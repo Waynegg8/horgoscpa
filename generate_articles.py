@@ -43,9 +43,9 @@ def save_hashes(hashes):
 
 def determine_category(title, content):
     text = (title + " " + " ".join(content)).lower()
-    if "稅務" in text:
+    if any(keyword in text for keyword in ["稅務", "稅收", "所得稅", "稅制"]):
         return "稅務"
-    elif "財務" in text or "財稅" in text:
+    elif any(keyword in text for keyword in ["財務", "財稅", "財務管理", "企業財務", "esg"]):
         return "財務管理"
     else:
         return "其他"

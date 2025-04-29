@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h3><a href="${article.url}">${article.title}</a></h3>
                         <p>${article.previewText || '暫無預覽內容'}</p>
                         <a href="${article.url}" class="read-more">閱讀全文 →</a>
-                   I</article>
+                    </article>
                 `).join('');
         } catch (error) {
             console.error('文章加載失敗:', error);
