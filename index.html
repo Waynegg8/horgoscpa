@@ -3,53 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>霍爾果斯會計師事務所</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="icon" href="favicon.ico">
+    <meta name="description" content="霍爾果斯會計師事務所提供專業的會計、稅務與財務顧問服務。">
+    <meta name="keywords" content="霍爾果斯, 會計服務, 稅務諮詢, 財務顧問">
+    <title>首頁 | 霍爾果斯會計師事務所</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="/img/favicon.ico">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <a href="/" class="logo">
-                <img src="/img/logo.png" alt="Logo" width="120">
-                <div class="brand">
-                    <span class="title">霍爾果斯會計師事務所</span>
-                    <span class="subtitle">Horgos CPA</span>
-                </div>
-            </a>
-            <ul class="nav-menu">
-                <li><a href="/services.html" class="nav-link">服務項目</a></li>
-                <li><a href="/blog/blog.html" class="nav-link active">部落格</a></li>
-                <li><a href="/contact.html" class="nav-link">聯絡我們</a></li>
-                <li><a href="/consult.html" class="cta-button">免費諮詢</a></li>
-            </ul>
-        </div>
-    </nav>
-
-    <section class="hero">
+    {navbar}
+    <main class="content-container">
+        <section class="hero">
+            <img src="/img/banner.jpg" alt="霍爾果斯會計師事務所" class="banner">
+            <h1>專業會計與財務顧問服務</h1>
+            <p>我們提供全方位的會計、稅務與財務管理解決方案，助您的企業穩健成長。</p>
+            <a href="/consult.html" class="cta-button">立即諮詢</a>
         </section>
-
-    <section class="blog-preview">
-        <h2>最新文章預覽</h2>
-        <div class="blog-preview-grid" id="blog-preview-grid"></div>
-        <a href="blog/blog.html" class="view-all-button">查看全部文章</a>
-    </section>
-
-    <div class="floating-buttons">
-        <a href="https://line.me/R/ti/p/@your-line-id" class="line-button">加入LINE</a>
-        <a href="consult.html" class="consult-button">立即諮詢</a>
-    </div>
-
-    <footer>
-        <div class="footer-content">
-            <p>© 2025 霍爾果斯會計師事務所</p>
-            <div class="social-links">
-                <a href="#"><img src="/img/facebook.png" alt="Facebook"></a>
-                <a href="#"><img src="/img/linkedin.png" alt="LinkedIn"></a>
-            </div>
+        <section class="blog-preview">
+            <h2>最新文章預覽</h2>
+            <div class="blog-preview-grid" id="blog-preview-grid"></div>
+            <a href="/blog/blog.html" class="view-all-button">查看全部文章</a>
+        </section>
+        <div class="floating-buttons">
+            <a href="https://line.me/R/ti/p/@your-line-id" class="line-button">加入LINE</a>
+            <a href="/consult.html" class="consult-button">立即諮詢</a>
         </div>
-    </footer>
-
-    <script src="js/scripts.js"></script>
+    </main>
+    {footer}
+    <script src="/js/scripts.js"></script>
 </body>
 </html>

@@ -13,8 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 .slice(0, maxArticles)
                 .map(article => `
                     <article class="blog-post" data-category="${article.category}">
+                        <img src="/img/blog/preview${article.id}.jpg" alt="${article.title}">
                         <h3><a href="${article.url}">${article.title}</a></h3>
-                        <p>${article.previewText}</p>
+                        <p>${article.previewText || '暫無預覽內容'}</p>
                         <a href="${article.url}" class="read-more">閱讀全文 →</a>
                     </article>
                 `).join('');
