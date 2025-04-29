@@ -1,56 +1,31 @@
 import os
 import json
 from datetime import datetime
-from pathlib import Path
 
-BASE_DIR = Path(__file__).parent
-BLOG_DIR = BASE_DIR / "blog"
-ARTICLES_DIR = BLOG_DIR / "articles"
-TEMPLATES_DIR = BASE_DIR / "templates"
-
-def load_template(name):
-    with open(TEMPLATES_DIR / f"{name}.html", "r", encoding="utf-8") as f:
-        return f.read()
+# 路径设置
+BASE_DIR = "."
+BLOG_DIR = os.path.join(BASE_DIR, "blog")
+ARTICLES_SOURCE_DIR = os.path.join(BLOG_DIR, "articles")  # 文章源文件目录
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 
 def generate_articles():
-    # 載入組件
-    base_template = load_template("base")
-    navbar = load_template("_navbar")
-    footer = load_template("_footer")
-
-    # 讀取文章數據
+    # 读取所有文章
     articles = []
-    for file in ARTICLES_DIR.glob("article*.json"):
-        with open(file, "r", encoding="utf-8") as f:
-            articles.append(json.load(f))
+    for filename in os.listdir(ARTICLES_SOURCE_DIR):
+        if filename.endswith(".json"):
+            path = os.path.join(ARTICLES_SOURCE_DIR, filename)
+            with open(path, "r", encoding="utf-8") as f:
+                articles.append(json.load(f))
 
-    # 生成文章HTML
-    for article in articles:
-        content = "".join(f"<p>{p}</p>" for p in article["content"])
-        html = base_template.format(
-            title=article["title"],
-            description=article["description"],
-            keywords=article["keywords"],
-            date=article["date"],
-            category=article["category"],
-            content=content,
-            navbar=navbar,
-            footer=footer,
-            canonical=f"https://yourdomain.com/blog/article{article['id']}.html"
-        )
-        output_path = BLOG_DIR / f"article{article['id']}.html"
-        output_path.write_text(html, encoding="utf-8")
+    # 按日期排序
+    articles.sort(key=lambda x: datetime.strptime(x["date"], "%Y-%m-%d"), reverse=True)
 
-    # 生成文章索引
-    articles_data = {
-        "articles": sorted(articles, 
-            key=lambda x: datetime.strptime(x["date"], "%Y-%m-%d"), 
-            reverse=True)
-    }
-    (BLOG_DIR / "articles.json").write_text(
-        json.dumps(articles_data, ensure_ascii=False, indent=2),
-        encoding="utf-8"
-    )
+    # 生成 articles.json 到 /blog 目录
+    output_path = os.path.join(BLOG_DIR, "articles.json")
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump({"articles": articles}, f, ensure_ascii=False, indent=2)
+
+    print(f"已生成 {len(articles)} 篇文章索引到 {output_path}")
 
 if __name__ == "__main__":
     generate_articles()
