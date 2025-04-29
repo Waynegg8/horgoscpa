@@ -1,5 +1,5 @@
+
 baseURL = "https://example.com/"
 languageCode = "zh-tw"
 title = "霍爾果斯會計師事務所"
 theme = "custom"
-paginate = 10
