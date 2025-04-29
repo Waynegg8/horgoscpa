@@ -1,30 +1,24 @@
-name: Generate Static Articles
+name: Generate Articles
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'blog/articles/*.json'  # 僅在 articles 目錄下的 JSON 檔案變更時觸發
+    branches: [main]
+    paths: 
+      - 'blog/articles/*.json'
+
 jobs:
-  generate-articles:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - name: Run Python script to generate articles
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Generate articles
         run: python generate_articles.py
-      - name: Commit new HTML files
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add blog/article*.html
-          git add index.html
-          git add blog/blog.html
-          git commit -m "Add newly generated article HTML files and update script tags" || echo "No changes to commit"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
