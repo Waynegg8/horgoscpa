@@ -1,0 +1,56 @@
+{
+  "articles": [
+    {
+      "id": 3,
+      "title": "企業財務風險管理新策略",
+      "description": "探索2025年企業財務風險管理的新策略與實務。",
+      "keywords": "霍爾果斯, 財務風險, 風險管理",
+      "date": "2025-04-25",
+      "category": "財務",
+      "previewText": "了解如何有效管理企業財務風險...",
+      "content": [
+        "2025年，企業面臨更複雜的財務風險，以下是我們的最新策略建議...",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua..."
+      ]
+    },
+    {
+      "id": 4,
+      "title": "企業財務風險管理新策略",
+      "description": "探索2025年企業財務風險管理的新策略與實務。",
+      "keywords": "霍爾果斯, 財務風險, 風險管理",
+      "date": "2025-04-25",
+      "category": "財務",
+      "previewText": "了解如何有效管理企業財務風險...",
+      "content": [
+        "2025年，企業面臨更複雜的財務風險，以下是我們的最新策略建議...",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua..."
+      ]
+    },
+    {
+      "id": 1,
+      "title": "2025年稅務新政策解析",
+      "description": "2025年稅務新政策解析，幫助企業與個人了解最新稅務變化。",
+      "keywords": "霍爾果斯, 稅務政策, 會計資訊",
+      "date": "2025-04-20",
+      "category": "稅務",
+      "previewText": "了解最新的稅務政策如何影響您的企業...",
+      "content": [
+        "2025年的稅務政策帶來了多項重要變革，影響企業與個人的稅務規劃。以下是我們的專業解析...",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua..."
+      ]
+    },
+    {
+      "id": 2,
+      "title": "如何優化企業財務報表",
+      "description": "如何優化企業財務報表，提升財務效率的實用技巧。",
+      "keywords": "霍爾果斯, 財務報表, 會計技巧",
+      "date": "2025-04-15",
+      "category": "會計",
+      "previewText": "實用的財務報表優化技巧，助您提升效率...",
+      "content": [
+        "財務報表是企業決策的核心，以下是幾個實用的優化技巧...",
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua..."
+      ]
+    }
+  ]
+}
