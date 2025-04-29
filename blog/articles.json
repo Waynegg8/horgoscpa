@@ -1,7 +1,7 @@
 {
   "meta": {
-    "generated_at": "2025-04-29T13:46:30.475855",
-    "total_articles": 6
+    "generated_at": "2025-04-29T13:51:11.984619",
+    "total_articles": 7
   },
   "articles": [
     {
@@ -24,6 +24,13 @@
       "date": "2025-04-25",
       "category": "財務",
       "url": "/blog/generated_articles/article6.html"
+    },
+    {
+      "id": 7,
+      "title": "企業管理新策略",
+      "date": "2025-04-25",
+      "category": "財務",
+      "url": "/blog/generated_articles/article7.html"
     },
     {
       "id": 4,
