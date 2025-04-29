@@ -68,3 +68,5 @@ function loadArticles(gridId, maxArticles = Infinity) {
     )).then(() => {
         // 在所有文章資料載入完成後再進行渲染
         console.log('All promises resolved, articlesData:', window.articlesData);
+    });  // 修復閉合
+}  // 閉合 loadArticles 函數
