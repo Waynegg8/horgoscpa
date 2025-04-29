@@ -1,5 +1,4 @@
-window.articlesData = window.articlesData || {};
-window.articlesData[1] = {
+{
     "id": 1,
     "title": "2025年稅務新政策解析",
     "description": "2025年稅務新政策解析，幫助企業與個人了解最新稅務變化。",
@@ -11,4 +10,4 @@ window.articlesData[1] = {
         "2025年的稅務政策帶來了多項重要變革，影響企業與個人的稅務規劃。以下是我們的專業解析...",
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua..."
     ]
-};
+}

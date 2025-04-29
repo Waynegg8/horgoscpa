@@ -1,5 +1,4 @@
-window.articlesData = window.articlesData || {};
-window.articlesData[2] = {
+{
     "id": 2,
     "title": "如何優化企業財務報表",
     "description": "如何優化企業財務報表，提升財務效率的實用技巧。",
@@ -11,4 +10,4 @@ window.articlesData[2] = {
         "財務報表是企業決策的核心，以下是幾個實用的優化技巧...",
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua..."
     ]
-};
+}
