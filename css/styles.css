@@ -15,7 +15,7 @@ body {
     font-family: 'Touch Me Sans Petite Regular', sans-serif;
     line-height: 1.9;
     color: #333;
-    background-color: #ffffff;
+    background-color: #f9f9f9; /* 背景色改為淺灰，提升層次感 */
 }
 h1, h2, h3 {
     font-family: 'Kaleko 105 Bold', sans-serif;
@@ -27,21 +27,22 @@ h1, h2, h3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.8rem 4rem;
-    background: linear-gradient(135deg, #1a3c5e 0%, #2b5278 100%);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-    position: sticky;
-    top: 0;
+    padding: 2rem 5rem; /* 增加內邊距，提升視覺舒適度 */
+    background: rgba(26, 60, 94, 0.95); /* 透明深藍背景 */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15); /* 更柔和的陰影 */
     z-index: 1000;
-    animation: fadeInDown 0.6s ease;
+    transition: background 0.3s ease;
+}
+.navbar:hover {
+    background: rgba(26, 60, 94, 1); /* 懸停時完全不透明 */
 }
 .logo {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 2rem;
 }
 .logo img {
-    height: 70px;
+    height: 80px; /* 放大 Logo */
     transition: transform 0.4s ease;
 }
 .logo img:hover {
@@ -52,26 +53,26 @@ h1, h2, h3 {
     flex-direction: column;
 }
 .logo-text span:first-child {
-    font-size: 1.8rem;
+    font-size: 2rem; /* 放大標題 */
     font-weight: bold;
     color: #ffffff;
 }
 .logo-text span:last-child {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     color: #d4af37;
 }
 .nav-links {
     list-style: none;
     display: flex;
-    gap: 3rem;
+    gap: 3.5rem;
 }
 .nav-links a {
     text-decoration: none;
     color: #ffffff;
     font-weight: bold;
-    font-size: 1.2rem;
-    padding: 0.7rem 1.5rem;
-    border-radius: 8px;
+    font-size: 1.3rem; /* 放大字體 */
+    padding: 0.8rem 1.8rem;
+    border-radius: 10px;
     transition: background-color 0.3s ease, transform 0.3s ease;
 }
 .nav-links a.active, .nav-links a:hover {
@@ -83,25 +84,25 @@ h1, h2, h3 {
 /* 首頁橫幅 */
 .hero {
     text-align: center;
-    padding: 7rem 3rem;
+    padding: 8rem 3rem; /* 增加頂部間距，避免被導航欄遮擋 */
     background: linear-gradient(135deg, #f7f9fc 0%, #e3e9ff 100%);
     position: relative;
-    border-radius: 0 0 40px 40px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border-radius: 0 0 50px 50px; /* 更大的圓角 */
+    box-shadow: 0 12px 30px rgba(0,0,0,0.1);
     animation: fadeIn 1.2s ease;
 }
 .hero .banner {
     width: 100%;
-    max-height: 550px;
+    max-height: 600px; /* 放大橫幅圖片 */
     object-fit: cover;
-    border-radius: 20px;
-    margin-bottom: 3rem;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    border-radius: 25px;
+    margin-bottom: 3.5rem;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     animation: slideIn 1s ease;
 }
 .hero h1 {
-    font-size: 3.5rem;
-    margin-bottom: 1.5rem;
+    font-size: 4rem; /* 放大標題 */
+    margin-bottom: 1.8rem;
     color: #1a3c5e;
     position: relative;
     display: inline-block;
@@ -109,63 +110,63 @@ h1, h2, h3 {
 .hero h1::after {
     content: '';
     position: absolute;
-    bottom: -10px;
+    bottom: -12px;
     left: 50%;
     transform: translateX(-50%);
-    width: 60px;
-    height: 4px;
+    width: 80px; /* 更長的下劃線 */
+    height: 5px;
     background-color: #d4af37;
-    border-radius: 2px;
+    border-radius: 3px;
 }
 .hero p {
-    font-size: 1.5rem;
-    margin-bottom: 3rem;
+    font-size: 1.6rem;
+    margin-bottom: 3.5rem;
     color: #4b5e7a;
 }
 .cta-button {
     display: inline-block;
-    padding: 1.3rem 3rem;
+    padding: 1.5rem 3.5rem;
     text-decoration: none;
     border-radius: 50px;
     font-weight: bold;
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     background: linear-gradient(135deg, #d4af37 0%, #b8972a 100%);
     color: #1a3c5e;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .cta-button:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.3);
 }
 
 /* 浮動按鈕 */
 .floating-buttons {
     position: fixed;
-    right: 40px;
+    right: 50px; /* 稍微拉開距離 */
     top: 50%;
     transform: translateY(-50%);
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 30px;
 }
 .floating-buttons a {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 110px;
-    height: 55px;
+    width: 120px; /* 放大按鈕 */
+    height: 60px;
     text-decoration: none;
     border-radius: 50px;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     color: white;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 .floating-buttons a:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    transform: scale(1.1);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
 }
 .line-button {
     background-color: #00c300;
@@ -188,56 +189,56 @@ h1, h2, h3 {
 
 /* 通用內容區 */
 .services-preview, .blog-preview, .team, .services, .blog, .article, .contact, .consult {
-    padding: 5rem 3rem;
+    padding: 6rem 3rem; /* 增加頂部間距 */
     max-width: 1500px;
     margin: 0 auto;
     background: #ffffff;
-    border-radius: 25px;
-    margin-top: 3rem;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+    border-radius: 30px;
+    margin-top: 4rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     animation: fadeInUp 0.8s ease;
 }
 .service-grid, .blog-grid, .team-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    gap: 3.5rem;
+    gap: 4rem; /* 增加卡片間距 */
 }
 .service-item, .blog-post, .team-member {
-    padding: 3rem;
+    padding: 3.5rem;
     background: linear-gradient(145deg, #ffffff 0%, #f7f9fc 100%);
-    border-radius: 25px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    border-radius: 30px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 .service-item:hover, .blog-post:hover, .team-member:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    transform: translateY(-12px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
 }
 .services-preview h2, .blog-preview h2 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 2.5rem;
-    margin-bottom: 3rem;
+    font-size: 2.8rem; /* 放大標題 */
+    margin-bottom: 3.5rem;
     color: #1a3c5e;
     position: relative;
 }
 .services-preview h2::after, .blog-preview h2::after {
     content: '';
     position: absolute;
-    bottom: -10px;
+    bottom: -12px;
     left: 0;
-    width: 80px;
-    height: 4px;
+    width: 100px; /* 更長的下劃線 */
+    height: 5px;
     background-color: #d4af37;
-    border-radius: 2px;
+    border-radius: 3px;
 }
 .services-preview h2 a, .blog-preview h2 a {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     text-decoration: none;
     color: #1a3c5e;
-    padding: 0.7rem 1.5rem;
-    border-radius: 8px;
+    padding: 0.8rem 1.8rem;
+    border-radius: 10px;
     background: #f7f9fc;
     transition: background-color 0.3s ease;
 }
@@ -250,21 +251,21 @@ h1, h2, h3 {
 .blog-post {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 2.5rem;
     background: #ffffff;
-    min-height: 340px;
+    min-height: 380px; /* 增加高度 */
     animation: slideIn 0.8s ease;
 }
 .blog-post img {
     width: 100%;
-    height: 260px;
+    height: 280px; /* 放大圖片 */
     object-fit: cover;
-    border-radius: 20px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    border-radius: 25px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 .blog-post h3 {
-    font-size: 1.8rem;
-    margin-bottom: 0.5rem;
+    font-size: 2rem; /* 放大標題 */
+    margin-bottom: 0.8rem;
 }
 .blog-post h3 a {
     text-decoration: none;
@@ -275,16 +276,16 @@ h1, h2, h3 {
 }
 .blog-post p {
     color: #6b7280;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     flex-grow: 1;
 }
 .read-more {
     text-decoration: none;
     color: #1a3c5e;
     font-weight: bold;
-    font-size: 1.2rem;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
+    font-size: 1.3rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 10px;
     background: #f7f9fc;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -296,53 +297,53 @@ h1, h2, h3 {
 /* 團隊成員 */
 .team-member img {
     width: 100%;
-    height: 360px;
+    height: 380px; /* 放大圖片 */
     object-fit: cover;
-    border-radius: 20px;
-    margin-bottom: 2rem;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    border-radius: 25px;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     animation: slideIn 0.8s ease;
 }
 .team-member h3 {
-    font-size: 1.8rem;
-    margin-bottom: 0.5rem;
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
 }
 .team-member p {
     color: #6b7280;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
 }
 
 /* 搜尋欄與分類過濾 */
 .search-bar {
-    margin-bottom: 3rem;
+    margin-bottom: 3.5rem;
 }
 .search-bar input {
     width: 100%;
-    padding: 1.3rem 2.5rem;
+    padding: 1.5rem 3rem;
     border: none;
     border-radius: 50px;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     background: #f7f9fc;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
     transition: box-shadow 0.3s ease;
 }
 .search-bar input:focus {
     outline: none;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
 }
 .category-filter {
     display: flex;
-    gap: 1.5rem;
-    margin-bottom: 3rem;
+    gap: 2rem;
+    margin-bottom: 3.5rem;
     flex-wrap: wrap;
 }
 .filter-btn {
-    padding: 0.9rem 2rem;
+    padding: 1rem 2.5rem;
     border: none;
     background: #f7f9fc;
     cursor: pointer;
     border-radius: 50px;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     color: #1a3c5e;
     transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
 }
@@ -355,65 +356,65 @@ h1, h2, h3 {
 /* 文章頁面 */
 .article {
     background: #ffffff;
-    padding: 5rem;
-    border-radius: 25px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    padding: 6rem;
+    border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     animation: fadeInUp 0.8s ease;
 }
 .article h1 {
-    font-size: 3rem;
-    margin-bottom: 2rem;
+    font-size: 3.5rem; /* 放大標題 */
+    margin-bottom: 2.5rem;
     color: #1a3c5e;
     position: relative;
 }
 .article h1::after {
     content: '';
     position: absolute;
-    bottom: -10px;
+    bottom: -12px;
     left: 0;
-    width: 80px;
-    height: 4px;
+    width: 100px;
+    height: 5px;
     background-color: #d4af37;
-    border-radius: 2px;
+    border-radius: 3px;
 }
 .article-meta {
     display: flex;
-    gap: 2.5rem;
-    margin-bottom: 3rem;
+    gap: 3rem;
+    margin-bottom: 3.5rem;
     color: #6b7280;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     background: #f7f9fc;
-    padding: 1rem 2rem;
+    padding: 1.2rem 2.5rem;
     border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
 .article-content {
     max-width: 1000px;
     margin: 0 auto;
-    line-height: 2.1;
+    line-height: 2.2;
 }
 .article-paragraph {
-    margin-bottom: 2.5rem;
+    margin-bottom: 3rem;
     text-indent: 2em;
     color: #444;
-    font-size: 1.2rem;
-    border-left: 4px solid #d4af37;
-    padding-left: 1.5rem;
+    font-size: 1.3rem;
+    border-left: 5px solid #d4af37;
+    padding-left: 2rem;
 }
 
 /* 聯絡與諮詢頁面 */
 .contact-info {
     display: flex;
     flex-wrap: wrap;
-    gap: 5rem;
+    gap: 6rem;
 }
 .contact-info .details {
     flex: 1;
     min-width: 340px;
 }
 .contact-info .details p {
-    margin-bottom: 1.5rem;
-    font-size: 1.3rem;
+    margin-bottom: 1.8rem;
+    font-size: 1.4rem;
     color: #4b5e7a;
 }
 .contact-info .map {
@@ -422,64 +423,47 @@ h1, h2, h3 {
 }
 .contact-info .map iframe {
     width: 100%;
-    height: 300px;
+    height: 320px;
     border: 0;
-    border-radius: 20px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    border-radius: 25px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 .consult-form {
-    padding: 70px 30px;
+    padding: 80px 30px;
     max-width: 1500px;
     margin: 0 auto;
 }
 .form-header {
     text-align: center;
-    margin-bottom: 60px;
+    margin-bottom: 70px;
 }
 .form-header h1 {
-    font-size: 3.2rem;
-    margin-bottom: 1.5rem;
+    font-size: 3.5rem;
+    margin-bottom: 1.8rem;
     color: #1a3c5e;
 }
 .form-header p {
     color: #6b7280;
-    font-size: 1.4rem;
+    font-size: 1.5rem;
 }
 .google-form-container {
     background: #ffffff;
-    border-radius: 25px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-    padding: 50px;
+    border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    padding: 60px;
 }
 
 /* 頁腳 */
 footer {
     text-align: center;
-    padding: 5rem;
+    padding: 6rem;
     background: linear-gradient(135deg, #1a3c5e 0%, #15324f 100%);
     color: #ffffff;
-    border-radius: 40px 40px 0 0;
-    box-shadow: 0 -8px 25px rgba(0,0,0,0.1);
+    border-radius: 50px 50px 0 0;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
 }
 footer p {
-    margin-bottom: 2rem;
-    font-size: 1.2rem;
-}
-.social-links {
-    display: flex;
-    justify-content: center;
-    gap: 2.5rem;
-}
-.social-links a {
-    display: inline-block;
-    transition: transform 0.4s ease;
-}
-.social-links a:hover {
-    transform: scale(1.3) rotate(5deg);
-}
-.social-links img {
-    width: 40px;
-    height: 40px;
+    font-size: 1.3rem;
 }
 
 /* 動畫效果 */
@@ -504,66 +488,66 @@ footer p {
 @media (max-width: 768px) {
     .navbar {
         flex-direction: column;
-        gap: 2.5rem;
-        padding: 2rem;
+        gap: 3rem;
+        padding: 2.5rem;
     }
     .nav-links {
         flex-direction: column;
         align-items: center;
-        gap: 1.5rem;
+        gap: 2rem;
     }
     .nav-links a {
-        font-size: 1.1rem;
-        padding: 0.6rem;
+        font-size: 1.2rem;
+        padding: 0.7rem;
     }
     .hero {
-        padding: 5rem 1.5rem;
+        padding: 6rem 2rem;
     }
     .hero h1 {
-        font-size: 2.8rem;
+        font-size: 3rem;
     }
     .hero .banner {
-        max-height: 400px;
+        max-height: 450px;
     }
     .hero p {
-        font-size: 1.3rem;
+        font-size: 1.4rem;
     }
     .floating-buttons {
-        right: 20px;
+        right: 25px;
         top: 70%;
     }
     .floating-buttons a {
-        width: 90px;
-        height: 50px;
-        font-size: 1rem;
+        width: 100px;
+        height: 55px;
+        font-size: 1.1rem;
     }
     .line-button {
         background-size: 40px 40px;
     }
     .services-preview, .blog-preview, .team, .services, .blog, .article, .contact, .consult {
-        padding: 3rem 2rem;
+        padding: 4rem 2.5rem;
     }
     .article {
-        padding: 3rem;
+        padding: 4rem;
     }
     .article h1 {
-        font-size: 2.5rem;
+        font-size: 2.8rem;
     }
     .article-paragraph {
         text-indent: 1em;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
     }
     .contact-info {
         flex-direction: column;
     }
     .consult-form {
-        padding: 50px 20px;
+        padding: 60px 25px;
     }
     .form-header h1 {
-        font-size: 2.8rem;
+        font-size: 3rem;
     }
     .google-form-container {
-        padding: 30px;
+        padding: 40px;
     }
     .google-form-container iframe {
         min-height: 800px;
@@ -572,10 +556,10 @@ footer p {
 
 @media (max-width: 480px) {
     .hero h1 {
-        font-size: 2.2rem;
+        font-size: 2.5rem;
     }
     .hero p {
-        font-size: 1.1rem;
+        font-size: 1.2rem;
     }
     .google-form-container iframe {
         min-height: 600px;

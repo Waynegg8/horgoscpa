@@ -1,13 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     const loadArticles = async (gridId, maxArticles = Infinity) => {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+
         try {
-            const response = await fetch('/blog/articles.json');
+            const response = await fetch('/blog/articles.json'); // 確保路徑正確
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
             const data = await response.json();
-            const grid = document.getElementById(gridId);
-            if (!grid) return;
-
             grid.innerHTML = data.articles
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .slice(0, maxArticles)
@@ -21,7 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 `).join('');
         } catch (error) {
             console.error('文章加載失敗:', error);
-            document.getElementById(gridId).innerHTML = '<p>⚠️ 文章暫時無法加載，請稍後再試</p>';
+            grid.innerHTML = `
+                <article class="blog-post">
+                    <h3>暫無文章</h3>
+                    <p>目前沒有可顯示的文章，請稍後再試或聯繫我們。</p>
+                    <a href="/contact.html" class="read-more">聯絡我們</a>
+                </article>
+            `;
         }
     };
 
