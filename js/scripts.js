@@ -1,10 +1,9 @@
-// 文章加載與渲染核心邏輯
 document.addEventListener('DOMContentLoaded', () => {
     const loadArticles = async (gridId, maxArticles = Infinity) => {
         try {
             const response = await fetch('/blog/articles.json');
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
+
             const data = await response.json();
             const grid = document.getElementById(gridId);
             if (!grid) return;
@@ -14,9 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 .slice(0, maxArticles)
                 .map(article => `
                     <article class="blog-post" data-category="${article.category}">
-                        <h3>${article.title}</h3>
+                        <h3><a href="${article.url}">${article.title}</a></h3>
                         <p>${article.previewText}</p>
-                        <a href="/blog/article${article.id}.html" class="read-more">閱讀全文 →</a>
+                        <a href="${article.url}" class="read-more">閱讀全文 →</a>
                     </article>
                 `).join('');
         } catch (error) {
@@ -28,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 頁面類型判斷
     if (document.getElementById('blog-grid')) {
         loadArticles('blog-grid'); // 部落格主頁
-    } 
+    }
     if (document.getElementById('blog-preview-grid')) {
         loadArticles('blog-preview-grid', 3); // 首頁預覽
     }
@@ -38,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const term = e.target.value.toLowerCase();
         document.querySelectorAll('.blog-post').forEach(post => {
             const visible = post.querySelector('h3').textContent.toLowerCase().includes(term) ||
-                           post.querySelector('p').textContent.toLowerCase().includes(term);
+                post.querySelector('p').textContent.toLowerCase().includes(term);
             post.style.display = visible ? 'block' : 'none';
         });
     });

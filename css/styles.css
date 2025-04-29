@@ -309,3 +309,25 @@ footer {
         min-height: 600px; /* 小屏幕進一步調整 */
     }
 }
+/* 文章內容樣式 */
+.article-content {
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+
+.article-paragraph {
+  margin-bottom: 1.5rem;
+  text-indent: 2em;
+}
+
+/* 移動端適配 */
+@media (max-width: 768px) {
+  .article-content {
+    padding: 0 15px;
+  }
+  
+  .article-paragraph {
+    text-indent: 1em;
+  }
+}
