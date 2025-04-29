@@ -45,3 +45,6 @@ jobs:
         env:
           # 使用 GitHub 內建 Token 驗證
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+# 驗證生成結果
+    ls -l blog/articles.json
+    cat blog/articles.json
