@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="霍爾果斯會計師事務所部落格，分享會計、稅務與財務管理的最新資訊與實用建議。">
+    <meta name="keywords" content="霍爾果斯, 會計部落格, 稅務資訊, 財務管理">
+    <title>部落格 - 霍爾果斯會計師事務所</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="icon" href="../favicon.ico">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <img src="../img/logo.png" alt="霍爾果斯會計師事務所 Logo">
+            <div class="logo-text">
+                <span>霍爾果斯會計師事務所</span>
+                <span>Horgoscpa</span>
+            </div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="../index.html">首頁</a></li>
+            <li><a href="../team.html">服務團隊</a></li>
+            <li><a href="../services.html">服務介紹</a></li>
+            <li><a href="blog.html" class="active">部落格</a></li>
+            <li><a href="../contact.html">聯絡我們</a></li>
+            <li><a href="../consult.html">立即諮詢</a></li>
+        </ul>
+    </nav>
+    <section class="blog">
+        <h1>最新文章</h1>
+        <div class="search-bar">
+            <input type="text" id="search" placeholder="搜尋文章...">
+        </div>
+        <div class="category-filter">
+            <button class="filter-btn active" data-category="all">全部</button>
+            <button class="filter-btn" data-category="tax">稅務</button>
+            <button class="filter-btn" data-category="accounting">會計</button>
+            <button class="filter-btn" data-category="finance">財務</button>
+        </div>
+        <div class="blog-grid" id="blog-grid"></div>
+    </section>
+    <div class="floating-buttons">
+        <a href="https://line.me/R/ti/p/@your-line-id" class="line-button">加入LINE</a>
+        <a href="../consult.html" class="consult-button">立即諮詢</a>
+    </div>
+    <footer>
+        <p>© 2025 霍爾果斯會計師事務所. All Rights Reserved.</p>
+    </footer>
+    <script src="articles/article1.json"></script>
+    <script src="articles/article2.json"></script>
+    <script src="../js/scripts.js"></script>
+</body>
+</html>
