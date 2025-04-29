@@ -28,31 +28,41 @@ document.querySelectorAll('.filter-btn').forEach(button => {
 // 全站使用根路徑
 function getBasePath() {
     const path = window.location.pathname;
+    console.log('Current path:', path); // 調試資訊
     if (path.includes('/blog/')) {
+        console.log('Returning basePath: ../'); // 調試資訊
         return '../'; // blog.html 在 blog/ 目錄下，根路徑需要回退一級
     }
+    console.log('Returning basePath: ""'); // 調試資訊
     return ''; // index.html 在根目錄
 }
 
 // 動態加載文章的通用函數
 function loadArticles(gridId, maxArticles = Infinity) {
     console.log('Loading articles for:', gridId);
-    console.log('Articles data:', window.articlesData);
+    console.log('Articles data before load:', window.articlesData); // 調試資訊
 
     const basePath = getBasePath();
+    console.log('basePath in loadArticles:', basePath); // 調試資訊
     const articlesDir = `${basePath}blog/articles/`;
     const articleFiles = ['article1.json', 'article2.json']; // 假設你有這些檔案，後續可以動態生成
+    console.log('articlesDir:', articlesDir); // 調試資訊
+    console.log('articleFiles:', articleFiles); // 調試資訊
 
     Promise.all(articleFiles.map(file =>
         fetch(articlesDir + file)
             .then(response => {
+                console.log('Fetch response for', file, ':', response); // 調試資訊
                 if (!response.ok) {
+                    console.error('Fetch error for', file, ':', response.status); // 調試資訊
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
+                console.log('Fetched data for', file, ':', data); // 調試資訊
                 window.articlesData[data.id] = data; // 假設 JSON 檔案中有 'id' 欄位
+                console.log('window.articlesData after', file, ':', window.articlesData); // 調試資訊
             })
             .catch(error => {
                 console.error('Could not load article:', error);
@@ -60,13 +70,16 @@ function loadArticles(gridId, maxArticles = Infinity) {
             })
     )).then(() => {
         // 在所有文章資料載入完成後再進行渲染
+        console.log('All promises resolved, articlesData:', window.articlesData); // 調試資訊
         const articles = Object.values(window.articlesData).filter(article => article !== null);
-        console.log('Filtered and loaded articles:', articles);
+        console.log('Filtered articles:', articles); // 調試資訊
 
         // 按日期倒序排序
         articles.sort((a, b) => new Date(b.date) - new Date(a.date));
+        console.log('Sorted articles:', articles); // 調試資訊
         // 限制文章數量
         const articlesToShow = articles.slice(0, maxArticles);
+        console.log('Articles to show:', articlesToShow); // 調試資訊
 
         const grid = document.getElementById(gridId);
         if (!grid) {
@@ -93,23 +106,25 @@ function loadArticles(gridId, maxArticles = Infinity) {
                 <span>發布日期：${article.date} | 分類：${article.category}</span>
             `;
             grid.appendChild(articleElement);
-            console.log(`Added article ${article.id} to grid`);
+            console.log(`Added article ${article.id} to grid`); // 調試資訊
         });
 
         if (articlesToShow.length === 0) {
             grid.innerHTML = '<p>目前沒有文章。</p>';
         } else {
-            console.log(`Total articles rendered: ${articlesToShow.length}`);
+            console.log(`Total articles rendered: ${articlesToShow.length}`); // 調試資訊
         }
     });
 }
 
 // 主頁最新文章（最多兩篇）
 if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
+    console.log('Loading latest articles for index page'); // 調試資訊
     loadArticles('blog-preview-grid', 2);
 }
 
 // 部落格頁面（所有文章）
 if (window.location.pathname.includes('blog.html')) {
+    console.log('Loading all articles for blog page'); // 調試資訊
     loadArticles('blog-grid');
 }
