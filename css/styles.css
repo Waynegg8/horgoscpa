@@ -247,3 +247,65 @@ footer {
         flex-direction: column;
     }
 }
+/* 諮詢頁面專用樣式 */
+.consult-form {
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.form-header h1 {
+    color: #2c3e50;
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+}
+
+.form-header p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+.google-form-container {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 0 auto;
+}
+
+.google-form-container iframe {
+    display: block;
+    width: 100%;
+    border: none;
+    min-height: 979px; /* 保持表單完整高度 */
+}
+
+/* 行動裝置適配 */
+@media (max-width: 768px) {
+    .consult-form {
+        padding: 20px 10px;
+    }
+
+    .form-header h1 {
+        font-size: 2rem;
+    }
+
+    .google-form-container {
+        padding: 10px;
+    }
+
+    .google-form-container iframe {
+        min-height: 800px; /* 行動裝置調整高度 */
+    }
+}
+
+@media (max-width: 480px) {
+    .google-form-container iframe {
+        min-height: 600px; /* 小屏幕進一步調整 */
+    }
+}
