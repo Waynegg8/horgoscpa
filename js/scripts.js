@@ -24,15 +24,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 頁面類型判斷
     if (document.getElementById('blog-grid')) {
-        loadArticles('blog-grid'); // 部落格主頁
+        loadArticles('blog-grid');
     }
     if (document.getElementById('blog-preview-grid')) {
-        loadArticles('blog-preview-grid', 3); // 首頁預覽
+        loadArticles('blog-preview-grid', 3);
     }
 
-    // 搜尋功能
     document.getElementById('search')?.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         document.querySelectorAll('.blog-post').forEach(post => {
@@ -42,7 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 分類篩選
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const category = this.dataset.category;

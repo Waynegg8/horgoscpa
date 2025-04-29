@@ -15,7 +15,7 @@ ARTICLE_TEMPLATE = """
     </section>
     <div class="floating-buttons">
         <a href="https://line.me/R/ti/p/@your-line-id" class="line-button">加入LINE</a>
-        <a href="../../consult.html" class="consult-button">立即諮詢</a>
+        <a href="/consult.html" class="consult-button">立即諮詢</a>
     </div>
 """
 
@@ -38,7 +38,7 @@ def generate_articles():
                     print(f"錯誤：文件 {filename} 不是有效的 JSON 格式")
                     continue
 
-    all_articles_data = {"articles": []}  # 初始化 all_articles_data
+    all_articles_data = {"articles": []}
 
     for article in articles:
         content_html = ''.join(
@@ -51,7 +51,7 @@ def generate_articles():
             category=article['category']
         )
         output_path = os.path.join(GENERATED_ARTICLES_DIR, f"article{article['id']}.html")
-        with open(output_path, 'w', encoding='utf-8', ) as f:
+        with open(output_path, 'w', encoding='utf-8') as f:
             f.write(base_html.format(
                 title=f"{article['title']} | 霍爾果斯會計師事務所",
                 description=article['description'],
@@ -62,24 +62,21 @@ def generate_articles():
                 footer=footer_html
             ))
 
-        # 構建 articles.json 的資料
         all_articles_data["articles"].append({
             "id": article['id'],
             "title": article['title'],
             "date": article['date'],
             "category": article['category'],
             "url": f"/blog/generated_articles/article{article['id']}.html",
-            "previewText": article.get('previewText', article['content'][0] if article['content'] else '')  # 獲取 previewText 或使用 content 的第一段
+            "previewText": article.get('previewText', article['content'][0] if article['content'] else '')
         })
 
-    # 生成 articles.json
     articles_json_path = "blog/articles.json"
     with open(articles_json_path, 'w', encoding='utf-8') as f:
         json.dump(all_articles_data, f, ensure_ascii=False, indent=2)
 
 
 if __name__ == '__main__':
-    # 載入模板
     with open("base.html", "r", encoding="utf-8") as f:
         base_html = f.read()
     with open("_navbar.html", "r", encoding="utf-8") as f:

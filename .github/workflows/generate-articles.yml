@@ -26,9 +26,11 @@ jobs:
           python generate_articles.py
           echo "生成文章列表："
           ls -l blog/generated_articles
+          echo "articles.json 檔案："
+          ls -l blog/articles.json
 
       - name: Commit and push
-        run: |  # 注意此处对齐
+        run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add blog/generated_articles blog/articles.json
