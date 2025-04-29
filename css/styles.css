@@ -13,7 +13,7 @@
 }
 body {
     font-family: 'Touch Me Sans Petite Regular', sans-serif;
-    line-height: 1.6; /* 縮小行高，減少壅擠感 */
+    line-height: 1.5; /* 進一步縮小行高 */
     color: #333;
     background-color: #f9f9f9;
 }
@@ -25,20 +25,23 @@ h1, h2, h3 {
 /* 導航欄 */
 .navbar {
     display: flex;
-    justify-content: space-between; /* 項目均勻分佈 */
+    justify-content: space-between;
     align-items: center;
-    padding: 1.5rem 4rem; /* 減少內邊距 */
-    background: #1a3c5e; /* 深藍背景，增加對比度 */
-    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    padding: 1rem 2rem; /* 減少內邊距 */
+    background: #1a3c5e;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     z-index: 1000;
+    max-width: 1200px; /* 限制最大寬度 */
+    margin: 0 auto; /* 居中 */
+    border-radius: 10px; /* 增加圓角 */
 }
 .logo {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1rem;
 }
 .logo img {
-    height: 60px; /* 縮小 Logo */
+    height: 50px; /* 縮小 Logo */
     transition: transform 0.3s ease;
 }
 .logo img:hover {
@@ -49,26 +52,26 @@ h1, h2, h3 {
     flex-direction: column;
 }
 .logo-text span:first-child {
-    font-size: 1.5rem; /* 縮小標題 */
+    font-size: 1.3rem; /* 縮小標題 */
     font-weight: bold;
-    color: #ffffff;
+    color: #ffffff; /* 白色字體，增加對比 */
 }
 .logo-text span:last-child {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: #d4af37;
 }
 .nav-links {
     list-style: none;
     display: flex;
-    gap: 2rem; /* 減少項目間距 */
+    gap: 1.5rem; /* 減少項目間距 */
 }
 .nav-links a {
     text-decoration: none;
-    color: #ffffff; /* 字體改為白色，增加對比 */
+    color: #ffffff;
     font-weight: bold;
-    font-size: 1.1rem; /* 縮小字體 */
-    padding: 0.5rem 1.2rem;
-    border-radius: 8px;
+    font-size: 1rem; /* 縮小字體 */
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
     transition: background-color 0.3s ease, transform 0.3s ease;
 }
 .nav-links a.active, .nav-links a:hover {
@@ -80,24 +83,26 @@ h1, h2, h3 {
 /* 首頁橫幅 */
 .hero {
     text-align: center;
-    padding: 6rem 2rem; /* 減少內邊距 */
+    padding: 4rem 1.5rem; /* 減少內邊距 */
     background: linear-gradient(135deg, #f7f9fc 0%, #e3e9ff 100%);
-    border-radius: 0 0 30px 30px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    animation: fadeIn 1s ease;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    animation: fadeIn 0.8s ease;
+    max-width: 1000px; /* 縮小最大寬度 */
+    margin: 2rem auto; /* 增加上下間距 */
 }
 .hero .banner {
     width: 100%;
-    max-height: 500px; /* 縮小橫幅圖片 */
+    max-height: 400px; /* 縮小橫幅圖片 */
     object-fit: cover;
-    border-radius: 20px;
-    margin-bottom: 2rem;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-    animation: slideIn 0.8s ease;
+    border-radius: 15px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    animation: slideIn 0.6s ease;
 }
 .hero h1 {
-    font-size: 3rem; /* 縮小標題 */
-    margin-bottom: 1.2rem;
+    font-size: 2.5rem; /* 縮小標題 */
+    margin-bottom: 1rem;
     color: #1a3c5e;
     position: relative;
     display: inline-block;
@@ -105,68 +110,68 @@ h1, h2, h3 {
 .hero h1::after {
     content: '';
     position: absolute;
-    bottom: -8px;
+    bottom: -6px;
     left: 50%;
     transform: translateX(-50%);
-    width: 60px;
-    height: 4px;
+    width: 50px;
+    height: 3px;
     background-color: #d4af37;
     border-radius: 2px;
 }
 .hero p {
-    font-size: 1.3rem; /* 縮小字體 */
-    margin-bottom: 2rem;
+    font-size: 1.1rem; /* 縮小字體 */
+    margin-bottom: 1.5rem;
     color: #4b5e7a;
 }
 .cta-button {
     display: inline-block;
-    padding: 1rem 2.5rem; /* 縮小按鈕 */
+    padding: 0.8rem 2rem; /* 縮小按鈕 */
     text-decoration: none;
-    border-radius: 40px;
+    border-radius: 30px;
     font-weight: bold;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     background: linear-gradient(135deg, #d4af37 0%, #b8972a 100%);
     color: #1a3c5e;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .cta-button:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
 }
 
 /* 浮動按鈕 */
 .floating-buttons {
     position: fixed;
-    right: 40px;
+    right: 30px;
     top: 50%;
     transform: translateY(-50%);
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    gap: 20px; /* 減少按鈕間距 */
+    gap: 15px; /* 減少按鈕間距 */
 }
 .floating-buttons a {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100px; /* 縮小按鈕 */
-    height: 50px;
+    width: 90px; /* 縮小按鈕 */
+    height: 45px;
     text-decoration: none;
-    border-radius: 40px;
-    font-size: 1.1rem;
+    border-radius: 30px;
+    font-size: 1rem;
     color: white;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 .floating-buttons a:hover {
     transform: scale(1.05);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
 }
 .line-button {
     background-color: #00c300;
     background-image: url('../img/line-icon.png');
-    background-size: 35px 35px;
+    background-size: 30px 30px;
     background-position: center;
     background-repeat: no-repeat;
     text-indent: -9999px;
@@ -184,56 +189,55 @@ h1, h2, h3 {
 
 /* 通用內容區 */
 .services-preview, .blog-preview, .team, .services, .blog, .article, .contact, .consult {
-    padding: 4rem 2rem; /* 減少內邊距 */
-    max-width: 1200px; /* 縮小最大寬度 */
-    margin: 0 auto;
+    padding: 3rem 1.5rem; /* 減少內邊距 */
+    max-width: 1000px; /* 縮小最大寬度 */
+    margin: 2rem auto; /* 增加上下間距 */
     background: #ffffff;
-    border-radius: 20px;
-    margin-top: 3rem;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-    animation: fadeInUp 0.6s ease;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+    animation: fadeInUp 0.5s ease;
 }
 .service-grid, .blog-grid, .team-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2.5rem; /* 減少卡片間距 */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem; /* 減少卡片間距 */
 }
 .service-item, .blog-post, .team-member {
-    padding: 2rem; /* 減少內邊距 */
+    padding: 1.5rem; /* 減少內邊距 */
     background: linear-gradient(145deg, #ffffff 0%, #f7f9fc 100%);
-    border-radius: 20px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    border-radius: 15px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .service-item:hover, .blog-post:hover, .team-member:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+    transform: translateY(-6px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 .services-preview h2, .blog-preview h2 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 2.2rem; /* 縮小標題 */
-    margin-bottom: 2rem;
+    font-size: 1.8rem; /* 縮小標題 */
+    margin-bottom: 1.5rem;
     color: #1a3c5e;
     position: relative;
 }
 .services-preview h2::after, .blog-preview h2::after {
     content: '';
     position: absolute;
-    bottom: -8px;
+    bottom: -6px;
     left: 0;
-    width: 80px;
-    height: 4px;
+    width: 60px;
+    height: 3px;
     background-color: #d4af37;
     border-radius: 2px;
 }
 .services-preview h2 a, .blog-preview h2 a {
-    font-size: 1.2rem;
+    font-size: 1rem;
     text-decoration: none;
     color: #1a3c5e;
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
     background: #f7f9fc;
     transition: background-color 0.3s ease;
 }
@@ -246,21 +250,21 @@ h1, h2, h3 {
 .blog-post {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
     background: #ffffff;
-    min-height: 300px; /* 縮小高度 */
-    animation: slideIn 0.6s ease;
+    min-height: 250px; /* 縮小高度 */
+    animation: slideIn 0.5s ease;
 }
 .blog-post img {
     width: 100%;
-    height: 220px; /* 縮小圖片 */
+    height: 180px; /* 縮小圖片 */
     object-fit: cover;
-    border-radius: 15px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
 .blog-post h3 {
-    font-size: 1.6rem; /* 縮小標題 */
-    margin-bottom: 0.6rem;
+    font-size: 1.4rem; /* 縮小標題 */
+    margin-bottom: 0.5rem;
 }
 .blog-post h3 a {
     text-decoration: none;
@@ -271,16 +275,16 @@ h1, h2, h3 {
 }
 .blog-post p {
     color: #6b7280;
-    font-size: 1.1rem;
+    font-size: 1rem;
     flex-grow: 1;
 }
 .read-more {
     text-decoration: none;
     color: #1a3c5e;
     font-weight: bold;
-    font-size: 1.1rem;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
+    font-size: 1rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
     background: #f7f9fc;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -292,53 +296,53 @@ h1, h2, h3 {
 /* 團隊成員 */
 .team-member img {
     width: 100%;
-    height: 300px; /* 縮小圖片 */
+    height: 250px; /* 縮小圖片 */
     object-fit: cover;
-    border-radius: 15px;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-    animation: slideIn 0.6s ease;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    animation: slideIn 0.5s ease;
 }
 .team-member h3 {
-    font-size: 1.6rem;
-    margin-bottom: 0.6rem;
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
 }
 .team-member p {
     color: #6b7280;
-    font-size: 1.1rem;
+    font-size: 1rem;
 }
 
 /* 搜尋欄與分類過濾 */
 .search-bar {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
 }
 .search-bar input {
     width: 100%;
-    padding: 1rem 2rem;
+    padding: 0.8rem 1.5rem;
     border: none;
-    border-radius: 40px;
-    font-size: 1.1rem;
+    border-radius: 30px;
+    font-size: 1rem;
     background: #f7f9fc;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     transition: box-shadow 0.3s ease;
 }
 .search-bar input:focus {
     outline: none;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
 .category-filter {
     display: flex;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
     flex-wrap: wrap;
 }
 .filter-btn {
-    padding: 0.8rem 2rem;
+    padding: 0.6rem 1.5rem;
     border: none;
     background: #f7f9fc;
     cursor: pointer;
-    border-radius: 40px;
-    font-size: 1.1rem;
+    border-radius: 30px;
+    font-size: 1rem;
     color: #1a3c5e;
     transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
 }
@@ -351,114 +355,114 @@ h1, h2, h3 {
 /* 文章頁面 */
 .article {
     background: #ffffff;
-    padding: 4rem; /* 減少內邊距 */
-    border-radius: 20px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-    animation: fadeInUp 0.6s ease;
+    padding: 3rem; /* 減少內邊距 */
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+    animation: fadeInUp 0.5s ease;
 }
 .article h1 {
-    font-size: 2.8rem; /* 縮小標題 */
-    margin-bottom: 2rem;
+    font-size: 2.2rem; /* 縮小標題 */
+    margin-bottom: 1.5rem;
     color: #1a3c5e;
     position: relative;
 }
 .article h1::after {
     content: '';
     position: absolute;
-    bottom: -8px;
+    bottom: -6px;
     left: 0;
-    width: 80px;
-    height: 4px;
+    width: 60px;
+    height: 3px;
     background-color: #d4af37;
     border-radius: 2px;
 }
 .article-meta {
     display: flex;
-    gap: 2rem;
-    margin-bottom: 2rem;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
     color: #6b7280;
-    font-size: 1.1rem;
+    font-size: 1rem;
     background: #f7f9fc;
-    padding: 1rem 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
 }
 .article-content {
-    max-width: 900px; /* 縮小內容寬度 */
+    max-width: 800px; /* 縮小內容寬度 */
     margin: 0 auto;
-    line-height: 2;
+    line-height: 1.8;
 }
 .article-paragraph {
-    margin-bottom: 2rem;
-    text-indent: 1.5em;
+    margin-bottom: 1.5rem;
+    text-indent: 1em;
     color: #444;
-    font-size: 1.1rem;
-    border-left: 4px solid #d4af37;
-    padding-left: 1.5rem;
+    font-size: 1rem;
+    border-left: 3px solid #d4af37;
+    padding-left: 1rem;
 }
 
 /* 聯絡與諮詢頁面 */
 .contact-info {
     display: flex;
     flex-wrap: wrap;
-    gap: 4rem; /* 減少間距 */
+    gap: 3rem; /* 減少間距 */
 }
 .contact-info .details {
     flex: 1;
-    min-width: 300px;
+    min-width: 250px;
 }
 .contact-info .details p {
-    margin-bottom: 1.2rem;
-    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
     color: #4b5e7a;
 }
 .contact-info .map {
     flex: 1;
-    min-width: 300px;
+    min-width: 250px;
 }
 .contact-info .map iframe {
     width: 100%;
-    height: 280px; /* 縮小地圖 */
+    height: 250px; /* 縮小地圖 */
     border: 0;
-    border-radius: 15px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
 .consult-form {
-    padding: 60px 25px; /* 減少內邊距 */
-    max-width: 1200px;
+    padding: 40px 20px; /* 減少內邊距 */
+    max-width: 1000px;
     margin: 0 auto;
 }
 .form-header {
     text-align: center;
-    margin-bottom: 50px;
+    margin-bottom: 40px;
 }
 .form-header h1 {
-    font-size: 2.8rem;
-    margin-bottom: 1.2rem;
+    font-size: 2.2rem;
+    margin-bottom: 1rem;
     color: #1a3c5e;
 }
 .form-header p {
     color: #6b7280;
-    font-size: 1.3rem;
+    font-size: 1.1rem;
 }
 .google-form-container {
     background: #ffffff;
-    border-radius: 20px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+    padding: 30px;
 }
 
 /* 頁腳 */
 footer {
     text-align: center;
-    padding: 4rem; /* 減少內邊距 */
+    padding: 3rem; /* 減少內邊距 */
     background: linear-gradient(135deg, #1a3c5e 0%, #15324f 100%);
     color: #ffffff;
-    border-radius: 30px 30px 0 0;
-    box-shadow: 0 -8px 25px rgba(0,0,0,0.1);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.1);
 }
 footer p {
-    font-size: 1.1rem;
+    font-size: 1rem;
 }
 
 /* 動畫效果 */
@@ -467,15 +471,15 @@ footer p {
     to { opacity: 1; }
 }
 @keyframes fadeInDown {
-    from { opacity: 0; transform: translateY(-20px); }
+    from { opacity: 0; transform: translateY(-15px); }
     to { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(15px); }
     to { opacity: 1; transform: translateY(0); }
 }
 @keyframes slideIn {
-    from { opacity: 0; transform: translateY(15px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -483,83 +487,83 @@ footer p {
 @media (max-width: 768px) {
     .navbar {
         flex-direction: column;
-        gap: 2rem;
-        padding: 2rem;
+        gap: 1.5rem;
+        padding: 1.5rem;
     }
     .nav-links {
-        flex-direction: row; /* 在平板尺寸時保持橫向排列 */
-        gap: 1.5rem;
+        flex-direction: row;
+        gap: 1rem;
         flex-wrap: wrap;
         justify-content: center;
     }
     .nav-links a {
-        font-size: 1rem;
-        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        padding: 0.5rem 0.8rem;
     }
     .hero {
-        padding: 4rem 1.5rem;
+        padding: 3rem 1rem;
     }
     .hero h1 {
-        font-size: 2.5rem;
+        font-size: 2rem;
     }
     .hero .banner {
-        max-height: 400px;
+        max-height: 350px;
     }
     .hero p {
-        font-size: 1.2rem;
+        font-size: 1rem;
     }
     .floating-buttons {
-        right: 20px;
+        right: 15px;
         top: 60%;
     }
     .floating-buttons a {
-        width: 90px;
-        height: 45px;
-        font-size: 1rem;
+        width: 80px;
+        height: 40px;
+        font-size: 0.9rem;
     }
     .line-button {
-        background-size: 30px 30px;
+        background-size: 25px 25px;
     }
     .services-preview, .blog-preview, .team, .services, .blog, .article, .contact, .consult {
-        padding: 3rem 1.5rem;
+        padding: 2rem 1rem;
     }
     .article {
-        padding: 3rem;
+        padding: 2rem;
     }
     .article h1 {
-        font-size: 2.2rem;
+        font-size: 1.8rem;
     }
     .article-paragraph {
-        text-indent: 1em;
-        font-size: 1rem;
+        text-indent: 0.8em;
+        font-size: 0.9rem;
     }
     .contact-info {
         flex-direction: column;
     }
     .consult-form {
-        padding: 40px 20px;
+        padding: 30px 15px;
     }
     .form-header h1 {
-        font-size: 2.2rem;
+        font-size: 1.8rem;
     }
     .google-form-container {
-        padding: 30px;
+        padding: 20px;
     }
     .google-form-container iframe {
-        min-height: 700px;
+        min-height: 600px;
     }
 }
 
 @media (max-width: 480px) {
     .nav-links {
-        flex-direction: column; /* 在手機尺寸時改為縱向排列 */
-        gap: 1rem;
+        flex-direction: column;
+        gap: 0.8rem;
     }
     .hero h1 {
-        font-size: 2rem;
+        font-size: 1.8rem;
     }
     .hero p {
-        font-size: 1rem;
+        font-size: 0.9rem;
     }
     .google-form-container iframe {
         min-height: 500px;

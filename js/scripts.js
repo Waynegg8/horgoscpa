@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!grid) return;
 
         try {
-            const response = await fetch('/blog/articles.json'); // 確保路徑正確
+            const response = await fetch('/blog/articles.json');
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
             const data = await response.json();
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h3><a href="${article.url}">${article.title}</a></h3>
                         <p>${article.previewText || '暫無預覽內容'}</p>
                         <a href="${article.url}" class="read-more">閱讀全文 →</a>
-                    </article>
+                   I</article>
                 `).join('');
         } catch (error) {
             console.error('文章加載失敗:', error);
@@ -38,20 +38,24 @@ document.addEventListener('DOMContentLoaded', () => {
         loadArticles('blog-preview-grid', 3);
     }
 
+    // 搜尋功能
     document.getElementById('search')?.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         document.querySelectorAll('.blog-post').forEach(post => {
-            const visible = post.querySelector('h3').textContent.toLowerCase().includes(term) ||
-                post.querySelector('p').textContent.toLowerCase().includes(term);
+            const title = post.querySelector('h3').textContent.toLowerCase();
+            const content = post.querySelector('p').textContent.toLowerCase();
+            const visible = title.includes(term) || content.includes(term);
             post.style.display = visible ? 'block' : 'none';
         });
     });
 
+    // 分類過濾功能
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const category = this.dataset.category;
             document.querySelectorAll('.blog-post').forEach(post => {
-                post.style.display = (category === 'all' || post.dataset.category === category) ? 'block' : 'none';
+                const postCategory = post.dataset.category;
+                post.style.display = (category === 'all' || postCategory === category) ? 'block' : 'none';
             });
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');

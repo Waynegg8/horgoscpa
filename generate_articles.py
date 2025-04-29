@@ -20,7 +20,7 @@ ARTICLE_TEMPLATE = """
     </section>
     <div class="floating-buttons">
         <a href="https://line.me/R/ti/p/@your-line-id" class="line-button">加入LINE</a>
-        <a href="/consult.html" class="consult-button">立即諮詢</a>
+        <a href="/consult.html" class="consult-button">免費諮詢</a>
     </div>
 """
 
@@ -42,14 +42,13 @@ def save_hashes(hashes):
         json.dump(hashes, f, ensure_ascii=False, indent=2)
 
 def determine_category(title, content):
-    """根據標題和內容自動分類"""
     text = (title + " " + " ".join(content)).lower()
     if "稅務" in text:
         return "稅務"
     elif "財務" in text or "財稅" in text:
         return "財務管理"
     else:
-        return "其他"  # 確保不會出現「未分類」
+        return "其他"
 
 def extract_article_data(filename):
     if not filename.endswith(".txt") or filename == "article_template.txt":
@@ -98,7 +97,7 @@ def extract_article_data(filename):
         return None
 
     date = datetime.utcnow().strftime("%Y-%m-%d")
-    category = determine_category(title, paragraphs)  # 自動分類
+    category = determine_category(title, paragraphs)
     preview_text = paragraphs[0][:100] + "..." if len(paragraphs[0]) > 100 else paragraphs[0]
     description = paragraphs[0][:150] + "..." if len(paragraphs[0]) > 150 else paragraphs[0]
     keywords = "霍爾果斯, 會計資訊"
@@ -171,4 +170,47 @@ def generate_articles():
             title=article['title'],
             content=content_html,
             date=article['date'],
-            category=article['category
+            category=article['category']
+        )
+        output_path = os.path.join(GENERATED_ARTICLES_DIR, f"article{article['id']}.html")
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(base_html.format(
+                title=f"{article['title']} | 霍爾果斯會計師事務所",
+                description=article['description'],
+                keywords=article['keywords'],
+                canonical=f"/blog/generated_articles/article{article['id']}.html",
+                navbar=navbar_html,
+                content=html_content,
+                footer=footer_html
+            ))
+
+        existing_articles[article['id']] = {
+            "id": article['id'],
+            "title": article['title'],
+            "date": article['date'],
+            "category": article['category'],
+            "url": f"/blog/generated_articles/article{article['id']}.html",
+            "previewText": article.get('previewText', article['content'][0] if article['content'] else '')
+        }
+
+    all_articles_data["articles"] = list(existing_articles.values())
+    all_articles_data["articles"].sort(key=lambda x: x["id"])
+    all_articles_data["meta"]["generated_at"] = datetime.utcnow().isoformat()
+    all_articles_data["meta"]["total_articles"] = len(all_articles_data["articles"])
+
+    with open(articles_json_path, 'w', encoding='utf-8') as f:
+        json.dump(all_articles_data, f, ensure_ascii=False, indent=2)
+
+    save_hashes(current_hashes)
+
+    print("文章生成完成！")
+
+if __name__ == '__main__':
+    with open("templates/base.html", "r", encoding="utf-8") as f:
+        base_html = f.read()
+    with open("templates/_navbar.html", "r", encoding="utf-8") as f:
+        navbar_html = f.read()
+    with open("templates/_footer.html", "r", encoding="utf-8") as f:
+        footer_html = f.read()
+
+    generate_articles()
