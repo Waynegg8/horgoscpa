@@ -1,9 +1,10 @@
-baseURL = "https://horgoscpa.com/"
+
+baseURL = "https://www.horgoscpa.com"
 languageCode = "zh-tw"
 title = "霍爾果斯會計師事務所"
-defaultContentLanguage = "zh"
+theme = "academic"
 
-[languages]
-  [languages.zh]
-    languageName = "中文"
-    weight = 1
+[params]
+  description = "霍爾果斯會計師事務所提供專業的會計、報稅、公司設立等服務，致力於為客戶提供高效、專業的會計解決方案。"
+  author = "霍爾果斯會計師事務所"
+  # Add other custom parameters if needed
