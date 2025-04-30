@@ -1,16 +1,13 @@
 baseURL = "https://horgoscpa.com/"
 languageCode = "zh-tw"
 title = "霍爾果斯會計事務所"
-
-
 defaultContentLanguage = "zh"
+
 [languages]
   [languages.zh]
-    title = "霍爾果斯會計事務所"
-    weight = 1
     languageName = "中文"
+    weight = 1
 
   [languages.en]
-    title = "Horgos CPA"
-    weight = 2
     languageName = "English"
+    weight = 2
