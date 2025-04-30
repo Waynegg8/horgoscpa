@@ -1,7 +1,6 @@
 baseURL = "http://localhost:1313/"
 languageCode = "zh-tw"
 title = "霍爾果斯會計師事務所"
-theme = "ananke"
 defaultContentLanguage = "zh-tw"
 enableRobotsTXT = true
 pagination.pagerSize = 10
