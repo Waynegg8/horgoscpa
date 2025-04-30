@@ -3,10 +3,6 @@
 title = "聯絡我們"
 +++
 
-地址：403 台中市西區建國路21號3樓之1  
-電話：04-2220-5606  
-信箱：info@horgoscpa.com  
-
 <form action="https://formspree.io/f/xwpovnwy" method="POST" enctype="multipart/form-data">
   <label>姓名: <input type="text" name="name"></label><br>
   <label>聯絡方式: <input type="text" name="contact"></label><br>
@@ -24,5 +20,3 @@ title = "聯絡我們"
   <input type="hidden" name="_redirect" value="/thank-you">
   <button type="submit">送出</button>
 </form>
-
-<iframe src="https://maps.google.com/maps?q=台中市西區建國路21號3樓之1&t=&z=15&ie=UTF8&iwloc=&output=embed" width="100%" height="300" style="border:0;" allowfullscreen loading="lazy"></iframe>
