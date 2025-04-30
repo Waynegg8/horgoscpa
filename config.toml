@@ -11,6 +11,6 @@ theme = "ananke"
 
 [markup]
   [markup.goldmark]
-    renderer = "html"
-    [markup.highlight]
-      style = "monokai"
+    renderer = { unsafe = true }
+  [markup.highlight]
+    style = "monokai"
