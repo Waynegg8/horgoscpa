@@ -1,1 +1,10 @@
-Mock content for theme file
+
+name = "ananke"
+license = "MIT"
+license_url = "https://opensource.org/licenses/MIT"
+description = "Ananke is a simple, beautiful theme for Hugo."
+
+# Additional parameters that may be needed
+[params]
+  homeTitle = "霍爾果斯會計師事務所"
+  homeSubtitle = "專業的會計與報稅服務"

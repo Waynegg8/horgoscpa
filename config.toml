@@ -5,4 +5,6 @@ title = "霍爾果斯會計師事務所"
 theme = "ananke"
 
 [params]
-  # Other params like site descriptions, social media links, etc.
+  # Other parameters like site descriptions, social media links, etc.
+  homeTitle = "霍爾果斯會計師事務所"
+  homeSubtitle = "專業的會計與報稅服務"
