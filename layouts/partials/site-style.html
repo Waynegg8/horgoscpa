@@ -1,5 +1,10 @@
+
 {{ with partials.IncludeCached "func/style/GetMainCSS.html" "style/GetMainCSS" }}
-<link rel="stylesheet" href="{{ .RelPermalink }}" >
+  {{ if .RelPermalink }}
+    <link rel="stylesheet" href="{{ .RelPermalink }}" >
+  {{ else }}
+    <!-- Handle the case where RelPermalink is not available -->
+  {{ end }}
 {{ end }}
 
 {{ range site.Params.custom_css }}
