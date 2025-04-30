@@ -3,47 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
-  <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ with .Summary }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}{{ end }}">
-  
-  <!-- 修改：移除 integrity 屬性，避免 SRI 問題 -->
-  {{ $style := resources.Get "css/custom.css" | resources.Minify }}
-  <link rel="stylesheet" href="{{ $style.Permalink }}">
-  
-  {{ with .Site.Params.favicon }}<link rel="icon" href="{{ . }}">{{ end }}
-  
-  <!-- 修改：移除或簡化自定義 CSS 處理，避免 CORS 問題 -->
-  <!-- 如果需要保留多個CSS文件，建議使用以下方式 -->
-  <!--
-  {{ range .Site.Params.custom_css -}}
-    {{ $custom_style := resources.Get . | resources.Minify }}
-    <link rel="stylesheet" href="{{ $custom_style.Permalink }}">
-  {{- end }}
-  -->
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <title>{{ .Title }} | {{ .Site.Title }}</title>
+  <meta name="description" content="{{ .Description }}">
+  <link rel="stylesheet" href="/css/custom.css">
 </head>
-<body class="bg-white">
-  {{ partial "header.html" . }}
-  
+<body>
+  <header><h1>{{ .Site.Title }}</h1></header>
   <main>
     {{ block "main" . }}{{ end }}
   </main>
-  
-  {{ partial "footer.html" . }}
-  
-  <!-- 修改：移除 integrity 屬性，避免 SRI 問題 -->
-  {{ $script := resources.Get "js/custom.js" | resources.Minify }}
-  <script src="{{ $script.Permalink }}"></script>
-  
-  <!-- 修改：如果必須使用 custom_js 參數，確保文件路徑正確 -->
-  <!--
-  {{ range .Site.Params.custom_js -}}
-    {{ $custom_js := resources.Get . | resources.Minify }}
-    <script src="{{ $custom_js.Permalink }}"></script>
-  {{- end }}
-  -->
+  <footer><p>&copy; {{ now.Year }} {{ .Site.Title }}</p></footer>
 </body>
 </html>
