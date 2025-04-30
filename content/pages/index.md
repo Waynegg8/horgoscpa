@@ -1,7 +1,7 @@
 ---
-title: "首頁"
-description: "霍爾果斯會計事務所"
-keywords: ["會計", "財務", "中國稅務", "註冊公司"]
+title: "首頁 | 霍爾果斯會計師事務所"
+slug: "index"
+url: "/index/"
 ---
 
 
