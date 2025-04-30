@@ -1,6 +1,7 @@
 baseURL = "https://horgoscpa.com/"
 languageCode = "zh-tw"
 title = "霍爾果斯會計事務所"
+defaultContentLanguage = "zh"
 
 [languages]
   [languages.zh]
@@ -8,3 +9,4 @@ title = "霍爾果斯會計事務所"
     weight = 1
 
 # deploy trigger - force update
+
