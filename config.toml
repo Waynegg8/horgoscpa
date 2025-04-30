@@ -1,16 +1,8 @@
 
-baseURL = "https://www.horgoscpa.com/"
-languageCode = "zh-hant"
+baseURL = "http://www.horgoscpa.com/"
+languageCode = "zh-TW"
 title = "霍爾果斯會計師事務所"
 theme = "ananke"
 
 [params]
-    subtitle = "專業現代化的會計師事務所"
-    description = "我們提供會計、報稅、公司設立等專業服務，幫助企業在繁雜的財務管理中駕輕就熟。"
-    socialMedia = {twitter = "horgoscpa", facebook = "horgoscpa"}
-
-[markup]
-  [markup.goldmark]
-    renderer = { unsafe = true }
-  [markup.highlight]
-    style = "monokai"
+  # Other params like site descriptions, social media links, etc.
