@@ -7,5 +7,3 @@ defaultContentLanguage = "zh"
   [languages.zh]
     languageName = "中文"
     weight = 1
-
-# deploy trigger - force update
