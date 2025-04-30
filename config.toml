@@ -1,0 +1,23 @@
+baseURL = "http://localhost:1313/"
+languageCode = "zh-tw"
+title = "霍爾果斯會計師事務所"
+theme = "ananke"
+defaultContentLanguage = "zh-tw"
+enableRobotsTXT = true
+pagination.pagerSize = 10
+
+
+[params]
+  title = "霍爾果斯會計師事務所"
+  baseURL = "https://your-website-url.com"
+  languageCode = "zh-tw"
+  theme = "ananke"
+  
+[taxonomies]
+  tag = "tags"
+  category = "categories"
+
+  author = "霍爾果斯會計師事務所"
+  description = "台中會計、記帳報稅、公司設立"
+  background_color_class = "bg-black"
+  recent_posts_number = 3
