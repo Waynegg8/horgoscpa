@@ -1,5 +1,5 @@
-
 {{ define "main" }}
 <h1>{{ .Title }}</h1>
 <article>{{ .Content }}</article>
+<p>標籤: {{ range .Params.tags }}<span>{{ . }}</span>{{ end }}</p>
 {{ end }}
