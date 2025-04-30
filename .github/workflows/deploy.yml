@@ -2,11 +2,6 @@ name: Deploy Hugo site to GitHub Pages
 
 on:
   push:
-    paths:
-      - 'content/blog/**'
-      - 'layouts/**'
-      - 'static/**'
-      - 'config.toml'
     branches:
       - main
 
@@ -26,8 +21,10 @@ jobs:
       - name: Build
         run: hugo --minify
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages (Safe Mode)
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          personal_token: ${{ secrets.GH_PAT }}
+          external_repository: Waynegg8/horgoscpa
           publish_dir: ./public
+          publish_branch: gh-pages
