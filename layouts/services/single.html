@@ -1,0 +1,23 @@
+{{ define "main" }}
+<article class="service-detail">
+  <header class="bg-primary text-white py-16">
+    <div class="container mx-auto px-4">
+      <h1 class="text-4xl font-bold mb-4">{{ .Title }}</h1>
+      <div class="flex items-center space-x-4">
+        <i class="{{ .Params.icon }} text-2xl"></i>
+        <span class="text-xl">{{ .Params.summary }}</span>
+      </div>
+    </div>
+  </header>
+  <section class="container mx-auto px-4 py-12">
+    <div class="grid lg:grid-cols-4 gap-8">
+      <div class="lg:col-span-3 content">
+        {{ .Content }}
+      </div>
+      <aside class="service-sidebar">
+        {{ partial "service-widget" . }}
+      </aside>
+    </div>
+  </section>
+</article>
+{{ end }}
