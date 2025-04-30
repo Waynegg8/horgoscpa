@@ -1,4 +1,5 @@
 ---
+type: "contact"
 title: "聯絡我們"
 description: "與霍爾果斯會計師事務所聯絡"
 featured_image: "/images/contact-header.jpg"

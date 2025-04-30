@@ -1,4 +1,5 @@
 ---
+type: "blog"
 title: "專業文章"
 description: "霍爾果斯會計師事務所的專業文章與最新資訊"
 featured_image: "/images/blog-header.jpg"

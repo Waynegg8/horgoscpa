@@ -1,4 +1,5 @@
 ---
+type: "faq"
 title: "常見問題"
 description: "霍爾果斯會計師事務所常見問題解答"
 featured_image: "/images/faq-header.jpg"

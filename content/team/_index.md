@@ -1,4 +1,5 @@
 ---
+type: "team"
 title: "專業團隊"
 description: "霍爾果斯會計師事務所的專業團隊成員"
 featured_image: "/images/team-header.jpg"
