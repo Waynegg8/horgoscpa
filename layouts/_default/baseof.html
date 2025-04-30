@@ -23,7 +23,7 @@
       <meta name="author" content="{{ $author }}">
     {{ end }}
 
-    {{ partials.Include "site-style.html" . }}
+    {{ partials.Include "site-style.html" (dict "page" .) }}
     {{ partials.Include "site-scripts.html" . }}
 
     {{ block "favicon" . }}
