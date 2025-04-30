@@ -4,7 +4,8 @@
     <h1 class="text-4xl font-bold text-primary mb-4">{{ .Title }}</h1>
     {{ with .Content }}<div class="content">{{ . }}</div>{{ end }}
   </div>
-  
+
+  {{ if .Paginator.Pages }}
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
     {{ range .Paginator.Pages }}
     <div class="border rounded-lg overflow-hidden">
@@ -23,25 +24,16 @@
     </div>
     {{ end }}
   </div>
-  
+
   {{ if gt .Paginator.TotalPages 1 }}
-  <div class="pagination flex justify-center mt-12 space-x-2">
-    {{ if .Paginator.HasPrev }}
-    <a href="{{ .Paginator.Prev.URL }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">上一頁</a>
-    {{ end }}
-    
-    {{ range .Paginator.Pagers }}
-    <a href="{{ .URL }}" class="px-4 py-2 {{ if eq . $.Paginator }}bg-primary text-white{{ else }}bg-gray-200 hover:bg-gray-300{{ end }} rounded">
-      {{ .PageNumber }}
-    </a>
-    {{ end }}
-    
-    {{ if .Paginator.HasNext }}
-    <a href="{{ .Paginator.Next.URL }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">下一頁</a>
-    {{ end }}
+  <div class="mt-8 text-center">
+    {{ template "_internal/pagination.html" . }}
+  </div>
+  {{ end }}
+  {{ else }}
+  <div class="text-center text-gray-500 text-xl mt-8">
+    無子頁面，僅顯示此頁內容。
   </div>
   {{ end }}
 </div>
-
-{{ partial "floating-buttons.html" . }}
 {{ end }}
