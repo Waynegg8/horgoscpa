@@ -1,0 +1,238 @@
+/* 全局樣式 */
+:root {
+  --primary-color: #2c5282;
+  --secondary-color: #3182ce;
+  --accent-color: #e53e3e;
+  --light-color: #f7fafc;
+  --dark-color: #1a202c;
+  --gray-color: #718096;
+}
+
+body {
+  font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--dark-color);
+  line-height: 1.6;
+}
+
+/* 導航欄樣式 */
+.bg-dark-blue {
+  background-color: var(--primary-color);
+}
+
+/* 浮動按鈕樣式 */
+.floating-buttons {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.floating-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.floating-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-consultation {
+  background-color: var(--accent-color);
+}
+
+.btn-line {
+  background-color: #06C755;
+}
+
+/* 首頁輪播樣式 */
+.carousel {
+  position: relative;
+  overflow: hidden;
+  height: 500px;
+}
+
+.carousel-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.carousel-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+  background-size: cover;
+  background-position: center;
+}
+
+.carousel-item.active {
+  opacity: 1;
+}
+
+.carousel-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+}
+
+/* 服務卡片樣式 */
+.service-card {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+}
+
+.service-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.service-card-body {
+  padding: 20px;
+}
+
+/* 團隊成員卡片樣式 */
+.team-card {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.team-photo {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 20px;
+  border: 5px solid var(--light-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* FAQ 樣式 */
+.faq-item {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 20px;
+}
+
+.faq-question {
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: var(--primary-color);
+}
+
+/* 聯絡表單樣式 */
+.contact-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+}
+
+.btn-submit {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-submit:hover {
+  background-color: var(--secondary-color);
+}
+
+/* 部落格樣式 */
+.blog-card {
+  margin-bottom: 30px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.blog-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.blog-content {
+  padding: 20px;
+}
+
+.blog-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.blog-date {
+  color: var(--gray-color);
+  font-size: 0.875rem;
+  margin-bottom: 10px;
+}
+
+.blog-excerpt {
+  margin-bottom: 15px;
+}
+
+.blog-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.blog-tag {
+  background-color: #e2e8f0;
+  color: var(--dark-color);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .carousel {
+    height: 300px;
+  }
+  
+  .floating-btn {
+    width: 50px;
+    height: 50px;
+  }
+}

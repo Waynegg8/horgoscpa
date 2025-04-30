@@ -1,0 +1,71 @@
+{{ define "main" }}
+<div class="container mx-auto px-4 py-12">
+  <div class="text-center mb-12">
+    <h1 class="text-4xl font-bold text-primary mb-4">{{ .Title }}</h1>
+    <div class="content">{{ .Content }}</div>
+    
+    <!-- 搜尋框 -->
+    <div class="max-w-xl mx-auto mt-8">
+      <input type="text" class="blog-search form-control" placeholder="搜尋文章...">
+    </div>
+  </div>
+  
+  <!-- 分類標籤列表 -->
+  <div class="mb-8 flex flex-wrap justify-center gap-2">
+    {{ range $name, $taxonomy := .Site.Taxonomies.categories }}
+    <a href="{{ "/categories/" | relLangURL }}{{ $name | urlize }}" class="inline-block bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full text-sm">
+      {{ $name }} ({{ $taxonomy.Count }})
+    </a>
+    {{ end }}
+  </div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    {{ range .Paginator.Pages }}
+    <div class="blog-card">
+      <a href="{{ .Permalink }}">
+        <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="blog-img">
+      </a>
+      <div class="blog-content">
+        <h2 class="blog-title">
+          <a href="{{ .Permalink }}">{{ .Title }}</a>
+        </h2>
+        <div class="blog-date">{{ .Date.Format "2006/01/02" }}</div>
+        <p class="blog-excerpt">{{ .Summary }}</p>
+        <div class="blog-tags">
+          {{ range .Params.categories }}
+          <a href="{{ "/categories/" | relLangURL }}{{ . | urlize }}" class="blog-tag">{{ . }}</a>
+          {{ end }}
+          {{ range .Params.tags }}
+          <a href="{{ "/tags/" | relLangURL }}{{ . | urlize }}" class="blog-tag">{{ . }}</a>
+          {{ end }}
+        </div>
+        <div class="mt-4">
+          <a href="{{ .Permalink }}" class="inline-block bg-primary text-white px-4 py-2 rounded">閱讀更多</a>
+        </div>
+      </div>
+    </div>
+    {{ end }}
+  </div>
+  
+  <!-- 分頁 -->
+  {{ if gt .Paginator.TotalPages 1 }}
+  <div class="pagination flex justify-center mt-12 space-x-2">
+    {{ if .Paginator.HasPrev }}
+    <a href="{{ .Paginator.Prev.URL }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">上一頁</a>
+    {{ end }}
+    
+    {{ range .Paginator.Pagers }}
+    <a href="{{ .URL }}" class="px-4 py-2 {{ if eq . $.Paginator }}bg-primary text-white{{ else }}bg-gray-200 hover:bg-gray-300{{ end }} rounded">
+      {{ .PageNumber }}
+    </a>
+    {{ end }}
+    
+    {{ if .Paginator.HasNext }}
+    <a href="{{ .Paginator.Next.URL }}" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">下一頁</a>
+    {{ end }}
+  </div>
+  {{ end }}
+</div>
+
+{{ partial "floating-buttons.html" . }}
+{{ end }}

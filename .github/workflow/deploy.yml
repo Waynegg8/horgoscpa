@@ -1,0 +1,36 @@
+name: GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # 設定要做部署的分支
+  workflow_dispatch: # 允許手動觸發部署流程
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true  # 同時checkout git submodules
+          fetch-depth: 0    # 取得完整的git歷史紀錄
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Install Ananke theme
+        run: git clone https://github.com/theNewDynamic/gohugo-theme-ananke.git themes/ananke
+
+      - name: Build
+        run: hugo --minify
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GH_PAT }}
+          publish_dir: ./public
+          cname: www.horgoscpa.com  # 設定您的自定義域名

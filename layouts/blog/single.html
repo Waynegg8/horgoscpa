@@ -1,0 +1,83 @@
+{{ define "main" }}
+<div class="container mx-auto px-4 py-12">
+  <article class="max-w-3xl mx-auto">
+    <header class="mb-8">
+      <h1 class="text-4xl font-bold text-primary mb-4">{{ .Title }}</h1>
+      <div class="flex flex-wrap items-center text-gray mb-4">
+        <div class="mr-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          {{ .Date.Format "2006/01/02" }}
+        </div>
+        {{ if .Params.author }}
+        <div class="mr-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          {{ .Params.author }}
+        </div>
+        {{ end }}
+        {{ if .Params.categories }}
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          {{ range $index, $category := .Params.categories }}
+          {{ if gt $index 0 }}, {{ end }}
+          <a href="{{ "/categories/" | relLangURL }}{{ . | urlize }}" class="hover:text-primary">{{ . }}</a>
+          {{ end }}
+        </div>
+        {{ end }}
+      </div>
+      
+      {{ if .Params.featured_image }}
+      <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="w-full h-64 md:h-96 object-cover rounded-lg mb-8">
+      {{ end }}
+    </header>
+    
+    <div class="content prose max-w-none">
+      {{ .Content }}
+    </div>
+    
+    {{ if .Params.tags }}
+    <div class="mt-8 pt-8 border-t border-gray-200">
+      <div class="flex flex-wrap gap-2">
+        <span class="font-bold">標籤：</span>
+        {{ range .Params.tags }}
+        <a href="{{ "/tags/" | relLangURL }}{{ . | urlize }}" class="inline-block bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-full text-sm">{{ . }}</a>
+        {{ end }}
+      </div>
+    </div>
+    {{ end }}
+    
+    <div class="mt-12">
+      <h2 class="text-2xl font-bold mb-4">相關文章</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {{ $related := .Site.RegularPages.Related . | first 3 }}
+        {{ with $related }}
+        {{ range . }}
+        <div class="border rounded-lg overflow-hidden">
+          <a href="{{ .Permalink }}">
+            <img src="{{ .Params.featured_image }}" alt="{{ .Title }}" class="w-full h-40 object-cover">
+          </a>
+          <div class="p-4">
+            <h3 class="font-bold mb-2">
+              <a href="{{ .Permalink }}" class="hover:text-primary">{{ .Title }}</a>
+            </h3>
+            <div class="text-sm text-gray mb-2">{{ .Date.Format "2006/01/02" }}</div>
+          </div>
+        </div>
+        {{ end }}
+        {{ else }}
+        <div class="col-span-3 text-center">
+          <p>沒有相關文章</p>
+        </div>
+        {{ end }}
+      </div>
+    </div>
+  </article>
+</div>
+
+{{ partial "floating-buttons.html" . }}
+{{ end }}
