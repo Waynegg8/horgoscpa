@@ -1,0 +1,14 @@
+
+<div class="carousel" style="position:relative; overflow:hidden; max-width:100%; height:300px;">
+  <img src="/images/slide1.jpg" class="slide" style="width:100%; height:300px; object-fit:cover;">
+  <img src="/images/slide2.jpg" class="slide" style="width:100%; height:300px; object-fit:cover; display:none;">
+  <img src="/images/slide3.jpg" class="slide" style="width:100%; height:300px; object-fit:cover; display:none;">
+</div>
+<script>
+let index = 0;
+setInterval(() => {
+  const slides = document.querySelectorAll('.slide');
+  slides.forEach((s, i) => s.style.display = i === index ? 'block' : 'none');
+  index = (index + 1) % slides.length;
+}, 3000);
+</script>
