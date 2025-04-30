@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+    {{ $css := resources.Get "css/custom.css" | minify | fingerprint }}
+    <link rel="stylesheet" href="{{ $css.Permalink }}" />
   <meta charset="UTF-8">
   <title>{{ .Title }}</title>
 </head>
