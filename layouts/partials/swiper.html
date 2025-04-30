@@ -3,7 +3,7 @@
     {{ range $index, $slide := site.Params.slides }}
     <div class="swiper-slide relative">
       <div class="hero-overlay absolute inset-0 z-10"></div>
-      <img src="{{ $slide.image }}" alt="{{ $slide.title }}" class="w-full h-[70vh] object-cover" loading="{{ if eq $index 0 }}eager{{ else }}lazy{{ endif }}">
+      <img src="{{ $slide.image }}" alt="{{ $slide.title }}" class="w-full h-[70vh] object-cover" loading="{{ if eq $index 0 }}eager{{ else }}lazy{{ end }}">
       <div class="absolute inset-0 z-20 flex items-center text-white">
         <div class="container px-4">
           <h2 class="text-4xl md:text-6xl font-bold mb-4 animate-fadeInUp">{{ $slide.title }}</h2>
