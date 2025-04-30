@@ -1,0 +1,48 @@
+<footer class="bg-dark-blue text-white py-12">
+  <div class="container mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div>
+        <h3 class="text-xl font-bold mb-4">關於我們</h3>
+        <p class="mb-4">霍爾果斯會計師事務所提供專業的會計、稅務與商業諮詢服務，致力於協助客戶實現財務目標。</p>
+        {{ if .Site.Params.site_logo }}
+        <img src="{{ .Site.Params.site_logo }}" alt="{{ .Site.Title }}" class="h-12">
+        {{ end }}
+      </div>
+      
+      <div>
+        <h3 class="text-xl font-bold mb-4">聯絡資訊</h3>
+        <p class="mb-2">{{ .Site.Params.address }}</p>
+        <p class="mb-2">電話：{{ .Site.Params.phone }}</p>
+        <p class="mb-2">LINE：{{ .Site.Params.line_id }}</p>
+        <p>Email：{{ .Site.Params.email }}</p>
+      </div>
+      
+      <div>
+        <h3 class="text-xl font-bold mb-4">服務項目</h3>
+        <ul>
+          {{ range where .Site.RegularPages "Section" "services" }}
+          <li class="mb-2"><a href="{{ .Permalink }}" class="hover:text-gray-300">{{ .Title }}</a></li>
+          {{ end }}
+        </ul>
+      </div>
+      
+      <div>
+        <h3 class="text-xl font-bold mb-4">最新文章</h3>
+        <ul>
+          {{ range first 3 (where .Site.RegularPages "Section" "blog") }}
+          <li class="mb-2"><a href="{{ .Permalink }}" class="hover:text-gray-300">{{ .Title }}</a></li>
+          {{ end }}
+        </ul>
+      </div>
+    </div>
+    
+    <div class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+      <p>&copy; {{ now.Format "2006" }} {{ .Site.Title }}. 版權所有。</p>
+      <div class="mt-4 md:mt-0">
+        <a href="/contact" class="text-white hover:text-gray-300 mx-2">聯絡我們</a>
+        <a href="/faq" class="text-white hover:text-gray-300 mx-2">常見問題</a>
+        <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="text-white hover:text-gray-300 mx-2">LINE諮詢</a>
+      </div>
+    </div>
+  </div>
+</footer>

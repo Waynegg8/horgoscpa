@@ -1,0 +1,46 @@
+<header class="bg-dark-blue text-white py-4 shadow-md">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-wrap items-center justify-between">
+      <div class="flex items-center">
+        {{ if .Site.Params.site_logo }}
+        <a href="{{ .Site.Home.RelPermalink }}" class="inline-block">
+          <img src="{{ .Site.Params.site_logo }}" alt="{{ .Site.Title }}" class="h-16">
+        </a>
+        {{ else }}
+        <a href="{{ .Site.Home.RelPermalink }}" class="text-2xl font-bold">{{ .Site.Title }}</a>
+        {{ end }}
+      </div>
+      
+      <nav class="hidden md:flex items-center space-x-6">
+        {{ range .Site.Menus.main }}
+        <a href="{{ .URL }}" class="text-white hover:text-gray-300 transition duration-300">{{ .Name }}</a>
+        {{ end }}
+      </nav>
+      
+      <div class="md:hidden">
+        <button class="mobile-menu-button focus:outline-none">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <div class="mobile-menu hidden md:hidden mt-4 border-t border-gray-700 pt-4">
+      {{ range .Site.Menus.main }}
+      <a href="{{ .URL }}" class="block py-2 text-white hover:text-gray-300">{{ .Name }}</a>
+      {{ end }}
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const button = document.querySelector('.mobile-menu-button');
+      const menu = document.querySelector('.mobile-menu');
+      
+      button.addEventListener('click', function() {
+        menu.classList.toggle('hidden');
+      });
+    });
+  </script>
+</header>
