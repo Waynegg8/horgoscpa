@@ -1,21 +1,22 @@
 
-{{ define "main" }}
-  <article class="post">
-    <h1>{{ .Title }}</h1>
-    <p>{{ .Content }}</p>
-    <p><strong>標籤：</strong>
-      {{ range .Params.tags }}
-        <a href="{{ "/tags/" | relURL }}{{ . | urlize }}">{{ . }}</a>
-      {{ end }}
-    </p>
-    <div class="post-navigation">
-      {{ if .PrevPage }}
-        <a href="{{ .PrevPage.Permalink }}">上一篇</a>
-      {{ end }}
-      {{ if .NextPage }}
-        <a href="{{ .NextPage.Permalink }}">下一篇</a>
-      {{ end }}
-    </div>
-    <a href="{{ "/blog/" | relURL }}">返回部落格</a>
-  </article>
-{{ end }}
+    {{ define "main" }}
+      <article class="post">
+        <h1>{{ .Title }}</h1>
+        <p>{{ .Content }}</p>
+        <p><strong>標籤：</strong>
+          {{ range .Params.tags }}
+            <a href="{{ "/tags/" | relURL }}{{ . | urlize }}">{{ . }}</a>
+          {{ end }}
+        </p>
+        <div class="post-navigation">
+          {{ if .PrevPage }}
+            <a href="{{ .PrevPage.Permalink }}">上一篇</a>
+          {{ end }}
+          {{ if .NextPage }}
+            <a href="{{ .NextPage.Permalink }}">下一篇</a>
+          {{ end }}
+        </div>
+        <a href="{{ "/blog/" | relURL }}">返回部落格</a>
+      </article>
+    {{ end }}
+    

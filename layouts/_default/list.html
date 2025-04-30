@@ -1,33 +1,9 @@
-
 {{ define "main" }}
-  <section class="hero">
-    <h1>歡迎來到霍爾果斯會計師事務所</h1>
-    <p>我們專注於會計、報稅、公司設立等領域，為您的業務提供專業支持。</p>
-  </section>
-
-  <section class="services">
-    <h2>我們的服務</h2>
-    <div class="service-list">
-      <div class="service-item">
-        <h3>會計服務</h3>
-        <p>提供全面的會計報告和財務分析服務，幫助您了解業務運營狀況。</p>
-        <a href="/service/accounting" class="btn">了解更多</a>
-      </div>
-      <div class="service-item">
-        <h3>報稅服務</h3>
-        <p>為企業和個人提供專業的報稅建議與服務，確保合規並最大化稅務效益。</p>
-        <a href="/service/tax" class="btn">了解更多</a>
-      </div>
-      <div class="service-item">
-        <h3>公司設立</h3>
-        <p>協助您完成公司設立流程，提供法律與財務上的全方位支持。</p>
-        <a href="/service/formation" class="btn">了解更多</a>
-      </div>
+  <h1>{{ .Title }}</h1>
+  {{ range .Pages }}
+    <div>
+      <a href="{{ .Permalink }}">{{ .Title }}</a>
+      <p>{{ .Summary }}</p>
     </div>
-  </section>
-
-  <div class="floating-buttons">
-    <a href="tel:+886422205606" class="floating-btn">免費諮詢</a>
-    <a href="https://line.me/R/ti/p/%40208ihted" target="_blank" class="floating-btn">LINE 聯絡</a>
-  </div>
+  {{ end }}
 {{ end }}
