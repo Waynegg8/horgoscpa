@@ -24,6 +24,133 @@
       vertical-align: middle;
     }
     
+    /* 導航欄樣式 */
+    .site-nav {
+      background-color: #004999;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    
+    .nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .logo a {
+      color: #fff;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-decoration: none;
+    }
+    
+    .nav-menu {
+      display: flex;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .nav-menu li {
+      margin-left: 30px;
+    }
+    
+    .nav-menu a {
+      color: rgba(255, 255, 255, 0.9);
+      position: relative;
+      padding-bottom: 5px;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    
+    .nav-menu a:hover, .nav-menu a.active {
+      color: #fff;
+    }
+    
+    .nav-menu a::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: 0;
+      left: 0;
+      background-color: #fff;
+      transition: width 0.3s;
+    }
+    
+    .nav-menu a:hover::after, .nav-menu a.active::after {
+      width: 100%;
+    }
+    
+    /* 移動裝置的導航菜單 */
+    @media (max-width: 768px) {
+      .nav-toggle-label {
+        display: block;
+        cursor: pointer;
+        position: relative;
+        width: 30px;
+        height: 21px;
+      }
+      
+      .nav-toggle-label span,
+      .nav-toggle-label span::before,
+      .nav-toggle-label span::after {
+        display: block;
+        background-color: #fff;
+        height: 3px;
+        width: 100%;
+        position: absolute;
+        transition: all 0.3s ease;
+      }
+      
+      .nav-toggle-label span {
+        top: 9px;
+      }
+      
+      .nav-toggle-label span::before,
+      .nav-toggle-label span::after {
+        content: '';
+      }
+      
+      .nav-toggle-label span::before {
+        top: -9px;
+      }
+      
+      .nav-toggle-label span::after {
+        bottom: -9px;
+      }
+      
+      .nav-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: #004999;
+        flex-direction: column;
+        align-items: center;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+      }
+      
+      .nav-toggle:checked ~ .nav-menu {
+        max-height: 300px;
+      }
+      
+      .nav-menu li {
+        width: 100%;
+        text-align: center;
+        margin: 0;
+        padding: 10px 0;
+      }
+    }
+    
     /* 懸浮按鈕樣式 */
     .cta-floating {
       position: fixed;
@@ -48,18 +175,19 @@
       transition: all 0.3s ease;
       font-weight: 600;
       font-size: 14px;
+      width: 120px;
+      text-decoration: none;
     }
     
     .cta-floating .cta-btn:hover {
-      padding-right: 20px;
+      transform: translateX(-5px);
       color: #fff;
     }
     
     .cta-floating .cta-btn.line {
       background-color: #06c755;
-      width: 44px;
-      height: 44px;
-      padding: 0;
+      width: 120px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -68,26 +196,145 @@
     .cta-floating .cta-btn.line .line-icon {
       width: 24px;
       height: 24px;
-      margin: 0;
     }
     
     .cta-floating .cta-btn.line:hover {
       background-color: #05a847;
-      padding: 0;
+      transform: translateX(-5px);
     }
     
-    /* LINE 連結樣式 */
-    .line-link {
-      display: inline-flex;
+    /* 頁尾樣式優化 */
+    .site-footer {
+      background-color: #333;
+      color: #ccc;
+      padding: 30px 0 20px;
+    }
+    
+    .footer-container {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      color: #06c755;
-      font-weight: 600;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    
+    .footer-info {
+      max-width: 50%;
+    }
+    
+    .footer-logo {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+    
+    .footer-contact {
+      text-align: right;
+    }
+    
+    .footer-contact p {
+      margin: 5px 0;
+    }
+    
+    .footer-contact a {
+      color: #ccc;
       text-decoration: none;
     }
     
-    .line-link:hover {
-      text-decoration: underline;
-      color: #05a847;
+    .footer-contact a:hover {
+      color: #fff;
+    }
+    
+    .footer-bottom {
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding-top: 15px;
+      margin-top: 15px;
+      text-align: center;
+      max-width: 1200px;
+      margin: 15px auto 0;
+      padding: 15px 20px 0;
+    }
+    
+    @media (max-width: 768px) {
+      .footer-container {
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .footer-info {
+        max-width: 100%;
+        margin-bottom: 20px;
+      }
+      
+      .footer-contact {
+        text-align: center;
+      }
+    }
+
+    /* 通用樣式 */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    
+    .section-title {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .section-title h2 {
+      font-size: 2rem;
+      color: #004999;
+      margin-bottom: 15px;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .section-title h2:after {
+      content: "";
+      position: absolute;
+      width: 60px;
+      height: 3px;
+      background-color: #0066cc;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .btn {
+      display: inline-block;
+      background-color: #0066cc;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+      background-color: #004d99;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      border: 2px solid #0066cc;
+      color: #0066cc;
+    }
+    
+    .btn-outline:hover {
+      background-color: #0066cc;
+      color: white;
     }
   </style>
   
@@ -136,7 +383,7 @@
     <div class="logo">
       <a href="/index.html">霍爾果斯會計師事務所</a>
     </div>
-    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
     <label for="nav-toggle" class="nav-toggle-label">
       <span></span>
     </label>
@@ -159,8 +406,21 @@
   </div>
 </header>
 
+<!-- 關於我們區塊（移到最上方） -->
+<section class="about-section" style="background-color: #f9f9f9; padding: 60px 0;">
+  <div class="container">
+    <div class="about-content">
+      <div class="section-title">
+        <h2>關於霍爾果斯會計師事務所</h2>
+      </div>
+      <p style="text-align: center; max-width: 800px; margin: 0 auto 20px;">成立於2018年，霍爾果斯會計師事務所由資深會計師與稅務專家組成，致力於為台灣中小企業與個人提供優質的會計與稅務服務。我們特別專注於跨境稅務規劃及新創企業的財務顧問服務，協助客戶在全球化經濟中取得成功。</p>
+      <p style="text-align: center; max-width: 800px; margin: 0 auto;">我們的核心價值在於專業、誠信與創新，期待成為您長期的財務夥伴。</p>
+    </div>
+  </div>
+</section>
+
 <!-- 服務區塊 -->
-<section class="services-section">
+<section class="services-section" style="padding: 60px 0;">
   <div class="container">
     <div class="section-title">
       <h2>專業服務項目</h2>
@@ -196,14 +456,14 @@
       </div>
     </div>
     
-    <div class="text-center" style="margin-top: 40px; text-align: center;">
+    <div class="text-center" style="margin-top: 40px;">
       <a href="/services.html" class="btn">查看所有服務</a>
     </div>
   </div>
 </section>
 
 <!-- 部落格預覽區塊 -->
-<section class="blog-section">
+<section class="blog-section" style="padding: 60px 0; background-color: #f9f9f9;">
   <div class="container">
     <div class="section-title">
       <h2>最新文章</h2>
@@ -214,19 +474,8 @@
       <!-- 文章將由 JavaScript 自動抓取並顯示 -->
     </div>
     
-    <div class="text-center" style="margin-top: 40px; text-align: center;">
+    <div class="text-center" style="margin-top: 40px;">
       <a href="/blog.html" class="btn btn-outline">查看更多文章</a>
-    </div>
-  </div>
-</section>
-
-<!-- 關於我們區塊 -->
-<section class="about-section">
-  <div class="container">
-    <div class="about-content">
-      <h2>關於霍爾果斯會計師事務所</h2>
-      <p>成立於2018年，霍爾果斯會計師事務所由資深會計師與稅務專家組成，致力於為台灣中小企業與個人提供優質的會計與稅務服務。我們特別專注於跨境稅務規劃及新創企業的財務顧問服務，協助客戶在全球化經濟中取得成功。</p>
-      <p>我們的核心價值在於專業、誠信與創新，期待成為您長期的財務夥伴。</p>
     </div>
   </div>
 </section>
