@@ -1,142 +1,201 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
-<link rel="manifest" href="/site.webmanifest">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="霍爾果斯會計師事務所聯絡資訊 - 專業稅務會計諮詢預約，歡迎與我們聯繫。" />
   <title>聯絡資訊 | 霍爾果斯會計師事務所</title>
+  
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- 樣式表 -->
   <link rel="stylesheet" href="/assets/css/style.css" />
-  <link rel="stylesheet" href="/assets/css/footer-fix.css" />
-  <style>
-    /* 聯絡頁面的並排顯示樣式 */
-    .contact-container {
-      display: flex;
-      flex-direction: row;
-      gap: 30px;
-      margin-top: 30px;
-    }
-    
-    .contact-info {
-      flex: 1;
-      min-width: 300px;
-      padding: 20px;
-      background: #f9f9f9;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    
-    .map-container {
-      flex: 1;
-      height: 350px;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    
-    @media (max-width: 768px) {
-      .contact-container {
-        flex-direction: column;
-      }
-      
-      .map-container {
-        height: 300px;
-      }
-    }
-    
-    .contact-info h2 {
-      color: #0066cc;
-      margin-top: 0;
-    }
-    
-    .contact-info p {
-      margin: 15px 0;
-      line-height: 1.5;
-    }
-    
-    .contact-info a {
-      color: #0066cc;
-      text-decoration: none;
-    }
-    
-    .contact-info a:hover {
-      text-decoration: underline;
-    }
-  </style>
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RKMCS9WVS5');
-</script>
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "霍爾果斯會計師事務所",
-  "url": "https://www.horgoscpa.com",
-  "logo": "https://www.horgoscpa.com/assets/images/favicon-32x32.png",
-  "contactPoint": [{
-    "@type": "ContactPoint",
+  
+  <!-- Google 分析 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-RKMCS9WVS5');
+  </script>
+  
+  <!-- 結構化資料 -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "AccountingService",
+    "name": "霍爾果斯會計師事務所",
+    "url": "https://www.horgoscpa.com",
+    "logo": "https://www.horgoscpa.com/assets/images/logo.png",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "建國路21號3樓之1",
+      "addressLocality": "台中市",
+      "addressRegion": "西區",
+      "postalCode": "403",
+      "addressCountry": "TW"
+    },
     "telephone": "+886-4-2220-5606",
-    "contactType": "Customer Service"
-  }]
-}
-</script>
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": [
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"
+      ],
+      "opens": "08:30",
+      "closes": "17:30"
+    }
+  }
+  </script>
 </head>
 <body>
 
+<!-- 導航欄 -->
 <nav class="site-nav">
-  <ul>
-    <li><a href="/index.html">霍爾果斯會計師事務所</a></li>
-    <li><a href="/services.html">服務</a></li>
-    <li><a href="/team.html">團隊</a></li>
-    <li><a href="/blog.html">部落格</a></li>
-    <li><a href="/faq.html">常見問題</a></li>
-    <li><a href="/video.html">影片</a></li>
-    <li><a href="/contact.html">聯絡資訊</a></li>
-  </ul>
+  <div class="nav-container">
+    <div class="logo">
+      <a href="/index.html">霍爾果斯會計師事務所</a>
+    </div>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+    </label>
+    <ul class="nav-menu">
+      <li><a href="/services.html">服務</a></li>
+      <li><a href="/team.html">團隊</a></li>
+      <li><a href="/blog.html">部落格</a></li>
+      <li><a href="/faq.html">常見問題</a></li>
+      <li><a href="/video.html">影片</a></li>
+      <li><a href="/contact.html" class="active">聯絡資訊</a></li>
+    </ul>
+  </div>
 </nav>
 
-<main class="contact-page">
-  <h1>聯絡資訊</h1>
-  <p>歡迎透過以下方式與霍爾果斯會計師事務所聯繫，我們期待為您提供專業的財稅諮詢服務。</p>
+<!-- 頁面標題 -->
+<div class="page-banner" style="background: linear-gradient(rgba(0, 77, 153, 0.85), rgba(0, 77, 153, 0.85)), url('../images/contact-bg.jpg') center/cover no-repeat; padding: 60px 0; color: white; text-align: center; margin-bottom: 60px;">
+  <div class="container">
+    <h1>聯絡資訊</h1>
+    <p>歡迎透過以下方式與霍爾果斯會計師事務所聯繫，我們期待為您提供專業的財稅諮詢服務</p>
+  </div>
+</div>
 
-  <div class="contact-container">
-    <div class="contact-info">
-      <h2>聯絡方式</h2>
-      <p><strong>電話：</strong>04-2220-5606</p>
-      <p><strong>LINE ID：</strong><a href="https://line.me/R/ti/p/@208ihted" target="_blank">@208ihted</a></p>
-      <p><strong>地址：</strong>台中市西區建國路21號3樓之1</p>
-      <p><strong>營業時間：</strong>週一至週五 9:00-18:00</p>
+<!-- 聯絡資訊主內容 -->
+<section class="contact-details-section">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-info">
+        <div class="contact-card">
+          <div class="contact-icon">
+            <img src="/assets/images/location-icon.svg" alt="地址" style="width: 40px; height: 40px;">
+          </div>
+          <h3>事務所地址</h3>
+          <p>台中市西區建國路21號3樓之1</p>
+          <a href="https://maps.app.goo.gl/xxxxx" target="_blank" class="btn btn-outline btn-sm">查看地圖</a>
+        </div>
+        
+        <div class="contact-card">
+          <div class="contact-icon">
+            <img src="/assets/images/phone-icon.svg" alt="電話" style="width: 40px; height: 40px;">
+          </div>
+          <h3>聯絡電話</h3>
+          <p>04-2220-5606</p>
+          <a href="tel:+886422205606" class="btn btn-outline btn-sm">立即撥打</a>
+        </div>
+        
+        <div class="contact-card">
+          <div class="contact-icon">
+            <img src="/assets/images/line-icon.svg" alt="LINE" style="width: 40px; height: 40px; filter: none;">
+          </div>
+          <h3>LINE 諮詢</h3>
+          <p>加入官方LINE，隨時諮詢</p>
+          <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="btn btn-line btn-sm">加入好友</a>
+        </div>
+        
+        <div class="contact-card">
+          <div class="contact-icon">
+            <img src="/assets/images/clock-icon.svg" alt="營業時間" style="width: 40px; height: 40px;">
+          </div>
+          <h3>營業時間</h3>
+          <p>週一至週五 8:30-17:30</p>
+          <a href="/booking.html" class="btn btn-outline btn-sm">預約諮詢</a>
+        </div>
+      </div>
       
-      <div style="margin-top: 30px;">
-        <h2>預約諮詢</h2>
-        <p>若需要專業諮詢服務，歡迎點擊右側懸浮按鈕進行線上預約。</p>
-        <a href="/booking.html" style="display: inline-block; margin-top: 10px; background: #0066cc; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 4px;">前往預約</a>
+      <div class="contact-map">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3641.080578501929!2d120.67441507534775!3d24.133808178410753!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34693da642d13c59%3A0x95e561addcaebda!2z6ZyN54i-5p6c5pav5pyD6KiI5bir5LqL5YuZ5omA!5e0!3m2!1sen!2stw!4v1746124996506!5m2!1sen!2stw" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
     </div>
-    
-    <div class="map-container">
-      <!-- 使用提供的更準確地圖嵌入代碼 -->
-      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3641.080578501929!2d120.67441507534775!3d24.133808178410753!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34693da642d13c59%3A0x95e561addcaebda!2z6ZyN54i-5p6c5pav5pyD6KiI5bir5LqL5YuZ5omA!5e0!3m2!1sen!2stw!4v1746124996506!5m2!1sen!2stw" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </div>
+</section>
+
+<!-- 預約諮詢 CTA -->
+<section class="cta-section" style="background-color: #f5f8fc; padding: 60px 0; text-align: center; margin: 60px 0;">
+  <div class="container">
+    <h2>需要專業諮詢服務？</h2>
+    <p>我們提供免費財稅諮詢，由專業會計師為您解答疑惑</p>
+    <div style="margin-top: 30px;">
+      <a href="/booking.html" class="btn">預約免費諮詢</a>
+      <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="btn btn-line" style="margin-left: 15px;">LINE 諮詢</a>
     </div>
   </div>
-</main>
+</section>
 
+<!-- 交通資訊 -->
+<section class="directions-section">
+  <div class="container">
+    <div class="section-title">
+      <h2>交通資訊</h2>
+      <p>多種便捷的方式前往我們的事務所</p>
+    </div>
+    
+    <div class="directions-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px;">
+      <div class="direction-card" style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+        <h3>大眾交通</h3>
+        <ul style="list-style-type: none; padding: 0; margin: 0;">
+          <li style="margin-bottom: 15px;"><strong>公車：</strong> 搭乘 x、x、x 路線至「xxxxx站」下車，步行約 3 分鐘</li>
+          <li><strong>計程車：</strong> 從台中火車站搭乘計程車約 10 分鐘可抵達</li>
+        </ul>
+      </div>
+      
+      <div class="direction-card" style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+        <h3>自行開車</h3>
+        <ul style="list-style-type: none; padding: 0; margin: 0;">
+          <li style="margin-bottom: 15px;"><strong>國道一號：</strong> 由台中交流道下，沿台灣大道往市區方向，右轉建國路</li>
+          <li><strong>停車資訊：</strong> 大樓設有地下停車場，或可停放於附近收費停車場</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 頁尾區域 -->
 <footer class="site-footer">
-  <p>&copy; 2025 霍爾果斯會計師事務所｜台中市西區建國路21號3樓之1｜電話：04-2220-5606</p>
+  <div class="footer-container">
+    <div class="footer-info">
+      <div class="footer-logo">霍爾果斯會計師事務所</div>
+      <p>提供專業稅務、會計與企業顧問服務</p>
+    </div>
+    
+    <div class="footer-contact">
+      <p>地址：台中市西區建國路21號3樓之1</p>
+      <p>電話：<a href="tel:+886422205606">04-2220-5606</a></p>
+      <p>LINE：<a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon">加入好友</a></p>
+    </div>
+  </div>
+  
+  <div class="footer-bottom">
+    <p>&copy; 2025 霍爾果斯會計師事務所</p>
+  </div>
 </footer>
 
+<!-- 懸浮按鈕 -->
 <div class="cta-floating">
-  <a href="/booking.html" class="cta-btn">📅<span>預約諮詢</span></a>
-  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line">💬<span>加入LINE</span></a>
+  <a href="/booking.html" class="cta-btn">免費諮詢</a>
+  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon">加入官方LINE</a>
 </div>
 
 </body>
