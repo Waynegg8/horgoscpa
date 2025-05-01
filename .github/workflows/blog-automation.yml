@@ -1,0 +1,104 @@
+name: 部落格自動化處理
+
+on:
+  # 手動觸發
+  workflow_dispatch:
+    inputs:
+      process_word:
+        description: '處理Word文檔'
+        required: true
+        default: 'true'
+        type: boolean
+      update_json:
+        description: '更新JSON文件'
+        required: true
+        default: 'true'
+        type: boolean
+  
+  # 當Word文檔上傳到指定目錄時觸發
+  push:
+    paths:
+      - 'word-docs/**/*.docx'
+  
+  # 每天定時執行
+  schedule:
+    - cron: '0 1 * * *'  # UTC 時間每天1點 (台灣時間9點)
+
+jobs:
+  blog-automation:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 檢出代碼
+      - name: 檢出代碼
+        uses: actions/checkout@v4
+      
+      # 設置 Python 環境
+      - name: 設置 Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      # 安裝依賴
+      - name: 安裝依賴套件
+        run: |
+          python -m pip install --upgrade pip
+          pip install python-docx markdown jieba gensim python-slugify requests
+      
+      # 創建必要的目錄
+      - name: 創建必要的目錄
+        run: |
+          mkdir -p blog
+          mkdir -p assets/data
+          mkdir -p word-docs
+      
+      # 處理Word文檔 (如果啟用)
+      - name: 處理Word文檔
+        if: ${{ github.event_name == 'push' || github.event.inputs.process_word == 'true' }}
+        run: |
+          if [ -d "word-docs" ] && [ "$(ls -A word-docs)" ]; then
+            python .github/scripts/word_to_html.py word-docs blog
+          else
+            echo "word-docs 目錄為空或不存在，跳過處理"
+          fi
+      
+      # 提交生成的HTML文件
+      - name: 提交生成的HTML文件
+        id: commit-html
+        if: ${{ github.event_name == 'push' || github.event.inputs.process_word == 'true' }}
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          git add blog/
+          
+          if git diff --staged --quiet; then
+            echo "沒有新的HTML文件需要提交"
+            echo "html_changed=false" >> $GITHUB_OUTPUT
+          else
+            git commit -m "自動將Word文檔轉換為HTML"
+            git push
+            echo "html_changed=true" >> $GITHUB_OUTPUT
+          fi
+      
+      # 更新博客JSON文件
+      - name: 更新博客JSON文件
+        if: ${{ steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' }}
+        run: |
+          python .github/scripts/update_blog_posts.py
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+      
+      # 清理Word文檔（可選，如果你想在處理完後清空目錄）
+      - name: 清理已處理的Word文檔
+        if: ${{ github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true' }}
+        run: |
+          # 移動已處理的文件到processed目錄
+          mkdir -p word-docs/processed
+          mv word-docs/*.docx word-docs/processed/
+          
+          # 提交更改
+          git add word-docs/
+          git commit -m "移動已處理的Word文檔" || echo "無需提交"
+          git push || echo "無需推送"
