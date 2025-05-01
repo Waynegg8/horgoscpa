@@ -69,13 +69,13 @@
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 0 30px;
+      padding: 0 40px; /* 增加外側間距 */
     }
     
-    /* 導航欄樣式 */
+    /* 改善導航欄樣式 */
     .site-nav {
       background-color: #004999;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* 增強陰影 */
       position: sticky;
       top: 0;
       z-index: 1000;
@@ -86,7 +86,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 15px 30px;
+      padding: 15px 40px; /* 增加間距 */
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -127,21 +127,26 @@
       margin-left: 35px;
     }
     
+    /* 改善導航選項邊框視覺效果 */
     .nav-menu a {
-      color: rgba(255, 255, 255, 0.9);
+      color: #fff;
       position: relative;
       padding: 8px 12px;
       font-weight: 500;
       text-decoration: none;
-      border: 1px solid transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15); /* 更明顯的初始邊框 */
       border-radius: 4px;
       transition: all 0.3s ease;
       font-family: "思源黑體", "微軟正黑體", sans-serif;
+      background-color: rgba(255, 255, 255, 0.05); /* 輕微背景色 */
     }
     
     .nav-menu a:hover, .nav-menu a.active {
       color: #fff;
-      border-color: rgba(255, 255, 255, 0.4);
+      border-color: rgba(255, 255, 255, 0.5); /* 懸停時更明顯的邊框 */
+      background-color: rgba(255, 255, 255, 0.15); /* 懸停時更明顯的背景 */
+      transform: translateY(-2px); /* 輕微上移效果 */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 懸停陰影 */
     }
     
     /* 默認隱藏漢堡選單相關元素 */
@@ -155,7 +160,7 @@
     
     /* 英雄區塊 */
     .hero {
-      background: linear-gradient(rgba(0, 77, 153, 0.85), rgba(0, 77, 153, 0.85)), url('../images/hero-bg.jpg') center/cover no-repeat;
+      background: linear-gradient(rgba(0, 77, 153, 0.85), rgba(0, 77, 153, 0.85)), url('../images/hero.jpg') center/cover no-repeat;
       color: white;
       padding: 120px 20px;
       text-align: center;
@@ -448,58 +453,73 @@
       color: #fff;
     }
     
-    /* 懸浮按鈕 */
+    /* 修改懸浮按鈕 */
     .cta-floating {
       position: fixed;
-      top: 50%;
+      bottom: 30px; /* 改為底部固定 */
       right: 0;
-      transform: translateY(-50%);
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      z-index:.99;
+      gap: 10px;
+      z-index: 999;
     }
     
-    .cta-floating .cta-btn {
-      background-color: #0066cc;
-      color: #fff;
-      padding: 15px 25px;
+    /* 改善LINE按鈕 */
+    .cta-floating .cta-btn.line {
+      background-color: #06c755;
       border-radius: 8px 0 0 8px;
+      width: 50px; /* 縮小寬度 */
+      height: 50px; /* 縮小高度 */
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 0;
+      order: -1; /* 讓LINE按鈕在上方 */
       box-shadow: -3px 3px 15px rgba(0,0,0,0.2);
       transition: all 0.3s ease;
-      font-weight: 600;
-      font-size: 16px;
-      text-decoration: none;
-      font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
-    }
-    
-    .cta-floating .cta-btn:hover {
-      transform: translateX(-8px);
-      color: #fff;
-    }
-    
-    .cta-floating .cta-btn.line {
-      background-color: #06c755;
-      width: 56px;
-      height: 56px;
-      padding: 0;
-      border-radius: 8px 0 0 8px;
     }
     
     .cta-floating .cta-btn.line img {
-      width: 32px;
-      height: 32px;
+      width: 30px; /* 縮小圖標 */
+      height: 30px;
     }
     
     .cta-floating .cta-btn.line:hover {
       background-color: #05a847;
+      transform: translateX(-5px); /* 懸停效果 */
+    }
+    
+    /* 改善免費諮詢按鈕 */
+    .cta-floating .cta-btn {
+      background-color: #0066cc;
+      color: #fff;
+      padding: 12px 20px; /* 縮小按鈕 */
+      border-radius: 8px 0 0 8px;
+      font-size: 18px; /* 放大字體 */
+      font-weight: 600;
+      text-decoration: none;
+      text-align: center;
+      box-shadow: -3px 3px 15px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+    }
+    
+    .cta-floating .cta-btn:hover {
+      transform: translateX(-5px);
+      color: #fff;
+      background-color: #004d99;
     }
     
     /* 響應式設計 */
     @media (max-width: 768px) {
+      .container {
+        padding: 0 20px; /* 移動裝置較小間距 */
+      }
+      
+      .nav-container {
+        padding: 15px 20px;
+      }
+      
       .nav-toggle-label {
         display: block;
         cursor: pointer;
@@ -563,6 +583,13 @@
       .nav-menu a {
         display: block;
         border: none;
+        background: none;
+      }
+      
+      .nav-menu a:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        transform: none;
+        box-shadow: none;
       }
       
       .hero {
@@ -592,12 +619,27 @@
         margin-bottom: 10px;
       }
       
+      /* 移動裝置上調整懸浮按鈕 */
       .cta-floating {
         bottom: 20px;
-        top: auto;
-        right: 20px;
-        transform: none;
-        flex-direction: row;
+        right: 10px;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .cta-floating .cta-btn.line {
+        width: 45px;
+        height: 45px;
+      }
+      
+      .cta-floating .cta-btn.line img {
+        width: 25px;
+        height: 25px;
+      }
+      
+      .cta-floating .cta-btn {
+        padding: 10px 16px;
+        font-size: 16px;
       }
     }
   </style>
@@ -756,7 +798,7 @@
   </div>
 </footer>
 
-<!-- 懸浮按鈕 -->
+<!-- 懸浮按鈕 - 改為底部固定，LINE在上方 -->
 <div class="cta-floating">
   <a href="/booking.html" class="cta-btn">免費諮詢</a>
   <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line">
