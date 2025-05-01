@@ -72,9 +72,9 @@
       padding: 0 40px; /* 增加外側間距 */
     }
     
-    /* 改善導航欄樣式 */
+    /* 改善導航欄樣式 - 更換色系 */
     .site-nav {
-      background-color: #004999;
+      background-color: #003366; /* 更深的藍色 */
       box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* 增強陰影 */
       position: sticky;
       top: 0;
@@ -127,24 +127,24 @@
       margin-left: 35px;
     }
     
-    /* 改善導航選項邊框視覺效果 */
+    /* 改善導航選項邊框視覺效果 - 更明顯的顏色對比 */
     .nav-menu a {
       color: #fff;
       position: relative;
-      padding: 8px 12px;
+      padding: 8px 15px;
       font-weight: 500;
       text-decoration: none;
-      border: 1px solid rgba(255, 255, 255, 0.15); /* 更明顯的初始邊框 */
+      border: 1px solid rgba(255, 255, 255, 0.3); /* 更明顯的初始邊框 */
       border-radius: 4px;
       transition: all 0.3s ease;
       font-family: "思源黑體", "微軟正黑體", sans-serif;
-      background-color: rgba(255, 255, 255, 0.05); /* 輕微背景色 */
+      background-color: rgba(255, 255, 255, 0.1); /* 更明顯的背景色 */
     }
     
     .nav-menu a:hover, .nav-menu a.active {
       color: #fff;
-      border-color: rgba(255, 255, 255, 0.5); /* 懸停時更明顯的邊框 */
-      background-color: rgba(255, 255, 255, 0.15); /* 懸停時更明顯的背景 */
+      border-color: rgba(255, 255, 255, 0.7); /* 懸停時更明顯的邊框 */
+      background-color: rgba(255, 255, 255, 0.2); /* 懸停時更明顯的背景 */
       transform: translateY(-2px); /* 輕微上移效果 */
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 懸停陰影 */
     }
@@ -158,9 +158,9 @@
       display: none;
     }
     
-    /* 英雄區塊 */
+    /* 英雄區塊 - 修正圖片路徑 */
     .hero {
-      background: linear-gradient(rgba(0, 77, 153, 0.85), rgba(0, 77, 153, 0.85)), url('../images/hero.jpg') center/cover no-repeat;
+      background: linear-gradient(rgba(0, 51, 102, 0.85), rgba(0, 51, 102, 0.85)), url('/assets/images/hero.jpg') center/cover no-repeat;
       color: white;
       padding: 120px 20px;
       text-align: center;
@@ -193,7 +193,7 @@
     
     .section-title h2 {
       font-size: 2.2rem;
-      color: #004999;
+      color: #003366; /* 與導航欄匹配 */
       margin-bottom: 20px;
       position: relative;
       display: inline-block;
@@ -283,7 +283,7 @@
       font-size: 1.5rem;
       margin-top: 0;
       margin-bottom: 20px;
-      color: #004999;
+      color: #003366; /* 與導航欄匹配 */
     }
     
     .service-card p {
@@ -453,11 +453,11 @@
       color: #fff;
     }
     
-    /* 修改懸浮按鈕 */
+    /* 修改懸浮按鈕 - 確保貼齊右側 */
     .cta-floating {
       position: fixed;
-      bottom: 30px; /* 改為底部固定 */
-      right: 0;
+      bottom: 30px; /* 底部固定 */
+      right: 0; /* 貼齊右側 */
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -468,8 +468,8 @@
     .cta-floating .cta-btn.line {
       background-color: #06c755;
       border-radius: 8px 0 0 8px;
-      width: 50px; /* 縮小寬度 */
-      height: 50px; /* 縮小高度 */
+      width: 55px; /* 調整寬度 */
+      height: 55px; /* 調整高度 */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -479,9 +479,9 @@
       transition: all 0.3s ease;
     }
     
-    .cta-floating .cta-btn.line img {
-      width: 30px; /* 縮小圖標 */
-      height: 30px;
+    .cta-floating .cta-btn.line svg {
+      width: 35px; /* 調整圖標大小 */
+      height: 35px;
     }
     
     .cta-floating .cta-btn.line:hover {
@@ -493,9 +493,9 @@
     .cta-floating .cta-btn {
       background-color: #0066cc;
       color: #fff;
-      padding: 12px 20px; /* 縮小按鈕 */
+      padding: 14px 20px; /* 調整按鈕大小 */
       border-radius: 8px 0 0 8px;
-      font-size: 18px; /* 放大字體 */
+      font-size: 20px; /* 放大字體 */
       font-weight: 600;
       text-decoration: none;
       text-align: center;
@@ -561,7 +561,7 @@
         top: 100%;
         left: 0;
         right: 0;
-        background-color: #004999;
+        background-color: #003366; /* 與導航欄匹配 */
         flex-direction: column;
         align-items: center;
         max-height: 0;
@@ -622,24 +622,24 @@
       /* 移動裝置上調整懸浮按鈕 */
       .cta-floating {
         bottom: 20px;
-        right: 10px;
+        right: 0;
         flex-direction: column;
         gap: 8px;
       }
       
       .cta-floating .cta-btn.line {
-        width: 45px;
-        height: 45px;
+        width: 50px;
+        height: 50px;
       }
       
-      .cta-floating .cta-btn.line img {
-        width: 25px;
-        height: 25px;
+      .cta-floating .cta-btn.line svg {
+        width: 30px;
+        height: 30px;
       }
       
       .cta-floating .cta-btn {
-        padding: 10px 16px;
-        font-size: 16px;
+        padding: 12px 18px;
+        font-size: 18px;
       }
     }
   </style>
@@ -802,7 +802,9 @@
 <div class="cta-floating">
   <a href="/booking.html" class="cta-btn">免費諮詢</a>
   <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line">
-    <img src="/assets/images/line-icon.svg" alt="LINE">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path fill="#FFFFFF" d="M19.952,12.694c0-3.363-3.37-6.1-7.502-6.1s-7.502,2.737-7.502,6.1c0,3.018,2.673,5.541,6.283,6.018c0.246,0.053,0.58,0.163,0.665,0.374c0.076,0.192,0.05,0.492,0.024,0.686c0,0-0.089,0.536-0.108,0.65c-0.033,0.192-0.152,0.75,0.657,0.409s4.375-2.578,5.972-4.411h0.001C19.338,14.843,19.952,13.829,19.952,12.694z M10.225,15.018H8.702c-0.138,0-0.25-0.112-0.25-0.25v-3.6c0-0.138,0.112-0.25,0.25-0.25s0.25,0.112,0.25,0.25v3.35h1.273c0.138,0,0.25,0.112,0.25,0.25S10.363,15.018,10.225,15.018z M11.325,14.768c0,0.138-0.112,0.25-0.25,0.25s-0.25-0.112-0.25-0.25v-3.6c0-0.138,0.112-0.25,0.25-0.25 s0.25,0.112,0.25,0.25V14.768z M15.326,14.768c0,0.107-0.068,0.204-0.169,0.239c-0.026,0.009-0.054,0.014-0.081,0.014 c-0.076,0-0.151-0.035-0.199-0.1l-1.773-2.401v2.248c0,0.138-0.112,0.25-0.25,0.25s-0.25-0.112-0.25-0.25v-3.6 c0-0.107,0.068-0.204,0.169-0.239c0.026-0.009,0.054-0.014,0.081-0.014c0.076,0,0.151,0.035,0.199,0.1l1.773,2.401v-2.248 c0-0.138,0.112-0.25,0.25-0.25s0.25,0.112,0.25,0.25V14.768z M16.5,13.018h1.274c0.138,0,0.25,0.112,0.25,0.25 s-0.112,0.25-0.25,0.25H16.5h-0.275c-0.138,0-0.25-0.112-0.25-0.25v-3.6c0-0.138,0.112-0.25,0.25-0.25H16.5h1.274 c0.138,0,0.25,0.112,0.25,0.25s-0.112,0.25-0.25,0.25H16.5v1.15h1.274c0.138,0,0.25,0.112,0.25,0.25s-0.112,0.25-0.25,0.25H16.5 V13.018z"/>
+    </svg>
   </a>
 </div>
 
