@@ -8,7 +8,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>服務項目 | 霍爾果斯會計師事務所</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  <!-- 內嵌樣式修正服務頁面頁尾置底 -->
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { 
+      display: flex; 
+      flex-direction: column; 
+      min-height: 100vh; 
+    }
+    main.services {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .site-footer {
+      margin-top: auto;
+    }
+  </style>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
 <script>
@@ -50,17 +67,17 @@
       <div class="card">
         <h2>稅務服務</h2>
         <p>個人與企業稅務規劃、跨境稅務、申報與爭議處理。</p>
-        <a href="services/tax.html">了解更多</a>
+        <a href="/services/tax.html">了解更多</a>
       </div>
       <div class="card">
         <h2>記帳與會計</h2>
         <p>代辦記帳、報表、制度建立與會計顧問服務。</p>
-        <a href="services/accounting.html">了解更多</a>
+        <a href="/services/accounting.html">了解更多</a>
       </div>
       <div class="card">
         <h2>企業顧問</h2>
         <p>公司設立、財務規劃、營運優化與併購顧問。</p>
-        <a href="services/consulting.html">了解更多</a>
+        <a href="/services/consulting.html">了解更多</a>
       </div>
     </section>
   </main>
