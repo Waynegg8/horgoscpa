@@ -10,6 +10,96 @@
   <title>預約諮詢 | 霍爾果斯會計師事務所</title>
   <link rel="stylesheet" href="/assets/css/style.css" />
   <link rel="stylesheet" href="/assets/css/footer-fix.css" />
+  <style>
+    /* 優化預約表單樣式 */
+    .booking-form {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #f9f9f9;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    
+    .form-group select,
+    .form-group input[type="text"],
+    .form-group input[type="tel"],
+    .form-group input[type="email"],
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    .form-group select:focus,
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: #0066cc;
+      outline: none;
+    }
+    
+    .options-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .option-btn {
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .option-btn:hover {
+      border-color: #0066cc;
+    }
+    
+    .option-btn.selected {
+      background: #0066cc;
+      color: white;
+      border-color: #0066cc;
+    }
+    
+    .submit-btn {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+      width: 100%;
+      margin-top: 20px;
+    }
+    
+    .submit-btn:hover {
+      background: #004d99;
+    }
+    
+    /* 隱藏的表單欄位，用於儲存選擇的選項 */
+    .hidden-field {
+      display: none;
+    }
+  </style>
 
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
@@ -19,7 +109,6 @@
   gtag('js', new Date());
   gtag('config', 'G-RKMCS9WVS5');
 </script>
-
 
 <script type="application/ld+json">
 {
@@ -35,7 +124,6 @@
   }]
 }
 </script>
-
 </head>
 <body>
 
@@ -51,37 +139,42 @@
   </ul>
 </nav>
 
-<main class="booking-page">
-  <h1>預約專業諮詢</h1>
-  <p>請填寫下列表單預約專業諮詢，我們將儘快為您安排時段。</p>
+<main class="booking-page" style="padding: 40px 20px;">
+  <h1 style="text-align: center; margin-bottom: 30px;">預約專業諮詢</h1>
+  <p style="text-align: center; max-width: 600px; margin: 0 auto 30px auto;">請填寫以下表單，我們將儘快為您安排合適的時間。</p>
 
   <form action="https://formspree.io/f/xwpovnwy" method="POST" class="booking-form">
-    <label>姓名<input type="text" name="name" required></label>
-    <label>電話<input type="tel" name="phone" required></label>
-    <label>電子郵件<input type="email" name="email" required></label>
-    <label>諮詢主題
-      <select name="topic" required>
-        <option value="">請選擇</option>
-        <option value="稅務">稅務</option>
-        <option value="會計">會計</option>
-        <option value="顧問">企業顧問</option>
-      </select>
-    </label>
-    <label>預約日期<input type="date" name="booking_date" required></label>
-    <label>預約時間
-      <select name="booking_time" required>
-        <option value="">請選擇</option>
-        <option value="09:00">09:00</option>
-        <option value="10:00">10:00</option>
-        <option value="11:00">11:00</option>
-        <option value="14:00">14:00</option>
-        <option value="15:00">15:00</option>
-        <option value="16:00">16:00</option>
-        <option value="17:00">17:00</option>
-      </select>
-    </label>
-    <label>簡述需求<textarea name="message" rows="4"></textarea></label>
-    <button type="submit">送出預約</button>
+    <div class="form-group">
+      <label>諮詢主題</label>
+      <div class="options-group" id="topic-options">
+        <button type="button" class="option-btn" data-value="稅務">稅務</button>
+        <button type="button" class="option-btn" data-value="會計">會計</button>
+        <button type="button" class="option-btn" data-value="顧問">企業顧問</button>
+      </div>
+      <input type="hidden" name="topic" id="topic-field" required>
+    </div>
+    
+    <div class="form-group">
+      <label>姓名</label>
+      <input type="text" name="name" required>
+    </div>
+    
+    <div class="form-group">
+      <label>電話</label>
+      <input type="tel" name="phone" required>
+    </div>
+    
+    <div class="form-group">
+      <label>電子郵件</label>
+      <input type="email" name="email" required>
+    </div>
+    
+    <div class="form-group">
+      <label>需求說明 (選填)</label>
+      <textarea name="message" rows="3" placeholder="請簡單描述您的需求，我們將依據您的需求安排專業會計師與您聯繫"></textarea>
+    </div>
+    
+    <button type="submit" class="submit-btn">送出預約申請</button>
   </form>
   
   <div style="margin-top: 40px; text-align: center;">
@@ -94,11 +187,36 @@
   <p>&copy; 2025 霍爾果斯會計師事務所｜台中市西區建國路21號3樓之1｜電話：04-2220-5606</p>
 </footer>
 
-
 <div class="cta-floating">
   <a href="/booking.html" class="cta-btn">📅<span>預約諮詢</span></a>
   <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line">💬<span>加入LINE</span></a>
 </div>
+
+<!-- 選項按鈕功能 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 為所有選項按鈕添加事件監聽
+    const optionGroups = document.querySelectorAll('.options-group');
+    
+    optionGroups.forEach(group => {
+      const buttons = group.querySelectorAll('.option-btn');
+      const hiddenField = document.getElementById(group.id.replace('options', 'field'));
+      
+      buttons.forEach(button => {
+        button.addEventListener('click', function() {
+          // 移除同組中其他按鈕的選中狀態
+          buttons.forEach(btn => btn.classList.remove('selected'));
+          
+          // 添加當前按鈕的選中狀態
+          this.classList.add('selected');
+          
+          // 更新隱藏字段的值
+          hiddenField.value = this.getAttribute('data-value');
+        });
+      });
+    });
+  });
+</script>
 
 </body>
 </html>

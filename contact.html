@@ -10,6 +10,61 @@
   <title>聯絡資訊 | 霍爾果斯會計師事務所</title>
   <link rel="stylesheet" href="/assets/css/style.css" />
   <link rel="stylesheet" href="/assets/css/footer-fix.css" />
+  <style>
+    /* 聯絡頁面的並排顯示樣式 */
+    .contact-container {
+      display: flex;
+      flex-direction: row;
+      gap: 30px;
+      margin-top: 30px;
+    }
+    
+    .contact-info {
+      flex: 1;
+      min-width: 300px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .map-container {
+      flex: 1;
+      height: 350px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    @media (max-width: 768px) {
+      .contact-container {
+        flex-direction: column;
+      }
+      
+      .map-container {
+        height: 300px;
+      }
+    }
+    
+    .contact-info h2 {
+      color: #0066cc;
+      margin-top: 0;
+    }
+    
+    .contact-info p {
+      margin: 15px 0;
+      line-height: 1.5;
+    }
+    
+    .contact-info a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+    
+    .contact-info a:hover {
+      text-decoration: underline;
+    }
+  </style>
 
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
@@ -19,7 +74,6 @@
   gtag('js', new Date());
   gtag('config', 'G-RKMCS9WVS5');
 </script>
-
 
 <script type="application/ld+json">
 {
@@ -35,7 +89,6 @@
   }]
 }
 </script>
-
 </head>
 <body>
 
@@ -55,7 +108,7 @@
   <h1>聯絡資訊</h1>
   <p>歡迎透過以下方式與霍爾果斯會計師事務所聯繫，我們期待為您提供專業的財稅諮詢服務。</p>
 
-  <div class="contact-grid">
+  <div class="contact-container">
     <div class="contact-info">
       <h2>聯絡方式</h2>
       <p><strong>電話：</strong>04-2220-5606</p>
@@ -65,13 +118,14 @@
       
       <div style="margin-top: 30px;">
         <h2>預約諮詢</h2>
-        <p>若需要專業諮詢服務，歡迎透過右側懸浮按鈕進行線上預約。</p>
-        <a href="/booking.html" class="cta-button" style="display: inline-block; margin-top: 10px;">前往預約</a>
+        <p>若需要專業諮詢服務，歡迎點擊右側懸浮按鈕進行線上預約。</p>
+        <a href="/booking.html" style="display: inline-block; margin-top: 10px; background: #0066cc; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 4px;">前往預約</a>
       </div>
     </div>
     
     <div class="map-container">
-      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3640.7032123208803!2d120.66048687551487!3d24.14118227834828!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34693d0c1111111%3A0x1111111111111111!2z5byY5ZyL6LevMjHomZ8z5qiTLTE!5e0!3m2!1szh-TW!2stw!4v1651234567890!5m2!1szh-TW!2stw" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <!-- 更準確的台中市西區建國路21號座標 -->
+      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3640.7106928665026!2d120.66370987384725!3d24.140949976068604!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34693d10ae34eb33%3A0xf790af26db38a848!2zNDA35bCP5Y-w5biC6KW_5Y2A5bu65ZyL6LevMjHomZ8!5e0!3m2!1szh-TW!2stw!4v1714629581899!5m2!1szh-TW!2stw" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
   </div>
 </main>
@@ -79,7 +133,6 @@
 <footer class="site-footer">
   <p>&copy; 2025 霍爾果斯會計師事務所｜台中市西區建國路21號3樓之1｜電話：04-2220-5606</p>
 </footer>
-
 
 <div class="cta-floating">
   <a href="/booking.html" class="cta-btn">📅<span>預約諮詢</span></a>
