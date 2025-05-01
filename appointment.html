@@ -2,41 +2,36 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>預約 - 霍爾果斯會計師事務所</title>
-    <link rel="stylesheet" href="assets/styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>預約諮詢 | 霍爾果斯會計師事務所</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
-    <header>
-        <nav>
-            <ul>
-                <li><a href="index.html">霍爾果斯會計師事務所</a></li>
-                <li><a href="services.html">服務總覽</a></li>
-                <li><a href="team.html">團隊介紹</a></li>
-                <li><a href="contact.html">聯絡我們</a></li>
-                <li><a href="blog.html">部落格</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <section class="appointment-container">
-        <h1>預約我們的服務</h1>
-        <form action="https://formspree.io/f/xyz" method="POST">
-            <label for="name">姓名：</label>
-            <input type="text" id="name" name="name" required>
-            <label for="email">電子郵件：</label>
-            <input type="email" id="email" name="email" required>
-            <label for="message">訊息：</label>
-            <textarea id="message" name="message" required></textarea>
-            <button type="submit">提交預約</button>
-        </form>
-    </section>
-
-    <footer>
-        <p>霍爾果斯會計師事務所 | 聯絡方式</p>
-    </footer>
-
-    <script src="assets/script.js"></script>
+  <main class="contact-page">
+    <h1>預約諮詢</h1>
+    <form action="https://formspree.io/f/xwpovnwy" method="POST" class="contact-form">
+      <label>姓名<input type="text" name="name" required></label>
+      <label>電話<input type="tel" name="phone" required></label>
+      <label>電子郵件<input type="email" name="email" required></label>
+      <label>諮詢主題
+        <select name="topic" required>
+          <option value="">請選擇</option>
+          <option value="稅務">稅務</option>
+          <option value="會計">會計</option>
+          <option value="顧問">企業顧問</option>
+        </select>
+      </label>
+      <label>聯絡原因
+        <select name="reason" required>
+          <option value="預約諮詢">預約諮詢</option>
+          <option value="一般諮詢">一般諮詢</option>
+          <option value="索取資料">索取資料</option>
+        </select>
+      </label>
+      <label>簡短訊息<textarea name="message"></textarea></label>
+      <button type="submit">送出</button>
+    </form>
+  </main>
 </body>
 </html>

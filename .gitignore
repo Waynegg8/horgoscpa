@@ -1,0 +1,10 @@
+# 系統與編譯暫存
+.DS_Store
+*.log
+*.tmp
+*.bak
+*.swp
+node_modules/
+dist/
+build/
+.env
