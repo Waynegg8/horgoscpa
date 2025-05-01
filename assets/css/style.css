@@ -1,6 +1,7 @@
 /* 
  * style.css - 霍爾果斯會計師事務所網站通用樣式
- * 從index.html提取的所有樣式，適用於整個網站
+ * 從 index.html 提取的所有樣式，適用於整個網站
+ * 創建日期: 2025-05-01
  */
 
 /* 字體定義 */
@@ -492,6 +493,233 @@ img {
   color: #fff;
 }
 
+/* 載入中顯示樣式 */
+.loading-container {
+  text-align: center;
+  padding: 30px;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #0066cc;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 20px; /* 移動裝置較小間距 */
+  }
+  
+  .nav-container {
+    padding: 15px 20px;
+  }
+  
+  .nav-toggle-label {
+    display: block;
+    cursor: pointer;
+    position: relative;
+    width: 30px;
+    height: 21px;
+  }
+  
+  .nav-toggle-label span,
+  .nav-toggle-label span::before,
+  .nav-toggle-label span::after {
+    display: block;
+    background-color: #fff;
+    height: 3px;
+    width: 100%;
+    position: absolute;
+    transition: all 0.3s ease;
+  }
+  
+  .nav-toggle-label span {
+    top: 9px;
+  }
+  
+  .nav-toggle-label span::before,
+  .nav-toggle-label span::after {
+    content: '';
+  }
+  
+  .nav-toggle-label span::before {
+    top: -9px;
+  }
+  
+  .nav-toggle-label span::after {
+    bottom: -9px;
+  }
+  
+  .nav-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #002147; /* 與導航欄匹配 */
+    flex-direction: column;
+    align-items: center;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  
+  .nav-toggle:checked ~ .nav-menu {
+    max-height: 350px;
+  }
+  
+  .nav-menu li {
+    width: 100%;
+    text-align: center;
+    margin: 0;
+    padding: 10px 0;
+  }
+  
+  .nav-menu a {
+    display: block;
+    border: none;
+    background: none;
+  }
+  
+  .nav-menu a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .hero {
+    padding: 80px 20px;
+  }
+  
+  .hero h1 {
+    font-size: 2.2rem;
+  }
+  
+  .hero p {
+    font-size: 1.1rem;
+  }
+  
+  .about-section,
+  .services-section,
+  .blog-section {
+    padding: 60px 0;
+  }
+  
+  .footer-container {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .footer-text {
+    margin-bottom: 10px;
+  }
+  
+  /* 移動裝置上調整懸浮按鈕 */
+  .cta-floating {
+    bottom: 20px;
+    gap: 8px;
+  }
+  
+  .float-btn {
+    width: 110px;
+    font-size: 16px;
+    padding: 12px 15px;
+  }
+}
+
+/* 服務頁面特定樣式 */
+.service-detail {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.service-detail h1 {
+  font-size: 2.4rem;
+  color: #002147;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.service-detail section {
+  margin-bottom: 40px;
+}
+
+.service-detail h2 {
+  font-size: 1.8rem;
+  color: #002147;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.service-detail h2:after {
+  content: "";
+  position: absolute;
+  width: 50px;
+  height: 3px;
+  background-color: #0066cc;
+  bottom: -10px;
+  left: 0;
+}
+
+.service-detail ul, 
+.service-detail ol {
+  margin-bottom: 20px;
+  padding-left: 25px;
+}
+
+.service-detail li {
+  margin-bottom: 10px;
+  color: #444;
+}
+
+.cta-box {
+  background-color: #f5f8fc;
+  border-radius: 10px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  margin-top: 40px;
+}
+
+.cta-button {
+  display: inline-block;
+  background-color: #0066cc;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.05rem;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.cta-button:hover {
+  background-color: #004d99;
+  color: white;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
 /* 部落格文章頁面樣式 */
 .blog-post {
   max-width: 800px;
@@ -568,14 +796,6 @@ img {
   margin-bottom: 10px;
 }
 
-.post-content blockquote {
-  border-left: 4px solid #0066cc;
-  padding: 15px 20px;
-  margin: 20px 0;
-  background-color: #f8f9fa;
-  font-style: italic;
-}
-
 .post-footer {
   margin-top: 50px;
   padding-top: 20px;
@@ -628,13 +848,7 @@ img {
   transform: translateX(-5px);
 }
 
-/* 常見問題樣式 */
-.faq-page {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 40px 20px;
-}
-
+/* FAQ 頁面樣式 */
 .faq-section details {
   background: #f9f9f9;
   border: 1px solid #ddd;
@@ -667,389 +881,401 @@ img {
 
 /* 團隊頁面樣式 */
 .team-page {
-  padding: 40px 20px;
   max-width: 1200px;
   margin: 0 auto;
+  padding: 40px 20px;
 }
 
 .team-grid {
   display: grid;
-  gap: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  margin-top: 40px;
 }
 
 .member-card {
   background: #fff;
-  border: 1px solid #ddd;
-  padding: 16px;
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  border-radius: 8px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .member-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.15);
 }
 
-.member-card img {
+.member-image {
+  height: 300px;
+  overflow: hidden;
+}
+
+.member-image img {
   width: 100%;
-  height: auto;
+  height: 100%;
   object-fit: cover;
-  margin-bottom: 12px;
-  border-radius: 6px;
 }
 
-.member-card h2 {
-  margin: 0;
-  font-size: 18px;
+.member-info {
+  padding: 25px;
+  text-align: center;
+}
+
+.member-info h2 {
+  font-size: 1.6rem;
+  margin: 0 0 10px 0;
   color: #002147;
 }
 
-/* 視頻頁面樣式 */
-.video-page {
-  padding: 40px 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+.member-info .position {
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 15px;
+  display: block;
 }
 
-.video-grid {
-  display: grid;
-  gap: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-}
-
-.video-card {
-  background: #fff;
-  border: 1px solid #ccc;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.video-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-}
-
-.video-card iframe {
-  width: 100%;
-  height: 180px;
-  margin-bottom: 12px;
-  border-radius: 4px;
-}
-
-.video-card h2 {
-  font-size: 18px;
-  margin-bottom: 4px;
-  color: #002147;
+.member-info p {
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 0;
 }
 
 /* 聯絡頁面樣式 */
 .contact-page {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
 }
 
-.contact-container {
-  display: flex;
-  flex-direction: row;
-  gap: 30px;
-  margin-top: 30px;
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 40px;
 }
 
 .contact-info {
-  flex: 1;
-  min-width: 300px;
-  padding: 20px;
-  background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
 }
 
-.map-container {
-  flex: 1;
-  height: 350px;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.contact-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 30px;
-}
-
-.contact-form input, 
-.contact-form select, 
-.contact-form textarea {
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  width: 100%;
-}
-
-.contact-form button {
-  background: #0066cc;
-  color: #fff;
-  border: none;
-  padding: 12px;
-  font-size: 16px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background 0.3s ease;
-}
-
-.contact-form button:hover {
-  background: #004d99;
-}
-
-/* 預約表單樣式 */
-.booking-form {
-  max-width: 600px;
-  margin: 0 auto;
-  background: #f9f9f9;
+.contact-card {
+  background: #fff;
   padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  text-align: center;
 }
 
-.form-group {
+.contact-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 102, 204, 0.1);
+  border-radius: 50%;
+}
+
+.contact-card h3 {
+  margin: 0 0 15px 0;
+  color: #002147;
+  font-size: 1.4rem;
+}
+
+.contact-card p {
+  color: #555;
   margin-bottom: 20px;
+}
+
+.contact-map {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  height: 100%;
+  min-height: 300px;
+}
+
+.contact-map iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
+.btn-line {
+  background-color: #06c755;
+  border-color: #06c755;
+  color: white;
+}
+
+.btn-line:hover {
+  background-color: #05a847;
+  border-color: #05a847;
+}
+
+.directions-section {
+  margin-top: 60px;
+}
+
+/* 表單樣式 */
+.form-group {
+  margin-bottom: 25px;
 }
 
 .form-group label {
   display: block;
-  font-weight: bold;
   margin-bottom: 8px;
+  font-weight: 600;
   color: #333;
 }
 
-.form-group select,
-.form-group input[type="text"],
-.form-group input[type="tel"],
-.form-group input[type="email"],
-.form-group textarea {
+.form-group input,
+.form-group textarea,
+.form-group select {
   width: 100%;
   padding: 12px;
   border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
+  border-radius: 5px;
+  font-size: 1rem;
   transition: border-color 0.3s;
 }
 
-.form-group select:focus,
 .form-group input:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
   border-color: #0066cc;
   outline: none;
 }
 
-.options-group {
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.checkbox-label {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
+  align-items: flex-start;
+  cursor: pointer;
 }
 
-.option-btn {
+.checkbox-label input {
+  width: auto;
+  margin-right: 10px;
+  margin-top: 5px;
+}
+
+.required {
+  color: #cc0000;
+}
+
+@media (max-width: 768px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .contact-map {
+    min-height: 250px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+/* 影片頁面樣式 */
+.video-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.video-card {
   background: #fff;
-  border: 1px solid #ddd;
-  padding: 8px 15px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.option-btn:hover {
-  border-color: #0066cc;
+.video-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.15);
 }
 
-.option-btn.selected {
-  background: #0066cc;
-  color: white;
-  border-color: #0066cc;
+.video-frame {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 比例 */
+  height: 0;
+  overflow: hidden;
 }
 
-.submit-btn {
-  background: #0066cc;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  font-size: 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.3s;
+.video-frame iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  margin-top: 20px;
+  height: 100%;
+  border: 0;
 }
 
-.submit-btn:hover {
-  background: #004d99;
+.video-info {
+  padding: 20px;
 }
 
-/* 載入中顯示樣式 */
-.loading-container {
+.video-info h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.4rem;
+  color: #002147;
+}
+
+.video-info .date {
+  color: #666;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.video-info p {
+  color: #555;
+  line-height: 1.7;
+}
+
+/* 頁面橫幅樣式 */
+.page-banner {
+  background: linear-gradient(rgba(0, 51, 102, 0.8), rgba(0, 51, 102, 0.8)), url('/assets/images/hero.jpg') center/cover no-repeat;
+  color: white;
+  padding: 80px 0;
   text-align: center;
-  padding: 30px;
+  margin-bottom: 60px;
 }
 
-.loading-spinner {
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border-left-color: #0066cc;
-  animation: spin 1s linear infinite;
+.page-banner h1 {
+  font-size: 2.8rem;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+.page-banner p {
+  font-size: 1.2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  opacity: 0.9;
+}
+
+/* 動畫效果 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+/* 共用工具類別 */
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+.mt-40 {
+  margin-top: 40px;
+}
+
+.text-primary {
+  color: #0066cc;
+}
+
+.bg-light {
+  background-color: #f9f9f9;
+}
+
+.rounded {
+  border-radius: 10px;
+}
+
+.shadow {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* 隱私權政策頁面樣式 */
+.policy-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.policy-container h2 {
+  color: #002147;
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+.policy-container p {
+  margin-bottom: 20px;
+  line-height: 1.8;
+}
+
+.policy-container ul {
+  margin-bottom: 20px;
+  padding-left: 25px;
+}
+
+.policy-container li {
+  margin-bottom: 10px;
+}
+
+/* 錯誤頁面樣式 */
+.error-container {
+  text-align: center;
+  padding: 80px 20px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.error-code {
+  font-size: 6rem;
+  color: #002147;
+  margin-bottom: 30px;
 }
 
-.error-message {
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  text-align: center;
-  margin: 20px 0;
+.error-container h1 {
+  font-size: 2.5rem;
+  margin-bottom: 25px;
+  color: #333;
 }
 
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .container {
-    padding: 0 20px;
-  }
-  
-  .nav-container {
-    padding: 15px 20px;
-  }
-  
-  .nav-toggle-label {
-    display: block;
-    cursor: pointer;
-    position: relative;
-    width: 30px;
-    height: 21px;
-  }
-  
-  .nav-toggle-label span,
-  .nav-toggle-label span::before,
-  .nav-toggle-label span::after {
-    display: block;
-    background-color: #fff;
-    height: 3px;
-    width: 100%;
-    position: absolute;
-    transition: all 0.3s ease;
-  }
-  
-  .nav-toggle-label span {
-    top: 9px;
-  }
-  
-  .nav-toggle-label span::before,
-  .nav-toggle-label span::after {
-    content: '';
-  }
-  
-  .nav-toggle-label span::before {
-    top: -9px;
-  }
-  
-  .nav-toggle-label span::after {
-    bottom: -9px;
-  }
-  
-  .nav-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: #002147;
-    flex-direction: column;
-    align-items: center;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-  }
-  
-  .nav-toggle:checked ~ .nav-menu {
-    max-height: 350px;
-  }
-  
-  .nav-menu li {
-    width: 100%;
-    text-align: center;
-    margin: 0;
-    padding: 10px 0;
-  }
-  
-  .nav-menu a {
-    display: block;
-    border: none;
-    background: none;
-  }
-  
-  .nav-menu a:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: none;
-    box-shadow: none;
-  }
-  
-  .hero {
-    padding: 80px 20px;
-  }
-  
-  .hero h1 {
-    font-size: 2.2rem;
-  }
-  
-  .hero p {
-    font-size: 1.1rem;
-  }
-  
-  .about-section,
-  .services-section,
-  .blog-section {
-    padding: 60px 0;
-  }
-  
-  .contact-container {
-    flex-direction: column;
-  }
-  
-  .map-container {
-    height: 300px;
-  }
-  
-  .footer-container {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .footer-text {
-    margin-bottom: 10px;
-  }
-  
-  /* 移動裝置上調整懸浮按鈕 */
-  .cta-floating {
-    bottom: 20px;
-    gap: 8px;
-  }
-  
-  .float-btn {
-    width: 110px;
-    font-size: 16px;
-    padding: 12px 15px;
-  }
+.error-container p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  color: #555;
+}
+
+.error-container .btn {
+  margin-top: 20px;
 }
