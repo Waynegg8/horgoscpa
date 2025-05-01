@@ -72,9 +72,9 @@
       padding: 0 40px; /* 增加外側間距 */
     }
     
-    /* 改善導航欄樣式 - 更換色系 */
+    /* 改善導航欄樣式 - 使用深藍色 */
     .site-nav {
-      background-color: #003366; /* 更深的藍色 */
+      background-color: #002147; /* 更深的藍色 */
       box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* 增強陰影 */
       position: sticky;
       top: 0;
@@ -158,9 +158,9 @@
       display: none;
     }
     
-    /* 英雄區塊 - 修正圖片路徑 */
+    /* 英雄區塊 - 修正圖片路徑與調亮背景色 */
     .hero {
-      background: linear-gradient(rgba(0, 51, 102, 0.85), rgba(0, 51, 102, 0.85)), url('/assets/images/hero.jpg') center/cover no-repeat;
+      background: linear-gradient(rgba(0, 51, 102, 0.7), rgba(0, 51, 102, 0.7)), url('/assets/images/hero.jpg') center/cover no-repeat;
       color: white;
       padding: 120px 20px;
       text-align: center;
@@ -193,7 +193,7 @@
     
     .section-title h2 {
       font-size: 2.2rem;
-      color: #003366; /* 與導航欄匹配 */
+      color: #002147; /* 與導航欄匹配 */
       margin-bottom: 20px;
       position: relative;
       display: inline-block;
@@ -283,7 +283,7 @@
       font-size: 1.5rem;
       margin-top: 0;
       margin-bottom: 20px;
-      color: #003366; /* 與導航欄匹配 */
+      color: #002147; /* 與導航欄匹配 */
     }
     
     .service-card p {
@@ -453,7 +453,7 @@
       color: #fff;
     }
     
-    /* 修改懸浮按鈕 - 確保貼齊右側 */
+    /* 懸浮按鈕 - 完全貼齊右側並調整對齊 */
     .cta-floating {
       position: fixed;
       bottom: 30px; /* 底部固定 */
@@ -464,7 +464,7 @@
       z-index: 999;
     }
     
-    /* 改善LINE按鈕 */
+    /* 改善LINE按鈕 - 解決圖標問題 */
     .cta-floating .cta-btn.line {
       background-color: #06c755;
       border-radius: 8px 0 0 8px;
@@ -477,11 +477,13 @@
       order: -1; /* 讓LINE按鈕在上方 */
       box-shadow: -3px 3px 15px rgba(0,0,0,0.2);
       transition: all 0.3s ease;
+      overflow: hidden; /* 確保內容不會溢出 */
     }
     
-    .cta-floating .cta-btn.line svg {
-      width: 35px; /* 調整圖標大小 */
-      height: 35px;
+    .cta-floating .line-icon {
+      width: 32px; /* 調整圖標大小 */
+      height: 32px;
+      display: block; /* 確保圖標正確顯示 */
     }
     
     .cta-floating .cta-btn.line:hover {
@@ -502,6 +504,7 @@
       box-shadow: -3px 3px 15px rgba(0,0,0,0.2);
       transition: all 0.3s ease;
       font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+      letter-spacing: 1px; /* 增加字間距，提高可讀性 */
     }
     
     .cta-floating .cta-btn:hover {
@@ -561,7 +564,7 @@
         top: 100%;
         left: 0;
         right: 0;
-        background-color: #003366; /* 與導航欄匹配 */
+        background-color: #002147; /* 與導航欄匹配 */
         flex-direction: column;
         align-items: center;
         max-height: 0;
@@ -632,9 +635,9 @@
         height: 50px;
       }
       
-      .cta-floating .cta-btn.line svg {
-        width: 30px;
-        height: 30px;
+      .cta-floating .line-icon {
+        width: 28px;
+        height: 28px;
       }
       
       .cta-floating .cta-btn {
@@ -798,13 +801,11 @@
   </div>
 </footer>
 
-<!-- 懸浮按鈕 - 改為底部固定，LINE在上方 -->
+<!-- 懸浮按鈕 - 改為底部固定，LINE在上方，使用純圖標 -->
 <div class="cta-floating">
   <a href="/booking.html" class="cta-btn">免費諮詢</a>
   <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path fill="#FFFFFF" d="M19.952,12.694c0-3.363-3.37-6.1-7.502-6.1s-7.502,2.737-7.502,6.1c0,3.018,2.673,5.541,6.283,6.018c0.246,0.053,0.58,0.163,0.665,0.374c0.076,0.192,0.05,0.492,0.024,0.686c0,0-0.089,0.536-0.108,0.65c-0.033,0.192-0.152,0.75,0.657,0.409s4.375-2.578,5.972-4.411h0.001C19.338,14.843,19.952,13.829,19.952,12.694z M10.225,15.018H8.702c-0.138,0-0.25-0.112-0.25-0.25v-3.6c0-0.138,0.112-0.25,0.25-0.25s0.25,0.112,0.25,0.25v3.35h1.273c0.138,0,0.25,0.112,0.25,0.25S10.363,15.018,10.225,15.018z M11.325,14.768c0,0.138-0.112,0.25-0.25,0.25s-0.25-0.112-0.25-0.25v-3.6c0-0.138,0.112-0.25,0.25-0.25 s0.25,0.112,0.25,0.25V14.768z M15.326,14.768c0,0.107-0.068,0.204-0.169,0.239c-0.026,0.009-0.054,0.014-0.081,0.014 c-0.076,0-0.151-0.035-0.199-0.1l-1.773-2.401v2.248c0,0.138-0.112,0.25-0.25,0.25s-0.25-0.112-0.25-0.25v-3.6 c0-0.107,0.068-0.204,0.169-0.239c0.026-0.009,0.054-0.014,0.081-0.014c0.076,0,0.151,0.035,0.199,0.1l1.773,2.401v-2.248 c0-0.138,0.112-0.25,0.25-0.25s0.25,0.112,0.25,0.25V14.768z M16.5,13.018h1.274c0.138,0,0.25,0.112,0.25,0.25 s-0.112,0.25-0.25,0.25H16.5h-0.275c-0.138,0-0.25-0.112-0.25-0.25v-3.6c0-0.138,0.112-0.25,0.25-0.25H16.5h1.274 c0.138,0,0.25,0.112,0.25,0.25s-0.112,0.25-0.25,0.25H16.5v1.15h1.274c0.138,0,0.25,0.112,0.25,0.25s-0.112,0.25-0.25,0.25H16.5 V13.018z"/>
-    </svg>
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTIxLjU3LDEyLjE0YzAsLTQuNTEtNC41My04LjE3LTEwLjA3LTguMTdzLTEwLjA3LDMuNjYtMTAuMDcsOC4xN2MwLDQuMDMsMy41OCw3LjQsOC40MSw4LjA0YzAuMzMsMC4wNywwLjc4LDAuMjIsMC44OSwwLjVjMC4xLDAuMjYsMC4wNywwLjY2LDAuMDMsMC45MWMwLDAtMC4xMiwwLjcyLTAuMTQsMC44N2MtMC4wNCwwLjI2LTAuMiwxLDAuODgsMC41NVM5LjY5LDIxLDEzLjg5LDE4LjM2aC4wMUMyMC43MiwxNS42NywyMS41NywxNC4wOCwyMS41NywxMi4xNHptLTEzLjA3LDMuMUg2LjJjLTAuMTgsMC0wLjMzLTAuMTUtMC4zMy0wLjMzdi00LjhjMC0wLjE4LDAuMTUtMC4zMywwLjMzLTAuMzNzMC4zMywwLjE1LDAuMzMsMC4zM3Y0LjQ3aDEuN2MwLjE4LDAsMC4zMywwLjE1LDAuMzMsMC4zM1M4LjQxLDE1LjI0LDguNSwxNS4yNHptMi45My0wLjMzYzAsMC4xOC0wLjE1LDAuMzMtMC4zMywwLjMzcy0wLjMzLTAuMTUtMC4zMy0wLjMzdi00LjhjMC0wLjE4LDAuMTUtMC4zMywwLjMzLTAuMzNzMC4zMywwLjE1LDAuMzMsMC4zM1YxNC45MXptNS4zNCwwYzAsMC4xNC0wLjA5LDAuMjctMC4yMywwLjMyYy0wLjAzLDAuMDEtMC4wNywwLjAyLTAuMSwwLjAyYy0wLjEsMC0wLjItMC4wNS0wLjI3LTAuMTNsLTIuMzctMy4ydjMuMDFjMCwwLjE4LTAuMTUsMC4zMy0wLjMzLDAuMzNzLTAuMzMtMC4xNS0wLjMzLTAuMzN2LTQuOGMwLTAuMTQsMC4wOS0wLjI3LDAuMjMtMC4zMmMwLjAzLTAuMDEsMC4wNy0wLjAyLDAuMS0wLjAyYzAuMSwwLDAuMiwwLjA1LDAuMjcsMC4xM2wyLjM3LDMuMnYtMy4wMWMwLTAuMTgsMC4xNS0wLjMzLDAuMzMtMC4zM3MwLjMzLDAuMTUsMC4zMywwLjMzVjE0Ljkxem0wLjQyLTIuMzVoMS43YzAuMTgsMCwwLjMzLDAuMTUsMC4zMywwLjMzcy0wLjE1LDAuMzMtMC4zMywwLjMzaC0xLjdoLTAuMzdjLTAuMTgsMC0wLjMzLTAuMTUtMC4zMy0wLjMzdi00LjhjMC0wLjE4LDAuMTUtMC4zMywwLjMzLTAuMzNoMC4zN2gxLjdjMC4xOCwwLDAuMzMsMC4xNSwwLjMzLDAuMzNzLTAuMTUsMC4zMy0wLjMzLDAuMzNoLTEuN3YxLjUzaDEuN2MwLjE4LDAsMC4zMywwLjE1LDAuMzMsMC4zM3MtMC4xNSwwLjMzLTAuMzMsMC4zM2gtMS43VjEyLjU2eiIvPjwvc3ZnPg==" alt="LINE" class="line-icon">
   </a>
 </div>
 
