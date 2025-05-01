@@ -7,6 +7,7 @@
 <link rel="manifest" href="/site.webmanifest">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="霍爾果斯會計師事務所部落格 - 提供專業稅務、會計與企業經營相關文章與知識。" />
   <title>部落格 | 霍爾果斯會計師事務所</title>
   <link rel="stylesheet" href="/assets/css/style.css" />
   <link rel="stylesheet" href="/assets/css/footer-fix.css" />
@@ -40,44 +41,188 @@
 <body>
 
 <nav class="site-nav">
-  <ul>
-    <li><a href="/index.html">首頁</a></li>
-    <li><a href="/services.html">服務</a></li>
-    <li><a href="/team.html">團隊</a></li>
-    <li><a href="/blog.html">部落格</a></li>
-    <li><a href="/faq.html">常見問題</a></li>
-    <li><a href="/video.html">影片</a></li>
-    <li><a href="/contact.html">聯絡我們</a></li>
-  </ul>
+  <div class="nav-container">
+    <div class="logo">
+      <a href="/index.html">霍爾果斯會計師事務所</a>
+    </div>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+    </label>
+    <ul class="nav-menu">
+      <li><a href="/services.html">服務</a></li>
+      <li><a href="/team.html">團隊</a></li>
+      <li><a href="/blog.html" class="active">部落格</a></li>
+      <li><a href="/faq.html">常見問題</a></li>
+      <li><a href="/video.html">影片</a></li>
+      <li><a href="/contact.html">聯絡資訊</a></li>
+    </ul>
+  </div>
 </nav>
 
-  <main class="blog-page">
-    <h1>最新文章</h1>
-    <section class="blog-grid">
-      <article class="blog-card">
-        <h2>跨境電商如何合法節稅？</h2>
-        <p class="date">2025-04-10</p>
-        <p>面對台灣與境外稅務申報差異，電商業者該注意哪些風險與機會？</p>
-        <a href="/blog/cross-border-tax.html">閱讀更多</a>
-      </article>
-      <article class="blog-card">
-        <h2>新創公司常見帳務陷阱</h2>
-        <p class="date">2025-03-22</p>
-        <p>從開立發票、勞健保到稅務合規，新創最容易忽略的會計問題整理。</p>
-        <a href="/blog/startup-traps.html">閱讀更多</a>
-      </article>
-    </section>
-  </main>
+<main class="blog-page">
+  <div class="container">
+    <header class="page-header">
+      <h1>專業財稅知識分享</h1>
+      <p>我們定期發布最新稅務法規、會計知識、企業財務管理等實用資訊，協助您掌握財務脈動。</p>
+    </header>
+    
+    <div class="category-filter">
+      <button class="filter-btn active" data-category="all">全部文章</button>
+      <button class="filter-btn" data-category="tax">稅務相關</button>
+      <button class="filter-btn" data-category="accounting">會計記帳</button>
+      <button class="filter-btn" data-category="business">企業經營</button>
+    </div>
+    
+    <div class="blog-grid" id="blog-posts-container">
+      <!-- 文章將由 JavaScript 自動抓取並顯示 -->
+    </div>
+  </div>
+</main>
 
 <footer class="site-footer">
-  <p>&copy; 2025 霍爾果斯會計師事務所｜台中市西區建國路21號3樓之1｜電話：04-2220-5606</p>
+  <div class="footer-container">
+    <div class="footer-info">
+      <div class="footer-logo">霍爾果斯會計師事務所</div>
+      <p>提供專業稅務、會計與企業顧問服務</p>
+    </div>
+    
+    <div class="footer-contact">
+      <p>地址：台中市西區建國路21號3樓之1</p>
+      <p>電話：04-2220-5606</p>
+      <p>LINE：<a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入好友</a></p>
+    </div>
+  </div>
+  
+  <div class="footer-bottom">
+    <p>&copy; 2025 霍爾果斯會計師事務所</p>
+  </div>
 </footer>
 
-
 <div class="cta-floating">
-  <a href="/contact.html" class="cta-btn">預約諮詢</a>
-  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line">加入LINE</a>
+  <a href="/booking.html" class="cta-btn">免費諮詢</a>
+  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入官方LINE</a>
 </div>
+
+<!-- 自動抓取文章的腳本 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 模擬從伺服器獲取的部落格文章資料
+    // 在實際應用中，應該使用 AJAX 或 Fetch API 從後端獲取
+    const blogPosts = [
+      {
+        title: '跨境電商如何合法節稅？',
+        date: '2025-04-10',
+        summary: '面對台灣與境外稅務申報差異，電商業者該注意哪些風險與機會？了解如何合法規劃跨境稅務並避免重複課稅。',
+        url: '/blog/cross-border-tax.html',
+        category: 'tax',
+        image: '/assets/images/blog/cross-border-tax.jpg'
+      },
+      {
+        title: '新創公司常見帳務陷阱',
+        date: '2025-03-22',
+        summary: '從開立發票、勞健保到稅務合規，新創最容易忽略的會計問題整理。避免常見財務錯誤，確保公司財務健全運作。',
+        url: '/blog/startup-traps.html',
+        category: 'accounting',
+        image: '/assets/images/blog/startup-accounting.jpg'
+      },
+      {
+        title: '年度稅務規劃指南',
+        date: '2025-03-05',
+        summary: '提前做好稅務規劃，合理降低稅負，掌握各項扣除額與優惠措施。專業稅務師提供的實用建議，讓您節稅無憂。',
+        url: '/blog/tax-planning.html',
+        category: 'tax',
+        image: '/assets/images/blog/tax-planning.jpg'
+      },
+      {
+        title: '企業主必知的財務指標',
+        date: '2025-02-18',
+        summary: '解析企業經營必須掌握的重要財務指標，從現金流到營運資金，幫助您更精準地評估企業健康狀況與成長潛力。',
+        url: '/blog/financial-indicators.html',
+        category: 'business',
+        image: '/assets/images/blog/financial-indicators.jpg'
+      },
+      {
+        title: '記帳士與會計師有何不同？',
+        date: '2025-01-30',
+        summary: '許多創業者對於記帳士與會計師的服務範圍與權限感到疑惑，本文詳細解說兩者的差異，及何時應聘請會計師或記帳士。',
+        url: '/blog/accountant-differences.html',
+        category: 'accounting',
+        image: '/assets/images/blog/accountant-types.jpg'
+      },
+      {
+        title: '中小企業如何申請政府補助',
+        date: '2025-01-15',
+        summary: '台灣政府提供多項中小企業補助方案，從研發創新到數位轉型。了解申請資格、準備文件與申請流程，提高補助申請成功率。',
+        url: '/blog/government-subsidies.html',
+        category: 'business',
+        image: '/assets/images/blog/government-subsidies.jpg'
+      }
+    ];
+    
+    // 獲取文章容器
+    const postsContainer = document.getElementById('blog-posts-container');
+    
+    // 過濾按鈕功能
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    let currentCategory = 'all';
+    
+    filterButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        // 移除所有按鈕的 active 狀態
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // 設置當前按鈕為 active
+        this.classList.add('active');
+        
+        // 獲取類別
+        currentCategory = this.getAttribute('data-category');
+        
+        // 重新渲染文章
+        renderPosts(currentCategory);
+      });
+    });
+    
+    // 渲染文章函數
+    function renderPosts(category) {
+      // 清空容器
+      postsContainer.innerHTML = '';
+      
+      // 過濾文章
+      const filteredPosts = category === 'all' 
+        ? blogPosts 
+        : blogPosts.filter(post => post.category === category);
+      
+      // 渲染文章
+      filteredPosts.forEach(post => {
+        const postElement = document.createElement('article');
+        postElement.className = 'blog-card';
+        
+        postElement.innerHTML = `
+          <div class="blog-image">
+            <img src="${post.image}" alt="${post.title}" />
+          </div>
+          <div class="blog-content">
+            <h2><a href="${post.url}">${post.title}</a></h2>
+            <p class="date">${post.date}</p>
+            <p>${post.summary}</p>
+            <a href="${post.url}" class="read-more">閱讀更多</a>
+          </div>
+        `;
+        
+        postsContainer.appendChild(postElement);
+      });
+      
+      // 如果沒有文章
+      if (filteredPosts.length === 0) {
+        postsContainer.innerHTML = '<p class="no-posts">目前沒有相關文章，請稍後再來查看。</p>';
+      }
+    }
+    
+    // 初始渲染所有文章
+    renderPosts('all');
+  });
+</script>
 
 </body>
 </html>

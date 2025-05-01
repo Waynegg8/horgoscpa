@@ -7,99 +7,10 @@
 <link rel="manifest" href="/site.webmanifest">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="霍爾果斯會計師事務所預約諮詢 - 預約專業會計師、稅務顧問一對一服務。" />
   <title>預約諮詢 | 霍爾果斯會計師事務所</title>
   <link rel="stylesheet" href="/assets/css/style.css" />
   <link rel="stylesheet" href="/assets/css/footer-fix.css" />
-  <style>
-    /* 優化預約表單樣式 */
-    .booking-form {
-      max-width: 600px;
-      margin: 0 auto;
-      background: #f9f9f9;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    
-    .form-group {
-      margin-bottom: 20px;
-    }
-    
-    .form-group label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 8px;
-      color: #333;
-    }
-    
-    .form-group select,
-    .form-group input[type="text"],
-    .form-group input[type="tel"],
-    .form-group input[type="email"],
-    .form-group textarea {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 16px;
-      transition: border-color 0.3s;
-    }
-    
-    .form-group select:focus,
-    .form-group input:focus,
-    .form-group textarea:focus {
-      border-color: #0066cc;
-      outline: none;
-    }
-    
-    .options-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    
-    .option-btn {
-      background: #fff;
-      border: 1px solid #ddd;
-      padding: 8px 15px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .option-btn:hover {
-      border-color: #0066cc;
-    }
-    
-    .option-btn.selected {
-      background: #0066cc;
-      color: white;
-      border-color: #0066cc;
-    }
-    
-    .submit-btn {
-      background: #0066cc;
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      font-size: 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.3s;
-      width: 100%;
-      margin-top: 20px;
-    }
-    
-    .submit-btn:hover {
-      background: #004d99;
-    }
-    
-    /* 隱藏的表單欄位，用於儲存選擇的選項 */
-    .hidden-field {
-      display: none;
-    }
-  </style>
 
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
@@ -128,68 +39,108 @@
 <body>
 
 <nav class="site-nav">
-  <ul>
-    <li><a href="/index.html">霍爾果斯會計師事務所</a></li>
-    <li><a href="/services.html">服務</a></li>
-    <li><a href="/team.html">團隊</a></li>
-    <li><a href="/blog.html">部落格</a></li>
-    <li><a href="/faq.html">常見問題</a></li>
-    <li><a href="/video.html">影片</a></li>
-    <li><a href="/contact.html">聯絡資訊</a></li>
-  </ul>
+  <div class="nav-container">
+    <div class="logo">
+      <a href="/index.html">霍爾果斯會計師事務所</a>
+    </div>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+    </label>
+    <ul class="nav-menu">
+      <li><a href="/services.html">服務</a></li>
+      <li><a href="/team.html">團隊</a></li>
+      <li><a href="/blog.html">部落格</a></li>
+      <li><a href="/faq.html">常見問題</a></li>
+      <li><a href="/video.html">影片</a></li>
+      <li><a href="/contact.html">聯絡資訊</a></li>
+    </ul>
+  </div>
 </nav>
 
-<main class="booking-page" style="padding: 40px 20px;">
-  <h1 style="text-align: center; margin-bottom: 30px;">預約專業諮詢</h1>
-  <p style="text-align: center; max-width: 600px; margin: 0 auto 30px auto;">請填寫以下表單，我們將儘快為您安排合適的時間。</p>
+<main class="booking-page">
+  <div class="container">
+    <header class="page-header">
+      <h1>預約專業諮詢</h1>
+      <p>填寫以下表單，我們將儘快為您安排合適的時間與專業會計師進行諮詢。首次諮詢免費，讓我們幫助您解決財稅問題。</p>
+    </header>
 
-  <form action="https://formspree.io/f/xwpovnwy" method="POST" class="booking-form">
-    <div class="form-group">
-      <label>諮詢主題</label>
-      <div class="options-group" id="topic-options">
-        <button type="button" class="option-btn" data-value="稅務">稅務</button>
-        <button type="button" class="option-btn" data-value="會計">會計</button>
-        <button type="button" class="option-btn" data-value="顧問">企業顧問</button>
+    <form action="https://formspree.io/f/xwpovnwy" method="POST" class="booking-form">
+      <div class="form-group">
+        <label for="booking-name">姓名 <span class="required">*</span></label>
+        <input type="text" id="booking-name" name="name" required>
       </div>
-      <input type="hidden" name="topic" id="topic-field" required>
-    </div>
+      
+      <div class="form-group">
+        <label for="booking-phone">電話 <span class="required">*</span></label>
+        <input type="tel" id="booking-phone" name="phone" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="booking-email">電子郵件 <span class="required">*</span></label>
+        <input type="email" id="booking-email" name="email" required>
+      </div>
+      
+      <div class="form-group">
+        <label>諮詢主題 <span class="required">*</span></label>
+        <div class="options-group" id="topic-options">
+          <button type="button" class="option-btn" data-value="稅務">稅務</button>
+          <button type="button" class="option-btn" data-value="會計">會計</button>
+          <button type="button" class="option-btn" data-value="企業顧問">企業顧問</button>
+        </div>
+        <input type="hidden" name="topic" id="topic-field" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="booking-message">需求說明 (選填)</label>
+        <textarea id="booking-message" name="message" rows="4" placeholder="請簡單描述您的需求，以便我們提前準備相關資料"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" name="agreement" required>
+          <span>我已閱讀並同意<a href="#" target="_blank">隱私權政策</a></span>
+        </label>
+      </div>
+      
+      <button type="submit" class="submit-btn">送出預約申請</button>
+    </form>
     
-    <div class="form-group">
-      <label>姓名</label>
-      <input type="text" name="name" required>
+    <div class="booking-note">
+      <h3>預約須知</h3>
+      <ul>
+        <li>首次諮詢免費</li>
+        <li>預約送出後，我們將於 1 個工作日內與您聯繫確認</li>
+        <li>若需變更或取消預約，請提前告知</li>
+        <li>如有緊急需求，可直接致電 04-2220-5606</li>
+      </ul>
+      <p>您也可以透過 LINE 直接與我們聯繫預約：<a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入好友</a></p>
     </div>
-    
-    <div class="form-group">
-      <label>電話</label>
-      <input type="tel" name="phone" required>
-    </div>
-    
-    <div class="form-group">
-      <label>電子郵件</label>
-      <input type="email" name="email" required>
-    </div>
-    
-    <div class="form-group">
-      <label>需求說明 (選填)</label>
-      <textarea name="message" rows="3" placeholder="請簡單描述您的需求，我們將依據您的需求安排專業會計師與您聯繫"></textarea>
-    </div>
-    
-    <button type="submit" class="submit-btn">送出預約申請</button>
-  </form>
-  
-  <div style="margin-top: 40px; text-align: center;">
-    <p>您也可以透過 LINE 或電話直接與我們聯繫</p>
-    <p>LINE ID：<a href="https://line.me/R/ti/p/@208ihted" target="_blank">@208ihted</a> | 電話：04-2220-5606</p>
   </div>
 </main>
 
 <footer class="site-footer">
-  <p>&copy; 2025 霍爾果斯會計師事務所｜台中市西區建國路21號3樓之1｜電話：04-2220-5606</p>
+  <div class="footer-container">
+    <div class="footer-info">
+      <div class="footer-logo">霍爾果斯會計師事務所</div>
+      <p>提供專業稅務、會計與企業顧問服務</p>
+    </div>
+    
+    <div class="footer-contact">
+      <p>地址：台中市西區建國路21號3樓之1</p>
+      <p>電話：04-2220-5606</p>
+      <p>LINE：<a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入好友</a></p>
+    </div>
+  </div>
+  
+  <div class="footer-bottom">
+    <p>&copy; 2025 霍爾果斯會計師事務所</p>
+  </div>
 </footer>
 
 <div class="cta-floating">
-  <a href="/booking.html" class="cta-btn">📅<span>預約諮詢</span></a>
-  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line">💬<span>加入LINE</span></a>
+  <a href="/booking.html" class="cta-btn">免費諮詢</a>
+  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入官方LINE</a>
 </div>
 
 <!-- 選項按鈕功能 -->
@@ -215,8 +166,8 @@
         });
       });
     });
+    
   });
 </script>
 
-</body>
-</html>
+<!-- 移除日期相關的 JavaScript -->
