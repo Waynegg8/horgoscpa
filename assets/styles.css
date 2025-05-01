@@ -212,3 +212,29 @@ button:hover, .cta-button:hover {
         font-size: 16px;
     }
 }
+
+/* Responsive adjustments for better layout on all devices */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 35px;
+    }
+
+    .cta-button {
+        padding: 12px 16px;
+    }
+
+    iframe {
+        width: 100%;
+    }
+}
+
+/* Ensuring appropriate margins and padding for all sections */
+section, .map-container {
+    margin: 20px;
+    padding: 20px;
+}
+
+footer {
+    text-align: center;
+    margin-top: 40px;
+}
