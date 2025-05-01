@@ -14,6 +14,23 @@
   
   <!-- 自定義樣式 -->
   <style>
+    /* 字體定義 */
+    @font-face {
+      font-family: 'Touch Me Sans Petite';
+      src: url('/assets/fonts/TouchMeSans-PetiteRegular.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    
+    @font-face {
+      font-family: 'Kaleko 105';
+      src: url('/assets/fonts/kaleko-105-bold.woff2') format('woff2');
+      font-weight: bold;
+      font-style: normal;
+      font-display: swap;
+    }
+    
     /* 基本樣式 */
     body {
       font-family: "思源黑體", "微軟正黑體", sans-serif;
@@ -21,6 +38,18 @@
       padding: 0;
       color: #333;
       line-height: 1.6;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+      font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+    }
+    
+    a, button, .btn, .read-more {
+      font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+    }
+    
+    p, li, td, input, textarea, select, label {
+      font-family: "Touch Me Sans Petite", "思源黑體", "微軟正黑體", sans-serif;
     }
     
     a {
@@ -40,7 +69,7 @@
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 0 30px;
     }
     
     /* 導航欄樣式 */
@@ -50,23 +79,41 @@
       position: sticky;
       top: 0;
       z-index: 1000;
+      padding: 5px 0;
     }
     
     .nav-container {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 15px 20px;
+      padding: 15px 30px;
       max-width: 1200px;
       margin: 0 auto;
     }
     
+    .logo {
+      display: flex;
+      flex-direction: column;
+    }
+    
     .logo a {
       color: #fff;
-      font-size: 1.3rem;
+      text-decoration: none;
+    }
+    
+    .logo-main {
+      font-size: 1.4rem;
       font-weight: 700;
       letter-spacing: 0.5px;
-      text-decoration: none;
+      font-family: "思源黑體", "微軟正黑體", sans-serif;
+    }
+    
+    .logo-sub {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+      font-family: "Kaleko 105", sans-serif;
     }
     
     .nav-menu {
@@ -77,34 +124,24 @@
     }
     
     .nav-menu li {
-      margin-left: 30px;
+      margin-left: 35px;
     }
     
     .nav-menu a {
       color: rgba(255, 255, 255, 0.9);
       position: relative;
-      padding-bottom: 5px;
+      padding: 8px 12px;
       font-weight: 500;
       text-decoration: none;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+      font-family: "思源黑體", "微軟正黑體", sans-serif;
     }
     
     .nav-menu a:hover, .nav-menu a.active {
       color: #fff;
-    }
-    
-    .nav-menu a::after {
-      content: '';
-      position: absolute;
-      width: 0;
-      height: 2px;
-      bottom: 0;
-      left: 0;
-      background-color: #fff;
-      transition: width 0.3s;
-    }
-    
-    .nav-menu a:hover::after, .nav-menu a.active::after {
-      width: 100%;
+      border-color: rgba(255, 255, 255, 0.4);
     }
     
     /* 默認隱藏漢堡選單相關元素 */
@@ -118,10 +155,11 @@
     
     /* 英雄區塊 */
     .hero {
-      background: linear-gradient(rgba(0, 77, 153, 0.85), rgba(0, 77, 153, 0.85)), url('/assets/images/hero-bg.jpg') center/cover no-repeat;
+      background: linear-gradient(rgba(0, 77, 153, 0.85), rgba(0, 77, 153, 0.85)), url('../images/hero-bg.jpg') center/cover no-repeat;
       color: white;
-      padding: 100px 20px;
+      padding: 120px 20px;
       text-align: center;
+      margin-bottom: 40px;
     }
     
     .hero-content {
@@ -130,27 +168,28 @@
     }
     
     .hero h1 {
-      font-size: 2.5rem;
-      margin-bottom: 20px;
+      font-size: 2.8rem;
+      margin-bottom: 25px;
       color: #fff;
     }
     
     .hero p {
-      font-size: 1.2rem;
+      font-size: 1.4rem;
       margin-bottom: 30px;
       opacity: 0.9;
+      line-height: 1.7;
     }
     
     /* 區塊標題 */
     .section-title {
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 50px;
     }
     
     .section-title h2 {
-      font-size: 2rem;
+      font-size: 2.2rem;
       color: #004999;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
       position: relative;
       display: inline-block;
     }
@@ -158,62 +197,71 @@
     .section-title h2:after {
       content: "";
       position: absolute;
-      width: 60px;
+      width: 70px;
       height: 3px;
       background-color: #0066cc;
-      bottom: -10px;
+      bottom: -12px;
       left: 50%;
       transform: translateX(-50%);
     }
     
     .section-title p {
-      max-width: 700px;
-      margin: 15px auto 0;
+      max-width: 800px;
+      margin: 20px auto 0;
       color: #666;
+      font-size: 1.1rem;
     }
     
     /* 關於區塊 */
     .about-section {
       background-color: #f9f9f9;
-      padding: 60px 0;
+      padding: 80px 0;
+      margin-bottom: 40px;
     }
     
     .about-content {
       text-align: center;
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
+    }
+    
+    .about-content p {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      margin-bottom: 25px;
     }
     
     /* 服務區塊 */
     .services-section {
-      padding: 60px 0;
+      padding: 80px 0;
+      margin-bottom: 40px;
     }
     
     .services-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 30px;
-      margin-top: 40px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 40px;
+      margin-top: 50px;
     }
     
     .service-card {
       background: white;
-      border-radius: 8px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      padding: 40px 30px;
       text-align: center;
       transition: transform 0.3s, box-shadow 0.3s;
     }
     
     .service-card:hover {
       transform: translateY(-10px);
-      box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.15);
     }
     
     .service-icon {
-      margin: 0 auto 20px;
-      width: 80px;
-      height: 80px;
+      margin: 0 auto 25px;
+      width: 90px;
+      height: 90px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -222,14 +270,21 @@
     }
     
     .service-icon img {
-      width: 40px;
-      height: 40px;
+      width: 45px;
+      height: 45px;
     }
     
     .service-card h3 {
+      font-size: 1.5rem;
       margin-top: 0;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
       color: #004999;
+    }
+    
+    .service-card p {
+      margin-bottom: 25px;
+      color: #555;
+      line-height: 1.7;
     }
     
     .read-more {
@@ -238,6 +293,7 @@
       color: #0066cc;
       margin-top: 15px;
       position: relative;
+      font-size: 1.05rem;
     }
     
     .read-more:after {
@@ -252,31 +308,32 @@
     
     /* 部落格區塊 */
     .blog-section {
-      padding: 60px 0;
+      padding: 80px 0;
       background-color: #f9f9f9;
+      margin-bottom: 40px;
     }
     
     .blog-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 30px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 40px;
     }
     
     .blog-card {
       background: white;
-      border-radius: 8px;
+      border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
       transition: transform 0.3s, box-shadow 0.3s;
     }
     
     .blog-card:hover {
       transform: translateY(-10px);
-      box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.15);
     }
     
     .blog-image {
-      height: 200px;
+      height: 220px;
       overflow: hidden;
     }
     
@@ -292,19 +349,20 @@
     }
     
     .blog-content {
-      padding: 25px;
+      padding: 30px;
     }
     
     .blog-card .date {
       color: #666;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       display: block;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
     
     .blog-card h3 {
       margin: 0 0 15px 0;
-      font-size: 1.3rem;
+      font-size: 1.4rem;
+      line-height: 1.4;
     }
     
     .blog-card h3 a {
@@ -316,23 +374,32 @@
       color: #0066cc;
     }
     
+    .blog-card p {
+      color: #555;
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+    
     /* 按鈕樣式 */
     .btn {
       display: inline-block;
       background-color: #0066cc;
       color: white;
-      padding: 12px 24px;
-      border-radius: 4px;
+      padding: 14px 28px;
+      border-radius: 5px;
       text-decoration: none;
       font-weight: 600;
+      font-size: 1.05rem;
       transition: all 0.3s ease;
+      border: 2px solid #0066cc;
     }
     
     .btn:hover {
       background-color: #004d99;
+      border-color: #004d99;
       color: white;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
     
     .btn-outline {
@@ -359,15 +426,17 @@
     
     .footer-container {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       max-width: 1200px;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 0 30px;
     }
     
     .footer-text p {
       margin: 0;
+      font-size: 0.95rem;
+      font-family: "思源黑體", "微軟正黑體", sans-serif;
     }
     
     .footer-text a {
@@ -387,41 +456,42 @@
       transform: translateY(-50%);
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      z-index: 99;
+      gap: 12px;
+      z-index:.99;
     }
     
     .cta-floating .cta-btn {
       background-color: #0066cc;
       color: #fff;
-      padding: 12px 20px;
-      border-radius: 6px 0 0 6px;
+      padding: 15px 25px;
+      border-radius: 8px 0 0 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: -2px 2px 10px rgba(0,0,0,0.2);
+      box-shadow: -3px 3px 15px rgba(0,0,0,0.2);
       transition: all 0.3s ease;
       font-weight: 600;
-      font-size: 14px;
+      font-size: 16px;
       text-decoration: none;
+      font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
     }
     
     .cta-floating .cta-btn:hover {
-      transform: translateX(-5px);
+      transform: translateX(-8px);
       color: #fff;
     }
     
     .cta-floating .cta-btn.line {
       background-color: #06c755;
-      width: 46px;
-      height: 46px;
+      width: 56px;
+      height: 56px;
       padding: 0;
-      border-radius: 6px 0 0 6px;
+      border-radius: 8px 0 0 8px;
     }
     
     .cta-floating .cta-btn.line img {
-      width: 24px;
-      height: 24px;
+      width: 32px;
+      height: 32px;
     }
     
     .cta-floating .cta-btn.line:hover {
@@ -480,7 +550,7 @@
       }
       
       .nav-toggle:checked ~ .nav-menu {
-        max-height: 300px;
+        max-height: 350px;
       }
       
       .nav-menu li {
@@ -490,12 +560,27 @@
         padding: 10px 0;
       }
       
+      .nav-menu a {
+        display: block;
+        border: none;
+      }
+      
+      .hero {
+        padding: 80px 20px;
+      }
+      
       .hero h1 {
-        font-size: 2rem;
+        font-size: 2.2rem;
       }
       
       .hero p {
-        font-size: 1rem;
+        font-size: 1.1rem;
+      }
+      
+      .about-section,
+      .services-section,
+      .blog-section {
+        padding: 60px 0;
       }
       
       .footer-container {
@@ -505,6 +590,14 @@
       
       .footer-text {
         margin-bottom: 10px;
+      }
+      
+      .cta-floating {
+        bottom: 20px;
+        top: auto;
+        right: 20px;
+        transform: none;
+        flex-direction: row;
       }
     }
   </style>
@@ -552,7 +645,10 @@
 <nav class="site-nav">
   <div class="nav-container">
     <div class="logo">
-      <a href="/index.html">霍爾果斯會計師事務所</a>
+      <a href="/index.html">
+        <div class="logo-main">霍爾果斯會計師事務所</div>
+        <div class="logo-sub">HorgosCPA</div>
+      </a>
     </div>
     <input type="checkbox" id="nav-toggle" class="nav-toggle">
     <label for="nav-toggle" class="nav-toggle-label">
@@ -627,7 +723,7 @@
       </div>
     </div>
     
-    <div class="text-center" style="margin-top: 40px;">
+    <div class="text-center" style="margin-top: 50px;">
       <a href="/services.html" class="btn">查看所有服務</a>
     </div>
   </div>
@@ -645,7 +741,7 @@
       <!-- 文章將由 JavaScript 自動抓取並顯示 -->
     </div>
     
-    <div class="text-center" style="margin-top: 40px;">
+    <div class="text-center" style="margin-top: 50px;">
       <a href="/blog.html" class="btn btn-outline">查看更多文章</a>
     </div>
   </div>
