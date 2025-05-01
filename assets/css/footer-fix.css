@@ -1,0 +1,26 @@
+/* 強制頁尾置底的獨立解決方案 */
+html {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+body {
+  position: relative;
+  min-height: 100%;
+  margin: 0;
+  padding-bottom: 60px; /* 必須等於或大於footer高度 */
+}
+
+.site-footer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60px; /* 設定一個固定的高度 */
+  background: #111;
+}
