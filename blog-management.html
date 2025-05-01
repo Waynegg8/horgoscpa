@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow"> <!-- 防止搜索引擎索引管理頁面 -->
+  <title>文章管理 | 霍爾果斯會計師事務所</title>
+  
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- 引用樣式表 -->
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  
+  <style>
+    /* 管理頁面特定樣式 */
+    .admin-container {
+      padding: 30px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      max-width: 1000px;
+      margin: 30px auto;
+    }
+    
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .admin-title {
+      margin: 0;
+      color: #002147;
+    }
+    
+    .admin-actions {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .admin-table th {
+      background-color: #f5f7fa;
+      font-weight: 600;
+    }
+    
+    .admin-table tr:hover {
+      background-color: #f9f9f9;
+    }
+    
+    .admin-table .actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .admin-btn {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    
+    .delete-btn {
+      background-color: #ff4d4f;
+      color: white;
+    }
+    
+    .delete-btn:hover {
+      background-color: #ff2e30;
+    }
+    
+    .view-btn {
+      background-color: #0066cc;
+      color: white;
+    }
+    
+    .view-btn:hover {
+      background-color: #0055aa;
+    }
+    
+    .refresh-btn {
+      background-color: #52c41a;
+      color: white;
+    }
+    
+    .refresh-btn:hover {
+      background-color: #47a919;
+    }
+    
+    /* 分頁樣式 */
+    .admin-pagination {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .page-btn {
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      background-color: #fff;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    
+    .page-btn.active {
+      background-color: #0066cc;
+      color: white;
+      border-color: #0066cc;
+    }
+    
+    .page-btn:hover:not(.active) {
+      background-color: #f0f0f0;
+    }
+    
+    /* 確認彈窗樣式 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      max-width: 450px;
+      width: 80%;
+      text-align: center;
+    }
+    
+    .modal-title {
+      margin-top: 0;
+      color: #333;
+    }
+    
+    .modal-message {
+      margin-bottom: 25px;
+      line-height: 1.6;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+    
+    .cancel-btn {
+      background-color: #f0f0f0;
+      color: #333;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .cancel-btn:hover {
+      background-color: #e0e0e0;
+    }
+    
+    .confirm-btn {
+      background-color: #ff4d4f;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .confirm-btn:hover {
+      background-color: #ff2e30;
+    }
+    
+    /* 加載動畫 */
+    .loading {
+      text-align: center;
+      padding: 50px;
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(0, 102, 204, 0.2);
+      border-radius: 50%;
+      border-top-color: #0066cc;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* 訊息提示 */
+    .message {
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .success {
+      background-color: #f6ffed;
+      border: 1px solid #b7eb8f;
+      color: #52c41a;
+    }
+    
+    .error {
+      background-color: #fff2f0;
+      border: 1px solid #ffccc7;
+      color: #ff4d4f;
+    }
+    
+    /* 文件上傳區域 */
+    .upload-area {
+      margin-top: 30px;
+      padding: 25px;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .upload-title {
+      margin-top: 0;
+      color: #333;
+    }
+    
+    .upload-input {
+      margin: 15px 0;
+    }
+    
+    .upload-btn {
+      background-color: #0066cc;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .upload-btn:hover {
+      background-color: #0055aa;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 導航欄 -->
+<nav class="site-nav">
+  <div class="nav-container">
+    <div class="logo">
+      <a href="/index.html">
+        <div class="logo-main">霍爾果斯會計師事務所</div>
+        <div class="logo-sub">HorgosCPA</div>
+      </a>
+    </div>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+    </label>
+    <ul class="nav-menu">
+      <li><a href="/services.html">服務項目</a></li>
+      <li><a href="/team.html">服務團隊</a></li>
+      <li><a href="/blog.html">部落格</a></li>
+      <li><a href="/faq.html">常見問題</a></li>
+      <li><a href="/video.html">影片</a></li>
+      <li><a href="/contact.html">聯絡資訊</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- 管理頁面內容 -->
+<main class="admin-page">
+  <div class="container">
+    <div class="admin-container">
+      <div class="admin-header">
+        <h1 class="admin-title">文章管理</h1>
+        <div class="admin-actions">
+          <button id="refresh-btn" class="admin-btn refresh-btn">刷新列表</button>
+          <a href="/blog.html" class="admin-btn view-btn">查看博客</a>
+        </div>
+      </div>
+      
+      <!-- 訊息容器 -->
+      <div id="message-container"></div>
+      
+      <!-- 文章列表表格 -->
+      <div id="articles-container">
+        <div class="loading">
+          <div class="loading-spinner"></div>
+          <p>加載文章中...</p>
+        </div>
+      </div>
+      
+      <!-- 分頁控制 -->
+      <div class="admin-pagination" id="pagination-container"></div>
+      
+      <!-- 上傳新 Word 文章區域 -->
+      <div class="upload-area">
+        <h2 class="upload-title">上傳新文章</h2>
+        <p>請選擇 Word 文檔以創建新文章。文檔名稱應使用日期前綴格式（例如：2025-05-01-文章標題.docx）</p>
+        <form id="upload-form">
+          <div class="upload-input">
+            <input type="file" id="word-file" accept=".docx" required>
+          </div>
+          <button type="submit" class="upload-btn">上傳文章</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- 確認刪除彈窗 -->
+<div id="delete-modal" class="modal">
+  <div class="modal-content">
+    <h2 class="modal-title">確認刪除</h2>
+    <p class="modal-message">您確定要刪除這篇文章嗎？此操作不可恢復。</p>
+    <div class="modal-buttons">
+      <button id="cancel-delete" class="cancel-btn">取消</button>
+      <button id="confirm-delete" class="confirm-btn">確認刪除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 頁尾區域 -->
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-text">
+      <p>&copy; 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
+    </div>
+  </div>
+</footer>
+
+<!-- 管理頁面腳本 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 元素
+    const articlesContainer = document.getElementById('articles-container');
+    const paginationContainer = document.getElementById('pagination-container');
+    const messageContainer = document.getElementById('message-container');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const deleteModal = document.getElementById('delete-modal');
+    const cancelDeleteBtn = document.getElementById('cancel-delete');
+    const confirmDeleteBtn = document.getElementById('confirm-delete');
+    const uploadForm = document.getElementById('upload-form');
+    
+    // 狀態
+    let articleData = null;
+    let currentPage = 1;
+    let itemsPerPage = 10;
+    let articleToDelete = null;
+    
+    // 初始加載文章
+    loadArticles();
+    
+    // 刷新按鈕事件
+    refreshBtn.addEventListener('click', loadArticles);
+    
+    // 上傳表單提交
+    uploadForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      uploadWordDocument();
+    });
+    
+    // 取消刪除按鈕
+    cancelDeleteBtn.addEventListener('click', function() {
+      closeModal();
+    });
+    
+    // 確認刪除按鈕
+    confirmDeleteBtn.addEventListener('click', function() {
+      if (articleToDelete) {
+        deleteArticle(articleToDelete);
+        closeModal();
+      }
+    });
+    
+    // 點擊模態框背景關閉
+    window.addEventListener('click', function(e) {
+      if (e.target === deleteModal) {
+        closeModal();
+      }
+    });
+    
+    /**
+     * 加載文章列表
+     */
+    async function loadArticles() {
+      try {
+        // 顯示加載中
+        articlesContainer.innerHTML = `
+          <div class="loading">
+            <div class="loading-spinner"></div>
+            <p>加載文章中...</p>
+          </div>
+        `;
+        
+        // 加載數據
+        const response = await fetch('/assets/data/blog-posts.json');
+        if (!response.ok) {
+          throw new Error('無法加載文章數據');
+        }
+        
+        const data = await response.json();
+        articleData = data;
+        
+        // 渲染文章列表
+        renderArticles();
+        
+      } catch (error) {
+        console.error('加載文章出錯:', error);
+        articlesContainer.innerHTML = `
+          <div class="message error">
+            加載文章時出現問題：${error.message}
+          </div>
+        `;
+      }
+    }
+    
+    /**
+     * 渲染文章列表
+     */
+    function renderArticles() {
+      if (!articleData || !articleData.posts || articleData.posts.length === 0) {
+        articlesContainer.innerHTML = `
+          <div class="message">尚無文章</div>
+        `;
+        paginationContainer.innerHTML = '';
+        return;
+      }
+      
+      const posts = articleData.posts;
+      
+      // 計算分頁
+      const totalPages = Math.ceil(posts.length / itemsPerPage);
+      currentPage = Math.min(currentPage, totalPages);
+      
+      // 獲取當前頁的文章
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = Math.min(startIndex + itemsPerPage, posts.length);
+      const currentPosts = posts.slice(startIndex, endIndex);
+      
+      // 創建表格
+      let tableHTML = `
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>標題</th>
+              <th>日期</th>
+              <th>分類</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      // 添加行
+      currentPosts.forEach(post => {
+        tableHTML += `
+          <tr>
+            <td>${post.title}</td>
+            <td>${post.date}</td>
+            <td>${post.category}</td>
+            <td class="actions">
+              <a href="${post.url}" target="_blank" class="admin-btn view-btn">查看</a>
+              <button class="admin-btn delete-btn" data-url="${post.url}">刪除</button>
+            </td>
+          </tr>
+        `;
+      });
+      
+      tableHTML += `
+          </tbody>
+        </table>
+      `;
+      
+      articlesContainer.innerHTML = tableHTML;
+      
+      // 綁定刪除按鈕事件
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          articleToDelete = this.getAttribute('data-url');
+          openModal();
+        });
+      });
+      
+      // 渲染分頁
+      renderPagination(totalPages);
+    }
+    
+    /**
+     * 渲染分頁控制
+     */
+    function renderPagination(totalPages) {
+      if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+      }
+      
+      let paginationHTML = '';
+      
+      // 上一頁按鈕
+      paginationHTML += `
+        <button class="page-btn ${currentPage === 1 ? 'disabled' : ''}" 
+                ${currentPage === 1 ? 'disabled' : ''} data-page="prev">
+          &laquo;
+        </button>
+      `;
+      
+      // 頁碼按鈕
+      for (let i = 1; i <= totalPages; i++) {
+        paginationHTML += `
+          <button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">
+            ${i}
+          </button>
+        `;
+      }
+      
+      // 下一頁按鈕
+      paginationHTML += `
+        <button class="page-btn ${currentPage === totalPages ? 'disabled' : ''}" 
+                ${currentPage === totalPages ? 'disabled' : ''} data-page="next">
+          &raquo;
+        </button>
+      `;
+      
+      paginationContainer.innerHTML = paginationHTML;
+      
+      // 綁定分頁按鈕事件
+      document.querySelectorAll('.page-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          if (this.disabled) return;
+          
+          const page = this.getAttribute('data-page');
+          
+          if (page === 'prev') {
+            currentPage--;
+          } else if (page === 'next') {
+            currentPage++;
+          } else {
+            currentPage = parseInt(page);
+          }
+          
+          renderArticles();
+          
+          // 滾動到表格頂部
+          articlesContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+      });
+    }
+    
+    /**
+     * 刪除文章
+     */
+    async function deleteArticle(articleUrl) {
+      try {
+        // 獲取文件名
+        const filename = articleUrl.split('/').pop();
+        
+        // 發送刪除請求到 GitHub API
+        const response = await fetch(`/api/delete-article?file=${filename}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            file: filename,
+            token: prompt('請輸入管理員令牌:', '')
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showMessage('文章已成功刪除！', 'success');
+          loadArticles(); // 重新加載文章列表
+        } else {
+          showMessage(`刪除失敗: ${result.message}`, 'error');
+        }
+      } catch (error) {
+        console.error('刪除文章時出錯:', error);
+        showMessage(`刪除失敗: ${error.message}`, 'error');
+      }
+    }
+    
+    /**
+     * 上傳 Word 文檔
+     */
+    async function uploadWordDocument() {
+      try {
+        const fileInput = document.getElementById('word-file');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+          showMessage('請選擇文件', 'error');
+          return;
+        }
+        
+        // 檢查文件名格式
+        if (!file.name.match(/^\d{4}-\d{2}-\d{2}-.+\.docx$/)) {
+          showMessage('文件名格式不正確，應為: YYYY-MM-DD-文章標題.docx', 'error');
+          return;
+        }
+        
+        // 創建 FormData 對象
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('token', prompt('請輸入管理員令牌:', ''));
+        
+        // 發送上傳請求
+        const response = await fetch('/api/upload-article', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showMessage('文章已成功上傳！', 'success');
+          fileInput.value = ''; // 清空文件輸入
+          loadArticles(); // 重新加載文章列表
+        } else {
+          showMessage(`上傳失敗: ${result.message}`, 'error');
+        }
+      } catch (error) {
+        console.error('上傳文章時出錯:', error);
+        showMessage(`上傳失敗: ${error.message}`, 'error');
+      }
+    }
+    
+    /**
+     * 顯示訊息
+     */
+    function showMessage(message, type = 'success') {
+      messageContainer.innerHTML = `
+        <div class="message ${type}">
+          ${message}
+        </div>
+      `;
+      
+      // 5秒後自動隱藏訊息
+      setTimeout(() => {
+        messageContainer.innerHTML = '';
+      }, 5000);
+    }
+    
+    /**
+     * 打開確認刪除彈窗
+     */
+    function openModal() {
+      deleteModal.style.display = 'flex';
+    }
+    
+    /**
+     * 關閉確認刪除彈窗
+     */
+    function closeModal() {
+      deleteModal.style.display = 'none';
+    }
+  });
+</script>
+
+</body>
+</html>

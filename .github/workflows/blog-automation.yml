@@ -14,11 +14,22 @@ on:
         required: true
         default: 'true'
         type: boolean
+      handle_deletion:
+        description: '處理文章刪除'
+        required: true
+        default: 'true'
+        type: boolean
   
   # 當Word文檔上傳到指定目錄時觸發
   push:
     paths:
       - 'word-docs/**/*.docx'
+      - 'blog/**/*.html'
+  
+  # 當文章被刪除時觸發
+  delete:
+    paths:
+      - 'blog/**/*.html'
   
   # 每天定時執行
   schedule:
@@ -32,6 +43,8 @@ jobs:
       # 檢出代碼
       - name: 檢出代碼
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 包含完整歷史記錄用於檢測刪除
       
       # 設置 Python 環境
       - name: 設置 Python
@@ -63,6 +76,24 @@ jobs:
             echo "word-docs 目錄為空或不存在，跳過處理"
           fi
       
+      # 檢測已刪除的HTML文件
+      - name: 檢測已刪除的HTML文件
+        id: check_deleted
+        if: ${{ github.event_name == 'delete' || github.event.inputs.handle_deletion == 'true' }}
+        run: |
+          # 獲取已刪除的HTML文件列表
+          git diff --name-only --diff-filter=D HEAD~1 HEAD | grep -E '^blog/.*\.html$' > deleted_files.txt
+          
+          # 檢查是否有文件被刪除
+          if [ -s deleted_files.txt ]; then
+            echo "檢測到以下HTML文件已被刪除:"
+            cat deleted_files.txt
+            echo "html_deleted=true" >> $GITHUB_OUTPUT
+          else
+            echo "沒有HTML文件被刪除"
+            echo "html_deleted=false" >> $GITHUB_OUTPUT
+          fi
+      
       # 提交生成的HTML文件
       - name: 提交生成的HTML文件
         id: commit-html
@@ -84,7 +115,7 @@ jobs:
       
       # 更新博客JSON文件
       - name: 更新博客JSON文件
-        if: ${{ steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' }}
+        if: ${{ steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' }}
         run: |
           python .github/scripts/update_blog_posts.py
         env:

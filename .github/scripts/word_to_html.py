@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-改進的Word文檔轉HTML腳本
-自動將Word文檔轉換為網站所需的HTML格式，並使用全站CSS樣式
+改進的Word文檔轉HTML腳本 (增強版)
+自動將Word文檔轉換為網站所需的HTML格式，並支援標籤和分類功能
 
 依賴套件:
 - python-docx: 用於讀取.docx文件
@@ -39,12 +39,22 @@ PROCESSED_LOG_FILE = ".processed_docs.json"  # 已處理文件記錄
 
 # 配置博客分類
 BLOG_CATEGORIES = {
-    "稅務": ["稅務", "報稅", "節稅", "扣繳", "稅法", "所得稅", "營業稅", "營所稅", "綜所稅", "稅務規劃"],
-    "會計": ["會計", "記帳", "帳務", "財報", "財務報表", "會計準則", "審計", "記帳士"],
-    "創業": ["創業", "新創", "公司設立", "企業", "經營", "營運", "公司登記"],
+    "稅務相關": ["稅務", "報稅", "節稅", "扣繳", "稅法", "所得稅", "營業稅", "營所稅", "綜所稅", "稅務規劃"],
+    "會計記帳": ["會計", "記帳", "帳務", "財報", "財務報表", "會計準則", "審計", "記帳士"],
+    "企業經營": ["創業", "新創", "公司設立", "企業", "經營", "營運", "公司登記", "管理"],
     "財務規劃": ["財務", "投資", "理財", "資金", "現金流", "資產", "負債"],
-    "法律": ["法律", "法規", "合約", "合同", "契約", "勞基法", "公司法", "商業法", "法務"],
+    "法律知識": ["法律", "法規", "合約", "合同", "契約", "勞基法", "公司法", "商業法", "法務"],
     "進出口": ["進出口", "跨境", "報關", "關稅", "國際貿易", "貿易", "外銷", "出口", "進口"]
+}
+
+# 分類對應的英文識別碼，用於URL和篩選
+CATEGORY_CODES = {
+    "稅務相關": "tax",
+    "會計記帳": "accounting",
+    "企業經營": "business",
+    "財務規劃": "financial",
+    "法律知識": "legal",
+    "進出口": "import-export"
 }
 
 def load_processed_docs() -> Dict[str, str]:
@@ -179,8 +189,8 @@ def generate_tags(title: str, paragraphs: List[Dict[str, str]]) -> List[str]:
     # 計算詞頻
     word_counts = Counter(filtered_words)
     
-    # 提取頻率最高的5個詞作為標籤候選
-    top_words = [word for word, _ in word_counts.most_common(10)]
+    # 提取頻率最高的詞作為標籤候選
+    top_words = [word for word, _ in word_counts.most_common(12)]
     
     # 根據預設分類篩選標籤
     selected_tags = []
@@ -209,31 +219,43 @@ def generate_tags(title: str, paragraphs: List[Dict[str, str]]) -> List[str]:
     
     return selected_tags
 
-def determine_primary_category(tags: List[str]) -> str:
+def determine_primary_category(tags: List[str], title: str, paragraphs: List[Dict[str, str]]) -> Tuple[str, str]:
     """
-    根據標籤確定主要分類
+    根據標籤、標題和內容確定主要分類
     :param tags: 標籤列表
-    :return: 主要分類
+    :param title: 文章標題
+    :param paragraphs: 段落列表
+    :return: (主要分類中文名, 主要分類英文代碼)
     """
+    # 合併所有文本用於分析
+    full_text = title + " " + " ".join([p["text"] for p in paragraphs]) + " " + " ".join(tags)
+    
     category_scores = {category: 0 for category in BLOG_CATEGORIES}
     
     # 計算每個分類的得分
+    for category, keywords in BLOG_CATEGORIES.items():
+        for keyword in keywords:
+            if keyword in full_text:
+                category_scores[category] += full_text.count(keyword) * 2  # 給予更高權重
+    
+    # 標籤也進行計分
     for tag in tags:
         for category, keywords in BLOG_CATEGORIES.items():
             if any(keyword in tag for keyword in keywords):
-                category_scores[category] += 1
+                category_scores[category] += 5  # 標籤命中給予更高權重
     
     # 選取得分最高的分類
     primary_category = max(category_scores.items(), key=lambda x: x[1])[0]
     
-    # 如果沒有任何匹配，默認為"財務規劃"
+    # 如果沒有任何匹配，默認為"稅務相關"
     if category_scores[primary_category] == 0:
-        return "財務規劃"
+        primary_category = "稅務相關"
     
-    return primary_category
+    # 返回中文分類名和英文代碼
+    return primary_category, CATEGORY_CODES.get(primary_category, "tax")
 
 def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str], 
-                 date: str, summary: str, primary_category: str, 
+                 date: str, summary: str, primary_category: str, category_code: str,
                  image: str = DEFAULT_IMAGE) -> str:
     """
     生成HTML內容，使用全站CSS樣式
@@ -242,7 +264,8 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     :param tags: 標籤列表
     :param date: 日期
     :param summary: 摘要
-    :param primary_category: 主要分類
+    :param primary_category: 主要分類(中文)
+    :param category_code: 分類代碼(英文)
     :param image: 圖片名稱
     :return: HTML內容
     """
@@ -312,6 +335,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
 </head>
 <body>
 
+<!-- 導航欄 -->
 <nav class="site-nav">
   <div class="nav-container">
     <div class="logo">
@@ -327,7 +351,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     <ul class="nav-menu">
       <li><a href="/services.html">服務項目</a></li>
       <li><a href="/team.html">服務團隊</a></li>
-      <li><a href="/blog.html">部落格</a></li>
+      <li><a href="/blog.html" class="active">部落格</a></li>
       <li><a href="/faq.html">常見問題</a></li>
       <li><a href="/video.html">影片</a></li>
       <li><a href="/contact.html">聯絡資訊</a></li>
@@ -336,20 +360,21 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
 </nav>
 
 <main class="blog-post">
-  <article>
-    <header class="post-header">
-      <h1>{title}</h1>
-      <div class="post-meta">
-        <span class="date">{date}</span>
-        <span class="category">分類: <a href="/blog/category/{slugify(primary_category)}.html">{primary_category}</a></span>
+  <div class="container">
+    <article>
+      <header class="post-header">
+        <h1>{title}</h1>
+        <div class="post-meta">
+          <span class="date">{date}</span>
+          <span class="category">分類: <a href="/blog/category/{slugify(category_code)}.html">{primary_category}</a></span>
+        </div>
+      </header>
+      
+      <div class="post-image">
+        <img src="{image_path}" alt="{title}">
       </div>
-    </header>
-    
-    <div class="post-image">
-      <img src="{image_path}" alt="{title}">
-    </div>
-    
-    <div class="post-content">
+      
+      <div class="post-content">
 """
     
     # 添加文章內容
@@ -358,32 +383,34 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
         content = para["text"]
         
         if tag == "li":
-            html += f"      <ul>\n        <li>{content}</li>\n      </ul>\n"
+            html += f"        <ul>\n          <li>{content}</li>\n        </ul>\n"
         else:
-            html += f"      <{tag}>{content}</{tag}>\n"
+            html += f"        <{tag}>{content}</{tag}>\n"
     
     # 添加標籤區域
-    html += """    </div>
-    
-    <footer class="post-footer">
-      <div class="post-tags">
-        <span>標籤:</span>
+    html += """      </div>
+      
+      <footer class="post-footer">
+        <div class="post-tags">
+          <span>標籤:</span>
 """
     
     # 添加標籤
     for tag in tags:
-        html += f'        <a href="/blog/tag/{slugify(tag)}.html" class="tag">{tag}</a>\n'
+        html += f'          <a href="/blog/tag/{slugify(tag)}.html" class="tag">{tag}</a>\n'
     
     # 完成HTML
-    html += """      </div>
-    </footer>
-  </article>
-  
-  <div class="post-navigation">
-    <a href="/blog.html" class="back-to-blog">← 返回部落格</a>
+    html += """        </div>
+      </footer>
+    </article>
+    
+    <div class="post-navigation">
+      <a href="/blog.html" class="back-to-blog">← 返回部落格</a>
+    </div>
   </div>
 </main>
 
+<!-- 頁尾區域 -->
 <footer class="site-footer">
   <div class="footer-container">
     <div class="footer-text">
@@ -392,6 +419,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
   </div>
 </footer>
 
+<!-- 懸浮按鈕 -->
 <div class="cta-floating">
   <a href="/booking.html" class="float-btn consult-btn">免費諮詢</a>
   <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="float-btn line-btn">LINE</a>
@@ -435,7 +463,7 @@ def process_docx(docx_path: str, output_dir: str = OUTPUT_DIR, processed_docs: D
         tags = generate_tags(title, paragraphs)
         
         # 確定主要分類
-        primary_category = determine_primary_category(tags)
+        primary_category, category_code = determine_primary_category(tags, title, paragraphs)
         
         # 生成HTML
         html_content = generate_html(
@@ -444,7 +472,8 @@ def process_docx(docx_path: str, output_dir: str = OUTPUT_DIR, processed_docs: D
             tags=tags,
             date=date,
             summary=summary,
-            primary_category=primary_category
+            primary_category=primary_category,
+            category_code=category_code
         )
         
         # 確保輸出目錄存在
@@ -463,13 +492,15 @@ def process_docx(docx_path: str, output_dir: str = OUTPUT_DIR, processed_docs: D
         
         print(f"成功生成HTML文件: {html_path}")
         print(f"標題: {title}")
-        print(f"分類: {primary_category}")
+        print(f"分類: {primary_category} ({category_code})")
         print(f"標籤: {', '.join(tags)}")
         
         return html_path
     
     except Exception as e:
         print(f"處理文件 {docx_path} 時出錯: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def scan_directory(input_dir: str, output_dir: str = OUTPUT_DIR) -> List[str]:
