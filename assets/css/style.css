@@ -1,0 +1,18 @@
+
+body {
+  margin: 0;
+  font-family: "微軟正黑體", sans-serif;
+}
+.hero {
+  background: url('../images/hero.jpg') center/cover no-repeat;
+  color: white;
+  padding: 120px 20px;
+  text-align: center;
+}
+footer {
+  background: #222;
+  color: #ccc;
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+}
