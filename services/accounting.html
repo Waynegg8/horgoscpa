@@ -1,94 +1,193 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
-<link rel="manifest" href="/site.webmanifest">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="霍爾果斯會計師事務所提供專業記帳與會計服務，包含日常記帳、財務報表編製、會計制度建立與專業顧問諮詢，確保您的財務記錄準確無誤。" />
   <title>記帳與會計 | 霍爾果斯會計師事務所</title>
-  <link rel="stylesheet" href="../assets/css/style.css" />
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RKMCS9WVS5');
-</script>
-
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "霍爾果斯會計師事務所",
-  "url": "https://www.horgoscpa.com",
-  "logo": "https://www.horgoscpa.com/assets/images/favicon-32x32.png",
-  "contactPoint": [{
-    "@type": "ContactPoint",
-    "telephone": "+886-4-2220-5606",
-    "contactType": "Customer Service"
-  }]
-}
-</script>
-
+  
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- 引用樣式表 -->
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  
+  <!-- Google 分析 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-RKMCS9WVS5');
+  </script>
+  
+  <!-- 結構化資料 -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "serviceType": "記帳與會計服務",
+    "provider": {
+      "@type": "AccountingService",
+      "name": "霍爾果斯會計師事務所",
+      "url": "https://www.horgoscpa.com",
+      "logo": "https://www.horgoscpa.com/assets/images/logo.png",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "建國路21號3樓之1",
+        "addressLocality": "台中市",
+        "addressRegion": "西區",
+        "postalCode": "403",
+        "addressCountry": "TW"
+      },
+      "telephone": "+886-4-2220-5606"
+    },
+    "description": "提供日常記帳、財務報表編製、會計制度建立與專業顧問諮詢，確保您的財務記錄準確無誤且符合法規要求。",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "TWD",
+      "availability": "https://schema.org/InStock"
+    }
+  }
+  </script>
 </head>
 <body>
 
+<!-- 導航欄 -->
 <nav class="site-nav">
-  <ul>
-    <li><a href="/index.html">首頁</a></li>
-    <li><a href="/services.html">服務</a></li>
-    <li><a href="/team.html">團隊</a></li>
-    <li><a href="/blog.html">部落格</a></li>
-    <li><a href="/faq.html">常見問題</a></li>
-    <li><a href="/video.html">影片</a></li>
-    <li><a href="/contact.html">聯絡我們</a></li>
-  </ul>
+  <div class="nav-container">
+    <div class="logo">
+      <a href="/index.html">
+        <div class="logo-main">霍爾果斯會計師事務所</div>
+        <div class="logo-sub">HorgosCPA</div>
+      </a>
+    </div>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+    </label>
+    <ul class="nav-menu">
+      <li><a href="/services.html" class="active">服務項目</a></li>
+      <li><a href="/team.html">服務團隊</a></li>
+      <li><a href="/blog.html">部落格</a></li>
+      <li><a href="/faq.html">常見問題</a></li>
+      <li><a href="/video.html">影片</a></li>
+      <li><a href="/contact.html">聯絡資訊</a></li>
+    </ul>
+  </div>
 </nav>
 
-  <main class="service-detail">
+<!-- 英雄區塊 -->
+<header class="hero">
+  <div class="hero-content">
     <h1>記帳與會計服務</h1>
-    <p>提供企業與商號的日常記帳、財報編製、會計制度導入與顧問協助。</p>
+    <p>提供企業與商號的日常記帳、財報編製、會計制度導入與顧問協助，讓您的財務管理更加準確高效</p>
+  </div>
+</header>
 
-    <section>
+<!-- 服務內容 -->
+<section class="services-section">
+  <div class="container">
+    <div class="section-title">
       <h2>服務內容</h2>
-      <ul>
-        <li>每日憑證輸入與帳務整理</li>
-        <li>月/季報表製作</li>
-        <li>成本與損益分析</li>
-        <li>建立與優化內部會計制度</li>
-      </ul>
-    </section>
+      <p>我們提供全方位的記帳與會計服務，無論您是初創企業還是成熟公司，都能找到適合的財務解決方案</p>
+    </div>
+    
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/assets/images/accounting-icon.svg" alt="日常記帳服務">
+        </div>
+        <h3>日常記帳服務</h3>
+        <p>提供每日憑證輸入、帳務處理、傳票整理與銀行對帳等基礎記帳服務，確保您的日常財務紀錄準確無誤，符合會計準則。</p>
+      </div>
+      
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/assets/images/accounting-icon.svg" alt="財務報表編製">
+        </div>
+        <h3>財務報表編製</h3>
+        <p>編製月報表、季度報表與年度財務報表，包含資產負債表、損益表與現金流量表，提供清晰的財務狀況分析與營運績效評估。</p>
+      </div>
+      
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/assets/images/accounting-icon.svg" alt="會計制度建立">
+        </div>
+        <h3>會計制度建立</h3>
+        <p>依據企業規模與產業特性，協助建立完整的會計制度與內控流程，包含會計科目劃分、帳務處理程序、報表產出流程與審核機制。</p>
+      </div>
+      
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/assets/images/accounting-icon.svg" alt="財務分析顧問">
+        </div>
+        <h3>財務分析顧問</h3>
+        <p>提供專業的財務分析與管理會計顧問服務，包含成本分析、預算編製、財務績效評估與業務決策支援，協助企業優化財務結構。</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <section>
+<!-- 服務流程 -->
+<section class="about-section">
+  <div class="container">
+    <div class="section-title">
       <h2>服務流程</h2>
-      <ol>
-        <li>洽談需求與確認業別</li>
-        <li>導入記帳系統與分工規劃</li>
-        <li>日常作業與定期報表</li>
-        <li>分析回饋與會計顧問建議</li>
-      </ol>
-    </section>
+    </div>
+    <div class="about-content">
+      <p>我們以系統化的流程提供記帳與會計服務，確保服務品質與效率</p>
+      
+      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 40px;">
+        <div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
+          <div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">1</div>
+          <h3>需求洽談</h3>
+          <p>了解企業規模、產業特性與會計需求，確認業別與記帳類型。</p>
+        </div>
+        
+        <div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
+          <div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">2</div>
+          <h3>系統導入</h3>
+          <p>建立適合的記帳系統與會計流程，進行分工規劃與權責劃分。</p>
+        </div>
+        
+        <div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
+          <div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">3</div>
+          <h3>執行記帳</h3>
+          <p>定期整理憑證、執行記帳作業，製作月報表與年度報表。</p>
+        </div>
+        
+        <div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
+          <div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">4</div>
+          <h3>分析與建議</h3>
+          <p>提供財務分析報告與會計顧問建議，協助優化財務結構。</p>
+        </div>
+      </div>
+      
+      <div class="text-center" style="margin-top: 50px;">
+        <a href="/booking.html" class="btn">立即諮詢</a>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <section class="cta-box">
-      <h2>立即諮詢</h2>
-      <p>交給專業記帳團隊，讓您專注在事業營運。</p>
-      <a href="../contact.html" class="cta-button">諮詢報價</a>
-    </section>
-  </main>
-
+<!-- 頁尾區域 -->
 <footer class="site-footer">
-  <p>&copy; 2025 霍爾果斯會計師事務所｜台中市西區建國路21號3樓之1｜電話：04-2220-5606</p>
+  <div class="footer-container">
+    <div class="footer-text">
+      <p>&copy; 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
+    </div>
+  </div>
 </footer>
 
-
+<!-- 懸浮按鈕 -->
 <div class="cta-floating">
-  <a href="/contact.html" class="cta-btn">預約諮詢</a>
-  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line">加入LINE</a>
+  <a href="/booking.html" class="float-btn consult-btn">免費諮詢</a>
+  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="float-btn line-btn">LINE</a>
 </div>
 
 </body>
