@@ -453,7 +453,8 @@
       color: #fff;
     }
     
-    /* 懸浮按鈕樣式 - 完全獨立的設計 */
+    /* 清除所有舊的懸浮按鈕樣式 */
+    /* 全新懸浮按鈕樣式 - 相同長度版本 */
     .cta-floating {
       position: fixed;
       bottom: 30px;
@@ -464,51 +465,42 @@
       gap: 10px;
     }
 
-    /* LINE按鈕 */
-    .line-btn {
+    .float-btn {
       display: block;
-      width: 60px;
-      height: 60px;
-      background-color: #06c755;
-      border-radius: 8px 0 0 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: -3px 3px 10px rgba(0,0,0,0.2);
-      transition: transform 0.3s ease;
-    }
-
-    .line-btn:hover {
-      transform: translateX(-5px);
-      background-color: #05a847;
-    }
-
-    .line-btn svg {
-      width: 36px;
-      height: 36px;
-      display: block;
-    }
-
-    /* 免費諮詢按鈕 */
-    .consult-btn {
-      display: block;
-      background-color: #0066cc;
-      color: #fff;
-      font-size: 20px;
-      font-weight: 600;
-      text-decoration: none;
+      width: 120px; /* 固定寬度 */
+      text-align: center;
       padding: 15px 20px;
       border-radius: 8px 0 0 8px;
-      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      text-decoration: none;
       box-shadow: -3px 3px 10px rgba(0,0,0,0.2);
       transition: transform 0.3s ease, background-color 0.3s ease;
       font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
       letter-spacing: 1px;
     }
 
-    .consult-btn:hover {
+    .float-btn:hover {
       transform: translateX(-5px);
+    }
+
+    .consult-btn {
+      background-color: #0066cc;
+      color: #fff;
+    }
+
+    .consult-btn:hover {
       background-color: #004d99;
+      color: #fff;
+    }
+
+    .line-btn {
+      background-color: #06c755;
+      color: #fff;
+    }
+
+    .line-btn:hover {
+      background-color: #05a847;
       color: #fff;
     }
     
@@ -627,19 +619,10 @@
         gap: 8px;
       }
       
-      .line-btn {
-        width: 50px;
-        height: 50px;
-      }
-      
-      .line-btn svg {
-        width: 30px;
-        height: 30px;
-      }
-      
-      .consult-btn {
-        font-size: 18px;
-        padding: 12px 18px;
+      .float-btn {
+        width: 110px;
+        font-size: 16px;
+        padding: 12px 15px;
       }
     }
   </style>
@@ -798,17 +781,13 @@
   </div>
 </footer>
 
-<!-- 懸浮按鈕 - 完全獨立的設計 -->
+<!-- 懸浮按鈕 - 完全獨立的設計，兩個按鈕一樣長 -->
 <div class="cta-floating">
   <!-- 免費諮詢按鈕 -->
-  <a href="/booking.html" class="consult-btn">免費諮詢</a>
+  <a href="/booking.html" class="float-btn consult-btn">免費諮詢</a>
   
-  <!-- LINE按鈕 - 使用官方圖標 -->
-  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="line-btn">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-      <path fill="#FFFFFF" d="M22,10.6c0-4.8-4.8-8.6-10.7-8.6S0.5,5.9,0.5,10.6c0,4.3,3.8,7.8,8.9,8.5c0.3,0.1,0.8,0.2,0.9,0.5  c0.1,0.3,0.1,0.7,0,1c0,0-0.1,0.8-0.1,0.9c0,0.3-0.2,1,0.9,0.5c1.1-0.5,5.7-3.4,7.8-5.8l0,0C21.2,13.8,22,12.3,22,10.6z   M8.1,13.3H6.4c-0.2,0-0.4-0.2-0.4-0.4v-4.8c0-0.2,0.2-0.4,0.4-0.4s0.4,0.2,0.4,0.4v4.4h1.3c0.2,0,0.4,0.2,0.4,0.4  S8.3,13.3,8.1,13.3z M9.9,12.9c0,0.2-0.2,0.4-0.4,0.4s-0.4-0.2-0.4-0.4v-4.8c0-0.2,0.2-0.4,0.4-0.4s0.4,0.2,0.4,0.4V12.9z   M15.2,12.9c0,0.2-0.1,0.3-0.3,0.4c0,0-0.1,0-0.1,0c-0.1,0-0.2-0.1-0.3-0.1L12.1,10v2.9c0,0.2-0.2,0.4-0.4,0.4s-0.4-0.2-0.4-0.4  v-4.8c0-0.2,0.1-0.3,0.3-0.4c0,0,0.1,0,0.1,0c0.1,0,0.3,0.1,0.3,0.2l2.4,3.2V7.8c0-0.2,0.2-0.4,0.4-0.4s0.4,0.2,0.4,0.4V12.9z   M17.6,10.6h1.3c0.2,0,0.4,0.2,0.4,0.4s-0.2,0.4-0.4,0.4h-1.3h-0.4c-0.2,0-0.4-0.2-0.4-0.4V8.1c0-0.2,0.2-0.4,0.4-0.4h0.4h1.3  c0.2,0,0.4,0.2,0.4,0.4s-0.2,0.4-0.4,0.4h-1.3V9h1.3c0.2,0,0.4,0.2,0.4,0.4s-0.2,0.4-0.4,0.4h-1.3V10.6z"/>
-    </svg>
-  </a>
+  <!-- LINE按鈕 - 與諮詢按鈕相同長度和樣式 -->
+  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="float-btn line-btn">LINE</a>
 </div>
 
 <!-- 自動抓取最新文章的腳本 -->
