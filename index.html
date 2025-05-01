@@ -1,40 +1,60 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
-<link rel="manifest" href="/site.webmanifest">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="霍爾果斯會計師事務所提供專業稅務、會計記帳與企業顧問服務，為您打造最全面的財務規劃方案。" />
-  <title>霍爾果斯會計師事務所</title>
+  <title>霍爾果斯會計師事務所 - 專業財稅顧問</title>
+  
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- 樣式表 -->
   <link rel="stylesheet" href="/assets/css/style.css" />
-  <link rel="stylesheet" href="/assets/css/footer-fix.css" />
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RKMCS9WVS5');
-</script>
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "霍爾果斯會計師事務所",
-  "url": "https://www.horgoscpa.com",
-  "logo": "https://www.horgoscpa.com/assets/images/favicon-32x32.png",
-  "contactPoint": [{
-    "@type": "ContactPoint",
+  
+  <!-- Google 分析 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-RKMCS9WVS5');
+  </script>
+  
+  <!-- 結構化資料 -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "AccountingService",
+    "name": "霍爾果斯會計師事務所",
+    "url": "https://www.horgoscpa.com",
+    "logo": "https://www.horgoscpa.com/assets/images/logo.png",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "建國路21號3樓之1",
+      "addressLocality": "台中市",
+      "addressRegion": "西區",
+      "postalCode": "403",
+      "addressCountry": "TW"
+    },
     "telephone": "+886-4-2220-5606",
-    "contactType": "Customer Service"
-  }]
-}
-</script>
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": [
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"
+      ],
+      "opens": "08:30",
+      "closes": "17:30"
+    }
+  }
+  </script>
 </head>
 <body>
+
+<!-- 導航欄 -->
 <nav class="site-nav">
   <div class="nav-container">
     <div class="logo">
@@ -55,122 +75,116 @@
   </div>
 </nav>
 
-  <header class="hero">
-    <div class="hero-content">
-      <h1>霍爾果斯會計師事務所</h1>
-      <p>值得信賴的財稅顧問</p>
-      <a href="/booking.html" class="cta-button">預約諮詢</a>
+<!-- 首頁英雄區域 -->
+<header class="hero">
+  <div class="hero-content">
+    <h1>專業可靠的財稅顧問夥伴</h1>
+    <p>提供全方位稅務規劃、會計記帳與企業顧問服務，協助您妥善管理財務，實現企業與個人財務目標</p>
+    <a href="/booking.html" class="btn">免費諮詢</a>
+  </div>
+</header>
+
+<!-- 服務區塊 -->
+<section class="services-section">
+  <div class="container">
+    <div class="section-title">
+      <h2>專業服務項目</h2>
+      <p>霍爾果斯會計師事務所提供多項專業服務，由經驗豐富的會計師團隊為您量身打造最適合的財務方案</p>
     </div>
-  </header>
-  
-  <main>
-    <section class="intro-section">
-      <div class="container">
-        <h2>我們提供專業服務</h2>
-        <p>霍爾果斯會計師事務所致力於為客戶提供全方位的稅務規劃、會計記帳與企業顧問服務，協助您妥善管理財務，實現企業與個人的財務目標。我們專業團隊擁有豐富經驗，能為您提供最適合的財務解決方案。</p>
-      </div>
-    </section>
     
-    <section class="services-overview">
-      <div class="container">
-        <div class="services-grid">
-          <div class="service-card">
-            <div class="service-icon">
-              <img src="/assets/images/tax-icon.svg" alt="稅務服務" />
-            </div>
-            <h3>稅務服務</h3>
-            <p>個人與企業稅務規劃、跨境稅務、申報與爭議處理。我們協助您合法節稅並降低稅務風險。</p>
-            <a href="/services/tax.html" class="read-more">了解更多</a>
-          </div>
-          
-          <div class="service-card">
-            <div class="service-icon">
-              <img src="/assets/images/accounting-icon.svg" alt="記帳與會計" />
-            </div>
-            <h3>記帳與會計</h3>
-            <p>代辦記帳、財務報表編製、會計制度建立與會計顧問服務。讓您專注業務，無後顧之憂。</p>
-            <a href="/services/accounting.html" class="read-more">了解更多</a>
-          </div>
-          
-          <div class="service-card">
-            <div class="service-icon">
-              <img src="/assets/images/consulting-icon.svg" alt="企業顧問" />
-            </div>
-            <h3>企業顧問</h3>
-            <p>公司設立登記、企業財務規劃、營運流程優化與併購顧問。全方位協助企業成長茁壯。</p>
-            <a href="/services/consulting.html" class="read-more">了解更多</a>
-          </div>
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/assets/images/tax-icon.svg" alt="稅務服務">
         </div>
-        
-        <div class="services-cta">
-          <a href="/services.html" class="cta-button">查看所有服務</a>
-        </div>
+        <h3>稅務服務</h3>
+        <p>提供個人與企業稅務規劃、申報與爭議處理，協助您合法節稅並降低稅務風險，讓您專心拓展業務與生活。</p>
+        <a href="/services/tax.html" class="read-more">了解更多</a>
       </div>
-    </section>
+      
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/assets/images/accounting-icon.svg" alt="記帳與會計">
+        </div>
+        <h3>記帳與會計</h3>
+        <p>提供日常記帳、財務報表編製、會計制度建立與專業顧問諮詢，確保您的財務記錄準確無誤且符合法規要求。</p>
+        <a href="/services/accounting.html" class="read-more">了解更多</a>
+      </div>
+      
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/assets/images/consulting-icon.svg" alt="企業顧問">
+        </div>
+        <h3>企業顧問</h3>
+        <p>協助公司設立登記、企業財務規劃、營運流程優化與併購顧問，提供全方位商業策略建議，助您企業成長。</p>
+        <a href="/services/consulting.html" class="read-more">了解更多</a>
+      </div>
+    </div>
     
-    <section class="latest-posts">
-      <div class="container">
-        <h2>最新文章</h2>
-        <div class="posts-grid">
-          <article class="post-card">
-            <h3><a href="/blog/cross-border-tax.html">跨境電商如何合法節稅？</a></h3>
-            <p class="date">2025-04-10</p>
-            <p>面對台灣與境外稅務申報差異，電商業者該注意哪些風險與機會？了解如何合法規劃跨境稅務。</p>
-            <a href="/blog/cross-border-tax.html" class="read-more">閱讀更多</a>
-          </article>
-          
-          <article class="post-card">
-            <h3><a href="/blog/startup-traps.html">新創公司常見帳務陷阱</a></h3>
-            <p class="date">2025-03-22</p>
-            <p>從開立發票、勞健保到稅務合規，新創最容易忽略的會計問題整理。避免常見財務錯誤。</p>
-            <a href="/blog/startup-traps.html" class="read-more">閱讀更多</a>
-          </article>
-          
-          <article class="post-card">
-            <h3><a href="/blog/tax-planning.html">年度稅務規劃指南</a></h3>
-            <p class="date">2025-03-05</p>
-            <p>提前做好稅務規劃，合理降低稅負，掌握各項扣除額與優惠措施。專業稅務師提供的實用建議。</p>
-            <a href="/blog/tax-planning.html" class="read-more">閱讀更多</a>
-          </article>
-        </div>
-        
-        <div class="posts-cta">
-          <a href="/blog.html" class="text-link">查看所有文章 →</a>
-        </div>
-      </div>
-    </section>
+    <div class="text-center" style="margin-top: 40px;">
+      <a href="/services.html" class="btn">查看所有服務</a>
+    </div>
+  </div>
+</section>
+
+<!-- 部落格預覽區塊 -->
+<section class="blog-section">
+  <div class="container">
+    <div class="section-title">
+      <h2>最新文章</h2>
+      <p>探索最新的財稅資訊、會計知識與企業經營建議，助您掌握財務脈動</p>
+    </div>
     
-    <section class="about-section">
-      <div class="container">
-        <div class="about-content">
-          <h2>關於霍爾果斯會計師事務所</h2>
-          <p>成立於2018年，霍爾果斯會計師事務所由資深會計師與稅務專家組成，致力於為台灣中小企業與個人提供優質的會計與稅務服務。我們特別專注於跨境稅務規劃及新創企業的財務顧問服務，協助客戶在全球化經濟中取得成功。</p>
-          <p>我們的核心價值在於專業、誠信與創新，期待成為您長期的財務夥伴。</p>
-          <a href="/team.html" class="text-link">認識我們的團隊 →</a>
-        </div>
-      </div>
-    </section>
+    <div class="blog-grid" id="latest-posts-container">
+      <!-- 文章將由 JavaScript 自動抓取並顯示 -->
+    </div>
     
-    <section class="contact-overview">
-      <div class="container">
-        <div class="contact-grid">
-          <div class="contact-info">
-            <h2>聯絡我們</h2>
-            <p><strong>地址：</strong>台中市西區建國路21號3樓之1</p>
-            <p><strong>電話：</strong>04-2220-5606</p>
-            <p><strong>LINE：</strong><a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入好友</a></p>
-            <p><strong>營業時間：</strong>週一至週五 8:30-17:30</p>
-          </div>
-          
-          <div class="contact-cta">
-            <a href="/booking.html" class="cta-button">預約諮詢</a>
-            <a href="/contact.html" class="text-link">查看完整聯絡資訊 →</a>
-          </div>
+    <div class="text-center" style="margin-top: 40px;">
+      <a href="/blog.html" class="btn btn-outline">查看更多文章</a>
+    </div>
+  </div>
+</section>
+
+<!-- 關於我們區塊 -->
+<section class="about-section">
+  <div class="container">
+    <div class="about-content">
+      <h2>關於霍爾果斯會計師事務所</h2>
+      <p>成立於2018年，霍爾果斯會計師事務所由資深會計師與稅務專家組成，致力於為台灣中小企業與個人提供優質的會計與稅務服務。我們特別專注於跨境稅務規劃及新創企業的財務顧問服務，協助客戶在全球化經濟中取得成功。</p>
+      <p>我們的核心價值在於專業、誠信與創新，期待成為您長期的財務夥伴。</p>
+      <a href="/team.html" class="btn">認識我們的團隊</a>
+    </div>
+  </div>
+</section>
+
+<!-- 聯絡資訊區塊 -->
+<section class="contact-section">
+  <div class="container">
+    <div class="section-title">
+      <h2>聯絡我們</h2>
+      <p>如有任何財稅相關問題，歡迎與我們聯繫</p>
+    </div>
+    
+    <div class="contact-grid">
+      <div class="contact-info">
+        <h3>聯絡方式</h3>
+        <p><strong>地址：</strong>台中市西區建國路21號3樓之1</p>
+        <p><strong>電話：</strong><a href="tel:+886422205606">04-2220-5606</a></p>
+        <p><strong>LINE：</strong><a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" style="filter: none;">加入好友</a></p>
+        <p><strong>營業時間：</strong>週一至週五 8:30-17:30</p>
+        <div style="margin-top: 20px;">
+          <a href="/booking.html" class="btn">預約免費諮詢</a>
         </div>
       </div>
-    </section>
-  </main>
-  
+      
+      <div class="contact-map">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3641.080578501929!2d120.67441507534775!3d24.133808178410753!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34693da642d13c59%3A0x95e561addcaebda!2z6ZyN54i-5p6c5pav5pyD6KiI5bir5LqL5YuZ5omA!5e0!3m2!1sen!2stw!4v1746124996506!5m2!1sen!2stw" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 頁尾區域 -->
 <footer class="site-footer">
   <div class="footer-container">
     <div class="footer-info">
@@ -180,8 +194,8 @@
     
     <div class="footer-contact">
       <p>地址：台中市西區建國路21號3樓之1</p>
-      <p>電話：04-2220-5606</p>
-      <p>LINE：<a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入好友</a></p>
+      <p>電話：<a href="tel:+886422205606">04-2220-5606</a></p>
+      <p>LINE：<a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon">加入好友</a></p>
     </div>
   </div>
   
@@ -190,55 +204,59 @@
   </div>
 </footer>
 
+<!-- 懸浮按鈕 -->
 <div class="cta-floating">
   <a href="/booking.html" class="cta-btn">免費諮詢</a>
-  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入官方LINE</a>
+  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon">加入官方LINE</a>
 </div>
 
 <!-- 自動抓取最新文章的腳本 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // 這裡應該使用 fetch 或 AJAX 來抓取最新文章
-    // 為示範用途，這裡模擬抓取最新文章的功能
-    
-    // 模擬從伺服器獲取的最新文章數據
+    // 模擬從伺服器獲取的最新文章資料
+    // 在實際應用中，應該使用 AJAX 或 Fetch API 從後端獲取
     const latestPosts = [
       {
         title: '跨境電商如何合法節稅？',
         date: '2025-04-10',
-        summary: '面對台灣與境外稅務申報差異，電商業者該注意哪些風險與機會？了解如何合法規劃跨境稅務。',
-        url: '/blog/cross-border-tax.html'
+        summary: '面對台灣與境外稅務申報差異，電商業者該注意哪些風險與機會？了解如何合法規劃跨境稅務並避免重複課稅。',
+        url: '/blog/cross-border-tax.html',
+        image: '/assets/images/blog/cross-border-tax.jpg'
       },
       {
         title: '新創公司常見帳務陷阱',
         date: '2025-03-22',
-        summary: '從開立發票、勞健保到稅務合規，新創最容易忽略的會計問題整理。避免常見財務錯誤。',
-        url: '/blog/startup-traps.html'
+        summary: '從開立發票、勞健保到稅務合規，新創最容易忽略的會計問題整理。避免常見財務錯誤，確保公司財務健全運作。',
+        url: '/blog/startup-traps.html',
+        image: '/assets/images/blog/startup-accounting.jpg'
       },
       {
         title: '年度稅務規劃指南',
         date: '2025-03-05',
-        summary: '提前做好稅務規劃，合理降低稅負，掌握各項扣除額與優惠措施。專業稅務師提供的實用建議。',
-        url: '/blog/tax-planning.html'
+        summary: '提前做好稅務規劃，合理降低稅負，掌握各項扣除額與優惠措施。專業稅務師提供的實用建議，讓您節稅無憂。',
+        url: '/blog/tax-planning.html',
+        image: '/assets/images/blog/tax-planning.jpg'
       }
     ];
     
     // 獲取文章容器
     const postsContainer = document.getElementById('latest-posts-container');
     
-    // 在實際應用中，應該從伺服器獲取最新文章
-    // 這裡為了演示，使用模擬數據
-    
-    // 渲染最新文章
+    // 渲染最新三篇文章
     latestPosts.forEach(post => {
       const postElement = document.createElement('article');
-      postElement.className = 'post-card';
+      postElement.className = 'blog-card';
       
       postElement.innerHTML = `
-        <h3><a href="${post.url}">${post.title}</a></h3>
-        <p class="date">${post.date}</p>
-        <p>${post.summary}</p>
-        <a href="${post.url}" class="read-more">閱讀更多</a>
+        <div class="blog-image">
+          <img src="${post.image}" alt="${post.title}">
+        </div>
+        <div class="blog-content">
+          <span class="date">${post.date}</span>
+          <h3><a href="${post.url}">${post.title}</a></h3>
+          <p>${post.summary}</p>
+          <a href="${post.url}" class="read-more">閱讀更多</a>
+        </div>
       `;
       
       postsContainer.appendChild(postElement);
@@ -246,45 +264,5 @@
   });
 </script>
 
-<!-- 修改懸浮按鈕位置的樣式 -->
-<style>
-  .cta-floating {
-    position: fixed;
-    top: 40%;
-    right: 0;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    z-index: 999;
-  }
-  
-  .cta-floating .cta-btn {
-    display: flex;
-    align-items: center;
-    background: #0066cc;
-    color: white;
-    text-decoration: none;
-    padding: 12px 16px;
-    border-radius: 6px 0 0 6px;
-    font-size: 14px;
-    box-shadow: -2px 2px 5px rgba(0,0,0,0.2);
-    transition: all 0.3s ease;
-  }
-  
-  .cta-floating .cta-btn.line {
-    background: #06c755;
-  }
-  
-  .cta-floating .cta-btn:hover {
-    padding-right: 20px;
-  }
-  
-  .cta-floating .line-icon {
-    width: 20px;
-    height: 20px;
-    margin-right: 8px;
-  }
-</style>
 </body>
 </html>
