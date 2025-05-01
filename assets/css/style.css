@@ -1,7 +1,7 @@
 /* 
  * style.css - 霍爾果斯會計師事務所網站通用樣式
- * 從 index.html 提取的所有樣式，適用於整個網站
- * 創建日期: 2025-05-01
+ * 按照 index.html 重新編輯，適用於整個網站
+ * 最後更新: 2025-05-01
  */
 
 /* 字體定義 */
@@ -62,7 +62,7 @@ img {
   padding: 0 40px; /* 增加外側間距 */
 }
 
-/* 導航欄樣式 */
+/* 改善導航欄樣式 - 使用深藍色 */
 .site-nav {
   background-color: #002147; /* 更深的藍色 */
   box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* 增強陰影 */
@@ -117,7 +117,7 @@ img {
   margin-left: 35px;
 }
 
-/* 導航選項邊框視覺效果 */
+/* 改善導航選項邊框視覺效果 - 更明顯的顏色對比 */
 .nav-menu a {
   color: #fff;
   position: relative;
@@ -148,7 +148,7 @@ img {
   display: none;
 }
 
-/* 英雄區塊 */
+/* 英雄區塊 - 修正圖片路徑與調亮背景色 */
 .hero {
   background: linear-gradient(rgba(0, 51, 102, 0.7), rgba(0, 51, 102, 0.7)), url('/assets/images/hero.jpg') center/cover no-repeat;
   color: white;
@@ -493,7 +493,7 @@ img {
   color: #fff;
 }
 
-/* 載入中顯示樣式 */
+/* 控制載入中顯示樣式 */
 .loading-container {
   text-align: center;
   padding: 30px;
@@ -645,7 +645,11 @@ img {
   }
 }
 
-/* 服務頁面特定樣式 */
+/* 
+ * 額外添加其他頁面樣式
+ */
+
+/* 服務頁面樣式 */
 .service-detail {
   max-width: 1000px;
   margin: 0 auto;
@@ -720,165 +724,6 @@ img {
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-/* 部落格文章頁面樣式 */
-.blog-post {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 40px 20px;
-}
-
-.post-header {
-  margin-bottom: 30px;
-}
-
-.post-header h1 {
-  font-size: 2.2rem;
-  color: #002147;
-  margin-bottom: 15px;
-  line-height: 1.3;
-}
-
-.post-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 20px;
-  color: #666;
-  font-size: 0.95rem;
-}
-
-.post-meta a {
-  color: #0066cc;
-}
-
-.post-image {
-  margin-bottom: 30px;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.post-image img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.post-content {
-  margin-bottom: 40px;
-  line-height: 1.8;
-}
-
-.post-content h2 {
-  font-size: 1.8rem;
-  color: #002147;
-  margin-top: 40px;
-  margin-bottom: 20px;
-}
-
-.post-content h3 {
-  font-size: 1.5rem;
-  color: #333;
-  margin-top: 30px;
-  margin-bottom: 15px;
-}
-
-.post-content p {
-  margin-bottom: 20px;
-}
-
-.post-content ul, .post-content ol {
-  margin-bottom: 20px;
-  padding-left: 25px;
-}
-
-.post-content li {
-  margin-bottom: 10px;
-}
-
-.post-footer {
-  margin-top: 50px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-}
-
-.post-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.post-tags span {
-  font-weight: bold;
-  color: #555;
-}
-
-.tag {
-  display: inline-block;
-  background-color: #f0f6ff;
-  color: #0066cc;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-}
-
-.tag:hover {
-  background-color: #0066cc;
-  color: #fff;
-  transform: translateY(-2px);
-}
-
-.post-navigation {
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-}
-
-.back-to-blog {
-  display: inline-block;
-  color: #0066cc;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.back-to-blog:hover {
-  color: #004d99;
-  transform: translateX(-5px);
-}
-
-/* FAQ 頁面樣式 */
-.faq-section details {
-  background: #f9f9f9;
-  border: 1px solid #ddd;
-  padding: 12px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-}
-
-.faq-section details:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.faq-section summary {
-  font-weight: bold;
-  padding: 10px;
-  outline: none;
-}
-
-.faq-section details[open] {
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.faq-section details[open] summary {
-  margin-bottom: 10px;
-  color: #0066cc;
-}
-
 /* 團隊頁面樣式 */
 .team-page {
   max-width: 1200px;
@@ -906,39 +751,189 @@ img {
   box-shadow: 0 15px 30px rgba(0,0,0,0.15);
 }
 
-.member-image {
-  height: 300px;
-  overflow: hidden;
-}
-
-.member-image img {
+.member-card img {
   width: 100%;
-  height: 100%;
+  height: auto;
   object-fit: cover;
 }
 
-.member-info {
-  padding: 25px;
-  text-align: center;
-}
-
-.member-info h2 {
+.member-card h2 {
   font-size: 1.6rem;
-  margin: 0 0 10px 0;
+  margin: 15px 0 10px;
   color: #002147;
+  padding: 0 20px;
 }
 
-.member-info .position {
+.member-card p {
+  padding: 0 20px 20px;
+  color: #555;
+  line-height: 1.6;
+}
+
+/* 影片頁面樣式 */
+.video-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.video-card {
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.video-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.video-card iframe {
+  width: 100%;
+  border: none;
+}
+
+.video-card h2 {
+  font-size: 1.4rem;
+  margin: 15px 0 10px;
+  color: #002147;
+  padding: 0 20px;
+}
+
+.video-card .date {
   color: #666;
-  font-size: 1rem;
-  margin-bottom: 15px;
+  font-size: 0.9rem;
+  padding: 0 20px 20px;
   display: block;
 }
 
-.member-info p {
-  color: #555;
-  line-height: 1.7;
-  margin-bottom: 0;
+/* 部落格文章頁面樣式 */
+.blog-post {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.blog-post h1 {
+  font-size: 2.2rem;
+  color: #002147;
+  margin-bottom: 15px;
+}
+
+.blog-post .date {
+  color: #666;
+  font-size: 0.95rem;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.article-content {
+  line-height: 1.8;
+}
+
+.article-content h2 {
+  font-size: 1.8rem;
+  color: #002147;
+  margin: 30px 0 15px;
+}
+
+.article-content p {
+  margin-bottom: 20px;
+}
+
+.article-content ul,
+.article-content ol {
+  margin-bottom: 20px;
+  padding-left: 25px;
+}
+
+.article-content li {
+  margin-bottom: 10px;
+}
+
+/* FAQ 頁面樣式 */
+.faq-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.faq-section {
+  margin-top: 40px;
+}
+
+.faq-item {
+  margin-bottom: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.faq-question {
+  background-color: #f5f8fc;
+  padding: 20px;
+  font-weight: 600;
+  color: #002147;
+  cursor: pointer;
+  position: relative;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.faq-question:hover {
+  background-color: #e6f0fa;
+}
+
+.faq-question.active {
+  background-color: #0066cc;
+  color: white;
+}
+
+.faq-answer {
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background-color: white;
+}
+
+.faq-answer.show {
+  padding: 20px;
+  max-height: 1000px;
+}
+
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.category-tab {
+  padding: 10px 20px;
+  background-color: #f0f0f0;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.category-tab:hover {
+  background-color: #e0e0e0;
+}
+
+.category-tab.active {
+  background-color: #0066cc;
+  color: white;
 }
 
 /* 聯絡頁面樣式 */
@@ -948,11 +943,14 @@ img {
   padding: 40px 20px;
 }
 
+.contact-details-section {
+  margin-bottom: 60px;
+}
+
 .contact-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 40px;
-  margin-top: 40px;
 }
 
 .contact-info {
@@ -962,41 +960,35 @@ img {
 }
 
 .contact-card {
-  background: #fff;
-  padding: 30px;
+  background: white;
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  padding: 30px;
   text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.contact-card:hover {
+  transform: translateY(-5px);
 }
 
 .contact-icon {
+  margin: 0 auto 20px;
   width: 60px;
   height: 60px;
-  margin: 0 auto 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 102, 204, 0.1);
+  background-color: rgba(0,102,204,0.1);
   border-radius: 50%;
-}
-
-.contact-card h3 {
-  margin: 0 0 15px 0;
-  color: #002147;
-  font-size: 1.4rem;
-}
-
-.contact-card p {
-  color: #555;
-  margin-bottom: 20px;
 }
 
 .contact-map {
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
   height: 100%;
-  min-height: 300px;
+  min-height: 400px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
 .contact-map iframe {
@@ -1005,27 +997,21 @@ img {
   border: 0;
 }
 
-.btn-sm {
-  padding: 8px 16px;
-  font-size: 0.9rem;
+/* 預約表單樣式 */
+.booking-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
 }
 
-.btn-line {
-  background-color: #06c755;
-  border-color: #06c755;
-  color: white;
+.booking-form {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+  padding: 40px;
+  margin-top: 40px;
 }
 
-.btn-line:hover {
-  background-color: #05a847;
-  border-color: #05a847;
-}
-
-.directions-section {
-  margin-top: 60px;
-}
-
-/* 表單樣式 */
 .form-group {
   margin-bottom: 25px;
 }
@@ -1077,84 +1063,45 @@ img {
   color: #cc0000;
 }
 
-@media (max-width: 768px) {
-  .contact-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .contact-map {
-    min-height: 250px;
-  }
-  
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-}
-
-/* 影片頁面樣式 */
-.video-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 20px;
-}
-
-.video-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-  margin-top: 40px;
-}
-
-.video-card {
-  background: #fff;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.video-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-}
-
-.video-frame {
-  position: relative;
-  padding-bottom: 56.25%; /* 16:9 比例 */
-  height: 0;
-  overflow: hidden;
-}
-
-.video-frame iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
+.submit-btn {
+  background-color: #0066cc;
+  color: white;
+  font-weight: 600;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.05rem;
   width: 100%;
-  height: 100%;
-  border: 0;
+  transition: all 0.3s ease;
 }
 
-.video-info {
-  padding: 20px;
+.submit-btn:hover {
+  background-color: #004d99;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-.video-info h2 {
-  margin: 0 0 10px 0;
-  font-size: 1.4rem;
+.booking-note {
+  margin-top: 40px;
+  padding: 30px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+}
+
+.booking-note h3 {
+  margin-top: 0;
   color: #002147;
-}
-
-.video-info .date {
-  color: #666;
-  font-size: 0.9rem;
-  display: block;
   margin-bottom: 15px;
 }
 
-.video-info p {
-  color: #555;
-  line-height: 1.7;
+.booking-note ul {
+  padding-left: 20px;
+  margin-bottom: 20px;
+}
+
+.booking-note li {
+  margin-bottom: 8px;
 }
 
 /* 頁面橫幅樣式 */
@@ -1179,32 +1126,21 @@ img {
   opacity: 0.9;
 }
 
-/* 動畫效果 */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.fade-in {
-  animation: fadeIn 0.5s ease-in;
-}
-
-@keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.slide-up {
-  animation: slideUp 0.5s ease-out;
-}
-
-/* 共用工具類別 */
+/* 工具類別 */
 .mb-20 {
   margin-bottom: 20px;
 }
 
 .mt-40 {
   margin-top: 40px;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mb-10 {
+  margin-bottom: 10px;
 }
 
 .text-primary {
@@ -1223,59 +1159,85 @@ img {
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-/* 隱私權政策頁面樣式 */
-.policy-container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 40px 20px;
-}
-
-.policy-container h2 {
-  color: #002147;
-  margin-top: 40px;
-  margin-bottom: 20px;
-}
-
-.policy-container p {
-  margin-bottom: 20px;
-  line-height: 1.8;
-}
-
-.policy-container ul {
-  margin-bottom: 20px;
-  padding-left: 25px;
-}
-
-.policy-container li {
-  margin-bottom: 10px;
-}
-
-/* 錯誤頁面樣式 */
-.error-container {
+.text-center {
   text-align: center;
-  padding: 80px 20px;
+}
+
+.line-icon {
+  vertical-align: middle;
+  margin-right: 5px;
+  width: 20px;
+  height: 20px;
+}
+
+/* 404頁面樣式 */
+.error-page {
   max-width: 800px;
   margin: 0 auto;
+  padding: 80px 20px;
+  text-align: center;
 }
 
 .error-code {
-  font-size: 6rem;
-  color: #002147;
-  margin-bottom: 30px;
+  font-size: 8rem;
+  color: #0066cc;
+  line-height: 1.2;
+  margin-bottom: 20px;
 }
 
-.error-container h1 {
+.error-page h1 {
   font-size: 2.5rem;
-  margin-bottom: 25px;
-  color: #333;
+  margin-bottom: 20px;
+  color: #002147;
 }
 
-.error-container p {
+.error-page p {
   font-size: 1.2rem;
   margin-bottom: 30px;
   color: #555;
 }
 
-.error-container .btn {
-  margin-top: 20px;
+/* 圖片效果 */
+.img-hover-zoom {
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.img-hover-zoom img {
+  transition: transform 0.5s ease;
+}
+
+.img-hover-zoom:hover img {
+  transform: scale(1.08);
+}
+
+/* 小螢幕適配 */
+@media (max-width: 576px) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+  
+  .hero p {
+    font-size: 1rem;
+  }
+  
+  .section-title h2 {
+    font-size: 1.8rem;
+  }
+  
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .contact-map {
+    min-height: 300px;
+  }
+  
+  .booking-form {
+    padding: 25px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }
