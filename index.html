@@ -453,64 +453,63 @@
       color: #fff;
     }
     
-    /* 懸浮按鈕 - 完全貼齊右側並調整對齊 */
+    /* 懸浮按鈕樣式 - 完全獨立的設計 */
     .cta-floating {
       position: fixed;
-      bottom: 30px; /* 底部固定 */
-      right: 0; /* 貼齊右側 */
+      bottom: 30px;
+      right: 0;
+      z-index: 999;
       display: flex;
       flex-direction: column;
       gap: 10px;
-      z-index: 999;
     }
-    
-    /* 改善LINE按鈕 - 解決圖標問題 */
-    .cta-floating .cta-btn.line {
+
+    /* LINE按鈕 */
+    .line-btn {
+      display: block;
+      width: 60px;
+      height: 60px;
       background-color: #06c755;
       border-radius: 8px 0 0 8px;
-      width: 55px; /* 調整寬度 */
-      height: 55px; /* 調整高度 */
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0;
-      order: -1; /* 讓LINE按鈕在上方 */
-      box-shadow: -3px 3px 15px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
-      overflow: hidden; /* 確保內容不會溢出 */
+      box-shadow: -3px 3px 10px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease;
     }
-    
-    .cta-floating .line-icon {
-      width: 32px; /* 調整圖標大小 */
-      height: 32px;
-      display: block; /* 確保圖標正確顯示 */
-    }
-    
-    .cta-floating .cta-btn.line:hover {
+
+    .line-btn:hover {
+      transform: translateX(-5px);
       background-color: #05a847;
-      transform: translateX(-5px); /* 懸停效果 */
     }
-    
-    /* 改善免費諮詢按鈕 */
-    .cta-floating .cta-btn {
+
+    .line-btn svg {
+      width: 36px;
+      height: 36px;
+      display: block;
+    }
+
+    /* 免費諮詢按鈕 */
+    .consult-btn {
+      display: block;
       background-color: #0066cc;
       color: #fff;
-      padding: 14px 20px; /* 調整按鈕大小 */
-      border-radius: 8px 0 0 8px;
-      font-size: 20px; /* 放大字體 */
+      font-size: 20px;
       font-weight: 600;
       text-decoration: none;
+      padding: 15px 20px;
+      border-radius: 8px 0 0 8px;
       text-align: center;
-      box-shadow: -3px 3px 15px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
+      box-shadow: -3px 3px 10px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease, background-color 0.3s ease;
       font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
-      letter-spacing: 1px; /* 增加字間距，提高可讀性 */
+      letter-spacing: 1px;
     }
-    
-    .cta-floating .cta-btn:hover {
+
+    .consult-btn:hover {
       transform: translateX(-5px);
-      color: #fff;
       background-color: #004d99;
+      color: #fff;
     }
     
     /* 響應式設計 */
@@ -625,24 +624,22 @@
       /* 移動裝置上調整懸浮按鈕 */
       .cta-floating {
         bottom: 20px;
-        right: 0;
-        flex-direction: column;
         gap: 8px;
       }
       
-      .cta-floating .cta-btn.line {
+      .line-btn {
         width: 50px;
         height: 50px;
       }
       
-      .cta-floating .line-icon {
-        width: 28px;
-        height: 28px;
+      .line-btn svg {
+        width: 30px;
+        height: 30px;
       }
       
-      .cta-floating .cta-btn {
-        padding: 12px 18px;
+      .consult-btn {
         font-size: 18px;
+        padding: 12px 18px;
       }
     }
   </style>
@@ -801,11 +798,16 @@
   </div>
 </footer>
 
-<!-- 懸浮按鈕 - 改為底部固定，LINE在上方，使用純圖標 -->
+<!-- 懸浮按鈕 - 完全獨立的設計 -->
 <div class="cta-floating">
-  <a href="/booking.html" class="cta-btn">免費諮詢</a>
-  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line">
-    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTIxLjU3LDEyLjE0YzAsLTQuNTEtNC41My04LjE3LTEwLjA3LTguMTdzLTEwLjA3LDMuNjYtMTAuMDcsOC4xN2MwLDQuMDMsMy41OCw3LjQsOC40MSw4LjA0YzAuMzMsMC4wNywwLjc4LDAuMjIsMC44OSwwLjVjMC4xLDAuMjYsMC4wNywwLjY2LDAuMDMsMC45MWMwLDAtMC4xMiwwLjcyLTAuMTQsMC44N2MtMC4wNCwwLjI2LTAuMiwxLDAuODgsMC41NVM5LjY5LDIxLDEzLjg5LDE4LjM2aC4wMUMyMC43MiwxNS42NywyMS41NywxNC4wOCwyMS41NywxMi4xNHptLTEzLjA3LDMuMUg2LjJjLTAuMTgsMC0wLjMzLTAuMTUtMC4zMy0wLjMzdi00LjhjMC0wLjE4LDAuMTUtMC4zMywwLjMzLTAuMzNzMC4zMywwLjE1LDAuMzMsMC4zM3Y0LjQ3aDEuN2MwLjE4LDAsMC4zMywwLjE1LDAuMzMsMC4zM1M4LjQxLDE1LjI0LDguNSwxNS4yNHptMi45My0wLjMzYzAsMC4xOC0wLjE1LDAuMzMtMC4zMywwLjMzcy0wLjMzLTAuMTUtMC4zMy0wLjMzdi00LjhjMC0wLjE4LDAuMTUtMC4zMywwLjMzLTAuMzNzMC4zMywwLjE1LDAuMzMsMC4zM1YxNC45MXptNS4zNCwwYzAsMC4xNC0wLjA5LDAuMjctMC4yMywwLjMyYy0wLjAzLDAuMDEtMC4wNywwLjAyLTAuMSwwLjAyYy0wLjEsMC0wLjItMC4wNS0wLjI3LTAuMTNsLTIuMzctMy4ydjMuMDFjMCwwLjE4LTAuMTUsMC4zMy0wLjMzLDAuMzNzLTAuMzMtMC4xNS0wLjMzLTAuMzN2LTQuOGMwLTAuMTQsMC4wOS0wLjI3LDAuMjMtMC4zMmMwLjAzLTAuMDEsMC4wNy0wLjAyLDAuMS0wLjAyYzAuMSwwLDAuMiwwLjA1LDAuMjcsMC4xM2wyLjM3LDMuMnYtMy4wMWMwLTAuMTgsMC4xNS0wLjMzLDAuMzMtMC4zM3MwLjMzLDAuMTUsMC4zMywwLjMzVjE0Ljkxem0wLjQyLTIuMzVoMS43YzAuMTgsMCwwLjMzLDAuMTUsMC4zMywwLjMzcy0wLjE1LDAuMzMtMC4zMywwLjMzaC0xLjdoLTAuMzdjLTAuMTgsMC0wLjMzLTAuMTUtMC4zMy0wLjMzdi00LjhjMC0wLjE4LDAuMTUtMC4zMywwLjMzLTAuMzNoMC4zN2gxLjdjMC4xOCwwLDAuMzMsMC4xNSwwLjMzLDAuMzNzLTAuMTUsMC4zMy0wLjMzLDAuMzNoLTEuN3YxLjUzaDEuN2MwLjE4LDAsMC4zMywwLjE1LDAuMzMsMC4zM3MtMC4xNSwwLjMzLTAuMzMsMC4zM2gtMS43VjEyLjU2eiIvPjwvc3ZnPg==" alt="LINE" class="line-icon">
+  <!-- 免費諮詢按鈕 -->
+  <a href="/booking.html" class="consult-btn">免費諮詢</a>
+  
+  <!-- LINE按鈕 - 使用官方圖標 -->
+  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="line-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      <path fill="#FFFFFF" d="M22,10.6c0-4.8-4.8-8.6-10.7-8.6S0.5,5.9,0.5,10.6c0,4.3,3.8,7.8,8.9,8.5c0.3,0.1,0.8,0.2,0.9,0.5  c0.1,0.3,0.1,0.7,0,1c0,0-0.1,0.8-0.1,0.9c0,0.3-0.2,1,0.9,0.5c1.1-0.5,5.7-3.4,7.8-5.8l0,0C21.2,13.8,22,12.3,22,10.6z   M8.1,13.3H6.4c-0.2,0-0.4-0.2-0.4-0.4v-4.8c0-0.2,0.2-0.4,0.4-0.4s0.4,0.2,0.4,0.4v4.4h1.3c0.2,0,0.4,0.2,0.4,0.4  S8.3,13.3,8.1,13.3z M9.9,12.9c0,0.2-0.2,0.4-0.4,0.4s-0.4-0.2-0.4-0.4v-4.8c0-0.2,0.2-0.4,0.4-0.4s0.4,0.2,0.4,0.4V12.9z   M15.2,12.9c0,0.2-0.1,0.3-0.3,0.4c0,0-0.1,0-0.1,0c-0.1,0-0.2-0.1-0.3-0.1L12.1,10v2.9c0,0.2-0.2,0.4-0.4,0.4s-0.4-0.2-0.4-0.4  v-4.8c0-0.2,0.1-0.3,0.3-0.4c0,0,0.1,0,0.1,0c0.1,0,0.3,0.1,0.3,0.2l2.4,3.2V7.8c0-0.2,0.2-0.4,0.4-0.4s0.4,0.2,0.4,0.4V12.9z   M17.6,10.6h1.3c0.2,0,0.4,0.2,0.4,0.4s-0.2,0.4-0.4,0.4h-1.3h-0.4c-0.2,0-0.4-0.2-0.4-0.4V8.1c0-0.2,0.2-0.4,0.4-0.4h0.4h1.3  c0.2,0,0.4,0.2,0.4,0.4s-0.2,0.4-0.4,0.4h-1.3V9h1.3c0.2,0,0.4,0.2,0.4,0.4s-0.2,0.4-0.4,0.4h-1.3V10.6z"/>
+    </svg>
   </a>
 </div>
 
