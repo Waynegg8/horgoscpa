@@ -13,6 +13,17 @@
 <link rel="stylesheet" href="/assets/css/fonts.css" />
 <link rel="stylesheet" href="/assets/css/base.css" />
 
+<!-- 頁尾置底修正 -->
+<style>
+  html, body { height: 100%; margin: 0; padding: 0; }
+  body { display: flex; flex-direction: column; min-height: 100vh; }
+  main, .hero, .service-detail, .blog-post, .faq-page, 
+  .contact-page, .team-page, .video-page, .blog-page, main.services {
+    flex: 1 0 auto;
+  }
+  .site-footer { flex-shrink: 0; margin-top: auto; }
+</style>
+
 <!-- Google Analytics GA4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
 <script>
