@@ -1,952 +1,437 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="霍爾果斯會計師事務所部落格 - 提供專業稅務、會計與企業經營相關文章與知識。" />
-  <title>部落格 | 霍爾果斯會計師事務所</title>
-  
-  <!-- Favicon -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
-  <link rel="manifest" href="/site.webmanifest">
-  
-  <!-- 引用樣式表 -->
-  <link rel="stylesheet" href="/assets/css/style.css" />
-  
-  <!-- Google 分析 -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-RKMCS9WVS5');
-  </script>
-  
-  <!-- 結構化資料 -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": "霍爾果斯會計師事務所部落格",
-    "description": "提供專業稅務、會計與企業經營相關文章與知識",
-    "url": "https://www.horgoscpa.com/blog.html",
-    "publisher": {
-      "@type": "Organization",
-      "name": "霍爾果斯會計師事務所",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://www.horgoscpa.com/assets/images/logo.png"
-      }
-    }
+<!-- 部落格頁面特定樣式 - 美化版 -->
+<style>
+  /* 搜尋框樣式 */
+  .search-container {
+    margin-bottom: 30px;
+    position: relative;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
   }
-  </script>
   
-  <!-- 部落格頁面特定樣式 -->
-  <style>
-    /* 搜尋框樣式 */
-    .search-container {
-      margin-bottom: 30px;
-      position: relative;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    
-    .search-input {
-      width: 100%;
-      padding: 12px 45px 12px 15px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-size: 16px;
-      transition: all 0.3s ease;
-    }
-    
-    .search-input:focus {
-      border-color: #0066cc;
-      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
-      outline: none;
-    }
-    
-    .search-button {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: #555;
-      cursor: pointer;
-      font-size: 18px;
-      transition: color 0.3s ease;
-    }
-    
-    .search-button:hover {
-      color: #0066cc;
-    }
-    
-    /* 部落格側邊欄樣式 */
+  .search-input {
+    width: 100%;
+    padding: 14px 45px 14px 18px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  
+  .search-input:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    outline: none;
+  }
+  
+  .search-button {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    font-size: 20px;
+    transition: color 0.3s ease;
+  }
+  
+  .search-button:hover {
+    color: #0066cc;
+  }
+  
+  /* 改進的分類標籤組 */
+  .category-filter {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  
+  .filter-btn {
+    background-color: #f5f7fa;
+    color: #555;
+    border: 2px solid #e6e9ee;
+    border-radius: 24px;
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+    font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+  }
+  
+  .filter-btn:hover {
+    background-color: #edf1f7;
+    border-color: #d3d8e3;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+  }
+  
+  .filter-btn.active {
+    background-color: #0066cc;
+    color: white;
+    border-color: #0066cc;
+    box-shadow: 0 3px 10px rgba(0, 102, 204, 0.3);
+  }
+  
+  /* 按壓效果 */
+  .filter-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  
+  /* 動畫效果 */
+  .filter-btn::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 24px;
+    transform: scale(0);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+  }
+  
+  .filter-btn:active::after {
+    transform: scale(1.5);
+    opacity: 0;
+    transition: 0s;
+  }
+  
+  /* 部落格側邊欄樣式 */
+  .blog-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 40px;
+    margin-top: 30px;
+  }
+  
+  .blog-main {
+    width: 100%;
+  }
+  
+  .blog-sidebar {
+    width: 100%;
+  }
+  
+  .sidebar-section {
+    margin-bottom: 40px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .sidebar-section:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
+  
+  .sidebar-section h3 {
+    font-size: 1.3rem;
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #0066cc;
+    color: #002147;
+    position: relative;
+  }
+  
+  .popular-posts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .popular-posts li {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eee;
+    transition: transform 0.3s ease;
+  }
+  
+  .popular-posts li:hover {
+    transform: translateX(5px);
+  }
+  
+  .popular-posts li:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  
+  .popular-posts a {
+    color: #333;
+    font-weight: 500;
+    text-decoration: none;
+    display: block;
+    transition: color 0.3s ease;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  
+  .popular-posts a:hover {
+    color: #0066cc;
+  }
+  
+  .popular-posts .post-date {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 5px;
+    display: block;
+  }
+  
+  /* 改進的標籤雲 */
+  .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .tag-cloud a {
+    display: inline-block;
+    padding: 6px 14px;
+    background: #f0f6ff;
+    border-radius: 20px;
+    color: #0066cc;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    font-weight: 500;
+    border: 1px solid #e0ecff;
+  }
+  
+  .tag-cloud a:hover {
+    background: #0066cc;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 102, 204, 0.2);
+  }
+  
+  /* 按壓效果 */
+  .tag-cloud a:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 102, 204, 0.1);
+    transition: all 0.1s ease;
+  }
+  
+  /* 確保部落格卡片樣式在調整後仍然美觀 */
+  .blog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+  }
+  
+  .blog-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  
+  .blog-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+  }
+  
+  /* 分頁控制樣式 */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 50px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 15px;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #333;
+    font-weight: 500;
+    text-decoration: none;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+  }
+  
+  .pagination-btn:hover {
+    background-color: #f5f5f5;
+    border-color: #ccc;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+  }
+  
+  .pagination-btn.active {
+    background-color: #0066cc;
+    color: #fff;
+    border-color: #0066cc;
+    box-shadow: 0 3px 10px rgba(0, 102, 204, 0.3);
+  }
+  
+  .pagination-btn.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  
+  /* 響應式調整 */
+  @media (max-width: 992px) {
     .blog-layout {
-      display: grid;
-      grid-template-columns: 1fr 300px;
-      gap: 40px;
-      margin-top: 30px;
-    }
-    
-    .blog-main {
-      width: 100%;
+      grid-template-columns: 1fr;
     }
     
     .blog-sidebar {
-      width: 100%;
+      order: -1;
     }
     
-    .sidebar-section {
-      margin-bottom: 40px;
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    .category-filter {
+      padding: 0 10px;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .filter-btn {
+      padding: 8px 15px;
+      font-size: 14px;
     }
     
-    .sidebar-section h3 {
-      font-size: 1.3rem;
-      margin-top: 0;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #0066cc;
-      color: #002147;
+    .category-filter {
+      gap: 8px;
     }
-    
-    .popular-posts {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    
-    .popular-posts li {
-      margin-bottom: 15px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid #eee;
-    }
-    
-    .popular-posts li:last-child {
-      margin-bottom: 0;
-      padding-bottom: 0;
-      border-bottom: none;
-    }
-    
-    .popular-posts a {
-      color: #333;
-      font-weight: 500;
-      text-decoration: none;
-      display: block;
-      transition: color 0.3s ease;
-      font-size: 0.95rem;
-    }
-    
-    .popular-posts a:hover {
-      color: #0066cc;
-    }
-    
-    .popular-posts .post-date {
-      font-size: 0.85rem;
-      color: #666;
-      margin-top: 5px;
-      display: block;
-    }
-    
-    .tag-cloud {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    
-    .tag-cloud a {
-      display: inline-block;
-      padding: 6px 12px;
-      background: #f5f5f5;
-      border-radius: 30px;
-      color: #555;
-      font-size: 0.85rem;
-      text-decoration: none;
-      transition: all 0.3s ease;
-    }
-    
-    .tag-cloud a:hover {
-      background: #0066cc;
-      color: #fff;
-    }
-    
-    /* 確保部落格卡片樣式在調整後仍然美觀 */
-    .blog-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 30px;
-    }
-    
-    /* 分頁控制樣式 */
-    .pagination {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-top: 50px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    
-    .pagination-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 40px;
-      height: 40px;
-      padding: 0 15px;
-      border-radius: 5px;
-      background-color: #fff;
-      color: #333;
-      font-weight: 500;
-      text-decoration: none;
-      border: 1px solid #ddd;
-      transition: all 0.3s ease;
-    }
-    
-    .pagination-btn:hover {
-      background-color: #f5f5f5;
-      border-color: #ccc;
-    }
-    
-    .pagination-btn.active {
-      background-color: #0066cc;
-      color: #fff;
-      border-color: #0066cc;
-    }
-    
-    .pagination-btn.disabled {
-      opacity: 0.5;
-      pointer-events: none;
-    }
-    
-    /* 響應式調整 */
-    @media (max-width: 992px) {
-      .blog-layout {
-        grid-template-columns: 1fr;
-      }
-      
-      .blog-sidebar {
-        order: -1;
-      }
-    }
-    
-    /* 沒有搜尋結果的提示 */
-    .no-results {
-      text-align: center;
-      padding: 40px 0;
-      color: #666;
-    }
-    
-    .no-results p {
-      margin-bottom: 15px;
-      font-size: 1.1rem;
-    }
-    
-    .no-results .btn {
-      margin-top: 10px;
-    }
-    
-    /* 加載中動畫 */
-    .loading-container {
-      text-align: center;
-      padding: 60px 0;
-    }
-    
-    .loading-spinner {
-      display: inline-block;
-      width: 50px;
-      height: 50px;
-      border: 3px solid rgba(0, 102, 204, 0.2);
-      border-radius: 50%;
-      border-top-color: #0066cc;
-      animation: spin 1s ease-in-out infinite;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  </style>
-</head>
-<body>
+  }
+  
+  /* 沒有搜尋結果的提示 */
+  .no-results {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    background: #f9f9f9;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+  }
+  
+  .no-results p {
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+  }
+  
+  .no-results .btn {
+    margin-top: 15px;
+    background: #0066cc;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .no-results .btn:hover {
+    background: #005bb9;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 102, 204, 0.2);
+  }
+  
+  /* 加載中動畫改進 */
+  .loading-container {
+    text-align: center;
+    padding: 60px 0;
+  }
+  
+  .loading-spinner {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(0, 102, 204, 0.2);
+    border-radius: 50%;
+    border-top-color: #0066cc;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
 
-<!-- 導航欄 -->
-<nav class="site-nav">
-  <div class="nav-container">
-    <div class="logo">
-      <a href="/index.html">
-        <div class="logo-main">霍爾果斯會計師事務所</div>
-        <div class="logo-sub">HorgosCPA</div>
-      </a>
-    </div>
-    <input type="checkbox" id="nav-toggle" class="nav-toggle">
-    <label for="nav-toggle" class="nav-toggle-label">
-      <span></span>
-    </label>
-    <ul class="nav-menu">
-      <li><a href="/services.html">服務項目</a></li>
-      <li><a href="/team.html">服務團隊</a></li>
-      <li><a href="/blog.html" class="active">部落格</a></li>
-      <li><a href="/faq.html">常見問題</a></li>
-      <li><a href="/video.html">影片</a></li>
-      <li><a href="/contact.html">聯絡資訊</a></li>
-    </ul>
-  </div>
-</nav>
+<!-- 使用方法：將此style區塊放在blog.html頁面的<head>標籤內，替換原有的樣式，或者可以單獨將這個樣式加入到網站的自定義CSS檔案中 -->
 
-<!-- 部落格頁面內容 -->
-<main class="blog-page">
-  <div class="container">
-    <header class="page-header">
-      <h1>專業財稅知識分享</h1>
-      <p>我們定期發布最新稅務法規、會計知識、企業財務管理等實用資訊，協助您掌握財務脈動。</p>
-    </header>
-    
-    <!-- 搜尋框 -->
-    <div class="search-container">
-      <input type="text" id="blog-search" class="search-input" placeholder="搜尋文章..." aria-label="搜尋文章">
-      <button class="search-button" id="search-btn" aria-label="搜尋">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-      </button>
-    </div>
-    
-    <div class="category-filter">
-      <button class="filter-btn active" data-category="all">全部文章</button>
-      <button class="filter-btn" data-category="tax">稅務相關</button>
-      <button class="filter-btn" data-category="accounting">會計記帳</button>
-      <button class="filter-btn" data-category="business">企業經營</button>
-    </div>
-    
-    <div class="blog-layout">
-      <div class="blog-main">
-        <div class="blog-grid" id="blog-posts-container">
-          <!-- 加載中提示 -->
-          <div class="loading-container">
-            <div class="loading-spinner"></div>
-            <p>正在加載文章...</p>
-          </div>
-        </div>
-        
-        <!-- 分頁控制 -->
-        <div class="pagination" id="pagination-container">
-          <!-- 分頁按鈕將由JavaScript動態生成 -->
-        </div>
-      </div>
-      
-      <div class="blog-sidebar">
-        <!-- 熱門文章區塊 -->
-        <div class="sidebar-section">
-          <h3>熱門文章</h3>
-          <ul class="popular-posts" id="popular-posts-container">
-            <li class="loading-item">正在加載熱門文章...</li>
-          </ul>
-        </div>
-        
-        <!-- 文章標籤雲 -->
-        <div class="sidebar-section">
-          <h3>熱門標籤</h3>
-          <div class="tag-cloud" id="tag-cloud-container">
-            <!-- 標籤將由JavaScript動態生成 -->
-            <span class="loading-item">正在加載標籤...</span>
-          </div>
-        </div>
-        
-        <!-- 訂閱區塊 -->
-        <div class="sidebar-section">
-          <h3>訂閱最新資訊</h3>
-          <p>定期收到最新稅務法規與會計實務資訊，讓您的財務管理更有效率。</p>
-          <form id="subscribe-form" class="subscribe-form">
-            <div style="margin-bottom: 15px;">
-              <input type="email" id="subscribe-email" class="search-input" placeholder="您的電子郵件" required>
-            </div>
-            <button type="submit" class="btn" style="width: 100%;">訂閱電子報</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-</main>
-
-<!-- 頁尾區域 -->
-<footer class="site-footer">
-  <div class="footer-container">
-    <div class="footer-text">
-      <p>&copy; 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
-    </div>
-  </div>
-</footer>
-
-<!-- 懸浮按鈕 -->
-<div class="cta-floating">
-  <a href="/booking.html" class="float-btn consult-btn">免費諮詢</a>
-  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="float-btn line-btn">LINE</a>
-</div>
-
-<!-- 自動抓取文章的腳本 -->
 <script>
+  // 此腳本為博客分類按鈕添加點擊波紋效果
   document.addEventListener('DOMContentLoaded', function() {
-    // 元素容器
-    const postsContainer = document.getElementById('blog-posts-container');
-    const popularPostsContainer = document.getElementById('popular-posts-container');
-    const paginationContainer = document.getElementById('pagination-container');
-    const tagCloudContainer = document.getElementById('tag-cloud-container');
-    
-    // 過濾按鈕
+    // 為所有分類按鈕添加波紋效果
     const filterButtons = document.querySelectorAll('.filter-btn');
     
-    // 搜尋元素
-    const searchInput = document.getElementById('blog-search');
-    const searchBtn = document.getElementById('search-btn');
-    
-    // 資料與分頁狀態
-    let allBlogData = null;
-    let currentPage = 1;
-    let currentCategory = 'all';
-    let currentSearchTerm = '';
-    let itemsPerPage = 6; // 每頁顯示6篇文章
-    
-    /**
-     * 獲取URL參數
-     */
-    function getUrlParams() {
-      const params = new URLSearchParams(window.location.search);
-      
-      // 獲取頁碼參數
-      const pageParam = params.get('page');
-      if (pageParam && !isNaN(parseInt(pageParam))) {
-        currentPage = Math.max(1, parseInt(pageParam));
-      }
-      
-      // 獲取分類參數
-      const categoryParam = params.get('category');
-      if (categoryParam) {
-        currentCategory = categoryParam;
-        
-        // 更新分類按鈕狀態
-        filterButtons.forEach(btn => {
-          if (btn.dataset.category === currentCategory) {
-            btn.classList.add('active');
-          } else {
-            btn.classList.remove('active');
-          }
-        });
-      }
-      
-      // 獲取搜尋參數
-      const searchParam = params.get('search');
-      if (searchParam) {
-        currentSearchTerm = searchParam;
-        searchInput.value = currentSearchTerm;
-      }
-      
-      // 獲取標籤參數
-      const tagParam = params.get('tag');
-      if (tagParam) {
-        currentSearchTerm = tagParam;
-        searchInput.value = tagParam;
-      }
-    }
-    
-    /**
-     * 更新URL參數
-     */
-    function updateUrlParams() {
-      const params = new URLSearchParams();
-      
-      if (currentPage > 1) {
-        params.set('page', currentPage);
-      }
-      
-      if (currentCategory !== 'all') {
-        params.set('category', currentCategory);
-      }
-      
-      if (currentSearchTerm) {
-        params.set('search', currentSearchTerm);
-      }
-      
-      const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
-      history.pushState({}, '', newUrl);
-    }
-    
-    /**
-     * 從新JSON格式加載博客數據
-     */
-    async function loadBlogData() {
-      try {
-        // 獲取URL參數
-        getUrlParams();
-        
-        // 加載數據
-        const response = await fetch('/assets/data/blog-posts.json');
-        
-        if (!response.ok) {
-          throw new Error('無法加載文章數據');
-        }
-        
-        // 解析JSON
-        const data = await response.json();
-        allBlogData = data;
-        
-        // 如果JSON中有指定每頁數量，使用其值
-        if (data.pagination && data.pagination.items_per_page) {
-          itemsPerPage = data.pagination.items_per_page;
-        }
-        
-        // 渲染初始內容
-        renderFilteredPosts();
-        renderPopularPosts(data.posts.slice(0, 4));
-        renderTagCloud(data.tags || extractTagsFromPosts(data.posts));
-        
-        return data;
-      } catch (error) {
-        console.error('加載文章出錯:', error);
-        
-        // 顯示錯誤信息
-        postsContainer.innerHTML = `
-          <div class="no-results">
-            <p>加載文章時出現問題。</p>
-            <p>請稍後再試或聯絡我們。</p>
-          </div>
-        `;
-        
-        // 使用備用數據
-        return useFallbackData();
-      }
-    }
-    
-    /**
-     * 在無法加載數據時使用備用數據
-     */
-    function useFallbackData() {
-      const fallbackPosts = [
-        {
-          title: '跨境電商如何合法節稅？',
-          date: '2025-04-10',
-          summary: '面對台灣與境外稅務申報差異，電商業者該注意哪些風險與機會？了解如何合法規劃跨境稅務並避免重複課稅。',
-          url: '/blog/cross-border-tax.html',
-          category: 'tax',
-          image: '/assets/images/blog/cross-border-tax.jpg',
-          tags: ["跨境稅務", "電子商務", "稅務規劃"]
-        },
-        {
-          title: '新創公司常見帳務陷阱',
-          date: '2025-03-22',
-          summary: '從開立發票、勞健保到稅務合規，新創最容易忽略的會計問題整理。避免常見財務錯誤，確保公司財務健全運作。',
-          url: '/blog/startup-traps.html',
-          category: 'accounting',
-          image: '/assets/images/blog/startup-accounting.jpg',
-          tags: ["新創企業", "會計實務", "稅務合規"]
-        },
-        {
-          title: '年度稅務規劃指南',
-          date: '2025-03-05',
-          summary: '提前做好稅務規劃，合理降低稅負，掌握各項扣除額與優惠措施。專業稅務師提供的實用建議，讓您節稅無憂。',
-          url: '/blog/tax-planning.html',
-          category: 'tax',
-          image: '/assets/images/blog/tax-planning.jpg',
-          tags: ["稅務規劃", "節稅策略", "扣除額"]
-        }
-      ];
-      
-      // 創建備用數據結構
-      const fallbackData = {
-        posts: fallbackPosts,
-        pagination: {
-          total_posts: fallbackPosts.length,
-          total_pages: 1,
-          items_per_page: 6
-        },
-        categories: ["tax", "accounting", "business"],
-        tags: ["跨境稅務", "電子商務", "稅務規劃", "新創企業", "會計實務", "稅務合規", "節稅策略", "扣除額"]
-      };
-      
-      // 使用備用數據
-      allBlogData = fallbackData;
-      renderFilteredPosts();
-      renderPopularPosts(fallbackPosts);
-      renderTagCloud(fallbackData.tags);
-      
-      return fallbackData;
-    }
-    
-    /**
-     * 從文章中提取所有唯一標籤
-     */
-    function extractTagsFromPosts(posts) {
-      const allTags = new Set();
-      
-      posts.forEach(post => {
-        if (post.tags && Array.isArray(post.tags)) {
-          post.tags.forEach(tag => allTags.add(tag));
-        }
-      });
-      
-      return Array.from(allTags);
-    }
-    
-    /**
-     * 過濾文章並進行分頁
-     */
-    function filterAndPaginatePosts() {
-      if (!allBlogData || !allBlogData.posts) return { posts: [], totalPages: 0 };
-      
-      // 根據分類過濾
-      let filteredPosts = allBlogData.posts;
-      if (currentCategory !== 'all') {
-        filteredPosts = filteredPosts.filter(post => post.category === currentCategory);
-      }
-      
-      // 根據搜尋詞過濾
-      if (currentSearchTerm) {
-        const searchTermLower = currentSearchTerm.toLowerCase();
-        filteredPosts = filteredPosts.filter(post => {
-          return post.title.toLowerCase().includes(searchTermLower) || 
-                 post.summary.toLowerCase().includes(searchTermLower) ||
-                 (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchTermLower)));
-        });
-      }
-      
-      // 計算總頁數
-      const totalPages = Math.max(1, Math.ceil(filteredPosts.length / itemsPerPage));
-      
-      // 確保當前頁碼有效
-      currentPage = Math.max(1, Math.min(currentPage, totalPages));
-      
-      // 對當前頁進行分頁
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = Math.min(startIndex + itemsPerPage, filteredPosts.length);
-      const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
-      
-      return {
-        posts: paginatedPosts,
-        totalPages: totalPages,
-        totalPosts: filteredPosts.length
-      };
-    }
-    
-    /**
-     * 渲染經過過濾和分頁的文章
-     */
-    function renderFilteredPosts() {
-      const { posts, totalPages, totalPosts } = filterAndPaginatePosts();
-      
-      // 清空容器
-      postsContainer.innerHTML = '';
-      
-      // 渲染文章
-      if (posts.length > 0) {
-        posts.forEach(post => {
-          const postElement = document.createElement('article');
-          postElement.className = 'blog-card';
-          
-          postElement.innerHTML = `
-            <div class="blog-image">
-              <img src="${post.image}" alt="${post.title}" />
-            </div>
-            <div class="blog-content">
-              <h2><a href="${post.url}">${post.title}</a></h2>
-              <p class="date">${post.date}</p>
-              <p>${post.summary}</p>
-              <a href="${post.url}" class="read-more">閱讀更多</a>
-            </div>
-          `;
-          
-          postsContainer.appendChild(postElement);
-        });
-        
-        // 渲染分頁控制
-        renderPagination(totalPages);
-      } else {
-        // 如果沒有文章
-        postsContainer.innerHTML = `
-          <div class="no-results">
-            <p>找不到符合「${currentSearchTerm || currentCategory}」的文章。</p>
-            <p>請嘗試其他關鍵字，或瀏覽我們的熱門文章。</p>
-            <button class="btn" id="reset-search">清除搜尋</button>
-          </div>
-        `;
-        
-        // 隱藏分頁
-        paginationContainer.style.display = 'none';
-        
-        // 綁定清除搜尋按鈕事件
-        document.getElementById('reset-search').addEventListener('click', function() {
-          currentSearchTerm = '';
-          currentCategory = 'all';
-          currentPage = 1;
-          searchInput.value = '';
-          
-          // 重置分類按鈕
-          filterButtons.forEach(btn => {
-            if (btn.dataset.category === 'all') {
-              btn.classList.add('active');
-            } else {
-              btn.classList.remove('active');
-            }
-          });
-          
-          // 更新URL並重新渲染
-          updateUrlParams();
-          renderFilteredPosts();
-        });
-      }
-    }
-    
-    /**
-     * 渲染分頁控制
-     */
-    function renderPagination(totalPages) {
-      if (totalPages <= 1) {
-        paginationContainer.style.display = 'none';
-        return;
-      }
-      
-      paginationContainer.style.display = 'flex';
-      paginationContainer.innerHTML = '';
-      
-      // 上一頁按鈕
-      const prevBtn = document.createElement('a');
-      prevBtn.className = `pagination-btn ${currentPage === 1 ? 'disabled' : ''}`;
-      prevBtn.innerHTML = '&laquo;';
-      prevBtn.href = 'javascript:void(0)';
-      if (currentPage > 1) {
-        prevBtn.addEventListener('click', () => {
-          currentPage--;
-          updateUrlParams();
-          renderFilteredPosts();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-      }
-      paginationContainer.appendChild(prevBtn);
-      
-      // 頁碼按鈕
-      // 最多顯示7個頁碼按鈕，其餘用省略號替代
-      const maxVisibleButtons = 7;
-      let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
-      let endPage = Math.min(startPage + maxVisibleButtons - 1, totalPages);
-      
-      if (endPage - startPage + 1 < maxVisibleButtons) {
-        startPage = Math.max(1, endPage - maxVisibleButtons + 1);
-      }
-      
-      // 第一頁按鈕
-      if (startPage > 1) {
-        const firstPageBtn = document.createElement('a');
-        firstPageBtn.className = 'pagination-btn';
-        firstPageBtn.textContent = '1';
-        firstPageBtn.href = 'javascript:void(0)';
-        firstPageBtn.addEventListener('click', () => {
-          currentPage = 1;
-          updateUrlParams();
-          renderFilteredPosts();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-        paginationContainer.appendChild(firstPageBtn);
-        
-        // 省略號
-        if (startPage > 2) {
-          const ellipsis = document.createElement('span');
-          ellipsis.className = 'pagination-btn disabled';
-          ellipsis.textContent = '...';
-          paginationContainer.appendChild(ellipsis);
-        }
-      }
-      
-      // 中間頁碼
-      for (let i = startPage; i <= endPage; i++) {
-        const pageBtn = document.createElement('a');
-        pageBtn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
-        pageBtn.textContent = i;
-        pageBtn.href = 'javascript:void(0)';
-        
-        if (i !== currentPage) {
-          pageBtn.addEventListener('click', () => {
-            currentPage = i;
-            updateUrlParams();
-            renderFilteredPosts();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          });
-        }
-        
-        paginationContainer.appendChild(pageBtn);
-      }
-      
-      // 最後頁按鈕
-      if (endPage < totalPages) {
-        // 省略號
-        if (endPage < totalPages - 1) {
-          const ellipsis = document.createElement('span');
-          ellipsis.className = 'pagination-btn disabled';
-          ellipsis.textContent = '...';
-          paginationContainer.appendChild(ellipsis);
-        }
-        
-        const lastPageBtn = document.createElement('a');
-        lastPageBtn.className = 'pagination-btn';
-        lastPageBtn.textContent = totalPages;
-        lastPageBtn.href = 'javascript:void(0)';
-        lastPageBtn.addEventListener('click', () => {
-          currentPage = totalPages;
-          updateUrlParams();
-          renderFilteredPosts();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-        paginationContainer.appendChild(lastPageBtn);
-      }
-      
-      // 下一頁按鈕
-      const nextBtn = document.createElement('a');
-      nextBtn.className = `pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`;
-      nextBtn.innerHTML = '&raquo;';
-      nextBtn.href = 'javascript:void(0)';
-      if (currentPage < totalPages) {
-        nextBtn.addEventListener('click', () => {
-          currentPage++;
-          updateUrlParams();
-          renderFilteredPosts();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-      }
-      paginationContainer.appendChild(nextBtn);
-    }
-    
-    /**
-     * 渲染熱門文章
-     */
-    function renderPopularPosts(posts) {
-      // 清空容器
-      popularPostsContainer.innerHTML = '';
-      
-      // 只顯示前4篇熱門文章
-      const topPosts = posts.slice(0, 4);
-      
-      topPosts.forEach(post => {
-        const listItem = document.createElement('li');
-        listItem.innerHTML = `
-          <a href="${post.url}">${post.title}</a>
-          <span class="post-date">${post.date}</span>
-        `;
-        popularPostsContainer.appendChild(listItem);
-      });
-    }
-    
-    /**
-     * 渲染標籤雲
-     */
-    function renderTagCloud(tags) {
-      // 清空容器
-      tagCloudContainer.innerHTML = '';
-      
-      // 如果沒有標籤
-      if (!tags || tags.length === 0) {
-        tagCloudContainer.innerHTML = '<p>暫無標籤</p>';
-        return;
-      }
-      
-      // 最多顯示12個熱門標籤
-      const displayTags = tags.slice(0, 12);
-      
-      displayTags.forEach(tag => {
-        const tagLink = document.createElement('a');
-        tagLink.href = 'javascript:void(0)';
-        tagLink.textContent = tag;
-        tagLink.dataset.tag = tag;
-        
-        tagLink.addEventListener('click', function() {
-          currentSearchTerm = tag;
-          currentCategory = 'all';
-          currentPage = 1;
-          searchInput.value = tag;
-          
-          // 重置分類按鈕
-          filterButtons.forEach(btn => {
-            if (btn.dataset.category === 'all') {
-              btn.classList.add('active');
-            } else {
-              btn.classList.remove('active');
-            }
-          });
-          
-          // 更新URL並重新渲染
-          updateUrlParams();
-          renderFilteredPosts();
-        });
-        
-        tagCloudContainer.appendChild(tagLink);
-      });
-    }
-    
-    // 綁定搜尋按鈕事件
-    searchBtn.addEventListener('click', function() {
-      currentSearchTerm = searchInput.value.trim();
-      currentPage = 1;
-      updateUrlParams();
-      renderFilteredPosts();
-    });
-    
-    // 綁定搜尋框回車事件
-    searchInput.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        currentSearchTerm = searchInput.value.trim();
-        currentPage = 1;
-        updateUrlParams();
-        renderFilteredPosts();
-      }
-    });
-    
-    // 綁定分類過濾按鈕事件
     filterButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        // 移除所有按鈕的active狀態
-        filterButtons.forEach(btn => btn.classList.remove('active'));
+      button.addEventListener('click', function(e) {
+        // 創建波紋元素
+        const ripple = document.createElement('div');
+        this.appendChild(ripple);
         
-        // 設置當前按鈕為active
-        this.classList.add('active');
+        // 設置波紋位置
+        const rect = this.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
         
-        // 設置當前分類
-        currentCategory = this.getAttribute('data-category');
-        currentPage = 1;
+        // 添加波紋樣式
+        ripple.style.cssText = `
+          position: absolute;
+          background: rgba(255, 255, 255, 0.7);
+          border-radius: 50%;
+          pointer-events: none;
+          width: 5px;
+          height: 5px;
+          top: ${y}px;
+          left: ${x}px;
+          transform: translate(-50%, -50%);
+          animation: ripple 0.6s ease-out;
+        `;
         
-        // 更新URL並重新渲染
-        updateUrlParams();
-        renderFilteredPosts();
+        // 波紋動畫結束後移除
+        setTimeout(() => {
+          ripple.remove();
+        }, 600);
       });
     });
     
-    // 綁定訂閱表單提交事件
-    const subscribeForm = document.getElementById('subscribe-form');
-    if (subscribeForm) {
-      subscribeForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const email = document.getElementById('subscribe-email').value;
-        alert(`感謝您的訂閱！我們將定期發送最新財稅資訊至 ${email}`);
-        this.reset();
-      });
+    // 添加波紋動畫
+    if (!document.querySelector('style#ripple-animation')) {
+      const style = document.createElement('style');
+      style.id = 'ripple-animation';
+      style.textContent = `
+        @keyframes ripple {
+          0% {
+            width: 0;
+            height: 0;
+            opacity: 0.7;
+          }
+          100% {
+            width: 500px;
+            height: 500px;
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
     }
-    
-    // 監聽瀏覽器前進/後退按鈕
-    window.addEventListener('popstate', function() {
-      getUrlParams();
-      renderFilteredPosts();
-    });
-    
-    // 初始化加載博客數據
-    loadBlogData();
   });
 </script>
-
-</body>
-</html>

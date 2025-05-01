@@ -15,6 +15,189 @@
   <!-- 引用樣式表 -->
   <link rel="stylesheet" href="/assets/css/style.css" />
   
+  <!-- 自定義樣式 - 改進的表單選項按鈕 -->
+  <style>
+    /* 改進的選項按鈕樣式 */
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    
+    .radio-option {
+      position: relative;
+      min-width: 100px;
+    }
+    
+    .radio-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .radio-option label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 6px 0;
+      font-weight: normal;
+      transition: all 0.3s ease;
+    }
+    
+    .radio-option label:before {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #0066cc;
+      border-radius: 50%;
+      margin-right: 10px;
+      transition: all 0.2s ease;
+      background-color: white;
+    }
+    
+    .radio-option input[type="radio"]:checked + label:before {
+      border-width: 2px;
+      border-color: #0066cc;
+    }
+    
+    .radio-option input[type="radio"]:checked + label:after {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 13px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #0066cc;
+    }
+    
+    .radio-option:hover label:before {
+      border-color: #004d99;
+    }
+    
+    .radio-option input[type="radio"]:focus + label:before {
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.2);
+      border-color: #004d99;
+    }
+    
+    /* 原有的選項按鈕樣式覆蓋 */
+    .options-group {
+      display: none; /* 隱藏原有的按鈕組 */
+    }
+    
+    /* 提交按鈕改進 */
+    .submit-btn {
+      background-color: #0066cc;
+      color: white;
+      padding: 14px 28px;
+      border-radius: 5px;
+      border: none;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      margin-top: 20px;
+      font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+    }
+    
+    .submit-btn:hover {
+      background-color: #004d99;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* 表單組樣式改進 */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .form-group input[type="text"],
+    .form-group input[type="tel"],
+    .form-group input[type="email"],
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: #0066cc;
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+      outline: none;
+    }
+    
+    /* 必填項標記 */
+    .required {
+      color: #ff4d4f;
+      margin-left: 3px;
+    }
+    
+    /* 更美觀的複選框 */
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .checkbox-label input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .checkbox-label span {
+      display: flex;
+      align-items: center;
+      font-weight: normal;
+    }
+    
+    .checkbox-label span:before {
+      content: '';
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #0066cc;
+      border-radius: 4px;
+      margin-right: 10px;
+      transition: all 0.2s ease;
+      background-color: white;
+    }
+    
+    .checkbox-label input[type="checkbox"]:checked + span:before {
+      background-color: #0066cc;
+      border-color: #0066cc;
+    }
+    
+    .checkbox-label input[type="checkbox"]:checked + span:after {
+      content: '✓';
+      position: absolute;
+      left: 5px;
+      top: 0px;
+      color: white;
+      font-size: 14px;
+    }
+    
+    .checkbox-label:hover span:before {
+      border-color: #004d99;
+    }
+  </style>
+  
   <!-- Google 分析 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
   <script>
@@ -92,10 +275,26 @@
       
       <div class="form-group">
         <label>諮詢主題 <span class="required">*</span></label>
+        <!-- 原有的按鈕組，保留但隱藏起來 -->
         <div class="options-group" id="topic-options">
           <button type="button" class="option-btn" data-value="稅務">稅務</button>
           <button type="button" class="option-btn" data-value="會計">會計</button>
           <button type="button" class="option-btn" data-value="企業顧問">企業顧問</button>
+        </div>
+        <!-- 新增改良版單選按鈕 -->
+        <div class="radio-group">
+          <div class="radio-option">
+            <input type="radio" id="topic-tax" name="topic-radio" value="稅務">
+            <label for="topic-tax">稅務</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" id="topic-accounting" name="topic-radio" value="會計">
+            <label for="topic-accounting">會計</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" id="topic-consulting" name="topic-radio" value="企業顧問">
+            <label for="topic-consulting">企業顧問</label>
+          </div>
         </div>
         <input type="hidden" name="topic" id="topic-field" required>
       </div>
@@ -143,29 +342,43 @@
   <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="float-btn line-btn">LINE</a>
 </div>
 
-<!-- 選項按鈕功能 -->
+<!-- 選項按鈕功能 - 修改後的版本 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // 為所有選項按鈕添加事件監聽
+    // 原有的選項按鈕功能，可以保留但不再使用
     const optionGroups = document.querySelectorAll('.options-group');
+    const hiddenField = document.getElementById('topic-field');
     
-    optionGroups.forEach(group => {
-      const buttons = group.querySelectorAll('.option-btn');
-      const hiddenField = document.getElementById(group.id.replace('options', 'field'));
-      
-      buttons.forEach(button => {
-        button.addEventListener('click', function() {
-          // 移除同組中其他按鈕的選中狀態
-          buttons.forEach(btn => btn.classList.remove('selected'));
-          
-          // 添加當前按鈕的選中狀態
-          this.classList.add('selected');
-          
-          // 更新隱藏字段的值
-          hiddenField.value = this.getAttribute('data-value');
-        });
+    // 新增的單選按鈕功能
+    const radioButtons = document.querySelectorAll('input[name="topic-radio"]');
+    
+    radioButtons.forEach(radio => {
+      radio.addEventListener('change', function() {
+        // 更新隱藏欄位的值
+        hiddenField.value = this.value;
+        console.log('Selected topic:', this.value);
       });
     });
     
+    // 表單提交前檢查是否有選擇主題
+    const bookingForm = document.querySelector('.booking-form');
+    bookingForm.addEventListener('submit', function(e) {
+      if (!hiddenField.value) {
+        // 如果沒有選擇主題，使用第一個單選按鈕的值
+        if (radioButtons.length > 0) {
+          const firstRadio = radioButtons[0];
+          firstRadio.checked = true;
+          hiddenField.value = firstRadio.value;
+        }
+      }
+    });
+    
+    // 默認選中第一個選項
+    if (radioButtons.length > 0) {
+      radioButtons[0].checked = true;
+      hiddenField.value = radioButtons[0].value;
+    }
   });
 </script>
+</body>
+</html>
