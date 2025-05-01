@@ -38,6 +38,10 @@ on:
 jobs:
   blog-automation:
     runs-on: ubuntu-latest
+    # 增加權限設置，確保可以被API觸發並運行
+    permissions:
+      contents: write
+      actions: write
     
     steps:
       # 檢出代碼
@@ -66,12 +70,47 @@ jobs:
           mkdir -p assets/data
           mkdir -p word-docs
       
+      # 確認JSON檔案存在
+      - name: 確認JSON檔案存在
+        run: |
+          if [ ! -f "assets/data/blog-posts.json" ]; then
+            echo "建立初始blog-posts.json檔案"
+            echo '{
+              "posts": [],
+              "pagination": {
+                "total_posts": 0,
+                "total_pages": 1,
+                "items_per_page": 6
+              },
+              "categories": ["tax", "accounting", "business"],
+              "tags": []
+            }' > assets/data/blog-posts.json
+            git config --global user.name "GitHub Actions Bot"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add assets/data/blog-posts.json
+            git commit -m "初始化blog-posts.json檔案" || echo "無需提交"
+            git push || echo "無需推送"
+          fi
+      
       # 處理Word文檔 (如果啟用)
       - name: 處理Word文檔
         if: ${{ github.event_name == 'push' || github.event.inputs.process_word == 'true' }}
         run: |
           if [ -d "word-docs" ] && [ "$(ls -A word-docs)" ]; then
-            python .github/scripts/word_to_html.py word-docs blog
+            # 複製word_to_html.py腳本到當前目錄
+            if [ -f ".github/scripts/word_to_html.py" ]; then
+              cp .github/scripts/word_to_html.py ./
+            elif [ -f ".github/workflows/word_to_html.py" ]; then
+              cp .github/workflows/word_to_html.py ./
+            fi
+            
+            # 運行Python腳本處理Word文檔
+            if [ -f "word_to_html.py" ]; then
+              python word_to_html.py word-docs blog
+            else
+              echo "找不到word_to_html.py腳本"
+              exit 1
+            fi
           else
             echo "word-docs 目錄為空或不存在，跳過處理"
           fi
@@ -82,7 +121,7 @@ jobs:
         if: ${{ github.event_name == 'delete' || github.event.inputs.handle_deletion == 'true' }}
         run: |
           # 獲取已刪除的HTML文件列表
-          git diff --name-only --diff-filter=D HEAD~1 HEAD | grep -E '^blog/.*\.html$' > deleted_files.txt
+          git diff --name-only --diff-filter=D HEAD~1 HEAD | grep -E '^blog/.*\.html$' > deleted_files.txt || true
           
           # 檢查是否有文件被刪除
           if [ -s deleted_files.txt ]; then
@@ -117,17 +156,45 @@ jobs:
       - name: 更新博客JSON文件
         if: ${{ steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' }}
         run: |
-          python .github/scripts/update_blog_posts.py
+          # 複製update_blog_posts.py腳本到當前目錄
+          if [ -f ".github/scripts/update_blog_posts.py" ]; then
+            cp .github/scripts/update_blog_posts.py ./
+          elif [ -f ".github/workflows/update_blog_posts.py" ]; then
+            cp .github/workflows/update_blog_posts.py ./
+          fi
+          
+          # 運行Python腳本更新JSON
+          if [ -f "update_blog_posts.py" ]; then
+            python update_blog_posts.py
+          else
+            echo "找不到update_blog_posts.py腳本"
+            exit 1
+          fi
         env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
       
-      # 清理Word文檔（可選，如果你想在處理完後清空目錄）
+      # 提交更新的JSON文件
+      - name: 提交更新的JSON文件
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          git add assets/data/blog-posts.json
+          
+          if git diff --staged --quiet; then
+            echo "沒有JSON文件變更需要提交"
+          else
+            git commit -m "更新博客文章JSON數據"
+            git push
+          fi
+      
+      # 清理Word文檔（可選，將處理過的Word文檔移動到processed目錄）
       - name: 清理已處理的Word文檔
         if: ${{ github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true' }}
         run: |
           # 移動已處理的文件到processed目錄
           mkdir -p word-docs/processed
-          mv word-docs/*.docx word-docs/processed/
+          find word-docs -maxdepth 1 -type f -name "*.docx" -exec mv {} word-docs/processed/ \;
           
           # 提交更改
           git add word-docs/

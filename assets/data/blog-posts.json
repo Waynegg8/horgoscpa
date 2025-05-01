@@ -1,0 +1,10 @@
+{
+  "posts": [],
+  "pagination": {
+    "total_posts": 0,
+    "total_pages": 1,
+    "items_per_page": 6
+  },
+  "categories": ["tax", "accounting", "business"],
+  "tags": []
+}
