@@ -1,57 +1,63 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
-<link rel="manifest" href="/site.webmanifest">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="霍爾果斯會計師事務所部落格 - 提供專業稅務、會計與企業經營相關文章與知識。" />
   <title>部落格 | 霍爾果斯會計師事務所</title>
+  
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- 引用樣式表 -->
   <link rel="stylesheet" href="/assets/css/style.css" />
-  <link rel="stylesheet" href="/assets/css/footer-fix.css" />
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-RKMCS9WVS5');
-</script>
-
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "霍爾果斯會計師事務所",
-  "url": "https://www.horgoscpa.com",
-  "logo": "https://www.horgoscpa.com/assets/images/favicon-32x32.png",
-  "contactPoint": [{
-    "@type": "ContactPoint",
-    "telephone": "+886-4-2220-5606",
-    "contactType": "Customer Service"
-  }]
-}
-</script>
-
+  
+  <!-- Google 分析 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-RKMCS9WVS5');
+  </script>
+  
+  <!-- 結構化資料 -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "霍爾果斯會計師事務所",
+    "url": "https://www.horgoscpa.com",
+    "logo": "https://www.horgoscpa.com/assets/images/favicon-32x32.png",
+    "contactPoint": [{
+      "@type": "ContactPoint",
+      "telephone": "+886-4-2220-5606",
+      "contactType": "Customer Service"
+    }]
+  }
+  </script>
 </head>
 <body>
 
+<!-- 導航欄 -->
 <nav class="site-nav">
   <div class="nav-container">
     <div class="logo">
-      <a href="/index.html">霍爾果斯會計師事務所</a>
+      <a href="/index.html">
+        <div class="logo-main">霍爾果斯會計師事務所</div>
+        <div class="logo-sub">HorgosCPA</div>
+      </a>
     </div>
     <input type="checkbox" id="nav-toggle" class="nav-toggle">
     <label for="nav-toggle" class="nav-toggle-label">
       <span></span>
     </label>
     <ul class="nav-menu">
-      <li><a href="/services.html">服務</a></li>
-      <li><a href="/team.html">團隊</a></li>
+      <li><a href="/services.html">服務項目</a></li>
+      <li><a href="/team.html">服務團隊</a></li>
       <li><a href="/blog.html" class="active">部落格</a></li>
       <li><a href="/faq.html">常見問題</a></li>
       <li><a href="/video.html">影片</a></li>
@@ -60,6 +66,7 @@
   </div>
 </nav>
 
+<!-- 部落格頁面內容 -->
 <main class="blog-page">
   <div class="container">
     <header class="page-header">
@@ -80,28 +87,19 @@
   </div>
 </main>
 
+<!-- 頁尾區域 -->
 <footer class="site-footer">
   <div class="footer-container">
-    <div class="footer-info">
-      <div class="footer-logo">霍爾果斯會計師事務所</div>
-      <p>提供專業稅務、會計與企業顧問服務</p>
+    <div class="footer-text">
+      <p>&copy; 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
     </div>
-    
-    <div class="footer-contact">
-      <p>地址：台中市西區建國路21號3樓之1</p>
-      <p>電話：04-2220-5606</p>
-      <p>LINE：<a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入好友</a></p>
-    </div>
-  </div>
-  
-  <div class="footer-bottom">
-    <p>&copy; 2025 霍爾果斯會計師事務所</p>
   </div>
 </footer>
 
+<!-- 懸浮按鈕 -->
 <div class="cta-floating">
-  <a href="/booking.html" class="cta-btn">免費諮詢</a>
-  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="cta-btn line"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入官方LINE</a>
+  <a href="/booking.html" class="float-btn consult-btn">免費諮詢</a>
+  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="float-btn line-btn">LINE</a>
 </div>
 
 <!-- 自動抓取文章的腳本 -->
