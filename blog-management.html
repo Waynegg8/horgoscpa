@@ -276,6 +276,22 @@
     .upload-btn:hover {
       background-color: #0055aa;
     }
+    
+    /* 管理員密碼輸入框 */
+    .password-input {
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    
+    .password-input:focus {
+      border-color: #0066cc;
+      box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+      outline: none;
+    }
   </style>
 </head>
 <body>
@@ -350,9 +366,27 @@
   <div class="modal-content">
     <h2 class="modal-title">確認刪除</h2>
     <p class="modal-message">您確定要刪除這篇文章嗎？此操作不可恢復。</p>
+    <div style="margin-bottom: 20px;">
+      <input type="password" id="admin-password" class="password-input" placeholder="請輸入管理員密碼" required>
+    </div>
     <div class="modal-buttons">
       <button id="cancel-delete" class="cancel-btn">取消</button>
       <button id="confirm-delete" class="confirm-btn">確認刪除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 上傳文章密碼彈窗 -->
+<div id="upload-modal" class="modal">
+  <div class="modal-content">
+    <h2 class="modal-title">管理員驗證</h2>
+    <p class="modal-message">請輸入管理員密碼以上傳文章</p>
+    <div style="margin-bottom: 20px;">
+      <input type="password" id="upload-password" class="password-input" placeholder="請輸入管理員密碼" required>
+    </div>
+    <div class="modal-buttons">
+      <button id="cancel-upload" class="cancel-btn">取消</button>
+      <button id="confirm-upload" class="confirm-btn">確認上傳</button>
     </div>
   </div>
 </div>
@@ -375,15 +409,21 @@
     const messageContainer = document.getElementById('message-container');
     const refreshBtn = document.getElementById('refresh-btn');
     const deleteModal = document.getElementById('delete-modal');
+    const uploadModal = document.getElementById('upload-modal');
     const cancelDeleteBtn = document.getElementById('cancel-delete');
     const confirmDeleteBtn = document.getElementById('confirm-delete');
+    const cancelUploadBtn = document.getElementById('cancel-upload');
+    const confirmUploadBtn = document.getElementById('confirm-upload');
     const uploadForm = document.getElementById('upload-form');
+    const adminPasswordInput = document.getElementById('admin-password');
+    const uploadPasswordInput = document.getElementById('upload-password');
     
     // 狀態
     let articleData = null;
     let currentPage = 1;
     let itemsPerPage = 10;
     let articleToDelete = null;
+    let fileToUpload = null;
     
     // 初始加載文章
     loadArticles();
@@ -394,26 +434,69 @@
     // 上傳表單提交
     uploadForm.addEventListener('submit', function(e) {
       e.preventDefault();
-      uploadWordDocument();
+      
+      // 獲取選擇的文件
+      const fileInput = document.getElementById('word-file');
+      if (fileInput.files.length > 0) {
+        fileToUpload = fileInput.files[0];
+        openUploadModal();
+      } else {
+        showMessage('請選擇要上傳的文件', 'error');
+      }
+    });
+    
+    // 確認上傳按鈕事件
+    confirmUploadBtn.addEventListener('click', function() {
+      const password = uploadPasswordInput.value.trim();
+      if (password) {
+        uploadWordDocument(password);
+        closeUploadModal();
+      } else {
+        alert('請輸入管理員密碼');
+      }
+    });
+    
+    // 取消上傳按鈕事件
+    cancelUploadBtn.addEventListener('click', function() {
+      closeUploadModal();
     });
     
     // 取消刪除按鈕
     cancelDeleteBtn.addEventListener('click', function() {
-      closeModal();
+      closeDeleteModal();
     });
     
     // 確認刪除按鈕
     confirmDeleteBtn.addEventListener('click', function() {
-      if (articleToDelete) {
-        deleteArticle(articleToDelete);
-        closeModal();
+      const password = adminPasswordInput.value.trim();
+      if (password && articleToDelete) {
+        deleteArticle(articleToDelete, password);
+        closeDeleteModal();
+      } else {
+        alert('請輸入管理員密碼');
       }
     });
     
     // 點擊模態框背景關閉
     window.addEventListener('click', function(e) {
       if (e.target === deleteModal) {
-        closeModal();
+        closeDeleteModal();
+      }
+      if (e.target === uploadModal) {
+        closeUploadModal();
+      }
+    });
+    
+    // 按鍵事件 - 在密碼輸入框中按Enter鍵確認
+    adminPasswordInput.addEventListener('keyup', function(e) {
+      if (e.key === 'Enter') {
+        confirmDeleteBtn.click();
+      }
+    });
+    
+    uploadPasswordInput.addEventListener('keyup', function(e) {
+      if (e.key === 'Enter') {
+        confirmUploadBtn.click();
       }
     });
     
@@ -515,7 +598,7 @@
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', function() {
           articleToDelete = this.getAttribute('data-url');
-          openModal();
+          openDeleteModal();
         });
       });
       
@@ -587,20 +670,19 @@
     /**
      * 刪除文章
      */
-    async function deleteArticle(articleUrl) {
+    async function deleteArticle(articleUrl, password) {
       try {
         // 獲取文件名
         const filename = articleUrl.split('/').pop();
         
-        // 發送刪除請求到 GitHub API
+        // 發送刪除請求到 API
         const response = await fetch(`/api/delete-article?file=${filename}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ 
-            file: filename,
-            token: prompt('請輸入管理員令牌:', '')
+            password: password
           })
         });
         
@@ -621,26 +703,23 @@
     /**
      * 上傳 Word 文檔
      */
-    async function uploadWordDocument() {
+    async function uploadWordDocument(password) {
       try {
-        const fileInput = document.getElementById('word-file');
-        const file = fileInput.files[0];
-        
-        if (!file) {
+        if (!fileToUpload) {
           showMessage('請選擇文件', 'error');
           return;
         }
         
         // 檢查文件名格式
-        if (!file.name.match(/^\d{4}-\d{2}-\d{2}-.+\.docx$/)) {
+        if (!fileToUpload.name.match(/^\d{4}-\d{2}-\d{2}-.+\.docx$/)) {
           showMessage('文件名格式不正確，應為: YYYY-MM-DD-文章標題.docx', 'error');
           return;
         }
         
         // 創建 FormData 對象
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('token', prompt('請輸入管理員令牌:', ''));
+        formData.append('file', fileToUpload);
+        formData.append('password', password);
         
         // 發送上傳請求
         const response = await fetch('/api/upload-article', {
@@ -652,7 +731,8 @@
         
         if (result.success) {
           showMessage('文章已成功上傳！', 'success');
-          fileInput.value = ''; // 清空文件輸入
+          document.getElementById('word-file').value = ''; // 清空文件輸入
+          fileToUpload = null; // 清除上傳文件
           loadArticles(); // 重新加載文章列表
         } else {
           showMessage(`上傳失敗: ${result.message}`, 'error');
@@ -682,15 +762,33 @@
     /**
      * 打開確認刪除彈窗
      */
-    function openModal() {
+    function openDeleteModal() {
       deleteModal.style.display = 'flex';
+      adminPasswordInput.value = ''; // 清空密碼輸入
+      adminPasswordInput.focus(); // 聚焦到密碼輸入框
     }
     
     /**
      * 關閉確認刪除彈窗
      */
-    function closeModal() {
+    function closeDeleteModal() {
       deleteModal.style.display = 'none';
+    }
+    
+    /**
+     * 打開上傳文章彈窗
+     */
+    function openUploadModal() {
+      uploadModal.style.display = 'flex';
+      uploadPasswordInput.value = ''; // 清空密碼輸入
+      uploadPasswordInput.focus(); // 聚焦到密碼輸入框
+    }
+    
+    /**
+     * 關閉上傳文章彈窗
+     */
+    function closeUploadModal() {
+      uploadModal.style.display = 'none';
     }
   });
 </script>

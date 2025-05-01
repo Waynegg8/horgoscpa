@@ -13,7 +13,9 @@ const GITHUB_TOKEN = process.env.GH_PAT; // 從環境變量讀取GitHub令牌
 const GITHUB_REPO = 'waynegg8/horgoscpa';
 const GITHUB_REPO_OWNER = 'waynegg8';
 const GITHUB_REPO_NAME = 'horgoscpa';
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'your-admin-token-here'; // 管理員令牌，應當設為環境變量
+
+// 管理員密碼 - 設置為環境變數或使用默認值 (請在實際部署時修改默認密碼)
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'wayne4591'; 
 
 // 創建 Express 應用
 const app = express();
@@ -50,9 +52,9 @@ const octokit = new Octokit({
   auth: GITHUB_TOKEN
 });
 
-// 驗證管理員令牌
-function verifyAdminToken(token) {
-  return token === ADMIN_TOKEN;
+// 驗證管理員密碼
+function verifyAdminPassword(password) {
+  return password === ADMIN_PASSWORD;
 }
 
 /**
@@ -61,9 +63,15 @@ function verifyAdminToken(token) {
  */
 app.post('/api/delete-article', async (req, res) => {
   try {
-    // 驗證令牌
-    if (!req.body.token || !verifyAdminToken(req.body.token)) {
-      return res.status(401).json({ success: false, message: '管理員令牌無效' });
+    // 獲取密碼 - 從req.body.token或req.body.password獲取(支持兩種格式)
+    const providedPassword = req.body.password || req.body.token || '';
+    
+    // 驗證密碼
+    if (!providedPassword || !verifyAdminPassword(providedPassword)) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '管理員密碼無效，無法執行刪除操作' 
+      });
     }
     
     // 獲取文件名
@@ -71,6 +79,9 @@ app.post('/api/delete-article', async (req, res) => {
     if (!filename) {
       return res.status(400).json({ success: false, message: '未提供文件名' });
     }
+    
+    // 記錄操作日誌 (不記錄密碼)
+    console.log(`[${new Date().toISOString()}] 刪除文章請求: ${filename}`);
     
     // 獲取文件 SHA
     const { data: fileData } = await octokit.repos.getContent({
@@ -100,10 +111,17 @@ app.post('/api/delete-article', async (req, res) => {
       }
     });
     
+    // 操作成功
+    console.log(`[${new Date().toISOString()}] 文章刪除成功: ${filename}`);
     res.json({ success: true, message: '文章已成功刪除' });
   } catch (error) {
-    console.error('刪除文章時出錯:', error);
-    res.status(500).json({ success: false, message: error.message || '刪除文章時出錯' });
+    // 操作失敗
+    console.error(`[${new Date().toISOString()}] 刪除文章時出錯:`, error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || '刪除文章時出錯',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -113,9 +131,15 @@ app.post('/api/delete-article', async (req, res) => {
  */
 app.post('/api/upload-article', upload.single('file'), async (req, res) => {
   try {
-    // 驗證令牌
-    if (!req.body.token || !verifyAdminToken(req.body.token)) {
-      return res.status(401).json({ success: false, message: '管理員令牌無效' });
+    // 獲取密碼 - 從req.body.token或req.body.password獲取(支持兩種格式)
+    const providedPassword = req.body.password || req.body.token || '';
+    
+    // 驗證密碼
+    if (!providedPassword || !verifyAdminPassword(providedPassword)) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '管理員密碼無效，無法執行上傳操作' 
+      });
     }
     
     if (!req.file) {
@@ -125,6 +149,9 @@ app.post('/api/upload-article', upload.single('file'), async (req, res) => {
     // 獲取文件資訊
     const filename = req.file.originalname;
     const filePath = req.file.path;
+    
+    // 記錄操作
+    console.log(`[${new Date().toISOString()}] 上傳文章: ${filename}`);
     
     // 提交到 GitHub
     await commitFile(filePath, filename);
@@ -141,10 +168,17 @@ app.post('/api/upload-article', upload.single('file'), async (req, res) => {
       }
     });
     
+    // 操作成功
+    console.log(`[${new Date().toISOString()}] 文章上傳成功: ${filename}`);
     res.json({ success: true, message: '文章已成功上傳' });
   } catch (error) {
-    console.error('上傳文章時出錯:', error);
-    res.status(500).json({ success: false, message: error.message || '上傳文章時出錯' });
+    // 操作失敗
+    console.error(`[${new Date().toISOString()}] 上傳文章時出錯:`, error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || '上傳文章時出錯',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -161,10 +195,19 @@ async function commitFile(filePath, filename) {
   await execPromise('git push origin main');
 }
 
+// 新增一個簡單的狀態檢查端點
+app.get('/api/status', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'production'
+  });
+});
+
 // 啟動服務器
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`API 服務器運行在 http://localhost:${PORT}`);
+  console.log(`[${new Date().toISOString()}] API 服務器運行在 http://localhost:${PORT}`);
 });
 
 module.exports = app;
