@@ -1,3 +1,4 @@
+
 body {
   margin: 0;
   font-family: "微軟正黑體", sans-serif;
@@ -250,61 +251,4 @@ main.services {
 }
 .cta-floating .cta-btn:hover {
   opacity: 0.85;
-}
-
-
-/* CTA 懸浮區：聯絡 / 預約雙按鈕 */
-.cta-floating {
-  position: fixed;
-  top: 40%;
-  right: 0;
-  transform: translateY(-50%);
-  z-index: 999;
-}
-.cta-floating .cta-toggle {
-  background: #0066cc;
-  color: white;
-  padding: 10px 14px;
-  border: none;
-  cursor: pointer;
-  border-radius: 6px 0 0 6px;
-}
-.cta-floating .cta-options {
-  display: none;
-  flex-direction: column;
-  margin-top: 5px;
-}
-.cta-floating:hover .cta-options {
-  display: flex;
-}
-.cta-floating .cta-options a {
-  background: #f2f2f2;
-  color: #000;
-  text-decoration: none;
-  padding: 10px;
-  border-radius: 6px 0 0 6px;
-}
-.cta-floating .cta-options a:hover {
-  background: #ddd;
-}
-
-/* Navbar 樣式 */
-.site-nav {
-  background: #f8f8f8;
-  padding: 12px 24px;
-}
-.site-nav ul {
-  display: flex;
-  gap: 24px;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.site-nav li a {
-  color: #333;
-  text-decoration: none;
-  font-weight: 500;
-}
-.site-nav li a:hover {
-  border-bottom: 2px solid #0066cc;
 }
