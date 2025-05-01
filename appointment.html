@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>預約 - 霍爾果斯會計師事務所</title>
+    <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">霍爾果斯會計師事務所</a></li>
+                <li><a href="services.html">服務總覽</a></li>
+                <li><a href="team.html">團隊介紹</a></li>
+                <li><a href="contact.html">聯絡我們</a></li>
+                <li><a href="blog.html">部落格</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="appointment-container">
+        <h1>預約我們的服務</h1>
+        <form action="https://formspree.io/f/xyz" method="POST">
+            <label for="name">姓名：</label>
+            <input type="text" id="name" name="name" required>
+            <label for="email">電子郵件：</label>
+            <input type="email" id="email" name="email" required>
+            <label for="message">訊息：</label>
+            <textarea id="message" name="message" required></textarea>
+            <button type="submit">提交預約</button>
+        </form>
+    </section>
+
+    <footer>
+        <p>霍爾果斯會計師事務所 | 聯絡方式</p>
+    </footer>
+
+    <script src="assets/script.js"></script>
+</body>
+</html>
