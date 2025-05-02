@@ -921,65 +921,30 @@
     // 檢查權限狀態並顯示登入窗口
     checkAuthStatus();
     
-    // 登入表單提交 - 修正登入表單事件處理
-    if (loginForm) {
-        // 確保表單存在
-        console.log("找到登入表單，添加提交事件監聽器");
-        
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            console.log("登入表單提交");
-            
-            const password = adminLoginPasswordInput.value.trim();
-            console.log("輸入的密碼：", password, "預期密碼：", ADMIN_PASSWORD);
-            
-            if (password === ADMIN_PASSWORD) {
-                console.log("密碼正確，設置認證狀態");
-                // 設置認證狀態
-                setAuthenticated(true);
-                
-                // 關閉登入彈窗
-                loginModal.style.display = 'none';
-                
-                // 初始加載數據
-                loadArticles();
-                loadVideos();
-                loadImages();
-                
-                // 顯示成功訊息
-                showMessage('登入成功，歡迎使用內容管理平台', 'success');
-            } else {
-                console.log("密碼不正確");
-                alert('密碼不正確，請重試');
-            }
-        });
-    } else {
-        console.error("找不到登入表單元素");
-    }
-    
-// 添加直接登入按鈕方便調試
-    const debugLoginBtn = document.createElement('button');
-    debugLoginBtn.style.position = 'fixed';
-    debugLoginBtn.style.bottom = '10px';
-    debugLoginBtn.style.right = '10px';
-    debugLoginBtn.style.zIndex = '9999';
-    debugLoginBtn.style.padding = '5px 10px';
-    debugLoginBtn.style.background = '#ff9800';
-    debugLoginBtn.style.color = 'white';
-    debugLoginBtn.style.border = 'none';
-    debugLoginBtn.style.borderRadius = '4px';
-    debugLoginBtn.style.cursor = 'pointer';
-    debugLoginBtn.textContent = '測試登入';
-    debugLoginBtn.addEventListener('click', function() {
+    // 登入表單提交
+    loginForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const password = adminLoginPasswordInput.value.trim();
+      if (password === ADMIN_PASSWORD) {
+        // 設置認證狀態
         setAuthenticated(true);
+        
+        // 關閉登入彈窗
         loginModal.style.display = 'none';
+        
+        // 初始加載數據
         loadArticles();
         loadVideos();
         loadImages();
-        showMessage('測試登入成功', 'success');
+        
+        // 顯示成功訊息
+        showMessage('登入成功，歡迎使用內容管理平台', 'success');
+      } else {
+        alert('密碼不正確，請重試');
+      }
     });
-    document.body.appendChild(debugLoginBtn);
-
+    
     // 初始加載數據 (在登入後才執行)
     function loadInitialData() {
       loadArticles();
@@ -1259,112 +1224,95 @@
      * 檢查認證狀態
      */
     function checkAuthStatus() {
-        console.log("檢查認證狀態");
-        // 嘗試從本地存儲獲取認證狀態
-        const storedAuth = localStorage.getItem('adminAuth');
-        const storedExpireTime = localStorage.getItem('authExpireTime');
+      // 嘗試從本地存儲獲取認證狀態
+      const storedAuth = localStorage.getItem('adminAuth');
+      const storedExpireTime = localStorage.getItem('authExpireTime');
+      
+      if (storedAuth && storedExpireTime) {
+        const now = new Date().getTime();
+        const expireTime = parseInt(storedExpireTime);
         
-        if (storedAuth && storedExpireTime) {
-            console.log("找到已儲存的認證狀態");
-            const now = new Date().getTime();
-            const expireTime = parseInt(storedExpireTime);
-            
-            if (now < expireTime) {
-                console.log("認證仍然有效");
-                // 認證仍然有效
-                isAuthenticated = true;
-                authExpireTime = expireTime;
-                
-                // 隱藏登入窗口
-                loginModal.style.display = 'none';
-                
-                // 初始加載數據
-                loadInitialData();
-                
-                // 顯示剩餘時間
-                const remainingMinutes = Math.round((expireTime - now) / 60000);
-                showMessage(`已登入，權限有效期還剩約 ${remainingMinutes} 分鐘`, 'info');
-                
-                // 設置自動登出計時器
-                setTimeout(function() {
-                    logout();
-                    showMessage('登入已過期，請重新登入', 'info');
-                    showLoginModal();
-                }, expireTime - now);
-                
-                return;
-            } else {
-                console.log("認證已過期");
-            }
-        } else {
-            console.log("未找到已儲存的認證狀態");
+        if (now < expireTime) {
+          // 認證仍然有效
+          isAuthenticated = true;
+          authExpireTime = expireTime;
+          
+          // 隱藏登入窗口
+          loginModal.style.display = 'none';
+          
+          // 初始加載數據
+          loadInitialData();
+          
+          // 顯示剩餘時間
+          const remainingMinutes = Math.round((expireTime - now) / 60000);
+          showMessage(`已登入，權限有效期還剩約 ${remainingMinutes} 分鐘`, 'info');
+          
+          // 設置自動登出計時器
+          setTimeout(function() {
+            logout();
+            showMessage('登入已過期，請重新登入', 'info');
+            showLoginModal();
+          }, expireTime - now);
+          
+          return;
         }
-        
-        // 認證無效或已過期，顯示登入窗口
-        console.log("顯示登入窗口");
-        showLoginModal();
+      }
+      
+      // 認證無效或已過期，顯示登入窗口
+      showLoginModal();
     }
     
     /**
      * 設置認證狀態
      */
     function setAuthenticated(status) {
-        console.log("設置認證狀態:", status);
-        isAuthenticated = status;
+      isAuthenticated = status;
+      
+      if (status) {
+        // 計算過期時間
+        const now = new Date().getTime();
+        authExpireTime = now + AUTH_DURATION;
         
-        if (status) {
-            // 計算過期時間
-            const now = new Date().getTime();
-            authExpireTime = now + AUTH_DURATION;
-            
-            // 保存到本地存儲
-            localStorage.setItem('adminAuth', 'true');
-            localStorage.setItem('authExpireTime', authExpireTime.toString());
-            console.log("保存認證狀態到本地存儲，過期時間:", new Date(authExpireTime).toLocaleString());
-            
-            // 設置自動登出計時器
-            setTimeout(function() {
-                logout();
-                showMessage('登入已過期，請重新登入', 'info');
-                showLoginModal();
-            }, AUTH_DURATION);
-        } else {
-            // 清除本地存儲
-            localStorage.removeItem('adminAuth');
-            localStorage.removeItem('authExpireTime');
-            console.log("清除認證狀態");
-            
-            authExpireTime = null;
-        }
+        // 保存到本地存儲
+        localStorage.setItem('adminAuth', 'true');
+        localStorage.setItem('authExpireTime', authExpireTime.toString());
+        
+        // 設置自動登出計時器
+        setTimeout(function() {
+          logout();
+          showMessage('登入已過期，請重新登入', 'info');
+          showLoginModal();
+        }, AUTH_DURATION);
+      } else {
+        // 清除本地存儲
+        localStorage.removeItem('adminAuth');
+        localStorage.removeItem('authExpireTime');
+        
+        authExpireTime = null;
+      }
     }
     
     /**
      * 登出
      */
     function logout() {
-        console.log("執行登出");
-        isAuthenticated = false;
-        authExpireTime = null;
-        
-        // 清除本地存儲
-        localStorage.removeItem('adminAuth');
-        localStorage.removeItem('authExpireTime');
+      isAuthenticated = false;
+      authExpireTime = null;
+      
+      // 清除本地存儲
+      localStorage.removeItem('adminAuth');
+      localStorage.removeItem('authExpireTime');
     }
     
     /**
      * 顯示登入模態框
      */
     function showLoginModal() {
-        console.log("顯示登入窗口");
-        loginModal.style.display = 'flex';
-        if (adminLoginPasswordInput) {
-            adminLoginPasswordInput.value = '';
-            adminLoginPasswordInput.focus();
-        } else {
-            console.error("找不到密碼輸入框元素");
-        }
+      loginModal.style.display = 'flex';
+      adminLoginPasswordInput.value = '';
+      adminLoginPasswordInput.focus();
     }
-
+    
     /**
      * 加載文章列表
      */
@@ -2597,116 +2545,4 @@ function resizeImage(file, maxWidth, maxHeight, maintainAspectRatio = true) {
 
 </body>
 </html>
-</script>
-<!-- Corrected login form and logic -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ADMIN_PASSWORD = 'wayne4591'; // 管理員密碼
-    let isAuthenticated = false;
-    const loginModal = document.getElementById('login-modal');
-    const loginForm = document.getElementById('login-form-unique');
-    const adminLoginPasswordInput = document.getElementById('admin-login-password-unique');
-    
-    // 驗證密碼是否正確
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const password = adminLoginPasswordInput.value.trim();
-            if (password === ADMIN_PASSWORD) {
-                setAuthenticated(true);
-                loginModal.style.display = 'none';
-                loadArticles();
-                loadVideos();
-                loadImages();
-                showMessage('登入成功，歡迎使用內容管理平台', 'success');
-            } else {
-                alert('密碼不正確，請重試');
-            }
-        });
-    }
-
-    // 設置認證狀態
-    function setAuthenticated(status) {
-        isAuthenticated = status;
-        if (status) {
-            const now = new Date().getTime();
-            const authExpireTime = now + 2 * 60 * 60 * 1000;
-            localStorage.setItem('adminAuth', 'true');
-            localStorage.setItem('authExpireTime', authExpireTime.toString());
-        } else {
-            localStorage.removeItem('adminAuth');
-            localStorage.removeItem('authExpireTime');
-        }
-    }
-
-    // 測試登入按鈕
-    const debugLoginBtn = document.createElement('button');
-    debugLoginBtn.style.position = 'fixed';
-    debugLoginBtn.style.bottom = '10px';
-    debugLoginBtn.style.right = '10px';
-    debugLoginBtn.style.zIndex = '9999';
-    debugLoginBtn.style.padding = '5px 10px';
-    debugLoginBtn.style.background = '#ff9800';
-    debugLoginBtn.style.color = 'white';
-    debugLoginBtn.style.border = 'none';
-    debugLoginBtn.style.borderRadius = '4px';
-    debugLoginBtn.style.cursor = 'pointer';
-    debugLoginBtn.textContent = '測試登入';
-    debugLoginBtn.addEventListener('click', function() {
-        setAuthenticated(true);
-        loginModal.style.display = 'none';
-        loadArticles();
-        loadVideos();
-        loadImages();
-        showMessage('測試登入成功', 'success');
-    });
-    document.body.appendChild(debugLoginBtn);
-
-    // 顯示登入窗口
-    function showLoginModal() {
-        loginModal.style.display = 'flex';
-        if (adminLoginPasswordInput) {
-            adminLoginPasswordInput.value = '';
-            adminLoginPasswordInput.focus();
-        }
-    }
-
-    // 載入文章、影片和圖片的函數
-    function loadArticles() {
-        console.log("Articles loaded.");
-    }
-
-    function loadVideos() {
-        console.log("Videos loaded.");
-    }
-
-    function loadImages() {
-        console.log("Images loaded.");
-    }
-
-    // 顯示提示訊息
-    function showMessage(message, type) {
-        const messageContainer = document.getElementById('message-container');
-        messageContainer.innerHTML = `<div class="message ${type}">${message}</div>`;
-    }
-
-    // 檢查是否已經登入
-    function checkAuthStatus() {
-        const storedAuth = localStorage.getItem('adminAuth');
-        const storedExpireTime = localStorage.getItem('authExpireTime');
-        const now = new Date().getTime();
-        
-        if (storedAuth && storedExpireTime && now < parseInt(storedExpireTime)) {
-            isAuthenticated = true;
-            loginModal.style.display = 'none';
-            loadArticles();
-            loadVideos();
-            loadImages();
-        } else {
-            showLoginModal();
-        }
-    }
-
-    checkAuthStatus();
-});
 </script>
