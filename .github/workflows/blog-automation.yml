@@ -1,4 +1,4 @@
-name: 部落格自動化處理
+name: 部落格與影片自動化處理
 
 on:
   # 手動觸發
@@ -19,12 +19,23 @@ on:
         required: true
         default: 'true'
         type: boolean
+      update_videos:
+        description: '更新影片數據'
+        required: true
+        default: 'false'
+        type: boolean
+      force_scan:
+        description: '強制掃描所有HTML文章'
+        required: true
+        default: 'false'
+        type: boolean
   
   # 當Word文檔上傳到指定目錄時觸發
   push:
     paths:
       - 'word-docs/**/*.docx'
       - 'blog/**/*.html'
+      - 'assets/data/videos.json'
   
   # 當文章被刪除時觸發
   delete:
@@ -36,7 +47,7 @@ on:
     - cron: '0 1 * * *'  # UTC 時間每天1點 (台灣時間9點)
 
 jobs:
-  blog-automation:
+  content-automation:
     runs-on: ubuntu-latest
     # 增加權限設置，確保可以被API觸發並運行
     permissions:
@@ -61,7 +72,7 @@ jobs:
       - name: 安裝依賴套件
         run: |
           python -m pip install --upgrade pip
-          pip install python-docx markdown jieba gensim python-slugify requests
+          pip install python-docx markdown jieba gensim python-slugify requests beautifulsoup4 lxml
       
       # 創建必要的目錄
       - name: 創建必要的目錄
@@ -70,11 +81,15 @@ jobs:
           mkdir -p assets/data
           mkdir -p word-docs
       
-      # 確認JSON檔案存在
-      - name: 確認JSON檔案存在
+      # 初始化或檢查JSON文件
+      - name: 初始化JSON文件
+        id: init_json
         run: |
-          if [ ! -f "assets/data/blog-posts.json" ]; then
-            echo "建立初始blog-posts.json檔案"
+          # 檢查blog-posts.json是否存在
+          if [ ! -f "assets/data/blog-posts.json" ] || [ "${{ github.event.inputs.force_scan }}" == "true" ] || [ "$(cat assets/data/blog-posts.json | grep -c '"posts": \[\]')" -eq "1" ]; then
+            # 不存在或強制掃描或是空文件，創建初始結構
+            echo "建立或更新blog-posts.json"
+            mkdir -p assets/data
             echo '{
               "posts": [],
               "pagination": {
@@ -85,12 +100,230 @@ jobs:
               "categories": ["tax", "accounting", "business"],
               "tags": []
             }' > assets/data/blog-posts.json
-            git config --global user.name "GitHub Actions Bot"
-            git config --global user.email "github-actions[bot]@users.noreply.github.com"
-            git add assets/data/blog-posts.json
-            git commit -m "初始化blog-posts.json檔案" || echo "無需提交"
-            git push || echo "無需推送"
+            
+            # 創建初始的latest-posts.json
+            echo '[]' > assets/data/latest-posts.json
+            
+            # 標記需要掃描HTML文件
+            echo "scan_html=true" >> $GITHUB_OUTPUT
+          else
+            # 檢查posts是否為空
+            POSTS_COUNT=$(cat assets/data/blog-posts.json | grep -o '"posts": \[.*\]' | grep -c "}")
+            if [ "$POSTS_COUNT" -eq "0" ]; then
+              echo "blog-posts.json的posts為空，需要掃描HTML文件"
+              echo "scan_html=true" >> $GITHUB_OUTPUT
+            else
+              echo "blog-posts.json已存在且包含文章數據"
+              echo "scan_html=false" >> $GITHUB_OUTPUT
+            fi
           fi
+          
+          # 檢查videos.json是否存在
+          if [ ! -f "assets/data/videos.json" ]; then
+            echo "建立初始videos.json檔案"
+            echo '{
+              "videos": [],
+              "pagination": {
+                "total": 0,
+                "totalPages": 1,
+                "itemsPerPage": 6
+              }
+            }' > assets/data/videos.json
+          fi
+          
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/data/*.json
+          git commit -m "初始化或更新JSON檔案" || echo "無需提交"
+          git push || echo "無需推送"
+      
+      # 掃描HTML文件生成JSON (如果需要)
+      - name: 掃描現有HTML文件
+        if: ${{ steps.init_json.outputs.scan_html == 'true' || github.event.inputs.force_scan == 'true' }}
+        run: |
+          # 創建一個Python腳本來掃描HTML文件
+          cat > scan_html_files.py << 'EOF'
+          #!/usr/bin/env python3
+          # -*- coding: utf-8 -*-
+          
+          """
+          掃描現有HTML文件生成blog-posts.json
+          """
+          
+          import os
+          import re
+          import json
+          import datetime
+          from pathlib import Path
+          from bs4 import BeautifulSoup
+          
+          # 部落格文章路徑設定
+          BLOG_DIR = "blog"  # 博客文章目錄
+          JSON_PATH = "assets/data/blog-posts.json"  # 完整文章JSON文件路徑
+          LATEST_POSTS_PATH = "assets/data/latest-posts.json"  # 最新文章JSON文件路徑
+          ITEMS_PER_PAGE = 6  # 每頁顯示的文章數量
+          
+          # 分類映射
+          CATEGORY_MAPPING = {
+              "稅務相關": "tax",
+              "會計記帳": "accounting",
+              "企業經營": "business",
+              "企業登記": "business",
+              "創業資訊": "startup",
+              "財務規劃": "financial",
+              "法律知識": "legal"
+          }
+          
+          def extract_info_from_html(file_path):
+              """從HTML文件中提取文章資訊"""
+              try:
+                  with open(file_path, 'r', encoding='utf-8') as f:
+                      content = f.read()
+                  
+                  # 使用BeautifulSoup解析HTML
+                  soup = BeautifulSoup(content, 'lxml')
+                  
+                  # 提取標題
+                  title_tag = soup.find('title')
+                  title = title_tag.text.split(' | ')[0] if title_tag else os.path.basename(file_path)
+                  
+                  # 提取日期
+                  date_span = soup.select_one('span.date')
+                  date = date_span.text if date_span else os.path.basename(file_path).split('-')[0:3]
+                  if isinstance(date, list):
+                      date = '-'.join(date)
+                  
+                  # 提取摘要
+                  meta_desc = soup.find('meta', attrs={'name': 'description'})
+                  summary = meta_desc['content'] if meta_desc else ""
+                  
+                  # 提取圖片
+                  meta_image = soup.find('meta', property='og:image')
+                  image = meta_image['content'] if meta_image else "/assets/images/blog/default.jpg"
+                  
+                  # 提取分類
+                  category_span = soup.select_one('span.category')
+                  category_text = ""
+                  if category_span:
+                      category_link = category_span.find('a')
+                      if category_link:
+                          category_text = category_link.text
+                  
+                  category_code = CATEGORY_MAPPING.get(category_text, "tax")
+                  
+                  # 提取標籤
+                  tags = []
+                  tag_links = soup.select('.post-tags .tag')
+                  for tag_link in tag_links:
+                      tags.append(tag_link.text)
+                  
+                  # 獲取URL
+                  relative_path = os.path.relpath(file_path)
+                  url = f"/{relative_path}"
+                  
+                  return {
+                      "title": title,
+                      "date": date,
+                      "summary": summary,
+                      "url": url,
+                      "image": image,
+                      "category": category_code,
+                      "tags": tags
+                  }
+              except Exception as e:
+                  print(f"處理文件 {file_path} 時出錯: {str(e)}")
+                  return None
+          
+          def scan_blog_directory():
+              """掃描部落格目錄獲取所有HTML文件信息"""
+              posts = []
+              
+              # 檢查目錄是否存在
+              if not os.path.exists(BLOG_DIR):
+                  print(f"目錄 {BLOG_DIR} 不存在")
+                  return posts
+              
+              # 掃描目錄下所有HTML文件
+              for file_name in os.listdir(BLOG_DIR):
+                  if file_name.endswith('.html'):
+                      file_path = os.path.join(BLOG_DIR, file_name)
+                      post_info = extract_info_from_html(file_path)
+                      if post_info:
+                          posts.append(post_info)
+                      else:
+                          print(f"無法提取 {file_path} 的信息")
+              
+              # 按日期排序
+              posts.sort(key=lambda x: x["date"], reverse=True)
+              
+              return posts
+          
+          def update_json_files(posts):
+              """更新JSON文件"""
+              # 確保目錄存在
+              os.makedirs(os.path.dirname(JSON_PATH), exist_ok=True)
+              
+              # 獲取所有標籤和分類
+              all_tags = set()
+              all_categories = set()
+              
+              for post in posts:
+                  if 'tags' in post and post['tags']:
+                      all_tags.update(post['tags'])
+                  if 'category' in post:
+                      all_categories.add(post['category'])
+              
+              # 建立完整數據結構
+              full_data = {
+                  "posts": posts,
+                  "pagination": {
+                      "total_posts": len(posts),
+                      "total_pages": max(1, (len(posts) + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE),
+                      "items_per_page": ITEMS_PER_PAGE
+                  },
+                  "categories": list(all_categories),
+                  "tags": list(all_tags)
+              }
+              
+              # 寫入完整JSON文件
+              with open(JSON_PATH, 'w', encoding='utf-8') as f:
+                  json.dump(full_data, f, ensure_ascii=False, indent=2)
+              
+              print(f"成功更新 {JSON_PATH}")
+              print(f"共 {len(posts)} 篇文章，{len(all_categories)} 個分類，{len(all_tags)} 個標籤")
+              
+              # 更新最新文章JSON
+              latest_posts = posts[:3] if len(posts) >= 3 else posts
+              with open(LATEST_POSTS_PATH, 'w', encoding='utf-8') as f:
+                  json.dump(latest_posts, f, ensure_ascii=False, indent=2)
+              
+              print(f"成功更新 {LATEST_POSTS_PATH}")
+              
+              return True
+          
+          def main():
+              """主函數"""
+              print("開始掃描部落格文章...")
+              posts = scan_blog_directory()
+              
+              if posts:
+                  print(f"找到 {len(posts)} 篇文章")
+                  update_json_files(posts)
+              else:
+                  print("未找到任何文章，創建空的JSON文件")
+                  update_json_files([])
+          
+          if __name__ == "__main__":
+              main()
+          EOF
+          
+          # 執行腳本
+          python scan_html_files.py
+          
+          # 提交更改
+          git add assets/data/blog-posts.json assets/data/latest-posts.json
+          git commit -m "掃描現有HTML文件並更新JSON" || echo "無需提交"
+          git push || echo "無需推送"
       
       # 處理Word文檔 (如果啟用)
       - name: 處理Word文檔
@@ -154,6 +387,7 @@ jobs:
       
       # 更新博客JSON文件
       - name: 更新博客JSON文件
+        id: update_blog_json
         if: ${{ steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' }}
         run: |
           # 複製update_blog_posts.py腳本到當前目錄
@@ -166,6 +400,7 @@ jobs:
           # 運行Python腳本更新JSON
           if [ -f "update_blog_posts.py" ]; then
             python update_blog_posts.py
+            echo "blog_json_updated=true" >> $GITHUB_OUTPUT
           else
             echo "找不到update_blog_posts.py腳本"
             exit 1
@@ -173,18 +408,31 @@ jobs:
         env:
           GH_PAT: ${{ secrets.GITHUB_TOKEN }}
       
+      # 處理影片JSON更新
+      - name: 檢查影片JSON更新
+        id: check_videos
+        run: |
+          if [ "${{ github.event.inputs.update_videos }}" == "true" ] || git diff --name-only HEAD~1 HEAD | grep -q "assets/data/videos.json"; then
+            echo "videos_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "videos_changed=false" >> $GITHUB_OUTPUT
+          fi
+      
       # 提交更新的JSON文件
       - name: 提交更新的JSON文件
+        if: ${{ steps.update_blog_json.outputs.blog_json_updated == 'true' || steps.check_videos.outputs.videos_changed == 'true' || steps.init_json.outputs.scan_html == 'true' }}
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
           git add assets/data/blog-posts.json
+          git add assets/data/videos.json
+          git add assets/data/latest-posts.json
           
           if git diff --staged --quiet; then
             echo "沒有JSON文件變更需要提交"
           else
-            git commit -m "更新博客文章JSON數據"
+            git commit -m "更新博客與影片JSON數據"
             git push
           fi
       

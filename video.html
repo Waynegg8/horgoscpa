@@ -15,6 +15,279 @@
   <!-- 引用樣式表 -->
   <link rel="stylesheet" href="/assets/css/style.css" />
   
+  <!-- 影片頁面特定樣式 -->
+  <style>
+    /* 搜尋框樣式 */
+    .search-container {
+      margin-bottom: 30px;
+      position: relative;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 14px 45px 14px 18px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    
+    .search-input:focus {
+      border-color: #0066cc;
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+      outline: none;
+    }
+    
+    .search-button {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #555;
+      cursor: pointer;
+      font-size: 20px;
+      transition: color 0.3s ease;
+    }
+    
+    .search-button:hover {
+      color: #0066cc;
+    }
+    
+    /* 改進的分類標籤組 */
+    .category-filter {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+    
+    .filter-btn {
+      background-color: #f5f7fa;
+      color: #555;
+      border: 2px solid #e6e9ee;
+      border-radius: 24px;
+      padding: 10px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+      font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+    }
+    
+    .filter-btn:hover {
+      background-color: #edf1f7;
+      border-color: #d3d8e3;
+      transform: translateY(-2px);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+    }
+    
+    .filter-btn.active {
+      background-color: #0066cc;
+      color: white;
+      border-color: #0066cc;
+      box-shadow: 0 3px 10px rgba(0, 102, 204, 0.3);
+    }
+    
+    /* 按壓效果 */
+    .filter-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    /* 影片網格佈局 */
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
+    }
+    
+    .video-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .video-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+    
+    .video-embed {
+      position: relative;
+      padding-bottom: 56.25%; /* 16:9 比例 */
+      height: 0;
+      overflow: hidden;
+    }
+    
+    .video-embed iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+    
+    .video-content {
+      padding: 20px;
+    }
+    
+    .video-content h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 1.3rem;
+      line-height: 1.4;
+      color: #002147;
+    }
+    
+    .video-content .date {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 12px;
+      display: block;
+    }
+    
+    .video-content p {
+      margin-bottom: 0;
+      color: #444;
+      line-height: 1.6;
+    }
+    
+    /* 分頁控制樣式 */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 50px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .pagination-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      height: 40px;
+      padding: 0 15px;
+      border-radius: 5px;
+      background-color: #fff;
+      color: #333;
+      font-weight: 500;
+      text-decoration: none;
+      border: 1px solid #ddd;
+      transition: all 0.3s ease;
+    }
+    
+    .pagination-btn:hover {
+      background-color: #f5f5f5;
+      border-color: #ccc;
+    }
+    
+    .pagination-btn.active {
+      background-color: #0066cc;
+      color: #fff;
+      border-color: #0066cc;
+    }
+    
+    .pagination-btn.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    
+    /* 加載中與空結果樣式 */
+    .loading-container {
+      text-align: center;
+      padding: 60px 0;
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(0, 102, 204, 0.2);
+      border-radius: 50%;
+      border-top-color: #0066cc;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .no-results {
+      text-align: center;
+      padding: 40px 0;
+      color: #666;
+      background: #f9f9f9;
+      border-radius: 12px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    }
+    
+    .no-results p {
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+    }
+    
+    .no-results .btn {
+      margin-top: 15px;
+      background: #0066cc;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-block;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .no-results .btn:hover {
+      background: #005bb9;
+      transform: translateY(-2px);
+      box-shadow: 0 3px 8px rgba(0, 102, 204, 0.2);
+    }
+    
+    /* 標籤樣式 */
+    .video-tags {
+      margin-top: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .video-tag {
+      display: inline-block;
+      padding: 4px 10px;
+      background: #f0f6ff;
+      border-radius: 20px;
+      color: #0066cc;
+      font-size: 0.8rem;
+      text-decoration: none;
+      border: 1px solid #e0ecff;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    
+    .video-tag:hover {
+      background: #0066cc;
+      color: #fff;
+    }
+  </style>
+  
   <!-- Google 分析 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
   <script>
@@ -22,22 +295,6 @@
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-RKMCS9WVS5');
-  </script>
-  
-  <!-- 結構化資料 -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "霍爾果斯會計師事務所",
-    "url": "https://www.horgoscpa.com",
-    "logo": "https://www.horgoscpa.com/assets/images/favicon-32x32.png",
-    "contactPoint": [{
-      "@type": "ContactPoint",
-      "telephone": "+886-4-2220-5606",
-      "contactType": "Customer Service"
-    }]
-  }
   </script>
 </head>
 <body>
@@ -74,29 +331,39 @@
       <p>透過我們的專業影片內容，掌握稅務、會計與企業財務知識，輕鬆學習複雜的財稅觀念</p>
     </header>
     
-    <section class="video-grid">
-      <div class="video-card">
-        <div class="video-embed">
-          <iframe src="https://www.youtube.com/embed/FvRwth0j_P0" frameborder="0" allowfullscreen></iframe>
-        </div>
-        <div class="video-content">
-          <h2>台灣報稅流程簡介</h2>
-          <p class="date">2025-03-15</p>
-          <p>本影片詳細介紹台灣個人與企業報稅流程，包含申報時間、必要文件與常見問題解析，讓您輕鬆掌握報稅要點。</p>
-        </div>
-      </div>
-      
-      <div class="video-card">
-        <div class="video-embed">
-          <iframe src="https://www.youtube.com/embed/MJlb2OEBuvA" frameborder="0" allowfullscreen></iframe>
-        </div>
-        <div class="video-content">
-          <h2>創業公司會計注意事項</h2>
-          <p class="date">2025-03-08</p>
-          <p>針對新創企業的會計實務指南，說明創業初期常見的會計問題與解決方案，包含成本控制、現金流管理與稅務規劃。</p>
-        </div>
+    <!-- 搜尋框 -->
+    <div class="search-container">
+      <input type="text" id="video-search" class="search-input" placeholder="搜尋影片..." aria-label="搜尋影片">
+      <button class="search-button" id="search-btn" aria-label="搜尋">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- 分類標籤 -->
+    <div class="category-filter">
+      <button class="filter-btn active" data-category="all">全部影片</button>
+      <button class="filter-btn" data-category="tax">稅務相關</button>
+      <button class="filter-btn" data-category="accounting">會計記帳</button>
+      <button class="filter-btn" data-category="business">企業經營</button>
+      <button class="filter-btn" data-category="tutorial">操作教學</button>
+    </div>
+    
+    <!-- 影片內容 -->
+    <section class="video-grid" id="video-container">
+      <!-- 加載中提示 -->
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>正在加載影片...</p>
       </div>
     </section>
+    
+    <!-- 分頁控制 -->
+    <div class="pagination" id="pagination-container">
+      <!-- 分頁按鈕將由JavaScript動態生成 -->
+    </div>
   </div>
 </main>
 
@@ -114,6 +381,606 @@
   <a href="/booking.html" class="float-btn consult-btn">免費諮詢</a>
   <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="float-btn line-btn">LINE</a>
 </div>
+
+<!-- 影片加載與過濾腳本 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('影片頁面腳本加載完成');
+    
+    // 元素容器
+    const videoContainer = document.getElementById('video-container');
+    const paginationContainer = document.getElementById('pagination-container');
+    
+    // 過濾按鈕
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    // 搜尋元素
+    const searchInput = document.getElementById('video-search');
+    const searchBtn = document.getElementById('search-btn');
+    
+    // 資料與分頁狀態
+    let allVideos = null;
+    let currentPage = 1;
+    let currentCategory = 'all';
+    let currentSearchTerm = '';
+    let itemsPerPage = 6; // 每頁顯示6個影片
+    
+    /**
+     * 獲取URL參數
+     */
+    function getUrlParams() {
+      console.log('解析URL參數');
+      const params = new URLSearchParams(window.location.search);
+      
+      // 獲取頁碼參數
+      const pageParam = params.get('page');
+      if (pageParam && !isNaN(parseInt(pageParam))) {
+        currentPage = Math.max(1, parseInt(pageParam));
+      }
+      
+      // 獲取分類參數
+      const categoryParam = params.get('category');
+      if (categoryParam) {
+        currentCategory = categoryParam;
+        
+        // 更新分類按鈕狀態
+        filterButtons.forEach(btn => {
+          if (btn.dataset.category === currentCategory) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+      }
+      
+      // 獲取搜尋參數
+      const searchParam = params.get('search');
+      if (searchParam) {
+        currentSearchTerm = searchParam;
+        searchInput.value = currentSearchTerm;
+      }
+      
+      console.log('URL參數解析結果:', { page: currentPage, category: currentCategory, search: currentSearchTerm });
+    }
+    
+    /**
+     * 更新URL參數
+     */
+    function updateUrlParams() {
+      const params = new URLSearchParams();
+      
+      if (currentPage > 1) {
+        params.set('page', currentPage);
+      }
+      
+      if (currentCategory !== 'all') {
+        params.set('category', currentCategory);
+      }
+      
+      if (currentSearchTerm) {
+        params.set('search', currentSearchTerm);
+      }
+      
+      const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+      history.pushState({}, '', newUrl);
+      
+      console.log('URL已更新:', newUrl);
+    }
+    
+    /**
+     * 加載影片數據
+     */
+    async function loadVideos() {
+      console.log('開始加載影片數據');
+      try {
+        // 獲取URL參數
+        getUrlParams();
+        
+        // 顯示加載中
+        videoContainer.innerHTML = `
+          <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>正在加載影片...</p>
+          </div>
+        `;
+        
+        // 嘗試多種路徑加載JSON
+        let response;
+        let jsonData;
+        
+        try {
+          console.log('嘗試加載路徑1: /assets/data/videos.json');
+          response = await fetch('/assets/data/videos.json');
+          
+          if (!response.ok) {
+            throw new Error(`HTTP錯誤: ${response.status}`);
+          }
+          
+          jsonData = await response.json();
+          console.log('成功加載JSON數據(路徑1)');
+        } catch (error1) {
+          console.warn('路徑1加載失敗，嘗試備用路徑:', error1);
+          
+          try {
+            console.log('嘗試加載路徑2: assets/data/videos.json (無前導斜線)');
+            response = await fetch('assets/data/videos.json');
+            
+            if (!response.ok) {
+              throw new Error(`HTTP錯誤: ${response.status}`);
+            }
+            
+            jsonData = await response.json();
+            console.log('成功加載JSON數據(路徑2)');
+          } catch (error2) {
+            console.warn('路徑2也加載失敗:', error2);
+            console.log('使用備用數據');
+            return useFallbackData();
+          }
+        }
+        
+        // 如果成功獲取數據
+        allVideos = jsonData;
+        
+        // 渲染影片列表
+        renderFilteredVideos();
+        
+        return jsonData;
+      } catch (error) {
+        console.error('加載影片出錯:', error);
+        
+        // 顯示錯誤信息
+        videoContainer.innerHTML = `
+          <div class="no-results">
+            <p>加載影片時出現問題: ${error.message}</p>
+            <p>請稍後再試或聯絡我們。</p>
+          </div>
+        `;
+        
+        // 使用備用數據
+        return useFallbackData();
+      }
+    }
+    
+    /**
+     * 在無法加載數據時使用備用數據
+     */
+    function useFallbackData() {
+      console.log('使用備用數據');
+      // 備用影片數據
+      const fallbackVideos = {
+        videos: [
+          {
+            title: "台灣報稅流程簡介",
+            date: "2025-03-15",
+            description: "本影片詳細介紹台灣個人與企業報稅流程，包含申報時間、必要文件與常見問題解析，讓您輕鬆掌握報稅要點。",
+            embedUrl: "https://www.youtube.com/embed/FvRwth0j_P0",
+            category: "tax",
+            tags: ["報稅", "個人所得稅", "企業報稅"]
+          },
+          {
+            title: "創業公司會計注意事項",
+            date: "2025-03-08",
+            description: "針對新創企業的會計實務指南，說明創業初期常見的會計問題與解決方案，包含成本控制、現金流管理與稅務規劃。",
+            embedUrl: "https://www.youtube.com/embed/MJlb2OEBuvA",
+            category: "accounting",
+            tags: ["新創企業", "會計實務", "財務管理"]
+          }
+        ],
+        pagination: {
+          total: 2,
+          totalPages: 1,
+          itemsPerPage: 6
+        }
+      };
+      
+      // 使用備用數據
+      allVideos = fallbackVideos;
+      
+      // 渲染影片列表
+      renderFilteredVideos();
+      
+      return fallbackVideos;
+    }
+    
+    /**
+     * 過濾影片並進行分頁
+     */
+    function filterAndPaginateVideos() {
+      console.log('過濾與分頁影片數據');
+      if (!allVideos || !allVideos.videos || !Array.isArray(allVideos.videos)) {
+        console.warn('影片數據無效，無法過濾與分頁');
+        return { videos: [], totalPages: 0, totalVideos: 0 };
+      }
+      
+      // 根據分類過濾
+      let filteredVideos = allVideos.videos;
+      if (currentCategory !== 'all') {
+        filteredVideos = filteredVideos.filter(video => video.category === currentCategory);
+      }
+      
+      // 根據搜尋詞過濾
+      if (currentSearchTerm) {
+        const searchTermLower = currentSearchTerm.toLowerCase();
+        filteredVideos = filteredVideos.filter(video => {
+          return video.title.toLowerCase().includes(searchTermLower) || 
+                 video.description.toLowerCase().includes(searchTermLower) ||
+                 (video.tags && video.tags.some(tag => tag.toLowerCase().includes(searchTermLower)));
+        });
+      }
+      
+      // 計算總頁數
+      const totalVideos = filteredVideos.length;
+      const totalPages = Math.max(1, Math.ceil(totalVideos / itemsPerPage));
+      
+      // 確保當前頁碼有效
+      currentPage = Math.max(1, Math.min(currentPage, totalPages));
+      
+      // 對當前頁進行分頁
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = Math.min(startIndex + itemsPerPage, totalVideos);
+      const paginatedVideos = filteredVideos.slice(startIndex, endIndex);
+      
+      console.log('過濾結果:', { 
+        totalVideos, 
+        totalPages, 
+        currentPage,
+        videosOnCurrentPage: paginatedVideos.length
+      });
+      
+      return {
+        videos: paginatedVideos,
+        totalPages: totalPages,
+        totalVideos: totalVideos
+      };
+    }
+    
+    /**
+     * 渲染經過過濾和分頁的影片
+     */
+    function renderFilteredVideos() {
+      console.log('渲染過濾後的影片');
+      const { videos, totalPages, totalVideos } = filterAndPaginateVideos();
+      
+      // 清空容器
+      videoContainer.innerHTML = '';
+      
+      // 渲染影片
+      if (videos && videos.length > 0) {
+        videos.forEach(video => {
+          const videoElement = document.createElement('div');
+          videoElement.className = 'video-card';
+          
+          // 確保必要的屬性存在
+          const videoEmbedUrl = video.embedUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+          const videoTitle = video.title || '未命名影片';
+          const videoDate = video.date || '未知日期';
+          const videoDescription = video.description || '無影片描述';
+          const videoTags = video.tags || [];
+          
+          // 創建標籤HTML
+          let tagsHtml = '';
+          if (videoTags.length > 0) {
+            tagsHtml = '<div class="video-tags">';
+            videoTags.forEach(tag => {
+              tagsHtml += `<span class="video-tag" data-tag="${tag}">${tag}</span>`;
+            });
+            tagsHtml += '</div>';
+          }
+          
+          videoElement.innerHTML = `
+            <div class="video-embed">
+              <iframe src="${videoEmbedUrl}" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <div class="video-content">
+              <h2>${videoTitle}</h2>
+              <p class="date">${videoDate}</p>
+              <p>${videoDescription}</p>
+              ${tagsHtml}
+            </div>
+          `;
+          
+          videoContainer.appendChild(videoElement);
+        });
+        
+        // 綁定標籤點擊事件
+        document.querySelectorAll('.video-tag').forEach(tag => {
+          tag.addEventListener('click', function() {
+            const tagText = this.textContent;
+            searchInput.value = tagText;
+            currentSearchTerm = tagText;
+            currentPage = 1;
+            updateUrlParams();
+            renderFilteredVideos();
+          });
+        });
+        
+        // 渲染分頁控制
+        renderPagination(totalPages);
+        
+        // 顯示總影片數
+        if (totalVideos > 0) {
+          const infoElement = document.createElement('div');
+          infoElement.className = 'search-results-info';
+          infoElement.style.textAlign = 'center';
+          infoElement.innerHTML = `<p>共找到 ${totalVideos} 部影片</p>`;
+          videoContainer.prepend(infoElement);
+        }
+      } else {
+        // 如果沒有影片
+        videoContainer.innerHTML = `
+          <div class="no-results">
+            <p>找不到符合「${currentSearchTerm || currentCategory}」的影片。</p>
+            <p>請嘗試其他關鍵字，或瀏覽我們的全部影片。</p>
+            <button class="btn" id="reset-search">清除搜尋</button>
+          </div>
+        `;
+        
+        // 隱藏分頁
+        if (paginationContainer) {
+          paginationContainer.style.display = 'none';
+        }
+        
+        // 綁定清除搜尋按鈕事件
+        const resetBtn = document.getElementById('reset-search');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', function() {
+            currentSearchTerm = '';
+            currentCategory = 'all';
+            currentPage = 1;
+            
+            if (searchInput) {
+              searchInput.value = '';
+            }
+            
+            // 重置分類按鈕
+            filterButtons.forEach(btn => {
+              if (btn.dataset.category === 'all') {
+                btn.classList.add('active');
+              } else {
+                btn.classList.remove('active');
+              }
+            });
+            
+            // 更新URL並重新渲染
+            updateUrlParams();
+            renderFilteredVideos();
+          });
+        }
+      }
+    }
+    
+    /**
+     * 渲染分頁控制
+     */
+    function renderPagination(totalPages) {
+      console.log('渲染分頁控制，總頁數:', totalPages);
+      if (!paginationContainer) {
+        console.warn('找不到分頁容器元素');
+        return;
+      }
+      
+      if (totalPages <= 1) {
+        paginationContainer.style.display = 'none';
+        return;
+      }
+      
+      paginationContainer.style.display = 'flex';
+      paginationContainer.innerHTML = '';
+      
+      // 上一頁按鈕
+      const prevBtn = document.createElement('a');
+      prevBtn.className = `pagination-btn ${currentPage === 1 ? 'disabled' : ''}`;
+      prevBtn.innerHTML = '&laquo;';
+      prevBtn.href = 'javascript:void(0)';
+      if (currentPage > 1) {
+        prevBtn.addEventListener('click', () => {
+          currentPage--;
+          updateUrlParams();
+          renderFilteredVideos();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+      paginationContainer.appendChild(prevBtn);
+      
+      // 頁碼按鈕
+      // 最多顯示7個頁碼按鈕，其餘用省略號替代
+      const maxVisibleButtons = 7;
+      let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
+      let endPage = Math.min(startPage + maxVisibleButtons - 1, totalPages);
+      
+      if (endPage - startPage + 1 < maxVisibleButtons) {
+        startPage = Math.max(1, endPage - maxVisibleButtons + 1);
+      }
+      
+      // 第一頁按鈕
+      if (startPage > 1) {
+        const firstPageBtn = document.createElement('a');
+        firstPageBtn.className = 'pagination-btn';
+        firstPageBtn.textContent = '1';
+        firstPageBtn.href = 'javascript:void(0)';
+        firstPageBtn.addEventListener('click', () => {
+          currentPage = 1;
+          updateUrlParams();
+          renderFilteredVideos();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        paginationContainer.appendChild(firstPageBtn);
+        
+        // 省略號
+        if (startPage > 2) {
+          const ellipsis = document.createElement('span');
+          ellipsis.className = 'pagination-btn disabled';
+          ellipsis.textContent = '...';
+          paginationContainer.appendChild(ellipsis);
+        }
+      }
+      
+      // 中間頁碼
+      for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('a');
+        pageBtn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+        pageBtn.textContent = i;
+        pageBtn.href = 'javascript:void(0)';
+        
+        if (i !== currentPage) {
+          pageBtn.addEventListener('click', () => {
+            currentPage = i;
+            updateUrlParams();
+            renderFilteredVideos();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        }
+        
+        paginationContainer.appendChild(pageBtn);
+      }
+      
+      // 最後頁按鈕
+      if (endPage < totalPages) {
+        // 省略號
+        if (endPage < totalPages - 1) {
+          const ellipsis = document.createElement('span');
+          ellipsis.className = 'pagination-btn disabled';
+          ellipsis.textContent = '...';
+          paginationContainer.appendChild(ellipsis);
+        }
+        
+        const lastPageBtn = document.createElement('a');
+        lastPageBtn.className = 'pagination-btn';
+        lastPageBtn.textContent = totalPages;
+        lastPageBtn.href = 'javascript:void(0)';
+        lastPageBtn.addEventListener('click', () => {
+          currentPage = totalPages;
+          updateUrlParams();
+          renderFilteredVideos();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        paginationContainer.appendChild(lastPageBtn);
+      }
+      
+      // 下一頁按鈕
+      const nextBtn = document.createElement('a');
+      nextBtn.className = `pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`;
+      nextBtn.innerHTML = '&raquo;';
+      nextBtn.href = 'javascript:void(0)';
+      if (currentPage < totalPages) {
+        nextBtn.addEventListener('click', () => {
+          currentPage++;
+          updateUrlParams();
+          renderFilteredVideos();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+      paginationContainer.appendChild(nextBtn);
+    }
+    
+    // 為所有分類標籤按鈕添加點擊波紋效果
+    filterButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        // 創建波紋元素
+        const ripple = document.createElement('div');
+        this.appendChild(ripple);
+        
+        // 設置波紋位置
+        const rect = this.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // 添加波紋樣式
+        ripple.style.cssText = `
+          position: absolute;
+          background: rgba(255, 255, 255, 0.7);
+          border-radius: 50%;
+          pointer-events: none;
+          width: 5px;
+          height: 5px;
+          top: ${y}px;
+          left: ${x}px;
+          transform: translate(-50%, -50%);
+          animation: ripple 0.6s ease-out;
+        `;
+        
+        // 波紋動畫結束後移除
+        setTimeout(() => {
+          ripple.remove();
+        }, 600);
+      });
+    });
+    
+    // 添加波紋動畫
+    if (!document.querySelector('style#ripple-animation')) {
+      const style = document.createElement('style');
+      style.id = 'ripple-animation';
+      style.textContent = `
+        @keyframes ripple {
+          0% {
+            width: 0;
+            height: 0;
+            opacity: 0.7;
+          }
+          100% {
+            width: 500px;
+            height: 500px;
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    // 綁定搜尋按鈕事件
+    if (searchBtn) {
+      searchBtn.addEventListener('click', function() {
+        if (searchInput) {
+          currentSearchTerm = searchInput.value.trim();
+          currentPage = 1;
+          updateUrlParams();
+          renderFilteredVideos();
+        }
+      });
+    }
+    
+    // 綁定搜尋框回車事件
+    if (searchInput) {
+      searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          currentSearchTerm = searchInput.value.trim();
+          currentPage = 1;
+          updateUrlParams();
+          renderFilteredVideos();
+        }
+      });
+    }
+    
+    // 綁定分類過濾按鈕事件
+    filterButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        // 移除所有按鈕的active狀態
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // 設置當前按鈕為active
+        this.classList.add('active');
+        
+        // 設置當前分類
+        currentCategory = this.getAttribute('data-category');
+        currentPage = 1;
+        
+        // 更新URL並重新渲染
+        updateUrlParams();
+        renderFilteredVideos();
+      });
+    });
+    
+    // 監聽瀏覽器前進/後退按鈕
+    window.addEventListener('popstate', function() {
+      getUrlParams();
+      renderFilteredVideos();
+    });
+    
+    // 初始化加載
+    loadVideos();
+  });
+</script>
 
 </body>
 </html>
