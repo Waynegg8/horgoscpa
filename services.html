@@ -1,28 +1,189 @@
 <!DOCTYPE html>
-
 <html lang="zh-TW">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta content="霍爾果斯會計師事務所提供專業稅務、會計記帳與企業顧問服務，為您打造最全面的財務規劃方案。" name="description"/>
-<title>服務項目 | 霍爾果斯會計師事務所</title>
-<!-- Favicon -->
-<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
-<link href="/assets/images/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
-<link href="/assets/images/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
-<link href="/site.webmanifest" rel="manifest"/>
-<!-- 引用樣式表 -->
-<link href="/assets/css/style.css" rel="stylesheet">
-<!-- Google 分析 -->
-<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
-<script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="霍爾果斯會計師事務所提供專業稅務、會計記帳與企業顧問服務，為您打造最全面的財務規劃方案。" />
+  <title>服務項目 | 霍爾果斯會計師事務所</title>
+  
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- 引用樣式表 -->
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  
+  <!-- 導航欄修正樣式 -->
+  <style>
+    /* 修正導航欄樣式 */
+    .logo {
+      min-width: 240px; /* 增加最小寬度確保文字不換行 */
+    }
+    
+    .logo-main {
+      white-space: nowrap; /* 確保不換行 */
+    }
+    
+    .nav-menu {
+      gap: 10px; /* 在菜單項目間添加間距 */
+    }
+    
+    .nav-menu li {
+      margin: 0 2px; /* 減少 li 元素的外邊距 */
+      position: relative; /* 為下拉選單定位 */
+    }
+    
+    .nav-menu a {
+      padding: 7px 8px; /* 減少內邊距 */
+      font-size: 0.9rem; /* 縮小字體 */
+    }
+
+    /* 重新設計CTA按鈕樣式 */
+    .nav-cta-item {
+      display: inline-block;
+      margin: 0 5px !important;
+    }
+    
+    .nav-consult-btn, .nav-line-btn {
+      font-weight: 700;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      padding: 8px 15px !important;
+      font-size: 1rem !important;
+      border-width: 2px !important;
+      letter-spacing: 0.5px;
+      animation: pulse 2s infinite;
+      min-width: 100px;
+      text-align: center;
+    }
+    
+    .nav-consult-btn {
+      background-color: #ff6b00 !important; /* 更明亮的橙色 */
+      border-color: #ff6b00 !important;
+    }
+    
+    .nav-line-btn {
+      background-color: #06c755 !important; /* 保持LINE綠色 */
+      border-color: #06c755 !important;
+    }
+    
+    .nav-consult-btn:hover, .nav-line-btn:hover {
+      transform: scale(1.05) translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(255, 107, 0, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
+      }
+    }
+
+    /* 下拉選單樣式 */
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background-color: #002147;
+      min-width: 180px;
+      border-radius: 4px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 1001;
+      padding: 8px 0;
+      margin-top: 5px;
+    }
+    
+    .dropdown-menu a {
+      display: block;
+      padding: 8px 15px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      border: none;
+      background: none;
+      text-align: left;
+    }
+    
+    .dropdown-menu a:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: none;
+      box-shadow: none;
+    }
+    
+    /* 顯示下拉選單 */
+    .has-dropdown:hover .dropdown-menu {
+      display: block;
+    }
+    
+    /* 下拉箭頭圖標 */
+    .has-dropdown > a::after {
+      content: "▼";
+      font-size: 0.6rem;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+    
+    @media (max-width: 1100px) {
+      .nav-container {
+        padding: 10px 15px; /* 減少導航欄內邊距 */
+      }
+    }
+    
+    /* 移動設備樣式 */
+    @media (max-width: 850px) {
+      .dropdown-menu {
+        position: static;
+        background-color: rgba(255, 255, 255, 0.05);
+        box-shadow: none;
+        margin-top: 0;
+        display: none;
+        padding: 0;
+      }
+      
+      .dropdown-menu a {
+        padding: 8px 20px 8px 30px;
+        font-size: 0.85rem;
+      }
+      
+      .has-dropdown > a::after {
+        float: right;
+        margin-top: 5px;
+      }
+      
+      /* 移動設備展開下拉選單的JS交互 */
+      .dropdown-menu.show {
+        display: block;
+      }
+      
+      /* 移動設備上的CTA按鈕 */
+      .nav-consult-btn, .nav-line-btn {
+        width: 90%;
+        margin: 5px auto;
+        text-align: center;
+      }
+    }
+  </style>
+  
+  <!-- Google 分析 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
+  <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-RKMCS9WVS5');
   </script>
-<!-- 結構化資料 -->
-<script type="application/ld+json">
+  
+  <!-- 結構化資料 -->
+  <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "AccountingService",
@@ -48,7 +209,9 @@
     }
   }
   </script>
-</link>  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body>
+
 <!-- 導航欄 -->
 <nav class="site-nav">
   <div class="nav-container">
@@ -78,97 +241,112 @@
       <li><a href="/blog.html">部落格</a></li>
       <li><a href="/faq.html">常見問題</a></li>
       <li><a href="/video.html">影片</a></li>
-      <li><a href="/contact.html" class="active">聯絡資訊</a></li>
+      <li><a href="/contact.html">聯絡資訊</a></li>
     </ul>
   </div>
-</nav><!-- 英雄區塊 -->
+</nav>
+
+<!-- 英雄區塊 -->
 <header class="hero">
-<div class="hero-content">
-<h1>專業服務項目</h1>
-<p>霍爾果斯會計師事務所提供多項專業服務，由經驗豐富的會計師團隊為您量身打造最適合的財務方案</p>
-</div>
+  <div class="hero-content">
+    <h1>專業服務項目</h1>
+    <p>霍爾果斯會計師事務所提供多項專業服務，由經驗豐富的會計師團隊為您量身打造最適合的財務方案</p>
+  </div>
 </header>
+
 <!-- 服務區塊 -->
 <section class="services-section">
-<div class="container">
-<div class="section-title">
-<h2>服務總覽</h2>
-<p>我們提供全方位的稅務、會計與企業顧問服務，協助您達成財務目標</p>
-</div>
-<div class="services-grid">
-<div class="service-card">
-<div class="service-icon">
-<img alt="稅務服務" src="/assets/images/tax-icon.svg"/>
-</div>
-<h3>稅務服務</h3>
-<p>提供個人與企業稅務規劃、申報與爭議處理，協助您合法節稅並降低稅務風險，讓您專心拓展業務與生活。</p>
-<a class="read-more" href="/services/tax.html">了解更多</a>
-</div>
-<div class="service-card">
-<div class="service-icon">
-<img alt="記帳與會計" src="/assets/images/accounting-icon.svg"/>
-</div>
-<h3>記帳與會計</h3>
-<p>提供日常記帳、財務報表編製、會計制度建立與專業顧問諮詢，確保您的財務記錄準確無誤且符合法規要求。</p>
-<a class="read-more" href="/services/accounting.html">了解更多</a>
-</div>
-<div class="service-card">
-<div class="service-icon">
-<img alt="企業顧問" src="/assets/images/consulting-icon.svg"/>
-</div>
-<h3>企業顧問</h3>
-<p>協助公司設立登記、企業財務規劃、營運流程優化與併購顧問，提供全方位商業策略建議，助您企業成長。</p>
-<a class="read-more" href="/services/consulting.html">了解更多</a>
-</div>
-</div>
-<div class="text-center" style="margin-top: 50px;">
-<a class="btn" href="/contact.html">聯絡我們</a>
-</div>
-</div>
+  <div class="container">
+    <div class="section-title">
+      <h2>服務總覽</h2>
+      <p>我們提供全方位的稅務、會計與企業顧問服務，協助您達成財務目標</p>
+    </div>
+    
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/assets/images/tax-icon.svg" alt="稅務服務">
+        </div>
+        <h3>稅務服務</h3>
+        <p>提供個人與企業稅務規劃、申報與爭議處理，協助您合法節稅並降低稅務風險，讓您專心拓展業務與生活。</p>
+        <a href="/services/tax.html" class="read-more">了解更多</a>
+      </div>
+      
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/assets/images/accounting-icon.svg" alt="記帳與會計">
+        </div>
+        <h3>記帳與會計</h3>
+        <p>提供日常記帳、財務報表編製、會計制度建立與專業顧問諮詢，確保您的財務記錄準確無誤且符合法規要求。</p>
+        <a href="/services/accounting.html" class="read-more">了解更多</a>
+      </div>
+      
+      <div class="service-card">
+        <div class="service-icon">
+          <img src="/assets/images/consulting-icon.svg" alt="企業顧問">
+        </div>
+        <h3>企業顧問</h3>
+        <p>協助公司設立登記、企業財務規劃、營運流程優化與併購顧問，提供全方位商業策略建議，助您企業成長。</p>
+        <a href="/services/consulting.html" class="read-more">了解更多</a>
+      </div>
+    </div>
+    
+    <div class="text-center" style="margin-top: 50px;">
+      <a href="/contact.html" class="btn">聯絡我們</a>
+    </div>
+  </div>
 </section>
+
 <!-- 服務流程區塊 -->
 <section class="about-section">
-<div class="container">
-<div class="section-title">
-<h2>服務流程</h2>
-</div>
-<div class="about-content">
-<p>我們以系統化、標準化的流程提供專業服務，確保每一步驟都能符合您的期望</p>
-<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 40px;">
-<div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
-<div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">1</div>
-<h3>需求諮詢</h3>
-<p>初步了解您的業務需求與痛點，分析您的財務情況與目標。</p>
-</div>
-<div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
-<div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">2</div>
-<h3>方案規劃</h3>
-<p>依據您的需求，量身打造最適合的服務方案與報價。</p>
-</div>
-<div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
-<div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">3</div>
-<h3>執行服務</h3>
-<p>專業會計師團隊依計畫執行服務，定期回報進度。</p>
-</div>
-<div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
-<div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">4</div>
-<h3>持續優化</h3>
-<p>持續追蹤服務成效，依據您的回饋不斷改善與調整。</p>
-</div>
-</div>
-</div>
-</div>
+  <div class="container">
+    <div class="section-title">
+      <h2>服務流程</h2>
+    </div>
+    <div class="about-content">
+      <p>我們以系統化、標準化的流程提供專業服務，確保每一步驟都能符合您的期望</p>
+      
+      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 40px;">
+        <div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
+          <div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">1</div>
+          <h3>需求諮詢</h3>
+          <p>初步了解您的業務需求與痛點，分析您的財務情況與目標。</p>
+        </div>
+        
+        <div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
+          <div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">2</div>
+          <h3>方案規劃</h3>
+          <p>依據您的需求，量身打造最適合的服務方案與報價。</p>
+        </div>
+        
+        <div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
+          <div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">3</div>
+          <h3>執行服務</h3>
+          <p>專業會計師團隊依計畫執行服務，定期回報進度。</p>
+        </div>
+        
+        <div style="flex: 1; min-width: 220px; max-width: 250px; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
+          <div style="width: 60px; height: 60px; background-color: #0066cc; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 20px;">4</div>
+          <h3>持續優化</h3>
+          <p>持續追蹤服務成效，依據您的回饋不斷改善與調整。</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
+
 <!-- 頁尾區域 -->
 <footer class="site-footer">
-<div class="footer-container">
-<div class="footer-text">
-<p>© 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
-</div>
-</div>
+  <div class="footer-container">
+    <div class="footer-text">
+      <p>&copy; 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
+    </div>
+  </div>
 </footer>
-<script src="/assets/js/navbar.js"></script><!-- 下拉選單與營業時間 JavaScript -->
-<script>document.addEventListener('DOMContentLoaded', function() {
+
+<!-- 下拉選單與營業時間 JavaScript -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
     // 僅在移動設備上添加下拉選單的點擊事件
     if (window.innerWidth <= 850) {
       const dropdownLinks = document.querySelectorAll('.has-dropdown > a');
@@ -198,38 +376,8 @@
     });
     
     window.prevWidth = window.innerWidth;
-    
-    // 判斷當前是否營業中
-    function checkBusinessHours() {
-      const now = new Date();
-      const day = now.getDay(); // 0是星期日，1-5是星期一到五，6是星期六
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const currentTime = hours * 60 + minutes; // 將時間轉換為分鐘
-      
-      // 營業時間：週一至週五 8:30-17:30
-      const openTime = 8 * 60 + 30; // 8:30 轉換為分鐘
-      const closeTime = 17 * 60 + 30; // 17:30 轉換為分鐘
-      
-      const isWeekday = day >= 1 && day <= 5; // 是否為工作日
-      const isDuringBusinessHours = currentTime >= openTime && currentTime < closeTime; // 是否在營業時間內
-      
-      const businessStatus = document.getElementById('business-status');
-      
-      if (isWeekday && isDuringBusinessHours) {
-        businessStatus.textContent = '營業中';
-        businessStatus.className = 'business-status status-open';
-      } else {
-        businessStatus.textContent = '非營業時間';
-        businessStatus.className = 'business-status status-closed';
-      }
-    }
-    
-    // 執行判斷
-    checkBusinessHours();
-    
-    // 每分鐘更新一次狀態
-    setInterval(checkBusinessHours, 60000);
-  });</script>
+  });
+</script>
+
 </body>
 </html>
