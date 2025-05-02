@@ -41,15 +41,46 @@
     }
 
     /* 突出顯示CTA按鈕 */
+    .nav-cta-item {
+      transform: scale(1.1);
+      z-index: 10; /* 確保按鈕顯示在最上層 */
+    }
+    
     .nav-consult-btn, .nav-line-btn {
       font-weight: 700;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      transform: scale(1.05);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      padding: 8px 15px !important;
+      font-size: 1rem !important;
+      border-width: 2px !important;
+      letter-spacing: 0.5px;
+      animation: pulse 2s infinite;
+    }
+    
+    .nav-consult-btn {
+      background-color: #ff6b00 !important; /* 更明亮的橙色 */
+      border-color: #ff6b00 !important;
+    }
+    
+    .nav-line-btn {
+      background-color: #06c755 !important; /* 保持LINE綠色 */
+      border-color: #06c755 !important;
     }
     
     .nav-consult-btn:hover, .nav-line-btn:hover {
-      transform: scale(1.1) translateY(-2px);
-      box-shadow: 0 5px 10px rgba(0,0,0,0.25);
+      transform: scale(1.1) translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(255, 107, 0, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
+      }
     }
 
     /* 下拉選單樣式 */
@@ -99,6 +130,26 @@
       vertical-align: middle;
     }
     
+    /* 營業狀態樣式 */
+    .business-status {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 5px;
+    }
+    
+    .status-open {
+      background-color: #4caf50;
+      color: white;
+    }
+    
+    .status-closed {
+      background-color: #f44336;
+      color: white;
+    }
+    
     @media (max-width: 1100px) {
       .nav-container {
         padding: 10px 15px; /* 減少導航欄內邊距 */
@@ -129,6 +180,13 @@
       /* 移動設備展開下拉選單的JS交互 */
       .dropdown-menu.show {
         display: block;
+      }
+      
+      /* 移動設備上的CTA按鈕 */
+      .nav-consult-btn, .nav-line-btn {
+        width: 90%;
+        margin: 5px auto;
+        text-align: center;
       }
     }
   </style>
@@ -225,7 +283,7 @@
           </div>
           <h3>事務所地址</h3>
           <p>台中市西區建國路21號3樓之1</p>
-          <a href="https://maps.app.goo.gl/xxxxx" target="_blank" class="btn btn-outline btn-sm">查看地圖</a>
+          <a href="https://maps.app.goo.gl/BGdS5iy11dWQPCHC8" target="_blank" class="btn btn-outline btn-sm">查看地圖</a>
         </div>
         
         <div class="contact-card">
@@ -252,25 +310,13 @@
           </div>
           <h3>營業時間</h3>
           <p>週一至週五 8:30-17:30</p>
-          <a href="/booking.html" class="btn btn-outline btn-sm">預約諮詢</a>
+          <div id="business-status" class="business-status"></div>
         </div>
       </div>
       
       <div class="contact-map">
         <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3641.080578501929!2d120.67441507534775!3d24.133808178410753!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34693da642d13c59%3A0x95e561addcaebda!2z6ZyN54i-5p6c5pav5pyD6KiI5bir5LqL5YuZ5omA!5e0!3m2!1sen!2stw!4v1746124996506!5m2!1sen!2stw" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- 預約諮詢 CTA -->
-<section class="cta-section" style="background-color: #f5f8fc; padding: 60px 0; text-align: center; margin: 60px 0;">
-  <div class="container">
-    <h2>需要專業諮詢服務？</h2>
-    <p>我們提供免費財稅諮詢，由專業會計師為您解答疑惑</p>
-    <div style="margin-top: 30px;">
-      <a href="/booking.html" class="btn">預約免費諮詢</a>
-      <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="btn btn-line" style="margin-left: 15px;">LINE 諮詢</a>
     </div>
   </div>
 </section>
@@ -312,7 +358,7 @@
   </div>
 </footer>
 
-<!-- 下拉選單 JavaScript -->
+<!-- 下拉選單與營業時間 JavaScript -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // 僅在移動設備上添加下拉選單的點擊事件
@@ -344,6 +390,38 @@
     });
     
     window.prevWidth = window.innerWidth;
+    
+    // 判斷當前是否營業中
+    function checkBusinessHours() {
+      const now = new Date();
+      const day = now.getDay(); // 0是星期日，1-5是星期一到五，6是星期六
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const currentTime = hours * 60 + minutes; // 將時間轉換為分鐘
+      
+      // 營業時間：週一至週五 8:30-17:30
+      const openTime = 8 * 60 + 30; // 8:30 轉換為分鐘
+      const closeTime = 17 * 60 + 30; // 17:30 轉換為分鐘
+      
+      const isWeekday = day >= 1 && day <= 5; // 是否為工作日
+      const isDuringBusinessHours = currentTime >= openTime && currentTime < closeTime; // 是否在營業時間內
+      
+      const businessStatus = document.getElementById('business-status');
+      
+      if (isWeekday && isDuringBusinessHours) {
+        businessStatus.textContent = '營業中';
+        businessStatus.className = 'business-status status-open';
+      } else {
+        businessStatus.textContent = '非營業時間';
+        businessStatus.className = 'business-status status-closed';
+      }
+    }
+    
+    // 執行判斷
+    checkBusinessHours();
+    
+    // 每分鐘更新一次狀態
+    setInterval(checkBusinessHours, 60000);
   });
 </script>
 
