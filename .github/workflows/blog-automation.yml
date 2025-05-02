@@ -94,6 +94,13 @@ jobs:
           echo "文件路徑: ${{ github.event.client_payload.file_path }}"
           echo "文章標題: ${{ github.event.client_payload.article_title }}"
           
+          # 設定Git配置
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 先拉取最新變更以避免衝突
+          git pull origin main --rebase
+          
           # 檢查文件是否存在
           if [ -f "${{ github.event.client_payload.file_path }}" ]; then
             # 刪除文件
@@ -101,8 +108,6 @@ jobs:
             echo "文件已刪除"
             
             # 提交變更
-            git config --global user.name "GitHub Actions Bot"
-            git config --global user.email "github-actions[bot]@users.noreply.github.com"
             git add -A
             git commit -m "透過API刪除文章: ${{ github.event.client_payload.article_title }}"
             git push
@@ -126,9 +131,13 @@ jobs:
           echo "將進行強制掃描"
           python scan_html_files.py
           
-          # 提交變更
+          # 設定Git配置
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 先拉取最新變更以避免衝突
+          git pull origin main --rebase
+          
           git add assets/data/blog-posts.json assets/data/latest-posts.json
           git commit -m "透過API執行強制掃描並更新JSON" || echo "無需提交"
           git push || echo "無需推送"
@@ -198,6 +207,10 @@ jobs:
           
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 先拉取最新變更以避免衝突
+          git pull origin main --rebase
+          
           git add assets/data/*.json
           git commit -m "初始化或更新JSON檔案" || echo "無需提交"
           git push || echo "無需推送"
@@ -207,6 +220,13 @@ jobs:
         if: ${{ steps.init_json.outputs.scan_html == 'true' || github.event.inputs.force_scan == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles') }}
         run: |
           python scan_html_files.py
+          
+          # 設定Git配置
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 先拉取最新變更以避免衝突
+          git pull origin main --rebase
           
           # 提交更改
           git add assets/data/blog-posts.json assets/data/latest-posts.json
@@ -266,6 +286,9 @@ jobs:
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
+          # 先拉取最新變更以避免衝突
+          git pull origin main --rebase
+          
           git add blog/
           
           if git diff --staged --quiet; then
@@ -304,6 +327,9 @@ jobs:
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           
+          # 先拉取最新變更以避免衝突
+          git pull origin main --rebase
+          
           git add assets/data/blog-posts.json
           git add assets/data/videos.json
           git add assets/data/latest-posts.json
@@ -319,6 +345,13 @@ jobs:
       - name: 清理已處理的Word文檔
         if: ${{ github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true' }}
         run: |
+          # 設定Git配置
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # 先拉取最新變更以避免衝突
+          git pull origin main --rebase
+          
           # 移動已處理的文件到processed目錄
           mkdir -p word-docs/processed
           find word-docs -maxdepth 1 -type f -name "*.docx" -exec mv {} word-docs/processed/ \;
