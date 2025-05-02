@@ -10,6 +10,7 @@ import os
 import re
 import json
 import datetime
+import sys
 from pathlib import Path
 from bs4 import BeautifulSoup
 
@@ -94,15 +95,34 @@ def scan_blog_directory():
     """掃描部落格目錄獲取所有HTML文件信息"""
     posts = []
     
+    # 獲取並輸出當前工作目錄
+    current_dir = os.getcwd()
+    print(f"當前工作目錄: {current_dir}")
+    
     # 檢查目錄是否存在
-    if not os.path.exists(BLOG_DIR):
-        print(f"目錄 {BLOG_DIR} 不存在")
+    blog_dir_path = os.path.join(current_dir, BLOG_DIR)
+    print(f"嘗試存取的部落格目錄: {blog_dir_path}")
+    
+    if not os.path.exists(blog_dir_path):
+        print(f"錯誤: 目錄 {blog_dir_path} 不存在")
+        # 列出根目錄下的所有文件和目錄
+        print(f"根目錄下的文件和目錄:")
+        for item in os.listdir(current_dir):
+            print(f"  - {item}")
         return posts
     
+    # 列出blog目錄中的所有文件
+    print(f"{BLOG_DIR}目錄中的文件:")
+    for item in os.listdir(blog_dir_path):
+        print(f"  - {item}")
+    
     # 掃描目錄下所有HTML文件
-    for file_name in os.listdir(BLOG_DIR):
+    html_count = 0
+    for file_name in os.listdir(blog_dir_path):
         if file_name.endswith('.html'):
-            file_path = os.path.join(BLOG_DIR, file_name)
+            html_count += 1
+            file_path = os.path.join(blog_dir_path, file_name)
+            print(f"處理HTML文件: {file_path}")
             post_info = extract_info_from_html(file_path)
             if post_info:
                 posts.append(post_info)
@@ -113,6 +133,8 @@ def scan_blog_directory():
                 print(f"  標籤: {', '.join(post_info['tags'])}")
             else:
                 print(f"無法提取 {file_path} 的信息")
+    
+    print(f"總共找到 {html_count} 個HTML文件")
     
     # 按日期排序
     posts.sort(key=lambda x: x["date"], reverse=True)
@@ -146,12 +168,27 @@ def update_json_files(posts):
         "tags": list(all_tags)
     }
     
-    # 寫入完整JSON文件
-    with open(JSON_PATH, 'w', encoding='utf-8') as f:
-        json.dump(full_data, f, ensure_ascii=False, indent=2)
+    # 檢查目前JSON文件是否存在
+    try:
+        if os.path.exists(JSON_PATH):
+            with open(JSON_PATH, 'r', encoding='utf-8') as f:
+                current_data = json.load(f)
+            print(f"現有JSON文件中有 {len(current_data.get('posts', []))} 篇文章")
+        else:
+            print(f"JSON文件 {JSON_PATH} 不存在，將創建新文件")
+    except Exception as e:
+        print(f"讀取現有JSON文件時出錯: {str(e)}")
     
-    print(f"成功更新 {JSON_PATH}")
-    print(f"共 {len(posts)} 篇文章，{len(all_categories)} 個分類，{len(all_tags)} 個標籤")
+    # 寫入完整JSON文件
+    try:
+        with open(JSON_PATH, 'w', encoding='utf-8') as f:
+            json.dump(full_data, f, ensure_ascii=False, indent=2)
+        
+        print(f"成功更新 {JSON_PATH}")
+        print(f"共 {len(posts)} 篇文章，{len(all_categories)} 個分類，{len(all_tags)} 個標籤")
+    except Exception as e:
+        print(f"寫入JSON文件時出錯: {str(e)}")
+        return False
     
     # 更新最新文章JSON
     latest_posts = posts[:3] if len(posts) >= 3 else posts
@@ -159,17 +196,24 @@ def update_json_files(posts):
     # 確保目錄存在
     os.makedirs(os.path.dirname(LATEST_POSTS_PATH), exist_ok=True)
     
-    with open(LATEST_POSTS_PATH, 'w', encoding='utf-8') as f:
-        json.dump(latest_posts, f, ensure_ascii=False, indent=2)
-    
-    print(f"成功更新 {LATEST_POSTS_PATH}")
-    print(f"新增了 {len(latest_posts)} 篇最新文章")
+    try:
+        with open(LATEST_POSTS_PATH, 'w', encoding='utf-8') as f:
+            json.dump(latest_posts, f, ensure_ascii=False, indent=2)
+        
+        print(f"成功更新 {LATEST_POSTS_PATH}")
+        print(f"新增了 {len(latest_posts)} 篇最新文章")
+    except Exception as e:
+        print(f"寫入最新文章JSON時出錯: {str(e)}")
+        return False
     
     return True
 
 def main():
     """主函數"""
     print("開始掃描部落格文章...")
+    print(f"Python版本: {sys.version}")
+    print(f"當前系統: {sys.platform}")
+    
     posts = scan_blog_directory()
     
     if posts:
