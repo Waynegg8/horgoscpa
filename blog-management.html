@@ -1710,6 +1710,15 @@
      */
     async function scanHtmlFiles() {
       try {
+        // 先驗證管理員密碼
+        const password = prompt('請輸入管理員密碼以執行掃描操作：');
+        
+        // 驗證密碼
+        if (password !== ADMIN_PASSWORD) {
+          showMessage('密碼錯誤，無法執行掃描操作', 'error');
+          return;
+        }
+        
         showMessage('正在掃描HTML文件並更新JSON...', 'info');
         
         // 獲取GitHub令牌
