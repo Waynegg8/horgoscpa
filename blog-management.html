@@ -1,21 +1,19 @@
 <!DOCTYPE html>
+
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex, nofollow"> <!-- 防止搜索引擎索引管理頁面 -->
-  <title>內容管理 | 霍爾果斯會計師事務所</title>
-  
-  <!-- Favicon -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
-  <link rel="manifest" href="/site.webmanifest">
-  
-  <!-- 引用樣式表 -->
-  <link rel="stylesheet" href="/assets/css/style.css" />
-  
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="noindex, nofollow" name="robots"/> <!-- 防止搜索引擎索引管理頁面 -->
+<title>內容管理 | 霍爾果斯會計師事務所</title>
+<!-- Favicon -->
+<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="/assets/images/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/assets/images/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
+<link href="/site.webmanifest" rel="manifest"/>
+<!-- 引用樣式表 -->
+<link href="/assets/css/style.css" rel="stylesheet">
+<style>
     /* 管理頁面特定樣式 */
     .admin-container {
       padding: 30px;
@@ -363,209 +361,203 @@
       display: block;
     }
   </style>
-</head>
+</link></head>
 <body>
+<!-- 導航欄 -->
 
 <!-- 導航欄 -->
 <nav class="site-nav">
-  <div class="nav-container">
-    <div class="logo">
-      <a href="/index.html">
-        <div class="logo-main">霍爾果斯會計師事務所</div>
-        <div class="logo-sub">HorgosCPA</div>
-      </a>
-    </div>
-    <input type="checkbox" id="nav-toggle" class="nav-toggle">
-    <label for="nav-toggle" class="nav-toggle-label">
-      <span></span>
-    </label>
-    <ul class="nav-menu">
-      <li class="nav-cta-item"><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
-      <li class="nav-cta-item"><a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="nav-line-btn">LINE</a></li>
-      <li class="nav-divider"></li>
-      <li><a href="/services.html">服務項目</a></li>
-      <li><a href="/team.html">服務團隊</a></li>
-      <li><a href="/blog.html">部落格</a></li>
-      <li><a href="/faq.html">常見問題</a></li>
-      <li><a href="/video.html">影片</a></li>
-      <li><a href="/contact.html">聯絡資訊</a></li>
-    </ul>
-  </div>
+<div class="nav-container">
+<div class="logo">
+<a href="/index.html">
+<div class="logo-main">霍爾果斯會計師事務所</div>
+<div class="logo-sub">HorgosCPA</div>
+</a>
+</div>
+<input class="nav-toggle" id="nav-toggle" type="checkbox"/>
+<label class="nav-toggle-label" for="nav-toggle">
+<span></span>
+</label>
+<ul class="nav-menu">
+<li class="nav-cta-item"><a class="nav-consult-btn" href="/booking.html">免費諮詢</a></li>
+<li class="nav-cta-item"><a class="nav-line-btn" href="https://line.me/R/ti/p/@208ihted" target="_blank">LINE</a></li>
+<li class="nav-divider"></li>
+<li class="has-dropdown">
+<a href="/services.html">服務項目</a>
+<div class="dropdown-menu">
+<a href="/services/tax.html">稅務服務</a>
+<a href="/services/accounting.html">記帳與會計</a>
+<a href="/services/consulting.html">企業顧問</a>
+</div>
+</li>
+<li><a href="/team.html">服務團隊</a></li>
+<li><a href="/blog.html">部落格</a></li>
+<li><a href="/faq.html">常見問題</a></li>
+<li><a href="/video.html">影片</a></li>
+<li><a href="/contact.html">聯絡資訊</a></li>
+</ul>
+</div>
 </nav>
 
 <!-- 管理頁面內容 -->
 <main class="admin-page">
-  <div class="container">
-    <div class="admin-container">
-      <div class="admin-header">
-        <h1 class="admin-title">內容管理平台</h1>
-        <div class="admin-actions">
-          <button id="refresh-btn" class="admin-btn refresh-btn">刷新列表</button>
-          <button id="scan-btn" class="admin-btn refresh-btn" style="background-color: #ff9800; margin-left: 10px;">掃描HTML文章</button>
-          <a href="/blog.html" class="admin-btn view-btn">查看博客</a>
-          <a href="/video.html" class="admin-btn view-btn">查看影片</a>
-        </div>
-      </div>
-      
-      <!-- 頁籤導航 -->
-      <div class="admin-tabs">
-        <div class="tab-item active" data-tab="blog-tab">部落格文章</div>
-        <div class="tab-item" data-tab="video-tab">影片管理</div>
-      </div>
-      
-      <!-- 訊息容器 -->
-      <div id="message-container"></div>
-      
-      <!-- 文章管理頁籤內容 -->
-      <div id="blog-tab" class="tab-content active">
-        <!-- 文章列表表格 -->
-        <div id="articles-container">
-          <div class="loading">
-            <div class="loading-spinner"></div>
-            <p>加載文章中...</p>
-          </div>
-        </div>
-        
-        <!-- 分頁控制 -->
-        <div class="admin-pagination" id="pagination-container"></div>
-        
-        <!-- 上傳新 Word 文章區域 -->
-        <div class="upload-area">
-          <h2 class="upload-title">上傳新文章</h2>
-          <p>請選擇 Word 文檔以創建新文章。文檔名稱應使用日期前綴格式（例如：2025-05-01-文章標題.docx）</p>
-          <form id="upload-form">
-            <div class="upload-input">
-              <input type="file" id="word-file" accept=".docx" required>
-            </div>
-            <button type="submit" class="upload-btn">上傳文章</button>
-          </form>
-        </div>
-      </div>
-      
-      <!-- 影片管理頁籤內容 -->
-      <div id="video-tab" class="tab-content">
-        <!-- 影片列表表格 -->
-        <div id="videos-container">
-          <div class="loading">
-            <div class="loading-spinner"></div>
-            <p>加載影片中...</p>
-          </div>
-        </div>
-        
-        <!-- 影片分頁控制 -->
-        <div class="admin-pagination" id="video-pagination-container"></div>
-        
-        <!-- 新增影片表單 -->
-        <div class="upload-area">
-          <h2 class="upload-title">新增影片</h2>
-          <p>填寫下方表單，將新影片加入到影片列表中</p>
-          <form id="video-form">
-            <div class="form-group">
-              <label for="video-title">影片標題</label>
-              <input type="text" id="video-title" required>
-            </div>
-            <div class="form-group">
-              <label for="video-date">發布日期</label>
-              <input type="date" id="video-date" required>
-            </div>
-            <div class="form-group">
-              <label for="video-description">影片描述</label>
-              <textarea id="video-description" required></textarea>
-            </div>
-            <div class="form-group">
-              <label for="video-embed">YouTube 嵌入網址</label>
-              <input type="text" id="video-embed" placeholder="例如：https://www.youtube.com/embed/xxxxxxxxxx" required>
-            </div>
-            <div class="form-group">
-              <label for="video-category">影片分類</label>
-              <select id="video-category" required>
-                <option value="tax">稅務相關</option>
-                <option value="accounting">會計記帳</option>
-                <option value="business">企業經營</option>
-                <option value="tutorial">操作教學</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="video-tags">標籤（以逗號分隔）</label>
-              <input type="text" id="video-tags" placeholder="例如：報稅,所得稅,企業稅務">
-            </div>
-            <button type="submit" class="upload-btn">新增影片</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="container">
+<div class="admin-container">
+<div class="admin-header">
+<h1 class="admin-title">內容管理平台</h1>
+<div class="admin-actions">
+<button class="admin-btn refresh-btn" id="refresh-btn">刷新列表</button>
+<button class="admin-btn refresh-btn" id="scan-btn" style="background-color: #ff9800; margin-left: 10px;">掃描HTML文章</button>
+<a class="admin-btn view-btn" href="/blog.html">查看博客</a>
+<a class="admin-btn view-btn" href="/video.html">查看影片</a>
+</div>
+</div>
+<!-- 頁籤導航 -->
+<div class="admin-tabs">
+<div class="tab-item active" data-tab="blog-tab">部落格文章</div>
+<div class="tab-item" data-tab="video-tab">影片管理</div>
+</div>
+<!-- 訊息容器 -->
+<div id="message-container"></div>
+<!-- 文章管理頁籤內容 -->
+<div class="tab-content active" id="blog-tab">
+<!-- 文章列表表格 -->
+<div id="articles-container">
+<div class="loading">
+<div class="loading-spinner"></div>
+<p>加載文章中...</p>
+</div>
+</div>
+<!-- 分頁控制 -->
+<div class="admin-pagination" id="pagination-container"></div>
+<!-- 上傳新 Word 文章區域 -->
+<div class="upload-area">
+<h2 class="upload-title">上傳新文章</h2>
+<p>請選擇 Word 文檔以創建新文章。文檔名稱應使用日期前綴格式（例如：2025-05-01-文章標題.docx）</p>
+<form id="upload-form">
+<div class="upload-input">
+<input accept=".docx" id="word-file" required="" type="file"/>
+</div>
+<button class="upload-btn" type="submit">上傳文章</button>
+</form>
+</div>
+</div>
+<!-- 影片管理頁籤內容 -->
+<div class="tab-content" id="video-tab">
+<!-- 影片列表表格 -->
+<div id="videos-container">
+<div class="loading">
+<div class="loading-spinner"></div>
+<p>加載影片中...</p>
+</div>
+</div>
+<!-- 影片分頁控制 -->
+<div class="admin-pagination" id="video-pagination-container"></div>
+<!-- 新增影片表單 -->
+<div class="upload-area">
+<h2 class="upload-title">新增影片</h2>
+<p>填寫下方表單，將新影片加入到影片列表中</p>
+<form id="video-form">
+<div class="form-group">
+<label for="video-title">影片標題</label>
+<input id="video-title" required="" type="text"/>
+</div>
+<div class="form-group">
+<label for="video-date">發布日期</label>
+<input id="video-date" required="" type="date"/>
+</div>
+<div class="form-group">
+<label for="video-description">影片描述</label>
+<textarea id="video-description" required=""></textarea>
+</div>
+<div class="form-group">
+<label for="video-embed">YouTube 嵌入網址</label>
+<input id="video-embed" placeholder="例如：https://www.youtube.com/embed/xxxxxxxxxx" required="" type="text"/>
+</div>
+<div class="form-group">
+<label for="video-category">影片分類</label>
+<select id="video-category" required="">
+<option value="tax">稅務相關</option>
+<option value="accounting">會計記帳</option>
+<option value="business">企業經營</option>
+<option value="tutorial">操作教學</option>
+</select>
+</div>
+<div class="form-group">
+<label for="video-tags">標籤（以逗號分隔）</label>
+<input id="video-tags" placeholder="例如：報稅,所得稅,企業稅務" type="text"/>
+</div>
+<button class="upload-btn" type="submit">新增影片</button>
+</form>
+</div>
+</div>
+</div>
+</div>
 </main>
-
 <!-- 確認刪除文章彈窗 -->
-<div id="delete-modal" class="modal">
-  <div class="modal-content">
-    <h2 class="modal-title">確認刪除</h2>
-    <p class="modal-message">您確定要刪除這篇文章嗎？此操作不可恢復。</p>
-    <div style="margin-bottom: 20px;">
-      <input type="password" id="admin-password" class="password-input" placeholder="請輸入管理員密碼" required>
-    </div>
-    <div class="modal-buttons">
-      <button id="cancel-delete" class="cancel-btn">取消</button>
-      <button id="confirm-delete" class="confirm-btn">確認刪除</button>
-    </div>
-  </div>
+<div class="modal" id="delete-modal">
+<div class="modal-content">
+<h2 class="modal-title">確認刪除</h2>
+<p class="modal-message">您確定要刪除這篇文章嗎？此操作不可恢復。</p>
+<div style="margin-bottom: 20px;">
+<input class="password-input" id="admin-password" placeholder="請輸入管理員密碼" required="" type="password"/>
 </div>
-
+<div class="modal-buttons">
+<button class="cancel-btn" id="cancel-delete">取消</button>
+<button class="confirm-btn" id="confirm-delete">確認刪除</button>
+</div>
+</div>
+</div>
 <!-- 確認刪除影片彈窗 -->
-<div id="delete-video-modal" class="modal">
-  <div class="modal-content">
-    <h2 class="modal-title">確認刪除影片</h2>
-    <p class="modal-message">您確定要刪除這個影片嗎？此操作不可恢復。</p>
-    <div style="margin-bottom: 20px;">
-      <input type="password" id="video-admin-password" class="password-input" placeholder="請輸入管理員密碼" required>
-    </div>
-    <div class="modal-buttons">
-      <button id="cancel-video-delete" class="cancel-btn">取消</button>
-      <button id="confirm-video-delete" class="confirm-btn">確認刪除</button>
-    </div>
-  </div>
+<div class="modal" id="delete-video-modal">
+<div class="modal-content">
+<h2 class="modal-title">確認刪除影片</h2>
+<p class="modal-message">您確定要刪除這個影片嗎？此操作不可恢復。</p>
+<div style="margin-bottom: 20px;">
+<input class="password-input" id="video-admin-password" placeholder="請輸入管理員密碼" required="" type="password"/>
 </div>
-
+<div class="modal-buttons">
+<button class="cancel-btn" id="cancel-video-delete">取消</button>
+<button class="confirm-btn" id="confirm-video-delete">確認刪除</button>
+</div>
+</div>
+</div>
 <!-- 上傳文章密碼彈窗 -->
-<div id="upload-modal" class="modal">
-  <div class="modal-content">
-    <h2 class="modal-title">管理員驗證</h2>
-    <p class="modal-message">請輸入管理員密碼以上傳文章</p>
-    <div style="margin-bottom: 20px;">
-      <input type="password" id="upload-password" class="password-input" placeholder="請輸入管理員密碼" required>
-    </div>
-    <div class="modal-buttons">
-      <button id="cancel-upload" class="cancel-btn">取消</button>
-      <button id="confirm-upload" class="confirm-btn">確認上傳</button>
-    </div>
-  </div>
+<div class="modal" id="upload-modal">
+<div class="modal-content">
+<h2 class="modal-title">管理員驗證</h2>
+<p class="modal-message">請輸入管理員密碼以上傳文章</p>
+<div style="margin-bottom: 20px;">
+<input class="password-input" id="upload-password" placeholder="請輸入管理員密碼" required="" type="password"/>
 </div>
-
+<div class="modal-buttons">
+<button class="cancel-btn" id="cancel-upload">取消</button>
+<button class="confirm-btn" id="confirm-upload">確認上傳</button>
+</div>
+</div>
+</div>
 <!-- 新增影片密碼彈窗 -->
-<div id="add-video-modal" class="modal">
-  <div class="modal-content">
-    <h2 class="modal-title">管理員驗證</h2>
-    <p class="modal-message">請輸入管理員密碼以新增影片</p>
-    <div style="margin-bottom: 20px;">
-      <input type="password" id="add-video-password" class="password-input" placeholder="請輸入管理員密碼" required>
-    </div>
-    <div class="modal-buttons">
-      <button id="cancel-add-video" class="cancel-btn">取消</button>
-      <button id="confirm-add-video" class="confirm-btn">確認新增</button>
-    </div>
-  </div>
+<div class="modal" id="add-video-modal">
+<div class="modal-content">
+<h2 class="modal-title">管理員驗證</h2>
+<p class="modal-message">請輸入管理員密碼以新增影片</p>
+<div style="margin-bottom: 20px;">
+<input class="password-input" id="add-video-password" placeholder="請輸入管理員密碼" required="" type="password"/>
 </div>
-
+<div class="modal-buttons">
+<button class="cancel-btn" id="cancel-add-video">取消</button>
+<button class="confirm-btn" id="confirm-add-video">確認新增</button>
+</div>
+</div>
+</div>
 <!-- 頁尾區域 -->
 <footer class="site-footer">
-  <div class="footer-container">
-    <div class="footer-text">
-      <p>&copy; 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
-    </div>
-  </div>
+<div class="footer-container">
+<div class="footer-text">
+<p>© 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
+</div>
+</div>
 </footer>
-
 <!-- GitHub API操作腳本 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -1534,6 +1526,5 @@
     }
   });
 </script>
-
-</body>
+<script src="/assets/js/navbar.js"></script></body>
 </html>
