@@ -405,18 +405,6 @@
             <span class="loading-item">正在加載標籤...</span>
           </div>
         </div>
-        
-        <!-- 訂閱區塊 -->
-        <div class="sidebar-section">
-          <h3>訂閱最新資訊</h3>
-          <p>定期收到最新稅務法規與會計實務資訊，讓您的財務管理更有效率。</p>
-          <form id="subscribe-form" class="subscribe-form">
-            <div style="margin-bottom: 15px;">
-              <input type="email" id="subscribe-email" class="search-input" placeholder="您的電子郵件" required>
-            </div>
-            <button type="submit" class="btn" style="width: 100%;">訂閱電子報</button>
-          </form>
-        </div>
       </div>
     </div>
   </div>
@@ -1148,17 +1136,6 @@
         renderFilteredPosts();
       });
     });
-    
-    // 綁定訂閱表單提交事件
-    const subscribeForm = document.getElementById('subscribe-form');
-    if (subscribeForm) {
-      subscribeForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const email = document.getElementById('subscribe-email').value;
-        alert(`感謝您的訂閱！我們將定期發送最新財稅資訊至 ${email}`);
-        this.reset();
-      });
-    }
     
     // 監聽瀏覽器前進/後退按鈕
     window.addEventListener('popstate', function() {

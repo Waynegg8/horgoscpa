@@ -981,6 +981,81 @@
     loadVideos();
   });
 </script>
+// 這個腳本用於視頻頁面的管理功能
+// 將其添加到 video.html 文件的底部
 
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 常數設定
+    const ADMIN_PASSWORD = 'wayne4591'; // 管理員密碼設置為 wayne4591
+    
+    // 確認是否有管理按鈕，若有則添加點擊事件
+    const manageButtons = document.querySelectorAll('.manage-video-btn');
+    if (manageButtons && manageButtons.length > 0) {
+      manageButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          // 要求管理員密碼
+          const password = prompt('請輸入管理員密碼以繼續操作：');
+          
+          // 驗證密碼
+          if (password === ADMIN_PASSWORD) {
+            // 密碼正確，執行相應操作
+            const action = this.getAttribute('data-action');
+            const videoId = this.getAttribute('data-id');
+            
+            if (action === 'edit') {
+              editVideo(videoId);
+            } else if (action === 'delete') {
+              deleteVideo(videoId);
+            }
+          } else {
+            // 密碼錯誤
+            alert('密碼錯誤，無法執行操作。');
+          }
+        });
+      });
+    }
+    
+    /**
+     * 編輯影片資訊
+     */
+    function editVideo(videoId) {
+      alert('編輯影片 ID: ' + videoId + '\n此功能需要透過管理平台操作。');
+      window.location.href = '/blog-management.html';
+    }
+    
+    /**
+     * 刪除影片
+     */
+    function deleteVideo(videoId) {
+      if (confirm('確定要刪除此影片嗎？此操作無法恢復。')) {
+        alert('刪除影片 ID: ' + videoId + '\n此功能需要透過管理平台操作。');
+        window.location.href = '/blog-management.html';
+      }
+    }
+    
+    // 添加新影片按鈕
+    const addVideoBtn = document.getElementById('add-video-btn');
+    if (addVideoBtn) {
+      addVideoBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // 要求管理員密碼
+        const password = prompt('請輸入管理員密碼以添加新影片：');
+        
+        // 驗證密碼
+        if (password === ADMIN_PASSWORD) {
+          // 密碼正確，導向管理頁面
+          window.location.href = '/blog-management.html';
+        } else {
+          // 密碼錯誤
+          alert('密碼錯誤，無法執行操作。');
+        }
+      });
+    }
+  });
+</script>
 </body>
 </html>
