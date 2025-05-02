@@ -13,8 +13,8 @@
 <link href="/site.webmanifest" rel="manifest"/>
 <!-- 引用樣式表 -->
 <link href="/assets/css/style.css" rel="stylesheet">
-<!-- 導航欄 (從navbar.html引入) -->
-<!--#include virtual="/includes/navbar.html" -->
+<!-- 導航欄容器 - 將由JS加載 -->
+<div id="navbar-container"></div>
 <!-- 頁面標題 -->
 <div class="page-banner" style="background: linear-gradient(rgba(0, 77, 153, 0.85), rgba(0, 77, 153, 0.85)), url('../images/contact-bg.jpg') center/cover no-repeat; padding: 60px 0; color: white; text-align: center; margin-bottom: 60px;">
 <div class="container">
@@ -165,5 +165,6 @@
     setInterval(checkBusinessHours, 60000);
   });
 </script>
-<script src="/assets/js/navbar.js"></script></body>
+<script src="/assets/js/navbar.js"></script><script src="/assets/js/navbar-loader.js"></script>
+</body>
 </html>

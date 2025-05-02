@@ -310,8 +310,8 @@
   </script>
 </link></head>
 <body>
-<!-- 導航欄 (從navbar.html引入) -->
-<!--#include virtual="/includes/navbar.html" -->
+<!-- 導航欄容器 - 將由JS加載 -->
+<div id="navbar-container"></div>
 <!-- 頁面內容 -->
 <main class="video-page">
 <div class="container">
@@ -967,5 +967,6 @@
     loadVideos();
   });
 </script>
-<script src="/assets/js/navbar.js"></script></body>
+<script src="/assets/js/navbar.js"></script><script src="/assets/js/navbar-loader.js"></script>
+</body>
 </html>
