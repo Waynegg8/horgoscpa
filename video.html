@@ -444,6 +444,25 @@
       background: #0066cc;
       color: #fff;
     }
+    
+    /* 搜尋結果信息樣式 */
+    .search-results-info {
+      width: 100%;
+      margin-bottom: 20px;
+      padding: 12px 20px;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: #333;
+      font-weight: 500;
+      border-left: 4px solid #0066cc;
+      text-align: left;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    .search-results-info p {
+      margin: 0;
+    }
   </style>
   
   <!-- Google 分析 -->
@@ -808,6 +827,24 @@
       
       // 渲染影片
       if (videos && videos.length > 0) {
+        // 添加搜索結果信息
+        const infoElement = document.createElement('div');
+        infoElement.className = 'search-results-info';
+        
+        // 設定顯示文本
+        let infoText = `共找到 ${totalVideos} 部影片`;
+        if (currentCategory !== 'all') {
+          const categoryName = filterButtons.find(btn => btn.dataset.category === currentCategory)?.textContent || currentCategory;
+          infoText += ` (分類: ${categoryName})`;
+        }
+        if (currentSearchTerm) {
+          infoText += ` (搜尋: "${currentSearchTerm}")`;
+        }
+        
+        infoElement.innerHTML = `<p>${infoText}</p>`;
+        videoContainer.appendChild(infoElement);
+        
+        // 渲染影片卡片
         videos.forEach(video => {
           const videoElement = document.createElement('div');
           videoElement.className = 'video-card';
@@ -858,15 +895,6 @@
         
         // 渲染分頁控制
         renderPagination(totalPages);
-        
-        // 顯示總影片數
-        if (totalVideos > 0) {
-          const infoElement = document.createElement('div');
-          infoElement.className = 'search-results-info';
-          infoElement.style.textAlign = 'center';
-          infoElement.innerHTML = `<p>共找到 ${totalVideos} 部影片</p>`;
-          videoContainer.prepend(infoElement);
-        }
       } else {
         // 如果沒有影片
         videoContainer.innerHTML = `
