@@ -902,75 +902,78 @@
      * 刪除影片
      */
     async function deleteVideo(videoIndex, password) {
-      try {
-        // 驗證管理員密碼
-        if (password !== ADMIN_PASSWORD) {
-          throw new Error('管理員密碼無效');
-        }
-        
-        // 確認影片數據存在
-        if (!videoData || !videoData.videos || !videoData.videos[videoIndex]) {
-          throw new Error('找不到要刪除的影片');
-        }
-        
-        // 顯示處理中提示
-        showMessage(`正在刪除影片，請稍候...`, 'info');
-        
-        // 從videoData中刪除選定的影片
-        const updatedVideoData = JSON.parse(JSON.stringify(videoData)); // 深拷貝
-        const deletedVideo = updatedVideoData.videos.splice(videoIndex, 1)[0];
-        
-        // 更新分頁信息
-        updatedVideoData.pagination.total = updatedVideoData.videos.length;
-        updatedVideoData.pagination.totalPages = Math.ceil(updatedVideoData.videos.length / updatedVideoData.pagination.itemsPerPage);
-        
-        // 將更新後的數據保存為JSON
-        const jsonContent = JSON.stringify(updatedVideoData, null, 2);
-        
-        try {
-          // 使用GitHub repository_dispatch API觸發工作流程
-          const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/dispatches`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `token ${getGitHubToken(password)}`,
-              'Accept': 'application/vnd.github.v3+json',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              event_type: 'update-videos',
-              client_payload: {
-                content: jsonContent,
-                message: `刪除影片: ${deletedVideo.title}`
-              }
-            })
-          });
-          
-          if (!response.ok) {
-            throw new Error(`API請求失敗 (狀態碼: ${response.status})`);
-          }
-          
-          // 更新本地數據
-          videoData = updatedVideoData;
-          
-          // 重新渲染影片列表
-          renderVideos();
-          
-          // 顯示成功訊息
-          showMessage(`影片「${deletedVideo.title}」已成功刪除！`, 'success');
-          
-        } catch (apiError) {
-          console.error('API請求失敗:', apiError);
-          
-          // 本地模式：僅更新前端顯示
-          videoData = updatedVideoData;
-          renderVideos();
-          showMessage(`影片已在本地刪除，但可能尚未同步到伺服器。錯誤: ${apiError.message}`, 'info');
-        }
-      } catch (error) {
-        console.error('刪除影片時出錯:', error);
-        showMessage(`刪除失敗: ${error.message}`, 'error');
-      }
+  try {
+    // 驗證管理員密碼
+    if (password !== ADMIN_PASSWORD) {
+      throw new Error('管理員密碼無效');
     }
+    
+    // 確認影片數據存在
+    if (!videoData || !videoData.videos || !videoData.videos[videoIndex]) {
+      throw new Error('找不到要刪除的影片');
+    }
+    
+    // 顯示處理中提示
+    showMessage(`正在刪除影片，請稍候...`, 'info');
+    
+    // 從videoData中刪除選定的影片
+    const updatedVideoData = JSON.parse(JSON.stringify(videoData)); // 深拷貝
+    const deletedVideo = updatedVideoData.videos.splice(videoIndex, 1)[0];
+    
+    // 更新分頁信息
+    updatedVideoData.pagination.total = updatedVideoData.videos.length;
+    updatedVideoData.pagination.totalPages = Math.ceil(updatedVideoData.videos.length / updatedVideoData.pagination.itemsPerPage);
+    
+    // 更新本地數據
+    videoData = updatedVideoData;
+    
+    // 重新渲染影片列表
+    renderVideos();
+    
+    // 直接儲存更新後的JSON檔案
+    const jsonContent = JSON.stringify(updatedVideoData, null, 2);
+    
+    // 將更新後的videos.json自動下載
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'videos.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    // 新增GitHub Actions操作指南
+    const actionsGuide = `
+      <div style="margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; border-left: 4px solid #0366d6;">
+        <h4 style="margin-top: 0; color: #0366d6;">手動更新GitHub儲存庫</h4>
+        <ol style="margin-bottom: 0; padding-left: 20px;">
+          <li>已自動下載更新後的 <strong>videos.json</strong> 檔案</li>
+          <li>請將此檔案上傳至GitHub儲存庫的 <code>assets/data/</code> 目錄</li>
+          <li>或者直接在GitHub網頁介面編輯此檔案: 
+            <a href="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/edit/main/assets/data/videos.json" target="_blank">編輯videos.json</a>
+          </li>
+          <li>完成後，GitHub Actions將自動處理其餘工作</li>
+        </ol>
+      </div>
+    `;
+    
+    // 顯示成功訊息和操作指南
+    messageContainer.innerHTML = `
+      <div class="message success">
+        影片「${deletedVideo.title}」已成功從列表中刪除！
+        ${actionsGuide}
+      </div>
+    `;
+    
+    return true;
+  } catch (error) {
+    console.error('刪除影片時出錯:', error);
+    showMessage(`刪除失敗: ${error.message}`, 'error');
+    return false;
+  }
+}
     
     /**
      * 新增影片
