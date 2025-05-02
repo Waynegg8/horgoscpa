@@ -1,7 +1,7 @@
 /* 
  * navbar.css - 霍爾果斯會計師事務所網站導航欄樣式
  * 最後更新日期: 2025-05-03
- * 優化版本
+ * 優化版本 - 解決LINE按鈕重複問題
  */
 
 /* 導航欄基本樣式 */
@@ -192,27 +192,7 @@
   border-color: #ff6b00 !important;
 }
 
-/* LINE 按鈕樣式 - 統一版本 */
-.nav-line-btn {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  min-width: auto !important;
-}
-
-.nav-line-btn img {
-  height: 36px;
-  width: auto;
-  max-width: none;
-  border: 0;
-  display: block;
-  transition: all 0.3s ease;
-}
-
-.nav-line-btn:hover img {
-  transform: scale(1.05);
-}
+/* 刪除LINE按鈕的CSS樣式，因為使用首頁的LINE按鈕，不在導航欄中顯示 */
 
 .nav-consult-btn:hover {
   transform: scale(1.05) translateY(-4px) !important;
@@ -531,17 +511,7 @@
     padding: 14px 24px !important;
   }
   
-  /* 移動版LINE按鈕 */
-  .nav-line-btn {
-    display: flex !important;
-    justify-content: center !important;
-    margin: 15px auto !important;
-  }
-  
-  .nav-line-btn img {
-    height: 36px;
-    width: auto;
-  }
+  /* 移動版不需要額外的LINE按鈕樣式，因為使用首頁的LINE按鈕 */
   
   .nav-divider {
     display: none;
