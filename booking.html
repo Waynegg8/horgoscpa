@@ -1,20 +1,137 @@
 <!DOCTYPE html>
-
 <html lang="zh-TW">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta content="霍爾果斯會計師事務所預約諮詢 - 預約專業會計師、稅務顧問一對一服務。" name="description"/>
-<title>預約諮詢 | 霍爾果斯會計師事務所</title>
-<!-- Favicon -->
-<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
-<link href="/assets/images/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
-<link href="/assets/images/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
-<link href="/site.webmanifest" rel="manifest"/>
-<!-- 引用樣式表 -->
-<link href="/assets/css/style.css" rel="stylesheet">
-<!-- 自定義樣式 - 改進的表單選項按鈕 -->
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="霍爾果斯會計師事務所預約諮詢 - 預約專業會計師、稅務顧問一對一服務。" />
+  <title>預約諮詢 | 霍爾果斯會計師事務所</title>
+  
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- 引用樣式表 -->
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  
+  <!-- 導航欄修正樣式 -->
+  <style>
+    /* 修正導航欄樣式 */
+    .logo {
+      min-width: 240px; /* 增加最小寬度確保文字不換行 */
+    }
+    
+    .logo-main {
+      white-space: nowrap; /* 確保不換行 */
+    }
+    
+    .nav-menu {
+      gap: 10px; /* 在菜單項目間添加間距 */
+    }
+    
+    .nav-menu li {
+      margin: 0 2px; /* 減少 li 元素的外邊距 */
+      position: relative; /* 為下拉選單定位 */
+    }
+    
+    .nav-menu a {
+      padding: 7px 8px; /* 減少內邊距 */
+      font-size: 0.9rem; /* 縮小字體 */
+    }
+
+    /* 重新設計CTA按鈕樣式 */
+    .nav-cta-item {
+      display: inline-block;
+      margin: 0 5px !important;
+    }
+    
+    .nav-consult-btn, .nav-line-btn {
+      font-weight: 700;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      padding: 8px 15px !important;
+      font-size: 1rem !important;
+      border-width: 2px !important;
+      letter-spacing: 0.5px;
+      animation: pulse 2s infinite;
+      min-width: 100px;
+      text-align: center;
+    }
+    
+    .nav-consult-btn {
+      background-color: #ff6b00 !important; /* 更明亮的橙色 */
+      border-color: #ff6b00 !important;
+    }
+    
+    .nav-line-btn {
+      background-color: #06c755 !important; /* 保持LINE綠色 */
+      border-color: #06c755 !important;
+    }
+    
+    .nav-consult-btn:hover, .nav-line-btn:hover {
+      transform: scale(1.05) translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(255, 107, 0, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
+      }
+    }
+
+    /* 下拉選單樣式 */
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background-color: #002147;
+      min-width: 180px;
+      border-radius: 4px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 1001;
+      padding: 8px 0;
+      margin-top: 5px;
+    }
+    
+    .dropdown-menu a {
+      display: block;
+      padding: 8px 15px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      border: none;
+      background: none;
+      text-align: left;
+    }
+    
+    .dropdown-menu a:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: none;
+      box-shadow: none;
+    }
+    
+    /* 顯示下拉選單 */
+    .has-dropdown:hover .dropdown-menu {
+      display: block;
+    }
+    
+    /* 下拉箭頭圖標 */
+    .has-dropdown > a::after {
+      content: "▼";
+      font-size: 0.6rem;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+    
     /* 改進的選項按鈕樣式 */
     .radio-group {
       display: flex;
@@ -194,17 +311,146 @@
     .checkbox-label:hover span:before {
       border-color: #004d99;
     }
+    
+    /* 頁面標題美化 */
+    .page-header {
+      text-align: center;
+      padding: 40px 0 20px;
+      margin-bottom: 30px;
+      position: relative;
+    }
+    
+    .page-header:after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 3px;
+      background-color: #0066cc;
+    }
+    
+    .page-header h1 {
+      font-size: 2.4rem;
+      color: #002147;
+      margin-bottom: 15px;
+    }
+    
+    .page-header p {
+      font-size: 1.1rem;
+      color: #555;
+      max-width: 800px;
+      margin: 0 auto 20px;
+      line-height: 1.6;
+    }
+    
+    /* 預約須知區域美化 */
+    .booking-note {
+      background: #f8f9fa;
+      padding: 25px;
+      border-radius: 8px;
+      margin-top: 40px;
+      border-left: 4px solid #0066cc;
+    }
+    
+    .booking-note h3 {
+      margin-top: 0;
+      color: #002147;
+      margin-bottom: 15px;
+    }
+    
+    .booking-note ul {
+      padding-left: 20px;
+      margin-bottom: 15px;
+    }
+    
+    .booking-note li {
+      margin-bottom: 8px;
+    }
+    
+    .booking-note p {
+      margin-bottom: 0;
+    }
+    
+    .booking-note .line-icon {
+      height: 20px;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+    
+    /* 表單美化 */
+    .booking-form {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+    
+    @media (max-width: 1100px) {
+      .nav-container {
+        padding: 10px 15px; /* 減少導航欄內邊距 */
+      }
+    }
+    
+    /* 移動設備樣式 */
+    @media (max-width: 850px) {
+      .dropdown-menu {
+        position: static;
+        background-color: rgba(255, 255, 255, 0.05);
+        box-shadow: none;
+        margin-top: 0;
+        display: none;
+        padding: 0;
+      }
+      
+      .dropdown-menu a {
+        padding: 8px 20px 8px 30px;
+        font-size: 0.85rem;
+      }
+      
+      .has-dropdown > a::after {
+        float: right;
+        margin-top: 5px;
+      }
+      
+      /* 移動設備展開下拉選單的JS交互 */
+      .dropdown-menu.show {
+        display: block;
+      }
+      
+      /* 移動設備上的CTA按鈕 */
+      .nav-consult-btn, .nav-line-btn {
+        width: 90%;
+        margin: 5px auto;
+        text-align: center;
+      }
+      
+      .booking-form {
+        padding: 20px;
+      }
+      
+      .page-header h1 {
+        font-size: 1.8rem;
+      }
+      
+      .page-header p {
+        font-size: 1rem;
+      }
+    }
   </style>
-<!-- Google 分析 -->
-<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
-<script>
+  
+  <!-- Google 分析 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
+  <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-RKMCS9WVS5');
   </script>
-<!-- 結構化資料 -->
-<script type="application/ld+json">
+  
+  <!-- 結構化資料 -->
+  <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -218,7 +464,9 @@
     }]
   }
   </script>
-</link>  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body>
+
 <!-- 導航欄 -->
 <nav class="site-nav">
   <div class="nav-container">
@@ -248,86 +496,98 @@
       <li><a href="/blog.html">部落格</a></li>
       <li><a href="/faq.html">常見問題</a></li>
       <li><a href="/video.html">影片</a></li>
-      <li><a href="/contact.html" class="active">聯絡資訊</a></li>
+      <li><a href="/contact.html">聯絡資訊</a></li>
     </ul>
   </div>
-</nav><!-- 預約諮詢頁面 -->
+</nav>
+
+<!-- 預約諮詢頁面 -->
 <main class="booking-page">
-<div class="container">
-<header class="page-header">
-<h1>預約專業諮詢</h1>
-<p>填寫以下表單，我們將儘快為您安排合適的時間與專業會計師進行諮詢。首次諮詢免費，讓我們幫助您解決財稅問題。</p>
-</header>
-<form action="https://formspree.io/f/xwpovnwy" class="booking-form" method="POST">
-<div class="form-group">
-<label for="booking-name">姓名 <span class="required">*</span></label>
-<input id="booking-name" name="name" required="" type="text"/>
-</div>
-<div class="form-group">
-<label for="booking-phone">電話 <span class="required">*</span></label>
-<input id="booking-phone" name="phone" required="" type="tel"/>
-</div>
-<div class="form-group">
-<label for="booking-email">電子郵件 <span class="required">*</span></label>
-<input id="booking-email" name="email" required="" type="email"/>
-</div>
-<div class="form-group">
-<label>諮詢主題 <span class="required">*</span></label>
-<!-- 原有的按鈕組，保留但隱藏起來 -->
-<div class="options-group" id="topic-options">
-<button class="option-btn" data-value="稅務" type="button">稅務</button>
-<button class="option-btn" data-value="會計" type="button">會計</button>
-<button class="option-btn" data-value="企業顧問" type="button">企業顧問</button>
-</div>
-<!-- 新增改良版單選按鈕 -->
-<div class="radio-group">
-<div class="radio-option">
-<input id="topic-tax" name="topic-radio" type="radio" value="稅務"/>
-<label for="topic-tax">稅務</label>
-</div>
-<div class="radio-option">
-<input id="topic-accounting" name="topic-radio" type="radio" value="會計"/>
-<label for="topic-accounting">會計</label>
-</div>
-<div class="radio-option">
-<input id="topic-consulting" name="topic-radio" type="radio" value="企業顧問"/>
-<label for="topic-consulting">企業顧問</label>
-</div>
-</div>
-<input id="topic-field" name="topic" required="" type="hidden"/>
-</div>
-<div class="form-group">
-<label for="booking-message">需求說明 (選填)</label>
-<textarea id="booking-message" name="message" placeholder="請簡單描述您的需求，以便我們提前準備相關資料" rows="4"></textarea>
-</div>
-<div class="form-group">
-<label class="checkbox-label">
-<input name="agreement" required="" type="checkbox"/>
-<span>我已閱讀並同意<a href="#" target="_blank">隱私權政策</a></span>
-</label>
-</div>
-<button class="submit-btn" type="submit">送出預約申請</button>
-</form>
-<div class="booking-note">
-<h3>預約須知</h3>
-<ul>
-<li>首次諮詢免費</li>
-<li>預約送出後，我們將於 1 個工作日內與您聯繫確認</li>
-<li>若需變更或取消預約，請提前告知</li>
-<li>如有緊急需求，可直接致電 04-2220-5606</li>
-</ul>
-<p>您也可以透過 LINE 直接與我們聯繫預約：<a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img alt="LINE" class="line-icon" src="/assets/images/line-icon.svg"/>加入好友</a></p>
-</div>
-</div>
+  <div class="container">
+    <header class="page-header">
+      <h1>預約專業諮詢</h1>
+      <p>填寫以下表單，我們將儘快為您安排合適的時間與專業會計師進行諮詢。首次諮詢免費，讓我們幫助您解決財稅問題。</p>
+    </header>
+
+    <form action="https://formspree.io/f/xwpovnwy" method="POST" class="booking-form">
+      <div class="form-group">
+        <label for="booking-name">姓名 <span class="required">*</span></label>
+        <input type="text" id="booking-name" name="name" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="booking-phone">電話 <span class="required">*</span></label>
+        <input type="tel" id="booking-phone" name="phone" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="booking-email">電子郵件 <span class="required">*</span></label>
+        <input type="email" id="booking-email" name="email" required>
+      </div>
+      
+      <div class="form-group">
+        <label>諮詢主題 <span class="required">*</span></label>
+        <!-- 原有的按鈕組，保留但隱藏起來 -->
+        <div class="options-group" id="topic-options">
+          <button type="button" class="option-btn" data-value="稅務">稅務</button>
+          <button type="button" class="option-btn" data-value="會計">會計</button>
+          <button type="button" class="option-btn" data-value="企業顧問">企業顧問</button>
+        </div>
+        <!-- 新增改良版單選按鈕 -->
+        <div class="radio-group">
+          <div class="radio-option">
+            <input type="radio" id="topic-tax" name="topic-radio" value="稅務">
+            <label for="topic-tax">稅務</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" id="topic-accounting" name="topic-radio" value="會計">
+            <label for="topic-accounting">會計</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" id="topic-consulting" name="topic-radio" value="企業顧問">
+            <label for="topic-consulting">企業顧問</label>
+          </div>
+        </div>
+        <input type="hidden" name="topic" id="topic-field" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="booking-message">需求說明 (選填)</label>
+        <textarea id="booking-message" name="message" rows="4" placeholder="請簡單描述您的需求，以便我們提前準備相關資料"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" name="agreement" required>
+          <span>我已閱讀並同意<a href="#" target="_blank">隱私權政策</a></span>
+        </label>
+      </div>
+      
+      <button type="submit" class="submit-btn">送出預約申請</button>
+    </form>
+    
+    <div class="booking-note">
+      <h3>預約須知</h3>
+      <ul>
+        <li>首次諮詢免費</li>
+        <li>預約送出後，我們將於 1 個工作日內與您聯繫確認</li>
+        <li>若需變更或取消預約，請提前告知</li>
+        <li>如有緊急需求，可直接致電 04-2220-5606</li>
+      </ul>
+      <p>您也可以透過 LINE 直接與我們聯繫預約：<a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入好友</a></p>
+    </div>
+  </div>
 </main>
+
 <!-- 頁尾區域 -->
 <footer class="site-footer">
-<div class="footer-container">
-<div class="footer-text">
-<p>© 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
-</div>
-</div>
+  <div class="footer-container">
+    <div class="footer-text">
+      <p>&copy; 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
+    </div>
+  </div>
 </footer>
+
 <!-- 選項按鈕功能 - 修改後的版本 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -366,8 +626,10 @@
     }
   });
 </script>
-<script src="/assets/js/navbar.js"></script><!-- 下拉選單與營業時間 JavaScript -->
-<script>document.addEventListener('DOMContentLoaded', function() {
+
+<!-- 下拉選單與營業時間 JavaScript -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
     // 僅在移動設備上添加下拉選單的點擊事件
     if (window.innerWidth <= 850) {
       const dropdownLinks = document.querySelectorAll('.has-dropdown > a');
@@ -397,38 +659,8 @@
     });
     
     window.prevWidth = window.innerWidth;
-    
-    // 判斷當前是否營業中
-    function checkBusinessHours() {
-      const now = new Date();
-      const day = now.getDay(); // 0是星期日，1-5是星期一到五，6是星期六
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const currentTime = hours * 60 + minutes; // 將時間轉換為分鐘
-      
-      // 營業時間：週一至週五 8:30-17:30
-      const openTime = 8 * 60 + 30; // 8:30 轉換為分鐘
-      const closeTime = 17 * 60 + 30; // 17:30 轉換為分鐘
-      
-      const isWeekday = day >= 1 && day <= 5; // 是否為工作日
-      const isDuringBusinessHours = currentTime >= openTime && currentTime < closeTime; // 是否在營業時間內
-      
-      const businessStatus = document.getElementById('business-status');
-      
-      if (isWeekday && isDuringBusinessHours) {
-        businessStatus.textContent = '營業中';
-        businessStatus.className = 'business-status status-open';
-      } else {
-        businessStatus.textContent = '非營業時間';
-        businessStatus.className = 'business-status status-closed';
-      }
-    }
-    
-    // 執行判斷
-    checkBusinessHours();
-    
-    // 每分鐘更新一次狀態
-    setInterval(checkBusinessHours, 60000);
-  });</script>
+  });
+</script>
+
 </body>
 </html>
