@@ -92,6 +92,16 @@ jobs:
           mkdir -p assets/data
           mkdir -p word-docs
       
+      # 檢查.github/scripts目錄中的腳本
+      - name: 檢查腳本
+        run: |
+          echo "列出 .github/scripts 目錄內容:"
+          ls -la .github/scripts || echo ".github/scripts 目錄不存在"
+          
+          # 顯示整個倉庫的目錄結構
+          echo "顯示整個倉庫的目錄結構:"
+          find . -type f -name "*.py" | sort
+      
       # 處理從repository_dispatch接收的文章刪除請求
       - name: 處理API觸發的文章刪除
         if: github.event_name == 'repository_dispatch' && github.event.action == 'delete-article'
@@ -137,7 +147,7 @@ jobs:
         run: |
           echo "收到API觸發的文章掃描請求"
           echo "將進行強制掃描"
-          python scan_html_files.py
+          python .github/scripts/scan_html_files.py
           
           # 確保工作區乾淨
           git stash -u || true
@@ -232,7 +242,28 @@ jobs:
       - name: 掃描現有HTML文件
         if: ${{ steps.init_json.outputs.scan_html == 'true' || github.event.inputs.force_scan == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles') }}
         run: |
-          python scan_html_files.py
+          echo "開始掃描HTML文件以生成JSON..."
+          
+          # 直接執行 .github/scripts 目錄下的腳本
+          if [ -f ".github/scripts/scan_html_files.py" ]; then
+            python .github/scripts/scan_html_files.py
+            echo "使用 .github/scripts/scan_html_files.py 掃描完成"
+          else
+            echo "錯誤: 找不到 .github/scripts/scan_html_files.py 腳本"
+            echo "嘗試查找腳本位置:"
+            find . -name "scan_html_files.py" -type f
+            
+            # 如果能找到腳本，使用第一個找到的
+            SCRIPT_PATH=$(find . -name "scan_html_files.py" -type f | head -n 1)
+            if [ -n "$SCRIPT_PATH" ]; then
+              echo "找到腳本: $SCRIPT_PATH"
+              python "$SCRIPT_PATH"
+              echo "使用 $SCRIPT_PATH 掃描完成"
+            else
+              echo "錯誤: 無法找到任何 scan_html_files.py 腳本"
+              exit 1
+            fi
+          fi
           
           # 確保工作區乾淨
           git stash -u || true
@@ -253,19 +284,27 @@ jobs:
         if: ${{ github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article') }}
         run: |
           if [ -d "word-docs" ] && [ "$(ls -A word-docs)" ]; then
-            # 複製word_to_html.py腳本到當前目錄
-            if [ -f ".github/scripts/word_to_html.py" ]; then
-              cp .github/scripts/word_to_html.py ./
-            elif [ -f ".github/workflows/word_to_html.py" ]; then
-              cp .github/workflows/word_to_html.py ./
-            fi
+            echo "開始處理word-docs目錄中的Word文檔..."
             
-            # 運行Python腳本處理Word文檔
-            if [ -f "word_to_html.py" ]; then
-              python word_to_html.py word-docs blog
+            # 使用 .github/scripts 目錄下的腳本
+            if [ -f ".github/scripts/word_to_html.py" ]; then
+              python .github/scripts/word_to_html.py word-docs blog
+              echo "使用 .github/scripts/word_to_html.py 處理完成"
             else
-              echo "找不到word_to_html.py腳本"
-              exit 1
+              echo "警告: 找不到 .github/scripts/word_to_html.py 腳本"
+              echo "嘗試查找腳本位置:"
+              find . -name "word_to_html.py" -type f
+              
+              # 如果能找到腳本，使用第一個找到的
+              SCRIPT_PATH=$(find . -name "word_to_html.py" -type f | head -n 1)
+              if [ -n "$SCRIPT_PATH" ]; then
+                echo "找到腳本: $SCRIPT_PATH"
+                python "$SCRIPT_PATH" word-docs blog
+                echo "使用 $SCRIPT_PATH 處理完成"
+              else
+                echo "錯誤: 無法找到任何 word_to_html.py 腳本"
+                exit 1
+              fi
             fi
           else
             echo "word-docs 目錄為空或不存在，跳過處理"
@@ -323,8 +362,31 @@ jobs:
         id: update_blog_json
         if: ${{ steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles')) }}
         run: |
-          python update_blog_posts.py
-          echo "blog_json_updated=true" >> $GITHUB_OUTPUT
+          echo "開始更新博客JSON文件..."
+
+          # 使用 .github/scripts 目錄下的腳本
+          if [ -f ".github/scripts/update_blog_posts.py" ]; then
+            python .github/scripts/update_blog_posts.py
+            echo "使用 .github/scripts/update_blog_posts.py 更新完成"
+            echo "blog_json_updated=true" >> $GITHUB_OUTPUT
+          else
+            echo "警告: 找不到 .github/scripts/update_blog_posts.py 腳本"
+            echo "嘗試查找腳本位置:"
+            find . -name "update_blog_posts.py" -type f
+            
+            # 如果能找到腳本，使用第一個找到的
+            SCRIPT_PATH=$(find . -name "update_blog_posts.py" -type f | head -n 1)
+            if [ -n "$SCRIPT_PATH" ]; then
+              echo "找到腳本: $SCRIPT_PATH"
+              python "$SCRIPT_PATH"
+              echo "使用 $SCRIPT_PATH 更新完成"
+              echo "blog_json_updated=true" >> $GITHUB_OUTPUT
+            else
+              echo "錯誤: 無法找到任何 update_blog_posts.py 腳本"
+              echo "blog_json_updated=false" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          fi
         env:
           GH_PAT: ${{ secrets.GITHUB_TOKEN }}
       
