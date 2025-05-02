@@ -1,20 +1,180 @@
 <!DOCTYPE html>
-
 <html lang="zh-TW">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta content="霍爾果斯會計師事務所教學影片 - 專業財稅知識教學，協助您更好地理解稅務與會計知識。" name="description"/>
-<title>教學影片 | 霍爾果斯會計師事務所</title>
-<!-- Favicon -->
-<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
-<link href="/assets/images/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png"/>
-<link href="/assets/images/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png"/>
-<link href="/site.webmanifest" rel="manifest"/>
-<!-- 引用樣式表 -->
-<link href="/assets/css/style.css" rel="stylesheet">
-<!-- 影片頁面特定樣式 -->
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="霍爾果斯會計師事務所教學影片 - 專業財稅知識教學，協助您更好地理解稅務與會計知識。" />
+  <title>教學影片 | 霍爾果斯會計師事務所</title>
+  
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- 引用樣式表 -->
+  <link rel="stylesheet" href="/assets/css/style.css" />
+  
+  <!-- 導航欄修正樣式 -->
+  <style>
+    /* 導航欄特殊樣式 */
+    .logo {
+      min-width: 240px; /* 增加最小寬度確保文字不換行 */
+    }
+    
+    .logo-main {
+      white-space: nowrap; /* 確保不換行 */
+    }
+    
+    .nav-menu {
+      gap: 10px; /* 在菜單項目間添加間距 */
+    }
+    
+    .nav-menu li {
+      margin: 0 2px; /* 減少 li 元素的外邊距 */
+      position: relative; /* 為下拉選單定位 */
+    }
+    
+    .nav-menu a {
+      padding: 7px 8px; /* 減少內邊距 */
+      font-size: 0.9rem; /* 縮小字體 */
+    }
+
+    /* 重新設計CTA按鈕樣式 */
+    .nav-cta-item {
+      display: inline-block;
+      margin: 0 5px !important;
+    }
+    
+    .nav-consult-btn, .nav-line-btn {
+      font-weight: 700;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      padding: 8px 15px !important;
+      font-size: 1rem !important;
+      border-width: 2px !important;
+      letter-spacing: 0.5px;
+      animation: pulse 2s infinite;
+      min-width: 100px;
+      text-align: center;
+    }
+    
+    .nav-consult-btn {
+      background-color: #ff6b00 !important; /* 更明亮的橙色 */
+      border-color: #ff6b00 !important;
+    }
+    
+    .nav-line-btn {
+      background-color: #06c755 !important; /* 保持LINE綠色 */
+      border-color: #06c755 !important;
+    }
+    
+    .nav-consult-btn:hover, .nav-line-btn:hover {
+      transform: scale(1.05) translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(255, 107, 0, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
+      }
+    }
+
+    /* 下拉選單樣式 */
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background-color: #002147;
+      min-width: 180px;
+      border-radius: 4px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 1001;
+      padding: 8px 0;
+      margin-top: 5px;
+    }
+    
+    .dropdown-menu a {
+      display: block;
+      padding: 8px 15px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      border: none;
+      background: none;
+      text-align: left;
+    }
+    
+    .dropdown-menu a:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: none;
+      box-shadow: none;
+    }
+    
+    /* 顯示下拉選單 */
+    .has-dropdown:hover .dropdown-menu {
+      display: block;
+    }
+    
+    /* 下拉箭頭圖標 */
+    .has-dropdown > a::after {
+      content: "▼";
+      font-size: 0.6rem;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+    
+    /* 移動設備樣式 */
+    @media (max-width: 1100px) {
+      .nav-container {
+        padding: 10px 15px; /* 減少導航欄內邊距 */
+      }
+    }
+    
+    @media (max-width: 850px) {
+      .dropdown-menu {
+        position: static;
+        background-color: rgba(255, 255, 255, 0.05);
+        box-shadow: none;
+        margin-top: 0;
+        display: none;
+        padding: 0;
+      }
+      
+      .dropdown-menu a {
+        padding: 8px 20px 8px 30px;
+        font-size: 0.85rem;
+      }
+      
+      .has-dropdown > a::after {
+        float: right;
+        margin-top: 5px;
+      }
+      
+      /* 移動設備展開下拉選單的JS交互 */
+      .dropdown-menu.show {
+        display: block;
+      }
+      
+      /* 移動設備上的CTA按鈕 */
+      .nav-consult-btn, .nav-line-btn {
+        width: 90%;
+        margin: 5px auto;
+        text-align: center;
+      }
+    }
+  </style>
+  
+  <!-- 影片頁面特定樣式 -->
+  <style>
     /* 搜尋框樣式 */
     .search-container {
       margin-bottom: 30px;
@@ -101,27 +261,12 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     
-    /* 搜索結果信息樣式 */
-    .search-results-info {
-      text-align: center;
-      margin: 0 0 30px 0;
-      padding: 10px;
-      background-color: #f5f7fa;
-      border-radius: 8px;
-      color: #444;
-      font-size: 0.95rem;
-    }
-    
-    .search-results-info p {
-      margin: 0;
-    }
-    
     /* 影片網格佈局 */
     .video-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 30px;
-      margin-top: 20px;
+      margin-top: 40px;
     }
     
     .video-card {
@@ -300,15 +445,18 @@
       color: #fff;
     }
   </style>
-<!-- Google 分析 -->
-<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
-<script>
+  
+  <!-- Google 分析 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
+  <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-RKMCS9WVS5');
   </script>
-</link>  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body>
+
 <!-- 導航欄 -->
 <nav class="site-nav">
   <div class="nav-container">
@@ -338,56 +486,64 @@
       <li><a href="/blog.html">部落格</a></li>
       <li><a href="/faq.html">常見問題</a></li>
       <li><a href="/video.html" class="active">影片</a></li>
-      <li><a href="/contact.html" class="active">聯絡資訊</a></li>
+      <li><a href="/contact.html">聯絡資訊</a></li>
     </ul>
   </div>
-</nav><!-- 頁面內容 -->
+</nav>
+
+<!-- 頁面內容 -->
 <main class="video-page">
-<div class="container">
-<header class="page-header">
-<h1>教學與說明影片</h1>
-<p>透過我們的專業影片內容，掌握稅務、會計與企業財務知識，輕鬆學習複雜的財稅觀念</p>
-</header>
-<!-- 搜尋框 -->
-<div class="search-container">
-<input aria-label="搜尋影片" class="search-input" id="video-search" placeholder="搜尋影片..." type="text"/>
-<button aria-label="搜尋" class="search-button" id="search-btn">
-<svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
-<circle cx="11" cy="11" r="8"></circle>
-<line x1="21" x2="16.65" y1="21" y2="16.65"></line>
-</svg>
-</button>
-</div>
-<!-- 分類標籤 -->
-<div class="category-filter">
-<button class="filter-btn active" data-category="all">全部影片</button>
-<button class="filter-btn" data-category="tax">稅務相關</button>
-<button class="filter-btn" data-category="accounting">會計記帳</button>
-<button class="filter-btn" data-category="business">企業經營</button>
-<button class="filter-btn" data-category="tutorial">操作教學</button>
-</div>
-<!-- 影片內容 -->
-<section id="video-container">
-<!-- 加載中提示 -->
-<div class="loading-container">
-<div class="loading-spinner"></div>
-<p>正在加載影片...</p>
-</div>
-</section>
-<!-- 分頁控制 -->
-<div class="pagination" id="pagination-container">
-<!-- 分頁按鈕將由JavaScript動態生成 -->
-</div>
-</div>
+  <div class="container">
+    <header class="page-header">
+      <h1>教學與說明影片</h1>
+      <p>透過我們的專業影片內容，掌握稅務、會計與企業財務知識，輕鬆學習複雜的財稅觀念</p>
+    </header>
+    
+    <!-- 搜尋框 -->
+    <div class="search-container">
+      <input type="text" id="video-search" class="search-input" placeholder="搜尋影片..." aria-label="搜尋影片">
+      <button class="search-button" id="search-btn" aria-label="搜尋">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- 分類標籤 -->
+    <div class="category-filter">
+      <button class="filter-btn active" data-category="all">全部影片</button>
+      <button class="filter-btn" data-category="tax">稅務相關</button>
+      <button class="filter-btn" data-category="accounting">會計記帳</button>
+      <button class="filter-btn" data-category="business">企業經營</button>
+      <button class="filter-btn" data-category="tutorial">操作教學</button>
+    </div>
+    
+    <!-- 影片內容 -->
+    <section class="video-grid" id="video-container">
+      <!-- 加載中提示 -->
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>正在加載影片...</p>
+      </div>
+    </section>
+    
+    <!-- 分頁控制 -->
+    <div class="pagination" id="pagination-container">
+      <!-- 分頁按鈕將由JavaScript動態生成 -->
+    </div>
+  </div>
 </main>
+
 <!-- 頁尾區域 -->
 <footer class="site-footer">
-<div class="footer-container">
-<div class="footer-text">
-<p>© 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
-</div>
-</div>
+  <div class="footer-container">
+    <div class="footer-text">
+      <p>&copy; 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
+    </div>
+  </div>
 </footer>
+
 <!-- 影片加載與過濾腳本 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -650,20 +806,8 @@
       // 清空容器
       videoContainer.innerHTML = '';
       
-      // 顯示總影片數
-      if (totalVideos > 0) {
-        const infoElement = document.createElement('div');
-        infoElement.className = 'search-results-info';
-        infoElement.innerHTML = `<p>共找到 ${totalVideos} 部影片</p>`;
-        videoContainer.appendChild(infoElement);
-      }
-      
       // 渲染影片
       if (videos && videos.length > 0) {
-        // 創建一個包裝元素來容納所有視頻卡片
-        const videoGridElement = document.createElement('div');
-        videoGridElement.className = 'video-grid';
-        
         videos.forEach(video => {
           const videoElement = document.createElement('div');
           videoElement.className = 'video-card';
@@ -697,11 +841,8 @@
             </div>
           `;
           
-          videoGridElement.appendChild(videoElement);
+          videoContainer.appendChild(videoElement);
         });
-        
-        // 將視頻網格添加到容器
-        videoContainer.appendChild(videoGridElement);
         
         // 綁定標籤點擊事件
         document.querySelectorAll('.video-tag').forEach(tag => {
@@ -717,16 +858,24 @@
         
         // 渲染分頁控制
         renderPagination(totalPages);
+        
+        // 顯示總影片數
+        if (totalVideos > 0) {
+          const infoElement = document.createElement('div');
+          infoElement.className = 'search-results-info';
+          infoElement.style.textAlign = 'center';
+          infoElement.innerHTML = `<p>共找到 ${totalVideos} 部影片</p>`;
+          videoContainer.prepend(infoElement);
+        }
       } else {
         // 如果沒有影片
-        const noResultsElement = document.createElement('div');
-        noResultsElement.className = 'no-results';
-        noResultsElement.innerHTML = `
-          <p>找不到符合「${currentSearchTerm || currentCategory}」的影片。</p>
-          <p>請嘗試其他關鍵字，或瀏覽我們的全部影片。</p>
-          <button class="btn" id="reset-search">清除搜尋</button>
+        videoContainer.innerHTML = `
+          <div class="no-results">
+            <p>找不到符合「${currentSearchTerm || currentCategory}」的影片。</p>
+            <p>請嘗試其他關鍵字，或瀏覽我們的全部影片。</p>
+            <button class="btn" id="reset-search">清除搜尋</button>
+          </div>
         `;
-        videoContainer.appendChild(noResultsElement);
         
         // 隱藏分頁
         if (paginationContainer) {
@@ -734,33 +883,31 @@
         }
         
         // 綁定清除搜尋按鈕事件
-        setTimeout(() => {
-          const resetBtn = document.getElementById('reset-search');
-          if (resetBtn) {
-            resetBtn.addEventListener('click', function() {
-              currentSearchTerm = '';
-              currentCategory = 'all';
-              currentPage = 1;
-              
-              if (searchInput) {
-                searchInput.value = '';
+        const resetBtn = document.getElementById('reset-search');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', function() {
+            currentSearchTerm = '';
+            currentCategory = 'all';
+            currentPage = 1;
+            
+            if (searchInput) {
+              searchInput.value = '';
+            }
+            
+            // 重置分類按鈕
+            filterButtons.forEach(btn => {
+              if (btn.dataset.category === 'all') {
+                btn.classList.add('active');
+              } else {
+                btn.classList.remove('active');
               }
-              
-              // 重置分類按鈕
-              filterButtons.forEach(btn => {
-                if (btn.dataset.category === 'all') {
-                  btn.classList.add('active');
-                } else {
-                  btn.classList.remove('active');
-                }
-              });
-              
-              // 更新URL並重新渲染
-              updateUrlParams();
-              renderFilteredVideos();
             });
-          }
-        }, 0);
+            
+            // 更新URL並重新渲染
+            updateUrlParams();
+            renderFilteredVideos();
+          });
+        }
       }
     }
     
@@ -996,8 +1143,10 @@
     loadVideos();
   });
 </script>
-<script src="/assets/js/navbar.js"></script><!-- 下拉選單與營業時間 JavaScript -->
-<script>document.addEventListener('DOMContentLoaded', function() {
+
+<!-- 下拉選單與營業時間 JavaScript -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
     // 僅在移動設備上添加下拉選單的點擊事件
     if (window.innerWidth <= 850) {
       const dropdownLinks = document.querySelectorAll('.has-dropdown > a');
@@ -1027,38 +1176,8 @@
     });
     
     window.prevWidth = window.innerWidth;
-    
-    // 判斷當前是否營業中
-    function checkBusinessHours() {
-      const now = new Date();
-      const day = now.getDay(); // 0是星期日，1-5是星期一到五，6是星期六
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const currentTime = hours * 60 + minutes; // 將時間轉換為分鐘
-      
-      // 營業時間：週一至週五 8:30-17:30
-      const openTime = 8 * 60 + 30; // 8:30 轉換為分鐘
-      const closeTime = 17 * 60 + 30; // 17:30 轉換為分鐘
-      
-      const isWeekday = day >= 1 && day <= 5; // 是否為工作日
-      const isDuringBusinessHours = currentTime >= openTime && currentTime < closeTime; // 是否在營業時間內
-      
-      const businessStatus = document.getElementById('business-status');
-      
-      if (isWeekday && isDuringBusinessHours) {
-        businessStatus.textContent = '營業中';
-        businessStatus.className = 'business-status status-open';
-      } else {
-        businessStatus.textContent = '非營業時間';
-        businessStatus.className = 'business-status status-closed';
-      }
-    }
-    
-    // 執行判斷
-    checkBusinessHours();
-    
-    // 每分鐘更新一次狀態
-    setInterval(checkBusinessHours, 60000);
-  });</script>
+  });
+</script>
+
 </body>
 </html>
