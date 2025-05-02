@@ -1,17 +1,21 @@
 /* 
  * footer.css - 霍爾果斯會計師事務所網站頁尾樣式
  * 最後更新日期: 2025-05-03
+ * 優化版本
  */
 
 /* 頁尾樣式 */
 .site-footer {
-  background-color: #333;
+  background: linear-gradient(to bottom, #2a2a2a, #333);
   color: #ccc;
-  padding: 20px 0;
+  padding: 30px 0 20px;
+  position: relative;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
 }
 
 .footer-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   max-width: 1200px;
@@ -19,20 +23,65 @@
   padding: 0 30px;
 }
 
+/* 聯絡資訊區塊 */
+.footer-contact {
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  width: 100%;
+  text-align: center;
+}
+
+/* 版權資訊區塊 */
+.footer-text {
+  width: 100%;
+  text-align: center;
+}
+
 .footer-text p {
   margin: 0;
   font-size: 0.95rem;
+  line-height: 1.6;
+  letter-spacing: 0.2px;
   font-family: "思源黑體", "微軟正黑體", sans-serif;
 }
 
 .footer-text a {
   color: #ccc;
   text-decoration: none;
-  transition: color 0.3s ease;
+  position: relative;
+  transition: all 0.3s ease;
+  display: inline-block;
+  padding: 0 3px;
 }
 
+/* 連結懸停效果 */
 .footer-text a:hover {
   color: #fff;
+}
+
+.footer-text a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: #fff;
+  transition: width 0.3s ease;
+}
+
+.footer-text a:hover::after {
+  width: 100%;
+}
+
+/* 頁尾分隔線 */
+.footer-divider {
+  width: 50px;
+  height: 3px;
+  background: linear-gradient(to right, #0066cc, rgba(0, 102, 204, 0.2));
+  margin: 10px auto;
+  border-radius: 2px;
 }
 
 /* 響應式設計 */
@@ -45,5 +94,15 @@
   
   .footer-text {
     margin-bottom: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-footer {
+    padding: 25px 0 15px;
+  }
+  
+  .footer-text p {
+    font-size: 0.85rem;
   }
 }

@@ -1,138 +1,29 @@
 /* 
  * navbar.css - 霍爾果斯會計師事務所網站導航欄樣式
  * 最後更新日期: 2025-05-03
+ * 優化版本
  */
-
-/* 修正導航欄樣式 */
-.logo {
-  min-width: 240px; /* 增加最小寬度確保文字不換行 */
-}
-
-.logo-main {
-  white-space: nowrap; /* 確保不換行 */
-}
-
-.nav-menu {
-  gap: 10px; /* 在菜單項目間添加間距 */
-}
-
-.nav-menu li {
-  margin: 0 2px; /* 減少 li 元素的外邊距 */
-  position: relative; /* 為下拉選單定位 */
-}
-
-.nav-menu a {
-  padding: 7px 8px; /* 減少內邊距 */
-  font-size: 0.9rem; /* 縮小字體 */
-}
-
-/* 重新設計CTA按鈕樣式 */
-.nav-cta-item {
-  display: inline-block;
-  margin: 0 5px !important;
-}
-
-.nav-consult-btn, .nav-line-btn {
-  font-weight: 700;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-  padding: 8px 15px !important;
-  font-size: 1rem !important;
-  border-width: 2px !important;
-  letter-spacing: 0.5px;
-  animation: pulse 2s infinite;
-  min-width: 100px;
-  text-align: center;
-}
-
-.nav-consult-btn {
-  background-color: #ff6b00 !important; /* 更明亮的橙色 */
-  border-color: #ff6b00 !important;
-}
-
-.nav-line-btn {
-  background-color: #06c755 !important; /* 保持LINE綠色 */
-  border-color: #06c755 !important;
-}
-
-.nav-consult-btn:hover, .nav-line-btn:hover {
-  transform: scale(1.05) translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(255, 107, 0, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
-  }
-}
-
-/* 下拉選單樣式 */
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background-color: #002147;
-  min-width: 180px;
-  border-radius: 4px;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-  display: none;
-  z-index: 1001;
-  padding: 8px 0;
-  margin-top: 5px;
-}
-
-.dropdown-menu a {
-  display: block;
-  padding: 8px 15px;
-  color: #fff;
-  text-decoration: none;
-  font-size: 0.85rem;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  border: none;
-  background: none;
-  text-align: left;
-}
-
-.dropdown-menu a:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: none;
-  box-shadow: none;
-}
-
-/* 顯示下拉選單 */
-.has-dropdown:hover .dropdown-menu {
-  display: block;
-}
-
-/* 下拉箭頭圖標 */
-.has-dropdown > a::after {
-  content: "▼";
-  font-size: 0.6rem;
-  margin-left: 5px;
-  vertical-align: middle;
-}
 
 /* 導航欄基本樣式 */
 .site-nav {
-  background-color: #002147; /* 更深的藍色 */
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* 增強陰影 */
+  background: linear-gradient(to bottom, #00193a, #002147);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
   position: sticky;
   top: 0;
   z-index: 1000;
   padding: 5px 0;
+  transition: all 0.3s ease;
+}
+
+.site-nav:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
 }
 
 .nav-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 30px; /* 調整上下間距 */
+  padding: 10px 30px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -141,6 +32,12 @@
 .logo {
   display: flex;
   flex-direction: column;
+  min-width: 240px;
+  transition: all 0.3s ease;
+}
+
+.logo:hover {
+  transform: translateY(-1px);
 }
 
 .logo a {
@@ -149,10 +46,28 @@
 }
 
 .logo-main {
-  font-size: 1.3rem; /* 略微縮小字型 */
+  font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: 0.5px;
   font-family: "思源黑體", "微軟正黑體", sans-serif;
+  white-space: nowrap;
+  position: relative;
+  padding-bottom: 2px;
+}
+
+.logo-main::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.7);
+  transition: width 0.3s ease;
+}
+
+.logo:hover .logo-main::after {
+  width: 100%;
 }
 
 .logo-sub {
@@ -170,79 +85,413 @@
   margin: 0;
   padding: 0;
   align-items: center;
-  flex-wrap: wrap; /* 允許在必要時換行 */
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.nav-menu li {
+  margin: 0 2px;
+  position: relative;
 }
 
 .nav-menu a {
   color: #fff;
   position: relative;
+  padding: 7px 12px;
+  font-size: 0.95rem;
   font-weight: 500;
   text-decoration: none;
-  border: 1px solid rgba(255, 255, 255, 0.3); /* 更明顯的初始邊框 */
-  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
   transition: all 0.3s ease;
   font-family: "思源黑體", "微軟正黑體", sans-serif;
-  background-color: rgba(255, 255, 255, 0.1); /* 更明顯的背景色 */
+  background-color: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
 }
 
-.nav-menu a:hover, .nav-menu a.active {
+.nav-menu a::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+  z-index: -1;
+}
+
+.nav-menu a:hover::before,
+.nav-menu a.active::before {
+  transform: translateY(0);
+}
+
+.nav-menu a:hover, 
+.nav-menu a.active {
   color: #fff;
-  border-color: rgba(255, 255, 255, 0.7); /* 懸停時更明顯的邊框 */
-  background-color: rgba(255, 255, 255, 0.2); /* 懸停時更明顯的背景 */
-  transform: translateY(-2px); /* 輕微上移效果 */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 懸停陰影 */
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.nav-menu a.active {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.6);
+  position: relative;
+}
+
+.nav-menu a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, #0066cc, rgba(255, 255, 255, 0.7));
+  border-radius: 1px;
 }
 
 /* 導航分隔線 */
 .nav-divider {
   width: 1px;
   height: 24px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
   margin: 0 10px;
+}
+
+/* 重新設計CTA按鈕樣式 */
+.nav-cta-item {
+  display: inline-block;
+  margin: 0 5px !important;
+}
+
+.nav-consult-btn, 
+.nav-line-btn {
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  padding: 10px 18px !important;
+  font-size: 1rem !important;
+  border-width: 2px !important;
+  letter-spacing: 0.5px;
+  min-width: 100px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.nav-consult-btn {
+  background: linear-gradient(to right, #ff6b00, #ff8c00) !important;
+  border-color: #ff6b00 !important;
+}
+
+.nav-line-btn {
+  background: linear-gradient(to right, #06c755, #07d65a) !important;
+  border-color: #06c755 !important;
+}
+
+.nav-consult-btn:hover, 
+.nav-line-btn:hover {
+  transform: scale(1.05) translateY(-3px) !important;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.4) !important;
+}
+
+.nav-consult-btn::before,
+.nav-line-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.nav-consult-btn:hover::before,
+.nav-line-btn:hover::before {
+  opacity: 1;
+}
+
+/* LINE圖標 */
+.nav-line-btn::after {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'%3E%3Cpath fill='white' d='M272.1 204.2v71.1c0 1.8-1.4 3.2-3.2 3.2h-11.4c-1.1 0-2.1-.6-2.6-1.3l-32.6-44v42.2c0 1.8-1.4 3.2-3.2 3.2h-11.4c-1.8 0-3.2-1.4-3.2-3.2v-71.1c0-1.8 1.4-3.2 3.2-3.2H219c1.1 0 2.1.6 2.6 1.3l32.6 44v-42.2c0-1.8 1.4-3.2 3.2-3.2h11.4c1.8-.1 3.3 1.4 3.3 3.1zm-82-3.2h-11.4c-1.8 0-3.2 1.4-3.2 3.2v71.1c0 1.8 1.4 3.2 3.2 3.2h11.4c1.8 0 3.2-1.4 3.2-3.2v-71.1c0-1.7-1.4-3.2-3.2-3.2zm-27.5 59.6h-31.1v-56.4c0-1.8-1.4-3.2-3.2-3.2h-11.4c-1.8 0-3.2 1.4-3.2 3.2v71.1c0 .9.3 1.6.9 2.2.6.5 1.3.9 2.2.9h45.7c1.8 0 3.2-1.4 3.2-3.2v-11.4c0-1.7-1.4-3.2-3.1-3.2zM332.1 201h-45.7c-1.7 0-3.2 1.4-3.2 3.2v71.1c0 1.7 1.4 3.2 3.2 3.2h45.7c1.8 0 3.2-1.4 3.2-3.2v-11.4c0-1.8-1.4-3.2-3.2-3.2H301v-12h31.1c1.8 0 3.2-1.4 3.2-3.2V234c0-1.8-1.4-3.2-3.2-3.2H301v-12h31.1c1.8 0 3.2-1.4 3.2-3.2v-11.4c-.1-1.7-1.5-3.2-3.2-3.2zM448 113.7V399c-.1 44.8-36.8 81.1-81.7 81H81c-44.8-.1-81.1-36.9-81-81.7V113c.1-44.8 36.9-81.1 81.7-81H367c44.8.1 81.1 36.8 81 81.7zm-61.6 122.6c0-73-73.2-132.4-163.1-132.4-89.9 0-163.1 59.4-163.1 132.4 0 65.4 58 120.2 136.4 130.6 19.1 4.1 16.9 11.1 12.6 36.8-.7 4.1-3.3 16.1 14.1 8.8 17.4-7.3 93.9-55.3 128.2-94.7 23.6-26 34.9-52.3 34.9-81.5z'%3E%3C/path%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  transition: transform 0.3s ease;
+}
+
+.nav-line-btn:hover::after {
+  transform: scale(1.1);
+}
+
+/* 下拉選單樣式 */
+.dropdown-menu {
+  position: absolute;
+  top: 120%;
+  left: 0;
+  background: linear-gradient(to bottom, #00224e, #001e44);
+  min-width: 200px;
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  display: none;
+  z-index: 1001;
+  padding: 10px 0;
+  margin-top: 5px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease, top 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 20px;
+  width: 12px;
+  height: 12px;
+  background: #00224e;
+  transform: rotate(45deg);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.dropdown-menu a {
+  display: block;
+  padding: 10px 20px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  border: none;
+  background: none;
+  text-align: left;
+  border-radius: 0;
+  border-left: 3px solid transparent;
+}
+
+.dropdown-menu a:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  transform: none;
+  box-shadow: none;
+  padding-left: 25px;
+  border-left: 3px solid #0066cc;
+}
+
+/* 顯示下拉選單動畫 */
+.has-dropdown:hover .dropdown-menu {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+  top: 100%;
+}
+
+/* 下拉箭頭圖標 */
+.has-dropdown > a::after {
+  content: "▼";
+  font-size: 0.6rem;
+  margin-left: 5px;
+  vertical-align: middle;
+  transition: transform 0.3s ease;
+}
+
+.has-dropdown:hover > a::after {
+  transform: rotate(180deg);
 }
 
 /* 漢堡選單 */
 .nav-toggle-label {
   display: none;
+  cursor: pointer;
+  position: relative;
+  width: 30px;
+  height: 21px;
+  transition: all 0.3s ease;
+}
+
+.nav-toggle-label span,
+.nav-toggle-label span::before,
+.nav-toggle-label span::after {
+  display: block;
+  background-color: #fff;
+  height: 2px;
+  width: 100%;
+  position: absolute;
+  transition: all 0.4s ease;
+  border-radius: 1px;
+}
+
+.nav-toggle-label span {
+  top: 9px;
+}
+
+.nav-toggle-label span::before,
+.nav-toggle-label span::after {
+  content: '';
+}
+
+.nav-toggle-label span::before {
+  top: -9px;
+}
+
+.nav-toggle-label span::after {
+  bottom: -9px;
 }
 
 .nav-toggle {
   display: none;
 }
 
-@media (max-width: 1100px) {
-  .nav-container {
-    padding: 10px 15px; /* 減少導航欄內邊距 */
+.nav-toggle:checked + .nav-toggle-label span {
+  background-color: transparent;
+}
+
+.nav-toggle:checked + .nav-toggle-label span::before {
+  transform: rotate(45deg);
+  top: 0;
+}
+
+.nav-toggle:checked + .nav-toggle-label span::after {
+  transform: rotate(-45deg);
+  bottom: 0;
+}
+
+/* 按鈕脈動動畫 */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 107, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
   }
 }
 
-/* 平板適配 */
-@media (max-width: 992px) {
-  .nav-menu a {
-    font-size: 0.9rem;
-    padding: 6px 8px;
+.nav-consult-btn {
+  animation: pulse 2s infinite;
+}
+
+/* 響應式設計 */
+@media (max-width: 1100px) {
+  .nav-container {
+    padding: 10px 15px;
   }
   
-  .nav-consult-btn, .nav-line-btn {
-    padding: 6px 12px;
+  .nav-menu a {
+    padding: 7px 10px;
     font-size: 0.9rem;
+  }
+  
+  .nav-consult-btn, 
+  .nav-line-btn {
+    padding: 8px 16px !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .nav-menu a {
+    font-size: 0.85rem;
+    padding: 6px 8px;
   }
 }
 
 /* 移動設備樣式 */
 @media (max-width: 850px) {
+  .nav-toggle-label {
+    display: block;
+  }
+  
+  .nav-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to bottom, #001e44, #00162e);
+    flex-direction: column;
+    align-items: center;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.52, 0.16, 0.24, 1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    padding: 0;
+    z-index: 1000;
+  }
+  
+  .nav-toggle:checked ~ .nav-menu {
+    max-height: 80vh;
+    padding: 15px 0;
+    overflow-y: auto;
+  }
+  
+  .nav-menu li {
+    width: 90%;
+    text-align: center;
+    margin: 0;
+    padding: 8px 0;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  
+  .nav-toggle:checked ~ .nav-menu li {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  /* 為每個選單項目添加延遲動畫 */
+  .nav-toggle:checked ~ .nav-menu li:nth-child(1) { transition-delay: 0.05s; }
+  .nav-toggle:checked ~ .nav-menu li:nth-child(2) { transition-delay: 0.1s; }
+  .nav-toggle:checked ~ .nav-menu li:nth-child(3) { transition-delay: 0.15s; }
+  .nav-toggle:checked ~ .nav-menu li:nth-child(4) { transition-delay: 0.2s; }
+  .nav-toggle:checked ~ .nav-menu li:nth-child(5) { transition-delay: 0.25s; }
+  .nav-toggle:checked ~ .nav-menu li:nth-child(6) { transition-delay: 0.3s; }
+  .nav-toggle:checked ~ .nav-menu li:nth-child(7) { transition-delay: 0.35s; }
+  .nav-toggle:checked ~ .nav-menu li:nth-child(8) { transition-delay: 0.4s; }
+  .nav-toggle:checked ~ .nav-menu li:nth-child(9) { transition-delay: 0.45s; }
+  
   .dropdown-menu {
     position: static;
     background-color: rgba(255, 255, 255, 0.05);
     box-shadow: none;
-    margin-top: 0;
+    margin: 10px 0 0;
     display: none;
     padding: 0;
+    width: 90%;
+    border: none;
+    transform: none;
+  }
+  
+  .dropdown-menu::before {
+    display: none;
   }
   
   .dropdown-menu a {
-    padding: 8px 20px 8px 30px;
-    font-size: 0.85rem;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    opacity: 0.9;
+    text-align: center;
+  }
+  
+  .dropdown-menu a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding-left: 20px;
+    border-left: none;
+    border-bottom: 3px solid #0066cc;
   }
   
   .has-dropdown > a::after {
@@ -253,79 +502,25 @@
   /* 移動設備展開下拉選單的JS交互 */
   .dropdown-menu.show {
     display: block;
+    animation: fadeIn 0.3s forwards;
   }
   
-  /* 移動設備上的CTA按鈕 */
-  .nav-consult-btn, .nav-line-btn {
-    width: 90%;
-    margin: 5px auto;
-    text-align: center;
-  }
-  
-  .nav-toggle-label {
-    display: block;
-    cursor: pointer;
-    position: relative;
-    width: 30px;
-    height: 21px;
-  }
-  
-  .nav-toggle-label span,
-  .nav-toggle-label span::before,
-  .nav-toggle-label span::after {
-    display: block;
-    background-color: #fff;
-    height: 3px;
-    width: 100%;
-    position: absolute;
-    transition: all 0.3s ease;
-  }
-  
-  .nav-toggle-label span {
-    top: 9px;
-  }
-  
-  .nav-toggle-label span::before,
-  .nav-toggle-label span::after {
-    content: '';
-  }
-  
-  .nav-toggle-label span::before {
-    top: -9px;
-  }
-  
-  .nav-toggle-label span::after {
-    bottom: -9px;
-  }
-  
-  .nav-menu {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: #002147; /* 與導航欄匹配 */
-    flex-direction: column;
-    align-items: center;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-  }
-  
-  .nav-toggle:checked ~ .nav-menu {
-    max-height: 500px;
-    padding: 10px 0;
-  }
-  
-  .nav-menu li {
-    width: 100%;
-    text-align: center;
-    margin: 0;
-    padding: 10px 0;
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   
   .nav-cta-item {
+    width: 90%;
+    margin: 8px 0 !important;
+  }
+  
+  .nav-consult-btn, 
+  .nav-line-btn {
     width: 100%;
-    margin: 5px 0;
+    margin: 5px auto;
+    justify-content: center;
+    padding: 12px 20px !important;
   }
   
   .nav-divider {
@@ -333,16 +528,26 @@
   }
   
   .nav-menu a {
-    display: block;
-    border: none;
-    background: none;
-    width: 80%;
-    margin: 0 auto;
+    width: 100%;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 15px;
   }
   
-  .nav-menu a:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+  .nav-menu a:hover,
+  .nav-menu a.active {
     transform: none;
+    background-color: rgba(255, 255, 255, 0.1);
     box-shadow: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-main {
+    font-size: 1.2rem;
+  }
+  
+  .logo-sub {
+    font-size: 0.8rem;
   }
 }
