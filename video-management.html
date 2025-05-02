@@ -496,6 +496,17 @@
 </div>
 </div>
 
+<!-- 處理進度彈窗 -->
+<div class="modal" id="progress-modal">
+<div class="modal-content">
+<h2 class="modal-title">處理中</h2>
+<div class="loading">
+<div class="loading-spinner"></div>
+<p id="progress-message">正在處理您的請求...</p>
+</div>
+</div>
+</div>
+
 <!-- 頁尾區域 -->
 <footer class="site-footer">
 <div class="footer-container">
@@ -521,6 +532,8 @@
     const refreshBtn = document.getElementById('refresh-btn');
     const deleteModal = document.getElementById('delete-modal');
     const addVideoModal = document.getElementById('add-video-modal');
+    const progressModal = document.getElementById('progress-modal');
+    const progressMessage = document.getElementById('progress-message');
     const cancelDeleteBtn = document.getElementById('cancel-delete');
     const confirmDeleteBtn = document.getElementById('confirm-delete');
     const cancelAddVideoBtn = document.getElementById('cancel-add-video');
@@ -653,22 +666,24 @@
           const response = await fetch(videosJsonPath);
           
           if (!response.ok) {
-            throw new Error(`無法獲取影片數據 (狀態碼: ${response.status})`);
-          }
-          
-          // 嘗試解析JSON
-          try {
+            // 本地獲取失敗，嘗試從GitHub獲取
+            const githubResponse = await fetch(`https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/assets/data/videos.json`);
+            
+            if (!githubResponse.ok) {
+              throw new Error(`無法獲取影片數據 (狀態碼: ${githubResponse.status})`);
+            }
+            
+            const data = await githubResponse.json();
+            videoData = data;
+          } else {
             const data = await response.json();
             videoData = data;
-            
-            // 渲染影片列表
-            renderVideos();
-          } catch (parseError) {
-            console.error('解析影片JSON時出錯:', parseError);
-            throw new Error('影片JSON格式無效，無法解析');
           }
+          
+          // 渲染影片列表
+          renderVideos();
         } catch (error) {
-          console.error('加載影片JSON出錯:', error);
+          console.error('加載JSON出錯:', error);
           // 使用備用數據
           useVideoFallbackData();
         }
@@ -766,7 +781,7 @@
       
       videosContainer.innerHTML = tableHTML;
       
-      // 綁定刪除影片按鈕事件
+      // 綁定刪除按鈕事件
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', function() {
           const index = parseInt(this.getAttribute('data-index'));
@@ -909,26 +924,29 @@
         updatedVideoData.pagination.total = updatedVideoData.videos.length;
         updatedVideoData.pagination.totalPages = Math.ceil(updatedVideoData.videos.length / updatedVideoData.pagination.itemsPerPage);
         
+        // 將更新後的數據保存為JSON
+        const jsonContent = JSON.stringify(updatedVideoData, null, 2);
+        
         try {
-          // 將更新後的數據保存為JSON
-          const jsonContent = JSON.stringify(updatedVideoData, null, 2);
-          
-          // 使用Fetch API發送POST請求
-          const response = await fetch('/api/update-videos', {
+          // 使用GitHub repository_dispatch API觸發工作流程
+          const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/dispatches`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${password}`
+              'Authorization': `token ${getGitHubToken(password)}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              content: jsonContent,
-              message: `刪除影片: ${deletedVideo.title}`
+              event_type: 'update-videos',
+              client_payload: {
+                content: jsonContent,
+                message: `刪除影片: ${deletedVideo.title}`
+              }
             })
           });
           
           if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `伺服器返回錯誤 (${response.status})`);
+            throw new Error(`API請求失敗 (狀態碼: ${response.status})`);
           }
           
           // 更新本地數據
@@ -996,26 +1014,29 @@
         updatedVideoData.pagination.total = updatedVideoData.videos.length;
         updatedVideoData.pagination.totalPages = Math.ceil(updatedVideoData.videos.length / updatedVideoData.pagination.itemsPerPage);
         
+        // 將更新後的數據保存為JSON
+        const jsonContent = JSON.stringify(updatedVideoData, null, 2);
+        
         try {
-          // 將更新後的數據保存為JSON
-          const jsonContent = JSON.stringify(updatedVideoData, null, 2);
-          
-          // 使用Fetch API發送POST請求
-          const response = await fetch('/api/update-videos', {
+          // 使用GitHub repository_dispatch API觸發工作流程
+          const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/dispatches`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${password}`
+              'Authorization': `token ${getGitHubToken(password)}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              content: jsonContent,
-              message: `新增影片: ${videoToAdd.title}`
+              event_type: 'update-videos',
+              client_payload: {
+                content: jsonContent,
+                message: `新增影片: ${videoToAdd.title}`
+              }
             })
           });
           
           if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `伺服器返回錯誤 (${response.status})`);
+            throw new Error(`API請求失敗 (狀態碼: ${response.status})`);
           }
           
           // 更新本地數據
@@ -1124,6 +1145,38 @@
      */
     function closeAddVideoModal() {
       addVideoModal.style.display = 'none';
+    }
+    
+    /**
+     * 打開處理進度彈窗
+     */
+    function openProgressModal(message) {
+      progressMessage.textContent = message;
+      progressModal.style.display = 'flex';
+    }
+    
+    /**
+     * 關閉處理進度彈窗
+     */
+    function closeProgressModal() {
+      progressModal.style.display = 'none';
+    }
+    
+    /**
+     * 獲取GitHub令牌
+     */
+    function getGitHubToken(password) {
+      // 這裡只是一個簡單的示例
+      // 在實際生產環境中，應該使用更安全的方式來處理令牌
+      
+      // 如果提供的是預設的管理員密碼，使用這個範例令牌
+      // 注意：這個令牌是示例，不是實際可用的令牌
+      // 在真實應用中，您可能需要讓用戶提供自己的令牌
+      if (password === ADMIN_PASSWORD) {
+        return 'ghp_YOUR_PERSONAL_ACCESS_TOKEN'; // 請替換為真實的Personal Access Token
+      }
+      
+      return '';
     }
     
     // 添加備份按鈕到頁面

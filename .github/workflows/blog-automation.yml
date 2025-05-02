@@ -45,6 +45,10 @@ on:
   # 每天定時執行
   schedule:
     - cron: '0 1 * * *'  # UTC 時間每天1點 (台灣時間9點)
+    
+  # 接收從網頁界面觸發的事件
+  repository_dispatch:
+    types: [delete-article, upload-article, scan-articles, update-video]
 
 jobs:
   content-automation:
@@ -82,12 +86,66 @@ jobs:
           mkdir -p assets/data
           mkdir -p word-docs
       
+      # 處理從repository_dispatch接收的文章刪除請求
+      - name: 處理API觸發的文章刪除
+        if: github.event_name == 'repository_dispatch' && github.event.action == 'delete-article'
+        run: |
+          echo "收到API觸發的文章刪除請求"
+          echo "文件路徑: ${{ github.event.client_payload.file_path }}"
+          echo "文章標題: ${{ github.event.client_payload.article_title }}"
+          
+          # 檢查文件是否存在
+          if [ -f "${{ github.event.client_payload.file_path }}" ]; then
+            # 刪除文件
+            rm "${{ github.event.client_payload.file_path }}"
+            echo "文件已刪除"
+            
+            # 提交變更
+            git config --global user.name "GitHub Actions Bot"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "透過API刪除文章: ${{ github.event.client_payload.article_title }}"
+            git push
+            echo "已提交刪除操作"
+          else
+            echo "警告: 找不到要刪除的文件 ${{ github.event.client_payload.file_path }}"
+          fi
+      
+      # 處理從repository_dispatch接收的文章上傳請求
+      - name: 處理API觸發的文章上傳
+        if: github.event_name == 'repository_dispatch' && github.event.action == 'upload-article'
+        run: |
+          echo "收到API觸發的文章上傳請求"
+          echo "文件已經由API上傳至指定位置，接下來進行處理"
+      
+      # 處理從repository_dispatch接收的掃描請求
+      - name: 處理API觸發的掃描請求
+        if: github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles'
+        run: |
+          echo "收到API觸發的文章掃描請求"
+          echo "將進行強制掃描"
+          python scan_html_files.py
+          
+          # 提交變更
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/data/blog-posts.json assets/data/latest-posts.json
+          git commit -m "透過API執行強制掃描並更新JSON" || echo "無需提交"
+          git push || echo "無需推送"
+      
+      # 處理從repository_dispatch接收的影片更新請求
+      - name: 處理API觸發的影片更新
+        if: github.event_name == 'repository_dispatch' && github.event.action == 'update-video'
+        run: |
+          echo "收到API觸發的影片更新請求"
+          echo "影片JSON文件已由API更新，無需額外操作"
+      
       # 初始化或檢查JSON文件
       - name: 初始化JSON文件
         id: init_json
         run: |
           # 檢查blog-posts.json是否存在
-          if [ ! -f "assets/data/blog-posts.json" ] || [ "${{ github.event.inputs.force_scan }}" == "true" ]; then
+          if [ ! -f "assets/data/blog-posts.json" ] || [ "${{ github.event.inputs.force_scan }}" == "true" ] || [ "${{ github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles' }}" == "true" ]; then
             # 不存在或強制掃描，創建初始結構
             echo "建立或更新blog-posts.json"
             mkdir -p assets/data
@@ -146,7 +204,7 @@ jobs:
       
       # 掃描HTML文件生成JSON (如果需要)
       - name: 掃描現有HTML文件
-        if: ${{ steps.init_json.outputs.scan_html == 'true' || github.event.inputs.force_scan == 'true' }}
+        if: ${{ steps.init_json.outputs.scan_html == 'true' || github.event.inputs.force_scan == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles') }}
         run: |
           python scan_html_files.py
           
@@ -157,7 +215,7 @@ jobs:
       
       # 處理Word文檔 (如果啟用)
       - name: 處理Word文檔
-        if: ${{ github.event_name == 'push' || github.event.inputs.process_word == 'true' }}
+        if: ${{ github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article') }}
         run: |
           if [ -d "word-docs" ] && [ "$(ls -A word-docs)" ]; then
             # 複製word_to_html.py腳本到當前目錄
@@ -181,10 +239,14 @@ jobs:
       # 檢測已刪除的HTML文件
       - name: 檢測已刪除的HTML文件
         id: check_deleted
-        if: ${{ github.event_name == 'delete' || github.event.inputs.handle_deletion == 'true' }}
+        if: ${{ github.event_name == 'delete' || github.event.inputs.handle_deletion == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'delete-article') }}
         run: |
           # 獲取已刪除的HTML文件列表
-          git diff --name-only --diff-filter=D HEAD~1 HEAD | grep -E '^blog/.*\.html$' > deleted_files.txt || true
+          if [ "${{ github.event_name }}" == "repository_dispatch" ] && [ "${{ github.event.action }}" == "delete-article" ]; then
+            echo "${{ github.event.client_payload.file_path }}" > deleted_files.txt
+          else
+            git diff --name-only --diff-filter=D HEAD~1 HEAD | grep -E '^blog/.*\.html$' > deleted_files.txt || true
+          fi
           
           # 檢查是否有文件被刪除
           if [ -s deleted_files.txt ]; then
@@ -199,7 +261,7 @@ jobs:
       # 提交生成的HTML文件
       - name: 提交生成的HTML文件
         id: commit-html
-        if: ${{ github.event_name == 'push' || github.event.inputs.process_word == 'true' }}
+        if: ${{ github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article') }}
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
@@ -218,7 +280,7 @@ jobs:
       # 更新博客JSON文件
       - name: 更新博客JSON文件
         id: update_blog_json
-        if: ${{ steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' }}
+        if: ${{ steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles')) }}
         run: |
           python update_blog_posts.py
           echo "blog_json_updated=true" >> $GITHUB_OUTPUT
@@ -229,7 +291,7 @@ jobs:
       - name: 檢查影片JSON更新
         id: check_videos
         run: |
-          if [ "${{ github.event.inputs.update_videos }}" == "true" ] || git diff --name-only HEAD~1 HEAD | grep -q "assets/data/videos.json"; then
+          if [ "${{ github.event.inputs.update_videos }}" == "true" ] || git diff --name-only HEAD~1 HEAD | grep -q "assets/data/videos.json" || [ "${{ github.event_name == 'repository_dispatch' && github.event.action == 'update-video' }}" == "true" ]; then
             echo "videos_changed=true" >> $GITHUB_OUTPUT
           else
             echo "videos_changed=false" >> $GITHUB_OUTPUT

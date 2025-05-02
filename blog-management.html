@@ -853,6 +853,7 @@
         
         // 從JSON數據中移除文章
         if (articleData && articleData.posts && articleToDeleteIndex >= 0) {
+          const deletedPost = articleData.posts[articleToDeleteIndex];
           articleData.posts.splice(articleToDeleteIndex, 1);
           articleData.pagination.total_posts = articleData.posts.length;
           articleData.pagination.total_pages = Math.max(1, Math.ceil(articleData.posts.length / articleData.pagination.items_per_page));
@@ -864,40 +865,104 @@
             console.error('保存到本地存儲失敗:', e);
           }
           
-          // 嘗試實際刪除文件 (這部分在本地網頁可能無法執行，但提供代碼)
+          // 使用github-action處理實際文件刪除
           try {
-            // 查詢文件的SHA (需要GitHub API)
-            const fileResponse = await fetch(`${GITHUB_API_BASE}/contents/${filePath}`, {
+            // 嘗試透過GitHub Repository Dispatch API觸發workflow
+            const token = getGitHubToken(password);
+            if (!token) {
+              throw new Error('無法獲取GitHub令牌');
+            }
+            
+            const dispatchResponse = await fetch(`${GITHUB_API_BASE}/dispatches`, {
+              method: 'POST',
               headers: {
-                'Authorization': `token ${getGitHubToken()}`
-              }
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                event_type: 'delete-article',
+                client_payload: {
+                  file_path: filePath,
+                  article_title: deletedPost.title,
+                  admin_password: password
+                }
+              })
             });
             
-            if (fileResponse.ok) {
-              const fileData = await fileResponse.json();
-              
-              // 刪除文件 (需要GitHub API)
-              const deleteResponse = await fetch(`${GITHUB_API_BASE}/contents/${filePath}`, {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `token ${getGitHubToken()}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  message: `刪除文章: ${filename}`,
-                  sha: fileData.sha,
-                  branch: GITHUB_BRANCH
-                })
-              });
-              
-              if (!deleteResponse.ok) {
-                console.warn('無法通過API刪除文件，但已從本地數據中移除');
-              }
-            } else {
-              console.warn('無法取得文件資訊，但已從本地數據中移除');
+            if (!dispatchResponse.ok) {
+              const errorText = await dispatchResponse.text();
+              console.error('GitHub API響應:', errorText);
+              throw new Error(`GitHub API請求失敗: ${dispatchResponse.status} ${dispatchResponse.statusText}`);
             }
+            
+            console.log('成功觸發GitHub Action刪除文件');
           } catch (apiError) {
             console.warn('API操作失敗，但已從本地數據中移除:', apiError);
+            // 嘗試使用GitHub API直接刪除文件(備用方法)
+            try {
+              // 查詢文件的SHA
+              const fileResponse = await fetch(`${GITHUB_API_BASE}/contents/${filePath}`, {
+                headers: {
+                  'Authorization': `token ${getGitHubToken(password)}`
+                }
+              });
+              
+              if (fileResponse.ok) {
+                const fileData = await fileResponse.json();
+                
+                // 刪除文件
+                const deleteResponse = await fetch(`${GITHUB_API_BASE}/contents/${filePath}`, {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `token ${getGitHubToken(password)}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    message: `刪除文章: ${filename}`,
+                    sha: fileData.sha,
+                    branch: GITHUB_BRANCH
+                  })
+                });
+                
+                if (!deleteResponse.ok) {
+                  console.warn('無法通過API直接刪除文件，但已從本地數據中移除');
+                } else {
+                  console.log('成功通過API直接刪除文件');
+                }
+              } else {
+                console.warn('無法取得文件資訊，但已從本地數據中移除');
+              }
+            } catch (directApiError) {
+              console.warn('直接API操作也失敗:', directApiError);
+            }
+          }
+          
+          // 使用workflow_dispatch來觸發GitHub Action(補救措施)
+          try {
+            const workflowResponse = await fetch(`${GITHUB_API_BASE}/actions/workflows/blog-automation.yml/dispatches`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `token ${getGitHubToken(password)}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                ref: GITHUB_BRANCH,
+                inputs: {
+                  handle_deletion: "true",
+                  update_json: "true"
+                }
+              })
+            });
+            
+            if (!workflowResponse.ok) {
+              console.warn('無法通過workflow_dispatch觸發GitHub Action，但已從本地數據中移除文章');
+            } else {
+              console.log('成功通過workflow_dispatch觸發GitHub Action');
+            }
+          } catch (workflowError) {
+            console.warn('嘗試觸發workflow_dispatch失敗:', workflowError);
           }
           
           // 關閉處理中彈窗
@@ -907,7 +972,7 @@
           renderArticles();
           
           // 顯示成功訊息
-          showMessage('文章已從列表中刪除！檔案也已標記為刪除。', 'success');
+          showMessage('文章已從列表中刪除！檔案也已標記為刪除。請等待GitHub Action完成處理。', 'success');
         } else {
           throw new Error('找不到要刪除的文章');
         }
@@ -944,65 +1009,105 @@
         // 準備FormData
         const formData = new FormData();
         formData.append('file', fileToUpload);
-        formData.append('password', password);
         
-        // 實際上傳文件 (這部分在本地網頁可能無法執行，但提供代碼)
+        // 嘗試使用GitHub API上傳文件
         try {
-          // 這裡可以添加實際的上傳邏輯，例如使用fetch到後端API
-          // 由於我們在靜態網頁環境，這裡只進行模擬
+          // 轉換文件為base64
+          const fileContent = await fileToBase64(fileToUpload);
           
-          // 模擬上傳延遲
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // 上傳到word-docs目錄
+          const uploadPath = `word-docs/${fileToUpload.name}`;
+          
+          // 使用GitHub API上傳文件
+          const uploadResponse = await fetch(`${GITHUB_API_BASE}/contents/${uploadPath}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `token ${getGitHubToken(password)}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              message: `上傳Word文檔: ${fileToUpload.name}`,
+              content: fileContent,
+              branch: GITHUB_BRANCH
+            })
+          });
+          
+          // 處理上傳結果
+          if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json();
+            throw new Error(`上傳文件失敗: ${errorData.message || uploadResponse.statusText}`);
+          }
+          
+          // 觸發GitHub Action處理文件
+          const workflowResponse = await fetch(`${GITHUB_API_BASE}/actions/workflows/blog-automation.yml/dispatches`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `token ${getGitHubToken(password)}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              ref: GITHUB_BRANCH,
+              inputs: {
+                process_word: "true",
+                update_json: "true"
+              }
+            })
+          });
+          
+          if (!workflowResponse.ok) {
+            throw new Error('無法觸發GitHub Action處理Word文檔');
+          }
           
           // 解析文件名獲取日期
           const dateMatch = fileToUpload.name.match(/^(\d{4}-\d{2}-\d{2})-(.+)\.docx$/);
-          if (dateMatch) {
-            const date = dateMatch[1];
-            const title = dateMatch[2].replace(/-/g, ' ');
-            
-            // 生成模擬的文章數據
-            const newArticle = {
-              title: title.charAt(0).toUpperCase() + title.slice(1), // 首字母大寫
-              date: date,
-              summary: `這是從Word文檔 ${fileToUpload.name} 生成的文章摘要。`,
-              url: `/blog/${date}-${title.toLowerCase().replace(/\s+/g, '-')}.html`,
-              image: "/assets/images/blog/default.jpg",
-              category: "tax", // 默認分類
-              tags: ["自動生成", "Word文檔"]
-            };
-            
-            // 添加到文章數據
-            if (!articleData) {
-              useArticleFallbackData();
-            }
-            
-            // 將新文章添加到頂部
-            articleData.posts.unshift(newArticle);
-            articleData.pagination.total_posts = articleData.posts.length;
-            articleData.pagination.total_pages = Math.ceil(articleData.posts.length / articleData.pagination.items_per_page);
-            
-            // 嘗試保存到localStorage
-            try {
-              localStorage.setItem('blog-posts-data', JSON.stringify(articleData));
-            } catch (e) {
-              console.error('保存到本地存儲失敗:', e);
-            }
-            
-            // 關閉處理中彈窗
-            closeProgressModal();
-            
-            // 重新渲染文章列表
-            renderArticles();
-            
-            // 清空上傳表單
-            document.getElementById('word-file').value = '';
-            fileToUpload = null;
-            
-            // 顯示成功訊息
-            showMessage(`文件已上傳並處理！新文章"${newArticle.title}"已添加到列表。`, 'success');
-          } else {
+          if (!dateMatch) {
             throw new Error('無法從文件名解析日期和標題');
           }
+          
+          const date = dateMatch[1];
+          const title = dateMatch[2].replace(/-/g, ' ');
+          
+          // 生成預覽文章數據
+          const newArticle = {
+            title: title.charAt(0).toUpperCase() + title.slice(1), // 首字母大寫
+            date: date,
+            summary: `正在處理Word文檔 ${fileToUpload.name}，請稍候。`,
+            url: `/blog/${date}-${title.toLowerCase().replace(/\s+/g, '-')}.html`,
+            image: "/assets/images/blog/default.jpg",
+            category: "tax", // 默認分類
+            tags: ["處理中", "Word文檔"]
+          };
+          
+          // 添加到文章數據
+          if (!articleData) {
+            useArticleFallbackData();
+          }
+          
+          // 將新文章添加到頂部
+          articleData.posts.unshift(newArticle);
+          articleData.pagination.total_posts = articleData.posts.length;
+          articleData.pagination.total_pages = Math.ceil(articleData.posts.length / articleData.pagination.items_per_page);
+          
+          // 嘗試保存到localStorage
+          try {
+            localStorage.setItem('blog-posts-data', JSON.stringify(articleData));
+          } catch (e) {
+            console.error('保存到本地存儲失敗:', e);
+          }
+          
+          // 關閉處理中彈窗
+          closeProgressModal();
+          
+          // 重新渲染文章列表
+          renderArticles();
+          
+          // 清空上傳表單
+          document.getElementById('word-file').value = '';
+          fileToUpload = null;
+          
+          // 顯示成功訊息
+          showMessage(`文件已上傳並提交處理！請等待GitHub Action完成處理和轉換。`, 'success');
         } catch (uploadError) {
           throw new Error(`上傳處理失敗: ${uploadError.message}`);
         }
@@ -1012,6 +1117,22 @@
         console.error('上傳文章時出錯:', error);
         showMessage(`上傳失敗: ${error.message}`, 'error');
       }
+    }
+    
+    /**
+     * 將文件轉換為base64
+     */
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          // 移除data URL前綴 (e.g., "data:application/octet-stream;base64,")
+          let base64 = reader.result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = error => reject(error);
+      });
     }
     
     /**
@@ -1031,63 +1152,40 @@
         // 顯示處理中彈窗
         openProgressModal('正在掃描HTML文件並更新JSON...');
         
-        // 這裡可以添加實際的掃描邏輯，例如使用fetch到後端API
-        // 由於我們在靜態網頁環境，這裡只進行模擬
-        
-        // 模擬掃描延遲
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        // 模擬從本地文件系統讀取blog目錄
-        // 在真實情況下，這需要後端API支持
-        
-        // 讀取現有的blog-posts.json以確保不會丟失數據
-        let existingData = null;
+        // 使用GitHub Action處理掃描
         try {
-          const response = await fetch('/assets/data/blog-posts.json');
-          if (response.ok) {
-            existingData = await response.json();
-          }
-        } catch (e) {
-          console.warn('讀取現有JSON失敗，將創建新數據');
-        }
-        
-        // 如果無法讀取現有數據，使用當前內存中的數據
-        if (!existingData && articleData) {
-          existingData = articleData;
-        }
-        
-        // 如果仍然沒有數據，創建新的空數據結構
-        if (!existingData) {
-          existingData = {
-            posts: [],
-            pagination: {
-              total_posts: 0,
-              total_pages: 1,
-              items_per_page: 6
+          const workflowResponse = await fetch(`${GITHUB_API_BASE}/actions/workflows/blog-automation.yml/dispatches`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `token ${getGitHubToken(password)}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json'
             },
-            categories: ["tax", "accounting", "business"],
-            tags: []
-          };
+            body: JSON.stringify({
+              ref: GITHUB_BRANCH,
+              inputs: {
+                force_scan: "true",
+                update_json: "true"
+              }
+            })
+          });
+          
+          if (!workflowResponse.ok) {
+            const errorText = await workflowResponse.text();
+            throw new Error(`無法觸發GitHub Action掃描: ${errorText}`);
+          }
+          
+          // 關閉處理中彈窗
+          closeProgressModal();
+          
+          // 顯示成功訊息
+          showMessage('已成功觸發掃描操作！請稍後幾分鐘後刷新頁面查看結果。', 'success');
+        } catch (apiError) {
+          // 關閉處理中彈窗
+          closeProgressModal();
+          console.error('API請求失敗:', apiError);
+          showMessage(`無法觸發GitHub Action: ${apiError.message}`, 'error');
         }
-        
-        // 更新articleData
-        articleData = existingData;
-        
-        // 嘗試保存到localStorage
-        try {
-          localStorage.setItem('blog-posts-data', JSON.stringify(articleData));
-        } catch (e) {
-          console.error('保存到本地存儲失敗:', e);
-        }
-        
-        // 關閉處理中彈窗
-        closeProgressModal();
-        
-        // 更新頁面上的文章列表
-        renderArticles();
-        
-        // 顯示成功訊息
-        showMessage('掃描完成！HTML文章已成功更新到JSON文件。', 'success');
       } catch (error) {
         // 關閉處理中彈窗
         closeProgressModal();
@@ -1161,13 +1259,44 @@
     
     /**
      * 獲取GitHub令牌
-     * 注意：在實際應用中，應該使用更安全的方式來處理令牌
      */
-    function getGitHubToken() {
-      // 這只是一個非常簡單的示例，不應在實際環境中使用
-      // 在實際應用中，令牌應該由後端安全處理
-      return 'ghp_YOUR_GITHUB_TOKEN'; // 實際上應該替換為真實令牌或從環境變量獲取
+    function getGitHubToken(password) {
+      // 簡單的個人訪問令牌生成方法(僅作示範)
+      // 實際應用中應該使用更安全的方法
+      if (password !== ADMIN_PASSWORD) {
+        return null;
+      }
+      
+      // 這裏使用一個示例令牌，實際使用時應該替換為真實的GitHub個人訪問令牌
+      // 注意：實際部署時，應該使用更安全的方式處理令牌，例如環境變量或安全存儲
+      return 'ghp_YOUR_GITHUB_TOKEN';
     }
+    
+    // 添加備份按鈕
+    const adminActions = document.querySelector('.admin-actions');
+    const backupBtn = document.createElement('button');
+    backupBtn.className = 'admin-btn refresh-btn';
+    backupBtn.style.backgroundColor = '#1890ff';
+    backupBtn.textContent = '備份數據';
+    backupBtn.addEventListener('click', function() {
+      if (!articleData) {
+        showMessage('沒有文章數據可備份', 'error');
+        return;
+      }
+      
+      const jsonContent = JSON.stringify(articleData, null, 2);
+      const blob = new Blob([jsonContent], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `blog-posts-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      
+      showMessage('文章數據已成功備份到本地', 'success');
+    });
+    adminActions.appendChild(backupBtn);
   });
 </script>
 <script src="/assets/js/navbar.js"></script></body>
