@@ -65,6 +65,12 @@ jobs:
         with:
           fetch-depth: 0  # 包含完整歷史記錄用於檢測刪除
       
+      # 設置 Git 配置
+      - name: 設置 Git 配置
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
       # 設置 Python 環境
       - name: 設置 Python
         uses: actions/setup-python@v4
@@ -94,12 +100,14 @@ jobs:
           echo "文件路徑: ${{ github.event.client_payload.file_path }}"
           echo "文章標題: ${{ github.event.client_payload.article_title }}"
           
-          # 設定Git配置
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # 確保工作區乾淨
+          git stash -u || true
           
           # 先拉取最新變更以避免衝突
-          git pull origin main --rebase
+          git pull origin ${GITHUB_REF##*/} || true
+          
+          # 應用stash (如果需要)
+          git stash pop || true
           
           # 檢查文件是否存在
           if [ -f "${{ github.event.client_payload.file_path }}" ]; then
@@ -131,12 +139,14 @@ jobs:
           echo "將進行強制掃描"
           python scan_html_files.py
           
-          # 設定Git配置
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # 確保工作區乾淨
+          git stash -u || true
           
           # 先拉取最新變更以避免衝突
-          git pull origin main --rebase
+          git pull origin ${GITHUB_REF##*/} || true
+          
+          # 應用stash (如果需要)
+          git stash pop || true
           
           git add assets/data/blog-posts.json assets/data/latest-posts.json
           git commit -m "透過API執行強制掃描並更新JSON" || echo "無需提交"
@@ -205,11 +215,14 @@ jobs:
             }' > assets/data/videos.json
           fi
           
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # 確保工作區乾淨
+          git stash -u || true
           
           # 先拉取最新變更以避免衝突
-          git pull origin main --rebase
+          git pull origin ${GITHUB_REF##*/} || true
+          
+          # 應用stash (如果需要)
+          git stash pop || true
           
           git add assets/data/*.json
           git commit -m "初始化或更新JSON檔案" || echo "無需提交"
@@ -221,12 +234,14 @@ jobs:
         run: |
           python scan_html_files.py
           
-          # 設定Git配置
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # 確保工作區乾淨
+          git stash -u || true
           
           # 先拉取最新變更以避免衝突
-          git pull origin main --rebase
+          git pull origin ${GITHUB_REF##*/} || true
+          
+          # 應用stash (如果需要)
+          git stash pop || true
           
           # 提交更改
           git add assets/data/blog-posts.json assets/data/latest-posts.json
@@ -283,11 +298,14 @@ jobs:
         id: commit-html
         if: ${{ github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article') }}
         run: |
-          git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          # 確保工作區乾淨
+          git stash -u || true
           
           # 先拉取最新變更以避免衝突
-          git pull origin main --rebase
+          git pull origin ${GITHUB_REF##*/} || true
+          
+          # 應用stash (如果需要)
+          git stash pop || true
           
           git add blog/
           
@@ -324,11 +342,14 @@ jobs:
       - name: 提交更新的JSON文件
         if: ${{ steps.update_blog_json.outputs.blog_json_updated == 'true' || steps.check_videos.outputs.videos_changed == 'true' || steps.init_json.outputs.scan_html == 'true' }}
         run: |
-          git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          # 確保工作區乾淨
+          git stash -u || true
           
           # 先拉取最新變更以避免衝突
-          git pull origin main --rebase
+          git pull origin ${GITHUB_REF##*/} || true
+          
+          # 應用stash (如果需要)
+          git stash pop || true
           
           git add assets/data/blog-posts.json
           git add assets/data/videos.json
@@ -345,12 +366,14 @@ jobs:
       - name: 清理已處理的Word文檔
         if: ${{ github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true' }}
         run: |
-          # 設定Git配置
-          git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          # 確保工作區乾淨
+          git stash -u || true
           
           # 先拉取最新變更以避免衝突
-          git pull origin main --rebase
+          git pull origin ${GITHUB_REF##*/} || true
+          
+          # 應用stash (如果需要)
+          git stash pop || true
           
           # 移動已處理的文件到processed目錄
           mkdir -p word-docs/processed
