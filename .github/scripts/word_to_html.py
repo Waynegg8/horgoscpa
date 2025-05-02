@@ -24,6 +24,7 @@ import docx
 import jieba
 import hashlib
 import datetime
+import random  # 導入隨機模組
 from typing import List, Dict, Any, Tuple, Optional
 from slugify import slugify
 from collections import Counter
@@ -38,110 +39,8 @@ IMAGES_DIR = os.path.join(PROJECT_ROOT, "assets/images/blog")    # 博客圖片�
 CSS_PATH = "/assets/css/style.css"  # 全站CSS路徑
 BLOG_URL_PREFIX = "/blog/"           # 博客URL前綴
 DEFAULT_AUTHOR = "霍爾果斯會計師事務所"  # 默認作者
-DEFAULT_IMAGE = "default-blog.jpg"   # 默認圖片
+DEFAULT_IMAGE = "default.jpg"   # 默認圖片
 PROCESSED_LOG_FILE = os.path.join(PROJECT_ROOT, ".processed_docs.json")  # 已處理文件記錄
-
-# 中文到英文的標題對應字典
-TITLE_TRANSLATION = {
-    # 稅務相關
-    "稅務": "tax",
-    "節稅": "tax-saving",
-    "報稅": "tax-filing",
-    "稅法": "tax-law",
-    "所得稅": "income-tax",
-    "營業稅": "vat",
-    "營所稅": "business-income-tax",
-    "綜所稅": "personal-income-tax",
-    "扣繳": "withholding",
-    "跨境": "cross-border",
-    "電商": "e-commerce",
-    "合法": "legal",
-    "國際稅務": "international-tax",
-    "雙重課稅": "double-taxation",
-    "境外": "offshore",
-    "租稅": "taxation",
-    "協定": "treaty",
-    "租稅協定": "tax-treaty",
-    "投資抵減": "investment-credit",
-    "海外": "overseas",
-    "避稅": "tax-avoidance",
-    "通關": "customs-clearance",
-    "進口": "import",
-    "出口": "export",
-    # 會計相關
-    "會計": "accounting",
-    "記帳": "bookkeeping",
-    "財務": "finance",
-    "帳務": "accounting-affairs",
-    "陷阱": "traps",
-    "財報": "financial-statements",
-    "財務報表": "financial-statements",
-    "資產負債表": "balance-sheet",
-    "損益表": "income-statement",
-    "現金流量表": "cash-flow-statement",
-    "審計": "audit",
-    "憑證": "voucher",
-    "發票": "invoice",
-    "電子發票": "e-invoice",
-    "內控": "internal-control",
-    "成本": "cost",
-    "費用": "expense",
-    "勞健保": "labor-insurance",
-    "二代健保": "nhi-premium",
-    "代扣": "deduction",
-    # 企業相關
-    "企業": "business",
-    "公司": "company",
-    "創業": "startup",
-    "新創": "startup",
-    "營運": "operation",
-    "管理": "management",
-    "經營": "management",
-    "策略": "strategy",
-    "設立": "establishment",
-    "登記": "registration",
-    "股權": "equity",
-    "股東": "shareholder",
-    "有限公司": "limited-company",
-    "股份有限公司": "corporation",
-    "獨資": "sole-proprietorship",
-    "合夥": "partnership",
-    "轉型": "transformation",
-    "併購": "merger-acquisition",
-    "人資": "hr",
-    "薪資": "salary",
-    # 常見動詞和介系詞
-    "如何": "how-to",
-    "指南": "guide",
-    "介紹": "introduction",
-    "分析": "analysis",
-    "常見": "common",
-    "問題": "issues",
-    "應對": "response",
-    "解決": "solution",
-    "方案": "plan",
-    "技巧": "skills",
-    "須知": "essentials",
-    "注意事項": "notes",
-    # 其他常用詞
-    "規劃": "planning",
-    "管理": "management",
-    "風險": "risk",
-    "優化": "optimization",
-    "效率": "efficiency",
-    "法規": "regulations",
-    "合規": "compliance",
-    "數位": "digital",
-    "轉型": "transformation",
-    "系統": "system",
-    "工具": "tools",
-    "平台": "platform",
-    "服務": "service",
-    "申報": "filing",
-    "年度": "annual",
-    "季度": "quarterly",
-    "月度": "monthly",
-}
 
 # 配置博客分類
 BLOG_CATEGORIES = {
@@ -163,30 +62,19 @@ CATEGORY_CODES = {
     "進出口": "import-export"
 }
 
-def translate_title_to_english(chinese_title: str) -> str:
-    """
-    將中文標題轉換為英文意譯的 slug
-    :param chinese_title: 中文標題
-    :return: 英文 slug
-    """
-    # 分詞處理
-    words = list(jieba.cut(chinese_title))
-    
-    # 轉換為英文單詞
-    english_words = []
-    for word in words:
-        if word in TITLE_TRANSLATION:
-            english_words.append(TITLE_TRANSLATION[word])
-        # 忽略標點符號和常見虛詞
-        elif word in ['的', '和', '與', '是', '在', '了', '有', '，', '。', '？', '！', ' ']:
-            continue
-    
-    # 如果沒有找到任何可翻譯的單詞，使用 slugify 進行音譯
-    if not english_words:
-        return slugify(chinese_title)
-    
-    # 拼接成 slug
-    return "-".join(english_words)
+# 縮圖集合，用於隨機選擇文章縮圖
+THUMBNAIL_IMAGES = [
+    "tax_thumb1.jpg", 
+    "tax_thumb2.jpg", 
+    "accounting_thumb1.jpg", 
+    "accounting_thumb2.jpg", 
+    "business_thumb1.jpg", 
+    "business_thumb2.jpg",
+    "financial_thumb1.jpg",
+    "legal_thumb1.jpg",
+    "import_export_thumb1.jpg",
+    "default.jpg"
+]
 
 def load_processed_docs() -> Dict[str, str]:
     """
@@ -385,19 +273,47 @@ def determine_primary_category(tags: List[str], title: str, paragraphs: List[Dic
     # 返回中文分類名和英文代碼
     return primary_category, CATEGORY_CODES.get(primary_category, "tax")
 
-def generate_html_filename(title: str, date: str) -> str:
+def select_thumbnail_for_category(category_code: str) -> str:
     """
-    生成 HTML 文件名，使用意譯方式
-    :param title: 文章標題
-    :param date: 日期字符串 (YYYY-MM-DD)
-    :return: HTML 文件名
+    根據文章分類隨機選擇合適的縮圖
+    :param category_code: 文章分類代碼
+    :return: 縮圖文件名
     """
-    english_title = translate_title_to_english(title)
-    return f"{date}-{english_title}.html"
+    # 檢查圖片目錄是否存在
+    if not os.path.exists(IMAGES_DIR):
+        try:
+            os.makedirs(IMAGES_DIR)
+            print(f"創建圖片目錄: {IMAGES_DIR}")
+        except Exception as e:
+            print(f"創建圖片目錄失敗: {str(e)}")
+            return DEFAULT_IMAGE
+    
+    # 獲取博客圖片目錄中的所有圖片
+    try:
+        available_images = [f for f in os.listdir(IMAGES_DIR) if f.endswith(('.jpg', '.jpeg', '.png', '.gif'))]
+    except Exception as e:
+        print(f"讀取圖片目錄失敗: {str(e)}")
+        available_images = []
+    
+    # 如果目錄為空或讀取失敗，使用預設縮圖集合
+    if not available_images:
+        available_images = THUMBNAIL_IMAGES
+    
+    # 根據分類過濾相關圖片
+    category_images = [img for img in available_images if category_code in img.lower()]
+    
+    # 如果沒有該分類的圖片，使用所有可用圖片
+    if not category_images:
+        category_images = available_images
+    
+    # 隨機選擇一張圖片
+    selected_image = random.choice(category_images) if category_images else DEFAULT_IMAGE
+    
+    return selected_image
 
 def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str], 
                  date: str, summary: str, primary_category: str, category_code: str,
-                 image: str = DEFAULT_IMAGE) -> str:
+                 image: str = None) -> str:
     """
     生成HTML內容，使用全站CSS樣式
     :param title: 文章標題
@@ -410,6 +326,10 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     :param image: 圖片名稱
     :return: HTML內容
     """
+    # 如果沒有指定圖片，根據分類隨機選擇一張
+    if not image:
+        image = select_thumbnail_for_category(category_code)
+    
     # 設置圖片路徑
     image_path = f"/assets/images/blog/{image}"
     
@@ -441,32 +361,31 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
   <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="{CSS_PATH}" />
   
-  <!-- 導航欄修正樣式 -->
+  <!-- 導航欄修正樣式與博客文章樣式 -->
   <style>
-    /* 修正導航欄樣式 */
+    /* 保留必要的導航欄樣式 */
     .logo {{
-      min-width: 240px; /* 增加最小寬度確保文字不換行 */
+      min-width: 240px;
     }}
     
     .logo-main {{
-      white-space: nowrap; /* 確保不換行 */
+      white-space: nowrap;
     }}
     
     .nav-menu {{
-      gap: 10px; /* 在菜單項目間添加間距 */
+      gap: 10px;
     }}
     
     .nav-menu li {{
-      margin: 0 2px; /* 減少 li 元素的外邊距 */
-      position: relative; /* 為下拉選單定位 */
+      margin: 0 2px;
+      position: relative;
     }}
     
     .nav-menu a {{
-      padding: 7px 8px; /* 減少內邊距 */
-      font-size: 0.9rem; /* 縮小字體 */
+      padding: 7px 8px;
+      font-size: 0.9rem;
     }}
 
-    /* 重新設計CTA按鈕樣式 */
     .nav-cta-item {{
       display: inline-block;
       margin: 0 5px !important;
@@ -485,12 +404,12 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     }}
     
     .nav-consult-btn {{
-      background-color: #ff6b00 !important; /* 更明亮的橙色 */
+      background-color: #ff6b00 !important;
       border-color: #ff6b00 !important;
     }}
     
     .nav-line-btn {{
-      background-color: #06c755 !important; /* 保持LINE綠色 */
+      background-color: #06c755 !important;
       border-color: #06c755 !important;
     }}
     
@@ -500,18 +419,11 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     }}
     
     @keyframes pulse {{
-      0% {{
-        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
-      }}
-      70% {{
-        box-shadow: 0 0 0 10px rgba(255, 107, 0, 0);
-      }}
-      100% {{
-        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
-      }}
+      0% {{ box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4); }}
+      70% {{ box-shadow: 0 0 0 10px rgba(255, 107, 0, 0); }}
+      100% {{ box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }}
     }}
 
-    /* 下拉選單樣式 */
     .dropdown-menu {{
       position: absolute;
       top: 100%;
@@ -545,12 +457,10 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
       box-shadow: none;
     }}
     
-    /* 顯示下拉選單 */
     .has-dropdown:hover .dropdown-menu {{
       display: block;
     }}
     
-    /* 下拉箭頭圖標 */
     .has-dropdown > a::after {{
       content: "▼";
       font-size: 0.6rem;
@@ -558,10 +468,161 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
       vertical-align: middle;
     }}
     
-    @media (max-width: 1100px) {{
-      .nav-container {{
-        padding: 10px 15px; /* 減少導航欄內邊距 */
-      }}
+    /* 博客文章頁面專用樣式 */
+    .blog-post {{
+      padding: 60px 0;
+      background-color: #f9f9f9;
+    }}
+    
+    .blog-post .container {{
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 30px;
+    }}
+    
+    .post-header {{
+      text-align: center;
+      margin-bottom: 40px;
+      position: relative;
+    }}
+    
+    .post-header h1 {{
+      font-size: 2.5rem;
+      color: #002147;
+      line-height: 1.3;
+      margin-bottom: 20px;
+      font-weight: 700;
+    }}
+    
+    .post-meta {{
+      color: #666;
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }}
+    
+    .post-meta .date {{
+      margin-right: 15px;
+    }}
+    
+    .post-meta a {{
+      color: #0066cc;
+      text-decoration: none;
+      transition: color 0.2s;
+    }}
+    
+    .post-meta a:hover {{
+      color: #004d99;
+      text-decoration: underline;
+    }}
+    
+    .post-image {{
+      margin-bottom: 40px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }}
+    
+    .post-image img {{
+      width: 100%;
+      height: auto;
+      display: block;
+    }}
+    
+    .post-content {{
+      background-color: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+      margin-bottom: 40px;
+    }}
+    
+    .post-content h2 {{
+      font-size: 1.8rem;
+      color: #002147;
+      margin-top: 40px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+    }}
+    
+    .post-content h3 {{
+      font-size: 1.5rem;
+      color: #333;
+      margin-top: 30px;
+      margin-bottom: 15px;
+    }}
+    
+    .post-content p {{
+      margin-bottom: 20px;
+      line-height: 1.8;
+      color: #333;
+      font-size: 1.1rem;
+    }}
+    
+    .post-content ul, .post-content ol {{
+      margin-bottom: 20px;
+      padding-left: 25px;
+    }}
+    
+    .post-content li {{
+      margin-bottom: 10px;
+      line-height: 1.7;
+      color: #333;
+      font-size: 1.05rem;
+    }}
+    
+    .post-tags {{
+      margin-top: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }}
+    
+    .post-tags span {{
+      font-weight: 600;
+      color: #555;
+    }}
+    
+    .tag {{
+      display: inline-block;
+      padding: 5px 12px;
+      background-color: #f0f6ff;
+      color: #0066cc;
+      border-radius: 20px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+      border: 1px solid #e0ecff;
+    }}
+    
+    .tag:hover {{
+      background-color: #0066cc;
+      color: white;
+      transform: translateY(-2px);
+    }}
+    
+    .post-navigation {{
+      margin-top: 30px;
+      margin-bottom: 60px;
+      text-align: center;
+    }}
+    
+    .back-to-blog {{
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #0066cc;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: all 0.3s;
+      font-weight: 600;
+    }}
+    
+    .back-to-blog:hover {{
+      background-color: #004d99;
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }}
     
     /* 移動設備樣式 */
@@ -585,104 +646,39 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
         margin-top: 5px;
       }}
       
-      /* 移動設備展開下拉選單的JS交互 */
       .dropdown-menu.show {{
         display: block;
       }}
       
-      /* 移動設備上的CTA按鈕 */
       .nav-consult-btn, .nav-line-btn {{
         width: 90%;
         margin: 5px auto;
         text-align: center;
       }}
-    }}
-    
-    /* 文章內容排版增強 */
-    .post-content {{
-      line-height: 1.8;
-      color: #333;
-    }}
-
-    .post-content h2 {{
-      margin-top: 1.8em;
-      margin-bottom: 0.8em;
-      font-size: 1.6rem;
-      color: #002147;
-      border-bottom: 2px solid #eaeaea;
-      padding-bottom: 0.3em;
-    }}
-
-    .post-content h3 {{
-      margin-top: 1.5em;
-      margin-bottom: 0.7em;
-      font-size: 1.4rem;
-      color: #0066cc;
-    }}
-
-    .post-content h4 {{
-      margin-top: 1.2em;
-      margin-bottom: 0.6em;
-      font-size: 1.2rem;
-      color: #444;
-    }}
-
-    .post-content p {{
-      margin-bottom: 1.2em;
-      text-align: justify;
-    }}
-
-    .post-content ul, .post-content ol {{
-      margin-bottom: 1.2em;
-      padding-left: 1.5em;
-    }}
-
-    .post-content li {{
-      margin-bottom: 0.5em;
-    }}
-
-    .post-content a {{
-      color: #0066cc;
-      text-decoration: none;
-      border-bottom: 1px dotted #0066cc;
-      transition: all 0.2s ease;
-    }}
-
-    .post-content a:hover {{
-      color: #004d99;
-      border-bottom: 1px solid #004d99;
-    }}
-
-    .post-content blockquote {{
-      border-left: 4px solid #0066cc;
-      padding-left: 1em;
-      margin-left: 0;
-      color: #555;
-      font-style: italic;
-    }}
-
-    .post-content code {{
-      background-color: #f5f5f5;
-      padding: 0.2em 0.4em;
-      border-radius: 3px;
-      font-family: monospace;
-    }}
-
-    .post-content table {{
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 1.2em;
-    }}
-
-    .post-content table th, .post-content table td {{
-      padding: 0.6em;
-      border: 1px solid #ddd;
-      text-align: left;
-    }}
-
-    .post-content table th {{
-      background-color: #f5f5f5;
-      font-weight: 600;
+      
+      .blog-post .container {{
+        padding: 0 20px;
+      }}
+      
+      .post-header h1 {{
+        font-size: 1.8rem;
+      }}
+      
+      .post-content {{
+        padding: 25px 20px;
+      }}
+      
+      .post-content h2 {{
+        font-size: 1.5rem;
+      }}
+      
+      .post-content h3 {{
+        font-size: 1.3rem;
+      }}
+      
+      .post-content p, .post-content li {{
+        font-size: 1rem;
+      }}
     }}
   </style>
   
@@ -762,7 +758,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
         <h1>{title}</h1>
         <div class="post-meta">
           <span class="date">{date}</span>
-          <span class="category">分類: <a href="/blog.html?category={category_code}">{primary_category}</a></span>
+          <span class="category">分類: <a href="/blog/category/{slugify(category_code)}.html">{primary_category}</a></span>
         </div>
       </header>
       
@@ -773,37 +769,15 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
       <div class="post-content">
 """
     
-    # 創建列表容器和列表項
-    list_open = False
-    current_list_type = ""
-    
     # 添加文章內容
     for para in paragraphs:
         tag = para["style"]
         content = para["text"]
         
-        # 處理列表項
         if tag == "li":
-            # 如果列表尚未開始，開始一個新列表
-            if not list_open:
-                html += "        <ul>\n"
-                list_open = True
-                current_list_type = "ul"
-            
-            # 添加列表項
-            html += f"          <li>{content}</li>\n"
+            html += f"        <ul>\n          <li>{content}</li>\n        </ul>\n"
         else:
-            # 如果有開啟的列表，先關閉它
-            if list_open:
-                html += f"        </{current_list_type}>\n"
-                list_open = False
-            
-            # 添加段落或標題
             html += f"        <{tag}>{content}</{tag}>\n"
-    
-    # 確保所有列表都被關閉
-    if list_open:
-        html += f"        </{current_list_type}>\n"
     
     # 添加標籤區域
     html += """      </div>
@@ -813,10 +787,9 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
           <span>標籤:</span>
 """
     
-    # 添加標籤 - 修改鏈接指向 blog.html 頁面而不是 tag 子頁面
+    # 添加標籤
     for tag in tags:
-        tag_slug = slugify(tag)
-        html += f'          <a href="/blog.html?tag={tag_slug}" class="tag">{tag}</a>\n'
+        html += f'          <a href="/blog/tag/{slugify(tag)}.html" class="tag">{tag}</a>\n'
     
     # 完成HTML
     html += """        </div>
@@ -913,8 +886,8 @@ def process_docx(docx_path: str, output_dir: str = OUTPUT_DIR, processed_docs: D
         # 確定主要分類
         primary_category, category_code = determine_primary_category(tags, title, paragraphs)
         
-        # 生成HTML文件名 - 使用意譯方式
-        html_filename = generate_html_filename(title, date)
+        # 選擇縮圖
+        image = select_thumbnail_for_category(category_code)
         
         # 生成HTML
         html_content = generate_html(
@@ -924,13 +897,15 @@ def process_docx(docx_path: str, output_dir: str = OUTPUT_DIR, processed_docs: D
             date=date,
             summary=summary,
             primary_category=primary_category,
-            category_code=category_code
+            category_code=category_code,
+            image=image
         )
         
         # 確保輸出目錄存在
         os.makedirs(output_dir, exist_ok=True)
         
-        # 設置HTML文件路徑
+        # 生成HTML文件名
+        html_filename = f"{date}-{slugify(title)}.html"
         html_path = os.path.join(output_dir, html_filename)
         
         # 寫入HTML文件
@@ -943,6 +918,7 @@ def process_docx(docx_path: str, output_dir: str = OUTPUT_DIR, processed_docs: D
         print(f"成功生成HTML文件: {html_path}")
         print(f"標題: {title}")
         print(f"分類: {primary_category} ({category_code})")
+        print(f"縮圖: {image}")
         print(f"標籤: {', '.join(tags)}")
         
         return html_path
