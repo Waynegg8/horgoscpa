@@ -657,3 +657,59 @@
         margin-bottom: 10px;
       }
     }
+/* 改善導航欄中的 CTA 按鈕樣式 */
+.nav-consult-btn, .nav-line-btn {
+  padding: 8px 16px !important;
+  margin-right: 10px !important;
+  font-weight: 600 !important;
+  border-radius: 5px !important;
+  transition: all 0.3s ease !important;
+  text-align: center !important;
+}
+
+.nav-consult-btn {
+  background-color: #0066cc !important;
+  color: #fff !important;
+  border: 1px solid #0066cc !important;
+}
+
+.nav-consult-btn:hover {
+  background-color: #004d99 !important;
+  border-color: #004d99 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.nav-line-btn {
+  background-color: #06c755 !important;
+  color: #fff !important;
+  border: 1px solid #06c755 !important;
+}
+
+.nav-line-btn:hover {
+  background-color: #05a847 !important;
+  border-color: #05a847 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 添加導航分隔線 */
+.nav-divider {
+  width: 1px;
+  height: 24px;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin: 0 10px;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .nav-consult-btn, .nav-line-btn {
+    width: 100%;
+    margin: 5px 0 !important;
+    padding: 10px !important;
+  }
+  
+  .nav-divider {
+    display: none;
+  }
+}
