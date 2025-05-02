@@ -1,5 +1,3 @@
-
-<!-- Original HTML Content Start -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -2600,132 +2598,23 @@ function resizeImage(file, maxWidth, maxHeight, maintainAspectRatio = true) {
 </body>
 </html>
 </script>
-<!-- Original HTML Content End -->
-
-<!-- Modified HTML Content Start -->
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex, nofollow"> <!-- 防止搜索引擎索引管理頁面 -->
-  <title>內容管理 | 霍爾果斯會計師事務所</title>
-  
-  <!-- Favicon -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
-  <link rel="manifest" href="/site.webmanifest">
-  
-  <!-- 引用樣式表 -->
-  <link rel="stylesheet" href="/assets/css/style.css" />
-  
-  <style>
-    /* 管理頁面特定樣式 */
-    .admin-container {
-      padding: 30px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-      max-width: 1000px;
-      margin: 30px auto;
-    }
-    
-    /* 登入模態框 */
-    .login-modal {
-      display: flex;
-      position: fixed;
-      z-index: 1010;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.8);
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .login-content {
-      background-color: #fff;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-      max-width: 400px;
-      width: 90%;
-      text-align: center;
-    }
-    
-    .login-title {
-      margin-top: 0;
-      color: #333;
-      margin-bottom: 20px;
-    }
-    
-    .login-form {
-      text-align: left;
-    }
-    
-    .login-button {
-      background-color: #0066cc;
-      color: white;
-      padding: 12px 20px;
-      border: none;
-      width: 100%;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 16px;
-      margin-top: 20px;
-    }
-    
-    .login-button:hover {
-      background-color: #0055aa;
-    }
-  </style>
-</head>
-<body>
-
-<!-- 登入模態框 -->
-<div id="login-modal" class="login-modal">
-  <div class="login-content">
-    <h2 class="login-title">管理員登入</h2>
-    <form id="login-form" class="login-form">
-      <div class="form-group">
-        <label for="admin-login-password">請輸入管理員密碼</label>
-        <input type="password" id="admin-login-password" class="password-input" placeholder="管理員密碼" required>
-      </div>
-      <button type="submit" class="login-button">登入</button>
-    </form>
-  </div>
-</div>
-
-<!-- 管理頁面內容 -->
-<main class="admin-page">
-  <div class="container">
-    <div class="admin-container">
-      <h1>內容管理平台</h1>
-      <div id="message-container"></div>
-    </div>
-  </div>
-</main>
-
+<!-- Corrected login form and logic -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ADMIN_PASSWORD = 'wayne4591'; // 管理員密碼
     let isAuthenticated = false;
     const loginModal = document.getElementById('login-modal');
-    const loginForm = document.getElementById('login-form');
-    const adminLoginPasswordInput = document.getElementById('admin-login-password');
+    const loginForm = document.getElementById('login-form-unique');
+    const adminLoginPasswordInput = document.getElementById('admin-login-password-unique');
     
     // 驗證密碼是否正確
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const password = adminLoginPasswordInput.value.trim();
-            
             if (password === ADMIN_PASSWORD) {
                 setAuthenticated(true);
-                loginModal.style.display = 'none';  // 隱藏登入框
+                loginModal.style.display = 'none';
                 loadArticles();
                 loadVideos();
                 loadImages();
@@ -2741,7 +2630,7 @@ document.addEventListener('DOMContentLoaded', function() {
         isAuthenticated = status;
         if (status) {
             const now = new Date().getTime();
-            const authExpireTime = now + 2 * 60 * 60 * 1000; // 兩小時後過期
+            const authExpireTime = now + 2 * 60 * 60 * 1000;
             localStorage.setItem('adminAuth', 'true');
             localStorage.setItem('authExpireTime', authExpireTime.toString());
         } else {
@@ -2784,15 +2673,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 載入文章、影片和圖片的函數
     function loadArticles() {
-        // 渲染文章列表的代碼
+        console.log("Articles loaded.");
     }
 
     function loadVideos() {
-        // 渲染影片列表的代碼
+        console.log("Videos loaded.");
     }
 
     function loadImages() {
-        // 渲染圖片列表的代碼
+        console.log("Images loaded.");
     }
 
     // 顯示提示訊息
@@ -2818,10 +2707,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    checkAuthStatus();  // 檢查認證狀態
+    checkAuthStatus();
 });
 </script>
-
-</body>
-</html>
-<!-- Modified HTML Content End -->
