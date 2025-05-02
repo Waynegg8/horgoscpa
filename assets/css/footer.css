@@ -1,0 +1,50 @@
+/* 
+ * footer.css - 霍爾果斯會計師事務所網站頁尾樣式
+ * 抽取自各頁面共用的頁尾樣式
+ * 最後更新日期: 2025-05-03
+ */
+
+/* 頁尾樣式 */
+.site-footer {
+  background-color: #333;
+  color: #ccc;
+  padding: 20px 0;
+}
+
+.footer-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 30px;
+}
+
+.footer-text p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-family: "思源黑體", "微軟正黑體", sans-serif;
+}
+
+.footer-text a {
+  color: #ccc;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-text a:hover {
+  color: #fff;
+}
+
+/* 響應式設計 */
+@media (max-width: 850px) {
+  .footer-container {
+    flex-direction: column;
+    text-align: center;
+    padding: 0 20px;
+  }
+  
+  .footer-text {
+    margin-bottom: 10px;
+  }
+}

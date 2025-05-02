@@ -1,0 +1,612 @@
+/* 
+ * blog.css - 霍爾果斯會計師事務所部落格相關頁面樣式
+ * 包含部落格文章列表頁與單篇文章頁的專用樣式
+ * 最後更新日期: 2025-05-03
+ */
+
+/* 部落格列表頁樣式 */
+
+/* 搜尋框樣式 */
+.search-container {
+  margin-bottom: 30px;
+  position: relative;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 45px 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+  outline: none;
+}
+
+.search-button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  font-size: 18px;
+  transition: color 0.3s ease;
+}
+
+.search-button:hover {
+  color: #0066cc;
+}
+
+/* 改進的分類標籤組 */
+.category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.filter-btn {
+  background-color: #f5f7fa;
+  color: #555;
+  border: 2px solid #e6e9ee;
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+}
+
+.filter-btn:hover {
+  background-color: #edf1f7;
+  border-color: #d3d8e3;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+}
+
+.filter-btn.active {
+  background-color: #0066cc;
+  color: white;
+  border-color: #0066cc;
+  box-shadow: 0 3px 10px rgba(0, 102, 204, 0.3);
+}
+
+/* 按壓效果 */
+.filter-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 部落格側邊欄樣式 */
+.blog-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 40px;
+  margin-top: 30px;
+}
+
+.blog-main {
+  width: 100%;
+}
+
+.blog-sidebar {
+  width: 100%;
+}
+
+.sidebar-section {
+  margin-bottom: 40px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.sidebar-section h3 {
+  font-size: 1.3rem;
+  margin-top: 0;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #0066cc;
+  color: #002147;
+}
+
+/* 熱門文章列表 */
+.popular-posts {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.popular-posts li {
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.popular-posts li:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.popular-posts a {
+  color: #333;
+  font-weight: 500;
+  text-decoration: none;
+  display: block;
+  transition: color 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.popular-posts a:hover {
+  color: #0066cc;
+}
+
+.popular-posts .post-date {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 5px;
+  display: block;
+}
+
+/* 標籤雲 */
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tag-cloud a {
+  display: inline-block;
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border-radius: 30px;
+  color: #555;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.tag-cloud a:hover {
+  background: #0066cc;
+  color: #fff;
+}
+
+/* 博客網格樣式 */
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.blog-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.blog-image {
+  height: 200px;
+  overflow: hidden;
+}
+
+.blog-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.blog-card:hover .blog-image img {
+  transform: scale(1.1);
+}
+
+.blog-content {
+  padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-card .date {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.blog-card h2, .blog-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 1.3rem;
+  line-height: 1.4;
+}
+
+.blog-card h2 a, .blog-card h3 a {
+  color: #333;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.blog-card h2 a:hover, .blog-card h3 a:hover {
+  color: #0066cc;
+}
+
+.blog-card p {
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 15px;
+  flex-grow: 1;
+}
+
+.read-more {
+  display: inline-block;
+  font-weight: 600;
+  color: #0066cc;
+  text-decoration: none;
+  position: relative;
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.read-more:after {
+  content: '→';
+  margin-left: 5px;
+  transition: margin-left 0.3s;
+}
+
+.read-more:hover:after {
+  margin-left: 10px;
+}
+
+/* 搜索結果信息樣式 */
+.search-results-info {
+  text-align: center;
+  margin: 0 0 30px 0;
+  padding: 10px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  color: #444;
+  font-size: 0.95rem;
+}
+
+.search-results-info p {
+  margin: 0;
+}
+
+/* 分頁控制樣式 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 50px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 15px;
+  border-radius: 5px;
+  background-color: #fff;
+  color: #333;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid #ddd;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #ccc;
+}
+
+.pagination-btn.active {
+  background-color: #0066cc;
+  color: #fff;
+  border-color: #0066cc;
+}
+
+.pagination-btn.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* 加載中與空結果樣式 */
+.loading-container {
+  text-align: center;
+  padding: 30px;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #0066cc;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px 0;
+  color: #666;
+  background: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+}
+
+.no-results p {
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.no-results .btn {
+  margin-top: 10px;
+  background: #0066cc;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-block;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.no-results .btn:hover {
+  background: #005bb9;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 102, 204, 0.2);
+}
+
+/* 響應式設計 */
+@media (max-width: 992px) {
+  .blog-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .blog-sidebar {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .blog-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .category-filter {
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 10px;
+  }
+  
+  .filter-btn {
+    flex-shrink: 0;
+  }
+}
+
+/* ==== 單篇文章頁樣式 ==== */
+
+.blog-post {
+  padding: 60px 0;
+  background-color: #f9f9f9;
+}
+
+.blog-post .container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 30px;
+}
+
+/* 文章頭部 */
+.post-header {
+  text-align: center;
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.post-header h1 {
+  font-size: 2.5rem;
+  color: #002147;
+  line-height: 1.3;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.post-meta {
+  color: #666;
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+.post-meta .date {
+  margin-right: 15px;
+}
+
+.post-meta a {
+  color: #0066cc;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.post-meta a:hover {
+  color: #004d99;
+  text-decoration: underline;
+}
+
+/* 文章主圖 */
+.post-image {
+  margin-bottom: 40px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+}
+
+.post-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 文章內容 */
+.post-content {
+  background-color: #fff;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+  margin-bottom: 40px;
+}
+
+.post-content h2 {
+  font-size: 1.8rem;
+  color: #002147;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.post-content h3 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+.post-content p {
+  margin-bottom: 20px;
+  line-height: 1.8;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.post-content ul, .post-content ol {
+  margin-bottom: 20px;
+  padding-left: 25px;
+}
+
+.post-content li {
+  margin-bottom: 10px;
+  line-height: 1.7;
+  color: #333;
+  font-size: 1.05rem;
+}
+
+/* 文章標籤 */
+.post-tags {
+  margin-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.post-tags span {
+  font-weight: 600;
+  color: #555;
+}
+
+.tag {
+  display: inline-block;
+  padding: 5px 12px;
+  background-color: #f0f6ff;
+  color: #0066cc;
+  border-radius: 20px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+  border: 1px solid #e0ecff;
+}
+
+.tag:hover {
+  background-color: #0066cc;
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* 文章導航 */
+.post-navigation {
+  margin-top: 30px;
+  margin-bottom: 60px;
+  text-align: center;
+}
+
+.back-to-blog {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #0066cc;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: all 0.3s;
+  font-weight: 600;
+}
+
+.back-to-blog:hover {
+  background-color: #004d99;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* 響應式調整 */
+@media (max-width: 850px) {
+  .blog-post .container {
+    padding: 0 20px;
+  }
+  
+  .post-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .post-content {
+    padding: 25px 20px;
+  }
+  
+  .post-content h2 {
+    font-size: 1.5rem;
+  }
+  
+  .post-content h3 {
+    font-size: 1.3rem;
+  }
+  
+  .post-content p, .post-content li {
+    font-size: 1rem;
+  }
+}

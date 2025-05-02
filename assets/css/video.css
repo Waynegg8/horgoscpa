@@ -1,0 +1,338 @@
+/* 
+ * video.css - 霍爾果斯會計師事務所影片頁面樣式
+ * 專門用於影片頁面的樣式設定
+ * 最後更新日期: 2025-05-03
+ */
+
+/* 搜尋框樣式 */
+.search-container {
+  margin-bottom: 30px;
+  position: relative;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 45px 14px 18px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.search-input:focus {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+  outline: none;
+}
+
+.search-button {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  font-size: 20px;
+  transition: color 0.3s ease;
+}
+
+.search-button:hover {
+  color: #0066cc;
+}
+
+/* 改進的分類標籤組 */
+.category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.filter-btn {
+  background-color: #f5f7fa;
+  color: #555;
+  border: 2px solid #e6e9ee;
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+}
+
+.filter-btn:hover {
+  background-color: #edf1f7;
+  border-color: #d3d8e3;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+}
+
+.filter-btn.active {
+  background-color: #0066cc;
+  color: white;
+  border-color: #0066cc;
+  box-shadow: 0 3px 10px rgba(0, 102, 204, 0.3);
+}
+
+/* 按壓效果 */
+.filter-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 搜尋結果信息樣式 */
+.search-results-info {
+  margin-bottom: 30px;
+  padding: 15px 0;
+  color: #333;
+  font-size: 1rem;
+  text-align: left;
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.search-results-info p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+/* 影片網格佈局 */
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 30px;
+}
+
+.video-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.video-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.video-embed {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 比例 */
+  height: 0;
+  overflow: hidden;
+}
+
+.video-embed iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.video-content {
+  padding: 20px;
+}
+
+.video-content h2 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1.3rem;
+  line-height: 1.4;
+  color: #002147;
+}
+
+.video-content .date {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.video-content p {
+  margin-bottom: 0;
+  color: #444;
+  line-height: 1.6;
+}
+
+/* 分頁控制樣式 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 50px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 15px;
+  border-radius: 5px;
+  background-color: #fff;
+  color: #333;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid #ddd;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #ccc;
+}
+
+.pagination-btn.active {
+  background-color: #0066cc;
+  color: #fff;
+  border-color: #0066cc;
+}
+
+.pagination-btn.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* 加載中與空結果樣式 */
+.loading-container {
+  text-align: center;
+  padding: 60px 0;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(0, 102, 204, 0.2);
+  border-radius: 50%;
+  border-top-color: #0066cc;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px 0;
+  color: #666;
+  background: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+}
+
+.no-results p {
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.no-results .btn {
+  margin-top: 15px;
+  background: #0066cc;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-block;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.no-results .btn:hover {
+  background: #005bb9;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 102, 204, 0.2);
+}
+
+/* 標籤樣式 */
+.video-tags {
+  margin-top: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.video-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #f0f6ff;
+  border-radius: 20px;
+  color: #0066cc;
+  font-size: 0.8rem;
+  text-decoration: none;
+  border: 1px solid #e0ecff;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.video-tag:hover {
+  background: #0066cc;
+  color: #fff;
+}
+
+/* 波紋動畫 */
+@keyframes ripple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.7;
+  }
+  100% {
+    width: 500px;
+    height: 500px;
+    opacity: 0;
+  }
+}
+
+/* 響應式調整 */
+@media (max-width: 992px) {
+  .video-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .category-filter {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  
+  .category-tab {
+    white-space: nowrap;
+    flex: 0 0 auto;
+    padding: 8px 15px;
+    font-size: 13px;
+  }
+  
+  .video-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .video-content h2 {
+    font-size: 1.2rem;
+  }
+}

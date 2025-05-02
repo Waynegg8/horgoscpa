@@ -1,0 +1,340 @@
+/* 
+ * common.css - 霍爾果斯會計師事務所網站共用樣式
+ * 包含全站通用的基礎樣式，從原始style.css中精簡提取
+ * 最後更新日期: 2025-05-03
+ */
+
+/* 字體定義 */
+@font-face {
+  font-family: 'Touch Me Sans Petite';
+  src: url('/assets/fonts/TouchMeSans-PetiteRegular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Kaleko 105';
+  src: url('/assets/fonts/kaleko-105-bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 基本樣式 */
+body {
+  font-family: "思源黑體", "微軟正黑體", sans-serif;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+}
+
+a, button, .btn, .read-more {
+  font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+}
+
+p, li, td, input, textarea, select, label {
+  font-family: "Touch Me Sans Petite", "思源黑體", "微軟正黑體", sans-serif;
+}
+
+a {
+  text-decoration: none;
+  color: #0066cc;
+}
+
+a:hover {
+  color: #004d99;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px; /* 增加外側間距 */
+}
+
+/* 頁面標題樣式 */
+.page-header {
+  text-align: center;
+  padding: 40px 0 20px;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.page-header:after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background-color: #0066cc;
+}
+
+.page-header h1 {
+  font-size: 2.4rem;
+  color: #002147;
+  margin-bottom: 15px;
+}
+
+.page-header p {
+  font-size: 1.1rem;
+  color: #555;
+  max-width: 800px;
+  margin: 0 auto 20px;
+  line-height: 1.6;
+}
+
+/* 英雄區塊 */
+.hero {
+  background: linear-gradient(rgba(0, 51, 102, 0.7), rgba(0, 51, 102, 0.7)), url('/assets/images/hero.jpg') center/cover no-repeat;
+  color: white;
+  padding: 120px 20px;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero h1 {
+  font-size: 2.8rem;
+  margin-bottom: 25px;
+  color: #fff;
+}
+
+.hero p {
+  font-size: 1.4rem;
+  margin-bottom: 30px;
+  opacity: 0.9;
+  line-height: 1.7;
+}
+
+/* 區塊標題 */
+.section-title {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.section-title h2 {
+  font-size: 2.2rem;
+  color: #002147; /* 與導航欄匹配 */
+  margin-bottom: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.section-title h2:after {
+  content: "";
+  position: absolute;
+  width: 70px;
+  height: 3px;
+  background-color: #0066cc;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.section-title p {
+  max-width: 800px;
+  margin: 20px auto 0;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+/* 按鈕樣式 */
+.btn {
+  display: inline-block;
+  background-color: #0066cc;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.05rem;
+  transition: all 0.3s ease;
+  border: 2px solid #0066cc;
+}
+
+.btn:hover {
+  background-color: #004d99;
+  border-color: #004d99;
+  color: white;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 2px solid #0066cc;
+  color: #0066cc;
+}
+
+.btn-outline:hover {
+  background-color: #0066cc;
+  color: white;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* 關於區塊 */
+.about-section {
+  background-color: #f9f9f9;
+  padding: 80px 0;
+  margin-bottom: 40px;
+}
+
+.about-content {
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.about-content p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin-bottom: 25px;
+}
+
+/* 服務區塊 */
+.services-section {
+  padding: 80px 0;
+  margin-bottom: 40px;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 40px;
+  margin-top: 50px;
+}
+
+.service-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  padding: 40px 30px;
+  text-align: center;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.service-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.service-icon {
+  margin: 0 auto 25px;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 102, 204, 0.1);
+  border-radius: 50%;
+}
+
+.service-icon img {
+  width: 45px;
+  height: 45px;
+}
+
+.service-card h3 {
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #002147; /* 與導航欄匹配 */
+}
+
+.service-card p {
+  margin-bottom: 25px;
+  color: #555;
+  line-height: 1.7;
+}
+
+/* 響應式設計 */
+@media (max-width: 992px) {
+  .hero h1 {
+    font-size: 2.4rem;
+  }
+  
+  .hero p {
+    font-size: 1.2rem;
+  }
+  
+  .section-title h2 {
+    font-size: 2rem;
+  }
+  
+  .services-grid {
+    gap: 30px;
+  }
+  
+  .about-section,
+  .services-section {
+    padding: 60px 0;
+  }
+}
+
+@media (max-width: 850px) {
+  .container {
+    padding: 0 20px; /* 移動裝置較小間距 */
+  }
+  
+  .hero {
+    padding: 80px 20px;
+  }
+  
+  .hero h1 {
+    font-size: 2.2rem;
+  }
+  
+  .hero p {
+    font-size: 1.1rem;
+  }
+  
+  .page-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .page-header p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .service-card {
+    padding: 30px 20px;
+  }
+  
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+  
+  .section-title h2 {
+    font-size: 1.7rem;
+  }
+}

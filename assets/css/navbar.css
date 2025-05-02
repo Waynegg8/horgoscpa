@@ -1,0 +1,338 @@
+/* 
+ * navbar.css - 霍爾果斯會計師事務所網站導航欄樣式
+ * 抽取自各頁面共用的導航欄樣式
+ * 最後更新日期: 2025-05-03
+ */
+
+/* 導航欄基本樣式 */
+.site-nav {
+  background-color: #002147; /* 更深的藍色 */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* 增強陰影 */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  padding: 5px 0;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 30px; /* 調整上下間距 */
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Logo 樣式 */
+.logo {
+  min-width: 240px; /* 增加最小寬度確保文字不換行 */
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap; /* 防止文字換行 */
+}
+
+.logo a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.logo-main {
+  font-size: 1.3rem; /* 略微縮小字型 */
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: "思源黑體", "微軟正黑體", sans-serif;
+  white-space: nowrap; /* 確保不換行 */
+}
+
+.logo-sub {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+  font-family: "Kaleko 105", sans-serif;
+}
+
+/* 導航選單樣式 */
+.nav-menu {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  flex-wrap: wrap; /* 允許在必要時換行 */
+  gap: 10px; /* 在菜單項目間添加間距 */
+}
+
+.nav-menu li {
+  margin: 0 2px; /* 減少 li 元素的外邊距 */
+  position: relative; /* 為下拉選單定位 */
+}
+
+.nav-menu a {
+  color: #fff;
+  position: relative;
+  padding: 7px 8px; /* 減少內邊距 */
+  font-size: 0.9rem; /* 縮小字體 */
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.3); /* 更明顯的初始邊框 */
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  font-family: "思源黑體", "微軟正黑體", sans-serif;
+  background-color: rgba(255, 255, 255, 0.1); /* 更明顯的背景色 */
+}
+
+.nav-menu a:hover, .nav-menu a.active {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.7); /* 懸停時更明顯的邊框 */
+  background-color: rgba(255, 255, 255, 0.2); /* 懸停時更明顯的背景 */
+  transform: translateY(-2px); /* 輕微上移效果 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 懸停陰影 */
+}
+
+/* CTA 按鈕樣式 */
+.nav-cta-item {
+  display: inline-block;
+  margin: 0 5px !important;
+}
+
+.nav-consult-btn, .nav-line-btn {
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  padding: 8px 15px !important;
+  font-size: 1rem !important;
+  border-width: 2px !important;
+  letter-spacing: 0.5px;
+  animation: pulse 2s infinite;
+  min-width: 100px;
+  text-align: center;
+}
+
+.nav-consult-btn {
+  background-color: #ff6b00 !important; /* 更明亮的橙色 */
+  border-color: #ff6b00 !important;
+}
+
+.nav-line-btn {
+  background-color: #06c755 !important; /* 保持LINE綠色 */
+  border-color: #06c755 !important;
+}
+
+.nav-consult-btn:hover, .nav-line-btn:hover {
+  transform: scale(1.05) translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 107, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
+  }
+}
+
+/* 導航分隔線 */
+.nav-divider {
+  width: 1px;
+  height: 24px;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin: 0 10px;
+}
+
+/* 下拉選單樣式 */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #002147;
+  min-width: 180px;
+  border-radius: 4px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  display: none;
+  z-index: 1001;
+  padding: 8px 0;
+  margin-top: 5px;
+}
+
+.dropdown-menu a {
+  display: block;
+  padding: 8px 15px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.dropdown-menu a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: none;
+  box-shadow: none;
+}
+
+/* 顯示下拉選單 */
+.has-dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+/* 下拉箭頭圖標 */
+.has-dropdown > a::after {
+  content: "▼";
+  font-size: 0.6rem;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+/* 漢堡選單 */
+.nav-toggle-label {
+  display: none;
+}
+
+.nav-toggle {
+  display: none;
+}
+
+/* 響應式設計 */
+@media (max-width: 1100px) {
+  .nav-container {
+    padding: 10px 15px; /* 減少導航欄內邊距 */
+  }
+}
+
+/* 平板適配 */
+@media (max-width: 992px) {
+  .nav-menu a {
+    font-size: 0.9rem;
+    padding: 6px 8px;
+  }
+  
+  .nav-consult-btn, .nav-line-btn {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+}
+
+/* 移動設備樣式 */
+@media (max-width: 850px) {
+  .nav-toggle-label {
+    display: block;
+    cursor: pointer;
+    position: relative;
+    width: 30px;
+    height: 21px;
+  }
+  
+  .nav-toggle-label span,
+  .nav-toggle-label span::before,
+  .nav-toggle-label span::after {
+    display: block;
+    background-color: #fff;
+    height: 3px;
+    width: 100%;
+    position: absolute;
+    transition: all 0.3s ease;
+  }
+  
+  .nav-toggle-label span {
+    top: 9px;
+  }
+  
+  .nav-toggle-label span::before,
+  .nav-toggle-label span::after {
+    content: '';
+  }
+  
+  .nav-toggle-label span::before {
+    top: -9px;
+  }
+  
+  .nav-toggle-label span::after {
+    bottom: -9px;
+  }
+  
+  .nav-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #002147; /* 與導航欄匹配 */
+    flex-direction: column;
+    align-items: center;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  
+  .nav-toggle:checked ~ .nav-menu {
+    max-height: 500px;
+    padding: 10px 0;
+  }
+  
+  .nav-menu li {
+    width: 100%;
+    text-align: center;
+    margin: 0;
+    padding: 10px 0;
+  }
+  
+  .nav-cta-item {
+    width: 100%;
+    margin: 5px 0;
+  }
+  
+  .nav-consult-btn, .nav-line-btn {
+    width: 90%;
+    padding: 10px;
+    margin: 5px auto;
+    text-align: center;
+  }
+  
+  .nav-divider {
+    display: none;
+  }
+  
+  .nav-menu a {
+    display: block;
+    border: none;
+    background: none;
+    width: 80%;
+    margin: 0 auto;
+  }
+  
+  .nav-menu a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .dropdown-menu {
+    position: static;
+    background-color: rgba(255, 255, 255, 0.05);
+    box-shadow: none;
+    margin-top: 0;
+    display: none;
+    padding: 0;
+  }
+  
+  .dropdown-menu a {
+    padding: 8px 20px 8px 30px;
+    font-size: 0.85rem;
+  }
+  
+  .has-dropdown > a::after {
+    float: right;
+    margin-top: 5px;
+  }
+  
+  /* 移動設備展開下拉選單的JS交互 */
+  .dropdown-menu.show {
+    display: block;
+  }
+}
