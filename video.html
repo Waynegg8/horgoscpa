@@ -261,12 +261,29 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     
+    /* 搜尋結果信息樣式 */
+    .search-results-info {
+      margin-bottom: 30px;
+      padding: 15px 0;
+      color: #333;
+      font-size: 1rem;
+      text-align: left;
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    
+    .search-results-info p {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #333;
+    }
+    
     /* 影片網格佈局 */
     .video-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 30px;
-      margin-top: 40px;
     }
     
     .video-card {
@@ -444,25 +461,6 @@
       background: #0066cc;
       color: #fff;
     }
-    
-    /* 搜尋結果信息樣式 */
-    .search-results-info {
-      width: 100%;
-      margin-bottom: 20px;
-      padding: 12px 20px;
-      background-color: #f9f9f9;
-      border-radius: 8px;
-      font-size: 1rem;
-      color: #333;
-      font-weight: 500;
-      border-left: 4px solid #0066cc;
-      text-align: left;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    
-    .search-results-info p {
-      margin: 0;
-    }
   </style>
   
   <!-- Google 分析 -->
@@ -538,6 +536,9 @@
       <button class="filter-btn" data-category="tutorial">操作教學</button>
     </div>
     
+    <!-- 搜尋結果資訊 -->
+    <div id="search-results-container"></div>
+    
     <!-- 影片內容 -->
     <section class="video-grid" id="video-container">
       <!-- 加載中提示 -->
@@ -570,6 +571,7 @@
     
     // 元素容器
     const videoContainer = document.getElementById('video-container');
+    const searchResultsContainer = document.getElementById('search-results-container');
     const paginationContainer = document.getElementById('pagination-container');
     
     // 過濾按鈕
@@ -665,6 +667,9 @@
           </div>
         `;
         
+        // 清空搜索結果容器
+        searchResultsContainer.innerHTML = '';
+        
         // 嘗試多種路徑加載JSON
         let response;
         let jsonData;
@@ -716,6 +721,9 @@
             <p>請稍後再試或聯絡我們。</p>
           </div>
         `;
+        
+        // 清空搜索結果容器
+        searchResultsContainer.innerHTML = '';
         
         // 使用備用數據
         return useFallbackData();
@@ -824,25 +832,12 @@
       
       // 清空容器
       videoContainer.innerHTML = '';
+      searchResultsContainer.innerHTML = '';
       
       // 渲染影片
       if (videos && videos.length > 0) {
-        // 添加搜索結果信息
-        const infoElement = document.createElement('div');
-        infoElement.className = 'search-results-info';
-        
-        // 設定顯示文本
-        let infoText = `共找到 ${totalVideos} 部影片`;
-        if (currentCategory !== 'all') {
-          const categoryName = filterButtons.find(btn => btn.dataset.category === currentCategory)?.textContent || currentCategory;
-          infoText += ` (分類: ${categoryName})`;
-        }
-        if (currentSearchTerm) {
-          infoText += ` (搜尋: "${currentSearchTerm}")`;
-        }
-        
-        infoElement.innerHTML = `<p>${infoText}</p>`;
-        videoContainer.appendChild(infoElement);
+        // 顯示搜索結果信息
+        searchResultsContainer.innerHTML = `<div class="search-results-info">共找到 ${totalVideos} 部影片</div>`;
         
         // 渲染影片卡片
         videos.forEach(video => {
