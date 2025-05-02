@@ -41,26 +41,32 @@ def extract_info_from_html(file_path):
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
+        print(f"檔案大小: {len(content)} 字節")
+        
         # 使用BeautifulSoup解析HTML
         soup = BeautifulSoup(content, 'lxml')
         
         # 提取標題
         title_tag = soup.find('title')
         title = title_tag.text.split(' | ')[0] if title_tag else os.path.basename(file_path)
+        print(f"提取標題: {title}")
         
         # 提取日期
         date_span = soup.select_one('span.date')
         date = date_span.text if date_span else os.path.basename(file_path).split('-')[0:3]
         if isinstance(date, list):
             date = '-'.join(date)
+        print(f"提取日期: {date}")
         
         # 提取摘要
         meta_desc = soup.find('meta', attrs={'name': 'description'})
         summary = meta_desc['content'] if meta_desc else ""
+        print(f"提取摘要: {summary[:50]}...")
         
         # 提取圖片
         meta_image = soup.find('meta', property='og:image')
         image = meta_image['content'] if meta_image else "/assets/images/blog/default.jpg"
+        print(f"提取圖片: {image}")
         
         # 提取分類
         category_span = soup.select_one('span.category')
@@ -71,6 +77,7 @@ def extract_info_from_html(file_path):
                 category_text = category_link.text
         
         category_code = CATEGORY_MAPPING.get(category_text, "tax")
+        print(f"提取分類: {category_text} ({category_code})")
         
         # 提取標籤
         tags = []
@@ -78,9 +85,12 @@ def extract_info_from_html(file_path):
         for tag_link in tag_links:
             tags.append(tag_link.text)
         
+        print(f"提取標籤: {tags}")
+        
         # 獲取URL (使用相對於專案根目錄的路徑)
         relative_path = os.path.relpath(file_path, PROJECT_ROOT)
         url = f"/{relative_path.replace(os.sep, '/')}"
+        print(f"生成URL: {url}")
         
         return {
             "title": title,
@@ -93,6 +103,8 @@ def extract_info_from_html(file_path):
         }
     except Exception as e:
         print(f"處理文件 {file_path} 時出錯: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def scan_blog_directory():
@@ -126,7 +138,7 @@ def scan_blog_directory():
         if file_name.endswith('.html'):
             html_count += 1
             file_path = os.path.join(BLOG_DIR, file_name)
-            print(f"處理HTML文件: {file_path}")
+            print(f"\n處理HTML文件: {file_path}")
             post_info = extract_info_from_html(file_path)
             if post_info:
                 posts.append(post_info)
@@ -178,6 +190,7 @@ def update_json_files(posts):
             with open(JSON_PATH, 'r', encoding='utf-8') as f:
                 current_data = json.load(f)
             print(f"現有JSON文件中有 {len(current_data.get('posts', []))} 篇文章")
+            print(f"現有JSON文件內容: {json.dumps(current_data, ensure_ascii=False, indent=2)[:500]}...")
         else:
             print(f"JSON文件 {JSON_PATH} 不存在，將創建新文件")
     except Exception as e:
@@ -190,6 +203,11 @@ def update_json_files(posts):
         
         print(f"成功更新 {JSON_PATH}")
         print(f"共 {len(posts)} 篇文章，{len(all_categories)} 個分類，{len(all_tags)} 個標籤")
+        
+        # 顯示部分更新後的JSON內容
+        with open(JSON_PATH, 'r', encoding='utf-8') as f:
+            updated_json = json.load(f)
+        print(f"更新後的JSON文件內容: {json.dumps(updated_json, ensure_ascii=False, indent=2)[:500]}...")
     except Exception as e:
         print(f"寫入JSON文件時出錯: {str(e)}")
         return False
@@ -206,6 +224,11 @@ def update_json_files(posts):
         
         print(f"成功更新 {LATEST_POSTS_PATH}")
         print(f"新增了 {len(latest_posts)} 篇最新文章")
+        
+        # 顯示最新文章JSON內容
+        with open(LATEST_POSTS_PATH, 'r', encoding='utf-8') as f:
+            latest_json = json.load(f)
+        print(f"最新文章JSON文件內容: {json.dumps(latest_json, ensure_ascii=False, indent=2)}")
     except Exception as e:
         print(f"寫入最新文章JSON時出錯: {str(e)}")
         return False
@@ -217,6 +240,8 @@ def main():
     print("開始掃描部落格文章...")
     print(f"Python版本: {sys.version}")
     print(f"當前系統: {sys.platform}")
+    print(f"JSON_PATH: {JSON_PATH}")
+    print(f"LATEST_POSTS_PATH: {LATEST_POSTS_PATH}")
     
     posts = scan_blog_directory()
     

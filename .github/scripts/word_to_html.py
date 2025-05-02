@@ -28,14 +28,18 @@ from typing import List, Dict, Any, Tuple, Optional
 from slugify import slugify
 from collections import Counter
 
-# 配置區域
-OUTPUT_DIR = "blog"                  # 輸出HTML的目錄
-IMAGES_DIR = "assets/images/blog"    # 博客圖片目錄
+# 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
+
+# 配置區域（使用絕對路徑）
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "blog")                  # 輸出HTML的目錄
+IMAGES_DIR = os.path.join(PROJECT_ROOT, "assets/images/blog")    # 博客圖片目錄
 CSS_PATH = "/assets/css/style.css"  # 全站CSS路徑
 BLOG_URL_PREFIX = "/blog/"           # 博客URL前綴
 DEFAULT_AUTHOR = "霍爾果斯會計師事務所"  # 默認作者
 DEFAULT_IMAGE = "default-blog.jpg"   # 默認圖片
-PROCESSED_LOG_FILE = ".processed_docs.json"  # 已處理文件記錄
+PROCESSED_LOG_FILE = os.path.join(PROJECT_ROOT, ".processed_docs.json")  # 已處理文件記錄
 
 # 配置博客分類
 BLOG_CATEGORIES = {
@@ -349,6 +353,9 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
       <span></span>
     </label>
     <ul class="nav-menu">
+      <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
+      <li><a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="nav-line-btn">LINE</a></li>
+      <li class="nav-divider"></li>
       <li><a href="/services.html">服務項目</a></li>
       <li><a href="/team.html">服務團隊</a></li>
       <li><a href="/blog.html" class="active">部落格</a></li>
@@ -418,12 +425,6 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     </div>
   </div>
 </footer>
-
-<!-- 懸浮按鈕 -->
-<div class="cta-floating">
-  <a href="/booking.html" class="float-btn consult-btn">免費諮詢</a>
-  <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="float-btn line-btn">LINE</a>
-</div>
 
 </body>
 </html>
@@ -529,6 +530,9 @@ def scan_directory(input_dir: str, output_dir: str = OUTPUT_DIR) -> List[str]:
 
 def main():
     """主函數"""
+    print(f"專案根目錄: {PROJECT_ROOT}")
+    print(f"輸出目錄: {OUTPUT_DIR}")
+    
     if len(sys.argv) < 2:
         print("請提供Word文檔路徑或包含Word文檔的目錄路徑")
         print("用法: python word_to_html.py <path_to_docx_or_directory> [output_directory]")

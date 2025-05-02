@@ -17,15 +17,19 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
 from collections import Counter
 
+# 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
+
 # GitHub 設定
 GITHUB_TOKEN = os.environ.get('GH_PAT')
 GITHUB_REPO = "waynegg8/horgoscpa"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}"
 
-# 部落格文章路徑設定
-BLOG_DIR = "blog"  # 博客文章目錄
-JSON_PATH = "assets/data/blog-posts.json"  # 完整文章JSON文件路徑
-LATEST_POSTS_PATH = "assets/data/latest-posts.json"  # 最新文章JSON文件路徑
+# 部落格文章路徑設定（使用絕對路徑）
+BLOG_DIR = os.path.join(PROJECT_ROOT, "blog")  # 博客文章目錄
+JSON_PATH = os.path.join(PROJECT_ROOT, "assets/data/blog-posts.json")  # 完整文章JSON文件路徑
+LATEST_POSTS_PATH = os.path.join(PROJECT_ROOT, "assets/data/latest-posts.json")  # 最新文章JSON文件路徑
 ITEMS_PER_PAGE = 6  # 每頁顯示的文章數量
 
 # 文章標題和日期的正則表達式
@@ -51,7 +55,7 @@ CATEGORY_MAPPING = {
 }
 
 # 已處理文件記錄
-PROCESSED_FILES_RECORD = ".processed_blog_files.json"
+PROCESSED_FILES_RECORD = os.path.join(PROJECT_ROOT, ".processed_blog_files.json")
 
 def get_file_content(path: str) -> Optional[str]:
     """
@@ -200,11 +204,14 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
             if keyword in text_for_keywords and len(tags) < 3:
                 tags.append(keyword)
     
+    # 使用相對路徑
+    url = f"/blog/{filename}"
+    
     return {
         "title": title,
         "date": date,
         "summary": summary,
-        "url": f"/{BLOG_DIR}/{filename}",
+        "url": url,
         "image": image,
         "category": category,
         "tags": tags
@@ -263,20 +270,31 @@ def save_processed_files(processed_files: Dict[str, str]) -> bool:
 def main():
     """主函數"""
     print("開始更新部落格文章 JSON 檔案...")
+    print(f"專案根目錄: {PROJECT_ROOT}")
+    print(f"部落格目錄: {BLOG_DIR}")
+    
+    # 檢查目錄是否存在
+    if not os.path.exists(BLOG_DIR):
+        print(f"錯誤: 目錄 {BLOG_DIR} 不存在")
+        return
     
     # 獲取部落格目錄內容
-    blog_files = get_directory_contents(BLOG_DIR)
-    html_files = [f for f in blog_files if f["name"].endswith(".html")]
-    
-    if not html_files:
-        print(f"在 {BLOG_DIR} 目錄中未找到 HTML 文件")
+    try:
+        blog_files = os.listdir(BLOG_DIR)
+        html_files = [f for f in blog_files if f.endswith(".html")]
+        
+        if not html_files:
+            print(f"在 {BLOG_DIR} 目錄中未找到 HTML 文件")
+            return
+    except Exception as e:
+        print(f"獲取部落格目錄內容時發生錯誤: {str(e)}")
         return
     
     # 加載已處理文件記錄
     processed_files = load_processed_files()
     
     # 獲取當前HTML文件的名稱集合
-    current_files = {f["name"] for f in html_files}
+    current_files = set(html_files)
     
     # 檢查是否有文件被刪除
     stored_files = set(processed_files.keys())
@@ -295,33 +313,38 @@ def main():
     posts = []
     
     # 處理每個 HTML 文件
-    for file in html_files:
-        filename = file["name"]
-        
+    for filename in html_files:
         # 檢查文件是否已處理過並且沒有變化
         if filename in processed_files:
-            # 獲取文件的最後修改時間
-            last_updated = file.get("updated_at", "")
-            
             # 如果文件沒有變化，使用已保存的信息
-            if last_updated == processed_files[filename].get("updated_at", ""):
-                print(f"文件 {filename} 未變更，使用已保存的信息")
-                post_info = processed_files[filename].get("info", {})
-                if post_info:
-                    posts.append(post_info)
-                    continue
+            print(f"文件 {filename} 未變更，使用已保存的信息")
+            post_info = processed_files[filename].get("info", {})
+            if post_info:
+                posts.append(post_info)
+                continue
         
         # 如果文件有變化或未處理過，重新提取信息
-        file_content = get_file_content(file["path"])
-        if file_content:
+        file_path = os.path.join(BLOG_DIR, filename)
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                file_content = f.read()
+                
             post_info = extract_post_info(file_content, filename)
             posts.append(post_info)
             
             # 更新處理記錄
             processed_files[filename] = {
-                "updated_at": file.get("updated_at", ""),
+                "updated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "info": post_info
             }
+            
+            print(f"成功處理文件: {filename}")
+            print(f"  標題: {post_info['title']}")
+            print(f"  日期: {post_info['date']}")
+            print(f"  分類: {post_info['category']}")
+            print(f"  標籤: {', '.join(post_info['tags'])}")
+        except Exception as e:
+            print(f"處理文件 {filename} 時出錯: {str(e)}")
     
     # 保存已處理文件記錄
     save_processed_files(processed_files)
@@ -348,54 +371,61 @@ def main():
         "tags": list(set(tag for post in posts for tag in post["tags"]))
     }
     
-    # 獲取目前的完整JSON文件
-    current_full_json = get_file_content(JSON_PATH)
-    current_full_data = json.loads(current_full_json) if current_full_json else {"posts": []}
+    # 檢查目前的完整JSON文件是否存在
+    if os.path.exists(JSON_PATH):
+        try:
+            with open(JSON_PATH, 'r', encoding='utf-8') as f:
+                current_full_data = json.load(f)
+            print(f"現有JSON文件中有 {len(current_full_data.get('posts', []))} 篇文章")
+        except Exception as e:
+            print(f"讀取現有JSON文件時出錯: {str(e)}")
+            current_full_data = {"posts": []}
+    else:
+        current_full_data = {"posts": []}
     
     # 檢查完整文章數據是否有變更
-    if json.dumps(full_data["posts"]) != json.dumps(current_full_data.get("posts", [])):
-        # 更新完整文章JSON文件
-        full_json_content = json.dumps(full_data, ensure_ascii=False, indent=2)
-        success_full = update_github_file(
-            JSON_PATH,
-            full_json_content,
-            "自動更新完整博客文章JSON"
-        )
-        
-        if success_full:
+    try:
+        if json.dumps(full_data["posts"]) != json.dumps(current_full_data.get("posts", [])):
+            # 更新完整文章JSON文件
+            with open(JSON_PATH, 'w', encoding='utf-8') as f:
+                json.dump(full_data, f, ensure_ascii=False, indent=2)
+            
             print(f"成功更新完整文章數據: {JSON_PATH}")
             print(f"總文章數: {total_posts}, 總頁數: {total_pages}")
         else:
-            print(f"更新完整文章數據失敗: {JSON_PATH}")
-    else:
-        print("完整文章數據無需更新")
+            print("完整文章數據無需更新")
+    except Exception as e:
+        print(f"更新完整文章數據時出錯: {str(e)}")
     
-    # 獲取目前的最新文章JSON文件
-    current_latest_json = get_file_content(LATEST_POSTS_PATH)
-    current_latest_posts = json.loads(current_latest_json) if current_latest_json else []
+    # 檢查最新文章JSON文件是否存在
+    if os.path.exists(LATEST_POSTS_PATH):
+        try:
+            with open(LATEST_POSTS_PATH, 'r', encoding='utf-8') as f:
+                current_latest_posts = json.load(f)
+        except Exception as e:
+            print(f"讀取最新文章JSON時出錯: {str(e)}")
+            current_latest_posts = []
+    else:
+        current_latest_posts = []
     
     # 檢查最新文章是否有變更
-    if json.dumps(latest_posts) != json.dumps(current_latest_posts):
-        # 更新最新文章JSON文件
-        latest_json_content = json.dumps(latest_posts, ensure_ascii=False, indent=2)
-        success_latest = update_github_file(
-            LATEST_POSTS_PATH,
-            latest_json_content,
-            "自動更新最新文章JSON"
-        )
-        
-        if success_latest:
+    try:
+        if json.dumps(latest_posts) != json.dumps(current_latest_posts):
+            # 更新最新文章JSON文件
+            with open(LATEST_POSTS_PATH, 'w', encoding='utf-8') as f:
+                json.dump(latest_posts, f, ensure_ascii=False, indent=2)
+            
             print(f"成功更新最新文章數據: {LATEST_POSTS_PATH}")
             print("最新文章:")
             for i, post in enumerate(latest_posts, 1):
                 print(f"{i}. {post['title']} ({post['date']})")
         else:
-            print(f"更新最新文章數據失敗: {LATEST_POSTS_PATH}")
-    else:
-        print("最新文章數據無需更新")
+            print("最新文章數據無需更新")
+    except Exception as e:
+        print(f"更新最新文章數據時出錯: {str(e)}")
 
 if __name__ == "__main__":
     if not GITHUB_TOKEN:
         print("錯誤: 未設定 GH_PAT 環境變數")
-    else:
-        main()
+        print("本地執行時會跳過GitHub API相關操作")
+    main()
