@@ -14,10 +14,14 @@ import sys
 from pathlib import Path
 from bs4 import BeautifulSoup
 
-# 部落格文章路徑設定
-BLOG_DIR = "blog"  # 博客文章目錄
-JSON_PATH = "assets/data/blog-posts.json"  # 完整文章JSON文件路徑
-LATEST_POSTS_PATH = "assets/data/latest-posts.json"  # 最新文章JSON文件路徑
+# 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
+
+# 部落格文章路徑設定（使用絕對路徑）
+BLOG_DIR = os.path.join(PROJECT_ROOT, "blog")  # 博客文章目錄
+JSON_PATH = os.path.join(PROJECT_ROOT, "assets/data/blog-posts.json")  # 完整文章JSON文件路徑
+LATEST_POSTS_PATH = os.path.join(PROJECT_ROOT, "assets/data/latest-posts.json")  # 最新文章JSON文件路徑
 ITEMS_PER_PAGE = 6  # 每頁顯示的文章數量
 
 # 分類映射
@@ -74,9 +78,9 @@ def extract_info_from_html(file_path):
         for tag_link in tag_links:
             tags.append(tag_link.text)
         
-        # 獲取URL
-        relative_path = os.path.relpath(file_path)
-        url = f"/{relative_path}"
+        # 獲取URL (使用相對於專案根目錄的路徑)
+        relative_path = os.path.relpath(file_path, PROJECT_ROOT)
+        url = f"/{relative_path.replace(os.sep, '/')}"
         
         return {
             "title": title,
@@ -98,30 +102,30 @@ def scan_blog_directory():
     # 獲取並輸出當前工作目錄
     current_dir = os.getcwd()
     print(f"當前工作目錄: {current_dir}")
+    print(f"專案根目錄: {PROJECT_ROOT}")
     
     # 檢查目錄是否存在
-    blog_dir_path = os.path.join(current_dir, BLOG_DIR)
-    print(f"嘗試存取的部落格目錄: {blog_dir_path}")
+    print(f"嘗試存取的部落格目錄: {BLOG_DIR}")
     
-    if not os.path.exists(blog_dir_path):
-        print(f"錯誤: 目錄 {blog_dir_path} 不存在")
+    if not os.path.exists(BLOG_DIR):
+        print(f"錯誤: 目錄 {BLOG_DIR} 不存在")
         # 列出根目錄下的所有文件和目錄
-        print(f"根目錄下的文件和目錄:")
-        for item in os.listdir(current_dir):
+        print(f"專案根目錄下的文件和目錄:")
+        for item in os.listdir(PROJECT_ROOT):
             print(f"  - {item}")
         return posts
     
     # 列出blog目錄中的所有文件
     print(f"{BLOG_DIR}目錄中的文件:")
-    for item in os.listdir(blog_dir_path):
+    for item in os.listdir(BLOG_DIR):
         print(f"  - {item}")
     
     # 掃描目錄下所有HTML文件
     html_count = 0
-    for file_name in os.listdir(blog_dir_path):
+    for file_name in os.listdir(BLOG_DIR):
         if file_name.endswith('.html'):
             html_count += 1
-            file_path = os.path.join(blog_dir_path, file_name)
+            file_path = os.path.join(BLOG_DIR, file_name)
             print(f"處理HTML文件: {file_path}")
             post_info = extract_info_from_html(file_path)
             if post_info:
