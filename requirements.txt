@@ -1,0 +1,8 @@
+python-docx
+markdown
+jieba
+gensim
+python-slugify
+requests
+beautifulsoup4
+lxml
