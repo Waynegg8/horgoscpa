@@ -115,7 +115,7 @@
     }
     
     .nav-menu li {
-      margin-left: 35px;
+      margin-left: 20px;
     }
     
     /* 改善導航選項邊框視覺效果 - 更明顯的顏色對比 */
@@ -138,6 +138,30 @@
       background-color: rgba(255, 255, 255, 0.2); /* 懸停時更明顯的背景 */
       transform: translateY(-2px); /* 輕微上移效果 */
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 懸停陰影 */
+    }
+    
+    /* 導航按鈕樣式 - 新增 */
+    .nav-consult-btn {
+      background-color: #0066cc;
+      color: #fff;
+      border: 1px solid #0066cc !important;
+      margin-right: 10px;
+    }
+    
+    .nav-consult-btn:hover {
+      background-color: #004d99;
+      border-color: #004d99 !important;
+    }
+    
+    .nav-line-btn {
+      background-color: #06c755;
+      color: #fff;
+      border: 1px solid #06c755 !important;
+    }
+    
+    .nav-line-btn:hover {
+      background-color: #05a847;
+      border-color: #05a847 !important;
     }
     
     /* 默認隱藏漢堡選單相關元素 */
@@ -444,8 +468,8 @@
       color: #fff;
     }
     
-    /* 全新懸浮按鈕樣式 - 相同長度版本 */
-    .cta-floating {
+    /* 懸浮按鈕樣式 - 移除 */
+    /* .cta-floating {
       position: fixed;
       bottom: 30px;
       right: 0;
@@ -457,7 +481,7 @@
 
     .float-btn {
       display: block;
-      width: 120px; /* 固定寬度 */
+      width: 120px;
       text-align: center;
       padding: 15px 20px;
       border-radius: 8px 0 0 8px;
@@ -492,7 +516,7 @@
     .line-btn:hover {
       background-color: #05a847;
       color: #fff;
-    }
+    } */
     
     /* 控制載入中顯示樣式 */
     .loading-container {
@@ -631,17 +655,5 @@
       
       .footer-text {
         margin-bottom: 10px;
-      }
-      
-      /* 移動裝置上調整懸浮按鈕 */
-      .cta-floating {
-        bottom: 20px;
-        gap: 8px;
-      }
-      
-      .float-btn {
-        width: 110px;
-        font-size: 16px;
-        padding: 12px 15px;
       }
     }
