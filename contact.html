@@ -200,6 +200,32 @@
       min-height: 350px;
     }
     
+    /* 交通資訊區域樣式 */
+    .directions-section {
+      margin-top: 80px; /* 增加與上方區塊的間距 */
+      padding: 30px 0 60px;
+    }
+    
+    .directions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
+    }
+    
+    .direction-card {
+      background: #fff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      height: 100%;
+    }
+    
+    /* 區塊間隔 */
+    .contact-details-section {
+      padding-bottom: 30px; /* 確保與下方區塊有足夠間距 */
+    }
+    
     @media (max-width: 1100px) {
       .nav-container {
         padding: 10px 15px; /* 減少導航欄內邊距 */
@@ -214,6 +240,10 @@
       
       .contact-map {
         height: 400px;
+      }
+      
+      .directions-section {
+        margin-top: 60px;
       }
     }
     
@@ -248,6 +278,10 @@
         width: 90%;
         margin: 5px auto;
         text-align: center;
+      }
+      
+      .directions-section {
+        margin-top: 40px;
       }
     }
   </style>
@@ -390,8 +424,8 @@
       <p>多種便捷的方式前往我們的事務所</p>
     </div>
     
-    <div class="directions-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px;">
-      <div class="direction-card" style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+    <div class="directions-grid">
+      <div class="direction-card">
         <h3>大眾交通</h3>
         <ul style="list-style-type: none; padding: 0; margin: 0;">
           <li style="margin-bottom: 15px;"><strong>公車：</strong> 搭乘 x、x、x 路線至「xxxxx站」下車，步行約 3 分鐘</li>
@@ -399,7 +433,7 @@
         </ul>
       </div>
       
-      <div class="direction-card" style="background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+      <div class="direction-card">
         <h3>自行開車</h3>
         <ul style="list-style-type: none; padding: 0; margin: 0;">
           <li style="margin-bottom: 15px;"><strong>國道一號：</strong> 由台中交流道下，沿台灣大道往市區方向，右轉建國路</li>
