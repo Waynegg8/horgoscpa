@@ -297,12 +297,170 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     for tag in tags:
         html += f'  <meta property="article:tag" content="{tag}" />\n'
     
-    # 引用全站CSS
+    # 引用全站CSS和添加導航欄修正樣式
     html += f"""  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
   <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="{CSS_PATH}" />
+  
+  <!-- 導航欄修正樣式 -->
+  <style>
+    /* 修正導航欄樣式 */
+    .logo {{
+      min-width: 240px; /* 增加最小寬度確保文字不換行 */
+    }}
+    
+    .logo-main {{
+      white-space: nowrap; /* 確保不換行 */
+    }}
+    
+    .nav-menu {{
+      gap: 10px; /* 在菜單項目間添加間距 */
+    }}
+    
+    .nav-menu li {{
+      margin: 0 2px; /* 減少 li 元素的外邊距 */
+      position: relative; /* 為下拉選單定位 */
+    }}
+    
+    .nav-menu a {{
+      padding: 7px 8px; /* 減少內邊距 */
+      font-size: 0.9rem; /* 縮小字體 */
+    }}
+
+    /* 重新設計CTA按鈕樣式 */
+    .nav-cta-item {{
+      display: inline-block;
+      margin: 0 5px !important;
+    }}
+    
+    .nav-consult-btn, .nav-line-btn {{
+      font-weight: 700;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      padding: 8px 15px !important;
+      font-size: 1rem !important;
+      border-width: 2px !important;
+      letter-spacing: 0.5px;
+      animation: pulse 2s infinite;
+      min-width: 100px;
+      text-align: center;
+    }}
+    
+    .nav-consult-btn {{
+      background-color: #ff6b00 !important; /* 更明亮的橙色 */
+      border-color: #ff6b00 !important;
+    }}
+    
+    .nav-line-btn {{
+      background-color: #06c755 !important; /* 保持LINE綠色 */
+      border-color: #06c755 !important;
+    }}
+    
+    .nav-consult-btn:hover, .nav-line-btn:hover {{
+      transform: scale(1.05) translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    }}
+    
+    @keyframes pulse {{
+      0% {{
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4);
+      }}
+      70% {{
+        box-shadow: 0 0 0 10px rgba(255, 107, 0, 0);
+      }}
+      100% {{
+        box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
+      }}
+    }}
+
+    /* 下拉選單樣式 */
+    .dropdown-menu {{
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background-color: #002147;
+      min-width: 180px;
+      border-radius: 4px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 1001;
+      padding: 8px 0;
+      margin-top: 5px;
+    }}
+    
+    .dropdown-menu a {{
+      display: block;
+      padding: 8px 15px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      border: none;
+      background: none;
+      text-align: left;
+    }}
+    
+    .dropdown-menu a:hover {{
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: none;
+      box-shadow: none;
+    }}
+    
+    /* 顯示下拉選單 */
+    .has-dropdown:hover .dropdown-menu {{
+      display: block;
+    }}
+    
+    /* 下拉箭頭圖標 */
+    .has-dropdown > a::after {{
+      content: "▼";
+      font-size: 0.6rem;
+      margin-left: 5px;
+      vertical-align: middle;
+    }}
+    
+    @media (max-width: 1100px) {{
+      .nav-container {{
+        padding: 10px 15px; /* 減少導航欄內邊距 */
+      }}
+    }}
+    
+    /* 移動設備樣式 */
+    @media (max-width: 850px) {{
+      .dropdown-menu {{
+        position: static;
+        background-color: rgba(255, 255, 255, 0.05);
+        box-shadow: none;
+        margin-top: 0;
+        display: none;
+        padding: 0;
+      }}
+      
+      .dropdown-menu a {{
+        padding: 8px 20px 8px 30px;
+        font-size: 0.85rem;
+      }}
+      
+      .has-dropdown > a::after {{
+        float: right;
+        margin-top: 5px;
+      }}
+      
+      /* 移動設備展開下拉選單的JS交互 */
+      .dropdown-menu.show {{
+        display: block;
+      }}
+      
+      /* 移動設備上的CTA按鈕 */
+      .nav-consult-btn, .nav-line-btn {{
+        width: 90%;
+        margin: 5px auto;
+        text-align: center;
+      }}
+    }}
+  </style>
   
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
@@ -353,10 +511,17 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
       <span></span>
     </label>
     <ul class="nav-menu">
-      <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
-      <li><a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="nav-line-btn">LINE</a></li>
+      <li class="nav-cta-item"><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
+      <li class="nav-cta-item"><a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="nav-line-btn">LINE</a></li>
       <li class="nav-divider"></li>
-      <li><a href="/services.html">服務項目</a></li>
+      <li class="has-dropdown">
+        <a href="/services.html">服務項目</a>
+        <div class="dropdown-menu">
+          <a href="/services/tax.html">稅務服務</a>
+          <a href="/services/accounting.html">記帳與會計</a>
+          <a href="/services/consulting.html">企業顧問</a>
+        </div>
+      </li>
       <li><a href="/team.html">服務團隊</a></li>
       <li><a href="/blog.html" class="active">部落格</a></li>
       <li><a href="/faq.html">常見問題</a></li>
@@ -425,6 +590,41 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     </div>
   </div>
 </footer>
+
+<!-- 下拉選單與營業時間 JavaScript -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 僅在移動設備上添加下拉選單的點擊事件
+    if (window.innerWidth <= 850) {
+      const dropdownLinks = document.querySelectorAll('.has-dropdown > a');
+      
+      dropdownLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const dropdownMenu = this.nextElementSibling;
+          dropdownMenu.classList.toggle('show');
+        });
+      });
+    }
+    
+    // 窗口大小改變時重新加載頁面以應用正確的樣式
+    window.addEventListener('resize', function() {
+      const width = window.innerWidth;
+      if ((width <= 850 && window.prevWidth > 850) || 
+          (width > 850 && window.prevWidth <= 850)) {
+        window.prevWidth = width;
+        // 延遲重新加載以避免連續調整大小時頻繁重新加載
+        clearTimeout(window.resizeTimer);
+        window.resizeTimer = setTimeout(function() {
+          location.reload();
+        }, 250);
+      }
+      window.prevWidth = width;
+    });
+    
+    window.prevWidth = window.innerWidth;
+  });
+</script>
 
 </body>
 </html>
