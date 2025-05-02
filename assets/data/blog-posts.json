@@ -1,47 +1,10 @@
 {
-  "posts": [
-    {
-      "title": "跨境電商如何合法節稅？",
-      "date": "2025-04-10",
-      "summary": "跨境電商如何合法節稅？專業會計師分析跨境稅務申報差異、風險與機會，助您合法規劃跨境電商稅務。",
-      "url": "/blog/cross-border-tax.html",
-      "image": "/assets/images/blog/default.jpg",
-      "category": "tax",
-      "tags": [
-        "跨境電商",
-        "稅務規劃",
-        "電子商務"
-      ]
+    "posts": [],
+    "pagination": {
+      "total_posts": 0,
+      "total_pages": 1,
+      "items_per_page": 6
     },
-    {
-      "title": "新創公司常見帳務陷阱",
-      "date": "2025-03-22",
-      "summary": "新創公司常見帳務陷阱，從開立發票、勞健保到稅務合規，避免常見財務錯誤，確保公司財務健全運作。",
-      "url": "/blog/startup-traps.html",
-      "image": "/assets/images/blog/default.jpg",
-      "category": "accounting",
-      "tags": [
-        "新創企業",
-        "會計實務",
-        "稅務合規"
-      ]
-    }
-  ],
-  "pagination": {
-    "total_posts": 2,
-    "total_pages": 1,
-    "items_per_page": 6
-  },
-  "categories": [
-    "accounting",
-    "tax"
-  ],
-  "tags": [
-    "跨境電商",
-    "會計實務",
-    "稅務合規",
-    "新創企業",
-    "稅務規劃",
-    "電子商務"
-  ]
-}
+    "categories": ["tax", "accounting", "business"],
+    "tags": []
+  }
