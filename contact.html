@@ -27,7 +27,7 @@
     }
     
     .nav-menu {
-      gap: 5px; /* 在菜單項目間添加間距 */
+      gap: 10px; /* 在菜單項目間添加間距 */
     }
     
     .nav-menu li {
@@ -40,10 +40,10 @@
       font-size: 0.9rem; /* 縮小字體 */
     }
 
-    /* 突出顯示CTA按鈕 */
+    /* 重新設計CTA按鈕樣式 */
     .nav-cta-item {
-      transform: scale(1.1);
-      z-index: 10; /* 確保按鈕顯示在最上層 */
+      display: inline-block;
+      margin: 0 5px !important;
     }
     
     .nav-consult-btn, .nav-line-btn {
@@ -54,6 +54,8 @@
       border-width: 2px !important;
       letter-spacing: 0.5px;
       animation: pulse 2s infinite;
+      min-width: 100px;
+      text-align: center;
     }
     
     .nav-consult-btn {
@@ -67,7 +69,7 @@
     }
     
     .nav-consult-btn:hover, .nav-line-btn:hover {
-      transform: scale(1.1) translateY(-3px);
+      transform: scale(1.05) translateY(-3px);
       box-shadow: 0 5px 15px rgba(0,0,0,0.4);
     }
     
@@ -150,9 +152,68 @@
       color: white;
     }
     
+    /* 聯絡資訊區塊樣式 */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-top: 30px;
+    }
+    
+    .contact-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    
+    .contact-card {
+      background: white;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+      text-align: center;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .contact-icon {
+      margin: 0 auto 15px;
+    }
+    
+    .contact-card h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #002147;
+    }
+    
+    .contact-card p {
+      margin-bottom: 15px;
+    }
+    
+    .contact-map {
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+      height: 100%;
+      min-height: 350px;
+    }
+    
     @media (max-width: 1100px) {
       .nav-container {
         padding: 10px 15px; /* 減少導航欄內邊距 */
+      }
+    }
+    
+    /* 平板適配 */
+    @media (max-width: 992px) {
+      .contact-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .contact-map {
+        height: 400px;
       }
     }
     
@@ -283,7 +344,7 @@
           </div>
           <h3>事務所地址</h3>
           <p>台中市西區建國路21號3樓之1</p>
-          <a href="https://maps.app.goo.gl/BGdS5iy11dWQPCHC8" target="_blank" class="btn btn-outline btn-sm">查看地圖</a>
+          <a href="https://maps.google.com/?q=台中市西區建國路21號3樓之1" target="_blank" class="btn btn-outline btn-sm">查看地圖</a>
         </div>
         
         <div class="contact-card">
