@@ -52,8 +52,6 @@
   }
   </script>
 </link>  <link rel="stylesheet" href="/assets/css/style.css" />
-</head>
-<body>
 <!-- 導航欄 -->
 <nav class="site-nav">
   <div class="nav-container">
@@ -83,11 +81,10 @@
       <li><a href="/blog.html">部落格</a></li>
       <li><a href="/faq.html">常見問題</a></li>
       <li><a href="/video.html">影片</a></li>
-      <li><a href="/contact.html">聯絡資訊</a></li>
+      <li><a href="/contact.html" class="active">聯絡資訊</a></li>
     </ul>
   </div>
-</nav>
-<!-- 英雄區塊 -->
+</nav><!-- 英雄區塊 -->
 <header class="hero">
 <div class="hero-content">
 <h1>稅務服務</h1>
@@ -177,5 +174,69 @@
 </div>
 </div>
 </footer>
-<script src="/assets/js/navbar.js"></script></body>
+<script src="/assets/js/navbar.js"></script><!-- 下拉選單與營業時間 JavaScript -->
+<script>document.addEventListener('DOMContentLoaded', function() {
+    // 僅在移動設備上添加下拉選單的點擊事件
+    if (window.innerWidth <= 850) {
+      const dropdownLinks = document.querySelectorAll('.has-dropdown > a');
+      
+      dropdownLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const dropdownMenu = this.nextElementSibling;
+          dropdownMenu.classList.toggle('show');
+        });
+      });
+    }
+    
+    // 窗口大小改變時重新加載頁面以應用正確的樣式
+    window.addEventListener('resize', function() {
+      const width = window.innerWidth;
+      if ((width <= 850 && window.prevWidth > 850) || 
+          (width > 850 && window.prevWidth <= 850)) {
+        window.prevWidth = width;
+        // 延遲重新加載以避免連續調整大小時頻繁重新加載
+        clearTimeout(window.resizeTimer);
+        window.resizeTimer = setTimeout(function() {
+          location.reload();
+        }, 250);
+      }
+      window.prevWidth = width;
+    });
+    
+    window.prevWidth = window.innerWidth;
+    
+    // 判斷當前是否營業中
+    function checkBusinessHours() {
+      const now = new Date();
+      const day = now.getDay(); // 0是星期日，1-5是星期一到五，6是星期六
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const currentTime = hours * 60 + minutes; // 將時間轉換為分鐘
+      
+      // 營業時間：週一至週五 8:30-17:30
+      const openTime = 8 * 60 + 30; // 8:30 轉換為分鐘
+      const closeTime = 17 * 60 + 30; // 17:30 轉換為分鐘
+      
+      const isWeekday = day >= 1 && day <= 5; // 是否為工作日
+      const isDuringBusinessHours = currentTime >= openTime && currentTime < closeTime; // 是否在營業時間內
+      
+      const businessStatus = document.getElementById('business-status');
+      
+      if (isWeekday && isDuringBusinessHours) {
+        businessStatus.textContent = '營業中';
+        businessStatus.className = 'business-status status-open';
+      } else {
+        businessStatus.textContent = '非營業時間';
+        businessStatus.className = 'business-status status-closed';
+      }
+    }
+    
+    // 執行判斷
+    checkBusinessHours();
+    
+    // 每分鐘更新一次狀態
+    setInterval(checkBusinessHours, 60000);
+  });</script>
+</body>
 </html>
