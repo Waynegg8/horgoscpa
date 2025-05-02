@@ -4,7 +4,7 @@
       "title": "創業財務管理：會計師簽證與稅務申報全攻略",
       "date": "2025-05-03",
       "summary": "隨著公司成長，財務報表和申報資料的複雜度提高，你可能聽說過要辦理各種會計師簽證：例如資本額簽證、稅務簽證、財務報表查核簽證等等。究竟哪些情況下需要會計師出馬簽證？擴大書審、查帳申報、稅務簽證三者又該如何選擇？本文將為您解析這些專業名詞背後的實際需求，幫助創業者做出明智的財務決策。",
-      "url": "/blog/2025-05-03-chuang-ye-cai-wu-guan-li-hui-ji-shi-qian-zheng-yu-shui-wu-shen-bao-quan-gong-lue.html",
+      "url": "/blog/2025-05-03-startup-finance-management-tax-filing.html",
       "image": "/assets/images/blog/default-blog.jpg",
       "category": "tax",
       "tags": [
@@ -14,23 +14,10 @@
       ]
     },
     {
-      "title": "跨境電商如何合法節稅？",
-      "date": "2025-04-10",
-      "summary": "跨境電商如何合法節稅？專業會計師分析跨境稅務申報差異、風險與機會，助您合法規劃跨境電商稅務。",
-      "url": "/blog/cross-border-tax.html",
-      "image": "/assets/images/blog/default.jpg",
-      "category": "tax",
-      "tags": [
-        "跨境電商",
-        "稅務規劃",
-        "電子商務"
-      ]
-    },
-    {
       "title": "創業財務規劃：銀行貸款與資本額設定攻略",
       "date": "2025-04-03",
       "summary": "創業繞不開的問題就是「資金」。在臺灣開公司，設立時需要決定資本額，營運中也可能會尋求銀行貸款或其他融資。資本額要訂多少？需要實收嗎？貸款又該如何申請？這些都是創業者常見的疑問。本文將分享資本額設定的考量、融資管道選擇與實用的申貸策略，幫助新創在財務規劃上打好基礎。",
-      "url": "/blog/2025-04-03-chuang-ye-cai-wu-gui-hua-yin-xing-dai-kuan-yu-zi-ben-e-she-ding-gong-lue.html",
+      "url": "/blog/2025-04-03-startup-finance-planning.html",
       "image": "/assets/images/blog/default-blog.jpg",
       "category": "financial",
       "tags": [
@@ -40,23 +27,10 @@
       ]
     },
     {
-      "title": "新創公司常見帳務陷阱",
-      "date": "2025-03-22",
-      "summary": "新創公司常見帳務陷阱，從開立發票、勞健保到稅務合規，避免常見財務錯誤，確保公司財務健全運作。",
-      "url": "/blog/startup-traps.html",
-      "image": "/assets/images/blog/default.jpg",
-      "category": "accounting",
-      "tags": [
-        "新創企業",
-        "會計實務",
-        "稅務合規"
-      ]
-    },
-    {
       "title": "創業老闆必知：勞工法規與員工管理全指南",
       "date": "2025-03-15",
       "summary": "當事業步上軌道、業務擴張，你可能開始聘僱員工或幫手。這時另一塊重要的合規課題登場了：勞工相關法規。臺灣的勞動法令對雇主有各種強制義務，包括勞工保險、健康保險、勞工退休金、就業保險等等。許多新手老闆對這方面不熟，誤以為小公司可以「先不辦」，結果踩到法規地雷被罰款甚至傷了員工權益。",
-      "url": "/blog/2025-03-15-chuang-ye-lao-ban-bi-zhi-lao-gong-fa-gui-yu-yuan-gong-guan-li-quan-zhi-nan.html",
+      "url": "/blog/2025-03-15-startup-management-guide.html",
       "image": "/assets/images/blog/default-blog.jpg",
       "category": "legal",
       "tags": [
@@ -69,7 +43,7 @@
       "title": "創業稅務規劃全攻略：營業稅、所得稅與發票制度",
       "date": "2025-03-03",
       "summary": "順利拿到營業執照開業後，緊接而來的就是實際營運中的稅務規劃。稅務對新創企業而言既是挑戰也是機會：一方面要遵循各項申報納稅義務，另一方面也可透過合理規劃合法節稅，為公司省下一筆不小的資源。本文將聚焦於營業稅、所得稅和發票制度三大塊，剖析創業常見的迷思與正確作法，幫助新手老闆避開地雷。",
-      "url": "/blog/2025-03-03-chuang-ye-shui-wu-gui-hua-quan-gong-lue-ying-ye-shui-suo-de-shui-yu-fa-piao-zhi-du.html",
+      "url": "/blog/2025-03-03-startup-tax-planning-vat-invoice.html",
       "image": "/assets/images/blog/default-blog.jpg",
       "category": "tax",
       "tags": [
@@ -82,7 +56,7 @@
       "title": "創業必知：營業登記與選址指南",
       "date": "2025-02-25",
       "summary": "當你決定好要採用行號還是公司型態後，接下來非常重要的一步就是辦理營業登記。無論何種行業，只要以營利為目的在臺灣展開業務，都必須依規定辦理營業（或公司）登記，取得營業登記證或公司執照。這不僅是合法經營的基本要求，也是後續報稅、開立發票等一切商業活動的前提。了解臺灣營業登記的規範和選擇合適的營業地址，",
-      "url": "/blog/2025-02-25-chuang-ye-bi-zhi-ying-ye-deng-ji-yu-xuan-zhi-zhi-nan.html",
+      "url": "/blog/2025-02-25-startup-registration-guide.html",
       "image": "/assets/images/blog/default-blog.jpg",
       "category": "tax",
       "tags": [
@@ -95,7 +69,7 @@
       "title": "創業初期的關鍵選擇：行號VS公司組織型態",
       "date": "2025-02-23",
       "summary": "創業的第一步，除了確立商業模式和產品服務，另一個至關重要的決定就是選擇適合的公司組織架構。在台灣，最常見的組織型態不外乎「行號」（又稱企業社，可為獨資或合夥）和「公司」（例如有限公司或股份有限公司）。不同型態在法律地位、責任歸屬、設立程序、稅務制度等方面差異顯著，並將深刻影響未來發展方向。",
-      "url": "/blog/2025-02-23-chuang-ye-chu-qi-de-guan-jian-xuan-ze-xing-hao-vsgong-si-zu-zhi-xing-tai.html",
+      "url": "/blog/2025-02-23-startup-company.html",
       "image": "/assets/images/blog/default-blog.jpg",
       "category": "tax",
       "tags": [
@@ -108,7 +82,7 @@
       "title": "創業必讀：合夥人協議與公司章程的重要性",
       "date": "2025-02-13",
       "summary": "創業道路上，除了商業模式和市場策略，公司治理結構的基礎文件同樣關鍵。合夥人協議與公司章程是企業組織架構的核心文件，卻常被新創團隊忽視。本文將探討這些文件的重要性，以及不重視它們可能導致的嚴重後果。 合夥人協議：防止兄弟變冤家的關鍵 許多新創企業由兩人或多人合夥創立，但初期未訂立清楚的合夥協議，",
-      "url": "/blog/2025-02-13-chuang-ye-bi-du-he-huo-ren-xie-yi-yu-gong-si-zhang-cheng-de-zhong-yao-xing.html",
+      "url": "/blog/2025-02-13-startup.html",
       "image": "/assets/images/blog/default-blog.jpg",
       "category": "business",
       "tags": [
@@ -121,7 +95,7 @@
       "title": "台灣創業指南：會計師的角色與價值",
       "date": "2025-02-03",
       "summary": "踏上創業旅程的新手老闆，除了對未來的憧憬，往往也面臨著繁瑣事務的挑戰。公司財務與稅務相關的數字和法規，常讓創業者感到頭昏腦脹。有些人為節省初期成本，可能想自己摸索或只找個會計助理協助。然而，創業初期就像蓋房子的地基，若沒有打好穩固基礎，未來營運可能面臨搖搖欲墜的風險。 會計師 vs.",
-      "url": "/blog/2025-02-03-tai-wan-chuang-ye-zhi-nan-hui-ji-shi-de-jiao-se-yu-jia-zhi.html",
+      "url": "/blog/2025-02-03-startup-guide.html",
       "image": "/assets/images/blog/default-blog.jpg",
       "category": "accounting",
       "tags": [
@@ -132,42 +106,36 @@
     }
   ],
   "pagination": {
-    "total_posts": 10,
+    "total_posts": 8,
     "total_pages": 2,
     "items_per_page": 6
   },
   "categories": [
+    "financial",
+    "business",
     "accounting",
     "legal",
-    "tax",
-    "business",
-    "financial"
+    "tax"
   ],
   "tags": [
-    "地址",
-    "登記",
-    "跨境電商",
-    "新創企業",
     "會計師",
-    "公司",
-    "會計實務",
-    "發票",
-    "稅務",
-    "稅務規劃",
-    "勞工",
-    "行號",
-    "創業",
-    "股份",
-    "資本額",
-    "電子商務",
     "申報",
-    "營業稅",
-    "財務",
-    "保險",
-    "資金",
-    "稅務合規",
+    "勞工",
     "所得",
+    "營業稅",
+    "股份",
+    "創業",
+    "公司",
+    "稅務",
+    "發票",
+    "行號",
+    "資本額",
     "營業",
-    "企業"
+    "地址",
+    "財務",
+    "企業",
+    "資金",
+    "保險",
+    "登記"
   ]
 }
