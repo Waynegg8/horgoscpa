@@ -87,8 +87,8 @@ jobs:
         id: init_json
         run: |
           # 檢查blog-posts.json是否存在
-          if [ ! -f "assets/data/blog-posts.json" ] || [ "${{ github.event.inputs.force_scan }}" == "true" ] || [ "$(cat assets/data/blog-posts.json | grep -c '"posts": \[\]')" -eq "1" ]; then
-            # 不存在或強制掃描或是空文件，創建初始結構
+          if [ ! -f "assets/data/blog-posts.json" ] || [ "${{ github.event.inputs.force_scan }}" == "true" ]; then
+            # 不存在或強制掃描，創建初始結構
             echo "建立或更新blog-posts.json"
             mkdir -p assets/data
             echo '{
@@ -108,14 +108,20 @@ jobs:
             # 標記需要掃描HTML文件
             echo "scan_html=true" >> $GITHUB_OUTPUT
           else
-            # 檢查posts是否為空
-            POSTS_COUNT=$(cat assets/data/blog-posts.json | grep -o '"posts": \[.*\]' | grep -c "}")
-            if [ "$POSTS_COUNT" -eq "0" ]; then
+            # 檢查posts是否為空 - 使用 grep || true 避免 grep 找不到匹配項目時的退出代碼 1
+            if grep -q '"posts": \[\]' assets/data/blog-posts.json; then
               echo "blog-posts.json的posts為空，需要掃描HTML文件"
               echo "scan_html=true" >> $GITHUB_OUTPUT
             else
-              echo "blog-posts.json已存在且包含文章數據"
-              echo "scan_html=false" >> $GITHUB_OUTPUT
+              # 使用 wc -l 計算包含 "posts" 的行數，如果至少有一行，則可能有文章
+              POSTS_LINE_COUNT=$(grep -c "posts" assets/data/blog-posts.json || true)
+              if [ "$POSTS_LINE_COUNT" -gt 0 ]; then
+                echo "blog-posts.json已存在且包含文章數據"
+                echo "scan_html=false" >> $GITHUB_OUTPUT
+              else
+                echo "無法確定blog-posts.json的內容，預設進行掃描"
+                echo "scan_html=true" >> $GITHUB_OUTPUT
+              fi
             fi
           fi
           
