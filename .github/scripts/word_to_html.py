@@ -4,6 +4,7 @@
 """
 Word 文檔轉換為 HTML 工具
 用於將 Word 文檔轉換為符合網站風格的 HTML 文件
+優化版本 2.0：強化排版分段表現形式
 """
 
 import os
@@ -186,7 +187,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
                  date: str, summary: str, primary_category: str, category_code: str,
                  image: str = None) -> str:
     """
-    生成HTML內容，使用符合 article.html 的格式
+    生成HTML內容，使用符合 article.html 的格式，但簡化版本
     :param title: 文章標題
     :param paragraphs: 段落列表
     :param tags: 標籤列表
@@ -204,33 +205,16 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     # 設置圖片路徑
     image_path = f"/assets/images/blog/{image}"
     
+    # 生成檔案名（不含路徑）
+    file_name = f"{date}-{slugify(title)}.html"
+    # 生成相對 URL 路徑（僅用於結構化資料）
+    relative_url = f"/blog/{file_name}"
+    
     # 預設作者相關內容
     author_name = "林會計師"
     author_title = "稅務與國際帳務專家"
     author_bio = "擁有20年以上業界經驗，專長於企業稅務規劃、跨境稅務與投資架構設計。精通臺商赴海外投資的各項財稅規劃，以及外資來臺投資的稅務審查與租稅協定應用。"
     author_image = "/assets/images/team/lin-profile.jpg"
-    
-    # 生成相關文章（這裡是假資料，實際應該從你的文章數據庫中獲取）
-    related_posts = [
-        {
-            "title": "年度稅務規劃指南",
-            "date": "2025-03-05",
-            "url": "/blog/tax-planning.html",
-            "image": "/assets/images/blog/tax-planning.jpg"
-        },
-        {
-            "title": "新創公司常見帳務陷阱",
-            "date": "2025-03-22",
-            "url": "/blog/startup-traps.html",
-            "image": "/assets/images/blog/startup-accounting.jpg"
-        },
-        {
-            "title": "雙重課稅的應對之道",
-            "date": "2025-02-18",
-            "url": "/blog/double-taxation.html",
-            "image": "/assets/images/blog/international-tax.jpg"
-        }
-    ]
     
     # 生成HTML頭部
     html = f"""<!DOCTYPE html>
@@ -277,7 +261,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     "@type": "BlogPosting",
     "headline": "{title}",
     "description": "{summary}",
-    "image": "{image_path}",
+    "image": "https://www.horgoscpa.com{image_path}",
     "datePublished": "{date}",
     "dateModified": "{date}",
     "author": {{
@@ -295,7 +279,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     }},
     "mainEntityOfPage": {{
       "@type": "WebPage",
-      "@id": "https://www.horgoscpa.com/blog/{date}-{slugify(title)}.html"
+      "@id": "https://www.horgoscpa.com{relative_url}"
     }},
     "keywords": "{', '.join(tags)}"
   }}
@@ -362,31 +346,179 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
       
       <!-- 文章主圖 -->
       <img src="{image_path}" alt="{title}" class="article-featured-image">
-      
+"""
+    
+    # 提取標題以生成目錄
+    toc_items = []
+    section_id = 0
+    for i, para in enumerate(paragraphs):
+        if para["style"].startswith('h') and len(para["style"]) == 2 and para["style"][1].isdigit():
+            level = int(para["style"][1])
+            if level > 1 and level <= 4:  # 只處理h2、h3、h4
+                section_id += 1
+                anchor_id = f"section-{section_id}"
+                toc_class = "article-toc-item" if level == 2 else "article-toc-item article-toc-subitem"
+                toc_items.append({
+                    "id": anchor_id,
+                    "title": para["text"],
+                    "level": level,
+                    "class": toc_class
+                })
+    
+    # 如果有足夠的標題，添加文章結構導航
+    if len(toc_items) >= 2:
+        html += """      
+      <!-- 文章結構導航 -->
+      <div class="article-toc">
+        <h3 class="article-toc-title">文章目錄</h3>
+        <ul class="article-toc-list">
+"""
+        
+        # 生成目錄HTML
+        for item in toc_items:
+            html += f"""          <li class="{item['class']}">
+            <a href="#{item['id']}" class="article-toc-link">{item['title']}</a>
+          </li>
+"""
+        
+        html += """        </ul>
+      </div>
+"""
+    
+    html += """      
       <!-- 文章內容主體 -->
       <div class="article-body">
 """
     
-    # 添加文章內容
-    for para in paragraphs:
-        tag = para["style"]
-        content = para["text"]
-        
-        if tag == "li":
-            html += f"        <ul>\n          <li>{content}</li>\n        </ul>\n"
-        elif tag.startswith("h") and len(tag) == 2 and tag[1].isdigit():
-            level = int(tag[1])
-            if level == 1:  # h1 已經用於標題，所以內容中的 h1 轉為 h2
-                html += f"        <h2>{content}</h2>\n"
-            else:
-                html += f"        <{tag}>{content}</{tag}>\n"
-        else:
-            html += f"        <{tag}>{content}</{tag}>\n"
+    # 添加文章內容，增強對特殊區塊的處理
+    section_id = 0
+    in_list = False
+    list_type = None
     
-    # 添加標籤區域與文章頁腳
-    html += f"""      </div>
+    for i, para in enumerate(paragraphs):
+        text = para["text"]
+        style = para["style"]
+        
+        # 處理標題並添加錨點
+        if style.startswith('h') and len(style) == 2 and style[1].isdigit():
+            level = int(style[1])
+            if level > 1 and level <= 4:  # 只處理h2、h3、h4
+                section_id += 1
+                anchor_id = f"section-{section_id}"
+                html += f'        <{style} id="{anchor_id}">{text}</{style}>\n'
+                continue
+        
+        # 檢測並處理提示區塊
+        if text.startswith("提示:") or text.startswith("TIP:"):
+            html += f'        <div class="tip-block">\n'
+            html += f'          <p>{text[5:].strip()}</p>\n'
+            html += f'        </div>\n'
+            continue
+            
+        # 檢測並處理警告區塊
+        if text.startswith("警告:") or text.startswith("WARNING:"):
+            html += f'        <div class="warning-block">\n'
+            html += f'          <p>{text[6:].strip()}</p>\n'
+            html += f'        </div>\n'
+            continue
+            
+        # 檢測並處理注意區塊
+        if text.startswith("注意:") or text.startswith("NOTE:"):
+            html += f'        <div class="note-block">\n'
+            html += f'          <p>{text[6:].strip()}</p>\n'
+            html += f'        </div>\n'
+            continue
+        
+        # 處理表格標題和注釋
+        if style == "p" and (text.startswith("表格:") or text.startswith("表:") or text.startswith("TABLE:")):
+            html += f'        <div class="table-note">{text[text.find(":")+1:].strip()}</div>\n'
+            continue
+        
+        # 處理分隔線
+        if style == "p" and (text.strip() == "---" or text.strip() == "***" or text.strip() == "___"):
+            html += f'        <hr>\n'
+            continue
+            
+        # 處理圖片說明
+        if style == "p" and (text.startswith("圖:") or text.startswith("圖片:") or text.startswith("FIGURE:")):
+            # 檢查是否有前一個元素
+            last_lines = html.splitlines()
+            if len(last_lines) > 2 and ("<img" in last_lines[-2] or "<p><img" in last_lines[-2]):
+                # 找到最近的圖片並將其包裝在figure中
+                img_line_index = -1
+                for j in range(len(last_lines) - 1, -1, -1):
+                    if "<img" in last_lines[j]:
+                        img_line_index = j
+                        break
+                
+                if img_line_index != -1:
+                    # 轉換為figure格式
+                    img_line = last_lines[img_line_index]
+                    if "<p><img" in img_line:
+                        img_line = img_line.replace("<p><img", "<figure>\n          <img")
+                        # 刪除可能的</p>
+                        if "</p>" in last_lines[img_line_index + 1]:
+                            last_lines[img_line_index + 1] = ""
+                    else:
+                        img_line = img_line.replace("<img", "<figure>\n          <img")
+                    
+                    last_lines[img_line_index] = img_line
+                    
+                    # 添加figcaption
+                    caption_text = text[text.find(":")+1:].strip()
+                    figcaption_line = f'          <figcaption>{caption_text}</figcaption>\n        </figure>'
+                    
+                    # 重建HTML
+                    html = "\n".join(last_lines[:img_line_index + 1]) + "\n" + figcaption_line + "\n" + "\n".join(last_lines[img_line_index + 2:])
+                    continue
+            
+            # 如果沒有找到圖片，則作為普通段落處理
+            html += f'        <p>{text}</p>\n'
+            continue
+        
+        # 處理列表項
+        if style == "li":
+            if not in_list:
+                # 開始新列表
+                in_list = True
+                list_type = "ul"  # 默認為無序列表
+                html += f'        <{list_type}>\n'
+            
+            html += f'          <li>{text}</li>\n'
+            
+            # 檢查下一項是否仍為列表項
+            if i == len(paragraphs) - 1 or paragraphs[i+1]["style"] != "li":
+                html += f'        </{list_type}>\n'
+                in_list = False
+            continue
+        elif in_list:
+            # 如果不是列表項但之前在列表中，關閉列表
+            html += f'        </{list_type}>\n'
+            in_list = False
+        
+        # 處理引用區塊
+        if style == "blockquote":
+            html += f'        <blockquote>\n          <p>{text}</p>\n        </blockquote>\n'
+            continue
+        
+        # 處理普通段落和其他元素
+        if style.startswith("h") and len(style) == 2 and style[1].isdigit():
+            level = int(style[1])
+            if level == 1:  # h1 已經用於標題，所以內容中的 h1 轉為 h2
+                html += f'        <h2>{text}</h2>\n'
+            else:
+                html += f'        <{style}>{text}</{style}>\n'
+        else:
+            html += f'        <{style}>{text}</{style}>\n'
+    
+    # 確保列表已關閉
+    if in_list:
+        html += f'        </{list_type}>\n'
+    
+    # 添加標籤區域
+    html += """      </div>
       
-      <!-- 文章標籤與分享 -->
+      <!-- 文章標籤 -->
       <div class="article-footer">
         <div class="article-tags">
 """
@@ -396,17 +528,6 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
         html += f'          <a href="/blog.html?tag={slugify(tag)}" class="article-tag">{tag}</a>\n'
     
     html += """        </div>
-        <div class="article-share">
-          <a href="https://www.facebook.com/sharer/sharer.php?u=" target="_blank" class="share-button facebook" aria-label="分享至Facebook">
-            <span class="material-symbols-rounded">facebook</span>
-          </a>
-          <a href="https://twitter.com/intent/tweet?url=" target="_blank" class="share-button twitter" aria-label="分享至Twitter">
-            <span class="material-symbols-rounded">twitter</span>
-          </a>
-          <a href="https://www.linkedin.com/shareArticle?mini=true&url=" target="_blank" class="share-button linkedin" aria-label="分享至LinkedIn">
-            <span class="material-symbols-rounded">linkedin</span>
-          </a>
-        </div>
       </div>
     </article>
     
@@ -422,45 +543,11 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
       </div>
     </div>
     
-    <!-- 相關文章 -->
-    <div class="related-posts">
-      <h3 class="related-title">延伸閱讀</h3>
-      <div class="related-posts-grid">
-"""
-    
-    # 添加相關文章
-    for related in related_posts:
-        html += f"""        <!-- 相關文章 -->
-        <div class="related-post-card">
-          <div class="related-post-image">
-            <img src="{related['image']}" alt="{related['title']}">
-          </div>
-          <div class="related-post-content">
-            <h4 class="related-post-title">
-              <a href="{related['url']}">{related['title']}</a>
-            </h4>
-            <span class="related-post-date">{related['date']}</span>
-          </div>
-        </div>
-"""
-    
-    # 文章導航
-    html += """      </div>
-    </div>
-    
-    <!-- 文章導航 -->
+    <!-- 簡化後的文章導航 - 只保留返回部落格按鈕 -->
     <div class="article-navigation">
-      <a href="#" class="nav-button prev-post">
-        <span class="material-symbols-rounded">arrow_back</span>
-        上一篇：上一篇文章標題
-      </a>
       <a href="/blog.html" class="back-to-blog">
         <span class="material-symbols-rounded">view_list</span>
         返回文章列表
-      </a>
-      <a href="#" class="nav-button next-post">
-        下一篇：下一篇文章標題
-        <span class="material-symbols-rounded">arrow_forward</span>
       </a>
     </div>
   </div>
@@ -629,6 +716,60 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     
     // 初始化進度
     updateReadingProgress();
+    
+    // 目錄導航功能
+    const tocLinks = document.querySelectorAll('.article-toc-link');
+    const sections = document.querySelectorAll('h2[id^="section-"], h3[id^="section-"], h4[id^="section-"]');
+    
+    if (tocLinks.length > 0 && sections.length > 0) {
+      // 監聽滾動事件，高亮當前閱讀的段落
+      window.addEventListener('scroll', function() {
+        // 獲取當前滾動位置
+        const scrollPosition = window.scrollY;
+        
+        // 決定當前可見的段落
+        let currentSectionId = '';
+        sections.forEach(section => {
+          const sectionTop = section.offsetTop - 120; // 添加一些偏移
+          if (scrollPosition >= sectionTop) {
+            currentSectionId = section.id;
+          }
+        });
+        
+        // 移除所有活動狀態
+        tocLinks.forEach(link => {
+          link.classList.remove('active');
+        });
+        
+        // 添加當前段落的活動狀態
+        if (currentSectionId) {
+          const currentLink = document.querySelector(`.article-toc-link[href="#${currentSectionId}"]`);
+          if (currentLink) {
+            currentLink.classList.add('active');
+          }
+        }
+      });
+      
+      // 點擊目錄鏈接時平滑滾動到對應段落
+      tocLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          const targetId = this.getAttribute('href').substring(1);
+          const targetElement = document.getElementById(targetId);
+          
+          if (targetElement) {
+            window.scrollTo({
+              top: targetElement.offsetTop - 100,
+              behavior: 'smooth'
+            });
+            
+            // 更新URL錨點但不跳轉
+            history.pushState(null, null, `#${targetId}`);
+          }
+        });
+      });
+    }
   });
 </script>
 
@@ -649,7 +790,7 @@ def process_word_files(input_dir: str, output_dir: str) -> None:
         os.makedirs(output_dir)
     
     # 獲取所有Word文檔
-    docx_files = [f for f in os.listdir(input_dir) if f.lower().endswith('.docx')]
+    docx_files = [f for f in os.listdir(input_dir) if f.lower().endswith('.docx') and not f.startswith('~$')]  # 排除臨時檔案
     
     if not docx_files:
         print(f"在 {input_dir} 中沒有找到Word文檔")
@@ -675,6 +816,9 @@ def process_word_files(input_dir: str, output_dir: str) -> None:
             # 判斷文章分類
             primary_category, category_code = determine_category(full_text)
             
+            # 生成檔案名
+            file_name = f"{date}-{slugify(title)}.html"
+            
             # 生成HTML
             html_content = generate_html(
                 title=title,
@@ -686,11 +830,9 @@ def process_word_files(input_dir: str, output_dir: str) -> None:
                 category_code=category_code
             )
             
-            # 生成文件名
-            file_name = f"{date}-{slugify(title)}.html"
+            # 寫入HTML文件
             output_path = os.path.join(output_dir, file_name)
             
-            # 寫入HTML文件
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(html_content)
             
@@ -698,6 +840,8 @@ def process_word_files(input_dir: str, output_dir: str) -> None:
         
         except Exception as e:
             print(f"處理 {docx_file} 時出錯: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
 def main() -> None:
     """主函數"""

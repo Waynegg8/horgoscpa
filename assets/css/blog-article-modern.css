@@ -1,7 +1,8 @@
 /* 
  * blog-article-modern.css - 霍爾果斯會計師事務所部落格文章內頁現代化樣式
  * 基於現有blog.css進行優化和現代化設計
- * 最後更新日期: 2025-05-07
+ * 最後更新日期: 2025-05-08
+ * 優化版本: 2.0 - 加強頁面排版與分段表現
  */
 
 /* ===== 1. 文章頁面標題區塊 ===== */
@@ -143,75 +144,478 @@
   max-height: 500px;
 }
 
-/* 文章內容主體 */
+/* ===== 新增：文章結構導航 ===== */
+.article-toc {
+  position: sticky;
+  top: 100px;
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 30px;
+  max-width: 300px;
+  max-height: 70vh;
+  overflow-y: auto;
+  float: right;
+  margin-left: 30px;
+  margin-right: -80px;
+  font-family: "Touch Me Sans Petite", "思源黑體", "微軟正黑體", sans-serif;
+}
+
+.article-toc-title {
+  font-size: 1.1rem;
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e9ecf2;
+}
+
+.article-toc-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.article-toc-item {
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.article-toc-link {
+  color: #444;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  padding-left: 10px;
+  border-left: 2px solid transparent;
+  display: block;
+  line-height: 1.4;
+}
+
+.article-toc-link:hover {
+  color: var(--secondary-color);
+  border-left: 2px solid var(--secondary-color);
+}
+
+.article-toc-link.active {
+  color: var(--secondary-color);
+  border-left: 2px solid var(--secondary-color);
+  font-weight: 500;
+}
+
+.article-toc-subitem {
+  padding-left: 20px;
+  margin-top: 5px;
+  font-size: 0.85rem;
+}
+
+/* ===== 4. 文章內容主體樣式增強 ===== */
 .article-body {
   padding: 40px;
+  position: relative;
 }
 
+/* 段落樣式優化 */
 .article-body p {
-  margin-bottom: 1.5rem;
-  line-height: 1.8;
+  margin-bottom: 1.8rem;
+  line-height: 1.9;
   color: #333;
   font-size: 1.1rem;
+  max-width: 42em;
 }
 
+/* 段落首行縮進 - 增強段落視覺區隔 */
+.article-body p + p {
+  text-indent: 2em;
+}
+
+/* 分段分隔線 */
+.article-body hr {
+  margin: 2.5rem auto;
+  width: 150px;
+  border: 0;
+  height: 1px;
+  background-image: linear-gradient(to right, rgba(0,0,0,0), rgba(0,102,204,0.5), rgba(0,0,0,0));
+}
+
+/* 主標題優化 */
 .article-body h2 {
-  font-size: 1.8rem;
+  font-size: 1.9rem;
   color: var(--primary-color);
-  margin-top: 2.5rem;
-  margin-bottom: 1.2rem;
+  margin-top: 3rem;
+  margin-bottom: 1.5rem;
   position: relative;
-  padding-bottom: 0.6rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #f0f0f0;
+  max-width: 100%;
+  scroll-margin-top: 100px; /* 錨點定位時的上方間距 */
 }
 
 .article-body h2::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  bottom: -1px;
   left: 0;
-  width: 60px;
+  width: 80px;
   height: 3px;
   background: linear-gradient(to right, var(--secondary-color), rgba(0, 112, 221, 0.3));
   border-radius: 1.5px;
 }
 
+/* 二級標題優化 */
 .article-body h3 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   color: var(--primary-color);
+  margin-top: 2.5rem;
+  margin-bottom: 1.2rem;
+  position: relative;
+  padding-left: 1rem;
+  scroll-margin-top: 100px;
+}
+
+/* 二級標題左側裝飾線 */
+.article-body h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  bottom: 0.2em;
+  width: 4px;
+  background: var(--secondary-color);
+  border-radius: 2px;
+}
+
+/* 三級標題優化 */
+.article-body h4 {
+  font-size: 1.3rem;
+  color: #333;
   margin-top: 2rem;
   margin-bottom: 1rem;
+  font-weight: 600;
+  scroll-margin-top: 100px;
 }
 
+/* 三級標題下劃線效果 */
+.article-body h4::after {
+  content: '';
+  display: block;
+  height: 2px;
+  width: 50px;
+  background: rgba(0, 102, 204, 0.3);
+  margin-top: 0.5rem;
+}
+
+/* ===== 5. 列表樣式優化 ===== */
+/* 列表容器樣式 */
 .article-body ul, 
 .article-body ol {
-  margin-bottom: 1.5rem;
-  padding-left: 1.8rem;
+  margin: 1.5rem 0 2rem;
+  padding-left: 2.2rem;
+  background-color: #f9fafc;
+  padding: 1.5rem 1.5rem 1.5rem 3.5rem;
+  border-radius: 8px;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.03);
 }
 
+/* 列表項優化 */
 .article-body li {
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.9rem;
   line-height: 1.7;
+  position: relative;
 }
 
+/* 有序列表數字樣式 */
+.article-body ol {
+  counter-reset: item;
+  list-style-type: none;
+}
+
+.article-body ol li {
+  counter-increment: item;
+}
+
+.article-body ol li::before {
+  content: counter(item) ".";
+  position: absolute;
+  left: -2em;
+  width: 1.5em;
+  text-align: right;
+  color: var(--secondary-color);
+  font-weight: bold;
+}
+
+/* 無序列表項目符號優化 */
+.article-body ul {
+  list-style-type: none;
+}
+
+.article-body ul li::before {
+  content: "•";
+  color: var(--secondary-color);
+  font-weight: bold;
+  display: inline-block; 
+  width: 1em;
+  margin-left: -1em;
+  font-size: 1.2em;
+}
+
+/* 嵌套列表樣式 */
+.article-body ul ul,
+.article-body ol ol,
+.article-body ul ol,
+.article-body ol ul {
+  margin: 0.8rem 0 0.8rem 0.5rem;
+  background-color: transparent;
+  box-shadow: none;
+  padding: 0 0 0 2rem;
+}
+
+/* ===== 6. 引用區塊優化 ===== */
+/* 引用區塊整體樣式 */
 .article-body blockquote {
   background: #f8fafd;
   border-left: 4px solid var(--secondary-color);
-  padding: 20px 25px;
-  margin: 1.5rem 0;
+  padding: 25px 30px;
+  margin: 2rem 0;
   color: #444;
   font-style: italic;
   border-radius: 0 8px 8px 0;
+  position: relative;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* 引用區塊前裝飾符號 */
+.article-body blockquote::before {
+  content: """;
+  font-family: Georgia, serif;
+  font-size: 4rem;
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  color: rgba(0, 102, 204, 0.1);
+  z-index: 0;
+}
+
+/* 引用內容樣式 */
+.article-body blockquote p {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 0.8rem;
+  text-indent: 0; /* 引用內段落不縮進 */
 }
 
 .article-body blockquote p:last-child {
   margin-bottom: 0;
 }
 
+/* 引用來源樣式 */
+.article-body blockquote cite {
+  display: block;
+  font-style: normal;
+  font-weight: bold;
+  margin-top: 0.8rem;
+  font-size: 0.9rem;
+  text-align: right;
+  color: #555;
+}
+
+/* ===== 7. 表格樣式優化 ===== */
+/* 表格容器樣式 */
+.article-body .table-container {
+  overflow-x: auto;
+  margin: 2.5rem 0;
+  border-radius: 10px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* 表格基本樣式 */
+.article-body table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 2rem 0;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* 表頭樣式 */
+.article-body th {
+  background: linear-gradient(to bottom, #f5f7fa, #e4eaf2);
+  color: var(--primary-color);
+  font-weight: 600;
+  padding: 15px 18px;
+  text-align: left;
+  border-bottom: 2px solid #d0d9e6;
+}
+
+/* 表格單元格樣式 */
+.article-body td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #e9ecf2;
+  transition: background-color 0.2s ease;
+}
+
+/* 表格行懸停效果 */
+.article-body tr:hover td {
+  background-color: #f0f5fe;
+}
+
+/* 斑馬條紋效果 */
+.article-body tr:nth-child(even) {
+  background-color: #f9fafc;
+}
+
+/* 表格注釋 */
+.article-body .table-note {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 10px;
+  font-style: italic;
+}
+
+/* ===== 8. 圖片與圖表優化 ===== */
+/* 圖片容器 */
+.article-body figure {
+  margin: 2.5rem auto;
+  max-width: 95%;
+  text-align: center;
+}
+
+/* 圖片樣式 */
+.article-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  display: block;
+  margin: 2rem auto;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* 圖片懸停效果 */
+.article-body figure:hover img,
+.article-body img:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+/* 圖片說明文字 */
+.article-body figcaption {
+  margin-top: 15px;
+  padding: 8px 15px;
+  background-color: #f5f7fa;
+  border-radius: 5px;
+  display: inline-block;
+  font-size: 0.9rem;
+  color: #555;
+  font-style: italic;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* ===== 9. 分隔內容模塊 ===== */
+/* 內容模塊容器 */
+.article-body .content-block {
+  background-color: #f9fafc;
+  border-radius: 12px;
+  padding: 25px 30px;
+  margin: 2.5rem 0;
+  border: 1px solid #e9ecf2;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* 內容模塊標題 */
+.article-body .content-block-title {
+  font-size: 1.3rem;
+  color: var(--primary-color);
+  margin: -25px -30px 20px;
+  padding: 15px 30px;
+  background-color: #f1f5fa;
+  border-bottom: 1px solid #e9ecf2;
+  border-radius: 12px 12px 0 0;
+  position: relative;
+}
+
+/* 提示區塊 */
+.article-body .tip-block {
+  background-color: #f0f8ff;
+  border-left: 4px solid #0088ff;
+  padding: 20px 25px;
+  margin: 1.5rem 0;
+  border-radius: 0 8px 8px 0;
+  position: relative;
+}
+
+.article-body .tip-block::before {
+  content: '💡';
+  position: absolute;
+  top: 20px;
+  left: -12px;
+  background: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 24px;
+  font-size: 16px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 警告區塊 */
+.article-body .warning-block {
+  background-color: #fff8f0;
+  border-left: 4px solid #ff8800;
+  padding: 20px 25px;
+  margin: 1.5rem 0;
+  border-radius: 0 8px 8px 0;
+  position: relative;
+}
+
+.article-body .warning-block::before {
+  content: '⚠️';
+  position: absolute;
+  top: 20px;
+  left: -12px;
+  background: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 24px;
+  font-size: 16px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 注意區塊 */
+.article-body .note-block {
+  background-color: #f5f5f5;
+  border-left: 4px solid #666;
+  padding: 20px 25px;
+  margin: 1.5rem 0;
+  border-radius: 0 8px 8px 0;
+  position: relative;
+}
+
+.article-body .note-block::before {
+  content: 'ℹ️';
+  position: absolute;
+  top: 20px;
+  left: -12px;
+  background: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 24px;
+  font-size: 16px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 代碼塊樣式 */
 .article-body code {
   background: #f5f7fa;
   padding: 2px 6px;
   border-radius: 4px;
-  font-family: monospace;
+  font-family: 'Consolas', 'Monaco', monospace;
   font-size: 0.9em;
   color: #333;
 }
@@ -222,65 +626,19 @@
   border-radius: 8px;
   overflow-x: auto;
   margin-bottom: 1.5rem;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
 }
 
 .article-body pre code {
   background: none;
   padding: 0;
-}
-
-.article-body img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
+  font-size: 0.95em;
+  color: #333;
   display: block;
-  margin: 2rem auto;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  line-height: 1.6;
 }
 
-.article-body figure {
-  margin: 2rem 0;
-}
-
-.article-body figcaption {
-  text-align: center;
-  font-size: 0.9rem;
-  color: #666;
-  margin-top: 10px;
-}
-
-/* 表格樣式 */
-.article-body table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 2rem 0;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-}
-
-.article-body th,
-.article-body td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.article-body th {
-  background: #f5f7fa;
-  color: var(--primary-color);
-  font-weight: 600;
-}
-
-.article-body tr:nth-child(even) {
-  background: #f9fafc;
-}
-
-.article-body tr:hover {
-  background: #f5f7fa;
-}
-
-/* ===== 4. 文章標籤與分享 ===== */
+/* ===== 10. 文章標籤與分享 ===== */
 .article-footer {
   padding: 30px 40px;
   border-top: 1px solid #f2f5f9;
@@ -336,6 +694,8 @@
   text-decoration: none;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
 }
 
 .share-button:hover {
@@ -358,7 +718,7 @@
   color: white;
 }
 
-/* ===== 5. 作者資訊區塊 ===== */
+/* ===== 11. 作者資訊區塊 ===== */
 .author-card {
   background: #f8fafd;
   border-radius: 16px;
@@ -383,6 +743,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  margin: 0;
+  box-shadow: none;
 }
 
 .author-info {
@@ -409,7 +771,7 @@
   margin-bottom: 0;
 }
 
-/* ===== 6. 相關文章區塊 ===== */
+/* ===== 12. 相關文章區塊 ===== */
 .related-posts {
   margin-bottom: 60px;
 }
@@ -462,6 +824,9 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.5s ease;
+  margin: 0;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 .related-post-card:hover .related-post-image img {
@@ -494,7 +859,7 @@
   color: #666;
 }
 
-/* ===== 7. 導航與返回按鈕 ===== */
+/* ===== 13. 導航與返回按鈕 ===== */
 .article-navigation {
   display: flex;
   justify-content: space-between;
@@ -552,7 +917,92 @@
   margin-right: 8px;
 }
 
-/* ===== 8. 響應式調整 ===== */
+/* ===== 14. 閱讀進度指示器 ===== */
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 4px;
+  background: var(--secondary-color);
+  width: 0%;
+  z-index: 1001;
+  transition: width 0.2s ease;
+}
+
+/* ===== 15. 列印優化 ===== */
+@media print {
+  body {
+    font-size: 12pt;
+    background: white;
+    color: black;
+  }
+  
+  .site-nav, 
+  .site-footer, 
+  .back-to-top, 
+  .article-toc,
+  .article-navigation,
+  .article-share {
+    display: none !important;
+  }
+  
+  .article-container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .article-card {
+    box-shadow: none;
+    border: none;
+  }
+  
+  .article-body {
+    padding: 0;
+  }
+  
+  .article-body p,
+  .article-body li {
+    page-break-inside: avoid;
+  }
+  
+  .article-body h2,
+  .article-body h3,
+  .article-body h4 {
+    page-break-after: avoid;
+  }
+  
+  .article-body img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+  
+  a {
+    text-decoration: none;
+    color: #000;
+  }
+  
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: 80%;
+  }
+  
+  a[href^="#"]:after,
+  a[href^="javascript:"]:after {
+    content: "";
+  }
+  
+  .article-body table {
+    border-collapse: collapse;
+  }
+  
+  .article-body th,
+  .article-body td {
+    border: 1px solid #ddd;
+  }
+}
+
+/* ===== 16. 響應式調整 ===== */
 @media (max-width: 1100px) {
   .article-container {
     margin-left: 20px;
@@ -563,12 +1013,25 @@
     font-size: 2.2rem;
   }
   
+  .article-toc {
+    margin-right: 0;
+    float: none;
+    max-width: 100%;
+    margin-bottom: 30px;
+    position: static;
+  }
+  
   .article-header-main,
   .article-meta,
   .article-body,
   .article-footer {
     padding-left: 30px;
     padding-right: 30px;
+  }
+  
+  .article-body p,
+  .article-body li {
+    max-width: 100%;
   }
 }
 
@@ -585,6 +1048,14 @@
   .author-avatar {
     width: 80px;
     height: 80px;
+  }
+  
+  .article-body h2 {
+    font-size: 1.7rem;
+  }
+  
+  .article-body h3 {
+    font-size: 1.5rem;
   }
 }
 
@@ -620,6 +1091,11 @@
     font-size: 1rem;
   }
   
+  .article-body ul, 
+  .article-body ol {
+    padding: 1.2rem 1.2rem 1.2rem 2.8rem;
+  }
+  
   .author-card {
     flex-direction: column;
     text-align: center;
@@ -645,6 +1121,10 @@
     width: 100%;
     justify-content: center;
   }
+  
+  .article-toc {
+    margin-top: 20px;
+  }
 }
 
 @media (max-width: 576px) {
@@ -662,5 +1142,32 @@
   .article-container {
     margin-left: 15px;
     margin-right: 15px;
+  }
+  
+  .article-body blockquote {
+    padding: 20px;
+  }
+  
+  .article-body blockquote::before {
+    font-size: 3rem;
+  }
+  
+  .article-body pre {
+    padding: 15px;
+  }
+  
+  .article-body table {
+    font-size: 0.9rem;
+  }
+  
+  .article-body th,
+  .article-body td {
+    padding: 10px;
+  }
+  
+  .article-body .tip-block,
+  .article-body .warning-block,
+  .article-body .note-block {
+    padding: 15px 20px;
   }
 }
