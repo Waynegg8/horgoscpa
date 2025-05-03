@@ -62,6 +62,7 @@
       margin-right: 10px;
       transition: all 0.2s ease;
       background-color: white;
+      vertical-align: middle;
     }
     
     .radio-option input[type="radio"]:checked + label:before {
@@ -72,8 +73,8 @@
     .radio-option input[type="radio"]:checked + label:after {
       content: '';
       position: absolute;
-      left: 7px;
-      top: 13px;
+      left: 5px;
+      top: 12px;
       width: 10px;
       height: 10px;
       border-radius: 50%;
@@ -305,6 +306,12 @@
       flex-direction: column;
     }
     
+    /* 移除藍色分隔條 */
+    .booking-layout:before,
+    .booking-layout:after {
+      display: none;
+    }
+    
     /* LINE圖標樣式 */
     .line-icon {
       display: inline-block;
@@ -500,7 +507,7 @@
           <div class="form-group">
             <label class="checkbox-label">
               <input type="checkbox" name="agreement" required>
-              <span>我已閱讀並同意<a href="#" target="_blank">隱私權政策</a></span>
+              <span>我同意讓您們通過我提供的資訊與我聯繫</span>
             </label>
           </div>
           
