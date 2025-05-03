@@ -59,7 +59,7 @@
 </head>
 <body>
 
-<!-- 修改後的導航欄 -->
+<!-- 導航欄 -->
 <nav class="site-nav">
   <div class="nav-container">
     <div class="logo">
@@ -157,7 +157,6 @@
     </div>
     
     <div class="blog-grid" id="latest-posts-container">
-      <!-- 載入中顯示 -->
       <div class="loading-container">
         <div class="loading-spinner"></div>
         <p>載入最新文章中...</p>
@@ -170,12 +169,79 @@
   </div>
 </section>
 
-<!-- 頁尾區域 -->
+<!-- 完整頁尾區域 -->
 <footer class="site-footer">
-  <!-- 頁尾內容保持原樣 -->
+  <div class="footer-container">
+    <div class="footer-content">
+      <div class="footer-logo">
+        <div class="logo-main" style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px;">霍爾果斯會計師事務所</div>
+        <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
+        <p>專業、誠信、創新的財稅顧問夥伴，致力於提供企業與個人最優質的財務與稅務解決方案。</p>
+        <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="footer-line-btn">
+          <span class="line-icon"></span>
+          <span>加入LINE好友</span>
+        </a>
+      </div>
+      
+      <div class="footer-contact">
+        <h3>聯絡我們</h3>
+        <ul class="contact-info">
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">location_on</span></i>
+            <span>台中市西區建國路21號3樓之1</span>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">call</span></i>
+            <a href="tel:+886422205606">04-2220-5606</a>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">schedule</span></i>
+            <span>週一至週五 8:30-17:30</span>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">mail</span></i>
+            <a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a>
+          </li>
+        </ul>
+      </div>
+      
+      <div class="footer-links">
+        <h3>快速連結</h3>
+        <ul class="quick-links">
+          <li><a href="/services.html"><span class="material-symbols-rounded icon-link">category</span> 專業服務</a></li>
+          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">diversity_3</span> 專業團隊</a></li>
+          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">description</span> 專欄文章</a></li>
+          <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">quiz</span> 常見問題</a></li>
+          <li><a href="/video.html"><span class="material-symbols-rounded icon-link">smart_display</span> 影音專區</a></li>
+          <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_page</span> 聯絡資訊</a></li>
+        </ul>
+      </div>
+      
+      <div class="footer-services">
+        <h3>服務項目</h3>
+        <ul class="services-list">
+          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">payments</span> 稅務服務</a></li>
+          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance_wallet</span> 記帳與會計</a></li>
+          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">trending_up</span> 企業顧問</a></li>
+          <li><a href="/booking.html"><span class="material-symbols-rounded icon-link">event_available</span> 預約諮詢</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <div class="footer-text">
+        <p>&copy; 2025 霍爾果斯會計師事務所</p>
+        <p><a href="/privacy.html">隱私權政策</a> | <a href="/terms.html">服務條款</a></p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="back-to-top">
+    <span class="material-symbols-rounded">arrow_upward</span>
+  </div>
 </footer>
 
-<!-- 返回頂部按鈕功能 - 腳本 -->
+<!-- 腳本 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const backToTopButton = document.querySelector('.back-to-top');
@@ -192,10 +258,7 @@
   });
 </script>
 
-<!-- 導航欄功能腳本 -->
 <script src="/assets/js/navbar.js"></script>
-
-<!-- 首頁功能腳本 -->
 <script src="/assets/js/index.js"></script>
 
 </body>
