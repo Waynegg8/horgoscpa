@@ -12,6 +12,9 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
   <link rel="manifest" href="/site.webmanifest">
   
+  <!-- Material Symbols 圖示庫 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
   <!-- 引用全站共用樣式 -->
   <link rel="stylesheet" href="/assets/css/common.css" />
   <link rel="stylesheet" href="/assets/css/navbar.css" />
@@ -176,7 +179,7 @@
   </div>
 </section>
 
-<!-- 頁尾區域 -->
+<!-- 頁尾區域 - 新版設計 -->
 <footer class="site-footer">
   <div class="footer-container">
     <div class="footer-content">
@@ -192,19 +195,19 @@
         <h3>聯絡我們</h3>
         <ul class="contact-info">
           <li>
-            <i class="location-icon">📍</i>
+            <i class="icon-contact"><span class="material-symbols-rounded">location_on</span></i>
             <span>台中市西區建國路21號3樓之1</span>
           </li>
           <li>
-            <i class="phone-icon">📞</i>
+            <i class="icon-contact"><span class="material-symbols-rounded">call</span></i>
             <a href="tel:+886422205606">04-2220-5606</a>
           </li>
           <li>
-            <i class="clock-icon">🕒</i>
+            <i class="icon-contact"><span class="material-symbols-rounded">schedule</span></i>
             <span>週一至週五 8:30-17:30</span>
           </li>
           <li>
-            <i class="mail-icon">✉️</i>
+            <i class="icon-contact"><span class="material-symbols-rounded">mail</span></i>
             <a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a>
           </li>
         </ul>
@@ -214,12 +217,12 @@
       <div class="footer-links">
         <h3>快速連結</h3>
         <ul class="quick-links">
-          <li><a href="/services.html">服務項目</a></li>
-          <li><a href="/team.html">服務團隊</a></li>
-          <li><a href="/blog.html">部落格</a></li>
-          <li><a href="/faq.html">常見問題</a></li>
-          <li><a href="/contact.html">聯絡資訊</a></li>
-          <li><a href="/booking.html">預約諮詢</a></li>
+          <li><a href="/index.html"><span class="material-symbols-rounded icon-link">home</span> 首頁</a></li>
+          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 服務團隊</a></li>
+          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 部落格</a></li>
+          <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
+          <li><a href="/video.html"><span class="material-symbols-rounded icon-link">play_circle</span> 影片</a></li>
+          <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_mail</span> 聯絡資訊</a></li>
         </ul>
       </div>
       
@@ -227,9 +230,10 @@
       <div class="footer-services">
         <h3>服務項目</h3>
         <ul class="services-list">
-          <li><a href="/services/tax.html">稅務服務</a></li>
-          <li><a href="/services/accounting.html">記帳與會計</a></li>
-          <li><a href="/services/consulting.html">企業顧問</a></li>
+          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">attach_money</span> 稅務服務</a></li>
+          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance</span> 記帳與會計</a></li>
+          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">work</span> 企業顧問</a></li>
+          <li><a href="/booking.html"><span class="material-symbols-rounded icon-link">event_available</span> 預約諮詢</a></li>
         </ul>
       </div>
     </div>
@@ -244,11 +248,11 @@
   
   <!-- 返回頂部按鈕 -->
   <div class="back-to-top">
-    <i class="arrow-up">↑</i>
+    <span class="material-symbols-rounded">arrow_upward</span>
   </div>
 </footer>
 
-<!-- 頁尾功能腳本 - 新增 -->
+<!-- 返回頂部按鈕功能 - 腳本 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // 返回頂部按鈕功能
@@ -275,6 +279,7 @@
     });
   });
 </script>
+
 <!-- 導航欄功能腳本 -->
 <script src="/assets/js/navbar.js"></script>
 
