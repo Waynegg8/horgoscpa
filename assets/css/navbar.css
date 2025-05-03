@@ -209,14 +209,14 @@
   background: linear-gradient(45deg, #ff6b00, #ff8c00) !important;
   border-radius: 6px !important;
   height: 48px; /* LINE按鈕高度 */
-  width: 99px; /* 精確匹配LINE按鈕的長度 */
+  width: 132px; /* 根據截圖精確匹配LINE按鈕寬度 */
 }
 
 .nav-scrolled .nav-consult-btn {
   padding: 0 !important;
   font-size: 0.95rem !important;
   height: 42px; /* 滾動時與LINE按鈕同步縮小 */
-  width: 87px; /* 滾動時縮小寬度 */
+  width: 116px; /* 滾動時縮小寬度 */
 }
 
 .nav-consult-btn:hover {
@@ -472,7 +472,7 @@
   }
   
   .nav-consult-btn {
-    width: 95px; /* 稍微調整適應螢幕 */
+    width: 126px; /* 稍微調整適應螢幕 */
     height: 44px;
   }
   
@@ -481,7 +481,7 @@
   }
   
   .nav-scrolled .nav-consult-btn {
-    width: 83px;
+    width: 110px;
     height: 38px;
   }
   
@@ -501,7 +501,7 @@
   }
   
   .nav-consult-btn {
-    width: 90px; /* 縮小寬度 */
+    width: 120px; /* 縮小寬度 */
     height: 40px;
   }
   
@@ -510,7 +510,7 @@
   }
   
   .nav-scrolled .nav-consult-btn {
-    width: 79px;
+    width: 105px;
     height: 36px;
   }
   
