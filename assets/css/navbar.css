@@ -1,40 +1,36 @@
 /* 
  * navbar.css - 霍爾果斯會計師事務所網站導航欄樣式
- * 最後更新日期: 2025-05-03
- * 優化版本 2.0
+ * 最後更新日期: 2025-05-05
+ * 優化版本 3.0
  */
 
 /* 導航欄基本樣式 */
 .site-nav {
-  background: linear-gradient(135deg, #002246, #003672);
+  background: linear-gradient(135deg, #001e3c, #003366);
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
   position: sticky;
   top: 0;
   z-index: 1000;
   padding: 0;
-  transition: all 0.4s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 /* 滾動效果 - 縮小導航欄 */
 .site-nav.nav-scrolled {
-  padding: 5px 0;
+  padding: 0;
   background: linear-gradient(135deg, #001a36, #002c5e);
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-
-.site-nav:hover {
-  box-shadow: 0 6px 30px rgba(0,0,0,0.25);
 }
 
 .nav-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 40px; /* 減少上下padding */
+  padding: 12px 40px;
   max-width: 1400px;
   margin: 0 auto;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .nav-scrolled .nav-container {
@@ -45,7 +41,7 @@
 .logo {
   display: flex;
   flex-direction: column;
-  min-width: 240px; /* 減少最小寬度 */
+  min-width: 230px;
   transition: all 0.3s ease;
 }
 
@@ -111,7 +107,7 @@
   padding: 0;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px; /* 減少間距 */
+  gap: 8px;
 }
 
 .nav-menu li {
@@ -122,22 +118,22 @@
 .nav-menu a {
   color: #fff;
   position: relative;
-  padding: 8px 14px; /* 減少padding */
-  font-size: 1.15rem; /* 增大字體尺寸，與LINE按鈕完全一致 */
+  padding: 10px 16px;
+  font-size: 1.1rem;
   font-weight: 600; 
   text-decoration: none;
   border-radius: 8px;
   transition: all 0.3s ease;
   font-family: "思源黑體", "微軟正黑體", sans-serif;
   background-color: rgba(255, 255, 255, 0.05);
-  letter-spacing: 0.4px; /* 統一字距 */
+  letter-spacing: 0.4px;
   display: flex;
   align-items: center;
 }
 
 .nav-scrolled .nav-menu a {
-  padding: 7px 12px;
-  font-size: 1.1rem; /* 滾動時保持相對大小 */
+  padding: 8px 14px;
+  font-size: 1.05rem;
 }
 
 .nav-menu a:hover, 
@@ -145,7 +141,7 @@
   color: #fff;
   background-color: rgba(255, 255, 255, 0.15);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 25, 100, 0.2); /* 減輕陰影 */
+  box-shadow: 0 4px 8px rgba(0, 25, 100, 0.2);
 }
 
 .nav-menu a.active {
@@ -167,9 +163,9 @@
 /* 導航分隔線 */
 .nav-divider {
   width: 1px;
-  height: 24px; /* 減少高度 */
+  height: 24px;
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
-  margin: 0 10px; /* 減少邊距 */
+  margin: 0 10px;
   transition: all 0.3s ease;
 }
 
@@ -186,17 +182,17 @@
 
 .nav-cta-item {
   display: inline-block;
-  margin: 0 3px !important; /* 減少邊距 */
+  margin: 0 3px !important;
 }
 
-/* 免費諮詢按鈕樣式 - 完全匹配LINE按鈕長度 */
+/* 免費諮詢按鈕樣式 */
 .nav-consult-btn {
   font-weight: 600;
   box-shadow: 0 8px 20px rgba(255, 107, 0, 0.3);
   padding: 0 !important;
-  font-size: 1.15rem !important; /* 增大字體尺寸，與LINE按鈕完全一致 */
+  font-size: 1.1rem !important;
   border: none !important;
-  letter-spacing: 0.4px; /* 微調字距 */
+  letter-spacing: 0.4px;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -208,15 +204,15 @@
   transition: all 0.3s ease !important;
   background: linear-gradient(45deg, #ff6b00, #ff8c00) !important;
   border-radius: 6px !important;
-  height: 48px; /* LINE按鈕高度 */
-  width: 140px; /* 再增加寬度，使其略長於LINE按鈕 */
+  height: 42px;
+  width: 130px;
 }
 
 .nav-scrolled .nav-consult-btn {
   padding: 0 !important;
-  font-size: 1.1rem !important;
-  height: 42px; /* 滾動時與LINE按鈕同步縮小 */
-  width: 125px; /* 滾動時縮小寬度 */
+  font-size: 1.05rem !important;
+  height: 38px;
+  width: 120px;
 }
 
 .nav-consult-btn:hover {
@@ -240,24 +236,7 @@
   left: 100%;
 }
 
-/* 按鈕脈動動畫 - 降低強度 */
-@keyframes gentle-pulse {
-  0% {
-    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.25);
-  }
-  50% {
-    box-shadow: 0 4px 15px rgba(255, 107, 0, 0.4);
-  }
-  100% {
-    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.25);
-  }
-}
-
-.nav-consult-btn {
-  animation: gentle-pulse 3s infinite;
-}
-
-/* LINE按鈕樣式 - 保持原有設定 */
+/* LINE按鈕樣式 */
 .nav-line-btn {
   padding: 0 !important;
   background: transparent !important;
@@ -276,12 +255,12 @@
 
 .nav-line-btn img {
   display: block;
-  height: 48px; /* LINE圖標高度 */
+  height: 42px;
   transition: all 0.3s ease;
 }
 
 .nav-scrolled .nav-line-btn img {
-  height: 42px; /* 滾動時稍微縮小但仍然保持較大尺寸 */
+  height: 38px;
 }
 
 /* 下拉選單樣式 */
@@ -290,18 +269,19 @@
   top: 120%;
   left: 0;
   background: linear-gradient(to bottom, #002c63, #00244f);
-  min-width: 220px; /* 減少最小寬度 */
+  min-width: 220px;
   border-radius: 12px;
   box-shadow: 0 15px 35px rgba(0,0,0,0.35);
-  display: none;
-  z-index: 1001;
-  padding: 10px 6px; /* 減少內部padding */
-  margin-top: 10px;
+  visibility: hidden;
   opacity: 0;
+  z-index: 1001;
+  padding: 10px 6px;
+  margin-top: 10px;
   transform: translateY(10px) scale(0.98);
-  transition: opacity 0.3s ease, transform 0.3s ease, top 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease, top 0.3s ease, visibility 0.3s ease;
   border: 1px solid rgba(255, 255, 255, 0.12);
   overflow: hidden;
+  pointer-events: none;
 }
 
 .dropdown-menu::before {
@@ -319,44 +299,60 @@
 
 .dropdown-menu a {
   display: block;
-  padding: 10px 16px; /* 減少padding */
+  padding: 10px 16px;
   color: #fff;
   text-decoration: none;
-  font-size: 1.15rem; /* 統一更大字體大小 */
+  font-size: 1.1rem;
   transition: all 0.25s ease;
   white-space: nowrap;
   border: none;
   background: none;
   text-align: left;
   border-radius: 8px;
-  margin: 4px 6px; /* 減少邊距 */
+  margin: 4px 6px;
 }
 
 .dropdown-menu a:hover {
   background-color: rgba(0, 136, 255, 0.15);
   transform: none;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15); /* 減輕陰影 */
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
   padding-left: 20px;
 }
 
-/* 顯示下拉選單動畫 */
+/* 顯示下拉選單動畫 - 修改使用visibility而非display */
 .has-dropdown:hover .dropdown-menu {
-  display: block;
+  visibility: visible;
   opacity: 1;
   transform: translateY(0) scale(1);
   top: 100%;
+  pointer-events: auto;
 }
 
-/* 下拉箭頭圖標 */
+/* 確保下拉菜單有足夠的接觸空間 */
+.has-dropdown > a {
+  position: relative;
+}
+
 .has-dropdown > a::after {
   content: "▾";
   font-size: 0.85rem;
-  margin-left: 6px; /* 減少距離 */
+  margin-left: 6px;
   transition: transform 0.3s ease;
 }
 
 .has-dropdown:hover > a::after {
   transform: rotate(180deg);
+}
+
+/* 添加下拉菜单区域的缓冲区，防止鼠标移开时下拉菜单过快消失 */
+.has-dropdown::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 20px; /* 缓冲区高度 */
+  background: transparent;
 }
 
 /* 漢堡選單 */
@@ -468,46 +464,12 @@
   
   .nav-menu a {
     padding: 7px 12px; /* 更小的padding */
-    font-size: 1.1rem; /* 依然保持較大的字體 */
+    font-size: 1.05rem; /* 依然保持較大的字體 */
   }
   
   .nav-consult-btn {
-    width: 132px; /* 稍微調整適應螢幕 */
-    height: 44px;
-  }
-  
-  .nav-line-btn img {
-    height: 44px;
-  }
-  
-  .nav-scrolled .nav-consult-btn {
-    width: 120px;
-    height: 38px;
-  }
-  
-  .nav-scrolled .nav-line-btn img {
-    height: 38px;
-  }
-  
-  .logo {
-    min-width: 220px; /* 更小的logo區域 */
-  }
-}
-
-@media (max-width: 992px) {
-  .nav-menu a {
-    font-size: 1.05rem; /* 更小的字體但仍保持比例 */
-    padding: 7px 10px;
-  }
-  
-  .dropdown-menu a {
-    font-size: 1.05rem;
-  }
-  
-  .nav-consult-btn {
-    width: 126px; /* 縮小寬度 */
+    width: 125px; /* 稍微調整適應螢幕 */
     height: 40px;
-    font-size: 1.05rem !important;
   }
   
   .nav-line-btn img {
@@ -517,11 +479,45 @@
   .nav-scrolled .nav-consult-btn {
     width: 115px;
     height: 36px;
-    font-size: 1rem !important;
   }
   
   .nav-scrolled .nav-line-btn img {
     height: 36px;
+  }
+  
+  .logo {
+    min-width: 220px; /* 更小的logo區域 */
+  }
+}
+
+@media (max-width: 992px) {
+  .nav-menu a {
+    font-size: 1rem; /* 更小的字體但仍保持比例 */
+    padding: 7px 10px;
+  }
+  
+  .dropdown-menu a {
+    font-size: 1rem;
+  }
+  
+  .nav-consult-btn {
+    width: 120px; /* 縮小寬度 */
+    height: 38px;
+    font-size: 1rem !important;
+  }
+  
+  .nav-line-btn img {
+    height: 38px;
+  }
+  
+  .nav-scrolled .nav-consult-btn {
+    width: 110px;
+    height: 34px;
+    font-size: 0.95rem !important;
+  }
+  
+  .nav-scrolled .nav-line-btn img {
+    height: 34px;
   }
   
   .nav-divider {
@@ -533,11 +529,11 @@
   }
   
   .logo-main {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
   }
   
   .logo-sub {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 }
 
@@ -613,6 +609,8 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     transform: none;
     border-radius: 8px;
+    visibility: visible;
+    pointer-events: auto;
   }
   
   .dropdown-menu::before {
@@ -621,7 +619,7 @@
   
   .dropdown-menu a {
     padding: 10px 15px;
-    font-size: 1.15rem; /* 保持與LINE按鈕一致的字體大小 */
+    font-size: 1.05rem;
     opacity: 0.9;
     text-align: center;
     margin: 3px;
@@ -654,9 +652,9 @@
   
   .nav-consult-btn {
     width: 100%; /* 填滿容器 */
-    height: 50px; /* 移動設備上更大的高度 */
+    height: 46px; /* 移動設備上更大的高度 */
     margin: 5px auto;
-    font-size: 1.15rem !important; /* 保持字體大小 */
+    font-size: 1.1rem !important; /* 保持字體大小 */
   }
   
   .nav-line-btn {
@@ -666,7 +664,7 @@
   }
   
   .nav-line-btn img {
-    height: 50px; /* 確保LINE圖片在移動設備上也有相同高度 */
+    height: 46px; /* 確保LINE圖片在移動設備上也有相同高度 */
   }
   
   .nav-divider {
@@ -678,7 +676,7 @@
     text-align: center;
     padding: 10px 15px;
     justify-content: center;
-    font-size: 1.15rem; /* 保持字體大小統一 */
+    font-size: 1.1rem; /* 保持字體大小統一 */
   }
   
   .nav-menu a:hover,
@@ -698,11 +696,11 @@
 
 @media (max-width: 480px) {
   .logo-main {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
   }
   
   .logo-sub {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
   
   .nav-container {
@@ -729,6 +727,6 @@
   .nav-menu a,
   .dropdown-menu a,
   .nav-consult-btn {
-    font-size: 1.1rem; /* 小螢幕上稍微調小字體，但仍保持相對大小 */
+    font-size: 1.05rem; /* 小螢幕上稍微調小字體，但仍保持相對大小 */
   }
 }

@@ -1,6 +1,6 @@
 /**
  * navbar.js - 霍爾果斯會計師事務所導航欄功能腳本
- * 最後更新日期: 2025-05-03
+ * 最後更新日期: 2025-05-05
  * 優化版本 2.0
  */
 
@@ -63,11 +63,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const dropdownLink = item.querySelector('a');
         const dropdownMenu = item.querySelector('.dropdown-menu');
         
-        dropdownLink.removeEventListener('click', handleDropdownClick);
-        dropdownMenu.classList.remove('show');
+        // 移除點擊事件
+        if (dropdownLink) {
+          const clone = dropdownLink.cloneNode(true);
+          if (dropdownLink.parentNode) {
+            dropdownLink.parentNode.replaceChild(clone, dropdownLink);
+          }
+        }
         
-        function handleDropdownClick(e) {
-          // 空函數，用於移除事件
+        // 移除show類
+        if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+          dropdownMenu.classList.remove('show');
         }
       });
     }
@@ -76,11 +82,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // 初始設置
   setupDropdowns();
   
-  // 監聽窗口大小變化
-  let resizeTimer;
+  // 監聽窗口大小變化 - 使用節流函數防止頻繁觸發
+  let resizeTimeout;
   window.addEventListener('resize', function() {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function() {
       setupDropdowns();
     }, 250);
   });
@@ -100,11 +106,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // 導航欄滾動效果
+  // 導航欄滾動效果 - 使用防抖和節流技術防止抖動
   const siteNav = document.querySelector('.site-nav');
+  let lastScrollTop = 0;
+  let scrollThrottleTimer;
   
-  window.addEventListener('scroll', function() {
+  // 滾動節流函數
+  function throttleScroll() {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // 如果滾動位置變化不大，則忽略
+    if (Math.abs(scrollTop - lastScrollTop) < 5) {
+      return;
+    }
     
     // 滾動超過100px時，添加較小的導航欄樣式
     if (scrollTop > 100) {
@@ -112,7 +126,23 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       siteNav.classList.remove('nav-scrolled');
     }
-  });
+    
+    // 更新最後滾動位置
+    lastScrollTop = scrollTop;
+  }
+  
+  // 使用 requestAnimationFrame 優化滾動處理
+  function onScroll() {
+    if (!scrollThrottleTimer) {
+      scrollThrottleTimer = setTimeout(function() {
+        scrollThrottleTimer = null;
+        requestAnimationFrame(throttleScroll);
+      }, 100); // 100ms 的節流
+    }
+  }
+  
+  // 監聽滾動事件
+  window.addEventListener('scroll', onScroll);
   
   // 平滑滾動到頁面頂部
   document.querySelector('.logo a').addEventListener('click', function(e) {
@@ -165,27 +195,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 添加 CSS 樣式 - 波紋效果
 document.addEventListener('DOMContentLoaded', function() {
-  const style = document.createElement('style');
-  style.textContent = `
-    .ripple-effect {
-      position: absolute;
-      border-radius: 50%;
-      background-color: rgba(255, 255, 255, 0.4);
-      transform: scale(0);
-      animation: ripple 0.6s linear;
-      pointer-events: none;
-      width: 100px;
-      height: 100px;
-      margin-top: -50px;
-      margin-left: -50px;
-    }
-    
-    @keyframes ripple {
-      to {
-        transform: scale(4);
-        opacity: 0;
+  if (!document.querySelector('style#ripple-styles')) {
+    const style = document.createElement('style');
+    style.id = 'ripple-styles';
+    style.textContent = `
+      .ripple-effect {
+        position: absolute;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.4);
+        transform: scale(0);
+        animation: ripple 0.6s linear;
+        pointer-events: none;
+        width: 100px;
+        height: 100px;
+        margin-top: -50px;
+        margin-left: -50px;
       }
-    }
-  `;
-  document.head.appendChild(style);
+      
+      @keyframes ripple {
+        to {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
 });
