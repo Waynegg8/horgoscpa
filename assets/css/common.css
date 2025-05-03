@@ -243,9 +243,10 @@ img {
   line-height: 1.7;
 }
 
-/* 英雄區塊 */
+/* 英雄區塊 - 移除底色 */
 .hero {
-  background: linear-gradient(rgba(0, 33, 71, 0.8), rgba(0, 51, 102, 0.75)), url('/assets/images/hero.jpg') center/cover no-repeat;
+  /* 移除原有的背景顏色和漸層 */
+  background: url('/assets/images/hero.jpg') center/cover no-repeat;
   color: white;
   padding: 180px 20px;
   text-align: center;
@@ -254,6 +255,7 @@ img {
   overflow: hidden;
 }
 
+/* 覆蓋層 - 使用半透明深色覆蓋以確保文字清晰可見 */
 .hero::before {
   content: '';
   position: absolute;
@@ -261,7 +263,7 @@ img {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at center, rgba(0, 102, 204, 0.15), transparent 70%);
+  background: rgba(0, 33, 71, 0.5); /* 調整透明度以獲得理想效果 */
   z-index: 1;
 }
 
