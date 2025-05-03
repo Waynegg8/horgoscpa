@@ -1,7 +1,9 @@
+```javascript
 /**
  * index-animation.js - 霍爾果斯會計師事務所首頁動畫效果
  * 實現流動式層疊設計的交互動效
- * 最後更新日期: 2025-05-06
+ * 最後更新日期: 2025-05-07
+ * 修改: 取消英雄區視差效果
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -84,23 +86,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
   
-  // 英雄區視差效果
+  // 英雄區視差效果 - 已修改為靜態背景
   const heroParallax = function() {
     const hero = document.querySelector('.home-hero');
     const heroContent = document.querySelector('.hero-content');
     
     if (hero && heroContent) {
-      window.addEventListener('scroll', function() {
-        // 計算滾動距離
-        const scrollPosition = window.pageYOffset;
-        
-        // 如果滾動位置小於英雄區高度（僅在英雄區可見時應用效果）
-        if (scrollPosition < hero.offsetHeight) {
-          // 創建微妙的視差效果 - 內容和背景以不同速度移動
-          hero.style.backgroundPosition = `center ${scrollPosition * 0.4}px`;
-          heroContent.style.transform = `translateY(${scrollPosition * 0.15}px)`;
-        }
-      });
+      // 設置固定的背景位置，取消動態視差效果
+      hero.style.backgroundPosition = 'center center';
+      hero.style.backgroundAttachment = 'scroll';
+      
+      // 移除滾動事件監聽，不再產生視差效果
     }
   };
   
@@ -134,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // 初始執行
   animateOnScroll();
-  heroParallax();
+  heroParallax(); // 保留調用，但內部行為已更改
   addDecorativeElements();
   
   // 滾動時執行動畫
@@ -147,3 +143,4 @@ document.addEventListener('DOMContentLoaded', function() {
     animateOnScroll();
   });
 });
+```
