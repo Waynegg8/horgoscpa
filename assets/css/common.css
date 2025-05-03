@@ -1,7 +1,7 @@
 /* 
  * common.css - 霍爾果斯會計師事務所網站共用樣式
  * 最後更新日期: 2025-05-03
- * 優化版本
+ * 優化版本 3.0
  */
 
 /* 字體定義 */
@@ -21,18 +21,72 @@
   font-display: swap;
 }
 
-/* 基本樣式 */
+/* CSS變量: 全站色彩與設計系統 */
 :root {
+  /* 主色調 */
   --primary-color: #002147;
+  --primary-light: #003877;
+  --primary-dark: #001630;
+  
+  /* 輔助色 */
   --secondary-color: #0066cc;
+  --secondary-light: #0088ff;
+  --secondary-dark: #004d99;
+  
+  /* 強調色 */
   --accent-color: #ff6b00;
+  --accent-light: #ff8c00;
+  --accent-dark: #e55d00;
+  
+  /* 文字顏色 */
+  --text-dark: #222;
   --text-color: #333;
-  --light-text: #666;
-  --lighter-text: #999;
-  --background-light: #f9f9f9;
-  --card-shadow: 0 8px 30px rgba(0,0,0,0.06);
-  --hover-shadow: 0 15px 40px rgba(0,0,0,0.1);
+  --text-medium: #666;
+  --text-light: #999;
+  
+  /* 背景色 */
+  --bg-light: #f9f9f9;
+  --bg-lighter: #f2f2f2;
+  --bg-white: #ffffff;
+  --bg-highlight: rgba(0, 102, 204, 0.05);
+  
+  /* 陰影效果 */
+  --shadow-subtle: 0 2px 10px rgba(0,0,0,0.05);
+  --shadow-card: 0 8px 30px rgba(0,0,0,0.06);
+  --shadow-hover: 0 15px 40px rgba(0,0,0,0.1);
+  --shadow-button: 0 6px 18px rgba(0, 102, 204, 0.2);
+  --shadow-button-hover: 0 10px 25px rgba(0, 102, 204, 0.3);
+  
+  /* 過渡效果 */
+  --transition-fast: all 0.2s ease;
   --transition-standard: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --transition-slow: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  
+  /* 圓角 */
+  --radius-small: 6px;
+  --radius-standard: 12px;
+  --radius-large: 16px;
+  --radius-circle: 50%;
+  
+  /* 間距系統 */
+  --space-xs: 5px;
+  --space-sm: 10px;
+  --space-md: 20px;
+  --space-lg: 30px;
+  --space-xl: 50px;
+  --space-xxl: 80px;
+}
+
+/* 基本重置與設置 */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
 }
 
 body {
@@ -41,58 +95,123 @@ body {
   padding: 0;
   color: var(--text-color);
   line-height: 1.6;
-  background-color: #fff;
+  background-color: var(--bg-white);
   overflow-x: hidden;
   font-size: 16px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* 排版系統 */
 h1, h2, h3, h4, h5, h6 {
   font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
   line-height: 1.3;
   color: var(--primary-color);
   margin-top: 0;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
-a, button, .btn, .read-more {
-  font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+h1 {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
 }
 
-p, li, td, input, textarea, select, label {
+h2 {
+  font-size: 2.8rem;
+  margin-bottom: 0.9rem;
+}
+
+h3 {
+  font-size: 2.2rem;
+  margin-bottom: 0.8rem;
+}
+
+h4 {
+  font-size: 1.8rem;
+  margin-bottom: 0.7rem;
+}
+
+h5 {
+  font-size: 1.5rem;
+  margin-bottom: 0.6rem;
+}
+
+h6 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+p {
+  margin-bottom: 1.5rem;
   font-family: "Touch Me Sans Petite", "思源黑體", "微軟正黑體", sans-serif;
+  line-height: 1.8;
+  font-size: 1.1rem;
 }
 
 a {
   text-decoration: none;
   color: var(--secondary-color);
   transition: var(--transition-standard);
+  position: relative;
 }
 
 a:hover {
-  color: #004d99;
-  transform: translateY(-1px);
+  color: var(--secondary-dark);
+  transform: translateY(-2px);
+}
+
+ul, ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
 }
 
 img {
   max-width: 100%;
   height: auto;
   vertical-align: middle;
+  border-radius: var(--radius-small);
 }
 
+/* 佈局容器 */
 .container {
-  max-width: 1280px; /* 增加容器寬度 */
+  max-width: 1300px;
   margin: 0 auto;
-  padding: 0 50px; /* 增加外側間距 */
+  padding: 0 var(--space-xl);
   position: relative;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -var(--space-md);
+  margin-right: -var(--space-md);
+}
+
+.col {
+  flex: 1 0 0%;
+  padding-left: var(--space-md);
+  padding-right: var(--space-md);
 }
 
 /* 頁面標題樣式 */
 .page-header {
   text-align: center;
-  padding: 80px 0 40px; /* 增加上下空間 */
-  margin-bottom: 60px; /* 增加下方空間 */
+  padding: var(--space-xxl) 0 var(--space-xl);
+  margin-bottom: var(--space-xxl);
   position: relative;
-  background-color: rgba(0, 33, 71, 0.02); /* 淡淡的背景色 */
+  background-color: var(--bg-light);
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(0, 102, 204, 0.05) 0%, transparent 60%),
+    radial-gradient(circle at 70% 80%, rgba(0, 102, 204, 0.05) 0%, transparent 40%);
+  border-bottom: 1px solid rgba(0, 33, 71, 0.05);
 }
 
 .page-header:after {
@@ -101,24 +220,24 @@ img {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 100px; /* 寬一點的分隔線 */
+  width: 100px;
   height: 3px;
   background: linear-gradient(to right, var(--secondary-color), rgba(0, 102, 204, 0.3));
   border-radius: 1.5px;
 }
 
 .page-header h1 {
-  font-size: 3.2rem;
+  font-size: 3.5rem;
   color: var(--primary-color);
   margin-bottom: 25px;
   position: relative;
   display: inline-block;
-  letter-spacing: -0.5px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .page-header p {
-  font-size: 1.3rem;
-  color: var(--light-text);
+  font-size: 1.4rem;
+  color: var(--text-medium);
   max-width: 800px;
   margin: 0 auto 20px;
   line-height: 1.7;
@@ -128,9 +247,9 @@ img {
 .hero {
   background: linear-gradient(rgba(0, 33, 71, 0.8), rgba(0, 51, 102, 0.75)), url('/assets/images/hero.jpg') center/cover no-repeat;
   color: white;
-  padding: 160px 20px; /* 增加高度 */
+  padding: 180px 20px;
   text-align: center;
-  margin-bottom: 80px; /* 增加下方空間 */
+  margin-bottom: var(--space-xxl);
   position: relative;
   overflow: hidden;
 }
@@ -147,23 +266,22 @@ img {
 }
 
 .hero-content {
-  max-width: 900px; /* 更寬的內容區 */
+  max-width: 900px;
   margin: 0 auto;
   position: relative;
   z-index: 2;
 }
 
 .hero h1 {
-  font-size: 3.6rem; /* 更大的標題 */
+  font-size: 4rem;
   margin-bottom: 35px;
   color: #fff;
   text-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  letter-spacing: -0.5px;
   line-height: 1.2;
 }
 
 .hero p {
-  font-size: 1.6rem;
+  font-size: 1.7rem;
   margin-bottom: 45px;
   opacity: 0.95;
   line-height: 1.7;
@@ -173,16 +291,16 @@ img {
 /* 區塊標題 */
 .section-title {
   text-align: center;
-  margin-bottom: 80px; /* 增加下方空間 */
+  margin-bottom: var(--space-xxl);
+  position: relative;
 }
 
 .section-title h2 {
-  font-size: 2.8rem; /* 更大的標題 */
+  font-size: 3rem;
   color: var(--primary-color);
   margin-bottom: 30px;
   position: relative;
   display: inline-block;
-  letter-spacing: -0.5px;
 }
 
 .section-title h2:after {
@@ -198,10 +316,10 @@ img {
 }
 
 .section-title p {
-  max-width: 900px; /* 更寬的內容區 */
+  max-width: 900px;
   margin: 30px auto 0;
-  color: var(--light-text);
-  font-size: 1.25rem;
+  color: var(--text-medium);
+  font-size: 1.3rem;
   line-height: 1.7;
 }
 
@@ -210,26 +328,28 @@ img {
   display: inline-block;
   background-color: var(--secondary-color);
   color: white;
-  padding: 16px 36px; /* 更寬大的按鈕 */
-  border-radius: 6px;
+  padding: 16px 36px;
+  border-radius: var(--radius-small);
   text-decoration: none;
   font-weight: 600;
   font-size: 1.1rem;
-  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: var(--transition-standard);
   border: 2px solid var(--secondary-color);
   position: relative;
   overflow: hidden;
   z-index: 1;
-  box-shadow: 0 6px 18px rgba(0, 102, 204, 0.2);
+  box-shadow: var(--shadow-button);
   letter-spacing: 0.3px;
+  text-align: center;
+  cursor: pointer;
 }
 
 .btn:hover {
-  background-color: #005bb9;
-  border-color: #005bb9;
+  background-color: var(--secondary-dark);
+  border-color: var(--secondary-dark);
   color: white;
   transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(0, 102, 204, 0.3);
+  box-shadow: var(--shadow-button-hover);
 }
 
 .btn:active {
@@ -250,6 +370,29 @@ img {
   box-shadow: 0 7px 20px rgba(0, 102, 204, 0.2);
 }
 
+.btn-accent {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  box-shadow: 0 6px 18px rgba(255, 107, 0, 0.2);
+}
+
+.btn-accent:hover {
+  background-color: var(--accent-dark);
+  border-color: var(--accent-dark);
+  box-shadow: 0 10px 25px rgba(255, 107, 0, 0.3);
+}
+
+.btn-sm {
+  padding: 10px 24px;
+  font-size: 1rem;
+}
+
+.btn-lg {
+  padding: 18px 42px;
+  font-size: 1.2rem;
+}
+
+/* 產生漣漪效果 */
 .btn::after {
   content: "";
   position: absolute;
@@ -260,7 +403,7 @@ img {
   padding-bottom: 120%;
   margin-left: -60%;
   margin-top: -60%;
-  background: rgba(255, 255, 255, 0.2); /* 更明顯的漣漪效果 */
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   transform: scale(0);
   opacity: 0;
@@ -274,21 +417,38 @@ img {
   transition: 0s;
 }
 
-.btn-sm {
-  padding: 10px 24px;
-  font-size: 1rem;
-}
-
+/* 工具類 */
 .text-center {
   text-align: center;
 }
 
+.text-right {
+  text-align: right;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.mt-1 { margin-top: var(--space-xs); }
+.mt-2 { margin-top: var(--space-sm); }
+.mt-3 { margin-top: var(--space-md); }
+.mt-4 { margin-top: var(--space-lg); }
+.mt-5 { margin-top: var(--space-xl); }
+
+.mb-1 { margin-bottom: var(--space-xs); }
+.mb-2 { margin-bottom: var(--space-sm); }
+.mb-3 { margin-bottom: var(--space-md); }
+.mb-4 { margin-bottom: var(--space-lg); }
+.mb-5 { margin-bottom: var(--space-xl); }
+
 /* 關於區塊 */
 .about-section {
-  background-color: var(--background-light);
-  padding: 120px 0; /* 增加上下空間 */
-  margin-bottom: 80px; /* 增加下方空間 */
+  background-color: var(--bg-light);
+  padding: var(--space-xxl) 0;
+  margin-bottom: var(--space-xxl);
   position: relative;
+  overflow: hidden;
 }
 
 .about-section::before {
@@ -299,45 +459,67 @@ img {
   right: 0;
   height: 5px;
   background: linear-gradient(to right, var(--secondary-color), var(--accent-color));
-  opacity: 0.15; /* 稍微明顯一點 */
+  opacity: 0.15;
 }
 
 .about-content {
   text-align: center;
-  max-width: 1000px; /* 更寬的內容區 */
+  max-width: 1000px;
   margin: 0 auto;
+  position: relative;
+  z-index: 2;
 }
 
 .about-content p {
-  font-size: 1.25rem; /* 更大的文字 */
+  font-size: 1.3rem;
   line-height: 1.8;
   margin-bottom: 30px;
   color: var(--text-color);
 }
 
-/* 服務區塊 */
+.about-section::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 10% 90%, rgba(0, 102, 204, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 90% 30%, rgba(0, 102, 204, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* 服務區塊 - 改為Flex佈局確保一行顯示 */
 .services-section {
-  padding: 120px 0; /* 增加上下空間 */
-  margin-bottom: 80px; /* 增加下方空間 */
+  padding: var(--space-xxl) 0;
+  margin-bottom: var(--space-xxl);
+  background-color: var(--bg-white);
+  position: relative;
+  overflow: hidden;
 }
 
 .services-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* 更寬的卡片 */
-  gap: 50px; /* 增加間距 */
-  margin-top: 60px;
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-xl);
+  width: 100%;
+  gap: var(--space-lg);
 }
 
 .service-card {
-  background: white;
-  border-radius: 16px; /* 更圓滑的邊角 */
-  box-shadow: var(--card-shadow);
-  padding: 50px 40px; /* 增加內部空間 */
+  background: var(--bg-white);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: 50px 30px;
   text-align: center;
   transition: var(--transition-standard);
   border: 1px solid rgba(0, 0, 0, 0.03);
   position: relative;
   overflow: hidden;
+  flex: 1;
+  width: 0; /* 重要: 確保flex元素能夠縮小到小於其內容 */
+  min-width: 250px; /* 設定最小寬度，確保內容可讀性 */
 }
 
 .service-card::before {
@@ -346,7 +528,7 @@ img {
   top: 0;
   left: 0;
   width: 100%;
-  height: 6px; /* 更粗的上邊框 */
+  height: 6px;
   background: linear-gradient(to right, var(--secondary-color), var(--accent-color));
   opacity: 0;
   transition: var(--transition-standard);
@@ -354,7 +536,7 @@ img {
 
 .service-card:hover {
   transform: translateY(-15px);
-  box-shadow: var(--hover-shadow);
+  box-shadow: var(--shadow-hover);
 }
 
 .service-card:hover::before {
@@ -362,14 +544,14 @@ img {
 }
 
 .service-icon {
-  margin: 0 auto 35px;
-  width: 110px; /* 更大的圖標容器 */
-  height: 110px;
+  margin: 0 auto 30px;
+  width: 100px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 102, 204, 0.08);
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   transition: var(--transition-standard);
 }
 
@@ -379,8 +561,8 @@ img {
 }
 
 .service-icon img {
-  width: 55px;
-  height: 55px;
+  width: 50px;
+  height: 50px;
   transition: var(--transition-standard);
 }
 
@@ -389,12 +571,12 @@ img {
 }
 
 .service-card h3 {
-  font-size: 1.8rem; /* 更大的標題 */
+  font-size: 1.6rem;
   margin-top: 0;
-  margin-bottom: 28px;
+  margin-bottom: 25px;
   color: var(--primary-color);
   position: relative;
-  padding-bottom: 18px;
+  padding-bottom: 15px;
 }
 
 .service-card h3::after {
@@ -403,30 +585,31 @@ img {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 45px;
+  width: 40px;
   height: 2px;
   background-color: rgba(0, 102, 204, 0.3);
   transition: var(--transition-standard);
 }
 
 .service-card:hover h3::after {
-  width: 70px;
+  width: 60px;
   background-color: var(--secondary-color);
 }
 
 .service-card p {
-  margin-bottom: 35px;
-  color: var(--light-text);
+  margin-bottom: 30px;
+  color: var(--text-medium);
   line-height: 1.7;
-  font-size: 1.1rem; /* 更大的文字 */
+  font-size: 1.05rem;
 }
 
-/* 部落格區塊 */
+/* 部落格區塊 - 改為Flex佈局確保一行顯示 */
 .blog-section {
-  padding: 120px 0; /* 增加上下空間 */
-  background-color: var(--background-light);
-  margin-bottom: 80px; /* 增加下方空間 */
+  padding: var(--space-xxl) 0;
+  background-color: var(--bg-light);
+  margin-bottom: var(--space-xxl);
   position: relative;
+  overflow: hidden;
 }
 
 .blog-section::before {
@@ -437,34 +620,37 @@ img {
   right: 0;
   height: 5px;
   background: linear-gradient(to right, var(--accent-color), var(--secondary-color));
-  opacity: 0.15; /* 稍微明顯一點 */
+  opacity: 0.15;
 }
 
 .blog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); /* 更寬的卡片 */
-  gap: 50px; /* 增加間距 */
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--space-lg);
 }
 
 .blog-card {
-  background: white;
-  border-radius: 16px; /* 更圓滑的邊角 */
+  background: var(--bg-white);
+  border-radius: var(--radius-large);
   overflow: hidden;
-  box-shadow: var(--card-shadow);
+  box-shadow: var(--shadow-card);
   transition: var(--transition-standard);
-  height: 100%;
   display: flex;
   flex-direction: column;
   border: 1px solid rgba(0, 0, 0, 0.03);
+  flex: 1;
+  width: 0; /* 重要: 確保flex元素能夠縮小到小於其內容 */
+  min-width: 280px; /* 設定最小寬度，確保內容可讀性 */
 }
 
 .blog-card:hover {
   transform: translateY(-15px);
-  box-shadow: var(--hover-shadow);
+  box-shadow: var(--shadow-hover);
 }
 
 .blog-image {
-  height: 250px; /* 更高的圖片區域 */
+  height: 220px;
   overflow: hidden;
   position: relative;
 }
@@ -497,17 +683,17 @@ img {
 }
 
 .blog-content {
-  padding: 35px; /* 增加內部空間 */
+  padding: 30px;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
 }
 
 .blog-card .date {
-  color: var(--lighter-text);
-  font-size: 1rem;
+  color: var(--text-light);
+  font-size: 0.95rem;
   display: block;
-  margin-bottom: 18px;
+  margin-bottom: 15px;
   position: relative;
   padding-left: 22px;
 }
@@ -518,12 +704,12 @@ img {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .blog-card h3 {
-  margin: 0 0 20px 0;
-  font-size: 1.6rem; /* 更大的標題 */
+  margin: 0 0 15px 0;
+  font-size: 1.5rem;
   line-height: 1.4;
   transition: var(--transition-standard);
 }
@@ -539,11 +725,11 @@ img {
 }
 
 .blog-card p {
-  color: var(--light-text);
+  color: var(--text-medium);
   line-height: 1.7;
-  margin-bottom: 30px;
+  margin-bottom: 25px;
   flex-grow: 1;
-  font-size: 1.1rem; /* 更大的文字 */
+  font-size: 1.05rem;
 }
 
 .read-more {
@@ -552,10 +738,9 @@ img {
   color: var(--secondary-color);
   margin-top: auto;
   position: relative;
-  padding-right: 30px;
+  padding-right: 25px;
   align-self: flex-start;
   transition: var(--transition-standard);
-  font-size: 1.05rem; /* 更大的文字 */
 }
 
 .read-more:after {
@@ -565,7 +750,6 @@ img {
   top: 50%;
   transform: translateY(-50%);
   transition: var(--transition-standard);
-  font-size: 1.2rem; /* 更大的箭頭 */
 }
 
 .read-more:hover {
@@ -580,12 +764,12 @@ img {
 /* 控制載入中顯示樣式 */
 .loading-container {
   text-align: center;
-  padding: 50px; /* 增加空間 */
+  padding: var(--space-xl);
   width: 100%;
 }
 
 .loading-spinner {
-  border: 5px solid rgba(0, 0, 0, 0.05);
+  border: 4px solid rgba(0, 0, 0, 0.1);
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -600,80 +784,116 @@ img {
 }
 
 .loading-container p {
-  color: var(--light-text);
+  color: var(--text-medium);
   font-size: 1.1rem;
   margin: 0;
 }
 
 .error-message {
-  padding: 35px;
-  background-color: #fff;
-  border-radius: 16px; /* 更圓滑的邊角 */
-  box-shadow: var(--card-shadow);
+  padding: 30px;
+  background-color: var(--bg-white);
+  border-radius: var(--radius-standard);
+  box-shadow: var(--shadow-card);
   text-align: center;
   margin: 30px 0;
-  border-left: 5px solid #ff6b00;
+  border-left: 5px solid var(--accent-color);
 }
 
 .error-message p {
   margin: 0 0 12px;
   color: var(--text-color);
-  font-size: 1.1rem; /* 更大的文字 */
+  font-size: 1.1rem;
 }
 
 /* 響應式設計 */
 @media (max-width: 1280px) {
   .container {
-    padding: 0 40px;
+    padding: 0 var(--space-lg);
+  }
+  
+  .page-header h1, .hero h1 {
+    font-size: 3.2rem;
   }
   
   .section-title h2 {
     font-size: 2.6rem;
   }
   
-  .hero h1 {
-    font-size: 3.2rem;
+  .about-content p {
+    font-size: 1.2rem;
   }
   
-  .hero p {
-    font-size: 1.5rem;
+  .service-card {
+    padding: 40px 25px;
+  }
+  
+  .blog-card h3 {
+    font-size: 1.4rem;
   }
 }
 
 @media (max-width: 1100px) {
   .container {
-    padding: 0 35px;
+    padding: 0 var(--space-md);
+  }
+  
+  .page-header h1, .hero h1 {
+    font-size: 3rem;
+  }
+  
+  .hero p {
+    font-size: 1.5rem;
   }
   
   .section-title h2 {
     font-size: 2.4rem;
   }
   
-  .hero h1 {
-    font-size: 3rem;
+  /* 服務和博客在中等屏幕上保持2列 */
+  .services-grid, .blog-grid {
+    flex-wrap: wrap;
+  }
+  
+  .service-card, .blog-card {
+    flex-basis: calc(50% - var(--space-md));
+    min-width: 300px;
+  }
+}
+
+@media (max-width: 992px) {
+  .page-header h1, .hero h1 {
+    font-size: 2.7rem;
   }
   
   .hero p {
     font-size: 1.4rem;
   }
   
-  .services-grid,
-  .blog-grid {
-    gap: 40px;
+  .section-title h2 {
+    font-size: 2.2rem;
+  }
+  
+  .page-header {
+    padding-top: var(--space-xl);
+    padding-bottom: var(--space-lg);
+  }
+  
+  .page-header p {
+    font-size: 1.2rem;
+  }
+  
+  .about-section, .services-section, .blog-section {
+    padding: var(--space-xl) 0;
   }
 }
 
-@media (max-width: 992px) {
+@media (max-width: 768px) {
   .container {
-    padding: 0 30px;
+    padding: 0 var(--space-md);
   }
   
-  .hero {
-    padding: 120px 20px;
-  }
-  
-  .hero h1 {
-    font-size: 2.7rem;
+  .page-header h1, .hero h1 {
+    font-size: 2.4rem;
   }
   
   .hero p {
@@ -681,141 +901,59 @@ img {
   }
   
   .section-title h2 {
-    font-size: 2.2rem;
+    font-size: 2rem;
   }
   
-  .about-section,
-  .services-section,
-  .blog-section {
-    padding: 100px 0;
+  .about-content p {
+    font-size: 1.1rem;
   }
   
-  .page-header {
-    padding: 60px 0 30px;
+  /* 服務和博客在小屏幕上垂直堆疊 */
+  .services-grid, .blog-grid {
+    flex-direction: column;
   }
   
-  .page-header h1 {
-    font-size: 2.6rem;
-  }
-  
-  .services-grid {
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  }
-  
-  .blog-grid {
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  .service-card, .blog-card {
+    width: 100%;
+    margin-bottom: var(--space-md);
   }
 }
 
-@media (max-width: 850px) {
+@media (max-width: 576px) {
   .container {
-    padding: 0 25px;
+    padding: 0 var(--space-sm);
   }
   
-  .hero {
-    padding: 100px 20px;
-  }
-  
-  .hero h1 {
-    font-size: 2.4rem;
+  .page-header h1, .hero h1 {
+    font-size: 2.2rem;
   }
   
   .hero p {
     font-size: 1.2rem;
   }
   
-  .service-card {
-    padding: 40px 30px;
-  }
-  
-  .service-icon {
-    width: 90px;
-    height: 90px;
-  }
-  
-  .service-icon img {
-    width: 45px;
-    height: 45px;
-  }
-  
-  .blog-content {
-    padding: 30px;
-  }
-  
-  .about-section,
-  .services-section,
-  .blog-section {
-    padding: 80px 0;
-  }
-}
-
-@media (max-width: 700px) {
-  .services-grid,
-  .blog-grid {
-    grid-template-columns: 1fr;
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-}
-
-@media (max-width: 600px) {
-  .hero {
-    padding: 80px 20px;
-  }
-  
-  .hero h1 {
-    font-size: 2.1rem;
-  }
-  
-  .hero p {
-    font-size: 1.1rem;
-  }
-  
-  .section-title h2 {
-    font-size: 2rem;
-  }
-  
-  .page-header h1 {
-    font-size: 2.2rem;
-  }
-  
-  .about-section,
-  .services-section,
-  .blog-section {
-    padding: 70px 0;
-  }
-  
-  .btn {
-    padding: 14px 30px;
-    font-size: 1.05rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .container {
-    padding: 0 20px;
-  }
-  
-  .hero h1 {
-    font-size: 1.9rem;
-  }
-  
   .section-title h2 {
     font-size: 1.8rem;
   }
   
-  .about-content p,
-  .service-card p,
-  .blog-card p {
-    font-size: 1.05rem;
+  .btn {
+    padding: 14px 28px;
+    font-size: 1rem;
   }
   
-  .page-header {
-    padding: 50px 0 25px;
+  .service-card {
+    padding: 30px 20px;
   }
   
-  .page-header h1 {
-    font-size: 2rem;
+  .service-card h3 {
+    font-size: 1.4rem;
+  }
+  
+  .blog-content {
+    padding: 25px 20px;
+  }
+  
+  .blog-card h3 {
+    font-size: 1.3rem;
   }
 }
