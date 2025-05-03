@@ -189,6 +189,62 @@
 }
 
 /* 移除 LINE 按鈕樣式 */
+/* 恢复以前被移除的 LINE 按钮样式 */
+.nav-line-btn {
+  font-weight: 700;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+  padding: 6px 12px !important;
+  font-size: 1.05rem !important;
+  border-width: 1px !important;
+  letter-spacing: 0.6px;
+  min-width: 36px !important;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  background: #06C755 !important;
+  border-color: #06C755 !important;
+}
+
+.nav-line-btn:hover {
+  transform: scale(1.05) translateY(-4px) !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4) !important;
+}
+
+.nav-line-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.nav-line-btn:hover::before {
+  opacity: 1;
+}
+
+/* 恢复移动版LINE按钮样式 */
+@media (max-width: 850px) {
+  .nav-line-btn {
+    width: 100%;
+    margin: 8px auto;
+    justify-content: center;
+    padding: 8px 24px !important;
+  }
+  
+  .nav-line-btn img {
+    height: 36px;
+  }
+}
 
 .nav-consult-btn:hover {
   transform: scale(1.05) translateY(-4px) !important;
