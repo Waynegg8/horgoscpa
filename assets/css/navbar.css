@@ -166,6 +166,30 @@
   margin: 0 6px !important;
 }
 
+/* LINE按鈕樣式 */
+.nav-line-btn {
+  padding: 5px 12px !important;
+  background: #06C755 !important;
+  border-color: #06C755 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+}
+
+.nav-line-btn:hover {
+  transform: scale(1.05) translateY(-4px) !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4) !important;
+  background: #05B44C !important;
+  border-color: #05B44C !important;
+}
+
+.nav-line-btn img {
+  display: block;
+  height: 36px;
+}
+
 .nav-consult-btn {
   font-weight: 700;
   box-shadow: 0 6px 15px rgba(0,0,0,0.3);
@@ -224,6 +248,13 @@
 
 .nav-consult-btn {
   animation: pulse 2s infinite;
+}
+
+/* CTA按鈕組樣式 - 改善按鈕排列 */
+.nav-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* 下拉選單樣式 */
@@ -496,11 +527,16 @@
     margin: 10px 0 !important;
   }
   
-  .nav-consult-btn {
+  .nav-consult-btn, .nav-line-btn {
     width: 100%;
     margin: 8px auto;
     justify-content: center;
     padding: 14px 24px !important;
+  }
+  
+  .nav-line-btn {
+    padding: 6px 24px !important;
+    justify-content: center;
   }
   
   .nav-divider {
