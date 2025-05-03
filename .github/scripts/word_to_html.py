@@ -41,6 +41,7 @@ BLOG_URL_PREFIX = "/blog/"           # 博客URL前綴
 DEFAULT_AUTHOR = "霍爾果斯會計師事務所"  # 默認作者
 DEFAULT_IMAGE = "default.jpg"   # 默認圖片
 PROCESSED_LOG_FILE = os.path.join(PROJECT_ROOT, ".processed_docs.json")  # 已處理文件記錄
+TRANSLATION_DICT_FILE = os.path.join(PROJECT_ROOT, "tw_financial_dict.json")  # 台灣財稅專業詞彙詞典
 
 # 配置博客分類
 BLOG_CATEGORIES = {
@@ -75,6 +76,78 @@ THUMBNAIL_IMAGES = [
     "import_export_thumb1.jpg",
     "default.jpg"
 ]
+
+def load_translation_dict(dict_path=TRANSLATION_DICT_FILE):
+    """
+    載入翻譯詞典
+    :param dict_path: 詞典檔案路徑
+    :return: 詞典字典對象
+    """
+    if os.path.exists(dict_path):
+        try:
+            with open(dict_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"載入詞典時出錯: {str(e)}")
+    else:
+        print(f"詞典檔案不存在: {dict_path}")
+    return {}
+
+def translate_title_for_url(title, dict_path=TRANSLATION_DICT_FILE):
+    """
+    將中文標題翻譯為適合URL的英文
+    :param title: 中文標題
+    :param dict_path: 詞典檔案路徑
+    :return: 英文URL友好標題
+    """
+    # 載入詞典
+    tw_dict = load_translation_dict(dict_path)
+    
+    if not tw_dict:
+        print("詞典為空或載入失敗，使用默認音譯")
+        return slugify(title)
+    
+    # 使用jieba分詞
+    jieba.setLogLevel(20)  # 設定日誌級別，抑制結巴的輸出信息
+    words = list(jieba.cut(title))
+    
+    # 翻譯結果
+    translated_parts = []
+    
+    # 翻譯結果日誌，用於記錄哪些詞未在詞典中找到
+    miss_words = []
+    
+    for word in words:
+        # 去除標點符號和空格
+        word = word.strip()
+        if not word or word.isspace():
+            continue
+            
+        # 查詞典
+        if word in tw_dict:
+            translated_parts.append(tw_dict[word])
+        else:
+            # 對於詞典中沒有的詞，使用音譯
+            miss_words.append(word)
+            translated_parts.append(slugify(word))
+    
+    # 記錄未在詞典中找到的詞
+    if miss_words:
+        print(f"以下詞彙未在詞典中找到: {', '.join(miss_words)}")
+    
+    # 組合結果
+    translated_title = "-".join(part for part in translated_parts if part)
+    
+    # 確保URL友好
+    translated_title = re.sub(r'-+', '-', translated_title)  # 移除多餘的連字符
+    translated_title = translated_title.strip('-')  # 移除首尾的連字符
+    
+    # 如果翻譯失敗或結果為空，回退到原來的音譯方法
+    if not translated_title:
+        print("翻譯失敗，使用默認音譯")
+        translated_title = slugify(title)
+    
+    return translated_title
 
 def load_processed_docs() -> Dict[str, str]:
     """
@@ -354,11 +427,14 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     for tag in tags:
         html += f'  <meta property="article:tag" content="{tag}" />\n'
     
-    # 引用外部CSS樣式表，不再內嵌樣式
+    # 引用外部CSS樣式表，加入Material Symbols圖示庫
     html += f"""  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
   <link rel="manifest" href="/site.webmanifest">
+  
+  <!-- Material Symbols 圖示庫 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   
   <!-- 引用全站共用樣式 -->
   <link rel="stylesheet" href="/assets/css/common.css" />
@@ -401,7 +477,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
 </head>
 <body>
 
-<!-- 導航欄 -->
+<!-- 導航欄 - 修改版 -->
 <nav class="site-nav">
   <div class="nav-container">
     <div class="logo">
@@ -415,9 +491,6 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
       <span></span>
     </label>
     <ul class="nav-menu">
-      <li class="nav-cta-item"><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
-      <li class="nav-cta-item"><a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="nav-line-btn"><img src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png" alt="加入好友" height="36" border="0"></a></li>
-      <li class="nav-divider"></li>
       <li class="has-dropdown">
         <a href="/services.html">服務項目</a>
         <div class="dropdown-menu">
@@ -427,10 +500,11 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
         </div>
       </li>
       <li><a href="/team.html">服務團隊</a></li>
-      <li><a href="/blog.html" class="active">部落格</a></li>
+      <li><a href="/blog.html" class="active">專欄文章</a></li>
       <li><a href="/faq.html">常見問題</a></li>
-      <li><a href="/video.html">影片</a></li>
-      <li><a href="/contact.html">聯絡資訊</a></li>
+      <li><a href="/video.html">影音專區</a></li>
+      <li><a href="/contact.html">聯繫我們</a></li>
+      <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
     </ul>
   </div>
 </nav>
@@ -486,14 +560,111 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
   </div>
 </main>
 
-<!-- 頁尾區域 -->
+<!-- 頁尾區域 - 修改版 -->
 <footer class="site-footer">
   <div class="footer-container">
-    <div class="footer-text">
-      <p>&copy; 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
+    <div class="footer-content">
+      <!-- Logo與簡介 -->
+      <div class="footer-logo">
+        <div class="logo-main" style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px;">霍爾果斯會計師事務所</div>
+        <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
+        <p>專業、誠信、創新的財稅顧問夥伴，致力於提供企業與個人最優質的財務與稅務解決方案。</p>
+        <!-- 新增LINE按鈕 -->
+        <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="footer-line-btn">
+          <span class="line-icon"></span>
+          <span>加入LINE好友</span>
+        </a>
+      </div>
+      
+      <!-- 聯絡資訊 -->
+      <div class="footer-contact">
+        <h3>聯絡我們</h3>
+        <ul class="contact-info">
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">location_on</span></i>
+            <span>台中市西區建國路21號3樓之1</span>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">call</span></i>
+            <a href="tel:+886422205606">04-2220-5606</a>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">schedule</span></i>
+            <span>週一至週五 8:30-17:30</span>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">mail</span></i>
+            <a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- 快速連結 -->
+      <div class="footer-links">
+        <h3>快速連結</h3>
+        <ul class="quick-links">
+          <li><a href="/index.html"><span class="material-symbols-rounded icon-link">home</span> 首頁</a></li>
+          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 服務團隊</a></li>
+          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 部落格</a></li>
+          <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
+          <li><a href="/video.html"><span class="material-symbols-rounded icon-link">play_circle</span> 影片</a></li>
+          <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_mail</span> 聯絡資訊</a></li>
+        </ul>
+      </div>
+      
+      <!-- 服務項目 -->
+      <div class="footer-services">
+        <h3>服務項目</h3>
+        <ul class="services-list">
+          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">attach_money</span> 稅務服務</a></li>
+          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance</span> 記帳與會計</a></li>
+          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">work</span> 企業顧問</a></li>
+          <li><a href="/booking.html"><span class="material-symbols-rounded icon-link">event_available</span> 預約諮詢</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- 版權資訊 -->
+    <div class="footer-bottom">
+      <div class="footer-text">
+        <p>&copy; 2025 霍爾果斯會計師事務所</p>
+      </div>
     </div>
   </div>
+  
+  <!-- 返回頂部按鈕 -->
+  <div class="back-to-top">
+    <span class="material-symbols-rounded">arrow_upward</span>
+  </div>
 </footer>
+
+<!-- 返回頂部按鈕功能 - 腳本 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 返回頂部按鈕功能
+    const backToTopButton = document.querySelector('.back-to-top');
+    
+    // 初始隱藏按鈕
+    backToTopButton.classList.remove('visible');
+    
+    // 監聽滾動事件
+    window.addEventListener('scroll', function() {
+      if (window.pageYOffset > 300) {
+        backToTopButton.classList.add('visible');
+      } else {
+        backToTopButton.classList.remove('visible');
+      }
+    });
+    
+    // 點擊事件
+    backToTopButton.addEventListener('click', function() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+  });
+</script>
 
 <!-- 導航欄功能腳本 -->
 <script src="/assets/js/navbar.js"></script>
@@ -556,8 +727,13 @@ def process_docx(docx_path: str, output_dir: str = OUTPUT_DIR, processed_docs: D
         # 確保輸出目錄存在
         os.makedirs(output_dir, exist_ok=True)
         
-        # 生成HTML文件名
-        html_filename = f"{date}-{slugify(title)}.html"
+        # 使用新的翻譯函數生成檔案名
+        translated_title = translate_title_for_url(title)
+        html_filename = f"{date}-{translated_title}.html"
+        
+        print(f"生成檔案名: {html_filename}")
+        print(f"(原標題: {title})")
+        
         html_path = os.path.join(output_dir, html_filename)
         
         # 寫入HTML文件
@@ -609,6 +785,16 @@ def main():
     """主函數"""
     print(f"專案根目錄: {PROJECT_ROOT}")
     print(f"輸出目錄: {OUTPUT_DIR}")
+    
+    # 檢查詞典檔案是否存在
+    if os.path.exists(TRANSLATION_DICT_FILE):
+        print(f"詞典檔案已存在: {TRANSLATION_DICT_FILE}")
+        # 載入詞典進行測試
+        dict_size = len(load_translation_dict())
+        print(f"詞典包含 {dict_size} 個詞彙")
+    else:
+        print(f"詞典檔案不存在: {TRANSLATION_DICT_FILE}")
+        print("將使用默認音譯方式生成檔案名")
     
     if len(sys.argv) < 2:
         print("請提供Word文檔路徑或包含Word文檔的目錄路徑")
