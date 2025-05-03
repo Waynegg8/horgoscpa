@@ -4,7 +4,7 @@
 網址=https://www.youtube.com/embed/FvRwth0j_P0
 ---
 標題=創業公司會計注意事項
-日期=2025-03-09
+日期=2025-03-10
 描述=針對新創企業的會計實務指南，說明創業初期常見的會計問題與解決方案，包含成本控制、現金流管理與稅務規劃。
 網址=https://www.youtube.com/embed/MJlb2OEBuvA
 ---

@@ -243,13 +243,13 @@ img {
   line-height: 1.7;
 }
 
-/* 英雄區塊 - 基礎樣式，適用於所有內頁 */
-.hero {
+/* 首頁英雄區塊樣式 - 僅用於首頁 */
+.home-hero {
   /* 背景設定 */
   background: url('/assets/images/hero.jpg') center/cover no-repeat;
   color: white;
-  /* 較小的高度適合內頁 */
-  padding: 100px 20px;
+  /* 首頁需要更大的高度 */
+  padding: 180px 20px;
   text-align: center;
   margin-bottom: var(--space-xxl);
   position: relative;
@@ -257,7 +257,7 @@ img {
 }
 
 /* 覆蓋層 - 使用半透明深色覆蓋以確保文字清晰可見 */
-.hero::before {
+.home-hero::before {
   content: '';
   position: absolute;
   top: 0;
@@ -268,12 +268,6 @@ img {
   z-index: 1;
 }
 
-/* 首頁專用 hero 樣式 */
-.home-hero {
-  /* 首頁需要更大的高度 */
-  padding: 180px 20px;
-}
-
 .hero-content {
   max-width: 900px;
   margin: 0 auto;
@@ -281,7 +275,7 @@ img {
   z-index: 2;
 }
 
-.hero h1 {
+.home-hero h1 {
   font-size: 3.5rem;
   margin-bottom: 25px;
   color: #fff;
@@ -289,7 +283,7 @@ img {
   line-height: 1.2;
 }
 
-.hero p {
+.home-hero p {
   font-size: 1.4rem;
   margin-bottom: 30px;
   opacity: 0.95;
@@ -1102,7 +1096,7 @@ img {
     padding: 0 var(--space-lg);
   }
   
-  .page-header h1, .hero h1 {
+  .page-header h1, .home-hero h1 {
     font-size: 3.2rem;
   }
   
@@ -1128,11 +1122,11 @@ img {
     padding: 0 var(--space-md);
   }
   
-  .page-header h1, .hero h1 {
+  .page-header h1, .home-hero h1 {
     font-size: 3rem;
   }
   
-  .hero p {
+  .home-hero p {
     font-size: 1.5rem;
   }
   
@@ -1161,11 +1155,11 @@ img {
 }
 
 @media (max-width: 992px) {
-  .page-header h1, .hero h1 {
+  .page-header h1, .home-hero h1 {
     font-size: 2.7rem;
   }
   
-  .hero p {
+  .home-hero p {
     font-size: 1.4rem;
   }
   
@@ -1224,11 +1218,11 @@ img {
     padding: 0 var(--space-md);
   }
   
-  .page-header h1, .hero h1 {
+  .page-header h1, .home-hero h1 {
     font-size: 2.4rem;
   }
   
-  .hero p {
+  .home-hero p {
     font-size: 1.3rem;
   }
   
@@ -1281,11 +1275,11 @@ img {
     padding: 0 var(--space-sm);
   }
   
-  .page-header h1, .hero h1 {
+  .page-header h1, .home-hero h1 {
     font-size: 2.2rem;
   }
   
-  .hero p {
+  .home-hero p {
     font-size: 1.2rem;
   }
   
