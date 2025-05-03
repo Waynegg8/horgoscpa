@@ -1,7 +1,7 @@
 /* 
  * navbar.css - 霍爾果斯會計師事務所網站導航欄樣式
  * 最後更新日期: 2025-05-03
- * 優化版本 - 統一導航欄按鈕樣式，修復LINE按鈕問題
+ * 優化版本 - 修復LINE按鈕問題
  */
 
 /* 導航欄基本樣式 */
@@ -161,20 +161,20 @@
   margin: 0 12px;
 }
 
-/* CTA按鈕樣式 - 統一樣式與大小 */
+/* 重新設計CTA按鈕樣式 */
 .nav-cta-item {
   display: inline-block;
   margin: 0 6px !important;
 }
 
-/* 共同的CTA按鈕基本樣式 */
-.nav-cta-btn {
+.nav-consult-btn {
   font-weight: 700;
   box-shadow: 0 6px 15px rgba(0,0,0,0.3);
-  padding: 10px 18px !important;
+  padding: 12px 22px !important;
   font-size: 1.05rem !important;
   border-width: 2px !important;
   letter-spacing: 0.6px;
+  min-width: 110px;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -184,39 +184,39 @@
   justify-content: center;
   gap: 8px;
   transition: all 0.3s ease;
-  height: 43px; /* 統一高度 */
-}
-
-/* 免費諮詢按鈕特有樣式 */
-.nav-consult-btn {
   background: linear-gradient(to right, #ff6b00, #ff8c00) !important;
   border-color: #ff6b00 !important;
-  padding: 12px 22px !important;
-  min-width: 110px;
 }
 
-/* LINE按鈕特有樣式 */
+/* LINE 按鈕樣式 - 修改後的簡化版本 */
 .nav-line-btn {
-  background: rgba(0, 0, 0, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  padding: 5px 12px !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
-  min-width: auto !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 36px !important;
 }
 
 .nav-line-btn img {
-  height: 32px;
+  height: 36px;
   width: auto;
-  transition: all 0.3s ease;
+  border: 0;
+  display: block;
+  transition: transform 0.3s ease;
 }
 
-/* 按鈕懸停效果 */
-.nav-cta-btn:hover {
+.nav-line-btn:hover img {
+  transform: scale(1.05);
+}
+
+.nav-consult-btn:hover {
   transform: scale(1.05) translateY(-4px) !important;
   box-shadow: 0 8px 20px rgba(0,0,0,0.4) !important;
 }
 
-.nav-cta-btn::before {
+.nav-consult-btn::before {
   content: '';
   position: absolute;
   top: 0;
@@ -229,11 +229,11 @@
   z-index: -1;
 }
 
-.nav-cta-btn:hover::before {
+.nav-consult-btn:hover::before {
   opacity: 1;
 }
 
-/* 按鈕脈動動畫 - 只應用於免費諮詢按鈕 */
+/* 按鈕脈動動畫 */
 @keyframes pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7);
@@ -400,12 +400,8 @@
     font-size: 0.95rem;
   }
   
-  .nav-cta-btn {
-    padding: 8px 15px !important;
-  }
-  
-  .nav-line-btn img {
-    height: 30px;
+  .nav-consult-btn {
+    padding: 10px 18px !important;
   }
 }
 
@@ -415,12 +411,8 @@
     padding: 7px 10px;
   }
   
-  .nav-cta-btn {
-    padding: 7px 14px !important;
-  }
-  
-  .nav-line-btn img {
-    height: 28px;
+  .nav-consult-btn {
+    padding: 9px 16px !important;
   }
 }
 
@@ -529,23 +521,24 @@
     margin: 10px 0 !important;
   }
   
-  /* 統一移動版CTA按鈕樣式 */
-  .nav-cta-btn {
+  .nav-consult-btn {
     width: 100%;
     margin: 8px auto;
     justify-content: center;
-    padding: 12px 24px !important;
-    height: auto;
+    padding: 14px 24px !important;
   }
   
-  /* 移動版LINE按鈕樣式 */
+  /* 移動版LINE按鈕樣式 - 修正後 */
   .nav-line-btn {
-    background: rgba(0, 0, 0, 0.2) !important;
-    padding: 8px 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    margin: 15px auto !important;
+    height: auto !important;
   }
-  
+
   .nav-line-btn img {
     height: 36px;
+    width: auto;
   }
   
   .nav-divider {
