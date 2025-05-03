@@ -162,11 +162,19 @@
   height: 36px;
   margin-left: 10px !important;
   opacity: 1 !important;
+  /* 添加最大寬度限制 */
+  max-width: 120px;
+  /* 添加白色空間處理 */
+  white-space: nowrap;
 }
 
 .nav-scrolled .nav-consult-btn {
   height: 34px;
   font-size: 0.9rem !important;
+  /* 確保縮放時寬度也一致縮小 */
+  max-width: 110px;
+  /* 減少水平padding在縮小模式 */
+  padding: 0 18px !important;
 }
 
 .nav-consult-btn:hover {
@@ -400,6 +408,7 @@
     font-size: 0.9rem !important;
     height: 34px;
     padding: 0 18px !important;
+    max-width: 110px;
   }
   
   .nav-line-btn img {
@@ -433,6 +442,7 @@
     font-size: 0.85rem !important;
     height: 32px;
     padding: 0 16px !important;
+    max-width: 100px;
   }
   
   .nav-line-btn img {
@@ -600,6 +610,8 @@
     height: 40px;
     font-size: 1rem !important;
     margin-left: 0 !important;
+    /* 在移動設備上取消最大寬度限制 */
+    max-width: 100%;
   }
   
   .nav-line-btn {
