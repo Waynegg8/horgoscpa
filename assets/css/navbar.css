@@ -207,7 +207,7 @@
   gap: 8px;
   transition: all 0.3s ease !important;
   background: linear-gradient(45deg, #ff6b00, #ff8c00) !important;
-  border-radius: 30px !important; /* 與LINE按鈕一致的圓角 */
+  border-radius: 8px !important; /* 修改：從30px改為8px，減少圓角 */
   height: 36px; /* 與LINE按鈕一致的高度 */
 }
 
@@ -256,39 +256,31 @@
   animation: gentle-pulse 3s infinite;
 }
 
-/* LINE按鈕樣式 */
+/* LINE按鈕樣式 - 修改為只顯示原始圖片 */
 .nav-line-btn {
-  padding: 8px 16px !important;
-  background: #06C755 !important;
+  padding: 0 !important; /* 移除內部padding */
+  background: transparent !important; /* 移除背景色 */
   border: none !important;
   display: flex !important;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 20px rgba(6, 199, 85, 0.25);
-  border-radius: 30px !important; /* 恢復原始的圓角 */
+  box-shadow: none !important; /* 移除陰影 */
+  border-radius: 0 !important; /* 移除圓角 */
 }
 
 .nav-scrolled .nav-line-btn {
-  padding: 6px 14px !important;
+  padding: 0 !important;
 }
 
 .nav-line-btn img {
   display: block;
-  height: 36px;
+  height: 42px; /* 放大Line圖標 */
   transition: all 0.3s ease;
 }
 
 .nav-scrolled .nav-line-btn img {
-  height: 34px;
-}
-.nav-scrolled .nav-line-btn {
-  padding: 6px 14px !important;
-  height: 34px; /* 滾動時高度縮小 */
-}
-
-.nav-scrolled .nav-line-btn img {
-  height: 32px; /* 滾動時縮小高度 */
+  height: 38px; /* 滾動時稍微縮小但仍然比原來大 */
 }
 
 /* 下拉選單樣式 */
@@ -484,8 +476,8 @@
     height: 34px; /* 更小的高度 */
   }
   
-  .nav-line-btn, .nav-line-btn img {
-    height: 34px; /* 縮小LINE按鈕高度 */
+  .nav-line-btn img {
+    height: 38px; /* 縮小LINE按鈕高度 */
   }
   
   .nav-scrolled .nav-consult-btn {
@@ -493,9 +485,8 @@
     height: 30px;
   }
   
-  .nav-scrolled .nav-line-btn, 
   .nav-scrolled .nav-line-btn img {
-    height: 30px; /* 滾動時縮小高度 */
+    height: 34px; /* 滾動時縮小高度 */
   }
   
   .logo {
@@ -516,8 +507,8 @@
     height: 32px;
   }
   
-  .nav-line-btn, .nav-line-btn img {
-    height: 32px; /* 調整LINE按鈕高度 */
+  .nav-line-btn img {
+    height: 36px; /* 調整LINE按鈕高度 */
   }
   
   .nav-scrolled .nav-consult-btn {
@@ -526,9 +517,8 @@
     height: 28px;
   }
   
-  .nav-scrolled .nav-line-btn,
   .nav-scrolled .nav-line-btn img {
-    height: 28px;
+    height: 32px;
   }
   
   .nav-divider {
@@ -659,27 +649,26 @@
     margin: 6px 0 !important;
   }
   
-  .nav-consult-btn, .nav-line-btn {
+  .nav-consult-btn {
     width: 100%;
     margin: 4px auto;
     justify-content: center;
-  }
-  
-  .nav-consult-btn {
-    padding: 8px 0 !important;
-    height: 40px;
+    border-radius: 8px !important; /* 確保移動設備上也使用較小的圓角 */
   }
   
   .nav-line-btn {
-    height: 40px;
     padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    width: 100%;
     display: flex !important;
     justify-content: center;
   }
   
   .nav-line-btn img {
-    height: 40px; /* 移動設備上稍微放大 */
-    max-width: 90%;
+    height: 46px; /* 移動設備上放大Line圖標 */
   }
   
   .nav-divider {
