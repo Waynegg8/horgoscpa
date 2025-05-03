@@ -62,10 +62,10 @@
   
   <!-- 服務頁面特定樣式 -->
   <style>
-    /* 頁面標題樣式調整 */
+    /* 頁面標題樣式調整 - 減少內邊距 */
     .page-header {
       text-align: left;
-      padding: var(--space-xxl) 0 var(--space-xl);
+      padding: 40px 0 20px; /* 大幅減少內邊距 */
       margin-bottom: 0;
       position: relative;
       background: linear-gradient(135deg, var(--bg-light), #ffffff);
@@ -73,9 +73,9 @@
     }
     
     .page-header h1 {
-      font-size: 3.5rem;
+      font-size: 2.8rem; /* 減小字體 */
       color: var(--primary-color);
-      margin-bottom: 25px;
+      margin-bottom: 15px; /* 減少底部間距 */
       position: relative;
       display: inline-block;
       text-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -94,14 +94,14 @@
     }
     
     .page-header p {
-      font-size: 1.4rem;
+      font-size: 1.2rem; /* 減小字體 */
       color: var(--text-medium);
       max-width: 800px;
-      margin: 0 0 20px 40px;
-      line-height: 1.7;
+      margin: 0 0 10px 40px; /* 減少底部間距 */
+      line-height: 1.6; /* 減少行高 */
     }
     
-    /* 服務卡片網格調整 */
+    /* 服務卡片網格調整 - 減少間距 */
     .services-section {
       background-color: #ffffff;
       background-image: 
@@ -110,19 +110,20 @@
         linear-gradient(rgba(0, 0, 0, 0.01) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 0, 0, 0.01) 1px, transparent 1px);
       background-size: auto, auto, 20px 20px, 20px 20px;
-      padding: var(--section-rhythm-2) 0;
+      padding: 40px 0 50px; /* 縮小上下內邊距 */
       margin-bottom: 0;
       position: relative;
       overflow: hidden;
     }
     
+    /* 修改斜角分隔的高度 */
     .services-section::before {
       content: '';
       position: absolute;
-      top: -80px;
+      top: -50px; /* 縮小高度 */
       left: 0;
       right: 0;
-      height: 80px;
+      height: 50px; /* 縮小高度 */
       background: inherit;
       transform: skewY(var(--flow-angle));
       transform-origin: left;
@@ -132,10 +133,10 @@
     .services-section::after {
       content: '';
       position: absolute;
-      bottom: -80px;
+      bottom: -50px; /* 縮小高度 */
       left: 0;
       right: 0;
-      height: 80px;
+      height: 50px; /* 縮小高度 */
       background: inherit;
       transform: skewY(var(--flow-angle));
       transform-origin: right;
@@ -145,19 +146,19 @@
     .services-grid {
       display: flex;
       flex-wrap: wrap;
-      gap: 25px;
-      margin-top: 40px;
+      gap: 20px; /* 縮小卡片間距 */
+      margin-top: 30px; /* 縮小與標題的間距 */
       position: relative;
       z-index: 2;
     }
     
     .service-card {
-      flex: 1 1 calc(25% - 25px);
-      min-width: 250px;
+      flex: 1 1 calc(25% - 20px); /* 調整寬度計算 */
+      min-width: 240px;
       background: var(--bg-white);
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.07);
-      padding: 40px 25px;
+      border-radius: 12px; /* 減小圓角 */
+      box-shadow: 0 8px 20px rgba(0,0,0,0.07);
+      padding: 30px 20px; /* 縮小內邊距 */
       text-align: center;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
       border: none;
@@ -166,19 +167,19 @@
     }
     
     .service-card:hover {
-      transform: translateY(-12px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+      transform: translateY(-10px);
+      box-shadow: 0 16px 30px rgba(0,0,0,0.12);
     }
     
     .service-icon {
-      margin: 0 auto 25px;
-      width: 90px;
-      height: 90px;
+      margin: 0 auto 20px; /* 減少底部間距 */
+      width: 80px; /* 縮小尺寸 */
+      height: 80px; /* 縮小尺寸 */
       display: flex;
       align-items: center;
       justify-content: center;
       background-color: rgba(0, 112, 221, 0.08);
-      border-radius: 12px;
+      border-radius: 10px; /* 減小圓角 */
       transition: all 0.3s ease;
     }
     
@@ -188,32 +189,59 @@
     }
     
     .service-icon svg {
-      width: 45px;
-      height: 45px;
+      width: 40px; /* 縮小尺寸 */
+      height: 40px; /* 縮小尺寸 */
       transition: all 0.3s ease;
       fill: var(--secondary-color);
     }
     
-    /* 流程區塊調整 */
+    .service-card h3 {
+      font-size: 1.4rem; /* 減小字體 */
+      margin-top: 0;
+      margin-bottom: 12px; /* 減少間距 */
+    }
+    
+    .service-card p {
+      margin-bottom: 15px; /* 減少間距 */
+      font-size: 0.95rem; /* 縮小字體 */
+      line-height: 1.6; /* 減少行高 */
+    }
+    
+    /* 流程區塊調整 - 減少間距 */
     .about-section {
       background: linear-gradient(175deg, var(--bg-light), #f0f6ff);
-      padding: var(--section-rhythm-3) 0;
+      padding: 40px 0 60px; /* 縮小內邊距 */
       margin-bottom: 0;
       position: relative;
       overflow: hidden;
     }
     
+    /* 修改斜角分隔的高度 */
     .about-section::before {
       content: '';
       position: absolute;
-      top: -80px;
+      top: -50px; /* 縮小高度 */
       left: 0;
       right: 0;
-      height: 80px;
+      height: 50px; /* 縮小高度 */
       background: inherit;
       transform: skewY(var(--flow-angle));
       transform-origin: left;
       z-index: 1;
+    }
+    
+    .section-title {
+      margin-bottom: 30px; /* 減少底部間距 */
+    }
+    
+    .section-title h2 {
+      font-size: 2.2rem; /* 減小字體 */
+      margin-bottom: 10px; /* 減少間距 */
+    }
+    
+    .section-title p {
+      font-size: 1.1rem; /* 減小字體 */
+      line-height: 1.6; /* 減少行高 */
     }
     
     .about-content {
@@ -224,38 +252,38 @@
     .step-container {
       display: flex;
       flex-wrap: wrap;
-      gap: 25px;
-      margin-top: 40px;
+      gap: 20px; /* 縮小間距 */
+      margin-top: 30px; /* 縮小與標題的間距 */
     }
     
     .step-card {
-      flex: 1 1 calc(25% - 25px);
+      flex: 1 1 calc(25% - 20px); /* 調整寬度計算 */
       min-width: 220px;
       background: white;
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      padding: 25px 20px; /* 縮小內邊距 */
+      border-radius: 12px; /* 減小圓角 */
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
       text-align: center;
       transition: all 0.3s ease;
     }
     
     .step-card:hover {
-      transform: translateY(-10px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+      transform: translateY(-8px); /* 減小上移距離 */
+      box-shadow: 0 16px 30px rgba(0,0,0,0.12);
     }
     
     .step-number {
       background: #0070dd;
       color: white;
-      width: 50px;
-      height: 50px;
-      border-radius: 12px;
+      width: 45px; /* 縮小尺寸 */
+      height: 45px; /* 縮小尺寸 */
+      border-radius: 10px; /* 減小圓角 */
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.3rem;
+      font-size: 1.2rem; /* 縮小字體 */
       font-weight: bold;
-      margin: 0 auto 20px;
+      margin: 0 auto 15px; /* 減少底部間距 */
       transition: all 0.3s ease;
     }
     
@@ -265,28 +293,38 @@
     
     .step-card h3 {
       margin-top: 0;
-      margin-bottom: 15px;
+      margin-bottom: 10px; /* 減少間距 */
       color: var(--primary-color);
-      font-size: 1.4rem;
+      font-size: 1.3rem; /* 縮小字體 */
     }
     
     .step-card p {
       color: #3a3a3a;
       margin-bottom: 0;
-      font-size: 1rem;
-      line-height: 1.7;
+      font-size: 0.95rem; /* 縮小字體 */
+      line-height: 1.6; /* 減少行高 */
     }
     
-    /* 裝飾元素 */
+    /* 調整按鈕樣式 */
+    .text-center {
+      margin-top: 35px; /* 減少間距 */
+    }
+    
+    .btn {
+      padding: 12px 30px; /* 縮小內邊距 */
+      font-size: 1rem; /* 縮小字體 */
+    }
+    
+    /* 裝飾元素調整 */
     .services-section::before {
       content: '';
       position: absolute;
       top: 10%;
       left: 5%;
-      width: 150px;
-      height: 150px;
+      width: 120px; /* 縮小尺寸 */
+      height: 120px; /* 縮小尺寸 */
       border: 2px solid rgba(0, 112, 221, 0.1);
-      border-radius: 30px;
+      border-radius: 24px; /* 減小圓角 */
       transform: rotate(15deg);
       z-index: 0;
     }
@@ -295,51 +333,60 @@
       position: absolute;
       right: 5%;
       bottom: 15%;
-      width: 200px;
-      height: 200px;
+      width: 160px; /* 縮小尺寸 */
+      height: 160px; /* 縮小尺寸 */
       z-index: 0;
       opacity: 0.1;
       background-image: radial-gradient(circle, var(--secondary-color) 1px, transparent 1px);
-      background-size: 20px 20px;
+      background-size: 16px 16px; /* 縮小尺寸 */
     }
     
     /* 響應式調整 */
     @media (max-width: 1280px) {
       .page-header h1 {
-        font-size: 3rem;
+        font-size: 2.5rem;
       }
       
       .page-header p {
-        font-size: 1.3rem;
+        font-size: 1.1rem;
+      }
+      
+      .section-title h2 {
+        font-size: 2rem;
       }
     }
     
     @media (max-width: 992px) {
       .service-card {
-        flex: 1 1 calc(50% - 25px);
+        flex: 1 1 calc(50% - 15px);
       }
       
       .step-card {
-        flex: 1 1 calc(50% - 25px);
+        flex: 1 1 calc(50% - 15px);
       }
       
       .page-header h1 {
-        font-size: 2.7rem;
+        font-size: 2.2rem;
       }
       
       .page-header p {
-        font-size: 1.2rem;
+        font-size: 1.05rem;
         margin-left: 20px;
+      }
+      
+      .section-title h2 {
+        font-size: 1.8rem;
       }
     }
     
     @media (max-width: 768px) {
       .page-header {
         text-align: center;
+        padding: 30px 0 15px;
       }
       
       .page-header h1 {
-        font-size: 2.4rem;
+        font-size: 2rem;
         padding-left: 0;
       }
       
@@ -349,11 +396,16 @@
       }
       
       .page-header p {
-        margin: 0 auto 20px;
+        margin: 0 auto 10px;
+        font-size: 1rem;
       }
       
       .service-card, .step-card {
         flex: 1 1 100%;
+      }
+      
+      .services-section, .about-section {
+        padding: 30px 0 40px;
       }
     }
   </style>
@@ -385,7 +437,7 @@
   </div>
 </nav>
 
-<!-- 頁面標題 - 改為與首頁相配的風格 -->
+<!-- 頁面標題 - 減少間距 -->
 <header class="page-header">
   <div class="container">
     <h1>專業服務項目</h1>
@@ -393,14 +445,14 @@
   </div>
 </header>
 
-<!-- 服務項目區塊 - 使用首頁風格 -->
+<!-- 服務項目區塊 - 減少間距 -->
 <section class="services-section">
   <div class="container">
     <div class="services-grid">
       <!-- 工商登記 -->
       <div class="service-card">
         <div class="service-icon">
-          <svg viewBox="0 0 24 24" width="50" height="50">
+          <svg viewBox="0 0 24 24" width="40" height="40">
             <path d="M22 19H20V3H7L10 7H17V19H12V21H22V19ZM2 19V17H10V19H2ZM14 9V7H2V9H14ZM14 13V11H2V13H14Z"/>
           </svg>
         </div>
@@ -412,7 +464,7 @@
       <!-- 帳務處理 -->
       <div class="service-card">
         <div class="service-icon">
-          <svg viewBox="0 0 24 24" width="50" height="50">
+          <svg viewBox="0 0 24 24" width="40" height="40">
             <path d="M5 3C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H5ZM7 5H9V7H7V5ZM7 9H9V11H7V9ZM7 13H9V15H7V13ZM7 17H9V19H7V17ZM11 5H13V7H11V5ZM11 9H13V11H11V9ZM11 13H13V15H11V13ZM11 17H13V19H11V17ZM15 5H17V7H15V5ZM15 9H17V11H15V9ZM15 13H17V15H15V13ZM15 17H17V19H15V17Z"/>
           </svg>
         </div>
@@ -424,7 +476,7 @@
       <!-- 稅務申報 -->
       <div class="service-card">
         <div class="service-icon">
-          <svg viewBox="0 0 24 24" width="50" height="50">
+          <svg viewBox="0 0 24 24" width="40" height="40">
             <path d="M9.5 2C9.5 1.44772 9.05229 1 8.5 1H3.5C2.94772 1 2.5 1.44772 2.5 2V22C2.5 22.5523 2.94772 23 3.5 23H20.5C21.0523 23 21.5 22.5523 21.5 22V8L15.5 2H14.5V7C14.5 7.55228 14.0523 8 13.5 8H8.5C7.94772 8 7.5 7.55228 7.5 7V2H3.5V22H20.5V8H15.5V2H9.5ZM6 15H18V17H6V15ZM6 19H18V21H6V19ZM13 11H16V13H13V11ZM12 11V13H8V11H12ZM9 15H11V17H9V15ZM12 15H15V17H12V15ZM16 15H18V17H16V15Z"/>
           </svg>
         </div>
@@ -436,7 +488,7 @@
       <!-- 財稅簽證 -->
       <div class="service-card">
         <div class="service-icon">
-          <svg viewBox="0 0 24 24" width="50" height="50">
+          <svg viewBox="0 0 24 24" width="40" height="40">
             <path d="M21 9V7C21 4.79086 19.2091 3 17 3H7C4.79086 3 3 4.79086 3 7V17C3 19.2091 4.79086 21 7 21H17C19.2091 21 21 19.2091 21 17V15H17V17H7V7H17V9H21ZM21 13V11H11V13H21ZM19 12C19 12.5523 18.5523 13 18 13C17.4477 13 17 12.5523 17 12C17 11.4477 17.4477 11 18 11C18.5523 11 19 11.4477 19 12Z"/>
           </svg>
         </div>
@@ -449,7 +501,7 @@
   </div>
 </section>
 
-<!-- 服務流程區塊 - 使用首頁風格 -->
+<!-- 服務流程區塊 - 減少間距 -->
 <section class="about-section">
   <div class="container">
     <div class="section-title">
