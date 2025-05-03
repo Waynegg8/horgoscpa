@@ -22,7 +22,7 @@ on:
       update_videos:
         description: '更新影片數據'
         required: true
-        default: 'false'
+        default: 'true'
         type: boolean
       force_scan:
         description: '強制掃描所有HTML文章'
@@ -30,13 +30,12 @@ on:
         default: 'false'
         type: boolean
   
-  # 當Word文檔上傳到指定目錄時觸發，以及video資料夾中的videos.txt發生變更時觸發
+  # 當特定文件發生變更時觸發
   push:
     paths:
       - 'word-docs/**/*.docx'
       - 'blog/**/*.html'
-      - 'assets/data/videos.json'
-      - 'video/videos.txt'
+      - 'video/videos.txt'  # 重點：確保 videos.txt 文件變更時能夠觸發
   
   # 當文章被刪除時觸發
   delete:
@@ -413,24 +412,36 @@ jobs:
         env:
           GH_PAT: ${{ secrets.GITHUB_TOKEN }}
       
-      # 檢查並更新影片數據
-      - name: 檢查並更新影片數據
+      # 檢查影片配置文件變更
+      - name: 檢查影片資料變更
+        id: check_video_changes
+        run: |
+          # 檢查是否有影片相關文件變更
+          if git diff --name-only HEAD~1 HEAD | grep -q "video/videos.txt"; then
+            echo "檢測到 videos.txt 文件有變更"
+            echo "videos_txt_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "videos.txt 文件沒有變更"
+            echo "videos_txt_changed=false" >> $GITHUB_OUTPUT
+          fi
+      
+      # 更新影片數據 - 特別加強對 videos.txt 變更的檢測和處理
+      - name: 更新影片數據
         id: update_videos
+        # 確保在 videos.txt 變更時觸發
         if: ${{ github.event.inputs.update_videos == 'true' || 
-                github.event_name == 'push' && (
-                  contains(toJson(github.event.commits.*.modified), 'video/videos.txt') || 
-                  contains(toJson(github.event.commits.*.added), 'video/videos.txt') || 
-                  contains(toJson(github.event.commits.*.removed), 'video/videos.txt')
-                ) || 
+                steps.check_video_changes.outputs.videos_txt_changed == 'true' ||
+                (github.event_name == 'push' && contains(github.event.head_commit.modified, 'video/videos.txt')) ||
+                (github.event_name == 'push' && contains(github.event.head_commit.added, 'video/videos.txt')) ||
                 github.event_name == 'repository_dispatch' && github.event.action == 'update-video' }}
         run: |
-          echo "檢查是否需要更新影片數據..."
+          echo "檢測到需要更新影片數據"
           
           # 檢查video資料夾是否存在videos.txt
           if [ -f "video/videos.txt" ]; then
             echo "找到 video/videos.txt，準備更新影片數據"
             
-            # 檢查是否有update_videos.py腳本
+            # 查找並執行update_videos.py腳本
             if [ -f ".github/scripts/update_videos.py" ]; then
               echo "使用 .github/scripts/update_videos.py 更新影片數據"
               python .github/scripts/update_videos.py
@@ -453,56 +464,13 @@ jobs:
               fi
             fi
           else
-            echo "沒有找到 video/videos.txt，檢查是否已被刪除"
-            if git diff --name-only HEAD~1 HEAD | grep -q "video/videos.txt"; then
-              echo "檢測到 video/videos.txt 已被刪除，將清空影片數據"
-              # 創建臨時空影片數據文件
-              mkdir -p video
-              echo "# 影片信息格式示例:" > video/videos.txt
-              
-              # 檢查是否有update_videos.py腳本
-              if [ -f ".github/scripts/update_videos.py" ]; then
-                echo "使用 .github/scripts/update_videos.py 清空影片數據"
-                python .github/scripts/update_videos.py
-                echo "videos_updated=true" >> $GITHUB_OUTPUT
-              else
-                echo "警告: 找不到 .github/scripts/update_videos.py 腳本"
-                echo "手動清空影片數據"
-                mkdir -p assets/data
-                echo '{
-                  "videos": [],
-                  "pagination": {
-                    "total": 0,
-                    "totalPages": 1,
-                    "itemsPerPage": 6
-                  }
-                }' > assets/data/videos.json
-                echo "videos_updated=true" >> $GITHUB_OUTPUT
-              fi
-              rm video/videos.txt
-            else
-              echo "video/videos.txt 不存在且未被刪除，跳過影片數據更新"
-              echo "videos_updated=false" >> $GITHUB_OUTPUT
-            fi
-          fi
-      
-      # 處理影片JSON更新
-      - name: 檢查影片JSON更新
-        id: check_videos
-        run: |
-          if [ "${{ github.event.inputs.update_videos }}" == "true" ] || \
-             [ "${{ steps.update_videos.outputs.videos_updated }}" == "true" ] || \
-             git diff --name-only HEAD~1 HEAD | grep -q "video/videos.txt" || \
-             git diff --name-only HEAD~1 HEAD | grep -q "assets/data/videos.json" || \
-             [ "${{ github.event_name == 'repository_dispatch' && github.event.action == 'update-video' }}" == "true" ]; then
-            echo "videos_changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "videos_changed=false" >> $GITHUB_OUTPUT
+            echo "警告: 找不到 video/videos.txt 文件"
+            echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
       
       # 提交更新的JSON文件
       - name: 提交更新的JSON文件
-        if: ${{ steps.update_blog_json.outputs.blog_json_updated == 'true' || steps.check_videos.outputs.videos_changed == 'true' || steps.init_json.outputs.scan_html == 'true' || steps.update_videos.outputs.videos_updated == 'true' }}
+        if: ${{ steps.update_blog_json.outputs.blog_json_updated == 'true' || steps.update_videos.outputs.videos_updated == 'true' }}
         run: |
           # 確保工作區乾淨
           git stash -u || true
