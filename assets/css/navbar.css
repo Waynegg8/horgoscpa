@@ -123,21 +123,21 @@
   color: #fff;
   position: relative;
   padding: 8px 14px; /* 減少padding */
-  font-size: 0.95rem; /* 減小字體 */
-  font-weight: 600; /* 修改：將字體粗細從500改為600，與LINE圖標一致 */
+  font-size: 1rem; /* 統一字體大小與LINE按鈕一致 */
+  font-weight: 600; 
   text-decoration: none;
   border-radius: 8px;
   transition: all 0.3s ease;
   font-family: "思源黑體", "微軟正黑體", sans-serif;
   background-color: rgba(255, 255, 255, 0.05);
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px; /* 統一字距 */
   display: flex;
   align-items: center;
 }
 
 .nav-scrolled .nav-menu a {
   padding: 7px 12px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .nav-menu a:hover, 
@@ -194,7 +194,7 @@
   font-weight: 600;
   box-shadow: 0 8px 20px rgba(255, 107, 0, 0.3);
   padding: 0 !important;
-  font-size: 1rem !important;
+  font-size: 1rem !important; /* 與LINE按鈕文字一致 */
   border: none !important;
   letter-spacing: 0.4px; /* 微調字距 */
   text-align: center;
@@ -209,14 +209,14 @@
   background: linear-gradient(45deg, #ff6b00, #ff8c00) !important;
   border-radius: 6px !important;
   height: 48px; /* LINE按鈕高度 */
-  width: 132px; /* 根據截圖精確匹配LINE按鈕寬度 */
+  width: 140px; /* 再增加寬度，使其略長於LINE按鈕 */
 }
 
 .nav-scrolled .nav-consult-btn {
   padding: 0 !important;
   font-size: 0.95rem !important;
   height: 42px; /* 滾動時與LINE按鈕同步縮小 */
-  width: 116px; /* 滾動時縮小寬度 */
+  width: 125px; /* 滾動時縮小寬度 */
 }
 
 .nav-consult-btn:hover {
@@ -322,7 +322,7 @@
   padding: 10px 16px; /* 減少padding */
   color: #fff;
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 1rem; /* 統一字體大小 */
   transition: all 0.25s ease;
   white-space: nowrap;
   border: none;
@@ -468,11 +468,11 @@
   
   .nav-menu a {
     padding: 7px 12px; /* 更小的padding */
-    font-size: 0.9rem;
+    font-size: 0.95rem;
   }
   
   .nav-consult-btn {
-    width: 126px; /* 稍微調整適應螢幕 */
+    width: 132px; /* 稍微調整適應螢幕 */
     height: 44px;
   }
   
@@ -481,7 +481,7 @@
   }
   
   .nav-scrolled .nav-consult-btn {
-    width: 110px;
+    width: 120px;
     height: 38px;
   }
   
@@ -496,12 +496,12 @@
 
 @media (max-width: 992px) {
   .nav-menu a {
-    font-size: 0.85rem; /* 更小的字體 */
+    font-size: 0.9rem; /* 更小的字體但仍保持比例 */
     padding: 7px 10px;
   }
   
   .nav-consult-btn {
-    width: 120px; /* 縮小寬度 */
+    width: 126px; /* 縮小寬度 */
     height: 40px;
   }
   
@@ -510,7 +510,7 @@
   }
   
   .nav-scrolled .nav-consult-btn {
-    width: 105px;
+    width: 115px;
     height: 36px;
   }
   
@@ -615,7 +615,7 @@
   
   .dropdown-menu a {
     padding: 10px 15px;
-    font-size: 0.9rem;
+    font-size: 1rem; /* 保持與LINE按鈕一致的字體大小 */
     opacity: 0.9;
     text-align: center;
     margin: 3px;
