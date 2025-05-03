@@ -293,20 +293,6 @@ img {
   max-width: 800px;
   margin-left: auto;
   margin-right: auto;
-  text-align: center;
-}
-
-.home-hero p span {
-  display: block;
-}
-
-.home-hero p span:first-child {
-  text-align: center;
-}
-
-.home-hero p span:not(:first-child) {
-  text-align: left;
-  margin-left: 25%;
 }
 
 /* 區塊標題 */
@@ -342,20 +328,6 @@ img {
   color: var(--text-medium);
   font-size: 1.3rem;
   line-height: 1.7;
-  text-align: center;
-}
-
-.section-title p span {
-  display: block;
-}
-
-.section-title p span:first-child {
-  text-align: center;
-}
-
-.section-title p span:not(:first-child) {
-  text-align: left;
-  margin-left: 25%;
 }
 
 /* 按鈕樣式 */
@@ -524,20 +496,6 @@ img {
   line-height: 1.8;
   margin-bottom: 30px;
   color: var(--text-color);
-  text-align: center;
-}
-
-.about-content p span {
-  display: block;
-}
-
-.about-content p span:first-child {
-  text-align: center;
-}
-
-.about-content p span:not(:first-child) {
-  text-align: left;
-  margin-left: 25%;
 }
 
 .about-section::after {
@@ -623,14 +581,13 @@ img {
   transform: scale(1.05);
 }
 
-.service-icon img, .service-icon svg {
+.service-icon img {
   width: 50px;
   height: 50px;
   transition: var(--transition-standard);
 }
 
-.service-card:hover .service-icon img, 
-.service-card:hover .service-icon svg {
+.service-card:hover .service-icon img {
   transform: scale(1.1);
 }
 
@@ -1254,11 +1211,6 @@ img {
   .faq-answer.show {
     padding: 15px 20px;
   }
-
-  .about-content p span:not(:first-child),
-  .section-title p span:not(:first-child) {
-    margin-left: 15%;
-  }
 }
 
 @media (max-width: 768px) {
@@ -1316,12 +1268,6 @@ img {
   .faq-answer.show {
     padding: 15px;
   }
-
-  .about-content p span:not(:first-child),
-  .section-title p span:not(:first-child),
-  .home-hero p span:not(:first-child) {
-    margin-left: 5%;
-  }
 }
 
 @media (max-width: 576px) {
@@ -1378,12 +1324,5 @@ img {
   
   .page-header p {
     font-size: 1rem;
-  }
-  
-  .about-content p span:not(:first-child),
-  .section-title p span:not(:first-child),
-  .home-hero p span:not(:first-child) {
-    margin-left: 0;
-    text-align: center;
   }
 }
