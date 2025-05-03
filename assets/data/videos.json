@@ -1,73 +1,37 @@
 {
   "videos": [
     {
-      "title": "台灣報稅流程簡介",
+      "title": "台灣報稅流程",
       "date": "2025-03-15",
-      "description": "本影片詳細介紹台灣個人與企業報稅流程，包含申報時間、必要文件與常見問題解析，讓您輕鬆掌握報稅要點。",
-      "embedUrl": "https://www.youtube.com/embed/FvRwth0j_P0",
+      "description": "本影片詳細介紹台灣報稅流程，包含申報時間、必要文件與常見問題解析，讓您輕鬆掌握報稅要點。",
+      "embedUrl": "https://www.youtube.com/embed/FvRgth0j_P0",
       "category": "tax",
-      "tags": ["報稅", "個人所得稅", "企業報稅"]
+      "tags": [
+        "報稅",
+        "台灣",
+        "流程",
+        "影片",
+        "詳細介紹"
+      ]
     },
     {
       "title": "創業公司會計注意事項",
-      "date": "2025-03-08",
+      "date": "2025-03-10",
       "description": "針對新創企業的會計實務指南，說明創業初期常見的會計問題與解決方案，包含成本控制、現金流管理與稅務規劃。",
       "embedUrl": "https://www.youtube.com/embed/MJlb2OEBuvA",
-      "category": "accounting",
-      "tags": ["新創企業", "會計實務", "財務管理"]
-    },
-    {
-      "title": "跨境電商稅務指南",
-      "date": "2025-02-20",
-      "description": "為電商業者解析跨境銷售的稅務責任，包含各國增值稅規定、常設機構風險、電商平台扣繳機制與雙重課稅情境處理。",
-      "embedUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-      "category": "tax",
-      "tags": ["跨境電商", "國際稅務", "增值稅"]
-    },
-    {
-      "title": "財務報表解析技巧",
-      "date": "2025-02-10",
-      "description": "學習如何閱讀與分析企業財務報表，了解資產負債表、損益表與現金流量表間的關聯，掌握關鍵財務比率的計算與判讀。",
-      "embedUrl": "https://www.youtube.com/embed/9bZkp7q19f0",
-      "category": "accounting",
-      "tags": ["財務報表", "財務分析", "財務比率"]
-    },
-    {
-      "title": "營業稅申報實務",
-      "date": "2025-01-25",
-      "description": "詳解營業稅申報流程與注意事項，包含稅額計算、憑證管理、零稅率與免稅規定，以及常見錯誤與補救措施。",
-      "embedUrl": "https://www.youtube.com/embed/VbXNmIvWa1c",
-      "category": "tax",
-      "tags": ["營業稅", "稅務申報", "進銷項發票"]
-    },
-    {
-      "title": "企業成本控制策略",
-      "date": "2025-01-15",
-      "description": "分享有效的企業成本控制方法，從固定成本與變動成本分析，到供應鏈管理、人力資源優化與數位轉型節省開支。",
-      "embedUrl": "https://www.youtube.com/embed/I1188GO4p1E",
       "category": "business",
-      "tags": ["成本控制", "企業管理", "營運效率"]
-    },
-    {
-      "title": "網站後台操作教學",
-      "date": "2025-01-05",
-      "description": "逐步教您如何使用本公司客戶專屬的雲端會計系統，包含收支紀錄、發票管理、員工薪資設定與財務報表產生等功能。",
-      "embedUrl": "https://www.youtube.com/embed/Y2VF8tmLFHw",
-      "category": "tutorial",
-      "tags": ["系統操作", "雲端會計", "後台教學"]
-    },
-    {
-      "title": "公司設立完整流程",
-      "date": "2024-12-20",
-      "description": "從公司類型選擇、名稱核准、資本額規劃到設立登記、稅籍登記，完整解說在台灣成立公司的各項流程與應備文件。",
-      "embedUrl": "https://www.youtube.com/embed/raCWGXV7LR8",
-      "category": "business",
-      "tags": ["公司設立", "創業", "商業登記"]
+      "tags": [
+        "會計",
+        "創業",
+        "公司",
+        "注意",
+        "事項"
+      ]
     }
   ],
   "pagination": {
-    "total": 8,
-    "totalPages": 2,
+    "total": 2,
+    "totalPages": 1,
     "itemsPerPage": 6
   }
 }
