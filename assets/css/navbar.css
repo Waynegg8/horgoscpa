@@ -192,13 +192,12 @@
 /* 免費諮詢按鈕樣式 */
 .nav-consult-btn {
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3); /* 減輕陰影 */
-  padding: 10px 18px !important; /* 統一padding */
-  font-size: 1rem !important;
+  box-shadow: 0 8px 20px rgba(255, 107, 0, 0.3);
+  padding: 8px 16px !important; /* 修改為與LINE按鈕一致 */
+  font-size: 1.05rem !important;
   border: none !important;
-  letter-spacing: 0.5px;
-  min-width: 100px; /* 減少最小寬度 */
-  height: 36px; /* 與LINE按鈕圖片高度一致 */
+  letter-spacing: 0.6px;
+  min-width: 120px; /* 調整最小寬度 */
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -206,17 +205,16 @@
   display: flex !important;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   transition: all 0.3s ease !important;
-  border-radius: 4px !important; /* 降低圓角以匹配LINE按鈕 */
   background: linear-gradient(45deg, #ff6b00, #ff8c00) !important;
+  border-radius: 30px !important;
 }
-
 .nav-scrolled .nav-consult-btn {
-  padding: 8px 16px !important; /* 滾動時統一縮小 */
-  font-size: 0.95rem !important;
-  height: 32px; /* 滾動時縮小高度 */
+  padding: 6px 14px !important; /* 修改為與LINE按鈕滾動狀態一致 */
+  font-size: 1rem !important;
+  min-width: 120px;
 }
-
 .nav-consult-btn:hover {
   transform: translateY(-3px) !important;
   box-shadow: 0 6px 15px rgba(255, 107, 0, 0.45) !important;
