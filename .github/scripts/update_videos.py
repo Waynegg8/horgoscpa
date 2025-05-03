@@ -11,6 +11,7 @@ import json
 import jieba
 import datetime
 import random
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
@@ -58,8 +59,13 @@ def load_videos_from_txt(file_path: str) -> List[Dict[str, Any]]:
         print(f"已創建空的影片信息文件 {file_path}")
         return videos
     
+    # 檢查文件是否為空或只有注釋
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
+    
+    if not content.strip() or content.strip().startswith('#') and not '---' in content:
+        print(f"影片信息文件 {file_path} 為空或只有註釋")
+        return videos
     
     # 用 --- 分隔每個影片信息
     video_blocks = content.split('---')
@@ -222,6 +228,30 @@ def update_videos_json(videos: List[Dict[str, Any]]) -> bool:
         print(f"更新影片數據時出錯：{str(e)}")
         return False
 
+def check_videos_txt_deleted() -> bool:
+    """
+    檢查 videos.txt 是否已被刪除
+    :return: True如果被刪除, False如果仍存在
+    """
+    # 檢查 git 歷史記錄中是否有刪除 videos.txt 的紀錄
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["git", "diff", "--name-only", "--diff-filter=D", "HEAD~1", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        deleted_files = result.stdout.strip().split('\n')
+        
+        if "video/videos.txt" in deleted_files:
+            print("檢測到 videos.txt 已被刪除")
+            return True
+        return False
+    except Exception as e:
+        print(f"檢查 videos.txt 刪除狀態時出錯: {str(e)}")
+        return False
+
 def main():
     """主函數"""
     print("開始更新影片數據...")
@@ -236,6 +266,9 @@ def main():
         print("詞典檔案不存在或為空")
         print("將使用默認分詞方式處理標題與描述")
     
+    # 檢查是否 videos.txt 已被刪除
+    is_deleted = check_videos_txt_deleted()
+    
     # 載入影片信息
     videos = load_videos_from_txt(VIDEOS_TXT_PATH)
     print(f"從 {VIDEOS_TXT_PATH} 載入了 {len(videos)} 部影片")
@@ -248,7 +281,24 @@ def main():
         else:
             print("影片數據更新失敗")
     else:
-        print("沒有找到影片數據，不進行更新")
+        if is_deleted or not os.path.exists(VIDEOS_TXT_PATH) or os.path.getsize(VIDEOS_TXT_PATH) == 0:
+            print("沒有找到影片數據或 videos.txt 已被刪除，將清空影片JSON")
+            # 創建空的影片數據
+            empty_data = {
+                "videos": [],
+                "pagination": {
+                    "total": 0,
+                    "totalPages": 1,
+                    "itemsPerPage": ITEMS_PER_PAGE
+                }
+            }
+            # 寫入空的JSON數據
+            os.makedirs(os.path.dirname(VIDEOS_JSON_PATH), exist_ok=True)
+            with open(VIDEOS_JSON_PATH, 'w', encoding='utf-8') as f:
+                json.dump(empty_data, f, ensure_ascii=False, indent=2)
+            print("已清空影片數據")
+        else:
+            print("沒有找到有效的影片數據，不進行更新")
 
 if __name__ == "__main__":
     main()
