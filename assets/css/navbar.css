@@ -189,24 +189,41 @@
   margin: 0 3px !important; /* 減少邊距 */
 }
 
-/* 按鈕容器通用設定，確保兩按鈕長度一致 */
-.nav-cta-item {
-  width: 130px; /* 固定相同的寬度 */
-  box-sizing: border-box;
+/* LINE按鈕樣式 - 保持原有設定 */
+.nav-line-btn {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
 
-.nav-scrolled .nav-cta-item {
-  width: 120px; /* 滾動時縮小但保持一致寬度 */
+.nav-scrolled .nav-line-btn {
+  padding: 0 !important;
 }
 
-/* 免費諮詢按鈕樣式 */
+.nav-line-btn img {
+  display: block;
+  height: 48px; /* LINE圖標高度 */
+  transition: all 0.3s ease;
+}
+
+.nav-scrolled .nav-line-btn img {
+  height: 42px; /* 滾動時稍微縮小但仍然保持較大尺寸 */
+}
+
+/* 免費諮詢按鈕樣式 - 與LINE按鈕統一寬度 */
 .nav-consult-btn {
   font-weight: 600;
   box-shadow: 0 8px 20px rgba(255, 107, 0, 0.3);
-  padding: 0 !important;
+  padding: 0 !important; /* 移除內部padding */
   font-size: 1rem !important;
   border: none !important;
-  letter-spacing: 0.4px; /* 微調字距，使文字看起來更協調 */
+  letter-spacing: 0.4px; /* 微調字距 */
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -218,13 +235,16 @@
   transition: all 0.3s ease !important;
   background: linear-gradient(45deg, #ff6b00, #ff8c00) !important;
   border-radius: 6px !important;
-  height: 48px; /* 與LINE按鈕一致的高度 */
-  width: 100%; /* 填滿容器 */
+  height: 48px; /* LINE按鈕高度 */
+  /* 寬度和LINE按鈕一致 - 通過自動計算 */
+  width: calc(36px * 2.777); /* LINE按鈕寬度近似值 - 基於LINE按鈕圖示比例 */
 }
 
 .nav-scrolled .nav-consult-btn {
+  padding: 0 !important;
   font-size: 0.95rem !important;
   height: 42px; /* 滾動時與LINE按鈕同步縮小 */
+  width: calc(32px * 2.777); /* 滾動時縮小寬度 */
 }
 
 .nav-consult-btn:hover {
@@ -263,35 +283,6 @@
 
 .nav-consult-btn {
   animation: gentle-pulse 3s infinite;
-}
-
-/* LINE按鈕樣式 */
-.nav-line-btn {
-  padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  height: 48px; /* 與免費諮詢按鈕相同的高度 */
-  width: 100%; /* 填滿容器 */
-}
-
-.nav-scrolled .nav-line-btn {
-  height: 42px; /* 滾動時縮小高度 */
-}
-
-.nav-line-btn img {
-  height: 48px; /* 高度與按鈕高度一致 */
-  transition: all 0.3s ease;
-  max-width: 100%; /* 確保圖片不會超出按鈕範圍 */
-}
-
-.nav-scrolled .nav-line-btn img {
-  height: 42px; /* 滾動時縮小 */
 }
 
 /* 下拉選單樣式 */
@@ -465,14 +456,6 @@
   .nav-menu {
     gap: 6px; /* 更小的間距 */
   }
-  
-  .nav-cta-item {
-    width: 120px; /* 稍微縮小按鈕 */
-  }
-  
-  .nav-scrolled .nav-cta-item {
-    width: 110px;
-  }
 }
 
 @media (max-width: 1100px) {
@@ -489,19 +472,8 @@
     font-size: 0.9rem;
   }
   
-  .nav-cta-item {
-    width: 110px; /* 再縮小按鈕 */
-  }
-  
-  .nav-scrolled .nav-cta-item {
-    width: 100px;
-  }
-  
   .nav-consult-btn {
-    height: 44px;
-  }
-  
-  .nav-line-btn {
+    width: calc(34px * 2.777); /* 縮小寬度 */
     height: 44px;
   }
   
@@ -510,10 +482,7 @@
   }
   
   .nav-scrolled .nav-consult-btn {
-    height: 38px;
-  }
-  
-  .nav-scrolled .nav-line-btn {
+    width: calc(30px * 2.777);
     height: 38px;
   }
   
@@ -532,19 +501,8 @@
     padding: 7px 10px;
   }
   
-  .nav-cta-item {
-    width: 100px; /* 更小的按鈕 */
-  }
-  
-  .nav-scrolled .nav-cta-item {
-    width: 90px;
-  }
-  
   .nav-consult-btn {
-    height: 40px;
-  }
-  
-  .nav-line-btn {
+    width: calc(32px * 2.777); /* 縮小寬度 */
     height: 40px;
   }
   
@@ -553,10 +511,7 @@
   }
   
   .nav-scrolled .nav-consult-btn {
-    height: 36px;
-  }
-  
-  .nav-scrolled .nav-line-btn {
+    width: calc(28px * 2.777);
     height: 36px;
   }
   
@@ -688,13 +643,20 @@
   }
   
   .nav-cta-item {
-    width: 90%; /* 移動設備下寬度一致 */
+    width: 90%;
     margin: 6px 0 !important;
   }
   
-  .nav-consult-btn, .nav-line-btn {
+  .nav-consult-btn {
+    width: 100%; /* 填滿容器 */
     height: 50px; /* 移動設備上更大的高度 */
     margin: 5px auto;
+  }
+  
+  .nav-line-btn {
+    text-align: center;
+    display: flex;
+    justify-content: center;
   }
   
   .nav-line-btn img {
