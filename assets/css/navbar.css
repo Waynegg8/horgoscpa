@@ -1,47 +1,44 @@
 /* 
  * navbar.css - 霍爾果斯會計師事務所網站導航欄樣式
- * 最後更新日期: 2025-05-05
- * 優化版本 3.0
+ * 最後更新日期: 2025-05-06
+ * 優化版本 4.0 - 現代簡約設計
  */
 
 /* 導航欄基本樣式 */
 .site-nav {
-  background: linear-gradient(135deg, #001e3c, #003366);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  background: linear-gradient(135deg, #002147, #003366);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
   position: sticky;
   top: 0;
   z-index: 1000;
-  padding: 0;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  height: 80px;
 }
 
 /* 滾動效果 - 縮小導航欄 */
 .site-nav.nav-scrolled {
-  padding: 0;
-  background: linear-gradient(135deg, #001a36, #002c5e);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  background: rgba(0, 33, 71, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  height: 65px;
 }
 
 .nav-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 40px;
+  height: 100%;
+  padding: 0 40px;
   max-width: 1400px;
   margin: 0 auto;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.nav-scrolled .nav-container {
-  padding: 8px 40px;
+  transition: all 0.3s ease;
 }
 
 /* Logo 樣式 */
 .logo {
   display: flex;
   flex-direction: column;
-  min-width: 230px;
   transition: all 0.3s ease;
 }
 
@@ -52,51 +49,34 @@
 .logo a {
   color: #fff;
   text-decoration: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .logo-main {
   font-size: 1.5rem;
   font-weight: 700;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   font-family: "思源黑體", "微軟正黑體", sans-serif;
   white-space: nowrap;
-  position: relative;
-  padding-bottom: 3px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
 }
 
 .nav-scrolled .logo-main {
-  font-size: 1.4rem;
-}
-
-.logo-main::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background-color: #0088ff;
-  transition: width 0.3s ease;
-}
-
-.logo:hover .logo-main::after {
-  width: 100%;
+  font-size: 1.3rem;
 }
 
 .logo-sub {
-  font-size: 0.95rem;
-  opacity: 0.85;
-  margin-top: 3px;
-  letter-spacing: 0.6px;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  letter-spacing: 0.5px;
   font-family: "Kaleko 105", sans-serif;
-  color: rgba(255,255,255,0.85);
   transition: all 0.3s ease;
 }
 
 .nav-scrolled .logo-sub {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 /* 導航選單樣式 */
@@ -106,93 +86,69 @@
   margin: 0;
   padding: 0;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  height: 100%;
 }
 
 .nav-menu li {
   margin: 0;
   position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .nav-menu a {
   color: #fff;
   position: relative;
-  padding: 10px 16px;
-  font-size: 1.1rem;
-  font-weight: 600; 
+  padding: 0 18px;
+  font-size: 1rem;
+  font-weight: 500; 
   text-decoration: none;
-  border-radius: 8px;
   transition: all 0.3s ease;
-  font-family: "思源黑體", "微軟正黑體", sans-serif;
-  background-color: rgba(255, 255, 255, 0.05);
-  letter-spacing: 0.4px;
+  opacity: 0.9;
+  height: 100%;
   display: flex;
   align-items: center;
-}
-
-.nav-scrolled .nav-menu a {
-  padding: 8px 14px;
-  font-size: 1.05rem;
 }
 
 .nav-menu a:hover, 
 .nav-menu a.active {
   color: #fff;
-  background-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 25, 100, 0.2);
-}
-
-.nav-menu a.active {
-  background-color: rgba(0, 136, 255, 0.25);
-  position: relative;
+  opacity: 1;
 }
 
 .nav-menu a.active::after {
   content: '';
   position: absolute;
-  bottom: -1px;
-  left: 15%;
-  width: 70%;
+  bottom: 0;
+  left: 18px;
+  right: 18px;
   height: 3px;
-  background: linear-gradient(to right, #0088ff, #00c3ff);
-  border-radius: 1.5px;
+  background: #0088ff;
+  border-radius: 3px 3px 0 0;
 }
 
 /* 導航分隔線 */
 .nav-divider {
   width: 1px;
   height: 24px;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
-  margin: 0 10px;
-  transition: all 0.3s ease;
-}
-
-.nav-scrolled .nav-divider {
-  height: 22px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+  margin: 0 5px;
 }
 
 /* CTA按鈕組樣式 */
-.nav-cta-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .nav-cta-item {
   display: inline-block;
-  margin: 0 3px !important;
+  margin: 0 5px !important;
 }
 
 /* 免費諮詢按鈕樣式 */
 .nav-consult-btn {
-  font-weight: 600;
-  box-shadow: 0 8px 20px rgba(255, 107, 0, 0.3);
-  padding: 0 !important;
-  font-size: 1.1rem !important;
-  border: none !important;
-  letter-spacing: 0.4px;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(255, 107, 0, 0.2);
+  padding: 0 22px !important;
+  font-size: 0.95rem !important;
+  letter-spacing: 0.5px;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -200,25 +156,23 @@
   display: flex !important;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   transition: all 0.3s ease !important;
-  background: linear-gradient(45deg, #ff6b00, #ff8c00) !important;
-  border-radius: 6px !important;
-  height: 42px;
-  width: 130px;
+  background: #ff6b00 !important;
+  border-radius: 25px !important;
+  height: 36px;
+  margin-left: 10px !important;
+  opacity: 1 !important;
 }
 
 .nav-scrolled .nav-consult-btn {
-  padding: 0 !important;
-  font-size: 1.05rem !important;
-  height: 38px;
-  width: 120px;
+  height: 34px;
+  font-size: 0.9rem !important;
 }
 
 .nav-consult-btn:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 6px 15px rgba(255, 107, 0, 0.45) !important;
-  background: linear-gradient(45deg, #ff7b00, #ff9d00) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 15px rgba(255, 107, 0, 0.3) !important;
+  background: #ff7b00 !important;
 }
 
 .nav-consult-btn::before {
@@ -247,97 +201,89 @@
   transition: all 0.3s ease;
   box-shadow: none !important;
   border-radius: 0 !important;
-}
-
-.nav-scrolled .nav-line-btn {
-  padding: 0 !important;
+  height: 100%;
+  margin-left: 5px !important;
+  opacity: 1 !important;
 }
 
 .nav-line-btn img {
   display: block;
-  height: 42px;
+  height: 36px;
   transition: all 0.3s ease;
 }
 
 .nav-scrolled .nav-line-btn img {
-  height: 38px;
+  height: 34px;
 }
 
 /* 下拉選單樣式 */
 .dropdown-menu {
   position: absolute;
   top: 120%;
-  left: 0;
-  background: linear-gradient(to bottom, #002c63, #00244f);
-  min-width: 220px;
-  border-radius: 12px;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.35);
+  left: 50%;
+  transform: translateX(-50%) translateY(10px) scale(0.98);
+  background: #fff;
+  min-width: 180px;
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
   visibility: hidden;
   opacity: 0;
   z-index: 1001;
-  padding: 10px 6px;
-  margin-top: 10px;
-  transform: translateY(10px) scale(0.98);
-  transition: opacity 0.3s ease, transform 0.3s ease, top 0.3s ease, visibility 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 8px;
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+  border: none;
   overflow: hidden;
   pointer-events: none;
 }
 
-.dropdown-menu::before {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: 30px;
-  width: 16px;
-  height: 16px;
-  background: #002c63;
-  transform: rotate(45deg);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-}
-
 .dropdown-menu a {
   display: block;
-  padding: 10px 16px;
-  color: #fff;
+  padding: 8px 15px;
+  color: #333;
   text-decoration: none;
-  font-size: 1.1rem;
-  transition: all 0.25s ease;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
   white-space: nowrap;
   border: none;
   background: none;
   text-align: left;
-  border-radius: 8px;
-  margin: 4px 6px;
+  border-radius: 5px;
+  margin: 2px 0;
+  height: auto;
+  opacity: 1;
 }
 
 .dropdown-menu a:hover {
-  background-color: rgba(0, 136, 255, 0.15);
+  background-color: #f5f9ff;
+  color: #0066cc;
   transform: none;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-  padding-left: 20px;
 }
 
-/* 顯示下拉選單動畫 - 修改使用visibility而非display */
+.dropdown-menu a.active {
+  background-color: #f0f6ff;
+  color: #0066cc;
+}
+
+.dropdown-menu a.active::after {
+  display: none;
+}
+
+/* 顯示下拉選單動畫 */
 .has-dropdown:hover .dropdown-menu {
   visibility: visible;
   opacity: 1;
-  transform: translateY(0) scale(1);
-  top: 100%;
+  transform: translateX(-50%) translateY(0) scale(1);
   pointer-events: auto;
 }
 
-/* 確保下拉菜單有足夠的接觸空間 */
-.has-dropdown > a {
-  position: relative;
-}
-
+/* 下拉箭頭圖標 */
 .has-dropdown > a::after {
   content: "▾";
-  font-size: 0.85rem;
-  margin-left: 6px;
+  font-size: 0.8rem;
+  margin-left: 5px;
   transition: transform 0.3s ease;
+  position: relative;
+  top: 1px;
 }
 
 .has-dropdown:hover > a::after {
@@ -351,7 +297,7 @@
   top: 100%;
   left: 0;
   width: 100%;
-  height: 20px; /* 缓冲区高度 */
+  height: 15px;
   background: transparent;
 }
 
@@ -360,8 +306,8 @@
   display: none;
   cursor: pointer;
   position: relative;
-  width: 34px;
-  height: 24px;
+  width: 30px;
+  height: 22px;
   transition: all 0.3s ease;
 }
 
@@ -378,7 +324,7 @@
 }
 
 .nav-toggle-label span {
-  top: 11px;
+  top: 10px;
 }
 
 .nav-toggle-label span::before,
@@ -387,11 +333,11 @@
 }
 
 .nav-toggle-label span::before {
-  top: -8px;
+  top: -7px;
 }
 
 .nav-toggle-label span::after {
-  bottom: -8px;
+  bottom: -7px;
 }
 
 .nav-toggle {
@@ -412,19 +358,7 @@
   bottom: 0;
 }
 
-/* 新增: 導航背景動態效果 */
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
+/* 導航背景微妙效果 */
 .site-nav::before {
   content: '';
   position: absolute;
@@ -432,100 +366,44 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(120deg, rgba(0, 136, 255, 0.05) 0%, rgba(0, 136, 255, 0) 25%, rgba(0, 136, 255, 0) 75%, rgba(0, 136, 255, 0.05) 100%);
-  background-size: 200% 200%;
-  animation: gradient-shift 15s ease infinite;
+  background: radial-gradient(circle at 30% 100%, rgba(0, 136, 255, 0.05), transparent 70%);
   z-index: -1;
 }
 
 /* 響應式設計 */
 @media (max-width: 1280px) {
   .nav-container {
-    padding: 12px 25px;
+    padding: 0 25px;
   }
   
-  .nav-scrolled .nav-container {
-    padding: 8px 25px;
-  }
-  
-  .nav-menu {
-    gap: 6px; /* 更小的間距 */
+  .nav-menu a {
+    padding: 0 15px;
+    font-size: 0.95rem;
   }
 }
 
 @media (max-width: 1100px) {
-  .nav-container {
-    padding: 10px 20px;
+  .site-nav {
+    height: 70px;
   }
   
-  .nav-scrolled .nav-container {
-    padding: 8px 20px;
+  .site-nav.nav-scrolled {
+    height: 60px;
   }
   
   .nav-menu a {
-    padding: 7px 12px; /* 更小的padding */
-    font-size: 1.05rem; /* 依然保持較大的字體 */
+    padding: 0 12px;
+    font-size: 0.9rem;
   }
   
   .nav-consult-btn {
-    width: 125px; /* 稍微調整適應螢幕 */
-    height: 40px;
+    font-size: 0.9rem !important;
+    height: 34px;
+    padding: 0 18px !important;
   }
   
   .nav-line-btn img {
-    height: 40px;
-  }
-  
-  .nav-scrolled .nav-consult-btn {
-    width: 115px;
-    height: 36px;
-  }
-  
-  .nav-scrolled .nav-line-btn img {
-    height: 36px;
-  }
-  
-  .logo {
-    min-width: 220px; /* 更小的logo區域 */
-  }
-}
-
-@media (max-width: 992px) {
-  .nav-menu a {
-    font-size: 1rem; /* 更小的字體但仍保持比例 */
-    padding: 7px 10px;
-  }
-  
-  .dropdown-menu a {
-    font-size: 1rem;
-  }
-  
-  .nav-consult-btn {
-    width: 120px; /* 縮小寬度 */
-    height: 38px;
-    font-size: 1rem !important;
-  }
-  
-  .nav-line-btn img {
-    height: 38px;
-  }
-  
-  .nav-scrolled .nav-consult-btn {
-    width: 110px;
     height: 34px;
-    font-size: 0.95rem !important;
-  }
-  
-  .nav-scrolled .nav-line-btn img {
-    height: 34px;
-  }
-  
-  .nav-divider {
-    margin: 0 6px;
-  }
-  
-  .logo {
-    min-width: 200px;
   }
   
   .logo-main {
@@ -533,51 +411,100 @@
   }
   
   .logo-sub {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .site-nav {
+    height: 65px;
+  }
+  
+  .site-nav.nav-scrolled {
+    height: 55px;
+  }
+  
+  .nav-menu a {
+    padding: 0 10px;
     font-size: 0.85rem;
+  }
+  
+  .nav-consult-btn {
+    font-size: 0.85rem !important;
+    height: 32px;
+    padding: 0 16px !important;
+  }
+  
+  .nav-line-btn img {
+    height: 32px;
+  }
+  
+  .logo-main {
+    font-size: 1.2rem;
+  }
+  
+  .logo-sub {
+    font-size: 0.75rem;
+  }
+  
+  .nav-menu a.active::after {
+    left: 10px;
+    right: 10px;
   }
 }
 
 /* 移動設備樣式 */
 @media (max-width: 850px) {
+  .site-nav {
+    height: 60px;
+  }
+  
+  .site-nav.nav-scrolled {
+    height: 55px;
+  }
+  
   .nav-toggle-label {
     display: block;
   }
   
   .nav-container {
-    padding: 10px 15px;
-  }
-  
-  .nav-scrolled .nav-container {
-    padding: 8px 15px;
+    padding: 0 15px;
   }
   
   .nav-menu {
-    position: absolute;
-    top: 100%;
+    position: fixed;
+    top: 60px;
     left: 0;
     right: 0;
-    background: linear-gradient(to bottom, #002452, #001b3e);
+    bottom: 0;
+    background: rgba(0, 33, 71, 0.97);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     flex-direction: column;
     align-items: center;
+    padding: 20px 0;
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.5s cubic-bezier(0.52, 0.16, 0.24, 1);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-    padding: 0;
+    height: auto;
     z-index: 1000;
   }
   
+  .nav-scrolled .nav-menu {
+    top: 55px;
+  }
+  
   .nav-toggle:checked ~ .nav-menu {
-    max-height: 80vh;
-    padding: 15px 0; /* 減少內部padding */
+    max-height: calc(100vh - 60px);
     overflow-y: auto;
   }
   
   .nav-menu li {
-    width: 90%;
+    width: 85%;
     text-align: center;
-    margin: 0;
-    padding: 6px 0; /* 減少行間距 */
+    margin: 5px 0;
+    padding: 5px 0;
+    height: auto;
     opacity: 0;
     transform: translateY(-10px);
     transition: opacity 0.3s ease, transform 0.3s ease;
@@ -598,135 +525,137 @@
   .nav-toggle:checked ~ .nav-menu li:nth-child(7) { transition-delay: 0.35s; }
   .nav-toggle:checked ~ .nav-menu li:nth-child(8) { transition-delay: 0.4s; }
   
-  .dropdown-menu {
-    position: static;
-    background-color: rgba(0, 60, 136, 0.2);
-    box-shadow: none;
-    margin: 8px 0 0;
-    display: none;
-    padding: 5px 0;
-    width: 90%;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transform: none;
-    border-radius: 8px;
-    visibility: visible;
-    pointer-events: auto;
+  .nav-menu a {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    padding: 12px 0;
+    font-size: 1rem;
+    height: auto;
   }
   
-  .dropdown-menu::before {
-    display: none;
+  .nav-menu a.active::after {
+    bottom: 5px;
+    height: 2px;
+    left: 30%;
+    right: 30%;
+  }
+  
+  .dropdown-menu {
+    position: static;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+    margin: 5px 0;
+    transform: none;
+    padding: 5px;
+    width: 100%;
+    border-radius: 8px;
+    visibility: hidden;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, visibility 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+    margin-top: 0;
   }
   
   .dropdown-menu a {
-    padding: 10px 15px;
-    font-size: 1.05rem;
+    padding: 10px 0;
+    font-size: 0.95rem;
+    color: #fff;
     opacity: 0.9;
-    text-align: center;
-    margin: 3px;
+    width: 100%;
+    margin: 2px 0;
   }
   
-  .dropdown-menu a:hover {
-    background-color: rgba(0, 136, 255, 0.15);
-    padding-left: 15px;
+  .dropdown-menu a:hover,
+  .dropdown-menu a.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+  
+  .dropdown-menu.show {
+    visibility: visible;
+    opacity: 1;
+    max-height: 500px;
+    margin-top: 5px;
+    pointer-events: auto;
   }
   
   .has-dropdown > a::after {
-    margin-left: 6px;
+    margin-left: 5px;
   }
   
-  /* 移動設備展開下拉選單的JS交互 */
-  .dropdown-menu.show {
-    display: block;
-    animation: fadeIn 0.3s forwards;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+  .has-dropdown:hover .dropdown-menu {
+    visibility: hidden;
+    opacity: 0;
+    transform: none;
   }
   
   .nav-cta-item {
-    width: 90%;
-    margin: 6px 0 !important;
+    width: 85%;
+    margin: 8px 0 !important;
   }
   
   .nav-consult-btn {
-    width: 100%; /* 填滿容器 */
-    height: 46px; /* 移動設備上更大的高度 */
-    margin: 5px auto;
-    font-size: 1.1rem !important; /* 保持字體大小 */
+    width: 100%;
+    height: 40px;
+    font-size: 1rem !important;
+    margin-left: 0 !important;
   }
   
   .nav-line-btn {
-    text-align: center;
-    display: flex;
-    justify-content: center;
+    height: 40px;
+    margin-left: 0 !important;
   }
   
   .nav-line-btn img {
-    height: 46px; /* 確保LINE圖片在移動設備上也有相同高度 */
+    height: 40px;
   }
   
   .nav-divider {
     display: none;
   }
   
-  .nav-menu a {
-    width: 100%;
-    text-align: center;
-    padding: 10px 15px;
-    justify-content: center;
-    font-size: 1.1rem; /* 保持字體大小統一 */
-  }
-  
-  .nav-menu a:hover,
-  .nav-menu a.active {
-    transform: none;
-    background-color: rgba(0, 136, 255, 0.15);
-    box-shadow: none;
-  }
-  
-  /* 改善移動端菜單項間隔 */
-  .nav-menu li:not(:last-child) {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-    margin-bottom: 4px;
-    padding-bottom: 10px;
+  /* 移動端下拉菜單專屬處理 */
+  .has-dropdown::after {
+    display: none;
   }
 }
 
 @media (max-width: 480px) {
+  .site-nav {
+    height: 55px;
+  }
+  
+  .site-nav.nav-scrolled {
+    height: 50px;
+  }
+  
+  .nav-menu {
+    top: 55px;
+  }
+  
+  .nav-scrolled .nav-menu {
+    top: 50px;
+  }
+  
   .logo-main {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
   
   .logo-sub {
-    font-size: 0.8rem;
-  }
-  
-  .nav-container {
-    padding: 10px 15px;
-  }
-  
-  .nav-scrolled .nav-container {
-    padding: 8px 15px;
+    font-size: 0.7rem;
   }
   
   .nav-toggle-label {
-    width: 28px;
+    width: 26px;
     height: 20px;
   }
   
   .nav-toggle-label span::before {
-    top: -7px;
+    top: -6px;
   }
   
   .nav-toggle-label span::after {
-    bottom: -7px;
-  }
-  
-  .nav-menu a,
-  .dropdown-menu a,
-  .nav-consult-btn {
-    font-size: 1.05rem; /* 小螢幕上稍微調小字體，但仍保持相對大小 */
+    bottom: -6px;
   }
 }

@@ -1,7 +1,7 @@
 /**
  * navbar.js - 霍爾果斯會計師事務所導航欄功能腳本
- * 最後更新日期: 2025-05-05
- * 優化版本 2.0
+ * 最後更新日期: 2025-05-06
+ * 優化版本 3.0 - 現代簡約設計
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -34,12 +34,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const dropdownMenu = item.querySelector('.dropdown-menu');
         
         // 移除之前的事件
-        dropdownLink.removeEventListener('click', handleDropdownClick);
+        if (dropdownLink._clickHandler) {
+          dropdownLink.removeEventListener('click', dropdownLink._clickHandler);
+        }
         
-        // 添加新的事件
-        dropdownLink.addEventListener('click', handleDropdownClick);
-        
-        function handleDropdownClick(e) {
+        // 創建新的事件處理程序
+        dropdownLink._clickHandler = function(e) {
           e.preventDefault();
           e.stopPropagation();
           
@@ -55,7 +55,10 @@ document.addEventListener('DOMContentLoaded', function() {
           
           // 切換當前下拉菜單
           dropdownMenu.classList.toggle('show');
-        }
+        };
+        
+        // 添加新的事件
+        dropdownLink.addEventListener('click', dropdownLink._clickHandler);
       });
     } else {
       // 桌面版：移除點擊事件，使用hover
@@ -64,11 +67,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const dropdownMenu = item.querySelector('.dropdown-menu');
         
         // 移除點擊事件
-        if (dropdownLink) {
-          const clone = dropdownLink.cloneNode(true);
-          if (dropdownLink.parentNode) {
-            dropdownLink.parentNode.replaceChild(clone, dropdownLink);
-          }
+        if (dropdownLink && dropdownLink._clickHandler) {
+          dropdownLink.removeEventListener('click', dropdownLink._clickHandler);
+          dropdownLink._clickHandler = null;
         }
         
         // 移除show類
@@ -110,21 +111,45 @@ document.addEventListener('DOMContentLoaded', function() {
   const siteNav = document.querySelector('.site-nav');
   let lastScrollTop = 0;
   let scrollThrottleTimer;
+  let scrollDirectionChangeCount = 0;
+  let prevScrollDirection = null;
   
   // 滾動節流函數
   function throttleScroll() {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     
-    // 如果滾動位置變化不大，則忽略
+    // 忽略微小的滾動變化
     if (Math.abs(scrollTop - lastScrollTop) < 5) {
       return;
     }
     
-    // 滾動超過100px時，添加較小的導航欄樣式
-    if (scrollTop > 100) {
-      siteNav.classList.add('nav-scrolled');
+    // 檢測滾動方向變化
+    const currentScrollDirection = scrollTop > lastScrollTop ? 'down' : 'up';
+    if (prevScrollDirection !== null && prevScrollDirection !== currentScrollDirection) {
+      scrollDirectionChangeCount++;
     } else {
-      siteNav.classList.remove('nav-scrolled');
+      scrollDirectionChangeCount = 0;
+    }
+    prevScrollDirection = currentScrollDirection;
+    
+    // 如果短時間內滾動方向變化超過閾值，忽略此次滾動處理以防止抖動
+    if (scrollDirectionChangeCount > 3) {
+      return;
+    }
+    
+    // 滾動超過閾值時，添加捲動樣式
+    if (scrollTop > 50) {
+      if (!siteNav.classList.contains('nav-scrolled')) {
+        requestAnimationFrame(() => {
+          siteNav.classList.add('nav-scrolled');
+        });
+      }
+    } else {
+      if (siteNav.classList.contains('nav-scrolled')) {
+        requestAnimationFrame(() => {
+          siteNav.classList.remove('nav-scrolled');
+        });
+      }
     }
     
     // 更新最後滾動位置
@@ -136,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!scrollThrottleTimer) {
       scrollThrottleTimer = setTimeout(function() {
         scrollThrottleTimer = null;
-        requestAnimationFrame(throttleScroll);
+        throttleScroll();
       }, 100); // 100ms 的節流
     }
   }
@@ -155,30 +180,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
+  // 波紋效果函數
+  function createRipple(event, element) {
+    const rect = element.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    const diameter = Math.max(rect.width, rect.height) * 2;
+    const radius = diameter / 2;
+    
+    const ripple = document.createElement('span');
+    ripple.style.width = ripple.style.height = `${diameter}px`;
+    ripple.style.left = `${x - radius}px`;
+    ripple.style.top = `${y - radius}px`;
+    ripple.classList.add('ripple-effect');
+    
+    const existingRipple = element.querySelector('.ripple-effect');
+    if (existingRipple) {
+      existingRipple.remove();
+    }
+    
+    element.appendChild(ripple);
+    
+    setTimeout(() => {
+      ripple.remove();
+    }, 600);
+  }
+  
   // 為CTA按鈕添加點擊波紋效果
-  const ctaButtons = document.querySelectorAll('.nav-consult-btn, .nav-line-btn');
+  const ctaButtons = document.querySelectorAll('.nav-consult-btn');
   
   ctaButtons.forEach(button => {
     button.addEventListener('click', function(e) {
-      const rect = button.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const ripple = document.createElement('span');
-      ripple.classList.add('ripple-effect');
-      ripple.style.left = `${x}px`;
-      ripple.style.top = `${y}px`;
-      
-      button.appendChild(ripple);
-      
-      setTimeout(() => {
-        ripple.remove();
-      }, 600);
+      createRipple(e, this);
     });
   });
   
   // 關閉漢堡選單當點擊選單項目
-  const navMenuItems = document.querySelectorAll('.nav-menu a');
+  const navMenuItems = document.querySelectorAll('.nav-menu a:not(.has-dropdown > a)');
   const navToggle = document.getElementById('nav-toggle');
   
   navMenuItems.forEach(item => {
@@ -187,6 +226,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // 延遲關閉導航，讓用戶能看到點擊效果
         setTimeout(() => {
           navToggle.checked = false;
+          
+          // 關閉所有打開的下拉菜單
+          dropdownItems.forEach(item => {
+            const menu = item.querySelector('.dropdown-menu');
+            if (menu && menu.classList.contains('show')) {
+              menu.classList.remove('show');
+            }
+          });
         }, 300);
       }
     });
@@ -206,15 +253,11 @@ document.addEventListener('DOMContentLoaded', function() {
         transform: scale(0);
         animation: ripple 0.6s linear;
         pointer-events: none;
-        width: 100px;
-        height: 100px;
-        margin-top: -50px;
-        margin-left: -50px;
       }
       
       @keyframes ripple {
         to {
-          transform: scale(4);
+          transform: scale(2);
           opacity: 0;
         }
       }
