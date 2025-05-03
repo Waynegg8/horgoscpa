@@ -1171,3 +1171,52 @@
     padding: 15px 20px;
   }
 }
+/* 簡化版文章頁面樣式 - 添加到blog-article-modern.css */
+
+/* 隱藏作者信息區塊 */
+.author-card {
+  display: none !important;
+}
+
+/* 隱藏副標題 */
+.article-subtitle {
+  display: none !important;
+}
+
+/* 簡化標題區域 */
+.article-header-main {
+  padding: 25px 40px 20px;
+}
+
+.article-title {
+  margin-bottom: 0;
+}
+
+/* 針對手動添加圖片的優化樣式 */
+.article-body img {
+  max-width: 100%;
+  margin: 20px auto;
+  display: block;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* 移除標題下空白空間 */
+.article-header-main + .article-body {
+  padding-top: 20px;
+}
+
+/* 調整文章內容間距 */
+.article-body p,
+.article-body h2,
+.article-body h3,
+.article-body h4 {
+  max-width: 42em;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 增強文章標籤區域 */
+.article-footer {
+  margin-top: 40px;
+}

@@ -4,7 +4,7 @@
 """
 Word 文檔轉換為 HTML 工具
 用於將 Word 文檔轉換為符合網站風格的 HTML 文件
-優化版本 3.0：增強內容提取完整性、修正檔名生成方式、改進圖片處理
+優化版本 4.0：簡化圖片處理、移除作者信息區塊、改進內容提取與檔名生成
 """
 
 import os
@@ -128,25 +128,42 @@ def slugify(text: str, use_translation: bool = True) -> str:
     :param use_translation: 是否使用翻譯字典
     :return: URL 友好的字符串
     """
-    # 如果使用翻譯字典，先嘗試翻譯文本
-    if use_translation and TRANSLATION_DICT:
-        text = translate_text(text)
+    logger.info(f"開始處理標題: {text}")
     
-    # 轉換為小寫
+    # 確保字典已載入
+    if use_translation and not TRANSLATION_DICT:
+        logger.warning("翻譯字典未載入或為空，將使用簡單轉換")
+        
+    # 處理中文標題
     slug = text.lower()
     
-    # 將空格和特殊字符替換為連接符
+    if use_translation and TRANSLATION_DICT:
+        # 逐個詞彙替換
+        for zh, en in TRANSLATION_DICT.items():
+            if zh in slug:
+                slug = slug.replace(zh, f"{en} ")
+                logger.info(f"替換: {zh} -> {en}")
+    
+    # 移除標點符號和特殊字符
     slug = re.sub(r'[^\w\s-]', '', slug)
-    slug = re.sub(r'[\s_-]+', '-', slug)
+    # 將空格轉換為連字符
+    slug = re.sub(r'[\s_]+', '-', slug)
+    # 移除開頭和結尾的連字符
     slug = re.sub(r'^-+|-+$', '', slug)
     
-    # 移除非ASCII字符（中文等）
-    slug = ''.join(c for c in slug if ord(c) < 128)
+    # 移除非ASCII字符
+    ascii_slug = ''
+    for c in slug:
+        if ord(c) < 128:
+            ascii_slug += c
+    slug = ascii_slug
     
-    # 確保不是空字符串
+    # 如果處理後為空，使用默認值
     if not slug:
+        logger.warning("處理後的標題為空，使用默認值'article'")
         slug = "article"
     
+    logger.info(f"處理後的標題: {slug}")
     return slug
 
 def select_thumbnail_for_category(category: str) -> str:
@@ -239,6 +256,18 @@ def extract_content_from_docx(docx_path: str) -> Tuple[str, str, List[Dict[str, 
         # 記錄開始處理文件
         logger.info(f"開始處理文件: {docx_path}")
         
+        # 檢查文件是否存在
+        if not os.path.exists(docx_path):
+            logger.error(f"文件不存在: {docx_path}")
+            raise FileNotFoundError(f"文件不存在: {docx_path}")
+        
+        # 檢查文件大小
+        file_size = os.path.getsize(docx_path)
+        logger.info(f"文件大小: {file_size} 字節")
+        if file_size == 0:
+            logger.error(f"文件大小為0: {docx_path}")
+            raise ValueError(f"文件大小為0: {docx_path}")
+        
         # 配置 mammoth 轉換選項
         convert_options = {
             "style_map": "p[style-name='標題'] => h1:fresh\n"
@@ -266,6 +295,9 @@ def extract_content_from_docx(docx_path: str) -> Tuple[str, str, List[Dict[str, 
         
         # 使用 mammoth 轉換 docx 為 HTML，添加自定義轉換器
         with open(docx_path, 'rb') as docx_file:
+            file_content = docx_file.read()
+            logger.info(f"成功讀取文件內容，共 {len(file_content)} 字節")
+            
             result = mammoth.convert_to_html(
                 docx_file,
                 transform_document=custom_styles_transform,
@@ -273,6 +305,13 @@ def extract_content_from_docx(docx_path: str) -> Tuple[str, str, List[Dict[str, 
             )
             html_content = result.value
             messages = result.messages
+            
+            logger.info(f"Mammoth 轉換成功，生成HTML長度: {len(html_content)}")
+            
+            # 如果HTML內容為空，拋出異常
+            if not html_content.strip():
+                logger.error("轉換後HTML內容為空")
+                raise ValueError("轉換後HTML內容為空")
         
         # 記錄警告信息
         for message in messages:
@@ -416,7 +455,7 @@ def extract_content_from_docx(docx_path: str) -> Tuple[str, str, List[Dict[str, 
     except Exception as e:
         logger.error(f"處理 Word 文檔時出錯: {str(e)}", exc_info=True)
         # 在出錯時提供基本內容
-        return "文章標題", "文章摘要", [{"style": "p", "text": "文章內容無法提取，請檢查原始文件。"}], ["財稅", "會計", "企業"], {"extraction_success": False, "error": str(e)}
+        return "文章標題", "文章摘要", [{"style": "p", "text": f"文章內容無法提取，原因: {str(e)}"}], ["財稅", "會計", "企業"], {"extraction_success": False, "error": str(e)}
 
 def determine_category(text: str) -> Tuple[str, str]:
     """
@@ -475,7 +514,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
                  date: str, summary: str, primary_category: str, category_code: str,
                  image: str = None) -> str:
     """
-    生成HTML內容，使用符合 article.html 的格式，但簡化版本
+    生成HTML內容，使用符合 article.html 的格式，但簡化版本 - 移除圖片和作者信息區塊
     :param title: 文章標題
     :param paragraphs: 段落列表
     :param tags: 標籤列表
@@ -490,7 +529,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     if not image:
         image = select_thumbnail_for_category(category_code)
     
-    # 設置圖片路徑
+    # 設置圖片路徑（僅用於結構化數據，頁面中不顯示）
     image_path = f"/assets/images/blog/{image}"
     
     # 生成檔案名（不含路徑）
@@ -500,12 +539,6 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     
     # 生成相對 URL 路徑（僅用於結構化資料）
     relative_url = f"/blog/{file_name}"
-    
-    # 預設作者相關內容
-    author_name = "林會計師"
-    author_title = "稅務與國際帳務專家"
-    author_bio = "擁有20年以上業界經驗，專長於企業稅務規劃、跨境稅務與投資架構設計。精通臺商赴海外投資的各項財稅規劃，以及外資來臺投資的稅務審查與租稅協定應用。"
-    author_image = "/assets/images/team/lin-profile.jpg"
     
     # 生成HTML頭部
     html = f"""<!DOCTYPE html>
@@ -557,7 +590,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     "dateModified": "{date}",
     "author": {{
       "@type": "Person",
-      "name": "{author_name}",
+      "name": "霍爾果斯會計師事務所",
       "url": "https://www.horgoscpa.com/team.html"
     }},
     "publisher": {{
@@ -603,11 +636,11 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
   </div>
 </nav>
 
-<!-- 文章頁面標題區塊 -->
+<!-- 文章頁面標題區塊 - 簡化版 -->
 <header class="article-header">
   <div class="container">
     <div class="article-header-content">
-      <!-- 實際內容由文章卡片展示 -->
+      <!-- 移除多餘內容 -->
     </div>
   </div>
 </header>
@@ -629,54 +662,13 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
         </a>
       </div>
       
-      <!-- 文章標題區 -->
+      <!-- 文章標題區 - 簡化版 -->
       <div class="article-header-main">
         <h1 class="article-title">{title}</h1>
-        <h2 class="article-subtitle">{summary}</h2>
       </div>
       
-      <!-- 文章主圖 -->
-      <img src="{image_path}" alt="{title}" class="article-featured-image">
-"""
-    
-    # 提取標題以生成目錄
-    toc_items = []
-    section_id = 0
-    for i, para in enumerate(paragraphs):
-        if para.get("style", "").startswith('h') and len(para.get("style", "")) == 2 and para.get("style", "")[1].isdigit():
-            level = int(para["style"][1])
-            if level > 1 and level <= 4:  # 只處理h2、h3、h4
-                section_id += 1
-                anchor_id = f"section-{section_id}"
-                toc_class = "article-toc-item" if level == 2 else "article-toc-item article-toc-subitem"
-                toc_items.append({
-                    "id": anchor_id,
-                    "title": para["text"],
-                    "level": level,
-                    "class": toc_class
-                })
-    
-    # 如果有足夠的標題，添加文章結構導航
-    if len(toc_items) >= 2:
-        html += """      
-      <!-- 文章結構導航 -->
-      <div class="article-toc">
-        <h3 class="article-toc-title">文章目錄</h3>
-        <ul class="article-toc-list">
-"""
-        
-        # 生成目錄HTML
-        for item in toc_items:
-            html += f"""          <li class="{item['class']}">
-            <a href="#{item['id']}" class="article-toc-link">{item['title']}</a>
-          </li>
-"""
-        
-        html += """        </ul>
-      </div>
-"""
-    
-    html += """      
+      <!-- 文章主圖移除，如需可手動添加 -->
+      
       <!-- 文章內容主體 -->
       <div class="article-body">
 """
@@ -705,20 +697,8 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
             
             continue
         
-        # 處理圖片
+        # 處理圖片 - 已在模板中移除，這裡保留處理邏輯以備將來使用
         if style == "img":
-            img_src = para.get("src", "")
-            img_alt = para.get("alt", "")
-            
-            if img_src:  # 只處理有源的圖片
-                html += f'        <figure>\n'
-                html += f'          <img src="{img_src}" alt="{img_alt}" loading="lazy">\n'
-                # 如果下一個元素是圖片說明
-                if i + 1 < len(paragraphs) and paragraphs[i+1].get("text", "").startswith(("圖:", "圖片:", "FIGURE:")):
-                    caption_text = paragraphs[i+1].get("text", "")[paragraphs[i+1].get("text", "").find(":")+1:].strip()
-                    html += f'          <figcaption>{caption_text}</figcaption>\n'
-                html += f'        </figure>\n'
-            
             continue
         
         # 處理表格
@@ -810,17 +790,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
       </div>
     </article>
     
-    <!-- 作者資訊 -->
-    <div class="author-card">
-      <div class="author-avatar">
-        <img src="{author_image}" alt="{author_name}">
-      </div>
-      <div class="author-info">
-        <h3 class="author-name">{author_name}</h3>
-        <div class="author-title">{author_title}</div>
-        <p class="author-bio">{author_bio}</p>
-      </div>
-    </div>
+    <!-- 移除作者信息區塊 -->
     
     <!-- 簡化後的文章導航 - 只保留返回部落格按鈕 -->
     <div class="article-navigation">
