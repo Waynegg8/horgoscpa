@@ -356,9 +356,36 @@
 </head>
 <body>
 
-<!-- 導航欄 - 此處沿用原有代碼 -->
+<!-- 導航欄 - 修改版 -->
 <nav class="site-nav">
-  <!-- 導航欄內容請保留原有代碼 -->
+  <div class="nav-container">
+    <div class="logo">
+      <a href="/index.html">
+        <div class="logo-main">霍爾果斯會計師事務所</div>
+        <div class="logo-sub">HorgosCPA</div>
+      </a>
+    </div>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+    </label>
+    <ul class="nav-menu">
+      <li class="has-dropdown">
+        <a href="/services.html">服務項目</a>
+        <div class="dropdown-menu">
+          <a href="/services/tax.html">稅務服務</a>
+          <a href="/services/accounting.html">記帳與會計</a>
+          <a href="/services/consulting.html">企業顧問</a>
+        </div>
+      </li>
+      <li><a href="/team.html">服務團隊</a></li>
+      <li><a href="/blog.html">專欄文章</a></li>
+      <li><a href="/faq.html">常見問題</a></li>
+      <li><a href="/video.html">影音專區</a></li>
+      <li><a href="/contact.html">聯繫我們</a></li>
+      <li><a href="/booking.html" class="nav-consult-btn active">免費諮詢</a></li>
+    </ul>
+  </div>
 </nav>
 
 <!-- 預約諮詢頁面 -->
@@ -391,21 +418,22 @@
           
           <div class="form-group">
             <label>諮詢主題 <span class="required">*</span></label>
+            <input type="hidden" id="topic-field" name="topic" value="工商登記">
             <div class="radio-options">
               <div class="radio-card">
-                <input type="radio" id="topic-business" name="topic" value="工商登記" checked>
+                <input type="radio" id="topic-business" name="topic-radio" value="工商登記" checked>
                 <label for="topic-business">工商登記</label>
               </div>
               <div class="radio-card">
-                <input type="radio" id="topic-accounting" name="topic" value="帳務處理">
+                <input type="radio" id="topic-accounting" name="topic-radio" value="帳務處理">
                 <label for="topic-accounting">帳務處理</label>
               </div>
               <div class="radio-card">
-                <input type="radio" id="topic-tax" name="topic" value="稅務申報">
+                <input type="radio" id="topic-tax" name="topic-radio" value="稅務申報">
                 <label for="topic-tax">稅務申報</label>
               </div>
               <div class="radio-card">
-                <input type="radio" id="topic-other" name="topic" value="其他">
+                <input type="radio" id="topic-other" name="topic-radio" value="其他">
                 <label for="topic-other">其他諮詢</label>
               </div>
             </div>
@@ -449,87 +477,117 @@
   </div>
 </main>
 
-<!-- 頁尾區域 - 此處沿用原有代碼 -->
+<!-- 頁尾區域 - 修改版 -->
 <footer class="site-footer">
-  <!-- 頁尾內容請保留原有代碼 -->
+  <div class="footer-container">
+    <div class="footer-content">
+      <!-- Logo與簡介 -->
+      <div class="footer-logo">
+        <div class="logo-main" style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px;">霍爾果斯會計師事務所</div>
+        <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
+        <p>專業、誠信、創新的財稅顧問夥伴，致力於提供企業與個人最優質的財務與稅務解決方案。</p>
+        <!-- 新增LINE按鈕 -->
+        <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="footer-line-btn">
+          <span class="line-icon"></span>
+          <span>加入LINE好友</span>
+        </a>
+      </div>
+      
+      <!-- 聯絡資訊 -->
+      <div class="footer-contact">
+        <h3>聯絡我們</h3>
+        <ul class="contact-info">
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">location_on</span></i>
+            <span>台中市西區建國路21號3樓之1</span>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">call</span></i>
+            <a href="tel:+886422205606">04-2220-5606</a>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">schedule</span></i>
+            <span>週一至週五 8:30-17:30</span>
+          </li>
+          <li>
+            <i class="icon-contact"><span class="material-symbols-rounded">mail</span></i>
+            <a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- 快速連結 -->
+      <div class="footer-links">
+        <h3>快速連結</h3>
+        <ul class="quick-links">
+          <li><a href="/index.html"><span class="material-symbols-rounded icon-link">home</span> 首頁</a></li>
+          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 服務團隊</a></li>
+          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 部落格</a></li>
+          <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
+          <li><a href="/video.html"><span class="material-symbols-rounded icon-link">play_circle</span> 影片</a></li>
+          <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_mail</span> 聯絡資訊</a></li>
+        </ul>
+      </div>
+      
+      <!-- 服務項目 -->
+      <div class="footer-services">
+        <h3>服務項目</h3>
+        <ul class="services-list">
+          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">attach_money</span> 稅務服務</a></li>
+          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance</span> 記帳與會計</a></li>
+          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">work</span> 企業顧問</a></li>
+          <li><a href="/booking.html"><span class="material-symbols-rounded icon-link">event_available</span> 預約諮詢</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- 版權資訊 -->
+    <div class="footer-bottom">
+      <div class="footer-text">
+        <p>&copy; 2025 霍爾果斯會計師事務所</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 返回頂部按鈕 -->
+  <div class="back-to-top">
+    <span class="material-symbols-rounded">arrow_upward</span>
+  </div>
 </footer>
 
-<!-- JavaScript -->
+<!-- 返回頂部按鈕功能 - 腳本 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // 處理「其他」選項的顯示/隱藏
-    const otherOption = document.getElementById('topic-other');
-    const otherTopicContainer = document.getElementById('other-topic-container');
-    const otherTopicInput = document.getElementById('other-topic');
-    
-    // 檢查是否選擇「其他」選項
-    function checkOtherOption() {
-      if (otherOption.checked) {
-        otherTopicContainer.style.display = 'block';
-        otherTopicInput.required = true;
-      } else {
-        otherTopicContainer.style.display = 'none';
-        otherTopicInput.required = false;
-      }
-    }
-    
-    // 初始檢查
-    checkOtherOption();
-    
-    // 添加事件監聽器到所有單選按鈕
-    document.querySelectorAll('input[name="topic"]').forEach(function(radio) {
-      radio.addEventListener('change', checkOtherOption);
-    });
-    
     // 返回頂部按鈕功能
     const backToTopButton = document.querySelector('.back-to-top');
-    if (backToTopButton) {
-      // 初始隱藏按鈕
-      backToTopButton.classList.remove('visible');
-      
-      // 監聽滾動事件
-      window.addEventListener('scroll', function() {
-        if (window.pageYOffset > 300) {
-          backToTopButton.classList.add('visible');
-        } else {
-          backToTopButton.classList.remove('visible');
-        }
-      });
-      
-      // 點擊事件
-      backToTopButton.addEventListener('click', function() {
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-      });
-    }
     
-    // 表單提交波紋效果
-    const submitBtn = document.querySelector('.submit-btn');
-    submitBtn.addEventListener('click', function(e) {
-      // 檢查表單驗證
-      const form = document.querySelector('.booking-form');
-      if (form.checkValidity()) {
-        // 創建波紋效果
-        const ripple = document.createElement('div');
-        ripple.style.position = 'absolute';
-        ripple.style.borderRadius = '50%';
-        ripple.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-        ripple.style.transform = 'scale(0)';
-        ripple.style.animation = 'ripple 0.6s linear';
-        ripple.style.pointerEvents = 'none';
-        
-        this.appendChild(ripple);
-        
-        // 動畫完成後移除波紋元素
-        setTimeout(() => {
-          ripple.remove();
-        }, 600);
+    // 初始隱藏按鈕
+    backToTopButton.classList.remove('visible');
+    
+    // 監聽滾動事件
+    window.addEventListener('scroll', function() {
+      if (window.pageYOffset > 300) {
+        backToTopButton.classList.add('visible');
+      } else {
+        backToTopButton.classList.remove('visible');
       }
+    });
+    
+    // 點擊事件
+    backToTopButton.addEventListener('click', function() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
     });
   });
 </script>
+
+<!-- 導航欄功能腳本 -->
+<script src="/assets/js/navbar.js"></script>
+
+<!-- 預約表單腳本 -->
+<script src="/assets/js/booking.js"></script>
 
 </body>
 </html>
