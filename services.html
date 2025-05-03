@@ -63,49 +63,95 @@
     .services-grid {
       display: flex;
       flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 20px;
-      margin-top: 30px;
+      gap: 15px;
+      margin-top: 20px;
     }
     
     .service-card {
       flex: 1;
       min-width: 220px;
-      max-width: calc(25% - 20px);
-      padding: 25px 20px;
+      max-width: calc(25% - 15px);
+      padding: 20px 15px;
     }
     
-    .page-header {
-      text-align: left;
+    /* 調整標題區域樣式 */
+    .page-title-section {
+      padding: 15px 0;
+      margin-bottom: 10px;
+      background-color: transparent;
+    }
+    
+    .page-title {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+      color: var(--primary-color);
+    }
+    
+    .page-description {
+      font-size: 1.1rem;
+      color: var(--text-medium);
+      max-width: 800px;
+      margin: 0 0 10px;
+    }
+    
+    /* 調整服務區塊樣式 */
+    .services-section {
+      padding: 20px 0 30px;
       margin-bottom: 20px;
     }
     
-    .page-header h1 {
-      font-size: 2.8rem;
+    /* 調整流程區塊樣式 */
+    .about-section {
+      padding: 30px 0;
+      margin-bottom: 30px;
+    }
+    
+    .about-section .section-title {
       margin-bottom: 15px;
     }
     
-    .page-header p {
-      max-width: 800px;
-      margin: 0 0 15px;
-      text-align: left;
+    .about-section .section-title h2 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    
+    .about-content p {
+      margin-bottom: 20px;
+    }
+    
+    .step-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .step-card {
+      flex: 1;
+      min-width: 200px;
+      padding: 20px;
     }
     
     /* 響應式調整 */
     @media (max-width: 992px) {
       .service-card {
-        max-width: calc(50% - 15px);
+        max-width: calc(50% - 10px);
       }
     }
     
     @media (max-width: 576px) {
       .service-card {
         max-width: 100%;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
       }
       
       .services-grid {
         flex-direction: column;
+      }
+      
+      .page-title {
+        font-size: 1.8rem;
       }
     }
   </style>
@@ -137,13 +183,13 @@
   </div>
 </nav>
 
-<!-- 頁面標題區域 -->
-<div class="page-header">
+<!-- 更簡潔的標題區域 -->
+<section class="page-title-section">
   <div class="container">
-    <h1>專業服務項目</h1>
-    <p>霍爾果斯會計師事務所提供多項專業服務，由經驗豐富的會計師團隊為您量身打造最適合的財務方案</p>
+    <h1 class="page-title">專業服務項目</h1>
+    <p class="page-description">霍爾果斯會計師事務所提供多項專業服務，由經驗豐富的會計師團隊為您量身打造最適合的財務方案</p>
   </div>
-</div>
+</section>
 
 <!-- 服務項目區塊 -->
 <section class="services-section">
@@ -209,7 +255,7 @@
     <div class="about-content">
       <p>我們以系統化、標準化的流程提供專業服務，確保每一步驟都能符合您的期望</p>
       
-      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 40px;">
+      <div class="step-container">
         <!-- 步驟1 -->
         <div class="step-card">
           <div class="step-number">1</div>
