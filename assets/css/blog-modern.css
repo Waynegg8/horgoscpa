@@ -2,6 +2,7 @@
  * blog-modern.css - 霍爾果斯會計師事務所部落格頁面現代化樣式
  * 最後更新日期: 2025-05-07
  * 包含修復日期圖標與文字重疊問題的調整
+ * 修改: 從卡片式排列改為列表式排列 (一行一篇文章)
  */
 
 /* 部落格頁面標題區塊 */
@@ -144,31 +145,34 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
+/* 修改: 從網格布局改為垂直列表 */
 .blog-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 30px;
 }
 
-/* 文章卡片樣式 */
+/* 修改: 文章卡片改為水平佈局的列表項 */
 .blog-card {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
   background-color: white;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  height: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  margin-bottom: 25px;
 }
 
 .blog-card:hover {
-  transform: translateY(-10px);
+  transform: translateY(-5px);
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
 }
 
+/* 修改: 調整圖片尺寸以適應水平佈局 */
 .blog-image {
-  height: 200px;
+  flex: 0 0 280px;
+  height: 220px;
   overflow: hidden;
 }
 
@@ -183,17 +187,19 @@
   transform: scale(1.1);
 }
 
+/* 修改: 調整內容佈局 */
 .blog-content {
   padding: 25px;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
 }
 
 .blog-card h2 {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   margin-top: 0;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   line-height: 1.4;
 }
 
@@ -232,6 +238,30 @@
   margin-bottom: 20px;
   line-height: 1.6;
   flex-grow: 1;
+}
+
+/* 分類標籤區塊 */
+.blog-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.blog-tag {
+  display: inline-block;
+  padding: 5px 12px;
+  background-color: #f0f6ff;
+  border-radius: 20px;
+  color: #0066cc;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.blog-tag:hover {
+  background-color: #0066cc;
+  color: white;
 }
 
 .read-more {
@@ -513,8 +543,14 @@
     font-size: 2.2rem;
   }
   
-  .blog-list {
-    grid-template-columns: 1fr;
+  /* 修改: 在移動設備上調整卡片佈局 */
+  .blog-card {
+    flex-direction: column;
+  }
+  
+  .blog-image {
+    flex: 0 0 200px;
+    width: 100%;
   }
   
   .category-filter {
