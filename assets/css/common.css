@@ -57,10 +57,10 @@
   --shadow-button: 0 6px 18px rgba(0, 102, 204, 0.2);
   --shadow-button-hover: 0 10px 25px rgba(0, 102, 204, 0.3);
   
-  /* 過渡效果 - 簡化 */
+  /* 過渡效果 */
   --transition-fast: all 0.2s ease;
-  --transition-standard: all 0.2s ease;
-  --transition-slow: all 0.3s ease;
+  --transition-standard: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --transition-slow: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
   
   /* 圓角 */
   --radius-small: 6px;
@@ -293,6 +293,20 @@ img {
   max-width: 800px;
   margin-left: auto;
   margin-right: auto;
+  text-align: center;
+}
+
+.home-hero p span {
+  display: block;
+}
+
+.home-hero p span:first-child {
+  text-align: center;
+}
+
+.home-hero p span:not(:first-child) {
+  text-align: left;
+  margin-left: 25%;
 }
 
 /* 區塊標題 */
@@ -328,6 +342,20 @@ img {
   color: var(--text-medium);
   font-size: 1.3rem;
   line-height: 1.7;
+  text-align: center;
+}
+
+.section-title p span {
+  display: block;
+}
+
+.section-title p span:first-child {
+  text-align: center;
+}
+
+.section-title p span:not(:first-child) {
+  text-align: left;
+  margin-left: 25%;
 }
 
 /* 按鈕樣式 */
@@ -496,6 +524,20 @@ img {
   line-height: 1.8;
   margin-bottom: 30px;
   color: var(--text-color);
+  text-align: center;
+}
+
+.about-content p span {
+  display: block;
+}
+
+.about-content p span:first-child {
+  text-align: center;
+}
+
+.about-content p span:not(:first-child) {
+  text-align: left;
+  margin-left: 25%;
 }
 
 .about-section::after {
@@ -556,7 +598,7 @@ img {
 }
 
 .service-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-15px);
   box-shadow: var(--shadow-hover);
 }
 
@@ -667,7 +709,7 @@ img {
 }
 
 .blog-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-15px);
   box-shadow: var(--shadow-hover);
 }
 
@@ -1212,6 +1254,11 @@ img {
   .faq-answer.show {
     padding: 15px 20px;
   }
+
+  .about-content p span:not(:first-child),
+  .section-title p span:not(:first-child) {
+    margin-left: 15%;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1269,6 +1316,12 @@ img {
   .faq-answer.show {
     padding: 15px;
   }
+
+  .about-content p span:not(:first-child),
+  .section-title p span:not(:first-child),
+  .home-hero p span:not(:first-child) {
+    margin-left: 5%;
+  }
 }
 
 @media (max-width: 576px) {
@@ -1325,5 +1378,12 @@ img {
   
   .page-header p {
     font-size: 1rem;
+  }
+  
+  .about-content p span:not(:first-child),
+  .section-title p span:not(:first-child),
+  .home-hero p span:not(:first-child) {
+    margin-left: 0;
+    text-align: center;
   }
 }
