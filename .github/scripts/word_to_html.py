@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-Word 文檔轉換為 HTML 工具
+Word 文檔轉換為 HTML 工具 - 改進版
 用於將 Word 文檔轉換為符合網站風格的 HTML 文件
-優化版本 4.0：簡化圖片處理、移除作者信息區塊、改進內容提取與檔名生成
+改進版：專注於純文字內容的處理，並恢復使用utils模組加載翻譯字典
 """
 
 import os
@@ -16,8 +16,7 @@ import datetime
 import mammoth
 import logging
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple, Set
-from bs4 import BeautifulSoup
+from typing import List, Dict, Any, Optional, Tuple
 
 # 設置日誌
 logging.basicConfig(
@@ -32,7 +31,12 @@ logger = logging.getLogger(__name__)
 
 # 引入 utils 模組 (如果存在)
 try:
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+    # 調整路徑以確保能夠找到項目根目錄
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
+    sys.path.append(PROJECT_ROOT)
+    
+    # 嘗試導入utils模組
     from utils import load_translation_dict, extract_keywords, setup_jieba_dict
     USE_UTILS = True
     logger.info("成功導入 utils 模組")
@@ -43,8 +47,14 @@ except ImportError:
     def load_translation_dict():
         """簡易版字典加載"""
         try:
-            dict_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tw_financial_dict.json')
+            # 首先嘗試在專案根目錄下查找
+            dict_path = os.path.join(PROJECT_ROOT, "assets/data/tw_financial_dict.json")
+            if not os.path.exists(dict_path):
+                # 然後嘗試在當前目錄查找
+                dict_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tw_financial_dict.json')
+            
             if os.path.exists(dict_path):
+                logger.info(f"從 {dict_path} 讀取翻譯字典")
                 with open(dict_path, 'r', encoding='utf-8') as f:
                     return json.load(f)
         except Exception as e:
@@ -70,6 +80,7 @@ except ImportError:
 
 # 加載翻譯字典
 TRANSLATION_DICT = load_translation_dict()
+logger.info(f"已加載翻譯字典，共 {len(TRANSLATION_DICT)} 個詞條")
 
 # 獲取專案根目錄
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -121,28 +132,81 @@ def translate_text(text: str) -> str:
     
     return text
 
-def slugify(text: str, use_translation: bool = True) -> str:
+def slugify(text: str) -> str:
     """
-    將文本轉換為 URL 友好的格式
+    將文本轉換為 URL 友好的格式 - 使用翻譯字典
     :param text: 要轉換的文本
-    :param use_translation: 是否使用翻譯字典
     :return: URL 友好的字符串
     """
     logger.info(f"開始處理標題: {text}")
     
-    # 確保字典已載入
-    if use_translation and not TRANSLATION_DICT:
-        logger.warning("翻譯字典未載入或為空，將使用簡單轉換")
-        
-    # 處理中文標題
-    slug = text.lower()
+    # 內建基本字典作為備用
+    base_replacements = {
+        '台灣': 'taiwan',
+        '創業': 'startup',
+        '指南': 'guide',
+        '會計': 'accounting',
+        '會計師': 'accountant',
+        '角色': 'role',
+        '價值': 'value',
+        '財務': 'finance',
+        '稅務': 'tax',
+        '申報': 'filing',
+        '公司': 'company',
+        '規劃': 'planning',
+        '管理': 'management',
+        '合夥人': 'partner',
+        '初期': 'early-stage',
+        '資本': 'capital',
+        '貸款': 'loan',
+        '銀行': 'bank',
+        '必知': 'essential',
+        '老闆': 'boss',
+        '勞工': 'labor',
+        '設定': 'setting',
+        '攻略': 'guide',
+        '法規': 'regulations',
+        '全攻略': 'complete-guide',
+        '選擇': 'choice',
+        '發票': 'invoice',
+        '所得稅': 'income-tax',
+        '營業稅': 'business-tax',
+        '制度': 'system',
+        '登記': 'registration',
+        '簽證': 'certificate',
+        '組織': 'organization',
+        '型態': 'type',
+        '行號': 'business-entity',
+        '營業': 'business'
+    }
     
-    if use_translation and TRANSLATION_DICT:
-        # 逐個詞彙替換
-        for zh, en in TRANSLATION_DICT.items():
-            if zh in slug:
-                slug = slug.replace(zh, f"{en} ")
-                logger.info(f"替換: {zh} -> {en}")
+    # 如果有翻譯字典，優先使用
+    slug = text.lower()
+    replaced = False
+    
+    # 首先嘗試使用翻譯字典
+    if TRANSLATION_DICT:
+        logger.info("使用翻譯字典進行轉換")
+        # 按詞彙長度排序，優先替換較長的詞彙
+        sorted_dict = sorted(TRANSLATION_DICT.items(), key=lambda x: len(x[0]), reverse=True)
+        
+        for zh, en in sorted_dict:
+            if zh.lower() in slug:
+                replaced_text = slug.replace(zh.lower(), f"{en}-")
+                if replaced_text != slug:
+                    replaced = True
+                    slug = replaced_text
+                    logger.info(f"使用翻譯字典替換: {zh} -> {en}")
+    
+    # 如果沒有使用翻譯字典或替換不完全，使用基本替換
+    if not replaced or len(slug) > 50:  # 如果結果還是太長，使用基本替換
+        logger.info("使用基本替換進行轉換")
+        new_slug = slug
+        for zh, en in base_replacements.items():
+            if zh in new_slug:
+                new_slug = new_slug.replace(zh, f"{en}-")
+                logger.info(f"使用基本替換: {zh} -> {en}")
+        slug = new_slug
     
     # 移除標點符號和特殊字符
     slug = re.sub(r'[^\w\s-]', '', slug)
@@ -150,6 +214,8 @@ def slugify(text: str, use_translation: bool = True) -> str:
     slug = re.sub(r'[\s_]+', '-', slug)
     # 移除開頭和結尾的連字符
     slug = re.sub(r'^-+|-+$', '', slug)
+    # 移除重複的連字符
+    slug = re.sub(r'-+', '-', slug)
     
     # 移除非ASCII字符
     ascii_slug = ''
@@ -162,6 +228,11 @@ def slugify(text: str, use_translation: bool = True) -> str:
     if not slug:
         logger.warning("處理後的標題為空，使用默認值'article'")
         slug = "article"
+    
+    # 截斷過長的slug
+    if len(slug) > 80:
+        slug = slug[:80]
+        logger.info("標題過長，已截斷")
     
     logger.info(f"處理後的標題: {slug}")
     return slug
@@ -188,67 +259,9 @@ def select_thumbnail_for_category(category: str) -> str:
     # 隨機選擇一張圖片
     return random.choice(images)
 
-def custom_styles_transform(element, settings=None):
-    """
-    自定義 mammoth 樣式轉換
-    :param element: mammoth 元素
-    :param settings: 設置
-    :return: 轉換結果
-    """
-    if element.tag == "table":
-        return {"element": "div", "attrs": {"class": "table-container"}, "children": [
-            {"element": "table"}
-        ]}
-    
-    if element.type == "paragraph":
-        style_name = element.paragraph_style_name or ""
-        
-        if "標題" in style_name or "Title" in style_name:
-            return {"element": "h1"}
-        
-        if "副標題" in style_name or "Subtitle" in style_name:
-            return {"element": "h2"}
-        
-        if "提示" in style_name or "Tip" in style_name:
-            return {"element": "div", "attrs": {"class": "tip-block"}}
-        
-        if "警告" in style_name or "Warning" in style_name:
-            return {"element": "div", "attrs": {"class": "warning-block"}}
-        
-        if "注意" in style_name or "Note" in style_name:
-            return {"element": "div", "attrs": {"class": "note-block"}}
-        
-        if "引用" in style_name or "Quote" in style_name:
-            return {"element": "blockquote"}
-    
-    # 默認返回 None，表示使用 mammoth 默認轉換
-    return None
-
-def count_html_elements(html_content: str) -> Dict[str, int]:
-    """
-    統計 HTML 內容中的各類元素數量
-    :param html_content: HTML 內容
-    :return: 元素類型及其數量的字典
-    """
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    element_counts = {
-        "paragraphs": len(soup.find_all("p")),
-        "headings": len(soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"])),
-        "lists": len(soup.find_all(["ul", "ol"])),
-        "list_items": len(soup.find_all("li")),
-        "images": len(soup.find_all("img")),
-        "tables": len(soup.find_all("table")),
-        "links": len(soup.find_all("a")),
-        "blockquotes": len(soup.find_all("blockquote")),
-        "total": len(soup.find_all())
-    }
-    
-    return element_counts
-
 def extract_content_from_docx(docx_path: str) -> Tuple[str, str, List[Dict[str, str]], List[str], Dict[str, Any]]:
     """
-    從 docx 文件中提取內容
+    從 docx 文件中提取純文字內容
     :param docx_path: Word 文檔路徑
     :return: (標題, 摘要, 段落列表, 標籤列表, 附加信息)
     """
@@ -268,41 +281,20 @@ def extract_content_from_docx(docx_path: str) -> Tuple[str, str, List[Dict[str, 
             logger.error(f"文件大小為0: {docx_path}")
             raise ValueError(f"文件大小為0: {docx_path}")
         
-        # 配置 mammoth 轉換選項
+        # 使用 mammoth 轉換 docx 為 HTML，使用簡化配置
         convert_options = {
             "style_map": "p[style-name='標題'] => h1:fresh\n"
                          "p[style-name='Title'] => h1:fresh\n"
                          "p[style-name='Heading 1'] => h1:fresh\n"
                          "p[style-name='標題 1'] => h1:fresh\n"
                          "p[style-name='Heading 2'] => h2:fresh\n"
-                         "p[style-name='標題 2'] => h2:fresh\n"
-                         "p[style-name='Heading 3'] => h3:fresh\n"
-                         "p[style-name='標題 3'] => h3:fresh\n"
-                         "p[style-name='Heading 4'] => h4:fresh\n"
-                         "p[style-name='標題 4'] => h4:fresh\n"
-                         "p[style-name='提示'] => div.tip-block:fresh\n"
-                         "p[style-name='Tip'] => div.tip-block:fresh\n"
-                         "p[style-name='警告'] => div.warning-block:fresh\n"
-                         "p[style-name='Warning'] => div.warning-block:fresh\n"
-                         "p[style-name='注意'] => div.note-block:fresh\n"
-                         "p[style-name='Note'] => div.note-block:fresh\n"
-                         "p[style-name='引用'] => blockquote:fresh\n"
-                         "p[style-name='Quote'] => blockquote:fresh\n"
-                         "table => div.table-container > table:fresh",
-            "include_embedded_style_map": True,
+                         "p[style-name='標題 2'] => h2:fresh",
             "include_default_style_map": True
         }
         
-        # 使用 mammoth 轉換 docx 為 HTML，添加自定義轉換器
         with open(docx_path, 'rb') as docx_file:
-            file_content = docx_file.read()
-            logger.info(f"成功讀取文件內容，共 {len(file_content)} 字節")
-            
-            result = mammoth.convert_to_html(
-                docx_file,
-                transform_document=custom_styles_transform,
-                **convert_options
-            )
+            # 直接使用 mammoth 轉換，不使用自定義轉換器
+            result = mammoth.convert_to_html(docx_file, **convert_options)
             html_content = result.value
             messages = result.messages
             
@@ -317,110 +309,29 @@ def extract_content_from_docx(docx_path: str) -> Tuple[str, str, List[Dict[str, 
         for message in messages:
             if message.type == "warning":
                 logger.warning(f"Mammoth 警告: {message.message}")
-        
+                
         # 使用 BeautifulSoup 解析 HTML
+        from bs4 import BeautifulSoup
         soup = BeautifulSoup(html_content, 'html.parser')
-        
-        # 統計元素數量，用於日誌和調試
-        element_counts = count_html_elements(html_content)
-        logger.info(f"HTML 元素統計: {element_counts}")
         
         # 提取標題 (假設第一個 h1 或 h2 是標題)
         title_tag = soup.find(['h1', 'h2'])
         title = title_tag.text.strip() if title_tag else os.path.basename(docx_path).replace('.docx', '')
         
-        # 如果需要，從標題中移除日期部分
+        # 從標題中移除日期部分
         title = re.sub(r'^\d{4}-\d{2}-\d{2}\s*-?\s*', '', title)
         
-        # 提取段落和其他元素
+        # 提取段落 - 只處理純文字
         paragraphs = []
-        content_tags = soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'div', 'img', 'table'])
         
-        # 標記已處理的標籤以避免重複
-        processed_tags = set()
-        
-        for tag in content_tags:
-            # 跳過已處理的標籤
-            if tag in processed_tags:
-                continue
-            
-            tag_name = tag.name
-            
-            # 處理列表 (ul/ol)
-            if tag_name in ['ul', 'ol']:
-                list_items = []
-                for li in tag.find_all('li', recursive=False):
-                    processed_tags.add(li)
-                    list_items.append({
-                        "style": "li",
-                        "text": li.get_text().strip()
-                    })
-                
-                if list_items:
-                    paragraphs.append({
-                        "style": tag_name,
-                        "items": list_items
-                    })
-                processed_tags.add(tag)
-                continue
-            
-            # 跳過空元素
-            if not tag.get_text().strip() and tag_name != 'img':
-                continue
-            
-            # 處理圖片
-            if tag_name == 'img':
-                img_src = tag.get('src', '')
-                img_alt = tag.get('alt', '')
-                
-                if img_src:  # 只處理有源的圖片
-                    paragraphs.append({
-                        "style": "img",
-                        "src": img_src,
-                        "alt": img_alt
-                    })
-                processed_tags.add(tag)
-                continue
-            
-            # 處理表格
-            if tag_name == 'table':
-                # 簡單處理，僅提取表格文本
-                paragraphs.append({
-                    "style": "table",
-                    "html": str(tag)
-                })
-                processed_tags.add(tag)
-                continue
-            
-            # 處理特殊區塊 (提示、警告、注意)
-            if tag_name == 'div' and tag.get('class'):
-                class_list = tag.get('class')
-                if any(c in ['tip-block', 'warning-block', 'note-block'] for c in class_list):
-                    block_type = 'tip' if 'tip-block' in class_list else 'warning' if 'warning-block' in class_list else 'note'
-                    paragraphs.append({
-                        "style": f"{block_type}-block",
-                        "text": tag.get_text().strip()
-                    })
-                    processed_tags.add(tag)
-                    continue
-            
-            # 處理引用區塊
-            if tag_name == 'blockquote':
-                paragraphs.append({
-                    "style": "blockquote",
-                    "text": tag.get_text().strip()
-                })
-                processed_tags.add(tag)
-                continue
-            
-            # 處理標準元素 (p, h1-h6)
+        # 提取所有段落和標題
+        for tag in soup.find_all(['p', 'h1', 'h2', 'h3', 'h4']):
             text = tag.get_text().strip()
-            if text:
+            if text:  # 只處理非空文字
                 paragraphs.append({
-                    "style": tag_name,
+                    "style": tag.name,
                     "text": text
                 })
-            processed_tags.add(tag)
         
         # 提取摘要 (使用第一段非標題文本)
         summary = ""
@@ -433,18 +344,31 @@ def extract_content_from_docx(docx_path: str) -> Tuple[str, str, List[Dict[str, 
         if not summary:
             summary = f"{title} - 專業財稅知識分享"
         
-        # 從內容中提取可能的標籤
+        # 從內容中提取可能的標籤 - 使用utils模組或備用方法
+        keywords = []
         full_text = title + " " + " ".join([p.get("text", "") for p in paragraphs if p.get("text")])
+        
         if USE_UTILS:
-            setup_jieba_dict()  # 確保字典已設置
+            # 如果有jieba詞典，設置它
+            setup_jieba_dict()
+            # 使用utils模組提取關鍵詞
             keywords = extract_keywords(full_text, 5)
+            logger.info("使用utils模組提取關鍵詞")
         else:
-            keywords = extract_keywords(full_text, 5)
+            # 使用簡單的關鍵詞提取 - 根據常見財稅相關詞彙
+            common_keywords = ["稅務", "會計", "財務", "企業", "記帳", "報稅", "節稅", "創業", 
+                              "公司", "規劃", "資本", "管理", "勞工", "營業", "行號"]
+            for keyword in common_keywords:
+                if keyword in full_text and len(keywords) < 3:
+                    keywords.append(keyword)
+            logger.info("使用內建方法提取關鍵詞")
+        
+        # 如果沒有找到關鍵詞，使用默認值
+        if not keywords:
+            keywords = ["財稅", "會計", "企業"]
         
         # 返回附加信息以供調試
         additional_info = {
-            "element_counts": element_counts,
-            "messages": [str(m) for m in messages],
             "extraction_success": True
         }
         
@@ -511,10 +435,9 @@ def determine_category(text: str) -> Tuple[str, str]:
     return primary_category, category_code
 
 def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str], 
-                 date: str, summary: str, primary_category: str, category_code: str,
-                 image: str = None) -> str:
+                 date: str, summary: str, primary_category: str, category_code: str) -> str:
     """
-    生成HTML內容，使用符合 article.html 的格式，但簡化版本 - 移除圖片和作者信息區塊
+    生成簡化版HTML內容 - 只處理文字
     :param title: 文章標題
     :param paragraphs: 段落列表
     :param tags: 標籤列表
@@ -522,25 +445,19 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     :param summary: 摘要
     :param primary_category: 主要分類(中文)
     :param category_code: 分類代碼(英文)
-    :param image: 圖片名稱
     :return: HTML內容
     """
-    # 如果沒有指定圖片，根據分類隨機選擇一張
-    if not image:
-        image = select_thumbnail_for_category(category_code)
+    # 設置圖片路徑（僅用於結構化數據）
+    image_path = f"/assets/images/blog/{select_thumbnail_for_category(category_code)}"
     
-    # 設置圖片路徑（僅用於結構化數據，頁面中不顯示）
-    image_path = f"/assets/images/blog/{image}"
-    
-    # 生成檔案名（不含路徑）
-    # 使用翻譯字典生成SEO友好的英文檔名
-    slugified_title = slugify(title, use_translation=True)
-    file_name = f"{date}-{slugified_title}.html"
+    # 生成檔案名（不含路徑）- 使用改進的slugify
+    slug = slugify(title)
+    file_name = f"{date}-{slug}.html"
     
     # 生成相對 URL 路徑（僅用於結構化資料）
     relative_url = f"/blog/{file_name}"
     
-    # 生成HTML頭部
+    # 生成HTML頭部 - 保持不變
     html = f"""<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -667,114 +584,20 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
         <h1 class="article-title">{title}</h1>
       </div>
       
-      <!-- 文章主圖移除，如需可手動添加 -->
-      
-      <!-- 文章內容主體 -->
+      <!-- 文章內容主體 - 純文字版 -->
       <div class="article-body">
 """
     
-    # 添加文章內容，增強對特殊區塊的處理
-    section_id = 0
-    in_list = False
-    list_type = None
-    list_items = []
-    
-    for i, para in enumerate(paragraphs):
+    # 添加文章內容 - 僅處理純文字
+    for para in paragraphs:
         style = para.get("style", "p")
-        
-        # 如果是列表容器
-        if style in ["ul", "ol"]:
-            list_type = style
-            in_list = True
-            list_items = para.get("items", [])
-            
-            html += f'        <{list_type}>\n'
-            
-            for item in list_items:
-                html += f'          <li>{item.get("text", "")}</li>\n'
-            
-            html += f'        </{list_type}>\n'
-            
-            continue
-        
-        # 處理圖片 - 已在模板中移除，這裡保留處理邏輯以備將來使用
-        if style == "img":
-            continue
-        
-        # 處理表格
-        if style == "table":
-            html += para.get("html", "") + "\n"
-            continue
-        
-        # 獲取文本內容
         text = para.get("text", "")
         
-        # 處理標題並添加錨點
-        if style.startswith('h') and len(style) == 2 and style[1].isdigit():
-            level = int(style[1])
-            if level > 1 and level <= 4:  # 只處理h2、h3、h4
-                section_id += 1
-                anchor_id = f"section-{section_id}"
-                html += f'        <{style} id="{anchor_id}">{text}</{style}>\n'
-                continue
-        
-        # 檢測並處理提示區塊
-        if style == "tip-block" or text.startswith("提示:") or text.startswith("TIP:"):
-            content = text[5:].strip() if text.startswith("提示:") or text.startswith("TIP:") else text
-            html += f'        <div class="tip-block">\n'
-            html += f'          <p>{content}</p>\n'
-            html += f'        </div>\n'
-            continue
-            
-        # 檢測並處理警告區塊
-        if style == "warning-block" or text.startswith("警告:") or text.startswith("WARNING:"):
-            content = text[6:].strip() if text.startswith("警告:") or text.startswith("WARNING:") else text
-            html += f'        <div class="warning-block">\n'
-            html += f'          <p>{content}</p>\n'
-            html += f'        </div>\n'
-            continue
-            
-        # 檢測並處理注意區塊
-        if style == "note-block" or text.startswith("注意:") or text.startswith("NOTE:"):
-            content = text[6:].strip() if text.startswith("注意:") or text.startswith("NOTE:") else text
-            html += f'        <div class="note-block">\n'
-            html += f'          <p>{content}</p>\n'
-            html += f'        </div>\n'
-            continue
-        
-        # 處理表格標題和注釋
-        if style == "p" and (text.startswith("表格:") or text.startswith("表:") or text.startswith("TABLE:")):
-            html += f'        <div class="table-note">{text[text.find(":")+1:].strip()}</div>\n'
-            continue
-        
-        # 處理分隔線
-        if style == "p" and (text.strip() == "---" or text.strip() == "***" or text.strip() == "___"):
-            html += f'        <hr>\n'
-            continue
-            
-        # 跳過圖片說明（已在圖片處理中處理）
-        if style == "p" and (text.startswith("圖:") or text.startswith("圖片:") or text.startswith("FIGURE:")):
-            # 檢查前面是否已經處理過這個圖片說明
-            prev_is_img = i > 0 and paragraphs[i-1].get("style") == "img"
-            if prev_is_img:
-                continue
-        
-        # 處理引用區塊
-        if style == "blockquote":
-            html += f'        <blockquote>\n          <p>{text}</p>\n        </blockquote>\n'
-            continue
-        
-        # 處理普通段落和其他元素
-        if style.startswith("h") and len(style) == 2 and style[1].isdigit():
-            level = int(style[1])
-            if level == 1:  # h1 已經用於標題，所以內容中的 h1 轉為 h2
-                html += f'        <h2>{text}</h2>\n'
-            else:
-                html += f'        <{style}>{text}</{style}>\n'
-        else:
+        # 只處理基本段落和標題
+        if text and style in ["p", "h1", "h2", "h3", "h4"]:
             html += f'        <{style}>{text}</{style}>\n'
     
-    # 添加標籤區域
+    # 添加標籤區域 - 保持不變
     html += """      </div>
       
       <!-- 文章標籤 -->
@@ -784,13 +607,14 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     
     # 添加標籤
     for tag in tags:
-        html += f'          <a href="/blog.html?tag={slugify(tag)}" class="article-tag">{tag}</a>\n'
+        # 使用改進後的slugify處理標籤URL
+        tag_slug = slugify(tag)
+        html += f'          <a href="/blog.html?tag={tag_slug}" class="article-tag">{tag}</a>\n'
     
+    # 底部部分 - 保持不變
     html += """        </div>
       </div>
     </article>
-    
-    <!-- 移除作者信息區塊 -->
     
     <!-- 簡化後的文章導航 - 只保留返回部落格按鈕 -->
     <div class="article-navigation">
@@ -965,60 +789,6 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     
     // 初始化進度
     updateReadingProgress();
-    
-    // 目錄導航功能
-    const tocLinks = document.querySelectorAll('.article-toc-link');
-    const sections = document.querySelectorAll('h2[id^="section-"], h3[id^="section-"], h4[id^="section-"]');
-    
-    if (tocLinks.length > 0 && sections.length > 0) {
-      // 監聽滾動事件，高亮當前閱讀的段落
-      window.addEventListener('scroll', function() {
-        // 獲取當前滾動位置
-        const scrollPosition = window.scrollY;
-        
-        // 決定當前可見的段落
-        let currentSectionId = '';
-        sections.forEach(section => {
-          const sectionTop = section.offsetTop - 120; // 添加一些偏移
-          if (scrollPosition >= sectionTop) {
-            currentSectionId = section.id;
-          }
-        });
-        
-        // 移除所有活動狀態
-        tocLinks.forEach(link => {
-          link.classList.remove('active');
-        });
-        
-        // 添加當前段落的活動狀態
-        if (currentSectionId) {
-          const currentLink = document.querySelector(`.article-toc-link[href="#${currentSectionId}"]`);
-          if (currentLink) {
-            currentLink.classList.add('active');
-          }
-        }
-      });
-      
-      // 點擊目錄鏈接時平滑滾動到對應段落
-      tocLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          
-          const targetId = this.getAttribute('href').substring(1);
-          const targetElement = document.getElementById(targetId);
-          
-          if (targetElement) {
-            window.scrollTo({
-              top: targetElement.offsetTop - 100,
-              behavior: 'smooth'
-            });
-            
-            // 更新URL錨點但不跳轉
-            history.pushState(null, null, `#${targetId}`);
-          }
-        });
-      });
-    }
   });
 </script>
 
@@ -1030,7 +800,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
 
 def process_word_files(input_dir: str, output_dir: str) -> None:
     """
-    處理指定目錄中的Word文檔，轉換為HTML
+    處理指定目錄中的Word文檔，轉換為HTML - 改進版
     :param input_dir: 輸入目錄
     :param output_dir: 輸出目錄
     """
@@ -1067,9 +837,9 @@ def process_word_files(input_dir: str, output_dir: str) -> None:
             # 判斷文章分類
             primary_category, category_code = determine_category(full_text)
             
-            # 生成檔案名，使用翻譯字典優化SEO
-            slugified_title = slugify(title, use_translation=True)
-            file_name = f"{date}-{slugified_title}.html"
+            # 生成檔案名，使用改進的 slugify
+            slug = slugify(title)
+            file_name = f"{date}-{slug}.html"
             
             # 生成HTML
             html_content = generate_html(
@@ -1093,22 +863,15 @@ def process_word_files(input_dir: str, output_dir: str) -> None:
             logger.info(f"  分類: {primary_category} ({category_code})")
             logger.info(f"  標籤: {', '.join(tags)}")
             
-            # 輸出統計信息
-            if additional_info and "element_counts" in additional_info:
-                counts = additional_info["element_counts"]
-                logger.info(f"  元素統計: {counts['paragraphs']} 段落, {counts['headings']} 標題, {counts['images']} 圖片, {counts['tables']} 表格")
-        
         except Exception as e:
             logger.error(f"處理 {docx_file} 時出錯: {str(e)}", exc_info=True)
-            import traceback
-            traceback.print_exc()
 
 def main() -> None:
     """主函數"""
     # 檢查命令行參數
     if len(sys.argv) < 3:
-        print("用法: python word_to_html.py <輸入目錄> <輸出目錄>")
-        print("例如: python word_to_html.py word-docs blog")
+        print("用法: python word_to_html_improved.py <輸入目錄> <輸出目錄>")
+        print("例如: python word_to_html_improved.py word-docs blog")
         return
     
     input_dir = sys.argv[1]
@@ -1118,9 +881,10 @@ def main() -> None:
     logger.info(f"輸入目錄: {input_dir}")
     logger.info(f"輸出目錄: {output_dir}")
     
-    # 加載財稅專業詞彙字典
+    # 如果有utils模組，使用它來設置詞典
     if USE_UTILS:
         setup_jieba_dict()
+        logger.info("已設置jieba詞典")
     
     # 處理Word文檔
     process_word_files(input_dir, output_dir)
