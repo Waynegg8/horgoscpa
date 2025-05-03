@@ -19,7 +19,12 @@
   <link rel="stylesheet" href="/assets/css/common.css" />
   <link rel="stylesheet" href="/assets/css/navbar.css" />
   <link rel="stylesheet" href="/assets/css/footer.css" />
-  <link rel="stylesheet" href="/assets/css/blog.css" />
+  
+  <!-- 新增: 首頁特定樣式 - 用於流動式設計 -->
+  <link rel="stylesheet" href="/assets/css/index-style.css" />
+  
+  <!-- 部落格專用現代化樣式 -->
+  <link rel="stylesheet" href="/assets/css/blog-modern.css" />
   
   <!-- Google 分析 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
@@ -65,40 +70,63 @@
       <span></span>
     </label>
     <ul class="nav-menu">
-  <li><a href="/services.html">服務項目</a></li>
-  <li><a href="/team.html">服務團隊</a></li>
-  <li><a href="/blog.html">專欄文章</a></li>
-  <li><a href="/faq.html">常見問題</a></li>
-  <li><a href="/video.html">影音專區</a></li>
-  <li><a href="/contact.html">聯繫我們</a></li>
-  <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
-</ul>
+      <li><a href="/services.html">專業服務</a></li>
+      <li><a href="/team.html">專業團隊</a></li>
+      <li><a href="/blog.html" class="active">專欄文章</a></li>
+      <li><a href="/faq.html">常見問題</a></li>
+      <li><a href="/video.html">影音專區</a></li>
+      <li><a href="/contact.html">聯繫我們</a></li>
+      <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
+    </ul>
   </div>
 </nav>
 
+<!-- 新增: 部落格頁面標題區塊 -->
+<header class="blog-header">
+  <div class="container">
+    <div class="blog-header-content">
+      <h1>專業財稅部落格</h1>
+      <p>探索財稅資訊、會計知識與企業經營建議，助您掌握財務脈動</p>
+    </div>
+  </div>
+</header>
 
-    
+<!-- 新增: 現代化搜索與過濾容器 -->
+<div class="container">
+  <div class="search-filter-container">
     <!-- 搜尋框 -->
     <div class="search-container">
       <input type="text" id="blog-search" class="search-input" placeholder="搜尋文章..." aria-label="搜尋文章">
       <button class="search-button" id="search-btn" aria-label="搜尋">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
       </button>
     </div>
     
+    <!-- 分類標籤 -->
     <div class="category-filter">
       <button class="filter-btn active" data-category="all">全部文章</button>
       <button class="filter-btn" data-category="tax">稅務相關</button>
       <button class="filter-btn" data-category="accounting">會計記帳</button>
       <button class="filter-btn" data-category="business">企業經營</button>
+      <button class="filter-btn" data-category="investment">投資理財</button>
+      <button class="filter-btn" data-category="international">跨境稅務</button>
     </div>
-    
+  </div>
+</div>
+
+<!-- 部落格主要內容區塊 -->
+<section class="blog-content-section">
+  <div class="container">
     <div class="blog-layout">
+      <!-- 主內容區 -->
       <div class="blog-main">
+        <!-- 搜索結果顯示區 -->
         <div id="search-results-container"></div>
+        
+        <!-- 博客文章列表 -->
         <div id="blog-posts-container">
           <!-- 加載中提示 -->
           <div class="loading-container">
@@ -113,6 +141,7 @@
         </div>
       </div>
       
+      <!-- 側邊欄 -->
       <div class="blog-sidebar">
         <!-- 熱門文章區塊 -->
         <div class="sidebar-section">
@@ -133,7 +162,7 @@
       </div>
     </div>
   </div>
-</main>
+</section>
 
 <!-- 頁尾區域 - 更新版 -->
 <footer class="site-footer">
@@ -179,21 +208,22 @@
         <h3>快速連結</h3>
         <ul class="quick-links">
           <li><a href="/index.html"><span class="material-symbols-rounded icon-link">home</span> 首頁</a></li>
-          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 服務團隊</a></li>
-          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 部落格</a></li>
+          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 專業團隊</a></li>
+          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 專欄文章</a></li>
           <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
           <li><a href="/video.html"><span class="material-symbols-rounded icon-link">play_circle</span> 影片</a></li>
           <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_mail</span> 聯絡資訊</a></li>
         </ul>
       </div>
       
-      <!-- 服務項目 -->
+      <!-- 服務項目 - 更新為與首頁一致 -->
       <div class="footer-services">
         <h3>服務項目</h3>
         <ul class="services-list">
-          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">attach_money</span> 稅務服務</a></li>
-          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance</span> 記帳與會計</a></li>
-          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">work</span> 企業顧問</a></li>
+          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">store</span> 工商登記</a></li>
+          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance_wallet</span> 帳務處理</a></li>
+          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">payments</span> 稅務申報</a></li>
+          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">verified</span> 財稅簽證</a></li>
           <li><a href="/booking.html"><span class="material-symbols-rounded icon-link">event_available</span> 預約諮詢</a></li>
         </ul>
       </div>
@@ -246,6 +276,94 @@
 
 <!-- 博客功能腳本 -->
 <script src="/assets/js/blog.js"></script>
+
+<!-- 新增: 博客頁面動畫效果 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 添加滾動時的元素動畫效果
+    const animateOnScroll = function() {
+      // 獲取所有需要動畫的元素
+      const blogCards = document.querySelectorAll('.blog-card');
+      const sidebarSections = document.querySelectorAll('.sidebar-section');
+      
+      // 檢查元素是否在視圖中
+      function isElementInViewport(el) {
+        const rect = el.getBoundingClientRect();
+        return (
+          rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.85 &&
+          rect.bottom >= 0
+        );
+      }
+      
+      // 處理博客卡片動畫
+      const visibleCards = Array.from(blogCards).filter(card => isElementInViewport(card) && !card.classList.contains('animated'));
+      
+      visibleCards.forEach((card, index) => {
+        card.classList.add('animated');
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+          card.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 100 + (index * 100)); // 依次延遲顯示
+      });
+      
+      // 處理側邊欄動畫
+      const visibleSections = Array.from(sidebarSections).filter(section => isElementInViewport(section) && !section.classList.contains('animated'));
+      
+      visibleSections.forEach((section, index) => {
+        section.classList.add('animated');
+        section.style.opacity = '0';
+        section.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+          section.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+          section.style.opacity = '1';
+          section.style.transform = 'translateY(0)';
+        }, 300 + (index * 200)); // 依次延遲顯示
+      });
+    };
+    
+    // 初始執行
+    setTimeout(animateOnScroll, 500);
+    
+    // 滾動時執行動畫
+    window.addEventListener('scroll', function() {
+      animateOnScroll();
+    });
+    
+    // 窗口大小改變時重新計算
+    window.addEventListener('resize', function() {
+      animateOnScroll();
+    });
+    
+    // 搜索框動畫效果
+    const searchInput = document.getElementById('blog-search');
+    if (searchInput) {
+      searchInput.addEventListener('focus', function() {
+        this.parentElement.style.transform = 'scale(1.01)';
+      });
+      
+      searchInput.addEventListener('blur', function() {
+        this.parentElement.style.transform = 'scale(1)';
+      });
+    }
+    
+    // 分類按鈕點擊效果增強
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    filterButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        // 添加一個簡單的縮放動畫效果
+        this.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          this.style.transform = '';
+        }, 200);
+      });
+    });
+  });
+</script>
 
 </body>
 </html>
