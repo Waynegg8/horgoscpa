@@ -128,113 +128,24 @@
   border-radius: 3px 3px 0 0;
 }
 
-/* 導航分隔線 */
-.nav-divider {
-  width: 1px;
-  height: 24px;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
-  margin: 0 5px;
-}
-
-/* CTA按鈕組樣式 */
-.nav-cta-item {
-  display: inline-block;
-  margin: 0 5px !important;
-}
-
-/* 免費諮詢按鈕 - 完全重構版 */
+/* 免費諮詢按鈕 - 整合到導航選單中 */
 .nav-consult-btn {
-  /* 固定尺寸與排版 */
-  width: auto;
-  min-width: 90px;
-  max-width: 120px;
-  height: 36px;
-  padding: 0 18px !important;
-  
-  /* 文字與對齊 */
-  font-size: 0.95rem !important;
-  font-weight: 500;
-  line-height: 1;
-  text-align: center;
-  white-space: nowrap;
-  letter-spacing: 0.5px;
-  
-  /* 外觀樣式 */
   background-color: #ff6b00 !important;
-  color: white;
+  color: #fff !important;
   border-radius: 25px !important;
+  padding: 6px 18px !important;
+  margin: 0 5px !important;
   box-shadow: 0 4px 15px rgba(255, 107, 0, 0.2);
-  
-  /* 定位與顯示 */
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-  
-  /* 動畫與轉場 */
-  transition: all 0.25s ease !important;
-  
-  /* 邊距調整 */
-  margin-left: 10px !important;
-  opacity: 1 !important;
-}
-
-/* 滾動狀態 */
-.nav-scrolled .nav-consult-btn {
-  height: 34px;
-  font-size: 0.9rem !important;
-  min-width: 85px;
-  max-width: 110px;
-  padding: 0 16px !important;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.3s ease !important;
+  height: auto !important;
 }
 
 .nav-consult-btn:hover {
-  transform: translateY(-2px) !important;
+  background-color: #ff7b00 !important;
+  transform: translateY(-3px) !important;
   box-shadow: 0 6px 15px rgba(255, 107, 0, 0.3) !important;
-  background: #ff7b00 !important;
-}
-
-.nav-consult-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
-  transition: left 0.7s ease;
-}
-
-.nav-consult-btn:hover::before {
-  left: 100%;
-}
-
-/* LINE按鈕樣式 */
-.nav-line-btn {
-  padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  height: 100%;
-  margin-left: 5px !important;
-  opacity: 1 !important;
-}
-
-.nav-line-btn img {
-  display: block;
-  height: 36px;
-  transition: all 0.3s ease;
-}
-
-.nav-scrolled .nav-line-btn img {
-  height: 34px;
 }
 
 /* 下拉選單樣式 */
@@ -311,7 +222,7 @@
   transform: rotate(180deg);
 }
 
-/* 添加下拉菜单区域的缓冲区，防止鼠标移开时下拉菜单过快消失 */
+/* 添加下拉菜单缓冲区 */
 .has-dropdown::after {
   content: '';
   position: absolute;
@@ -417,18 +328,6 @@
     font-size: 0.9rem;
   }
   
-  .nav-consult-btn {
-    height: 34px;
-    font-size: 0.9rem !important;
-    min-width: 85px;
-    max-width: 110px;
-    padding: 0 16px !important;
-  }
-  
-  .nav-line-btn img {
-    height: 34px;
-  }
-  
   .logo-main {
     font-size: 1.3rem;
   }
@@ -450,18 +349,6 @@
   .nav-menu a {
     padding: 0 10px;
     font-size: 0.85rem;
-  }
-  
-  .nav-consult-btn {
-    height: 32px;
-    font-size: 0.85rem !important;
-    min-width: 80px;
-    max-width: 100px;
-    padding: 0 14px !important;
-  }
-  
-  .nav-line-btn img {
-    height: 32px;
   }
   
   .logo-main {
@@ -548,7 +435,6 @@
   .nav-toggle:checked ~ .nav-menu li:nth-child(5) { transition-delay: 0.25s; }
   .nav-toggle:checked ~ .nav-menu li:nth-child(6) { transition-delay: 0.3s; }
   .nav-toggle:checked ~ .nav-menu li:nth-child(7) { transition-delay: 0.35s; }
-  .nav-toggle:checked ~ .nav-menu li:nth-child(8) { transition-delay: 0.4s; }
   
   .nav-menu a {
     width: 100%;
@@ -615,32 +501,12 @@
     transform: none;
   }
   
-  .nav-cta-item {
-    width: 85%;
-    margin: 8px 0 !important;
-  }
-  
+  /* 免費諮詢按鈕移動版 */
   .nav-consult-btn {
     width: 100%;
-    height: 40px;
-    font-size: 1rem !important;
-    margin-left: 0 !important;
-    /* 在移動設備上取消最大寬度限制 */
-    max-width: 100%;
-    min-width: unset;
-  }
-  
-  .nav-line-btn {
-    height: 40px;
-    margin-left: 0 !important;
-  }
-  
-  .nav-line-btn img {
-    height: 40px;
-  }
-  
-  .nav-divider {
-    display: none;
+    padding: 10px 0 !important;
+    margin: 10px 0 !important;
+    border-radius: 5px !important;
   }
   
   /* 移動端下拉菜單專屬處理 */
