@@ -142,39 +142,52 @@
   margin: 0 5px !important;
 }
 
-/* 免費諮詢按鈕樣式 */
+/* 免費諮詢按鈕 - 完全重構版 */
 .nav-consult-btn {
-  font-weight: 500;
-  box-shadow: 0 4px 15px rgba(255, 107, 0, 0.2);
-  padding: 0 22px !important;
+  /* 固定尺寸與排版 */
+  width: auto;
+  min-width: 90px;
+  max-width: 120px;
+  height: 36px;
+  padding: 0 18px !important;
+  
+  /* 文字與對齊 */
   font-size: 0.95rem !important;
-  letter-spacing: 0.5px;
+  font-weight: 500;
+  line-height: 1;
   text-align: center;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  
+  /* 外觀樣式 */
+  background-color: #ff6b00 !important;
+  color: white;
+  border-radius: 25px !important;
+  box-shadow: 0 4px 15px rgba(255, 107, 0, 0.2);
+  
+  /* 定位與顯示 */
   display: flex !important;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease !important;
-  background: #ff6b00 !important;
-  border-radius: 25px !important;
-  height: 36px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  
+  /* 動畫與轉場 */
+  transition: all 0.25s ease !important;
+  
+  /* 邊距調整 */
   margin-left: 10px !important;
   opacity: 1 !important;
-  /* 添加最大寬度限制 */
-  max-width: 120px;
-  /* 添加白色空間處理 */
-  white-space: nowrap;
 }
 
+/* 滾動狀態 */
 .nav-scrolled .nav-consult-btn {
   height: 34px;
   font-size: 0.9rem !important;
-  /* 確保縮放時寬度也一致縮小 */
+  min-width: 85px;
   max-width: 110px;
-  /* 減少水平padding在縮小模式 */
-  padding: 0 18px !important;
+  padding: 0 16px !important;
 }
 
 .nav-consult-btn:hover {
@@ -405,10 +418,11 @@
   }
   
   .nav-consult-btn {
-    font-size: 0.9rem !important;
     height: 34px;
-    padding: 0 18px !important;
+    font-size: 0.9rem !important;
+    min-width: 85px;
     max-width: 110px;
+    padding: 0 16px !important;
   }
   
   .nav-line-btn img {
@@ -439,10 +453,11 @@
   }
   
   .nav-consult-btn {
-    font-size: 0.85rem !important;
     height: 32px;
-    padding: 0 16px !important;
+    font-size: 0.85rem !important;
+    min-width: 80px;
     max-width: 100px;
+    padding: 0 14px !important;
   }
   
   .nav-line-btn img {
@@ -612,6 +627,7 @@
     margin-left: 0 !important;
     /* 在移動設備上取消最大寬度限制 */
     max-width: 100%;
+    min-width: unset;
   }
   
   .nav-line-btn {
