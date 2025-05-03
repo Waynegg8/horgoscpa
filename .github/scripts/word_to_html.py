@@ -315,7 +315,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
                  date: str, summary: str, primary_category: str, category_code: str,
                  image: str = None) -> str:
     """
-    生成HTML內容，使用全站CSS樣式
+    生成HTML內容，使用外部CSS樣式表
     :param title: 文章標題
     :param paragraphs: 段落列表
     :param tags: 標籤列表
@@ -354,333 +354,17 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     for tag in tags:
         html += f'  <meta property="article:tag" content="{tag}" />\n'
     
-    # 引用全站CSS和添加導航欄修正樣式
+    # 引用外部CSS樣式表，不再內嵌樣式
     html += f"""  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="stylesheet" href="{CSS_PATH}" />
   
-  <!-- 導航欄修正樣式與博客文章樣式 -->
-  <style>
-    /* 保留必要的導航欄樣式 */
-    .logo {{
-      min-width: 240px;
-    }}
-    
-    .logo-main {{
-      white-space: nowrap;
-    }}
-    
-    .nav-menu {{
-      gap: 10px;
-    }}
-    
-    .nav-menu li {{
-      margin: 0 2px;
-      position: relative;
-    }}
-    
-    .nav-menu a {{
-      padding: 7px 8px;
-      font-size: 0.9rem;
-    }}
-
-    .nav-cta-item {{
-      display: inline-block;
-      margin: 0 5px !important;
-    }}
-    
-    .nav-consult-btn, .nav-line-btn {{
-      font-weight: 700;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-      padding: 8px 15px !important;
-      font-size: 1rem !important;
-      border-width: 2px !important;
-      letter-spacing: 0.5px;
-      animation: pulse 2s infinite;
-      min-width: 100px;
-      text-align: center;
-    }}
-    
-    .nav-consult-btn {{
-      background-color: #ff6b00 !important;
-      border-color: #ff6b00 !important;
-    }}
-    
-    .nav-line-btn {{
-      background-color: #06c755 !important;
-      border-color: #06c755 !important;
-    }}
-    
-    .nav-consult-btn:hover, .nav-line-btn:hover {{
-      transform: scale(1.05) translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-    }}
-    
-    @keyframes pulse {{
-      0% {{ box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4); }}
-      70% {{ box-shadow: 0 0 0 10px rgba(255, 107, 0, 0); }}
-      100% {{ box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }}
-    }}
-
-    .dropdown-menu {{
-      position: absolute;
-      top: 100%;
-      left: 0;
-      background-color: #002147;
-      min-width: 180px;
-      border-radius: 4px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-      display: none;
-      z-index: 1001;
-      padding: 8px 0;
-      margin-top: 5px;
-    }}
-    
-    .dropdown-menu a {{
-      display: block;
-      padding: 8px 15px;
-      color: #fff;
-      text-decoration: none;
-      font-size: 0.85rem;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-      border: none;
-      background: none;
-      text-align: left;
-    }}
-    
-    .dropdown-menu a:hover {{
-      background-color: rgba(255, 255, 255, 0.1);
-      transform: none;
-      box-shadow: none;
-    }}
-    
-    .has-dropdown:hover .dropdown-menu {{
-      display: block;
-    }}
-    
-    .has-dropdown > a::after {{
-      content: "▼";
-      font-size: 0.6rem;
-      margin-left: 5px;
-      vertical-align: middle;
-    }}
-    
-    /* 博客文章頁面專用樣式 */
-    .blog-post {{
-      padding: 60px 0;
-      background-color: #f9f9f9;
-    }}
-    
-    .blog-post .container {{
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 0 30px;
-    }}
-    
-    .post-header {{
-      text-align: center;
-      margin-bottom: 40px;
-      position: relative;
-    }}
-    
-    .post-header h1 {{
-      font-size: 2.5rem;
-      color: #002147;
-      line-height: 1.3;
-      margin-bottom: 20px;
-      font-weight: 700;
-    }}
-    
-    .post-meta {{
-      color: #666;
-      font-size: 1rem;
-      margin-bottom: 20px;
-    }}
-    
-    .post-meta .date {{
-      margin-right: 15px;
-    }}
-    
-    .post-meta a {{
-      color: #0066cc;
-      text-decoration: none;
-      transition: color 0.2s;
-    }}
-    
-    .post-meta a:hover {{
-      color: #004d99;
-      text-decoration: underline;
-    }}
-    
-    .post-image {{
-      margin-bottom: 40px;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-    }}
-    
-    .post-image img {{
-      width: 100%;
-      height: auto;
-      display: block;
-    }}
-    
-    .post-content {{
-      background-color: #fff;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-      margin-bottom: 40px;
-    }}
-    
-    .post-content h2 {{
-      font-size: 1.8rem;
-      color: #002147;
-      margin-top: 40px;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #f0f0f0;
-    }}
-    
-    .post-content h3 {{
-      font-size: 1.5rem;
-      color: #333;
-      margin-top: 30px;
-      margin-bottom: 15px;
-    }}
-    
-    .post-content p {{
-      margin-bottom: 20px;
-      line-height: 1.8;
-      color: #333;
-      font-size: 1.1rem;
-    }}
-    
-    .post-content ul, .post-content ol {{
-      margin-bottom: 20px;
-      padding-left: 25px;
-    }}
-    
-    .post-content li {{
-      margin-bottom: 10px;
-      line-height: 1.7;
-      color: #333;
-      font-size: 1.05rem;
-    }}
-    
-    .post-tags {{
-      margin-top: 30px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-    }}
-    
-    .post-tags span {{
-      font-weight: 600;
-      color: #555;
-    }}
-    
-    .tag {{
-      display: inline-block;
-      padding: 5px 12px;
-      background-color: #f0f6ff;
-      color: #0066cc;
-      border-radius: 20px;
-      text-decoration: none;
-      font-size: 0.9rem;
-      transition: all 0.3s;
-      border: 1px solid #e0ecff;
-    }}
-    
-    .tag:hover {{
-      background-color: #0066cc;
-      color: white;
-      transform: translateY(-2px);
-    }}
-    
-    .post-navigation {{
-      margin-top: 30px;
-      margin-bottom: 60px;
-      text-align: center;
-    }}
-    
-    .back-to-blog {{
-      display: inline-block;
-      padding: 10px 20px;
-      background-color: #0066cc;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
-      transition: all 0.3s;
-      font-weight: 600;
-    }}
-    
-    .back-to-blog:hover {{
-      background-color: #004d99;
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }}
-    
-    /* 移動設備樣式 */
-    @media (max-width: 850px) {{
-      .dropdown-menu {{
-        position: static;
-        background-color: rgba(255, 255, 255, 0.05);
-        box-shadow: none;
-        margin-top: 0;
-        display: none;
-        padding: 0;
-      }}
-      
-      .dropdown-menu a {{
-        padding: 8px 20px 8px 30px;
-        font-size: 0.85rem;
-      }}
-      
-      .has-dropdown > a::after {{
-        float: right;
-        margin-top: 5px;
-      }}
-      
-      .dropdown-menu.show {{
-        display: block;
-      }}
-      
-      .nav-consult-btn, .nav-line-btn {{
-        width: 90%;
-        margin: 5px auto;
-        text-align: center;
-      }}
-      
-      .blog-post .container {{
-        padding: 0 20px;
-      }}
-      
-      .post-header h1 {{
-        font-size: 1.8rem;
-      }}
-      
-      .post-content {{
-        padding: 25px 20px;
-      }}
-      
-      .post-content h2 {{
-        font-size: 1.5rem;
-      }}
-      
-      .post-content h3 {{
-        font-size: 1.3rem;
-      }}
-      
-      .post-content p, .post-content li {{
-        font-size: 1rem;
-      }}
-    }}
-  </style>
+  <!-- 引用全站共用樣式 -->
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <link rel="stylesheet" href="/assets/css/navbar.css" />
+  <link rel="stylesheet" href="/assets/css/footer.css" />
+  <link rel="stylesheet" href="/assets/css/blog.css" />
   
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
@@ -732,7 +416,7 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
     </label>
     <ul class="nav-menu">
       <li class="nav-cta-item"><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
-      <li class="nav-cta-item"><a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="nav-line-btn">LINE</a></li>
+      <li class="nav-cta-item"><a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="nav-line-btn"><img src="https://scdn.line-apps.com/n/line_add_friends/btn/zh-Hant.png" alt="加入好友" height="36" border="0"></a></li>
       <li class="nav-divider"></li>
       <li class="has-dropdown">
         <a href="/services.html">服務項目</a>
@@ -811,40 +495,8 @@ def generate_html(title: str, paragraphs: List[Dict[str, str]], tags: List[str],
   </div>
 </footer>
 
-<!-- 下拉選單與營業時間 JavaScript -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // 僅在移動設備上添加下拉選單的點擊事件
-    if (window.innerWidth <= 850) {
-      const dropdownLinks = document.querySelectorAll('.has-dropdown > a');
-      
-      dropdownLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          const dropdownMenu = this.nextElementSibling;
-          dropdownMenu.classList.toggle('show');
-        });
-      });
-    }
-    
-    // 窗口大小改變時重新加載頁面以應用正確的樣式
-    window.addEventListener('resize', function() {
-      const width = window.innerWidth;
-      if ((width <= 850 && window.prevWidth > 850) || 
-          (width > 850 && window.prevWidth <= 850)) {
-        window.prevWidth = width;
-        // 延遲重新加載以避免連續調整大小時頻繁重新加載
-        clearTimeout(window.resizeTimer);
-        window.resizeTimer = setTimeout(function() {
-          location.reload();
-        }, 250);
-      }
-      window.prevWidth = width;
-    });
-    
-    window.prevWidth = window.innerWidth;
-  });
-</script>
+<!-- 導航欄功能腳本 -->
+<script src="/assets/js/navbar.js"></script>
 
 </body>
 </html>
