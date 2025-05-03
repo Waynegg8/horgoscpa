@@ -179,19 +179,9 @@
 .quick-links a {
   color: #e0e0e0;
   text-decoration: none;
+  display: flex;
+  align-items: center;
   transition: all 0.3s ease;
-  display: inline-block;
-  position: relative;
-  padding-left: 15px;
-}
-
-.quick-links a:before {
-  content: '›';
-  position: absolute;
-  left: 0;
-  top: 0;
-  color: #0088ff;
-  transition: transform 0.3s ease;
 }
 
 .quick-links a:hover {
@@ -199,8 +189,24 @@
   transform: translateX(5px);
 }
 
-.quick-links a:hover:before {
-  transform: translateX(3px);
+/* 快速連結圖標優化 */
+.footer-links .icon-link {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 28px;
+  height: 28px;
+  background-color: rgba(0, 102, 204, 0.1);
+  border-radius: 50%;
+  margin-right: 10px;
+  color: #0088ff;
+  transition: all 0.3s ease;
+}
+
+.quick-links a:hover .icon-link {
+  background-color: rgba(0, 102, 204, 0.2);
+  color: white;
+  transform: scale(1.1);
 }
 
 /* 服務區塊 */
@@ -242,19 +248,9 @@
 .services-list a {
   color: #e0e0e0;
   text-decoration: none;
+  display: flex;
+  align-items: center;
   transition: all 0.3s ease;
-  display: inline-block;
-  position: relative;
-  padding-left: 15px;
-}
-
-.services-list a:before {
-  content: '›';
-  position: absolute;
-  left: 0;
-  top: 0;
-  color: #0088ff;
-  transition: transform 0.3s ease;
 }
 
 .services-list a:hover {
@@ -262,8 +258,25 @@
   transform: translateX(5px);
 }
 
-.services-list a:hover:before {
-  transform: translateX(3px);
+/* 服務圖標優化 */
+.footer-services .icon-link {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 28px;
+  height: 28px;
+  background-color: rgba(0, 102, 204, 0.2);
+  border-radius: 50%;
+  margin-right: 10px;
+  color: #0088ff;
+  transition: all 0.3s ease;
+}
+
+.services-list a:hover .icon-link {
+  background-color: #0066cc;
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0, 102, 204, 0.4);
 }
 
 /* 版權信息 */

@@ -1,0 +1,11 @@
+<!-- consulting-icon-new.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#0066cc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M2 22 L12 2 22 22z" />
+  <path d="M12 2 L12 18" />
+  <path d="M5 12 L19 12" />
+  <path d="M17 17 L7 17" />
+  <circle cx="12" cy="22" r="0.5" stroke-width="3" />
+  <circle cx="12" cy="17" r="0.5" stroke-width="2" />
+  <circle cx="12" cy="12" r="0.5" stroke-width="2" />
+  <path d="M9 7 L15 7" />
+</svg>
