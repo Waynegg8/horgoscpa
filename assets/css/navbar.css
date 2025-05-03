@@ -189,38 +189,11 @@
   margin: 0 3px !important; /* 減少邊距 */
 }
 
-/* LINE按鈕樣式 - 保持原有設定 */
-.nav-line-btn {
-  padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-}
-
-.nav-scrolled .nav-line-btn {
-  padding: 0 !important;
-}
-
-.nav-line-btn img {
-  display: block;
-  height: 48px; /* LINE圖標高度 */
-  transition: all 0.3s ease;
-}
-
-.nav-scrolled .nav-line-btn img {
-  height: 42px; /* 滾動時稍微縮小但仍然保持較大尺寸 */
-}
-
-/* 免費諮詢按鈕樣式 - 與LINE按鈕統一寬度 */
+/* 免費諮詢按鈕樣式 - 完全匹配LINE按鈕長度 */
 .nav-consult-btn {
   font-weight: 600;
   box-shadow: 0 8px 20px rgba(255, 107, 0, 0.3);
-  padding: 0 !important; /* 移除內部padding */
+  padding: 0 !important;
   font-size: 1rem !important;
   border: none !important;
   letter-spacing: 0.4px; /* 微調字距 */
@@ -236,15 +209,14 @@
   background: linear-gradient(45deg, #ff6b00, #ff8c00) !important;
   border-radius: 6px !important;
   height: 48px; /* LINE按鈕高度 */
-  /* 寬度和LINE按鈕一致 - 通過自動計算 */
-  width: calc(36px * 2.777); /* LINE按鈕寬度近似值 - 基於LINE按鈕圖示比例 */
+  width: 99px; /* 精確匹配LINE按鈕的長度 */
 }
 
 .nav-scrolled .nav-consult-btn {
   padding: 0 !important;
   font-size: 0.95rem !important;
   height: 42px; /* 滾動時與LINE按鈕同步縮小 */
-  width: calc(32px * 2.777); /* 滾動時縮小寬度 */
+  width: 87px; /* 滾動時縮小寬度 */
 }
 
 .nav-consult-btn:hover {
@@ -283,6 +255,33 @@
 
 .nav-consult-btn {
   animation: gentle-pulse 3s infinite;
+}
+
+/* LINE按鈕樣式 - 保持原有設定 */
+.nav-line-btn {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.nav-scrolled .nav-line-btn {
+  padding: 0 !important;
+}
+
+.nav-line-btn img {
+  display: block;
+  height: 48px; /* LINE圖標高度 */
+  transition: all 0.3s ease;
+}
+
+.nav-scrolled .nav-line-btn img {
+  height: 42px; /* 滾動時稍微縮小但仍然保持較大尺寸 */
 }
 
 /* 下拉選單樣式 */
@@ -473,7 +472,7 @@
   }
   
   .nav-consult-btn {
-    width: calc(34px * 2.777); /* 縮小寬度 */
+    width: 95px; /* 稍微調整適應螢幕 */
     height: 44px;
   }
   
@@ -482,7 +481,7 @@
   }
   
   .nav-scrolled .nav-consult-btn {
-    width: calc(30px * 2.777);
+    width: 83px;
     height: 38px;
   }
   
@@ -502,7 +501,7 @@
   }
   
   .nav-consult-btn {
-    width: calc(32px * 2.777); /* 縮小寬度 */
+    width: 90px; /* 縮小寬度 */
     height: 40px;
   }
   
@@ -511,7 +510,7 @@
   }
   
   .nav-scrolled .nav-consult-btn {
-    width: calc(28px * 2.777);
+    width: 79px;
     height: 36px;
   }
   
