@@ -1,6 +1,7 @@
 /**
  * navbar.js - 霍爾果斯會計師事務所導航欄功能腳本
  * 最後更新日期: 2025-05-03
+ * 優化版本 2.0
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -24,79 +25,83 @@ document.addEventListener('DOMContentLoaded', function() {
   // 移動設備下拉菜單處理
   const dropdownItems = document.querySelectorAll('.has-dropdown');
   
-  // 在移動設備上為下拉菜單添加點擊切換功能
-  if (window.innerWidth <= 850) {
-    dropdownItems.forEach(item => {
-      const dropdownLink = item.querySelector('a');
-      const dropdownMenu = item.querySelector('.dropdown-menu');
-      
-      // 阻止下拉鏈接的默認行為
-      dropdownLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        // 關閉所有其他的下拉菜單
-        dropdownItems.forEach(otherItem => {
-          if (otherItem !== item) {
-            otherItem.querySelector('.dropdown-menu').classList.remove('show');
-          }
-        });
-        
-        // 切換當前下拉菜單的顯示狀態
-        dropdownMenu.classList.toggle('show');
-      });
-    });
-  }
-  
-  // 監聽窗口大小變化，根據屏幕寬度重新啟用或禁用下拉菜單的點擊功能
-  window.addEventListener('resize', function() {
+  // 處理下拉菜單功能
+  function setupDropdowns() {
     if (window.innerWidth <= 850) {
       // 移動設備上為下拉菜單添加點擊功能
       dropdownItems.forEach(item => {
         const dropdownLink = item.querySelector('a');
         const dropdownMenu = item.querySelector('.dropdown-menu');
         
-        // 移除之前的事件監聽器，以避免重複添加
+        // 移除之前的事件
         dropdownLink.removeEventListener('click', handleDropdownClick);
         
-        // 添加新的事件監聽器
+        // 添加新的事件
         dropdownLink.addEventListener('click', handleDropdownClick);
         
-        // 處理下拉菜單點擊的函數
         function handleDropdownClick(e) {
           e.preventDefault();
+          e.stopPropagation();
           
+          // 關閉其他下拉菜單
           dropdownItems.forEach(otherItem => {
             if (otherItem !== item) {
-              otherItem.querySelector('.dropdown-menu').classList.remove('show');
+              const otherMenu = otherItem.querySelector('.dropdown-menu');
+              if (otherMenu && otherMenu.classList.contains('show')) {
+                otherMenu.classList.remove('show');
+              }
             }
           });
           
+          // 切換當前下拉菜單
           dropdownMenu.classList.toggle('show');
         }
       });
     } else {
-      // 當屏幕寬度大於850px時，移除所有的show類和點擊事件
+      // 桌面版：移除點擊事件，使用hover
       dropdownItems.forEach(item => {
+        const dropdownLink = item.querySelector('a');
         const dropdownMenu = item.querySelector('.dropdown-menu');
+        
+        dropdownLink.removeEventListener('click', handleDropdownClick);
         dropdownMenu.classList.remove('show');
+        
+        function handleDropdownClick(e) {
+          // 空函數，用於移除事件
+        }
       });
+    }
+  }
+  
+  // 初始設置
+  setupDropdowns();
+  
+  // 監聽窗口大小變化
+  let resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      setupDropdowns();
+    }, 250);
+  });
+  
+  // 點擊頁面其他區域關閉下拉菜單
+  document.addEventListener('click', function(e) {
+    if (window.innerWidth <= 850) {
+      const isDropdownButton = e.target.closest('.has-dropdown > a');
+      if (!isDropdownButton) {
+        dropdownItems.forEach(item => {
+          const menu = item.querySelector('.dropdown-menu');
+          if (menu && menu.classList.contains('show')) {
+            menu.classList.remove('show');
+          }
+        });
+      }
     }
   });
   
-  // 平滑滾動到頁面頂部的功能（可選，當導航欄固定在頂部時很有用）
-  document.querySelector('.logo a').addEventListener('click', function(e) {
-    if (currentPath === '/' || currentPath === '/index.html') {
-      e.preventDefault();
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    }
-  });
-  
-  // 滾動時的導航欄效果
+  // 導航欄滾動效果
   const siteNav = document.querySelector('.site-nav');
-  let lastScrollTop = 0;
   
   window.addEventListener('scroll', function() {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -107,7 +112,80 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       siteNav.classList.remove('nav-scrolled');
     }
-    
-    lastScrollTop = scrollTop;
   });
+  
+  // 平滑滾動到頁面頂部
+  document.querySelector('.logo a').addEventListener('click', function(e) {
+    if (currentPath === '/' || currentPath === '/index.html') {
+      e.preventDefault();
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  });
+  
+  // 為CTA按鈕添加點擊波紋效果
+  const ctaButtons = document.querySelectorAll('.nav-consult-btn, .nav-line-btn');
+  
+  ctaButtons.forEach(button => {
+    button.addEventListener('click', function(e) {
+      const rect = button.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const ripple = document.createElement('span');
+      ripple.classList.add('ripple-effect');
+      ripple.style.left = `${x}px`;
+      ripple.style.top = `${y}px`;
+      
+      button.appendChild(ripple);
+      
+      setTimeout(() => {
+        ripple.remove();
+      }, 600);
+    });
+  });
+  
+  // 關閉漢堡選單當點擊選單項目
+  const navMenuItems = document.querySelectorAll('.nav-menu a');
+  const navToggle = document.getElementById('nav-toggle');
+  
+  navMenuItems.forEach(item => {
+    item.addEventListener('click', function() {
+      if (window.innerWidth <= 850 && navToggle.checked) {
+        // 延遲關閉導航，讓用戶能看到點擊效果
+        setTimeout(() => {
+          navToggle.checked = false;
+        }, 300);
+      }
+    });
+  });
+});
+
+// 添加 CSS 樣式 - 波紋效果
+document.addEventListener('DOMContentLoaded', function() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .ripple-effect {
+      position: absolute;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.4);
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
+      width: 100px;
+      height: 100px;
+      margin-top: -50px;
+      margin-left: -50px;
+    }
+    
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+  `;
+  document.head.appendChild(style);
 });
