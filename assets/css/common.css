@@ -243,12 +243,13 @@ img {
   line-height: 1.7;
 }
 
-/* 英雄區塊 - 移除底色 */
+/* 英雄區塊 - 基礎樣式，適用於所有內頁 */
 .hero {
-  /* 移除原有的背景顏色和漸層 */
+  /* 背景設定 */
   background: url('/assets/images/hero.jpg') center/cover no-repeat;
   color: white;
-  padding: 180px 20px;
+  /* 較小的高度適合內頁 */
+  padding: 100px 20px;
   text-align: center;
   margin-bottom: var(--space-xxl);
   position: relative;
@@ -267,6 +268,12 @@ img {
   z-index: 1;
 }
 
+/* 首頁專用 hero 樣式 */
+.home-hero {
+  /* 首頁需要更大的高度 */
+  padding: 180px 20px;
+}
+
 .hero-content {
   max-width: 900px;
   margin: 0 auto;
@@ -275,19 +282,23 @@ img {
 }
 
 .hero h1 {
-  font-size: 4rem;
-  margin-bottom: 35px;
+  font-size: 3.5rem;
+  margin-bottom: 25px;
   color: #fff;
   text-shadow: 0 2px 5px rgba(0,0,0,0.3);
   line-height: 1.2;
 }
 
 .hero p {
-  font-size: 1.7rem;
-  margin-bottom: 45px;
+  font-size: 1.4rem;
+  margin-bottom: 30px;
   opacity: 0.95;
   line-height: 1.7;
   text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  /* 為段落添加最大寬度，提高長文本可讀性 */
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* 區塊標題 */
