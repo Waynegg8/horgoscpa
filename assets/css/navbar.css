@@ -193,11 +193,11 @@
 .nav-consult-btn {
   font-weight: 600;
   box-shadow: 0 8px 20px rgba(255, 107, 0, 0.3);
-  padding: 0 16px !important; /* 調整padding以符合更大的高度 */
-  font-size: 1rem !important; /* 稍微增加文字大小 */
+  padding: 0 !important; /* 移除內部padding以更好控制整體寬度 */
+  font-size: 1rem !important;
   border: none !important;
-  letter-spacing: 0.6px;
-  min-width: 110px;
+  letter-spacing: 0.4px; /* 微調字距，使文字看起來更協調 */
+  width: auto; /* 讓寬度由內容自適應 */
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -208,15 +208,15 @@
   gap: 8px;
   transition: all 0.3s ease !important;
   background: linear-gradient(45deg, #ff6b00, #ff8c00) !important;
-  border-radius: 6px !important; /* 保留略微圓角，與LINE按鈕相似 */
-  height: 48px; /* 增加高度與LINE按鈕一致 */
+  border-radius: 6px !important;
+  height: 48px; /* 與LINE按鈕一致的高度 */
+  min-width: 100px; /* 設定最小寬度 */
 }
 
 .nav-scrolled .nav-consult-btn {
-  padding: 0 14px !important;
+  padding: 0 !important;
   font-size: 0.95rem !important;
-  min-width: 100px;
-  height: 42px; /* 滾動時稍微縮小但仍保持較大尺寸 */
+  height: 42px; /* 滾動時與LINE按鈕同步縮小 */
 }
 
 .nav-consult-btn:hover {
@@ -259,15 +259,16 @@
 
 /* LINE按鈕樣式 - 只顯示原始圖片，更大尺寸 */
 .nav-line-btn {
-  padding: 0 !important; /* 移除內部padding */
-  background: transparent !important; /* 移除背景色 */
+  padding: 0 !important;
+  background: transparent !important;
   border: none !important;
   display: flex !important;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  box-shadow: none !important; /* 移除陰影 */
-  border-radius: 0 !important; /* 移除圓角 */
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  min-width: 100px; /* 設定與免費諮詢按鈕相同的最小寬度 */
 }
 
 .nav-scrolled .nav-line-btn {
@@ -472,23 +473,25 @@
   }
   
   .nav-consult-btn {
-    padding: 0 15px !important; /* 更小的按鈕 */
-    min-width: 90px; /* 更小的最小寬度 */
-    height: 44px; /* 保持較大高度 */
-    border-radius: 6px !important; /* 保持相同圓角 */
+    padding: 0 !important;
+    min-width: 90px;
+    height: 44px;
+  }
+  
+  .nav-line-btn {
+    min-width: 90px;
   }
   
   .nav-line-btn img {
-    height: 44px; /* 縮小LINE按鈕高度 */
+    height: 44px;
   }
   
   .nav-scrolled .nav-consult-btn {
-    padding: 0 14px !important;
     height: 38px;
   }
   
   .nav-scrolled .nav-line-btn img {
-    height: 38px; /* 滾動時縮小高度 */
+    height: 38px;
   }
   
   .logo {
@@ -503,20 +506,19 @@
   }
   
   .nav-consult-btn {
-    padding: 0 14px !important;
-    font-size: 0.95rem !important;
-    min-width: 85px;
     height: 40px;
-    border-radius: 6px !important; /* 保持相同圓角 */
+    min-width: 85px;
+  }
+  
+  .nav-line-btn {
+    min-width: 85px;
   }
   
   .nav-line-btn img {
-    height: 40px; /* 調整LINE按鈕高度 */
+    height: 40px;
   }
   
   .nav-scrolled .nav-consult-btn {
-    padding: 0 12px !important;
-    font-size: 0.9rem !important;
     height: 36px;
   }
   
@@ -652,27 +654,15 @@
     margin: 6px 0 !important;
   }
   
-  .nav-consult-btn {
-    width: 100%;
-    margin: 4px auto;
-    justify-content: center;
-    border-radius: 6px !important; /* 保持略微圓角 */
+  .nav-consult-btn, .nav-line-btn {
+    width: 90%;
+    min-width: unset; /* 在移動設備上取消最小寬度限制 */
     height: 50px; /* 移動設備上更大的高度 */
-  }
-  
-  .nav-line-btn {
-    padding: 0 !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    width: 100%;
-    display: flex !important;
-    justify-content: center;
+    margin: 5px auto;
   }
   
   .nav-line-btn img {
-    height: 50px; /* 移動設備上更大的Line圖標 */
+    height: 50px; /* 確保LINE圖片在移動設備上也有相同高度 */
   }
   
   .nav-divider {
