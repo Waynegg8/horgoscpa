@@ -312,12 +312,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // 清空容器
     postsContainer.innerHTML = '';
     
-    // 顯示總文章數
-    if (totalPosts > 0) {
+    // 顯示搜尋結果資訊
+    if (currentSearchTerm || currentCategory !== 'all') {
       const infoElement = document.createElement('div');
       infoElement.className = 'search-results-info';
-      infoElement.innerHTML = `<p>共找到 ${totalPosts} 篇文章</p>`;
-      postsContainer.appendChild(infoElement);
+      
+      let infoText = `共找到 ${totalPosts} 篇`;
+      
+      if (currentCategory !== 'all') {
+        const categoryText = Array.from(filterButtons).find(btn => btn.dataset.category === currentCategory)?.textContent || currentCategory;
+        infoText += ` ${categoryText}`;
+      }
+      
+      if (currentSearchTerm) {
+        infoText += ` 包含「${currentSearchTerm}」`;
+      }
+      
+      infoText += '的文章';
+      infoElement.innerHTML = `<p>${infoText}</p>`;
+      
+      // 將搜尋結果信息添加到搜尋結果容器
+      const searchResultsContainer = document.getElementById('search-results-container');
+      if (searchResultsContainer) {
+        searchResultsContainer.innerHTML = '';
+        searchResultsContainer.appendChild(infoElement);
+      }
+    } else {
+      // 清空搜尋結果容器
+      const searchResultsContainer = document.getElementById('search-results-container');
+      if (searchResultsContainer) {
+        searchResultsContainer.innerHTML = '';
+      }
     }
     
     // 渲染文章
@@ -342,8 +367,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <img src="${postImage}" alt="${postTitle}" />
           </div>
           <div class="blog-content">
+            <span class="date">${postDate}</span>
             <h2><a href="${postUrl}">${postTitle}</a></h2>
-            <p class="date">${postDate}</p>
             <p>${postSummary}</p>
             <a href="${postUrl}" class="read-more">閱讀更多</a>
           </div>
@@ -555,11 +580,17 @@ document.addEventListener('DOMContentLoaded', function() {
       const postUrl = post.url || '#';
       const postTitle = post.title || '未命名文章';
       const postDate = post.date || '未知日期';
+      const postImage = post.image || '/assets/images/blog/default.jpg';
       
       const listItem = document.createElement('li');
       listItem.innerHTML = `
-        <a href="${postUrl}">${postTitle}</a>
-        <span class="post-date">${postDate}</span>
+        <div class="popular-post-img">
+          <img src="${postImage}" alt="${postTitle}">
+        </div>
+        <div class="popular-post-content">
+          <a href="${postUrl}">${postTitle}</a>
+          <span class="post-date">${postDate}</span>
+        </div>
       `;
       popularPostsContainer.appendChild(listItem);
     });
