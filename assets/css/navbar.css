@@ -1,7 +1,7 @@
 /* 
  * navbar.css - 霍爾果斯會計師事務所網站導航欄樣式
  * 最後更新日期: 2025-05-06
- * 優化版本 4.0 - 現代簡約設計
+ * 優化版本 4.1 - 移除下拉菜單樣式
  */
 
 /* 導航欄基本樣式 */
@@ -128,7 +128,7 @@
   border-radius: 3px 3px 0 0;
 }
 
-/* 免費諮詢按鈕 - 整合到導航選單中 */
+/* 免費諮詢按鈕 */
 .nav-consult-btn {
   background-color: #ff6b00 !important;
   color: #fff !important;
@@ -146,118 +146,6 @@
   background-color: #ff7b00 !important;
   transform: translateY(-3px) !important;
   box-shadow: 0 6px 15px rgba(255, 107, 0, 0.3) !important;
-}
-
-/* 下拉選單樣式 */
-.dropdown-menu {
-  position: absolute;
-  top: 120%;
-  left: 50%;
-  transform: translateX(-50%) translateY(10px) scale(0.98);
-  background: #fff;
-  min-width: 180px;
-  border-radius: 8px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-  visibility: hidden;
-  opacity: 0;
-  z-index: 1001;
-  padding: 8px;
-  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
-  border: none;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.dropdown-menu a {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 15px;
-  color: #333;
-  text-decoration: none;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  border: none;
-  background: none;
-  text-align: left;
-  border-radius: 5px;
-  margin: 2px 0;
-  height: auto;
-  opacity: 1;
-}
-
-.dropdown-menu a:hover {
-  background-color: #f5f9ff;
-  color: #0066cc;
-  transform: none;
-}
-
-.dropdown-menu a.active {
-  background-color: #f0f6ff;
-  color: #0066cc;
-}
-
-.dropdown-menu a.active::after {
-  display: none;
-}
-
-/* 下拉選單圖標樣式 */
-.dropdown-menu a::before {
-  font-family: 'Material Symbols Rounded';
-  font-size: 20px;
-  color: #0066cc;
-  transition: all 0.3s ease;
-}
-
-.dropdown-menu a[href="/services/tax.html"]::before {
-  content: "payments";
-}
-
-.dropdown-menu a[href="/services/accounting.html"]::before {
-  content: "account_balance_wallet";  
-}
-
-.dropdown-menu a[href="/services/consulting.html"]::before {
-  content: "trending_up";
-}
-
-.dropdown-menu a:hover::before {
-  transform: scale(1.2);
-  color: #0088ff;
-}
-
-/* 顯示下拉選單動畫 */
-.has-dropdown:hover .dropdown-menu {
-  visibility: visible;
-  opacity: 1;
-  transform: translateX(-50%) translateY(0) scale(1);
-  pointer-events: auto;
-}
-
-/* 下拉箭頭圖標 */
-.has-dropdown > a::after {
-  content: "▾";
-  font-size: 0.8rem;
-  margin-left: 5px;
-  transition: transform 0.3s ease;
-  position: relative;
-  top: 1px;
-}
-
-.has-dropdown:hover > a::after {
-  transform: rotate(180deg);
-}
-
-/* 添加下拉菜单缓冲区 */
-.has-dropdown::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  height: 15px;
-  background: transparent;
 }
 
 /* 漢堡選單 */
@@ -317,7 +205,7 @@
   bottom: 0;
 }
 
-/* 導航背景微妙效果 */
+/* 導航背景效果 */
 .site-nav::before {
   content: '';
   position: absolute;
@@ -479,66 +367,12 @@
     right: 30%;
   }
   
-  .dropdown-menu {
-    position: static;
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: none;
-    margin: 5px 0;
-    transform: none;
-    padding: 5px;
-    width: 100%;
-    border-radius: 8px;
-    visibility: hidden;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease, visibility 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
-    margin-top: 0;
-  }
-  
-  .dropdown-menu a {
-    padding: 10px 0;
-    font-size: 0.95rem;
-    color: #fff;
-    opacity: 0.9;
-    width: 100%;
-    margin: 2px 0;
-  }
-  
-  .dropdown-menu a:hover,
-  .dropdown-menu a.active {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-  }
-  
-  .dropdown-menu.show {
-    visibility: visible;
-    opacity: 1;
-    max-height: 500px;
-    margin-top: 5px;
-    pointer-events: auto;
-  }
-  
-  .has-dropdown > a::after {
-    margin-left: 5px;
-  }
-  
-  .has-dropdown:hover .dropdown-menu {
-    visibility: hidden;
-    opacity: 0;
-    transform: none;
-  }
-  
   /* 免費諮詢按鈕移動版 */
   .nav-consult-btn {
     width: 100%;
     padding: 10px 0 !important;
     margin: 10px 0 !important;
     border-radius: 5px !important;
-  }
-  
-  /* 移動端下拉菜單專屬處理 */
-  .has-dropdown::after {
-    display: none;
   }
 }
 
