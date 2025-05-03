@@ -1,8 +1,7 @@
 /**
  * blog.js - 霍爾果斯會計師事務所部落格功能腳本
  * 最後更新日期: 2025-05-10
- * 優化列表式顯示的文章載入與過濾功能
- * 改進: 整個卡片可點擊、摘要長度優化
+ * 優化: 添加即時搜索功能、滾動時動畫效果、改進圖片加載
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -20,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const searchButton = document.getElementById('search-btn');
   const filterButtons = document.querySelectorAll('.filter-btn');
   const searchResultsContainer = document.getElementById('search-results-container');
+  const searchContainer = document.querySelector('.search-container');
   
   // 狀態變數
   let allPosts = [];
@@ -47,6 +47,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 設置事件監聽器
     setupEventListeners();
+    
+    // 設置滾動動畫
+    setupScrollAnimations();
   }
   
   /**
@@ -78,17 +81,57 @@ document.addEventListener('DOMContentLoaded', function() {
       // 如果URL有搜索參數，填充搜索框
       if (currentSearchQuery) {
         searchInput.value = currentSearchQuery;
+        searchContainer.classList.add('search-active');
       }
       
-      // 點擊搜索按鈕
+      // 即時搜索功能
+      // 創建防抖函數
+      function debounce(func, delay) {
+        let timeout;
+        return function() {
+          const context = this;
+          const args = arguments;
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(context, args), delay);
+        };
+      }
+      
+      // 搜索處理函數
+      const handleSearchInput = debounce(function() {
+        const searchValue = searchInput.value.trim();
+        
+        // 添加搜索活躍狀態樣式
+        if (searchValue.length > 0) {
+          searchContainer.classList.add('search-active');
+        } else {
+          searchContainer.classList.remove('search-active');
+          // 空搜索時顯示所有文章
+          currentSearchQuery = '';
+          currentPage = 1;
+          updateURL();
+          filterAndDisplayPosts();
+          return;
+        }
+        
+        // 執行搜索
+        currentSearchQuery = searchValue;
+        currentPage = 1;
+        updateURL();
+        filterAndDisplayPosts();
+      }, 500); // 500ms防抖延遲
+      
+      // 監聽輸入事件
+      searchInput.addEventListener('input', handleSearchInput);
+      
+      // 保留原有按鈕搜索功能
       searchButton.addEventListener('click', function() {
-        handleSearch();
+        handleSearchInput();
       });
       
       // 按Enter鍵搜索
       searchInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-          handleSearch();
+          handleSearchInput();
         }
       });
     }
@@ -97,6 +140,62 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
       // 處理卡片點擊
       handleCardClick(e);
+    });
+  }
+  
+  /**
+   * 設置滾動時的動畫效果
+   */
+  function setupScrollAnimations() {
+    // 添加滾動時的元素動畫效果
+    const animateOnScroll = function() {
+      // 獲取所有需要動畫的元素
+      const blogCards = document.querySelectorAll('.blog-card');
+      const sidebarSections = document.querySelectorAll('.sidebar-section');
+      
+      // 檢查元素是否在視圖中
+      function isElementInViewport(el) {
+        const rect = el.getBoundingClientRect();
+        return (
+          rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.85 &&
+          rect.bottom >= 0
+        );
+      }
+      
+      // 處理博客卡片動畫
+      blogCards.forEach(card => {
+        if (isElementInViewport(card) && !card.classList.contains('animated')) {
+          card.classList.add('animated');
+        }
+      });
+      
+      // 處理側邊欄動畫
+      sidebarSections.forEach((section, index) => {
+        if (isElementInViewport(section) && !section.classList.contains('animated')) {
+          section.classList.add('animated');
+          section.style.opacity = '0';
+          section.style.transform = 'translateY(20px)';
+          
+          setTimeout(() => {
+            section.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+            section.style.opacity = '1';
+            section.style.transform = 'translateY(0)';
+          }, 300 + (index * 200)); // 依次延遲顯示
+        }
+      });
+    };
+    
+    // 初始執行
+    setTimeout(animateOnScroll, 500);
+    
+    // 滾動時執行動畫
+    window.addEventListener('scroll', function() {
+      animateOnScroll();
+    });
+    
+    // 窗口大小改變時重新計算
+    window.addEventListener('resize', function() {
+      animateOnScroll();
     });
   }
   
@@ -120,28 +219,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     }
-  }
-  
-  /**
-   * 處理搜索功能
-   */
-  function handleSearch() {
-    currentSearchQuery = searchInput.value.trim();
-    currentPage = 1;
-    currentCategory = 'all';
-    currentTag = '';
-    
-    // 重置分類按鈕狀態
-    filterButtons.forEach(btn => {
-      if (btn.dataset.category === 'all') {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
-    
-    updateURL();
-    filterAndDisplayPosts();
   }
   
   /**
@@ -298,12 +375,53 @@ document.addEventListener('DOMContentLoaded', function() {
       blogPostsContainer.innerHTML = `
         <div class="no-results">
           <p>沒有找到符合條件的文章。</p>
-          <button class="btn" onclick="window.location.href='/blog.html'">
+          <button class="btn" id="reset-search">
             返回所有文章
           </button>
         </div>
       `;
+      
+      // 隱藏分頁
+      if (paginationContainer) {
+        paginationContainer.style.display = 'none';
+      }
+      
+      // 為重置按鈕添加事件
+      setTimeout(() => {
+        const resetBtn = document.getElementById('reset-search');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            currentSearchQuery = '';
+            currentCategory = 'all';
+            currentTag = '';
+            currentPage = 1;
+            
+            // 重置分類按鈕
+            filterButtons.forEach(btn => {
+              if (btn.dataset.category === 'all') {
+                btn.classList.add('active');
+              } else {
+                btn.classList.remove('active');
+              }
+            });
+            
+            // 移除搜索活躍狀態
+            searchContainer.classList.remove('search-active');
+            
+            // 更新URL並重新顯示
+            updateURL();
+            filterAndDisplayPosts();
+          });
+        }
+      }, 0);
+      
       return;
+    }
+    
+    // 顯示分頁
+    if (paginationContainer) {
+      paginationContainer.style.display = 'flex';
     }
     
     const postsHTML = `
@@ -337,12 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * 創建文章卡片HTML
    */
   function createPostCard(post) {
-    const postDate = new Date(post.date);
-    const formattedDate = postDate.toLocaleDateString('zh-TW', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    const postDate = post.date;
     
     // 確保摘要長度適當
     let summary = post.summary || '';
@@ -350,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
       summary = summary.substring(0, SUMMARY_MAX_LENGTH) + '...';
     }
     
-    // 處理標籤
+    // 處理標籤 - 最多顯示3個
     const tagsHTML = post.tags && post.tags.length > 0
       ? post.tags.slice(0, 3).map(tag => 
           `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="blog-tag">${tag}</a>`
@@ -367,7 +480,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div>
             <div class="date">
               <span class="material-symbols-rounded">calendar_month</span>
-              ${formattedDate}
+              ${postDate}
             </div>
             <h2><a href="${post.url}">${post.title}</a></h2>
             <p>${summary}</p>
@@ -408,21 +521,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 取最新的5篇文章作為"熱門"文章
     const popularPosts = allPosts
+      .slice()
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 5);
     
     const postsHTML = popularPosts.map(post => {
-      const postDate = new Date(post.date);
-      const formattedDate = postDate.toLocaleDateString('zh-TW', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      
       return `
         <li>
           <a href="${post.url}">${post.title}</a>
-          <span class="post-date">${formattedDate}</span>
+          <span class="post-date">${post.date}</span>
         </li>
       `;
     }).join('');
@@ -471,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
       `;
       
       if (startPage > 2) {
-        paginationHTML += `<span class="pagination-ellipsis">...</span>`;
+        paginationHTML += `<span class="pagination-btn disabled">...</span>`;
       }
     }
     
@@ -486,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 最後一頁
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
-        paginationHTML += `<span class="pagination-ellipsis">...</span>`;
+        paginationHTML += `<span class="pagination-btn disabled">...</span>`;
       }
       
       paginationHTML += `

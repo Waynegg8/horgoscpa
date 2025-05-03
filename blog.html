@@ -81,7 +81,7 @@
   </div>
 </nav>
 
-<!-- 新增: 部落格頁面標題區塊 -->
+<!-- 新增: 部落格頁面標題區塊 - 與services.html保持一致 -->
 <header class="blog-header">
   <div class="container">
     <div class="blog-header-content">
@@ -97,6 +97,7 @@
     <!-- 搜尋框 -->
     <div class="search-container">
       <input type="text" id="blog-search" class="search-input" placeholder="搜尋文章..." aria-label="搜尋文章">
+      <span class="search-status" aria-hidden="true"></span>
       <button class="search-button" id="search-btn" aria-label="搜尋">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"></circle>
@@ -274,96 +275,8 @@
 <!-- 導航欄功能腳本 -->
 <script src="/assets/js/navbar.js"></script>
 
-<!-- 博客功能腳本 -->
+<!-- 博客功能腳本 - 使用優化版 -->
 <script src="/assets/js/blog.js"></script>
-
-<!-- 新增: 博客頁面動畫效果 -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // 添加滾動時的元素動畫效果
-    const animateOnScroll = function() {
-      // 獲取所有需要動畫的元素
-      const blogCards = document.querySelectorAll('.blog-card');
-      const sidebarSections = document.querySelectorAll('.sidebar-section');
-      
-      // 檢查元素是否在視圖中
-      function isElementInViewport(el) {
-        const rect = el.getBoundingClientRect();
-        return (
-          rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.85 &&
-          rect.bottom >= 0
-        );
-      }
-      
-      // 處理博客卡片動畫
-      const visibleCards = Array.from(blogCards).filter(card => isElementInViewport(card) && !card.classList.contains('animated'));
-      
-      visibleCards.forEach((card, index) => {
-        card.classList.add('animated');
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(30px)';
-        
-        setTimeout(() => {
-          card.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
-        }, 100 + (index * 100)); // 依次延遲顯示
-      });
-      
-      // 處理側邊欄動畫
-      const visibleSections = Array.from(sidebarSections).filter(section => isElementInViewport(section) && !section.classList.contains('animated'));
-      
-      visibleSections.forEach((section, index) => {
-        section.classList.add('animated');
-        section.style.opacity = '0';
-        section.style.transform = 'translateY(20px)';
-        
-        setTimeout(() => {
-          section.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
-          section.style.opacity = '1';
-          section.style.transform = 'translateY(0)';
-        }, 300 + (index * 200)); // 依次延遲顯示
-      });
-    };
-    
-    // 初始執行
-    setTimeout(animateOnScroll, 500);
-    
-    // 滾動時執行動畫
-    window.addEventListener('scroll', function() {
-      animateOnScroll();
-    });
-    
-    // 窗口大小改變時重新計算
-    window.addEventListener('resize', function() {
-      animateOnScroll();
-    });
-    
-    // 搜索框動畫效果
-    const searchInput = document.getElementById('blog-search');
-    if (searchInput) {
-      searchInput.addEventListener('focus', function() {
-        this.parentElement.style.transform = 'scale(1.01)';
-      });
-      
-      searchInput.addEventListener('blur', function() {
-        this.parentElement.style.transform = 'scale(1)';
-      });
-    }
-    
-    // 分類按鈕點擊效果增強
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    filterButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        // 添加一個簡單的縮放動畫效果
-        this.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-          this.style.transform = '';
-        }, 200);
-      });
-    });
-  });
-</script>
 
 </body>
 </html>
