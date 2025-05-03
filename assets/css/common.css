@@ -392,6 +392,20 @@ img {
   font-size: 1.2rem;
 }
 
+/* LINE按鈕樣式 */
+.btn-line {
+  background-color: #06c755;
+  border-color: #06c755;
+  color: white;
+  box-shadow: 0 6px 18px rgba(6, 199, 85, 0.2);
+}
+
+.btn-line:hover {
+  background-color: #05b54c;
+  border-color: #05b54c;
+  box-shadow: 0 10px 25px rgba(6, 199, 85, 0.3);
+}
+
 /* 產生漣漪效果 */
 .btn::after {
   content: "";
@@ -805,6 +819,270 @@ img {
   font-size: 1.1rem;
 }
 
+/* 頁面標題橫幅 */
+.page-banner {
+  background: linear-gradient(rgba(0, 77, 153, 0.85), rgba(0, 77, 153, 0.85)), url('/assets/images/banner-bg.jpg') center/cover no-repeat;
+  padding: 60px 0;
+  color: white;
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.page-banner h1 {
+  color: white;
+  margin-bottom: 20px;
+  font-size: 2.5rem;
+}
+
+.page-banner p {
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 800px;
+  margin: 0 auto;
+  font-size: 1.2rem;
+}
+
+/* ===== FAQ頁面樣式 ===== */
+/* 分類標籤樣式 */
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 40px;
+  margin-top: 30px;
+}
+
+.category-tab {
+  background-color: #f5f7fa;
+  color: #555;
+  border: 2px solid #e6e9ee;
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+}
+
+.category-tab:hover {
+  background-color: #edf1f7;
+  border-color: #d3d8e3;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+}
+
+.category-tab.active {
+  background-color: #0066cc;
+  color: white;
+  border-color: #0066cc;
+  box-shadow: 0 3px 10px rgba(0, 102, 204, 0.3);
+}
+
+/* 按壓效果 */
+.category-tab:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* FAQ問答區域樣式 */
+.faq-section {
+  margin-top: 30px;
+  margin-bottom: 60px;
+}
+
+.faq-item {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.faq-item:hover {
+  box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+.faq-question {
+  padding: 20px 25px;
+  background-color: #f9f9f9;
+  color: #002147;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  border-left: 4px solid #0066cc;
+}
+
+.faq-question::after {
+  content: "+";
+  font-size: 1.5rem;
+  color: #0066cc;
+  transition: transform 0.3s ease;
+}
+
+.faq-question.active::after {
+  content: "−";
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background-color: #fff;
+}
+
+.faq-answer.show {
+  padding: 20px 25px;
+  max-height: 1000px;
+}
+
+.faq-answer p {
+  margin-top: 0;
+  margin-bottom: 15px;
+  line-height: 1.7;
+}
+
+.faq-answer p:last-child {
+  margin-bottom: 0;
+}
+
+.faq-answer ul, .faq-answer ol {
+  margin-left: 20px;
+  margin-bottom: 15px;
+  padding-left: 0;
+}
+
+.faq-answer li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.faq-answer table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+}
+
+.faq-answer th, .faq-answer td {
+  padding: 10px 15px;
+  border: 1px solid #e0e0e0;
+  text-align: left;
+}
+
+.faq-answer th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
+
+.faq-answer tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* ===== 聯絡頁面樣式 ===== */
+/* 營業狀態樣式 */
+.business-status {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+.status-open {
+  background-color: #4caf50;
+  color: white;
+}
+
+.status-closed {
+  background-color: #f44336;
+  color: white;
+}
+
+/* 聯絡資訊區塊樣式 */
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.contact-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.contact-card {
+  background: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+  text-align: center;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.contact-icon {
+  margin: 0 auto 15px;
+}
+
+.contact-card h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #002147;
+}
+
+.contact-card p {
+  margin-bottom: 15px;
+}
+
+.contact-map {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+  height: 100%;
+  min-height: 350px;
+}
+
+/* 交通資訊區域樣式 */
+.directions-section {
+  margin-top: 80px; /* 增加與上方區塊的間距 */
+  padding: 30px 0 60px;
+}
+
+.directions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.direction-card {
+  background: #fff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  height: 100%;
+}
+
+/* 區塊間隔 */
+.contact-details-section {
+  padding-bottom: 30px; /* 確保與下方區塊有足夠間距 */
+}
+
 /* 響應式設計 */
 @media (max-width: 1280px) {
   .container {
@@ -858,6 +1136,15 @@ img {
     flex-basis: calc(50% - var(--space-md));
     min-width: 300px;
   }
+  
+  /* 聯絡頁面調整 */
+  .contact-grid {
+    gap: 20px;
+  }
+  
+  .contact-info {
+    gap: 15px;
+  }
 }
 
 @media (max-width: 992px) {
@@ -884,6 +1171,38 @@ img {
   
   .about-section, .services-section, .blog-section {
     padding: var(--space-xl) 0;
+  }
+  
+  /* 聯絡頁面調整 */
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .contact-map {
+    height: 400px;
+  }
+  
+  .directions-section {
+    margin-top: 60px;
+  }
+  
+  /* FAQ 頁面調整 */
+  .category-tabs {
+    gap: 10px;
+  }
+  
+  .category-tab {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+  
+  .faq-question {
+    padding: 18px 20px;
+    font-size: 1rem;
+  }
+  
+  .faq-answer.show {
+    padding: 15px 20px;
   }
 }
 
@@ -916,6 +1235,31 @@ img {
   .service-card, .blog-card {
     width: 100%;
     margin-bottom: var(--space-md);
+  }
+  
+  /* FAQ頁面調整 */
+  .category-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  
+  .category-tab {
+    white-space: nowrap;
+    flex: 0 0 auto;
+    padding: 8px 15px;
+    font-size: 13px;
+  }
+  
+  .faq-question {
+    padding: 15px;
+    font-size: 0.95rem;
+  }
+  
+  .faq-answer.show {
+    padding: 15px;
   }
 }
 
@@ -955,5 +1299,23 @@ img {
   
   .blog-card h3 {
     font-size: 1.3rem;
+  }
+  
+  /* 聯絡頁面調整 */
+  .contact-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .directions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* FAQ頁面 */
+  .page-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .page-header p {
+    font-size: 1rem;
   }
 }
