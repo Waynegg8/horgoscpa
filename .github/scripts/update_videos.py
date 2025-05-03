@@ -15,6 +15,10 @@ from collections import Counter
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
+# 引入 utils 模組
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+from utils import load_translation_dict, setup_jieba_dict
+
 # 獲取專案根目錄
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
@@ -125,11 +129,15 @@ def generate_category_and_tags(title: str, description: str) -> Tuple[str, List[
     :param description: 影片描述
     :return: (分類, 標籤列表)
     """
+    # 使用 utils 模組載入詞典並設置 jieba 分詞
+    setup_jieba_dict()
+    
     # 合併文本
     full_text = f"{title} {description}"
     
     # 使用結巴分詞
     jieba.setLogLevel(20)  # 設定日誌級別，抑制結巴的輸出信息
+            
     words = jieba.cut(full_text)
     
     # 過濾停用詞
@@ -217,6 +225,16 @@ def update_videos_json(videos: List[Dict[str, Any]]) -> bool:
 def main():
     """主函數"""
     print("開始更新影片數據...")
+    
+    # 使用 utils 模組載入詞典
+    tw_dict = load_translation_dict()
+    
+    # 檢查是否有詞典檔案
+    if tw_dict:
+        print(f"詞典包含 {len(tw_dict)} 個詞彙")
+    else:
+        print("詞典檔案不存在或為空")
+        print("將使用默認分詞方式處理標題與描述")
     
     # 載入影片信息
     videos = load_videos_from_txt(VIDEOS_TXT_PATH)

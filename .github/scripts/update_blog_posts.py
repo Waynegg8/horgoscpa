@@ -13,9 +13,14 @@ import re
 import datetime
 import base64
 import requests
+import jieba
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
 from collections import Counter
+
+# 引入 utils 模組
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils import load_translation_dict, setup_jieba_dict
 
 # 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -161,6 +166,9 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     :param filename: 文件名稱
     :return: 文章資訊字典
     """
+    # 使用 utils 模組設置 jieba 分詞詞典
+    setup_jieba_dict()
+            
     # 提取標題
     title_match = re.search(TITLE_REGEX, content)
     title = title_match.group(1).split(" | ")[0] if title_match else "未找到標題"
@@ -197,12 +205,31 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     # 如果沒有提取到標籤，根據標題和摘要生成一些關鍵詞
     if not tags:
         # 從標題和摘要中提取關鍵詞
+        # 使用jieba分詞
+        jieba.setLogLevel(20)  # 設定日誌級別，抑制結巴的輸出信息
         text_for_keywords = f"{title} {summary} {category_text}"
-        # 根據常見關鍵詞生成標籤
-        common_keywords = ["稅務", "會計", "財務", "企業", "記帳", "報稅", "節稅", "創業"]
-        for keyword in common_keywords:
-            if keyword in text_for_keywords and len(tags) < 3:
-                tags.append(keyword)
+        words = list(jieba.cut(text_for_keywords))
+        
+        # 過濾停用詞
+        stopwords = ["的", "了", "和", "是", "在", "我們", "您", "與", "為", "以", "及", "或", "你", "我", "他", "她", "它", "此", "該"]
+        filtered_words = [word for word in words if len(word) > 1 and word not in stopwords]
+        
+        # 計算詞頻
+        word_counts = Counter(filtered_words)
+        
+        # 提取頻率最高的詞作為標籤候選
+        top_words = [word for word, _ in word_counts.most_common(5)]
+        
+        # 選取至多3個標籤
+        tags = top_words[:3]
+        
+        # 如果仍然沒有標籤，使用一些預設標籤
+        if not tags:
+            # 根據常見關鍵詞生成標籤
+            common_keywords = ["稅務", "會計", "財務", "企業", "記帳", "報稅", "節稅", "創業"]
+            for keyword in common_keywords:
+                if keyword in text_for_keywords and len(tags) < 3:
+                    tags.append(keyword)
     
     # 使用相對路徑
     url = f"/blog/{filename}"
@@ -272,6 +299,14 @@ def main():
     print("開始更新部落格文章 JSON 檔案...")
     print(f"專案根目錄: {PROJECT_ROOT}")
     print(f"部落格目錄: {BLOG_DIR}")
+    
+    # 使用 utils 模組檢查詞典
+    tw_dict = load_translation_dict()
+    if tw_dict:
+        print(f"詞典包含 {len(tw_dict)} 個詞彙")
+    else:
+        print("詞典檔案不存在或為空")
+        print("將使用默認分詞方式處理標題與描述")
     
     # 檢查目錄是否存在
     if not os.path.exists(BLOG_DIR):

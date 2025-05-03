@@ -9,6 +9,10 @@
 import os
 import sys
 
+# 引入 utils 模組 (如果需要使用字典)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils import load_translation_dict
+
 def check_directory_structure():
     """檢查專案目錄結構"""
     # 獲取當前工作目錄
@@ -102,6 +106,21 @@ def check_directory_structure():
             print(f"已創建 assets/data 目錄: {data_dir}")
         except Exception as e:
             print(f"嘗試創建 assets/data 目錄時出錯: {str(e)}")
+            
+    # 檢查翻譯詞典
+    tw_dict_path = os.path.join(project_root, "tw_financial_dict.json")
+    print(f"\n檢查翻譯詞典: {tw_dict_path}")
+    
+    if os.path.exists(tw_dict_path):
+        print("翻譯詞典存在")
+        # 使用 utils 模組加載詞典
+        tw_dict = load_translation_dict()
+        if tw_dict:
+            print(f"詞典包含 {len(tw_dict)} 個詞彙")
+        else:
+            print("詞典檔案存在但無法加載或為空")
+    else:
+        print("翻譯詞典不存在")
 
 if __name__ == "__main__":
     print(f"Python 版本: {sys.version}")

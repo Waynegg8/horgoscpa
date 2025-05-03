@@ -14,6 +14,10 @@ import sys
 from pathlib import Path
 from bs4 import BeautifulSoup
 
+# 引入 utils 模組
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils import load_translation_dict, setup_jieba_dict
+
 # 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
@@ -242,6 +246,13 @@ def main():
     print(f"當前系統: {sys.platform}")
     print(f"JSON_PATH: {JSON_PATH}")
     print(f"LATEST_POSTS_PATH: {LATEST_POSTS_PATH}")
+    
+    # 使用 utils 模組加載字典
+    tw_dict = load_translation_dict()
+    if tw_dict:
+        print(f"詞典包含 {len(tw_dict)} 個詞彙")
+    else:
+        print("詞典檔案不存在或為空")
     
     posts = scan_blog_directory()
     

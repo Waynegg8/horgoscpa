@@ -33,6 +33,7 @@
     .radio-option {
       position: relative;
       min-width: 100px;
+      margin-bottom: 10px;
     }
     
     .radio-option input[type="radio"] {
@@ -107,6 +108,7 @@
       width: 100%;
       margin-top: 20px;
       font-family: "Kaleko 105", "思源黑體", "微軟正黑體", sans-serif;
+      border-bottom: none; /* 消除底部醜線 */
     }
     
     .submit-btn:hover {
@@ -146,6 +148,12 @@
       outline: none;
     }
     
+    /* 其他選項的文本框 */
+    .other-option-input {
+      margin-top: 10px;
+      display: none;
+    }
+    
     /* 必填項標記 */
     .required {
       color: #ff4d4f;
@@ -157,6 +165,8 @@
       display: flex;
       align-items: center;
       cursor: pointer;
+      position: relative;
+      padding-left: 30px;
     }
     
     .checkbox-label input[type="checkbox"] {
@@ -174,12 +184,14 @@
     
     .checkbox-label span:before {
       content: '';
-      display: inline-block;
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
       width: 18px;
       height: 18px;
       border: 2px solid #0066cc;
       border-radius: 4px;
-      margin-right: 10px;
       transition: all 0.2s ease;
       background-color: white;
     }
@@ -192,8 +204,9 @@
     .checkbox-label input[type="checkbox"]:checked + span:after {
       content: '✓';
       position: absolute;
-      left: 5px;
-      top: 0px;
+      left: 4px;
+      top: 50%;
+      transform: translateY(-50%);
       color: white;
       font-size: 14px;
     }
@@ -275,6 +288,14 @@
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+    
+    /* LINE圖標樣式 */
+    .line-friend {
+      display: inline-block;
+      height: 24px;
+      vertical-align: middle;
+      margin-right: 5px;
     }
     
     @media (max-width: 600px) {
@@ -383,20 +404,28 @@
           <button type="button" class="option-btn" data-value="會計">會計</button>
           <button type="button" class="option-btn" data-value="企業顧問">企業顧問</button>
         </div>
-        <!-- 新增改良版單選按鈕 -->
+        <!-- 更新的單選按鈕 -->
         <div class="radio-group">
           <div class="radio-option">
-            <input type="radio" id="topic-tax" name="topic-radio" value="稅務">
-            <label for="topic-tax">稅務</label>
+            <input type="radio" id="topic-business" name="topic-radio" value="工商登記(成立公司,工作室等)">
+            <label for="topic-business">工商登記(成立公司,工作室等)</label>
           </div>
           <div class="radio-option">
-            <input type="radio" id="topic-accounting" name="topic-radio" value="會計">
-            <label for="topic-accounting">會計</label>
+            <input type="radio" id="topic-accounting" name="topic-radio" value="帳務處理(記帳報稅)">
+            <label for="topic-accounting">帳務處理(記帳報稅)</label>
           </div>
           <div class="radio-option">
-            <input type="radio" id="topic-consulting" name="topic-radio" value="企業顧問">
-            <label for="topic-consulting">企業顧問</label>
+            <input type="radio" id="topic-tax" name="topic-radio" value="稅務申報">
+            <label for="topic-tax">稅務申報</label>
           </div>
+          <div class="radio-option">
+            <input type="radio" id="topic-other" name="topic-radio" value="其他">
+            <label for="topic-other">其他</label>
+          </div>
+        </div>
+        <!-- 其他選項輸入框 -->
+        <div id="other-option-input" class="other-option-input">
+          <input type="text" id="other-topic" name="other-topic" placeholder="請說明您的諮詢主題">
         </div>
         <input type="hidden" name="topic" id="topic-field" required>
       </div>
@@ -424,7 +453,7 @@
         <li>若需變更或取消預約，請提前告知</li>
         <li>如有緊急需求，可直接致電 04-2220-5606</li>
       </ul>
-      <p>您也可以透過 LINE 直接與我們聯繫預約：<a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" />加入好友</a></p>
+      <p>您也可以透過 LINE 直接與我們聯繫預約：<a href="https://line.me/R/ti/p/@208ihted" target="_blank"><img src="/assets/images/line-icon.svg" alt="LINE" class="line-icon" style="width:24px;height:24px;display:inline-block;vertical-align:middle;margin-right:5px;" />加入好友</a></p>
     </div>
   </div>
 </main>
@@ -539,7 +568,74 @@
 <script src="/assets/js/navbar.js"></script>
 
 <!-- 預約表單功能腳本 -->
-<script src="/assets/js/booking.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 原有的選項按鈕功能，可以保留但不再使用
+  const optionGroups = document.querySelectorAll('.options-group');
+  const hiddenField = document.getElementById('topic-field');
+  
+  // 新增的單選按鈕功能
+  const radioButtons = document.querySelectorAll('input[name="topic-radio"]');
+  const otherOptionInput = document.getElementById('other-option-input');
+  const otherTopicInput = document.getElementById('other-topic');
+  
+  // 監聽單選按鈕變化
+  radioButtons.forEach(radio => {
+    radio.addEventListener('change', function() {
+      // 更新隱藏欄位的值
+      if (this.value === '其他') {
+        // 顯示其他選項輸入框
+        otherOptionInput.style.display = 'block';
+        
+        // 如果有填寫其他選項，使用其值
+        if (otherTopicInput.value) {
+          hiddenField.value = '其他: ' + otherTopicInput.value;
+        } else {
+          hiddenField.value = '其他';
+        }
+        
+        // 監聽其他選項輸入框變化
+        otherTopicInput.addEventListener('input', function() {
+          hiddenField.value = '其他: ' + this.value;
+        });
+      } else {
+        // 隱藏其他選項輸入框
+        otherOptionInput.style.display = 'none';
+        // 更新隱藏欄位的值
+        hiddenField.value = this.value;
+      }
+      
+      console.log('Selected topic:', hiddenField.value);
+    });
+  });
+  
+  // 表單提交前檢查是否有選擇主題
+  const bookingForm = document.querySelector('.booking-form');
+  bookingForm.addEventListener('submit', function(e) {
+    if (!hiddenField.value) {
+      // 如果沒有選擇主題，使用第一個單選按鈕的值
+      if (radioButtons.length > 0) {
+        const firstRadio = radioButtons[0];
+        firstRadio.checked = true;
+        hiddenField.value = firstRadio.value;
+      }
+    }
+    
+    // 如果選擇了"其他"但未填寫內容
+    if (hiddenField.value === '其他' && radioButtons[3].checked) {
+      otherTopicInput.required = true;
+    } else {
+      otherTopicInput.required = false;
+    }
+  });
+  
+  // 默認選中第一個選項
+  if (radioButtons.length > 0) {
+    radioButtons[0].checked = true;
+    hiddenField.value = radioButtons[0].value;
+  }
+});
+</script>
 
 </body>
 </html>

@@ -20,6 +20,216 @@
   <link rel="stylesheet" href="/assets/css/navbar.css" />
   <link rel="stylesheet" href="/assets/css/footer.css" />
   
+  <!-- 聯絡頁面特定樣式 -->
+  <style>
+    /* 頁面橫幅背景 */
+    .contact-banner {
+      background: linear-gradient(rgba(0, 33, 71, 0.85), rgba(0, 77, 153, 0.85)), 
+                 url('/assets/images/banner-bg.jpg') center/cover no-repeat;
+      padding: 60px 0;
+      color: white;
+      text-align: center;
+      margin-bottom: 60px;
+    }
+    
+    .contact-banner h1 {
+      color: white;
+      margin-bottom: 20px;
+      font-size: 2.5rem;
+    }
+    
+    .contact-banner p {
+      color: rgba(255, 255, 255, 0.9);
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.2rem;
+    }
+    
+    /* 聯絡資訊卡片 */
+    .contact-cards {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      margin: 50px 0;
+    }
+    
+    .contact-card {
+      position: relative;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+      padding: 30px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+    
+    .contact-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+    
+    /* 卡片頭部圖標 */
+    .card-icon {
+      background-color: #f5f7fa;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      color: #0066cc;
+    }
+    
+    .card-icon span {
+      font-size: 36px;
+    }
+    
+    /* 卡片標題 */
+    .contact-card h3 {
+      color: #002147;
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+    }
+    
+    /* 卡片內容 */
+    .contact-card p {
+      color: #333;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    
+    /* 卡片按鈕 */
+    .contact-card .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #0066cc;
+      color: white;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .contact-card .btn:hover {
+      background-color: #004d99;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    /* LINE按鈕特殊樣式 */
+    .contact-card .btn-line {
+      background-color: #06c755;
+    }
+    
+    .contact-card .btn-line:hover {
+      background-color: #05b54d;
+    }
+    
+    /* 營業狀態樣式 */
+    .business-status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    
+    .status-open {
+      background-color: #4caf50;
+      color: white;
+    }
+    
+    .status-closed {
+      background-color: #f44336;
+      color: white;
+    }
+    
+    /* 地圖容器 */
+    .map-container {
+      width: 100%;
+      height: 450px;
+      margin: 50px 0;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    /* 交通方式 */
+    .directions-section {
+      background-color: #f5f7fa;
+      padding: 60px 0;
+      margin: 50px 0;
+    }
+    
+    .directions-section h2 {
+      text-align: center;
+      margin-bottom: 40px;
+      color: #002147;
+    }
+    
+    .directions-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+    }
+    
+    .direction-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+      padding: 25px;
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .direction-card h3 {
+      color: #002147;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .direction-card h3 span {
+      margin-right: 10px;
+      color: #0066cc;
+    }
+    
+    .direction-card ul {
+      padding-left: 20px;
+    }
+    
+    .direction-card li {
+      margin-bottom: 10px;
+      color: #333;
+    }
+    
+    /* 響應式調整 */
+    @media (max-width: 768px) {
+      .contact-banner h1 {
+        font-size: 2rem;
+      }
+      
+      .contact-banner p {
+        font-size: 1rem;
+      }
+      
+      .contact-card {
+        max-width: 100%;
+      }
+      
+      .map-container {
+        height: 350px;
+      }
+    }
+  </style>
+  
   <!-- Google 分析 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
   <script>
@@ -91,84 +301,84 @@
   </div>
 </nav>
 
-<!-- 頁面標題 -->
-<div class="page-banner">
+<!-- 頁面橫幅 -->
+<div class="contact-banner">
   <div class="container">
     <h1>聯絡資訊</h1>
     <p>歡迎透過以下方式與霍爾果斯會計師事務所聯繫，我們期待為您提供專業的財稅諮詢服務</p>
   </div>
 </div>
 
-<!-- 聯絡資訊主內容 -->
-<section class="contact-details-section">
-  <div class="container">
-    <div class="contact-grid">
-      <div class="contact-info">
-        <div class="contact-card">
-          <div class="contact-icon">
-            <img src="/assets/images/location-icon.svg" alt="地址" style="width: 40px; height: 40px;">
-          </div>
-          <h3>事務所地址</h3>
-          <p>台中市西區建國路21號3樓之1</p>
-          <a href="https://maps.google.com/?q=台中市西區建國路21號3樓之1" target="_blank" class="btn btn-outline btn-sm">查看地圖</a>
-        </div>
-        
-        <div class="contact-card">
-          <div class="contact-icon">
-            <img src="/assets/images/phone-icon.svg" alt="電話" style="width: 40px; height: 40px;">
-          </div>
-          <h3>聯絡電話</h3>
-          <p>04-2220-5606</p>
-          <a href="tel:+886422205606" class="btn btn-outline btn-sm">立即撥打</a>
-        </div>
-        
-        <div class="contact-card">
-          <div class="contact-icon">
-            <img src="/assets/images/line-icon.svg" alt="LINE" style="width: 40px; height: 40px; filter: none;">
-          </div>
-          <h3>LINE 諮詢</h3>
-          <p>加入官方LINE，隨時諮詢</p>
-          <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="btn btn-line btn-sm">加入好友</a>
-        </div>
-        
-        <div class="contact-card">
-          <div class="contact-icon">
-            <img src="/assets/images/clock-icon.svg" alt="營業時間" style="width: 40px; height: 40px;">
-          </div>
-          <h3>營業時間</h3>
-          <p>週一至週五 8:30-17:30</p>
-          <div id="business-status" class="business-status"></div>
-        </div>
+<!-- 聯絡資訊卡片 -->
+<div class="container">
+  <div class="contact-cards">
+    <!-- 事務所地址 -->
+    <div class="contact-card">
+      <div class="card-icon">
+        <span class="material-symbols-rounded">location_on</span>
       </div>
-      
-      <div class="contact-map">
-        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3641.080578501929!2d120.67441507534775!3d24.133808178410753!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34693da642d13c59%3A0x95e561addcaebda!2z6ZyN54i-5p6c5pav5pyD6KiI5bir5LqL5YuZ5omA!5e0!3m2!1sen!2stw!4v1746124996506!5m2!1sen!2stw" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 交通資訊 -->
-<section class="directions-section">
-  <div class="container">
-    <div class="section-title">
-      <h2>交通資訊</h2>
-      <p>多種便捷的方式前往我們的事務所</p>
+      <h3>事務所地址</h3>
+      <p>台中市西區建國路21號3樓之1</p>
+      <a href="https://maps.google.com/?q=台中市西區建國路21號3樓之1" target="_blank" class="btn">查看地圖</a>
     </div>
     
+    <!-- 聯絡電話 -->
+    <div class="contact-card">
+      <div class="card-icon">
+        <span class="material-symbols-rounded">call</span>
+      </div>
+      <h3>聯絡電話</h3>
+      <p>04-2220-5606</p>
+      <a href="tel:+886422205606" class="btn">立即撥打</a>
+    </div>
+    
+    <!-- LINE諮詢 -->
+    <div class="contact-card">
+      <div class="card-icon">
+        <!-- LINE圖標使用內聯SVG保證顯示 -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#0066cc">
+          <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+        </svg>
+      </div>
+      <h3>LINE 諮詢</h3>
+      <p>加入官方LINE，隨時諮詢</p>
+      <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="btn btn-line">加入好友</a>
+    </div>
+    
+    <!-- 營業時間 -->
+    <div class="contact-card">
+      <div class="card-icon">
+        <span class="material-symbols-rounded">schedule</span>
+      </div>
+      <h3>營業時間</h3>
+      <p>週一至週五 8:30-17:30</p>
+      <div id="business-status" class="business-status"></div>
+    </div>
+  </div>
+  
+  <!-- Google地圖 -->
+  <div class="map-container">
+    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3641.080578501929!2d120.67441507534775!3d24.133808178410753!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34693da642d13c59%3A0x95e561addcaebda!2z6ZyN54i-5p6c5pav5pyD6KiI5bir5LqL5YuZ5omA!5e0!3m2!1sen!2stw!4v1746124996506!5m2!1sen!2stw" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </div>
+</div>
+
+<!-- 交通資訊區塊 -->
+<section class="directions-section">
+  <div class="container">
+    <h2>交通資訊</h2>
     <div class="directions-grid">
       <div class="direction-card">
-        <h3>大眾交通</h3>
-        <ul style="list-style-type: none; padding: 0; margin: 0;">
-          <li style="margin-bottom: 15px;"><strong>公車：</strong> 搭乘 x、x、x 路線至「xxxxx站」下車，步行約 3 分鐘</li>
+        <h3><span class="material-symbols-rounded">directions_bus</span> 大眾交通</h3>
+        <ul>
+          <li><strong>公車：</strong> 搭乘 x、x、x 路線至「xxxxx站」下車，步行約 3 分鐘</li>
           <li><strong>計程車：</strong> 從台中火車站搭乘計程車約 10 分鐘可抵達</li>
         </ul>
       </div>
       
       <div class="direction-card">
-        <h3>自行開車</h3>
-        <ul style="list-style-type: none; padding: 0; margin: 0;">
-          <li style="margin-bottom: 15px;"><strong>國道一號：</strong> 由台中交流道下，沿台灣大道往市區方向，右轉建國路</li>
+        <h3><span class="material-symbols-rounded">directions_car</span> 自行開車</h3>
+        <ul>
+          <li><strong>國道一號：</strong> 由台中交流道下，沿台灣大道往市區方向，右轉建國路</li>
           <li><strong>停車資訊：</strong> 大樓設有地下停車場，或可停放於附近收費停車場</li>
         </ul>
       </div>
@@ -286,7 +496,41 @@
 <script src="/assets/js/navbar.js"></script>
 
 <!-- 聯絡頁面腳本 -->
-<script src="/assets/js/contact.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 判斷當前是否營業中
+    function checkBusinessHours() {
+      const now = new Date();
+      const day = now.getDay(); // 0是星期日，1-5是星期一到五，6是星期六
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const currentTime = hours * 60 + minutes; // 將時間轉換為分鐘
+      
+      // 營業時間：週一至週五 8:30-17:30
+      const openTime = 8 * 60 + 30; // 8:30 轉換為分鐘
+      const closeTime = 17 * 60 + 30; // 17:30 轉換為分鐘
+      
+      const isWeekday = day >= 1 && day <= 5; // 是否為工作日
+      const isDuringBusinessHours = currentTime >= openTime && currentTime < closeTime; // 是否在營業時間內
+      
+      const businessStatus = document.getElementById('business-status');
+      
+      if (isWeekday && isDuringBusinessHours) {
+        businessStatus.textContent = '營業中';
+        businessStatus.className = 'business-status status-open';
+      } else {
+        businessStatus.textContent = '非營業時間';
+        businessStatus.className = 'business-status status-closed';
+      }
+    }
+    
+    // 執行判斷
+    checkBusinessHours();
+    
+    // 每分鐘更新一次狀態
+    setInterval(checkBusinessHours, 60000);
+  });
+</script>
 
 </body>
 </html>

@@ -29,6 +29,10 @@ from typing import List, Dict, Any, Tuple, Optional
 from slugify import slugify
 from collections import Counter
 
+# 引入 utils 模組
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils import load_translation_dict, setup_jieba_dict
+
 # 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
@@ -41,7 +45,6 @@ BLOG_URL_PREFIX = "/blog/"           # 博客URL前綴
 DEFAULT_AUTHOR = "霍爾果斯會計師事務所"  # 默認作者
 DEFAULT_IMAGE = "default.jpg"   # 默認圖片
 PROCESSED_LOG_FILE = os.path.join(PROJECT_ROOT, ".processed_docs.json")  # 已處理文件記錄
-TRANSLATION_DICT_FILE = os.path.join(PROJECT_ROOT, "tw_financial_dict.json")  # 台灣財稅專業詞彙詞典
 
 # 配置博客分類
 BLOG_CATEGORIES = {
@@ -77,31 +80,14 @@ THUMBNAIL_IMAGES = [
     "default.jpg"
 ]
 
-def load_translation_dict(dict_path=TRANSLATION_DICT_FILE):
-    """
-    載入翻譯詞典
-    :param dict_path: 詞典檔案路徑
-    :return: 詞典字典對象
-    """
-    if os.path.exists(dict_path):
-        try:
-            with open(dict_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"載入詞典時出錯: {str(e)}")
-    else:
-        print(f"詞典檔案不存在: {dict_path}")
-    return {}
-
-def translate_title_for_url(title, dict_path=TRANSLATION_DICT_FILE):
+def translate_title_for_url(title):
     """
     將中文標題翻譯為適合URL的英文
     :param title: 中文標題
-    :param dict_path: 詞典檔案路徑
     :return: 英文URL友好標題
     """
-    # 載入詞典
-    tw_dict = load_translation_dict(dict_path)
+    # 使用 utils 模組載入詞典
+    tw_dict = load_translation_dict()
     
     if not tw_dict:
         print("詞典為空或載入失敗，使用默認音譯")
@@ -268,6 +254,9 @@ def generate_tags(title: str, paragraphs: List[Dict[str, str]]) -> List[str]:
     :param paragraphs: 段落列表
     :return: 標籤列表
     """
+    # 使用 utils 模組設置 jieba 分詞詞典
+    setup_jieba_dict()
+    
     # 合併所有文本
     full_text = title + " " + " ".join([p["text"] for p in paragraphs])
     
@@ -319,6 +308,9 @@ def determine_primary_category(tags: List[str], title: str, paragraphs: List[Dic
     :param paragraphs: 段落列表
     :return: (主要分類中文名, 主要分類英文代碼)
     """
+    # 使用 utils 模組設置 jieba 分詞詞典
+    setup_jieba_dict()
+            
     # 合併所有文本用於分析
     full_text = title + " " + " ".join([p["text"] for p in paragraphs]) + " " + " ".join(tags)
     
@@ -786,14 +778,12 @@ def main():
     print(f"專案根目錄: {PROJECT_ROOT}")
     print(f"輸出目錄: {OUTPUT_DIR}")
     
-    # 檢查詞典檔案是否存在
-    if os.path.exists(TRANSLATION_DICT_FILE):
-        print(f"詞典檔案已存在: {TRANSLATION_DICT_FILE}")
-        # 載入詞典進行測試
-        dict_size = len(load_translation_dict())
-        print(f"詞典包含 {dict_size} 個詞彙")
+    # 檢查詞典使用 utils 模組
+    tw_dict = load_translation_dict()
+    if tw_dict:
+        print(f"詞典包含 {len(tw_dict)} 個詞彙")
     else:
-        print(f"詞典檔案不存在: {TRANSLATION_DICT_FILE}")
+        print("詞典檔案不存在或為空")
         print("將使用默認音譯方式生成檔案名")
     
     if len(sys.argv) < 2:
