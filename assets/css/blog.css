@@ -1,5 +1,5 @@
 /* 
- * blog.css - 霍爾果斯會計師事務所部落格相關頁面樣式 (改進現有卡片設計)
+ * blog.css - 霍爾果斯會計師事務所部落格相關頁面樣式 (列表式布局)
  * 包含部落格文章列表頁與單篇文章頁的專用樣式
  * 最後更新日期: 2025-05-05
  */
@@ -172,7 +172,6 @@
   font-size: 0.85rem;
   color: #666;
   margin-top: 6px;
-  display: block;
   display: flex;
   align-items: center;
 }
@@ -208,11 +207,11 @@
   box-shadow: 0 3px 6px rgba(0,0,0,0.1);
 }
 
-/* 改進的博客網格樣式 */
+/* 列表式博客佈局 */
 .blog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
   margin-top: 20px;
 }
 
@@ -220,32 +219,46 @@
   background: white;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-  height: 100%;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.08);
   display: flex;
-  flex-direction: column;
-  position: relative;
+  transition: all 0.3s ease;
 }
 
 .blog-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
 }
 
-/* 分類標籤 */
+/* 文章縮略圖 */
+.blog-image {
+  flex: 0 0 280px;
+  position: relative;
+  overflow: hidden;
+}
+
+.blog-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.blog-card:hover .blog-image img {
+  transform: scale(1.05);
+}
+
+/* 文章分類標籤 */
 .blog-category {
   position: absolute;
   top: 15px;
-  right: 15px;
-  background: #0066cc;
-  color: white;
+  left: 15px;
   padding: 5px 12px;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
-  z-index: 2;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  color: white;
+  z-index: 1;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
 }
 
 .category-tax { background-color: #0066cc; }
@@ -254,92 +267,73 @@
 .category-financial { background-color: #9c27b0; }
 .category-legal { background-color: #f44336; }
 
-.blog-image {
-  height: 200px;
-  overflow: hidden;
-  position: relative;
-}
-
-.blog-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.blog-card:hover .blog-image img {
-  transform: scale(1.08);
-}
-
+/* 文章內容 */
 .blog-content {
-  padding: 25px;
-  flex-grow: 1;
+  flex: 1;
+  padding: 25px 30px;
   display: flex;
   flex-direction: column;
 }
 
 .blog-card .date {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 12px;
   display: flex;
   align-items: center;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 10px;
 }
 
 .blog-card .date:before {
   content: "\1F4C5";
   margin-right: 6px;
-  font-size: 1.05rem;
 }
 
 .blog-card h2, .blog-card h3 {
-  margin: 0 0 15px 0;
-  font-size: 1.4rem;
+  font-size: 1.6rem;
+  margin-bottom: 12px;
   line-height: 1.4;
-  color: #002147;
-  transition: color 0.3s ease;
 }
 
 .blog-card h2 a, .blog-card h3 a {
-  color: inherit;
+  color: #002147;
   text-decoration: none;
+  transition: color 0.3s ease;
 }
 
-.blog-card:hover h2, .blog-card:hover h3 {
+.blog-card h2 a:hover, .blog-card h3 a:hover {
   color: #0066cc;
 }
 
 .blog-card p {
+  margin-bottom: 15px;
   color: #555;
-  line-height: 1.7;
-  margin-bottom: 20px;
   flex-grow: 1;
+  line-height: 1.6;
 }
 
 .read-more {
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
+  gap: 5px;
   font-weight: 600;
   color: #0066cc;
   text-decoration: none;
-  position: relative;
-  align-self: flex-start;
-  margin-top: auto;
   padding: 5px 0;
   transition: all 0.3s ease;
+  position: relative;
 }
 
-.read-more:after {
+.read-more::after {
   content: '→';
-  margin-left: 6px;
-  transition: transform 0.3s;
+  transition: transform 0.3s ease;
 }
 
-.read-more:hover:after {
+.read-more:hover::after {
   transform: translateX(5px);
 }
 
-.read-more:before {
+.read-more::before {
   content: '';
   position: absolute;
   bottom: 0;
@@ -350,7 +344,7 @@
   transition: width 0.3s ease;
 }
 
-.read-more:hover:before {
+.read-more:hover::before {
   width: 100%;
 }
 
@@ -493,20 +487,15 @@
   .blog-sidebar {
     order: -1;
   }
-  
-  .blog-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  }
-  
-  .blog-card {
-    max-width: 450px;
-    margin: 0 auto;
-  }
 }
 
 @media (max-width: 768px) {
-  .blog-grid {
-    grid-template-columns: 1fr;
+  .blog-card {
+    flex-direction: column;
+  }
+  
+  .blog-image {
+    flex: 0 0 200px;
   }
   
   .category-filter {
@@ -519,8 +508,8 @@
     flex-shrink: 0;
   }
   
-  .blog-card {
-    max-width: 100%;
+  .blog-card h2, .blog-card h3 {
+    font-size: 1.4rem;
   }
 }
 
