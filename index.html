@@ -179,12 +179,102 @@
 <!-- 頁尾區域 -->
 <footer class="site-footer">
   <div class="footer-container">
-    <div class="footer-text">
-      <p>&copy; 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
+    <div class="footer-content">
+      <!-- Logo與簡介 -->
+      <div class="footer-logo">
+        <div class="logo-main" style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px;">霍爾果斯會計師事務所</div>
+        <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
+        <p>專業、誠信、創新的財稅顧問夥伴，致力於提供企業與個人最優質的財務與稅務解決方案。</p>
+      </div>
+      
+      <!-- 聯絡資訊 -->
+      <div class="footer-contact">
+        <h3>聯絡我們</h3>
+        <ul class="contact-info">
+          <li>
+            <i class="location-icon">📍</i>
+            <span>台中市西區建國路21號3樓之1</span>
+          </li>
+          <li>
+            <i class="phone-icon">📞</i>
+            <a href="tel:+886422205606">04-2220-5606</a>
+          </li>
+          <li>
+            <i class="clock-icon">🕒</i>
+            <span>週一至週五 8:30-17:30</span>
+          </li>
+          <li>
+            <i class="mail-icon">✉️</i>
+            <a href="mailto:contact@horgoscpa.com">contact@horgoscpa.com</a>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- 快速連結 -->
+      <div class="footer-links">
+        <h3>快速連結</h3>
+        <ul class="quick-links">
+          <li><a href="/services.html">服務項目</a></li>
+          <li><a href="/team.html">服務團隊</a></li>
+          <li><a href="/blog.html">部落格</a></li>
+          <li><a href="/faq.html">常見問題</a></li>
+          <li><a href="/contact.html">聯絡資訊</a></li>
+          <li><a href="/booking.html">預約諮詢</a></li>
+        </ul>
+      </div>
+      
+      <!-- 服務項目 -->
+      <div class="footer-services">
+        <h3>服務項目</h3>
+        <ul class="services-list">
+          <li><a href="/services/tax.html">稅務服務</a></li>
+          <li><a href="/services/accounting.html">記帳與會計</a></li>
+          <li><a href="/services/consulting.html">企業顧問</a></li>
+        </ul>
+      </div>
     </div>
+    
+    <!-- 版權資訊 -->
+    <div class="footer-bottom">
+      <div class="footer-text">
+        <p>&copy; 2025 霍爾果斯會計師事務所 | 台中市西區建國路21號3樓之1 | 電話：<a href="tel:+886422205606">04-2220-5606</a></p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 返回頂部按鈕 -->
+  <div class="back-to-top">
+    <i class="arrow-up">↑</i>
   </div>
 </footer>
 
+<!-- 頁尾功能腳本 - 新增 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 返回頂部按鈕功能
+    const backToTopButton = document.querySelector('.back-to-top');
+    
+    // 初始隱藏按鈕
+    backToTopButton.classList.remove('visible');
+    
+    // 監聽滾動事件
+    window.addEventListener('scroll', function() {
+      if (window.pageYOffset > 300) {
+        backToTopButton.classList.add('visible');
+      } else {
+        backToTopButton.classList.remove('visible');
+      }
+    });
+    
+    // 點擊事件
+    backToTopButton.addEventListener('click', function() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+  });
+</script>
 <!-- 導航欄功能腳本 -->
 <script src="/assets/js/navbar.js"></script>
 

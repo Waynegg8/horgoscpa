@@ -1,14 +1,14 @@
 /* 
  * footer.css - 霍爾果斯會計師事務所網站頁尾樣式
  * 最後更新日期: 2025-05-03
- * 優化版本 2.0
+ * 優化版本 3.0
  */
 
 /* 頁尾基本樣式 */
 .site-footer {
-  background: linear-gradient(to bottom, #001a36, #002a56);
+  background: linear-gradient(to bottom, #001830, #002d5a);
   color: #e0e0e0;
-  padding: 50px 0 30px;
+  padding: 60px 0 30px;
   position: relative;
   box-shadow: 0 -5px 25px rgba(0,0,0,0.1);
 }
@@ -31,8 +31,7 @@
   margin: 0 auto;
   padding: 0 40px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-wrap: wrap;
 }
 
 /* 頁尾內容區塊 */
@@ -44,10 +43,30 @@
   margin-bottom: 30px;
 }
 
+/* Logo區塊 */
+.footer-logo {
+  flex: 1 1 300px;
+  margin-bottom: 30px;
+}
+
+.footer-logo img {
+  max-width: 180px;
+  height: auto;
+  margin-bottom: 15px;
+}
+
+.footer-logo p {
+  color: #c4c4c4;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
 /* 聯絡資訊區塊 */
 .footer-contact {
   flex: 1 1 300px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+  padding-left: 20px;
 }
 
 .footer-contact h3 {
@@ -78,12 +97,17 @@
   margin-bottom: 15px;
   display: flex;
   align-items: flex-start;
+  transition: transform 0.3s ease;
 }
 
-.contact-info li i {
-  margin-right: 10px;
+.contact-info li:hover {
+  transform: translateX(5px);
+}
+
+.contact-info i {
+  margin-right: 15px;
   color: #0088ff;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   min-width: 20px;
   text-align: center;
 }
@@ -92,18 +116,98 @@
   color: #e0e0e0;
   text-decoration: none;
   transition: all 0.3s ease;
-  border-bottom: 1px dotted rgba(224, 224, 224, 0.3);
+  position: relative;
+  padding-bottom: 2px;
+}
+
+.contact-info a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: #ffffff;
+  transition: width 0.3s ease;
 }
 
 .contact-info a:hover {
   color: #ffffff;
-  border-bottom-color: #ffffff;
 }
 
-/* 服務列表區塊 */
+.contact-info a:hover::after {
+  width: 100%;
+}
+
+/* 快速連結區塊 */
+.footer-links {
+  flex: 1 1 250px;
+  margin-bottom: 30px;
+  padding-left: 20px;
+}
+
+.footer-links h3 {
+  color: #ffffff;
+  font-size: 1.3rem;
+  margin: 0 0 20px;
+  position: relative;
+  padding-bottom: 12px;
+}
+
+.footer-links h3:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 50px;
+  height: 2px;
+  background: linear-gradient(to right, #0066cc, rgba(0, 102, 204, 0.3));
+}
+
+.quick-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  columns: 1;
+}
+
+.quick-links li {
+  margin-bottom: 12px;
+  break-inside: avoid;
+}
+
+.quick-links a {
+  color: #e0e0e0;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-block;
+  position: relative;
+  padding-left: 15px;
+}
+
+.quick-links a:before {
+  content: '›';
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #0088ff;
+  transition: transform 0.3s ease;
+}
+
+.quick-links a:hover {
+  color: #ffffff;
+  transform: translateX(5px);
+}
+
+.quick-links a:hover:before {
+  transform: translateX(3px);
+}
+
+/* 服務區塊 */
 .footer-services {
-  flex: 1 1 300px;
-  margin-bottom: 20px;
+  flex: 1 1 250px;
+  margin-bottom: 30px;
+  padding-left: 20px;
 }
 
 .footer-services h3 {
@@ -128,8 +232,6 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  column-count: 2;
-  column-gap: 20px;
 }
 
 .services-list li {
@@ -157,107 +259,22 @@
 
 .services-list a:hover {
   color: #ffffff;
-  transform: translateX(3px);
+  transform: translateX(5px);
 }
 
 .services-list a:hover:before {
   transform: translateX(3px);
 }
 
-/* 營業時間區塊 */
-.footer-hours {
-  flex: 1 1 300px;
-  margin-bottom: 20px;
-}
-
-.footer-hours h3 {
-  color: #ffffff;
-  font-size: 1.3rem;
-  margin: 0 0 20px;
-  position: relative;
-  padding-bottom: 12px;
-}
-
-.footer-hours h3:after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 50px;
-  height: 2px;
-  background: linear-gradient(to right, #0066cc, rgba(0, 102, 204, 0.3));
-}
-
-.hours-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.hours-list li {
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.hours-list .day {
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.hours-list .time {
-  color: #e0e0e0;
-}
-
-/* 頁尾導航 */
-.footer-nav {
-  width: 100%;
-  margin: 20px 0;
-  padding: 20px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  text-align: center;
-}
-
-.footer-nav ul {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  gap: 20px;
-}
-
-.footer-nav a {
-  color: #e0e0e0;
-  text-decoration: none;
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
-  position: relative;
-  padding: 5px 0;
-}
-
-.footer-nav a:after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 0;
-  height: 1px;
-  background-color: #ffffff;
-  transition: width 0.3s ease;
-}
-
-.footer-nav a:hover {
-  color: #ffffff;
-}
-
-.footer-nav a:hover:after {
-  width: 100%;
-}
-
 /* 版權信息 */
+.footer-bottom {
+  width: 100%;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 25px;
+  margin-top: 10px;
+}
+
 .footer-text {
   text-align: center;
   width: 100%;
@@ -265,7 +282,7 @@
 
 .footer-text p {
   margin: 0 0 10px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   line-height: 1.7;
   color: rgba(224, 224, 224, 0.8);
 }
@@ -275,12 +292,26 @@
   text-decoration: none;
   position: relative;
   transition: all 0.3s ease;
-  border-bottom: 1px dotted rgba(224, 224, 224, 0.3);
+  padding-bottom: 1px;
+}
+
+.footer-text a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: #ffffff;
+  transition: width 0.3s ease;
 }
 
 .footer-text a:hover {
   color: #ffffff;
-  border-bottom-color: #ffffff;
+}
+
+.footer-text a:hover::after {
+  width: 100%;
 }
 
 /* 返回頂部按鈕 */
@@ -316,31 +347,6 @@
   box-shadow: 0 8px 20px rgba(0, 102, 204, 0.6);
 }
 
-/* 小標誌區塊 */
-.footer-logo {
-  text-align: center;
-  margin-bottom: 25px;
-}
-
-.footer-logo img {
-  max-width: 180px;
-  opacity: 0.8;
-  transition: opacity 0.3s ease;
-}
-
-.footer-logo img:hover {
-  opacity: 1;
-}
-
-/* 分隔線 */
-.footer-divider {
-  width: 60px;
-  height: 3px;
-  background: linear-gradient(to right, #0066cc, rgba(0, 102, 204, 0.3));
-  margin: 20px auto;
-  border-radius: 1.5px;
-}
-
 /* 背景效果 */
 .site-footer::after {
   content: '';
@@ -349,7 +355,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at top right, rgba(0, 102, 204, 0.1), transparent 70%);
+  background: 
+    radial-gradient(circle at top right, rgba(0, 102, 204, 0.1), transparent 70%),
+    radial-gradient(circle at bottom left, rgba(0, 102, 204, 0.05), transparent 70%);
   pointer-events: none;
 }
 
@@ -362,16 +370,13 @@
 
 @media (max-width: 992px) {
   .footer-content {
-    flex-direction: column;
+    justify-content: flex-start;
   }
   
-  .footer-services, .footer-contact, .footer-hours {
-    flex: 1 1 100%;
-    margin-bottom: 30px;
-  }
-  
-  .services-list {
-    column-count: 2;
+  .footer-logo, .footer-contact, .footer-links, .footer-services {
+    flex: 1 1 45%;
+    padding-left: 0;
+    margin-right: 20px;
   }
 }
 
@@ -384,33 +389,30 @@
     padding: 0 20px;
   }
   
-  .footer-services h3, .footer-contact h3, .footer-hours h3 {
+  .footer-logo, .footer-contact, .footer-links, .footer-services {
+    flex: 1 1 100%;
+    margin-right: 0;
+  }
+  
+  .footer-logo {
+    margin-bottom: 20px;
+  }
+  
+  .footer-contact h3, .footer-links h3, .footer-services h3 {
     font-size: 1.2rem;
   }
   
-  .footer-nav ul {
-    gap: 15px;
-  }
-  
   .footer-text p {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 }
 
 @media (max-width: 576px) {
-  .services-list {
-    column-count: 1;
-  }
-  
   .back-to-top {
     bottom: 20px;
     right: 20px;
     width: 40px;
     height: 40px;
     font-size: 1rem;
-  }
-  
-  .footer-logo img {
-    max-width: 150px;
   }
 }
