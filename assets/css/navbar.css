@@ -123,7 +123,7 @@
   color: #fff;
   position: relative;
   padding: 8px 14px; /* 減少padding */
-  font-size: 1rem; /* 統一字體大小與LINE按鈕一致 */
+  font-size: 1.15rem; /* 增大字體尺寸，與LINE按鈕完全一致 */
   font-weight: 600; 
   text-decoration: none;
   border-radius: 8px;
@@ -137,7 +137,7 @@
 
 .nav-scrolled .nav-menu a {
   padding: 7px 12px;
-  font-size: 0.95rem;
+  font-size: 1.1rem; /* 滾動時保持相對大小 */
 }
 
 .nav-menu a:hover, 
@@ -194,7 +194,7 @@
   font-weight: 600;
   box-shadow: 0 8px 20px rgba(255, 107, 0, 0.3);
   padding: 0 !important;
-  font-size: 1rem !important; /* 與LINE按鈕文字一致 */
+  font-size: 1.15rem !important; /* 增大字體尺寸，與LINE按鈕完全一致 */
   border: none !important;
   letter-spacing: 0.4px; /* 微調字距 */
   text-align: center;
@@ -214,7 +214,7 @@
 
 .nav-scrolled .nav-consult-btn {
   padding: 0 !important;
-  font-size: 0.95rem !important;
+  font-size: 1.1rem !important;
   height: 42px; /* 滾動時與LINE按鈕同步縮小 */
   width: 125px; /* 滾動時縮小寬度 */
 }
@@ -322,7 +322,7 @@
   padding: 10px 16px; /* 減少padding */
   color: #fff;
   text-decoration: none;
-  font-size: 1rem; /* 統一字體大小 */
+  font-size: 1.15rem; /* 統一更大字體大小 */
   transition: all 0.25s ease;
   white-space: nowrap;
   border: none;
@@ -468,7 +468,7 @@
   
   .nav-menu a {
     padding: 7px 12px; /* 更小的padding */
-    font-size: 0.95rem;
+    font-size: 1.1rem; /* 依然保持較大的字體 */
   }
   
   .nav-consult-btn {
@@ -496,13 +496,18 @@
 
 @media (max-width: 992px) {
   .nav-menu a {
-    font-size: 0.9rem; /* 更小的字體但仍保持比例 */
+    font-size: 1.05rem; /* 更小的字體但仍保持比例 */
     padding: 7px 10px;
+  }
+  
+  .dropdown-menu a {
+    font-size: 1.05rem;
   }
   
   .nav-consult-btn {
     width: 126px; /* 縮小寬度 */
     height: 40px;
+    font-size: 1.05rem !important;
   }
   
   .nav-line-btn img {
@@ -512,6 +517,7 @@
   .nav-scrolled .nav-consult-btn {
     width: 115px;
     height: 36px;
+    font-size: 1rem !important;
   }
   
   .nav-scrolled .nav-line-btn img {
@@ -615,7 +621,7 @@
   
   .dropdown-menu a {
     padding: 10px 15px;
-    font-size: 1rem; /* 保持與LINE按鈕一致的字體大小 */
+    font-size: 1.15rem; /* 保持與LINE按鈕一致的字體大小 */
     opacity: 0.9;
     text-align: center;
     margin: 3px;
@@ -650,6 +656,7 @@
     width: 100%; /* 填滿容器 */
     height: 50px; /* 移動設備上更大的高度 */
     margin: 5px auto;
+    font-size: 1.15rem !important; /* 保持字體大小 */
   }
   
   .nav-line-btn {
@@ -671,6 +678,7 @@
     text-align: center;
     padding: 10px 15px;
     justify-content: center;
+    font-size: 1.15rem; /* 保持字體大小統一 */
   }
   
   .nav-menu a:hover,
@@ -716,5 +724,11 @@
   
   .nav-toggle-label span::after {
     bottom: -7px;
+  }
+  
+  .nav-menu a,
+  .dropdown-menu a,
+  .nav-consult-btn {
+    font-size: 1.1rem; /* 小螢幕上稍微調小字體，但仍保持相對大小 */
   }
 }
