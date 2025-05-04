@@ -22,7 +22,12 @@
   
   <!-- 新增: 首頁特定樣式 - 用於流動式設計 -->
   <link rel="stylesheet" href="/assets/css/index-style.css" />
-  
+
+  <!-- 移動版導航欄樣式 -->
+<link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
+
+<!-- 必須確保在頁面底部加載此JavaScript -->
+<script src="/assets/js/mobile-navbar.js" defer></script>
   <!-- Google 分析 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
   <script>
@@ -86,6 +91,34 @@
     </ul>
   </div>
 </nav>
+
+<!-- 在這裡添加移動版導航欄 -->
+<div class="mobile-navbar" style="display: none;">
+  <div class="mobile-nav-container">
+    <div class="mobile-menu-btn" id="mobileMenuBtn">
+      <span class="material-symbols-rounded">menu</span>
+    </div>
+    <div class="logo">
+      <a href="/index.html">
+        <div class="logo-main">霍爾果斯會計師事務所</div>
+        <div class="logo-sub">HorgosCPA</div>
+      </a>
+    </div>
+    <div class="mobile-nav-spacer"></div>
+  </div>
+  
+  <div class="mobile-menu" id="mobileMenu">
+    <ul class="mobile-menu-links">
+      <li><a href="/services.html" class="mobile-nav-link">專業服務</a></li>
+      <li><a href="/team.html" class="mobile-nav-link">專業團隊</a></li>
+      <li><a href="/blog.html" class="mobile-nav-link">專欄文章</a></li>
+      <li><a href="/faq.html" class="mobile-nav-link">常見問題</a></li>
+      <li><a href="/video.html" class="mobile-nav-link">影音專區</a></li>
+      <li><a href="/contact.html" class="mobile-nav-link">聯繫我們</a></li>
+      <li><a href="/booking.html" class="mobile-consult-btn">免費諮詢</a></li>
+    </ul>
+  </div>
+</div>
 
 <!-- 英雄區塊 -->
 <div class="home-hero" style="background-image: url('/assets/images/hero.jpg');">

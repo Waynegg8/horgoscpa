@@ -1,699 +1,195 @@
 /* 
- * video-modern.css - 霍爾果斯會計師事務所影片頁面現代化樣式
+ * mobile-navbar.css - 霍爾果斯會計師事務所移動版導航欄樣式
  * 最後更新日期: 2025-05-10
- * 主要改進: 與blog頁面風格統一、搜索體驗優化、影片卡片布局改進
+ * 移動設備專用導航設計
  */
 
-/* 影片頁面標題區塊 - 與blog-modern.css風格統一 */
-.blog-header {
-  background: linear-gradient(135deg, var(--bg-light), #ffffff);
-  text-align: left;
-  padding: 40px 0 20px;
-  margin-bottom: 0;
-  position: relative;
-}
-
-.blog-header-content {
-  padding-left: 20px;
-}
-
-.blog-header h1 {
-  font-size: 2.8rem;
-  color: var(--primary-color);
-  margin-bottom: 15px;
-  position: relative;
-  display: inline-block;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-.blog-header h1::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 0;
-  width: 80px;
-  height: 4px;
-  background: linear-gradient(to right, var(--secondary-color), rgba(0, 112, 221, 0.3));
-  border-radius: 2px;
-}
-
-.blog-header p {
-  font-size: 1.2rem;
-  color: var(--text-medium);
-  max-width: 800px;
-  margin: 0 0 10px 20px;
-  line-height: 1.6;
-}
-
-/* 搜尋與過濾區塊 - 優化交互體驗 */
-.search-filter-container {
-  margin: 20px 0 30px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.search-container {
-  position: relative;
-  max-width: 600px;
-  margin: 0 auto;
-  width: 100%;
-  transition: all 0.3s ease;
-}
-
-.search-input {
-  width: 100%;
-  padding: 14px 45px 14px 18px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.search-input:focus {
-  border-color: #0066cc;
-  box-shadow: 0 5px 15px rgba(0, 102, 204, 0.15);
-  outline: none;
-}
-
-.search-button {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: #f0f6ff;
-  color: #0066cc;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.search-button:hover {
-  background: #0066cc;
-  color: white;
-}
-
-/* 搜索活動指示器 */
-.search-status {
-  position: absolute;
-  right: 55px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ddd;
-  opacity: 0;
-  transition: all 0.3s ease;
-}
-
-.search-active .search-status {
-  opacity: 1;
-  background: #4CAF50;
-}
-
-/* 分類過濾按鈕 */
-.category-filter {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.filter-btn {
-  padding: 12px 24px;
-  border-radius: 50px;
-  background-color: #f8f9fa;
-  border: 2px solid #e6e9ee;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.filter-btn::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 150%;
-  height: 150%;
-  background: rgba(0, 102, 204, 0.05);
-  border-radius: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  transition: transform 0.5s ease-out;
-  z-index: -1;
-}
-
-.filter-btn:hover {
-  border-color: rgba(0, 102, 204, 0.3);
-  transform: translateY(-3px);
-}
-
-.filter-btn:hover::after {
-  transform: translate(-50%, -50%) scale(1);
-}
-
-.filter-btn.active {
-  background-color: #0066cc;
-  color: white;
-  border-color: #0066cc;
-  box-shadow: 0 5px 15px rgba(0, 102, 204, 0.2);
-}
-
-/* 內容區域 - 與blog-modern.css風格統一 */
-.blog-content-section {
-  background-color: #ffffff;
-  background-image: 
-    radial-gradient(circle at 90% 10%, rgba(0, 102, 204, 0.03), transparent 400px),
-    radial-gradient(circle at 10% 90%, rgba(0, 102, 204, 0.03), transparent 400px);
-  padding: 40px 0 60px;
-  position: relative;
-}
-
-/* 新增布局 - 使用與blog相同的grid */
-.video-layout {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 40px;
-}
-
-/* 主要影片區塊 */
-.video-main {
-  width: 100%;
-}
-
-/* 搜索結果信息 */
-.search-results-info {
-  background-color: #f8f9fa;
-  padding: 15px 20px;
-  border-radius: 8px;
-  margin-bottom: 25px;
-  font-size: 1.1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-}
-
-/* 影片卡片網格 */
-.video-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 25px;
-}
-
-/* 影片卡片設計 */
-.video-card {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  cursor: pointer;
-  opacity: 0; /* 為動畫準備 */
-}
-
-/* 卡片懸停效果 */
-.video-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
-}
-
-/* 滾動時入場動畫 */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.video-card.animated {
-  animation: fadeInUp 0.7s forwards;
-}
-
-/* 延遲不同卡片動畫 */
-.video-grid .video-card:nth-child(2).animated { animation-delay: 0.1s; }
-.video-grid .video-card:nth-child(3).animated { animation-delay: 0.2s; }
-.video-grid .video-card:nth-child(4).animated { animation-delay: 0.3s; }
-.video-grid .video-card:nth-child(5).animated { animation-delay: 0.4s; }
-.video-grid .video-card:nth-child(6).animated { animation-delay: 0.5s; }
-
-.video-embed {
-  position: relative;
-  padding-bottom: 56.25%; /* 16:9 比例 */
-  height: 0;
-  overflow: hidden;
-}
-
-.video-embed iframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  transition: all 0.3s ease;
-}
-
-.video-card:hover .video-embed iframe {
-  transform: scale(1.02); /* 懸停時視頻微縮放 */
-}
-
-.video-content {
-  padding: 25px;
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-}
-
-.video-content h2 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-size: 1.3rem;
-  line-height: 1.4;
-  color: #002147;
-  transition: all 0.3s ease;
-}
-
-.video-card:hover .video-content h2 {
-  color: #0066cc;
-}
-
-.video-content .date {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 12px;
-  display: inline-block;
-}
-
-.video-content p {
-  margin-bottom: 15px;
-  color: #555;
-  line-height: 1.6;
-  flex-grow: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  max-height: 4.8em;
-}
-
-/* 標籤樣式 */
-.video-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: auto;
-}
-
-.video-tag {
-  display: inline-block;
-  padding: 5px 12px;
-  background-color: #f0f6ff;
-  border-radius: 20px;
-  color: #0066cc;
-  font-size: 0.85rem;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  position: relative;
-  z-index: 2;
-}
-
-.video-tag:hover {
-  background-color: #0066cc;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(0, 102, 204, 0.2);
-}
-
-/* 側邊欄樣式 */
-.video-sidebar {
-  width: 100%;
-}
-
-.sidebar-section {
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-  padding: 30px;
-  margin-bottom: 30px;
-  position: relative;
-  overflow: hidden;
-}
-
-.sidebar-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 6px;
-  background: linear-gradient(to right, #0066cc, #0088ff);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.sidebar-section:hover {
-  box-shadow: 0 15px 40px rgba(0,0,0,0.1);
-}
-
-.sidebar-section:hover::before {
-  opacity: 1;
-}
-
-.sidebar-section h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  position: relative;
-  padding-bottom: 15px;
-  font-size: 1.4rem;
-  color: #002147;
-}
-
-.sidebar-section h3::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 60px;
-  height: 3px;
-  background: linear-gradient(to right, #0066cc, rgba(0, 102, 204, 0.3));
-  border-radius: 1.5px;
-}
-
-/* 熱門影片列表 */
-.popular-videos {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.popular-videos li {
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
-  transition: all 0.3s ease;
-}
-
-.popular-videos li:hover {
-  transform: translateX(5px);
-}
-
-.popular-videos li:last-child {
-  border-bottom: none;
-}
-
-.popular-videos a {
-  color: #333;
-  text-decoration: none;
-  font-weight: 500;
-  display: block;
-  margin-bottom: 5px;
-  transition: all 0.3s ease;
-}
-
-.popular-videos a:hover {
-  color: #0066cc;
-}
-
-.popular-videos .video-date {
-  font-size: 0.85rem;
-  color: #888;
-  display: block;
-}
-
-/* 影片分類統計 */
-.category-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.category-stat {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 15px;
-  background-color: #f5f7fa;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.category-stat:hover {
-  background-color: #e5efff;
-  transform: translateX(5px);
-}
-
-.category-name {
-  font-weight: 500;
-  color: #333;
-}
-
-.category-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 8px;
-  background-color: #0066cc;
-  color: white;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-/* 側邊欄CTA區塊 */
-.cta-section {
-  background: linear-gradient(135deg, #f0f6ff, #e5efff);
-  text-align: center;
-}
-
-.cta-button {
-  display: inline-block;
-  background-color: #0066cc;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  text-decoration: none;
-  margin-top: 15px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 102, 204, 0.2);
-}
-
-.cta-button:hover {
-  background-color: #004d99;
-  color: white;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 102, 204, 0.3);
-}
-
-/* 分頁控制優化 */
-.pagination {
-  display: flex;
-  justify-content: center;
-  margin-top: 50px;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.pagination-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  height: 40px;
-  padding: 0 15px;
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-weight: 500;
-  color: #333;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
-
-.pagination-btn:hover {
-  background-color: #f5f5f5;
-  border-color: #0066cc;
-  transform: translateY(-2px);
-}
-
-.pagination-btn.active {
-  background-color: #0066cc;
-  color: white;
-  border-color: #0066cc;
-  box-shadow: 0 3px 10px rgba(0, 102, 204, 0.15);
-}
-
-.pagination-btn.disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-/* 加載與錯誤狀態優化 */
-.loading-container {
-  text-align: center;
-  padding: 50px 0;
-}
-
-.loading-spinner {
-  display: inline-block;
-  width: 50px;
-  height: 50px;
-  border: 3px solid rgba(0, 102, 204, 0.2);
-  border-radius: 50%;
-  border-top-color: #0066cc;
-  animation: spin 1s ease-in-out infinite;
-  margin-bottom: 20px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* 無結果顯示優化 */
-.no-results {
-  padding: 40px;
-  text-align: center;
-  background: linear-gradient(135deg, #f9fafc, #f5f7fa);
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
-  margin: 40px 0;
-}
-
-.no-results p {
-  margin-bottom: 15px;
-  font-size: 1.1rem;
-  color: #555;
-}
-
-.no-results .btn {
-  margin-top: 15px;
-  padding: 12px 25px;
-  border-radius: 8px;
-  background: #0066cc;
-  color: white;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.no-results .btn:hover {
-  background: #004d99;
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 102, 204, 0.2);
-}
-
-/* 響應式設計優化 */
-@media (max-width: 992px) {
-  .video-layout {
-    grid-template-columns: 1fr;
+/* 桌面版導航欄在移動設備上隱藏 */
+@media (max-width: 850px) {
+  /* 隱藏原有的導航組件 */
+  .site-nav .nav-menu,
+  .site-nav .nav-toggle-label,
+  .site-nav .nav-toggle {
+    display: none !important;
   }
   
-  .video-sidebar {
-    order: -1;
+  /* 重置導航欄樣式 */
+  .site-nav {
+    background: #002147;
+    height: 60px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   }
   
-  .sidebar-section {
-    margin-bottom: 25px;
-    padding: 25px;
+  .site-nav .nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+    padding: 0 15px;
   }
   
-  .blog-header h1 {
-    font-size: 2.4rem;
-  }
-  
-  .blog-header p {
-    font-size: 1.1rem;
-  }
-  
-  .video-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .blog-header {
+  /* Logo調整 */
+  .site-nav .logo {
+    flex-grow: 1;
     text-align: center;
-    padding: 30px 0 15px;
   }
   
-  .blog-header h1 {
-    font-size: 2rem;
-    padding-left: 0;
+  .site-nav .logo-main {
+    font-size: 1.2rem;
   }
   
-  .blog-header h1::after {
-    left: 50%;
-    transform: translateX(-50%);
+  .site-nav .logo-sub {
+    font-size: 0.7rem;
   }
   
-  .blog-header p {
-    margin: 0 auto 10px;
-    font-size: 1rem;
+  /* 新增：移動版菜單按鈕 */
+  .mobile-menu-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
   }
   
-  .category-filter {
-    overflow-x: auto;
-    padding-bottom: 10px;
-    justify-content: flex-start;
+  .mobile-menu-btn:hover {
+    background: rgba(255,255,255,0.2);
   }
   
-  .filter-btn {
-    flex: 0 0 auto;
-    white-space: nowrap;
-    padding: 10px 16px;
-    font-size: 0.9rem;
+  .mobile-menu-btn span {
+    color: white;
+    font-size: 24px;
   }
   
-  .sidebar-section {
-    padding: 20px;
+  /* 新增：移動版全屏菜單 */
+  .mobile-menu {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,33,71,0.95);
+    backdrop-filter: blur(10px);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
   }
   
-  .video-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 576px) {
-  .search-input {
-    padding: 12px 40px 12px 15px;
+  .mobile-menu.open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
   }
   
-  .blog-header h1 {
-    font-size: 1.8rem;
+  .mobile-menu-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    list-style: none;
   }
   
-  .no-results {
-    padding: 30px 20px;
+  .mobile-menu-links li {
+    width: 80%;
+    text-align: center;
+    margin: 10px 0;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.3s ease;
   }
   
-  .pagination-btn {
-    min-width: 35px;
-    height: 35px;
-    padding: 0 10px;
-    font-size: 0.9rem;
+  .mobile-menu.open .mobile-menu-links li {
+    transform: translateY(0);
+    opacity: 1;
   }
   
-  .video-content {
-    padding: 20px;
+  /* 序列動畫延遲 */
+  .mobile-menu.open .mobile-menu-links li:nth-child(1) { transition-delay: 0.1s; }
+  .mobile-menu.open .mobile-menu-links li:nth-child(2) { transition-delay: 0.15s; }
+  .mobile-menu.open .mobile-menu-links li:nth-child(3) { transition-delay: 0.2s; }
+  .mobile-menu.open .mobile-menu-links li:nth-child(4) { transition-delay: 0.25s; }
+  .mobile-menu.open .mobile-menu-links li:nth-child(5) { transition-delay: 0.3s; }
+  .mobile-menu.open .mobile-menu-links li:nth-child(6) { transition-delay: 0.35s; }
+  .mobile-menu.open .mobile-menu-links li:nth-child(7) { transition-delay: 0.4s; }
+  
+  .mobile-menu-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: 600;
+    padding: 15px 0;
+    display: block;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  
+  .mobile-menu-links a:hover {
+    color: #0088ff;
+  }
+  
+  .mobile-menu-links a.active {
+    color: #0088ff;
+  }
+  
+  .mobile-menu-links a.active::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    left: 35%;
+    right: 35%;
+    height: 2px;
+    background: #0088ff;
+    border-radius: 1px;
+  }
+  
+  /* 諮詢按鈕樣式 */
+  .mobile-consult-btn {
+    background-color: #ff6b00;
+    color: white !important;
+    border-radius: 30px;
+    padding: 12px 25px !important;
+    margin-top: 20px;
+    font-weight: 700;
+    box-shadow: 0 5px 15px rgba(255,107,0,0.3);
+  }
+  
+  .mobile-consult-btn:hover {
+    background-color: #ff7b00 !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(255,107,0,0.4);
+  }
+  
+  /* 為頁面內容添加頂部間距，避免被導航欄遮擋 */
+  body {
+    padding-top: 60px;
+  }
+  
+  /* 確保其他頁面元素的正確定位 */
+  .home-hero,
+  .page-header,
+  .blog-header,
+  .contact-header,
+  .booking-header,
+  .team-section,
+  main {
+    margin-top: 0;
+    position: relative;
+    z-index: 1;
   }
 }
