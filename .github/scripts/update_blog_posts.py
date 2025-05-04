@@ -18,6 +18,7 @@ import jieba
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set
 from collections import Counter
+from bs4 import BeautifulSoup  # 添加BeautifulSoup用於更可靠的HTML解析
 
 # 引入 utils 模組
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -38,16 +39,16 @@ JSON_PATH = os.path.join(PROJECT_ROOT, "assets/data/blog-posts.json")  # 完整�
 LATEST_POSTS_PATH = os.path.join(PROJECT_ROOT, "assets/data/latest-posts.json")  # 最新文章JSON文件路徑
 ITEMS_PER_PAGE = 6  # 每頁顯示的文章數量
 
-# 文章標題和日期的正則表達式
-TITLE_REGEX = r"<title>(.*?)<\/title>"
-DATE_REGEX = r'<span class="date">(.*?)<\/span>'
+# 文章標題和日期的正則表達式（更新為更精確的匹配）
+TITLE_REGEX = r"<h1 class=\"article-title\">(.*?)<\/h1>"
+DATE_REGEX = r'<div class="article-date">[\s\S]*?(\d{4}-\d{2}-\d{2})[\s\S]*?<\/div>'
 SUMMARY_REGEX = r'<meta name="description" content="(.*?)"'
-IMAGE_REGEX = r'<meta property="og:image" content="(.*?)"'
-CATEGORY_REGEX = r'<span class="category">分類: <a[^>]*>(.*?)<\/a><\/span>'
+IMAGE_REGEX = r'image": "https://www\.horgoscpa\.com(.*?)"'
+CATEGORY_REGEX = r'<a href="/blog\.html\?category=(.*?)" class="article-category">'
 
 # 標籤提取正則表達式
-TAG_SECTION_REGEX = r'<div class="post-tags">[\s\S]*?<\/div>'
-TAG_REGEX = r'<a href="[^"]*" class="tag">(.*?)<\/a>'
+TAG_SECTION_REGEX = r'<div class="article-tags">[\s\S]*?<\/div>'
+TAG_REGEX = r'<a href="/blog\.html\?tag=.*?" class="article-tag">(.*?)<\/a>'
 
 # 文章分類映射
 CATEGORY_MAPPING = {
@@ -160,6 +161,136 @@ def update_github_file(path: str, content: str, message: str) -> bool:
         print(f"更新文件時發生錯誤 ({path}): {str(e)}")
         return False
 
+def extract_date_from_filename(filename: str) -> str:
+    """
+    從文件名中提取日期
+    :param filename: 文件名
+    :return: 日期字符串 (YYYY-MM-DD)
+    """
+    date_match = re.search(r'(\d{4}-\d{2}-\d{2})', filename)
+    return date_match.group(1) if date_match else datetime.datetime.now().strftime("%Y-%m-%d")
+
+def extract_first_paragraph(html_content: str) -> str:
+    """
+    從HTML內容中提取第一個有意義的段落作為摘要
+    :param html_content: HTML內容
+    :return: 第一個段落文字
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # 查找文章內容區域
+    article_body = soup.select_one('.article-body')
+    
+    if article_body:
+        # 從文章內容中查找第一個非空段落
+        paragraphs = article_body.find_all('p')
+        for p in paragraphs:
+            text = p.get_text().strip()
+            if text and len(text) > 20:  # 確保段落有足夠的內容
+                return text[:200] + "..." if len(text) > 200 else text
+    
+    # 如果在文章內容中找不到合適的段落，嘗試在整個文檔中查找
+    paragraphs = soup.find_all('p')
+    for p in paragraphs:
+        text = p.get_text().strip()
+        if text and len(text) > 20:
+            return text[:200] + "..." if len(text) > 200 else text
+    
+    return "本文介紹了相關財稅知識，點擊閱讀全文瞭解更多。"
+
+def detect_image_in_html(html_content: str) -> str:
+    """
+    從HTML內容中檢測文章主圖
+    :param html_content: HTML內容
+    :return: 圖片路徑
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # 查找可能的圖片位置
+    # 1. 查找結構化數據中的圖片
+    script_tags = soup.find_all('script', {'type': 'application/ld+json'})
+    for script in script_tags:
+        try:
+            data = json.loads(script.string)
+            if data.get('image'):
+                image_url = data['image']
+                # 如果是完整URL，提取路徑部分
+                if image_url.startswith('https://www.horgoscpa.com'):
+                    return image_url.replace('https://www.horgoscpa.com', '')
+                return image_url
+        except:
+            pass
+    
+    # 2. 查找Open Graph標籤
+    og_image = soup.find('meta', {'property': 'og:image'})
+    if og_image and og_image.get('content'):
+        image_url = og_image.get('content')
+        if image_url.startswith('https://www.horgoscpa.com'):
+            return image_url.replace('https://www.horgoscpa.com', '')
+        return image_url
+    
+    # 3. 在文章內容中查找第一張圖片
+    article_body = soup.select_one('.article-body')
+    if article_body:
+        first_img = article_body.find('img')
+        if first_img and first_img.get('src'):
+            return first_img.get('src')
+    
+    # 4. 在整個頁面中查找圖片
+    first_img = soup.find('img')
+    if first_img and first_img.get('src'):
+        return first_img.get('src')
+    
+    # 如果都找不到，返回默認圖片
+    category_code = detect_category_in_html(html_content)
+    return f"/assets/images/blog/{category_code}_default.jpg" if category_code else "/assets/images/blog/default.jpg"
+
+def detect_category_in_html(html_content: str) -> str:
+    """
+    從HTML內容中檢測文章分類
+    :param html_content: HTML內容
+    :return: 分類代碼
+    """
+    # 使用正則表達式查找分類
+    category_match = re.search(CATEGORY_REGEX, html_content)
+    if category_match:
+        return category_match.group(1)
+    
+    # 使用BeautifulSoup進行更可靠的查找
+    soup = BeautifulSoup(html_content, 'html.parser')
+    category_link = soup.select_one('a.article-category')
+    if category_link:
+        href = category_link.get('href', '')
+        category_match = re.search(r'category=(\w+)', href)
+        if category_match:
+            return category_match.group(1)
+    
+    # 如果不能從HTML中提取，嘗試從內容推斷
+    text_content = soup.get_text()
+    categories = {
+        "tax": ["稅務", "稅金", "稅法", "報稅", "節稅", "扣繳", "所得稅", "營業稅"],
+        "accounting": ["會計", "記帳", "財報", "簿記", "帳務", "財務報表"],
+        "business": ["企業", "經營", "管理", "公司", "營運", "登記"],
+        "startup": ["創業", "新創", "資金", "募資"],
+        "investment": ["投資", "理財", "資產", "報酬", "風險"],
+        "international": ["跨境", "國際", "海外", "全球"]
+    }
+    
+    scores = {category: 0 for category in categories}
+    for category, keywords in categories.items():
+        for keyword in keywords:
+            scores[category] += text_content.count(keyword)
+    
+    # 找出得分最高的分類
+    max_score = 0
+    best_category = "tax"  # 默認為稅務相關
+    for category, score in scores.items():
+        if score > max_score:
+            max_score = score
+            best_category = category
+    
+    return best_category
+
 def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     """
     從 HTML 內容中提取文章資訊
@@ -169,46 +300,90 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     """
     # 使用 utils 模組設置 jieba 分詞詞典
     setup_jieba_dict()
-            
+    
+    # 使用BeautifulSoup解析HTML
+    soup = BeautifulSoup(content, 'html.parser')
+    
     # 提取標題
-    title_match = re.search(TITLE_REGEX, content)
-    title = title_match.group(1).split(" | ")[0] if title_match else "未找到標題"
+    title_element = soup.select_one('h1.article-title')
+    title = title_element.get_text().strip() if title_element else None
+    
+    if not title:
+        title_match = re.search(TITLE_REGEX, content)
+        title = title_match.group(1) if title_match else "未找到標題"
+    
+    # 如果標題仍然未找到，使用文件名作為備選
+    if title == "未找到標題":
+        # 從文件名提取可能的標題
+        base_name = os.path.basename(filename)
+        name_without_ext = os.path.splitext(base_name)[0]
+        # 移除日期部分和連字符
+        title_from_filename = re.sub(r'^\d{4}-\d{2}-\d{2}-', '', name_without_ext)
+        title_from_filename = title_from_filename.replace('-', ' ').title()
+        title = title_from_filename
     
     # 提取日期
-    date_match = re.search(DATE_REGEX, content)
-    date = date_match.group(1) if date_match else datetime.datetime.now().strftime("%Y-%m-%d")
+    # 首先嘗試從文章元數據中提取
+    date_element = soup.select_one('.article-date')
+    date = None
+    if date_element:
+        date_text = date_element.get_text().strip()
+        date_match = re.search(r'\d{4}-\d{2}-\d{2}', date_text)
+        if date_match:
+            date = date_match.group(0)
+    
+    # 如果無法從元數據提取，嘗試從正則表達式提取
+    if not date:
+        date_match = re.search(DATE_REGEX, content)
+        date = date_match.group(1) if date_match else None
+    
+    # 如果仍然無法提取，從文件名提取
+    if not date:
+        date = extract_date_from_filename(filename)
     
     # 提取摘要
-    summary_match = re.search(SUMMARY_REGEX, content)
-    summary = summary_match.group(1) if summary_match else "文章摘要未找到"
+    # 首先嘗試從meta標籤提取
+    summary = None
+    meta_description = soup.find('meta', {'name': 'description'})
+    if meta_description and meta_description.get('content'):
+        summary = meta_description.get('content')
+    
+    # 如果無法從meta標籤提取，嘗試提取第一個有意義的段落
+    if not summary or summary == title:
+        summary = extract_first_paragraph(content)
     
     # 提取圖片
-    image_match = re.search(IMAGE_REGEX, content)
-    image = image_match.group(1) if image_match else f"/assets/images/blog/default.jpg"
+    image = detect_image_in_html(content)
     
     # 確保圖片路徑正確
     if not image.startswith("http") and not image.startswith("/"):
         image = f"/{image}"
     
     # 提取分類
-    category_match = re.search(CATEGORY_REGEX, content)
-    category_text = category_match.group(1) if category_match else "稅務相關"
-    category = CATEGORY_MAPPING.get(category_text, "tax")
+    category_code = detect_category_in_html(content)
     
     # 提取標籤
     tags = []
-    tag_section_match = re.search(TAG_SECTION_REGEX, content)
-    if tag_section_match:
-        tag_section = tag_section_match.group(0)
-        tag_matches = re.findall(TAG_REGEX, tag_section)
-        tags = tag_matches if tag_matches else []
+    tag_elements = soup.select('.article-tag')
+    for tag_el in tag_elements:
+        tag_text = tag_el.get_text().strip()
+        if tag_text:
+            tags.append(tag_text)
     
-    # 如果沒有提取到標籤，根據標題和摘要生成一些關鍵詞
+    # 如果沒有提取到標籤，嘗試從正則表達式提取
+    if not tags:
+        tag_section_match = re.search(TAG_SECTION_REGEX, content)
+        if tag_section_match:
+            tag_section = tag_section_match.group(0)
+            tag_matches = re.findall(TAG_REGEX, tag_section)
+            tags = tag_matches if tag_matches else []
+    
+    # 如果仍然沒有標籤，生成基於內容的關鍵詞
     if not tags:
         # 從標題和摘要中提取關鍵詞
         # 使用jieba分詞
         jieba.setLogLevel(20)  # 設定日誌級別，抑制結巴的輸出信息
-        text_for_keywords = f"{title} {summary} {category_text}"
+        text_for_keywords = f"{title} {summary} {category_code}"
         words = list(jieba.cut(text_for_keywords))
         
         # 過濾停用詞
@@ -226,7 +401,6 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
         
         # 如果仍然沒有標籤，使用一些預設標籤
         if not tags:
-            # 根據常見關鍵詞生成標籤
             common_keywords = ["稅務", "會計", "財務", "企業", "記帳", "報稅", "節稅", "創業"]
             for keyword in common_keywords:
                 if keyword in text_for_keywords and len(tags) < 3:
@@ -241,7 +415,7 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
         "summary": summary,
         "url": url,
         "image": image,
-        "category": category,
+        "category": category_code,
         "tags": tags
     }
 
@@ -378,6 +552,8 @@ def main():
             print(f"  標題: {post_info['title']}")
             print(f"  日期: {post_info['date']}")
             print(f"  分類: {post_info['category']}")
+            print(f"  摘要: {post_info['summary'][:50]}...")
+            print(f"  圖片: {post_info['image']}")
             print(f"  標籤: {', '.join(post_info['tags'])}")
         except Exception as e:
             print(f"處理文件 {filename} 時出錯: {str(e)}")

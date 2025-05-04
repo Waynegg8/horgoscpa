@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const searchTerms = currentSearchQuery.toLowerCase().split(' ');
       filteredPosts = filteredPosts.filter(post => {
         const title = post.title.toLowerCase();
-        const summary = post.summary.toLowerCase();
+        const summary = post.summary ? post.summary.toLowerCase() : '';
         const tags = post.tags ? post.tags.join(' ').toLowerCase() : '';
         
         return searchTerms.every(term => 
@@ -322,21 +322,21 @@ document.addEventListener('DOMContentLoaded', function() {
       );
     }
     
-    // 分頁處理
+    // 計算總頁數
     const totalPosts = filteredPosts.length;
-    const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
+    const totalPages = Math.max(1, Math.ceil(totalPosts / POSTS_PER_PAGE));
     
     // 確保當前頁碼有效
     if (currentPage < 1) currentPage = 1;
     if (currentPage > totalPages) currentPage = totalPages;
     
-    // 獲取當前頁的文章
+    // 對當前頁進行分頁
     const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
-    const endIndex = startIndex + POSTS_PER_PAGE;
-    const currentPagePosts = filteredPosts.slice(startIndex, endIndex);
+    const endIndex = Math.min(startIndex + POSTS_PER_PAGE, filteredPosts.length);
+    const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
     
     // 顯示文章
-    displayPosts(currentPagePosts);
+    displayPosts(paginatedPosts);
     
     // 生成分頁控制
     generatePagination(currentPage, totalPages);
@@ -434,6 +434,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 為每個卡片添加點擊事件
     addCardClickEvents();
+
+    // 由於圖片載入可能需要時間，添加圖片加載監控
+    const allImages = blogPostsContainer.querySelectorAll('.blog-image img');
+    allImages.forEach(img => {
+      // 圖片加載失敗時使用備用圖片
+      img.addEventListener('error', function() {
+        // 檢測文章分類，使用對應分類的備用圖片
+        const cardElement = this.closest('.blog-card');
+        if(cardElement) {
+          const postCategory = cardElement.dataset.category || 'default';
+          this.src = `/assets/images/blog/${postCategory}_default.jpg`;
+        } else {
+          this.src = '/assets/images/blog/default.jpg';
+        }
+      });
+    });
   }
   
   /**
@@ -453,14 +469,32 @@ document.addEventListener('DOMContentLoaded', function() {
   
   /**
    * 創建文章卡片HTML
+   * 修改：僅使用一種圖標方式，優化摘要顯示，添加容錯處理
    */
   function createPostCard(post) {
-    const postDate = post.date;
+    if (!post) {
+      console.error("createPostCard: 收到無效的貼文數據");
+      return "";
+    }
+
+    // 確保文章資料有效
+    const postTitle = post.title || "無標題文章";
+    const postDate = post.date || new Date().toISOString().split('T')[0];
+    const postUrl = post.url || "#";
+    const postCategory = post.category || "default";
     
     // 確保摘要長度適當
     let summary = post.summary || '';
-    if (summary.length > SUMMARY_MAX_LENGTH) {
+    if (summary === postTitle) {
+      summary = "點擊閱讀文章瞭解更多詳情...";
+    } else if (summary.length > SUMMARY_MAX_LENGTH) {
       summary = summary.substring(0, SUMMARY_MAX_LENGTH) + '...';
+    }
+    
+    // 確保圖片路徑有效
+    let imageUrl = post.image || '/assets/images/blog/default.jpg';
+    if (!imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
+      imageUrl = '/' + imageUrl;
     }
     
     // 處理標籤 - 最多顯示3個
@@ -470,26 +504,24 @@ document.addEventListener('DOMContentLoaded', function() {
         ).join('')
       : '';
     
+    // 使用dataset屬性儲存重要資訊，便於JavaScript處理
     return `
-      <article class="blog-card" data-url="${post.url}">
-        <a href="${post.url}" class="blog-card-link" aria-label="閱讀文章：${post.title}">閱讀全文</a>
+      <article class="blog-card" data-url="${postUrl}" data-category="${postCategory}">
+        <a href="${postUrl}" class="blog-card-link" aria-label="閱讀文章：${postTitle}">閱讀全文</a>
         <div class="blog-image">
-          <img src="${post.image || '/assets/images/blog/default.jpg'}" alt="${post.title}" loading="lazy">
+          <img src="${imageUrl}" alt="${postTitle}" loading="lazy">
         </div>
         <div class="blog-content">
           <div>
-            <div class="date">
-              <span class="material-symbols-rounded">calendar_month</span>
-              ${postDate}
-            </div>
-            <h2><a href="${post.url}">${post.title}</a></h2>
+            <div class="date">${postDate}</div>
+            <h2><a href="${postUrl}">${postTitle}</a></h2>
             <p>${summary}</p>
           </div>
           <div>
             <div class="blog-meta">
               ${tagsHTML}
             </div>
-            <a href="${post.url}" class="read-more">繼續閱讀</a>
+            <a href="${postUrl}" class="read-more">繼續閱讀</a>
           </div>
         </div>
       </article>

@@ -7,3 +7,7 @@ requests
 beautifulsoup4
 lxml
 mammoth>=1.5.0
+docx2txt
+difflib
+hashlib
+

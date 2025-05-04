@@ -293,10 +293,9 @@
   color: #0066cc;
 }
 
-/* 修正日期圖標與文字重疊問題 */
+/* 修正日期樣式 - 移除偽元素的圖標 */
 .blog-card .date {
-  display: inline-flex;
-  align-items: center;
+  display: inline-block;
   margin-bottom: 10px;
   color: #666;
   font-size: 0.9rem;
@@ -304,10 +303,9 @@
   z-index: 2;
 }
 
-.blog-card .date .material-symbols-rounded {
-  margin-right: 8px;
-  font-size: 20px;
-  color: #0066cc;
+/* 移除之前的日期偽元素圖標 */
+.blog-card .date::before {
+  display: none;
 }
 
 /* 優化: 摘要文字固定高度 */
