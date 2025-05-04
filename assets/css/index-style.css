@@ -20,6 +20,10 @@
   --section-rhythm-1: 70px;    /* 關於區塊間距 */
   --section-rhythm-2: 90px;    /* 服務區塊間距 */
   --section-rhythm-3: 80px;    /* 文章區塊間距 */
+  
+  /* 新增：服務卡片統一高度 */
+  --service-card-height: 450px; /* 統一卡片高度 */
+  --service-card-content-height: 120px; /* 統一內容區域高度 */
 }
 
 /* ===== 2. 容器調整 ===== */
@@ -155,11 +159,12 @@
   gap: 25px;         /* 減少卡片間距 */
 }
 
+/* 修改：統一服務卡片高度和布局 */
 .service-card {
   background: var(--bg-white);
   border-radius: 15px;  /* 增加圓角 */
   box-shadow: 0 10px 30px rgba(0,0,0,0.07);
-  padding: 40px 25px;   /* 調整內間距 */
+  padding: 40px 25px 30px; /* 調整內間距，底部減少 */
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   border: none;
@@ -167,6 +172,11 @@
   overflow: hidden;
   flex: 1;
   cursor: pointer; /* 添加鼠标指针样式，表明可点击 */
+  
+  /* 新增：固定卡片高度 */
+  height: var(--service-card-height);
+  display: flex;
+  flex-direction: column;
 }
 
 .service-card:hover {
@@ -228,14 +238,21 @@
   padding-bottom: 12px;
 }
 
+/* 修改：控制卡片內容區域高度 */
 .service-card p {
   margin-bottom: 25px;
   color: #3a3a3a;
   line-height: 1.7;
   font-size: 1.05rem;
+  flex-grow: 1; /* 允許內容區域彈性擴展 */
+  min-height: var(--service-card-content-height); /* 確保最小高度一致 */
+  display: -webkit-box;
+  -webkit-line-clamp: 4; /* 限制最多顯示4行 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-/* 修改: 美化閱讀更多連結 - 移除箭頭效果，保留變色效果 */
+/* 修改：統一底部按鈕位置 */
 .service-card .read-more {
   display: inline-block;
   padding: 8px 16px;
@@ -245,6 +262,8 @@
   font-weight: 600;
   position: relative;
   transition: color 0.3s ease, background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  margin-top: auto; /* 推到 flex 容器底部 */
+  align-self: center; /* 水平居中 */
 }
 
 /* 完全移除箭頭效果 */
@@ -373,7 +392,7 @@
   font-size: 1rem;
 }
 
-/* 修改: 閱讀更多連結 - 移除箭頭效果 */
+/* 修改: 統一部落格卡片閱讀更多連結位置 */
 .blog-card .read-more {
   align-self: flex-start;
   position: relative;
@@ -384,6 +403,7 @@
   background-color: #f0f6ff;
   border-radius: 20px;
   color: var(--secondary-color);
+  margin-top: auto; /* 確保按鈕在底部 */
 }
 
 /* 完全移除箭頭效果 */
@@ -568,6 +588,12 @@
   .section-title h2 {
     font-size: 2.8rem;
   }
+  
+  /* 稍微調整卡片高度 */
+  :root {
+    --service-card-height: 420px;
+    --service-card-content-height: 100px;
+  }
 }
 
 @media (max-width: 992px) {
@@ -610,6 +636,8 @@
     flex: 1 1 45%;
     min-width: 300px;
     margin-bottom: 20px;
+    height: auto; /* 取消固定高度，改為自適應 */
+    min-height: 400px; /* 設置最小高度 */
   }
 }
 
@@ -669,6 +697,8 @@
   /* 服務卡片一行一個 */
   .service-card {
     flex: 1 1 100%;
+    height: auto; /* 移動版上完全取消固定高度 */
+    min-height: 350px;
   }
   
   /* 部落格卡片一行一個 */
