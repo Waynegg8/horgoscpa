@@ -375,11 +375,11 @@
     
     /* 文件卡片容器 */
     .documents-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 30px;
-      margin-top: 50px;
-    }
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  margin-top: 50px;
+}
     
     .document-card {
       background: white;
@@ -468,12 +468,12 @@
     }
     
     /* 服務優勢卡片容器 */
-    .advantages-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 30px;
-      margin-top: 50px;
-    }
+   .advantages-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  margin-top: 50px;
+}
     
     .advantage-card {
       background: white;
@@ -566,85 +566,86 @@
     }
     
     /* 響應式調整 */
-    @media (max-width: 992px) {
-      .detail-card {
-        gap: 30px;
-        padding: 30px;
-      }
-      
-      .process-steps::before {
-        display: none;
-      }
-      
-      .process-steps {
-        flex-direction: column;
-      }
-      
-      .step-card {
-        width: 100%;
-      }
-      
-      .documents-container, .advantages-container {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      .service-header h1 {
-        font-size: 2.4rem;
-      }
-      
-      .detail-title {
-        font-size: 1.8rem;
-      }
-      
-      .cta-content h2 {
-        font-size: 2.2rem;
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .detail-card {
-        flex-direction: column;
-        gap: 20px;
-      }
-      
-      .detail-card:nth-child(even) {
-        flex-direction: column;
-      }
-      
-      .detail-icon {
-        width: 100%;
-        transform: rotate(0);
-      }
-      
-      .detail-card:nth-child(even) .detail-icon {
-        transform: rotate(0);
-      }
-      
-      .service-header {
-        text-align: center;
-      }
-      
-      .service-header-content {
-        padding-left: 0;
-      }
-      
-      .service-header h1 {
-        font-size: 2rem;
-      }
-      
-      .service-header h1::after {
-        left: 50%;
-        transform: translateX(-50%);
-      }
-      
-      .service-header p {
-        margin: 0 auto 10px;
-      }
-      
-      .documents-container, .advantages-container {
-        grid-template-columns: 1fr;
-      }
-    }
+@media (max-width: 992px) {
+  .detail-card {
+    gap: 30px;
+    padding: 30px;
+  }
+  
+  .process-steps::before {
+    display: none;
+  }
+  
+  .process-steps {
+    flex-direction: column;
+  }
+  
+  .step-card {
+    width: 100%;
+  }
+  
+  .documents-container, .advantages-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .service-header h1 {
+    font-size: 2.4rem;
+  }
+  
+  .detail-title {
+    font-size: 1.8rem;
+  }
+  
+  .cta-content h2 {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .detail-card {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .detail-card:nth-child(even) {
+    flex-direction: column;
+  }
+  
+  .detail-icon {
+    width: 100%;
+    transform: rotate(0);
+  }
+  
+  .detail-card:nth-child(even) .detail-icon {
+    transform: rotate(0);
+  }
+  
+  .service-header {
+    text-align: center;
+  }
+  
+  .service-header-content {
+    padding-left: 0;
+  }
+  
+  .service-header h1 {
+    font-size: 2rem;
+  }
+  
+  .service-header h1::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .service-header p {
+    margin: 0 auto 10px;
+  }
+  
+  .documents-container, .advantages-container {
+    grid-template-columns: 1fr; /* 手機版單列顯示 */
+  }
+}
+
   </style>
   
   <!-- Google 分析 -->
@@ -783,6 +784,7 @@
 </section>
 
 <!-- 所需文件區塊 -->
+<!-- 所需文件區塊 - 修改為2x2格式 -->
 <section class="documents-section">
   <div class="container">
     <div class="section-title">
@@ -791,6 +793,7 @@
     </div>
     
     <div class="documents-container">
+      <!-- 修改為固定2列2欄 -->
       <div class="document-card">
         <div class="document-icon">
           <span class="material-symbols-rounded">person</span>
@@ -848,7 +851,7 @@
   </div>
 </section>
 
-<!-- 服務優勢區塊 -->
+<!-- 服務優勢區塊 - 修改為2x2格式 -->
 <section class="advantages-section">
   <div class="container">
     <div class="section-title">
@@ -857,6 +860,7 @@
     </div>
     
     <div class="advantages-container">
+      <!-- 修改為固定2列2欄 -->
       <div class="advantage-card">
         <div class="advantage-icon">
           <span class="material-symbols-rounded">timer</span>
