@@ -1495,8 +1495,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
 </script>
 
 </body>
-</html>
-"""
+</html>"""
     
     return template
 
