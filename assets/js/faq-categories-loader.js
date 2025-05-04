@@ -85,21 +85,26 @@ document.addEventListener('DOMContentLoaded', function() {
     return stats;
   }
   
-  // 綁定分類按鈕事件
+  // 綁定分類按鈕事件 - 修正選擇問題
   function bindCategoryEvents() {
     const filterButtons = document.querySelectorAll('.filter-btn');
     
+    // 清除所有按鈕的之前綁定的事件
     filterButtons.forEach(button => {
-      // 移除舊有事件監聽器（如果有）
-      button.replaceWith(button.cloneNode(true));
-      
-      // 重新獲取DOM元素
-      const newButton = document.querySelector(`.filter-btn[data-category="${button.dataset.category}"]`);
-      
-      // 添加新的事件監聽器
-      newButton.addEventListener('click', function() {
+      const newButton = button.cloneNode(true);
+      button.parentNode.replaceChild(newButton, button);
+    });
+
+    // 重新獲取新的按鈕元素
+    const newFilterButtons = document.querySelectorAll('.filter-btn');
+    
+    // 添加新的事件監聽器
+    newFilterButtons.forEach(button => {
+      button.addEventListener('click', function() {
         // 移除所有按鈕的active狀態
-        filterButtons.forEach(btn => btn.classList.remove('active'));
+        newFilterButtons.forEach(btn => {
+          btn.classList.remove('active');
+        });
         
         // 設置當前按鈕為active
         this.classList.add('active');
@@ -113,13 +118,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // 綁定側邊欄分類點擊事件
   function bindSidebarEvents() {
     const categoryStats = document.querySelectorAll('.category-stat');
+    const filterButtons = document.querySelectorAll('.filter-btn');
     
     categoryStats.forEach(stat => {
       stat.addEventListener('click', function() {
         const category = this.dataset.category;
         
         // 更新分類按鈕狀態
-        document.querySelectorAll('.filter-btn').forEach(btn => {
+        filterButtons.forEach(btn => {
           if (btn.dataset.category === category) {
             btn.classList.add('active');
           } else {

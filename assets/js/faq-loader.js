@@ -185,7 +185,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 500);
   }
   
-  // 擴展原有的faq-modern.js功能
+  // 全局公開 filterQuestions 函數，方便其他腳本調用
+  window.filterQuestions = function(category) {
+    const faqItems = document.querySelectorAll('.faq-item');
+    
+    // 如果是 "all"，顯示所有項目
+    if (category === 'all') {
+      faqItems.forEach(item => {
+        item.style.display = 'block';
+      });
+      return;
+    }
+    
+    // 否則，只顯示所選類別的項目
+    faqItems.forEach(item => {
+      if (item.dataset.category === category) {
+        item.style.display = 'block';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  };
   
   // 展開所有問題
   window.expandAll = function() {

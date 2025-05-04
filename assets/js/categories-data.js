@@ -34,13 +34,13 @@ const categoriesData = {
     { id: "service", name: "服務流程" }
   ],
   
-  // 初始統計資料（實際數量會由JavaScript動態計算）
+  // 初始統計資料（更新為實際數量）
   initialStats: {
     video: {
-      "tax": 2,
+      "tax": 1,
       "accounting": 1,
       "business": 0,
-      "tutorial": 1
+      "tutorial": 0
     },
     blog: {
       "tax": 5,

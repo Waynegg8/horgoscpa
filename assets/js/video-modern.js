@@ -192,12 +192,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const videos = allVideos.videos;
     const categoryCountMap = {};
     
+    // 初始化每個分類的數量為0
+    filterButtons.forEach(btn => {
+      const category = btn.dataset.category;
+      if (category && category !== 'all') {
+        categoryCountMap[category] = 0;
+      }
+    });
+    
     // 計算各分類的數量
     videos.forEach(video => {
-      if (video.category) {
-        if (!categoryCountMap[video.category]) {
-          categoryCountMap[video.category] = 0;
-        }
+      if (video.category && categoryCountMap.hasOwnProperty(video.category)) {
         categoryCountMap[video.category]++;
       }
     });
@@ -207,10 +212,24 @@ document.addEventListener('DOMContentLoaded', function() {
       const category = stat.dataset.category;
       const countElement = stat.querySelector('.category-count');
       
-      if (countElement && category && categoryCountMap[category]) {
+      if (countElement && category && categoryCountMap.hasOwnProperty(category)) {
         countElement.textContent = categoryCountMap[category];
+        
+        // 為數量為0的分類添加視覺提示
+        if (categoryCountMap[category] === 0) {
+          stat.classList.add('empty-category');
+        } else {
+          stat.classList.remove('empty-category');
+        }
       }
     });
+    
+    // 如果定義了全局更新函數，則調用它
+    if (typeof window.updateCategoryStats === 'function') {
+      window.updateCategoryStats(categoryCountMap);
+    }
+    
+    console.log('分類統計更新完成:', categoryCountMap);
   }
   
   /**
@@ -228,8 +247,8 @@ document.addEventListener('DOMContentLoaded', function() {
       return new Date(b.date) - new Date(a.date);
     });
     
-    // 選取前4個最新的影片
-    const popularVideos = sortedVideos.slice(0, 4);
+    // 選取前4個最新的影片，或者所有影片（如果少於4個）
+    const popularVideos = sortedVideos.slice(0, Math.min(4, sortedVideos.length));
     
     // 生成HTML
     popularVideos.forEach((video, index) => {
@@ -272,26 +291,10 @@ document.addEventListener('DOMContentLoaded', function() {
           embedUrl: "https://www.youtube.com/embed/MJlb2OEBuvA",
           category: "accounting",
           tags: ["新創企業", "會計實務", "財務管理"]
-        },
-        {
-          title: "電子發票申請與使用教學",
-          date: "2025-02-25",
-          description: "如何申請電子發票及完整操作流程，解說相關法規要求與使用技巧，幫助企業順利轉型至電子化發票系統。",
-          embedUrl: "https://www.youtube.com/embed/K2Awh1qdPVk",
-          category: "tutorial",
-          tags: ["電子發票", "操作教學"]
-        },
-        {
-          title: "企業節稅合法途徑",
-          date: "2025-02-10",
-          description: "企業常見的合法節稅方式解析，包含費用認列、投資抵減、折舊策略等，協助企業在合法範圍內優化稅務結構。",
-          embedUrl: "https://www.youtube.com/embed/Lm2QfiU5rY0",
-          category: "tax",
-          tags: ["企業節稅", "稅務規劃"]
         }
       ],
       pagination: {
-        total: 4,
+        total: 2,
         totalPages: 1,
         itemsPerPage: 6
       }
@@ -869,77 +872,3 @@ document.addEventListener('DOMContentLoaded', function() {
     initEventListeners();
   });
 });
-/**
- * 更新側邊欄統計數據
- * 根據影片數據計算各分類的影片數量並更新到網頁中
- */
-function updateSidebarStatistics() {
-  console.log('更新側邊欄統計數據');
-  if (!allVideos || !allVideos.videos) {
-    console.warn('沒有影片數據，無法更新側邊欄統計');
-    return;
-  }
-  
-  const videos = allVideos.videos;
-  
-  // 初始化分類計數映射
-  const categoryCountMap = {
-    'tax': 0,
-    'accounting': 0,
-    'business': 0,
-    'tutorial': 0,
-    'other': 0
-  };
-  
-  // 計算各分類的數量
-  videos.forEach(video => {
-    if (video.category) {
-      // 如果分類存在於映射中，增加計數
-      if (categoryCountMap.hasOwnProperty(video.category)) {
-        categoryCountMap[video.category]++;
-      } else {
-        // 否則歸類為其他
-        categoryCountMap['other']++;
-      }
-    } else {
-      // 沒有分類的影片歸類為其他
-      categoryCountMap['other']++;
-    }
-  });
-  
-  // 計算所有影片總數
-  const totalVideos = videos.length;
-  
-  // 更新側邊欄分類統計數據
-  categoryStats.forEach(stat => {
-    const category = stat.dataset.category;
-    const countElement = stat.querySelector('.category-count');
-    
-    if (countElement) {
-      if (category === 'all') {
-        // 全部影片數量
-        countElement.textContent = totalVideos;
-      } else if (category && categoryCountMap.hasOwnProperty(category)) {
-        // 特定分類的影片數量
-        countElement.textContent = categoryCountMap[category];
-      } else {
-        // 未知分類，顯示0或實際數量
-        countElement.textContent = categoryCountMap['other'] || 0;
-      }
-    }
-  });
-  
-  // 為統計數據為0的分類添加視覺提示
-  categoryStats.forEach(stat => {
-    const category = stat.dataset.category;
-    const countElement = stat.querySelector('.category-count');
-    
-    if (countElement && countElement.textContent === '0') {
-      stat.classList.add('empty-category');
-    } else {
-      stat.classList.remove('empty-category');
-    }
-  });
-  
-  console.log('分類統計更新完成:', categoryCountMap);
-}

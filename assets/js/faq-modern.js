@@ -63,25 +63,31 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
-   * 過濾問題
+   * 過濾問題 - 更新為使用全局函數
    */
   function filterQuestions(category) {
-    // 如果是 "all"，顯示所有項目
-    if (category === 'all') {
-      faqItems.forEach(item => {
-        item.style.display = 'block';
-      });
-      return;
-    }
-    
-    // 否則，只顯示所選類別的項目
-    faqItems.forEach(item => {
-      if (item.dataset.category === category) {
-        item.style.display = 'block';
-      } else {
-        item.style.display = 'none';
+    if (typeof window.filterQuestions === 'function') {
+      // 使用全局函數進行過濾
+      window.filterQuestions(category);
+    } else {
+      // 備用：如果全局函數不存在，使用本地實現
+      // 如果是 "all"，顯示所有項目
+      if (category === 'all') {
+        faqItems.forEach(item => {
+          item.style.display = 'block';
+        });
+        return;
       }
-    });
+      
+      // 否則，只顯示所選類別的項目
+      faqItems.forEach(item => {
+        if (item.dataset.category === category) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
   }
   
   /**
@@ -203,45 +209,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
-   * 展開所有問題
-   */
-  function expandAll() {
-    faqItems.forEach(item => {
-      // 只對當前可見的項目進行操作
-      if (item.style.display !== 'none') {
-        const question = item.querySelector('.faq-question');
-        const answer = item.querySelector('.faq-answer');
-        
-        if (!question.classList.contains('active')) {
-          question.classList.add('active');
-          answer.classList.add('show');
-          answer.style.maxHeight = answer.scrollHeight + 'px';
-        }
-      }
-    });
-  }
-  
-  /**
-   * 收合所有問題
-   */
-  function collapseAll() {
-    faqItems.forEach(item => {
-      const question = item.querySelector('.faq-question');
-      const answer = item.querySelector('.faq-answer');
-      
-      if (question.classList.contains('active')) {
-        question.classList.remove('active');
-        answer.style.maxHeight = '0';
-        
-        // 延遲移除 show 類以保留過渡動畫
-        setTimeout(() => {
-          answer.classList.remove('show');
-        }, 10);
-      }
-    });
-  }
-  
-  /**
    * 捲動至指定問題並展開
    */
   function scrollToQuestion(questionId) {
@@ -336,28 +303,46 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // 展開所有按鈕事件
-  expandAllBtn.addEventListener('click', expandAll);
+  if (expandAllBtn) {
+    expandAllBtn.addEventListener('click', function() {
+      if (typeof window.expandAll === 'function') {
+        window.expandAll();
+      }
+    });
+  }
   
   // 收合所有按鈕事件
-  collapseAllBtn.addEventListener('click', collapseAll);
+  if (collapseAllBtn) {
+    collapseAllBtn.addEventListener('click', function() {
+      if (typeof window.collapseAll === 'function') {
+        window.collapseAll();
+      }
+    });
+  }
   
   // 搜尋輸入事件
-  searchInput.addEventListener('input', function() {
-    searchQuestions(this.value.trim());
-  });
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      searchQuestions(this.value.trim());
+    });
+  }
   
   // 搜尋按鈕點擊事件
-  searchBtn.addEventListener('click', function() {
-    searchQuestions(searchInput.value.trim());
-  });
+  if (searchBtn) {
+    searchBtn.addEventListener('click', function() {
+      searchQuestions(searchInput.value.trim());
+    });
+  }
   
   // 搜尋框回車事件
-  searchInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      searchQuestions(this.value.trim());
-    }
-  });
+  if (searchInput) {
+    searchInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        searchQuestions(this.value.trim());
+      }
+    });
+  }
   
   // 默認展開第一個問題
   if (faqQuestions.length > 0) {
@@ -404,4 +389,3 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 600);
     });
   });
-});
