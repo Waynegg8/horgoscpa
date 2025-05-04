@@ -25,27 +25,46 @@
   
   <!-- 聯絡頁面特定樣式 -->
   <style>
-    /* 頁面橫幅背景 */
-    .contact-banner {
-      background: linear-gradient(rgba(0, 33, 71, 0.85), rgba(0, 77, 153, 0.85)), 
-                 url('/assets/images/banner-bg.jpg') center/cover no-repeat;
-      padding: 60px 0;
-      color: white;
-      text-align: center;
-      margin-bottom: 60px;
+    /* 頁面標題樣式調整 - 與team.html一致 */
+    .contact-header {
+      text-align: left;
+      padding: 40px 0 20px;
+      margin-bottom: 0;
+      position: relative;
+      background: linear-gradient(135deg, var(--bg-light), #ffffff);
+      border-bottom: none;
     }
     
-    .contact-banner h1 {
-      color: white;
-      margin-bottom: 20px;
-      font-size: 2.5rem;
+    .contact-header-content {
+      padding-left: 20px;
     }
     
-    .contact-banner p {
-      color: rgba(255, 255, 255, 0.9);
-      max-width: 800px;
-      margin: 0 auto;
+    .contact-header h1 {
+      font-size: 2.8rem;
+      color: var(--primary-color);
+      margin-bottom: 15px;
+      position: relative;
+      display: inline-block;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    .contact-header h1::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: var(--title-accent-width);
+      height: 4px;
+      background: linear-gradient(to right, var(--secondary-color), rgba(0, 112, 221, 0.3));
+      border-radius: 2px;
+    }
+    
+    .contact-header p {
       font-size: 1.2rem;
+      color: var(--text-medium);
+      max-width: 800px;
+      margin: 0 0 10px 20px;
+      line-height: 1.6;
     }
     
     /* 聯絡資訊卡片 - 改為2x2格式 */
@@ -176,6 +195,10 @@
     /* 內容佈局重構 */
     .contact-details-section {
       padding: 30px 0 60px;
+      background-color: #ffffff;
+      background-image: 
+        radial-gradient(circle at 90% 10%, rgba(0, 102, 204, 0.03), transparent 400px),
+        radial-gradient(circle at 10% 90%, rgba(0, 102, 204, 0.03), transparent 400px);
     }
     
     .section-title {
@@ -286,12 +309,27 @@
     }
     
     @media (max-width: 768px) {
-      .contact-banner h1 {
+      .contact-header {
+        text-align: center;
+        padding: 30px 0 20px;
+      }
+      
+      .contact-header-content {
+        padding-left: 0;
+      }
+      
+      .contact-header h1 {
         font-size: 2rem;
       }
       
-      .contact-banner p {
-        font-size: 1rem;
+      .contact-header h1::after {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .contact-header p {
+        margin: 0 auto 10px;
+        font-size: 1.1rem;
       }
       
       .contact-cards {
@@ -372,12 +410,15 @@
   </div>
 </nav>
 
-<!-- 頁面橫幅 -->
-<div class="contact-banner">
+<!-- 頁面標題 - 修改為與team.html一致的樣式 -->
+<header class="contact-header">
   <div class="container">
-    <h1>歡迎透過以下方式與霍爾果斯會計師事務所聯繫，我們期待為您提供專業的財稅諮詢服務</h1>
+    <div class="contact-header-content">
+      <h1>聯絡我們</h1>
+      <p>歡迎透過以下方式與霍爾果斯會計師事務所聯繫，我們期待為您提供專業的財稅諮詢服務</p>
+    </div>
   </div>
-</div>
+</header>
 
 <!-- 聯絡頁面主要內容 -->
 <section class="contact-details-section">
