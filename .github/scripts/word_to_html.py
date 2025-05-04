@@ -1393,7 +1393,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
       </div>
     </div>
     
-    <!-- 版權資訊 -->
+     <!-- 版權資訊 -->
     <div class="footer-bottom">
       <div class="footer-text">
         <p>&copy; 2025 霍爾果斯會計師事務所</p>
@@ -1409,7 +1409,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
 
 <!-- 返回頂部按鈕功能 - 腳本 -->
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {{
     // 返回頂部按鈕功能
     const backToTopButton = document.querySelector('.back-to-top');
     
@@ -1417,22 +1417,22 @@ def generate_html(title: str, html_content: str, tags: List[str],
     backToTopButton.classList.remove('visible');
     
     // 監聽滾動事件
-    window.addEventListener('scroll', function() {
-      if (window.pageYOffset > 300) {
+    window.addEventListener('scroll', function() {{
+      if (window.pageYOffset > 300) {{
         backToTopButton.classList.add('visible');
-      } else {
+      }} else {{
         backToTopButton.classList.remove('visible');
-      }
-    });
+      }}
+    }});
     
     // 點擊事件
-    backToTopButton.addEventListener('click', function() {
-      window.scrollTo({
+    backToTopButton.addEventListener('click', function() {{
+      window.scrollTo({{
         top: 0,
         behavior: 'smooth'
-      });
-    });
-  });
+      }});
+    }});
+  }});
 </script>
 
 <!-- 導航欄功能腳本 -->
@@ -1440,7 +1440,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
 
 <!-- 文章閱讀進度指示器 -->
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {{
     // 創建閱讀進度條
     const progressIndicator = document.createElement('div');
     progressIndicator.className = 'reading-progress';
@@ -1457,7 +1457,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
     document.body.appendChild(progressIndicator);
     
     // 計算閱讀進度
-    function updateReadingProgress() {
+    function updateReadingProgress() {{
       const articleContent = document.querySelector('.article-card');
       if (!articleContent) return;
       
@@ -1469,21 +1469,21 @@ def generate_html(title: str, html_content: str, tags: List[str],
       
       // 考慮視窗大小，確保內容完全可見時進度為100%
       let progress = 0;
-      if (currentPosition > contentTop) {
+      if (currentPosition > contentTop) {{
         progress = Math.min(100, ((currentPosition - contentTop) / (contentHeight)) * 100);
-      }
+      }}
       
-      progressIndicator.style.width = `${progress}%`;
+      progressIndicator.style.width = `${{progress}}%`;
       
       // 當閱讀完畢時添加動畫效果
-      if (progress >= 99) {
+      if (progress >= 99) {{
         progressIndicator.style.transition = 'width 0.5s ease, opacity 1s ease';
         progressIndicator.style.opacity = '0.5';
-      } else {
+      }} else {{
         progressIndicator.style.transition = 'width 0.2s ease';
         progressIndicator.style.opacity = '1';
-      }
-    }
+      }}
+    }}
     
     // 滾動時更新進度
     window.addEventListener('scroll', updateReadingProgress);
@@ -1491,7 +1491,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
     
     // 初始化進度
     updateReadingProgress();
-  });
+  }});
 </script>
 
 </body>
