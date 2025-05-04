@@ -167,6 +167,11 @@
   overflow: hidden;
   flex: 1;
   cursor: pointer; /* 添加鼠标指针样式，表明可点击 */
+  
+  /* 修改：使用 Flexbox 垂直布局 */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .service-card:hover {
@@ -228,27 +233,44 @@
   padding-bottom: 12px;
 }
 
+/* 修改：使段落內容佔據卡片的彈性空間 */
 .service-card p {
   margin-bottom: 25px;
   color: #3a3a3a;
   line-height: 1.7;
   font-size: 1.05rem;
+  flex-grow: 1; /* 讓段落佔據卡片的彈性空間 */
 }
 
-/* 美化閱讀更多連結 - 修改为移除下划线效果 */
+/* 修改閱讀更多連結 - 解決定位和重疊問題 */
 .service-card .read-more {
-  display: inline-block;
+  display: inline-flex; /* 使用flex布局 */
+  align-items: center; /* 垂直居中 */
   padding: 8px 0;
   color: var(--secondary-color);
   font-weight: 600;
   position: relative;
   transition: all 0.3s ease;
+  margin-top: auto; /* 推到卡片底部 */
+  align-self: center; /* 水平居中 */
+  white-space: nowrap; /* 防止文字換行 */
 }
 
-/* 移除了下划线动画相关的 ::after 伪元素 */
+/* 重新設計箭頭 */
+.service-card .read-more::after {
+  content: '→';
+  display: inline-block;
+  margin-left: 8px; /* 增加箭頭與文字間距 */
+  transition: transform 0.3s ease;
+}
+
 .service-card .read-more:hover {
   color: var(--primary-color); /* 只保留颜色变化效果 */
   transform: translateX(5px); /* 添加轻微的右移效果，增强交互感 */
+}
+
+.service-card .read-more:hover::after {
+  transform: translateX(3px); /* 箭頭單獨有個小移動 */
 }
 
 /* ===== 6. 部落格卡片優化 ===== */
@@ -324,6 +346,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  height: auto; /* 改為自動高度 */
 }
 
 /* 日期標籤改進 - 修复与图标重叠问题 */
@@ -355,21 +378,23 @@
   transition: all 0.3s ease;
 }
 
+/* 修改段落樣式 */
 .blog-card p {
   color: #3a3a3a;
   line-height: 1.7;
   margin-bottom: 20px;
-  flex-grow: 1;
+  flex-grow: 1; /* 讓段落佔據彈性空間 */
   font-size: 1rem;
 }
 
-/* 閱讀更多連結改進 */
+/* 修改部落格卡片"閱讀更多"按鈕 */
 .blog-card .read-more {
   align-self: flex-start;
   position: relative;
   padding-right: 25px;
   font-weight: 600;
   transition: all 0.3s ease;
+  margin-top: auto; /* 推到底部 */
 }
 
 .blog-card .read-more::after {
