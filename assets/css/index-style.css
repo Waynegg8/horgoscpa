@@ -472,9 +472,24 @@
   margin-bottom: 30px;
   color: white; /* 修改為白色，原為 var(--primary-color) */
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); /* 修改為黑色陰影，提高在明亮背景上的可讀性 */
+  text-shadow: 
+    0 1px 0 #cccccc,
+    0 2px 0 #c9c9c9,
+    0 3px 0 #bbb,
+    0 4px 0 #b9b9b9,
+    0 5px 0 #aaa,
+    0 6px 1px rgba(0,0,0,.1),
+    0 0 5px rgba(0,0,0,.1),
+    0 1px 3px rgba(0,0,0,.3),
+    0 3px 5px rgba(0,0,0,.2),
+    0 5px 10px rgba(0,0,0,.25),
+    0 10px 10px rgba(0,0,0,.2),
+    0 20px 20px rgba(0,0,0,.15);
   line-height: 1.2;
   position: relative;
   max-width: 800px;
+  font-weight: 700; /* 增加字體粗細 */
+  letter-spacing: 1px; /* 增加字距 */
 }
 
 .home-hero h1::after {
@@ -493,13 +508,20 @@
   margin-bottom: 30px;
   opacity: 0.95;
   line-height: 1.6;
-  color: white; /* 修改為白色，原為 var(--text-color) */
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* 修改為黑色陰影，提高可讀性 */
+  color: white;
+  /* 段落文字的立體感陰影，較標題稍微輕一些 */
+  text-shadow: 
+    0 1px 0 #ccc,
+    0 2px 0 #c9c9c9,
+    0 3px 3px rgba(0,0,0,.3),
+    0 5px 10px rgba(0,0,0,.2);
   max-width: 600px;
   margin-left: 20px;
   position: relative;
   z-index: 2;
+  font-weight: 500; /* 增加字體粗細，但不要太粗 */
 }
+
 /* ===== 8. 關於我們區塊優化 ===== */
 .about-content {
   text-align: left;  /* 改為左對齊 */
