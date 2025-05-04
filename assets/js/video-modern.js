@@ -2,6 +2,7 @@
  * video-modern.js - 霍爾果斯會計師事務所影片頁面現代化腳本
  * 最後更新日期: 2025-05-10
  * 基於原有video.js優化，增加滾動動畫、改進搜索體驗、側邊欄交互功能
+ * 增加動態抓取熱門影片功能
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -159,6 +160,9 @@ document.addEventListener('DOMContentLoaded', function() {
       // 更新側邊欄統計數據
       updateSidebarStatistics();
       
+      // 新增：顯示熱門影片
+      renderPopularVideos();
+      
       return jsonData;
     } catch (error) {
       console.error('加載影片出錯:', error);
@@ -207,6 +211,42 @@ document.addEventListener('DOMContentLoaded', function() {
         countElement.textContent = categoryCountMap[category];
       }
     });
+  }
+  
+  /**
+   * 新增：顯示熱門影片
+   * 按日期排序選擇最新的4個影片作為熱門影片
+   */
+  function renderPopularVideos() {
+    if (!popularVideosContainer || !allVideos || !allVideos.videos) return;
+    
+    // 清空容器
+    popularVideosContainer.innerHTML = '';
+    
+    // 將影片按日期排序（新 -> 舊）
+    const sortedVideos = [...allVideos.videos].sort((a, b) => {
+      return new Date(b.date) - new Date(a.date);
+    });
+    
+    // 選取前4個最新的影片
+    const popularVideos = sortedVideos.slice(0, 4);
+    
+    // 生成HTML
+    popularVideos.forEach((video, index) => {
+      const videoTitle = video.title || '未命名影片';
+      const videoDate = formatDate(video.date) || '未知日期';
+      
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <a href="#" id="popular-video-${index + 1}" data-title="${videoTitle}">${videoTitle}</a>
+        <span class="video-date">${videoDate}</span>
+      `;
+      
+      popularVideosContainer.appendChild(li);
+    });
+    
+    // 綁定熱門影片點擊事件
+    bindPopularVideoEvents();
   }
   
   /**
@@ -265,6 +305,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 更新側邊欄統計數據
     updateSidebarStatistics();
+    
+    // 新增：顯示熱門影片
+    renderPopularVideos();
     
     return fallbackVideos;
   }
@@ -695,7 +738,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         // 獲取影片標題並進行搜索
-        const videoTitle = this.textContent;
+        const videoTitle = this.getAttribute('data-title') || this.textContent;
         searchInput.value = videoTitle;
         
         // 觸發搜索
@@ -804,9 +847,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
     
-    // 綁定熱門影片事件
-    bindPopularVideoEvents();
-    
     // 添加標籤動態點擊處理
     document.addEventListener('click', function(e) {
       if (e.target.classList.contains('video-tag')) {
@@ -829,3 +869,77 @@ document.addEventListener('DOMContentLoaded', function() {
     initEventListeners();
   });
 });
+/**
+ * 更新側邊欄統計數據
+ * 根據影片數據計算各分類的影片數量並更新到網頁中
+ */
+function updateSidebarStatistics() {
+  console.log('更新側邊欄統計數據');
+  if (!allVideos || !allVideos.videos) {
+    console.warn('沒有影片數據，無法更新側邊欄統計');
+    return;
+  }
+  
+  const videos = allVideos.videos;
+  
+  // 初始化分類計數映射
+  const categoryCountMap = {
+    'tax': 0,
+    'accounting': 0,
+    'business': 0,
+    'tutorial': 0,
+    'other': 0
+  };
+  
+  // 計算各分類的數量
+  videos.forEach(video => {
+    if (video.category) {
+      // 如果分類存在於映射中，增加計數
+      if (categoryCountMap.hasOwnProperty(video.category)) {
+        categoryCountMap[video.category]++;
+      } else {
+        // 否則歸類為其他
+        categoryCountMap['other']++;
+      }
+    } else {
+      // 沒有分類的影片歸類為其他
+      categoryCountMap['other']++;
+    }
+  });
+  
+  // 計算所有影片總數
+  const totalVideos = videos.length;
+  
+  // 更新側邊欄分類統計數據
+  categoryStats.forEach(stat => {
+    const category = stat.dataset.category;
+    const countElement = stat.querySelector('.category-count');
+    
+    if (countElement) {
+      if (category === 'all') {
+        // 全部影片數量
+        countElement.textContent = totalVideos;
+      } else if (category && categoryCountMap.hasOwnProperty(category)) {
+        // 特定分類的影片數量
+        countElement.textContent = categoryCountMap[category];
+      } else {
+        // 未知分類，顯示0或實際數量
+        countElement.textContent = categoryCountMap['other'] || 0;
+      }
+    }
+  });
+  
+  // 為統計數據為0的分類添加視覺提示
+  categoryStats.forEach(stat => {
+    const category = stat.dataset.category;
+    const countElement = stat.querySelector('.category-count');
+    
+    if (countElement && countElement.textContent === '0') {
+      stat.classList.add('empty-category');
+    } else {
+      stat.classList.remove('empty-category');
+    }
+  });
+  
+  console.log('分類統計更新完成:', categoryCountMap);
+}
