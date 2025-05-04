@@ -441,7 +441,7 @@
   right: 0;
   bottom: 0;
   /* 使用更輕柔的漸變覆蓋層 */
-  background: linear-gradient(135deg, rgba(248, 250, 253, 0.1), rgba(240, 246, 255, 0));
+  background: linear-gradient(135deg, rgba(248, 250, 253, -0.1), rgba(240, 246, 255, -0.2));
   z-index: 1;
 }
 
