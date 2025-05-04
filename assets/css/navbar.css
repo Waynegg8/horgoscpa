@@ -13,6 +13,7 @@
   z-index: 1000;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   height: 80px;
+  isolation: isolate; /* 創建新的堆疊上下文 */
 }
 
 /* 滾動效果 - 縮小導航欄 */
@@ -205,7 +206,7 @@
   bottom: 0;
 }
 
-響應式設計 */
+/* 響應式設計 */
 @media (max-width: 1280px) {
   .nav-container {
     padding: 0 25px;
@@ -287,11 +288,11 @@
   }
   
   .nav-menu {
-    position: fixed;
+    position: absolute; /* 改為absolute而非fixed */
     top: 60px;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: auto; /* 不要延伸到底部 */
     background: rgba(0, 33, 71, 0.97);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -302,7 +303,7 @@
     overflow: hidden;
     transition: max-height 0.5s cubic-bezier(0.52, 0.16, 0.24, 1);
     height: auto;
-    z-index: 1000;
+    z-index: 999; /* 確保低於導航欄本身 */
   }
   
   .nav-scrolled .nav-menu {
@@ -400,7 +401,5 @@
   
   .nav-toggle-label span::after {
     bottom: -6px;
-
-
   }
 }
