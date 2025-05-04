@@ -19,6 +19,11 @@
   <link rel="stylesheet" href="/assets/css/common.css" />
   <link rel="stylesheet" href="/assets/css/navbar.css" />
   <link rel="stylesheet" href="/assets/css/footer.css" />
+  
+  <!-- 新增: 首頁特定樣式 - 用於流動式設計 -->
+  <link rel="stylesheet" href="/assets/css/index-style.css" />
+  
+  <!-- 影片專用樣式 -->
   <link rel="stylesheet" href="/assets/css/video.css" />
   
   <!-- Google 分析 -->
@@ -32,7 +37,7 @@
 </head>
 <body>
 
-<!-- 導航欄 - 更新版 -->
+<!-- 導航欄 -->
 <nav class="site-nav">
   <div class="nav-container">
     <div class="logo">
@@ -46,19 +51,30 @@
       <span></span>
     </label>
     <ul class="nav-menu">
-  <li><a href="/services.html">服務項目</a></li>
-  <li><a href="/team.html">服務團隊</a></li>
-  <li><a href="/blog.html">專欄文章</a></li>
-  <li><a href="/faq.html">常見問題</a></li>
-  <li><a href="/video.html">影音專區</a></li>
-  <li><a href="/contact.html">聯繫我們</a></li>
-  <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
-</ul>
+      <li><a href="/services.html">專業服務</a></li>
+      <li><a href="/team.html">專業團隊</a></li>
+      <li><a href="/blog.html">專欄文章</a></li>
+      <li><a href="/faq.html">常見問題</a></li>
+      <li><a href="/video.html" class="active">影音專區</a></li>
+      <li><a href="/contact.html">聯繫我們</a></li>
+      <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
+    </ul>
   </div>
 </nav>
 
+<!-- 新增: 影片頁面標題區塊 -->
+<header class="blog-header">
+  <div class="container">
+    <div class="blog-header-content">
+      <h1>專業財稅教學影片</h1>
+      <p>觀看實用的稅務與會計教學，輕鬆學習複雜的財務知識</p>
+    </div>
+  </div>
+</header>
 
-    
+<!-- 影片主要內容區塊 -->
+<main class="blog-content-section">
+  <div class="container">
     <!-- 搜尋框 -->
     <div class="search-container">
       <input type="text" id="video-search" class="search-input" placeholder="搜尋影片..." aria-label="搜尋影片">
@@ -98,7 +114,7 @@
   </div>
 </main>
 
-<!-- 頁尾區域 - 更新版 -->
+<!-- 頁尾區域 -->
 <footer class="site-footer">
   <div class="footer-container">
     <div class="footer-content">
@@ -142,21 +158,22 @@
         <h3>快速連結</h3>
         <ul class="quick-links">
           <li><a href="/index.html"><span class="material-symbols-rounded icon-link">home</span> 首頁</a></li>
-          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 服務團隊</a></li>
-          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 部落格</a></li>
+          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 專業團隊</a></li>
+          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 專欄文章</a></li>
           <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
-          <li><a href="/video.html"><span class="material-symbols-rounded icon-link">play_circle</span> 影片</a></li>
+          <li><a href="/video.html"><span class="material-symbols-rounded icon-link">play_circle</span> 影音專區</a></li>
           <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_mail</span> 聯絡資訊</a></li>
         </ul>
       </div>
       
-      <!-- 服務項目 -->
+      <!-- 服務項目 - 更新為與首頁一致 -->
       <div class="footer-services">
         <h3>服務項目</h3>
         <ul class="services-list">
-          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">attach_money</span> 稅務服務</a></li>
-          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance</span> 記帳與會計</a></li>
-          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">work</span> 企業顧問</a></li>
+          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">store</span> 工商登記</a></li>
+          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance_wallet</span> 帳務處理</a></li>
+          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">payments</span> 稅務申報</a></li>
+          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">verified</span> 財稅簽證</a></li>
           <li><a href="/booking.html"><span class="material-symbols-rounded icon-link">event_available</span> 預約諮詢</a></li>
         </ul>
       </div>
