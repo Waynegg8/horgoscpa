@@ -166,10 +166,10 @@
       overflow: hidden;
       cursor: pointer; /* 添加鼠标指针样式，表明可点击 */
       
-      /* 新增：使用Flexbox垂直布局 */
+      /* 新增：使用Flexbox垂直布局與固定高度 */
       display: flex;
       flex-direction: column;
-      height: 100%;
+      height: 450px; /* 固定卡片高度 */
     }
     
     .service-card:hover {
@@ -235,35 +235,31 @@
       flex-grow: 1; /* 讓段落佔據剩餘空間 */
     }
     
-    /* 修改"了解更多"链接样式 - 完全移除下划线效果 */
+    /* 修改"了解更多"链接样式 - 移除箭頭但保留變色效果 */
     .service-card .read-more {
-      display: inline-flex; /* 使用flex布局確保對齊 */
-      align-items: center; /* 垂直居中對齊 */
-      justify-content: center; /* 水平居中 */
-      padding: 8px 0;
+      display: inline-block;
+      padding: 8px 16px;
+      background-color: #f0f6ff;
+      border-radius: 20px;
       color: var(--secondary-color);
       font-weight: 600;
-      margin-top: auto; /* 推到底部 */
-      align-self: center; /* 水平置中 */
-      white-space: nowrap; /* 防止文字換行 */
-      transition: all 0.3s ease;
+      transition: color 0.3s ease, background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+      margin-top: auto;
+      align-self: center;
     }
     
-    /* 添加箭頭指示 */
+    /* 移除箭頭相關樣式 */
     .service-card .read-more::after {
-      content: '→';
-      display: inline-block;
-      margin-left: 8px; /* 間距 */
-      transition: transform 0.3s ease;
+      content: none !important;
+      display: none !important;
     }
     
+    /* 保留變色效果 */
     .service-card .read-more:hover {
-      color: var(--primary-color); /* 只保留颜色变化效果 */
-      transform: translateX(5px); /* 添加轻微的右移效果，增强交互感 */
-    }
-    
-    .service-card .read-more:hover::after {
-      transform: translateX(3px); /* 箭頭單獨移動效果 */
+      background-color: var(--secondary-color);
+      color: white;
+      transform: translateY(-3px);
+      box-shadow: 0 5px 10px rgba(0, 102, 204, 0.2);
     }
     
     /* 流程區塊調整 - 減少間距 */
@@ -315,6 +311,7 @@
       margin-top: 30px; /* 縮小與標題的間距 */
     }
     
+    /* 修改: 服務流程卡片高度統一 */
     .step-card {
       flex: 1 1 calc(25% - 20px); /* 調整寬度計算 */
       min-width: 220px;
@@ -325,10 +322,10 @@
       text-align: center;
       transition: all 0.3s ease;
       
-      /* 新增：使用Flexbox垂直布局 */
+      /* 新增：使用Flexbox垂直布局與固定高度 */
       display: flex;
       flex-direction: column;
-      height: 100%;
+      min-height: 220px; /* 設定最小高度，確保卡片高度一致 */
     }
     
     .step-card:hover {
@@ -362,13 +359,16 @@
       font-size: 1.3rem; /* 縮小字體 */
     }
     
-    /* 修改：段落使用flex-grow佔據剩餘空間 */
+    /* 修改：段落使用flex-grow佔據剩餘空間，確保卡片高度一致 */
     .step-card p {
       color: #3a3a3a;
       margin-bottom: 0;
       font-size: 0.95rem; /* 縮小字體 */
       line-height: 1.6; /* 減少行高 */
-      flex-grow: 1; /* 佔據剩餘空間 */
+      flex-grow: 1; /* 佔據剩餘空間，使卡片高度一致 */
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     
     /* 調整按鈕樣式 */
@@ -425,6 +425,7 @@
     @media (max-width: 992px) {
       .service-card {
         flex: 1 1 calc(50% - 15px);
+        height: 400px; /* 在中等屏幕上調整高度 */
       }
       
       .step-card {
@@ -468,6 +469,11 @@
       
       .service-card, .step-card {
         flex: 1 1 100%;
+      }
+      
+      .service-card {
+        height: auto; /* 在小屏幕上使用自適應高度 */
+        min-height: 350px; /* 設置最小高度 */
       }
       
       .services-section, .about-section {
@@ -659,7 +665,8 @@
       <div class="footer-links">
         <h3>快速連結</h3>
         <ul class="quick-links">
-          <li><a href="/index.html"><span class="material-symbols-rounded icon-link">home</span> 首頁</a></li>
+          <!-- 修改: 將"首頁"改為"專業服務"並更新圖標 -->
+          <li><a href="/services.html"><span class="material-symbols-rounded icon-link">business_center</span> 專業服務</a></li>
           <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 專業團隊</a></li>
           <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 專欄文章</a></li>
           <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
@@ -734,105 +741,3 @@
         }
       });
     });
-  });
-</script>
-
-<!-- 導航欄功能腳本 -->
-<script src="/assets/js/navbar.js"></script>
-
-<!-- 新增: 添加首頁動畫效果到服務頁面 -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // 添加滾動時的元素動畫效果
-    const animateOnScroll = function() {
-      // 獲取所有需要動畫的元素
-      const serviceCards = document.querySelectorAll('.service-card');
-      const stepCards = document.querySelectorAll('.step-card');
-      const sectionTitle = document.querySelector('.section-title');
-      
-      // 檢查元素是否在視圖中
-      function isElementInViewport(el) {
-        const rect = el.getBoundingClientRect();
-        return (
-          rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.85 &&
-          rect.bottom >= 0
-        );
-      }
-      
-      // 處理標題動畫
-      if (sectionTitle && isElementInViewport(sectionTitle) && !sectionTitle.classList.contains('animated')) {
-        sectionTitle.classList.add('animated');
-        
-        // 為標題添加動畫類
-        const heading = sectionTitle.querySelector('h2');
-        const description = sectionTitle.querySelector('p');
-        
-        if (heading) {
-          heading.style.opacity = '0';
-          heading.style.transform = 'translateY(20px)';
-          setTimeout(() => {
-            heading.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-            heading.style.opacity = '1';
-            heading.style.transform = 'translateY(0)';
-          }, 100);
-        }
-        
-        if (description) {
-          description.style.opacity = '0';
-          description.style.transform = 'translateY(20px)';
-          setTimeout(() => {
-            description.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-            description.style.opacity = '1';
-            description.style.transform = 'translateY(0)';
-          }, 300); // 延遲出現，形成錯位感
-        }
-      }
-      
-      // 處理服務卡片動畫
-      const visibleServiceCards = Array.from(serviceCards).filter(card => isElementInViewport(card) && !card.classList.contains('animated'));
-      
-      visibleServiceCards.forEach((card, index) => {
-        card.classList.add('animated');
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(30px)';
-        
-        setTimeout(() => {
-          card.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
-        }, 100 + (index * 150)); // 依次延遲顯示
-      });
-      
-      // 處理步驟卡片動畫
-      const visibleStepCards = Array.from(stepCards).filter(card => isElementInViewport(card) && !card.classList.contains('animated'));
-      
-      visibleStepCards.forEach((card, index) => {
-        card.classList.add('animated');
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(30px)';
-        
-        setTimeout(() => {
-          card.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
-        }, 100 + (index * 150)); // 依次延遲顯示
-      });
-    };
-    
-    // 初始執行
-    animateOnScroll();
-    
-    // 滾動時執行動畫
-    window.addEventListener('scroll', function() {
-      animateOnScroll();
-    });
-    
-    // 窗口大小改變時重新計算
-    window.addEventListener('resize', function() {
-      animateOnScroll();
-    });
-  });
-</script>
-
-</body>
-</html>
