@@ -1,54 +1,68 @@
 /* 
  * faq-modern.css - 霍爾果斯會計師事務所常見問題頁面樣式
- * 最後更新日期: 2025-05-04
+ * 最後更新日期: 2025-05-05
  * 基於blog-modern.css進行優化，適用於FAQ頁面
  */
 
 /* ===== 1. 頁面標題區塊樣式 ===== */
 .faq-header {
-  background: linear-gradient(rgba(0, 33, 71, 0.85), rgba(0, 77, 153, 0.85)), 
-             url('/assets/images/banner-bg.jpg') center/cover no-repeat;
-  padding: 35px 0;
-  color: white;
-  text-align: center;
-  margin-bottom: 35px;
+  background: linear-gradient(135deg, var(--bg-light), #ffffff);
+  text-align: left;
+  padding: 40px 0 20px;
+  margin-bottom: 0;
   position: relative;
 }
 
 .faq-header-content {
-  max-width: 800px;
-  margin: 0 auto;
+  padding-left: 20px;
 }
 
 .faq-header h1 {
-  color: white;
+  font-size: 2.8rem;
+  color: var(--primary-color);
   margin-bottom: 15px;
-  font-size: 2.2rem;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  position: relative;
+  display: inline-block;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.faq-header h1::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(to right, var(--secondary-color), rgba(0, 112, 221, 0.3));
+  border-radius: 2px;
 }
 
 .faq-header p {
-  color: rgba(255, 255, 255, 0.95);
-  margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  color: var(--text-medium);
+  max-width: 800px;
+  margin: 0 0 10px 20px;
   line-height: 1.6;
 }
 
 .faq-header p a {
-  color: #ffffff;
-  font-weight: 600;
-  text-decoration: underline;
+  color: var(--secondary-color);
+  text-decoration: none;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .faq-header p a:hover {
-  color: #ffffff;
-  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  color: var(--secondary-dark);
 }
 
 /* ===== 2. 主要內容區塊樣式 ===== */
 .faq-content-section {
-  padding: 20px 0 60px;
+  background-color: #ffffff;
+  background-image: 
+    radial-gradient(circle at 90% 10%, rgba(0, 102, 204, 0.03), transparent 400px),
+    radial-gradient(circle at 10% 90%, rgba(0, 102, 204, 0.03), transparent 400px);
+  padding: 40px 0 60px;
   position: relative;
 }
 
@@ -61,52 +75,49 @@
 /* ===== 3. 搜尋框樣式 ===== */
 .search-container {
   position: relative;
-  margin-bottom: 25px;
-  max-width: 650px;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 600px;
+  margin: 0 auto 25px;
+  width: 100%;
+  transition: all 0.3s ease;
 }
 
 .search-input {
   width: 100%;
-  padding: 12px 45px 12px 18px;
+  padding: 14px 45px 14px 18px;
+  border-radius: 8px;
   border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 0.95rem;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+  font-size: 16px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  background-color: #f8f9fa;
 }
 
 .search-input:focus {
   border-color: #0066cc;
-  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+  box-shadow: 0 5px 15px rgba(0, 102, 204, 0.15);
   outline: none;
-  background-color: #fff;
 }
 
 .search-button {
   position: absolute;
-  right: 10px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
+  background: #f0f6ff;
+  color: #0066cc;
   border: none;
-  color: #555;
-  cursor: pointer;
-  font-size: 18px;
-  transition: color 0.3s ease;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .search-button:hover {
-  color: #0066cc;
-  background-color: rgba(0, 102, 204, 0.1);
+  background: #0066cc;
+  color: white;
 }
 
 /* ===== 4. 兩欄佈局 ===== */
@@ -124,50 +135,52 @@
 /* ===== 6. 分類標籤樣式 ===== */
 .category-filter {
   display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  padding-bottom: 10px;
-  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
   margin-bottom: 20px;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-}
-
-.category-filter::-webkit-scrollbar {
-  height: 4px;
-}
-
-.category-filter::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 102, 204, 0.3);
-  border-radius: 2px;
 }
 
 .filter-btn {
-  background-color: #f5f7fa;
-  color: #555;
-  border: 1px solid #e6e9ee;
-  border-radius: 20px;
-  padding: 8px 15px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: 50px;
+  background-color: #f8f9fa;
+  border: 2px solid #e6e9ee;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s ease;
-  white-space: nowrap;
-  flex: 0 0 auto;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.filter-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  background: rgba(0, 102, 204, 0.05);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.5s ease-out;
+  z-index: -1;
 }
 
 .filter-btn:hover {
-  background-color: #edf1f7;
-  border-color: #d3d8e3;
-  transform: translateY(-2px);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+  border-color: rgba(0, 102, 204, 0.3);
+  transform: translateY(-3px);
+}
+
+.filter-btn:hover::after {
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .filter-btn.active {
   background-color: #0066cc;
   color: white;
   border-color: #0066cc;
-  box-shadow: 0 3px 8px rgba(0, 102, 204, 0.3);
+  box-shadow: 0 5px 15px rgba(0, 102, 204, 0.2);
 }
 
 /* ===== 7. FAQ控制按鈕 ===== */
@@ -496,7 +509,7 @@
   }
   
   .faq-header h1 {
-    font-size: 2rem;
+    font-size: 2.4rem;
   }
   
   .sidebar-section {
@@ -514,11 +527,26 @@
   }
   
   .faq-header {
-    padding: 25px 0;
+    text-align: center;
+    padding: 30px 0 15px;
+  }
+  
+  .faq-header-content {
+    padding-left: 0;
   }
   
   .faq-header h1 {
-    font-size: 1.8rem;
+    font-size: 2rem;
+  }
+  
+  .faq-header h1::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .faq-header p {
+    margin: 0 auto 10px;
+    font-size: 1rem;
   }
   
   .search-container {
@@ -536,11 +564,35 @@
   .category-filter {
     overflow-x: auto;
     padding-bottom: 10px;
+    justify-content: flex-start;
   }
   
   .filter-btn {
-    padding: 6px 12px;
-    font-size: 0.85rem;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 576px) {
+  .search-input {
+    padding: 12px 40px 12px 15px;
+  }
+  
+  .faq-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .no-results {
+    padding: 30px 20px;
+  }
+  
+  .pagination-btn {
+    min-width: 35px;
+    height: 35px;
+    padding: 0 10px;
+    font-size: 0.9rem;
   }
 }
 
