@@ -53,6 +53,9 @@ document.addEventListener('DOMContentLoaded', function() {
     fallbackPosts.forEach(post => {
       renderPost(post);
     });
+    
+    // 為每個卡片添加點擊事件
+    addCardClickEvents();
   }
   
   /**
@@ -63,6 +66,8 @@ document.addEventListener('DOMContentLoaded', function() {
     postElement.className = 'blog-card';
     
     postElement.innerHTML = `
+      <!-- 添加覆盖整个卡片的链接 -->
+      <a href="${post.url}" class="blog-card-link">阅读完整文章</a>
       <div class="blog-image">
         <img src="${post.image}" alt="${post.title}">
       </div>
@@ -75,6 +80,25 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     
     postsContainer.appendChild(postElement);
+  }
+  
+  /**
+   * 為文章卡片添加點擊事件
+   */
+  function addCardClickEvents() {
+    const blogCards = document.querySelectorAll('.blog-card');
+    blogCards.forEach(card => {
+      card.addEventListener('click', function(e) {
+        // 如果不是點擊特定元素，才進行跳轉
+        if (!e.target.closest('a.read-more') && !e.target.closest('a h3') && !e.target.closest('button')) {
+          // 获取卡片内的链接并跳转
+          const link = this.querySelector('.blog-card-link');
+          if (link) {
+            window.location.href = link.href;
+          }
+        }
+      });
+    });
   }
   
   /**
@@ -103,6 +127,9 @@ document.addEventListener('DOMContentLoaded', function() {
         renderPost(post);
       });
       
+      // 為卡片添加點擊事件
+      addCardClickEvents();
+      
     } catch (error) {
       console.error('載入文章時發生錯誤:', error);
       showError();
@@ -111,4 +138,19 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // 執行載入
   loadPosts();
+  
+  // 處理服務卡片點擊
+  const serviceCards = document.querySelectorAll('.service-card');
+  serviceCards.forEach(card => {
+    card.addEventListener('click', function(e) {
+      // 如果不是點擊具體的鏈接或按鈕，才進行跳轉
+      if (!e.target.closest('a.read-more') && !e.target.closest('button')) {
+        // 獲取卡片內的第一個鏈接并跳轉
+        const link = this.querySelector('.service-card-link');
+        if (link) {
+          window.location.href = link.href;
+        }
+      }
+    });
+  });
 });

@@ -164,11 +164,32 @@
       border: none;
       position: relative;
       overflow: hidden;
+      cursor: pointer; /* 添加鼠标指针样式，表明可点击 */
     }
     
     .service-card:hover {
       transform: translateY(-10px);
       box-shadow: 0 16px 30px rgba(0,0,0,0.12);
+    }
+    
+    /* 添加覆盖整个卡片的链接 */
+    .service-card-link {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1; /* 确保链接覆盖整个卡片 */
+      text-indent: -9999px; /* 隐藏文本 */
+    }
+    
+    /* 确保卡片内容在链接上方 */
+    .service-card .service-icon,
+    .service-card h3,
+    .service-card p,
+    .service-card .read-more {
+      position: relative;
+      z-index: 2;
     }
     
     .service-icon {
@@ -207,7 +228,7 @@
       line-height: 1.6; /* 減少行高 */
     }
     
-    /* 修改"了解更多"链接样式 */
+    /* 修改"了解更多"链接样式 - 完全移除下划线效果 */
     .service-card .read-more {
       display: inline-block;
       padding: 8px 0;
@@ -217,19 +238,11 @@
       transition: all 0.3s ease;
     }
     
-    .service-card .read-more::after {
-      content: '';
-      position: absolute;
-      bottom: -4px; /* 将值从 0 改为 -4px，使线条下移避免与文字重叠 */
-      left: 0;
-      width: 0;
-      height: 2px;
-      background-color: var(--secondary-color);
-      transition: width 0.3s ease;
-    }
+    /* 移除了下划线动画相关的 ::after 伪元素 */
     
-    .service-card .read-more:hover::after {
-      width: 100%;
+    .service-card .read-more:hover {
+      color: var(--primary-color); /* 只保留颜色变化效果 */
+      transform: translateX(5px); /* 添加轻微的右移效果，增强交互感 */
     }
     
     /* 流程區塊調整 - 減少間距 */
@@ -476,6 +489,8 @@
     <div class="services-grid">
       <!-- 工商登記 -->
       <div class="service-card">
+        <!-- 添加整个卡片可点击链接 -->
+        <a href="/services/consulting.html" class="service-card-link">访问工商登记详情页</a>
         <div class="service-icon">
           <svg viewBox="0 0 24 24" width="40" height="40">
             <path d="M22 19H20V3H7L10 7H17V19H12V21H22V19ZM2 19V17H10V19H2ZM14 9V7H2V9H14ZM14 13V11H2V13H14Z"/>
@@ -488,6 +503,8 @@
       
       <!-- 帳務處理 -->
       <div class="service-card">
+        <!-- 添加整个卡片可点击链接 -->
+        <a href="/services/accounting.html" class="service-card-link">访问帐务处理详情页</a>
         <div class="service-icon">
           <svg viewBox="0 0 24 24" width="40" height="40">
             <path d="M5 3C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H5ZM7 5H9V7H7V5ZM7 9H9V11H7V9ZM7 13H9V15H7V13ZM7 17H9V19H7V17ZM11 5H13V7H11V5ZM11 9H13V11H11V9ZM11 13H13V15H11V13ZM11 17H13V19H11V17ZM15 5H17V7H15V5ZM15 9H17V11H15V9ZM15 13H17V15H15V13ZM15 17H17V19H15V17Z"/>
@@ -500,6 +517,8 @@
       
       <!-- 稅務申報 -->
       <div class="service-card">
+        <!-- 添加整个卡片可点击链接 -->
+        <a href="/services/tax.html" class="service-card-link">访问税务申报详情页</a>
         <div class="service-icon">
           <svg viewBox="0 0 24 24" width="40" height="40">
             <path d="M9.5 2C9.5 1.44772 9.05229 1 8.5 1H3.5C2.94772 1 2.5 1.44772 2.5 2V22C2.5 22.5523 2.94772 23 3.5 23H20.5C21.0523 23 21.5 22.5523 21.5 22V8L15.5 2H14.5V7C14.5 7.55228 14.0523 8 13.5 8H8.5C7.94772 8 7.5 7.55228 7.5 7V2H3.5V22H20.5V8H15.5V2H9.5ZM6 15H18V17H6V15ZM6 19H18V21H6V19ZM13 11H16V13H13V11ZM12 11V13H8V11H12ZM9 15H11V17H9V15ZM12 15H15V17H12V15ZM16 15H18V17H16V15Z"/>
@@ -512,6 +531,8 @@
       
       <!-- 財稅簽證 -->
       <div class="service-card">
+        <!-- 添加整个卡片可点击链接 -->
+        <a href="/services/tax.html" class="service-card-link">访问财税签证详情页</a>
         <div class="service-icon">
           <svg viewBox="0 0 24 24" width="40" height="40">
             <path d="M21 9V7C21 4.79086 19.2091 3 17 3H7C4.79086 3 3 4.79086 3 7V17C3 19.2091 4.79086 21 7 21H17C19.2091 21 21 19.2091 21 17V15H17V17H7V7H17V9H21ZM21 13V11H11V13H21ZM19 12C19 12.5523 18.5523 13 18 13C17.4477 13 17 12.5523 17 12C17 11.4477 17.4477 11 18 11C18.5523 11 19 11.4477 19 12Z"/>
@@ -669,6 +690,20 @@
       window.scrollTo({
         top: 0,
         behavior: 'smooth'
+      });
+    });
+    
+    // 新增：服务卡片整体点击功能
+    const serviceCards = document.querySelectorAll('.service-card');
+    serviceCards.forEach(card => {
+      card.addEventListener('click', function(e) {
+        // 如果点击的不是卡片内的按钮或链接，就触发卡片链接的点击
+        if (!e.target.closest('a') && !e.target.closest('button')) {
+          const link = this.querySelector('.service-card-link');
+          if (link) {
+            window.location.href = link.href;
+          }
+        }
       });
     });
   });
