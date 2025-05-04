@@ -4,46 +4,21 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-  // 檢查是否為移動設備
-  const isMobile = window.innerWidth <= 850;
-  
   // 獲取元素
-  const mobileNavbar = document.querySelector('.mobile-navbar');
-  const siteNav = document.querySelector('.site-nav');
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
   const mobileMenu = document.getElementById('mobileMenu');
   const mobileLinks = document.querySelectorAll('.mobile-nav-link');
-  
-  // 根據設備顯示對應導航欄
-  if (isMobile) {
-    if (mobileNavbar) mobileNavbar.style.display = 'block';
-    if (siteNav) siteNav.style.display = 'none';
-  }
-  
-  // 窗口大小變化時重新檢查
-  window.addEventListener('resize', function() {
-    const isNowMobile = window.innerWidth <= 850;
-    
-    if (isNowMobile) {
-      if (mobileNavbar) mobileNavbar.style.display = 'block';
-      if (siteNav) siteNav.style.display = 'none';
-    } else {
-      if (mobileNavbar) mobileNavbar.style.display = 'none';
-      if (siteNav) siteNav.style.display = 'block';
-    }
-  });
+  const mobileBtnIcon = document.querySelector('.mobile-menu-btn span');
   
   // 菜單按鈕點擊事件
   if (mobileMenuBtn && mobileMenu) {
-    mobileMenuBtn.addEventListener('click', function() {
+    mobileMenuBtn.addEventListener('click', function(e) {
+      e.stopPropagation(); // 防止事件冒泡
       mobileMenu.classList.toggle('open');
       
-      // 切換菜單圖標
-      const icon = this.querySelector('span');
-      if (mobileMenu.classList.contains('open')) {
-        icon.textContent = 'close';
-      } else {
-        icon.textContent = 'menu';
+      // 切換圖標
+      if (mobileBtnIcon) {
+        mobileBtnIcon.textContent = mobileMenu.classList.contains('open') ? 'close' : 'menu';
       }
     });
   }
@@ -53,10 +28,21 @@ document.addEventListener('DOMContentLoaded', function() {
     mobileLinks.forEach(link => {
       link.addEventListener('click', function() {
         mobileMenu.classList.remove('open');
-        mobileMenuBtn.querySelector('span').textContent = 'menu';
+        if (mobileBtnIcon) mobileBtnIcon.textContent = 'menu';
       });
     });
   }
+  
+  // 點擊頁面其他區域關閉菜單
+  document.addEventListener('click', function(e) {
+    if (mobileMenu && mobileMenu.classList.contains('open')) {
+      // 檢查點擊是否在菜單區域外
+      if (!e.target.closest('.mobile-menu') && !e.target.closest('.mobile-menu-btn')) {
+        mobileMenu.classList.remove('open');
+        if (mobileBtnIcon) mobileBtnIcon.textContent = 'menu';
+      }
+    }
+  });
   
   // 設置當前頁面的活動狀態
   const currentPath = window.location.pathname;
@@ -71,4 +57,19 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+  
+  // 調整內容區域的頂部間距
+  const adjustContentPadding = function() {
+    if (window.innerWidth <= 850) {
+      document.body.style.paddingTop = '60px';
+    } else {
+      document.body.style.paddingTop = '0';
+    }
+  };
+  
+  // 初始調整
+  adjustContentPadding();
+  
+  // 窗口大小變化時重新調整
+  window.addEventListener('resize', adjustContentPadding);
 });
