@@ -205,20 +205,7 @@
   bottom: 0;
 }
 
-/* 導航背景效果 */
-.site-nav::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 100%;
-  background: radial-gradient(circle at 30% 100%, rgba(0, 136, 255, 0.05), transparent 70%);
-  z-index: -1;
-  overflow: hidden; /* 新增：防止溢出 */
-}
-
-/* 響應式設計 */
+響應式設計 */
 @media (max-width: 1280px) {
   .nav-container {
     padding: 0 25px;
@@ -413,10 +400,7 @@
   
   .nav-toggle-label span::after {
     bottom: -6px;
-  }
-  .site-nav::before {
-    height: 100%; /* 確保高度與導航欄一致 */
-    bottom: auto; /* 移除底部延伸 */
+
 
   }
 }
