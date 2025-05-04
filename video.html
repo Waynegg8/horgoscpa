@@ -31,6 +31,10 @@
 
   <!-- 確保Material Icons可用 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <!-- 引入中央分類資料 -->
+  <script src="/assets/js/categories-data.js"></script>
+  
   <!-- Google 分析 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
   <script>
@@ -120,13 +124,9 @@
         </button>
       </div>
       
-      <!-- 分類標籤 -->
+      <!-- 分類標籤 - 將由JavaScript動態生成 -->
       <div class="category-filter">
-        <button class="filter-btn active" data-category="all">全部影片</button>
-        <button class="filter-btn" data-category="tax">稅務相關</button>
-        <button class="filter-btn" data-category="accounting">會計記帳</button>
-        <button class="filter-btn" data-category="business">企業經營</button>
-        <button class="filter-btn" data-category="tutorial">操作教學</button>
+        <!-- 分類按鈕將由JavaScript動態生成 -->
       </div>
     </div>
     
@@ -163,26 +163,11 @@
           </ul>
         </div>
         
-        <!-- 影片分類 - 修改為動態生成 -->
+        <!-- 影片分類 - 將由JavaScript動態生成 -->
         <div class="sidebar-section">
           <h3>影片分類</h3>
           <div class="category-stats">
-            <div class="category-stat" data-category="tax">
-              <span class="category-name">稅務相關</span>
-              <span class="category-count">0</span>
-            </div>
-            <div class="category-stat" data-category="accounting">
-              <span class="category-name">會計記帳</span>
-              <span class="category-count">0</span>
-            </div>
-            <div class="category-stat" data-category="business">
-              <span class="category-name">企業經營</span>
-              <span class="category-count">0</span>
-            </div>
-            <div class="category-stat" data-category="tutorial">
-              <span class="category-name">操作教學</span>
-              <span class="category-count">0</span>
-            </div>
+            <!-- 分類統計將由JavaScript動態生成 -->
           </div>
         </div>
         
@@ -307,8 +292,12 @@
 <!-- 導航欄功能腳本 -->
 <script src="/assets/js/navbar.js"></script>
 
+<!-- 引入影片分類動態載入腳本 -->
+<script src="/assets/js/video-categories-loader.js"></script>
+
 <!-- 影片功能腳本 - 使用更新版本 -->
 <script src="/assets/js/video-modern.js"></script>
+
 <!-- 移動版導航欄功能腳本 -->
 <script src="/assets/js/mobile-navbar.js"></script>
 </body>
