@@ -14,7 +14,11 @@
   
   <!-- Material Symbols 圖示庫 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  
+  <!-- 移動版導航欄樣式 -->
+<link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
+
+<!-- 確保Material Icons可用 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <!-- 引用全站共用樣式 -->
   <link rel="stylesheet" href="/assets/css/common.css" />
   <link rel="stylesheet" href="/assets/css/navbar.css" />
@@ -80,7 +84,33 @@
     </ul>
   </div>
 </nav>
-
+<!-- 移動版導航欄 -->
+<div class="mobile-navbar" style="display: none;">
+  <div class="mobile-nav-container">
+    <div class="mobile-menu-btn" id="mobileMenuBtn">
+      <span class="material-symbols-rounded">menu</span>
+    </div>
+    <div class="logo">
+      <a href="/index.html">
+        <div class="logo-main">霍爾果斯會計師事務所</div>
+        <div class="logo-sub">HorgosCPA</div>
+      </a>
+    </div>
+    <div class="mobile-nav-spacer"></div>
+  </div>
+  
+  <div class="mobile-menu" id="mobileMenu">
+    <ul class="mobile-menu-links">
+      <li><a href="/services.html" class="mobile-nav-link">專業服務</a></li>
+      <li><a href="/team.html" class="mobile-nav-link">專業團隊</a></li>
+      <li><a href="/blog.html" class="mobile-nav-link">專欄文章</a></li>
+      <li><a href="/faq.html" class="mobile-nav-link">常見問題</a></li>
+      <li><a href="/video.html" class="mobile-nav-link">影音專區</a></li>
+      <li><a href="/contact.html" class="mobile-nav-link">聯繫我們</a></li>
+      <li><a href="/booking.html" class="mobile-consult-btn">免費諮詢</a></li>
+    </ul>
+  </div>
+</div>
 <!-- 新增: 部落格頁面標題區塊 -->
 <header class="blog-header">
   <div class="container">
@@ -277,6 +307,7 @@
 
 <!-- 博客功能腳本 - 使用優化版 -->
 <script src="/assets/js/blog.js"></script>
-
+<!-- 移動版導航欄功能腳本 -->
+<script src="/assets/js/mobile-navbar.js"></script>
 </body>
 </html>
