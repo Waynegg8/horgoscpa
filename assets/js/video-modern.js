@@ -1,3 +1,9 @@
+/**
+ * video-modern.js - 霍爾果斯會計師事務所影片頁面現代化腳本
+ * 最後更新日期: 2025-05-10
+ * 基於原有video.js優化，增加滾動動畫、改進搜索體驗、側邊欄交互功能
+ */
+
 document.addEventListener('DOMContentLoaded', function() {
   console.log('影片頁面腳本加載完成');
   
@@ -5,13 +11,18 @@ document.addEventListener('DOMContentLoaded', function() {
   const videoContainer = document.getElementById('video-container');
   const searchResultsContainer = document.getElementById('search-results-container');
   const paginationContainer = document.getElementById('pagination-container');
+  const popularVideosContainer = document.getElementById('popular-videos-container');
   
   // 過濾按鈕
   const filterButtons = document.querySelectorAll('.filter-btn');
   
+  // 側邊欄分類條目
+  const categoryStats = document.querySelectorAll('.category-stat');
+  
   // 搜尋元素
   const searchInput = document.getElementById('video-search');
   const searchBtn = document.getElementById('search-btn');
+  const searchContainer = document.querySelector('.search-container');
   
   // 資料與分頁狀態
   let allVideos = null;
@@ -53,6 +64,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchParam) {
       currentSearchTerm = searchParam;
       searchInput.value = currentSearchTerm;
+      
+      // 添加搜索活躍狀態
+      searchContainer.classList.add('search-active');
     }
     
     console.log('URL參數解析結果:', { page: currentPage, category: currentCategory, search: currentSearchTerm });
@@ -142,6 +156,9 @@ document.addEventListener('DOMContentLoaded', function() {
       // 渲染影片列表
       renderFilteredVideos();
       
+      // 更新側邊欄統計數據
+      updateSidebarStatistics();
+      
       return jsonData;
     } catch (error) {
       console.error('加載影片出錯:', error);
@@ -160,6 +177,36 @@ document.addEventListener('DOMContentLoaded', function() {
       // 使用備用數據
       return useFallbackData();
     }
+  }
+  
+  /**
+   * 更新側邊欄統計數據
+   */
+  function updateSidebarStatistics() {
+    if (!allVideos || !allVideos.videos) return;
+    
+    const videos = allVideos.videos;
+    const categoryCountMap = {};
+    
+    // 計算各分類的數量
+    videos.forEach(video => {
+      if (video.category) {
+        if (!categoryCountMap[video.category]) {
+          categoryCountMap[video.category] = 0;
+        }
+        categoryCountMap[video.category]++;
+      }
+    });
+    
+    // 更新側邊欄分類統計數據
+    categoryStats.forEach(stat => {
+      const category = stat.dataset.category;
+      const countElement = stat.querySelector('.category-count');
+      
+      if (countElement && category && categoryCountMap[category]) {
+        countElement.textContent = categoryCountMap[category];
+      }
+    });
   }
   
   /**
@@ -185,10 +232,26 @@ document.addEventListener('DOMContentLoaded', function() {
           embedUrl: "https://www.youtube.com/embed/MJlb2OEBuvA",
           category: "accounting",
           tags: ["新創企業", "會計實務", "財務管理"]
+        },
+        {
+          title: "電子發票申請與使用教學",
+          date: "2025-02-25",
+          description: "如何申請電子發票及完整操作流程，解說相關法規要求與使用技巧，幫助企業順利轉型至電子化發票系統。",
+          embedUrl: "https://www.youtube.com/embed/K2Awh1qdPVk",
+          category: "tutorial",
+          tags: ["電子發票", "操作教學"]
+        },
+        {
+          title: "企業節稅合法途徑",
+          date: "2025-02-10",
+          description: "企業常見的合法節稅方式解析，包含費用認列、投資抵減、折舊策略等，協助企業在合法範圍內優化稅務結構。",
+          embedUrl: "https://www.youtube.com/embed/Lm2QfiU5rY0",
+          category: "tax",
+          tags: ["企業節稅", "稅務規劃"]
         }
       ],
       pagination: {
-        total: 2,
+        total: 4,
         totalPages: 1,
         itemsPerPage: 6
       }
@@ -200,28 +263,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // 渲染影片列表
     renderFilteredVideos();
     
+    // 更新側邊欄統計數據
+    updateSidebarStatistics();
+    
     return fallbackVideos;
-  }
-  
-  /**
-   * 從文章中提取所有唯一標籤
-   */
-  function extractTagsFromPosts(posts) {
-    console.log('從文章中提取標籤');
-    const allTags = new Set();
-    
-    if (!posts || !Array.isArray(posts)) {
-      console.warn('文章數據無效，無法提取標籤');
-      return [];
-    }
-    
-    posts.forEach(post => {
-      if (post.tags && Array.isArray(post.tags)) {
-        post.tags.forEach(tag => allTags.add(tag));
-      }
-    });
-    
-    return Array.from(allTags);
   }
   
   /**
@@ -290,56 +335,35 @@ document.addEventListener('DOMContentLoaded', function() {
     // 渲染影片
     if (videos && videos.length > 0) {
       // 顯示搜索結果信息
-      searchResultsContainer.innerHTML = `<div class="search-results-info">共找到 ${totalVideos} 部影片</div>`;
-      
-      // 渲染影片卡片
-      videos.forEach(video => {
-        const videoElement = document.createElement('div');
-        videoElement.className = 'video-card';
+      if (currentSearchTerm || currentCategory !== 'all') {
+        let resultText = '';
         
-        // 確保必要的屬性存在
-        const videoEmbedUrl = video.embedUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ';
-        const videoTitle = video.title || '未命名影片';
-        const videoDate = video.date || '未知日期';
-        const videoDescription = video.description || '無影片描述';
-        const videoTags = video.tags || [];
-        
-        // 創建標籤HTML
-        let tagsHtml = '';
-        if (videoTags.length > 0) {
-          tagsHtml = '<div class="video-tags">';
-          videoTags.forEach(tag => {
-            tagsHtml += `<span class="video-tag" data-tag="${tag}">${tag}</span>`;
-          });
-          tagsHtml += '</div>';
+        if (currentSearchTerm) {
+          resultText += `搜尋「${currentSearchTerm}」`;
         }
         
-        videoElement.innerHTML = `
-          <div class="video-embed">
-            <iframe src="${videoEmbedUrl}" frameborder="0" allowfullscreen></iframe>
-          </div>
-          <div class="video-content">
-            <h2>${videoTitle}</h2>
-            <p class="date">${videoDate}</p>
-            <p>${videoDescription}</p>
-            ${tagsHtml}
+        if (currentCategory !== 'all') {
+          if (resultText) resultText += '，';
+          resultText += `分類「${getCategoryName(currentCategory)}」`;
+        }
+        
+        searchResultsContainer.innerHTML = `
+          <div class="search-results-info">
+            ${resultText}的結果：找到 ${totalVideos} 部影片
           </div>
         `;
-        
+      }
+      
+      // 創建影片卡片
+      videos.forEach(video => {
+        const videoElement = createVideoCard(video);
         videoContainer.appendChild(videoElement);
       });
       
-      // 綁定標籤點擊事件
-      document.querySelectorAll('.video-tag').forEach(tag => {
-        tag.addEventListener('click', function() {
-          const tagText = this.textContent;
-          searchInput.value = tagText;
-          currentSearchTerm = tagText;
-          currentPage = 1;
-          updateUrlParams();
-          renderFilteredVideos();
-        });
-      });
+      // 添加動畫效果
+      setTimeout(() => {
+        addScrollAnimations();
+      }, 100);
       
       // 渲染分頁控制
       renderPagination(totalPages);
@@ -347,7 +371,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // 如果沒有影片
       videoContainer.innerHTML = `
         <div class="no-results">
-          <p>找不到符合「${currentSearchTerm || currentCategory}」的影片。</p>
+          <p>找不到符合條件的影片。</p>
           <p>請嘗試其他關鍵字，或瀏覽我們的全部影片。</p>
           <button class="btn" id="reset-search">清除搜尋</button>
         </div>
@@ -369,6 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (searchInput) {
               searchInput.value = '';
+              searchContainer.classList.remove('search-active');
             }
             
             // 重置分類按鈕
@@ -387,6 +412,118 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }, 0);
     }
+  }
+  
+  /**
+   * 獲取分類名稱的顯示文本
+   */
+  function getCategoryName(category) {
+    const categoryMap = {
+      'tax': '稅務相關',
+      'accounting': '會計記帳',
+      'business': '企業經營',
+      'tutorial': '操作教學',
+      'all': '全部影片'
+    };
+    
+    return categoryMap[category] || category;
+  }
+  
+  /**
+   * 創建影片卡片
+   */
+  function createVideoCard(video) {
+    if (!video) return null;
+    
+    // 確保必要的屬性存在
+    const videoEmbedUrl = video.embedUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+    const videoTitle = video.title || '未命名影片';
+    const videoDate = video.date || '未知日期';
+    const videoDescription = video.description || '無影片描述';
+    const videoTags = video.tags || [];
+    const videoCategory = video.category || 'other';
+    
+    // 創建卡片元素
+    const cardElement = document.createElement('div');
+    cardElement.className = 'video-card';
+    cardElement.dataset.category = videoCategory;
+    
+    // 創建標籤HTML
+    let tagsHtml = '';
+    if (videoTags.length > 0) {
+      tagsHtml = '<div class="video-tags">';
+      videoTags.forEach(tag => {
+        tagsHtml += `<span class="video-tag" data-tag="${tag}">${tag}</span>`;
+      });
+      tagsHtml += '</div>';
+    }
+    
+    // 卡片內容
+    cardElement.innerHTML = `
+      <div class="video-embed">
+        <iframe src="${videoEmbedUrl}" frameborder="0" allowfullscreen loading="lazy"></iframe>
+      </div>
+      <div class="video-content">
+        <h2>${videoTitle}</h2>
+        <span class="date">${formatDate(videoDate)}</span>
+        <p>${videoDescription}</p>
+        ${tagsHtml}
+      </div>
+    `;
+    
+    return cardElement;
+  }
+  
+  /**
+   * 格式化日期顯示
+   */
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch (e) {
+      return dateStr;
+    }
+  }
+  
+  /**
+   * 添加滾動動畫效果
+   */
+  function addScrollAnimations() {
+    // 獲取所有影片卡片
+    const videoCards = document.querySelectorAll('.video-card');
+    
+    // 檢查元素是否在視圖中
+    function isElementInViewport(el) {
+      const rect = el.getBoundingClientRect();
+      return (
+        rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.85 &&
+        rect.bottom >= 0
+      );
+    }
+    
+    // 處理卡片動畫
+    function animateOnScroll() {
+      videoCards.forEach(card => {
+        if (isElementInViewport(card) && !card.classList.contains('animated')) {
+          card.classList.add('animated');
+        }
+      });
+    }
+    
+    // 初始執行
+    animateOnScroll();
+    
+    // 滾動時執行
+    window.addEventListener('scroll', animateOnScroll);
   }
   
   /**
@@ -513,103 +650,172 @@ document.addEventListener('DOMContentLoaded', function() {
     paginationContainer.appendChild(nextBtn);
   }
   
-  // 為所有分類標籤按鈕添加點擊波紋效果
-  filterButtons.forEach(button => {
-    button.addEventListener('click', function(e) {
-      // 創建波紋元素
-      const ripple = document.createElement('div');
-      this.appendChild(ripple);
-      
-      // 設置波紋位置
-      const rect = this.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      // 添加波紋樣式
-      ripple.style.cssText = `
-        position: absolute;
-        background: rgba(255, 255, 255, 0.7);
-        border-radius: 50%;
-        pointer-events: none;
-        width: 5px;
-        height: 5px;
-        top: ${y}px;
-        left: ${x}px;
-        transform: translate(-50%, -50%);
-        animation: ripple 0.6s ease-out;
-      `;
-      
-      // 波紋動畫結束後移除
-      setTimeout(() => {
-        ripple.remove();
-      }, 600);
-    });
-  });
-  
-  // 添加波紋動畫
-  if (!document.querySelector('style#ripple-animation')) {
-    const style = document.createElement('style');
-    style.id = 'ripple-animation';
-    style.textContent = `
-      @keyframes ripple {
-        0% {
-          width: 0;
-          height: 0;
-          opacity: 0.7;
-        }
-        100% {
-          width: 500px;
-          height: 500px;
-          opacity: 0;
-        }
-      }
-    `;
-    document.head.appendChild(style);
+  // 防抖函數 - 用於搜索輸入優化
+  function debounce(func, delay) {
+    let timeout;
+    return function() {
+      const context = this;
+      const args = arguments;
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(context, args), delay);
+    };
   }
   
-  // 綁定搜尋按鈕事件
-  if (searchBtn) {
-    searchBtn.addEventListener('click', function() {
-      if (searchInput) {
-        currentSearchTerm = searchInput.value.trim();
-        currentPage = 1;
-        updateUrlParams();
-        renderFilteredVideos();
-      }
-    });
-  }
-  
-  // 綁定搜尋框回車事件
-  if (searchInput) {
-    searchInput.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        currentSearchTerm = searchInput.value.trim();
-        currentPage = 1;
-        updateUrlParams();
-        renderFilteredVideos();
-      }
-    });
-  }
-  
-  // 綁定分類過濾按鈕事件
-  filterButtons.forEach(button => {
-    button.addEventListener('click', function() {
-      // 移除所有按鈕的active狀態
-      filterButtons.forEach(btn => btn.classList.remove('active'));
-      
-      // 設置當前按鈕為active
-      this.classList.add('active');
-      
-      // 設置當前分類
-      currentCategory = this.getAttribute('data-category');
-      currentPage = 1;
-      
-      // 更新URL並重新渲染
+ // 搜索處理函數
+  const handleSearchInput = debounce(function() {
+    const searchValue = searchInput.value.trim();
+    
+    // 添加搜索活躍狀態
+    if (searchValue.length > 0) {
+      searchContainer.classList.add('search-active');
+    } else {
+      searchContainer.classList.remove('search-active');
+      // 空搜索時重置
+      currentSearchTerm = '';
       updateUrlParams();
       renderFilteredVideos();
+      return;
+    }
+    
+    // 更新搜索條件
+    currentSearchTerm = searchValue;
+    currentPage = 1;
+    
+    // 更新URL並重新渲染
+    updateUrlParams();
+    renderFilteredVideos();
+  }, 500); // 500ms防抖延遲
+  
+  // 綁定熱門影片事件
+  function bindPopularVideoEvents() {
+    const popularVideos = document.querySelectorAll('.popular-videos li a');
+    
+    popularVideos.forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // 獲取影片標題並進行搜索
+        const videoTitle = this.textContent;
+        searchInput.value = videoTitle;
+        
+        // 觸發搜索
+        handleSearchInput();
+      });
     });
-  });
+  }
+  
+  // 初始化事件監聽
+  function initEventListeners() {
+    // 綁定搜索輸入事件
+    if (searchInput) {
+      searchInput.addEventListener('input', handleSearchInput);
+      
+      // 搜索框回車事件
+      searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleSearchInput();
+        }
+      });
+    }
+    
+    // 搜索按鈕點擊事件
+    if (searchBtn) {
+      searchBtn.addEventListener('click', handleSearchInput);
+    }
+    
+    // 分類過濾按鈕事件
+    filterButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        // 移除所有按鈕的active狀態
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // 設置當前按鈕為active
+        this.classList.add('active');
+        
+        // 設置當前分類
+        currentCategory = this.dataset.category;
+        currentPage = 1;
+        
+        // 更新URL並重新渲染
+        updateUrlParams();
+        renderFilteredVideos();
+      });
+      
+      // 為按鈕添加波紋效果
+      button.addEventListener('click', function(e) {
+        // 創建波紋元素
+        const ripple = document.createElement('div');
+        this.appendChild(ripple);
+        
+        // 設置波紋位置
+        const rect = this.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // 添加波紋樣式
+        ripple.style.cssText = `
+          position: absolute;
+          background: rgba(255, 255, 255, 0.7);
+          border-radius: 50%;
+          pointer-events: none;
+          width: 5px;
+          height: 5px;
+          top: ${y}px;
+          left: ${x}px;
+          transform: translate(-50%, -50%);
+          animation: ripple 0.6s ease-out;
+        `;
+        
+        // 波紋動畫結束後移除
+        setTimeout(() => {
+          ripple.remove();
+        }, 600);
+      });
+    });
+    
+    // 側邊欄分類統計點擊事件
+    categoryStats.forEach(stat => {
+      stat.addEventListener('click', function() {
+        const category = this.dataset.category;
+        
+        // 更新分類按鈕狀態
+        filterButtons.forEach(btn => {
+          if (btn.dataset.category === category) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+        
+        // 更新當前分類並重設頁碼
+        currentCategory = category;
+        currentPage = 1;
+        
+        // 更新URL並重新渲染
+        updateUrlParams();
+        renderFilteredVideos();
+        
+        // 滾動到內容區域
+        window.scrollTo({
+          top: document.querySelector('.blog-content-section').offsetTop - 100,
+          behavior: 'smooth'
+        });
+      });
+    });
+    
+    // 綁定熱門影片事件
+    bindPopularVideoEvents();
+    
+    // 添加標籤動態點擊處理
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('video-tag')) {
+        const tag = e.target.textContent;
+        searchInput.value = tag;
+        handleSearchInput();
+      }
+    });
+  }
   
   // 監聽瀏覽器前進/後退按鈕
   window.addEventListener('popstate', function() {
@@ -618,5 +824,8 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // 初始化加載
-  loadVideos();
+  loadVideos().then(() => {
+    // 初始化事件監聽
+    initEventListeners();
+  });
 });
