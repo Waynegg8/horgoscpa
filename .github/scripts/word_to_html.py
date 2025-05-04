@@ -1410,13 +1410,13 @@ def generate_html(title: str, html_content: str, tags: List[str],
 <!-- 返回頂部按鈕功能 - 腳本 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // 返回頂部按鈕功能
+    # 返回頂部按鈕功能
     const backToTopButton = document.querySelector('.back-to-top');
     
-    // 初始隱藏按鈕
+    # 初始隱藏按鈕
     backToTopButton.classList.remove('visible');
     
-    // 監聽滾動事件
+    # 監聽滾動事件
     window.addEventListener('scroll', function() {
       if (window.pageYOffset > 300) {
         backToTopButton.classList.add('visible');
@@ -1425,7 +1425,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
       }
     });
     
-    // 點擊事件
+    # 點擊事件
     backToTopButton.addEventListener('click', function() {
       window.scrollTo({
         top: 0,
@@ -1456,7 +1456,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
     `;
     document.body.appendChild(progressIndicator);
     
-    // 計算閱讀進度
+    # 計算閱讀進度
     function updateReadingProgress() {
       const articleContent = document.querySelector('.article-card');
       if (!articleContent) return;
@@ -1467,7 +1467,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
       const currentPosition = window.scrollY + window.innerHeight;
       const windowHeight = window.innerHeight;
       
-      // 考慮視窗大小，確保內容完全可見時進度為100%
+      # 考慮視窗大小，確保內容完全可見時進度為100%
       let progress = 0;
       if (currentPosition > contentTop) {
         progress = Math.min(100, ((currentPosition - contentTop) / (contentHeight)) * 100);
@@ -1475,7 +1475,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
       
       progressIndicator.style.width = `${progress}%`;
       
-      // 當閱讀完畢時添加動畫效果
+      # 當閱讀完畢時添加動畫效果
       if (progress >= 99) {
         progressIndicator.style.transition = 'width 0.5s ease, opacity 1s ease';
         progressIndicator.style.opacity = '0.5';
@@ -1485,11 +1485,11 @@ def generate_html(title: str, html_content: str, tags: List[str],
       }
     }
     
-    // 滾動時更新進度
+    # 滾動時更新進度
     window.addEventListener('scroll', updateReadingProgress);
     window.addEventListener('resize', updateReadingProgress);
     
-    // 初始化進度
+    # 初始化進度
     updateReadingProgress();
   });
 </script>
