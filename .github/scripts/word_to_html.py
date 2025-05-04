@@ -1410,13 +1410,13 @@ def generate_html(title: str, html_content: str, tags: List[str],
 <!-- 返回頂部按鈕功能 - 腳本 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    # 返回頂部按鈕功能
+    // 返回頂部按鈕功能
     const backToTopButton = document.querySelector('.back-to-top');
     
-    # 初始隱藏按鈕
+    // 初始隱藏按鈕
     backToTopButton.classList.remove('visible');
     
-    # 監聽滾動事件
+    // 監聽滾動事件
     window.addEventListener('scroll', function() {
       if (window.pageYOffset > 300) {
         backToTopButton.classList.add('visible');
@@ -1425,7 +1425,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
       }
     });
     
-    # 點擊事件
+    // 點擊事件
     backToTopButton.addEventListener('click', function() {
       window.scrollTo({
         top: 0,
