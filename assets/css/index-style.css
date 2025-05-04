@@ -441,7 +441,7 @@
   right: 0;
   bottom: 0;
   /* 使用更輕柔的漸變覆蓋層 */
-  background: linear-gradient(135deg, rgba(248, 250, 253, 0.5), rgba(240, 246, 255, 0.4));
+  background: linear-gradient(135deg, rgba(248, 250, 253, 0.8), rgba(240, 246, 255, 0.7));
   z-index: 1;
 }
 
@@ -470,8 +470,8 @@
 .home-hero h1 {
   font-size: 4rem;
   margin-bottom: 30px;
-  color: var(--primary-color); /* 深色文字，與網站主題一致 */
-  text-shadow: 0 1px 3px rgba(255,255,255,0.5); /* 淺色陰影提高可讀性 */
+  color: white; /* 修改為白色，原為 var(--primary-color) */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); /* 修改為黑色陰影，提高在明亮背景上的可讀性 */
   line-height: 1.2;
   position: relative;
   max-width: 800px;
@@ -493,10 +493,10 @@
   margin-bottom: 30px;
   opacity: 0.95;
   line-height: 1.6;
-  color: var(--text-color);
-  text-shadow: 0 1px 2px rgba(255,255,255,0.5);
+  color: white; /* 修改為白色，原為 var(--text-color) */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); /* 修改為黑色陰影，提高可讀性 */
   max-width: 600px;
-  margin-left: 20px;  /* 右移形成錯位 */
+  margin-left: 20px;
   position: relative;
   z-index: 2;
 }
