@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="霍爾果斯會計師事務所提供專業企業顧問服務，協助公司設立登記、企業財務規劃、營運流程優化與併購顧問，提供全方位商業策略建議。" />
-  <title>企業顧問服務 | 霍爾果斯會計師事務所</title>
+  <meta name="description" content="霍爾果斯會計師事務所工商登記服務 - 專業協助企業設立、變更與各類工商登記。" />
+  <title>工商登記 | 霍爾果斯會計師事務所</title>
   
   <!-- Favicon -->
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -20,6 +20,633 @@
   <link rel="stylesheet" href="/assets/css/navbar.css" />
   <link rel="stylesheet" href="/assets/css/footer.css" />
   
+  <!-- 引用首頁特定樣式 - 用於流動式設計 -->
+  <link rel="stylesheet" href="/assets/css/index-style.css" />
+  
+  <!-- 服務頁面特定樣式 -->
+  <style>
+    /* 頁面標題樣式調整 - 與team.html一致 */
+    .service-header {
+      text-align: left;
+      padding: 40px 0 20px;
+      margin-bottom: 0;
+      position: relative;
+      background: linear-gradient(135deg, var(--bg-light), #ffffff);
+      border-bottom: none;
+    }
+    
+    .service-header-content {
+      padding-left: 20px;
+    }
+    
+    .service-header h1 {
+      font-size: 2.8rem;
+      color: var(--primary-color);
+      margin-bottom: 15px;
+      position: relative;
+      display: inline-block;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    .service-header h1::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: var(--title-accent-width);
+      height: 4px;
+      background: linear-gradient(to right, var(--secondary-color), rgba(0, 112, 221, 0.3));
+      border-radius: 2px;
+    }
+    
+    .service-header p {
+      font-size: 1.2rem;
+      color: var(--text-medium);
+      max-width: 800px;
+      margin: 0 0 10px 20px;
+      line-height: 1.6;
+    }
+    
+    /* 服務詳情區塊樣式 */
+    .service-detail-section {
+      background-color: #ffffff;
+      background-image: 
+        radial-gradient(circle at 90% 10%, rgba(0, 102, 204, 0.03), transparent 400px),
+        radial-gradient(circle at 10% 90%, rgba(0, 102, 204, 0.03), transparent 400px);
+      padding: 60px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* 斜角分隔設計 */
+    .service-detail-section::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: inherit;
+      transform: skewY(var(--flow-angle));
+      transform-origin: left;
+      z-index: 1;
+    }
+    
+    .service-detail-section::after {
+      content: '';
+      position: absolute;
+      bottom: -50px;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: inherit;
+      transform: skewY(var(--flow-angle));
+      transform-origin: right;
+      z-index: 1;
+    }
+    
+    /* 詳情卡片樣式 */
+    .detail-card {
+      display: flex;
+      align-items: center;
+      gap: 50px;
+      margin: 0 0 70px;
+      padding: 40px 50px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(0, 102, 204, 0.05);
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .detail-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 
+        0 30px 60px rgba(0, 0, 0, 0.12),
+        0 0 0 1px rgba(0, 102, 204, 0.08);
+    }
+    
+    /* 交錯排列 */
+    .detail-card:nth-child(even) {
+      flex-direction: row-reverse;
+    }
+    
+    /* 裝飾元素 */
+    .detail-card::before {
+      content: '';
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(0, 112, 221, 0.08) 0%, rgba(0, 112, 221, 0.01) 100%);
+      z-index: 0;
+      top: -125px;
+      left: -125px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    
+    .detail-card:nth-child(even)::before {
+      left: auto;
+      right: -125px;
+    }
+    
+    .detail-card:hover::before {
+      opacity: 1;
+    }
+    
+    /* 圖示區塊 */
+    .detail-icon {
+      flex: 0 0 35%;
+      position: relative;
+      overflow: hidden;
+      border-radius: 14px;
+      box-shadow: 
+        0 15px 30px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(0, 102, 204, 0.1);
+      transform: rotate(-1deg);
+      transition: all 0.4s ease;
+    }
+    
+    .detail-card:nth-child(even) .detail-icon {
+      transform: rotate(1deg);
+    }
+    
+    .detail-card:hover .detail-icon {
+      transform: rotate(0);
+    }
+    
+    .detail-icon img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    .detail-card:hover .detail-icon img {
+      transform: scale(1.05);
+    }
+    
+    /* 內容區塊 */
+    .detail-content {
+      flex: 1;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* 標題設計 */
+    .detail-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 15px;
+      position: relative;
+      letter-spacing: -0.02em;
+    }
+    
+    /* 內容段落 */
+    .detail-text {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: #444;
+    }
+    
+    .detail-text p {
+      margin-bottom: 15px;
+    }
+    
+    .detail-text p:last-child {
+      margin-bottom: 0;
+    }
+    
+    /* 流程區塊 */
+    .process-section {
+      background: linear-gradient(175deg, var(--bg-light), #f0f6ff);
+      padding: 60px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* 斜角分隔設計 */
+    .process-section::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: inherit;
+      transform: skewY(var(--flow-angle));
+      transform-origin: left;
+      z-index: 1;
+    }
+    
+    .process-content {
+      position: relative;
+      z-index: 2;
+    }
+    
+    .section-title {
+      margin-bottom: 50px;
+      text-align: center;
+    }
+    
+    .section-title h2 {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 15px;
+      position: relative;
+      display: inline-block;
+    }
+    
+    .section-title h2::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(to right, var(--secondary-color), rgba(0, 112, 221, 0.3));
+      border-radius: 2px;
+    }
+    
+    .section-title p {
+      font-size: 1.2rem;
+      color: var(--text-medium);
+      max-width: 800px;
+      margin: 20px auto 0;
+    }
+    
+    /* 流程步驟 */
+    .process-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 30px;
+      position: relative;
+    }
+    
+    /* 流程連接線 */
+    .process-steps::before {
+      content: '';
+      position: absolute;
+      top: 90px;
+      left: 60px;
+      right: 60px;
+      height: 2px;
+      background: linear-gradient(to right, var(--secondary-color), rgba(0, 112, 221, 0.3));
+      z-index: 1;
+    }
+    
+    .step-card {
+      flex: 1;
+      min-width: 220px;
+      background: white;
+      padding: 30px 25px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 2;
+    }
+    
+    .step-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    }
+    
+    .step-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      background: var(--secondary-color);
+      color: white;
+      font-size: 1.3rem;
+      font-weight: 700;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      position: relative;
+    }
+    
+    .step-card h3 {
+      font-size: 1.3rem;
+      color: var(--primary-color);
+      margin-bottom: 15px;
+    }
+    
+    .step-card p {
+      font-size: 0.95rem;
+      color: #444;
+      line-height: 1.6;
+    }
+    
+    /* 文件需求區塊 */
+    .documents-section {
+      background-color: #ffffff;
+      background-image: 
+        radial-gradient(circle at 90% 10%, rgba(0, 102, 204, 0.03), transparent 400px),
+        radial-gradient(circle at 10% 90%, rgba(0, 102, 204, 0.03), transparent 400px);
+      padding: 60px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* 斜角分隔設計 */
+    .documents-section::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: inherit;
+      transform: skewY(var(--flow-angle));
+      transform-origin: left;
+      z-index: 1;
+    }
+    
+    /* 文件卡片容器 */
+    .documents-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      margin-top: 50px;
+    }
+    
+    .document-card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .document-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    }
+    
+    .document-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 6px;
+      height: 100%;
+      background: var(--secondary-color);
+      border-radius: 3px 0 0 3px;
+    }
+    
+    .document-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
+      background: #f0f6ff;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .document-icon span {
+      font-size: 30px;
+      color: var(--secondary-color);
+    }
+    
+    .document-card h3 {
+      font-size: 1.3rem;
+      color: var(--primary-color);
+      margin-bottom: 15px;
+    }
+    
+    .document-card ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    
+    .document-card li {
+      margin-bottom: 10px;
+      color: #444;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    
+    .document-card li:last-child {
+      margin-bottom: 0;
+    }
+    
+    /* 服務優勢區塊 */
+    .advantages-section {
+      background: linear-gradient(175deg, var(--bg-light), #f0f6ff);
+      padding: 60px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* 斜角分隔設計 */
+    .advantages-section::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: inherit;
+      transform: skewY(var(--flow-angle));
+      transform-origin: left;
+      z-index: 1;
+    }
+    
+    /* 服務優勢卡片容器 */
+    .advantages-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      margin-top: 50px;
+    }
+    
+    .advantage-card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .advantage-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    }
+    
+    .advantage-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      background: #f0f6ff;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+    }
+    
+    .advantage-icon span {
+      font-size: 36px;
+      color: var(--secondary-color);
+    }
+    
+    .advantage-card h3 {
+      font-size: 1.3rem;
+      color: var(--primary-color);
+      margin-bottom: 15px;
+    }
+    
+    .advantage-card p {
+      font-size: 0.95rem;
+      color: #444;
+      line-height: 1.6;
+    }
+    
+    /* 行動區塊 */
+    .cta-section {
+      padding: 80px 0;
+      text-align: center;
+      background-color: #ffffff;
+      position: relative;
+    }
+    
+    /* 斜角分隔設計 */
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: -50px;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: inherit;
+      transform: skewY(var(--flow-angle));
+      transform-origin: left;
+      z-index: 1;
+    }
+    
+    .cta-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .cta-content h2 {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      margin-bottom: 20px;
+    }
+    
+    .cta-content p {
+      font-size: 1.2rem;
+      color: #444;
+      margin-bottom: 30px;
+    }
+    
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    
+    /* 響應式調整 */
+    @media (max-width: 992px) {
+      .detail-card {
+        gap: 30px;
+        padding: 30px;
+      }
+      
+      .process-steps::before {
+        display: none;
+      }
+      
+      .process-steps {
+        flex-direction: column;
+      }
+      
+      .step-card {
+        width: 100%;
+      }
+      
+      .documents-container, .advantages-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .service-header h1 {
+        font-size: 2.4rem;
+      }
+      
+      .detail-title {
+        font-size: 1.8rem;
+      }
+      
+      .cta-content h2 {
+        font-size: 2.2rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .detail-card {
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .detail-card:nth-child(even) {
+        flex-direction: column;
+      }
+      
+      .detail-icon {
+        width: 100%;
+        transform: rotate(0);
+      }
+      
+      .detail-card:nth-child(even) .detail-icon {
+        transform: rotate(0);
+      }
+      
+      .service-header {
+        text-align: center;
+      }
+      
+      .service-header-content {
+        padding-left: 0;
+      }
+      
+      .service-header h1 {
+        font-size: 2rem;
+      }
+      
+      .service-header h1::after {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      
+      .service-header p {
+        margin: 0 auto 10px;
+      }
+      
+      .documents-container, .advantages-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  
   <!-- Google 分析 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
   <script>
@@ -28,41 +655,10 @@
     gtag('js', new Date());
     gtag('config', 'G-RKMCS9WVS5');
   </script>
-  
-  <!-- 結構化資料 -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Service",
-    "serviceType": "企業顧問服務",
-    "provider": {
-      "@type": "AccountingService",
-      "name": "霍爾果斯會計師事務所",
-      "url": "https://www.horgoscpa.com",
-      "logo": "https://www.horgoscpa.com/assets/images/logo.png",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "建國路21號3樓之1",
-        "addressLocality": "台中市",
-        "addressRegion": "西區",
-        "postalCode": "403",
-        "addressCountry": "TW"
-      },
-      "telephone": "+886-4-2220-5606"
-    },
-    "description": "協助公司設立登記、企業財務規劃、營運流程優化與併購顧問，提供全方位商業策略建議，助您企業成長。",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "TWD",
-      "availability": "https://schema.org/InStock"
-    }
-  }
-  </script>
 </head>
 <body>
 
-<!-- 導航欄 - 修改版 -->
+<!-- 導航欄 -->
 <nav class="site-nav">
   <div class="nav-container">
     <div class="logo">
@@ -76,80 +672,241 @@
       <span></span>
     </label>
     <ul class="nav-menu">
-  <li><a href="/services.html">服務項目</a></li>
-  <li><a href="/team.html">服務團隊</a></li>
-  <li><a href="/blog.html">專欄文章</a></li>
-  <li><a href="/faq.html">常見問題</a></li>
-  <li><a href="/video.html">影音專區</a></li>
-  <li><a href="/contact.html">聯繫我們</a></li>
-  <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
-</ul>
+      <li><a href="/services.html" class="active">專業服務</a></li>
+      <li><a href="/team.html">專業團隊</a></li>
+      <li><a href="/blog.html">專欄文章</a></li>
+      <li><a href="/faq.html">常見問題</a></li>
+      <li><a href="/video.html">影音專區</a></li>
+      <li><a href="/contact.html">聯繫我們</a></li>
+      <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
+    </ul>
   </div>
 </nav>
 
 <!-- 頁面標題 -->
-<div class="page-header">
+<header class="service-header">
   <div class="container">
-    <h1>企業顧問服務</h1>
-    <p>協助公司設立登記、企業財務規劃、營運流程優化與併購顧問，提供全方位商業策略建議，助您企業成長。</p>
+    <div class="service-header-content">
+      <h1>工商登記服務</h1>
+      <p>專業協助企業設立、變更與各類工商登記，為您的事業開展提供完整且高效的登記服務</p>
+    </div>
   </div>
-</div>
+</header>
 
-<!-- 服務項目區塊 -->
-<section class="services-section">
+<!-- 服務詳情區塊 -->
+<section class="service-detail-section">
   <div class="container">
-    <div class="services-grid">
-      <div class="service-card">
-        <div class="service-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="50" height="50" fill="#0066cc">
-            <path d="M22 19H20V3H7L10 7H17V19H12V21H22V19ZM2 19V17H10V19H2ZM14 9V7H2V9H14ZM14 13V11H2V13H14Z"/>
-          </svg>
-        </div>
-        <h3>公司設立登記</h3>
-        <p>提供公司與分支機構設立登記服務，包含資本結構規劃、公司型態選擇、營業項目設定、主管機關申請與股權架構設計，協助企業順利完成設立程序。</p>
+    <!-- 詳情卡片 -->
+    <div class="detail-card">
+      <div class="detail-icon">
+        <img src="/assets/images/business-registration.jpg" alt="公司登記服務">
       </div>
-
-      <!-- 企業財務規劃卡片 -->
-      <div class="service-card">
-        <div class="service-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="50" height="50" fill="#0066cc">
-            <path d="M16 7H13V10H16V7ZM16 11H13V14H16V11ZM16 15H13V18H16V15ZM17 6H22V19H10V5H2V3H10C11.1046 3 12 3.89543 12 5V17H20V8H11V6H17ZM8 7H5V10H8V7ZM8 11H5V14H8V11ZM8 15H5V18H8V15Z"/>
-          </svg>
+      <div class="detail-content">
+        <h2 class="detail-title">公司設立登記</h2>
+        <div class="detail-text">
+          <p>霍爾果斯會計師事務所提供專業的公司設立登記服務，包括有限公司、股份有限公司、分公司等各類型企業的登記服務。我們協助您完成從名稱預查、章程撰寫到設立登記的全流程服務。</p>
+          <p>依據企業需求，我們提供最適合的組織型態選擇建議，並針對不同規模與產業特性，提供專業的資本額與股權架構規劃，協助您為企業奠定穩固的基礎。</p>
         </div>
-        <h3>企業財務規劃</h3>
-        <p>針對企業財務狀況進行全面分析，包含資金流規劃、成本結構優化、融資策略制定、投資報酬評估與風險管理，建立健全的財務體質與決策機制。</p>
-      </div>
-
-      <!-- 營運流程優化卡片 -->
-      <div class="service-card">
-        <div class="service-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="50" height="50" fill="#0066cc">
-            <path d="M20 13.5C20 17.0899 17.0899 20 13.5 20C13.0055 20 12.5253 19.942 12.0659 19.8321L13.0779 18H16V16H14.0779L15.8321 14.2458C15.9428 14.0017 16 13.7288 16 13.4414C16 12.6304 15.3424 11.9732 14.5313 11.9732C14.0893 11.9732 13.6889 12.1603 13.4128 12.4682L12.5 13.5L11.0757 12.0757L11.6221 11.5293L8.79289 8.7L10.2071 7.28579L13.0364 10.115L14.5829 8.56848C14.8436 8.30774 15 7.9524 15 7.57071C15 6.83755 14.4091 6.24664 13.6759 6.24664C13.5493 6.24664 13.4257 6.26326 13.3074 6.29517L11.5 8.5L10.0757 7.07571L11.9243 5.22714C11.4775 4.68825 10.7913 4.32858 10.0251 4.32858C8.6471 4.32858 7.52858 5.44711 7.52858 6.82511C7.52858 7.16838 7.60114 7.49467 7.73206 7.79074L3.92531 12.9482L3 12.2174V16H6.78264L6.05178 15.0747L7.99415 12.3698C8.68754 13.3359 9.78927 14 11.0251 14C13.2338 14 15.0251 12.2086 15.0251 10C15.0251 7.9766 13.4749 6.30531 11.5 6.04078V4C15.0899 4 18 6.91015 18 10.5C18 10.9945 17.942 11.4747 17.8321 11.9341L19.0757 10.9243L20.4999 12.3485L18.0659 15.4142C19.2428 14.9159 20 13.8166 20 12.5251C20 12.3688 19.989 12.2152 19.9676 12.0647L22 11.0379V13.5Z"/>
-          </svg>
-        </div>
-        <h3>營運流程優化</h3>
-        <p>協助企業診斷與優化營運流程，包含組織架構檢視、業務流程重組、內控制度建立、人力資源配置與績效評估系統，提升整體營運效率與競爭力。</p>
-      </div>
-
-      <!-- 企業併購顧問卡片 -->
-      <div class="service-card">
-        <div class="service-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="50" height="50" fill="#0066cc">
-            <path d="M2 9.99983H7.3125L10.4062 6.90608L13.5 9.99983H22V19.9998H2V9.99983ZM4 11.9998V17.9998H20V11.9998H14.6875L11.5938 8.90608L8.5 11.9998H4ZM14 15.9998H18V13.9998H14V15.9998ZM2 3.99983H22V5.99983H2V3.99983Z"/>
-          </svg>
-        </div>
-        <h3>企業併購顧問</h3>
-        <p>提供企業轉型、合併與收購的專業顧問服務，包含標的評估、盡職調查、交易架構設計、價值評估、談判策略與整合規劃，確保併購流程順利並創造最大價值。</p>
       </div>
     </div>
-      
-    <div class="text-center" style="margin-top: 50px;">
-      <a href="/booking.html" class="btn">立即諮詢</a>
+    
+    <div class="detail-card">
+      <div class="detail-icon">
+        <img src="/assets/images/business-change.jpg" alt="公司變更登記">
+      </div>
+      <div class="detail-content">
+        <h2 class="detail-title">公司變更登記</h2>
+        <div class="detail-text">
+          <p>企業成長過程中，常需進行各項變更登記，如公司名稱、負責人、資本額、股東結構、營業項目等變更。我們提供專業的公司變更登記服務，確保您的變更過程符合法規且快速完成。</p>
+          <p>我們會根據您的業務需求與發展規劃，提供最適合的變更方案，並協助您完成相關文件的準備與申報，減輕您的行政負擔，讓您專注於企業經營與發展。</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="detail-card">
+      <div class="detail-icon">
+        <img src="/assets/images/business-close.jpg" alt="公司歇業與解散登記">
+      </div>
+      <div class="detail-content">
+        <h2 class="detail-title">公司歇業與解散登記</h2>
+        <div class="detail-text">
+          <p>當企業需要進行歇業或解散時，涉及許多繁瑣的行政與稅務程序。我們提供完整的公司歇業、解散與清算服務，協助您順利完成公司的結束程序。</p>
+          <p>我們的服務包括稅務結算、資產處理、債權債務清理、解散登記等各項流程，確保您的公司結束程序合法合規，避免潛在的法律與稅務風險。</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- 頁尾區域 - 修改版 -->
+<!-- 服務流程區塊 -->
+<section class="process-section">
+  <div class="container">
+    <div class="section-title">
+      <h2>服務流程</h2>
+      <p>我們提供系統化、標準化的工商登記服務流程，確保您的登記程序順利完成</p>
+    </div>
+    
+    <div class="process-content">
+      <div class="process-steps">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>需求諮詢</h3>
+          <p>與客戶進行初步溝通，了解企業需求、規模、產業特性等，提供適合的企業型態、資本額與營業項目建議。</p>
+        </div>
+        
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>名稱預查</h3>
+          <p>協助進行公司名稱預查，確認名稱可用性，並提供替代名稱建議，確保名稱符合法規要求。</p>
+        </div>
+        
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3>文件準備</h3>
+          <p>協助準備設立所需文件，包括章程、股東名冊、董事與監察人資料、出資證明等必要文件。</p>
+        </div>
+        
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <h3>申請登記</h3>
+          <p>向主管機關申請設立登記，並跟進申請進度，確保登記程序順利進行，解決可能出現的問題。</p>
+        </div>
+        
+        <div class="step-card">
+          <div class="step-number">5</div>
+          <h3>完成登記</h3>
+          <p>完成公司登記後，協助申請統一發票、開立銀行帳戶、辦理稅籍登記等後續事項，確保公司可順利營運。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 所需文件區塊 -->
+<section class="documents-section">
+  <div class="container">
+    <div class="section-title">
+      <h2>所需文件與準備</h2>
+      <p>為確保登記程序順利進行，請準備以下相關文件與資料</p>
+    </div>
+    
+    <div class="documents-container">
+      <div class="document-card">
+        <div class="document-icon">
+          <span class="material-symbols-rounded">person</span>
+        </div>
+        <h3>公司負責人資料</h3>
+        <ul>
+          <li>負責人身分證正反面影本</li>
+          <li>印鑑證明正本 (3個月內)</li>
+          <li>個人印章</li>
+          <li>居住證明 (戶籍謄本或房屋稅單)</li>
+        </ul>
+      </div>
+      
+      <div class="document-card">
+        <div class="document-icon">
+          <span class="material-symbols-rounded">groups</span>
+        </div>
+        <h3>股東與董監事資料</h3>
+        <ul>
+          <li>股東身分證正反面影本</li>
+          <li>董事與監察人身分證影本</li>
+          <li>出資比例與金額</li>
+          <li>董事會議紀錄 (如適用)</li>
+        </ul>
+      </div>
+      
+      <div class="document-card">
+        <div class="document-icon">
+          <span class="material-symbols-rounded">home</span>
+        </div>
+        <h3>公司地址資料</h3>
+        <ul>
+          <li>公司登記地址證明文件</li>
+          <li>房屋所有權狀影本</li>
+          <li>房屋稅單影本</li>
+          <li>租賃契約影本 (如為租賃)</li>
+          <li>房東同意書 (如為租賃)</li>
+        </ul>
+      </div>
+      
+      <div class="document-card">
+        <div class="document-icon">
+          <span class="material-symbols-rounded">description</span>
+        </div>
+        <h3>公司營運資料</h3>
+        <ul>
+          <li>公司名稱選項 (至少3個)</li>
+          <li>營業項目清單</li>
+          <li>預定資本額</li>
+          <li>公司章程草案</li>
+          <li>預計營業內容說明</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 服務優勢區塊 -->
+<section class="advantages-section">
+  <div class="container">
+    <div class="section-title">
+      <h2>我們的服務優勢</h2>
+      <p>霍爾果斯會計師事務所在工商登記服務方面擁有豐富經驗與獨特優勢</p>
+    </div>
+    
+    <div class="advantages-container">
+      <div class="advantage-card">
+        <div class="advantage-icon">
+          <span class="material-symbols-rounded">timer</span>
+        </div>
+        <h3>高效率辦理時程</h3>
+        <p>憑藉豐富經驗與專業流程，我們能夠在最短時間內完成工商登記程序，縮短您的等待時間，加速企業營運啟動。</p>
+      </div>
+      
+      <div class="advantage-card">
+        <div class="advantage-icon">
+          <span class="material-symbols-rounded">verified</span>
+        </div>
+        <h3>減少補件風險</h3>
+        <p>專業且嚴謹的文件審核流程，確保提交的申請資料完整無誤，大幅降低主管機關補件要求的風險，避免耽誤登記時間。</p>
+      </div>
+      
+      <div class="advantage-card">
+        <div class="advantage-icon">
+          <span class="material-symbols-rounded">account_balance</span>
+        </div>
+        <h3>稅務規劃整合</h3>
+        <p>結合稅務專業，在公司設立階段即提供適當的稅務規劃建議，為企業未來發展奠定良好的稅務基礎，降低潛在稅務風險。</p>
+      </div>
+      
+      <div class="advantage-card">
+        <div class="advantage-icon">
+          <span class="material-symbols-rounded">all_inclusive</span>
+        </div>
+        <h3>一站式服務</h3>
+        <p>提供從公司設立、營運到後續稅務申報的完整服務，讓您無需聯繫多家服務提供商，享受無縫整合的專業服務體驗。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 行動呼籲區塊 -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-content">
+      <h2>專業團隊為您提供最佳服務</h2>
+      <p>無論您是初創企業或已有經營基礎，我們的專業團隊都能為您提供最適合的工商登記服務，歡迎與我們聯繫。</p>
+      <div class="cta-buttons">
+        <a href="/booking.html" class="btn">預約免費諮詢</a>
+        <a href="/contact.html" class="btn btn-outline">聯絡我們</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 頁尾區域 -->
 <footer class="site-footer">
   <div class="footer-container">
     <div class="footer-content">
@@ -193,21 +950,22 @@
         <h3>快速連結</h3>
         <ul class="quick-links">
           <li><a href="/index.html"><span class="material-symbols-rounded icon-link">home</span> 首頁</a></li>
-          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 服務團隊</a></li>
-          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 部落格</a></li>
+          <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 專業團隊</a></li>
+          <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 專欄文章</a></li>
           <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
-          <li><a href="/video.html"><span class="material-symbols-rounded icon-link">play_circle</span> 影片</a></li>
+          <li><a href="/video.html"><span class="material-symbols-rounded icon-link">play_circle</span> 影音專區</a></li>
           <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_mail</span> 聯絡資訊</a></li>
         </ul>
       </div>
       
-      <!-- 服務項目 -->
+      <!-- 服務項目 - 更新為與首頁一致 -->
       <div class="footer-services">
         <h3>服務項目</h3>
         <ul class="services-list">
-          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">attach_money</span> 稅務服務</a></li>
-          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance</span> 記帳與會計</a></li>
-          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">work</span> 企業顧問</a></li>
+          <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">store</span> 工商登記</a></li>
+          <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance_wallet</span> 帳務處理</a></li>
+          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">payments</span> 稅務申報</a></li>
+          <li><a href="/services/audit.html"><span class="material-symbols-rounded icon-link">verified</span> 財稅簽證</a></li>
           <li><a href="/booking.html"><span class="material-symbols-rounded icon-link">event_available</span> 預約諮詢</a></li>
         </ul>
       </div>
@@ -257,6 +1015,134 @@
 
 <!-- 導航欄功能腳本 -->
 <script src="/assets/js/navbar.js"></script>
+
+<!-- 動畫效果腳本 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 添加滾動時的元素動畫效果
+    const animateOnScroll = function() {
+      // 獲取所有需要動畫的元素
+      const detailCards = document.querySelectorAll('.detail-card');
+      const stepCards = document.querySelectorAll('.step-card');
+      const documentCards = document.querySelectorAll('.document-card');
+      const advantageCards = document.querySelectorAll('.advantage-card');
+      const sectionTitles = document.querySelectorAll('.section-title');
+      
+      // 檢查元素是否在視圖中
+      function isElementInViewport(el) {
+        const rect = el.getBoundingClientRect();
+        return (
+          rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.85 &&
+          rect.bottom >= 0
+        );
+      }
+      
+      // 處理詳情卡片動畫
+      const visibleDetailCards = Array.from(detailCards).filter(card => isElementInViewport(card) && !card.classList.contains('animated'));
+      
+      visibleDetailCards.forEach((card, index) => {
+        card.classList.add('animated');
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+          card.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 100 + (index * 150)); // 依次延遲顯示
+      });
+      
+      // 處理流程步驟卡片動畫
+      const visibleStepCards = Array.from(stepCards).filter(card => isElementInViewport(card) && !card.classList.contains('animated'));
+      
+      visibleStepCards.forEach((card, index) => {
+        card.classList.add('animated');
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+          card.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 100 + (index * 150)); // 依次延遲顯示
+      });
+      
+      // 處理文件卡片動畫
+      const visibleDocumentCards = Array.from(documentCards).filter(card => isElementInViewport(card) && !card.classList.contains('animated'));
+      
+      visibleDocumentCards.forEach((card, index) => {
+        card.classList.add('animated');
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+          card.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 100 + (index * 150)); // 依次延遲顯示
+      });
+      
+      // 處理優勢卡片動畫
+      const visibleAdvantageCards = Array.from(advantageCards).filter(card => isElementInViewport(card) && !card.classList.contains('animated'));
+      
+      visibleAdvantageCards.forEach((card, index) => {
+        card.classList.add('animated');
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        
+        setTimeout(() => {
+          card.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 100 + (index * 150)); // 依次延遲顯示
+      });
+      
+      // 處理標題動畫
+      sectionTitles.forEach(title => {
+        if (isElementInViewport(title) && !title.classList.contains('animated')) {
+          title.classList.add('animated');
+          
+          // 為標題添加動畫類
+          const heading = title.querySelector('h2');
+          const description = title.querySelector('p');
+          
+          if (heading) {
+            heading.style.opacity = '0';
+            heading.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+              heading.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+              heading.style.opacity = '1';
+              heading.style.transform = 'translateY(0)';
+            }, 100);
+          }
+          
+          if (description) {
+            description.style.opacity = '0';
+            description.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+              description.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+              description.style.opacity = '1';
+              description.style.transform = 'translateY(0)';
+            }, 300); // 延遲出現，形成錯位感
+          }
+        }
+      });
+    };
+    
+    // 初始執行
+    animateOnScroll();
+    
+    // 滾動時執行動畫
+    window.addEventListener('scroll', function() {
+      animateOnScroll();
+    });
+    
+    // 窗口大小改變時重新計算
+    window.addEventListener('resize', function() {
+      animateOnScroll();
+    });
+  });
+</script>
 
 </body>
 </html>
