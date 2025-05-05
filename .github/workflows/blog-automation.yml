@@ -434,46 +434,14 @@ jobs:
             echo "videos_txt_changed=false" >> $GITHUB_OUTPUT
           fi
       
-      # 判斷是否需要更新影片數據
-      - name: 判斷是否需要更新影片數據
-        id: check_update_videos
-        run: |
-          NEED_UPDATE="false"
-          
-          if [ "${{ github.event.inputs.update_videos }}" == "true" ]; then
-            NEED_UPDATE="true"
-            echo "觸發條件: 手動指定更新影片"
-          fi
-          
-          if [ "${{ steps.check_video_changes.outputs.videos_txt_changed }}" == "true" ]; then
-            NEED_UPDATE="true"
-            echo "觸發條件: videos.txt 檔案有變更"
-          fi
-          
-          if [ "${{ github.event_name }}" == "push" ]; then
-            if [[ "${{ contains(github.event.head_commit.modified, 'video/videos.txt') }}" == "true" ]]; then
-              NEED_UPDATE="true"
-              echo "觸發條件: push 事件修改了 videos.txt 檔案"
-            fi
-            
-            if [[ "${{ contains(github.event.head_commit.added, 'video/videos.txt') }}" == "true" ]]; then
-              NEED_UPDATE="true"
-              echo "觸發條件: push 事件新增了 videos.txt 檔案"
-            fi
-          fi
-          
-          if [ "${{ github.event_name }}" == "repository_dispatch" ] && [ "${{ github.event.action }}" == "update-video" ]; then
-            NEED_UPDATE="true"
-            echo "觸發條件: repository_dispatch 事件請求更新影片"
-          fi
-          
-          echo "need_update=${NEED_UPDATE}" >> $GITHUB_OUTPUT
-          echo "判斷結果: ${NEED_UPDATE}"
-
       # 更新影片數據
       - name: 更新影片數據
         id: update_videos
-        if: steps.check_update_videos.outputs.need_update == 'true'
+        if: github.event.inputs.update_videos == 'true' || 
+            steps.check_video_changes.outputs.videos_txt_changed == 'true' ||
+            (github.event_name == 'push' && contains(github.event.head_commit.modified, 'video/videos.txt')) ||
+            (github.event_name == 'push' && contains(github.event.head_commit.added, 'video/videos.txt')) ||
+            (github.event_name == 'repository_dispatch' && github.event.action == 'update-video')
         run: |
           echo "檢測到需要更新影片數據"
           
@@ -507,45 +475,15 @@ jobs:
             echo "警告: 找不到 video/videos.txt 文件"
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
-
-      # 判斷是否需要更新網站 Sitemap
-      - name: 判斷是否需要更新 Sitemap
-        id: check_update_sitemap
-        run: |
-          NEED_UPDATE="false"
-          
-          if [ "${{ github.event.inputs.update_sitemap }}" == "true" ]; then
-            NEED_UPDATE="true"
-            echo "觸發條件: 手動指定更新 Sitemap"
-          fi
-          
-          if [ "${{ steps.commit-html.outputs.html_changed }}" == "true" ]; then
-            NEED_UPDATE="true"
-            echo "觸發條件: HTML 文件有變更"
-          fi
-          
-          if [ "${{ steps.check_deleted.outputs.html_deleted }}" == "true" ]; then
-            NEED_UPDATE="true"
-            echo "觸發條件: HTML 文件被刪除"
-          fi
-          
-          if [ "${{ github.event_name }}" == "schedule" ]; then
-            NEED_UPDATE="true"
-            echo "觸發條件: 定時執行"
-          fi
-          
-          if [ "${{ github.event_name }}" == "repository_dispatch" ] && [ "${{ github.event.action }}" == "update-sitemap" ]; then
-            NEED_UPDATE="true"
-            echo "觸發條件: repository_dispatch 事件請求更新 Sitemap"
-          fi
-          
-          echo "need_update=${NEED_UPDATE}" >> $GITHUB_OUTPUT
-          echo "判斷結果: ${NEED_UPDATE}"
-
+      
       # 更新網站 Sitemap
       - name: 更新網站 Sitemap
         id: update_sitemap
-        if: steps.check_update_sitemap.outputs.need_update == 'true'
+        if: github.event.inputs.update_sitemap == 'true' || 
+            steps.commit-html.outputs.html_changed == 'true' || 
+            steps.check_deleted.outputs.html_deleted == 'true' || 
+            github.event_name == 'schedule' || 
+            (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap')
         run: |
           echo "開始更新網站 Sitemap..."
           
