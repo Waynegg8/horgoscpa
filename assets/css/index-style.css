@@ -761,96 +761,68 @@
     height: 40px;
   }
 }
-/* 更新 Hero 區塊樣式 - 添加到 index-style.css */
+/* 更精確的左上角對齊 - 可以替換上面的相關部分 */
 
-/* 移除原有的背景圖片 */
+/* Hero 區塊整體設置 */
 .home-hero {
   position: relative;
-  background-color: var(--light-bg-color); /* 使用淺色背景 */
-  padding: 60px 0;
+  background-image: none; /* 移除背景圖片 */
+  background-color: #ffffff; /* 白色背景 */
+  padding: 0; /* 移除所有內邊距 */
+  margin: 0;
+  height: 500px; /* 固定高度 */
   overflow: hidden;
 }
 
-/* 創建彈性布局容器 */
-.hero-flex-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 40px;
-}
-
-/* Logo 圖片容器 */
-.hero-logo {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  max-width: 50%;
-}
-
-/* Logo 圖片樣式 */
-.hero-logo-image {
+/* 容器設置 */
+.hero-container {
+  position: relative;
   width: 100%;
-  max-width: 450px; /* 控制最大寬度 */
+  height: 100%;
+  padding: 0; /* 移除內邊距 */
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Logo 完全貼齊左上角 */
+.hero-logo-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 55%; /* 控制 logo 區域寬度 */
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  display: block; /* 使用 block 代替 flex */
+}
+
+/* Logo 圖片本身 */
+.hero-logo-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  max-width: 650px;
   height: auto;
+  padding: 0;
+  margin: 0;
   object-fit: contain;
-  display: block;
+  object-position: left top;
+  transform-origin: top left; /* 確保縮放時以左上角為基準 */
 }
 
-/* 文字內容區域 */
+/* 文字內容區 */
 .hero-content {
-  flex: 1;
-  padding: 20px;
-  max-width: 50%;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 45%; /* 控制文字區域寬度 */
+  padding: 20px 40px;
+  text-align: right;
 }
 
-.hero-content h1 {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-  color: var(--primary-color);
-}
-
-.hero-content p {
-  font-size: 1.1rem;
-  color: var(--text-color);
-  line-height: 1.6;
-}
-
-/* 響應式調整 */
-@media (max-width: 991px) {
-  .hero-flex-container {
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .hero-logo, .hero-content {
-    max-width: 100%;
-  }
-  
-  .hero-logo-image {
-    max-width: 350px;
-  }
-  
-  .hero-content {
-    text-align: center;
-  }
-}
-
-/* 小螢幕設備進一步調整 */
-@media (max-width: 576px) {
-  .home-hero {
-    padding: 40px 0;
-  }
-  
-  .hero-logo-image {
-    max-width: 280px;
-  }
-  
-  .hero-content h1 {
-    font-size: 2rem;
-  }
-  
-  .hero-content p {
-    font-size: 1rem;
-  }
+/* 確保背景中任何額外元素都被清除 */
+.home-hero:before, .home-hero:after {
+  display: none;
 }
