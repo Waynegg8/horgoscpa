@@ -403,33 +403,33 @@
     bottom: -6px;
   }
 }
-/* 修改 navbar.css 文件中的logo圖片尺寸 */
+/* 修改 navbar.css 文件中的logo尺寸比例 */
 .logo-img {
-  height: 65px; /* 顯著增大高度 */
+  height: 85px; /* 進一步增大中文logo高度 */
   width: auto;
   transition: all 0.3s ease;
 }
 
 .nav-scrolled .logo-img {
-  height: 55px; /* 滾動後的高度也相應增加 */
+  height: 65px; /* 滾動後的高度也相應調整 */
 }
 
-/* 調整容器樣式，確保有足夠空間 */
+/* 調整容器樣式，確保視覺平衡 */
 .logo-container {
   display: flex;
   align-items: center;
-  gap: 15px; /* 增加間距 */
+  gap: 12px; /* 略微縮小間距 */
 }
 
-/* 英文文字大小相應調整 */
+/* 縮小英文字體 */
 .logo-sub {
-  font-size: 1.3rem;
-  opacity: 0.9;
+  font-size: 1rem; /* 縮小為1rem */
+  opacity: 0.85; /* 略微降低不透明度，使視覺重點更集中在中文上 */
   letter-spacing: 0.5px;
   font-family: "Kaleko 105", sans-serif;
   transition: all 0.3s ease;
 }
 
 .nav-scrolled .logo-sub {
-  font-size: 1.2rem;
+  font-size: 0.9rem;
 }
