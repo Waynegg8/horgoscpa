@@ -240,7 +240,7 @@
   background-color: white;
   border-radius: 10px;
   box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-  margin-bottom: 20px;
+  margin-bottom: 25px; /* 修改：從20px增加到25px */
   overflow: hidden;
   transition: all 0.3s ease;
   border: none;
@@ -306,20 +306,24 @@
   transform: rotate(180deg);
 }
 
+/* 修改：改變FAQ答案展開方式 */
 .faq-answer {
   padding: 0;
   max-height: 0;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: all 0.35s ease;
   background-color: white;
+  opacity: 0; /* 初始設置為不可見 */
 }
 
 .faq-answer.show {
-  max-height: 2000px;
+  max-height: unset; /* 不使用固定高度，改用內容自動撐開 */
+  opacity: 1; /* 顯示內容 */
+  padding-bottom: 15px; /* 底部增加統一間距 */
 }
 
 .answer-content {
-  padding: 20px 20px 20px 48px;
+  padding: 20px 20px 15px 48px; /* 保持一致的內容填充 */
   color: #333;
   line-height: 1.75;
   font-size: 1rem;
@@ -332,7 +336,7 @@
 }
 
 .answer-content p:last-child {
-  margin-bottom: 0;
+  margin-bottom: 10px; /* 修改：確保最後一段也有底部間距 */
 }
 
 .answer-content ul, .answer-content ol {
@@ -344,6 +348,11 @@
 .answer-content li {
   margin-bottom: 8px;
   line-height: 1.6;
+}
+
+.answer-content ul:last-child,
+.answer-content ol:last-child {
+  margin-bottom: 10px; /* 確保列表作為最後元素時也有底部間距 */
 }
 
 .answer-content table {
@@ -610,5 +619,34 @@
     padding: 0 10px;
     font-size: 0.9rem;
   }
-  
-  /* 修改：調整最小螢幕
+}
+
+/* 高亮顯示搜尋結果 */
+.highlight {
+  background-color: rgba(0, 102, 204, 0.15);
+  color: #0066cc;
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 500;
+}
+
+/* 沒有搜尋結果的提示 */
+.no-results {
+  background-color: #f9fafc;
+  border-radius: 10px;
+  padding: 40px 30px;
+  text-align: center;
+  margin: 30px 0;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+}
+
+.no-results p {
+  margin: 0 0 10px;
+  color: #555;
+}
+
+.no-results p:first-child {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #333;
+}

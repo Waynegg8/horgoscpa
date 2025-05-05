@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   /**
    * 切換問題答案顯示/隱藏
+   * 修改：簡化函數，使用CSS控制展開效果
    */
   function toggleAnswer(question) {
     // 獲取相關元素
@@ -133,17 +134,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isActive) {
       // 收合
       question.classList.remove('active');
-      answer.style.maxHeight = '0';
       
-      // 延遲移除 show 類以保留過渡動畫
-      setTimeout(() => {
-        answer.classList.remove('show');
-      }, 10);
+      // 移除 show 類，CSS過渡效果會處理收合動畫
+      answer.classList.remove('show');
     } else {
       // 展開
       question.classList.add('active');
       answer.classList.add('show');
-      answer.style.maxHeight = answer.scrollHeight + 'px';
+      
+      // 不再設置 maxHeight，讓CSS控制
     }
   }
   
@@ -220,7 +219,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!question.classList.contains('active')) {
           question.classList.add('active');
           answer.classList.add('show');
-          answer.style.maxHeight = answer.scrollHeight + 'px';
         }
       }
     });
