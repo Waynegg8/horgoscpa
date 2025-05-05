@@ -1204,6 +1204,9 @@ def generate_html(title: str, html_content: str, tags: List[str],
   <!-- 新增: 首頁特定樣式 - 用於流動式設計 -->
   <link rel="stylesheet" href="/assets/css/index-style.css" />
   
+  <!-- 移動版導航欄樣式 -->
+  <link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
+  
   <!-- 文章內頁專用現代化樣式 -->
   <link rel="stylesheet" href="/assets/css/blog-article-modern.css" />
   
@@ -1249,13 +1252,15 @@ def generate_html(title: str, html_content: str, tags: List[str],
 </head>
 <body>
 
-<!-- 導航欄 - 更新版 -->
+<!-- 導航欄 -->
 <nav class="site-nav">
   <div class="nav-container">
     <div class="logo">
       <a href="/index.html">
-        <div class="logo-main">霍爾果斯會計師事務所</div>
-        <div class="logo-sub">HorgosCPA</div>
+        <div class="logo-container">
+          <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
+          <div class="logo-sub">HorgosCPA</div>
+        </div>
       </a>
     </div>
     <input type="checkbox" id="nav-toggle" class="nav-toggle">
@@ -1273,6 +1278,36 @@ def generate_html(title: str, html_content: str, tags: List[str],
     </ul>
   </div>
 </nav>
+
+<!-- 移動版導航欄 -->
+<div class="mobile-navbar" style="display: none;">
+  <div class="mobile-nav-container">
+    <div class="mobile-menu-btn" id="mobileMenuBtn">
+      <span class="material-symbols-rounded">menu</span>
+    </div>
+    <div class="logo">
+      <a href="/index.html">
+        <div class="logo-container">
+          <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
+          <div class="logo-sub">HorgosCPA</div>
+        </div>
+      </a>
+    </div>
+    <div class="mobile-nav-spacer"></div>
+  </div>
+  
+  <div class="mobile-menu" id="mobileMenu">
+    <ul class="mobile-menu-links">
+      <li><a href="/services.html" class="mobile-nav-link">專業服務</a></li>
+      <li><a href="/team.html" class="mobile-nav-link">專業團隊</a></li>
+      <li><a href="/blog.html" class="mobile-nav-link">專欄文章</a></li>
+      <li><a href="/faq.html" class="mobile-nav-link">常見問題</a></li>
+      <li><a href="/video.html" class="mobile-nav-link">影音專區</a></li>
+      <li><a href="/contact.html" class="mobile-nav-link">聯繫我們</a></li>
+      <li><a href="/booking.html" class="mobile-consult-btn">免費諮詢</a></li>
+    </ul>
+  </div>
+</div>
 
 <!-- 文章頁面標題區塊 - 簡化版 -->
 <header class="article-header">
@@ -1328,13 +1363,13 @@ def generate_html(title: str, html_content: str, tags: List[str],
   </div>
 </section>
 
-<!-- 頁尾區域 - 更新版 -->
+<!-- 頁尾區域 -->
 <footer class="site-footer">
   <div class="footer-container">
     <div class="footer-content">
       <!-- Logo與簡介 -->
       <div class="footer-logo">
-        <div class="logo-main" style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px;">霍爾果斯會計師事務所</div>
+        <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="footer-logo-img">
         <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
         <p>專業、誠信、創新的財稅顧問夥伴，致力於提供企業與個人最優質的財務與稅務解決方案。</p>
         <!-- 新增LINE按鈕 -->
@@ -1375,7 +1410,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
           <li><a href="/team.html"><span class="material-symbols-rounded icon-link">groups</span> 專業團隊</a></li>
           <li><a href="/blog.html"><span class="material-symbols-rounded icon-link">article</span> 專欄文章</a></li>
           <li><a href="/faq.html"><span class="material-symbols-rounded icon-link">help</span> 常見問題</a></li>
-          <li><a href="/video.html"><span class="material-symbols-rounded icon-link">play_circle</span> 影片</a></li>
+          <li><a href="/video.html"><span class="material-symbols-rounded icon-link">play_circle</span> 影音專區</a></li>
           <li><a href="/contact.html"><span class="material-symbols-rounded icon-link">contact_mail</span> 聯絡資訊</a></li>
         </ul>
       </div>
@@ -1387,13 +1422,13 @@ def generate_html(title: str, html_content: str, tags: List[str],
           <li><a href="/services/consulting.html"><span class="material-symbols-rounded icon-link">store</span> 工商登記</a></li>
           <li><a href="/services/accounting.html"><span class="material-symbols-rounded icon-link">account_balance_wallet</span> 帳務處理</a></li>
           <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">payments</span> 稅務申報</a></li>
-          <li><a href="/services/tax.html"><span class="material-symbols-rounded icon-link">verified</span> 財稅簽證</a></li>
+          <li><a href="/services/audit.html"><span class="material-symbols-rounded icon-link">verified</span> 財稅簽證</a></li>
           <li><a href="/booking.html"><span class="material-symbols-rounded icon-link">event_available</span> 預約諮詢</a></li>
         </ul>
       </div>
     </div>
     
-     <!-- 版權資訊 -->
+    <!-- 版權資訊 -->
     <div class="footer-bottom">
       <div class="footer-text">
         <p>&copy; 2025 霍爾果斯會計師事務所</p>
@@ -1437,6 +1472,9 @@ def generate_html(title: str, html_content: str, tags: List[str],
 
 <!-- 導航欄功能腳本 -->
 <script src="/assets/js/navbar.js"></script>
+
+<!-- 移動版導航欄功能腳本 -->
+<script src="/assets/js/mobile-navbar.js"></script>
 
 <!-- 文章閱讀進度指示器 -->
 <script>
