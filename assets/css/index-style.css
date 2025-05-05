@@ -761,3 +761,96 @@
     height: 40px;
   }
 }
+/* 更新 Hero 區塊樣式 - 添加到 index-style.css */
+
+/* 移除原有的背景圖片 */
+.home-hero {
+  position: relative;
+  background-color: var(--light-bg-color); /* 使用淺色背景 */
+  padding: 60px 0;
+  overflow: hidden;
+}
+
+/* 創建彈性布局容器 */
+.hero-flex-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+/* Logo 圖片容器 */
+.hero-logo {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 50%;
+}
+
+/* Logo 圖片樣式 */
+.hero-logo-image {
+  width: 100%;
+  max-width: 450px; /* 控制最大寬度 */
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* 文字內容區域 */
+.hero-content {
+  flex: 1;
+  padding: 20px;
+  max-width: 50%;
+}
+
+.hero-content h1 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: var(--primary-color);
+}
+
+.hero-content p {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+/* 響應式調整 */
+@media (max-width: 991px) {
+  .hero-flex-container {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .hero-logo, .hero-content {
+    max-width: 100%;
+  }
+  
+  .hero-logo-image {
+    max-width: 350px;
+  }
+  
+  .hero-content {
+    text-align: center;
+  }
+}
+
+/* 小螢幕設備進一步調整 */
+@media (max-width: 576px) {
+  .home-hero {
+    padding: 40px 0;
+  }
+  
+  .hero-logo-image {
+    max-width: 280px;
+  }
+  
+  .hero-content h1 {
+    font-size: 2rem;
+  }
+  
+  .hero-content p {
+    font-size: 1rem;
+  }
+}
