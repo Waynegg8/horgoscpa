@@ -403,3 +403,30 @@
     bottom: -6px;
   }
 }
+/* 新增 logo 圖片樣式 */
+.logo a {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-decoration: none;
+  color: var(--primary-color);
+}
+
+.logo-image {
+  height: 70px; /* 根據需要調整高度 */
+  width: auto;
+  margin-bottom: 5px;
+}
+
+/* 移動版的 logo 圖片樣式 */
+.mobile-navbar .logo-image {
+  height: 50px; /* 移動版稍微小一點 */
+  width: auto;
+}
+
+/* 如果只想顯示圖片，可以取消註解下方樣式來隱藏文字 */
+/*
+.logo-main, .logo-sub {
+  display: none;
+}
+*/
