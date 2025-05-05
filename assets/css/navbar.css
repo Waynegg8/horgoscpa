@@ -405,25 +405,25 @@
 }
 /* 修改 navbar.css 文件中的logo圖片尺寸 */
 .logo-img {
-  height: 48px; /* 增加高度 */
+  height: 65px; /* 顯著增大高度 */
   width: auto;
   transition: all 0.3s ease;
 }
 
 .nav-scrolled .logo-img {
-  height: 40px; /* 滾動後的高度也相應增加 */
+  height: 55px; /* 滾動後的高度也相應增加 */
 }
 
-/* 調整英文文字與圖片的垂直對齊 */
+/* 調整容器樣式，確保有足夠空間 */
 .logo-container {
   display: flex;
   align-items: center;
-  gap: 12px; /* 增加間距，讓布局更寬敞 */
+  gap: 15px; /* 增加間距 */
 }
 
-/* 英文文字大小可以略微增加 */
+/* 英文文字大小相應調整 */
 .logo-sub {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   opacity: 0.9;
   letter-spacing: 0.5px;
   font-family: "Kaleko 105", sans-serif;
@@ -431,34 +431,5 @@
 }
 
 .nav-scrolled .logo-sub {
-  font-size: 1rem;
-}
-
-/* 移動設備適配 */
-@media (max-width: 992px) {
-  .logo-img {
-    height: 42px; /* 中等尺寸屏幕上的高度 */
-  }
-  
-  .nav-scrolled .logo-img {
-    height: 36px;
-  }
-  
-  .logo-sub {
-    font-size: 1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .logo-img {
-    height: 38px; /* 小尺寸屏幕上的高度 */
-  }
-  
-  .nav-scrolled .logo-img {
-    height: 32px;
-  }
-  
-  .logo-sub {
-    font-size: 0.95rem;
-  }
+  font-size: 1.2rem;
 }
