@@ -477,10 +477,10 @@ jobs:
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
 
-     # 新增: 更新網站 Sitemap
-- name: 更新網站 Sitemap
-  id: update_sitemap
-  if: ${{ github.event.inputs.update_sitemap == 'true' || steps.commit-html.outputs.html_changed == 'true' || steps.check_deleted.outputs.html_deleted == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap') }}
+      # 新增: 更新網站 Sitemap
+      - name: 更新網站 Sitemap
+        id: update_sitemap
+        if: ${{ github.event.inputs.update_sitemap == 'true' || steps.commit-html.outputs.html_changed == 'true' || steps.check_deleted.outputs.html_deleted == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap') }}
         run: |
           echo "開始更新網站 Sitemap..."
           
