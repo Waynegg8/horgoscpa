@@ -62,7 +62,6 @@ on:
 jobs:
   content-automation:
     runs-on: ubuntu-latest
-    # 增加權限設置，確保可以被API觸發並運行
     permissions:
       contents: write
       actions: write
@@ -124,14 +123,6 @@ jobs:
           # 執行腳本
           python .github/scripts/generate_sitemap.py
 
-      # 提交更新的Sitemap
-      - name: 提交更新的Sitemap
-        if: steps.update_sitemap.outputs.sitemap_updated == 'true'
-        run: |
-          git add sitemap.xml
-          git commit -m "更新網站Sitemap"
-          git push
-
       # 處理從repository_dispatch接收的文章刪除請求
       - name: 處理API觸發的文章刪除
         if: github.event_name == 'repository_dispatch' && github.event.action == 'delete-article'
@@ -164,7 +155,7 @@ jobs:
             echo "警告: 找不到要刪除的文件 ${{ github.event.client_payload.file_path }}"
           fi
 
-      # 處理從repository_dispatch接收的掃描請求
+      # 處理掃描請求
       - name: 處理API觸發的掃描請求
         if: github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles'
         run: |
@@ -247,19 +238,6 @@ jobs:
             fi
           fi
 
-      # 檢查影片配置文件變更
-      - name: 檢查影片資料變更
-        id: check_video_changes
-        run: |
-          # 檢查是否有影片相關文件變更
-          if git diff --name-only HEAD~1 HEAD | grep -q "video/videos.txt"; then
-            echo "檢測到 videos.txt 文件有變更"
-            echo "videos_txt_changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "videos.txt 文件沒有變更"
-            echo "videos_txt_changed=false" >> $GITHUB_OUTPUT
-          fi
-
       # 更新影片數據
       - name: 更新影片數據
         id: update_videos
@@ -298,7 +276,7 @@ jobs:
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
 
-      # 清理已處理的Word文檔（可選，將處理過的Word文檔移動到processed目錄）
+      # 清理已處理的Word文檔
       - name: 清理已處理的Word文檔
         if: github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true'
         run: |
