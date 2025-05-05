@@ -76,18 +76,18 @@
 .search-container {
   position: relative;
   max-width: 600px;
-  margin: 0 auto 25px;
+  margin: 0 auto 30px; /* 增加底部間距 */
   width: 100%;
   transition: all 0.3s ease;
 }
 
 .search-input {
   width: 100%;
-  padding: 14px 45px 14px 18px;
-  border-radius: 8px;
+  padding: 15px 50px 15px 20px; /* 增加內邊距 */
+  border-radius: 10px;
   border: 1px solid #ddd;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-  font-size: 16px;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.07);
+  font-size: 1.05rem;
   transition: all 0.3s ease;
 }
 
@@ -142,11 +142,12 @@
 }
 
 .filter-btn {
-  padding: 12px 24px;
-  border-radius: 50px;
-  background-color: #f8f9fa;
-  border: 2px solid #e6e9ee;
-  font-weight: 600;
+  padding: 12px 25px;
+  border-radius: 30px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  border: 1px solid #e6e9ee;
+  background-color: #ffffff;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
   position: relative;
@@ -177,7 +178,7 @@
 }
 
 .filter-btn.active {
-  background-color: #0066cc;
+  background: linear-gradient(135deg, #0066cc, #0088ff);
   color: white;
   border-color: #0066cc;
   box-shadow: 0 5px 15px rgba(0, 102, 204, 0.2);
@@ -237,22 +238,22 @@
 
 .faq-item {
   background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  margin-bottom: 15px;
+  border-radius: 10px;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
   overflow: hidden;
   transition: all 0.3s ease;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: none;
 }
 
 .faq-item:hover {
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  transform: translateY(-3px);
 }
 
 .faq-question {
-  padding: 15px;
-  background-color: #f9f9f9;
+  padding: 18px 20px;
+  background: linear-gradient(to right, #f0f6ff, #ffffff);
   cursor: pointer;
   position: relative;
   display: flex;
@@ -260,28 +261,30 @@
   gap: 12px;
   color: #002147;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1.5;
   transition: all 0.3s ease;
   user-select: none;
+  border-radius: 10px 10px 0 0;
 }
 
 .faq-question:hover {
-  background-color: #f5f7fa;
+  background: linear-gradient(to right, #e5efff, #f5f7fa);
 }
 
 .question-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
-  background-color: #0066cc;
+  background: linear-gradient(135deg, #0066cc, #0088ff);
   color: white;
   border-radius: 50%;
   font-weight: 700;
   font-size: 0.85rem;
+  box-shadow: 0 2px 5px rgba(0, 102, 204, 0.3);
 }
 
 .question-text {
@@ -295,8 +298,8 @@
 }
 
 .faq-question.active {
-  background-color: #f0f6ff;
-  border-bottom: 1px solid rgba(0, 102, 204, 0.15);
+  background: linear-gradient(to right, #e5efff, #f0f6ff);
+  border-bottom: 2px solid rgba(0, 102, 204, 0.2);
 }
 
 .faq-question.active .toggle-icon {
@@ -316,15 +319,16 @@
 }
 
 .answer-content {
-  padding: 15px;
+  padding: 20px 20px 20px 48px;
   color: #333;
+  line-height: 1.75;
+  font-size: 1rem;
 }
 
 .answer-content p {
   margin-top: 0;
   margin-bottom: 15px;
   line-height: 1.7;
-  font-size: 0.95rem;
 }
 
 .answer-content p:last-child {
@@ -340,7 +344,6 @@
 .answer-content li {
   margin-bottom: 8px;
   line-height: 1.6;
-  font-size: 0.95rem;
 }
 
 .answer-content table {
@@ -372,11 +375,11 @@
 
 .sidebar-section {
   background-color: white;
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: 10px;
+  padding: 22px;
   margin-bottom: 25px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+  border: none;
 }
 
 .sidebar-section h3 {
@@ -410,17 +413,20 @@
 .popular-question-link {
   color: #333;
   display: block;
-  padding-left: 22px;
+  padding: 10px 10px 10px 25px;
   position: relative;
   line-height: 1.4;
   transition: all 0.3s ease;
+  background-color: #f9fafc;
+  border-radius: 5px;
+  margin-bottom: 8px;
 }
 
 .popular-question-link::before {
   content: 'Q';
   position: absolute;
-  left: 0;
-  top: 0;
+  left: 8px;
+  top: 9px;
   font-weight: 700;
   color: #0066cc;
   font-size: 0.9rem;
@@ -428,7 +434,8 @@
 
 .popular-question-link:hover {
   color: #0066cc;
-  transform: translateX(3px);
+  transform: translateX(5px);
+  background-color: #f0f6ff;
 }
 
 /* ===== 12. 分類統計 ===== */
@@ -485,17 +492,17 @@
 
 .cta-button {
   display: inline-block;
-  background-color: #0066cc;
+  background: linear-gradient(135deg, #0066cc, #0088ff);
   color: white;
-  padding: 10px 20px;
-  border-radius: 4px;
+  padding: 12px 24px;
+  border-radius: 50px;
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
 }
 
 .cta-button:hover {
-  background-color: #004d99;
+  background: linear-gradient(135deg, #004d99, #0066cc);
   transform: translateY(-3px);
   box-shadow: 0 6px 15px rgba(0, 102, 204, 0.3);
   color: white;
@@ -513,7 +520,7 @@
   }
   
   .sidebar-section {
-    padding: 15px;
+    padding: 18px;
   }
 }
 
@@ -554,11 +561,11 @@
   }
   
   .faq-question {
-    padding: 12px;
+    padding: 15px 15px;
   }
   
   .answer-content {
-    padding: 12px;
+    padding: 18px 15px 18px 40px;
   }
   
   .category-filter {
@@ -604,43 +611,4 @@
     font-size: 0.9rem;
   }
   
-  /* 修改：調整最小螢幕尺寸下的底部間距 */
-  .faq-list {
-    margin-bottom: 40px;
-  }
-}
-
-/* ===== 15. 動畫效果 ===== */
-@keyframes fadeIn {
-  0% { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeOut {
-  0% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(10px); }
-}
-
-.fade-in {
-  animation: fadeIn 0.3s ease forwards;
-}
-
-.fade-out {
-  animation: fadeOut 0.3s ease forwards;
-}
-
-/* ===== 16. 亮點效果 ===== */
-.highlight {
-  background-color: #ffff66;
-  padding: 0 2px;
-  border-radius: 2px;
-}
-
-/* ===== 17. 底部額外間距 ===== */
-.faq-list:last-child {
-  margin-bottom: 70px; /* 為最後一個FAQ列表添加更多底部間距 */
-}
-
-.article-navigation {
-  margin-bottom: 20px; /* 確保導航區域也有足夠的底部間距 */
-}
+  /* 修改：調整最小螢幕
