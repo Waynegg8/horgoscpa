@@ -5,12 +5,14 @@
 Sitemap 自動生成工具
 這個腳本會掃描網站的HTML文件並生成符合標準的sitemap.xml
 支援優先級和更新頻率設定，並依據更新日期排序
+新增：支援影片Sitemap，方便Google索引影片內容
 """
 
 import os
 import re
 import datetime
 import sys
+import json
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 import logging
@@ -32,7 +34,9 @@ PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
 # 網站配置
 SITE_URL = "https://www.horgoscpa.com"
 SITEMAP_PATH = os.path.join(PROJECT_ROOT, "sitemap.xml")
+VIDEO_SITEMAP_PATH = os.path.join(PROJECT_ROOT, "video-sitemap.xml")
 SITEMAP_INDEX_PATH = os.path.join(PROJECT_ROOT, "sitemap_index.xml")
+VIDEOS_JSON_PATH = os.path.join(PROJECT_ROOT, "assets", "data", "videos.json")
 
 # 掃描目錄配置
 SCAN_DIRS = {
@@ -233,6 +237,119 @@ def get_html_files() -> List[Dict[str, Any]]:
     
     return html_files
 
+def get_video_data() -> List[Dict[str, Any]]:
+    """
+    從videos.json讀取影片資料
+    :return: 影片資料列表
+    """
+    if not os.path.exists(VIDEOS_JSON_PATH):
+        logger.warning(f"找不到影片資料: {VIDEOS_JSON_PATH}")
+        return []
+    
+    try:
+        with open(VIDEOS_JSON_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        videos = data.get('videos', [])
+        logger.info(f"找到 {len(videos)} 部影片")
+        return videos
+    except Exception as e:
+        logger.error(f"載入影片資料時出錯: {str(e)}")
+        return []
+
+def format_iso_date(date_str: str) -> str:
+    """
+    將日期格式化為ISO 8601格式
+    :param date_str: YYYY-MM-DD格式的日期
+    :return: YYYY-MM-DDT00:00:00+08:00格式的日期
+    """
+    try:
+        date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        return date_obj.strftime("%Y-%m-%dT00:00:00+08:00")
+    except:
+        # 返回當前日期
+        now = datetime.datetime.now()
+        return now.strftime("%Y-%m-%dT00:00:00+08:00")
+
+def generate_video_sitemap(videos: List[Dict[str, Any]]) -> str:
+    """
+    生成影片sitemap.xml內容
+    :param videos: 影片資料列表
+    :return: video-sitemap.xml內容
+    """
+    if not videos:
+        return ""
+    
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
+        '        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">'
+    ]
+    
+    # 影片頁面基本URL
+    video_page_url = f"{SITE_URL}/video.html"
+    
+    for video in videos:
+        if not video.get('title') or not video.get('embedUrl'):
+            continue
+        
+        # 提取必要資料
+        title = video.get('title')
+        description = video.get('description', '')
+        upload_date = format_iso_date(video.get('date', datetime.datetime.now().strftime("%Y-%m-%d")))
+        
+        # 獲取影片ID
+        video_id = video.get('videoId', '')
+        if not video_id and 'embedUrl' in video:
+            # 嘗試從embedUrl提取
+            embed_url = video.get('embedUrl', '')
+            match = re.search(r'youtube\.com/embed/([^/?&]+)', embed_url)
+            if match:
+                video_id = match.group(1)
+        
+        # 生成縮圖URL
+        thumbnail_url = video.get('thumbnailUrl', '')
+        if not thumbnail_url and video_id:
+            thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+        
+        # 生成內容URL（YouTube原始URL）
+        content_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else video.get('embedUrl', '')
+        
+        # 根據影片ID生成獨立頁面URL
+        page_url = f"{video_page_url}?video={video_id}" if video_id else video_page_url
+        
+        # 添加影片URL
+        lines.append('  <url>')
+        lines.append(f'    <loc>{page_url}</loc>')
+        lines.append('    <video:video>')
+        lines.append(f'      <video:thumbnail_loc>{thumbnail_url}</video:thumbnail_loc>')
+        lines.append(f'      <video:title>{title}</video:title>')
+        lines.append(f'      <video:description>{description}</video:description>')
+        lines.append(f'      <video:content_loc>{content_url}</video:content_loc>')
+        lines.append(f'      <video:player_loc allow_embed="yes">{video.get("embedUrl", "")}</video:player_loc>')
+        lines.append(f'      <video:publication_date>{upload_date}</video:publication_date>')
+        
+        # 添加分類和標籤
+        if video.get('category'):
+            lines.append(f'      <video:category>{video.get("category")}</video:category>')
+        
+        if video.get('tags'):
+            tags = video.get('tags', [])
+            for tag in tags[:10]:  # 最多10個標籤
+                lines.append(f'      <video:tag>{tag}</video:tag>')
+        
+        # 影片設置
+        lines.append('      <video:family_friendly>yes</video:family_friendly>')
+        lines.append('      <video:requires_subscription>no</video:requires_subscription>')
+        lines.append('      <video:live>no</video:live>')
+        
+        lines.append('    </video:video>')
+        lines.append('  </url>')
+    
+    lines.append('</urlset>')
+    
+    return '\n'.join(lines)
+
 def generate_sitemap(files: List[Dict[str, Any]]) -> str:
     """
     生成sitemap.xml內容
@@ -269,9 +386,19 @@ def generate_sitemap_index() -> str:
         '  <sitemap>',
         f'    <loc>{SITE_URL}/sitemap.xml</loc>',
         f'    <lastmod>{today}</lastmod>',
-        '  </sitemap>',
-        '</sitemapindex>'
+        '  </sitemap>'
     ]
+    
+    # 如果存在影片Sitemap，添加到索引中
+    if os.path.exists(VIDEO_SITEMAP_PATH):
+        lines.extend([
+            '  <sitemap>',
+            f'    <loc>{SITE_URL}/video-sitemap.xml</loc>',
+            f'    <lastmod>{today}</lastmod>',
+            '  </sitemap>'
+        ])
+    
+    lines.append('</sitemapindex>')
     
     return '\n'.join(lines)
 
@@ -288,6 +415,17 @@ def main():
     with open(SITEMAP_PATH, 'w', encoding='utf-8') as f:
         f.write(sitemap_content)
     logger.info(f"已生成 sitemap.xml: {SITEMAP_PATH}")
+    
+    # 獲取影片資料並生成影片Sitemap
+    videos = get_video_data()
+    if videos:
+        logger.info(f"找到 {len(videos)} 部影片資料，開始生成影片Sitemap")
+        video_sitemap_content = generate_video_sitemap(videos)
+        with open(VIDEO_SITEMAP_PATH, 'w', encoding='utf-8') as f:
+            f.write(video_sitemap_content)
+        logger.info(f"已生成 video-sitemap.xml: {VIDEO_SITEMAP_PATH}")
+    else:
+        logger.warning("沒有找到影片資料，跳過生成影片Sitemap")
     
     # 生成sitemap_index.xml
     sitemap_index_content = generate_sitemap_index()

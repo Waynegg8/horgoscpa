@@ -3,6 +3,7 @@
  * 最後更新日期: 2025-05-10
  * 基於原有video.js優化，增加滾動動畫、改進搜索體驗、側邊欄交互功能
  * 增加動態抓取熱門影片功能
+ * 新增SEO優化: 影片縮圖、結構化資料、影片延遲載入
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -13,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const searchResultsContainer = document.getElementById('search-results-container');
   const paginationContainer = document.getElementById('pagination-container');
   const popularVideosContainer = document.getElementById('popular-videos-container');
+  const structuredDataContainer = document.getElementById('structured-data-container');
   
   // 過濾按鈕
   const filterButtons = document.querySelectorAll('.filter-btn');
@@ -31,6 +33,148 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentCategory = 'all';
   let currentSearchTerm = '';
   let itemsPerPage = 6; // 每頁顯示6個影片
+  
+  /**
+   * 從YouTube URL提取影片ID
+   * @param {string} url - YouTube嵌入URL
+   * @return {string|null} - YouTube影片ID或null
+   */
+  function extractYouTubeVideoId(url) {
+    if (!url) return null;
+    
+    // 處理各種可能的YouTube URL格式
+    let videoId = null;
+    
+    // 嵌入URL: https://www.youtube.com/embed/VIDEO_ID
+    const embedMatch = url.match(/youtube\.com\/embed\/([^\/\?]+)/i);
+    if (embedMatch && embedMatch[1]) return embedMatch[1];
+    
+    // 標準URL: https://www.youtube.com/watch?v=VIDEO_ID
+    const standardMatch = url.match(/youtube\.com\/watch\?v=([^&]+)/i);
+    if (standardMatch && standardMatch[1]) return standardMatch[1];
+    
+    // 短URL: https://youtu.be/VIDEO_ID
+    const shortMatch = url.match(/youtu\.be\/([^\/\?]+)/i);
+    if (shortMatch && shortMatch[1]) return shortMatch[1];
+    
+    return null;
+  }
+  
+  /**
+   * 生成YouTube縮圖URL
+   * @param {string} videoId - YouTube影片ID
+   * @param {string} quality - 縮圖品質 (default, mq, hq, sd, maxres)
+   * @return {string} - 縮圖URL
+   */
+  function generateYouTubeThumbnailUrl(videoId, quality = 'maxres') {
+    if (!videoId) return '';
+    
+    const qualityMap = {
+      'default': 'default',
+      'mq': 'mqdefault',
+      'hq': 'hqdefault',
+      'sd': 'sddefault',
+      'maxres': 'maxresdefault'
+    };
+    
+    const thumbnailQuality = qualityMap[quality] || 'maxresdefault';
+    return `https://img.youtube.com/vi/${videoId}/${thumbnailQuality}.jpg`;
+  }
+  
+  /**
+   * 生成影片結構化資料
+   * @param {Array} videos - 影片資料陣列
+   * @return {string} - 結構化資料HTML
+   */
+  function generateStructuredData(videos) {
+    if (!videos || !videos.length) return '';
+    
+    // 創建ItemList結構化資料
+    const itemListData = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "itemListElement": [],
+      "numberOfItems": videos.length
+    };
+    
+    // 創建各個影片的VideoObject結構化資料
+    const videoStructuredDataArray = [];
+    
+    videos.forEach((video, index) => {
+      if (!video.title || !video.embedUrl) return;
+      
+      // 提取影片ID和生成縮圖URL
+      const videoId = extractYouTubeVideoId(video.embedUrl);
+      const thumbnailUrl = generateYouTubeThumbnailUrl(videoId, 'maxres');
+      
+      // 格式化日期
+      const isoDate = new Date(video.date).toISOString();
+      
+      // 創建標準YouTube URL，與嵌入URL不同
+      const contentUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : video.embedUrl;
+      
+      // VideoObject結構化資料
+      const videoData = {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        "name": video.title,
+        "description": video.description || `${video.title} - 霍爾果斯會計師事務所專業影片教學`,
+        "thumbnailUrl": thumbnailUrl,
+        "uploadDate": isoDate,
+        "contentUrl": contentUrl,
+        "embedUrl": video.embedUrl,
+        "publisher": {
+          "@type": "Organization",
+          "name": "霍爾果斯會計師事務所",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://www.horgoscpa.com/assets/images/logo.png"
+          }
+        }
+      };
+      
+      // 添加到結構化資料陣列
+      videoStructuredDataArray.push(
+        `<script type="application/ld+json">${JSON.stringify(videoData)}</script>`
+      );
+      
+      // 添加到ItemList中
+      itemListData.itemListElement.push({
+        "@type": "ListItem",
+        "position": index + 1,
+        "item": {
+          "@type": "VideoObject",
+          "name": video.title,
+          "url": window.location.href + `?video=${videoId || index}`
+        }
+      });
+    });
+    
+    // 更新主頁的ItemList結構化資料
+    const scriptElements = document.querySelectorAll('script[type="application/ld+json"]');
+    
+    let itemListUpdated = false;
+    scriptElements.forEach(script => {
+      try {
+        const data = JSON.parse(script.textContent);
+        if (data["@type"] === "ItemList") {
+          script.textContent = JSON.stringify(itemListData);
+          itemListUpdated = true;
+        }
+      } catch (e) {
+        console.error('解析結構化資料時出錯:', e);
+      }
+    });
+    
+    // 如果沒有找到現有的ItemList，創建新的
+    if (!itemListUpdated) {
+      videoStructuredDataArray.unshift(
+        `<script type="application/ld+json">${JSON.stringify(itemListData)}</script>`
+      );
+    }
+    
+    return videoStructuredDataArray.join('\n');
+  }
   
   /**
    * 獲取URL參數
@@ -154,6 +298,11 @@ document.addEventListener('DOMContentLoaded', function() {
       // 如果成功獲取數據
       allVideos = jsonData;
       
+      // 生成並添加結構化資料
+      if (allVideos && allVideos.videos && allVideos.videos.length > 0) {
+        structuredDataContainer.innerHTML = generateStructuredData(allVideos.videos);
+      }
+      
       // 渲染影片列表
       renderFilteredVideos();
       
@@ -254,10 +403,15 @@ document.addEventListener('DOMContentLoaded', function() {
     popularVideos.forEach((video, index) => {
       const videoTitle = video.title || '未命名影片';
       const videoDate = formatDate(video.date) || '未知日期';
+      const videoId = extractYouTubeVideoId(video.embedUrl);
+      const thumbnailUrl = generateYouTubeThumbnailUrl(videoId, 'mq');
       
       const li = document.createElement('li');
       li.innerHTML = `
-        <a href="#" id="popular-video-${index + 1}" data-title="${videoTitle}">${videoTitle}</a>
+        <a href="#" id="popular-video-${index + 1}" data-title="${videoTitle}">
+          <img src="${thumbnailUrl}" alt="${videoTitle}" class="popular-video-thumbnail" loading="lazy">
+          <span class="popular-video-title">${videoTitle}</span>
+        </a>
         <span class="video-date">${videoDate}</span>
       `;
       
@@ -280,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function() {
           title: "台灣報稅流程簡介",
           date: "2025-03-15",
           description: "本影片詳細介紹台灣個人與企業報稅流程，包含申報時間、必要文件與常見問題解析，讓您輕鬆掌握報稅要點。",
-          embedUrl: "https://www.youtube.com/embed/FvRwth0j_P0",
+          embedUrl: "https://www.youtube.com/embed/FvRgth0j_P0",
           category: "tax",
           tags: ["報稅", "個人所得稅", "企業報稅"]
         },
@@ -302,6 +456,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 使用備用數據
     allVideos = fallbackVideos;
+    
+    // 生成並添加結構化資料
+    if (structuredDataContainer) {
+      structuredDataContainer.innerHTML = generateStructuredData(allVideos.videos);
+    }
     
     // 渲染影片列表
     renderFilteredVideos();
@@ -368,6 +527,27 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
+   * 播放影片 - 將縮圖替換為iframe
+   * @param {Element} videoCard - 影片卡片元素
+   * @param {string} embedUrl - YouTube嵌入URL
+   */
+  function playVideo(videoCard, embedUrl) {
+    if (!videoCard || !embedUrl) return;
+    
+    const videoEmbed = videoCard.querySelector('.video-embed');
+    if (!videoEmbed) return;
+    
+    // 移除播放按鈕並替換縮圖為iframe
+    videoEmbed.innerHTML = `
+      <iframe src="${embedUrl}?autoplay=1" frameborder="0" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" loading="lazy"></iframe>
+    `;
+    
+    // 移除縮圖類別，添加活躍類別
+    videoEmbed.classList.remove('video-thumbnail');
+    videoEmbed.classList.add('video-playing');
+  }
+  
+  /**
    * 渲染經過過濾和分頁的影片
    */
   function renderFilteredVideos() {
@@ -410,6 +590,9 @@ document.addEventListener('DOMContentLoaded', function() {
       setTimeout(() => {
         addScrollAnimations();
       }, 100);
+      
+      // 綁定影片縮圖點擊事件
+      bindVideoThumbnailEvents();
       
       // 渲染分頁控制
       renderPagination(totalPages);
@@ -489,10 +672,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const videoTags = video.tags || [];
     const videoCategory = video.category || 'other';
     
+    // 提取YouTube影片ID
+    const videoId = extractYouTubeVideoId(videoEmbedUrl);
+    
+    // 生成縮圖URL
+    const thumbnailUrl = generateYouTubeThumbnailUrl(videoId, 'maxres');
+    
     // 創建卡片元素
     const cardElement = document.createElement('div');
     cardElement.className = 'video-card';
     cardElement.dataset.category = videoCategory;
+    cardElement.dataset.videoId = videoId;
     
     // 創建標籤HTML
     let tagsHtml = '';
@@ -504,10 +694,15 @@ document.addEventListener('DOMContentLoaded', function() {
       tagsHtml += '</div>';
     }
     
-    // 卡片內容
+    // 卡片內容 - 使用縮圖代替直接嵌入iframe，點擊後載入影片
     cardElement.innerHTML = `
-      <div class="video-embed">
-        <iframe src="${videoEmbedUrl}" frameborder="0" allowfullscreen loading="lazy"></iframe>
+      <div class="video-embed video-thumbnail" data-embed-url="${videoEmbedUrl}">
+        <img src="${thumbnailUrl}" alt="${videoTitle}" loading="lazy" class="video-thumbnail-img">
+        <div class="video-play-button" aria-label="播放影片">
+          <svg xmlns="http://www.w3.org/2000/svg" width="68" height="48" viewBox="0 0 68 48">
+            <path d="M66.5,7.7c-0.8-2.9-3.1-5.2-6-6c-5.3-1.4-26.6-1.4-26.6-1.4s-21.3,0-26.6,1.4c-2.9,0.8-5.2,3.1-6,6 C0,13,0,24,0,24s0,11,1.3,16.3c0.8,2.9,3.1,5.2,6,6c5.3,1.4,26.6,1.4,26.6,1.4s21.3,0,26.6-1.4c2.9-0.8,5.2-3.1,6-6 C68,35,68,24,68,24S68,13,66.5,7.7z M27.2,33.6V14.4L44.8,24L27.2,33.6z" fill="#ff0000"/>
+          </svg>
+        </div>
       </div>
       <div class="video-content">
         <h2>${videoTitle}</h2>
@@ -518,6 +713,26 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     
     return cardElement;
+  }
+  
+  /**
+   * 綁定影片縮圖點擊事件
+   */
+  function bindVideoThumbnailEvents() {
+    const videoThumbnails = document.querySelectorAll('.video-thumbnail');
+    
+    videoThumbnails.forEach(thumbnail => {
+      thumbnail.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const videoCard = this.closest('.video-card');
+        const embedUrl = this.dataset.embedUrl;
+        
+        if (videoCard && embedUrl) {
+          playVideo(videoCard, embedUrl);
+        }
+      });
+    });
   }
   
   /**

@@ -35,6 +35,19 @@
   <!-- 引入中央分類資料 -->
   <script src="/assets/js/categories-data.js"></script>
   
+  <!-- 影片頁面結構化資料 - 主頁面標記 -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "itemListElement": [],
+    "numberOfItems": 0
+  }
+  </script>
+  
+  <!-- 個別影片結構化資料將由 JavaScript 動態生成 -->
+  <div id="structured-data-container"></div>
+  
   <!-- Google 分析 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RKMCS9WVS5"></script>
   <script>
