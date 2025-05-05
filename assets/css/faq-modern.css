@@ -62,7 +62,7 @@
   background-image: 
     radial-gradient(circle at 90% 10%, rgba(0, 102, 204, 0.03), transparent 400px),
     radial-gradient(circle at 10% 90%, rgba(0, 102, 204, 0.03), transparent 400px);
-  padding: 40px 0 60px;
+  padding: 40px 0 80px; /* 修改：增加底部間距從60px到80px */
   position: relative;
 }
 
@@ -232,7 +232,7 @@
 
 /* ===== 9. FAQ項目樣式 ===== */
 .faq-list {
-  margin-bottom: 30px;
+  margin-bottom: 60px; /* 修改：從30px增加到60px，增加底部間距 */
 }
 
 .faq-item {
@@ -573,6 +573,15 @@
     flex: 0 0 auto;
     white-space: nowrap;
   }
+  
+  /* 修改：調整手機版下的底部間距 */
+  .faq-list {
+    margin-bottom: 50px;
+  }
+  
+  .faq-content-section {
+    padding: 30px 0 70px;
+  }
 }
 
 @media (max-width: 576px) {
@@ -593,6 +602,11 @@
     height: 35px;
     padding: 0 10px;
     font-size: 0.9rem;
+  }
+  
+  /* 修改：調整最小螢幕尺寸下的底部間距 */
+  .faq-list {
+    margin-bottom: 40px;
   }
 }
 
@@ -620,4 +634,13 @@
   background-color: #ffff66;
   padding: 0 2px;
   border-radius: 2px;
+}
+
+/* ===== 17. 底部額外間距 ===== */
+.faq-list:last-child {
+  margin-bottom: 70px; /* 為最後一個FAQ列表添加更多底部間距 */
+}
+
+.article-navigation {
+  margin-bottom: 20px; /* 確保導航區域也有足夠的底部間距 */
 }

@@ -405,13 +405,13 @@
 }
 /* 修改 navbar.css 文件中的logo尺寸比例 */
 .logo-img {
-  height: 75px; /* 進一步增大中文logo高度 */
+  height: 65px; /* 進一步增大中文logo高度 */
   width: auto;
   transition: all 0.3s ease;
 }
 
 .nav-scrolled .logo-img {
-  height: 65px; /* 滾動後的高度也相應調整 */
+  height: 60px; /* 滾動後的高度也相應調整 */
 }
 
 /* 調整容器樣式，確保視覺平衡 */
