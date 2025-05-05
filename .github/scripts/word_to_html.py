@@ -1715,7 +1715,7 @@ def process_word_files(input_dir: str, output_dir: str) -> List[Dict]:
     
     # 獲取所有Word文檔
     docx_files = [f for f in os.listdir(input_dir) 
-                 if f.lower().endswith('.docx') and not f.startswith('~)]  # 排除臨時檔案
+             if f.lower().endswith('.docx') and not f.startswith('~')]  # 排除臨時檔案
     
     if not docx_files:
         logger.warning(f"在 {input_dir} 中沒有找到Word文檔")
