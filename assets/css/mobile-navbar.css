@@ -18,7 +18,7 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 60px;
+    height: 65px; /* 增加導航欄高度以適應更大的logo */
     background: linear-gradient(135deg, #002147, #003366);
     box-shadow: 0 2px 10px rgba(0,0,0,0.15);
     z-index: 1000;
@@ -43,19 +43,27 @@
     color: white;
     text-decoration: none;
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* 改為水平排列 */
     align-items: center;
+    gap: 8px; /* 設定中文和英文之間的間距 */
   }
   
-  .mobile-navbar .logo-main {
-    font-size: 1.1rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  /* 添加logo容器用於水平排列中文圖片和英文 */
+  .mobile-navbar .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
   
+  /* 中文logo圖片樣式 */
+  .mobile-navbar .logo-img {
+    height: 45px; /* 設定較大的中文logo尺寸 */
+    width: auto;
+  }
+  
+  /* 英文字體樣式 */
   .mobile-navbar .logo-sub {
-    font-size: 0.7rem;
+    font-size: 0.8rem; /* 保持英文字體較小 */
     opacity: 0.8;
     letter-spacing: 0.5px;
   }
@@ -90,7 +98,7 @@
   /* 移動版菜單 */
   .mobile-menu {
     position: fixed;
-    top: 60px;
+    top: 65px; /* 修改與導航欄高度一致 */
     left: 0;
     right: 0;
     background: #002147;
@@ -100,7 +108,7 @@
     transition: all 0.3s ease;
     pointer-events: none;
     box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-    max-height: calc(100vh - 60px);
+    max-height: calc(100vh - 65px); /* 修改計算 */
     overflow-y: auto;
   }
   
@@ -166,7 +174,7 @@
   
   /* 為內容添加頂部間距 */
   body {
-    padding-top: 60px;
+    padding-top: 65px; /* 修改與導航欄高度一致 */
   }
   
   /* 內容區樣式修正 */
@@ -184,12 +192,16 @@
   
   /* 適配小螢幕手機 */
   @media (max-width: 360px) {
-    .mobile-navbar .logo-main {
-      font-size: 1rem;
+    .mobile-navbar {
+      height: 60px; /* 稍微縮小高度 */
+    }
+    
+    .mobile-navbar .logo-img {
+      height: 38px; /* 稍微縮小圖片但仍保持較大 */
     }
     
     .mobile-navbar .logo-sub {
-      font-size: 0.65rem;
+      font-size: 0.7rem;
     }
     
     .mobile-menu-btn,
@@ -200,6 +212,15 @@
     
     .mobile-menu-btn span {
       font-size: 20px;
+    }
+    
+    .mobile-menu {
+      top: 60px;
+      max-height: calc(100vh - 60px);
+    }
+    
+    body {
+      padding-top: 60px;
     }
   }
 }
