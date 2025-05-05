@@ -66,7 +66,7 @@ EXCLUDE_PATTERNS = [
     r".*\.git/.*",
     r".*\.github/.*",
     r".*sitemap.*\.xml$",
-}
+]
 
 def get_page_update_date(file_path: str) -> str:
     """
