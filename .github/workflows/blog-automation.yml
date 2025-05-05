@@ -73,7 +73,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # 包含完整歷史記錄用於檢測刪除
-      
+          
       # 設置 Git 配置
       - name: 設置 Git 配置
         run: |
@@ -101,17 +101,37 @@ jobs:
           mkdir -p assets/data
           mkdir -p word-docs
           mkdir -p video
-      
-      # 檢查.github/scripts目錄中的腳本
-      - name: 檢查腳本
+
+      # 更新網站 Sitemap
+      - name: 更新網站 Sitemap
+        id: update_sitemap
+        if: github.event.inputs.update_sitemap == 'true' || steps.commit-html.outputs.html_changed == 'true' || steps.check_deleted.outputs.html_deleted == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap')
         run: |
-          echo "列出 .github/scripts 目錄內容:"
-          ls -la .github/scripts || echo ".github/scripts 目錄不存在"
+          echo "開始更新網站 Sitemap..."
           
-          # 顯示整個倉庫的目錄結構
-          echo "顯示整個倉庫的目錄結構:"
-          find . -type f -name "*.py" | sort
-      
+          # 確保 .github/scripts 目錄存在
+          mkdir -p .github/scripts
+          
+          # 檢查 .github/scripts 目錄下是否已經存在 generate_sitemap.py
+          if [ ! -f ".github/scripts/generate_sitemap.py" ]; then
+            echo "錯誤: 找不到 generate_sitemap.py 腳本！請確保腳本存在於 .github/scripts 目錄中。"
+            exit 1
+          fi
+          
+          # 確保腳本可執行
+          chmod +x .github/scripts/generate_sitemap.py
+          
+          # 執行腳本
+          python .github/scripts/generate_sitemap.py
+
+      # 提交更新的Sitemap
+      - name: 提交更新的Sitemap
+        if: steps.update_sitemap.outputs.sitemap_updated == 'true'
+        run: |
+          git add sitemap.xml
+          git commit -m "更新網站Sitemap"
+          git push
+
       # 處理從repository_dispatch接收的文章刪除請求
       - name: 處理API觸發的文章刪除
         if: github.event_name == 'repository_dispatch' && github.event.action == 'delete-article'
@@ -143,14 +163,7 @@ jobs:
           else
             echo "警告: 找不到要刪除的文件 ${{ github.event.client_payload.file_path }}"
           fi
-      
-      # 處理從repository_dispatch接收的文章上傳請求
-      - name: 處理API觸發的文章上傳
-        if: github.event_name == 'repository_dispatch' && github.event.action == 'upload-article'
-        run: |
-          echo "收到API觸發的文章上傳請求"
-          echo "文件已經由API上傳至指定位置，接下來進行處理"
-      
+
       # 處理從repository_dispatch接收的掃描請求
       - name: 處理API觸發的掃描請求
         if: github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles'
@@ -171,146 +184,8 @@ jobs:
           git add assets/data/blog-posts.json assets/data/latest-posts.json
           git commit -m "透過API執行強制掃描並更新JSON" || echo "無需提交"
           git push || echo "無需推送"
-      
-      # 處理從repository_dispatch接收的影片更新請求
-      - name: 處理API觸發的影片更新
-        if: github.event_name == 'repository_dispatch' && github.event.action == 'update-video'
-        run: |
-          echo "收到API觸發的影片更新請求"
-          
-          # 檢查scripts目錄中是否存在update_videos.py腳本
-          if [ -f ".github/scripts/update_videos.py" ]; then
-            echo "執行影片更新腳本"
-            python .github/scripts/update_videos.py
-            echo "影片數據更新完成"
-          else
-            echo "警告: 找不到 .github/scripts/update_videos.py 腳本"
-            echo "嘗試查找腳本位置:"
-            find . -name "update_videos.py" -type f
-            
-            # 如果能找到腳本，使用第一個找到的
-            SCRIPT_PATH=$(find . -name "update_videos.py" -type f | head -n 1)
-            if [ -n "$SCRIPT_PATH" ]; then
-              echo "找到腳本: $SCRIPT_PATH"
-              python "$SCRIPT_PATH"
-              echo "使用 $SCRIPT_PATH 更新完成"
-            else
-              echo "錯誤: 無法找到任何 update_videos.py 腳本"
-              echo "影片JSON文件未更新"
-            fi
-          fi
-      
-      # 初始化或檢查JSON文件
-      - name: 初始化JSON文件
-        id: init_json
-        run: |
-          # 檢查blog-posts.json是否存在
-          if [ ! -f "assets/data/blog-posts.json" ] || [ "${{ github.event.inputs.force_scan }}" == "true" ] || [ "${{ github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles' }}" == "true" ]; then
-            # 不存在或強制掃描，創建初始結構
-            echo "建立或更新blog-posts.json"
-            mkdir -p assets/data
-            echo '{
-              "posts": [],
-              "pagination": {
-                "total_posts": 0,
-                "total_pages": 1,
-                "items_per_page": 6
-              },
-              "categories": ["tax", "accounting", "business"],
-              "tags": []
-            }' > assets/data/blog-posts.json
-            
-            # 創建初始的latest-posts.json
-            echo '[]' > assets/data/latest-posts.json
-            
-            # 標記需要掃描HTML文件
-            echo "scan_html=true" >> $GITHUB_OUTPUT
-          else
-            # 檢查posts是否為空 - 使用 grep || true 避免 grep 找不到匹配項目時的退出代碼 1
-            if grep -q '"posts": \[\]' assets/data/blog-posts.json; then
-              echo "blog-posts.json的posts為空，需要掃描HTML文件"
-              echo "scan_html=true" >> $GITHUB_OUTPUT
-            else
-              # 使用 wc -l 計算包含 "posts" 的行數，如果至少有一行，則可能有文章
-              POSTS_LINE_COUNT=$(grep -c "posts" assets/data/blog-posts.json || true)
-              if [ "$POSTS_LINE_COUNT" -gt 0 ]; then
-                echo "blog-posts.json已存在且包含文章數據"
-                echo "scan_html=false" >> $GITHUB_OUTPUT
-              else
-                echo "無法確定blog-posts.json的內容，預設進行掃描"
-                echo "scan_html=true" >> $GITHUB_OUTPUT
-              fi
-            fi
-          fi
-          
-          # 檢查videos.json是否存在
-          if [ ! -f "assets/data/videos.json" ]; then
-            echo "建立初始videos.json檔案"
-            echo '{
-              "videos": [],
-              "pagination": {
-                "total": 0,
-                "totalPages": 1,
-                "itemsPerPage": 6
-              }
-            }' > assets/data/videos.json
-          fi
-          
-          # 確保工作區乾淨
-          git stash -u || true
-          
-          # 先拉取最新變更以避免衝突
-          git pull origin ${GITHUB_REF##*/} || true
-          
-          # 應用stash (如果需要)
-          git stash pop || true
-          
-          git add assets/data/*.json
-          git commit -m "初始化或更新JSON檔案" || echo "無需提交"
-          git push || echo "無需推送"
-      
-      # 掃描HTML文件生成JSON (如果需要)
-      - name: 掃描現有HTML文件
-        if: steps.init_json.outputs.scan_html == 'true' || github.event.inputs.force_scan == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles')
-        run: |
-          echo "開始掃描HTML文件以生成JSON..."
-          
-          # 直接執行 .github/scripts 目錄下的腳本
-          if [ -f ".github/scripts/scan_html_files.py" ]; then
-            python .github/scripts/scan_html_files.py
-            echo "使用 .github/scripts/scan_html_files.py 掃描完成"
-          else
-            echo "錯誤: 找不到 .github/scripts/scan_html_files.py 腳本"
-            echo "嘗試查找腳本位置:"
-            find . -name "scan_html_files.py" -type f
-            
-            # 如果能找到腳本，使用第一個找到的
-            SCRIPT_PATH=$(find . -name "scan_html_files.py" -type f | head -n 1)
-            if [ -n "$SCRIPT_PATH" ]; then
-              echo "找到腳本: $SCRIPT_PATH"
-              python "$SCRIPT_PATH"
-              echo "使用 $SCRIPT_PATH 掃描完成"
-            else
-              echo "錯誤: 無法找到任何 scan_html_files.py 腳本"
-              exit 1
-            fi
-          fi
-          
-          # 確保工作區乾淨
-          git stash -u || true
-          
-          # 先拉取最新變更以避免衝突
-          git pull origin ${GITHUB_REF##*/} || true
-          
-          # 應用stash (如果需要)
-          git stash pop || true
-          
-          # 提交更改
-          git add assets/data/blog-posts.json assets/data/latest-posts.json
-          git commit -m "掃描現有HTML文件並更新JSON" || echo "無需提交"
-          git push || echo "無需推送"
-      
-      # 處理Word文檔 (如果啟用)
+
+      # 處理Word文檔
       - name: 處理Word文檔
         if: github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article')
         run: |
@@ -340,61 +215,14 @@ jobs:
           else
             echo "word-docs 目錄為空或不存在，跳過處理"
           fi
-      
-      # 檢測已刪除的HTML文件
-      - name: 檢測已刪除的HTML文件
-        id: check_deleted
-        if: github.event_name == 'delete' || github.event.inputs.handle_deletion == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'delete-article')
-        run: |
-          # 獲取已刪除的HTML文件列表
-          if [ "${{ github.event_name }}" == "repository_dispatch" ] && [ "${{ github.event.action }}" == "delete-article" ]; then
-            echo "${{ github.event.client_payload.file_path }}" > deleted_files.txt
-          else
-            git diff --name-only --diff-filter=D HEAD~1 HEAD | grep -E '^blog/.*\.html$' > deleted_files.txt || true
-          fi
-          
-          # 檢查是否有文件被刪除
-          if [ -s deleted_files.txt ]; then
-            echo "檢測到以下HTML文件已被刪除:"
-            cat deleted_files.txt
-            echo "html_deleted=true" >> $GITHUB_OUTPUT
-          else
-            echo "沒有HTML文件被刪除"
-            echo "html_deleted=false" >> $GITHUB_OUTPUT
-          fi
-      
-      # 提交生成的HTML文件
-      - name: 提交生成的HTML文件
-        id: commit-html
-        if: github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article')
-        run: |
-          # 確保工作區乾淨
-          git stash -u || true
-          
-          # 先拉取最新變更以避免衝突
-          git pull origin ${GITHUB_REF##*/} || true
-          
-          # 應用stash (如果需要)
-          git stash pop || true
-          
-          git add blog/
-          
-          if git diff --staged --quiet; then
-            echo "沒有新的HTML文件需要提交"
-            echo "html_changed=false" >> $GITHUB_OUTPUT
-          else
-            git commit -m "自動將Word文檔轉換為HTML"
-            git push
-            echo "html_changed=true" >> $GITHUB_OUTPUT
-          fi
-      
+
       # 更新博客JSON文件
       - name: 更新博客JSON文件
         id: update_blog_json
         if: steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles'))
         run: |
           echo "開始更新博客JSON文件..."
-
+          
           # 使用 .github/scripts 目錄下的腳本
           if [ -f ".github/scripts/update_blog_posts.py" ]; then
             python .github/scripts/update_blog_posts.py
@@ -418,9 +246,7 @@ jobs:
               exit 1
             fi
           fi
-        env:
-          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
-      
+
       # 檢查影片配置文件變更
       - name: 檢查影片資料變更
         id: check_video_changes
@@ -433,7 +259,7 @@ jobs:
             echo "videos.txt 文件沒有變更"
             echo "videos_txt_changed=false" >> $GITHUB_OUTPUT
           fi
-      
+
       # 更新影片數據
       - name: 更新影片數據
         id: update_videos
@@ -471,104 +297,8 @@ jobs:
             echo "警告: 找不到 video/videos.txt 文件"
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
-      
-      # 更新網站 Sitemap
-      - name: 更新網站 Sitemap
-        id: update_sitemap
-        if: github.event.inputs.update_sitemap == 'true' || steps.commit-html.outputs.html_changed == 'true' || steps.check_deleted.outputs.html_deleted == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap')
-        run: |
-          echo "開始更新網站 Sitemap..."
-          
-          # 複製 generate_sitemap.py 腳本到 .github/scripts 目錄
-          mkdir -p .github/scripts
-          
-          # 若腳本不存在，將其復制到腳本目錄
-          if [ ! -f ".github/scripts/generate_sitemap.py" ]; then
-            # 檢查腳本是否已存在於根目錄
-            if [ -f "./generate_sitemap.py" ]; then
-              cp ./generate_sitemap.py .github/scripts/
-              echo "從根目錄複製 generate_sitemap.py 到 .github/scripts/"
-            else
-              # 創建腳本內容
-              cat > .github/scripts/generate_sitemap.py << 'EOF'
-#!/usr/bin/env python3
-# 此腳本用於生成網站 Sitemap
-# 完整腳本請參見倉庫中的 generate_sitemap.py 文件
-import os
-import sys
-import datetime
-import re
-from bs4 import BeautifulSoup
 
-print("開始生成 Sitemap...")
-# 腳本邏輯在這裡
-EOF
-              echo "已創建 generate_sitemap.py 腳本占位符"
-            fi
-            
-            # 確保腳本可執行
-            chmod +x .github/scripts/generate_sitemap.py
-          fi
-          
-          # 執行 sitemap 生成腳本
-          if [ -f ".github/scripts/generate_sitemap.py" ]; then
-            python .github/scripts/generate_sitemap.py
-            echo "使用 .github/scripts/generate_sitemap.py 生成 Sitemap 完成"
-            echo "sitemap_updated=true" >> $GITHUB_OUTPUT
-          else
-            echo "警告: 找不到 .github/scripts/generate_sitemap.py 腳本"
-            echo "嘗試查找腳本位置:"
-            find . -name "generate_sitemap.py" -type f
-            
-            # 如果能找到腳本，使用第一個找到的
-            SCRIPT_PATH=$(find . -name "generate_sitemap.py" -type f | head -n 1)
-            if [ -n "$SCRIPT_PATH" ]; then
-              echo "找到腳本: $SCRIPT_PATH"
-              python "$SCRIPT_PATH"
-              echo "使用 $SCRIPT_PATH 生成 Sitemap 完成"
-              echo "sitemap_updated=true" >> $GITHUB_OUTPUT
-            else
-              echo "錯誤: 無法找到任何 generate_sitemap.py 腳本"
-              echo "Sitemap 未更新"
-              echo "sitemap_updated=false" >> $GITHUB_OUTPUT
-            fi
-          fi
-      
-      # 提交更新的JSON文件和Sitemap
-      - name: 提交更新的JSON文件和Sitemap
-        if: steps.update_blog_json.outputs.blog_json_updated == 'true' || steps.update_videos.outputs.videos_updated == 'true' || steps.update_sitemap.outputs.sitemap_updated == 'true'
-        run: |
-          # 確保工作區乾淨
-          git stash -u || true
-          
-          # 先拉取最新變更以避免衝突
-          git pull origin ${GITHUB_REF##*/} || true
-          
-          # 應用stash (如果需要)
-          git stash pop || true
-          
-          # 添加需要提交的文件
-          git add assets/data/blog-posts.json
-          git add assets/data/videos.json
-          git add assets/data/latest-posts.json
-          
-          # 添加 Sitemap 文件
-          if [ -f "sitemap.xml" ]; then
-            git add sitemap.xml
-          fi
-          
-          if [ -f "sitemap_index.xml" ]; then
-            git add sitemap_index.xml
-          fi
-          
-          if git diff --staged --quiet; then
-            echo "沒有文件變更需要提交"
-          else
-            git commit -m "更新博客、影片JSON數據與網站Sitemap"
-            git push
-          fi
-      
-      # 清理Word文檔（可選，將處理過的Word文檔移動到processed目錄）
+      # 清理已處理的Word文檔（可選，將處理過的Word文檔移動到processed目錄）
       - name: 清理已處理的Word文檔
         if: github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true'
         run: |
