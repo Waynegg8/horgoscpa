@@ -413,14 +413,14 @@
 }
 
 .logo-image {
-  height: 70px; /* 根據需要調整高度 */
+  height: 40px; /* 降低高度讓圖片變小 */
   width: auto;
   margin-bottom: 5px;
 }
 
 /* 移動版的 logo 圖片樣式 */
 .mobile-navbar .logo-image {
-  height: 50px; /* 移動版稍微小一點 */
+  height: 30px; /* 移動版更小一點 */
   width: auto;
 }
 
