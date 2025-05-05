@@ -35,14 +35,10 @@ on:
         default: 'true'
         type: boolean
   
-  # 當特定文件發生變更時觸發
+  # 當有任何文件變更時觸發
   push:
     paths:
-      - 'word-docs/**/*.docx'
-      - 'blog/**/*.html'
-      - 'services/**/*.html'
-      - '*.html'
-      - 'video/videos.txt'  # 重點：確保 videos.txt 文件變更時能夠觸發
+      - '**/*'  # 任何文件變更都會觸發工作流
   
   # 當文章被刪除時觸發
   delete:
@@ -67,19 +63,19 @@ jobs:
       actions: write
     
     steps:
-      # 檢出代碼
+      # 1. 檢出代碼
       - name: 檢出代碼
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # 包含完整歷史記錄用於檢測刪除
           
-      # 設置 Git 配置
+      # 2. 設置 Git 配置
       - name: 設置 Git 配置
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
       
-      # 設置 Python 環境
+      # 3. 設置 Python 環境
       - name: 設置 Python
         uses: actions/setup-python@v4
         with:
@@ -87,13 +83,13 @@ jobs:
           cache: 'pip'
           cache-dependency-path: requirements.txt
       
-      # 安裝依賴
+      # 4. 安裝依賴
       - name: 安裝依賴套件
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
-      # 創建必要的目錄
+      # 5. 創建必要的目錄
       - name: 創建必要的目錄
         run: |
           mkdir -p blog
@@ -101,29 +97,7 @@ jobs:
           mkdir -p word-docs
           mkdir -p video
 
-      # 更新網站 Sitemap
-      - name: 更新網站 Sitemap
-        id: update_sitemap
-        if: github.event.inputs.update_sitemap == 'true' || steps.commit-html.outputs.html_changed == 'true' || steps.check_deleted.outputs.html_deleted == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap')
-        run: |
-          echo "開始更新網站 Sitemap..."
-          
-          # 確保 .github/scripts 目錄存在
-          mkdir -p .github/scripts
-          
-          # 檢查 .github/scripts 目錄下是否已經存在 generate_sitemap.py
-          if [ ! -f ".github/scripts/generate_sitemap.py" ]; then
-            echo "錯誤: 找不到 generate_sitemap.py 腳本！請確保腳本存在於 .github/scripts 目錄中。"
-            exit 1
-          fi
-          
-          # 確保腳本可執行
-          chmod +x .github/scripts/generate_sitemap.py
-          
-          # 執行腳本
-          python .github/scripts/generate_sitemap.py
-
-      # 處理從repository_dispatch接收的文章刪除請求
+      # 6. 處理API觸發的文章刪除
       - name: 處理API觸發的文章刪除
         if: github.event_name == 'repository_dispatch' && github.event.action == 'delete-article'
         run: |
@@ -155,7 +129,7 @@ jobs:
             echo "警告: 找不到要刪除的文件 ${{ github.event.client_payload.file_path }}"
           fi
 
-      # 處理掃描請求
+      # 7. 處理掃描請求
       - name: 處理API觸發的掃描請求
         if: github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles'
         run: |
@@ -176,7 +150,7 @@ jobs:
           git commit -m "透過API執行強制掃描並更新JSON" || echo "無需提交"
           git push || echo "無需推送"
 
-      # 處理Word文檔
+      # 8. 處理Word文檔
       - name: 處理Word文檔
         if: github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article')
         run: |
@@ -207,7 +181,15 @@ jobs:
             echo "word-docs 目錄為空或不存在，跳過處理"
           fi
 
-      # 更新博客JSON文件
+      # 9. 上傳並提交轉換後的 HTML
+      - name: 上傳並提交轉換後的 HTML
+        run: |
+          echo "檢查是否有新的 HTML 文件"
+          git add blog/*.html
+          git commit -m "提交轉換後的 HTML 文件"
+          git push
+          
+      # 10. 更新博客JSON文件
       - name: 更新博客JSON文件
         id: update_blog_json
         if: steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles'))
@@ -238,7 +220,7 @@ jobs:
             fi
           fi
 
-      # 更新影片數據
+      # 11. 更新影片數據
       - name: 更新影片數據
         id: update_videos
         if: github.event.inputs.update_videos == 'true' || steps.check_video_changes.outputs.videos_txt_changed == 'true' || (github.event_name == 'push' && contains(github.event.head_commit.modified, 'video/videos.txt')) || (github.event_name == 'push' && contains(github.event.head_commit.added, 'video/videos.txt')) || (github.event_name == 'repository_dispatch' && github.event.action == 'update-video')
@@ -276,7 +258,7 @@ jobs:
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
 
-      # 清理已處理的Word文檔
+      # 12. 清理已處理的Word文檔
       - name: 清理已處理的Word文檔
         if: github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true'
         run: |
@@ -297,3 +279,17 @@ jobs:
           git add word-docs/
           git commit -m "移動已處理的Word文檔" || echo "無需提交"
           git push || echo "無需推送"
+      
+      # 13. 更新網站 Sitemap（最後步驟）
+      - name: 更新網站 Sitemap
+        id: update_sitemap
+        run: |
+          echo "開始更新網站 Sitemap..."
+          
+          # 生成並提交新的 sitemap.xml 文件
+          python .github/scripts/generate_sitemap.py
+          
+          # 提交更新的Sitemap
+          git add sitemap.xml
+          git commit -m "更新網站Sitemap"
+          git push
