@@ -473,3 +473,16 @@
     font-size: 1rem;
   }
 }
+/* 添加到 footer.css 文件中 */
+.footer-logo-img {
+  max-width: 180px;
+  height: auto;
+  margin-bottom: 15px;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .footer-logo-img {
+    max-width: 160px;
+  }
+}
