@@ -1194,12 +1194,20 @@ def slugify(text: str) -> str:
     # 移除重複的連字符
     slug = re.sub(r'-+', '-', slug)
     
+    # 確保結尾沒有連字符 - 新增這一行
+    if slug.endswith('-'):
+        slug = slug[:-1]
+    
     # 移除非ASCII字符
     ascii_slug = ''
     for c in slug:
         if ord(c) < 128:
             ascii_slug += c
     slug = ascii_slug
+    
+    # 再次確保結尾沒有連字符 - 新增這一行 (以防移除非ASCII字符後末尾有連字符)
+    if slug.endswith('-'):
+        slug = slug[:-1]
     
     # 如果處理後為空，使用默認值
     if not slug:
@@ -1209,6 +1217,9 @@ def slugify(text: str) -> str:
     # 截斷過長的slug
     if len(slug) > 80:
         slug = slug[:80]
+        # 確保截斷後結尾沒有連字符
+        if slug.endswith('-'):
+            slug = slug[:-1]
         logger.info("標題過長，已截斷")
     
     logger.info(f"處理後的URL: {slug}")

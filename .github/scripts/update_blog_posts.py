@@ -493,6 +493,38 @@ def main():
         blog_files = os.listdir(BLOG_DIR)
         html_files = [f for f in blog_files if f.endswith(".html")]
         
+        # 檢查並修復檔案名稱問題
+        fixed_files = []
+        for filename in html_files:
+            if filename.endswith('-.html'):
+                print(f"發現問題檔案名: {filename}")
+                new_filename = filename.replace('-.html', '.html')
+                # 檢查新檔名是否有意義
+                if new_filename == filename:
+                    # 如果只是移除了尾部的連字符，則需要更有意義的名稱
+                    base_name = os.path.splitext(filename)[0]  # 不含副檔名
+                    date_part = base_name[:10] if len(base_name) >= 10 else ""
+                    # 從檔案內容提取標題，為簡單起見，這裡使用一個更有意義的固定名稱
+                    new_filename = f"{date_part}-article.html" if date_part else "article.html"
+                
+                print(f"修正為: {new_filename}")
+                
+                # 實際修改檔案名
+                old_path = os.path.join(BLOG_DIR, filename)
+                new_path = os.path.join(BLOG_DIR, new_filename)
+                try:
+                    os.rename(old_path, new_path)
+                    print(f"已重命名檔案 {filename} 為 {new_filename}")
+                    fixed_files.append((filename, new_filename))
+                except Exception as e:
+                    print(f"重命名檔案時出錯: {e}")
+        
+        # 重新獲取檔案列表（包含可能已重命名的檔案）
+        if fixed_files:
+            blog_files = os.listdir(BLOG_DIR)
+            html_files = [f for f in blog_files if f.endswith(".html")]
+            print(f"更新後的HTML檔案列表: {len(html_files)} 個檔案")
+        
         if not html_files:
             print(f"在 {BLOG_DIR} 目錄中未找到 HTML 文件")
             return
@@ -502,6 +534,13 @@ def main():
     
     # 加載已處理文件記錄
     processed_files = load_processed_files()
+    
+    # 更新已處理檔案記錄以反映已重命名的檔案
+    for old_name, new_name in fixed_files:
+        if old_name in processed_files:
+            processed_files[new_name] = processed_files[old_name]
+            processed_files.pop(old_name, None)
+            print(f"已更新處理記錄: {old_name} -> {new_name}")
     
     # 獲取當前HTML文件的名稱集合
     current_files = set(html_files)
@@ -609,6 +648,32 @@ def main():
     except Exception as e:
         print(f"更新完整文章數據時出錯: {str(e)}")
     
+    # 檢查最新文章JSON文件是否存在
+    if os.path.exists(LATEST_POSTS_PATH):
+        try:
+            with open(LATEST_POSTS_PATH, 'r', encoding='utf-8') as f:
+                current_latest_posts = json.load(f)
+        except Exception as e:
+            print(f"讀取最新文章JSON時出錯: {str(e)}")
+            current_latest_posts = []
+    else:
+        current_latest_posts = []
+    
+    # 檢查最新文章是否有變更
+    try:
+        if json.dumps(latest_posts) != json.dumps(current_latest_posts):
+            # 更新最新文章JSON文件
+            with open(LATEST_POSTS_PATH, 'w', encoding='utf-8') as f:
+                json.dump(latest_posts, f, ensure_ascii=False, indent=2)
+            
+            print(f"成功更新最新文章數據: {LATEST_POSTS_PATH}")
+            print("最新文章:")
+            for i, post in enumerate(latest_posts, 1):
+                print(f"{i}. {post['title']} ({post['date']})")
+        else:
+            print("最新文章數據無需更新")
+    except Exception as e:
+        print(f"更新最新文章數據時出錯: {str(e)}")    
     # 檢查最新文章JSON文件是否存在
     if os.path.exists(LATEST_POSTS_PATH):
         try:

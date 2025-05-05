@@ -1,15 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://www.horgoscpa.com/index.html</loc></url>
-  <url><loc>https://www.horgoscpa.com/services.html</loc></url>
-  <url><loc>https://www.horgoscpa.com/services/tax.html</loc></url>
-  <url><loc>https://www.horgoscpa.com/services/accounting.html</loc></url>
-  <url><loc>https://www.horgoscpa.com/services/consulting.html</loc></url>
-  <url><loc>https://www.horgoscpa.com/team.html</loc></url>
-  <url><loc>https://www.horgoscpa.com/faq.html</loc></url>
-  <url><loc>https://www.horgoscpa.com/contact.html</loc></url>
-  <url><loc>https://www.horgoscpa.com/blog.html</loc></url>
-  <url><loc>https://www.horgoscpa.com/blog/cross-border-tax.html</loc></url>
-  <url><loc>https://www.horgoscpa.com/blog/startup-traps.html</loc></url>
-  <url><loc>https://www.horgoscpa.com/video.html</loc></url>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
+
+
+<url>
+  <loc>https://www.horgoscpa.com/</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>1.00</priority>
+</url>
+<url>
+  <loc>https://www.horgoscpa.com/services</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://www.horgoscpa.com/team</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://www.horgoscpa.com/blog</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://www.horgoscpa.com/faq</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://www.horgoscpa.com/video</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://www.horgoscpa.com/contact</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://www.horgoscpa.com/booking</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://www.horgoscpa.com/services/consulting</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://www.horgoscpa.com/services/accounting</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://www.horgoscpa.com/services/tax</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://www.horgoscpa.com/services/audit</loc>
+  <lastmod>2025-05-05T11:20:19+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+
+
 </urlset>
