@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-優化版 Word 文檔轉換為 HTML 工具
-修復日期下方自動生成內容和格式轉換問題
+優化版 Word 文檔轉換為 HTML 工具 - 修訂版
+解決內容提取不完整和日期下方自動生成內容的問題
 作者: Claude
 日期: 2025-05-05
 """
@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 import importlib
 import subprocess
+import io
 
 # 確保依賴安裝
 def ensure_dependencies():
@@ -42,6 +43,7 @@ ensure_dependencies()
 import mammoth
 from bs4 import BeautifulSoup
 import docx
+import docx2txt
 
 # 設置日誌
 def setup_logging():
@@ -147,111 +149,220 @@ def extract_date_from_filename(filename: str) -> Optional[str]:
     
     return None
 
-def extract_word_content(docx_path: str) -> Dict:
+def extract_word_content_direct(docx_path: str) -> str:
     """
-    提取Word文檔的結構化內容
+    直接從Word文檔提取完整文本內容
     :param docx_path: Word文檔路徑
-    :return: 包含結構化內容的字典
+    :return: 提取的純文本內容
     """
-    logger.info(f"開始提取Word文檔內容: {docx_path}")
-    
-    # 定義結果結構
-    result = {
-        'title': '',
-        'sections': [],
-        'paragraphs': [],
-        'lists': [],
-        'metadata': {},
-        'raw_html': ''
-    }
+    logger.info(f"使用直接提取法從Word獲取內容: {docx_path}")
     
     try:
-        # 方法1: 使用mammoth提取HTML
-        with open(docx_path, 'rb') as docx_file:
-            # 自定義樣式映射，避免過度使用強調標記
-            style_map = """
-                p[style-name='標題'] => h1:fresh
-                p[style-name='Title'] => h1:fresh
-                p[style-name='Heading 1'] => h1:fresh
-                p[style-name='標題 1'] => h1:fresh
-                p[style-name='Heading 2'] => h2:fresh
-                p[style-name='標題 2'] => h2:fresh
-                p[style-name='Heading 3'] => h3:fresh
-                p[style-name='標題 3'] => h3:fresh
-                p[style-name='Heading 4'] => h4:fresh
-                p[style-name='標題 4'] => h4:fresh
-                p[style-name='List Paragraph'] => li:fresh
-                p[style-name='項目符號'] => li:fresh
-            """
-            
-            convert_options = {
-                "style_map": style_map,
-                "include_default_style_map": True
-            }
-            
-            # 使用mammoth提取HTML
-            mammoth_result = mammoth.convert_to_html(docx_file, **convert_options)
-            result['raw_html'] = mammoth_result.value
-            
-            # 使用BeautifulSoup解析HTML
-            soup = BeautifulSoup(result['raw_html'], 'html.parser')
-            
-            # 提取標題 (第一個h1或h2)
-            title_tag = soup.find(['h1', 'h2'])
-            if title_tag:
-                result['title'] = title_tag.get_text().strip()
-            
-            # 提取段落和標題
-            for elem in soup.find_all(['h1', 'h2', 'h3', 'h4', 'p', 'li']):
-                text = elem.get_text().strip()
-                if not text:
-                    continue
-                
-                elem_type = elem.name
-                if elem_type.startswith('h'):
-                    # 標題
-                    level = int(elem_type[1])
-                    result['sections'].append({
-                        'type': 'heading',
-                        'level': level,
-                        'text': text
-                    })
-                elif elem_type == 'p':
-                    # 段落
-                    result['paragraphs'].append({
-                        'type': 'paragraph',
-                        'text': text
-                    })
-                elif elem_type == 'li':
-                    # 列表項
-                    result['lists'].append({
-                        'type': 'list_item',
-                        'text': text
-                    })
-        
-        # 方法2: 使用python-docx提取更詳細的結構
+        # 使用python-docx直接提取所有段落
         doc = docx.Document(docx_path)
+        full_text = []
         
-        # 提取文檔屬性
-        result['metadata'] = {
-            'author': doc.core_properties.author,
-            'created': doc.core_properties.created,
-            'modified': doc.core_properties.modified,
-            'title': doc.core_properties.title,
-            'subject': doc.core_properties.subject,
-            'keywords': doc.core_properties.keywords
-        }
+        # 逐段落提取文本
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if text:  # 忽略空白段落
+                # 檢查段落的風格以判斷其類型
+                style_name = para.style.name if para.style else "Normal"
+                
+                # 處理標題
+                if style_name.startswith('Heading') or style_name.startswith('標題'):
+                    level = 1
+                    if len(style_name) > 7 and style_name[-1].isdigit():
+                        level = int(style_name[-1])
+                    heading_mark = '#' * level + ' '
+                    full_text.append(f"{heading_mark}{text}")
+                else:
+                    full_text.append(text)
         
-        logger.info(f"成功提取Word文檔內容，找到 {len(result['sections'])} 個標題，{len(result['paragraphs'])} 個段落，{len(result['lists'])} 個列表項")
-        return result
+        # 處理表格
+        for table in doc.tables:
+            full_text.append("表格開始:")
+            for i, row in enumerate(table.rows):
+                row_text = []
+                for cell in row.cells:
+                    cell_text = cell.text.strip()
+                    row_text.append(cell_text if cell_text else " ")
+                full_text.append(" | ".join(row_text))
+            full_text.append("表格結束")
         
+        logger.info(f"直接提取了 {len(full_text)} 個段落")
+        return "\n\n".join(full_text)
+    
     except Exception as e:
-        logger.error(f"提取Word內容時出錯: {str(e)}", exc_info=True)
-        raise Exception(f"提取Word內容失敗: {str(e)}")
+        logger.error(f"直接提取Word內容時出錯: {str(e)}")
+        return ""
+
+def extract_docx_with_mammoth(docx_path: str) -> str:
+    """
+    使用mammoth提取Word文檔的HTML內容
+    :param docx_path: Word文檔路徑
+    :return: HTML內容
+    """
+    logger.info(f"使用mammoth從Word獲取HTML: {docx_path}")
+    
+    try:
+        with open(docx_path, 'rb') as docx_file:
+            # 使用最簡單的轉換配置，確保獲取完整內容
+            result = mammoth.convert_to_html(docx_file)
+            html_content = result.value
+            
+            # 檢查警告
+            warnings = []
+            for message in result.messages:
+                if message.type == "warning":
+                    warnings.append(message.message)
+            
+            if warnings:
+                logger.warning(f"Mammoth轉換警告: {warnings}")
+            
+            logger.info(f"Mammoth提取的HTML長度: {len(html_content)}")
+            return html_content
+    
+    except Exception as e:
+        logger.error(f"Mammoth提取Word內容時出錯: {str(e)}")
+        return ""
+
+def extract_docx_with_docx2txt(docx_path: str) -> str:
+    """
+    使用docx2txt提取Word文檔的純文本內容
+    :param docx_path: Word文檔路徑
+    :return: 純文本內容
+    """
+    logger.info(f"使用docx2txt從Word獲取純文本: {docx_path}")
+    
+    try:
+        text = docx2txt.process(docx_path)
+        logger.info(f"Docx2txt提取的文本長度: {len(text)}")
+        return text
+    
+    except Exception as e:
+        logger.error(f"Docx2txt提取Word內容時出錯: {str(e)}")
+        return ""
+
+def extract_word_content(docx_path: str) -> Dict:
+    """
+    使用多種方法提取Word文檔內容，確保最大程度的完整性
+    :param docx_path: Word文檔路徑
+    :return: 包含所有提取結果的字典
+    """
+    logger.info(f"開始多方法提取Word文檔內容: {docx_path}")
+    
+    results = {
+        'direct_text': extract_word_content_direct(docx_path),
+        'mammoth_html': extract_docx_with_mammoth(docx_path),
+        'docx2txt': extract_docx_with_docx2txt(docx_path)
+    }
+    
+    # 檢查是否所有方法都失敗了
+    if not results['direct_text'] and not results['mammoth_html'] and not results['docx2txt']:
+        raise Exception("所有提取方法都失敗了，無法獲取Word內容")
+    
+    # 檢查提取結果的完整性
+    content_lengths = {
+        'direct_text': len(results['direct_text']),
+        'mammoth_html': len(BeautifulSoup(results['mammoth_html'], 'html.parser').get_text()) if results['mammoth_html'] else 0,
+        'docx2txt': len(results['docx2txt'])
+    }
+    
+    logger.info(f"提取結果長度比較: {content_lengths}")
+    
+    # 選擇最完整的內容
+    best_method = max(content_lengths.items(), key=lambda x: x[1])[0]
+    logger.info(f"選擇的最佳提取方法: {best_method}, 長度: {content_lengths[best_method]}")
+    
+    return results
+
+def convert_to_html(content_dict: Dict) -> str:
+    """
+    將提取的內容轉換為HTML
+    :param content_dict: 提取的內容字典
+    :return: HTML字符串
+    """
+    logger.info("開始將提取內容轉換為HTML")
+    
+    # 如果已有mammoth提取的HTML，優先使用它
+    if content_dict['mammoth_html']:
+        logger.info("使用mammoth提取的HTML")
+        return content_dict['mammoth_html']
+    
+    # 如果沒有HTML，則從直接提取的文本生成HTML
+    if content_dict['direct_text']:
+        logger.info("從直接提取的文本生成HTML")
+        
+        paragraphs = content_dict['direct_text'].split('\n\n')
+        html_parts = ['<!DOCTYPE html>', '<html>', '<head>', '<meta charset="UTF-8">', '</head>', '<body>']
+        
+        for para in paragraphs:
+            para = para.strip()
+            if not para:
+                continue
+            
+            # 檢查是否為標題（以#開頭）
+            if para.startswith('#'):
+                heading_match = re.match(r'^(#+)\s+(.+)$', para)
+                if heading_match:
+                    level = len(heading_match.group(1))
+                    level = min(level, 6)  # 標題級別最大為6
+                    title_text = heading_match.group(2).strip()
+                    html_parts.append(f'<h{level}>{title_text}</h{level}>')
+                else:
+                    html_parts.append(f'<p>{para}</p>')
+            elif para.startswith('表格開始:'):
+                # 跳過表格標記
+                continue
+            elif para.startswith('表格結束'):
+                # 跳過表格標記
+                continue
+            elif ' | ' in para and not para.startswith('- '):
+                # 處理表格行
+                cells = para.split(' | ')
+                html_parts.append('<tr>')
+                for cell in cells:
+                    html_parts.append(f'<td>{cell}</td>')
+                html_parts.append('</tr>')
+            elif para.startswith('- '):
+                # 處理列表項
+                item_text = para[2:].strip()
+                html_parts.append(f'<li>{item_text}</li>')
+            else:
+                # 普通段落
+                html_parts.append(f'<p>{para}</p>')
+        
+        html_parts.append('</body>')
+        html_parts.append('</html>')
+        
+        return '\n'.join(html_parts)
+    
+    # 如果都沒有，則從docx2txt生成HTML
+    if content_dict['docx2txt']:
+        logger.info("從docx2txt提取的文本生成HTML")
+        
+        paragraphs = content_dict['docx2txt'].split('\n\n')
+        html_parts = ['<!DOCTYPE html>', '<html>', '<head>', '<meta charset="UTF-8">', '</head>', '<body>']
+        
+        for para in paragraphs:
+            para = para.strip()
+            if not para:
+                continue
+            html_parts.append(f'<p>{para}</p>')
+        
+        html_parts.append('</body>')
+        html_parts.append('</html>')
+        
+        return '\n'.join(html_parts)
+    
+    # 如果所有方法都失敗，返回空HTML
+    logger.warning("所有轉換方法都失敗，返回空HTML")
+    return '<!DOCTYPE html><html><body><p>無法提取內容</p></body></html>'
 
 def clean_html_content(html_content: str) -> str:
     """
-    清理HTML內容，解決格式問題
+    清理HTML內容，確保格式良好
     :param html_content: 原始HTML內容
     :return: 清理後的HTML內容
     """
@@ -260,204 +371,222 @@ def clean_html_content(html_content: str) -> str:
     # 使用BeautifulSoup解析HTML
     soup = BeautifulSoup(html_content, 'html.parser')
     
-    # 1. 清理不必要的強調/加粗標籤
+    # 確保有body元素
+    if not soup.body:
+        new_body = soup.new_tag('body')
+        for tag in list(soup.children):
+            if tag.name not in ['html', 'head']:
+                new_body.append(tag.extract())
+        
+        if soup.html:
+            soup.html.append(new_body)
+        else:
+            html_tag = soup.new_tag('html')
+            html_tag.append(new_body)
+            soup.append(html_tag)
+    
+    # 清理不必要的強調/加粗標籤
     for strong in soup.find_all('strong'):
         # 如果整個段落都被加粗，則移除加粗
         if strong.parent and strong.parent.name in ['p', 'li']:
             if len(strong.parent.get_text().strip()) == len(strong.get_text().strip()):
                 strong.replace_with(strong.get_text())
     
-    # 2. 處理列表項，確保它們在正確的容器中
-    list_items = soup.find_all('li')
-    current_list = None
-    
-    for li in list_items:
-        # 如果列表項不在ul或ol中
+    # 清理列表結構，確保列表項在適當的列表容器中
+    orphan_list_items = []
+    for li in soup.find_all('li'):
         if li.parent.name not in ['ul', 'ol']:
+            orphan_list_items.append(li)
+    
+    if orphan_list_items:
+        logger.info(f"發現 {len(orphan_list_items)} 個孤立列表項，將它們放入合適的列表容器")
+        
+        current_list = None
+        for li in orphan_list_items:
+            # 從原位置移除
+            li_content = li.get_text()
+            li.extract()
+            
             # 如果沒有當前列表，創建一個新的
             if current_list is None:
                 current_list = soup.new_tag('ul')
-                li.insert_before(current_list)
+                soup.body.append(current_list)
             
-            # 將列表項移動到列表中
-            original_li = li.extract()
-            current_list.append(original_li)
-        else:
-            # 如果列表項在正確的容器中，更新當前列表引用
-            current_list = li.parent
+            # 創建新的列表項
+            new_li = soup.new_tag('li')
+            new_li.string = li_content
+            current_list.append(new_li)
     
-    # 3. 合併相鄰的相同類型列表
-    lists = soup.find_all(['ul', 'ol'])
-    for i in range(len(lists) - 1, 0, -1):
-        current_list = lists[i]
-        prev_list = lists[i-1]
-        
-        # 檢查是否相鄰且相同類型
-        if current_list.name == prev_list.name and current_list.previous_sibling == prev_list:
-            # 將當前列表的項目移動到前一個列表
-            items = current_list.find_all('li', recursive=False)
-            for item in items:
-                prev_list.append(item.extract())
-            
-            # 移除空列表
-            current_list.decompose()
+    # 修復嵌套的段落標籤
+    for p in soup.find_all('p'):
+        nested_p = p.find_all('p')
+        for nested in nested_p:
+            nested.unwrap()
     
-    # 4. 為長列表添加分組標記
-    long_lists = [lst for lst in soup.find_all(['ul', 'ol']) if len(lst.find_all('li')) > 5]
-    for lst in long_lists:
-        # 為長列表添加類別
-        lst['class'] = lst.get('class', []) + ['grouped-list']
-    
-    # 5. 清理空元素
+    # 移除空元素
     for elem in soup.find_all():
-        if not elem.contents and elem.name not in ['br', 'hr', 'img']:
+        if elem.name not in ['br', 'hr', 'img'] and not elem.contents and not elem.string:
             elem.decompose()
-        elif elem.name in ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li'] and not elem.get_text().strip():
-            elem.decompose()
-    
-    # 6. 確保所有標題有適當的層次
-    headings = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
-    for i, h in enumerate(headings):
-        if i == 0 and h.name != 'h1':
-            # 第一個標題應該是h1
-            h.name = 'h1'
-        elif i > 0:
-            # 其他標題不應該跳級
-            prev_level = int(headings[i-1].name[1])
-            curr_level = int(h.name[1])
-            if curr_level > prev_level + 1:
-                h.name = f'h{prev_level + 1}'
     
     logger.info("HTML內容清理完成")
     return str(soup)
 
-def organize_content(content_dict: Dict) -> Dict:
+def extract_article_structure(html_content: str) -> Dict:
     """
-    組織提取的內容，為HTML生成做準備
-    :param content_dict: 提取的內容字典
-    :return: 組織後的內容字典
+    從HTML內容中提取文章結構
+    :param html_content: HTML內容
+    :return: 包含文章結構的字典
     """
-    logger.info("開始組織內容結構")
+    logger.info("開始提取文章結構")
     
-    result = {
-        'title': content_dict.get('title', '未命名文章'),
-        'main_content': [],
-        'list_sections': [],
-        'summary': '',
-        'metadata': content_dict.get('metadata', {})
-    }
+    soup = BeautifulSoup(html_content, 'html.parser')
     
-    # 從段落中提取摘要
-    if content_dict['paragraphs']:
-        first_para = content_dict['paragraphs'][0]['text']
-        result['summary'] = first_para[:200] + ('...' if len(first_para) > 200 else '')
+    # 確保有body元素
+    body = soup.body
+    if not body:
+        logger.warning("HTML中沒有body元素，使用整個文檔")
+        body = soup
     
-    # 組織主要內容
-    all_elements = []
+    # 提取標題（第一個h1或h2）
+    title = "未命名文章"
+    h1 = body.find(['h1'])
+    if h1:
+        title = h1.get_text().strip()
+    else:
+        h2 = body.find(['h2'])
+        if h2:
+            title = h2.get_text().strip()
     
-    # 添加標題
-    for section in content_dict['sections']:
-        all_elements.append({
-            'type': 'heading',
-            'level': section['level'],
-            'text': section['text'],
-            'order': len(all_elements)
-        })
+    # 從標題中移除日期（如果有）
+    title = re.sub(r'^\d{4}-\d{2}-\d{2}\s*-?\s*', '', title)
     
-    # 添加段落
-    for para in content_dict['paragraphs']:
-        all_elements.append({
-            'type': 'paragraph',
-            'text': para['text'],
-            'order': len(all_elements)
-        })
+    # 提取摘要（第一個段落）
+    summary = ""
+    first_p = body.find('p')
+    if first_p:
+        summary = first_p.get_text().strip()
+        if len(summary) > 200:
+            summary = summary[:197] + "..."
     
-    # 按原始順序排序
-    all_elements.sort(key=lambda x: x['order'])
-    
-    # 將內容分為主要內容和列表部分
-    result['main_content'] = all_elements
-    
-    # 如果有列表項，將它們組織成單獨的部分
-    if content_dict['lists']:
-        # 獲取可能的列表主題
-        list_topics = []
-        for item in content_dict['lists']:
-            first_words = item['text'].split()[:2]
-            if first_words:
-                potential_topic = first_words[0]
-                if len(potential_topic) > 1 and potential_topic not in list_topics:
-                    list_topics.append(potential_topic)
+    # 提取所有內容元素
+    content = []
+    for elem in body.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'table']):
+        # 跳過空元素
+        if not elem.get_text().strip():
+            continue
         
-        # 按主題分組列表項
-        grouped_items = {}
-        for item in content_dict['lists']:
-            assigned = False
-            for topic in list_topics:
-                if topic in item['text'][:20]:  # 檢查項目開頭是否包含主題詞
-                    if topic not in grouped_items:
-                        grouped_items[topic] = []
-                    grouped_items[topic].append(item)
-                    assigned = True
-                    break
+        # 不處理嵌套元素
+        if elem.parent and elem.parent.name in ['td', 'li']:
+            continue
+        
+        # 處理特定類型的元素
+        if elem.name.startswith('h'):
+            level = int(elem.name[1])
+            elem_text = elem.get_text().strip()
             
-            # 如果沒有分配到主題，放入"其他"類別
-            if not assigned:
-                if '其他' not in grouped_items:
-                    grouped_items['其他'] = []
-                grouped_items['其他'].append(item)
-        
-        # 轉換為列表部分
-        for topic, items in grouped_items.items():
-            result['list_sections'].append({
-                'topic': topic,
-                'items': items
+            # 不重複包含標題
+            if elem_text != title:
+                content.append({
+                    'type': 'heading',
+                    'level': level,
+                    'text': elem_text
+                })
+        elif elem.name == 'p':
+            content.append({
+                'type': 'paragraph',
+                'text': elem.get_text().strip()
+            })
+        elif elem.name in ['ul', 'ol']:
+            list_items = []
+            for li in elem.find_all('li', recursive=False):
+                list_items.append(li.get_text().strip())
+            
+            content.append({
+                'type': 'list',
+                'list_type': elem.name,
+                'items': list_items
+            })
+        elif elem.name == 'table':
+            rows = []
+            for tr in elem.find_all('tr', recursive=False):
+                cells = [td.get_text().strip() for td in tr.find_all(['td', 'th'], recursive=False)]
+                rows.append(cells)
+            
+            content.append({
+                'type': 'table',
+                'rows': rows
             })
     
-    logger.info(f"內容組織完成: 找到 {len(result['main_content'])} 個主要內容元素和 {len(result['list_sections'])} 個列表部分")
+    result = {
+        'title': title,
+        'summary': summary,
+        'content': content
+    }
+    
+    logger.info(f"提取到標題: '{title}'")
+    logger.info(f"提取到 {len(content)} 個內容元素")
+    
     return result
 
-def generate_article_html(organized_content: Dict, date: str, category_code: str = "tax") -> str:
+def generate_article_html(article_structure: Dict, date: str) -> str:
     """
-    生成文章HTML
-    :param organized_content: 組織後的內容
+    根據文章結構生成HTML
+    :param article_structure: 文章結構
     :param date: 發布日期
-    :param category_code: 分類代碼
-    :return: 文章HTML
+    :return: HTML字符串
     """
-    logger.info(f"開始生成文章HTML，日期: {date}，分類: {category_code}")
+    logger.info(f"開始生成文章HTML，日期: {date}")
     
-    # 獲取標題和摘要
-    title = organized_content['title']
-    summary = organized_content.get('summary', f"{title} - 專業財稅知識分享")
+    title = article_structure['title']
+    summary = article_structure['summary']
+    content = article_structure['content']
     
-    # 生成標籤 (從摘要和標題中提取)
-    all_text = title + " " + summary
-    for elem in organized_content['main_content']:
-        all_text += " " + elem['text']
+    # 生成文章內容HTML
+    content_html = []
+    for elem in content:
+        if elem['type'] == 'heading':
+            level = elem['level']
+            text = elem['text']
+            content_html.append(f'<h{level}>{text}</h{level}>')
+        elif elem['type'] == 'paragraph':
+            text = elem['text']
+            content_html.append(f'<p>{text}</p>')
+        elif elem['type'] == 'list':
+            list_type = elem['list_type']
+            items = elem['items']
+            
+            list_html = [f'<{list_type}>']
+            for item in items:
+                list_html.append(f'<li>{item}</li>')
+            list_html.append(f'</{list_type}>')
+            
+            content_html.append('\n'.join(list_html))
+        elif elem['type'] == 'table':
+            rows = elem['rows']
+            
+            table_html = ['<table border="1">']
+            for row in rows:
+                table_html.append('<tr>')
+                for cell in row:
+                    table_html.append(f'<td>{cell}</td>')
+                table_html.append('</tr>')
+            table_html.append('</table>')
+            
+            content_html.append('\n'.join(table_html))
     
-    # 提取標籤
-    if USE_UTILS:
-        setup_jieba_dict()
-        tags = extract_keywords(all_text, 5)
-    else:
-        # 簡易版標籤提取
-        common_keywords = ["稅務", "會計", "財務", "企業", "記帳", "報稅", "節稅", "創業", "公司"]
-        tags = []
-        for kw in common_keywords:
-            if kw in all_text and len(tags) < 5:
-                tags.append(kw)
+    # 如果沒有內容，添加摘要作為內容
+    if not content_html and summary:
+        content_html.append(f'<p>{summary}</p>')
     
-    # 確保至少有一些標籤
-    if not tags:
-        tags = ["財稅", "會計", "企業"]
+    # 確定主題分類
+    text_content = title + " " + summary + " " + ' '.join([elem.get('text', '') for elem in content])
     
-    # 決定主要分類
-    primary_category = "稅務相關"  # 默認
+    # 計算各個分類關鍵詞出現的次數
     category_scores = {
         "稅務相關": 0,
         "會計記帳": 0,
         "企業經營": 0,
+        "投資理財": 0,
         "創業資訊": 0
     }
     
@@ -466,54 +595,63 @@ def generate_article_html(organized_content: Dict, date: str, category_code: str
         "稅務相關": ["稅", "報稅", "節稅", "稅務", "稅收", "所得稅", "營業稅", "扣繳", "稅法"],
         "會計記帳": ["會計", "記帳", "帳務", "財報", "憑證", "審計", "財務報表", "會計師"],
         "企業經營": ["企業", "公司", "經營", "管理", "營運", "商業", "策略", "執行長"],
+        "投資理財": ["財務", "規劃", "投資", "理財", "資產", "負債", "現金流", "財富"],
         "創業資訊": ["創業", "新創", "新創事業", "創業家", "募資", "新創團隊"]
     }
     
     # 統計關鍵詞出現次數
     for category, words in keywords.items():
         for word in words:
-            count = all_text.count(word)
+            count = text_content.count(word)
             if count > 0:
                 category_scores[category] += count
     
     # 選取得分最高的類別
     primary_category = max(category_scores.items(), key=lambda x: x[1])[0]
     
-    # 映射到類別代碼
+    # 如果沒有明確的類別，默認為稅務相關
+    if category_scores[primary_category] == 0:
+        primary_category = "稅務相關"
+    
+    # 對應類別代碼
     category_map = {
         "稅務相關": "tax",
         "會計記帳": "accounting",
         "企業經營": "business",
+        "投資理財": "investment",
         "創業資訊": "startup"
     }
     
-    # 如果有提供類別代碼，使用它，否則使用推斷的類別
-    if not category_code or category_code not in category_map.values():
-        category_code = category_map.get(primary_category, "tax")
+    category_code = category_map.get(primary_category, "tax")
+    
+    # 提取標籤
+    if USE_UTILS:
+        setup_jieba_dict()
+        tags = extract_keywords(text_content, 5)
+    else:
+        # 簡易版標籤提取
+        common_keywords = ["稅務", "會計", "財務", "企業", "記帳", "報稅", "節稅", "創業", "公司"]
+        tags = []
+        for kw in common_keywords:
+            if kw in text_content and len(tags) < 5:
+                tags.append(kw)
+    
+    # 確保至少有一些標籤
+    if not tags:
+        tags = ["財稅", "會計", "企業"]
+    
+    # 生成標籤連結
+    tag_links = generate_tag_links(tags)
     
     # 選擇文章圖片
     image_path = f"/assets/images/blog/{category_code}_default.jpg"
     
-    # 生成slug (SEO友好URL)
+    # 生成SEO友好的URL
     slug = slugify(title)
     file_name = f"{date}-{slug}.html"
     relative_url = f"/blog/{file_name}"
     
-    # 生成標籤連結HTML
-    tag_links = generate_tag_links(tags)
-    
-    # 生成主要內容HTML
-    main_content_html = []
-    for elem in organized_content['main_content']:
-        if elem['type'] == 'heading':
-            level = elem['level']
-            main_content_html.append(f'<h{level}>{elem["text"]}</h{level}>')
-        elif elem['type'] == 'paragraph':
-            main_content_html.append(f'<p>{elem["text"]}</p>')
-    
-    main_content_html = "\n".join(main_content_html)
-    
-    # HTML模板
+    # 生成HTML模板
     template = f"""<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -668,7 +806,7 @@ def generate_article_html(organized_content: Dict, date: str, category_code: str
       
       <!-- 文章內容主體 -->
       <div class="article-body">
-{main_content_html}
+{"".join(content_html)}
       </div>
       
       <!-- 文章標籤 -->
@@ -1020,36 +1158,41 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
         date_match = re.search(r'(\d{4}-\d{2}-\d{2})', filename)
         date = date_match.group(1) if date_match else datetime.datetime.now().strftime("%Y-%m-%d")
         
-        # 2. 提取Word內容
+        # 2. 使用多種方法提取Word內容
         content_dict = extract_word_content(docx_path)
         
-        # 3. 組織內容結構
-        organized_content = organize_content(content_dict)
+        # 3. 將內容轉換為HTML
+        html_content = convert_to_html(content_dict)
         
-        # 4. 生成HTML
-        html_content = generate_article_html(organized_content, date)
+        # 4. 清理HTML內容
+        cleaned_html = clean_html_content(html_content)
         
-        # 5. 生成文件名
-        slug = slugify(organized_content['title'])
+        # 5. 提取文章結構
+        article_structure = extract_article_structure(cleaned_html)
+        
+        # 6. 生成最終HTML
+        final_html = generate_article_html(article_structure, date)
+        
+        # 7. 生成文件名
+        slug = slugify(article_structure['title'])
         file_name = f"{date}-{slug}.html"
         
-        # 6. 寫入文件
+        # 8. 寫入文件
         output_path = os.path.join(output_dir, file_name)
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         
         with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(html_content)
+            f.write(final_html)
         
         logger.info(f"成功將 {filename} 轉換為 {file_name}")
         
         return {
             'success': True,
             'output_file': file_name,
-            'title': organized_content['title'],
+            'title': article_structure['title'],
             'metadata': {
                 'date': date,
-                'summary': organized_content.get('summary', ''),
-                'tags': organized_content.get('tags', [])
+                'summary': article_structure['summary']
             }
         }
         
