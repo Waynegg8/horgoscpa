@@ -442,7 +442,7 @@ jobs:
                 steps.check_video_changes.outputs.videos_txt_changed == 'true' ||
                 (github.event_name == 'push' && contains(github.event.head_commit.modified, 'video/videos.txt')) ||
                 (github.event_name == 'push' && contains(github.event.head_commit.added, 'video/videos.txt')) ||
-                github.event_name == 'repository_dispatch' && github.event.action == 'update-video' }}
+                (github.event_name == 'repository_dispatch' && github.event.action == 'update-video') }}
         run: |
           echo "檢測到需要更新影片數據"
           
