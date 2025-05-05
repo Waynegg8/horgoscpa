@@ -1165,18 +1165,31 @@ def generate_html(title: str, html_content: str, tags: List[str],
     # 生成相對 URL 路徑
     relative_url = f"/blog/{file_name}"
     
-    # 檢查HTML內容格式
+    # 處理HTML內容
     if html_content.startswith(('<!DOCTYPE', '<html')):
         # 提取body內容
         soup = BeautifulSoup(html_content, 'html.parser')
         body = soup.find('body')
         if body:
+            # 清理標題中的 # 符號
+            for header in body.select('h1, h2, h3, h4, h5, h6'):
+                header.string = re.sub(r'^#+\s*', '', header.text) if header.text else ''
+            
+            # 檢查並移除與文章標題重複的標題
+            first_header = body.select_one('h1:first-child, h2:first-child')
+            if first_header and first_header.text.strip().lower() == title.strip().lower():
+                first_header.decompose()
+            
+            # 獲取清理後的內容
             body_content = ''.join(str(tag) for tag in body.contents)
         else:
             body_content = html_content
     else:
-        # 內容不是完整HTML，直接使用
+        # 如果不是完整HTML，直接使用
         body_content = html_content
+        
+        # 嘗試清理文字內容中的標題前缀
+        body_content = re.sub(r'<(h[1-6])>#+\s*', r'<\1>', body_content)
     
     # 創建網站格式的HTML
     template = f"""<!DOCTYPE html>
@@ -1309,15 +1322,6 @@ def generate_html(title: str, html_content: str, tags: List[str],
   </div>
 </div>
 
-<!-- 文章頁面標題區塊 - 簡化版 -->
-<header class="article-header">
-  <div class="container">
-    <div class="article-header-content">
-      <!-- 移除多餘內容 -->
-    </div>
-  </div>
-</header>
-
 <!-- 文章內容主體區塊 -->
 <section class="article-content-section">
   <div class="article-container">
@@ -1335,7 +1339,7 @@ def generate_html(title: str, html_content: str, tags: List[str],
         </a>
       </div>
       
-      <!-- 文章標題區 - 簡化版 -->
+      <!-- 文章標題區 -->
       <div class="article-header-main">
         <h1 class="article-title">{title}</h1>
       </div>
@@ -1467,6 +1471,24 @@ def generate_html(title: str, html_content: str, tags: List[str],
         behavior: 'smooth'
       }});
     }});
+    
+    // 清理可能的格式問題
+    (function cleanupArticleContent() {{
+      // 移除標題前的 # 符號
+      const headers = document.querySelectorAll('.article-body h1, .article-body h2, .article-body h3, .article-body h4, .article-body h5, .article-body h6');
+      headers.forEach(header => {{
+        header.innerHTML = header.innerHTML.replace(/^#+\s*/, '');
+      }});
+      
+      // 如果第一個標題與文章標題相同，則隱藏
+      const firstHeader = document.querySelector('.article-body h1:first-child, .article-body h2:first-child');
+      const articleTitle = document.querySelector('.article-title');
+      
+      if (firstHeader && articleTitle && 
+          firstHeader.textContent.trim().toLowerCase() === articleTitle.textContent.trim().toLowerCase()) {{
+        firstHeader.style.display = 'none';
+      }}
+    }})();
   }});
 </script>
 
