@@ -32,20 +32,22 @@
     padding: 0 15px;
   }
   
-  /* Logo 樣式 */
+  /* Logo 樣式 - 水平排列版本 */
   .mobile-navbar .logo {
     flex: 1;
     display: flex;
-    justify-content: center;
+    justify-content: center; /* 保持居中 */
+    padding: 0 15px; /* 增加左右內邊距，使logo整體離按鈕遠一點 */
   }
   
   .mobile-navbar .logo a {
     color: white;
     text-decoration: none;
     display: flex;
-    flex-direction: row; /* 改為水平排列 */
+    flex-direction: row; /* 水平排列 */
     align-items: center;
-    gap: 8px; /* 設定中文和英文之間的間距 */
+    justify-content: center; /* 確保水平居中 */
+    gap: 8px; /* 中文和英文之間的間距 */
   }
   
   /* 添加logo容器用於水平排列中文圖片和英文 */
@@ -57,15 +59,16 @@
   
   /* 中文logo圖片樣式 */
   .mobile-navbar .logo-img {
-    height: 40px; /* 設定較大的中文logo尺寸 */
+    height: 36px; /* 稍微調小logo圖片尺寸 */
     width: auto;
   }
   
   /* 英文字體樣式 */
   .mobile-navbar .logo-sub {
-    font-size: 0.8rem; /* 保持英文字體較小 */
+    font-size: 0.75rem; /* 稍微調小英文字體 */
     opacity: 0.8;
     letter-spacing: 0.5px;
+    white-space: nowrap; /* 防止英文換行 */
   }
   
   /* 菜單按鈕 */
@@ -197,7 +200,7 @@
     }
     
     .mobile-navbar .logo-img {
-      height: 38px; /* 稍微縮小圖片但仍保持較大 */
+      height: 32px; /* 稍微縮小圖片 */
     }
     
     .mobile-navbar .logo-sub {
