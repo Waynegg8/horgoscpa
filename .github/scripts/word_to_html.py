@@ -16,6 +16,7 @@ import random
 import hashlib
 import datetime
 import logging
+import glob
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 import importlib
@@ -68,6 +69,13 @@ def setup_logging():
 
 # 設置全局日誌器
 logger = setup_logging()
+
+# 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
+
+# 設置圖片目錄路徑
+BLOG_IMAGES_DIR = os.path.join(PROJECT_ROOT, "assets", "images", "blog")
 
 # 嘗試導入 utils 模組
 try:
@@ -129,6 +137,82 @@ CATEGORY_MAPPING = {
     "創業": "startup",
     "法律": "legal"
 }
+
+# 確保圖片目錄存在
+def ensure_blog_images_dir():
+    """確保部落格圖片目錄存在"""
+    try:
+        # 確保 assets/images/blog 目錄存在
+        os.makedirs(BLOG_IMAGES_DIR, exist_ok=True)
+        logger.info(f"確保圖片目錄存在: {BLOG_IMAGES_DIR}")
+        return True
+    except Exception as e:
+        logger.error(f"創建圖片目錄時出錯: {str(e)}")
+        return False
+
+# 生成默認圖片（僅在沒有任何可用圖片時使用）
+def create_default_images():
+    """創建默認的分類圖片，如果不存在"""
+    categories = ["tax", "accounting", "business", "startup", "financial", "legal"]
+    default_path = os.path.join(BLOG_IMAGES_DIR, "default.jpg")
+    
+    # 如果目錄為空，創建至少一張默認圖片
+    if not os.path.exists(default_path):
+        logger.info("未找到默認圖片，使用外部圖片服務")
+        
+        # 這裡您可以添加代碼從外部下載圖片或生成一個基本圖片
+        # 作為示例，我們只記錄這個行為
+        logger.info("提示：您應該手動上傳一些圖片到 assets/images/blog 目錄")
+    
+    # 記錄當前可用的圖片
+    images = get_available_images()
+    logger.info(f"可用的圖片文件: {len(images)}")
+
+def get_available_images():
+    """獲取可用的圖片文件列表"""
+    if not os.path.exists(BLOG_IMAGES_DIR):
+        return []
+    
+    # 獲取所有圖片文件 (jpg, png, jpeg, gif, webp)
+    images = []
+    for ext in ['*.jpg', '*.jpeg', '*.png', '*.gif', '*.webp']:
+        images.extend(glob.glob(os.path.join(BLOG_IMAGES_DIR, ext)))
+    
+    return images
+
+def select_random_image(category_code):
+    """
+    從圖片目錄中隨機選擇一張圖片
+    優先選擇與分類相關的圖片，否則隨機選擇
+    """
+    # 確保圖片目錄存在
+    ensure_blog_images_dir()
+    
+    # 取得可用圖片
+    available_images = get_available_images()
+    
+    if not available_images:
+        # 如果沒有可用圖片，創建默認圖片並返回路徑
+        create_default_images()
+        return f"/assets/images/blog/{category_code}_default.jpg"
+    
+    # 優先查找與分類相關的圖片
+    category_images = [img for img in available_images if category_code in os.path.basename(img).lower()]
+    
+    if category_images:
+        # 從分類相關圖片中隨機選擇
+        selected_image = random.choice(category_images)
+    else:
+        # 從所有圖片中隨機選擇
+        selected_image = random.choice(available_images)
+    
+    # 轉換為網站相對路徑
+    relative_path = selected_image.replace(PROJECT_ROOT, '')
+    if not relative_path.startswith('/'):
+        relative_path = '/' + relative_path
+    
+    logger.info(f"已選擇圖片: {relative_path}")
+    return relative_path
 
 def extract_date_from_filename(filename: str) -> Optional[str]:
     """
@@ -643,8 +727,8 @@ def generate_article_html(article_structure: Dict, date: str) -> str:
     # 生成標籤連結
     tag_links = generate_tag_links(tags)
     
-    # 選擇文章圖片
-    image_path = f"/assets/images/blog/{category_code}_default.jpg"
+    # 選擇文章圖片 - 隨機選擇
+    image_path = select_random_image(category_code)
     
     # 生成SEO友好的URL
     slug = slugify(title)
@@ -1214,6 +1298,9 @@ def process_word_files(input_dir: str, output_dir: str) -> List[Dict]:
     # 確保輸出目錄存在
     os.makedirs(output_dir, exist_ok=True)
     
+    # 確保圖片目錄存在
+    ensure_blog_images_dir()
+    
     # 獲取所有Word文檔
     docx_files = [f for f in os.listdir(input_dir) 
              if f.lower().endswith('.docx') and not f.startswith('~')]  # 排除臨時檔案
@@ -1258,6 +1345,9 @@ def main() -> int:
     if USE_UTILS:
         setup_jieba_dict()
         logger.info("已設置jieba詞典")
+    
+    # 確保圖片目錄存在
+    ensure_blog_images_dir()
     
     # 處理Word文檔
     logger.info("====== Word轉HTML處理開始 ======")
