@@ -4,7 +4,7 @@
 """
 Word 文檔轉換為 HTML 工具 - 改進版
 用於將 Word 文檔轉換為符合網站風格的 HTML 文件
-重點優化：確保文章內容絕對完整性
+重點優化：確保文章內容絕對完整性，並處理Markdown語法標記
 """
 
 import os
@@ -490,12 +490,25 @@ def merge_extraction_results(extraction_results: Dict, validation_results: Dict)
 
 def enhance_html_content(html_content: str, extraction_results: Dict) -> str:
     """
-    增強HTML內容，填補可能的缺失
+    增強HTML內容，填補可能的缺失，並清理Markdown語法
     :param html_content: HTML內容
     :param extraction_results: 提取結果字典
     :return: 增強後的HTML
     """
     from bs4 import BeautifulSoup
+    
+    # 清理可能的Markdown格式問題
+    # 清理標題前的Markdown符號
+    html_content = re.sub(r'\*\*\\?#\s*', '', html_content)
+    html_content = re.sub(r'\*\*\\?##\s*', '', html_content)
+    html_content = re.sub(r'\*\*\\?###\s*', '', html_content)
+    
+    # 清理粗體標記
+    html_content = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', html_content)
+    
+    # 清理列表項前的符號
+    html_content = re.sub(r'\*\*-\s*\\?\*\*(.*?)\\?\*\*', r'<li>\1</li>', html_content)
+    html_content = re.sub(r'-\s*\*\*(.*?)\*\*', r'<li>\1</li>', html_content)
     
     # 解析HTML
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -603,6 +616,24 @@ def enhance_html_content(html_content: str, extraction_results: Dict) -> str:
                 li_tag.string = text
                 current_list.append(li_tag)
     
+    # 檢查並清理所有標題和段落中可能殘留的Markdown標記
+    for tag in soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li']):
+        text = tag.get_text()
+        # 清理標題中的#符號
+        if tag.name.startswith('h') and text.startswith('#'):
+            text = re.sub(r'^#+\s*', '', text)
+            tag.string = text
+        
+        # 清理粗體標記
+        if '**' in text:
+            text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+            tag.string = text
+        
+        # 清理列表項前的標記
+        if tag.name == 'li' and text.startswith('-'):
+            text = re.sub(r'^-\s*', '', text)
+            tag.string = text
+    
     # 返回增強後的HTML
     enhanced_html = str(soup)
     logger.info(f"融合後HTML長度: {len(enhanced_html)}")
@@ -627,6 +658,12 @@ def convert_structured_to_html(structured_content: Dict) -> str:
         text = para['text']
         style = para['style']
         is_list_item = para.get('is_list_item', False)
+        
+        # 清理可能的Markdown標記
+        # 清理標題前的#符號
+        text = re.sub(r'^#+\s*', '', text)
+        # 清理粗體標記
+        text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
         
         # 跳過空段落
         if not text.strip():
@@ -653,6 +690,9 @@ def convert_structured_to_html(structured_content: Dict) -> str:
         
         # 列表項處理
         elif is_list_item or any(text.strip().startswith(prefix) for prefix in ['-', '•', '*', '1.', '2.']):
+            # 清理列表項標記
+            text = re.sub(r'^[-•*]\s*', '', text)
+            
             # 判斷列表類型
             if text.strip()[0].isdigit() and '.' in text.strip()[:3]:
                 new_list_type = 'ol'
@@ -712,10 +752,18 @@ def convert_structured_to_html(structured_content: Dict) -> str:
 
 def convert_text_to_html(text: str) -> str:
     """
-    將純文本轉換為簡單HTML格式，嘗試識別結構
+    將純文本轉換為簡單HTML格式，嘗試識別結構，並清理Markdown標記
     :param text: 純文本
     :return: HTML字符串
     """
+    # 首先清理可能的Markdown標記
+    # 清理標題前的#符號
+    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE)
+    # 清理粗體標記
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    # 清理列表項前的標記
+    text = re.sub(r'^-\s*', '', text, flags=re.MULTILINE)
+    
     lines = text.split('\n')
     html_parts = ['<!DOCTYPE html>', '<html>', '<head><meta charset="UTF-8"></head>', '<body>']
     
@@ -1171,9 +1219,20 @@ def generate_html(title: str, html_content: str, tags: List[str],
         soup = BeautifulSoup(html_content, 'html.parser')
         body = soup.find('body')
         if body:
-            # 清理標題中的 # 符號
+            # 清理標題中的 # 符號和 Markdown 粗體標記
             for header in body.select('h1, h2, h3, h4, h5, h6'):
-                header.string = re.sub(r'^#+\s*', '', header.text) if header.text else ''
+                # 清理標題前的#符號
+                header_text = header.get_text()
+                header_text = re.sub(r'^#+\s*', '', header_text)
+                # 清理粗體標記
+                header_text = re.sub(r'\*\*(.*?)\*\*', r'\1', header_text)
+                header.string = header_text.strip() if header_text else ''
+            
+            # 清理段落中的Markdown粗體標記
+            for p in body.select('p, li'):
+                p_text = p.get_text()
+                p_text = re.sub(r'\*\*(.*?)\*\*', r'\1', p_text)
+                p.string = p_text.strip() if p_text else ''
             
             # 檢查並移除與文章標題重複的標題
             first_header = body.select_one('h1:first-child, h2:first-child')
@@ -1188,8 +1247,9 @@ def generate_html(title: str, html_content: str, tags: List[str],
         # 如果不是完整HTML，直接使用
         body_content = html_content
         
-        # 嘗試清理文字內容中的標題前缀
+        # 嘗試清理文字內容中的標題前缀和Markdown格式
         body_content = re.sub(r'<(h[1-6])>#+\s*', r'<\1>', body_content)
+        body_content = re.sub(r'<(p|li|h[1-6])>\*\*(.*?)\*\*</\1>', r'<\1>\2</\1>', body_content)
     
     # 創建網站格式的HTML
     template = f"""<!DOCTYPE html>
@@ -1480,6 +1540,12 @@ def generate_html(title: str, html_content: str, tags: List[str],
         header.innerHTML = header.innerHTML.replace(/^#+\s*/, '');
       }});
       
+      // 移除粗體標記符號
+      const allElements = document.querySelectorAll('.article-body h1, .article-body h2, .article-body h3, .article-body p, .article-body li');
+      allElements.forEach(el => {{
+        el.innerHTML = el.innerHTML.replace(/\*\*(.*?)\*\*/g, '$1');
+      }});
+      
       // 如果第一個標題與文章標題相同，則隱藏
       const firstHeader = document.querySelector('.article-body h1:first-child, .article-body h2:first-child');
       const articleTitle = document.querySelector('.article-title');
@@ -1649,7 +1715,7 @@ def process_word_files(input_dir: str, output_dir: str) -> List[Dict]:
     
     # 獲取所有Word文檔
     docx_files = [f for f in os.listdir(input_dir) 
-                 if f.lower().endswith('.docx') and not f.startswith('~$')]  # 排除臨時檔案
+                 if f.lower().endswith('.docx') and not f.startswith('~)]  # 排除臨時檔案
     
     if not docx_files:
         logger.warning(f"在 {input_dir} 中沒有找到Word文檔")

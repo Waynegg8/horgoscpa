@@ -1,4 +1,4 @@
-/* 文章頁面現代化樣式 */
+/* 文章頁面現代化樣式 - 優化版 */
 
 /* 文章頁面標題區塊 */
 .article-header {
@@ -11,66 +11,75 @@
 .article-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 2.5rem 1.5rem;
 }
 
 /* 文章卡片樣式 */
 .article-card {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
-  padding: 2rem;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.06);
+  padding: 2.5rem;
   margin-bottom: 2rem;
   overflow-wrap: break-word;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.article-card:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 /* 文章元資料樣式 */
 .article-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
+  gap: 1.2rem;
+  margin-bottom: 1.8rem;
+  font-size: 0.95rem;
   color: #666;
 }
 
 .article-date, .article-category {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
 }
 
 .article-category {
   text-decoration: none;
   color: var(--secondary-color);
   font-weight: 500;
+  transition: color 0.2s ease;
 }
 
 .article-category:hover {
+  color: var(--primary-color);
   text-decoration: underline;
 }
 
 /* 文章標題樣式 */
 .article-title {
-  font-size: 2.2rem;
+  font-size: 2.4rem;
   font-weight: 700;
   color: var(--primary-color);
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   line-height: 1.3;
+  letter-spacing: -0.01em;
 }
 
 /* 文章內容區域樣式 */
 .article-content-section {
-  padding: 2rem 0;
+  padding: 2.5rem 0;
   overflow-x: hidden;
+  background-color: #fcfcfc;
 }
 
 /* 文章主體樣式 */
 .article-body {
   font-family: 'Noto Sans TC', sans-serif;
-  line-height: 1.7;
+  line-height: 1.8;
   color: #333;
-  font-size: 1rem;
+  font-size: 1.05rem;
 }
 
 /* 標題樣式定義 */
@@ -83,88 +92,102 @@
   font-family: 'Noto Sans TC', sans-serif;
   color: var(--primary-color);
   font-weight: 600;
-  margin-top: 1.8rem;
-  margin-bottom: 1rem;
+  margin-top: 2.2rem;
+  margin-bottom: 1.2rem;
   clear: both;
   line-height: 1.4;
   max-width: 100% !important;
   margin-right: 0 !important;
   margin-left: 0 !important;
   width: auto !important;
+  letter-spacing: 0.02em;
 }
 
 /* 標題層級 */
 .article-body h1 {
-  font-size: 1.8rem !important;
+  font-size: 1.9rem !important;
   font-weight: 700;
-  margin-top: 2rem;
+  margin-top: 2.8rem;
   border-bottom: 1px solid #eee;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.6rem;
 }
 
 .article-body h2 {
-  font-size: 1.5rem !important;
-  margin-top: 1.8rem;
+  font-size: 1.6rem !important;
+  margin-top: 2.5rem;
   border-bottom: 1px solid #f3f3f3;
-  padding-bottom: 0.3rem;
+  padding-bottom: 0.5rem;
 }
 
 .article-body h3 {
-  font-size: 1.3rem !important;
-  margin-top: 1.5rem;
+  font-size: 1.4rem !important;
+  margin-top: 2rem;
+  color: #00428e;
 }
 
 .article-body h4 {
-  font-size: 1.1rem !important;
-  margin-top: 1.2rem;
+  font-size: 1.2rem !important;
+  margin-top: 1.5rem;
+  color: #005096;
 }
 
 .article-body h5 {
-  font-size: 1rem !important;
-  margin-top: 1rem;
+  font-size: 1.1rem !important;
+  margin-top: 1.3rem;
+  color: #0062b9;
 }
 
 .article-body h6 {
-  font-size: 0.9rem !important;
-  margin-top: 1rem;
+  font-size: 1rem !important;
+  margin-top: 1.2rem;
   color: #555;
+  font-style: italic;
 }
 
-/* 修正標題前的 # 符號 */
-.article-body h1:before,
-.article-body h2:before,
-.article-body h3:before,
-.article-body h4:before,
-.article-body h5:before,
-.article-body h6:before {
+/* 確保沒有Markdown殘留符號 */
+.article-body h1::before,
+.article-body h2::before,
+.article-body h3::before,
+.article-body h4::before,
+.article-body h5::before,
+.article-body h6::before,
+.article-body p::before,
+.article-body li::before {
   content: none !important;
   display: none !important;
 }
 
+.article-body h1:first-child {
+  margin-top: 0.5rem;
+}
+
 /* 段落樣式 */
 .article-body p {
-  margin-bottom: 1.2rem;
-  font-size: 1rem !important;
-  line-height: 1.7;
+  margin-bottom: 1.5rem;
+  font-size: 1.05rem !important;
+  line-height: 1.8;
   max-width: 100% !important;
   margin-right: 0 !important;
   margin-left: 0 !important;
+  text-align: justify;
+  hyphens: auto;
 }
 
 /* 列表樣式 */
 .article-body ul,
 .article-body ol {
-  margin: 1rem 0 1.5rem 1.5rem;
-  padding-left: 0.5rem;
+  margin: 1.2rem 0 1.8rem 1.8rem;
+  padding-left: 0.8rem;
   max-width: 100% !important;
   margin-right: 0 !important;
 }
 
 .article-body li {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.8rem;
   position: relative;
-  font-size: 1rem !important;
-  line-height: 1.6;
+  font-size: 1.05rem !important;
+  line-height: 1.7;
+  padding-left: 0.3rem;
 }
 
 .article-body ul li {
@@ -175,14 +198,24 @@
   list-style-type: decimal !important;
 }
 
+/* 嵌套列表 */
+.article-body ul ul,
+.article-body ol ol,
+.article-body ul ol,
+.article-body ol ul {
+  margin-top: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
 /* 引用區塊 */
 .article-body blockquote {
-  margin: 1.5rem 0;
-  padding: 1rem 1.5rem;
+  margin: 1.8rem 0;
+  padding: 1.2rem 1.5rem;
   border-left: 4px solid var(--secondary-color);
   background-color: #f9f9f9;
-  color: #555;
+  color: #444;
   font-style: italic;
+  border-radius: 0 8px 8px 0;
 }
 
 .article-body blockquote p:last-child {
@@ -192,27 +225,35 @@
 /* 表格樣式 */
 .article-body table {
   width: 100%;
-  margin: 1.5rem 0;
+  margin: 1.8rem 0;
   border-collapse: collapse;
   overflow-x: auto;
   display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
 }
 
 .article-body table th {
-  background-color: #f5f5f5;
+  background-color: #f5f7fa;
   font-weight: 600;
   text-align: left;
   border: 1px solid #ddd;
-  padding: 0.7rem;
+  padding: 0.8rem 1rem;
+  font-size: 1.05rem !important;
 }
 
 .article-body table td {
   border: 1px solid #ddd;
-  padding: 0.7rem;
+  padding: 0.8rem 1rem;
+  font-size: 1rem !important;
 }
 
 .article-body table tr:nth-child(even) {
   background-color: #f9f9f9;
+}
+
+.article-body table tr:hover {
+  background-color: #f0f6ff;
 }
 
 /* 強調樣式 */
@@ -233,11 +274,13 @@
   text-decoration: none;
   border-bottom: 1px solid rgba(0, 102, 204, 0.3);
   transition: all 0.2s ease;
+  padding-bottom: 1px;
 }
 
 .article-body a:hover {
   color: var(--primary-color);
   border-bottom: 1px solid var(--primary-color);
+  background-color: rgba(0, 102, 204, 0.05);
 }
 
 /* 水平線 */
@@ -245,41 +288,43 @@
   height: 1px;
   background-color: #eee;
   border: none;
-  margin: 2rem 0;
+  margin: 2.5rem 0;
 }
 
 /* 文章標籤樣式 */
 .article-footer {
-  margin-top: 2.5rem;
-  padding-top: 1.5rem;
+  margin-top: 3rem;
+  padding-top: 1.8rem;
   border-top: 1px solid #eee;
 }
 
 .article-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: 0.8rem;
 }
 
 .article-tag {
   display: inline-block;
-  padding: 0.3rem 0.8rem;
+  padding: 0.4rem 1rem;
   background: #f0f6ff;
   color: var(--secondary-color);
-  border-radius: 20px;
-  font-size: 0.85rem;
+  border-radius: 30px;
+  font-size: 0.9rem;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .article-tag:hover {
   background: var(--secondary-color);
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 102, 204, 0.2);
 }
 
 /* 文章導航 - 上一篇/下一篇 */
 .article-navigation {
-  margin: 2rem 0;
+  margin: 2.5rem 0;
   text-align: center;
 }
 
@@ -288,12 +333,12 @@
   align-items: center;
   background: var(--secondary-color);
   color: white;
-  padding: 0.6rem 1.2rem;
-  border-radius: 30px;
+  padding: 0.8rem 1.5rem;
+  border-radius: 50px;
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s ease;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .back-to-blog:hover {
@@ -319,36 +364,36 @@
   font-family: inherit !important;
   font-size: inherit !important;
   line-height: inherit !important;
+  color: inherit !important;
+}
+
+/* 移除任何可能出現的Markdown標記 */
+.article-body *:not(pre *) {
+  white-space: normal !important;
 }
 
 /* 修正可能的字體大小問題 */
 .article-body * {
   font-size: inherit;
   box-sizing: border-box !important;
+  max-width: 100% !important;
 }
 
 /* 重寫標題和段落的字體大小，確保覆蓋內聯樣式 */
-.article-body h1 { font-size: 1.8rem !important; }
-.article-body h2 { font-size: 1.5rem !important; }
-.article-body h3 { font-size: 1.3rem !important; }
-.article-body h4 { font-size: 1.1rem !important; }
-.article-body h5 { font-size: 1rem !important; }
-.article-body h6 { font-size: 0.9rem !important; }
+.article-body h1 { font-size: 1.9rem !important; }
+.article-body h2 { font-size: 1.6rem !important; }
+.article-body h3 { font-size: 1.4rem !important; }
+.article-body h4 { font-size: 1.2rem !important; }
+.article-body h5 { font-size: 1.1rem !important; }
+.article-body h6 { font-size: 1rem !important; }
 .article-body p, 
 .article-body li, 
 .article-body td, 
 .article-body th { 
-  font-size: 1rem !important; 
+  font-size: 1.05rem !important; 
 }
 
-/* 修正Word特有的標題符號問題 */
-.article-body h1:first-of-type[id^="#"],
-.article-body h2:first-of-type[id^="#"],
-.article-body h3:first-of-type[id^="#"],
-.article-body h4:first-of-type[id^="#"] {
-  display: none;
-}
-
+/* 移除可能的空白元素 */
 .article-body h1:empty,
 .article-body h2:empty,
 .article-body h3:empty,
@@ -357,7 +402,97 @@
   display: none;
 }
 
+/* 確保圖片和媒體內容響應式 */
+.article-body img,
+.article-body video,
+.article-body iframe {
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* 移除Markdown符號 */
+.article-body p,
+.article-body li,
+.article-body h1,
+.article-body h2,
+.article-body h3,
+.article-body h4,
+.article-body h5,
+.article-body h6 {
+  position: relative;
+}
+
+/* 清理可能殘留的Markdown標記 */
+.article-body h1[id^="#"],
+.article-body h2[id^="#"],
+.article-body h3[id^="#"],
+.article-body h4[id^="#"] {
+  display: block;
+}
+
+.article-body h1[id^="#"]::before,
+.article-body h2[id^="#"]::before,
+.article-body h3[id^="#"]::before,
+.article-body h4[id^="#"]::before {
+  content: none !important;
+}
+
+/* 嘗試移除粗體標記 */
+.article-body *::before,
+.article-body *::after {
+  display: none !important;
+}
+
+/* 改進打印時的樣式 */
+@media print {
+  .article-navigation,
+  .site-nav,
+  .site-footer,
+  .back-to-top,
+  .mobile-navbar {
+    display: none !important;
+  }
+  
+  .article-card {
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .article-container {
+    padding: 0;
+    max-width: 100%;
+  }
+  
+  .article-body {
+    font-size: 12pt !important;
+  }
+  
+  .article-body a {
+    color: #000 !important;
+    text-decoration: underline;
+    border-bottom: none;
+  }
+}
+
 /* 響應式調整 */
+@media (max-width: 992px) {
+  .article-container {
+    padding: 2rem 1.2rem;
+  }
+  
+  .article-title {
+    font-size: 2.2rem;
+  }
+  
+  .article-card {
+    padding: 2rem;
+  }
+}
+
 @media (max-width: 768px) {
   .article-container {
     padding: 1.5rem 1rem;
@@ -365,22 +500,29 @@
   
   .article-card {
     padding: 1.5rem;
+    border-radius: 10px;
   }
   
   .article-title {
     font-size: 1.8rem;
+    margin-bottom: 1.5rem;
   }
   
   .article-body h1 {
-    font-size: 1.6rem !important;
+    font-size: 1.7rem !important;
   }
   
   .article-body h2 {
-    font-size: 1.4rem !important;
+    font-size: 1.5rem !important;
   }
   
   .article-body h3 {
-    font-size: 1.2rem !important;
+    font-size: 1.3rem !important;
+  }
+  
+  .article-body p, 
+  .article-body li {
+    font-size: 1rem !important;
   }
 }
 
@@ -391,14 +533,33 @@
   
   .article-card {
     padding: 1.2rem;
+    border-radius: 8px;
   }
   
   .article-title {
     font-size: 1.6rem;
+    margin-bottom: 1.2rem;
   }
   
   .article-meta {
     flex-direction: column;
     gap: 0.5rem;
+    margin-bottom: 1.2rem;
+  }
+  
+  .article-body {
+    font-size: 0.95rem !important;
+  }
+  
+  .article-body h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .article-body h2 {
+    font-size: 1.3rem !important;
+  }
+  
+  .article-body h3 {
+    font-size: 1.2rem !important;
   }
 }
