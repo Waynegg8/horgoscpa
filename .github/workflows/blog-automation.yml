@@ -543,24 +543,24 @@ jobs:
           echo "判斷結果: ${NEED_UPDATE}"
 
       # 更新網站 Sitemap
-- name: 更新網站 Sitemap
-  id: update_sitemap
-  if: github.event.inputs.update_sitemap == 'true' || steps.commit-html.outputs.html_changed == 'true' || steps.check_deleted.outputs.html_deleted == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap')
-  run: |
-    echo "開始更新網站 Sitemap..."
-    
-    # 複製 generate_sitemap.py 腳本到 .github/scripts 目錄
-    mkdir -p .github/scripts
-    
-    # 若腳本不存在，將其復制到腳本目錄
-    if [ ! -f ".github/scripts/generate_sitemap.py" ]; then
-      # 檢查腳本是否已存在於根目錄
-      if [ -f "./generate_sitemap.py" ]; then
-        cp ./generate_sitemap.py .github/scripts/
-        echo "從根目錄複製 generate_sitemap.py 到 .github/scripts/"
-      else
-        # 創建腳本內容
-        cat > .github/scripts/generate_sitemap.py << 'EOF'
+      - name: 更新網站 Sitemap
+        id: update_sitemap
+        if: steps.check_update_sitemap.outputs.need_update == 'true'
+        run: |
+          echo "開始更新網站 Sitemap..."
+          
+          # 複製 generate_sitemap.py 腳本到 .github/scripts 目錄
+          mkdir -p .github/scripts
+          
+          # 若腳本不存在，將其復制到腳本目錄
+          if [ ! -f ".github/scripts/generate_sitemap.py" ]; then
+            # 檢查腳本是否已存在於根目錄
+            if [ -f "./generate_sitemap.py" ]; then
+              cp ./generate_sitemap.py .github/scripts/
+              echo "從根目錄複製 generate_sitemap.py 到 .github/scripts/"
+            else
+              # 創建腳本內容
+              cat > .github/scripts/generate_sitemap.py << 'EOF'
 #!/usr/bin/env python3
 # 此腳本用於生成網站 Sitemap
 # 完整腳本請參見倉庫中的 generate_sitemap.py 文件
@@ -573,36 +573,36 @@ from bs4 import BeautifulSoup
 print("開始生成 Sitemap...")
 # 腳本邏輯在這裡
 EOF
-        echo "已創建 generate_sitemap.py 腳本占位符"
-      fi
-      
-      # 確保腳本可執行
-      chmod +x .github/scripts/generate_sitemap.py
-    fi
-    
-    # 執行 sitemap 生成腳本
-    if [ -f ".github/scripts/generate_sitemap.py" ]; then
-      python .github/scripts/generate_sitemap.py
-      echo "使用 .github/scripts/generate_sitemap.py 生成 Sitemap 完成"
-      echo "sitemap_updated=true" >> $GITHUB_OUTPUT
-    else
-      echo "警告: 找不到 .github/scripts/generate_sitemap.py 腳本"
-      echo "嘗試查找腳本位置:"
-      find . -name "generate_sitemap.py" -type f
-      
-      # 如果能找到腳本，使用第一個找到的
-      SCRIPT_PATH=$(find . -name "generate_sitemap.py" -type f | head -n 1)
-      if [ -n "$SCRIPT_PATH" ]; then
-        echo "找到腳本: $SCRIPT_PATH"
-        python "$SCRIPT_PATH"
-        echo "使用 $SCRIPT_PATH 生成 Sitemap 完成"
-        echo "sitemap_updated=true" >> $GITHUB_OUTPUT
-      else
-        echo "錯誤: 無法找到任何 generate_sitemap.py 腳本"
-        echo "Sitemap 未更新"
-        echo "sitemap_updated=false" >> $GITHUB_OUTPUT
-      fi
-    fi
+              echo "已創建 generate_sitemap.py 腳本占位符"
+            fi
+            
+            # 確保腳本可執行
+            chmod +x .github/scripts/generate_sitemap.py
+          fi
+          
+          # 執行 sitemap 生成腳本
+          if [ -f ".github/scripts/generate_sitemap.py" ]; then
+            python .github/scripts/generate_sitemap.py
+            echo "使用 .github/scripts/generate_sitemap.py 生成 Sitemap 完成"
+            echo "sitemap_updated=true" >> $GITHUB_OUTPUT
+          else
+            echo "警告: 找不到 .github/scripts/generate_sitemap.py 腳本"
+            echo "嘗試查找腳本位置:"
+            find . -name "generate_sitemap.py" -type f
+            
+            # 如果能找到腳本，使用第一個找到的
+            SCRIPT_PATH=$(find . -name "generate_sitemap.py" -type f | head -n 1)
+            if [ -n "$SCRIPT_PATH" ]; then
+              echo "找到腳本: $SCRIPT_PATH"
+              python "$SCRIPT_PATH"
+              echo "使用 $SCRIPT_PATH 生成 Sitemap 完成"
+              echo "sitemap_updated=true" >> $GITHUB_OUTPUT
+            else
+              echo "錯誤: 無法找到任何 generate_sitemap.py 腳本"
+              echo "Sitemap 未更新"
+              echo "sitemap_updated=false" >> $GITHUB_OUTPUT
+            fi
+          fi
       
       # 提交更新的JSON文件和Sitemap
       - name: 提交更新的JSON文件和Sitemap
