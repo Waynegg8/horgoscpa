@@ -403,53 +403,61 @@
     bottom: -6px;
   }
 }
-/* 添加到 navbar.css 文件中 Logo 樣式部分 */
-.logo a {
-  color: #fff;
-  text-decoration: none;
+/* 添加到 navbar.css 文件中 */
+.logo-container {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  gap: 10px; /* 控制圖片與文字間的間距 */
 }
 
 .logo-img {
-  max-height: 35px;
+  height: 38px;
   width: auto;
   transition: all 0.3s ease;
-  margin-bottom: 3px;
 }
 
 .nav-scrolled .logo-img {
-  max-height: 30px;
+  height: 32px;
 }
 
-/* 保留原有的logo-sub樣式，只需調整與圖片的配合效果 */
 .logo-sub {
-  font-size: 0.85rem;
-  opacity: 0.8;
+  font-size: 1rem;
+  opacity: 0.9;
   letter-spacing: 0.5px;
   font-family: "Kaleko 105", sans-serif;
   transition: all 0.3s ease;
-  margin-top: -3px; /* 調整與圖片的間距 */
+  /* 移除原有的margin-top，因為現在是左右排列 */
+}
+
+.nav-scrolled .logo-sub {
+  font-size: 0.95rem;
 }
 
 /* 移動設備適配 */
 @media (max-width: 992px) {
   .logo-img {
-    max-height: 30px;
+    height: 34px;
   }
   
   .nav-scrolled .logo-img {
-    max-height: 26px;
+    height: 30px;
+  }
+  
+  .logo-sub {
+    font-size: 0.95rem;
   }
 }
 
 @media (max-width: 480px) {
   .logo-img {
-    max-height: 28px;
+    height: 30px;
   }
   
   .nav-scrolled .logo-img {
-    max-height: 24px;
+    height: 26px;
+  }
+  
+  .logo-sub {
+    font-size: 0.9rem;
   }
 }
