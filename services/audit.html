@@ -14,15 +14,17 @@
   
   <!-- Material Symbols 圖示庫 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  <!-- 移動版導航欄樣式 -->
-<link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
-
-<!-- 確保Material Icons可用 -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
   <!-- 引用全站共用樣式 -->
   <link rel="stylesheet" href="/assets/css/common.css" />
   <link rel="stylesheet" href="/assets/css/navbar.css" />
   <link rel="stylesheet" href="/assets/css/footer.css" />
+  
+  <!-- 移動版導航欄樣式 -->
+  <link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
+  
+  <!-- 確保Material Icons可用 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   
   <!-- 引用首頁特定樣式 - 用於流動式設計 -->
   <link rel="stylesheet" href="/assets/css/index-style.css" />
@@ -662,13 +664,15 @@
 </head>
 <body>
 
-<!-- 導航欄 -->
+<!-- 導航欄 - 與index.html保持一致 -->
 <nav class="site-nav">
   <div class="nav-container">
     <div class="logo">
       <a href="/index.html">
-        <div class="logo-main">霍爾果斯會計師事務所</div>
-        <div class="logo-sub">HorgosCPA</div>
+        <div class="logo-container">
+          <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
+          <div class="logo-sub">HorgosCPA</div>
+        </div>
       </a>
     </div>
     <input type="checkbox" id="nav-toggle" class="nav-toggle">
@@ -686,7 +690,8 @@
     </ul>
   </div>
 </nav>
-<!-- 移動版導航欄 -->
+
+<!-- 移動版導航欄 - 與index.html保持一致 -->
 <div class="mobile-navbar" style="display: none;">
   <div class="mobile-nav-container">
     <div class="mobile-menu-btn" id="mobileMenuBtn">
@@ -694,8 +699,10 @@
     </div>
     <div class="logo">
       <a href="/index.html">
-        <div class="logo-main">霍爾果斯會計師事務所</div>
-        <div class="logo-sub">HorgosCPA</div>
+        <div class="logo-container">
+          <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
+          <div class="logo-sub">HorgosCPA</div>
+        </div>
       </a>
     </div>
     <div class="mobile-nav-spacer"></div>
@@ -713,6 +720,7 @@
     </ul>
   </div>
 </div>
+
 <!-- 頁面標題 -->
 <header class="service-header">
   <div class="container">
@@ -939,13 +947,13 @@
   </div>
 </section>
 
-<!-- 頁尾區域 -->
+<!-- 頁尾區域 - 與index.html保持一致 -->
 <footer class="site-footer">
   <div class="footer-container">
     <div class="footer-content">
       <!-- Logo與簡介 -->
       <div class="footer-logo">
-        <div class="logo-main" style="color: white; font-size: 1.5rem; font-weight: 700; margin-bottom: 5px;">霍爾果斯會計師事務所</div>
+        <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="footer-logo-img">
         <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
         <p>專業、誠信、創新的財稅顧問夥伴，致力於提供企業與個人最優質的財務與稅務解決方案。</p>
         <!-- 新增LINE按鈕 -->
@@ -1176,6 +1184,7 @@
     });
   });
 </script>
+
 <!-- 移動版導航欄功能腳本 -->
 <script src="/assets/js/mobile-navbar.js"></script>
 </body>
