@@ -271,7 +271,7 @@ jobs:
       
       # 掃描HTML文件生成JSON (如果需要)
       - name: 掃描現有HTML文件
-        if: ${{ steps.init_json.outputs.scan_html == 'true' || github.event.inputs.force_scan == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles') }}
+        if: steps.init_json.outputs.scan_html == 'true' || github.event.inputs.force_scan == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles')
         run: |
           echo "開始掃描HTML文件以生成JSON..."
           
@@ -312,7 +312,7 @@ jobs:
       
       # 處理Word文檔 (如果啟用)
       - name: 處理Word文檔
-        if: ${{ github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article') }}
+        if: github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article')
         run: |
           if [ -d "word-docs" ] && [ "$(ls -A word-docs)" ]; then
             echo "開始處理word-docs目錄中的Word文檔..."
@@ -344,7 +344,7 @@ jobs:
       # 檢測已刪除的HTML文件
       - name: 檢測已刪除的HTML文件
         id: check_deleted
-        if: ${{ github.event_name == 'delete' || github.event.inputs.handle_deletion == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'delete-article') }}
+        if: github.event_name == 'delete' || github.event.inputs.handle_deletion == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'delete-article')
         run: |
           # 獲取已刪除的HTML文件列表
           if [ "${{ github.event_name }}" == "repository_dispatch" ] && [ "${{ github.event.action }}" == "delete-article" ]; then
@@ -366,7 +366,7 @@ jobs:
       # 提交生成的HTML文件
       - name: 提交生成的HTML文件
         id: commit-html
-        if: ${{ github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article') }}
+        if: github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article')
         run: |
           # 確保工作區乾淨
           git stash -u || true
@@ -391,7 +391,7 @@ jobs:
       # 更新博客JSON文件
       - name: 更新博客JSON文件
         id: update_blog_json
-        if: ${{ steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles')) }}
+        if: steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles'))
         run: |
           echo "開始更新博客JSON文件..."
 
@@ -434,15 +434,46 @@ jobs:
             echo "videos_txt_changed=false" >> $GITHUB_OUTPUT
           fi
       
-      # 更新影片數據 - 特別加強對 videos.txt 變更的檢測和處理
+      # 判斷是否需要更新影片數據
+      - name: 判斷是否需要更新影片數據
+        id: check_update_videos
+        run: |
+          NEED_UPDATE="false"
+          
+          if [ "${{ github.event.inputs.update_videos }}" == "true" ]; then
+            NEED_UPDATE="true"
+            echo "觸發條件: 手動指定更新影片"
+          fi
+          
+          if [ "${{ steps.check_video_changes.outputs.videos_txt_changed }}" == "true" ]; then
+            NEED_UPDATE="true"
+            echo "觸發條件: videos.txt 檔案有變更"
+          fi
+          
+          if [ "${{ github.event_name }}" == "push" ]; then
+            if [[ "${{ contains(github.event.head_commit.modified, 'video/videos.txt') }}" == "true" ]]; then
+              NEED_UPDATE="true"
+              echo "觸發條件: push 事件修改了 videos.txt 檔案"
+            fi
+            
+            if [[ "${{ contains(github.event.head_commit.added, 'video/videos.txt') }}" == "true" ]]; then
+              NEED_UPDATE="true"
+              echo "觸發條件: push 事件新增了 videos.txt 檔案"
+            fi
+          fi
+          
+          if [ "${{ github.event_name }}" == "repository_dispatch" ] && [ "${{ github.event.action }}" == "update-video" ]; then
+            NEED_UPDATE="true"
+            echo "觸發條件: repository_dispatch 事件請求更新影片"
+          fi
+          
+          echo "need_update=${NEED_UPDATE}" >> $GITHUB_OUTPUT
+          echo "判斷結果: ${NEED_UPDATE}"
+
+      # 更新影片數據
       - name: 更新影片數據
         id: update_videos
-        # 確保在 videos.txt 變更時觸發
-        if: ${{ github.event.inputs.update_videos == 'true' || 
-                steps.check_video_changes.outputs.videos_txt_changed == 'true' ||
-                (github.event_name == 'push' && contains(github.event.head_commit.modified, 'video/videos.txt')) ||
-                (github.event_name == 'push' && contains(github.event.head_commit.added, 'video/videos.txt')) ||
-                (github.event_name == 'repository_dispatch' && github.event.action == 'update-video') }}
+        if: steps.check_update_videos.outputs.need_update == 'true'
         run: |
           echo "檢測到需要更新影片數據"
           
@@ -477,10 +508,44 @@ jobs:
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
 
-      # 新增: 更新網站 Sitemap
+      # 判斷是否需要更新網站 Sitemap
+      - name: 判斷是否需要更新 Sitemap
+        id: check_update_sitemap
+        run: |
+          NEED_UPDATE="false"
+          
+          if [ "${{ github.event.inputs.update_sitemap }}" == "true" ]; then
+            NEED_UPDATE="true"
+            echo "觸發條件: 手動指定更新 Sitemap"
+          fi
+          
+          if [ "${{ steps.commit-html.outputs.html_changed }}" == "true" ]; then
+            NEED_UPDATE="true"
+            echo "觸發條件: HTML 文件有變更"
+          fi
+          
+          if [ "${{ steps.check_deleted.outputs.html_deleted }}" == "true" ]; then
+            NEED_UPDATE="true"
+            echo "觸發條件: HTML 文件被刪除"
+          fi
+          
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            NEED_UPDATE="true"
+            echo "觸發條件: 定時執行"
+          fi
+          
+          if [ "${{ github.event_name }}" == "repository_dispatch" ] && [ "${{ github.event.action }}" == "update-sitemap" ]; then
+            NEED_UPDATE="true"
+            echo "觸發條件: repository_dispatch 事件請求更新 Sitemap"
+          fi
+          
+          echo "need_update=${NEED_UPDATE}" >> $GITHUB_OUTPUT
+          echo "判斷結果: ${NEED_UPDATE}"
+
+      # 更新網站 Sitemap
       - name: 更新網站 Sitemap
         id: update_sitemap
-        if: ${{ github.event.inputs.update_sitemap == 'true' || steps.commit-html.outputs.html_changed == 'true' || steps.check_deleted.outputs.html_deleted == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap') }}
+        if: steps.check_update_sitemap.outputs.need_update == 'true'
         run: |
           echo "開始更新網站 Sitemap..."
           
@@ -493,10 +558,9 @@ jobs:
             if [ -f "./generate_sitemap.py" ]; then
               cp ./generate_sitemap.py .github/scripts/
               echo "從根目錄複製 generate_sitemap.py 到 .github/scripts/"
-            else:
+            else
               # 創建腳本內容（這裡只包含一個簡單的提示，腳本內容將從另一個位置獲取）
-              echo "|
-#!/usr/bin/env python3
+              echo '#!/usr/bin/env python3
 # 此腳本用於生成網站 Sitemap
 # 完整腳本請參見倉庫中的 generate_sitemap.py 文件
 import os
@@ -504,22 +568,10 @@ import sys
 import datetime
 import re
 from bs4 import BeautifulSoup
-print('開始生成 Sitemap...')
-# 腳本邏輯在這裡
-" > .github/scripts/generate_sitemap.py
 
-            # 檢查條件：是否需要執行腳本
-            if [ ! -f ".github/scripts/generate_sitemap.py" ]; then
-                echo "警告: 找不到 generate_sitemap.py 腳本"
-            else
-                # 如果存在，則執行腳本
-                python .github/scripts/generate_sitemap.py
-                echo "Sitemap 生成完成"
-            fi
-
-print('開始生成 Sitemap...')
+print("開始生成 Sitemap...")
 # 腳本邏輯在這裡
-" > .github/scripts/generate_sitemap.py
+' > .github/scripts/generate_sitemap.py
               echo "已創建 generate_sitemap.py 腳本占位符"
             fi
             
@@ -553,9 +605,7 @@ print('開始生成 Sitemap...')
       
       # 提交更新的JSON文件和Sitemap
       - name: 提交更新的JSON文件和Sitemap
-        if: ${{ steps.update_blog_json.outputs.blog_json_updated == 'true' || 
-                steps.update_videos.outputs.videos_updated == 'true' || 
-                steps.update_sitemap.outputs.sitemap_updated == 'true' }}
+        if: steps.update_blog_json.outputs.blog_json_updated == 'true' || steps.update_videos.outputs.videos_updated == 'true' || steps.update_sitemap.outputs.sitemap_updated == 'true'
         run: |
           # 確保工作區乾淨
           git stash -u || true
@@ -589,7 +639,7 @@ print('開始生成 Sitemap...')
       
       # 清理Word文檔（可選，將處理過的Word文檔移動到processed目錄）
       - name: 清理已處理的Word文檔
-        if: ${{ github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true' }}
+        if: github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true'
         run: |
           # 確保工作區乾淨
           git stash -u || true
