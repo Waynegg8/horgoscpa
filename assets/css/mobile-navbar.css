@@ -57,7 +57,7 @@
   
   /* 中文logo圖片樣式 */
   .mobile-navbar .logo-img {
-    height: 45px; /* 設定較大的中文logo尺寸 */
+    height: 35px; /* 設定較大的中文logo尺寸 */
     width: auto;
   }
   
