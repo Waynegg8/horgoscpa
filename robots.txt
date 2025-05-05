@@ -1,3 +1,22 @@
 User-agent: *
 Allow: /
+
+# 允許所有搜尋引擎機器人爬取網站內容
+# 禁止爬取特定目錄
+Disallow: /assets/css/
+Disallow: /assets/js/
+Disallow: /assets/data/
+Disallow: /.github/
+Disallow: /.git/
+
+# 只允許圖片目錄的圖片文件被爬取
+Allow: /assets/images/*.jpg$
+Allow: /assets/images/*.jpeg$
+Allow: /assets/images/*.png$
+Allow: /assets/images/*.gif$
+Allow: /assets/images/*.svg$
+Allow: /assets/images/*.webp$
+
+# sitemap 位置
 Sitemap: https://www.horgoscpa.com/sitemap.xml
+Sitemap: https://www.horgoscpa.com/sitemap_index.xml
