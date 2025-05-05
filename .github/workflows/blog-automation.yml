@@ -495,7 +495,8 @@ jobs:
               echo "從根目錄複製 generate_sitemap.py 到 .github/scripts/"
             else:
               # 創建腳本內容（這裡只包含一個簡單的提示，腳本內容將從另一個位置獲取）
-              echo "#!/usr/bin/env python3
+              echo "|
+#!/usr/bin/env python3
 # 此腳本用於生成網站 Sitemap
 # 完整腳本請參見倉庫中的 generate_sitemap.py 文件
 import os
@@ -506,6 +507,15 @@ from bs4 import BeautifulSoup
 print('開始生成 Sitemap...')
 # 腳本邏輯在這裡
 " > .github/scripts/generate_sitemap.py
+
+            # 檢查條件：是否需要執行腳本
+            if [ ! -f ".github/scripts/generate_sitemap.py" ]; then
+                echo "警告: 找不到 generate_sitemap.py 腳本"
+            else
+                # 如果存在，則執行腳本
+                python .github/scripts/generate_sitemap.py
+                echo "Sitemap 生成完成"
+            fi
 
 print('開始生成 Sitemap...')
 # 腳本邏輯在這裡
