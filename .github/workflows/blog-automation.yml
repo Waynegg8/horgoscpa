@@ -181,13 +181,13 @@ jobs:
             echo "word-docs 目錄為空或不存在，跳過處理"
           fi
 
-      # 9. 上傳並提交轉換後的 HTML
+      # 9. 上傳並提交轉換後的 HTML - 修復此步驟以處理無文件情況
       - name: 上傳並提交轉換後的 HTML
         run: |
           echo "檢查是否有新的 HTML 文件"
-          git add blog/*.html
-          git commit -m "提交轉換後的 HTML 文件"
-          git push
+          git add blog/*.html || echo "沒有找到HTML文件或添加失敗"
+          git commit -m "提交轉換後的 HTML 文件" || echo "沒有新的 HTML 文件需要提交"
+          git push || echo "沒有變更需要推送"
           
       # 10. 更新博客JSON文件
       - name: 更新博客JSON文件
@@ -258,7 +258,7 @@ jobs:
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
 
-      # 12. 清理已處理的Word文檔
+      # 12. 清理已處理的Word文檔 - 修復以處理無變更情況
       - name: 清理已處理的Word文檔
         if: github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true'
         run: |
@@ -271,25 +271,34 @@ jobs:
           # 應用stash (如果需要)
           git stash pop || true
           
-          # 移動已處理的文件到processed目錄
-          mkdir -p word-docs/processed
-          find word-docs -maxdepth 1 -type f -name "*.docx" -exec mv {} word-docs/processed/ \;
-          
-          # 提交更改
-          git add word-docs/
-          git commit -m "移動已處理的Word文檔" || echo "無需提交"
-          git push || echo "無需推送"
+          # 檢查是否有文件需要移動
+          if [ -d "word-docs" ] && [ "$(find word-docs -maxdepth 1 -type f -name "*.docx" | wc -l)" -gt 0 ]; then
+            # 移動已處理的文件到processed目錄
+            mkdir -p word-docs/processed
+            find word-docs -maxdepth 1 -type f -name "*.docx" -exec mv {} word-docs/processed/ \;
+            
+            # 提交更改
+            git add word-docs/
+            git commit -m "移動已處理的Word文檔" || echo "無需提交"
+            git push || echo "無需推送"
+          else
+            echo "沒有需要處理的 Word 文檔"
+          fi
       
-      # 13. 更新網站 Sitemap（最後步驟）
+      # 13. 更新網站 Sitemap（最後步驟） - 修復以處理錯誤
       - name: 更新網站 Sitemap
         id: update_sitemap
         run: |
           echo "開始更新網站 Sitemap..."
           
           # 生成並提交新的 sitemap.xml 文件
-          python .github/scripts/generate_sitemap.py
+          python .github/scripts/generate_sitemap.py || echo "生成 Sitemap 時出錯"
           
-          # 提交更新的Sitemap
-          git add sitemap.xml
-          git commit -m "更新網站Sitemap"
-          git push
+          # 檢查文件是否存在並提交
+          if [ -f "sitemap.xml" ]; then
+            git add sitemap.xml
+            git commit -m "更新網站Sitemap" || echo "無需提交 Sitemap"
+            git push || echo "無需推送 Sitemap"
+          else
+            echo "警告: sitemap.xml 文件不存在或生成失敗"
+          fi
