@@ -405,7 +405,7 @@
 }
 /* 修改 navbar.css 文件中的logo尺寸比例 */
 .logo-img {
-  height: 85px; /* 進一步增大中文logo高度 */
+  height: 80px; /* 進一步增大中文logo高度 */
   width: auto;
   transition: all 0.3s ease;
 }
