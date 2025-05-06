@@ -1,3 +1,4 @@
+```python
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -11,7 +12,12 @@ import json
 import jieba
 import re
 import datetime
+import logging
 from typing import Dict, Any, List, Tuple
+
+# 設置日誌
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -157,7 +163,6 @@ def save_json_file(file_path: str, data: Dict[str, Any]) -> bool:
         print(f"保存JSON文件時出錯 ({file_path}): {str(e)}")
         return False
 
-# 新增: 將文本轉換為 URL 友好的格式
 def slugify(text: str, translation_dict: dict = None) -> str:
     """
     將文本轉換為 URL 友好的格式
@@ -165,7 +170,7 @@ def slugify(text: str, translation_dict: dict = None) -> str:
     :param translation_dict: 翻譯字典（可選）
     :return: URL 友好的字符串
     """
-    print(f"開始處理標題URL化: {text}")
+    logger.debug(f"開始處理標題URL化: {text}")
     
     # 如果沒有提供翻譯字典，加載默認字典
     if translation_dict is None:
@@ -211,36 +216,37 @@ def slugify(text: str, translation_dict: dict = None) -> str:
         '營業': 'business'
     }
     
-    # 轉換為小寫
-    slug = text.lower()
-    replaced = False
+    # 使用 jieba 分詞分割文本
+    jieba.setLogLevel(20)  # 抑制 jieba 日誌
+    words = list(jieba.cut(text))
+    logger.debug(f"分詞結果: {words}")
     
-    # 首先嘗試使用翻譯字典
+    slug = text.lower()
+    replaced_words = set()  # 記錄已替換的詞彙，避免重複
+    
+    # 優先使用翻譯字典進行替換，按詞彙長度排序
     if translation_dict:
-        print("使用翻譯字典進行轉換")
-        # 按詞彙長度排序，優先替換較長的詞彙
+        logger.info("使用翻譯字典進行轉換")
         sorted_dict = sorted(translation_dict.items(), key=lambda x: len(x[0]), reverse=True)
         
         for zh, en in sorted_dict:
-            if zh.lower() in slug:
-                replaced_text = slug.replace(zh.lower(), f"{en}-")
-                if replaced_text != slug:
-                    replaced = True
-                    slug = replaced_text
-                    print(f"使用翻譯字典替換: {zh} -> {en}")
+            zh_lower = zh.lower()
+            if zh_lower in slug and zh_lower not in replaced_words:
+                slug = slug.replace(zh_lower, f"{en}-")
+                replaced_words.add(zh_lower)
+                logger.debug(f"使用翻譯字典替換: {zh} -> {en}")
     
-    # 如果沒有使用翻譯字典或替換不完全，使用基本替換
-    if not replaced or len(slug) > 50:  # 如果結果還是太長，使用基本替換
-        print("使用基本替換進行轉換")
-        new_slug = slug
-        for zh, en in base_replacements.items():
-            if zh in new_slug:
-                new_slug = new_slug.replace(zh, f"{en}-")
-                print(f"使用基本替換: {zh} -> {en}")
-        slug = new_slug
+    # 使用基本替換字典進行補充
+    logger.info("使用基本替換進行轉換")
+    for zh, en in base_replacements.items():
+        zh_lower = zh.lower()
+        if zh_lower in slug and zh_lower not in replaced_words:
+            slug = slug.replace(zh_lower, f"{en}-")
+            replaced_words.add(zh_lower)
+            logger.debug(f"使用基本替換: {zh} -> {en}")
     
-    # 移除標點符號和特殊字符
-    slug = re.sub(r'[^\w\s-]', '', slug)
+    # 清理特殊字符，但保留數字和點（如 2.0）
+    slug = re.sub(r'[^\w\s.-]', '', slug)
     # 將空格轉換為連字符
     slug = re.sub(r'[\s_]+', '-', slug)
     # 移除開頭和結尾的連字符
@@ -248,14 +254,10 @@ def slugify(text: str, translation_dict: dict = None) -> str:
     # 移除重複的連字符
     slug = re.sub(r'-+', '-', slug)
     
-    # 確保結尾沒有連字符
-    if slug.endswith('-'):
-        slug = slug[:-1]
-    
-    # 移除非ASCII字符
+    # 移除非 ASCII 字符，但保留數字和點
     ascii_slug = ''
     for c in slug:
-        if ord(c) < 128:
+        if ord(c) < 128 or c in '0123456789.':
             ascii_slug += c
     slug = ascii_slug
     
@@ -265,21 +267,19 @@ def slugify(text: str, translation_dict: dict = None) -> str:
     
     # 如果處理後為空，使用默認值
     if not slug:
-        print("處理後的標題為空，使用默認值'article'")
+        logger.warning("處理後的標題為空，使用默認值'article'")
         slug = "article"
     
-    # 截斷過長的slug
+    # 截斷過長的 slug
     if len(slug) > 80:
         slug = slug[:80]
-        # 確保截斷後結尾沒有連字符
         if slug.endswith('-'):
             slug = slug[:-1]
-        print("標題過長，已截斷")
+        logger.info("標題過長，已截斷")
     
-    print(f"處理後的URL: {slug}")
+    logger.debug(f"處理後的URL: {slug}")
     return slug
 
-# 新增: 從文件名提取系列信息
 def extract_series_info(filename: str) -> Tuple[bool, str, str, str, str]:
     """
     從文件名提取系列信息
@@ -321,3 +321,4 @@ if os.path.exists(TRANSLATION_DICT_FILE):
     setup_jieba_dict()
 else:
     print(f"警告: 詞典文件不存在 ({TRANSLATION_DICT_FILE})，將使用默認分詞方式")
+```

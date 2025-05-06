@@ -1,3 +1,4 @@
+```python
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -26,7 +27,7 @@ import io
 # 確保依賴安裝
 def ensure_dependencies():
     required_packages = [
-        "mammoth", "python-docx", "bs4", "lxml", "docx2txt"
+        "mammoth", "python-docx", "bs4", "lxml", "docx2txt", "jieba"
     ]
     
     # 檢查並安裝缺失的包
@@ -79,7 +80,7 @@ BLOG_IMAGES_DIR = os.path.join(PROJECT_ROOT, "assets", "images", "blog")
 
 # 嘗試導入 utils 模組
 try:
-    from utils import load_translation_dict, extract_keywords, setup_jieba_dict
+    from utils import load_translation_dict, extract_keywords, setup_jieba_dict, slugify
     USE_UTILS = True
     logger.info("成功導入 utils 模組")
 except ImportError:
@@ -563,7 +564,7 @@ def extract_article_structure(html_content: str) -> Dict:
         if elem.parent and elem.parent.name in ['td', 'li']:
             continue
         
-        # 處理特定類型的元素
+        # 處理特定/rpc/llm/llm_worker.py類型的元素
         if elem.name.startswith('h'):
             level = int(elem.name[1])
             elem_text = elem.get_text().strip()
@@ -1109,122 +1110,6 @@ def generate_article_html(article_structure: Dict, date: str) -> str:
     
     return template
 
-def slugify(text: str) -> str:
-    """
-    將文本轉換為 URL 友好的格式 - 使用翻譯字典
-    :param text: 要轉換的文本
-    :return: URL 友好的字符串
-    """
-    logger.info(f"開始處理標題URL化: {text}")
-    
-    # 內建基本字典作為備用
-    base_replacements = {
-        '台灣': 'taiwan',
-        '創業': 'startup',
-        '指南': 'guide',
-        '會計': 'accounting',
-        '會計師': 'accountant',
-        '角色': 'role',
-        '價值': 'value',
-        '財務': 'finance',
-        '稅務': 'tax',
-        '申報': 'filing',
-        '公司': 'company',
-        '規劃': 'planning',
-        '管理': 'management',
-        '合夥人': 'partner',
-        '初期': 'early-stage',
-        '資本': 'capital',
-        '貸款': 'loan',
-        '銀行': 'bank',
-        '必知': 'essential',
-        '老闆': 'boss',
-        '勞工': 'labor',
-        '設定': 'setting',
-        '攻略': 'guide',
-        '法規': 'regulations',
-        '全攻略': 'complete-guide',
-        '選擇': 'choice',
-        '發票': 'invoice',
-        '所得稅': 'income-tax',
-        '營業稅': 'business-tax',
-        '制度': 'system',
-        '登記': 'registration',
-        '簽證': 'certificate',
-        '組織': 'organization',
-        '型態': 'type',
-        '行號': 'business-entity',
-        '營業': 'business'
-    }
-    
-    # 如果有翻譯字典，優先使用
-    slug = text.lower()
-    replaced = False
-    
-    # 首先嘗試使用翻譯字典
-    if TRANSLATION_DICT:
-        logger.info("使用翻譯字典進行轉換")
-        # 按詞彙長度排序，優先替換較長的詞彙
-        sorted_dict = sorted(TRANSLATION_DICT.items(), key=lambda x: len(x[0]), reverse=True)
-        
-        for zh, en in sorted_dict:
-            if zh.lower() in slug:
-                replaced_text = slug.replace(zh.lower(), f"{en}-")
-                if replaced_text != slug:
-                    replaced = True
-                    slug = replaced_text
-                    logger.info(f"使用翻譯字典替換: {zh} -> {en}")
-    
-    # 如果沒有使用翻譯字典或替換不完全，使用基本替換
-    if not replaced or len(slug) > 50:  # 如果結果還是太長，使用基本替換
-        logger.info("使用基本替換進行轉換")
-        new_slug = slug
-        for zh, en in base_replacements.items():
-            if zh in new_slug:
-                new_slug = new_slug.replace(zh, f"{en}-")
-                logger.info(f"使用基本替換: {zh} -> {en}")
-        slug = new_slug
-    
-    # 移除標點符號和特殊字符
-    slug = re.sub(r'[^\w\s-]', '', slug)
-    # 將空格轉換為連字符
-    slug = re.sub(r'[\s_]+', '-', slug)
-    # 移除開頭和結尾的連字符
-    slug = re.sub(r'^-+|-+$', '', slug)
-    # 移除重複的連字符
-    slug = re.sub(r'-+', '-', slug)
-    
-    # 確保結尾沒有連字符 - 新增這一行
-    if slug.endswith('-'):
-        slug = slug[:-1]
-    
-    # 移除非ASCII字符
-    ascii_slug = ''
-    for c in slug:
-        if ord(c) < 128:
-            ascii_slug += c
-    slug = ascii_slug
-    
-    # 再次確保結尾沒有連字符 - 新增這一行 (以防移除非ASCII字符後末尾有連字符)
-    if slug.endswith('-'):
-        slug = slug[:-1]
-    
-    # 如果處理後為空，使用默認值
-    if not slug:
-        logger.warning("處理後的標題為空，使用默認值'article'")
-        slug = "article"
-    
-    # 截斷過長的slug
-    if len(slug) > 80:
-        slug = slug[:80]
-        # 確保截斷後結尾沒有連字符
-        if slug.endswith('-'):
-            slug = slug[:-1]
-        logger.info("標題過長，已截斷")
-    
-    logger.info(f"處理後的URL: {slug}")
-    return slug
-
 def generate_tag_links(tags: List[str]) -> str:
     """
     生成標籤鏈接HTML
@@ -1268,23 +1153,10 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
         # 6. 生成最終HTML
         final_html = generate_article_html(article_structure, date)
         
-        # 7. 生成文件名 (基於原始Word檔名)
-        # 從Word檔名中移除日期部分和.docx後綴
-        base_filename = os.path.splitext(filename)[0]  # 移除.docx後綴
-        
-        # 檢查是否有日期部分
-        if date_match:
-            # 從檔名中移除日期部分，保留後面的中文部分
-            word_title = re.sub(r'^\d{4}-\d{2}-\d{2}-?', '', base_filename)
-        else:
-            word_title = base_filename
-        
-        # 如果沒有提取到有意義的標題，則使用文章內容中的標題
-        if not word_title or word_title.strip() == '':
-            word_title = article_structure['title']
-        
-        # 保留原始中文名稱，生成HTML檔名
-        html_filename = f"{date}-{word_title}.html"
+        # 7. 生成文件名 (基於文章標題)
+        word_title = article_structure['title']
+        slug = slugify(word_title, TRANSLATION_DICT)
+        html_filename = f"{date}-{slug}.html"
         
         # 8. 寫入文件
         output_path = os.path.join(output_dir, html_filename)
@@ -1399,3 +1271,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+```
