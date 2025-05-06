@@ -1,7 +1,7 @@
 /* 
  * blog-modern.css - 霍爾果斯會計師事務所部落格頁面現代化樣式
  * 最後更新日期: 2025-05-10
- * 主要改進: 與services.html頁面風格統一、搜索體驗優化、內容呈現改進
+ * 主要改進: 與services.html頁面風格統一、搜索體驗優化、內容呈現改進、系列文章樣式
  */
 
 /* 部落格頁面標題區塊 - 與services.html風格統一 */
@@ -198,6 +198,27 @@
   margin-bottom: 25px;
   font-size: 1.1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn-reset {
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-reset:hover {
+  background-color: #004d99;
+  transform: translateY(-2px);
 }
 
 /* 優化: 列表布局垂直方向 */
@@ -384,6 +405,32 @@
   transform: translateX(5px);
 }
 
+/* 系列文章徽章 */
+.series-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: rgba(0, 102, 204, 0.85);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(2px);
+}
+
+/* 系列文章指示器 */
+.series-indicator {
+  background-color: #0066cc;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin-right: 5px;
+}
+
 /* 滾動時入場動畫 */
 @keyframes fadeInUp {
   from {
@@ -529,6 +576,119 @@
   color: white;
   transform: translateY(-3px);
   box-shadow: 0 5px 10px rgba(0, 102, 204, 0.15);
+}
+
+.tag-cloud a.active {
+  background-color: #0066cc;
+  color: white;
+  box-shadow: 0 3px 10px rgba(0, 102, 204, 0.15);
+}
+
+/* 系列文章區塊樣式 */
+.series-section {
+  background-color: #f8f9fa;
+  padding: 60px 0;
+  margin-bottom: 40px;
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: 40px;
+  color: #002147;
+  font-size: 2.2rem;
+  position: relative;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(to right, #0066cc, rgba(0, 102, 204, 0.3));
+  border-radius: 2px;
+}
+
+.series-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.series-card {
+  background-color: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  opacity: 0;
+}
+
+.series-card.animated {
+  animation: fadeInUp 0.7s forwards;
+}
+
+.series-card:nth-child(2).animated { animation-delay: 0.1s; }
+.series-card:nth-child(3).animated { animation-delay: 0.2s; }
+.series-card:nth-child(4).animated { animation-delay: 0.3s; }
+.series-card:nth-child(5).animated { animation-delay: 0.4s; }
+
+.series-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.series-image {
+  height: 180px;
+  overflow: hidden;
+}
+
+.series-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.series-card:hover .series-image img {
+  transform: scale(1.1);
+}
+
+.series-content {
+  padding: 25px;
+  text-align: center;
+}
+
+.series-content h3 {
+  margin: 0 0 10px;
+  color: #002147;
+  font-size: 1.4rem;
+}
+
+.series-content p {
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.view-series-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.view-series-btn:hover {
+  background-color: #004d99;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 102, 204, 0.2);
 }
 
 /* 分頁控制優化 */
@@ -689,6 +849,10 @@
   .blog-header p {
     font-size: 1.1rem;
   }
+  
+  .series-list {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
@@ -743,6 +907,19 @@
   .sidebar-section {
     padding: 20px;
   }
+  
+  .series-section {
+    padding: 40px 0;
+  }
+  
+  .section-title {
+    font-size: 1.8rem;
+  }
+  
+  .series-list {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+  }
 }
 
 @media (max-width: 576px) {
@@ -767,5 +944,18 @@
     height: 35px;
     padding: 0 10px;
     font-size: 0.9rem;
+  }
+  
+  .series-list {
+    grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+  }
+  
+  .series-content h3 {
+    font-size: 1.2rem;
+  }
+  
+  .search-results-info {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

@@ -1,7 +1,7 @@
 /**
  * blog.js - 霍爾果斯會計師事務所部落格功能腳本
  * 最後更新日期: 2025-05-10
- * 優化: 添加即時搜索功能、滾動時動畫效果、改進圖片加載
+ * 優化: 添加即時搜索功能、滾動時動畫效果、改進圖片加載、支持系列文章
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const filterButtons = document.querySelectorAll('.filter-btn');
   const searchResultsContainer = document.getElementById('search-results-container');
   const searchContainer = document.querySelector('.search-container');
+  const seriesListContainer = document.getElementById('series-list-container');
+  const seriesSection = document.querySelector('.series-section');
   
   // 狀態變數
   let allPosts = [];
@@ -27,6 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentCategory = 'all';
   let currentTag = '';
   let currentSearchQuery = '';
+  let currentSeries = ''; // 新增: 當前選中的系列
   
   // 初始化
   init();
@@ -40,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
     currentCategory = urlParams.get('category') || 'all';
     currentTag = urlParams.get('tag') || '';
     currentSearchQuery = urlParams.get('search') || '';
+    currentSeries = urlParams.get('series') || ''; // 新增: 從URL獲取系列參數
     currentPage = parseInt(urlParams.get('page') || '1');
     
     // 載入文章數據
@@ -71,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         currentCategory = this.dataset.category;
         currentPage = 1;
+        currentSeries = ''; // 清除系列選擇
         updateURL();
         filterAndDisplayPosts();
       });
@@ -108,6 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // 空搜索時顯示所有文章
           currentSearchQuery = '';
           currentPage = 1;
+          currentSeries = ''; // 清除系列選擇
           updateURL();
           filterAndDisplayPosts();
           return;
@@ -116,6 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 執行搜索
         currentSearchQuery = searchValue;
         currentPage = 1;
+        currentSeries = ''; // 清除系列選擇
         updateURL();
         filterAndDisplayPosts();
       }, 500); // 500ms防抖延遲
@@ -140,6 +147,25 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
       // 處理卡片點擊
       handleCardClick(e);
+      
+      // 處理系列按鈕點擊
+      if (e.target.classList.contains('view-series-btn') || 
+          e.target.parentElement.classList.contains('view-series-btn')) {
+        const btn = e.target.classList.contains('view-series-btn') ? 
+                    e.target : e.target.parentElement;
+        
+        const seriesName = btn.dataset.series;
+        if (seriesName) {
+          e.preventDefault();
+          filterBySeriesName(seriesName);
+        }
+      }
+
+      // 處理"返回所有文章"按鈕
+      if (e.target.id === 'reset-search' || e.target.parentElement.id === 'reset-search') {
+        e.preventDefault();
+        resetFilters();
+      }
     });
   }
   
@@ -151,6 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const animateOnScroll = function() {
       // 獲取所有需要動畫的元素
       const blogCards = document.querySelectorAll('.blog-card');
+      const seriesCards = document.querySelectorAll('.series-card');
       const sidebarSections = document.querySelectorAll('.sidebar-section');
       
       // 檢查元素是否在視圖中
@@ -164,6 +191,13 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // 處理博客卡片動畫
       blogCards.forEach(card => {
+        if (isElementInViewport(card) && !card.classList.contains('animated')) {
+          card.classList.add('animated');
+        }
+      });
+      
+      // 處理系列卡片動畫
+      seriesCards.forEach(card => {
         if (isElementInViewport(card) && !card.classList.contains('animated')) {
           card.classList.add('animated');
         }
@@ -243,6 +277,10 @@ document.addEventListener('DOMContentLoaded', function() {
       url.searchParams.set('search', currentSearchQuery);
     }
     
+    if (currentSeries) {
+      url.searchParams.set('series', currentSeries);
+    }
+    
     if (currentPage > 1) {
       url.searchParams.set('page', currentPage);
     }
@@ -265,11 +303,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return response.json();
       })
       .then(data => {
-        allPosts = data.posts || [];
+        allPosts = data || {};
         
-        // 初始化標籤雲和熱門文章
+        // 初始化標籤雲、熱門文章和系列文章
         initializeTagCloud(data.tags || []);
         initializePopularPosts();
+        initializeSeriesList(data.series || {});
         
         // 過濾並顯示文章
         filterAndDisplayPosts();
@@ -284,42 +323,53 @@ document.addEventListener('DOMContentLoaded', function() {
    * 根據當前過濾條件過濾和顯示文章
    */
   function filterAndDisplayPosts() {
-    let filteredPosts = allPosts;
+    let filteredPosts = allPosts.posts || [];
     
-    // 根據搜索查詢過濾
-    if (currentSearchQuery) {
-      const searchTerms = currentSearchQuery.toLowerCase().split(' ');
-      filteredPosts = filteredPosts.filter(post => {
-        const title = post.title.toLowerCase();
-        const summary = post.summary ? post.summary.toLowerCase() : '';
-        const tags = post.tags ? post.tags.join(' ').toLowerCase() : '';
-        
-        return searchTerms.every(term => 
-          title.includes(term) || 
-          summary.includes(term) || 
-          tags.includes(term)
-        );
-      });
+    // 根據系列過濾
+    if (currentSeries && allPosts.series && allPosts.series[currentSeries]) {
+      filteredPosts = allPosts.series[currentSeries] || [];
       
-      // 顯示搜索結果信息
-      showSearchResults(filteredPosts.length);
+      // 顯示系列結果信息
+      showSeriesResults(currentSeries, filteredPosts.length);
     } else {
-      // 隱藏搜索結果信息
-      hideSearchResults();
-    }
-    
-    // 根據分類過濾
-    if (currentCategory && currentCategory !== 'all') {
-      filteredPosts = filteredPosts.filter(post => post.category === currentCategory);
-    }
-    
-    // 根據標籤過濾
-    if (currentTag) {
-      filteredPosts = filteredPosts.filter(post => 
-        post.tags && post.tags.some(tag => 
-          tag.toLowerCase() === currentTag.toLowerCase()
-        )
-      );
+      // 隱藏系列結果信息
+      hideSeriesResults();
+      
+      // 根據搜索查詢過濾
+      if (currentSearchQuery) {
+        const searchTerms = currentSearchQuery.toLowerCase().split(' ');
+        filteredPosts = filteredPosts.filter(post => {
+          const title = post.title.toLowerCase();
+          const summary = post.summary ? post.summary.toLowerCase() : '';
+          const tags = post.tags ? post.tags.join(' ').toLowerCase() : '';
+          
+          return searchTerms.every(term => 
+            title.includes(term) || 
+            summary.includes(term) || 
+            tags.includes(term)
+          );
+        });
+        
+        // 顯示搜索結果信息
+        showSearchResults(filteredPosts.length);
+      } else {
+        // 隱藏搜索結果信息
+        hideSearchResults();
+      }
+      
+      // 根據分類過濾
+      if (currentCategory && currentCategory !== 'all') {
+        filteredPosts = filteredPosts.filter(post => post.category === currentCategory);
+      }
+      
+      // 根據標籤過濾
+      if (currentTag) {
+        filteredPosts = filteredPosts.filter(post => 
+          post.tags && post.tags.some(tag => 
+            tag.toLowerCase() === currentTag.toLowerCase()
+          )
+        );
+      }
     }
     
     // 計算總頁數
@@ -343,6 +393,121 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
+   * 初始化系列文章列表
+   * @param {Object} series 系列文章數據
+   */
+  function initializeSeriesList(series) {
+    if (!seriesListContainer) return;
+    
+    // 如果沒有系列文章，隱藏整個區域
+    if (!series || Object.keys(series).length === 0) {
+      if (seriesSection) seriesSection.style.display = 'none';
+      return;
+    }
+    
+    // 顯示系列區域
+    if (seriesSection) seriesSection.style.display = 'block';
+    
+    // 生成系列列表HTML
+    let seriesHTML = '';
+    
+    // 遍歷所有系列
+    for (const [seriesName, seriesPosts] of Object.entries(series)) {
+      if (!seriesPosts || seriesPosts.length === 0) continue;
+      
+      // 使用第一篇文章的圖片作為系列代表
+      const firstPost = seriesPosts[0];
+      const seriesImage = firstPost.image || '/assets/images/blog/default.jpg';
+      
+      seriesHTML += `
+        <div class="series-card" data-series="${seriesName}">
+          <div class="series-image">
+            <img src="${seriesImage}" alt="${seriesName}" loading="lazy">
+          </div>
+          <div class="series-content">
+            <h3>${seriesName}</h3>
+            <p>${seriesPosts.length} 篇文章</p>
+            <button class="view-series-btn" data-series="${seriesName}">查看系列</button>
+          </div>
+        </div>
+      `;
+    }
+    
+    seriesListContainer.innerHTML = seriesHTML;
+  }
+  
+  /**
+   * 根據系列名稱過濾文章
+   * @param {string} seriesName 系列名稱
+   */
+  function filterBySeriesName(seriesName) {
+    if (!allPosts.series || !allPosts.series[seriesName]) {
+      console.error('找不到系列:', seriesName);
+      return;
+    }
+    
+    // 更新過濾條件
+    currentSeries = seriesName;
+    currentCategory = 'all';
+    currentTag = '';
+    currentSearchQuery = '';
+    currentPage = 1;
+    
+    // 重置搜索框
+    if (searchInput) {
+      searchInput.value = '';
+      searchContainer.classList.remove('search-active');
+    }
+    
+    // 重置分類按鈕
+    filterButtons.forEach(btn => {
+      if (btn.dataset.category === 'all') {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+    
+    // 更新URL並重新過濾
+    updateURL();
+    filterAndDisplayPosts();
+    
+    // 滾動到文章列表頂部
+    if (blogPostsContainer) {
+      window.scrollTo({
+        top: blogPostsContainer.offsetTop - 100,
+        behavior: 'smooth'
+      });
+    }
+  }
+  
+  /**
+   * 顯示系列搜索結果
+   * @param {string} seriesName 系列名稱
+   * @param {number} resultCount 結果數量
+   */
+  function showSeriesResults(seriesName, resultCount) {
+    if (!searchResultsContainer) return;
+    
+    searchResultsContainer.innerHTML = `
+      <div class="search-results-info">
+        系列 "${seriesName}" 的文章: ${resultCount} 篇
+        <button class="btn-reset" id="reset-search">
+          返回所有文章
+        </button>
+      </div>
+    `;
+    searchResultsContainer.style.display = 'block';
+  }
+  
+  /**
+   * 隱藏系列結果信息
+   */
+  function hideSeriesResults() {
+    // 已包含在hideSearchResults中處理
+  }
+  
+  /**
    * 顯示搜索結果信息
    */
   function showSearchResults(resultCount) {
@@ -351,6 +516,9 @@ document.addEventListener('DOMContentLoaded', function() {
     searchResultsContainer.innerHTML = `
       <div class="search-results-info">
         搜尋 "${currentSearchQuery}" 的結果: ${resultCount} 篇文章
+        <button class="btn-reset" id="reset-search">
+          返回所有文章
+        </button>
       </div>
     `;
     searchResultsContainer.style.display = 'block';
@@ -363,6 +531,36 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!searchResultsContainer) return;
     searchResultsContainer.innerHTML = '';
     searchResultsContainer.style.display = 'none';
+  }
+  
+  /**
+   * 重置所有過濾器
+   */
+  function resetFilters() {
+    currentCategory = 'all';
+    currentTag = '';
+    currentSearchQuery = '';
+    currentSeries = '';
+    currentPage = 1;
+    
+    // 重置搜索框
+    if (searchInput) {
+      searchInput.value = '';
+      searchContainer.classList.remove('search-active');
+    }
+    
+    // 重置分類按鈕
+    filterButtons.forEach(btn => {
+      if (btn.dataset.category === 'all') {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+    
+    // 更新URL並重新過濾
+    updateURL();
+    filterAndDisplayPosts();
   }
   
   /**
@@ -385,36 +583,6 @@ document.addEventListener('DOMContentLoaded', function() {
       if (paginationContainer) {
         paginationContainer.style.display = 'none';
       }
-      
-      // 為重置按鈕添加事件
-      setTimeout(() => {
-        const resetBtn = document.getElementById('reset-search');
-        if (resetBtn) {
-          resetBtn.addEventListener('click', function() {
-            searchInput.value = '';
-            currentSearchQuery = '';
-            currentCategory = 'all';
-            currentTag = '';
-            currentPage = 1;
-            
-            // 重置分類按鈕
-            filterButtons.forEach(btn => {
-              if (btn.dataset.category === 'all') {
-                btn.classList.add('active');
-              } else {
-                btn.classList.remove('active');
-              }
-            });
-            
-            // 移除搜索活躍狀態
-            searchContainer.classList.remove('search-active');
-            
-            // 更新URL並重新顯示
-            updateURL();
-            filterAndDisplayPosts();
-          });
-        }
-      }, 0);
       
       return;
     }
@@ -469,7 +637,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   /**
    * 創建文章卡片HTML
-   * 修改：僅使用一種圖標方式，優化摘要顯示，添加容錯處理
+   * 修改：僅使用一種圖標方式，優化摘要顯示，添加容錯處理，支持系列文章標籤
    */
   function createPostCard(post) {
     if (!post) {
@@ -504,12 +672,18 @@ document.addEventListener('DOMContentLoaded', function() {
         ).join('')
       : '';
     
+    // 處理系列文章標記
+    const seriesBadge = post.is_series 
+      ? `<div class="series-badge" title="${post.series_name} EP${post.episode}">${post.series_name} EP${post.episode}</div>` 
+      : '';
+    
     // 使用dataset屬性儲存重要資訊，便於JavaScript處理
     return `
-      <article class="blog-card" data-url="${postUrl}" data-category="${postCategory}">
+      <article class="blog-card" data-url="${postUrl}" data-category="${postCategory}" ${post.is_series ? `data-series="${post.series_name}" data-episode="${post.episode}"` : ''}>
         <a href="${postUrl}" class="blog-card-link" aria-label="閱讀文章：${postTitle}">閱讀全文</a>
         <div class="blog-image">
           <img src="${imageUrl}" alt="${postTitle}" loading="lazy">
+          ${seriesBadge}
         </div>
         <div class="blog-content">
           <div>
@@ -549,18 +723,22 @@ document.addEventListener('DOMContentLoaded', function() {
    * 初始化熱門文章
    */
   function initializePopularPosts() {
-    if (!popularPostsContainer || !allPosts || allPosts.length === 0) return;
+    if (!popularPostsContainer || !allPosts.posts || allPosts.posts.length === 0) return;
     
     // 取最新的5篇文章作為"熱門"文章
-    const popularPosts = allPosts
+    const popularPosts = allPosts.posts
       .slice()
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 5);
     
     const postsHTML = popularPosts.map(post => {
+      // 添加系列文章標記
+      const seriesIndicator = post.is_series ? 
+        `<span class="series-indicator">[${post.series_name} EP${post.episode}]</span> ` : '';
+        
       return `
         <li>
-          <a href="${post.url}">${post.title}</a>
+          <a href="${post.url}">${seriesIndicator}${post.title}</a>
           <span class="post-date">${post.date}</span>
         </li>
       `;

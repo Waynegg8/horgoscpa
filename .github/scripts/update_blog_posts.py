@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-自動更新部落格文章 JSON 檔案 (進階版，支持刪除功能)
+自動更新部落格文章 JSON 檔案 (進階版，支持系列文章與排程發布)
 這個腳本會掃描指定的部落格文章目錄，提取文章資訊，
-並更新 blog-posts.json 檔案，支援標籤、分類、分頁和文章刪除。
+並更新 blog-posts.json 檔案，支援標籤、分類、系列文章和發布排程。
 """
 
 import os
@@ -15,14 +15,15 @@ import datetime
 import base64
 import requests
 import jieba
+import math
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Set
-from collections import Counter
+from typing import List, Dict, Any, Optional, Set, Tuple
+from collections import Counter, defaultdict
 from bs4 import BeautifulSoup  # 添加BeautifulSoup用於更可靠的HTML解析
 
 # 引入 utils 模組
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import load_translation_dict, setup_jieba_dict
+from utils import load_translation_dict, setup_jieba_dict, extract_series_info, slugify
 
 # 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -304,6 +305,9 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     # 使用BeautifulSoup解析HTML
     soup = BeautifulSoup(content, 'html.parser')
     
+    # 提取系列信息
+    is_series, series_name, episode, date_from_filename, title_from_filename = extract_series_info(filename)
+    
     # 提取標題
     title_element = soup.select_one('h1.article-title')
     title = title_element.get_text().strip() if title_element else None
@@ -339,10 +343,9 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     
     # 如果仍然無法提取，從文件名提取
     if not date:
-        date = extract_date_from_filename(filename)
+        date = date_from_filename if date_from_filename else extract_date_from_filename(filename)
     
-    # 提取摘要
-    # 首先嘗試從meta標籤提取
+    # 提取摘要（第一個段落）
     summary = None
     meta_description = soup.find('meta', {'name': 'description'})
     if meta_description and meta_description.get('content'):
@@ -409,7 +412,8 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     # 使用相對路徑
     url = f"/blog/{filename}"
     
-    return {
+    # 構建結果字典
+    result = {
         "title": title,
         "date": date,
         "summary": summary,
@@ -418,6 +422,14 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
         "category": category_code,
         "tags": tags
     }
+    
+    # 如果是系列文章，添加系列信息
+    if is_series:
+        result["is_series"] = True
+        result["series_name"] = series_name
+        result["episode"] = int(episode)
+    
+    return result
 
 def parse_date(date_str: str) -> datetime.datetime:
     """
@@ -468,6 +480,101 @@ def save_processed_files(processed_files: Dict[str, str]) -> bool:
     except Exception as e:
         print(f"保存已處理文件記錄時發生錯誤: {str(e)}")
         return False
+
+def filter_by_date(posts: List[Dict[str, Any]], cutoff_date: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    篩選指定日期及之前的文章
+    :param posts: 所有文章列表
+    :param cutoff_date: 截止日期 (YYYY-MM-DD) 或 None（使用當天日期）
+    :return: 篩選後的文章列表
+    """
+    if cutoff_date is None:
+        cutoff_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    
+    # 篩選日期在截止日期及之前的文章
+    filtered_posts = [post for post in posts if post["date"] <= cutoff_date]
+    
+    return filtered_posts
+
+def group_series_posts(posts: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    將系列文章分組
+    :param posts: 所有文章列表
+    :return: 包含系列分組的字典
+    """
+    # 分組系列文章
+    series_posts = defaultdict(list)
+    non_series_posts = []
+    
+    for post in posts:
+        if post.get("is_series"):
+            series_name = post["series_name"]
+            series_posts[series_name].append(post)
+        else:
+            non_series_posts.append(post)
+    
+    # 對每個系列中的文章按集數排序
+    for series_name in series_posts:
+        series_posts[series_name].sort(key=lambda x: x["episode"])
+    
+    # 對非系列文章按日期排序
+    non_series_posts.sort(key=lambda x: x["date"], reverse=True)
+    
+    return {
+        "series_posts": dict(series_posts),
+        "non_series_posts": non_series_posts
+    }
+
+def standardize_filename(filename: str, post_info: Dict[str, Any]) -> str:
+    """
+    標準化文件名
+    :param filename: 原始文件名
+    :param post_info: 文章信息
+    :return: 標準化後的文件名
+    """
+    # 取得基本信息
+    date = post_info["date"]
+    title = post_info["title"]
+    
+    # 將標題轉換為URL友好的格式
+    title_slug = slugify(title)
+    
+    # 如果是系列文章
+    if post_info.get("is_series"):
+        series_name = post_info["series_name"]
+        episode = post_info["episode"]
+        # 格式: YYYY-MM-DD-系列名稱EP編號-標題.html
+        new_filename = f"{date}-{series_name}EP{episode}-{title_slug}.html"
+    else:
+        # 格式: YYYY-MM-DD-標題.html
+        new_filename = f"{date}-{title_slug}.html"
+    
+    return new_filename
+
+def rename_file_if_needed(old_path: str, new_path: str) -> bool:
+    """
+    如果需要，重命名文件
+    :param old_path: 舊文件路徑
+    :param new_path: 新文件路徑
+    :return: 是否重命名成功
+    """
+    if old_path != new_path and os.path.exists(old_path):
+        try:
+            # 確保目標目錄存在
+            os.makedirs(os.path.dirname(new_path), exist_ok=True)
+            
+            # 如果目標文件已存在，先刪除
+            if os.path.exists(new_path):
+                os.remove(new_path)
+            
+            # 重命名文件
+            os.rename(old_path, new_path)
+            print(f"重命名文件: {old_path} -> {new_path}")
+            return True
+        except Exception as e:
+            print(f"重命名文件時出錯: {str(e)}")
+            return False
+    return True  # 不需要重命名
 
 def main():
     """主函數"""
@@ -560,6 +667,7 @@ def main():
         save_processed_files(processed_files)
     
     posts = []
+    renamed_files = []
     
     # 處理每個 HTML 文件
     for filename in html_files:
@@ -569,6 +677,23 @@ def main():
             print(f"文件 {filename} 未變更，使用已保存的信息")
             post_info = processed_files[filename].get("info", {})
             if post_info:
+                # 檢查文件名是否需要標準化
+                new_filename = standardize_filename(filename, post_info)
+                old_path = os.path.join(BLOG_DIR, filename)
+                new_path = os.path.join(BLOG_DIR, new_filename)
+                
+                # 如果需要重命名
+                if new_filename != filename:
+                    if rename_file_if_needed(old_path, new_path):
+                        # 更新記錄和文件名
+                        processed_files[new_filename] = processed_files[filename]
+                        processed_files.pop(filename, None)
+                        filename = new_filename
+                        renamed_files.append((old_path, new_path))
+                        
+                        # 更新URL
+                        post_info["url"] = f"/blog/{new_filename}"
+                
                 posts.append(post_info)
                 continue
         
@@ -579,6 +704,22 @@ def main():
                 file_content = f.read()
                 
             post_info = extract_post_info(file_content, filename)
+            
+            # 檢查文件名是否需要標準化
+            new_filename = standardize_filename(filename, post_info)
+            old_path = os.path.join(BLOG_DIR, filename)
+            new_path = os.path.join(BLOG_DIR, new_filename)
+            
+            # 如果需要重命名
+            if new_filename != filename:
+                if rename_file_if_needed(old_path, new_path):
+                    # 更新文件名
+                    filename = new_filename
+                    renamed_files.append((old_path, new_path))
+                    
+                    # 更新URL
+                    post_info["url"] = f"/blog/{new_filename}"
+            
             posts.append(post_info)
             
             # 更新處理記錄
@@ -591,6 +732,9 @@ def main():
             print(f"  標題: {post_info['title']}")
             print(f"  日期: {post_info['date']}")
             print(f"  分類: {post_info['category']}")
+            print(f"  系列: {post_info.get('series_name', '非系列')}")
+            if post_info.get("is_series"):
+                print(f"  集數: EP{post_info.get('episode')}")
             print(f"  摘要: {post_info['summary'][:50]}...")
             print(f"  圖片: {post_info['image']}")
             print(f"  標籤: {', '.join(post_info['tags'])}")
@@ -600,26 +744,43 @@ def main():
     # 保存已處理文件記錄
     save_processed_files(processed_files)
     
+    # 篩選今天及之前日期的文章
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    filtered_posts = filter_by_date(posts, today)
+    print(f"篩選後 (日期 <= {today})：{len(filtered_posts)} 篇文章")
+    
     # 按日期排序 (最新的優先)
-    posts.sort(key=lambda x: parse_date(x["date"]), reverse=True)
+    filtered_posts.sort(key=lambda x: parse_date(x["date"]), reverse=True)
+    
+    # 獲取系列文章分組
+    grouped_posts = group_series_posts(filtered_posts)
+    series_posts = grouped_posts["series_posts"]
+    non_series_posts = grouped_posts["non_series_posts"]
+    
+    # 輸出系列文章統計
+    print(f"系列文章數: {len(series_posts)} 個系列")
+    for series_name, series_articles in series_posts.items():
+        print(f"  - {series_name}: {len(series_articles)} 篇")
+    print(f"非系列文章數: {len(non_series_posts)} 篇")
     
     # 獲取最新的3篇文章用於首頁顯示
-    latest_posts = posts[:3]
+    latest_posts = filtered_posts[:3]
     
     # 生成分頁信息
-    total_posts = len(posts)
+    total_posts = len(filtered_posts)
     total_pages = get_total_pages(total_posts)
     
     # 創建包含分頁信息的完整數據結構
     full_data = {
-        "posts": posts,
+        "posts": filtered_posts,
+        "series": series_posts,
         "pagination": {
             "total_posts": total_posts,
             "total_pages": total_pages,
             "items_per_page": ITEMS_PER_PAGE
         },
-        "categories": list(set(post["category"] for post in posts)),
-        "tags": list(set(tag for post in posts for tag in post["tags"]))
+        "categories": list(set(post["category"] for post in filtered_posts)),
+        "tags": list(set(tag for post in filtered_posts for tag in post["tags"]))
     }
     
     # 檢查目前的完整JSON文件是否存在
@@ -636,7 +797,8 @@ def main():
     
     # 檢查完整文章數據是否有變更
     try:
-        if json.dumps(full_data["posts"]) != json.dumps(current_full_data.get("posts", [])):
+        current_posts = current_full_data.get("posts", [])
+        if len(filtered_posts) != len(current_posts) or len(renamed_files) > 0:
             # 更新完整文章JSON文件
             with open(JSON_PATH, 'w', encoding='utf-8') as f:
                 json.dump(full_data, f, ensure_ascii=False, indent=2)
@@ -661,33 +823,7 @@ def main():
     
     # 檢查最新文章是否有變更
     try:
-        if json.dumps(latest_posts) != json.dumps(current_latest_posts):
-            # 更新最新文章JSON文件
-            with open(LATEST_POSTS_PATH, 'w', encoding='utf-8') as f:
-                json.dump(latest_posts, f, ensure_ascii=False, indent=2)
-            
-            print(f"成功更新最新文章數據: {LATEST_POSTS_PATH}")
-            print("最新文章:")
-            for i, post in enumerate(latest_posts, 1):
-                print(f"{i}. {post['title']} ({post['date']})")
-        else:
-            print("最新文章數據無需更新")
-    except Exception as e:
-        print(f"更新最新文章數據時出錯: {str(e)}")    
-    # 檢查最新文章JSON文件是否存在
-    if os.path.exists(LATEST_POSTS_PATH):
-        try:
-            with open(LATEST_POSTS_PATH, 'r', encoding='utf-8') as f:
-                current_latest_posts = json.load(f)
-        except Exception as e:
-            print(f"讀取最新文章JSON時出錯: {str(e)}")
-            current_latest_posts = []
-    else:
-        current_latest_posts = []
-    
-    # 檢查最新文章是否有變更
-    try:
-        if json.dumps(latest_posts) != json.dumps(current_latest_posts):
+        if len(latest_posts) != len(current_latest_posts) or len(renamed_files) > 0:
             # 更新最新文章JSON文件
             with open(LATEST_POSTS_PATH, 'w', encoding='utf-8') as f:
                 json.dump(latest_posts, f, ensure_ascii=False, indent=2)
@@ -702,6 +838,11 @@ def main():
         print(f"更新最新文章數據時出錯: {str(e)}")
 
 if __name__ == "__main__":
+    # 檢查是否有 --publish-scheduled 參數
+    publish_scheduled = "--publish-scheduled" in sys.argv
+    if publish_scheduled:
+        print("執行自動發布排定文章模式")
+    
     if not GITHUB_TOKEN:
         print("錯誤: 未設定 GH_PAT 環境變數")
         print("本地執行時會跳過GitHub API相關操作")

@@ -9,7 +9,9 @@
 import os
 import json
 import jieba
-from typing import Dict, Any, List
+import re
+import datetime
+from typing import Dict, Any, List, Tuple
 
 # 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -154,6 +156,161 @@ def save_json_file(file_path: str, data: Dict[str, Any]) -> bool:
     except Exception as e:
         print(f"保存JSON文件時出錯 ({file_path}): {str(e)}")
         return False
+
+# 新增: 將文本轉換為 URL 友好的格式
+def slugify(text: str, translation_dict: dict = None) -> str:
+    """
+    將文本轉換為 URL 友好的格式
+    :param text: 要轉換的文本
+    :param translation_dict: 翻譯字典（可選）
+    :return: URL 友好的字符串
+    """
+    print(f"開始處理標題URL化: {text}")
+    
+    # 如果沒有提供翻譯字典，加載默認字典
+    if translation_dict is None:
+        translation_dict = load_translation_dict()
+    
+    # 內建基本字典作為備用
+    base_replacements = {
+        '台灣': 'taiwan',
+        '創業': 'startup',
+        '指南': 'guide',
+        '會計': 'accounting',
+        '會計師': 'accountant',
+        '角色': 'role',
+        '價值': 'value',
+        '財務': 'finance',
+        '稅務': 'tax',
+        '申報': 'filing',
+        '公司': 'company',
+        '規劃': 'planning',
+        '管理': 'management',
+        '合夥人': 'partner',
+        '初期': 'early-stage',
+        '資本': 'capital',
+        '貸款': 'loan',
+        '銀行': 'bank',
+        '必知': 'essential',
+        '老闆': 'boss',
+        '勞工': 'labor',
+        '設定': 'setting',
+        '攻略': 'guide',
+        '法規': 'regulations',
+        '全攻略': 'complete-guide',
+        '選擇': 'choice',
+        '發票': 'invoice',
+        '所得稅': 'income-tax',
+        '營業稅': 'business-tax',
+        '制度': 'system',
+        '登記': 'registration',
+        '簽證': 'certificate',
+        '組織': 'organization',
+        '型態': 'type',
+        '行號': 'business-entity',
+        '營業': 'business'
+    }
+    
+    # 轉換為小寫
+    slug = text.lower()
+    replaced = False
+    
+    # 首先嘗試使用翻譯字典
+    if translation_dict:
+        print("使用翻譯字典進行轉換")
+        # 按詞彙長度排序，優先替換較長的詞彙
+        sorted_dict = sorted(translation_dict.items(), key=lambda x: len(x[0]), reverse=True)
+        
+        for zh, en in sorted_dict:
+            if zh.lower() in slug:
+                replaced_text = slug.replace(zh.lower(), f"{en}-")
+                if replaced_text != slug:
+                    replaced = True
+                    slug = replaced_text
+                    print(f"使用翻譯字典替換: {zh} -> {en}")
+    
+    # 如果沒有使用翻譯字典或替換不完全，使用基本替換
+    if not replaced or len(slug) > 50:  # 如果結果還是太長，使用基本替換
+        print("使用基本替換進行轉換")
+        new_slug = slug
+        for zh, en in base_replacements.items():
+            if zh in new_slug:
+                new_slug = new_slug.replace(zh, f"{en}-")
+                print(f"使用基本替換: {zh} -> {en}")
+        slug = new_slug
+    
+    # 移除標點符號和特殊字符
+    slug = re.sub(r'[^\w\s-]', '', slug)
+    # 將空格轉換為連字符
+    slug = re.sub(r'[\s_]+', '-', slug)
+    # 移除開頭和結尾的連字符
+    slug = re.sub(r'^-+|-+$', '', slug)
+    # 移除重複的連字符
+    slug = re.sub(r'-+', '-', slug)
+    
+    # 確保結尾沒有連字符
+    if slug.endswith('-'):
+        slug = slug[:-1]
+    
+    # 移除非ASCII字符
+    ascii_slug = ''
+    for c in slug:
+        if ord(c) < 128:
+            ascii_slug += c
+    slug = ascii_slug
+    
+    # 再次確保結尾沒有連字符
+    if slug.endswith('-'):
+        slug = slug[:-1]
+    
+    # 如果處理後為空，使用默認值
+    if not slug:
+        print("處理後的標題為空，使用默認值'article'")
+        slug = "article"
+    
+    # 截斷過長的slug
+    if len(slug) > 80:
+        slug = slug[:80]
+        # 確保截斷後結尾沒有連字符
+        if slug.endswith('-'):
+            slug = slug[:-1]
+        print("標題過長，已截斷")
+    
+    print(f"處理後的URL: {slug}")
+    return slug
+
+# 新增: 從文件名提取系列信息
+def extract_series_info(filename: str) -> Tuple[bool, str, str, str, str]:
+    """
+    從文件名提取系列信息
+    :param filename: 文件名（例如：2025-02-03-系列名稱EP1-文章標題.html）
+    :return: (是否為系列, 系列名稱, 集數, 日期, 標題)
+    """
+    # 移除.html後綴
+    name_without_ext = os.path.splitext(os.path.basename(filename))[0]
+    
+    # 提取日期
+    date_match = re.search(r'^(\d{4}-\d{2}-\d{2})', name_without_ext)
+    date = date_match.group(1) if date_match else None
+    
+    # 檢查是否為系列文章
+    series_match = re.search(r'-([^-]+)EP(\d+)-', name_without_ext)
+    
+    if series_match:
+        series_name = series_match.group(1)
+        episode = series_match.group(2)
+        
+        # 提取標題（系列名稱和集數之後的部分）
+        title_match = re.search(r'EP\d+-(.+)$', name_without_ext)
+        title = title_match.group(1) if title_match else ""
+        
+        return True, series_name, episode, date, title
+    else:
+        # 非系列文章，提取標題（日期之後的部分）
+        title_match = re.search(r'^\d{4}-\d{2}-\d{2}-(.+)$', name_without_ext)
+        title = title_match.group(1) if title_match else name_without_ext
+        
+        return False, None, None, date, title
 
 # 初始化：確保必要的目錄存在
 ensure_dir_exists(BLOG_DIR)

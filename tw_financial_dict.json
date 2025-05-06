@@ -1,7 +1,6 @@
 {
   "所得稅": "income-tax",
   "營業稅": "business-tax",
-  "營所稅": "profit-seeking-enterprise-income-tax",
   "綜所稅": "individual-income-tax",
   "扣繳": "withholding-tax",
   "稅務規劃": "tax-planning",
@@ -227,5 +226,7 @@
   "重組": "restructuring",
   "改組": "reorganization",
   "改革": "reform",
-  "變革": "transformation"
+  "變革": "transformation",
+  "合建分屋": "joint-development-housing",
+  "人壽": "life-insurance"
 }
