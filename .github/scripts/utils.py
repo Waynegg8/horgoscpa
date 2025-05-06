@@ -312,6 +312,24 @@ def extract_series_info(filename: str) -> Tuple[bool, str, str, str, str]:
         
         return False, None, None, date, title
 
+# 新增: 從Word檔案名提取中文部分
+def extract_chinese_filename(filename: str) -> str:
+    """
+    從Word檔案名中提取中文部分
+    :param filename: Word檔案名（不含路徑和副檔名）
+    :return: 中文部分
+    """
+    # 移除副檔名
+    name_without_ext = os.path.splitext(os.path.basename(filename))[0]
+    
+    # 只保留中文字符和部分標點
+    chinese_part = re.findall(r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+', name_without_ext)
+    if chinese_part:
+        return ''.join(chinese_part)
+    
+    # 如果沒有中文字符，返回原始檔案名（去除副檔名）
+    return name_without_ext
+
 # 初始化：確保必要的目錄存在
 ensure_dir_exists(BLOG_DIR)
 ensure_dir_exists(JSON_DATA_DIR)

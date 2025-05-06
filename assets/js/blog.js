@@ -399,9 +399,17 @@ document.addEventListener('DOMContentLoaded', function() {
   function initializeSeriesList(series) {
     if (!seriesListContainer) return;
     
-    // 如果沒有系列文章，隱藏整個區域
+    // 如果沒有系列文章，顯示提示但不隱藏區域
     if (!series || Object.keys(series).length === 0) {
-      if (seriesSection) seriesSection.style.display = 'none';
+      // 顯示系列區域
+      if (seriesSection) seriesSection.style.display = 'block';
+      // 顯示無系列文章的提示
+      seriesListContainer.innerHTML = `
+        <div class="no-series" style="text-align: center; padding: 40px 20px;">
+          <p style="font-size: 1.2rem; color: #666;">目前尚無系列文章</p>
+          <p style="color: #888; margin-top: 10px;">持續關注我們的更新吧！</p>
+        </div>
+      `;
       return;
     }
     

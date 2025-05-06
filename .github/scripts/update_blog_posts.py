@@ -23,7 +23,7 @@ from bs4 import BeautifulSoup  # 添加BeautifulSoup用於更可靠的HTML解析
 
 # 引入 utils 模組
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import load_translation_dict, setup_jieba_dict, extract_series_info, slugify
+from utils import load_translation_dict, setup_jieba_dict, extract_series_info, slugify, extract_chinese_filename
 
 # 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -409,15 +409,29 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
                 if keyword in text_for_keywords and len(tags) < 3:
                     tags.append(keyword)
     
-    # 使用相對路徑
-    url = f"/blog/{filename}"
+    # 保留原始檔名（中文版本）
+    original_filename = filename
+    
+    # 構建 URL (使用英文版本)
+    title_slug = slugify(title)  # 將標題轉為英文 slug
+    
+    # 如果是系列文章，URL 使用英文，但檔案名保留中文
+    if is_series:
+        series_slug = slugify(series_name)
+        url_slug = f"{date}-{series_slug}EP{episode}-{title_slug}.html"
+    else:
+        url_slug = f"{date}-{title_slug}.html"
+    
+    # URL 使用英文，適合網址列顯示
+    url = f"/blog/{url_slug}"
     
     # 構建結果字典
     result = {
-        "title": title,
+        "title": title,  # 中文標題
         "date": date,
         "summary": summary,
-        "url": url,
+        "url": url,  # 英文 URL
+        "original_filename": original_filename,  # 保存原始檔名(中文)
         "image": image,
         "category": category_code,
         "tags": tags
@@ -426,7 +440,7 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     # 如果是系列文章，添加系列信息
     if is_series:
         result["is_series"] = True
-        result["series_name"] = series_name
+        result["series_name"] = series_name  # 使用原始系列名稱
         result["episode"] = int(episode)
     
     return result
@@ -527,29 +541,38 @@ def group_series_posts(posts: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 def standardize_filename(filename: str, post_info: Dict[str, Any]) -> str:
     """
-    標準化文件名
+    標準化文件名 - 基於原始檔名，保留中文部分
     :param filename: 原始文件名
     :param post_info: 文章信息
     :return: 標準化後的文件名
     """
     # 取得基本信息
     date = post_info["date"]
-    title = post_info["title"]
     
-    # 將標題轉換為URL友好的格式
-    title_slug = slugify(title)
+    # 從原始檔名中提取中文部分
+    base_name = os.path.splitext(os.path.basename(filename))[0]  # 移除.html後綴
+    chinese_part = extract_chinese_filename(base_name)
     
-    # 如果是系列文章
-    if post_info.get("is_series"):
-        series_name = post_info["series_name"]
-        episode = post_info["episode"]
-        # 格式: YYYY-MM-DD-系列名稱EP編號-標題.html
-        new_filename = f"{date}-{series_name}EP{episode}-{title_slug}.html"
+    # 移除日期部分（如果有）
+    name_without_date = re.sub(r'^\d{4}-\d{2}-\d{2}-?', '', base_name)
+    
+    # 檢查是否為系列文章
+    is_series, series_name, episode, _, _ = extract_series_info(filename)
+    
+    if is_series:
+        # 如果已經是系列文章格式，保持原樣
+        if "EP" in name_without_date:
+            return f"{date}-{name_without_date}.html"
+        
+        # 否則，使用系列資訊重組檔名，保留中文
+        return f"{date}-{series_name}EP{episode}-{chinese_part}.html"
     else:
-        # 格式: YYYY-MM-DD-標題.html
-        new_filename = f"{date}-{title_slug}.html"
-    
-    return new_filename
+        # 非系列文章，使用中文部分
+        if chinese_part:
+            return f"{date}-{chinese_part}.html"
+        else:
+            # 如果沒有中文部分，使用原始名稱部分
+            return f"{date}-{name_without_date}.html"
 
 def rename_file_if_needed(old_path: str, new_path: str) -> bool:
     """
@@ -677,7 +700,7 @@ def main():
             print(f"文件 {filename} 未變更，使用已保存的信息")
             post_info = processed_files[filename].get("info", {})
             if post_info:
-                # 檢查文件名是否需要標準化
+                # 檢查文件名是否需要標準化 - 保留中文檔名
                 new_filename = standardize_filename(filename, post_info)
                 old_path = os.path.join(BLOG_DIR, filename)
                 new_path = os.path.join(BLOG_DIR, new_filename)
@@ -691,9 +714,7 @@ def main():
                         filename = new_filename
                         renamed_files.append((old_path, new_path))
                         
-                        # 更新URL
-                        post_info["url"] = f"/blog/{new_filename}"
-                
+                # URL 使用英文版本 (保留在 post_info 中)
                 posts.append(post_info)
                 continue
         
@@ -705,7 +726,7 @@ def main():
                 
             post_info = extract_post_info(file_content, filename)
             
-            # 檢查文件名是否需要標準化
+            # 檢查文件名是否需要標準化 - 保留中文檔名
             new_filename = standardize_filename(filename, post_info)
             old_path = os.path.join(BLOG_DIR, filename)
             new_path = os.path.join(BLOG_DIR, new_filename)
@@ -716,9 +737,6 @@ def main():
                     # 更新文件名
                     filename = new_filename
                     renamed_files.append((old_path, new_path))
-                    
-                    # 更新URL
-                    post_info["url"] = f"/blog/{new_filename}"
             
             posts.append(post_info)
             
