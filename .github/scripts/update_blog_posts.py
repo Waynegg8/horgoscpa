@@ -755,7 +755,7 @@ def filter_by_date(posts: List[Dict[str, Any]], cutoff_date: Optional[str] = Non
 
 def group_series_posts(posts: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    將系列文章分組
+    將系列文章分組並添加豐富的系列信息
     :param posts: 所有文章列表
     :return: 包含系列分組的字典
     """
@@ -763,22 +763,65 @@ def group_series_posts(posts: List[Dict[str, Any]]) -> Dict[str, Any]:
     series_posts = defaultdict(list)
     non_series_posts = []
     
+    # 記錄系列信息
+    series_info = {}
+    
     for post in posts:
         if post.get("is_series"):
             series_name = post["series_name"]
             series_posts[series_name].append(post)
+            
+            # 收集系列信息
+            if series_name not in series_info:
+                series_info[series_name] = {
+                    "id": series_name,
+                    "title": series_name,
+                    "description": f"關於{series_name}的系列文章",  # 默認描述
+                    "image": post.get("image", "/assets/images/blog/default.jpg"),  # 使用第一篇文章的圖片
+                    "episode_count": 0,
+                    "category": post.get("category", ""),
+                    "latest_date": post.get("date", "")
+                }
+            
+            # 更新最新發布日期
+            if post.get("date") and post["date"] > series_info[series_name]["latest_date"]:
+                series_info[series_name]["latest_date"] = post["date"]
+                
+            # 如果文章有更好的圖片，更新系列圖片
+            if post.get("image") and "default" not in post["image"]:
+                series_info[series_name]["image"] = post["image"]
+                
         else:
             non_series_posts.append(post)
     
     # 對每個系列中的文章按集數排序
     for series_name in series_posts:
         series_posts[series_name].sort(key=lambda x: x["episode"])
+        # 更新系列文章數量
+        series_info[series_name]["episode_count"] = len(series_posts[series_name])
     
     # 對非系列文章按日期排序
     non_series_posts.sort(key=lambda x: x["date"], reverse=True)
     
+    # 構建加強版的系列數據
+    enhanced_series = {}
+    for series_name, posts_list in series_posts.items():
+        enhanced_series[series_name] = {
+            "title": series_info[series_name]["title"],
+            "description": series_info[series_name]["description"],
+            "image": series_info[series_name]["image"],
+            "total_episodes": series_info[series_name]["episode_count"],
+            "posts": posts_list
+        }
+    
+    # 構建系列列表，按最新日期排序
+    series_list = list(series_info.values())
+    series_list.sort(key=lambda x: x["latest_date"], reverse=True)
+    
     return {
         "series_posts": dict(series_posts),
+        "enhanced_series": enhanced_series,
+        "series_list": series_list,
         "non_series_posts": non_series_posts
     }
 
@@ -967,6 +1010,8 @@ def main():
     # 獲取系列文章分組
     grouped_posts = group_series_posts(filtered_posts)
     series_posts = grouped_posts["series_posts"]
+    enhanced_series = grouped_posts["enhanced_series"]
+    series_list = grouped_posts["series_list"]
     non_series_posts = grouped_posts["non_series_posts"]
     
     # 輸出系列文章統計
@@ -985,7 +1030,8 @@ def main():
     # 創建包含分頁信息的完整數據結構
     full_data = {
         "posts": filtered_posts,
-        "series": series_posts,
+        "series": enhanced_series,  # 使用加強版系列數據
+        "series_list": series_list,  # 添加系列列表
         "pagination": {
             "total_posts": total_posts,
             "total_pages": total_pages,
