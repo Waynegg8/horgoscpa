@@ -320,4 +320,3 @@ if os.path.exists(TRANSLATION_DICT_FILE):
     setup_jieba_dict()
 else:
     print(f"警告: 詞典文件不存在 ({TRANSLATION_DICT_FILE})，將使用默認分詞方式")
-```
