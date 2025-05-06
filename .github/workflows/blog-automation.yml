@@ -276,10 +276,10 @@ jobs:
             echo "html_deleted=false" >> $GITHUB_OUTPUT
           fi
       
-      # 13. 更新博客JSON文件
+      # 13. 更新博客JSON文件 - 新增在任何推送事件中更新JSON
       - name: 更新博客JSON文件
         id: update_blog_json
-        if: steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles' || github.event.action == 'publish-scheduled'))
+        if: steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles' || github.event.action == 'publish-scheduled')) || github.event_name == 'push'
         run: |
           echo "開始更新博客JSON文件..."
           
@@ -382,10 +382,10 @@ jobs:
             echo "沒有需要處理的 Word 文檔"
           fi
       
-      # 16. 更新網站 Sitemap（最後步驟） - 修復以處理錯誤
+      # 16. 更新網站 Sitemap - 現在在每次倉庫有任何變動時都會更新
       - name: 更新網站 Sitemap
         id: update_sitemap
-        if: github.event.inputs.update_sitemap == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap')
+        if: github.event.inputs.update_sitemap == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap') || github.event_name == 'push' || steps.commit-html.outputs.html_changed == 'true' || steps.update_blog_json.outputs.blog_json_updated == 'true'
         run: |
           echo "開始更新網站 Sitemap..."
           
@@ -406,3 +406,6 @@ jobs:
         run: |
           echo "工作流程完成執行"
           echo "時間: $(date)"
+          
+          # 可以在這裡添加其他通知方式，如發送郵件或Slack通知
+          # 例如使用curl發送webhook通知等
