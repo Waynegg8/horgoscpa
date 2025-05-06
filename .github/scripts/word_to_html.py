@@ -4,8 +4,9 @@
 """
 優化版 Word 文檔轉換為 HTML 工具 - 修訂版
 解決內容提取不完整和日期下方自動生成內容的問題
+新增系列文章識別和保存功能
 作者: Claude
-日期: 2025-05-05
+日期: 2025-05-06
 """
 
 import os
@@ -122,6 +123,23 @@ except ImportError:
     def setup_jieba_dict():
         """空函數實現"""
         pass
+        
+    def slugify(text, translation_dict=None):
+        """簡易版文本轉英文slug"""
+        # 使用正則表達式移除非字母數字字符，並用連字符替代空格
+        if translation_dict and text in translation_dict:
+            return translation_dict[text].lower().replace(' ', '-')
+        
+        # 簡單轉換成拼音或英文的功能我們無法在這實現
+        # 所以對於不在字典中的中文，我們使用一個通用替代詞
+        if re.search(r'[\u4e00-\u9fff]', text):
+            # 對中文文本，生成一個唯一的標識
+            hash_value = hashlib.md5(text.encode('utf-8')).hexdigest()[:8]
+            return f"article-{hash_value}"
+        
+        text = re.sub(r'[^\w\s-]', '', text).strip().lower()
+        text = re.sub(r'[-\s]+', '-', text)
+        return text
 
 # 加載翻譯字典
 TRANSLATION_DICT = load_translation_dict()
@@ -232,6 +250,37 @@ def extract_date_from_filename(filename: str) -> Optional[str]:
             pass
     
     return None
+
+def extract_series_info_from_filename(filename: str) -> Tuple[bool, Optional[str], Optional[int]]:
+    """
+    從文件名中提取系列文章信息
+    :param filename: 文件名
+    :return: (是否為系列文章, 系列名稱, 集數)
+    """
+    # 檢查是否包含EPx或EP_x格式的集數標記
+    series_match = re.search(r'EP(\d+)[-_]', filename, re.IGNORECASE)
+    if series_match:
+        # 提取系列名称（取EP前面的部分，去掉日期）
+        name_parts = filename.split('EP', 1)[0].strip()
+        # 去掉日期部分
+        name_parts = re.sub(r'^\d{4}-\d{2}-\d{2}[-_]?', '', name_parts).strip('-_')
+        
+        # 如果名稱為空，使用更寬鬆的提取方式
+        if not name_parts:
+            # 嘗試獲取文件名的基本部分
+            base_name = os.path.splitext(filename)[0]
+            parts = re.split(r'EP\d+[-_]', base_name, flags=re.IGNORECASE)[0]
+            parts = re.sub(r'^\d{4}-\d{2}-\d{2}[-_]?', '', parts).strip('-_')
+            if parts:
+                name_parts = parts
+            else:
+                name_parts = "未命名系列"
+                
+        series_name = name_parts
+        episode = int(series_match.group(1))
+        return True, series_name, episode
+    
+    return False, None, None
 
 def extract_word_content_direct(docx_path: str) -> str:
     """
@@ -612,12 +661,50 @@ def extract_article_structure(html_content: str) -> Dict:
     
     return result
 
-def generate_article_html(article_structure: Dict, date: str, english_url: str) -> str:
+def fully_translate_to_english(text: str) -> str:
+    """
+    完全轉換文本為英文
+    如果失敗則生成一個基於哈希的唯一標識符
+    """
+    # 使用翻譯字典
+    if text in TRANSLATION_DICT:
+        return TRANSLATION_DICT[text].lower().replace(' ', '-')
+    
+    # 嘗試分詞並翻譯
+    words = list(text)  # 簡單拆分為字符
+    translated = []
+    
+    for word in words:
+        if word in TRANSLATION_DICT:
+            translated.append(TRANSLATION_DICT[word].lower())
+        elif re.match(r'^[a-zA-Z0-9.]+$', word):  # 英文或數字
+            translated.append(word.lower())
+        else:
+            translated.append('term')  # 無法翻譯的詞用'term'替代
+    
+    result = '-'.join(translated)
+    
+    # 清理結果
+    result = re.sub(r'-{2,}', '-', result)  # 移除連續的連字符
+    result = result.strip('-')  # 移除開頭和結尾的連字符
+    
+    # 如果結果為空或太長，使用基於哈希的標識符
+    if not result or len(result) > 100:
+        hash_value = hashlib.md5(text.encode('utf-8')).hexdigest()[:8]
+        result = f"article-{hash_value}"
+    
+    return result
+
+def generate_article_html(article_structure: Dict, date: str, english_url: str, is_series=False, series_name=None, episode=None, original_filename=None) -> str:
     """
     根據文章結構生成HTML
     :param article_structure: 文章結構
     :param date: 發布日期
     :param english_url: 英文URL (用於SEO)
+    :param is_series: 是否為系列文章
+    :param series_name: 系列名稱
+    :param episode: 集數
+    :param original_filename: 原始檔名
     :return: HTML字符串
     """
     logger.info(f"開始生成文章HTML，日期: {date}")
@@ -734,6 +821,55 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str) 
     # 使用英文URL（用於SEO）
     relative_url = english_url
     
+    # 準備系列文章meta標籤
+    series_meta_tags = ""
+    if is_series and series_name and episode:
+        series_meta_tags = f"""
+  <meta name="series-name" content="{series_name}">
+  <meta name="series-episode" content="{episode}">
+  <meta name="original-filename" content="{original_filename or ''}">
+"""
+    
+    # 準備結構化數據
+    structured_data = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": title,
+        "description": summary,
+        "image": f"https://www.horgoscpa.com{image_path}",
+        "datePublished": date,
+        "dateModified": date,
+        "author": {
+            "@type": "Person",
+            "name": "霍爾果斯會計師事務所",
+            "url": "https://www.horgoscpa.com/team.html"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "霍爾果斯會計師事務所",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://www.horgoscpa.com/assets/images/logo.png"
+            }
+        },
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": f"https://www.horgoscpa.com{relative_url}"
+        },
+        "keywords": ", ".join(tags)
+    }
+    
+    # 添加系列文章信息到結構化數據
+    if is_series and series_name and episode:
+        structured_data["isPartOf"] = {
+            "@type": "Series",
+            "name": series_name,
+            "position": episode,
+            "originalFilename": original_filename or ""
+        }
+    
+    structured_data_json = json.dumps(structured_data, ensure_ascii=False)
+    
     # 生成HTML模板
     template = f"""<!DOCTYPE html>
 <html lang="zh-TW">
@@ -742,6 +878,7 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str) 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="{summary}" />
   <title>{title} | 霍爾果斯會計師事務所</title>
+  {series_meta_tags}
   
   <!-- Favicon -->
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -777,33 +914,7 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str) 
   
   <!-- 結構化資料 -->
   <script type="application/ld+json">
-  {{
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    "headline": "{title}",
-    "description": "{summary}",
-    "image": "https://www.horgoscpa.com{image_path}",
-    "datePublished": "{date}",
-    "dateModified": "{date}",
-    "author": {{
-      "@type": "Person",
-      "name": "霍爾果斯會計師事務所",
-      "url": "https://www.horgoscpa.com/team.html"
-    }},
-    "publisher": {{
-      "@type": "Organization",
-      "name": "霍爾果斯會計師事務所",
-      "logo": {{
-        "@type": "ImageObject",
-        "url": "https://www.horgoscpa.com/assets/images/logo.png"
-      }}
-    }},
-    "mainEntityOfPage": {{
-      "@type": "WebPage",
-      "@id": "https://www.horgoscpa.com{relative_url}"
-    }},
-    "keywords": "{', '.join(tags)}"
-  }}
+  {structured_data_json}
   </script>
 </head>
 <body>
@@ -1130,11 +1241,18 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
     try:
         # 1. 提取文件名資訊
         filename = os.path.basename(docx_path)
+        original_filename = filename  # 保存原始檔名
         logger.info(f"開始處理文件: {filename}")
         
         # 從文件名提取日期
         date_match = re.search(r'(\d{4}-\d{2}-\d{2})', filename)
         date = date_match.group(1) if date_match else datetime.datetime.now().strftime("%Y-%m-%d")
+        
+        # 從文件名提取系列文章信息
+        is_series, series_name, episode = extract_series_info_from_filename(filename)
+        
+        if is_series:
+            logger.info(f"檢測到系列文章: {series_name}, EP{episode}")
         
         # 2. 使用多種方法提取Word內容
         content_dict = extract_word_content(docx_path)
@@ -1153,13 +1271,28 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
         
         # 為 URL 和檔名生成英文 slug（使用相同的英文檔名）
         english_slug = slugify(word_title, TRANSLATION_DICT)
+        
+        # 確保英文slug不為空且有意義
+        if not english_slug or english_slug == "term":
+            # 使用隨機哈希加上標題的前幾個字符
+            hash_part = hashlib.md5(word_title.encode('utf-8')).hexdigest()[:8]
+            english_slug = f"article-{hash_part}"
+            
         english_url = f"/blog/{date}-{english_slug}.html"
         html_filename = f"{date}-{english_slug}.html"  # 使用英文 slug 作為檔名
         
         logger.info(f"生成英文檔名及URL: {html_filename}")
         
         # 7. 生成最終HTML
-        final_html = generate_article_html(article_structure, date, english_url)
+        final_html = generate_article_html(
+            article_structure, 
+            date, 
+            english_url,
+            is_series=is_series,
+            series_name=series_name,
+            episode=episode,
+            original_filename=original_filename
+        )
         
         # 8. 寫入文件
         output_path = os.path.join(output_dir, html_filename)
@@ -1174,12 +1307,15 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
         return {
             'success': True,
             'output_file': html_filename,
-            'original_filename': filename,
+            'original_filename': original_filename,
             'title': article_structure['title'],
-            'english_url': english_url,  # 保存英文URL
+            'english_url': english_url,
             'metadata': {
                 'date': date,
-                'summary': article_structure['summary']
+                'summary': article_structure['summary'],
+                'is_series': is_series,
+                'series_name': series_name,
+                'episode': episode
             }
         }
         

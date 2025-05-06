@@ -5,6 +5,7 @@
 自動更新部落格文章 JSON 檔案 (進階版，支持系列文章與排程發布)
 這個腳本會掃描指定的部落格文章目錄，提取文章資訊，
 並更新 blog-posts.json 檔案，支援標籤、分類、系列文章和發布排程。
+改進系列文章識別，支持從HTML中提取系列文章信息。
 """
 
 import os
@@ -17,6 +18,7 @@ import requests
 import jieba
 import math
 import shutil
+import hashlib
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set, Tuple
 from collections import Counter, defaultdict
@@ -24,7 +26,72 @@ from bs4 import BeautifulSoup
 
 # 引入 utils 模組
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import load_translation_dict, setup_jieba_dict, extract_series_info, slugify
+try:
+    from utils import load_translation_dict, setup_jieba_dict, extract_series_info, slugify
+except ImportError:
+    # 提供基本實現，以防 utils 模組不可用
+    def load_translation_dict():
+        """簡易版字典加載"""
+        try:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
+            dict_path = os.path.join(project_root, "assets/data/tw_financial_dict.json")
+            
+            if os.path.exists(dict_path):
+                with open(dict_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception as e:
+            print(f"載入字典文件出錯: {str(e)}")
+        return {}
+    
+    def setup_jieba_dict():
+        """空函數實現"""
+        pass
+    
+    def extract_series_info(filename):
+        """提取系列信息"""
+        is_series = False
+        series_name = None
+        episode = None
+        date_from_filename = None
+        title_from_filename = None
+        
+        # 提取日期
+        date_match = re.search(r'(\d{4}-\d{2}-\d{2})', filename)
+        date_from_filename = date_match.group(1) if date_match else None
+        
+        # 提取系列信息
+        series_match = re.search(r'EP(\d+)[-_]', filename, re.IGNORECASE)
+        if series_match:
+            is_series = True
+            # 提取系列名称（取EP前面的部分，去掉日期）
+            name_parts = filename.split('EP', 1)[0].strip()
+            # 去掉日期部分
+            name_parts = re.sub(r'^\d{4}-\d{2}-\d{2}[-_]?', '', name_parts).strip('-_')
+            series_name = name_parts
+            episode = int(series_match.group(1))
+            
+            # 提取标题部分（如果有）
+            title_parts = filename.split(f"EP{episode}", 1)
+            if len(title_parts) > 1 and title_parts[1]:
+                title_from_filename = title_parts[1].strip('-_')
+        
+        return is_series, series_name, episode, date_from_filename, title_from_filename
+    
+    def slugify(text, translation_dict=None):
+        """簡易版文本轉英文slug"""
+        # 使用正則表達式移除非字母數字字符，並用連字符替代空格
+        if translation_dict and text in translation_dict:
+            return translation_dict[text].lower().replace(' ', '-')
+        
+        # 中文生成一個唯一的標識
+        if re.search(r'[\u4e00-\u9fff]', text):
+            hash_value = hashlib.md5(text.encode('utf-8')).hexdigest()[:8]
+            return f"article-{hash_value}"
+        
+        text = re.sub(r'[^\w\s-]', '', text).strip().lower()
+        text = re.sub(r'[-\s]+', '-', text)
+        return text
 
 # 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -341,9 +408,20 @@ def create_english_url(title: str, date: str, is_series: bool, series_name: str 
     # 轉換標題為英文
     english_title = fully_translate_to_english(title)
     
+    # 確保URL有效，不為空且有意義
+    if not english_title or english_title == "untitled" or english_title == "term":
+        # 使用隨機哈希加上標題的前幾個字符
+        hash_part = hashlib.md5(title.encode('utf-8')).hexdigest()[:8]
+        english_title = f"article-{hash_part}"
+    
     # 處理系列文章
     if is_series:
         english_series_name = fully_translate_to_english(series_name)
+        if not english_series_name or english_series_name == "untitled" or english_series_name == "term":
+            # 使用隨機哈希加上系列名稱的前幾個字符
+            hash_part = hashlib.md5(series_name.encode('utf-8')).hexdigest()[:8]
+            english_series_name = f"series-{hash_part}"
+        
         return f"/blog/{date}-{english_series_name.lower()}-ep{episode}-{english_title.lower()}.html"
     else:
         return f"/blog/{date}-{english_title.lower()}.html"
@@ -358,181 +436,36 @@ def fully_translate_to_english(text: str) -> str:
     if not text:
         return "untitled"
     
-    # 使用擴充版的詞典進行轉換
-    result = enhanced_slugify(text)
-    
-    # 替換所有非英文字符為連字符
-    result = re.sub(r'[^\x00-\x7F]+', '-', result)
-    
-    # 清理重複的連字符
-    result = re.sub(r'-+', '-', result)
-    
-    # 移除開頭和結尾的連字符
-    result = result.strip('-')
-    
-    # 確保結果不為空
-    if not result:
-        return "untitled"
-    
-    return result
-
-def enhanced_slugify(text: str) -> str:
-    """
-    增強版詞典轉換，確保100%轉換為英文
-    """
-    # 加載主詞典
+    # 使用翻譯字典
     translation_dict = load_translation_dict()
     
-    # 加載擴展詞典(包含更多詞彙)
-    extended_dict = load_extended_dict()
+    if text in translation_dict:
+        return translation_dict[text].lower().replace(' ', '-')
     
-    # 合併詞典
-    combined_dict = {**translation_dict, **extended_dict}
+    # 嘗試分詞並翻譯
+    words = list(text)  # 簡單拆分為字符
+    translated = []
     
-    # 使用jieba分詞
-    jieba.setLogLevel(20)  # 抑制jieba輸出
-    words = list(jieba.cut(text))
-    
-    # 轉換結果
-    result = []
     for word in words:
-        word = word.strip()
-        if not word:  # 跳過空白詞
-            continue
-            
-        if word in combined_dict:
-            result.append(combined_dict[word])
-        elif len(word.strip()) > 0:
-            # 對於未在詞典中找到的詞，使用通用替代詞
-            # 檢查是否為數字或英文
-            if re.match(r'^[a-zA-Z0-9.]+$', word):
-                result.append(word)
-            else:
-                result.append("term")
+        if word in translation_dict:
+            translated.append(translation_dict[word].lower())
+        elif re.match(r'^[a-zA-Z0-9.]+$', word):  # 英文或數字
+            translated.append(word.lower())
+        else:
+            translated.append('term')  # 無法翻譯的詞用'term'替代
     
-    return "-".join(result)
-
-def load_extended_dict():
-    """
-    加載擴展詞典，包含更多專業詞彙
-    此函數可以從配置文件加載或直接返回詞典
-    """
-    # 這裡可以從額外的詞典文件加載，或者直接定義一個更大的詞典
-    additional_dict = {
-        "概覽": "overview",
-        "制度": "system",
-        "解析": "analysis",
-        "指南": "guide",
-        "完整": "complete",
-        "詳解": "detailed",
-        "策略": "strategy",
-        "實務": "practice",
-        "案例": "case",
-        "分析": "analysis",
-        "入門": "beginner",
-        "專業": "professional",
-        "簡介": "introduction",
-        "介紹": "introduction",
-        "說明": "explanation",
-        "總結": "summary",
-        "基礎": "basic",
-        "進階": "advanced",
-        "常見": "common",
-        "問題": "problems",
-        "解決": "solution",
-        "方案": "solution",
-        "思路": "thinking",
-        "思維": "thinking",
-        "方法": "method",
-        "步驟": "steps",
-        "流程": "process",
-        "技巧": "tips",
-        "攻略": "guide",
-        "全面": "comprehensive",
-        "深度": "depth",
-        "核心": "core",
-        "關鍵": "key",
-        "重點": "key-points",
-        "要點": "key-points",
-        "分享": "sharing",
-        "經驗": "experience",
-        "感想": "thoughts",
-        "回顧": "review",
-        "展望": "outlook",
-        "前景": "prospect",
-        "趨勢": "trend",
-        "發展": "development",
-        "歷史": "history",
-        "變化": "changes",
-        "轉變": "transformation",
-        "創新": "innovation",
-        "變革": "reform",
-        "改革": "reform",
-        "優化": "optimization",
-        "提升": "enhancement",
-        "改進": "improvement",
-        "效率": "efficiency",
-        "品質": "quality",
-        "質量": "quality",
-        "成效": "effectiveness",
-        "結果": "results",
-        "成果": "achievements",
-        "收穫": "gains",
-        "挑戰": "challenges",
-        "困難": "difficulties",
-        "障礙": "obstacles",
-        "瓶頸": "bottleneck",
-        "突破": "breakthrough",
-        "克服": "overcome",
-        "應對": "respond",
-        "管理": "management",
-        "領導": "leadership",
-        "團隊": "team",
-        "合作": "cooperation",
-        "協作": "collaboration",
-        "溝通": "communication",
-        "交流": "exchange",
-        "連接": "connection",
-        "整合": "integration",
-        "融合": "fusion",
-        "結合": "combination",
-        "比較": "comparison",
-        "對比": "contrast",
-        "差異": "difference",
-        "相似": "similarity",
-        "特點": "features",
-        "特性": "characteristics",
-        "屬性": "attributes",
-        "價值": "value",
-        "意義": "significance",
-        "重要性": "importance",
-        "影響": "impact",
-        "效應": "effect",
-        "作用": "function",
-        "功能": "function",
-        "用途": "usage",
-        "應用": "application",
-        "實踐": "practice",
-        "操作": "operation",
-        "執行": "execution",
-        "實現": "implementation",
-        "推廣": "promotion",
-        "普及": "popularization",
-        "推動": "promotion",
-        "促進": "facilitation",
-        "加速": "acceleration",
-        "加強": "strengthening",
-        "強化": "enhancement",
-        "深化": "deepening",
-        "豐富": "enrichment",
-        "完善": "perfect",
-        "精確": "precision",
-        "精準": "accuracy",
-        "準確": "accuracy",
-        "詳細": "detailed"
-    }
+    result = '-'.join(translated)
     
-    return additional_dict
+    # 清理結果
+    result = re.sub(r'-{2,}', '-', result)  # 移除連續的連字符
+    result = result.strip('-')  # 移除開頭和結尾的連字符
+    
+    # 如果結果為空或太長，使用基於哈希的標識符
+    if not result or len(result) > 100:
+        hash_value = hashlib.md5(text.encode('utf-8')).hexdigest()[:8]
+        result = f"article-{hash_value}"
+    
+    return result
 
 def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     """
@@ -547,8 +480,41 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     # 使用BeautifulSoup解析HTML
     soup = BeautifulSoup(content, 'html.parser')
     
-    # 提取系列信息
-    is_series, series_name, episode, date_from_filename, title_from_filename = extract_series_info(filename)
+    # 嘗試從HTML meta標籤中提取系列信息
+    is_series = False
+    series_name = None
+    episode = None
+    original_filename = None
+    
+    series_name_meta = soup.find('meta', {'name': 'series-name'})
+    series_episode_meta = soup.find('meta', {'name': 'series-episode'})
+    original_filename_meta = soup.find('meta', {'name': 'original-filename'})
+    
+    if series_name_meta and series_episode_meta:
+        is_series = True
+        series_name = series_name_meta.get('content')
+        episode = int(series_episode_meta.get('content'))
+        if original_filename_meta:
+            original_filename = original_filename_meta.get('content')
+    
+    # 如果沒有從meta標籤提取到，嘗試從結構化數據中提取
+    if not is_series:
+        script_tags = soup.find_all('script', {'type': 'application/ld+json'})
+        for script in script_tags:
+            try:
+                data = json.loads(script.string)
+                if 'isPartOf' in data:
+                    is_series = True
+                    series_name = data['isPartOf'].get('name')
+                    episode = data['isPartOf'].get('position')
+                    original_filename = data['isPartOf'].get('originalFilename')
+                    break
+            except:
+                pass
+    
+    # 如果仍未提取到，嘗試從文件名提取（舊方法作為備份）
+    if not is_series:
+        is_series, series_name, episode, date_from_filename, title_from_filename = extract_series_info(filename)
     
     # 提取標題
     title_element = soup.select_one('h1.article-title')
@@ -666,10 +632,12 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     }
     
     # 如果是系列文章，添加系列信息
-    if is_series:
+    if is_series and series_name and episode:
         result["is_series"] = True
         result["series_name"] = series_name
         result["episode"] = int(episode)
+        if original_filename:
+            result["original_filename"] = original_filename
     
     return result
 
@@ -977,9 +945,11 @@ def main():
             print(f"  標題: {post_info['title']}")
             print(f"  日期: {post_info['date']}")
             print(f"  分類: {post_info['category']}")
-            print(f"  系列: {post_info.get('series_name', '非系列')}")
             if post_info.get("is_series"):
+                print(f"  系列: {post_info.get('series_name', '未知系列')}")
                 print(f"  集數: EP{post_info.get('episode')}")
+                if 'original_filename' in post_info:
+                    print(f"  原始檔名: {post_info.get('original_filename')}")
             print(f"  摘要: {post_info['summary'][:50]}...")
             print(f"  圖片: {post_info['image']}")
             print(f"  標籤: {', '.join(post_info['tags'])}")
