@@ -1268,22 +1268,38 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
         # 6. 生成最終HTML
         final_html = generate_article_html(article_structure, date)
         
-        # 7. 生成文件名
-        slug = slugify(article_structure['title'])
-        file_name = f"{date}-{slug}.html"
+        # 7. 生成文件名 (基於原始Word檔名)
+        # 從Word檔名中移除日期部分和.docx後綴
+        base_filename = os.path.splitext(filename)[0]  # 移除.docx後綴
+        
+        # 檢查是否有日期部分
+        if date_match:
+            # 從檔名中移除日期部分，保留後面的中文部分
+            word_title = re.sub(r'^\d{4}-\d{2}-\d{2}-?', '', base_filename)
+        else:
+            word_title = base_filename
+        
+        # 如果沒有提取到有意義的標題，則使用文章內容中的標題
+        if not word_title or word_title.strip() == '':
+            word_title = article_structure['title']
+        
+        # 保留原始中文名稱，生成HTML檔名
+        html_filename = f"{date}-{word_title}.html"
         
         # 8. 寫入文件
-        output_path = os.path.join(output_dir, file_name)
+        output_path = os.path.join(output_dir, html_filename)
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(final_html)
         
-        logger.info(f"成功將 {filename} 轉換為 {file_name}")
+        logger.info(f"成功將 {filename} 轉換為 {html_filename}")
         
+        # 儲存原始檔名資訊，方便後續處理
         return {
             'success': True,
-            'output_file': file_name,
+            'output_file': html_filename,
+            'original_filename': filename,
             'title': article_structure['title'],
             'metadata': {
                 'date': date,
