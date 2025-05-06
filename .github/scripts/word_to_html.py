@@ -1151,16 +1151,12 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
         # 6. 生成檔名
         word_title = article_structure['title']
         
-        # 為 URL 生成英文 slug（僅用於 HTML 內容中的 URL）
+        # 為 URL 和檔名生成英文 slug（使用相同的英文檔名）
         english_slug = slugify(word_title, TRANSLATION_DICT)
         english_url = f"/blog/{date}-{english_slug}.html"
+        html_filename = f"{date}-{english_slug}.html"  # 使用英文 slug 作為檔名
         
-        # 為檔名保留中文標題（清理不允許的檔名字符）
-        chinese_filename = re.sub(r'[\\/:*?"<>|]', '', word_title)
-        html_filename = f"{date}-{chinese_filename}.html"
-        
-        logger.info(f"生成中文檔名: {html_filename}")
-        logger.info(f"生成英文URL: {english_url}")
+        logger.info(f"生成英文檔名及URL: {html_filename}")
         
         # 7. 生成最終HTML
         final_html = generate_article_html(article_structure, date, english_url)
