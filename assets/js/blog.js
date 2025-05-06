@@ -1,7 +1,7 @@
 /**
  * blog.js - 霍爾果斯會計師事務所部落格功能腳本
  * 最後更新日期: 2025-05-10
- * 優化: 添加即時搜索功能、滾動時動畫效果、改進圖片加載、支持系列文章
+ * 優化: 修正URL導航問題、移除頂部系列文章區塊、完善系列文章顯示功能
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -20,8 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const filterButtons = document.querySelectorAll('.filter-btn');
   const searchResultsContainer = document.getElementById('search-results-container');
   const searchContainer = document.querySelector('.search-container');
-  const seriesListContainer = document.getElementById('series-list-container');
-  const seriesSection = document.querySelector('.series-section');
+  const sidebarSeriesContainer = document.getElementById('sidebar-series-list-container');
   
   // 狀態變數
   let allPosts = [];
@@ -29,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentCategory = 'all';
   let currentTag = '';
   let currentSearchQuery = '';
-  let currentSeries = ''; // 新增: 當前選中的系列
+  let currentSeries = ''; // 當前選中的系列
   
   // 初始化
   init();
@@ -43,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
     currentCategory = urlParams.get('category') || 'all';
     currentTag = urlParams.get('tag') || '';
     currentSearchQuery = urlParams.get('search') || '';
-    currentSeries = urlParams.get('series') || ''; // 新增: 從URL獲取系列參數
+    currentSeries = urlParams.get('series') || '';
     currentPage = parseInt(urlParams.get('page') || '1');
     
     // 載入文章數據
@@ -177,7 +176,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const animateOnScroll = function() {
       // 獲取所有需要動畫的元素
       const blogCards = document.querySelectorAll('.blog-card');
-      const seriesCards = document.querySelectorAll('.series-card');
       const sidebarSections = document.querySelectorAll('.sidebar-section');
       
       // 檢查元素是否在視圖中
@@ -191,13 +189,6 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // 處理博客卡片動畫
       blogCards.forEach(card => {
-        if (isElementInViewport(card) && !card.classList.contains('animated')) {
-          card.classList.add('animated');
-        }
-      });
-      
-      // 處理系列卡片動畫
-      seriesCards.forEach(card => {
         if (isElementInViewport(card) && !card.classList.contains('animated')) {
           card.classList.add('animated');
         }
@@ -248,8 +239,10 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!isLink && !isButton) {
         // 獲取卡片的URL並導航
         const cardUrl = cardEl.dataset.url;
-        if (cardUrl) {
+        if (cardUrl && cardUrl.startsWith('/blog/')) {
           window.location.href = cardUrl;
+        } else {
+          console.error('無效的文章URL:', cardUrl);
         }
       }
     }
@@ -308,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 初始化標籤雲、熱門文章和系列文章
         initializeTagCloud(data.tags || []);
         initializePopularPosts();
-        initializeSeriesList(data.series || {});
+        initializeSidebarSeriesList(data.series || {});
         
         // 過濾並顯示文章
         filterAndDisplayPosts();
@@ -333,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
       showSeriesResults(currentSeries, filteredPosts.length);
     } else {
       // 隱藏系列結果信息
-      hideSeriesResults();
+      hideSearchResults();
       
       // 根據搜索查詢過濾
       if (currentSearchQuery) {
@@ -393,50 +386,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
-   * 初始化系列文章列表 - 改進版
+   * 初始化側邊欄系列文章列表
    * @param {Object} series 系列文章數據
    */
-  function initializeSeriesList(series) {
-    // 原有的系列文章區塊初始化代碼 - 現在隱藏
-    if (seriesListContainer) {
-      // 如果沒有系列文章，隱藏整個區域
-      if (!series || Object.keys(series).length === 0) {
-        if (seriesSection) seriesSection.style.display = 'none';
-        return;
-      }
-      
-      // 顯示系列區域(實際上我們將使用CSS隱藏它)
-      if (seriesSection) seriesSection.style.display = 'block';
-      
-      // 生成系列列表HTML - 保留原有代碼以維持兼容性
-      let seriesHTML = '';
-      
-      // 遍歷所有系列
-      for (const [seriesName, seriesPosts] of Object.entries(series)) {
-        if (!seriesPosts || seriesPosts.length === 0) continue;
-        
-        // 使用第一篇文章的圖片作為系列代表
-        const firstPost = seriesPosts[0];
-        const seriesImage = firstPost.image || '/assets/images/blog/default.jpg';
-        
-        seriesHTML += `
-          <div class="series-card" data-series="${seriesName}">
-            <div class="series-image">
-              <img src="${seriesImage}" alt="${seriesName}" loading="lazy">
-            </div>
-            <div class="series-content">
-              <h3>${seriesName}</h3>
-              <p>${seriesPosts.length} 篇文章</p>
-              <button class="view-series-btn" data-series="${seriesName}">查看系列</button>
-            </div>
-          </div>
-        `;
-      }
-      
-      seriesListContainer.innerHTML = seriesHTML;
-    }
-    
-    // 新增：側邊欄系列文章初始化
+  function initializeSidebarSeriesList(series) {
     const sidebarSeriesContainer = document.getElementById('sidebar-series-list-container');
     if (!sidebarSeriesContainer) return;
     
@@ -488,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
-   * 根據系列名稱過濾文章 - 改進版
+   * 根據系列名稱過濾文章
    * @param {string} seriesName 系列名稱
    */
   function filterBySeriesName(seriesName) {
@@ -523,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateURL();
     filterAndDisplayPosts();
     
-    // 改進的捲動邏輯：智能決策是否需要捲動
+    // 捲動到適當位置
     setTimeout(() => {
       // 找出要捲動到的目標元素
       const targetElement = (searchResultsContainer && searchResultsContainer.style.display === 'block') 
@@ -566,13 +519,6 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     `;
     searchResultsContainer.style.display = 'block';
-  }
-  
-  /**
-   * 隱藏系列結果信息
-   */
-  function hideSeriesResults() {
-    // 已包含在hideSearchResults中處理
   }
   
   /**
@@ -668,10 +614,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     blogPostsContainer.innerHTML = postsHTML;
     
-    // 為每個卡片添加點擊事件
-    addCardClickEvents();
+    // 添加元素進入視口動畫
+    const cards = blogPostsContainer.querySelectorAll('.blog-card');
+    setTimeout(() => {
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          card.classList.add('animated');
+        }, index * 100); // 依次添加動畫
+      });
+    }, 100);
 
-    // 由於圖片載入可能需要時間，添加圖片加載監控
+    // 監控圖片加載
     const allImages = blogPostsContainer.querySelectorAll('.blog-image img');
     allImages.forEach(img => {
       // 圖片加載失敗時使用備用圖片
@@ -689,23 +642,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
-   * 為文章卡片添加點擊事件
-   */
-  function addCardClickEvents() {
-    const cards = document.querySelectorAll('.blog-card');
-    cards.forEach(card => {
-      card.addEventListener('click', function(e) {
-        // 如果不是點擊特定元素，才進行跳轉
-        if (!e.target.closest('a') && !e.target.closest('button')) {
-          window.location.href = this.dataset.url;
-        }
-      });
-    });
-  }
-  
-  /**
    * 創建文章卡片HTML
-   * 修改：僅使用一種圖標方式，優化摘要顯示，添加容錯處理，支持系列文章標籤
    */
   function createPostCard(post) {
     if (!post) {

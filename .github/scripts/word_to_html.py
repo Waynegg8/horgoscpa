@@ -1277,9 +1277,21 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
             # 使用隨機哈希加上標題的前幾個字符
             hash_part = hashlib.md5(word_title.encode('utf-8')).hexdigest()[:8]
             english_slug = f"article-{hash_part}"
+        
+        # 構建HTML文件名
+        html_filename = f"{date}-{english_slug}"
+        
+        # 如果是系列文章，添加系列標識
+        if is_series:
+            series_slug = slugify(series_name, TRANSLATION_DICT)
+            if not series_slug or len(series_slug) < 3:
+                series_slug = hashlib.md5(series_name.encode('utf-8')).hexdigest()[:8]
+            html_filename = f"{html_filename}-{series_slug}-ep{episode}"
+        
+        # 確保html副檔名
+        html_filename = f"{html_filename}.html"
             
-        english_url = f"/blog/{date}-{english_slug}.html"
-        html_filename = f"{date}-{english_slug}.html"  # 使用英文 slug 作為檔名
+        english_url = f"/blog/{html_filename}"  # 使用相同格式作為URL
         
         logger.info(f"生成英文檔名及URL: {html_filename}")
         
@@ -1326,7 +1338,6 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
             'error': str(e),
             'docx_path': docx_path
         }
-
 def process_word_files(input_dir: str, output_dir: str) -> List[Dict]:
     """
     處理指定目錄中的Word文檔，轉換為HTML

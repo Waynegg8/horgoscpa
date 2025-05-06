@@ -403,28 +403,41 @@ def detect_category_in_html(html_content: str) -> str:
 
 def create_english_url(title: str, date: str, is_series: bool, series_name: str = None, episode: int = None) -> str:
     """
-    創建完全英文的URL (僅用於URL而非檔名)
+    創建標準化且一致的URL (確保與文件名一致)
     """
-    # 轉換標題為英文
-    english_title = fully_translate_to_english(title)
+    # 轉換標題為英文 - 優先使用意譯
+    translation_dict = load_translation_dict()
+    english_title = slugify(title, translation_dict)
     
     # 確保URL有效，不為空且有意義
-    if not english_title or english_title == "untitled" or english_title == "term":
+    if not english_title or english_title == "untitled" or len(english_title) < 3:
         # 使用隨機哈希加上標題的前幾個字符
         hash_part = hashlib.md5(title.encode('utf-8')).hexdigest()[:8]
         english_title = f"article-{hash_part}"
     
-    # 處理系列文章
-    if is_series:
-        english_series_name = fully_translate_to_english(series_name)
-        if not english_series_name or english_series_name == "untitled" or english_series_name == "term":
-            # 使用隨機哈希加上系列名稱的前幾個字符
-            hash_part = hashlib.md5(series_name.encode('utf-8')).hexdigest()[:8]
-            english_series_name = f"series-{hash_part}"
+    # 清理標題，確保最終URL合理
+    english_title = re.sub(r'[^\w-]', '', english_title).strip('-')
+    
+    # 如果標題太長，截取合理長度
+    if len(english_title) > 30:
+        english_title = english_title[:30]
+    
+    # 標準URL格式
+    url = f"/blog/{date}-{english_title}"
+    
+    # 如果是系列文章，加入系列信息
+    if is_series and series_name and episode is not None:
+        # 使用簡短的系列標記，確保URL長度合理
+        series_slug = slugify(series_name, translation_dict)
+        if len(series_slug) > 15:  # 如果系列名稱太長，使用截短版本
+            series_slug = series_slug[:15]
         
-        return f"/blog/{date}-{english_series_name.lower()}-ep{episode}-{english_title.lower()}.html"
-    else:
-        return f"/blog/{date}-{english_title.lower()}.html"
+        url = f"{url}-{series_slug}-ep{episode}"
+    
+    # 確保URL以.html結尾
+    url = f"{url}.html"
+    
+    return url
 
 def fully_translate_to_english(text: str) -> str:
     """
@@ -617,15 +630,16 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
                 if keyword in text_for_keywords and len(tags) < 3:
                     tags.append(keyword)
     
-    # 生成英文URL (注意：這只影響URL，不影響檔名)
-    english_url = create_english_url(title, date, is_series, series_name, episode) if is_series else create_english_url(title, date, False)
+    # 生成URL，確保與文件名匹配
+    base_filename = os.path.basename(filename)
+    url = f"/blog/{base_filename}"
     
     # 構建結果字典
     result = {
         "title": title,
         "date": date,
         "summary": summary,
-        "url": english_url,  # 使用英文URL (僅用於URL路徑)
+        "url": url,  # 使用實際文件名作為URL
         "image": image,
         "category": category_code,
         "tags": tags
@@ -634,7 +648,7 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     # 如果是系列文章，添加系列信息
     if is_series and series_name and episode:
         result["is_series"] = True
-        result["series_name"] = series_name
+        result["series_name"] = series_name  # 保存中文系列名稱
         result["episode"] = int(episode)
         if original_filename:
             result["original_filename"] = original_filename
@@ -657,16 +671,6 @@ def verify_filename_format(filename: str) -> bool:
     if not filename.lower().endswith('.html'):
         print(f"檔名格式不正確（非HTML檔案）: {filename}")
         return False
-    
-    # 檢查系列文章格式
-    series_match = re.search(r'-(.+)EP(\d+)-', filename)
-    if series_match:
-        # 確認系列名稱和集數
-        series_name = series_match.group(1)
-        episode = series_match.group(2)
-        if not series_name or not episode:
-            print(f"系列文章格式不正確: {filename}")
-            return False
     
     return True
 
@@ -899,21 +903,11 @@ def main():
             print(f"文件 {filename} 未變更，使用已保存的信息")
             post_info = processed_files[filename].get("info", {})
             if post_info:
-                # 更新生成英文URL (確保即使對已處理文件也生成正確的英文URL)
-                if post_info.get("is_series"):
-                    post_info["url"] = create_english_url(
-                        post_info["title"], 
-                        post_info["date"], 
-                        True, 
-                        post_info["series_name"], 
-                        post_info["episode"]
-                    )
-                else:
-                    post_info["url"] = create_english_url(
-                        post_info["title"], 
-                        post_info["date"], 
-                        False
-                    )
+                # 確保URL與文件名匹配
+                expected_url = f"/blog/{filename}"
+                if post_info["url"] != expected_url:
+                    print(f"更新URL以匹配文件名: {filename}")
+                    post_info["url"] = expected_url
                 
                 posts.append(post_info)
                 continue
@@ -953,7 +947,7 @@ def main():
             print(f"  摘要: {post_info['summary'][:50]}...")
             print(f"  圖片: {post_info['image']}")
             print(f"  標籤: {', '.join(post_info['tags'])}")
-            print(f"  英文URL: {post_info['url']}")
+            print(f"  URL: {post_info['url']}")
         except Exception as e:
             print(f"處理文件 {filename} 時出錯: {str(e)}")
             import traceback
