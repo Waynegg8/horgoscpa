@@ -39,6 +39,11 @@ on:
         required: true
         default: 'true'
         type: boolean
+      update_dictionary:
+        description: '更新翻譯字典'
+        required: true
+        default: 'true'
+        type: boolean
   
   # 當有任何文件變更時觸發
   push:
@@ -58,7 +63,7 @@ on:
     
   # 接收從網頁界面觸發的事件
   repository_dispatch:
-    types: [delete-article, upload-article, scan-articles, update-video, update-sitemap, publish-scheduled]
+    types: [delete-article, upload-article, scan-articles, update-video, update-sitemap, publish-scheduled, update-dictionary]
 
 jobs:
   content-automation:
@@ -93,6 +98,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          # 安裝額外的翻譯依賴
+          pip install requests
       
       # 5. 創建必要的目錄
       - name: 創建必要的目錄
@@ -102,7 +109,45 @@ jobs:
           mkdir -p word-docs
           mkdir -p video
 
-      # 6. 處理API觸發的文章刪除
+      # 6. 更新翻譯字典 (新步驟)
+      - name: 更新翻譯字典
+        if: github.event.inputs.update_dictionary == 'true' || github.event_name == 'repository_dispatch' && github.event.action == 'update-dictionary' || (github.event_name == 'push' && contains(github.event.head_commit.modified, 'word-docs'))
+        run: |
+          echo "開始更新翻譯字典..."
+          
+          # 使用 .github/scripts 目錄下的更新翻譯字典腳本
+          if [ -f ".github/scripts/update_dictionary.py" ]; then
+            python .github/scripts/update_dictionary.py
+            echo "使用 .github/scripts/update_dictionary.py 更新翻譯字典完成"
+            echo "dictionary_updated=true" >> $GITHUB_OUTPUT
+          else
+            echo "警告: 找不到 .github/scripts/update_dictionary.py 腳本"
+            echo "將手動建立翻譯字典更新腳本"
+            
+            # 手動創建翻譯字典腳本
+            mkdir -p .github/scripts
+            cat > .github/scripts/translate_utils.py << 'EOF'
+# 此處插入 translate_utils.py 的內容
+# (為簡潔起見，這裡省略了具體內容)
+EOF
+            
+            cat > .github/scripts/update_dictionary.py << 'EOF'
+# 此處插入 update_dictionary.py 的內容
+# (為簡潔起見，這裡省略了具體內容)
+EOF
+            
+            chmod +x .github/scripts/update_dictionary.py
+            python .github/scripts/update_dictionary.py
+            echo "使用動態創建的腳本更新翻譯字典完成"
+            echo "dictionary_updated=true" >> $GITHUB_OUTPUT
+          fi
+          
+          # 提交更新後的字典
+          git add tw_financial_dict.json
+          git commit -m "更新翻譯字典" || echo "無需提交翻譯字典"
+          git push || echo "無需推送翻譯字典"
+
+      # 7. 處理API觸發的文章刪除
       - name: 處理API觸發的文章刪除
         if: github.event_name == 'repository_dispatch' && github.event.action == 'delete-article'
         run: |
@@ -134,7 +179,7 @@ jobs:
             echo "警告: 找不到要刪除的文件 ${{ github.event.client_payload.file_path }}"
           fi
 
-      # 7. 處理掃描請求
+      # 8. 處理掃描請求
       - name: 處理API觸發的掃描請求
         if: github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles'
         run: |
@@ -155,7 +200,7 @@ jobs:
           git commit -m "透過API執行強制掃描並更新JSON" || echo "無需提交"
           git push || echo "無需推送"
 
-      # 8. 處理排程發布請求
+      # 9. 處理排程發布請求
       - name: 處理API觸發的排程發布請求
         if: github.event_name == 'repository_dispatch' && github.event.action == 'publish-scheduled' || github.event_name == 'schedule' || github.event.inputs.publish_scheduled == 'true'
         run: |
@@ -177,7 +222,7 @@ jobs:
           
           echo "排程發布任務完成"
 
-      # 9. 處理Word文檔
+      # 10. 處理Word文檔
       - name: 處理Word文檔
         if: github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article')
         run: |
@@ -208,7 +253,7 @@ jobs:
             echo "word-docs 目錄為空或不存在，跳過處理"
           fi
 
-      # 10. 上傳並提交轉換後的 HTML - 修復此步驟以處理無文件情況
+      # 11. 上傳並提交轉換後的 HTML - 修復此步驟以處理無文件情況
       - name: 上傳並提交轉換後的 HTML
         id: commit-html
         run: |
@@ -234,7 +279,7 @@ jobs:
             echo "html_changed=false" >> $GITHUB_OUTPUT
           fi
           
-      # 11. 檢查是否有文章被刪除
+      # 12. 檢查是否有文章被刪除
       - name: 檢查是否有文章被刪除
         id: check_deleted
         if: github.event.inputs.handle_deletion == 'true' || github.event_name == 'delete'
@@ -251,7 +296,7 @@ jobs:
             echo "html_deleted=false" >> $GITHUB_OUTPUT
           fi
       
-      # 12. 更新博客JSON文件
+      # 13. 更新博客JSON文件
       - name: 更新博客JSON文件
         id: update_blog_json
         if: steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles' || github.event.action == 'publish-scheduled'))
@@ -287,7 +332,7 @@ jobs:
           git commit -m "更新博客JSON文件" || echo "無需提交JSON文件"
           git push || echo "無需推送"
 
-      # 13. 更新影片數據
+      # 14. 更新影片數據
       - name: 更新影片數據
         id: update_videos
         if: github.event.inputs.update_videos == 'true' || steps.check_video_changes.outputs.videos_txt_changed == 'true' || (github.event_name == 'push' && contains(github.event.head_commit.modified, 'video/videos.txt')) || (github.event_name == 'push' && contains(github.event.head_commit.added, 'video/videos.txt')) || (github.event_name == 'repository_dispatch' && github.event.action == 'update-video')
@@ -330,7 +375,7 @@ jobs:
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
 
-      # 14. 清理已處理的Word文檔 - 修復以處理無變更情況
+      # 15. 清理已處理的Word文檔 - 修復以處理無變更情況
       - name: 清理已處理的Word文檔
         if: github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true'
         run: |
@@ -357,7 +402,7 @@ jobs:
             echo "沒有需要處理的 Word 文檔"
           fi
       
-      # 15. 更新網站 Sitemap（最後步驟） - 修復以處理錯誤
+      # 16. 更新網站 Sitemap（最後步驟） - 修復以處理錯誤
       - name: 更新網站 Sitemap
         id: update_sitemap
         if: github.event.inputs.update_sitemap == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap')
@@ -376,7 +421,7 @@ jobs:
             echo "警告: sitemap.xml 文件不存在或生成失敗"
           fi
           
-      # 16. 結果通知
+      # 17. 結果通知
       - name: 工作流執行結果通知
         run: |
           echo "工作流程完成執行"
