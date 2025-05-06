@@ -296,7 +296,17 @@ document.addEventListener('DOMContentLoaded', function() {
         return response.json();
       })
       .then(data => {
-        allPosts = data || {};
+        // 檢查數據結構並輸出調試信息
+        console.log('獲取到的博客數據:', data);
+        console.log('系列文章數據:', data.series);
+        
+        // 將完整數據保存到全局變量
+        allPosts = data;
+        
+        // 確保系列數據存在
+        if (!data.series || Object.keys(data.series).length === 0) {
+          console.warn('未檢測到系列文章數據');
+        }
         
         // 初始化標籤雲、熱門文章和系列文章
         initializeTagCloud(data.tags || []);
@@ -390,26 +400,47 @@ document.addEventListener('DOMContentLoaded', function() {
    * @param {Object} series 系列文章數據
    */
   function initializeSidebarSeriesList(series) {
-    const sidebarSeriesContainer = document.getElementById('sidebar-series-list-container');
-    if (!sidebarSeriesContainer) return;
+    console.log('初始化系列文章側邊欄，數據:', series);
     
-    // 如果沒有系列文章，隱藏整個區域
-    if (!series || Object.keys(series).length === 0) {
-      const seriesSection = document.querySelector('.series-sidebar-section');
-      if (seriesSection) seriesSection.style.display = 'none';
+    const sidebarSeriesContainer = document.getElementById('sidebar-series-list-container');
+    if (!sidebarSeriesContainer) {
+      console.error('無法找到系列文章容器元素 (sidebar-series-list-container)');
       return;
     }
     
-    // 顯示側邊欄系列區域
-    const seriesSection = document.querySelector('.series-sidebar-section');
-    if (seriesSection) seriesSection.style.display = 'block';
+    // 檢查系列數據
+    if (!series || Object.keys(series).length === 0) {
+      console.warn('沒有系列文章數據可顯示');
+      
+      // 獲取系列區塊並隱藏
+      const seriesSection = document.querySelector('.series-sidebar-section');
+      if (seriesSection) {
+        seriesSection.style.display = 'none';
+        console.log('已隱藏系列文章區塊');
+      }
+      return;
+    }
     
-    // 生成側邊欄系列列表HTML
+    // 確保系列區塊顯示
+    const seriesSection = document.querySelector('.series-sidebar-section');
+    if (seriesSection) {
+      seriesSection.style.display = 'block';
+      console.log('顯示系列文章區塊');
+    }
+    
+    // 生成系列文章 HTML
     let seriesHTML = '';
+    let seriesCount = 0;
     
     // 遍歷所有系列
     for (const [seriesName, seriesPosts] of Object.entries(series)) {
-      if (!seriesPosts || seriesPosts.length === 0) continue;
+      if (!seriesPosts || seriesPosts.length === 0) {
+        console.warn(`系列 "${seriesName}" 沒有文章，跳過`);
+        continue;
+      }
+      
+      seriesCount++;
+      console.log(`處理系列: ${seriesName}，共 ${seriesPosts.length} 篇文章`);
       
       // 使用第一篇文章的圖片作為系列代表
       const firstPost = seriesPosts[0];
@@ -428,6 +459,17 @@ document.addEventListener('DOMContentLoaded', function() {
       `;
     }
     
+    // 檢查是否有系列文章被處理
+    if (seriesCount === 0) {
+      console.warn('沒有有效的系列文章可顯示');
+      
+      // 顯示沒有系列文章的提示
+      sidebarSeriesContainer.innerHTML = '<div class="no-series-message">目前沒有系列文章</div>';
+      return;
+    }
+    
+    // 更新 DOM
+    console.log(`更新系列文章容器，共 ${seriesCount} 個系列`);
     sidebarSeriesContainer.innerHTML = seriesHTML;
     
     // 添加點擊事件
@@ -435,6 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
     seriesCards.forEach(card => {
       card.addEventListener('click', function() {
         const seriesName = this.dataset.series;
+        console.log(`選擇系列: ${seriesName}`);
         filterBySeriesName(seriesName);
       });
     });
