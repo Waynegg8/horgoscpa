@@ -16,6 +16,7 @@ import base64
 import requests
 import jieba
 import math
+import shutil
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Set, Tuple
 from collections import Counter, defaultdict
@@ -72,21 +73,28 @@ def get_file_content(path: str) -> Optional[str]:
     :return: 檔案內容 (如果存在)
     """
     try:
-        headers = {
-            "Authorization": f"token {GITHUB_TOKEN}",
-            "Accept": "application/vnd.github.v3+json"
-        }
+        if os.path.exists(path):
+            # 如果文件存在於本地，直接讀取
+            with open(path, 'r', encoding='utf-8') as f:
+                return f.read()
         
-        response = requests.get(
-            f"{GITHUB_API_URL}/contents/{path}",
-            headers=headers
-        )
-        
-        if response.status_code == 200:
-            content = response.json()
-            if content.get("type") == "file":
-                file_content = base64.b64decode(content["content"]).decode("utf-8")
-                return file_content
+        # 否則嘗試從GitHub獲取
+        if GITHUB_TOKEN:
+            headers = {
+                "Authorization": f"token {GITHUB_TOKEN}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            
+            response = requests.get(
+                f"{GITHUB_API_URL}/contents/{path}",
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                content = response.json()
+                if content.get("type") == "file":
+                    file_content = base64.b64decode(content["content"]).decode("utf-8")
+                    return file_content
         return None
     except Exception as e:
         print(f"獲取文件內容時發生錯誤 ({path}): {str(e)}")
@@ -99,18 +107,25 @@ def get_directory_contents(path: str) -> List[Dict[str, Any]]:
     :return: 目錄內容列表
     """
     try:
-        headers = {
-            "Authorization": f"token {GITHUB_TOKEN}",
-            "Accept": "application/vnd.github.v3+json"
-        }
+        # 如果目錄存在於本地，直接列出文件
+        if os.path.exists(path) and os.path.isdir(path):
+            return [{"name": f, "type": "file" if os.path.isfile(os.path.join(path, f)) else "dir"} 
+                   for f in os.listdir(path)]
         
-        response = requests.get(
-            f"{GITHUB_API_URL}/contents/{path}",
-            headers=headers
-        )
-        
-        if response.status_code == 200:
-            return response.json()
+        # 否則嘗試從GitHub獲取
+        if GITHUB_TOKEN:
+            headers = {
+                "Authorization": f"token {GITHUB_TOKEN}",
+                "Accept": "application/vnd.github.v3+json"
+            }
+            
+            response = requests.get(
+                f"{GITHUB_API_URL}/contents/{path}",
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                return response.json()
         return []
     except Exception as e:
         print(f"獲取目錄內容時發生錯誤 ({path}): {str(e)}")
@@ -124,6 +139,21 @@ def update_github_file(path: str, content: str, message: str) -> bool:
     :param message: 提交訊息
     :return: 是否成功
     """
+    if not GITHUB_TOKEN:
+        print(f"警告: 未設定 GH_PAT 環境變數，無法更新GitHub檔案: {path}")
+        
+        # 如果文件存在於本地，直接更新本地文件
+        local_path = os.path.join(PROJECT_ROOT, path)
+        try:
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            print(f"已更新本地文件: {local_path}")
+            return True
+        except Exception as e:
+            print(f"更新本地文件時發生錯誤: {str(e)}")
+            return False
+    
     try:
         headers = {
             "Authorization": f"token {GITHUB_TOKEN}",
@@ -140,6 +170,12 @@ def update_github_file(path: str, content: str, message: str) -> bool:
         if response.status_code == 200:
             current_file = response.json()
             sha = current_file["sha"]
+        elif response.status_code == 404:
+            print(f"文件不存在，將創建新文件: {path}")
+        else:
+            print(f"獲取檔案SHA失敗 ({path}): HTTP {response.status_code}")
+            if response.text:
+                print(f"回應內容: {response.text[:200]}...")
             
         # 準備更新數據
         update_data = {
@@ -157,7 +193,13 @@ def update_github_file(path: str, content: str, message: str) -> bool:
             json=update_data
         )
         
-        return response.status_code in [200, 201]
+        success = response.status_code in [200, 201]
+        if not success:
+            print(f"更新GitHub檔案失敗 ({path}): HTTP {response.status_code}")
+            if response.text:
+                print(f"回應內容: {response.text[:200]}...")
+            
+        return success
     except Exception as e:
         print(f"更新文件時發生錯誤 ({path}): {str(e)}")
         return False
@@ -294,7 +336,7 @@ def detect_category_in_html(html_content: str) -> str:
 
 def create_english_url(title: str, date: str, is_series: bool, series_name: str = None, episode: int = None) -> str:
     """
-    創建完全英文的URL
+    創建完全英文的URL (僅用於URL而非檔名)
     """
     # 轉換標題為英文
     english_title = fully_translate_to_english(title)
@@ -609,18 +651,15 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
                 if keyword in text_for_keywords and len(tags) < 3:
                     tags.append(keyword)
     
-    # 生成英文URL (新增功能)
+    # 生成英文URL (注意：這只影響URL，不影響檔名)
     english_url = create_english_url(title, date, is_series, series_name, episode) if is_series else create_english_url(title, date, False)
-    
-    # 使用相對路徑指向原始中文檔名 (仍然保留原本風格的路徑)
-    file_url = f"/blog/{filename}"
     
     # 構建結果字典
     result = {
         "title": title,
         "date": date,
         "summary": summary,
-        "url": english_url,  # 使用英文URL而非原始文件路徑
+        "url": english_url,  # 使用英文URL (僅用於URL路徑)
         "image": image,
         "category": category_code,
         "tags": tags
@@ -634,32 +673,34 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     
     return result
 
-def standardize_filename(filename: str, post_info: Dict[str, Any]) -> str:
+def verify_filename_format(filename: str) -> bool:
     """
-    標準化文件名 - 修改為保留中文
-    :param filename: 原始文件名
-    :param post_info: 文章信息
-    :return: 標準化後的中文文件名
+    驗證文件名格式是否正確
+    :param filename: 文件名
+    :return: 是否符合格式
     """
-    # 取得基本信息
-    date = post_info["date"]
-    title = post_info["title"]
+    # 檢查是否有日期部分
+    date_match = re.search(r'^\d{4}-\d{2}-\d{2}-', filename)
+    if not date_match:
+        print(f"檔名格式不正確（缺少日期前綴）: {filename}")
+        return False
     
-    # 不進行轉換，保留中文標題
-    # 移除不能作為檔名的字符
-    title_for_filename = re.sub(r'[\\/:*?"<>|]', '', title)
+    # 檢查是否有HTML副檔名
+    if not filename.lower().endswith('.html'):
+        print(f"檔名格式不正確（非HTML檔案）: {filename}")
+        return False
     
-    # 如果是系列文章
-    if post_info.get("is_series"):
-        series_name = post_info["series_name"]
-        episode = post_info["episode"]
-        # 格式: YYYY-MM-DD-系列名稱EP編號-標題.html
-        new_filename = f"{date}-{series_name}EP{episode}-{title_for_filename}.html"
-    else:
-        # 格式: YYYY-MM-DD-標題.html
-        new_filename = f"{date}-{title_for_filename}.html"
+    # 檢查系列文章格式
+    series_match = re.search(r'-(.+)EP(\d+)-', filename)
+    if series_match:
+        # 確認系列名稱和集數
+        series_name = series_match.group(1)
+        episode = series_match.group(2)
+        if not series_name or not episode:
+            print(f"系列文章格式不正確: {filename}")
+            return False
     
-    return new_filename
+    return True
 
 def parse_date(date_str: str) -> datetime.datetime:
     """
@@ -702,11 +743,25 @@ def save_processed_files(processed_files: Dict[str, str]) -> bool:
     """
     try:
         content = json.dumps(processed_files, ensure_ascii=False, indent=2)
-        return update_github_file(
-            PROCESSED_FILES_RECORD,
-            content,
-            "更新已處理文件記錄"
-        )
+        
+        # 先保存到本地
+        local_path = PROCESSED_FILES_RECORD
+        try:
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            print(f"已保存本地處理記錄: {local_path}")
+        except Exception as e:
+            print(f"保存本地處理記錄時出錯: {str(e)}")
+        
+        # 嘗試更新GitHub
+        if GITHUB_TOKEN:
+            return update_github_file(
+                PROCESSED_FILES_RECORD,
+                content,
+                "更新已處理文件記錄"
+            )
+        return True
     except Exception as e:
         print(f"保存已處理文件記錄時發生錯誤: {str(e)}")
         return False
@@ -755,30 +810,21 @@ def group_series_posts(posts: List[Dict[str, Any]]) -> Dict[str, Any]:
         "non_series_posts": non_series_posts
     }
 
-def rename_file_if_needed(old_path: str, new_path: str) -> bool:
+def load_or_create_json(json_path, default_data):
     """
-    如果需要，重命名文件
-    :param old_path: 舊文件路徑
-    :param new_path: 新文件路徑
-    :return: 是否重命名成功
+    載入JSON檔案，如果不存在則創建
+    :param json_path: JSON檔案路徑
+    :param default_data: 預設數據
+    :return: 載入的數據
     """
-    if old_path != new_path and os.path.exists(old_path):
-        try:
-            # 確保目標目錄存在
-            os.makedirs(os.path.dirname(new_path), exist_ok=True)
-            
-            # 如果目標文件已存在，先刪除
-            if os.path.exists(new_path):
-                os.remove(new_path)
-            
-            # 重命名文件
-            os.rename(old_path, new_path)
-            print(f"重命名文件: {old_path} -> {new_path}")
-            return True
-        except Exception as e:
-            print(f"重命名文件時出錯: {str(e)}")
-            return False
-    return True  # 不需要重命名
+    try:
+        if os.path.exists(json_path):
+            with open(json_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        return default_data
+    except Exception as e:
+        print(f"載入JSON檔案時出錯 ({json_path}): {str(e)}")
+        return default_data
 
 def main():
     """主函數"""
@@ -796,8 +842,8 @@ def main():
     
     # 檢查目錄是否存在
     if not os.path.exists(BLOG_DIR):
-        print(f"錯誤: 目錄 {BLOG_DIR} 不存在")
-        return
+        os.makedirs(BLOG_DIR, exist_ok=True)
+        print(f"創建目錄: {BLOG_DIR}")
     
     # 獲取部落格目錄內容
     try:
@@ -838,10 +884,10 @@ def main():
         
         if not html_files:
             print(f"在 {BLOG_DIR} 目錄中未找到 HTML 文件")
-            return
+            # 不要提前返回，嘗試處理或創建 JSON
     except Exception as e:
         print(f"獲取部落格目錄內容時發生錯誤: {str(e)}")
-        return
+        html_files = []  # 設置為空列表，繼續處理
     
     # 加載已處理文件記錄
     processed_files = load_processed_files()
@@ -871,52 +917,21 @@ def main():
         save_processed_files(processed_files)
     
     posts = []
-    renamed_files = []
-    
-    # 檢查並修復不一致的檔案名稱
-    for filename in html_files:
-        file_path = os.path.join(BLOG_DIR, filename)
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                file_content = f.read()
-            post_info = extract_post_info(file_content, filename)
-            new_filename = standardize_filename(filename, post_info)
-            if new_filename != filename:
-                old_path = os.path.join(BLOG_DIR, filename)
-                new_path = os.path.join(BLOG_DIR, new_filename)
-                if rename_file_if_needed(old_path, new_path):
-                    print(f"修復檔案名稱: {filename} -> {new_filename}")
-                    renamed_files.append((old_path, new_path))
-                    # 更新處理記錄
-                    processed_files[new_filename] = processed_files.get(filename, {})
-                    processed_files.pop(filename, None)
-                    filename = new_filename
-        except Exception as e:
-            print(f"檢查檔案 {filename} 時出錯: {str(e)}")
     
     # 處理每個 HTML 文件
     for filename in html_files:
+        # 驗證檔名格式
+        if not verify_filename_format(filename):
+            print(f"跳過格式不正確的檔案: {filename}")
+            continue
+            
         # 檢查文件是否已處理過並且沒有變化
         if filename in processed_files:
             # 如果文件沒有變化，使用已保存的信息
             print(f"文件 {filename} 未變更，使用已保存的信息")
             post_info = processed_files[filename].get("info", {})
             if post_info:
-                # 檢查文件名是否需要標準化
-                new_filename = standardize_filename(filename, post_info)
-                old_path = os.path.join(BLOG_DIR, filename)
-                new_path = os.path.join(BLOG_DIR, new_filename)
-                
-                # 如果需要重命名
-                if new_filename != filename:
-                    if rename_file_if_needed(old_path, new_path):
-                        # 更新記錄和文件名
-                        processed_files[new_filename] = processed_files[filename]
-                        processed_files.pop(filename, None)
-                        filename = new_filename
-                        renamed_files.append((old_path, new_path))
-                        
-                # 重新生成英文URL (確保即使對已處理文件也生成正確的英文URL)
+                # 更新生成英文URL (確保即使對已處理文件也生成正確的英文URL)
                 if post_info.get("is_series"):
                     post_info["url"] = create_english_url(
                         post_info["title"], 
@@ -938,23 +953,18 @@ def main():
         # 如果文件有變化或未處理過，重新提取信息
         file_path = os.path.join(BLOG_DIR, filename)
         try:
+            # 檢查文件是否存在
+            if not os.path.exists(file_path):
+                print(f"警告: 文件不存在: {file_path}")
+                continue
+                
             with open(file_path, 'r', encoding='utf-8') as f:
                 file_content = f.read()
                 
+            # 提取文章信息
             post_info = extract_post_info(file_content, filename)
             
-            # 檢查文件名是否需要標準化
-            new_filename = standardize_filename(filename, post_info)
-            old_path = os.path.join(BLOG_DIR, filename)
-            new_path = os.path.join(BLOG_DIR, new_filename)
-            
-            # 如果需要重命名
-            if new_filename != filename:
-                if rename_file_if_needed(old_path, new_path):
-                    # 更新文件名
-                    filename = new_filename
-                    renamed_files.append((old_path, new_path))
-            
+            # 添加到文章列表
             posts.append(post_info)
             
             # 更新處理記錄
@@ -976,6 +986,8 @@ def main():
             print(f"  英文URL: {post_info['url']}")
         except Exception as e:
             print(f"處理文件 {filename} 時出錯: {str(e)}")
+            import traceback
+            traceback.print_exc()
     
     # 保存已處理文件記錄
     save_processed_files(processed_files)
@@ -1000,7 +1012,7 @@ def main():
     print(f"非系列文章數: {len(non_series_posts)} 篇")
     
     # 獲取最新的3篇文章用於首頁顯示
-    latest_posts = filtered_posts[:3]
+    latest_posts = filtered_posts[:3] if filtered_posts else []
     
     # 生成分頁信息
     total_posts = len(filtered_posts)
@@ -1015,63 +1027,66 @@ def main():
             "total_pages": total_pages,
             "items_per_page": ITEMS_PER_PAGE
         },
-        "categories": list(set(post["category"] for post in filtered_posts)),
-        "tags": list(set(tag for post in filtered_posts for tag in post["tags"]))
+        "categories": list(set(post["category"] for post in filtered_posts)) if filtered_posts else [],
+        "tags": list(set(tag for post in filtered_posts for tag in post["tags"])) if filtered_posts else []
     }
     
-    # 檢查目前的完整JSON文件是否存在
-    if os.path.exists(JSON_PATH):
-        try:
-            with open(JSON_PATH, 'r', encoding='utf-8') as f:
-                current_full_data = json.load(f)
-            print(f"現有JSON文件中有 {len(current_full_data.get('posts', []))} 篇文章")
-        except Exception as e:
-            print(f"讀取現有JSON文件時出錯: {str(e)}")
-            current_full_data = {"posts": []}
-    else:
-        current_full_data = {"posts": []}
+    # 加載現有JSON文件或創建新的
+    current_full_data = load_or_create_json(JSON_PATH, {"posts": []})
     
-    # 檢查完整文章數據是否有變更
+    # 始終更新JSON文件
     try:
-        current_posts = current_full_data.get("posts", [])
-        if len(filtered_posts) != len(current_posts) or len(renamed_files) > 0:
-            # 更新完整文章JSON文件
-            with open(JSON_PATH, 'w', encoding='utf-8') as f:
-                json.dump(full_data, f, ensure_ascii=False, indent=2)
-            
-            print(f"成功更新完整文章數據: {JSON_PATH}")
-            print(f"總文章數: {total_posts}, 總頁數: {total_pages}")
-        else:
-            print("完整文章數據無需更新")
+        print(f"更新JSON檔案: {JSON_PATH}")
+        # 確保目錄存在
+        os.makedirs(os.path.dirname(JSON_PATH), exist_ok=True)
+        
+        # 寫入本地文件
+        with open(JSON_PATH, 'w', encoding='utf-8') as f:
+            json.dump(full_data, f, ensure_ascii=False, indent=2)
+        
+        print(f"成功更新本地完整文章數據: {JSON_PATH}")
+        print(f"總文章數: {total_posts}, 總頁數: {total_pages}")
+        
+        # 如果有GitHub Token，也更新到GitHub
+        if GITHUB_TOKEN:
+            success = update_github_file(
+                "assets/data/blog-posts.json",
+                json.dumps(full_data, ensure_ascii=False, indent=2),
+                "更新部落格文章JSON數據"
+            )
+            print(f"GitHub更新結果: {'成功' if success else '失敗'}")
     except Exception as e:
         print(f"更新完整文章數據時出錯: {str(e)}")
+        import traceback
+        traceback.print_exc()
     
-    # 檢查最新文章JSON文件是否存在
-    if os.path.exists(LATEST_POSTS_PATH):
-        try:
-            with open(LATEST_POSTS_PATH, 'r', encoding='utf-8') as f:
-                current_latest_posts = json.load(f)
-        except Exception as e:
-            print(f"讀取最新文章JSON時出錯: {str(e)}")
-            current_latest_posts = []
-    else:
-        current_latest_posts = []
-    
-    # 檢查最新文章是否有變更
+    # 更新最新文章JSON文件
     try:
-        if len(latest_posts) != len(current_latest_posts) or len(renamed_files) > 0:
-            # 更新最新文章JSON文件
-            with open(LATEST_POSTS_PATH, 'w', encoding='utf-8') as f:
-                json.dump(latest_posts, f, ensure_ascii=False, indent=2)
-            
-            print(f"成功更新最新文章數據: {LATEST_POSTS_PATH}")
-            print("最新文章:")
-            for i, post in enumerate(latest_posts, 1):
-                print(f"{i}. {post['title']} ({post['date']})")
-        else:
-            print("最新文章數據無需更新")
+        print(f"更新最新文章JSON: {LATEST_POSTS_PATH}")
+        # 確保目錄存在
+        os.makedirs(os.path.dirname(LATEST_POSTS_PATH), exist_ok=True)
+        
+        # 寫入本地文件
+        with open(LATEST_POSTS_PATH, 'w', encoding='utf-8') as f:
+            json.dump(latest_posts, f, ensure_ascii=False, indent=2)
+        
+        print(f"成功更新本地最新文章數據: {LATEST_POSTS_PATH}")
+        print("最新文章:")
+        for i, post in enumerate(latest_posts, 1):
+            print(f"{i}. {post['title']} ({post['date']})")
+        
+        # 如果有GitHub Token，也更新到GitHub
+        if GITHUB_TOKEN:
+            success = update_github_file(
+                "assets/data/latest-posts.json",
+                json.dumps(latest_posts, ensure_ascii=False, indent=2),
+                "更新最新文章JSON數據"
+            )
+            print(f"GitHub更新結果: {'成功' if success else '失敗'}")
     except Exception as e:
         print(f"更新最新文章數據時出錯: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     # 檢查是否有 --publish-scheduled 參數
@@ -1080,6 +1095,6 @@ if __name__ == "__main__":
         print("執行自動發布排定文章模式")
     
     if not GITHUB_TOKEN:
-        print("錯誤: 未設定 GH_PAT 環境變數")
-        print("本地執行時會跳過GitHub API相關操作")
+        print("警告: 未設定 GH_PAT 環境變數")
+        print("本地執行時會跳過GitHub API相關操作，僅更新本地文件")
     main()

@@ -563,7 +563,7 @@ def extract_article_structure(html_content: str) -> Dict:
         if elem.parent and elem.parent.name in ['td', 'li']:
             continue
         
-        # 處理特定/rpc/llm/llm_worker.py類型的元素
+        # 處理特定類型的元素
         if elem.name.startswith('h'):
             level = int(elem.name[1])
             elem_text = elem.get_text().strip()
@@ -612,11 +612,12 @@ def extract_article_structure(html_content: str) -> Dict:
     
     return result
 
-def generate_article_html(article_structure: Dict, date: str) -> str:
+def generate_article_html(article_structure: Dict, date: str, english_url: str) -> str:
     """
     根據文章結構生成HTML
     :param article_structure: 文章結構
     :param date: 發布日期
+    :param english_url: 英文URL (用於SEO)
     :return: HTML字符串
     """
     logger.info(f"開始生成文章HTML，日期: {date}")
@@ -730,10 +731,8 @@ def generate_article_html(article_structure: Dict, date: str) -> str:
     # 選擇文章圖片 - 隨機選擇
     image_path = select_random_image(category_code)
     
-    # 生成SEO友好的URL
-    slug = slugify(title)
-    file_name = f"{date}-{slug}.html"
-    relative_url = f"/blog/{file_name}"
+    # 使用英文URL（用於SEO）
+    relative_url = english_url
     
     # 生成HTML模板
     template = f"""<!DOCTYPE html>
@@ -1149,13 +1148,22 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
         # 5. 提取文章結構
         article_structure = extract_article_structure(cleaned_html)
         
-        # 6. 生成最終HTML
-        final_html = generate_article_html(article_structure, date)
-        
-        # 7. 生成文件名 (基於文章標題)
+        # 6. 生成檔名
         word_title = article_structure['title']
-        slug = slugify(word_title, TRANSLATION_DICT)
-        html_filename = f"{date}-{slug}.html"
+        
+        # 為 URL 生成英文 slug（僅用於 HTML 內容中的 URL）
+        english_slug = slugify(word_title, TRANSLATION_DICT)
+        english_url = f"/blog/{date}-{english_slug}.html"
+        
+        # 為檔名保留中文標題（清理不允許的檔名字符）
+        chinese_filename = re.sub(r'[\\/:*?"<>|]', '', word_title)
+        html_filename = f"{date}-{chinese_filename}.html"
+        
+        logger.info(f"生成中文檔名: {html_filename}")
+        logger.info(f"生成英文URL: {english_url}")
+        
+        # 7. 生成最終HTML
+        final_html = generate_article_html(article_structure, date, english_url)
         
         # 8. 寫入文件
         output_path = os.path.join(output_dir, html_filename)
@@ -1172,6 +1180,7 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
             'output_file': html_filename,
             'original_filename': filename,
             'title': article_structure['title'],
+            'english_url': english_url,  # 保存英文URL
             'metadata': {
                 'date': date,
                 'summary': article_structure['summary']
