@@ -1,24 +1,9 @@
 [
   {
-    "title": "小規模營利事業規定與短漏報處理",
-    "date": "2025-05-06",
-    "summary": "在營利事業所得稅結算申報中，小規模營利事業與免用統一發票業者具有特殊的申報規定，同時短漏報情形的處理也有明確的規範。本文將基於一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點，詳細說明小規模營利事業的申報特殊規定、短漏報的補稅處罰方式，以及獨資合夥組織的稅務處理特點，幫助相關營利事業正確申報所得稅，避免不必要的稅務爭議。",
-    "url": "/blog/2025-05-06-term-term-term-term-term-term-term.html",
-    "image": "/assets/images/blog/tax_1.jpg",
-    "category": "tax",
-    "tags": [
-      "營利事業",
-      "規定",
-      "處理",
-      "申報",
-      "審核"
-    ]
-  },
-  {
     "title": "房地合一稅2.0制度概覽",
     "date": "2025-05-06",
     "summary": "房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
-    "url": "/blog/2025-05-06-house-land-tax-2.0-system-overview.html",
+    "url": "/blog/2025-05-06-house-land-tax-2.0-ep1-term-term-term-term-term-2-.-0-term-term-term-term.html",
     "image": "/assets/images/blog/tax_1.jpg",
     "category": "tax",
     "tags": [
@@ -27,13 +12,36 @@
       "交易",
       "房地",
       "不動產"
-    ]
+    ],
+    "is_series": true,
+    "series_name": "房地合一稅2.0",
+    "episode": 1,
+    "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx"
+  },
+  {
+    "title": "小規模營利事業規定與短漏報處理",
+    "date": "2025-05-06",
+    "summary": "在營利事業所得稅結算申報中，小規模營利事業與免用統一發票業者具有特殊的申報規定，同時短漏報情形的處理也有明確的規範。本文將基於一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點，詳細說明小規模營利事業的申報特殊規定、短漏報的補稅處罰方式，以及獨資合夥組織的稅務處理特點，幫助相關營利事業正確申報所得稅，避免不必要的稅務爭議。",
+    "url": "/blog/2025-05-06-business-income-tax-expanded-written-review-analysis-ep4-term-term-term-term-term-term-term-term-term-term-term-term-term-term-term.html",
+    "image": "/assets/images/blog/tax_1.jpg",
+    "category": "tax",
+    "tags": [
+      "營利事業",
+      "規定",
+      "處理",
+      "申報",
+      "審核"
+    ],
+    "is_series": true,
+    "series_name": "營所稅擴大書面審核解析",
+    "episode": 4,
+    "original_filename": "2025-05-06-營所稅擴大書面審核解析EP4-小規模營利事業規定與短漏報處理.docx"
   },
   {
     "title": "不適用案件類型與特殊情況處理",
     "date": "2025-05-04",
     "summary": "擴大書面審核制度為符合條件的營利事業提供了簡化申報程序的便利，但並非所有營利事業都適用此制度。財政部在一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點中，明確規定了不適用擴大書面審核的案件類型及特殊情況。本文將詳細解析這些不適用情況，同時說明土地及不動產交易的特殊處理方式，幫助營利事業了解自身是否符合擴大書面審核的條件。",
-    "url": "/blog/2025-05-04-term-term-term-term-term-term-term-term.html",
+    "url": "/blog/2025-05-04-business-income-tax-expanded-written-review-analysis-ep3-term-term-term-term-term-term-term-term-term-term-term-term-term-term.html",
     "image": "/assets/images/blog/tax_1.jpg",
     "category": "tax",
     "tags": [
@@ -42,6 +50,10 @@
       "適用",
       "案件",
       "申報"
-    ]
+    ],
+    "is_series": true,
+    "series_name": "營所稅擴大書面審核解析",
+    "episode": 3,
+    "original_filename": "2025-05-04-營所稅擴大書面審核解析EP3-不適用案件類型與特殊情況處理.docx"
   }
 ]
