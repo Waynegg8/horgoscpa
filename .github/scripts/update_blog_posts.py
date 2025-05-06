@@ -292,6 +292,206 @@ def detect_category_in_html(html_content: str) -> str:
     
     return best_category
 
+def create_english_url(title: str, date: str, is_series: bool, series_name: str = None, episode: int = None) -> str:
+    """
+    創建完全英文的URL
+    """
+    # 轉換標題為英文
+    english_title = fully_translate_to_english(title)
+    
+    # 處理系列文章
+    if is_series:
+        english_series_name = fully_translate_to_english(series_name)
+        return f"/blog/{date}-{english_series_name.lower()}-ep{episode}-{english_title.lower()}.html"
+    else:
+        return f"/blog/{date}-{english_title.lower()}.html"
+
+def fully_translate_to_english(text: str) -> str:
+    """
+    將中文文本完全轉換為英文
+    使用擴展詞典和備用方案確保100%轉換
+    """
+    # 原始文本預處理
+    text = text.strip()
+    if not text:
+        return "untitled"
+    
+    # 使用擴充版的詞典進行轉換
+    result = enhanced_slugify(text)
+    
+    # 替換所有非英文字符為連字符
+    result = re.sub(r'[^\x00-\x7F]+', '-', result)
+    
+    # 清理重複的連字符
+    result = re.sub(r'-+', '-', result)
+    
+    # 移除開頭和結尾的連字符
+    result = result.strip('-')
+    
+    # 確保結果不為空
+    if not result:
+        return "untitled"
+    
+    return result
+
+def enhanced_slugify(text: str) -> str:
+    """
+    增強版詞典轉換，確保100%轉換為英文
+    """
+    # 加載主詞典
+    translation_dict = load_translation_dict()
+    
+    # 加載擴展詞典(包含更多詞彙)
+    extended_dict = load_extended_dict()
+    
+    # 合併詞典
+    combined_dict = {**translation_dict, **extended_dict}
+    
+    # 使用jieba分詞
+    jieba.setLogLevel(20)  # 抑制jieba輸出
+    words = list(jieba.cut(text))
+    
+    # 轉換結果
+    result = []
+    for word in words:
+        word = word.strip()
+        if not word:  # 跳過空白詞
+            continue
+            
+        if word in combined_dict:
+            result.append(combined_dict[word])
+        elif len(word.strip()) > 0:
+            # 對於未在詞典中找到的詞，使用通用替代詞
+            # 檢查是否為數字或英文
+            if re.match(r'^[a-zA-Z0-9.]+$', word):
+                result.append(word)
+            else:
+                result.append("term")
+    
+    return "-".join(result)
+
+def load_extended_dict():
+    """
+    加載擴展詞典，包含更多專業詞彙
+    此函數可以從配置文件加載或直接返回詞典
+    """
+    # 這裡可以從額外的詞典文件加載，或者直接定義一個更大的詞典
+    additional_dict = {
+        "概覽": "overview",
+        "制度": "system",
+        "解析": "analysis",
+        "指南": "guide",
+        "完整": "complete",
+        "詳解": "detailed",
+        "策略": "strategy",
+        "實務": "practice",
+        "案例": "case",
+        "分析": "analysis",
+        "入門": "beginner",
+        "專業": "professional",
+        "簡介": "introduction",
+        "介紹": "introduction",
+        "說明": "explanation",
+        "總結": "summary",
+        "基礎": "basic",
+        "進階": "advanced",
+        "常見": "common",
+        "問題": "problems",
+        "解決": "solution",
+        "方案": "solution",
+        "思路": "thinking",
+        "思維": "thinking",
+        "方法": "method",
+        "步驟": "steps",
+        "流程": "process",
+        "技巧": "tips",
+        "攻略": "guide",
+        "全面": "comprehensive",
+        "深度": "depth",
+        "核心": "core",
+        "關鍵": "key",
+        "重點": "key-points",
+        "要點": "key-points",
+        "分享": "sharing",
+        "經驗": "experience",
+        "感想": "thoughts",
+        "回顧": "review",
+        "展望": "outlook",
+        "前景": "prospect",
+        "趨勢": "trend",
+        "發展": "development",
+        "歷史": "history",
+        "變化": "changes",
+        "轉變": "transformation",
+        "創新": "innovation",
+        "變革": "reform",
+        "改革": "reform",
+        "優化": "optimization",
+        "提升": "enhancement",
+        "改進": "improvement",
+        "效率": "efficiency",
+        "品質": "quality",
+        "質量": "quality",
+        "成效": "effectiveness",
+        "結果": "results",
+        "成果": "achievements",
+        "收穫": "gains",
+        "挑戰": "challenges",
+        "困難": "difficulties",
+        "障礙": "obstacles",
+        "瓶頸": "bottleneck",
+        "突破": "breakthrough",
+        "克服": "overcome",
+        "應對": "respond",
+        "管理": "management",
+        "領導": "leadership",
+        "團隊": "team",
+        "合作": "cooperation",
+        "協作": "collaboration",
+        "溝通": "communication",
+        "交流": "exchange",
+        "連接": "connection",
+        "整合": "integration",
+        "融合": "fusion",
+        "結合": "combination",
+        "比較": "comparison",
+        "對比": "contrast",
+        "差異": "difference",
+        "相似": "similarity",
+        "特點": "features",
+        "特性": "characteristics",
+        "屬性": "attributes",
+        "價值": "value",
+        "意義": "significance",
+        "重要性": "importance",
+        "影響": "impact",
+        "效應": "effect",
+        "作用": "function",
+        "功能": "function",
+        "用途": "usage",
+        "應用": "application",
+        "實踐": "practice",
+        "操作": "operation",
+        "執行": "execution",
+        "實現": "implementation",
+        "推廣": "promotion",
+        "普及": "popularization",
+        "推動": "promotion",
+        "促進": "facilitation",
+        "加速": "acceleration",
+        "加強": "strengthening",
+        "強化": "enhancement",
+        "深化": "deepening",
+        "豐富": "enrichment",
+        "完善": "perfect",
+        "精確": "precision",
+        "精準": "accuracy",
+        "準確": "accuracy",
+        "詳細": "detailed"
+    }
+    
+    return additional_dict
+
 def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
     """
     從 HTML 內容中提取文章資訊
@@ -409,15 +609,18 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
                 if keyword in text_for_keywords and len(tags) < 3:
                     tags.append(keyword)
     
-    # 使用相對路徑
-    url = f"/blog/{filename}"
+    # 生成英文URL (新增功能)
+    english_url = create_english_url(title, date, is_series, series_name, episode) if is_series else create_english_url(title, date, False)
+    
+    # 使用相對路徑指向原始中文檔名 (仍然保留原本風格的路徑)
+    file_url = f"/blog/{filename}"
     
     # 構建結果字典
     result = {
         "title": title,
         "date": date,
         "summary": summary,
-        "url": url,
+        "url": english_url,  # 使用英文URL而非原始文件路徑
         "image": image,
         "category": category_code,
         "tags": tags
@@ -430,6 +633,33 @@ def extract_post_info(content: str, filename: str) -> Dict[str, Any]:
         result["episode"] = int(episode)
     
     return result
+
+def standardize_filename(filename: str, post_info: Dict[str, Any]) -> str:
+    """
+    標準化文件名 - 修改為保留中文
+    :param filename: 原始文件名
+    :param post_info: 文章信息
+    :return: 標準化後的中文文件名
+    """
+    # 取得基本信息
+    date = post_info["date"]
+    title = post_info["title"]
+    
+    # 不進行轉換，保留中文標題
+    # 移除不能作為檔名的字符
+    title_for_filename = re.sub(r'[\\/:*?"<>|]', '', title)
+    
+    # 如果是系列文章
+    if post_info.get("is_series"):
+        series_name = post_info["series_name"]
+        episode = post_info["episode"]
+        # 格式: YYYY-MM-DD-系列名稱EP編號-標題.html
+        new_filename = f"{date}-{series_name}EP{episode}-{title_for_filename}.html"
+    else:
+        # 格式: YYYY-MM-DD-標題.html
+        new_filename = f"{date}-{title_for_filename}.html"
+    
+    return new_filename
 
 def parse_date(date_str: str) -> datetime.datetime:
     """
@@ -524,32 +754,6 @@ def group_series_posts(posts: List[Dict[str, Any]]) -> Dict[str, Any]:
         "series_posts": dict(series_posts),
         "non_series_posts": non_series_posts
     }
-
-def standardize_filename(filename: str, post_info: Dict[str, Any]) -> str:
-    """
-    標準化文件名
-    :param filename: 原始文件名
-    :param post_info: 文章信息
-    :return: 標準化後的文件名
-    """
-    # 取得基本信息
-    date = post_info["date"]
-    title = post_info["title"]
-    
-    # 將標題轉換為URL友好的格式
-    title_slug = slugify(title)
-    
-    # 如果是系列文章
-    if post_info.get("is_series"):
-        series_name = post_info["series_name"]
-        episode = post_info["episode"]
-        # 格式: YYYY-MM-DD-系列名稱EP編號-標題.html
-        new_filename = f"{date}-{slugify(series_name)}EP{episode}-{title_slug}.html"
-    else:
-        # 格式: YYYY-MM-DD-標題.html
-        new_filename = f"{date}-{title_slug}.html"
-    
-    return new_filename
 
 def rename_file_if_needed(old_path: str, new_path: str) -> bool:
     """
@@ -712,8 +916,21 @@ def main():
                         filename = new_filename
                         renamed_files.append((old_path, new_path))
                         
-                        # 更新URL
-                        post_info["url"] = f"/blog/{new_filename}"
+                # 重新生成英文URL (確保即使對已處理文件也生成正確的英文URL)
+                if post_info.get("is_series"):
+                    post_info["url"] = create_english_url(
+                        post_info["title"], 
+                        post_info["date"], 
+                        True, 
+                        post_info["series_name"], 
+                        post_info["episode"]
+                    )
+                else:
+                    post_info["url"] = create_english_url(
+                        post_info["title"], 
+                        post_info["date"], 
+                        False
+                    )
                 
                 posts.append(post_info)
                 continue
@@ -737,9 +954,6 @@ def main():
                     # 更新文件名
                     filename = new_filename
                     renamed_files.append((old_path, new_path))
-                    
-                    # 更新URL
-                    post_info["url"] = f"/blog/{new_filename}"
             
             posts.append(post_info)
             
@@ -759,6 +973,7 @@ def main():
             print(f"  摘要: {post_info['summary'][:50]}...")
             print(f"  圖片: {post_info['image']}")
             print(f"  標籤: {', '.join(post_info['tags'])}")
+            print(f"  英文URL: {post_info['url']}")
         except Exception as e:
             print(f"處理文件 {filename} 時出錯: {str(e)}")
     

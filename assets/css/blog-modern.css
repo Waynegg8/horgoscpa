@@ -584,111 +584,66 @@
   box-shadow: 0 3px 10px rgba(0, 102, 204, 0.15);
 }
 
-/* 系列文章區塊樣式 */
-.series-section {
-  background-color: #f8f9fa;
-  padding: 60px 0;
-  margin-bottom: 40px;
+/* 側邊欄系列文章區域 - 新增 */
+.sidebar-series-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.section-title {
-  text-align: center;
-  margin-bottom: 40px;
-  color: #002147;
-  font-size: 2.2rem;
-  position: relative;
-}
-
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: -15px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 4px;
-  background: linear-gradient(to right, #0066cc, rgba(0, 102, 204, 0.3));
-  border-radius: 2px;
-}
-
-.series-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 30px;
-  margin-top: 30px;
-}
-
-.series-card {
+.sidebar-series-card {
   background-color: white;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  opacity: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 }
 
-.series-card.animated {
-  animation: fadeInUp 0.7s forwards;
+.sidebar-series-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-.series-card:nth-child(2).animated { animation-delay: 0.1s; }
-.series-card:nth-child(3).animated { animation-delay: 0.2s; }
-.series-card:nth-child(4).animated { animation-delay: 0.3s; }
-.series-card:nth-child(5).animated { animation-delay: 0.4s; }
-
-.series-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-}
-
-.series-image {
-  height: 180px;
+.sidebar-series-image {
+  flex: 0 0 60px;
+  height: 60px;
   overflow: hidden;
 }
 
-.series-image img {
+.sidebar-series-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.5s ease;
 }
 
-.series-card:hover .series-image img {
+.sidebar-series-card:hover .sidebar-series-image img {
   transform: scale(1.1);
 }
 
-.series-content {
-  padding: 25px;
-  text-align: center;
+.sidebar-series-content {
+  padding: 10px;
+  flex-grow: 1;
 }
 
-.series-content h3 {
-  margin: 0 0 10px;
+.sidebar-series-content h4 {
+  margin: 0 0 5px;
+  font-size: 0.95rem;
   color: #002147;
-  font-size: 1.4rem;
 }
 
-.series-content p {
+.sidebar-series-content p {
+  margin: 0;
+  font-size: 0.8rem;
   color: #666;
-  margin-bottom: 20px;
 }
 
-.view-series-btn {
-  display: inline-block;
-  padding: 10px 20px;
-  background-color: #0066cc;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.view-series-btn:hover {
-  background-color: #004d99;
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 102, 204, 0.2);
+/* 系列文章區塊樣式 - 修改為隱藏 */
+.series-section {
+  display: none;
 }
 
 /* 分頁控制優化 */

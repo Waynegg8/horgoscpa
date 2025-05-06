@@ -393,22 +393,65 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
-   * 初始化系列文章列表
+   * 初始化系列文章列表 - 改進版
    * @param {Object} series 系列文章數據
    */
   function initializeSeriesList(series) {
-    if (!seriesListContainer) return;
+    // 原有的系列文章區塊初始化代碼 - 現在隱藏
+    if (seriesListContainer) {
+      // 如果沒有系列文章，隱藏整個區域
+      if (!series || Object.keys(series).length === 0) {
+        if (seriesSection) seriesSection.style.display = 'none';
+        return;
+      }
+      
+      // 顯示系列區域(實際上我們將使用CSS隱藏它)
+      if (seriesSection) seriesSection.style.display = 'block';
+      
+      // 生成系列列表HTML - 保留原有代碼以維持兼容性
+      let seriesHTML = '';
+      
+      // 遍歷所有系列
+      for (const [seriesName, seriesPosts] of Object.entries(series)) {
+        if (!seriesPosts || seriesPosts.length === 0) continue;
+        
+        // 使用第一篇文章的圖片作為系列代表
+        const firstPost = seriesPosts[0];
+        const seriesImage = firstPost.image || '/assets/images/blog/default.jpg';
+        
+        seriesHTML += `
+          <div class="series-card" data-series="${seriesName}">
+            <div class="series-image">
+              <img src="${seriesImage}" alt="${seriesName}" loading="lazy">
+            </div>
+            <div class="series-content">
+              <h3>${seriesName}</h3>
+              <p>${seriesPosts.length} 篇文章</p>
+              <button class="view-series-btn" data-series="${seriesName}">查看系列</button>
+            </div>
+          </div>
+        `;
+      }
+      
+      seriesListContainer.innerHTML = seriesHTML;
+    }
+    
+    // 新增：側邊欄系列文章初始化
+    const sidebarSeriesContainer = document.getElementById('sidebar-series-list-container');
+    if (!sidebarSeriesContainer) return;
     
     // 如果沒有系列文章，隱藏整個區域
     if (!series || Object.keys(series).length === 0) {
+      const seriesSection = document.querySelector('.series-sidebar-section');
       if (seriesSection) seriesSection.style.display = 'none';
       return;
     }
     
-    // 顯示系列區域
+    // 顯示側邊欄系列區域
+    const seriesSection = document.querySelector('.series-sidebar-section');
     if (seriesSection) seriesSection.style.display = 'block';
     
-    // 生成系列列表HTML
+    // 生成側邊欄系列列表HTML
     let seriesHTML = '';
     
     // 遍歷所有系列
@@ -420,24 +463,32 @@ document.addEventListener('DOMContentLoaded', function() {
       const seriesImage = firstPost.image || '/assets/images/blog/default.jpg';
       
       seriesHTML += `
-        <div class="series-card" data-series="${seriesName}">
-          <div class="series-image">
+        <div class="sidebar-series-card" data-series="${seriesName}">
+          <div class="sidebar-series-image">
             <img src="${seriesImage}" alt="${seriesName}" loading="lazy">
           </div>
-          <div class="series-content">
-            <h3>${seriesName}</h3>
+          <div class="sidebar-series-content">
+            <h4>${seriesName}</h4>
             <p>${seriesPosts.length} 篇文章</p>
-            <button class="view-series-btn" data-series="${seriesName}">查看系列</button>
           </div>
         </div>
       `;
     }
     
-    seriesListContainer.innerHTML = seriesHTML;
+    sidebarSeriesContainer.innerHTML = seriesHTML;
+    
+    // 添加點擊事件
+    const seriesCards = sidebarSeriesContainer.querySelectorAll('.sidebar-series-card');
+    seriesCards.forEach(card => {
+      card.addEventListener('click', function() {
+        const seriesName = this.dataset.series;
+        filterBySeriesName(seriesName);
+      });
+    });
   }
   
   /**
-   * 根據系列名稱過濾文章
+   * 根據系列名稱過濾文章 - 改進版
    * @param {string} seriesName 系列名稱
    */
   function filterBySeriesName(seriesName) {
@@ -472,13 +523,30 @@ document.addEventListener('DOMContentLoaded', function() {
     updateURL();
     filterAndDisplayPosts();
     
-    // 滾動到文章列表頂部
-    if (blogPostsContainer) {
-      window.scrollTo({
-        top: blogPostsContainer.offsetTop - 100,
-        behavior: 'smooth'
-      });
-    }
+    // 改進的捲動邏輯：智能決策是否需要捲動
+    setTimeout(() => {
+      // 找出要捲動到的目標元素
+      const targetElement = (searchResultsContainer && searchResultsContainer.style.display === 'block') 
+        ? searchResultsContainer 
+        : blogPostsContainer;
+      
+      if (targetElement) {
+        const rect = targetElement.getBoundingClientRect();
+        // 檢查目標元素是否在視圖中
+        const isVisible = (
+          rect.top >= 0 &&
+          rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.5
+        );
+        
+        // 只有當目標不在視圖中或位置過高時才捲動
+        if (!isVisible) {
+          window.scrollTo({
+            top: targetElement.offsetTop - 100,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }, 100); // 給予DOM時間更新
   }
   
   /**
