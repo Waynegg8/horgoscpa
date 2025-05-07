@@ -330,7 +330,7 @@ def process_article(html_path: str, output_dir: str) -> Dict:
                 shutil.move(meta_path, new_meta_path)
             
             # 可以選擇是否刪除原HTML文件
-             os.remove(html_path)
+            os.remove(html_path)
         
         logger.info(f"成功處理文章，輸出文件: {output_path}")
         
