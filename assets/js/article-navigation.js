@@ -2,7 +2,7 @@
  * article-navigation.js - 霍爾果斯會計師事務所文章導航腳本
  * 最後更新日期: 2025-05-07
  * 功能: 為文章頁面生成上一篇和下一篇導航，支援系列文章內導航
- * 簡化版：直接從DOM元素取得系列信息
+ * 優化版：完全依賴 meta 標籤獲取系列信息
  */
 document.addEventListener('DOMContentLoaded', function() {
   // 獲取導航按鈕
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const allPosts = data.posts || [];
     
     if (seriesInfo.isSeries) {
-      // 系列文章: 根據系列名稱和集數查找前後文章
+      // 系列文章: 直接根據系列名稱和集數查找前後文章
       handleSeriesArticles(allPosts, data.series, seriesInfo);
     } else {
       // 非系列文章: 根據日期查找前後文章
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * 處理系列文章導航
+     * 處理系列文章導航 - 優化版
      */
     function handleSeriesArticles(posts, seriesData, info) {
       const seriesName = info.seriesName;
@@ -145,16 +145,23 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      console.log(`處理系列文章 "${seriesName}" EP${currentEpisode} 的導航`);
+      console.log(`處理系列文章導航 "${seriesName}" EP${currentEpisode}`);
       
       // 嘗試從series數據中獲取系列文章
       let seriesPosts = [];
       
-      if (seriesData && seriesData[seriesName] && Array.isArray(seriesData[seriesName].posts)) {
-        seriesPosts = seriesData[seriesName].posts;
-        console.log(`從series對象中找到 ${seriesPosts.length} 篇 "${seriesName}" 系列文章`);
-      } else {
-        // 從所有文章中過濾
+      if (seriesData && seriesData[seriesName]) {
+        if (Array.isArray(seriesData[seriesName].posts)) {
+          seriesPosts = seriesData[seriesName].posts;
+          console.log(`從series對象中找到 ${seriesPosts.length} 篇 "${seriesName}" 系列文章`);
+        } else if (Array.isArray(seriesData[seriesName])) {
+          seriesPosts = seriesData[seriesName];
+          console.log(`從series陣列中找到 ${seriesPosts.length} 篇 "${seriesName}" 系列文章`);
+        }
+      }
+      
+      // 如果系列數據中找不到，從所有文章中過濾
+      if (seriesPosts.length === 0) {
         seriesPosts = posts.filter(post => 
           post.is_series && 
           post.series_name === seriesName
@@ -172,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
       seriesPosts.sort((a, b) => parseInt(a.episode) - parseInt(b.episode));
       console.log('系列文章順序:', seriesPosts.map(p => `EP${p.episode}`).join(', '));
       
-      // 直接根據集數查找前一集和後一集，跳過查找當前文章的步驟
+      // 直接根據集數查找前一集和後一集
       prevPost = seriesPosts.find(post => parseInt(post.episode) === currentEpisode - 1);
       nextPost = seriesPosts.find(post => parseInt(post.episode) === currentEpisode + 1);
       
@@ -235,13 +242,13 @@ document.addEventListener('DOMContentLoaded', function() {
      * 處理非系列文章導航
      */
     function handleNonSeriesArticles(posts, info) {
-      if (!info.date) {
-        console.error('找不到文章日期，無法處理非系列文章導航');
+      if (!info.date && !info.title) {
+        console.error('找不到文章日期或標題，無法處理非系列文章導航');
         setDefaultState();
         return;
       }
       
-      console.log(`處理非系列文章的導航 (日期: ${info.date})`);
+      console.log(`處理非系列文章導航 (日期: ${info.date}, 標題: ${info.title})`);
       
       // 按日期排序所有文章
       const sortedPosts = [...posts].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -250,14 +257,22 @@ document.addEventListener('DOMContentLoaded', function() {
       let currentIndex = -1;
       
       if (info.title) {
-        currentIndex = sortedPosts.findIndex(post => 
-          post.date === info.date && 
-          post.title === info.title
-        );
+        // 先嘗試使用標題和日期
+        if (info.date) {
+          currentIndex = sortedPosts.findIndex(post => 
+            post.date === info.date && 
+            post.title === info.title
+          );
+        }
+        
+        // 如果找不到，僅使用標題
+        if (currentIndex === -1) {
+          currentIndex = sortedPosts.findIndex(post => post.title === info.title);
+        }
       }
       
-      // 如果找不到精確匹配，僅使用日期
-      if (currentIndex === -1) {
+      // 如果還找不到，僅使用日期
+      if (currentIndex === -1 && info.date) {
         currentIndex = sortedPosts.findIndex(post => post.date === info.date);
       }
       
@@ -282,32 +297,37 @@ document.addEventListener('DOMContentLoaded', function() {
         // 如果仍然找不到，使用日期比較
         console.log('無法找到當前文章的精確位置，使用日期比較');
         
-        const currentDate = new Date(info.date);
-        
-        // 找出日期比當前文章早的所有文章
-        const earlierPosts = sortedPosts.filter(post => 
-          new Date(post.date) < currentDate
-        );
-        
-        // 找出日期比當前文章晚的所有文章
-        const laterPosts = sortedPosts.filter(post => 
-          new Date(post.date) > currentDate
-        );
-        
-        if (earlierPosts.length > 0) {
-          earlierPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-          nextPost = earlierPosts[0]; // 日期較近的文章作為下一篇
-          // 處理URL
-          nextPost.url = processUrl(nextPost.url);
-          console.log(`根據日期比較找到下一篇: ${nextPost.title}`);
-        }
-        
-        if (laterPosts.length > 0) {
-          laterPosts.sort((a, b) => new Date(a.date) - new Date(b.date));
-          prevPost = laterPosts[0]; // 日期較近的文章作為上一篇
-          // 處理URL
-          prevPost.url = processUrl(prevPost.url);
-          console.log(`根據日期比較找到上一篇: ${prevPost.title}`);
+        if (info.date) {
+          const currentDate = new Date(info.date);
+          
+          // 找出日期比當前文章早的所有文章
+          const earlierPosts = sortedPosts.filter(post => 
+            new Date(post.date) < currentDate
+          );
+          
+          // 找出日期比當前文章晚的所有文章
+          const laterPosts = sortedPosts.filter(post => 
+            new Date(post.date) > currentDate
+          );
+          
+          if (earlierPosts.length > 0) {
+            earlierPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+            nextPost = earlierPosts[0]; // 日期較近的文章作為下一篇
+            // 處理URL
+            nextPost.url = processUrl(nextPost.url);
+            console.log(`根據日期比較找到下一篇: ${nextPost.title}`);
+          }
+          
+          if (laterPosts.length > 0) {
+            laterPosts.sort((a, b) => new Date(a.date) - new Date(b.date));
+            prevPost = laterPosts[0]; // 日期較近的文章作為上一篇
+            // 處理URL
+            prevPost.url = processUrl(prevPost.url);
+            console.log(`根據日期比較找到上一篇: ${prevPost.title}`);
+          }
+        } else {
+          console.error('無法進行日期比較，無法提供文章導航');
+          setDefaultState();
         }
       }
       
