@@ -2,7 +2,7 @@
  * article-navigation.js - 霍爾果斯會計師事務所文章導航腳本
  * 最後更新日期: 2025-05-08
  * 功能: 為文章頁面生成上一篇和下一篇導航，支援系列文章內導航
- * 增強版: 改用文章內容特徵匹配而非URL匹配
+ * 增強版: 忽略URL後綴並強化文章匹配邏輯
  */
 document.addEventListener('DOMContentLoaded', function() {
   // 獲取導航按鈕
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(data => {
       console.log('成功加載文章數據:', data.posts ? data.posts.length : 0, '篇文章');
-      findArticleInData(data, articleInfo);
+      findAndHandleNavigation(data, articleInfo);
     })
     .catch(error => {
       console.error('加載文章數據時出錯:', error);
@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', function() {
       seriesName: null,
       episode: null,
       category: null,
-      tags: []
+      tags: [],
+      currentUrl: window.location.pathname
     };
     
     // 獲取標題
@@ -125,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 從標題或URL嘗試提取系列信息
     const titleSeriesMatch = result.title ? result.title.match(/(.+)[：\s]EP(\d+)/i) : null;
-    const urlSeriesMatch = window.location.pathname.match(/-(ep\d+)($|[.-])/i);
+    const urlSeriesMatch = window.location.pathname.match(/[Ee][Pp](\d+)($|[-.])/i);
     
     if (titleSeriesMatch) {
       result.isSeries = true;
@@ -134,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log(`從標題提取系列信息: ${result.seriesName} EP${result.episode}`);
     } else if (urlSeriesMatch) {
       result.isSeries = true;
-      result.episode = parseInt(urlSeriesMatch[1].replace(/[^\d]/g, ''));
+      result.episode = parseInt(urlSeriesMatch[1]);
       
       // 嘗試從標題推斷系列名稱
       if (result.title) {
@@ -155,9 +156,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
-   * 在數據中查找當前文章並處理導航
+   * 查找並處理文章導航
    */
-  function findArticleInData(data, articleInfo) {
+  function findAndHandleNavigation(data, articleInfo) {
     const allPosts = data.posts || [];
     if (allPosts.length === 0) {
       console.error('文章數據為空');
@@ -165,54 +166,23 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    // 查找最匹配的文章
-    let currentPost = null;
-    let currentIndex = -1;
-    let matchScore = 0;
+    // 1. 嘗試通過URL匹配（忽略後綴）
+    let currentPost = findPostByUrl(allPosts, articleInfo.currentUrl);
     
-    for (let i = 0; i < allPosts.length; i++) {
-      const post = allPosts[i];
-      let score = 0;
-      
-      // 計算匹配分數
-      if (articleInfo.title && post.title && post.title.includes(articleInfo.title)) {
-        score += 5; // 標題包含(不要求完全匹配)
-      }
-      
-      if (articleInfo.date && post.date === articleInfo.date) {
-        score += 3; // 日期匹配
-      }
-      
-      if (articleInfo.isSeries && post.is_series) {
-        score += 1; // 都是系列文章
-        
-        if (articleInfo.seriesName && post.series_name && 
-            (post.series_name.includes(articleInfo.seriesName) || 
-             articleInfo.seriesName.includes(post.series_name))) {
-          score += 3; // 系列名稱相似
-          
-          if (articleInfo.episode && post.episode && 
-              articleInfo.episode === post.episode) {
-            score += 5; // 集數匹配
-          }
-        }
-      }
-      
-      // 如果發現更匹配的文章
-      if (score > matchScore) {
-        matchScore = score;
-        currentPost = post;
-        currentIndex = i;
-      }
+    // 2. 如果URL匹配失敗，嘗試通過特徵匹配
+    if (!currentPost) {
+      currentPost = findPostByFeatures(allPosts, articleInfo);
     }
     
     if (currentPost) {
-      console.log(`找到最匹配的文章: "${currentPost.title}" (匹配分數: ${matchScore})`);
+      console.log(`找到匹配的文章: "${currentPost.title}"`);
       
-      // 處理導航
-      if (articleInfo.isSeries && currentPost.is_series) {
-        handleSeriesNavigation(data, articleInfo, currentPost);
+      // 根據是否為系列文章選擇不同的處理方式
+      if (currentPost.is_series) {
+        handleSeriesNavigation(data, currentPost);
       } else {
+        // 查找當前文章在所有文章中的索引
+        const currentIndex = allPosts.findIndex(post => post.title === currentPost.title && post.date === currentPost.date);
         handleNormalNavigation(allPosts, currentIndex);
       }
     } else {
@@ -222,9 +192,123 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
+   * 通過URL匹配文章（忽略後綴）
+   */
+  function findPostByUrl(posts, currentUrl) {
+    // 移除所有URL後綴進行比較
+    const normalizeUrl = (url) => {
+      return url.replace(/\.[^/.]+$/, ''); // 移除任何後綴，如 .html
+    };
+    
+    const normalizedCurrentUrl = normalizeUrl(currentUrl);
+    
+    // 嘗試直接匹配（忽略後綴）
+    const matchedPost = posts.find(post => normalizeUrl(post.url) === normalizedCurrentUrl);
+    
+    if (matchedPost) {
+      console.log(`通過URL匹配找到文章: ${matchedPost.title}`);
+      return matchedPost;
+    }
+    
+    // 嘗試部分匹配（用於處理URL格式略有差異的情況）
+    const urlParts = normalizedCurrentUrl.split('/');
+    const lastPart = urlParts[urlParts.length - 1];
+    
+    if (lastPart) {
+      const partialMatchedPost = posts.find(post => {
+        const postUrlParts = normalizeUrl(post.url).split('/');
+        const postLastPart = postUrlParts[postUrlParts.length - 1];
+        return postLastPart === lastPart;
+      });
+      
+      if (partialMatchedPost) {
+        console.log(`通過URL部分匹配找到文章: ${partialMatchedPost.title}`);
+        return partialMatchedPost;
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * 通過文章特徵匹配
+   */
+  function findPostByFeatures(posts, articleInfo) {
+    let bestMatch = null;
+    let highestScore = 0;
+    
+    for (const post of posts) {
+      let score = 0;
+      
+      // 標題匹配
+      if (articleInfo.title && post.title) {
+        // 完全匹配
+        if (post.title === articleInfo.title) {
+          score += 10;
+        } 
+        // 部分匹配
+        else if (post.title.includes(articleInfo.title) || articleInfo.title.includes(post.title)) {
+          score += 5;
+        }
+      }
+      
+      // 日期匹配
+      if (articleInfo.date && post.date === articleInfo.date) {
+        score += 3;
+      }
+      
+      // 系列信息匹配
+      if (articleInfo.isSeries && post.is_series) {
+        score += 1;
+        
+        // 系列名稱匹配
+        if (articleInfo.seriesName && post.series_name) {
+          if (post.series_name === articleInfo.seriesName) {
+            score += 4;
+          } else if (post.series_name.includes(articleInfo.seriesName) || 
+                     articleInfo.seriesName.includes(post.series_name)) {
+            score += 2;
+          }
+        }
+        
+        // 集數匹配
+        if (articleInfo.episode && post.episode && articleInfo.episode === post.episode) {
+          score += 5;
+        }
+      }
+      
+      // 分類匹配
+      if (articleInfo.category && post.category && 
+          articleInfo.category.toLowerCase() === post.category.toLowerCase()) {
+        score += 2;
+      }
+      
+      // 標籤匹配
+      if (articleInfo.tags.length > 0 && post.tags && post.tags.length > 0) {
+        const matchedTags = articleInfo.tags.filter(tag => 
+          post.tags.some(postTag => postTag.toLowerCase() === tag.toLowerCase())
+        );
+        score += matchedTags.length;
+      }
+      
+      // 更新最佳匹配
+      if (score > highestScore) {
+        highestScore = score;
+        bestMatch = post;
+      }
+    }
+    
+    if (bestMatch) {
+      console.log(`通過特徵匹配找到文章: ${bestMatch.title} (分數: ${highestScore})`);
+    }
+    
+    return bestMatch;
+  }
+  
+  /**
    * 處理系列文章導航
    */
-  function handleSeriesNavigation(data, articleInfo, currentPost) {
+  function handleSeriesNavigation(data, currentPost) {
     const seriesName = currentPost.series_name;
     const currentEpisode = currentPost.episode;
     let prevPost = null;
@@ -234,14 +318,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log(`處理系列文章 "${seriesName}" EP${currentEpisode} 的導航`);
     
-    // 嘗試從series數據中獲取系列文章
+    // 獲取系列所有文章
     let seriesPosts = [];
     
+    // 嘗試從新格式獲取系列文章
     if (data.series && data.series[seriesName] && Array.isArray(data.series[seriesName].posts)) {
       seriesPosts = data.series[seriesName].posts;
       console.log(`從series對象中找到 ${seriesPosts.length} 篇 "${seriesName}" 系列文章`);
-    } else {
-      // 從所有文章中過濾
+    } 
+    // 從所有文章中過濾
+    else {
       seriesPosts = data.posts.filter(post => 
         post.is_series && 
         post.series_name === seriesName
@@ -250,14 +336,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (seriesPosts.length === 0) {
-      console.error(`找不到系列 "${seriesName}" 的文章，嘗試使用一般導航`);
-      const allPosts = data.posts || [];
-      const currentIndex = allPosts.findIndex(post => post.title === currentPost.title && post.date === currentPost.date);
-      if (currentIndex !== -1) {
-        handleNormalNavigation(allPosts, currentIndex);
-      } else {
-        setDefaultState();
-      }
+      console.error(`找不到系列 "${seriesName}" 的文章`);
+      setDefaultState();
       return;
     }
     
@@ -268,27 +348,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 查找前一集和後一集
     prevPost = seriesPosts.find(post => parseInt(post.episode) === currentEpisode - 1);
     nextPost = seriesPosts.find(post => parseInt(post.episode) === currentEpisode + 1);
-    
-    // 處理找不到前一集或後一集的情況
-    if (!prevPost && currentEpisode > 1) {
-      // 嘗試模糊匹配前一集
-      seriesPosts.sort((a, b) => Math.abs(parseInt(a.episode) - (currentEpisode - 1)) - 
-                               Math.abs(parseInt(b.episode) - (currentEpisode - 1)));
-      if (seriesPosts[0] && parseInt(seriesPosts[0].episode) < currentEpisode) {
-        prevPost = seriesPosts[0];
-        console.log(`未找到EP${currentEpisode-1}，改用EP${prevPost.episode}作為上一篇`);
-      }
-    }
-    
-    if (!nextPost && currentEpisode < Math.max(...seriesPosts.map(p => parseInt(p.episode)))) {
-      // 嘗試模糊匹配後一集
-      seriesPosts.sort((a, b) => Math.abs(parseInt(a.episode) - (currentEpisode + 1)) - 
-                               Math.abs(parseInt(b.episode) - (currentEpisode + 1)));
-      if (seriesPosts[0] && parseInt(seriesPosts[0].episode) > currentEpisode) {
-        nextPost = seriesPosts[0];
-        console.log(`未找到EP${currentEpisode+1}，改用EP${nextPost.episode}作為下一篇`);
-      }
-    }
     
     if (prevPost) {
       console.log(`找到上一集 EP${prevPost.episode}: ${prevPost.title}`);
@@ -346,20 +405,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log(`處理普通文章導航 (索引: ${currentIndex})`);
     
+    if (currentIndex === -1) {
+      console.error('找不到當前文章的索引');
+      setDefaultState();
+      return;
+    }
+    
     // 按日期排序所有文章
     const sortedPosts = [...posts].sort((a, b) => new Date(b.date) - new Date(a.date));
     
-    // 嘗試在排序後的文章中找到當前文章
+    // 在排序後的文章中找到當前文章
     const currentPost = posts[currentIndex];
-    let sortedIndex = -1;
-    
-    for (let i = 0; i < sortedPosts.length; i++) {
-      if (sortedPosts[i].title === currentPost.title && 
-          sortedPosts[i].date === currentPost.date) {
-        sortedIndex = i;
-        break;
-      }
-    }
+    let sortedIndex = sortedPosts.findIndex(post => 
+      post.title === currentPost.title && post.date === currentPost.date
+    );
     
     if (sortedIndex !== -1) {
       console.log(`在排序後的文章中找到當前文章 (索引: ${sortedIndex})`);
@@ -377,7 +436,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       console.log('在排序後的文章中未找到當前文章，使用原始索引');
       
-      // 使用原始索引
+      // 如果在排序後的文章中找不到，使用原始順序
       if (currentIndex > 0) {
         prevPost = posts[currentIndex - 1];
         console.log(`找到上一篇: ${prevPost.title}`);
