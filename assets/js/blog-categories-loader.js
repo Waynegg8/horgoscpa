@@ -1,6 +1,6 @@
 /**
  * blog-categories-loader.js - 霍爾果斯會計師事務所部落格頁面分類動態載入
- * 最後更新日期: 2025-05-16
+ * 最後更新日期: 2025-05-17
  * 用途: 將部落格頁面的分類標籤從硬編碼改為動態載入，並只顯示有文章的分類
  */
 
@@ -42,9 +42,14 @@ document.addEventListener('DOMContentLoaded', function() {
       // 只有"全部"類別或有文章的類別才顯示
       if (category.id === 'all' || categoryStats[category.id] > 0) {
         const button = document.createElement('button');
-        button.className = 'filter-btn' + (category.id === 'all' ? ' active' : '');
+        button.className = 'filter-btn';
         button.setAttribute('data-category', category.id);
         button.textContent = category.name;
+        
+        // 設置當前選中的分類
+        if (window.currentCategory === category.id) {
+          button.classList.add('active');
+        }
         
         // 如果有統計數據，在按鈕上顯示數量
         if (category.id !== 'all' && categoryStats[category.id]) {
@@ -55,47 +60,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
     
-    // 重新綁定分類按鈕事件
-    bindCategoryEvents();
-  }
-  
-  // 綁定分類按鈕事件
-  function bindCategoryEvents() {
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    
-    filterButtons.forEach(button => {
-      // 移除舊有事件監聽器（如果有）
-      button.replaceWith(button.cloneNode(true));
-      
-      // 重新獲取DOM元素
-      const newButton = document.querySelector(`.filter-btn[data-category="${button.dataset.category}"]`);
-      if (!newButton) return; // 確保按鈕存在
-      
-      // 添加新的事件監聽器
-      newButton.addEventListener('click', function() {
-        // 移除所有按鈕的active狀態
-        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-        
-        // 設置當前按鈕為active
-        this.classList.add('active');
-        
-        // 如果存在主腳本中的篩選函數，則調用它
-        if (typeof window.filterAndDisplayPosts === 'function') {
-          // 設置當前分類
-          window.currentCategory = this.dataset.category;
-          window.currentPage = 1;
-          
-          // 更新URL並重新顯示文章
-          if (typeof window.updateURL === 'function') {
-            window.updateURL();
-          }
-          
-          window.filterAndDisplayPosts();
-        } else {
-          console.warn('未找到篩選函數，請確認blog.js是否正確載入');
-        }
-      });
-    });
+    // 注意: 不在這裡綁定事件，讓blog.js來處理事件綁定
+    console.log('已載入分類按鈕，由主腳本處理事件綁定');
   }
   
   // 延遲執行載入，確保blog.js有機會先載入文章
@@ -107,4 +73,4 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('更新分類統計:', categoryStats);
     loadBlogCategories();
   };
-})
+});

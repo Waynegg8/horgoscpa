@@ -1,4 +1,4 @@
-```javascript
+javascript
 /**
  * index-animation.js - 霍爾果斯會計師事務所首頁動畫效果
  * 實現流動式層疊設計的交互動效
@@ -143,4 +143,3 @@ document.addEventListener('DOMContentLoaded', function() {
     animateOnScroll();
   });
 });
-```

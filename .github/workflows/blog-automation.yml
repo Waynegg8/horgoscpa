@@ -109,25 +109,9 @@ jobs:
           mkdir -p word-docs
           mkdir -p video
           mkdir -p .github/scripts
+          mkdir -p logs
 
-      # 6. 更新翻譯字典 (新步驟)
-      - name: 更新翻譯字典
-        id: update_dictionary
-        if: github.event.inputs.update_dictionary == 'true' || github.event_name == 'repository_dispatch' && github.event.action == 'update-dictionary' || (github.event_name == 'push' && contains(github.event.head_commit.modified, 'word-docs'))
-        run: |
-          echo "開始更新翻譯字典..."
-          
-          # 執行字典更新腳本
-          python .github/scripts/update_dictionary.py
-          
-          # 提交更新後的字典
-          git add tw_financial_dict.json
-          git commit -m "更新翻譯字典" || echo "無需提交翻譯字典"
-          git push || echo "無需推送翻譯字典"
-          
-          echo "dictionary_updated=true" >> $GITHUB_OUTPUT
-
-      # 7. 處理API觸發的文章刪除
+      # 6. 處理API觸發的文章刪除
       - name: 處理API觸發的文章刪除
         if: github.event_name == 'repository_dispatch' && github.event.action == 'delete-article'
         run: |
@@ -159,7 +143,7 @@ jobs:
             echo "警告: 找不到要刪除的文件 ${{ github.event.client_payload.file_path }}"
           fi
 
-      # 8. 處理掃描請求
+      # 7. 處理掃描請求
       - name: 處理API觸發的掃描請求
         if: github.event_name == 'repository_dispatch' && github.event.action == 'scan-articles'
         run: |
@@ -180,7 +164,7 @@ jobs:
           git commit -m "透過API執行強制掃描並更新JSON" || echo "無需提交"
           git push || echo "無需推送"
 
-      # 9. 處理排程發布請求
+      # 8. 處理排程發布請求
       - name: 處理API觸發的排程發布請求
         if: github.event_name == 'repository_dispatch' && github.event.action == 'publish-scheduled' || github.event_name == 'schedule' || github.event.inputs.publish_scheduled == 'true'
         run: |
@@ -202,64 +186,71 @@ jobs:
           
           echo "排程發布任務完成"
 
-      # 10. 處理Word文檔
+      # 9. 處理Word文檔 - 修改為模組化流程
       - name: 處理Word文檔
+        id: process_word
         if: github.event_name == 'push' || github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article')
         run: |
           if [ -d "word-docs" ] && [ "$(ls -A word-docs)" ]; then
             echo "開始處理word-docs目錄中的Word文檔..."
             
-            # 使用 .github/scripts 目錄下的腳本
-            if [ -f ".github/scripts/word_to_html.py" ]; then
-              python .github/scripts/word_to_html.py word-docs blog
-              echo "使用 .github/scripts/word_to_html.py 處理完成"
-            else
-              echo "警告: 找不到 .github/scripts/word_to_html.py 腳本"
-              echo "嘗試查找腳本位置:"
-              find . -name "word_to_html.py" -type f
-              
-              # 如果能找到腳本，使用第一個找到的
-              SCRIPT_PATH=$(find . -name "word_to_html.py" -type f | head -n 1)
-              if [ -n "$SCRIPT_PATH" ]; then
-                echo "找到腳本: $SCRIPT_PATH"
-                python "$SCRIPT_PATH" word-docs blog
-                echo "使用 $SCRIPT_PATH 處理完成"
-              else
-                echo "錯誤: 無法找到任何 word_to_html.py 腳本"
-                exit 1
-              fi
-            fi
+            # 步驟1: 更新翻譯字典（從Word內容提取專業詞彙並翻譯）
+            echo "1. 更新翻譯字典..."
+            python .github/scripts/update_dictionary.py
+            
+            # 提交更新後的字典
+            git add tw_financial_dict.json
+            git commit -m "更新翻譯字典" || echo "無需提交翻譯字典"
+            git push || echo "無需推送翻譯字典"
+            
+            # 步驟2: 執行Word轉HTML（純格式轉換）
+            echo "2. 轉換Word文檔為HTML..."
+            python .github/scripts/word_to_html.py word-docs blog
+            
+            # 步驟3: 執行文章分類
+            echo "3. 分析文章分類..."
+            python .github/scripts/article_classifier.py blog
+            
+            # 步驟4: 執行標籤生成
+            echo "4. 生成文章標籤..."
+            python .github/scripts/tag_generator.py blog
+            
+            # 步驟5: 完成HTML文件（添加分類標籤和優化）
+            echo "5. 完成HTML文件..."
+            python .github/scripts/html_finalizer.py blog
+            
+            echo "Word文檔處理完成"
+            echo "html_changed=true" >> $GITHUB_OUTPUT
           else
             echo "word-docs 目錄為空或不存在，跳過處理"
+            echo "html_changed=false" >> $GITHUB_OUTPUT
           fi
 
-      # 11. 上傳並提交轉換後的 HTML - 修復此步驟以處理無文件情況
+      # 10. 上傳並提交轉換後的 HTML
       - name: 上傳並提交轉換後的 HTML
-        id: commit-html
+        if: steps.process_word.outputs.html_changed == 'true'
         run: |
           # 檢查是否有新的文件變更
           git status
           
-          # 嘗試添加新的HTML文件
-          git add blog/*.html
+          # 添加新的HTML文件和元數據文件
+          git add blog/*.html blog/*.meta.json
           
           # 檢查是否有變更的文件
-          CHANGED_FILES=$(git diff --name-only --cached | grep -c ".html" || echo "0")
-          echo "檢測到 $CHANGED_FILES 個變更的HTML文件"
+          CHANGED_FILES=$(git diff --name-only --cached | grep -c ".html\|.meta.json" || echo "0")
+          echo "檢測到 $CHANGED_FILES 個變更的文件"
           
           if [ "$CHANGED_FILES" -gt "0" ]; then
             echo "提交轉換後的HTML文件"
-            git commit -m "提交轉換後的 HTML 文件"
+            git commit -m "提交轉換後的 HTML 文件和元數據"
             git push
-            echo "html_changed=true" >> $GITHUB_OUTPUT
           else
-            echo "沒有新的 HTML 文件需要提交"
+            echo "沒有新的文件需要提交"
             # 重置已添加的文件（如果有）
-            git reset HEAD blog/*.html
-            echo "html_changed=false" >> $GITHUB_OUTPUT
+            git reset HEAD blog/*.html blog/*.meta.json
           fi
           
-      # 12. 檢查是否有文章被刪除
+      # 11. 檢查是否有文章被刪除
       - name: 檢查是否有文章被刪除
         id: check_deleted
         if: github.event.inputs.handle_deletion == 'true' || github.event_name == 'delete'
@@ -276,10 +267,10 @@ jobs:
             echo "html_deleted=false" >> $GITHUB_OUTPUT
           fi
       
-      # 13. 更新博客JSON文件 - 新增在任何推送事件中更新JSON
+      # 12. 更新博客JSON文件
       - name: 更新博客JSON文件
         id: update_blog_json
-        if: steps.commit-html.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles' || github.event.action == 'publish-scheduled')) || github.event_name == 'push'
+        if: steps.process_word.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles' || github.event.action == 'publish-scheduled')) || github.event_name == 'push'
         run: |
           echo "開始更新博客JSON文件..."
           
@@ -312,10 +303,10 @@ jobs:
           git commit -m "更新博客JSON文件" || echo "無需提交JSON文件"
           git push || echo "無需推送"
 
-      # 14. 更新影片數據
+      # 13. 更新影片數據
       - name: 更新影片數據
         id: update_videos
-        if: github.event.inputs.update_videos == 'true' || steps.check_video_changes.outputs.videos_txt_changed == 'true' || (github.event_name == 'push' && contains(github.event.head_commit.modified, 'video/videos.txt')) || (github.event_name == 'push' && contains(github.event.head_commit.added, 'video/videos.txt')) || (github.event_name == 'repository_dispatch' && github.event.action == 'update-video')
+        if: github.event.inputs.update_videos == 'true' || (github.event_name == 'push' && contains(github.event.head_commit.modified, 'video/videos.txt')) || (github.event_name == 'push' && contains(github.event.head_commit.added, 'video/videos.txt')) || (github.event_name == 'repository_dispatch' && github.event.action == 'update-video')
         run: |
           echo "檢測到需要更新影片數據"
           
@@ -355,9 +346,9 @@ jobs:
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
 
-      # 15. 清理已處理的Word文檔 - 修復以處理無變更情況
+      # 14. 清理已處理的Word文檔
       - name: 清理已處理的Word文檔
-        if: github.event_name == 'push' && steps.commit-html.outputs.html_changed == 'true'
+        if: steps.process_word.outputs.html_changed == 'true'
         run: |
           # 確保工作區乾淨
           git stash -u || true
@@ -382,10 +373,10 @@ jobs:
             echo "沒有需要處理的 Word 文檔"
           fi
       
-      # 16. 更新網站 Sitemap - 移除了對任何push操作的觸發
+      # 15. 更新網站 Sitemap
       - name: 更新網站 Sitemap
         id: update_sitemap
-        if: github.event.inputs.update_sitemap == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap') || steps.commit-html.outputs.html_changed == 'true' || steps.update_blog_json.outputs.blog_json_updated == 'true'
+        if: github.event.inputs.update_sitemap == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap') || steps.process_word.outputs.html_changed == 'true' || steps.update_blog_json.outputs.blog_json_updated == 'true'
         run: |
           echo "開始更新網站 Sitemap..."
           
@@ -401,7 +392,7 @@ jobs:
             echo "警告: sitemap.xml 文件不存在或生成失敗"
           fi
           
-      # 17. 結果通知
+      # 16. 結果通知
       - name: 工作流執行結果通知
         run: |
           echo "工作流程完成執行"
