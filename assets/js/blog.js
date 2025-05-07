@@ -92,36 +92,28 @@ document.addEventListener('DOMContentLoaded', function() {
       button.addEventListener('click', function() {
         const newCategory = this.dataset.category;
         
-        // 如果點擊已經是活動狀態的按鈕，不做任何操作
-        if (newCategory === currentCategory && !currentSearchQuery && !currentSeries && !currentTag) {
-          return;
-        }
-        
-        // 清除所有活動狀態
+        // 清除所有活動狀態 - 不論是否已經是活動狀態，都先移除所有
         filterButtons.forEach(btn => btn.classList.remove('active'));
         
         // 設置當前按鈕為活動狀態
         this.classList.add('active');
         
-        // 清除搜索狀態
-        if (currentSearchQuery) {
-          currentSearchQuery = '';
-          if (searchInput) {
-            searchInput.value = '';
-            searchContainer.classList.remove('search-active');
-          }
+        // 清除搜索狀態和其他篩選條件
+        if (searchInput) {
+          searchInput.value = '';
+          searchContainer.classList.remove('search-active');
         }
+        currentSearchQuery = '';
+        currentSeries = '';
+        currentTag = '';
         
         // 更新狀態
         currentCategory = newCategory;
         currentPage = 1; // 重置頁碼
-        currentSeries = '';
-        currentTag = '';
         
         console.log('點擊分類按鈕:', currentCategory);
         filterAndDisplayPosts();
         updateURL();
-        updateUIState(); // 確保UI狀態一致
       });
     });
     
@@ -146,15 +138,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const searchValue = searchInput.value.trim();
         
         if (searchValue.length > 0) {
+          // 搜索狀態激活時，清除分類選擇
+          filterButtons.forEach(btn => btn.classList.remove('active'));
+          filterButtons[0].classList.add('active'); // 將"全部"分類設為活動狀態
+          currentCategory = 'all';
           searchContainer.classList.add('search-active');
         } else {
           searchContainer.classList.remove('search-active');
           currentSearchQuery = '';
           currentPage = 1;
           currentSeries = '';
+          
+          // 重置為默認分類視圖
+          filterButtons.forEach(btn => {
+            if (btn.dataset.category === 'all') {
+              btn.classList.add('active');
+            } else {
+              btn.classList.remove('active');
+            }
+          });
+          
           filterAndDisplayPosts();
           updateURL();
-          updateUIState(); // 確保UI狀態一致
           return;
         }
         
@@ -165,7 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('搜索查詢:', currentSearchQuery);
         filterAndDisplayPosts();
         updateURL();
-        updateUIState(); // 確保UI狀態一致
       }, 500);
       
       searchInput.addEventListener('input', handleSearchInput);
@@ -266,13 +270,21 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateUIState() {
     // 更新分類按鈕狀態
     if (filterButtons && filterButtons.length > 0) {
-      filterButtons.forEach(btn => {
-        if (btn.dataset.category === currentCategory) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
-      });
+      // 清除所有按鈕的活動狀態
+      filterButtons.forEach(btn => btn.classList.remove('active'));
+      
+      // 根據當前狀態設置正確的活動按鈕
+      if (currentSearchQuery || currentSeries || currentTag) {
+        // 如果有搜索或其他篩選條件，將"全部"分類設為活動狀態
+        filterButtons[0].classList.add('active');
+      } else {
+        // 否則根據當前分類設置活動狀態
+        filterButtons.forEach(btn => {
+          if (btn.dataset.category === currentCategory) {
+            btn.classList.add('active');
+          }
+        });
+      }
     }
     
     // 更新搜索框
@@ -674,14 +686,8 @@ document.addEventListener('DOMContentLoaded', function() {
       searchContainer.classList.remove('search-active');
     }
     
-    // 更新分類按鈕狀態
-    filterButtons.forEach(btn => {
-      if (btn.dataset.category === 'all') {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
+    // 更新UI狀態
+    updateUIState();
     
     filterAndDisplayPosts();
     updateURL();
@@ -1087,13 +1093,8 @@ document.addEventListener('DOMContentLoaded', function() {
       searchContainer.classList.remove('search-active');
     }
     
-    filterButtons.forEach(btn => {
-      if (btn.dataset.category === 'all') {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
-      }
-    });
+    // 更新UI狀態 - 使用updateUIState函數來確保一致性
+    updateUIState();
     
     filterAndDisplayPosts();
     updateURL();
