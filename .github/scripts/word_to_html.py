@@ -553,6 +553,9 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
   <meta name="description" content="{summary}" />
   <title>{title} | 霍爾果斯會計師事務所</title>
   {series_meta_tags}
+
+<!-- hreflang 標籤 -->
+  <link rel="alternate" hreflang="zh-TW" href="https://www.horgoscpa.com{english_url}" />
   
   <!-- Favicon -->
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">

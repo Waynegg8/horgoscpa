@@ -911,12 +911,32 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function initializeTagCloud(tags) {
-    if (!tagCloudContainer || !tags || tags.length === 0) return;
-    
-    const topTags = tags.slice(0, 15);
-    const tagsHTML = topTags.map(tag => `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="${currentTag === tag ? 'active' : ''}">${tag}</a>`).join('');
-    tagCloudContainer.innerHTML = tagsHTML;
+  if (!tagCloudContainer || !tags || tags.length === 0) return;
+  
+  // 只顯示有文章的標籤
+  const filteredTags = tags.filter(tag => {
+    // 檢查該標籤是否與任何文章的標籤有關聯
+    return allPosts.posts.some(post => post.tags && post.tags.includes(tag));
+  });
+  
+  // 如果過濾後沒有標籤，顯示沒有標籤的訊息
+  if (filteredTags.length === 0) {
+    tagCloudContainer.innerHTML = "<p>目前沒有標籤。</p>";
+    return;
   }
+
+  // 只顯示最多15個標籤
+  const topTags = filteredTags.slice(0, 15);
+  
+  // 生成標籤HTML
+  const tagsHTML = topTags.map(tag => 
+    `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="${currentTag === tag ? 'active' : ''}">${tag}</a>`
+  ).join('');
+
+  // 將標籤加入頁面
+  tagCloudContainer.innerHTML = tagsHTML;
+}
+
   
   function initializePopularPosts() {
     if (!popularPostsContainer || !allPosts.posts || allPosts.posts.length === 0) return;
