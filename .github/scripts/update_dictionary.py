@@ -15,6 +15,7 @@ import re
 import jieba
 from pathlib import Path
 from typing import List, Dict, Any, Set
+import argparse  # 導入argparse模組用於命令行參數
 
 # 確保腳本目錄在 Python 路徑中
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -209,6 +210,9 @@ def update_translation_dictionary() -> bool:
 
 def main():
     """主函數"""
+    # 首先聲明全局變數
+    global WORD_DOCS_DIR, TRANSLATION_DICT_PATH
+    
     # 設置命令行參數
     parser = argparse.ArgumentParser(description='更新翻譯字典')
     parser.add_argument('--dict-path', type=str, default=TRANSLATION_DICT_PATH,
@@ -218,7 +222,6 @@ def main():
     args = parser.parse_args()
     
     # 更新路徑
-    global WORD_DOCS_DIR, TRANSLATION_DICT_PATH
     WORD_DOCS_DIR = args.word_dir
     TRANSLATION_DICT_PATH = args.dict_path
     
@@ -236,5 +239,4 @@ def main():
         return 1
 
 if __name__ == "__main__":
-    import argparse  # 導入argparse模組用於命令行參數
     sys.exit(main())
