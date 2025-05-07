@@ -2,10 +2,9 @@
  * article-navigation.js - 霍爾果斯會計師事務所文章導航腳本
  * 最後更新日期: 2025-05-07
  * 功能: 為文章頁面生成上一篇和下一篇導航，支援系列文章內導航
- * 全新版本：完全重構導航邏輯
+ * 專注版本：直接使用系列名稱和集數匹配
  */
 document.addEventListener('DOMContentLoaded', function() {
-  // 添加載入中狀態顯示
   const prevLink = document.getElementById('prev-article');
   const nextLink = document.getElementById('next-article');
   
@@ -14,278 +13,341 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // 設置初始載入中狀態
+  // 初始化載入狀態
   setLoadingState(true);
   
-  // 獲取當前文章信息的多種方法
-  const articleInfo = getArticleInfoFromDOM();
-  const currentUrl = window.location.pathname;
-  const currentFilename = currentUrl.split('/').pop();
+  // 首先嘗試從DOM元素獲取系列信息
+  let currentSeriesInfo = extractSeriesInfoFromDOM();
+  console.log('從DOM提取的系列信息:', currentSeriesInfo);
   
-  console.log('當前頁面URL:', currentUrl);
-  console.log('當前頁面文件名:', currentFilename);
-  console.log('從DOM獲取的文章信息:', articleInfo);
+  // 如果無法從DOM獲取，嘗試從URL或檔名獲取
+  if (!currentSeriesInfo.isValid) {
+    currentSeriesInfo = extractSeriesInfoFromURL(window.location.pathname);
+    console.log('從URL提取的系列信息:', currentSeriesInfo);
+  }
 
   // 從 JSON 獲取文章數據
-  fetch('/assets/data/blog-posts.json?v=' + new Date().getTime())
+  fetch('/assets/data/blog-posts.json?nocache=' + new Date().getTime())
     .then(response => {
       if (!response.ok) {
-        throw new Error('無法獲取文章數據，狀態碼: ' + response.status);
+        throw new Error('無法獲取文章數據');
       }
       return response.json();
     })
     .then(data => {
-      try {
-        processPostsData(data);
-      } catch (err) {
-        console.error('處理文章數據時出錯:', err);
-        setDefaultNavigationState();
-      }
+      handleBlogData(data, currentSeriesInfo);
     })
     .catch(error => {
       console.error('載入導航數據失敗:', error);
       setDefaultNavigationState();
     });
-  
+
   /**
-   * 從DOM中獲取文章信息
+   * 從DOM元素提取系列信息
    */
-  function getArticleInfoFromDOM() {
-    const info = {};
+  function extractSeriesInfoFromDOM() {
+    const result = { isValid: false };
     
-    // 嘗試從標題獲取信息
-    const titleElement = document.querySelector('h1.article-title');
-    if (titleElement) {
-      info.title = titleElement.textContent.trim();
-    }
-    
-    // 嘗試從日期獲取信息
-    const dateElement = document.querySelector('.article-date');
-    if (dateElement) {
-      const dateMatch = dateElement.textContent.match(/\d{4}-\d{2}-\d{2}/);
-      if (dateMatch) {
-        info.date = dateMatch[0];
-      }
-    }
-    
-    // 嘗試從meta標籤獲取系列信息
+    // 嘗試從meta標籤提取
     const seriesNameMeta = document.querySelector('meta[name="series-name"]');
     const seriesEpisodeMeta = document.querySelector('meta[name="series-episode"]');
     
     if (seriesNameMeta && seriesEpisodeMeta) {
-      info.is_series = true;
-      info.series_name = seriesNameMeta.getAttribute('content');
-      info.episode = parseInt(seriesEpisodeMeta.getAttribute('content'));
+      result.isValid = true;
+      result.isSeries = true;
+      result.seriesName = seriesNameMeta.getAttribute('content');
+      result.episode = parseInt(seriesEpisodeMeta.getAttribute('content'));
+      return result;
     }
     
-    // 嘗試從類別獲取信息
-    const categoryElement = document.querySelector('.article-category');
-    if (categoryElement) {
-      info.category = categoryElement.textContent.trim();
+    // 嘗試從文章內容提取
+    const articleTitle = document.querySelector('h1.article-title');
+    if (articleTitle) {
+      const titleText = articleTitle.textContent;
+      // 檢查標題中是否包含EP或第X集
+      const episodeMatch = titleText.match(/EP(\d+)|第(\d+)集/i);
+      if (episodeMatch) {
+        result.isValid = true;
+        result.isSeries = true;
+        result.episode = parseInt(episodeMatch[1] || episodeMatch[2]);
+        
+        // 嘗試從標題中提取系列名稱
+        const seriesTitleMatch = titleText.match(/(.*?)(EP\d+|第\d+集)/i);
+        if (seriesTitleMatch) {
+          result.seriesName = seriesTitleMatch[1].trim();
+        }
+      }
     }
     
-    return info;
+    // 嘗試從標籤或段落中提取
+    if (!result.isValid) {
+      document.querySelectorAll('p, .article-tag, .series-badge').forEach(el => {
+        if (result.isValid) return; // 如果已找到，跳過
+        
+        const text = el.textContent;
+        if (text.includes('系列') || text.includes('EP')) {
+          const episodeMatch = text.match(/EP(\d+)|第(\d+)集/i);
+          const seriesMatch = text.match(/(.*?)(系列|EP\d+|第\d+集)/i);
+          
+          if (episodeMatch && seriesMatch) {
+            result.isValid = true;
+            result.isSeries = true;
+            result.episode = parseInt(episodeMatch[1] || episodeMatch[2]);
+            result.seriesName = seriesMatch[1].trim();
+          }
+        }
+      });
+    }
+    
+    // 如果無法提取系列信息，表示可能不是系列文章
+    if (!result.isValid) {
+      result.isSeries = false;
+    }
+    
+    return result;
   }
   
   /**
-   * 處理文章數據找到前後文章
+   * 從URL路徑提取系列信息
    */
-  function processPostsData(data) {
+  function extractSeriesInfoFromURL(urlPath) {
+    const result = { isValid: false };
+    
+    // 檢查URL中是否有ep標記
+    const epMatch = urlPath.match(/ep(\d+)|第(\d+)集/i);
+    if (epMatch) {
+      result.isValid = true;
+      result.isSeries = true;
+      result.episode = parseInt(epMatch[1] || epMatch[2]);
+      
+      // 嘗試從URL提取系列名稱 - 找出位於日期和EP之間的部分
+      const pathSegments = urlPath.split('/');
+      const filename = pathSegments[pathSegments.length - 1];
+      
+      // 針對格式為: 2025-05-06-series-name-ep1.html
+      const dateSeriesMatch = filename.match(/\d{4}-\d{2}-\d{2}-(.*?)-(ep\d+|第\d+集)/i);
+      if (dateSeriesMatch) {
+        result.seriesName = dateSeriesMatch[1].replace(/-/g, ' ').trim();
+      }
+    } else {
+      // 如果URL中沒有明確的EP標記，就假設不是系列文章
+      result.isSeries = false;
+    }
+    
+    return result;
+  }
+
+  /**
+   * 處理博客數據
+   */
+  function handleBlogData(data, currentSeriesInfo) {
     const allPosts = data.posts || [];
     const seriesData = data.series || {};
     
     if (!allPosts.length) {
-      console.error('沒有找到任何文章數據');
+      console.error('沒有找到文章數據');
       setDefaultNavigationState();
       return;
     }
     
-    console.log(`總共找到 ${allPosts.length} 篇文章`);
-    
-    // 嘗試多種方式找到當前文章
-    let currentPost = findCurrentPost(allPosts, currentUrl, currentFilename, articleInfo);
-    
-    if (!currentPost) {
-      console.error('無法確定當前文章，無法設置導航');
-      setDefaultNavigationState();
-      return;
-    }
-    
-    console.log('確定當前文章:', currentPost.title);
-    findAdjacentPosts(currentPost, allPosts, seriesData);
-  }
-  
-  /**
-   * 嘗試多種方式找到當前文章
-   */
-  function findCurrentPost(posts, currentUrl, currentFilename, articleInfo) {
-    // 1. 直接URL匹配
-    let post = posts.find(p => p.url === currentUrl);
-    
-    // 2. 忽略域名部分的URL匹配
-    if (!post) {
-      post = posts.find(p => {
-        // 確保URL有效
-        if (!p.url) return false;
-        // 獲取文件名部分
-        const postFilename = p.url.split('/').pop();
-        return postFilename === currentFilename;
-      });
-    }
-    
-    // 3. 基於標題和日期匹配
-    if (!post && articleInfo.title && articleInfo.date) {
-      post = posts.find(p => 
-        p.title === articleInfo.title && 
-        p.date === articleInfo.date
-      );
-    }
-    
-    // 4. 系列文章特殊匹配
-    if (!post && articleInfo.is_series) {
-      post = posts.find(p => 
-        p.is_series && 
-        p.series_name === articleInfo.series_name && 
-        p.episode === articleInfo.episode
-      );
-    }
-    
-    // 5. 最後嘗試模糊匹配
-    if (!post) {
-      // 從URL提取可能的日期
-      const dateMatch = currentUrl.match(/(\d{4}-\d{2}-\d{2})/);
-      if (dateMatch) {
-        const dateInUrl = dateMatch[1];
-        post = posts.find(p => p.date === dateInUrl && currentUrl.includes(p.title.toLowerCase().replace(/\s+/g, '-')));
-      }
-    }
-    
-    return post;
-  }
-  
-  /**
-   * 根據當前文章找到相鄰文章
-   */
-  function findAdjacentPosts(currentPost, allPosts, seriesData) {
     let prevPost = null;
     let nextPost = null;
     let prevMessage = '';
     let nextMessage = '';
     
-    if (currentPost.is_series) {
-      console.log('當前是系列文章:', currentPost.series_name, '第', currentPost.episode, '集');
-      const seriesPosts = getSeriesPosts(currentPost, allPosts, seriesData);
+    // 如果是系列文章，優先查找同系列文章
+    if (currentSeriesInfo.isSeries && currentSeriesInfo.seriesName && currentSeriesInfo.episode) {
+      const seriesName = currentSeriesInfo.seriesName;
+      const currentEpisode = currentSeriesInfo.episode;
+      
+      console.log(`正在查找系列「${seriesName}」的第${currentEpisode}集的相鄰文章`);
+      
+      // 找到所有同系列文章
+      let seriesPosts = [];
+      
+      // 嘗試從series對象獲取
+      if (seriesData[seriesName] && Array.isArray(seriesData[seriesName].posts)) {
+        seriesPosts = seriesData[seriesName].posts;
+        console.log(`從series對象找到「${seriesName}」系列的${seriesPosts.length}篇文章`);
+      } else {
+        // 從所有文章中過濾
+        seriesPosts = allPosts.filter(post => {
+          return post.is_series && 
+                 post.series_name && 
+                 (post.series_name === seriesName || 
+                  post.series_name.toLowerCase() === seriesName.toLowerCase());
+        });
+        console.log(`從所有文章中過濾出「${seriesName}」系列的${seriesPosts.length}篇文章`);
+      }
+      
+      // 不同系列間導航的特別處理
+      if (seriesPosts.length === 0) {
+        // 如果找不到完全匹配的系列名，嘗試模糊匹配
+        const possibleSeriesNames = Object.keys(seriesData);
+        const similarSeries = possibleSeriesNames.find(name => 
+          name.includes(seriesName) || seriesName.includes(name)
+        );
+        
+        if (similarSeries) {
+          console.log(`找到類似的系列名稱: ${similarSeries}`);
+          seriesPosts = seriesData[similarSeries].posts || [];
+        }
+      }
       
       if (seriesPosts.length > 0) {
         // 按集數排序
-        const sortedSeriesPosts = [...seriesPosts].sort((a, b) => a.episode - b.episode);
-        const currentEpisode = parseInt(currentPost.episode);
+        seriesPosts.sort((a, b) => {
+          const epA = parseInt(a.episode);
+          const epB = parseInt(b.episode);
+          return epA - epB;
+        });
         
-        // 查找同系列的上一篇和下一篇
-        prevPost = sortedSeriesPosts.find(p => parseInt(p.episode) === currentEpisode - 1);
-        nextPost = sortedSeriesPosts.find(p => parseInt(p.episode) === currentEpisode + 1);
+        console.log('系列文章按集數排序:', seriesPosts.map(p => `EP${p.episode}`).join(', '));
         
-        // 處理系列的第一篇/最後一篇的特殊情況
-        if (!prevPost && sortedSeriesPosts[0]?.episode === currentEpisode) {
-          // 系列第一篇，找其他最新文章作為上一篇
-          const nonSeriesPosts = allPosts.filter(p => 
-            !p.is_series || p.series_name !== currentPost.series_name
+        // 找出當前集數的前後文章
+        prevPost = seriesPosts.find(post => parseInt(post.episode) === currentEpisode - 1);
+        nextPost = seriesPosts.find(post => parseInt(post.episode) === currentEpisode + 1);
+        
+        // 紀錄找到的文章
+        if (prevPost) {
+          console.log(`找到上一集 EP${prevPost.episode}: ${prevPost.title}`);
+        } else {
+          console.log(`未找到上一集 (EP${currentEpisode - 1})`);
+        }
+        
+        if (nextPost) {
+          console.log(`找到下一集 EP${nextPost.episode}: ${nextPost.title}`);
+        } else {
+          console.log(`未找到下一集 (EP${currentEpisode + 1})`);
+        }
+        
+        // 如果是第一集，找其他系列或非系列的文章作為上一篇
+        if (!prevPost && seriesPosts[0]?.episode === currentEpisode) {
+          const otherPosts = allPosts.filter(post => 
+            !post.is_series || 
+            (post.is_series && post.series_name !== seriesName)
           );
           
-          if (nonSeriesPosts.length > 0) {
-            nonSeriesPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-            prevPost = nonSeriesPosts[0];
-            prevMessage = '將離開此系列，前往其他文章';
+          if (otherPosts.length > 0) {
+            otherPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+            prevPost = otherPosts[0];
+            prevMessage = '將離開此系列，前往其他主題';
+            console.log(`當前為系列第一集，找到非系列文章作為上一篇: ${prevPost.title}`);
           }
         }
         
-        if (!nextPost && sortedSeriesPosts[sortedSeriesPosts.length - 1]?.episode === currentEpisode) {
-          // 系列最後一篇，找其他最新文章作為下一篇
-          const nonSeriesPosts = allPosts.filter(p => 
-            !p.is_series || p.series_name !== currentPost.series_name
+        // 如果是最後一集，找其他系列或非系列的文章作為下一篇
+        if (!nextPost && seriesPosts[seriesPosts.length - 1]?.episode === currentEpisode) {
+          const otherPosts = allPosts.filter(post => 
+            !post.is_series || 
+            (post.is_series && post.series_name !== seriesName)
           );
           
-          if (nonSeriesPosts.length > 0) {
-            nonSeriesPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-            nextPost = nonSeriesPosts[0];
-            nextMessage = '系列已結束，前往其他文章';
+          if (otherPosts.length > 0) {
+            otherPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+            nextPost = otherPosts[0];
+            nextMessage = '系列完結，下一篇文章為其他主題';
+            console.log(`當前為系列最後一集，找到非系列文章作為下一篇: ${nextPost.title}`);
           }
-        }
-      }
-    } else {
-      // 非系列文章，按日期導航
-      const sortedPosts = [...allPosts].sort((a, b) => new Date(b.date) - new Date(a.date));
-      const currentIndex = sortedPosts.findIndex(p => p.url === currentPost.url);
-      
-      if (currentIndex !== -1) {
-        if (currentIndex > 0) {
-          prevPost = sortedPosts[currentIndex - 1];
-        }
-        
-        if (currentIndex < sortedPosts.length - 1) {
-          nextPost = sortedPosts[currentIndex + 1];
         }
       } else {
-        // 如果找不到精確索引，使用日期比較
-        const currentDate = new Date(currentPost.date);
-        
-        // 找出日期比當前文章早的所有文章
-        const earlierPosts = sortedPosts.filter(p => new Date(p.date) < currentDate);
-        // 找出日期比當前文章晚的所有文章
-        const laterPosts = sortedPosts.filter(p => new Date(p.date) > currentDate);
-        
-        if (earlierPosts.length > 0) {
-          earlierPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-          nextPost = earlierPosts[0]; // 日期較近的文章作為下一篇
-        }
-        
-        if (laterPosts.length > 0) {
-          laterPosts.sort((a, b) => new Date(a.date) - new Date(b.date));
-          prevPost = laterPosts[0]; // 日期較近的文章作為上一篇
-        }
+        console.log(`無法找到系列「${seriesName}」的文章，使用基於日期的導航`);
+        // 如果找不到系列文章，回退到基於日期的導航
+        findAdjacentPostsByDate(allPosts);
       }
+    } else {
+      // 非系列文章，使用基於日期的導航
+      console.log('當前文章非系列文章或無法確定系列信息，使用基於日期的導航');
+      findAdjacentPostsByDate(allPosts);
     }
     
     // 更新導航連結
     updateNavigationLinks(prevPost, nextPost, prevMessage, nextMessage);
-  }
-  
-  /**
-   * 獲取系列文章列表
-   */
-  function getSeriesPosts(currentPost, allPosts, seriesData) {
-    if (!currentPost || !currentPost.series_name) {
-      return [];
+    
+    /**
+     * 基於日期查找前後文章
+     */
+    function findAdjacentPostsByDate(posts) {
+      // 嘗試從DOM中獲取當前文章日期
+      const dateElement = document.querySelector('.article-date');
+      let currentDate = null;
+      
+      if (dateElement) {
+        const dateMatch = dateElement.textContent.match(/\d{4}-\d{2}-\d{2}/);
+        if (dateMatch) {
+          currentDate = new Date(dateMatch[0]);
+        }
+      }
+      
+      // 如果無法從DOM獲取日期，嘗試從URL提取
+      if (!currentDate) {
+        const urlDateMatch = window.location.pathname.match(/(\d{4}-\d{2}-\d{2})/);
+        if (urlDateMatch) {
+          currentDate = new Date(urlDateMatch[1]);
+        }
+      }
+      
+      if (!currentDate) {
+        console.error('無法確定當前文章日期，無法基於日期導航');
+        return;
+      }
+      
+      console.log('當前文章日期:', currentDate.toISOString().split('T')[0]);
+      
+      // 對文章按日期排序
+      const sortedPosts = [...posts].sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      // 找出比當前日期早和晚的文章
+      const earlierPosts = sortedPosts.filter(post => new Date(post.date) < currentDate);
+      const laterPosts = sortedPosts.filter(post => new Date(post.date) > currentDate);
+      
+      // 日期與當前文章相同的文章
+      const sameDatePosts = sortedPosts.filter(post => post.date === currentDate.toISOString().split('T')[0]);
+      
+      // 如果有多篇同一天的文章，嘗試通過標題或URL區分
+      if (sameDatePosts.length > 1) {
+        const currentTitle = document.querySelector('h1.article-title')?.textContent;
+        const currentUrl = window.location.pathname;
+        
+        sameDatePosts.forEach(post => {
+          if (post.title === currentTitle || currentUrl.includes(post.url)) {
+            // 跳過當前文章
+            return;
+          }
+          
+          // 如果還沒有找到下一篇，使用同日期的其他文章
+          if (!nextPost) {
+            nextPost = post;
+          }
+        });
+      }
+      
+      // 如果還沒找到前後文章，使用日期比較
+      if (!prevPost && laterPosts.length > 0) {
+        prevPost = laterPosts.sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+      }
+      
+      if (!nextPost && earlierPosts.length > 0) {
+        nextPost = earlierPosts.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      }
     }
-    
-    const seriesName = currentPost.series_name;
-    
-    // 先從series對象中查找
-    if (seriesData[seriesName] && Array.isArray(seriesData[seriesName].posts)) {
-      return seriesData[seriesName].posts;
-    }
-    
-    // 如果找不到，從所有文章中過濾
-    return allPosts.filter(p => 
-      p.is_series && p.series_name === seriesName
-    );
   }
   
   /**
    * 更新導航連結
    */
   function updateNavigationLinks(prevPost, nextPost, prevMessage, nextMessage) {
-    // 解除載入狀態
+    // 取消載入狀態
     setLoadingState(false);
     
-    // 更新上一篇連結
+    // 更新上一篇導航
     if (prevPost && prevPost.url) {
       prevLink.href = prevPost.url;
       prevLink.classList.remove('disabled');
       
       const titleEl = prevLink.querySelector('.nav-title');
       if (titleEl) {
-        titleEl.textContent = prevPost.title || '上一篇文章';
+        titleEl.textContent = prevPost.title;
       }
       
       if (prevMessage) {
@@ -295,20 +357,18 @@ document.addEventListener('DOMContentLoaded', function() {
           prevLink.classList.add('nav-warning');
         }
       }
-      
-      console.log('設置上一篇:', prevPost.title);
     } else {
       disableLink(prevLink, '無上一篇');
     }
     
-    // 更新下一篇連結
+    // 更新下一篇導航
     if (nextPost && nextPost.url) {
       nextLink.href = nextPost.url;
       nextLink.classList.remove('disabled');
       
       const titleEl = nextLink.querySelector('.nav-title');
       if (titleEl) {
-        titleEl.textContent = nextPost.title || '下一篇文章';
+        titleEl.textContent = nextPost.title;
       }
       
       if (nextMessage) {
@@ -318,23 +378,21 @@ document.addEventListener('DOMContentLoaded', function() {
           nextLink.classList.add('nav-warning');
         }
       }
-      
-      console.log('設置下一篇:', nextPost.title);
     } else {
       disableLink(nextLink, '無下一篇');
     }
   }
   
   /**
-   * 禁用導航連結
+   * 設置載入狀態
    */
-  function disableLink(link, message) {
-    link.removeAttribute('href');
-    link.classList.add('disabled');
+  function setLoadingState(isLoading) {
+    const prevTitle = prevLink.querySelector('.nav-title');
+    const nextTitle = nextLink.querySelector('.nav-title');
     
-    const titleEl = link.querySelector('.nav-title');
-    if (titleEl) {
-      titleEl.textContent = message || '無相關文章';
+    if (isLoading) {
+      if (prevTitle) prevTitle.textContent = '載入中...';
+      if (nextTitle) nextTitle.textContent = '載入中...';
     }
   }
   
@@ -348,20 +406,15 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
-   * 設置載入狀態
+   * 禁用導航連結
    */
-  function setLoadingState(isLoading) {
-    const prevTitle = prevLink.querySelector('.nav-title');
-    const nextTitle = nextLink.querySelector('.nav-title');
+  function disableLink(link, message) {
+    link.removeAttribute('href');
+    link.classList.add('disabled');
     
-    if (isLoading) {
-      prevLink.classList.add('loading');
-      nextLink.classList.add('loading');
-      if (prevTitle) prevTitle.textContent = '載入中...';
-      if (nextTitle) nextTitle.textContent = '載入中...';
-    } else {
-      prevLink.classList.remove('loading');
-      nextLink.classList.remove('loading');
+    const titleEl = link.querySelector('.nav-title');
+    if (titleEl) {
+      titleEl.textContent = message || '無相關文章';
     }
   }
 });
