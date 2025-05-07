@@ -132,6 +132,31 @@ document.addEventListener('DOMContentLoaded', function() {
         resetFilters();
       }
     });
+    
+    // 分頁按鈕事件委托到容器
+    if (paginationContainer) {
+      paginationContainer.addEventListener('click', function(e) {
+        const pageButton = e.target.closest('.pagination-btn:not(.disabled)');
+        if (pageButton) {
+          e.preventDefault();
+          const page = parseInt(pageButton.dataset.page);
+          if (page && page !== currentPage) {
+            currentPage = page;
+            updateURL();
+            filterAndDisplayPosts();
+            
+            // 滾動到內容頂部
+            const targetElement = document.querySelector('.blog-content-section');
+            if (targetElement) {
+              window.scrollTo({
+                top: targetElement.offsetTop - 100,
+                behavior: 'smooth'
+              });
+            }
+          }
+        }
+      });
+    }
   }
   
   function setupScrollAnimations() {
@@ -724,28 +749,7 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     
     paginationContainer.innerHTML = paginationHTML;
-    
-    const pageButtons = paginationContainer.querySelectorAll('.pagination-btn:not(.disabled)');
-    pageButtons.forEach(button => {
-      button.removeEventListener('click', handlePageClick); // 移除舊的事件監聽器
-      button.addEventListener('click', handlePageClick); // 添加新的事件監聽器
-    });
   }
-  
-  function handlePageClick(e) {
-  e.preventDefault();  // 阻止默認行為，避免跳轉
-  const page = parseInt(this.dataset.page);
-  if (page && page !== currentPage) {
-    currentPage = page;
-    updateURL();  // 更新 URL 參數
-    filterAndDisplayPosts();  // 只更新文章列表
-    window.scrollTo({
-      top: document.querySelector('.blog-content-section').offsetTop - 100,
-      behavior: 'smooth'  // 滾動到指定位置
-    });
-  }
-}
-
   
   function showSearchResults(resultCount) {
     if (!searchResultsContainer) return;
