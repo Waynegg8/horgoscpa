@@ -1,32 +1,4 @@
-def translate_text(text: str, source_lang: str = "zh", target_lang: str = "en", max_retries: int = 2, 
-                  use_cache: bool = True, cache_file_path: str = None) -> Optional[str]:
-    """
-    使用可用的翻譯服務翻譯文本
-    :param text: 要翻譯的文本
-    :param source_lang: 源語言代碼 (默認為中文)
-    :param target_lang: 目標語言代碼 (默認為英文)
-    :param max_retries: 最大重試次數
-    :param use_cache: 是否使用翻譯緩存
-    :param cache_file_path: 緩存文件路徑 (如果為None則使用默認路徑)
-    :return: 翻譯結果或 None (如果翻譯失敗)
-    """
-    if cache_file_path is None:
-        cache_file_path = DEFAULT_CACHE_PATH
-        
-    if not text or not text.strip():
-        return ""
-    
-    # 清理文本
-    cleaned_text = clean_text_for_translation(text)
-    if not cleaned_text:
-        return ""
-    
-    # 如果文本不包含中文字符，則直接返回原文
-    if not re.search(r'[\u4e00-\u9fff]', cleaned_text):
-        return cleaned_text
-    
-    # 生成緩存鍵
-    cache_key = f"{cleaned_text}_{source_lang}_{target_lang}"#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -50,6 +22,15 @@ logger = logging.getLogger("translate_utils")
 
 # DeepL API 金鑰
 DEEPL_API_KEY = "3bd36bba-fe3f-4b76-8bcf-7f6fcbe2a5c4:fx"
+
+# 文件路徑設置
+DEFAULT_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "translation_cache.json")
+DEFAULT_DICT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tw_financial_dict.json")
+
+# 翻譯緩存字典
+TRANSLATION_CACHE = {}
+# 最大緩存大小
+MAX_CACHE_SIZE = 5000
 
 # 翻譯服務配置 - 增加更多免費服務
 TRANSLATE_ENDPOINTS = [
@@ -406,11 +387,6 @@ def find_working_translation_endpoint(text: str, source_lang: str = "zh", target
     logger.error("所有翻譯服務均不可用")
     return None
 
-# 翻譯緩存字典
-TRANSLATION_CACHE = {}
-# 最大緩存大小
-MAX_CACHE_SIZE = 5000
-
 def load_translation_cache(cache_file_path: str) -> None:
     """
     從文件加載翻譯緩存
@@ -442,7 +418,7 @@ def save_translation_cache(cache_file_path: str) -> None:
         logger.warning(f"保存翻譯緩存失敗: {str(e)}")
 
 def translate_text(text: str, source_lang: str = "zh", target_lang: str = "en", max_retries: int = 2, 
-                  use_cache: bool = True, cache_file_path: str = "translation_cache.json") -> Optional[str]:
+                  use_cache: bool = True, cache_file_path: str = None) -> Optional[str]:
     """
     使用可用的翻譯服務翻譯文本
     :param text: 要翻譯的文本
@@ -450,9 +426,12 @@ def translate_text(text: str, source_lang: str = "zh", target_lang: str = "en", 
     :param target_lang: 目標語言代碼 (默認為英文)
     :param max_retries: 最大重試次數
     :param use_cache: 是否使用翻譯緩存
-    :param cache_file_path: 緩存文件路徑
+    :param cache_file_path: 緩存文件路徑 (如果為None則使用默認路徑)
     :return: 翻譯結果或 None (如果翻譯失敗)
     """
+    if cache_file_path is None:
+        cache_file_path = DEFAULT_CACHE_PATH
+        
     if not text or not text.strip():
         return ""
     
@@ -587,43 +566,6 @@ def translate_to_english_slug(text: str, existing_dict: Dict[str, str] = None) -
     hash_value = hashlib.md5(text.encode('utf-8')).hexdigest()[:8]
     return f"article-{hash_value}"
 
-def batch_translate_terms(terms: List[str], existing_dict: Dict[str, str] = None) -> Dict[str, str]:
-    """
-    批量翻譯術語
-    :param terms: 術語列表
-    :param existing_dict: 現有翻譯字典 (可選)
-    :return: 翻譯結果字典
-    """
-    if existing_dict is None:
-        existing_dict = {}
-    
-    result_dict = {}
-    
-    # 查找一個可用的翻譯服務
-    test_term = next((term for term in terms if term not in existing_dict), None)
-    if test_term:
-        find_working_translation_endpoint(test_term)
-    
-    for term in terms:
-        # 跳過空術語或純數字、英文
-        if not term or not re.search(r'[\u4e00-\u9fff]', term):
-            continue
-        
-        # 如果已在字典中，跳過
-        if term in existing_dict:
-            continue
-        
-        # 翻譯並轉換為 slug
-        translated = translate_to_english_slug(term)
-        if translated:
-            result_dict[term] = translated
-            logger.info(f"翻譯術語: {term} -> {translated}")
-        
-        # 避免頻率限制
-        time.sleep(0.5)
-    
-    return result_dict
-
 def extract_chinese_terms_from_filename(filename: str) -> List[str]:
     """
     從文件名中提取中文詞彙
@@ -657,133 +599,6 @@ def extract_chinese_terms_from_filename(filename: str) -> List[str]:
             chinese_terms.append(chinese_only)
     
     return chinese_terms
-
-def update_translation_dict(file_paths: List[str], dict_path: str) -> bool:
-    """
-    更新翻譯字典
-    :param file_paths: 文件路徑列表
-    :param dict_path: 字典文件路徑
-    :return: 是否成功更新
-    """
-    try:
-        # 加載現有字典
-        existing_dict = {}
-        if os.path.exists(dict_path):
-            with open(dict_path, 'r', encoding='utf-8') as f:
-                existing_dict = json.load(f)
-        
-        # 收集需要翻譯的術語
-        terms_to_translate = []
-        
-        for file_path in file_paths:
-            if not os.path.exists(file_path):
-                logger.warning(f"文件不存在: {file_path}")
-                continue
-            
-            filename = os.path.basename(file_path)
-            chinese_terms = extract_chinese_terms_from_filename(filename)
-            
-            for term in chinese_terms:
-                if term and term not in existing_dict and term not in terms_to_translate:
-                    terms_to_translate.append(term)
-        
-        if not terms_to_translate:
-            logger.info("沒有新術語需要翻譯")
-            return True
-        
-        logger.info(f"將翻譯 {len(terms_to_translate)} 個新術語")
-        
-        # 批量翻譯
-        new_translations = batch_translate_terms(terms_to_translate, existing_dict)
-        
-        if not new_translations:
-            logger.warning("沒有獲得新的翻譯結果")
-            return True
-        
-        # 更新字典
-        existing_dict.update(new_translations)
-        
-        # 保存更新後的字典
-        with open(dict_path, 'w', encoding='utf-8') as f:
-            json.dump(existing_dict, f, ensure_ascii=False, indent=2, sort_keys=True)
-        
-        logger.info(f"成功更新翻譯字典，新增 {len(new_translations)} 個翻譯")
-        return True
-        
-    except Exception as e:
-        logger.error(f"更新翻譯字典時發生錯誤: {str(e)}")
-        return False
-
-def update_translation_dict(file_paths: List[str], dict_path: str = None, cache_file_path: str = None) -> bool:
-    """
-    更新翻譯字典
-    :param file_paths: 文件路徑列表
-    :param dict_path: 字典文件路徑 (如果為None則使用默認路徑)
-    :param cache_file_path: 緩存文件路徑 (如果為None則使用默認路徑)
-    :return: 是否成功更新
-    """
-    if dict_path is None:
-        dict_path = DEFAULT_DICT_PATH
-    
-    if cache_file_path is None:
-        cache_file_path = DEFAULT_CACHE_PATH
-    
-    try:
-        # 加載翻譯緩存
-        load_translation_cache(cache_file_path)
-        
-        # 加載現有字典
-        existing_dict = {}
-        if os.path.exists(dict_path):
-            with open(dict_path, 'r', encoding='utf-8') as f:
-                existing_dict = json.load(f)
-        
-        # 收集需要翻譯的術語
-        terms_to_translate = []
-        
-        for file_path in file_paths:
-            if not os.path.exists(file_path):
-                logger.warning(f"文件不存在: {file_path}")
-                continue
-            
-            filename = os.path.basename(file_path)
-            chinese_terms = extract_chinese_terms_from_filename(filename)
-            
-            for term in chinese_terms:
-                if term and term not in existing_dict and term not in terms_to_translate:
-                    terms_to_translate.append(term)
-        
-        if not terms_to_translate:
-            logger.info("沒有新術語需要翻譯")
-            return True
-        
-        logger.info(f"將翻譯 {len(terms_to_translate)} 個新術語")
-        
-        # 批量翻譯
-        new_translations = batch_translate_terms(terms_to_translate, existing_dict)
-        
-        if not new_translations:
-            logger.warning("沒有獲得新的翻譯結果")
-            return True
-        
-        # 更新字典
-        existing_dict.update(new_translations)
-        
-        # 保存更新後的字典
-        # 確保目錄存在
-        os.makedirs(os.path.dirname(os.path.abspath(dict_path)), exist_ok=True)
-        with open(dict_path, 'w', encoding='utf-8') as f:
-            json.dump(existing_dict, f, ensure_ascii=False, indent=2, sort_keys=True)
-        
-        # 保存翻譯緩存
-        save_translation_cache(cache_file_path)
-        
-        logger.info(f"成功更新財務字典，新增 {len(new_translations)} 個翻譯，總詞條數: {len(existing_dict)}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"更新翻譯字典時發生錯誤: {str(e)}")
-        return False
 
 def batch_translate_terms(terms: List[str], existing_dict: Dict[str, str] = None, dict_path: str = None, 
                        cache_file_path: str = None) -> Dict[str, str]:
@@ -887,6 +702,77 @@ def batch_translate_terms(terms: List[str], existing_dict: Dict[str, str] = None
             logger.warning(f"保存最終翻譯結果時出錯: {str(e)}")
     
     return result_dict
+
+def update_translation_dict(file_paths: List[str], dict_path: str = None, cache_file_path: str = None) -> bool:
+    """
+    更新翻譯字典
+    :param file_paths: 文件路徑列表
+    :param dict_path: 字典文件路徑 (如果為None則使用默認路徑)
+    :param cache_file_path: 緩存文件路徑 (如果為None則使用默認路徑)
+    :return: 是否成功更新
+    """
+    if dict_path is None:
+        dict_path = DEFAULT_DICT_PATH
+    
+    if cache_file_path is None:
+        cache_file_path = DEFAULT_CACHE_PATH
+    
+    try:
+        # 加載翻譯緩存
+        load_translation_cache(cache_file_path)
+        
+        # 加載現有字典
+        existing_dict = {}
+        if os.path.exists(dict_path):
+            with open(dict_path, 'r', encoding='utf-8') as f:
+                existing_dict = json.load(f)
+        
+        # 收集需要翻譯的術語
+        terms_to_translate = []
+        
+        for file_path in file_paths:
+            if not os.path.exists(file_path):
+                logger.warning(f"文件不存在: {file_path}")
+                continue
+            
+            filename = os.path.basename(file_path)
+            chinese_terms = extract_chinese_terms_from_filename(filename)
+            
+            for term in chinese_terms:
+                if term and term not in existing_dict and term not in terms_to_translate:
+                    terms_to_translate.append(term)
+        
+        if not terms_to_translate:
+            logger.info("沒有新術語需要翻譯")
+            return True
+        
+        logger.info(f"將翻譯 {len(terms_to_translate)} 個新術語")
+        
+        # 批量翻譯
+        new_translations = batch_translate_terms(terms_to_translate, existing_dict)
+        
+        if not new_translations:
+            logger.warning("沒有獲得新的翻譯結果")
+            return True
+        
+        # 更新字典
+        existing_dict.update(new_translations)
+        
+        # 保存更新後的字典
+        # 確保目錄存在
+        os.makedirs(os.path.dirname(os.path.abspath(dict_path)), exist_ok=True)
+        with open(dict_path, 'w', encoding='utf-8') as f:
+            json.dump(existing_dict, f, ensure_ascii=False, indent=2, sort_keys=True)
+        
+        # 保存翻譯緩存
+        save_translation_cache(cache_file_path)
+        
+        logger.info(f"成功更新財務字典，新增 {len(new_translations)} 個翻譯，總詞條數: {len(existing_dict)}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"更新翻譯字典時發生錯誤: {str(e)}")
+        return False
 
 def init_financial_dict(dict_path: str = None) -> Dict[str, str]:
     """
