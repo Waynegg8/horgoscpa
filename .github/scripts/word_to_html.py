@@ -16,6 +16,10 @@ import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 
+# 添加這兩行
+import importlib
+import subprocess
+
 # 確保依賴安裝
 def ensure_dependencies():
     required_packages = [
