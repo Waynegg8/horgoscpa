@@ -208,8 +208,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // 更新UI元素以反映當前狀態
-  function updateUIState() {
-    // 更新分類按鈕狀態
+function updateUIState() {
+  // 更新分類按鈕狀態
+  if (filterButtons && filterButtons.length > 0) {  // 添加這個檢查
     filterButtons.forEach(btn => {
       if (btn.dataset.category === currentCategory) {
         btn.classList.add('active');
@@ -217,17 +218,18 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.classList.remove('active');
       }
     });
-    
-    // 更新搜索框
-    if (searchInput) {
-      searchInput.value = currentSearchQuery;
-      if (currentSearchQuery) {
-        searchContainer.classList.add('search-active');
-      } else {
-        searchContainer.classList.remove('search-active');
-      }
+  }
+  
+  // 更新搜索框
+  if (searchInput) {
+    searchInput.value = currentSearchQuery;
+    if (currentSearchQuery) {
+      searchContainer.classList.add('search-active');
+    } else {
+      searchContainer.classList.remove('search-active');
     }
   }
+}
   
   function setupScrollAnimations() {
     const animateOnScroll = function() {
