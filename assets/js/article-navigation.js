@@ -4,20 +4,18 @@
  * 功能: 為文章頁面生成上一篇和下一篇導航，支援系列文章內導航
  */
 document.addEventListener('DOMContentLoaded', function() {
-  const BLOG_POSTS_JSON = '/assets/data/blog-posts.json';
   const prevLink = document.getElementById('prev-article');
   const nextLink = document.getElementById('next-article');
-
+  
   if (!prevLink || !nextLink) {
     console.error('導航元素未找到');
     return;
   }
 
-  // 獲取當前文章的 URL
   const currentUrl = window.location.pathname;
 
   // 從 JSON 獲取文章數據
-  fetch(BLOG_POSTS_JSON)
+  fetch('/assets/data/blog-posts.json')
     .then(response => {
       if (!response.ok) {
         throw new Error('無法獲取文章數據');
