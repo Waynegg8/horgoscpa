@@ -382,10 +382,10 @@ jobs:
             echo "沒有需要處理的 Word 文檔"
           fi
       
-      # 16. 更新網站 Sitemap - 現在在每次倉庫有任何變動時都會更新
+      # 16. 更新網站 Sitemap - 移除了對任何push操作的觸發
       - name: 更新網站 Sitemap
         id: update_sitemap
-        if: github.event.inputs.update_sitemap == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap') || github.event_name == 'push' || steps.commit-html.outputs.html_changed == 'true' || steps.update_blog_json.outputs.blog_json_updated == 'true'
+        if: github.event.inputs.update_sitemap == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap') || steps.commit-html.outputs.html_changed == 'true' || steps.update_blog_json.outputs.blog_json_updated == 'true'
         run: |
           echo "開始更新網站 Sitemap..."
           
