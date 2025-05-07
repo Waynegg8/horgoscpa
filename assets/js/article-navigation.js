@@ -97,6 +97,16 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
+   * 處理URL，去掉.html後綴，保持相對路徑
+   */
+  function processUrl(url) {
+    if (!url) return '';
+    
+    // 去掉.html後綴
+    return url.replace(/\.html$/, '');
+  }
+  
+  /**
    * 查找相鄰文章
    */
   function findAdjacentArticles(data, seriesInfo) {
@@ -161,8 +171,8 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (prevPost) {
         console.log(`找到上一集 EP${prevPost.episode}: ${prevPost.title}`);
-        // 處理URL，去掉.html後綴
-        prevPost.url = prevPost.url.replace(/\.html$/, '');
+        // 處理URL
+        prevPost.url = processUrl(prevPost.url);
       } else {
         console.log(`沒有上一集 (EP${currentEpisode-1})`);
         
@@ -176,8 +186,8 @@ document.addEventListener('DOMContentLoaded', function() {
           if (otherPosts.length > 0) {
             otherPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
             prevPost = otherPosts[0];
-            // 處理URL，去掉.html後綴
-            prevPost.url = prevPost.url.replace(/\.html$/, '');
+            // 處理URL
+            prevPost.url = processUrl(prevPost.url);
             prevMessage = '離開此系列，前往其他主題';
             console.log(`系列第一集，找到非系列文章作為上一篇: ${prevPost.title}`);
           }
@@ -186,8 +196,8 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (nextPost) {
         console.log(`找到下一集 EP${nextPost.episode}: ${nextPost.title}`);
-        // 處理URL，去掉.html後綴
-        nextPost.url = nextPost.url.replace(/\.html$/, '');
+        // 處理URL
+        nextPost.url = processUrl(nextPost.url);
       } else {
         console.log(`沒有下一集 (EP${currentEpisode+1})`);
         
@@ -202,8 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
           if (otherPosts.length > 0) {
             otherPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
             nextPost = otherPosts[0];
-            // 處理URL，去掉.html後綴
-            nextPost.url = nextPost.url.replace(/\.html$/, '');
+            // 處理URL
+            nextPost.url = processUrl(nextPost.url);
             nextMessage = '系列已結束，前往其他主題';
             console.log(`系列最後一集，找到非系列文章作為下一篇: ${nextPost.title}`);
           }
@@ -250,15 +260,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // 獲取相鄰文章
         if (currentIndex > 0) {
           prevPost = sortedPosts[currentIndex - 1];
-          // 處理URL，去掉.html後綴
-          prevPost.url = prevPost.url.replace(/\.html$/, '');
+          // 處理URL
+          prevPost.url = processUrl(prevPost.url);
           console.log(`找到上一篇: ${prevPost.title}`);
         }
         
         if (currentIndex < sortedPosts.length - 1) {
           nextPost = sortedPosts[currentIndex + 1];
-          // 處理URL，去掉.html後綴
-          nextPost.url = nextPost.url.replace(/\.html$/, '');
+          // 處理URL
+          nextPost.url = processUrl(nextPost.url);
           console.log(`找到下一篇: ${nextPost.title}`);
         }
       } else {
@@ -280,16 +290,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (earlierPosts.length > 0) {
           earlierPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
           nextPost = earlierPosts[0]; // 日期較近的文章作為下一篇
-          // 處理URL，去掉.html後綴
-          nextPost.url = nextPost.url.replace(/\.html$/, '');
+          // 處理URL
+          nextPost.url = processUrl(nextPost.url);
           console.log(`根據日期比較找到下一篇: ${nextPost.title}`);
         }
         
         if (laterPosts.length > 0) {
           laterPosts.sort((a, b) => new Date(a.date) - new Date(b.date));
           prevPost = laterPosts[0]; // 日期較近的文章作為上一篇
-          // 處理URL，去掉.html後綴
-          prevPost.url = prevPost.url.replace(/\.html$/, '');
+          // 處理URL
+          prevPost.url = processUrl(prevPost.url);
           console.log(`根據日期比較找到上一篇: ${prevPost.title}`);
         }
       }
