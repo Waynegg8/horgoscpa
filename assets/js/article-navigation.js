@@ -2,7 +2,7 @@
  * article-navigation.js - 霍爾果斯會計師事務所文章導航腳本
  * 最後更新日期: 2025-05-07
  * 功能: 為文章頁面生成上一篇和下一篇導航，支援系列文章內導航
- * 優化版：完全依賴 meta 標籤獲取系列信息
+ * 優化版：完全依賴 meta 標籤獲取系列信息，並提供更好的導航體驗
  */
 document.addEventListener('DOMContentLoaded', function() {
   // 獲取導航按鈕
@@ -218,18 +218,50 @@ document.addEventListener('DOMContentLoaded', function() {
         // 如果是系列最後一集，找非系列文章作為下一篇
         if (seriesPosts.length > 0 && 
             parseInt(seriesPosts[seriesPosts.length-1].episode) === currentEpisode) {
-          const otherPosts = posts.filter(post => 
-            !post.is_series || 
-            post.series_name !== seriesName
-          );
           
-          if (otherPosts.length > 0) {
-            otherPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-            nextPost = otherPosts[0];
-            // 處理URL
+          // 尋找其他系列的第一集或最新文章
+          let otherSeries = [];
+          
+          // 先查找其他系列
+          if (seriesData) {
+            for (const otherSeriesName in seriesData) {
+              if (otherSeriesName !== seriesName) {
+                let otherSeriesPosts = [];
+                if (Array.isArray(seriesData[otherSeriesName].posts)) {
+                  otherSeriesPosts = seriesData[otherSeriesName].posts;
+                } else if (Array.isArray(seriesData[otherSeriesName])) {
+                  otherSeriesPosts = seriesData[otherSeriesName];
+                }
+                
+                if (otherSeriesPosts.length > 0) {
+                  otherSeriesPosts.sort((a, b) => parseInt(a.episode) - parseInt(b.episode));
+                  otherSeries.push(otherSeriesPosts[0]); // 取其他系列的第一集
+                }
+              }
+            }
+          }
+          
+          if (otherSeries.length > 0) {
+            // 按日期排序，取最新的系列第一集
+            otherSeries.sort((a, b) => new Date(b.date) - new Date(a.date));
+            nextPost = otherSeries[0];
             nextPost.url = processUrl(nextPost.url);
-            nextMessage = '系列已結束，前往其他主題';
-            console.log(`系列最後一集，找到非系列文章作為下一篇: ${nextPost.title}`);
+            nextMessage = '本篇已是本系列最後一篇即將轉至新文章';
+            console.log(`系列最後一集，找到其他系列的第一集作為下一篇: ${nextPost.title}`);
+          } else {
+            // 如果沒有其他系列，找最新的非系列文章
+            const otherPosts = posts.filter(post => 
+              !post.is_series || 
+              post.series_name !== seriesName
+            );
+            
+            if (otherPosts.length > 0) {
+              otherPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+              nextPost = otherPosts[0];
+              nextPost.url = processUrl(nextPost.url);
+              nextMessage = '本篇已是本系列最後一篇即將轉至新文章';
+              console.log(`系列最後一集，找到非系列文章作為下一篇: ${nextPost.title}`);
+            }
           }
         }
       }
@@ -292,6 +324,33 @@ document.addEventListener('DOMContentLoaded', function() {
           // 處理URL
           nextPost.url = processUrl(nextPost.url);
           console.log(`找到下一篇: ${nextPost.title}`);
+        } else {
+          // 如果是最新的文章，尋找系列文章的第一集作為推薦
+          const seriesFirstEpisodes = [];
+          if (data.series) {
+            for (const seriesName in data.series) {
+              let seriesPosts = [];
+              if (Array.isArray(data.series[seriesName].posts)) {
+                seriesPosts = data.series[seriesName].posts;
+              } else if (Array.isArray(data.series[seriesName])) {
+                seriesPosts = data.series[seriesName];
+              }
+              
+              if (seriesPosts.length > 0) {
+                seriesPosts.sort((a, b) => parseInt(a.episode) - parseInt(b.episode));
+                seriesFirstEpisodes.push(seriesPosts[0]); // 取系列的第一集
+              }
+            }
+          }
+          
+          if (seriesFirstEpisodes.length > 0) {
+            // 按日期排序，取最新的系列第一集
+            seriesFirstEpisodes.sort((a, b) => new Date(b.date) - new Date(a.date));
+            nextPost = seriesFirstEpisodes[0];
+            nextPost.url = processUrl(nextPost.url);
+            nextMessage = '即將進入系列文章';
+            console.log(`最新文章，找到系列第一集作為下一篇: ${nextPost.title}`);
+          }
         }
       } else {
         // 如果仍然找不到，使用日期比較
@@ -332,7 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       // 更新導航按鈕
-      updateNavigation(prevPost, nextPost);
+      updateNavigation(prevPost, nextPost, prevMessage, nextMessage);
     }
   }
   
