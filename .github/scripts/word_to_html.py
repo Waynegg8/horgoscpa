@@ -380,7 +380,7 @@ def generate_html_template(title, summary, content, date, is_series=False, serie
   {series_meta}
 
 <!-- hreflang 標籤 -->
-<link rel="alternate" hreflang="zh-TW" href="https://www.horgoscpa.com/blog/{date}-{eng_url}.html" />
+<link rel="alternate" hreflang="zh-TW" href="https://www.horgoscpa.com/blog/{date}-{eng_url}" />
   
   <!-- Favicon -->
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
