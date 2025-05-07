@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-翻譯工具模組 - 使用 LibreTranslate API 將中文翻譯為英文
+翻譯工具模組 - 使用多種免費翻譯 API 將中文翻譯為英文
 作者: Claude
-日期: 2025-05-07
+日期: 2025-05-17
 """
 
 import os
@@ -13,18 +13,69 @@ import json
 import time
 import logging
 import requests
+import hashlib
 from typing import Dict, List, Optional, Union, Any
 
 # 設置日誌
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("translate_utils")
 
-# 翻譯服務配置
-# 使用免費的 LibreTranslate API 服務，可以根據需要替換為其他服務
-LIBRE_TRANSLATE_ENDPOINTS = [
-    "https://libretranslate.de/translate",
-    "https://translate.terraprint.co/translate",
-    "https://translate.argosopentech.com/translate"
+# 翻譯服務配置 - 增加更多免費服務
+TRANSLATE_ENDPOINTS = [
+    # LibreTranslate 系列
+    {
+        "url": "https://translate.terraprint.co/translate",
+        "type": "libretranslate",
+        "timeout": 15,
+        "retry_delay": 1
+    },
+    {
+        "url": "https://translate.argosopentech.com/translate",
+        "type": "libretranslate",
+        "timeout": 15,
+        "retry_delay": 1
+    },
+    {
+        "url": "https://libretranslate.de/translate",
+        "type": "libretranslate",
+        "timeout": 15,
+        "retry_delay": 1
+    },
+    # Lingva 翻譯 (開源 Google 翻譯替代品)
+    {
+        "url": "https://lingva.ml/api/v1/{source}/{target}/{query}",
+        "type": "lingva",
+        "timeout": 15,
+        "retry_delay": 1
+    },
+    # FunTranslations API (每小時 60 次免費請求)
+    {
+        "url": "https://api.funtranslations.com/translate/chinese-simplified.json",
+        "type": "funtranslations",
+        "timeout": 10,
+        "retry_delay": 2
+    },
+    # MyMemory API (每天 100 次免費請求)
+    {
+        "url": "https://api.mymemory.translated.net/get",
+        "type": "mymemory",
+        "timeout": 10,
+        "retry_delay": 1
+    },
+    # Yandex 翻譯鏡像
+    {
+        "url": "https://translate.api.skitzen.com/api/v1/translate",
+        "type": "skitzen",
+        "timeout": 15,
+        "retry_delay": 1
+    },
+    # Translate.eu API (無需金鑰)
+    {
+        "url": "https://www.translate.eu/api/translate",
+        "type": "translateeu",
+        "timeout": 15,
+        "retry_delay": 1
+    }
 ]
 
 def clean_text_for_translation(text: str) -> str:
@@ -48,9 +99,166 @@ def clean_text_for_translation(text: str) -> str:
     
     return text
 
+def translate_with_libretranslate(endpoint: Dict, text: str, source_lang: str, target_lang: str) -> Optional[str]:
+    """使用 LibreTranslate API 翻譯文本"""
+    try:
+        data = {
+            "q": text,
+            "source": source_lang,
+            "target": target_lang,
+            "format": "text"
+        }
+        
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post(
+            endpoint["url"], 
+            json=data, 
+            headers=headers, 
+            timeout=endpoint["timeout"]
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if 'translatedText' in result:
+                return result['translatedText']
+        
+        logger.warning(f"LibreTranslate 請求失敗: 狀態碼 {response.status_code}")
+        return None
+    except Exception as e:
+        logger.warning(f"LibreTranslate 翻譯出錯: {str(e)}")
+        return None
+
+def translate_with_lingva(endpoint: Dict, text: str, source_lang: str, target_lang: str) -> Optional[str]:
+    """使用 Lingva API 翻譯文本"""
+    try:
+        url = endpoint["url"].format(
+            source=source_lang,
+            target=target_lang,
+            query=text
+        )
+        
+        response = requests.get(url, timeout=endpoint["timeout"])
+        
+        if response.status_code == 200:
+            result = response.json()
+            if 'translation' in result:
+                return result['translation']
+        
+        logger.warning(f"Lingva 請求失敗: 狀態碼 {response.status_code}")
+        return None
+    except Exception as e:
+        logger.warning(f"Lingva 翻譯出錯: {str(e)}")
+        return None
+
+def translate_with_funtranslations(endpoint: Dict, text: str, source_lang: str, target_lang: str) -> Optional[str]:
+    """使用 FunTranslations API 翻譯文本"""
+    try:
+        data = {
+            "text": text
+        }
+        
+        response = requests.post(
+            endpoint["url"], 
+            data=data, 
+            timeout=endpoint["timeout"]
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if 'contents' in result and 'translated' in result['contents']:
+                return result['contents']['translated']
+        
+        logger.warning(f"FunTranslations 請求失敗: 狀態碼 {response.status_code}")
+        return None
+    except Exception as e:
+        logger.warning(f"FunTranslations 翻譯出錯: {str(e)}")
+        return None
+
+def translate_with_mymemory(endpoint: Dict, text: str, source_lang: str, target_lang: str) -> Optional[str]:
+    """使用 MyMemory API 翻譯文本"""
+    try:
+        langpair = f"{source_lang}|{target_lang}"
+        params = {
+            "q": text,
+            "langpair": langpair
+        }
+        
+        response = requests.get(
+            endpoint["url"], 
+            params=params, 
+            timeout=endpoint["timeout"]
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if 'responseData' in result and 'translatedText' in result['responseData']:
+                return result['responseData']['translatedText']
+        
+        logger.warning(f"MyMemory 請求失敗: 狀態碼 {response.status_code}")
+        return None
+    except Exception as e:
+        logger.warning(f"MyMemory 翻譯出錯: {str(e)}")
+        return None
+
+def translate_with_skitzen(endpoint: Dict, text: str, source_lang: str, target_lang: str) -> Optional[str]:
+    """使用 Skitzen API 翻譯文本"""
+    try:
+        data = {
+            "text": text,
+            "from": source_lang,
+            "to": target_lang
+        }
+        
+        response = requests.post(
+            endpoint["url"], 
+            json=data, 
+            timeout=endpoint["timeout"]
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if 'translated' in result:
+                return result['translated']
+        
+        logger.warning(f"Skitzen 請求失敗: 狀態碼 {response.status_code}")
+        return None
+    except Exception as e:
+        logger.warning(f"Skitzen 翻譯出錯: {str(e)}")
+        return None
+
+def translate_with_translateeu(endpoint: Dict, text: str, source_lang: str, target_lang: str) -> Optional[str]:
+    """使用 Translate.eu API 翻譯文本"""
+    try:
+        data = {
+            "text": text,
+            "from": source_lang,
+            "to": target_lang,
+            "format": "json"
+        }
+        
+        response = requests.post(
+            endpoint["url"], 
+            data=data, 
+            timeout=endpoint["timeout"]
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if 'text' in result:
+                return result['text']
+        
+        logger.warning(f"Translate.eu 請求失敗: 狀態碼 {response.status_code}")
+        return None
+    except Exception as e:
+        logger.warning(f"Translate.eu 翻譯出錯: {str(e)}")
+        return None
+
 def translate_text(text: str, source_lang: str = "zh", target_lang: str = "en", max_retries: int = 3) -> Optional[str]:
     """
-    使用 LibreTranslate API 翻譯文本
+    使用多種翻譯 API 嘗試翻譯文本
     :param text: 要翻譯的文本
     :param source_lang: 源語言代碼 (默認為中文)
     :param target_lang: 目標語言代碼 (默認為英文)
@@ -70,43 +278,44 @@ def translate_text(text: str, source_lang: str = "zh", target_lang: str = "en", 
         return cleaned_text
     
     # 輪詢所有端點，直到成功為止
-    for endpoint in LIBRE_TRANSLATE_ENDPOINTS:
+    for endpoint in TRANSLATE_ENDPOINTS:
         for attempt in range(max_retries):
             try:
-                data = {
-                    "q": cleaned_text,
-                    "source": source_lang,
-                    "target": target_lang,
-                    "format": "text"
-                }
-                
-                headers = {
-                    "Content-Type": "application/json"
-                }
-                
-                response = requests.post(endpoint, json=data, headers=headers, timeout=10)
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    if 'translatedText' in result:
-                        translated_text = result['translatedText']
-                        logger.info(f"成功翻譯文本，字節數: {len(cleaned_text)}")
-                        return translated_text
-                    else:
-                        logger.warning(f"翻譯 API 回應缺少 'translatedText' 字段: {result}")
+                # 根據端點類型選擇不同的翻譯方法
+                if endpoint["type"] == "libretranslate":
+                    result = translate_with_libretranslate(endpoint, cleaned_text, source_lang, target_lang)
+                elif endpoint["type"] == "lingva":
+                    result = translate_with_lingva(endpoint, cleaned_text, source_lang, target_lang)
+                elif endpoint["type"] == "funtranslations":
+                    result = translate_with_funtranslations(endpoint, cleaned_text, source_lang, target_lang)
+                elif endpoint["type"] == "mymemory":
+                    result = translate_with_mymemory(endpoint, cleaned_text, source_lang, target_lang)
+                elif endpoint["type"] == "skitzen":
+                    result = translate_with_skitzen(endpoint, cleaned_text, source_lang, target_lang)
+                elif endpoint["type"] == "translateeu":
+                    result = translate_with_translateeu(endpoint, cleaned_text, source_lang, target_lang)
                 else:
-                    logger.warning(f"翻譯請求失敗: 狀態碼 {response.status_code}")
+                    logger.warning(f"未知的端點類型: {endpoint['type']}")
+                    continue
                     
-                # 在重試前等待一段時間（避免頻率限制）
-                time.sleep(1)
+                if result:
+                    logger.info(f"使用 {endpoint['type']} 成功翻譯文本，字節數: {len(cleaned_text)}")
+                    return result
+                
+                # 在重試前等待指定的延遲時間
+                time.sleep(endpoint["retry_delay"])
                 
             except Exception as e:
-                logger.error(f"翻譯文本時發生錯誤: {str(e)}")
-                # 在重試前等待一段時間
-                time.sleep(1)
+                logger.error(f"翻譯服務 {endpoint['type']} 出錯: {str(e)}")
+                # 在重試前等待指定的延遲時間
+                time.sleep(endpoint["retry_delay"])
                 
-    logger.error(f"所有翻譯端點均失敗，無法翻譯文本: {cleaned_text[:100]}")
-    return None
+    # 如果所有翻譯服務都失敗，嘗試使用簡單的漢語拼音轉換
+    logger.warning(f"所有翻譯端點均失敗，無法翻譯文本: {cleaned_text[:100]}")
+    
+    # 生成哈希值作為回退方案
+    hash_value = hashlib.md5(cleaned_text.encode('utf-8')).hexdigest()[:8]
+    return f"untranslated-{hash_value}"
 
 def translate_to_english_slug(text: str, existing_dict: Dict[str, str] = None) -> str:
     """
@@ -115,8 +324,6 @@ def translate_to_english_slug(text: str, existing_dict: Dict[str, str] = None) -
     :param existing_dict: 現有翻譯字典 (可選)
     :return: 英文 slug
     """
-    import hashlib
-    
     if not text:
         return "untitled"
     
@@ -125,22 +332,25 @@ def translate_to_english_slug(text: str, existing_dict: Dict[str, str] = None) -
         return existing_dict[text].lower().replace(' ', '-')
     
     # 嘗試翻譯
-    translated = translate_text(text)
-    
-    if translated:
-        # 清理翻譯結果，只保留英文、數字和空格
-        cleaned = re.sub(r'[^\w\s]', '', translated).strip().lower()
-        # 將空格替換為連字符
-        slug = re.sub(r'\s+', '-', cleaned)
-        # 移除連續的連字符
-        slug = re.sub(r'-+', '-', slug)
-        # 確保 slug 不超過 100 個字符
-        if len(slug) > 100:
-            slug = slug[:100]
+    try:
+        translated = translate_text(text)
         
-        # 確保 slug 不為空
-        if slug:
-            return slug
+        if translated:
+            # 清理翻譯結果，只保留英文、數字和空格
+            cleaned = re.sub(r'[^\w\s]', '', translated).strip().lower()
+            # 將空格替換為連字符
+            slug = re.sub(r'\s+', '-', cleaned)
+            # 移除連續的連字符
+            slug = re.sub(r'-+', '-', slug)
+            # 確保 slug 不超過 100 個字符
+            if len(slug) > 100:
+                slug = slug[:100]
+            
+            # 確保 slug 不為空
+            if slug and slug != "untranslated":
+                return slug
+    except Exception as e:
+        logger.warning(f"翻譯失敗，使用備用方法: {str(e)}")
     
     # 如果翻譯失敗或結果為空，使用哈希
     hash_value = hashlib.md5(text.encode('utf-8')).hexdigest()[:8]
