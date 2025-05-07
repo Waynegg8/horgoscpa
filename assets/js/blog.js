@@ -445,33 +445,31 @@ document.addEventListener('DOMContentLoaded', function() {
           console.warn('未檢測到系列文章數據');
         }
         
-       function initializeTagCloud(tags) {
-  if (!tagCloudContainer || !tags || tags.length === 0) return;
-
-  // 過濾出有文章的標籤
-  const filteredTags = tags.filter(tag => {
-    // 檢查該標籤是否與任何文章的標籤有關聯
-    return allPosts.posts.some(post => post.tags && post.tags.includes(tag));
-  });
-
-  // 如果過濾後沒有標籤，顯示沒有標籤的訊息
-  if (filteredTags.length === 0) {
-    tagCloudContainer.innerHTML = "<p>目前沒有標籤。</p>";
-    return;
+        // 初始化標籤雲和熱門文章
+        if (data.tags && Array.isArray(data.tags)) {
+          initializeTagCloud(data.tags);
+        } else {
+          console.warn('未檢測到標籤數據');
+        }
+        
+        // 初始化系列列表
+        initializeSidebarSeriesList(data);
+        
+        // 初始化熱門文章區域
+        initializePopularPosts();
+        
+        // 更新分類統計
+        updateCategoryStats();
+        
+        // 顯示文章
+        filterAndDisplayPosts();
+        
+      })
+      .catch(error => {
+        console.error('獲取博客數據失敗:', error);
+        showError('無法加載博客數據。請稍後再試。');
+      });
   }
-
-  // 顯示最多5個標籤
-  const topTags = filteredTags.slice(0, 5);
-
-  // 生成標籤HTML
-  const tagsHTML = topTags.map(tag => 
-    `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="${currentTag === tag ? 'active' : ''}">${tag}</a>`
-  ).join('');
-
-  // 將標籤加入頁面
-  tagCloudContainer.innerHTML = tagsHTML;
-}
-
   
   function initializeSidebarSeriesList(data) {
     const sidebarSeriesContainer = document.getElementById('sidebar-series-list-container');
@@ -925,32 +923,31 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function initializeTagCloud(tags) {
-  if (!tagCloudContainer || !tags || tags.length === 0) return;
-  
-  // 只顯示有文章的標籤
-  const filteredTags = tags.filter(tag => {
-    // 檢查該標籤是否與任何文章的標籤有關聯
-    return allPosts.posts.some(post => post.tags && post.tags.includes(tag));
-  });
-  
-  // 如果過濾後沒有標籤，顯示沒有標籤的訊息
-  if (filteredTags.length === 0) {
-    tagCloudContainer.innerHTML = "<p>目前沒有標籤。</p>";
-    return;
+    if (!tagCloudContainer || !tags || tags.length === 0) return;
+    
+    // 過濾出有文章的標籤
+    const filteredTags = tags.filter(tag => {
+      // 檢查該標籤是否與任何文章的標籤有關聯
+      return allPosts.posts.some(post => post.tags && post.tags.includes(tag));
+    });
+    
+    // 如果過濾後沒有標籤，顯示沒有標籤的訊息
+    if (filteredTags.length === 0) {
+      tagCloudContainer.innerHTML = "<p>目前沒有標籤。</p>";
+      return;
+    }
+    
+    // 顯示最多15個標籤
+    const topTags = filteredTags.slice(0, 15);
+    
+    // 生成標籤HTML
+    const tagsHTML = topTags.map(tag => 
+      `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="${currentTag === tag ? 'active' : ''}">${tag}</a>`
+    ).join('');
+    
+    // 將標籤加入頁面
+    tagCloudContainer.innerHTML = tagsHTML;
   }
-
-  // 只顯示最多15個標籤
-  const topTags = filteredTags.slice(0, 15);
-  
-  // 生成標籤HTML
-  const tagsHTML = topTags.map(tag => 
-    `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="${currentTag === tag ? 'active' : ''}">${tag}</a>`
-  ).join('');
-
-  // 將標籤加入頁面
-  tagCloudContainer.innerHTML = tagsHTML;
-}
-
   
   function initializePopularPosts() {
     if (!popularPostsContainer || !allPosts.posts || allPosts.posts.length === 0) return;
