@@ -12,12 +12,12 @@ import json
 import logging
 import glob
 import re
-import shutil
-import datetime
+import datetime  # 添加這一行
+import shutil  # html_finalizer.py需要
+import hashlib  # html_finalizer.py需要
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 from bs4 import BeautifulSoup
-
 # 設置日誌
 def setup_logging():
     log_dir = "logs"
