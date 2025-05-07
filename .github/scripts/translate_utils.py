@@ -26,34 +26,27 @@ TRANSLATE_ENDPOINTS = [
     {
         "url": "https://translate.terraprint.co/translate",
         "type": "libretranslate",
-        "timeout": 15,
+        "timeout": 10,
         "retry_delay": 1
     },
     {
         "url": "https://translate.argosopentech.com/translate",
         "type": "libretranslate",
-        "timeout": 15,
+        "timeout": 10,
         "retry_delay": 1
     },
     {
         "url": "https://libretranslate.de/translate",
         "type": "libretranslate",
-        "timeout": 15,
+        "timeout": 10,
         "retry_delay": 1
     },
     # Lingva 翻譯 (開源 Google 翻譯替代品)
     {
         "url": "https://lingva.ml/api/v1/{source}/{target}/{query}",
         "type": "lingva",
-        "timeout": 15,
-        "retry_delay": 1
-    },
-    # FunTranslations API (每小時 60 次免費請求)
-    {
-        "url": "https://api.funtranslations.com/translate/chinese-simplified.json",
-        "type": "funtranslations",
         "timeout": 10,
-        "retry_delay": 2
+        "retry_delay": 1
     },
     # MyMemory API (每天 100 次免費請求)
     {
@@ -66,17 +59,27 @@ TRANSLATE_ENDPOINTS = [
     {
         "url": "https://translate.api.skitzen.com/api/v1/translate",
         "type": "skitzen",
-        "timeout": 15,
+        "timeout": 10,
         "retry_delay": 1
     },
     # Translate.eu API (無需金鑰)
     {
         "url": "https://www.translate.eu/api/translate",
         "type": "translateeu",
-        "timeout": 15,
+        "timeout": 10,
         "retry_delay": 1
+    },
+    # FunTranslations API (每小時 60 次免費請求)
+    {
+        "url": "https://api.funtranslations.com/translate/chinese-simplified.json",
+        "type": "funtranslations",
+        "timeout": 10,
+        "retry_delay": 2
     }
 ]
+
+# 保存當前工作的翻譯服務索引
+current_working_endpoint_index = 0
 
 def clean_text_for_translation(text: str) -> str:
     """
@@ -256,9 +259,77 @@ def translate_with_translateeu(endpoint: Dict, text: str, source_lang: str, targ
         logger.warning(f"Translate.eu 翻譯出錯: {str(e)}")
         return None
 
-def translate_text(text: str, source_lang: str = "zh", target_lang: str = "en", max_retries: int = 3) -> Optional[str]:
+def find_working_translation_endpoint(text: str, source_lang: str = "zh", target_lang: str = "en") -> Optional[int]:
     """
-    使用多種翻譯 API 嘗試翻譯文本
+    查找一個可用的翻譯服務
+    :return: 可用的翻譯服務索引，或 None 如果全部失敗
+    """
+    global current_working_endpoint_index
+    
+    # 首先檢查當前工作服務是否仍然可用
+    if 0 <= current_working_endpoint_index < len(TRANSLATE_ENDPOINTS):
+        endpoint = TRANSLATE_ENDPOINTS[current_working_endpoint_index]
+        
+        try:
+            # 根據端點類型選擇不同的翻譯方法
+            result = None
+            if endpoint["type"] == "libretranslate":
+                result = translate_with_libretranslate(endpoint, text, source_lang, target_lang)
+            elif endpoint["type"] == "lingva":
+                result = translate_with_lingva(endpoint, text, source_lang, target_lang)
+            elif endpoint["type"] == "funtranslations":
+                result = translate_with_funtranslations(endpoint, text, source_lang, target_lang)
+            elif endpoint["type"] == "mymemory":
+                result = translate_with_mymemory(endpoint, text, source_lang, target_lang)
+            elif endpoint["type"] == "skitzen":
+                result = translate_with_skitzen(endpoint, text, source_lang, target_lang)
+            elif endpoint["type"] == "translateeu":
+                result = translate_with_translateeu(endpoint, text, source_lang, target_lang)
+            
+            if result:
+                logger.info(f"當前翻譯服務 {endpoint['type']} 仍然可用")
+                return current_working_endpoint_index
+            
+            logger.info(f"當前翻譯服務 {endpoint['type']} 無法使用，將嘗試其他服務")
+            
+        except Exception as e:
+            logger.warning(f"檢查當前翻譯服務時出錯: {str(e)}")
+    
+    # 輪詢所有端點，尋找工作的端點
+    for index, endpoint in enumerate(TRANSLATE_ENDPOINTS):
+        if index == current_working_endpoint_index:
+            continue  # 跳過已經檢查過的當前端點
+        
+        try:
+            # 根據端點類型選擇不同的翻譯方法
+            result = None
+            if endpoint["type"] == "libretranslate":
+                result = translate_with_libretranslate(endpoint, text, source_lang, target_lang)
+            elif endpoint["type"] == "lingva":
+                result = translate_with_lingva(endpoint, text, source_lang, target_lang)
+            elif endpoint["type"] == "funtranslations":
+                result = translate_with_funtranslations(endpoint, text, source_lang, target_lang)
+            elif endpoint["type"] == "mymemory":
+                result = translate_with_mymemory(endpoint, text, source_lang, target_lang)
+            elif endpoint["type"] == "skitzen":
+                result = translate_with_skitzen(endpoint, text, source_lang, target_lang)
+            elif endpoint["type"] == "translateeu":
+                result = translate_with_translateeu(endpoint, text, source_lang, target_lang)
+            
+            if result:
+                logger.info(f"發現可用的翻譯服務: {endpoint['type']}")
+                current_working_endpoint_index = index
+                return index
+            
+        except Exception as e:
+            logger.warning(f"檢查翻譯服務 {endpoint['type']} 時出錯: {str(e)}")
+    
+    logger.error("所有翻譯服務均不可用")
+    return None
+
+def translate_text(text: str, source_lang: str = "zh", target_lang: str = "en", max_retries: int = 2) -> Optional[str]:
+    """
+    使用可用的翻譯服務翻譯文本
     :param text: 要翻譯的文本
     :param source_lang: 源語言代碼 (默認為中文)
     :param target_lang: 目標語言代碼 (默認為英文)
@@ -277,11 +348,17 @@ def translate_text(text: str, source_lang: str = "zh", target_lang: str = "en", 
     if not re.search(r'[\u4e00-\u9fff]', cleaned_text):
         return cleaned_text
     
-    # 輪詢所有端點，直到成功為止
-    for endpoint in TRANSLATE_ENDPOINTS:
+    # 找到可用的翻譯服務
+    endpoint_index = find_working_translation_endpoint(cleaned_text, source_lang, target_lang)
+    
+    if endpoint_index is not None:
+        # 使用找到的可用服務
+        endpoint = TRANSLATE_ENDPOINTS[endpoint_index]
+        
         for attempt in range(max_retries):
             try:
                 # 根據端點類型選擇不同的翻譯方法
+                result = None
                 if endpoint["type"] == "libretranslate":
                     result = translate_with_libretranslate(endpoint, cleaned_text, source_lang, target_lang)
                 elif endpoint["type"] == "lingva":
@@ -294,23 +371,27 @@ def translate_text(text: str, source_lang: str = "zh", target_lang: str = "en", 
                     result = translate_with_skitzen(endpoint, cleaned_text, source_lang, target_lang)
                 elif endpoint["type"] == "translateeu":
                     result = translate_with_translateeu(endpoint, cleaned_text, source_lang, target_lang)
-                else:
-                    logger.warning(f"未知的端點類型: {endpoint['type']}")
-                    continue
-                    
+                
                 if result:
                     logger.info(f"使用 {endpoint['type']} 成功翻譯文本，字節數: {len(cleaned_text)}")
                     return result
                 
-                # 在重試前等待指定的延遲時間
-                time.sleep(endpoint["retry_delay"])
+                # 如果失敗，嘗試找到其他可用服務
+                logger.warning(f"嘗試用 {endpoint['type']} 翻譯失敗，尋找其他服務")
+                endpoint_index = find_working_translation_endpoint(cleaned_text, source_lang, target_lang)
+                if endpoint_index is None:
+                    break
+                endpoint = TRANSLATE_ENDPOINTS[endpoint_index]
                 
             except Exception as e:
                 logger.error(f"翻譯服務 {endpoint['type']} 出錯: {str(e)}")
-                # 在重試前等待指定的延遲時間
-                time.sleep(endpoint["retry_delay"])
-                
-    # 如果所有翻譯服務都失敗，嘗試使用簡單的漢語拼音轉換
+                # 尋找其他可用服務
+                endpoint_index = find_working_translation_endpoint(cleaned_text, source_lang, target_lang)
+                if endpoint_index is None:
+                    break
+                endpoint = TRANSLATE_ENDPOINTS[endpoint_index]
+    
+    # 如果所有翻譯服務都失敗，使用哈希值作為回退方案
     logger.warning(f"所有翻譯端點均失敗，無法翻譯文本: {cleaned_text[:100]}")
     
     # 生成哈希值作為回退方案
@@ -335,7 +416,7 @@ def translate_to_english_slug(text: str, existing_dict: Dict[str, str] = None) -
     try:
         translated = translate_text(text)
         
-        if translated:
+        if translated and not translated.startswith("untranslated-"):
             # 清理翻譯結果，只保留英文、數字和空格
             cleaned = re.sub(r'[^\w\s]', '', translated).strip().lower()
             # 將空格替換為連字符
@@ -347,7 +428,7 @@ def translate_to_english_slug(text: str, existing_dict: Dict[str, str] = None) -
                 slug = slug[:100]
             
             # 確保 slug 不為空
-            if slug and slug != "untranslated":
+            if slug:
                 return slug
     except Exception as e:
         logger.warning(f"翻譯失敗，使用備用方法: {str(e)}")
@@ -367,6 +448,11 @@ def batch_translate_terms(terms: List[str], existing_dict: Dict[str, str] = None
         existing_dict = {}
     
     result_dict = {}
+    
+    # 查找一個可用的翻譯服務
+    test_term = next((term for term in terms if term not in existing_dict), None)
+    if test_term:
+        find_working_translation_endpoint(test_term)
     
     for term in terms:
         # 跳過空術語或純數字、英文
