@@ -12,12 +12,13 @@ import json
 import logging
 import glob
 import re
-import datetime  # 添加這一行
-import shutil  # html_finalizer.py需要
-import hashlib  # html_finalizer.py需要
+import datetime
+import shutil
+import hashlib
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 from bs4 import BeautifulSoup
+
 # 設置日誌
 def setup_logging():
     log_dir = "logs"
@@ -92,6 +93,8 @@ def slugify(text: str, translation_dict: Dict[str, str] = None) -> str:
     slug = re.sub(r'\s+', '-', cleaned)
     # 移除連續的連字符
     slug = re.sub(r'-+', '-', slug)
+    # 移除結尾的連字符（新增）
+    slug = slug.rstrip('-')
     
     # 如果生成的slug為空，使用哈希
     if not slug or len(slug) < 3:
@@ -127,8 +130,8 @@ def generate_optimized_filename(metadata: Dict, translation_dict: Dict[str, str]
         # 否則使用標題slug
         filename = f"{date}-{title_slug}"
     
-    # 如果是系列文章，添加系列信息
-    if is_series and series_name:
+    # 如果是系列文章，添加系列信息（修改後的邏輯）
+    if series_name and episode:  # 不再檢查 is_series 標誌
         series_slug = slugify(series_name, translation_dict)
         if not series_slug or len(series_slug) < 3:
             series_slug = hashlib.md5(series_name.encode('utf-8')).hexdigest()[:8]
