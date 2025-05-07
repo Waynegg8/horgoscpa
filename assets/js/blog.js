@@ -1,13 +1,29 @@
 /**
  * blog.js - 霍爾果斯會計師事務所部落格功能腳本
- * 最後更新日期: 2025-05-10
- * 優化: 修正URL導航問題、系列文章顯示功能、支持豐富的系列文章信息、修正分頁問題
+ * 最後更新日期: 2025-05-16
+ * 優化: 修正URL導航問題、系列文章顯示功能、支持豐富的系列文章信息、修正分頁問題、統一系列文章分類
  */
 document.addEventListener('DOMContentLoaded', function() {
   // 常量定義
   const BLOG_POSTS_JSON = '/assets/data/blog-posts.json';
   const POSTS_PER_PAGE = 6;
   const SUMMARY_MAX_LENGTH = 120; // 摘要最大長度
+  
+  // 隨機圖片選擇功能 - 預設圖片庫
+  const DEFAULT_IMAGES = [
+    '/assets/images/blog/accounting_default.jpg',
+    '/assets/images/blog/tax_default.jpg',
+    '/assets/images/blog/consulting_default.jpg',
+    '/assets/images/blog/business_default.jpg',
+    '/assets/images/blog/finance_default.jpg',
+    '/assets/images/blog/default.jpg'
+  ];
+  
+  // 隨機選擇圖片函數
+  function getRandomImage() {
+    const randomIndex = Math.floor(Math.random() * DEFAULT_IMAGES.length);
+    return DEFAULT_IMAGES[randomIndex];
+  }
   
   // DOM 元素
   const blogPostsContainer = document.getElementById('blog-posts-container');
@@ -29,6 +45,11 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentSearchQuery = '';
   let currentSeries = '';
   
+  // 暴露當前狀態給其他腳本
+  window.currentCategory = currentCategory;
+  window.currentPage = currentPage;
+  window.allPosts = null; // 將在資料載入後設置
+  
   // 初始化
   init();
   
@@ -40,6 +61,10 @@ document.addEventListener('DOMContentLoaded', function() {
     currentSearchQuery = urlParams.get('search') || '';
     currentSeries = urlParams.get('series') || '';
     currentPage = parseInt(urlParams.get('page') || '1');
+    
+    // 更新全局變數，供其他腳本使用
+    window.currentCategory = currentCategory;
+    window.currentPage = currentPage;
     
     console.log('初始化參數:', {
       category: currentCategory,
@@ -161,6 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
           
           if (page && page !== currentPage) {
             currentPage = page;
+            window.currentPage = currentPage; // 更新全局狀態
             
             console.log('更新當前頁碼為:', currentPage);
             filterAndDisplayPosts(); // 先更新內容
@@ -191,6 +217,10 @@ document.addEventListener('DOMContentLoaded', function() {
       currentSeries = urlParams.get('series') || '';
       currentPage = parseInt(urlParams.get('page') || '1');
       
+      // 更新全局變數
+      window.currentCategory = currentCategory;
+      window.currentPage = currentPage;
+      
       console.log('從URL更新參數:', {
         category: currentCategory,
         tag: currentTag,
@@ -208,28 +238,28 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // 更新UI元素以反映當前狀態
-function updateUIState() {
-  // 更新分類按鈕狀態
-  if (filterButtons && filterButtons.length > 0) {  // 添加這個檢查
-    filterButtons.forEach(btn => {
-      if (btn.dataset.category === currentCategory) {
-        btn.classList.add('active');
+  function updateUIState() {
+    // 更新分類按鈕狀態
+    if (filterButtons && filterButtons.length > 0) {  // 添加這個檢查
+      filterButtons.forEach(btn => {
+        if (btn.dataset.category === currentCategory) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+    
+    // 更新搜索框
+    if (searchInput) {
+      searchInput.value = currentSearchQuery;
+      if (currentSearchQuery) {
+        searchContainer.classList.add('search-active');
       } else {
-        btn.classList.remove('active');
+        searchContainer.classList.remove('search-active');
       }
-    });
-  }
-  
-  // 更新搜索框
-  if (searchInput) {
-    searchInput.value = currentSearchQuery;
-    if (currentSearchQuery) {
-      searchContainer.classList.add('search-active');
-    } else {
-      searchContainer.classList.remove('search-active');
     }
   }
-}
   
   function setupScrollAnimations() {
     const animateOnScroll = function() {
@@ -288,6 +318,8 @@ function updateUIState() {
     }
   }
   
+  // 暴露給其他腳本使用的函數
+  window.updateURL = updateURL;
   function updateURL() {
     const url = new URL(window.location);
     url.search = '';
@@ -325,6 +357,63 @@ function updateUIState() {
     console.log('更新URL:', url.toString());
   }
   
+  // 新增：統一系列文章分類
+  function normalizeSeriesCategories(data) {
+    console.log('開始統一系列文章分類');
+    // 為每個系列確定主要分類
+    const seriesCategories = {};
+    
+    // 計算每個系列中各分類的文章數
+    if (data.series) {
+      Object.keys(data.series).forEach(seriesName => {
+        const seriesData = data.series[seriesName];
+        const seriesPosts = Array.isArray(seriesData) ? 
+          seriesData : (seriesData.posts || []);
+        
+        if (seriesPosts.length === 0) return;
+        
+        const categoryCount = {};
+        seriesPosts.forEach(post => {
+          if (post.category) {
+            categoryCount[post.category] = (categoryCount[post.category] || 0) + 1;
+          }
+        });
+        
+        // 選擇出現最多的分類為系列的主要分類
+        let mainCategory = 'tax'; // 默認分類
+        let maxCount = 0;
+        
+        Object.keys(categoryCount).forEach(category => {
+          if (categoryCount[category] > maxCount) {
+            maxCount = categoryCount[category];
+            mainCategory = category;
+          }
+        });
+        
+        seriesCategories[seriesName] = mainCategory;
+        console.log(`系列 "${seriesName}" 的主要分類確定為: ${mainCategory}`);
+      });
+    }
+    
+    // 更新所有文章的分類，使同一系列的文章擁有相同分類
+    let updatedCount = 0;
+    data.posts.forEach(post => {
+      if (post.is_series && post.series_name && seriesCategories[post.series_name]) {
+        const originalCategory = post.category;
+        const seriesCategory = seriesCategories[post.series_name];
+        
+        if (originalCategory !== seriesCategory) {
+          post.category = seriesCategory;
+          updatedCount++;
+          console.log(`更新文章 "${post.title}" 的分類: ${originalCategory} -> ${seriesCategory}`);
+        }
+      }
+    });
+    
+    console.log(`共更新了 ${updatedCount} 篇文章的分類`);
+    return data;
+  }
+  
   function fetchBlogPosts() {
     showLoading();
     
@@ -338,6 +427,9 @@ function updateUIState() {
       .then(data => {
         console.log('獲取到的博客數據:', data);
         
+        // 統一系列文章分類
+        data = normalizeSeriesCategories(data);
+        
         if (data.series_list && Array.isArray(data.series_list)) {
           console.log('新格式系列列表:', data.series_list);
         }
@@ -347,6 +439,7 @@ function updateUIState() {
         }
         
         allPosts = data;
+        window.allPosts = data; // 設置全局變數
         
         if (!data.series || Object.keys(data.series).length === 0) {
           console.warn('未檢測到系列文章數據');
@@ -356,6 +449,9 @@ function updateUIState() {
         initializePopularPosts();
         initializeSidebarSeriesList(data);
         filterAndDisplayPosts();
+        
+        // 通知分類加載器更新分類數據
+        updateCategoryStats();
       })
       .catch(error => {
         console.error('獲取文章數據時出錯:', error);
@@ -381,7 +477,8 @@ function updateUIState() {
           return;
         }
         
-        const seriesImage = series.image || '/assets/images/blog/default.jpg';
+        // 使用隨機圖片或特定圖片
+        const seriesImage = series.image || getRandomImage();
         const seriesId = series.id;
         const seriesTitle = series.title || seriesId;
         const episodeCount = series.episode_count || 0;
@@ -390,7 +487,7 @@ function updateUIState() {
           <div class="sidebar-series-card" data-series="${escapeHtml(seriesId)}">
             <div class="sidebar-series-image">
               <img src="${escapeHtml(seriesImage)}" alt="${escapeHtml(seriesTitle)}" loading="lazy" 
-                  onerror="this.src='/assets/images/blog/default.jpg';">
+                  onerror="this.src='${getRandomImage()}';">
             </div>
             <div class="sidebar-series-content">
               <h4>${escapeHtml(seriesTitle)}</h4>
@@ -427,7 +524,8 @@ function updateUIState() {
         const seriesData = series[seriesName];
         if (seriesData.posts && Array.isArray(seriesData.posts)) {
           const seriesPosts = seriesData.posts;
-          const seriesImage = seriesData.image || '/assets/images/blog/default.jpg';
+          // 使用隨機圖片或特定圖片
+          const seriesImage = seriesData.image || getRandomImage();
           const seriesTitle = seriesData.title || seriesName;
           
           seriesCount++;
@@ -435,7 +533,7 @@ function updateUIState() {
             <div class="sidebar-series-card" data-series="${escapeHtml(seriesName)}">
               <div class="sidebar-series-image">
                 <img src="${escapeHtml(seriesImage)}" alt="${escapeHtml(seriesTitle)}" loading="lazy"
-                    onerror="this.src='/assets/images/blog/default.jpg';">
+                    onerror="this.src='${getRandomImage()}';">
               </div>
               <div class="sidebar-series-content">
                 <h4>${escapeHtml(seriesTitle)}</h4>
@@ -449,13 +547,14 @@ function updateUIState() {
           
           seriesCount++;
           const firstPost = seriesPosts[0];
-          const seriesImage = firstPost.image || '/assets/images/blog/default.jpg';
+          // 使用隨機圖片或特定圖片
+          const seriesImage = firstPost.image || getRandomImage();
           
           seriesHTML += `
             <div class="sidebar-series-card" data-series="${escapeHtml(seriesName)}">
               <div class="sidebar-series-image">
                 <img src="${escapeHtml(seriesImage)}" alt="${escapeHtml(seriesName)}" loading="lazy"
-                    onerror="this.src='/assets/images/blog/default.jpg';">
+                    onerror="this.src='${getRandomImage()}';">
               </div>
               <div class="sidebar-series-content">
                 <h4>${escapeHtml(seriesName)}</h4>
@@ -526,6 +625,10 @@ function updateUIState() {
     currentSearchQuery = '';
     currentPage = 1;
     
+    // 更新全局變數
+    window.currentCategory = currentCategory;
+    window.currentPage = currentPage;
+    
     if (searchInput) {
       searchInput.value = '';
       searchContainer.classList.remove('search-active');
@@ -593,6 +696,28 @@ function updateUIState() {
     searchResultsContainer.style.display = 'block';
   }
   
+  // 更新分類統計並通知分類加載器
+  function updateCategoryStats() {
+    if (!allPosts || !allPosts.posts) return;
+    
+    // 計算各分類的文章數量
+    const categoryStats = {};
+    allPosts.posts.forEach(post => {
+      if (post.category) {
+        categoryStats[post.category] = (categoryStats[post.category] || 0) + 1;
+      }
+    });
+    
+    console.log('更新分類統計:', categoryStats);
+    
+    // 通知分類加載器更新
+    if (typeof window.updateBlogCategoryStats === 'function') {
+      window.updateBlogCategoryStats(categoryStats);
+    }
+  }
+  
+  // 暴露給其他腳本使用的函數
+  window.filterAndDisplayPosts = filterAndDisplayPosts;
   function filterAndDisplayPosts() {
     console.log('執行filterAndDisplayPosts，當前參數:', {
       page: currentPage,
@@ -655,6 +780,23 @@ function updateUIState() {
     
     console.log(`顯示第 ${startIndex+1} 到 ${endIndex} 篇文章`);
     
+    // 統計各分類的文章數量
+    const categoryStats = {};
+    filteredPosts.forEach(post => {
+      if (post.category) {
+        categoryStats[post.category] = (categoryStats[post.category] || 0) + 1;
+      }
+    });
+    
+    // 通知分類加載器更新
+    if (typeof window.updateBlogCategoryStats === 'function' && 
+        currentCategory === 'all' && 
+        !currentTag && 
+        !currentSearchQuery && 
+        !currentSeries) {
+      window.updateBlogCategoryStats(categoryStats);
+    }
+    
     displayPosts(paginatedPosts);
     generatePagination(currentPage, totalPages);
   }
@@ -704,9 +846,10 @@ function updateUIState() {
         const cardElement = this.closest('.blog-card');
         if(cardElement) {
           const postCategory = cardElement.dataset.category || 'default';
-          this.src = `/assets/images/blog/${postCategory}_default.jpg`;
+          // 使用隨機圖片
+          this.src = getRandomImage();
         } else {
-          this.src = '/assets/images/blog/default.jpg';
+          this.src = getRandomImage();
         }
       });
     });
@@ -730,7 +873,7 @@ function updateUIState() {
       summary = summary.substring(0, SUMMARY_MAX_LENGTH) + '...';
     }
     
-    let imageUrl = post.image || '/assets/images/blog/default.jpg';
+    let imageUrl = post.image || getRandomImage();
     if (!imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
       imageUrl = '/' + imageUrl;
     }
@@ -747,7 +890,7 @@ function updateUIState() {
       <article class="blog-card" data-url="${postUrl}" data-category="${postCategory}" ${post.is_series ? `data-series="${post.series_name}" data-episode="${post.episode}"` : ''}>
         <a href="${postUrl}" class="blog-card-link" aria-label="閱讀文章：${postTitle}">閱讀全文</a>
         <div class="blog-image">
-          <img src="${imageUrl}" alt="${postTitle}" loading="lazy">
+          <img src="${imageUrl}" alt="${postTitle}" loading="lazy" onerror="this.src='${getRandomImage()}';">
           ${seriesBadge}
         </div>
         <div class="blog-content">
@@ -874,6 +1017,10 @@ function updateUIState() {
     currentSearchQuery = '';
     currentSeries = '';
     currentPage = 1;
+    
+    // 更新全局變數
+    window.currentCategory = currentCategory;
+    window.currentPage = currentPage;
     
     if (searchInput) {
       searchInput.value = '';

@@ -1,7 +1,7 @@
 /**
  * blog-categories-loader.js - 霍爾果斯會計師事務所部落格頁面分類動態載入
- * 最後更新日期: 2025-05-15
- * 用途: 將部落格頁面的分類標籤從硬編碼改為動態載入
+ * 最後更新日期: 2025-05-16
+ * 用途: 將部落格頁面的分類標籤從硬編碼改為動態載入，並只顯示有文章的分類
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
   
+  // 存儲各分類的文章統計
+  let categoryStats = {};
+  
   // 動態載入部落格分類標籤
   function loadBlogCategories() {
     const categoryFilter = document.querySelector('.category-filter');
@@ -19,13 +22,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // 清空現有內容
     categoryFilter.innerHTML = '';
     
-    // 載入分類
+    // 從window.allPosts中獲取統計資料（如果可用）
+    if (window.allPosts && window.allPosts.posts && Array.isArray(window.allPosts.posts)) {
+      categoryStats = {};
+      window.allPosts.posts.forEach(post => {
+        if (post.category) {
+          categoryStats[post.category] = (categoryStats[post.category] || 0) + 1;
+        }
+      });
+      console.log('從文章數據獲取到分類統計:', categoryStats);
+    } else {
+      // 使用初始統計數據
+      categoryStats = categoriesData.initialStats.blog || {};
+      console.log('使用初始分類統計:', categoryStats);
+    }
+    
+    // 載入分類（僅顯示有文章的分類和"全部"分類）
     categoriesData.blogCategories.forEach(category => {
-      const button = document.createElement('button');
-      button.className = 'filter-btn' + (category.id === 'all' ? ' active' : '');
-      button.setAttribute('data-category', category.id);
-      button.textContent = category.name;
-      categoryFilter.appendChild(button);
+      // 只有"全部"類別或有文章的類別才顯示
+      if (category.id === 'all' || categoryStats[category.id] > 0) {
+        const button = document.createElement('button');
+        button.className = 'filter-btn' + (category.id === 'all' ? ' active' : '');
+        button.setAttribute('data-category', category.id);
+        button.textContent = category.name;
+        
+        // 如果有統計數據，在按鈕上顯示數量
+        if (category.id !== 'all' && categoryStats[category.id]) {
+          button.setAttribute('title', `${categoryStats[category.id]} 篇文章`);
+        }
+        
+        categoryFilter.appendChild(button);
+      }
     });
     
     // 重新綁定分類按鈕事件
@@ -42,27 +69,28 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // 重新獲取DOM元素
       const newButton = document.querySelector(`.filter-btn[data-category="${button.dataset.category}"]`);
+      if (!newButton) return; // 確保按鈕存在
       
       // 添加新的事件監聽器
       newButton.addEventListener('click', function() {
         // 移除所有按鈕的active狀態
-        filterButtons.forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
         
         // 設置當前按鈕為active
         this.classList.add('active');
         
         // 如果存在主腳本中的篩選函數，則調用它
-        if (typeof filterAndDisplayPosts === 'function') {
+        if (typeof window.filterAndDisplayPosts === 'function') {
           // 設置當前分類
           window.currentCategory = this.dataset.category;
           window.currentPage = 1;
           
           // 更新URL並重新顯示文章
-          if (typeof updateURL === 'function') {
-            updateURL();
+          if (typeof window.updateURL === 'function') {
+            window.updateURL();
           }
           
-          filterAndDisplayPosts();
+          window.filterAndDisplayPosts();
         } else {
           console.warn('未找到篩選函數，請確認blog.js是否正確載入');
         }
@@ -70,12 +98,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // 執行載入
-  loadBlogCategories();
+  // 延遲執行載入，確保blog.js有機會先載入文章
+  setTimeout(loadBlogCategories, 500);
   
-  // 提供給主腳本的回調函數
+  // 提供給主腳本的回調函數，用於在文章資料載入後更新分類
   window.updateBlogCategoryStats = function(stats) {
-    // 如果存在側邊欄分類統計，可以在這裡更新
-    console.log('Blog category stats updated:', stats);
+    categoryStats = stats || {};
+    console.log('更新分類統計:', categoryStats);
+    loadBlogCategories();
   };
-});
+})

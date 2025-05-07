@@ -1,6 +1,6 @@
 /**
  * categories-data.js - 霍爾果斯會計師事務所網站分類資料
- * 最後更新日期: 2025-05-15
+ * 最後更新日期: 2025-05-16
  * 集中管理網站所有分類資料，便於維護和更新
  */
 
@@ -34,26 +34,24 @@ const categoriesData = {
     { id: "service", name: "服務流程" }
   ],
   
-  // 初始統計資料（更新為實際數量）
+  // 更新為實際數量
   initialStats: {
     video: {
-      "tax": 1,
-      "accounting": 1,
-      "business": 0,
-      "tutorial": 0
-    },
-    blog: {
       "tax": 5,
-      "accounting": 4,
-      "business": 3,
-      "investment": 2,
-      "international": 1
-    },
-    faq: {
-      "tax": 3,
       "accounting": 3,
       "business": 2,
-      "service": 2
+      "tutorial": 1
+    },
+    blog: {
+      "tax": 45,
+      "accounting": 1,
+      "business": 10
+    },
+    faq: {
+      "tax": 8,
+      "accounting": 5,
+      "business": 6,
+      "service": 4
     }
   }
 };
