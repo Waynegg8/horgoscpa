@@ -13,6 +13,7 @@ import logging
 import glob
 import re
 import jieba
+import datetime  # 添加這一行
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 from bs4 import BeautifulSoup
