@@ -6,7 +6,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
   // 確認是否已載入中央分類資料
-  if (typeof categoriesData === 'undefined') {
+  if (typeof window.categoriesData === 'undefined') {
     console.error('分類資料尚未載入，請確認categories-data.js是否正確引入');
     return;
   }
@@ -37,13 +37,13 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('從文章數據獲取到分類統計:', categoryStats);
       } else {
         // 使用初始統計數據
-        categoryStats = categoriesData.initialStats.blog || {};
+        categoryStats = window.categoriesData.initialStats.blog || {};
         console.log('使用初始分類統計:', categoryStats);
       }
       
       // 載入分類（僅顯示有文章的分類和"全部"分類）
-      if (categoriesData && categoriesData.blogCategories && Array.isArray(categoriesData.blogCategories)) {
-        categoriesData.blogCategories.forEach(category => {
+      if (window.categoriesData && window.categoriesData.blogCategories && Array.isArray(window.categoriesData.blogCategories)) {
+        window.categoriesData.blogCategories.forEach(category => {
           if (!category || !category.id) return;
           
           // 只有"全部"類別或有文章的類別才顯示
