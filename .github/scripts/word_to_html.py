@@ -303,8 +303,11 @@ def generate_basic_html(article_structure: Optional[Dict], date: str, original_f
         slug = f"{series_name.lower().replace(' ', '-')}-ep{episode}-{slug}"
     slug = re.sub(r'-+', '-', slug)  # 移除連續的連字符
     
+    # 生成eng_url變數供模板使用
+    eng_url = slug
+    
     # 生成HTML內容
-    html_content = generate_html_template(title, summary, content, date, is_series, series_name, episode, original_filename)
+    html_content = generate_html_template(title, summary, content, date, is_series, series_name, episode, original_filename, eng_url)
     
     # 生成建議的文件名
     if is_series:
@@ -316,8 +319,12 @@ def generate_basic_html(article_structure: Optional[Dict], date: str, original_f
     
     return html_content, suggested_filename
 
-def generate_html_template(title, summary, content, date, is_series=False, series_name=None, episode=None, original_filename=None):
+def generate_html_template(title, summary, content, date, is_series=False, series_name=None, episode=None, original_filename=None, eng_url=None):
     """生成完整HTML模板，包含導航欄和頁腳"""
+    
+    # 如果沒有提供eng_url，生成一個默認值
+    if eng_url is None:
+        eng_url = "article"
     
     # 設置系列文章的meta標籤
     series_meta = ""
@@ -710,26 +717,113 @@ def generate_html_template(title, summary, content, date, is_series=False, serie
     
     return html
 
-def save_article_metadata(output_path: str, article_structure: Dict, date: str, 
-                         is_series: bool, series_name: str, episode: int, original_filename: str):
-    """保存文章元數據供後續處理"""
-    metadata = {
-        'title': article_structure['title'],
-        'summary': article_structure['summary'],
-        'date': date,
-        'is_series': is_series,
-        'series_name': series_name if is_series else None,
-        'episode': episode if is_series else None,
-        'original_filename': original_filename,
-        'html_path': output_path
-    }
+def update_metadata(meta_path: str, classification_info: Dict) -> bool:
+    """更新元數據文件，添加分類信息"""
+    try:
+        # 載入原有元數據
+        metadata = load_metadata(meta_path)
+        if not metadata:
+            return False
+        
+        # 添加分類信息
+        metadata["classification"] = classification_info
+        
+        # 保存更新後的元數據
+        with open(meta_path, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=2)
+        
+        logger.info(f"成功更新元數據: {meta_path}")
+        return True
+    except Exception as e:
+        logger.error(f"更新元數據失敗: {meta_path}, 錯誤: {str(e)}")
+        return False
+
+def process_article(html_path: str, output_dir: str) -> Dict:
+    """處理單篇文章的HTML完成"""
+    logger.info(f"開始處理文章: {html_path}")
     
-    # 保存元數據到JSON文件
-    meta_path = output_path.replace('.html', '.meta.json')
-    with open(meta_path, 'w', encoding='utf-8') as f:
-        json.dump(metadata, f, ensure_ascii=False, indent=2)
+    # 檢查元數據文件是否存在
+    meta_path = html_path.replace('.html', '.meta.json')
+    if not os.path.exists(meta_path):
+        logger.error(f"找不到元數據文件: {meta_path}")
+        return {
+            'success': False,
+            'html_path': html_path,
+            'error': '找不到元數據文件'
+        }
     
-    logger.info(f"文章元數據已保存至: {meta_path}")
+    # 載入HTML和元數據
+    html_content, soup = load_html_content(html_path)
+    metadata = load_metadata(meta_path)
+    
+    if not html_content or not soup or not metadata:
+        return {
+            'success': False,
+            'html_path': html_path,
+            'error': '無法載入HTML內容或元數據'
+        }
+    
+    # 檢查元數據中是否有分類和標籤信息
+    if "classification" not in metadata:
+        logger.warning(f"元數據中缺少分類信息: {meta_path}")
+    
+    if "tags" not in metadata:
+        logger.warning(f"元數據中缺少標籤信息: {meta_path}")
+    
+    # 載入翻譯字典
+    translation_dict = load_translation_dict()
+    
+    # 根據元數據更新HTML內容
+    updated_soup = update_html_with_metadata(soup, metadata)
+    
+    # 生成優化的文件名
+    optimized_filename = generate_optimized_filename(metadata, translation_dict)
+    
+    # 準備輸出路徑
+    output_path = os.path.join(output_dir, optimized_filename)
+    
+    # 如果輸出文件已存在且不是當前處理的文件，先備份
+    if os.path.exists(output_path) and os.path.abspath(output_path) != os.path.abspath(html_path):
+        backup_path = output_path + f".bak.{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+        shutil.copy2(output_path, backup_path)
+        logger.info(f"已備份現有文件: {output_path} -> {backup_path}")
+    
+    # 保存更新後的HTML
+    try:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(str(updated_soup))
+        
+        # 如果生成的文件與原文件不同，且原文件不是剛創建的臨時文件，則刪除原文件
+        if os.path.abspath(output_path) != os.path.abspath(html_path) and not html_path.endswith('.tmp.html'):
+            # 更新元數據中的HTML路徑
+            metadata["html_path"] = output_path
+            with open(meta_path, 'w', encoding='utf-8') as f:
+                json.dump(metadata, f, ensure_ascii=False, indent=2)
+            
+            # 重命名元數據文件以匹配新的HTML文件名
+            new_meta_path = output_path.replace('.html', '.meta.json')
+            if os.path.abspath(new_meta_path) != os.path.abspath(meta_path):
+                shutil.move(meta_path, new_meta_path)
+            
+            # 可以選擇是否刪除原HTML文件
+            os.remove(html_path)
+        
+        logger.info(f"成功處理文章，輸出文件: {output_path}")
+        
+        return {
+            'success': True,
+            'original_path': html_path,
+            'output_path': output_path,
+            'meta_path': meta_path.replace('.html', '.meta.json'),
+            'optimized_filename': optimized_filename
+        }
+    except Exception as e:
+        logger.error(f"保存更新後的HTML失敗: {output_path}, 錯誤: {str(e)}")
+        return {
+            'success': False,
+            'html_path': html_path,
+            'error': f"保存更新後的HTML失敗: {str(e)}"
+        }
 
 def process_word_file(docx_path: str, output_dir: str) -> Dict:
     """處理單個Word文件，轉換為HTML並返回結果信息"""
@@ -804,6 +898,212 @@ def process_word_files(input_dir: str, output_dir: str) -> List[Dict]:
         logger.info(f"處理進度: {success_count}/{len(results)} 成功")
     
     return results
+
+def load_metadata(meta_path: str) -> Optional[Dict]:
+    """載入文章元數據"""
+    try:
+        with open(meta_path, 'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+        return metadata
+    except Exception as e:
+        logger.error(f"載入元數據失敗: {meta_path}, 錯誤: {str(e)}")
+        return None
+
+def load_html_content(html_path: str) -> Tuple[Optional[str], Optional[Any]]:
+    """載入HTML文件並解析內容"""
+    try:
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html_content, 'html.parser')
+        return html_content, soup
+    except Exception as e:
+        logger.error(f"載入HTML文件失敗: {html_path}, 錯誤: {str(e)}")
+        return None, None
+
+def update_html_with_metadata(soup: Any, metadata: Dict) -> Any:
+    """根據元數據更新HTML內容"""
+    # 獲取分類信息
+    classification = metadata.get("classification", {})
+    main_category = classification.get("main_category", "")
+    main_category_code = classification.get("main_category_code", "")
+    subcategory = classification.get("subcategory", "")
+    subcategory_code = classification.get("subcategory_code", "")
+    
+    # 獲取標籤信息
+    tags = metadata.get("tags", [])
+    
+    # 獲取系列信息
+    is_series = metadata.get("is_series", False)
+    series_name = metadata.get("series_name", "")
+    episode = metadata.get("episode", "")
+    original_filename = metadata.get("original_filename", "")
+    
+    # 1. 更新頭部元數據
+    # 找到<head>標籤，如果不存在則創建
+    head = soup.head
+    if not head:
+        head = soup.new_tag("head")
+        if soup.html:
+            soup.html.insert(0, head)
+        else:
+            html = soup.new_tag("html")
+            html.append(head)
+            soup.append(html)
+    
+    # 添加分類元數據
+    if main_category and main_category_code:
+        meta_main_category = soup.new_tag("meta")
+        meta_main_category["name"] = "main-category"
+        meta_main_category["content"] = main_category
+        head.append(meta_main_category)
+        
+        meta_main_category_code = soup.new_tag("meta")
+        meta_main_category_code["name"] = "main-category-code"
+        meta_main_category_code["content"] = main_category_code
+        head.append(meta_main_category_code)
+    
+    if subcategory and subcategory_code:
+        meta_subcategory = soup.new_tag("meta")
+        meta_subcategory["name"] = "subcategory"
+        meta_subcategory["content"] = subcategory
+        head.append(meta_subcategory)
+        
+        meta_subcategory_code = soup.new_tag("meta")
+        meta_subcategory_code["name"] = "subcategory-code"
+        meta_subcategory_code["content"] = subcategory_code
+        head.append(meta_subcategory_code)
+    
+    # 添加系列文章元數據
+    if is_series and series_name:
+        meta_series_name = soup.new_tag("meta")
+        meta_series_name["name"] = "series-name"
+        meta_series_name["content"] = series_name
+        head.append(meta_series_name)
+        
+        meta_series_episode = soup.new_tag("meta")
+        meta_series_episode["name"] = "series-episode"
+        meta_series_episode["content"] = str(episode)
+        head.append(meta_series_episode)
+        
+        if original_filename:
+            meta_original_filename = soup.new_tag("meta")
+            meta_original_filename["name"] = "original-filename"
+            meta_original_filename["content"] = original_filename
+            head.append(meta_original_filename)
+    
+    # 2. 更新文章分類顯示
+    # 找到分類顯示區域（假設有一個特定的class或ID）
+    category_div = soup.find("div", class_="article-category")
+    if category_div:
+        # 清空現有內容
+        category_div.clear()
+        
+        # 添加分類圖標
+        icon_span = soup.new_tag("span")
+        icon_span["class"] = "material-symbols-rounded"
+        icon_span.string = "sell"
+        category_div.append(icon_span)
+        
+        # 添加空格
+        category_div.append(" ")
+        
+        # 添加分類鏈接
+        category_link = soup.new_tag("a")
+        category_link["href"] = f"/blog.html?category={main_category_code}"
+        category_link.string = main_category
+        category_div.append(category_link)
+    
+    # 3. 更新文章標籤
+    # 找到標籤顯示區域
+    tags_div = soup.find("div", class_="article-tags")
+    if tags_div and tags:
+        # 清空現有內容
+        tags_div.clear()
+        
+        # 添加每個標籤
+        for tag in tags:
+            tag_name = tag.get("name", "")
+            tag_slug = tag.get("slug", "")
+            
+            if tag_name and tag_slug:
+                tag_link = soup.new_tag("a")
+                tag_link["href"] = f"/blog.html?tag={tag_slug}"
+                tag_link["class"] = "article-tag"
+                tag_link.string = tag_name
+                tags_div.append(tag_link)
+                
+                # 添加換行符以美化HTML源碼
+                tags_div.append("\n          ")
+    
+    return soup
+
+def generate_optimized_filename(metadata: Dict, translation_dict: Dict[str, str]) -> str:
+    """根據元數據生成優化的文件名"""
+    # 獲取基本信息
+    date = metadata.get("date", datetime.datetime.now().strftime("%Y-%m-%d"))
+    title = metadata.get("title", "Untitled")
+    
+    # 獲取分類信息
+    classification = metadata.get("classification", {})
+    main_category_code = classification.get("main_category_code", "")
+    subcategory_code = classification.get("subcategory_code", "")
+    
+    # 獲取系列信息
+    is_series = metadata.get("is_series", False)
+    series_name = metadata.get("series_name", "")
+    episode = metadata.get("episode", "")
+    
+    # 從標題生成英文slug
+    title_slug = slugify(title, translation_dict)
+    
+    # 構建文件名
+    if main_category_code and subcategory_code:
+        # 如果有分類信息，加入分類代碼
+        filename = f"{date}-{main_category_code}-{subcategory_code}-{title_slug}"
+    else:
+        # 否則使用標題slug
+        filename = f"{date}-{title_slug}"
+    
+    # 如果是系列文章，添加系列信息（修改後的邏輯）
+    if series_name and episode:  # 不再檢查 is_series 標誌
+        series_slug = slugify(series_name, translation_dict)
+        if not series_slug or len(series_slug) < 3:
+            series_slug = hashlib.md5(series_name.encode('utf-8')).hexdigest()[:8]
+        filename = f"{filename}-{series_slug}-ep{episode}"
+    
+    # 添加.html擴展名
+    filename = f"{filename}.html"
+    
+    # 確保文件名不會太長
+    if len(filename) > 100:
+        # 如果文件名過長，截斷並保持擴展名
+        base_name, ext = os.path.splitext(filename)
+        filename = base_name[:95] + ext
+    
+    return filename
+
+def save_article_metadata(output_path: str, article_structure: Dict, date: str, 
+                         is_series: bool, series_name: str, episode: int, original_filename: str):
+    """保存文章元數據供後續處理"""
+    metadata = {
+        'title': article_structure['title'],
+        'summary': article_structure['summary'],
+        'date': date,
+        'is_series': is_series,
+        'series_name': series_name if is_series else None,
+        'episode': episode if is_series else None,
+        'original_filename': original_filename,
+        'html_path': output_path
+    }
+    
+    # 保存元數據到JSON文件
+    meta_path = output_path.replace('.html', '.meta.json')
+    with open(meta_path, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f, ensure_ascii=False, indent=2)
+    
+    logger.info(f"文章元數據已保存至: {meta_path}")
 
 def main() -> int:
     """主函數"""
