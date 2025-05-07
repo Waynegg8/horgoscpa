@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 優化版 Word 文檔轉換為 HTML 工具 - 修訂版
 解決內容提取不完整和日期下方自動生成內容的問題
-新增系列文章識別和保存功能
+新增系列文章識別和保存功能，添加上一篇/下一篇導航
 作者: Claude
 日期: 2025-05-06
 """
-
 import os
 import sys
 import re
@@ -29,8 +27,6 @@ def ensure_dependencies():
     required_packages = [
         "mammoth", "python-docx", "bs4", "lxml", "docx2txt", "jieba"
     ]
-    
-    # 檢查並安裝缺失的包
     for package in required_packages:
         try:
             importlib.import_module(package)
@@ -38,25 +34,17 @@ def ensure_dependencies():
             print(f"安裝缺失的依賴: {package}")
             subprocess.check_call([sys.executable, "-m", "pip", "install", package])
 
-# 執行依賴檢查
 ensure_dependencies()
 
-# 必須的依賴
 import mammoth
 from bs4 import BeautifulSoup
 import docx
 import docx2txt
 
-# 設置日誌
 def setup_logging():
-    # 創建日誌目錄
     log_dir = "logs"
     os.makedirs(log_dir, exist_ok=True)
-    
-    # 設置日誌文件名
     log_file = os.path.join(log_dir, f"word_extraction_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
-    
-    # 配置日誌格式
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -65,20 +53,14 @@ def setup_logging():
             logging.StreamHandler()
         ]
     )
-    
     return logging.getLogger("word_extractor")
 
-# 設置全局日誌器
 logger = setup_logging()
 
-# 獲取專案根目錄（假設腳本在 .github/scripts 目錄下）
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..'))
-
-# 設置圖片目錄路徑
 BLOG_IMAGES_DIR = os.path.join(PROJECT_ROOT, "assets", "images", "blog")
 
-# 嘗試導入 utils 模組
 try:
     from utils import load_translation_dict, extract_keywords, setup_jieba_dict, slugify
     USE_UTILS = True
@@ -88,17 +70,12 @@ except ImportError:
     USE_UTILS = False
     
     def load_translation_dict():
-        """簡易版字典加載"""
         try:
-            # 首先嘗試在專案根目錄下查找
             script_dir = os.path.dirname(os.path.abspath(__file__))
             project_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
             dict_path = os.path.join(project_root, "assets/data/tw_financial_dict.json")
-            
             if not os.path.exists(dict_path):
-                # 然後嘗試在當前目錄查找
                 dict_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tw_financial_dict.json')
-            
             if os.path.exists(dict_path):
                 logger.info(f"從 {dict_path} 讀取翻譯字典")
                 with open(dict_path, 'r', encoding='utf-8') as f:
@@ -108,44 +85,29 @@ except ImportError:
         return {}
     
     def extract_keywords(text, top_n=5):
-        """簡易版關鍵詞提取"""
-        # 簡單實現，實際使用中應考慮導入 jieba 等分詞工具
         words = re.findall(r'[\w\u4e00-\u9fff]{2,}', text)
         word_freq = {}
         for word in words:
-            if word in word_freq:
-                word_freq[word] += 1
-            else:
-                word_freq[word] = 1
+            word_freq[word] = word_freq.get(word, 0) + 1
         sorted_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
         return [word for word, _ in sorted_words[:top_n]]
     
     def setup_jieba_dict():
-        """空函數實現"""
         pass
         
     def slugify(text, translation_dict=None):
-        """簡易版文本轉英文slug"""
-        # 使用正則表達式移除非字母數字字符，並用連字符替代空格
         if translation_dict and text in translation_dict:
             return translation_dict[text].lower().replace(' ', '-')
-        
-        # 簡單轉換成拼音或英文的功能我們無法在這實現
-        # 所以對於不在字典中的中文，我們使用一個通用替代詞
         if re.search(r'[\u4e00-\u9fff]', text):
-            # 對中文文本，生成一個唯一的標識
             hash_value = hashlib.md5(text.encode('utf-8')).hexdigest()[:8]
             return f"article-{hash_value}"
-        
         text = re.sub(r'[^\w\s-]', '', text).strip().lower()
         text = re.sub(r'[-\s]+', '-', text)
         return text
 
-# 加載翻譯字典
 TRANSLATION_DICT = load_translation_dict()
 logger.info(f"已加載翻譯字典，共 {len(TRANSLATION_DICT)} 個詞條")
 
-# 設置預設分類
 CATEGORY_MAPPING = {
     "稅務": "tax",
     "會計": "accounting",
@@ -156,11 +118,8 @@ CATEGORY_MAPPING = {
     "法律": "legal"
 }
 
-# 確保圖片目錄存在
 def ensure_blog_images_dir():
-    """確保部落格圖片目錄存在"""
     try:
-        # 確保 assets/images/blog 目錄存在
         os.makedirs(BLOG_IMAGES_DIR, exist_ok=True)
         logger.info(f"確保圖片目錄存在: {BLOG_IMAGES_DIR}")
         return True
@@ -168,141 +127,72 @@ def ensure_blog_images_dir():
         logger.error(f"創建圖片目錄時出錯: {str(e)}")
         return False
 
-# 生成默認圖片（僅在沒有任何可用圖片時使用）
 def create_default_images():
-    """創建默認的分類圖片，如果不存在"""
     categories = ["tax", "accounting", "business", "startup", "financial", "legal"]
     default_path = os.path.join(BLOG_IMAGES_DIR, "default.jpg")
-    
-    # 如果目錄為空，創建至少一張默認圖片
     if not os.path.exists(default_path):
-        logger.info("未找到默認圖片，使用外部圖片服務")
-        
-        # 這裡您可以添加代碼從外部下載圖片或生成一個基本圖片
-        # 作為示例，我們只記錄這個行為
-        logger.info("提示：您應該手動上傳一些圖片到 assets/images/blog 目錄")
-    
-    # 記錄當前可用的圖片
+        logger.info("提示：您應手動上傳圖片到 assets/images/blog 目錄")
     images = get_available_images()
     logger.info(f"可用的圖片文件: {len(images)}")
 
 def get_available_images():
-    """獲取可用的圖片文件列表"""
     if not os.path.exists(BLOG_IMAGES_DIR):
         return []
-    
-    # 獲取所有圖片文件 (jpg, png, jpeg, gif, webp)
     images = []
     for ext in ['*.jpg', '*.jpeg', '*.png', '*.gif', '*.webp']:
         images.extend(glob.glob(os.path.join(BLOG_IMAGES_DIR, ext)))
-    
     return images
 
 def select_random_image(category_code):
-    """
-    從圖片目錄中隨機選擇一張圖片
-    優先選擇與分類相關的圖片，否則隨機選擇
-    """
-    # 確保圖片目錄存在
     ensure_blog_images_dir()
-    
-    # 取得可用圖片
     available_images = get_available_images()
-    
     if not available_images:
-        # 如果沒有可用圖片，創建默認圖片並返回路徑
         create_default_images()
         return f"/assets/images/blog/{category_code}_default.jpg"
-    
-    # 優先查找與分類相關的圖片
     category_images = [img for img in available_images if category_code in os.path.basename(img).lower()]
-    
-    if category_images:
-        # 從分類相關圖片中隨機選擇
-        selected_image = random.choice(category_images)
-    else:
-        # 從所有圖片中隨機選擇
-        selected_image = random.choice(available_images)
-    
-    # 轉換為網站相對路徑
+    selected_image = random.choice(category_images if category_images else available_images)
     relative_path = selected_image.replace(PROJECT_ROOT, '')
     if not relative_path.startswith('/'):
         relative_path = '/' + relative_path
-    
     logger.info(f"已選擇圖片: {relative_path}")
     return relative_path
 
 def extract_date_from_filename(filename: str) -> Optional[str]:
-    """
-    從文件名中提取日期
-    :param filename: 文件名
-    :return: 日期字符串 (YYYY-MM-DD) 或 None
-    """
-    # 嘗試從文件名中提取日期 (YYYY-MM-DD 格式)
+    date_match = re.search(r' W
     date_match = re.search(r'(\d{4}-\d{2}-\d{2})', filename)
     if date_match:
         date_str = date_match.group(1)
         try:
-            # 驗證日期格式
             datetime.datetime.strptime(date_str, "%Y-%m-%d")
             return date_str
         except ValueError:
             pass
-    
     return None
 
 def extract_series_info_from_filename(filename: str) -> Tuple[bool, Optional[str], Optional[int]]:
-    """
-    從文件名中提取系列文章信息
-    :param filename: 文件名
-    :return: (是否為系列文章, 系列名稱, 集數)
-    """
-    # 檢查是否包含EPx或EP_x格式的集數標記
     series_match = re.search(r'EP(\d+)[-_]', filename, re.IGNORECASE)
     if series_match:
-        # 提取系列名称（取EP前面的部分，去掉日期）
         name_parts = filename.split('EP', 1)[0].strip()
-        # 去掉日期部分
         name_parts = re.sub(r'^\d{4}-\d{2}-\d{2}[-_]?', '', name_parts).strip('-_')
-        
-        # 如果名稱為空，使用更寬鬆的提取方式
         if not name_parts:
-            # 嘗試獲取文件名的基本部分
             base_name = os.path.splitext(filename)[0]
             parts = re.split(r'EP\d+[-_]', base_name, flags=re.IGNORECASE)[0]
             parts = re.sub(r'^\d{4}-\d{2}-\d{2}[-_]?', '', parts).strip('-_')
-            if parts:
-                name_parts = parts
-            else:
-                name_parts = "未命名系列"
-                
+            name_parts = parts or "未命名系列"
         series_name = name_parts
         episode = int(series_match.group(1))
         return True, series_name, episode
-    
     return False, None, None
 
 def extract_word_content_direct(docx_path: str) -> str:
-    """
-    直接從Word文檔提取完整文本內容
-    :param docx_path: Word文檔路徑
-    :return: 提取的純文本內容
-    """
     logger.info(f"使用直接提取法從Word獲取內容: {docx_path}")
-    
     try:
-        # 使用python-docx直接提取所有段落
         doc = docx.Document(docx_path)
         full_text = []
-        
-        # 逐段落提取文本
         for para in doc.paragraphs:
             text = para.text.strip()
-            if text:  # 忽略空白段落
-                # 檢查段落的風格以判斷其類型
+            if text:
                 style_name = para.style.name if para.style else "Normal"
-                
-                # 處理標題
                 if style_name.startswith('Heading') or style_name.startswith('標題'):
                     level = 1
                     if len(style_name) > 7 and style_name[-1].isdigit():
@@ -311,276 +201,162 @@ def extract_word_content_direct(docx_path: str) -> str:
                     full_text.append(f"{heading_mark}{text}")
                 else:
                     full_text.append(text)
-        
-        # 處理表格
         for table in doc.tables:
             full_text.append("表格開始:")
-            for i, row in enumerate(table.rows):
-                row_text = []
-                for cell in row.cells:
-                    cell_text = cell.text.strip()
-                    row_text.append(cell_text if cell_text else " ")
+            for row in table.rows:
+                row_text = [cell.text.strip() or " " for cell in row.cells]
                 full_text.append(" | ".join(row_text))
             full_text.append("表格結束")
-        
         logger.info(f"直接提取了 {len(full_text)} 個段落")
         return "\n\n".join(full_text)
-    
     except Exception as e:
         logger.error(f"直接提取Word內容時出錯: {str(e)}")
         return ""
 
 def extract_docx_with_mammoth(docx_path: str) -> str:
-    """
-    使用mammoth提取Word文檔的HTML內容
-    :param docx_path: Word文檔路徑
-    :return: HTML內容
-    """
     logger.info(f"使用mammoth從Word獲取HTML: {docx_path}")
-    
     try:
         with open(docx_path, 'rb') as docx_file:
-            # 使用最簡單的轉換配置，確保獲取完整內容
             result = mammoth.convert_to_html(docx_file)
             html_content = result.value
-            
-            # 檢查警告
-            warnings = []
-            for message in result.messages:
-                if message.type == "warning":
-                    warnings.append(message.message)
-            
+            warnings = [m.message for m in result.messages if m.type == "warning"]
             if warnings:
                 logger.warning(f"Mammoth轉換警告: {warnings}")
-            
             logger.info(f"Mammoth提取的HTML長度: {len(html_content)}")
             return html_content
-    
     except Exception as e:
         logger.error(f"Mammoth提取Word內容時出錯: {str(e)}")
         return ""
 
 def extract_docx_with_docx2txt(docx_path: str) -> str:
-    """
-    使用docx2txt提取Word文檔的純文本內容
-    :param docx_path: Word文檔路徑
-    :return: 純文本內容
-    """
     logger.info(f"使用docx2txt從Word獲取純文本: {docx_path}")
-    
     try:
         text = docx2txt.process(docx_path)
         logger.info(f"Docx2txt提取的文本長度: {len(text)}")
         return text
-    
     except Exception as e:
         logger.error(f"Docx2txt提取Word內容時出錯: {str(e)}")
         return ""
 
 def extract_word_content(docx_path: str) -> Dict:
-    """
-    使用多種方法提取Word文檔內容，確保最大程度的完整性
-    :param docx_path: Word文檔路徑
-    :return: 包含所有提取結果的字典
-    """
     logger.info(f"開始多方法提取Word文檔內容: {docx_path}")
-    
     results = {
         'direct_text': extract_word_content_direct(docx_path),
         'mammoth_html': extract_docx_with_mammoth(docx_path),
         'docx2txt': extract_docx_with_docx2txt(docx_path)
     }
-    
-    # 檢查是否所有方法都失敗了
     if not results['direct_text'] and not results['mammoth_html'] and not results['docx2txt']:
         raise Exception("所有提取方法都失敗了，無法獲取Word內容")
-    
-    # 檢查提取結果的完整性
     content_lengths = {
         'direct_text': len(results['direct_text']),
         'mammoth_html': len(BeautifulSoup(results['mammoth_html'], 'html.parser').get_text()) if results['mammoth_html'] else 0,
         'docx2txt': len(results['docx2txt'])
     }
-    
     logger.info(f"提取結果長度比較: {content_lengths}")
-    
-    # 選擇最完整的內容
     best_method = max(content_lengths.items(), key=lambda x: x[1])[0]
     logger.info(f"選擇的最佳提取方法: {best_method}, 長度: {content_lengths[best_method]}")
-    
     return results
 
 def convert_to_html(content_dict: Dict) -> str:
-    """
-    將提取的內容轉換為HTML
-    :param content_dict: 提取的內容字典
-    :return: HTML字符串
-    """
     logger.info("開始將提取內容轉換為HTML")
-    
-    # 如果已有mammoth提取的HTML，優先使用它
     if content_dict['mammoth_html']:
         logger.info("使用mammoth提取的HTML")
         return content_dict['mammoth_html']
-    
-    # 如果沒有HTML，則從直接提取的文本生成HTML
     if content_dict['direct_text']:
         logger.info("從直接提取的文本生成HTML")
-        
         paragraphs = content_dict['direct_text'].split('\n\n')
         html_parts = ['<!DOCTYPE html>', '<html>', '<head>', '<meta charset="UTF-8">', '</head>', '<body>']
-        
         for para in paragraphs:
             para = para.strip()
             if not para:
                 continue
-            
-            # 檢查是否為標題（以#開頭）
             if para.startswith('#'):
                 heading_match = re.match(r'^(#+)\s+(.+)$', para)
                 if heading_match:
                     level = len(heading_match.group(1))
-                    level = min(level, 6)  # 標題級別最大為6
+                    level = min(level, 6)
                     title_text = heading_match.group(2).strip()
                     html_parts.append(f'<h{level}>{title_text}</h{level}>')
                 else:
                     html_parts.append(f'<p>{para}</p>')
             elif para.startswith('表格開始:'):
-                # 跳過表格標記
                 continue
             elif para.startswith('表格結束'):
-                # 跳過表格標記
                 continue
             elif ' | ' in para and not para.startswith('- '):
-                # 處理表格行
                 cells = para.split(' | ')
                 html_parts.append('<tr>')
                 for cell in cells:
                     html_parts.append(f'<td>{cell}</td>')
                 html_parts.append('</tr>')
             elif para.startswith('- '):
-                # 處理列表項
                 item_text = para[2:].strip()
                 html_parts.append(f'<li>{item_text}</li>')
             else:
-                # 普通段落
                 html_parts.append(f'<p>{para}</p>')
-        
         html_parts.append('</body>')
         html_parts.append('</html>')
-        
         return '\n'.join(html_parts)
-    
-    # 如果都沒有，則從docx2txt生成HTML
     if content_dict['docx2txt']:
         logger.info("從docx2txt提取的文本生成HTML")
-        
         paragraphs = content_dict['docx2txt'].split('\n\n')
         html_parts = ['<!DOCTYPE html>', '<html>', '<head>', '<meta charset="UTF-8">', '</head>', '<body>']
-        
         for para in paragraphs:
             para = para.strip()
             if not para:
                 continue
             html_parts.append(f'<p>{para}</p>')
-        
         html_parts.append('</body>')
         html_parts.append('</html>')
-        
         return '\n'.join(html_parts)
-    
-    # 如果所有方法都失敗，返回空HTML
     logger.warning("所有轉換方法都失敗，返回空HTML")
     return '<!DOCTYPE html><html><body><p>無法提取內容</p></body></html>'
 
 def clean_html_content(html_content: str) -> str:
-    """
-    清理HTML內容，確保格式良好
-    :param html_content: 原始HTML內容
-    :return: 清理後的HTML內容
-    """
     logger.info("開始清理HTML內容")
-    
-    # 使用BeautifulSoup解析HTML
     soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # 確保有body元素
     if not soup.body:
         new_body = soup.new_tag('body')
         for tag in list(soup.children):
             if tag.name not in ['html', 'head']:
                 new_body.append(tag.extract())
-        
         if soup.html:
             soup.html.append(new_body)
         else:
             html_tag = soup.new_tag('html')
             html_tag.append(new_body)
             soup.append(html_tag)
-    
-    # 清理不必要的強調/加粗標籤
     for strong in soup.find_all('strong'):
-        # 如果整個段落都被加粗，則移除加粗
         if strong.parent and strong.parent.name in ['p', 'li']:
             if len(strong.parent.get_text().strip()) == len(strong.get_text().strip()):
                 strong.replace_with(strong.get_text())
-    
-    # 清理列表結構，確保列表項在適當的列表容器中
-    orphan_list_items = []
-    for li in soup.find_all('li'):
-        if li.parent.name not in ['ul', 'ol']:
-            orphan_list_items.append(li)
-    
+    orphan_list_items = [li for li in soup.find_all('li') if li.parent.name not in ['ul', 'ol']]
     if orphan_list_items:
         logger.info(f"發現 {len(orphan_list_items)} 個孤立列表項，將它們放入合適的列表容器")
-        
         current_list = None
         for li in orphan_list_items:
-            # 從原位置移除
             li_content = li.get_text()
             li.extract()
-            
-            # 如果沒有當前列表，創建一個新的
             if current_list is None:
                 current_list = soup.new_tag('ul')
                 soup.body.append(current_list)
-            
-            # 創建新的列表項
             new_li = soup.new_tag('li')
             new_li.string = li_content
             current_list.append(new_li)
-    
-    # 修復嵌套的段落標籤
     for p in soup.find_all('p'):
         nested_p = p.find_all('p')
         for nested in nested_p:
             nested.unwrap()
-    
-    # 移除空元素
     for elem in soup.find_all():
         if elem.name not in ['br', 'hr', 'img'] and not elem.contents and not elem.string:
             elem.decompose()
-    
     logger.info("HTML內容清理完成")
     return str(soup)
 
 def extract_article_structure(html_content: str) -> Dict:
-    """
-    從HTML內容中提取文章結構
-    :param html_content: HTML內容
-    :return: 包含文章結構的字典
-    """
     logger.info("開始提取文章結構")
-    
     soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # 確保有body元素
-    body = soup.body
-    if not body:
-        logger.warning("HTML中沒有body元素，使用整個文檔")
-        body = soup
-    
-    # 提取標題（第一個h1或h2）
+    body = soup.body or soup
     title = "未命名文章"
     h1 = body.find(['h1'])
     if h1:
@@ -589,131 +365,59 @@ def extract_article_structure(html_content: str) -> Dict:
         h2 = body.find(['h2'])
         if h2:
             title = h2.get_text().strip()
-    
-    # 從標題中移除日期（如果有）
     title = re.sub(r'^\d{4}-\d{2}-\d{2}\s*-?\s*', '', title)
-    
-    # 提取摘要（第一個段落）
     summary = ""
     first_p = body.find('p')
     if first_p:
         summary = first_p.get_text().strip()
         if len(summary) > 200:
             summary = summary[:197] + "..."
-    
-    # 提取所有內容元素
     content = []
     for elem in body.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'table']):
-        # 跳過空元素
-        if not elem.get_text().strip():
+        if not elem.get_text().strip() or (elem.parent and elem.parent.name in ['td', 'li']):
             continue
-        
-        # 不處理嵌套元素
-        if elem.parent and elem.parent.name in ['td', 'li']:
-            continue
-        
-        # 處理特定類型的元素
         if elem.name.startswith('h'):
             level = int(elem.name[1])
             elem_text = elem.get_text().strip()
-            
-            # 不重複包含標題
             if elem_text != title:
-                content.append({
-                    'type': 'heading',
-                    'level': level,
-                    'text': elem_text
-                })
+                content.append({'type': 'heading', 'level': level, 'text': elem_text})
         elif elem.name == 'p':
-            content.append({
-                'type': 'paragraph',
-                'text': elem.get_text().strip()
-            })
+            content.append({'type': 'paragraph', 'text': elem.get_text().strip()})
         elif elem.name in ['ul', 'ol']:
-            list_items = []
-            for li in elem.find_all('li', recursive=False):
-                list_items.append(li.get_text().strip())
-            
-            content.append({
-                'type': 'list',
-                'list_type': elem.name,
-                'items': list_items
-            })
+            list_items = [li.get_text().strip() for li in elem.find_all('li', recursive=False)]
+            content.append({'type': 'list', 'list_type': elem.name, 'items': list_items})
         elif elem.name == 'table':
-            rows = []
-            for tr in elem.find_all('tr', recursive=False):
-                cells = [td.get_text().strip() for td in tr.find_all(['td', 'th'], recursive=False)]
-                rows.append(cells)
-            
-            content.append({
-                'type': 'table',
-                'rows': rows
-            })
-    
-    result = {
-        'title': title,
-        'summary': summary,
-        'content': content
-    }
-    
+            rows = [[td.get_text().strip() for td in tr.find_all(['td', 'th'], recursive=False)] for tr in elem.find_all('tr', recursive=False)]
+            content.append({'type': 'table', 'rows': rows})
     logger.info(f"提取到標題: '{title}'")
     logger.info(f"提取到 {len(content)} 個內容元素")
-    
-    return result
+    return {'title': title, 'summary': summary, 'content': content}
 
 def fully_translate_to_english(text: str) -> str:
-    """
-    完全轉換文本為英文
-    如果失敗則生成一個基於哈希的唯一標識符
-    """
-    # 使用翻譯字典
     if text in TRANSLATION_DICT:
         return TRANSLATION_DICT[text].lower().replace(' ', '-')
-    
-    # 嘗試分詞並翻譯
-    words = list(text)  # 簡單拆分為字符
+    words = list(text)
     translated = []
-    
     for word in words:
         if word in TRANSLATION_DICT:
             translated.append(TRANSLATION_DICT[word].lower())
-        elif re.match(r'^[a-zA-Z0-9.]+$', word):  # 英文或數字
+        elif re.match(r'^[a-zA-Z0-9.]+$', word):
             translated.append(word.lower())
         else:
-            translated.append('term')  # 無法翻譯的詞用'term'替代
-    
+            translated.append('term')
     result = '-'.join(translated)
-    
-    # 清理結果
-    result = re.sub(r'-{2,}', '-', result)  # 移除連續的連字符
-    result = result.strip('-')  # 移除開頭和結尾的連字符
-    
-    # 如果結果為空或太長，使用基於哈希的標識符
+    result = re.sub(r'-{2,}', '-', result).strip('-')
     if not result or len(result) > 100:
         hash_value = hashlib.md5(text.encode('utf-8')).hexdigest()[:8]
         result = f"article-{hash_value}"
-    
     return result
 
 def generate_article_html(article_structure: Dict, date: str, english_url: str, is_series=False, series_name=None, episode=None, original_filename=None) -> str:
-    """
-    根據文章結構生成HTML
-    :param article_structure: 文章結構
-    :param date: 發布日期
-    :param english_url: 英文URL (用於SEO)
-    :param is_series: 是否為系列文章
-    :param series_name: 系列名稱
-    :param episode: 集數
-    :param original_filename: 原始檔名
-    :return: HTML字符串
-    """
     logger.info(f"開始生成文章HTML，日期: {date}")
-    
     title = article_structure['title']
     summary = article_structure['summary']
     content = article_structure['content']
     
-    # 生成文章內容HTML
     content_html = []
     for elem in content:
         if elem['type'] == 'heading':
@@ -726,16 +430,13 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
         elif elem['type'] == 'list':
             list_type = elem['list_type']
             items = elem['items']
-            
             list_html = [f'<{list_type}>']
             for item in items:
                 list_html.append(f'<li>{item}</li>')
             list_html.append(f'</{list_type}>')
-            
             content_html.append('\n'.join(list_html))
         elif elem['type'] == 'table':
             rows = elem['rows']
-            
             table_html = ['<table border="1">']
             for row in rows:
                 table_html.append('<tr>')
@@ -743,17 +444,12 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
                     table_html.append(f'<td>{cell}</td>')
                 table_html.append('</tr>')
             table_html.append('</table>')
-            
             content_html.append('\n'.join(table_html))
     
-    # 如果沒有內容，添加摘要作為內容
     if not content_html and summary:
         content_html.append(f'<p>{summary}</p>')
     
-    # 確定主題分類
     text_content = title + " " + summary + " " + ' '.join([elem.get('text', '') for elem in content])
-    
-    # 計算各個分類關鍵詞出現的次數
     category_scores = {
         "稅務相關": 0,
         "會計記帳": 0,
@@ -761,8 +457,6 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
         "投資理財": 0,
         "創業資訊": 0
     }
-    
-    # 關鍵詞列表
     keywords = {
         "稅務相關": ["稅", "報稅", "節稅", "稅務", "稅收", "所得稅", "營業稅", "扣繳", "稅法"],
         "會計記帳": ["會計", "記帳", "帳務", "財報", "憑證", "審計", "財務報表", "會計師"],
@@ -770,22 +464,14 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
         "投資理財": ["財務", "規劃", "投資", "理財", "資產", "負債", "現金流", "財富"],
         "創業資訊": ["創業", "新創", "新創事業", "創業家", "募資", "新創團隊"]
     }
-    
-    # 統計關鍵詞出現次數
     for category, words in keywords.items():
         for word in words:
             count = text_content.count(word)
             if count > 0:
                 category_scores[category] += count
-    
-    # 選取得分最高的類別
     primary_category = max(category_scores.items(), key=lambda x: x[1])[0]
-    
-    # 如果沒有明確的類別，默認為稅務相關
     if category_scores[primary_category] == 0:
         primary_category = "稅務相關"
-    
-    # 對應類別代碼
     category_map = {
         "稅務相關": "tax",
         "會計記帳": "accounting",
@@ -793,35 +479,27 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
         "投資理財": "investment",
         "創業資訊": "startup"
     }
-    
     category_code = category_map.get(primary_category, "tax")
     
-    # 提取標籤
     if USE_UTILS:
         setup_jieba_dict()
         tags = extract_keywords(text_content, 5)
     else:
-        # 簡易版標籤提取
         common_keywords = ["稅務", "會計", "財務", "企業", "記帳", "報稅", "節稅", "創業", "公司"]
-        tags = []
-        for kw in common_keywords:
-            if kw in text_content and len(tags) < 5:
-                tags.append(kw)
+        tags = [kw for kw in common_keywords if kw in text_content and len(tags) < 5]
     
-    # 確保至少有一些標籤
     if not tags:
         tags = ["財稅", "會計", "企業"]
     
-    # 生成標籤連結
-    tag_links = generate_tag_links(tags)
+    tag_links = []
+    for tag in tags:
+        slug = slugify(tag)
+        tag_links.append(f'<a href="/blog.html?tag={slug}" class="article-tag">{tag}</a>')
+    tag_links = '\n          '.join(tag_links)
     
-    # 選擇文章圖片 - 隨機選擇
     image_path = select_random_image(category_code)
-    
-    # 使用英文URL（用於SEO）
     relative_url = english_url
     
-    # 準備系列文章meta標籤
     series_meta_tags = ""
     if is_series and series_name and episode:
         series_meta_tags = f"""
@@ -830,7 +508,6 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
   <meta name="original-filename" content="{original_filename or ''}">
 """
     
-    # 準備結構化數據
     structured_data = {
         "@context": "https://schema.org",
         "@type": "BlogPosting",
@@ -859,7 +536,6 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
         "keywords": ", ".join(tags)
     }
     
-    # 添加系列文章信息到結構化數據
     if is_series and series_name and episode:
         structured_data["isPartOf"] = {
             "@type": "Series",
@@ -870,7 +546,6 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
     
     structured_data_json = json.dumps(structured_data, ensure_ascii=False)
     
-    # 生成HTML模板
     template = f"""<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -1011,11 +686,21 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
       </div>
     </article>
     
-    <!-- 簡化後的文章導航 - 只保留返回部落格按鈕 -->
+    <!-- 文章導航 - 包含上一篇/下一篇和返回部落格 -->
     <div class="article-navigation">
+      <a href="#" id="prev-article" class="prev-article disabled">
+        <span class="material-symbols-rounded">navigate_before</span>
+        <span class="nav-title">載入中...</span>
+        <span class="nav-message"></span>
+      </a>
       <a href="/blog.html" class="back-to-blog">
         <span class="material-symbols-rounded">view_list</span>
         返回文章列表
+      </a>
+      <a href="#" id="next-article" class="next-article disabled">
+        <span class="material-symbols-rounded">navigate_next</span>
+        <span class="nav-title">載入中...</span>
+        <span class="nav-message"></span>
       </a>
     </div>
   </div>
@@ -1030,7 +715,6 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
         <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="footer-logo-img">
         <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
         <p>專業、誠信、創新的財稅顧問夥伴，致力於提供企業與個人最優質的財務與稅務解決方案。</p>
-        <!-- 新增LINE按鈕 -->
         <a href="https://line.me/R/ti/p/@208ihted" target="_blank" class="footer-line-btn">
           <span class="line-icon"></span>
           <span>加入LINE好友</span>
@@ -1073,7 +757,7 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
         </ul>
       </div>
       
-      <!-- 服務項目 - 更新為與首頁一致 -->
+      <!-- 服務項目 -->
       <div class="footer-services">
         <h3>服務項目</h3>
         <ul class="services-list">
@@ -1100,16 +784,11 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
   </div>
 </footer>
 
-<!-- 返回頂部按鈕功能 - 腳本 -->
+<!-- 返回頂部按鈕功能 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {{
-    // 返回頂部按鈕功能
     const backToTopButton = document.querySelector('.back-to-top');
-    
-    // 初始隱藏按鈕
     backToTopButton.classList.remove('visible');
-    
-    // 監聽滾動事件
     window.addEventListener('scroll', function() {{
       if (window.pageYOffset > 300) {{
         backToTopButton.classList.add('visible');
@@ -1117,8 +796,6 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
         backToTopButton.classList.remove('visible');
       }}
     }});
-    
-    // 點擊事件
     backToTopButton.addEventListener('click', function() {{
       window.scrollTo({{
         top: 0,
@@ -1128,22 +805,16 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
     
     // 清理可能的格式問題
     (function cleanupArticleContent() {{
-      // 移除標題前的 # 符號
       const headers = document.querySelectorAll('.article-body h1, .article-body h2, .article-body h3, .article-body h4, .article-body h5, .article-body h6');
       headers.forEach(header => {{
         header.innerHTML = header.innerHTML.replace(/^#+\s*/, '');
       }});
-      
-      // 移除粗體標記符號
       const allElements = document.querySelectorAll('.article-body h1, .article-body h2, .article-body h3, .article-body p, .article-body li');
       allElements.forEach(el => {{
         el.innerHTML = el.innerHTML.replace(/\*\*(.*?)\*\*/g, '$1');
       }});
-      
-      // 如果第一個標題與文章標題相同，則隱藏
       const firstHeader = document.querySelector('.article-body h1:first-child, .article-body h2:first-child');
       const articleTitle = document.querySelector('.article-title');
-      
       if (firstHeader && articleTitle && 
           firstHeader.textContent.trim().toLowerCase() === articleTitle.textContent.trim().toLowerCase()) {{
         firstHeader.style.display = 'none';
@@ -1158,10 +829,12 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
 <!-- 移動版導航欄功能腳本 -->
 <script src="/assets/js/mobile-navbar.js"></script>
 
+<!-- 文章導航腳本 -->
+<script src="/assets/js/article-navigation.js"></script>
+
 <!-- 文章閱讀進度指示器 -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {{
-    // 創建閱讀進度條
     const progressIndicator = document.createElement('div');
     progressIndicator.className = 'reading-progress';
     progressIndicator.style.cssText = `
@@ -1176,26 +849,18 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
     `;
     document.body.appendChild(progressIndicator);
     
-    // 計算閱讀進度
     function updateReadingProgress() {{
       const articleContent = document.querySelector('.article-card');
       if (!articleContent) return;
       
       const contentHeight = articleContent.offsetHeight;
       const contentTop = articleContent.offsetTop;
-      const contentBottom = contentTop + contentHeight;
       const currentPosition = window.scrollY + window.innerHeight;
-      const windowHeight = window.innerHeight;
-      
-      // 考慮視窗大小，確保內容完全可見時進度為100%
       let progress = 0;
       if (currentPosition > contentTop) {{
         progress = Math.min(100, ((currentPosition - contentTop) / (contentHeight)) * 100);
       }}
-      
       progressIndicator.style.width = `${{progress}}%`;
-      
-      // 當閱讀完畢時添加動畫效果
       if (progress >= 99) {{
         progressIndicator.style.transition = 'width 0.5s ease, opacity 1s ease';
         progressIndicator.style.opacity = '0.5';
@@ -1205,26 +870,17 @@ def generate_article_html(article_structure: Dict, date: str, english_url: str, 
       }}
     }}
     
-    // 滾動時更新進度
     window.addEventListener('scroll', updateReadingProgress);
     window.addEventListener('resize', updateReadingProgress);
-    
-    // 初始化進度
     updateReadingProgress();
   }});
 </script>
 
 </body>
 </html>"""
-    
     return template
 
 def generate_tag_links(tags: List[str]) -> str:
-    """
-    生成標籤鏈接HTML
-    :param tags: 標籤列表
-    :return: HTML標籤鏈接
-    """
     tag_links = []
     for tag in tags:
         slug = slugify(tag)
@@ -1232,70 +888,39 @@ def generate_tag_links(tags: List[str]) -> str:
     return '\n          '.join(tag_links)
 
 def process_word_file(docx_path: str, output_dir: str) -> Dict:
-    """
-    處理單個Word文件的完整流程
-    :param docx_path: Word文檔路徑
-    :param output_dir: 輸出目錄
-    :return: 處理結果
-    """
     try:
-        # 1. 提取文件名資訊
         filename = os.path.basename(docx_path)
-        original_filename = filename  # 保存原始檔名
+        original_filename = filename
         logger.info(f"開始處理文件: {filename}")
         
-        # 從文件名提取日期
-        date_match = re.search(r'(\d{4}-\d{2}-\d{2})', filename)
-        date = date_match.group(1) if date_match else datetime.datetime.now().strftime("%Y-%m-%d")
-        
-        # 從文件名提取系列文章信息
+        date = extract_date_from_filename(filename) or datetime.datetime.now().strftime("%Y-%m-%d")
         is_series, series_name, episode = extract_series_info_from_filename(filename)
         
         if is_series:
             logger.info(f"檢測到系列文章: {series_name}, EP{episode}")
         
-        # 2. 使用多種方法提取Word內容
         content_dict = extract_word_content(docx_path)
-        
-        # 3. 將內容轉換為HTML
         html_content = convert_to_html(content_dict)
-        
-        # 4. 清理HTML內容
         cleaned_html = clean_html_content(html_content)
-        
-        # 5. 提取文章結構
         article_structure = extract_article_structure(cleaned_html)
         
-        # 6. 生成檔名
         word_title = article_structure['title']
-        
-        # 為 URL 和檔名生成英文 slug（使用相同的英文檔名）
         english_slug = slugify(word_title, TRANSLATION_DICT)
         
-        # 確保英文slug不為空且有意義
         if not english_slug or english_slug == "term":
-            # 使用隨機哈希加上標題的前幾個字符
             hash_part = hashlib.md5(word_title.encode('utf-8')).hexdigest()[:8]
             english_slug = f"article-{hash_part}"
         
-        # 構建HTML文件名
         html_filename = f"{date}-{english_slug}"
-        
-        # 如果是系列文章，添加系列標識
         if is_series:
             series_slug = slugify(series_name, TRANSLATION_DICT)
             if not series_slug or len(series_slug) < 3:
                 series_slug = hashlib.md5(series_name.encode('utf-8')).hexdigest()[:8]
             html_filename = f"{html_filename}-{series_slug}-ep{episode}"
         
-        # 確保html副檔名
         html_filename = f"{html_filename}.html"
-            
-        english_url = f"/blog/{html_filename}"  # 使用相同格式作為URL
+        english_url = f"/blog/{html_filename}"
         
-        logger.info(f"生成英文檔名及URL: {html_filename}")
-        
-        # 7. 生成最終HTML
         final_html = generate_article_html(
             article_structure, 
             date, 
@@ -1306,7 +931,6 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
             original_filename=original_filename
         )
         
-        # 8. 寫入文件
         output_path = os.path.join(output_dir, html_filename)
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         
@@ -1315,7 +939,6 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
         
         logger.info(f"成功將 {filename} 轉換為 {html_filename}")
         
-        # 儲存原始檔名資訊，方便後續處理
         return {
             'success': True,
             'output_file': html_filename,
@@ -1330,7 +953,6 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
                 'episode': episode
             }
         }
-        
     except Exception as e:
         logger.error(f"處理 {docx_path} 時出錯: {str(e)}", exc_info=True)
         return {
@@ -1338,22 +960,11 @@ def process_word_file(docx_path: str, output_dir: str) -> Dict:
             'error': str(e),
             'docx_path': docx_path
         }
+
 def process_word_files(input_dir: str, output_dir: str) -> List[Dict]:
-    """
-    處理指定目錄中的Word文檔，轉換為HTML
-    :param input_dir: 輸入目錄
-    :param output_dir: 輸出目錄
-    :return: 處理結果列表
-    """
-    # 確保輸出目錄存在
     os.makedirs(output_dir, exist_ok=True)
-    
-    # 確保圖片目錄存在
     ensure_blog_images_dir()
-    
-    # 獲取所有Word文檔
-    docx_files = [f for f in os.listdir(input_dir) 
-             if f.lower().endswith('.docx') and not f.startswith('~')]  # 排除臨時檔案
+    docx_files = [f for f in os.listdir(input_dir) if f.lower().endswith('.docx') and not f.startswith('~')]
     
     if not docx_files:
         logger.warning(f"在 {input_dir} 中沒有找到Word文檔")
@@ -1361,24 +972,18 @@ def process_word_files(input_dir: str, output_dir: str) -> List[Dict]:
     
     logger.info(f"找到 {len(docx_files)} 個Word文檔")
     
-    # 處理每個Word文檔
     results = []
     for idx, docx_file in enumerate(docx_files, 1):
         docx_path = os.path.join(input_dir, docx_file)
         logger.info(f"處理第 {idx}/{len(docx_files)} 個文件: {docx_file}")
-        
         result = process_word_file(docx_path, output_dir)
         results.append(result)
-        
-        # 記錄進度
         success_count = sum(1 for r in results if r['success'])
         logger.info(f"處理進度: {success_count}/{len(results)} 成功")
     
     return results
 
 def main() -> int:
-    """主函數"""
-    # 檢查命令行參數
     if len(sys.argv) < 3:
         print("用法: python word_to_html.py <輸入目錄> <輸出目錄>")
         print("例如: python word_to_html.py word-docs blog")
@@ -1387,23 +992,18 @@ def main() -> int:
     input_dir = sys.argv[1]
     output_dir = sys.argv[2]
     
-    # 記錄參數
     logger.info(f"輸入目錄: {input_dir}")
     logger.info(f"輸出目錄: {output_dir}")
     
-    # 如果有utils模組，使用它來設置詞典
     if USE_UTILS:
         setup_jieba_dict()
         logger.info("已設置jieba詞典")
     
-    # 確保圖片目錄存在
     ensure_blog_images_dir()
     
-    # 處理Word文檔
     logger.info("====== Word轉HTML處理開始 ======")
     results = process_word_files(input_dir, output_dir)
     
-    # 輸出總結
     success_count = sum(1 for r in results if r['success'])
     fail_count = len(results) - success_count
     

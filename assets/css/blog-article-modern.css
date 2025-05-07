@@ -325,10 +325,16 @@
 /* 文章導航 - 上一篇/下一篇 */
 .article-navigation {
   margin: 2.5rem 0;
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
-.back-to-blog {
+.back-to-blog,
+.prev-article,
+.next-article {
   display: inline-flex;
   align-items: center;
   background: var(--secondary-color);
@@ -341,10 +347,37 @@
   gap: 0.6rem;
 }
 
-.back-to-blog:hover {
+.back-to-blog:hover,
+.prev-article:hover,
+.next-article:hover {
   background: var(--primary-color);
   transform: translateY(-3px);
   box-shadow: 0 5px 15px rgba(0, 102, 204, 0.3);
+}
+
+.prev-article.disabled,
+.next-article.disabled {
+  background: #ccc;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.nav-warning {
+  background: #ff9800 !important;
+}
+
+.nav-title {
+  font-size: 0.95rem;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-message {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-left: 0.5rem;
 }
 
 /* 閱讀進度條 */
