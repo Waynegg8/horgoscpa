@@ -733,18 +733,19 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function handlePageClick(e) {
-    e.preventDefault();
-    const page = parseInt(this.dataset.page);
-    if (page && page !== currentPage) {
-      currentPage = page;
-      updateURL();
-      filterAndDisplayPosts();
-      window.scrollTo({
-        top: document.querySelector('.blog-content-section').offsetTop - 100,
-        behavior: 'smooth'
-      });
-    }
+  e.preventDefault();  // 阻止默認行為，避免跳轉
+  const page = parseInt(this.dataset.page);
+  if (page && page !== currentPage) {
+    currentPage = page;
+    updateURL();  // 更新 URL 參數
+    filterAndDisplayPosts();  // 只更新文章列表
+    window.scrollTo({
+      top: document.querySelector('.blog-content-section').offsetTop - 100,
+      behavior: 'smooth'  // 滾動到指定位置
+    });
   }
+}
+
   
   function showSearchResults(resultCount) {
     if (!searchResultsContainer) return;
