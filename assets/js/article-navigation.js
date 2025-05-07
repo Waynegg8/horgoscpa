@@ -116,9 +116,11 @@ document.addEventListener('DOMContentLoaded', function() {
   /**
    * 從陣列中隨機選擇一個元素
    */
-  function getRandomElement(array) {
+  function getRandomItem(array) {
     if (!array || array.length === 0) return null;
-    return array[Math.floor(Math.random() * array.length)];
+    const randomIndex = Math.floor(Math.random() * array.length);
+    console.log(`隨機選擇索引 ${randomIndex}，共 ${array.length} 個元素`);
+    return array[randomIndex];
   }
   
   /**
@@ -248,9 +250,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           }
           
+          console.log(`找到 ${otherSeriesFirstEpisodes.length} 個其他系列的第一集`);
+          
           if (otherSeriesFirstEpisodes.length > 0) {
-            // 隨機選擇一個其他系列的第一集
-            nextPost = getRandomElement(otherSeriesFirstEpisodes);
+            // 直接實現隨機選擇，不依賴函數調用
+            const randomIndex = Math.floor(Math.random() * otherSeriesFirstEpisodes.length);
+            nextPost = otherSeriesFirstEpisodes[randomIndex];
+            
+            console.log(`隨機選擇了索引 ${randomIndex} 的系列: ${nextPost.series_name}`);
+            
             nextPost.url = processUrl(nextPost.url);
             nextMessage = '本篇已是本系列最後一篇即將轉至新文章';
             console.log(`系列最後一集，隨機找到其他系列的第一集作為下一篇: ${nextPost.title}`);
@@ -350,9 +358,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           }
           
+          console.log(`找到 ${seriesFirstEpisodes.length} 個系列的第一集`);
+          
           if (seriesFirstEpisodes.length > 0) {
-            // 隨機選擇一個系列的第一集
-            nextPost = getRandomElement(seriesFirstEpisodes);
+            // 直接實現隨機選擇，不依賴函數調用
+            const randomIndex = Math.floor(Math.random() * seriesFirstEpisodes.length);
+            nextPost = seriesFirstEpisodes[randomIndex];
+            
+            console.log(`隨機選擇了索引 ${randomIndex} 的系列: ${nextPost.series_name}`);
+            
             nextPost.url = processUrl(nextPost.url);
             nextMessage = '即將進入系列文章';
             console.log(`最新文章，隨機找到系列第一集作為下一篇: ${nextPost.title}`);
