@@ -445,19 +445,26 @@ document.addEventListener('DOMContentLoaded', function() {
           console.warn('未檢測到系列文章數據');
         }
         
-        initializeTagCloud(data.tags || []);
-        initializePopularPosts();
-        initializeSidebarSeriesList(data);
-        filterAndDisplayPosts();
-        
-        // 通知分類加載器更新分類數據
-        updateCategoryStats();
-      })
-      .catch(error => {
-        console.error('獲取文章數據時出錯:', error);
-        showError('無法載入文章數據，請稍後再試。');
-      });
+       function initializeTagCloud(tags) {
+  if (!tagCloudContainer || !tags || tags.length === 0) return;
+  
+  // 過濾出有文章的標籤
+  const filteredTags = tags.filter(tag => {
+    return allPosts.posts.some(post => post.tags && post.tags.includes(tag));
+  });
+
+  if (filteredTags.length === 0) {
+    tagCloudContainer.innerHTML = "<p>目前沒有標籤。</p>";
+    return;
   }
+
+  const topTags = filteredTags.slice(0, 5); // 顯示最多5個標籤
+  const tagsHTML = topTags.map(tag => 
+    `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="${currentTag === tag ? 'active' : ''}">${tag}</a>`
+  ).join('');
+
+  tagCloudContainer.innerHTML = tagsHTML;
+}
   
   function initializeSidebarSeriesList(data) {
     const sidebarSeriesContainer = document.getElementById('sidebar-series-list-container');
