@@ -97,13 +97,20 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
-   * 處理URL，去掉.html後綴，保持相對路徑
+   * 處理URL，去掉.html後綴，添加域名前綴
    */
   function processUrl(url) {
     if (!url) return '';
     
     // 去掉.html後綴
-    return url.replace(/\.html$/, '');
+    url = url.replace(/\.html$/, '');
+    
+    // 添加域名前綴
+    if (url.startsWith('/')) {
+      url = 'https://horgoscpa.com' + url;
+    }
+    
+    return url;
   }
   
   /**
