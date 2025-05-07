@@ -114,6 +114,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   /**
+   * 從陣列中隨機選擇一個元素
+   */
+  function getRandomElement(array) {
+    if (!array || array.length === 0) return null;
+    return array[Math.floor(Math.random() * array.length)];
+  }
+  
+  /**
    * 查找相鄰文章
    */
   function findAdjacentArticles(data, seriesInfo) {
@@ -129,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
       handleSeriesArticles(allPosts, data.series, seriesInfo);
     } else {
       // 非系列文章: 根據日期查找前後文章
-      handleNonSeriesArticles(allPosts, seriesInfo);
+      handleNonSeriesArticles(allPosts, data.series, seriesInfo);
     }
     
     /**
@@ -215,14 +223,13 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         console.log(`沒有下一集 (EP${currentEpisode+1})`);
         
-        // 如果是系列最後一集，找非系列文章作為下一篇
+        // 如果是系列最後一集，隨機找一個其他系列的第一集作為下一篇
         if (seriesPosts.length > 0 && 
             parseInt(seriesPosts[seriesPosts.length-1].episode) === currentEpisode) {
           
-          // 尋找其他系列的第一集或最新文章
-          let otherSeries = [];
+          // 收集其他系列的第一集
+          let otherSeriesFirstEpisodes = [];
           
-          // 先查找其他系列
           if (seriesData) {
             for (const otherSeriesName in seriesData) {
               if (otherSeriesName !== seriesName) {
@@ -235,19 +242,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (otherSeriesPosts.length > 0) {
                   otherSeriesPosts.sort((a, b) => parseInt(a.episode) - parseInt(b.episode));
-                  otherSeries.push(otherSeriesPosts[0]); // 取其他系列的第一集
+                  otherSeriesFirstEpisodes.push(otherSeriesPosts[0]); // 取其他系列的第一集
                 }
               }
             }
           }
           
-          if (otherSeries.length > 0) {
-            // 按日期排序，取最新的系列第一集
-            otherSeries.sort((a, b) => new Date(b.date) - new Date(a.date));
-            nextPost = otherSeries[0];
+          if (otherSeriesFirstEpisodes.length > 0) {
+            // 隨機選擇一個其他系列的第一集
+            nextPost = getRandomElement(otherSeriesFirstEpisodes);
             nextPost.url = processUrl(nextPost.url);
             nextMessage = '本篇已是本系列最後一篇即將轉至新文章';
-            console.log(`系列最後一集，找到其他系列的第一集作為下一篇: ${nextPost.title}`);
+            console.log(`系列最後一集，隨機找到其他系列的第一集作為下一篇: ${nextPost.title}`);
           } else {
             // 如果沒有其他系列，找最新的非系列文章
             const otherPosts = posts.filter(post => 
@@ -273,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * 處理非系列文章導航
      */
-    function handleNonSeriesArticles(posts, info) {
+    function handleNonSeriesArticles(posts, seriesData, info) {
       if (!info.date && !info.title) {
         console.error('找不到文章日期或標題，無法處理非系列文章導航');
         setDefaultState();
@@ -325,15 +331,16 @@ document.addEventListener('DOMContentLoaded', function() {
           nextPost.url = processUrl(nextPost.url);
           console.log(`找到下一篇: ${nextPost.title}`);
         } else {
-          // 如果是最新的文章，尋找系列文章的第一集作為推薦
+          // 如果是最新的文章，隨機推薦一個系列的第一集
           const seriesFirstEpisodes = [];
-          if (data.series) {
-            for (const seriesName in data.series) {
+          
+          if (seriesData) {
+            for (const seriesName in seriesData) {
               let seriesPosts = [];
-              if (Array.isArray(data.series[seriesName].posts)) {
-                seriesPosts = data.series[seriesName].posts;
-              } else if (Array.isArray(data.series[seriesName])) {
-                seriesPosts = data.series[seriesName];
+              if (Array.isArray(seriesData[seriesName].posts)) {
+                seriesPosts = seriesData[seriesName].posts;
+              } else if (Array.isArray(seriesData[seriesName])) {
+                seriesPosts = seriesData[seriesName];
               }
               
               if (seriesPosts.length > 0) {
@@ -344,12 +351,11 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           
           if (seriesFirstEpisodes.length > 0) {
-            // 按日期排序，取最新的系列第一集
-            seriesFirstEpisodes.sort((a, b) => new Date(b.date) - new Date(a.date));
-            nextPost = seriesFirstEpisodes[0];
+            // 隨機選擇一個系列的第一集
+            nextPost = getRandomElement(seriesFirstEpisodes);
             nextPost.url = processUrl(nextPost.url);
             nextMessage = '即將進入系列文章';
-            console.log(`最新文章，找到系列第一集作為下一篇: ${nextPost.title}`);
+            console.log(`最新文章，隨機找到系列第一集作為下一篇: ${nextPost.title}`);
           }
         }
       } else {
