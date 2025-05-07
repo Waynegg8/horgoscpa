@@ -158,7 +158,6 @@ def select_random_image(category_code):
     return relative_path
 
 def extract_date_from_filename(filename: str) -> Optional[str]:
-    date_match = re.search(r' W
     date_match = re.search(r'(\d{4}-\d{2}-\d{2})', filename)
     if date_match:
         date_str = date_match.group(1)
