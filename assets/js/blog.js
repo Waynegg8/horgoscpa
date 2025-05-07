@@ -81,26 +81,40 @@ document.addEventListener('DOMContentLoaded', function() {
   
   function setupEventListeners() {
     // 設置分類過濾按鈕
-    filterButtons.forEach(button => {
-      if (button.dataset.category === currentCategory) {
-        button.classList.add('active');
-      } else {
-        button.classList.remove('active');
+   // Find this section in the setupEventListeners function
+filterButtons.forEach(button => {
+  if (button.dataset.category === currentCategory) {
+    button.classList.add('active');
+  } else {
+    button.classList.remove('active');
+  }
+  
+  button.addEventListener('click', function() {
+    // First clear any active search
+    if (currentSearchQuery) {
+      currentSearchQuery = '';
+      if (searchInput) {
+        searchInput.value = '';
+        searchContainer.classList.remove('search-active');
       }
-      
-      button.addEventListener('click', function() {
-        filterButtons.forEach(btn => btn.classList.remove('active'));
-        this.classList.add('active');
-        
-        currentCategory = this.dataset.category;
-        currentPage = 1; // 重置頁碼
-        currentSeries = '';
-        
-        console.log('點擊分類按鈕:', currentCategory);
-        filterAndDisplayPosts();
-        updateURL();
-      });
-    });
+    }
+    
+    // Remove active class from all buttons
+    filterButtons.forEach(btn => btn.classList.remove('active'));
+    
+    // Add active class to clicked button
+    this.classList.add('active');
+    
+    currentCategory = this.dataset.category;
+    currentPage = 1; // Reset page number
+    currentSeries = '';
+    
+    console.log('Clicked category button:', currentCategory);
+    filterAndDisplayPosts();
+    updateURL();
+    updateUIState(); // Add this call to ensure UI consistency
+  });
+});
     
     // 設置搜索功能
     if (searchInput && searchButton) {
