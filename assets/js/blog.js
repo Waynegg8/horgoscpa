@@ -81,40 +81,49 @@ document.addEventListener('DOMContentLoaded', function() {
   
   function setupEventListeners() {
     // 設置分類過濾按鈕
-   // Find this section in the setupEventListeners function
-filterButtons.forEach(button => {
-  if (button.dataset.category === currentCategory) {
-    button.classList.add('active');
-  } else {
-    button.classList.remove('active');
-  }
-  
-  button.addEventListener('click', function() {
-    // First clear any active search
-    if (currentSearchQuery) {
-      currentSearchQuery = '';
-      if (searchInput) {
-        searchInput.value = '';
-        searchContainer.classList.remove('search-active');
+    filterButtons.forEach(button => {
+      // 初始化時設置活動狀態
+      if (button.dataset.category === currentCategory) {
+        button.classList.add('active');
+      } else {
+        button.classList.remove('active');
       }
-    }
-    
-    // Remove active class from all buttons
-    filterButtons.forEach(btn => btn.classList.remove('active'));
-    
-    // Add active class to clicked button
-    this.classList.add('active');
-    
-    currentCategory = this.dataset.category;
-    currentPage = 1; // Reset page number
-    currentSeries = '';
-    
-    console.log('Clicked category button:', currentCategory);
-    filterAndDisplayPosts();
-    updateURL();
-    updateUIState(); // Add this call to ensure UI consistency
-  });
-});
+      
+      button.addEventListener('click', function() {
+        const newCategory = this.dataset.category;
+        
+        // 如果點擊已經是活動狀態的按鈕，不做任何操作
+        if (newCategory === currentCategory && !currentSearchQuery && !currentSeries && !currentTag) {
+          return;
+        }
+        
+        // 清除所有活動狀態
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // 設置當前按鈕為活動狀態
+        this.classList.add('active');
+        
+        // 清除搜索狀態
+        if (currentSearchQuery) {
+          currentSearchQuery = '';
+          if (searchInput) {
+            searchInput.value = '';
+            searchContainer.classList.remove('search-active');
+          }
+        }
+        
+        // 更新狀態
+        currentCategory = newCategory;
+        currentPage = 1; // 重置頁碼
+        currentSeries = '';
+        currentTag = '';
+        
+        console.log('點擊分類按鈕:', currentCategory);
+        filterAndDisplayPosts();
+        updateURL();
+        updateUIState(); // 確保UI狀態一致
+      });
+    });
     
     // 設置搜索功能
     if (searchInput && searchButton) {
@@ -145,6 +154,7 @@ filterButtons.forEach(button => {
           currentSeries = '';
           filterAndDisplayPosts();
           updateURL();
+          updateUIState(); // 確保UI狀態一致
           return;
         }
         
@@ -155,6 +165,7 @@ filterButtons.forEach(button => {
         console.log('搜索查詢:', currentSearchQuery);
         filterAndDisplayPosts();
         updateURL();
+        updateUIState(); // 確保UI狀態一致
       }, 500);
       
       searchInput.addEventListener('input', handleSearchInput);
@@ -254,7 +265,7 @@ filterButtons.forEach(button => {
   // 更新UI元素以反映當前狀態
   function updateUIState() {
     // 更新分類按鈕狀態
-    if (filterButtons && filterButtons.length > 0) {  // 添加這個檢查
+    if (filterButtons && filterButtons.length > 0) {
       filterButtons.forEach(btn => {
         if (btn.dataset.category === currentCategory) {
           btn.classList.add('active');
@@ -478,6 +489,9 @@ filterButtons.forEach(button => {
         // 顯示文章
         filterAndDisplayPosts();
         
+        // 確保UI狀態與當前狀態一致
+        updateUIState();
+        
       })
       .catch(error => {
         console.error('獲取博客數據失敗:', error);
@@ -660,6 +674,7 @@ filterButtons.forEach(button => {
       searchContainer.classList.remove('search-active');
     }
     
+    // 更新分類按鈕狀態
     filterButtons.forEach(btn => {
       if (btn.dataset.category === 'all') {
         btn.classList.add('active');
@@ -951,8 +966,8 @@ filterButtons.forEach(button => {
       return;
     }
     
-    // 顯示最多15個標籤
-    const topTags = filteredTags.slice(0, 15);
+    // 顯示最多5個標籤
+    const topTags = filteredTags.slice(0, 5);
     
     // 生成標籤HTML
     const tagsHTML = topTags.map(tag => 
