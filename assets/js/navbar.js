@@ -1,7 +1,7 @@
 /**
  * navbar.js - 霍爾果斯會計師事務所導航欄功能腳本
  * 最後更新日期: 2025-05-06
- * 優化版本 3.1 - 移除下拉菜單後的精簡版
+ * 優化版本 3.2 - 修復語法錯誤
  */
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 檢查是否為當前頁面路徑
     if (linkPath === currentPath || 
-        (currentPath.includes(linkPath) && linkPath !== '/' && linkPath !== '/index.html') {
+        (currentPath.includes(linkPath) && linkPath !== '/' && linkPath !== '/index.html')) {
       link.classList.add('active');
     }
   });
@@ -51,15 +51,17 @@ document.addEventListener('DOMContentLoaded', function() {
   const navToggle = document.getElementById('nav-toggle');
   const navMenuItems = document.querySelectorAll('.nav-menu a');
   
-  navMenuItems.forEach(item => {
-    item.addEventListener('click', function() {
-      if (window.innerWidth <= 850 && navToggle.checked) {
-        setTimeout(() => {
-          navToggle.checked = false;
-        }, 300);
-      }
+  if (navToggle && navMenuItems.length > 0) {
+    navMenuItems.forEach(item => {
+      item.addEventListener('click', function() {
+        if (window.innerWidth <= 850 && navToggle.checked) {
+          setTimeout(() => {
+            navToggle.checked = false;
+          }, 300);
+        }
+      });
     });
-  });
+  }
 
   // 按鈕波紋效果
   function createRipple(event, element) {
