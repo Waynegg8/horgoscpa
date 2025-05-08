@@ -176,7 +176,7 @@ class JsonGenerator:
             # 提取主要數據
             post_info = {
                 "title": title,
-                "url": html_file.stem,  # 使用文件名作為URL (不含.html)
+                "url": "/blog/" + html_file.stem,  # 修改：添加/blog/前綴
                 "date": meta_tags.get("date", ""),
                 "summary": meta_tags.get("description", ""),
                 "category": meta_tags.get("main-category-code", ""),
