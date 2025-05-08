@@ -979,7 +979,7 @@ document.addEventListener('DOMContentLoaded', function() {
           showSearchResults(filteredPosts.length);
         }
         
-        // 使用分類篩選
+      // 使用分類篩選
         if (currentCategory && currentCategory !== 'all') {
           console.log(`按分類篩選: ${currentCategory}, 篩選前文章數: ${filteredPosts.length}`);
           
@@ -995,7 +995,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentTag) {
           filteredPosts = filteredPosts.filter(function(post) {
             return post && post.tags && post.tags.some(function(tag) {
-              return tag.toLowerCase() === currentTag.toLowerCase();
+              // 檢查標籤是否是物件
+              if (typeof tag === 'object' && tag !== null) {
+                return tag.slug === currentTag || tag.name === currentTag;
+              } else {
+                return tag === currentTag;
+              }
             });
           });
         }
@@ -1135,7 +1140,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const tagsHTML = post.tags && post.tags.length > 0
       ? post.tags.slice(0, 3).map(function(tag) {
-          return `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="blog-tag">${tag}</a>`;
+          // 檢查標籤是否是物件
+          if (typeof tag === 'object' && tag !== null) {
+            return `<a href="/blog.html?tag=${encodeURIComponent(tag.slug)}" class="blog-tag">${tag.name}</a>`;
+          } else {
+            // 處理字符串標籤的情況
+            return `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="blog-tag">${tag}</a>`;
+          }
         }).join('')
       : '';
     
@@ -1179,7 +1190,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const filteredTags = tags.filter(function(tag) {
         // 檢查該標籤是否與任何文章的標籤有關聯
         return allPosts.posts.some(function(post) {
-          return post && post.tags && post.tags.includes(tag);
+          return post && post.tags && post.tags.some(function(postTag) {
+            // 檢查標籤是否是物件
+            if (typeof postTag === 'object' && postTag !== null) {
+              return postTag.slug === tag.slug || postTag.name === tag.name;
+            } else {
+              return postTag === tag;
+            }
+          });
         });
       });
       
@@ -1194,7 +1212,17 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // 生成標籤HTML
       const tagsHTML = topTags.map(function(tag) {
-        return `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="${currentTag === tag ? 'active' : ''}">${tag}</a>`;
+        // 檢查標籤是否是物件
+        if (typeof tag === 'object' && tag !== null) {
+          const tagSlug = tag.slug || '';
+          const tagName = tag.name || '';
+          const activeClass = currentTag === tagSlug ? 'active' : '';
+          return `<a href="/blog.html?tag=${encodeURIComponent(tagSlug)}" class="${activeClass}">${tagName}</a>`;
+        } else {
+          // 處理字符串標籤的情況
+          const activeClass = currentTag === tag ? 'active' : '';
+          return `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="${activeClass}">${tag}</a>`;
+        }
       }).join('');
       
       // 將標籤加入頁面

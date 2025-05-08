@@ -260,14 +260,24 @@ class JsonGenerator:
         filtered_posts = []
         for post in posts:
             try:
+                # 檢查日期是否為空
+                if post.get("date") == "" or not post.get("date"):
+                    # 將無日期的文章視為當天發布
+                    filtered_posts.append(post)
+                    logger.warning(f"文章日期為空: {post.get('title', '')}, 視為當天發布")
+                    continue
+                    
                 post_date = datetime.strptime(post["date"], "%Y-%m-%d").date()
                 if post_date <= current_date:
                     filtered_posts.append(post)
             except (ValueError, KeyError) as e:
-                logger.warning(f"文章日期格式錯誤: {post.get('title', '')}, {e}")
+                logger.warning(f"文章日期格式錯誤: {post.get('title', '')}, {e}, 視為當天發布")
+                # 添加日期格式錯誤的文章，視為當天發布
+                filtered_posts.append(post)
         
         # 按日期排序（新到舊）
-        filtered_posts.sort(key=lambda x: x["date"], reverse=True)
+        # 對於日期為空的文章，排在最前面
+        filtered_posts.sort(key=lambda x: x.get("date", "") or "9999-12-31", reverse=True)
         
         return filtered_posts
     

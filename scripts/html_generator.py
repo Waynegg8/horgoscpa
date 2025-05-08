@@ -76,7 +76,8 @@ class HtmlGenerator:
             "title": article_info["title"],
             "description": summary,
             "keywords": keywords,
-            "original_filename": article_info["original_filename"]
+            "original_filename": article_info["original_filename"],
+            "date": article_info.get("date", "")  # 添加日期到META標籤
         }
         
         # 添加英文關鍵詞（如果有）
@@ -92,6 +93,9 @@ class HtmlGenerator:
         if article_info.get("is_series", False):
             meta_tags["series_name"] = article_info["series_name"]
             meta_tags["series_episode"] = article_info["episode"]
+            # 添加系列標識
+            if "series_slug" in article_info:
+                meta_tags["series_slug"] = article_info["series_slug"]
         
         return meta_tags
     
@@ -347,6 +351,7 @@ class HtmlGenerator:
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="{meta_tags['description']}" name="description"/>
 <meta content="{meta_tags['keywords']}" name="keywords"/>
+<meta content="{meta_tags['date']}" name="date"/>
 """
 
         # 添加英文關鍵詞（如果有）
@@ -356,6 +361,7 @@ class HtmlGenerator:
         html += f"""<title>{meta_tags['title']} | 霍爾果斯會計師事務所</title>
 <meta content="{meta_tags.get('series_name', '')}" name="series-name"/>
 <meta content="{meta_tags.get('series_episode', '')}" name="series-episode"/>
+<meta content="{meta_tags.get('series_slug', '')}" name="series-slug"/>
 <meta content="{meta_tags['original_filename']}" name="original-filename"/>
 <!-- hreflang 標籤 -->
 <link href="https://www.horgoscpa.com/blog/{article_info['url']}" hreflang="zh-TW" rel="alternate"/>
