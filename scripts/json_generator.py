@@ -331,13 +331,13 @@ class JsonGenerator:
     
     def generate_latest_posts(self, current_date=None):
         """
-        生成最新文章檔案 - 基於掃描結果而非舊數據
+        生成最新文章檔案 - 直接輸出文章陣列
         
         Args:
             current_date: 當前日期，預設為今天
             
         Returns:
-            dict: 最新文章資料
+            list: 最新文章資料陣列
         """
         # 過濾可發布的文章 - 使用掃描的HTML數據
         filtered_posts = self._filter_posts_by_date(self.blog_posts["posts"], current_date)
@@ -370,18 +370,11 @@ class JsonGenerator:
             
             latest_posts_data.append(latest_post)
         
-        # 建立最新文章資料 - 完全重新生成
-        latest_data = {
-            "latest_posts": latest_posts_data,
-            "count": len(latest_posts_data),
-            "generated_time": datetime.now().isoformat()
-        }
-        
-        # 儲存最新文章資料
-        write_json(self.latest_posts_file, latest_data)
+        # 直接輸出文章陣列，不使用 "latest_posts" 包裝
+        write_json(self.latest_posts_file, latest_posts_data)
         logger.info(f"已生成最新文章資料: {self.latest_posts_file}，共 {len(latest_posts_data)} 篇")
         
-        return latest_data
+        return latest_posts_data
     
     def generate_blog_index(self, current_date=None):
         """
@@ -429,7 +422,7 @@ class JsonGenerator:
     
     def generate_series_json(self):
         """
-        生成系列文章 JSON - 基於掃描結果而非舊數據
+        生成系列文章 JSON - 直接輸出系列資料
         
         Returns:
             dict: 系列文章資料
@@ -442,7 +435,7 @@ class JsonGenerator:
         series_list = list(series_info.values())
         series_list.sort(key=lambda x: x["latest_post_date"], reverse=True)
         
-        # 建立系列文章資料 - 完全重新生成
+        # 建立系列文章資料 - 保持與 blog-index.json 一致的結構
         series_data = {
             "series": series_info,
             "series_list": series_list,

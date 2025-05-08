@@ -466,101 +466,111 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // 強化: 統一系列文章分類
+  // 修改: 改進系列文章分類統一邏輯
   function normalizeSeriesCategories(data) {
     if (!data) return data;
     
     try {
       console.log('開始統一系列文章分類');
+      
+      // 如果沒有系列數據或文章數據，直接返回
+      if (!data.series || !data.posts || !Array.isArray(data.posts)) {
+        console.warn('無系列或文章數據，跳過分類統一');
+        return data;
+      }
+      
       // 為每個系列確定主要分類
       const seriesCategories = {};
       
-      // 計算每個系列中各分類的文章數
-      if (data && data.series) {
-        Object.keys(data.series).forEach(function(seriesName) {
-          const seriesData = data.series[seriesName];
-          if (!seriesData) return;
-          
-          let seriesPosts = [];
-          
-          // 適配不同的數據格式
-          if (Array.isArray(seriesData)) {
-            seriesPosts = seriesData;
-          } else if (seriesData.posts && Array.isArray(seriesData.posts)) {
-            seriesPosts = seriesData.posts;
-          } else {
-            console.warn(`無法識別系列 "${seriesName}" 的數據格式`);
-            return;
+      // 第一步：為每個系列確定分類
+      Object.keys(data.series).forEach(function(seriesName) {
+        const seriesData = data.series[seriesName];
+        if (!seriesData) return;
+        
+        // 根據不同的數據格式獲取系列文章
+        let seriesPosts = [];
+        
+        if (Array.isArray(seriesData)) {
+          seriesPosts = seriesData;
+        } else if (seriesData.posts && Array.isArray(seriesData.posts)) {
+          seriesPosts = seriesData.posts;
+        } else {
+          console.warn(`無法識別系列 "${seriesName}" 的數據格式`);
+          return;
+        }
+        
+        if (seriesPosts.length === 0) {
+          console.warn(`系列 "${seriesName}" 沒有文章`);
+          return;
+        }
+        
+        // 統計各分類出現次數
+        const categoryCount = {};
+        seriesPosts.forEach(function(post) {
+          if (post && post.category) {
+            categoryCount[post.category] = (categoryCount[post.category] || 0) + 1;
           }
-          
-          if (seriesPosts.length === 0) {
-            console.warn(`系列 "${seriesName}" 沒有文章`);
-            return;
-          }
-          
-          const categoryCount = {};
-          seriesPosts.forEach(function(post) {
-            if (post && post.category) {
-              categoryCount[post.category] = (categoryCount[post.category] || 0) + 1;
-            }
-          });
-          
-          // 選擇出現最多的分類為系列的主要分類
-          let mainCategory = 'tax'; // 默認分類
-          let maxCount = 0;
-          
-          Object.keys(categoryCount).forEach(function(category) {
-            if (categoryCount[category] > maxCount) {
-              maxCount = categoryCount[category];
-              mainCategory = category;
-            }
-          });
-          
-          seriesCategories[seriesName] = mainCategory;
-          console.log(`系列 "${seriesName}" 的主要分類確定為: ${mainCategory}`);
         });
-      }
+        
+        // 如果沒有任何分類，使用默認分類
+        if (Object.keys(categoryCount).length === 0) {
+          seriesCategories[seriesName] = 'tax'; // 默認分類
+          console.log(`系列 "${seriesName}" 沒有任何分類，使用默認分類 'tax'`);
+          return;
+        }
+        
+        // 找出出現最多的分類
+        let mainCategory = 'tax'; // 默認分類
+        let maxCount = 0;
+        
+        Object.keys(categoryCount).forEach(function(category) {
+          if (categoryCount[category] > maxCount) {
+            maxCount = categoryCount[category];
+            mainCategory = category;
+          }
+        });
+        
+        seriesCategories[seriesName] = mainCategory;
+        console.log(`系列 "${seriesName}" 的主要分類確定為: ${mainCategory}`);
+      });
       
-      // 更新所有文章的分類，使同一系列的文章擁有相同分類
+      // 第二步：為所有屬於系列的文章統一分類
       let updatedCount = 0;
-      if (data && data.posts && Array.isArray(data.posts)) {
-        data.posts.forEach(function(post) {
-          if (post && post.is_series && post.series_name && seriesCategories[post.series_name]) {
-            const originalCategory = post.category;
-            const seriesCategory = seriesCategories[post.series_name];
-            
-            if (originalCategory !== seriesCategory) {
-              post.category = seriesCategory;
-              updatedCount++;
-              console.log(`更新文章 "${post.title}" 的分類: ${originalCategory} -> ${seriesCategory}`);
-            }
+      data.posts.forEach(function(post) {
+        if (post && post.is_series && post.series_name && seriesCategories[post.series_name]) {
+          const originalCategory = post.category;
+          const seriesCategory = seriesCategories[post.series_name];
+          
+          if (originalCategory !== seriesCategory) {
+            post.category = seriesCategory;
+            updatedCount++;
+            console.log(`更新文章 "${post.title}" 的分類: ${originalCategory} -> ${seriesCategory}`);
           }
-        });
-      }
+        }
+      });
       
-      // 同時更新系列數據中的文章分類
-      if (data && data.series) {
-        Object.keys(data.series).forEach(function(seriesName) {
-          if (seriesCategories[seriesName]) {
-            const seriesCategory = seriesCategories[seriesName];
-            const seriesData = data.series[seriesName];
-            
-            if (Array.isArray(seriesData)) {
-              seriesData.forEach(function(post) {
-                if (post && post.category !== seriesCategory) {
-                  post.category = seriesCategory;
-                }
-              });
-            } else if (seriesData && seriesData.posts && Array.isArray(seriesData.posts)) {
-              seriesData.posts.forEach(function(post) {
-                if (post && post.category !== seriesCategory) {
-                  post.category = seriesCategory;
-                }
-              });
+      // 第三步：更新系列數據中的文章分類
+      Object.keys(data.series).forEach(function(seriesName) {
+        if (!seriesCategories[seriesName]) return;
+        
+        const seriesCategory = seriesCategories[seriesName];
+        const seriesData = data.series[seriesName];
+        
+        // 根據不同的數據格式更新系列文章分類
+        if (Array.isArray(seriesData)) {
+          seriesData.forEach(function(post) {
+            if (post && post.category !== seriesCategory) {
+              post.category = seriesCategory;
             }
-          }
-        });
-      }
+          });
+        } else if (seriesData && seriesData.posts && Array.isArray(seriesData.posts)) {
+          seriesData.posts.forEach(function(post) {
+            if (post && post.category !== seriesCategory) {
+              post.category = seriesCategory;
+            }
+          });
+        }
+      });
       
       console.log(`共更新了 ${updatedCount} 篇文章的分類`);
       return data;
@@ -649,20 +659,26 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const seriesSection = document.querySelector('.series-sidebar-section');
     
+    // 顯示載入中狀態
+    sidebarSeriesContainer.innerHTML = '<div class="loading-item">正在載入系列文章...</div>';
+    
+    // 優先使用 series_list 數據
     if (data.series_list && Array.isArray(data.series_list) && data.series_list.length > 0) {
       let seriesHTML = '';
       
       data.series_list.forEach(function(series) {
-        if (!series || !series.id) {
+        if (!series || (!series.id && !series.slug)) {
           console.warn('跳過無效系列數據');
           return;
         }
         
+        // 使用系列識別碼，優先使用 slug
+        const seriesId = series.slug || series.id || '';
+        
         // 使用隨機圖片或特定圖片
         const seriesImage = series.image || getRandomImage();
-        const seriesId = series.id;
-        const seriesTitle = series.title || seriesId;
-        const episodeCount = series.episode_count || 0;
+        const seriesTitle = series.title || series.name || seriesId;
+        const episodeCount = series.count || (series.posts ? series.posts.length : 0) || 0;
         
         seriesHTML += `
           <div class="sidebar-series-card" data-series="${escapeHtml(seriesId)}">
@@ -678,29 +694,22 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
       });
       
-      sidebarSeriesContainer.innerHTML = seriesHTML;
-      
-      const seriesCards = sidebarSeriesContainer.querySelectorAll('.sidebar-series-card');
-      if (seriesCards) {
-        seriesCards.forEach(function(card) {
-          if (card) {
-            card.addEventListener('click', function() {
-              if (this.dataset) {
-                const seriesName = this.dataset.series;
-                if (seriesName) {
-                  console.log(`選擇系列: ${seriesName}`);
-                  filterBySeriesName(seriesName);
-                }
-              }
-            });
-          }
-        });
+      if (seriesHTML) {
+        sidebarSeriesContainer.innerHTML = seriesHTML;
+        
+        // 為系列卡片添加點擊事件
+        attachSeriesCardEvents(sidebarSeriesContainer);
+        
+        // 顯示系列區塊
+        if (seriesSection) {
+          seriesSection.style.display = 'block';
+        }
+      } else {
+        sidebarSeriesContainer.innerHTML = '<div class="no-series-message">目前沒有系列文章</div>';
       }
-      
-      if (seriesSection) {
-        seriesSection.style.display = 'block';
-      }
-    } else if (data.series && Object.keys(data.series).length > 0) {
+    } 
+    // 如果沒有 series_list，嘗試使用 series 數據
+    else if (data.series && Object.keys(data.series).length > 0) {
       const series = data.series;
       let seriesHTML = '';
       let seriesCount = 0;
@@ -711,84 +720,84 @@ document.addEventListener('DOMContentLoaded', function() {
         const seriesData = series[seriesName];
         if (!seriesData) continue;
         
+        // 獲取系列文章陣列
+        let seriesPosts = [];
         if (seriesData.posts && Array.isArray(seriesData.posts)) {
-          const seriesPosts = seriesData.posts;
-          // 使用隨機圖片或特定圖片
-          const seriesImage = seriesData.image || getRandomImage();
-          const seriesTitle = seriesData.title || seriesName;
-          
-          seriesCount++;
-          seriesHTML += `
-            <div class="sidebar-series-card" data-series="${escapeHtml(seriesName)}">
-              <div class="sidebar-series-image">
-                <img src="${escapeHtml(seriesImage)}" alt="${escapeHtml(seriesTitle)}" loading="lazy"
-                    onerror="this.src='${getRandomImage()}';">
-              </div>
-              <div class="sidebar-series-content">
-                <h4>${escapeHtml(seriesTitle)}</h4>
-                <p>${seriesPosts.length} 篇文章</p>
-              </div>
-            </div>
-          `;
+          seriesPosts = seriesData.posts;
         } else if (Array.isArray(seriesData)) {
-          const seriesPosts = seriesData;
-          if (seriesPosts.length === 0) continue;
-          
-          seriesCount++;
-          const firstPost = seriesPosts[0];
-          // 使用隨機圖片或特定圖片
-          const seriesImage = firstPost && firstPost.image ? firstPost.image : getRandomImage();
-          
-          seriesHTML += `
-            <div class="sidebar-series-card" data-series="${escapeHtml(seriesName)}">
-              <div class="sidebar-series-image">
-                <img src="${escapeHtml(seriesImage)}" alt="${escapeHtml(seriesName)}" loading="lazy"
-                    onerror="this.src='${getRandomImage()}';">
-              </div>
-              <div class="sidebar-series-content">
-                <h4>${escapeHtml(seriesName)}</h4>
-                <p>${seriesPosts.length} 篇文章</p>
-              </div>
-            </div>
-          `;
+          seriesPosts = seriesData;
+        } else {
+          continue;
         }
+        
+        if (seriesPosts.length === 0) continue;
+        
+        seriesCount++;
+        
+        // 使用隨機圖片或特定圖片
+        const seriesImage = (seriesData.image || (seriesPosts[0] && seriesPosts[0].image)) || getRandomImage();
+        const seriesTitle = seriesData.title || seriesData.name || seriesName;
+        
+        seriesHTML += `
+          <div class="sidebar-series-card" data-series="${escapeHtml(seriesName)}">
+            <div class="sidebar-series-image">
+              <img src="${escapeHtml(seriesImage)}" alt="${escapeHtml(seriesTitle)}" loading="lazy"
+                  onerror="this.src='${getRandomImage()}';">
+            </div>
+            <div class="sidebar-series-content">
+              <h4>${escapeHtml(seriesTitle)}</h4>
+              <p>${seriesPosts.length} 篇文章</p>
+            </div>
+          </div>
+        `;
       }
       
       if (seriesCount > 0) {
         sidebarSeriesContainer.innerHTML = seriesHTML;
         
-        const seriesCards = sidebarSeriesContainer.querySelectorAll('.sidebar-series-card');
-        if (seriesCards) {
-          seriesCards.forEach(function(card) {
-            if (card) {
-              card.addEventListener('click', function() {
-                if (this.dataset) {
-                  const seriesName = this.dataset.series;
-                  if (seriesName) {
-                    console.log(`選擇系列: ${seriesName}`);
-                    filterBySeriesName(seriesName);
-                  }
-                }
-              });
-            }
-          });
-        }
+        // 為系列卡片添加點擊事件
+        attachSeriesCardEvents(sidebarSeriesContainer);
         
+        // 顯示系列區塊
         if (seriesSection) {
           seriesSection.style.display = 'block';
         }
       } else {
+        sidebarSeriesContainer.innerHTML = '<div class="no-series-message">目前沒有系列文章</div>';
+        
+        // 隱藏系列區塊
         if (seriesSection) {
           seriesSection.style.display = 'none';
         }
-        sidebarSeriesContainer.innerHTML = '<div class="no-series-message">目前沒有系列文章</div>';
       }
     } else {
       console.warn('沒有系列文章數據可顯示');
+      sidebarSeriesContainer.innerHTML = '<div class="no-series-message">目前沒有系列文章</div>';
+      
+      // 隱藏系列區塊
       if (seriesSection) {
         seriesSection.style.display = 'none';
       }
-      sidebarSeriesContainer.innerHTML = '<div class="no-series-message">目前沒有系列文章</div>';
+    }
+  }
+  
+  // 添加系列卡片點擊事件
+  function attachSeriesCardEvents(container) {
+    const seriesCards = container.querySelectorAll('.sidebar-series-card');
+    if (seriesCards && seriesCards.length > 0) {
+      seriesCards.forEach(function(card) {
+        if (card) {
+          card.addEventListener('click', function() {
+            if (this.dataset && this.dataset.series) {
+              const seriesName = this.dataset.series;
+              if (seriesName) {
+                console.log(`選擇系列: ${seriesName}`);
+                filterBySeriesName(seriesName);
+              }
+            }
+          });
+        }
+      });
     }
   }
   
@@ -798,6 +807,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
+    // 尋找系列文章
     let seriesPosts = [];
     
     if (allPosts.series && allPosts.series[seriesName]) {
@@ -816,6 +826,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
+    // 更新狀態
     currentSeries = seriesName;
     currentCategory = 'all';
     currentTag = '';
@@ -826,6 +837,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.currentCategory = currentCategory;
     window.currentPage = currentPage;
     
+    // 重置搜索框
     if (searchInput) {
       searchInput.value = '';
     }
@@ -845,9 +857,13 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
     
+    // 過濾並顯示文章
     filterAndDisplayPosts();
+    
+    // 更新URL
     updateURL();
     
+    // 滾動到內容區域
     setTimeout(function() {
       const targetElement = (searchResultsContainer && searchResultsContainer.style.display === 'block') 
         ? searchResultsContainer 
@@ -876,18 +892,25 @@ document.addEventListener('DOMContentLoaded', function() {
     let seriesTitle = seriesName;
     let seriesDescription = '';
     
+    // 嘗試獲取系列詳細信息
     if (allPosts && allPosts.series && allPosts.series[seriesName]) {
       const seriesData = allPosts.series[seriesName];
       if (seriesData) {
+        // 嘗試獲取系列標題
         if (seriesData.title) {
           seriesTitle = seriesData.title;
+        } else if (seriesData.name) {
+          seriesTitle = seriesData.name;
         }
+        
+        // 嘗試獲取系列描述
         if (seriesData.description) {
           seriesDescription = `<p class="series-description">${escapeHtml(seriesData.description)}</p>`;
         }
       }
     }
     
+    // 顯示系列搜索結果信息
     searchResultsContainer.innerHTML = `
       <div class="search-results-info">
         <h3>系列: "${seriesTitle}"</h3>
@@ -942,16 +965,30 @@ document.addEventListener('DOMContentLoaded', function() {
         series: currentSeries
       });
       
-      let filteredPosts = allPosts.posts || [];
+      // 確保有文章陣列
+      let filteredPosts = allPosts.posts && Array.isArray(allPosts.posts) ? allPosts.posts : [];
+      
+      if (filteredPosts.length === 0) {
+        console.warn('沒有可用的文章數據');
+        showError('沒有可用的文章數據');
+        return;
+      }
       
       if (currentSeries) {
         // 使用系列文章數據
         if (allPosts.series && allPosts.series[currentSeries]) {
           const seriesData = allPosts.series[currentSeries];
           if (seriesData) {
-            filteredPosts = seriesData.posts && Array.isArray(seriesData.posts) ? 
-                            seriesData.posts : 
-                            (Array.isArray(seriesData) ? seriesData : []);
+            // 根據數據格式獲取系列文章
+            if (seriesData.posts && Array.isArray(seriesData.posts)) {
+              filteredPosts = seriesData.posts;
+            } else if (Array.isArray(seriesData)) {
+              filteredPosts = seriesData;
+            } else {
+              console.warn(`系列 "${currentSeries}" 數據格式不符合預期`);
+            }
+            
+            // 顯示系列搜索結果
             showSeriesResults(currentSeries, filteredPosts.length);
           }
         } else {
@@ -970,22 +1007,25 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const title = post.title ? post.title.toLowerCase() : '';
             const summary = post.summary ? post.summary.toLowerCase() : '';
-            const tags = post.tags ? post.tags.join(' ').toLowerCase() : '';
+            const tags = post.tags ? (Array.isArray(post.tags) ? 
+                      post.tags.map(t => typeof t === 'object' ? t.name || '' : t).join(' ') : 
+                      '').toLowerCase() : '';
             
             return searchTerms.every(function(term) {
               return title.includes(term) || summary.includes(term) || tags.includes(term);
             });
           });
+          
+          // 顯示搜索結果
           showSearchResults(filteredPosts.length);
         }
         
-      // 使用分類篩選
+        // 使用分類篩選
         if (currentCategory && currentCategory !== 'all') {
           console.log(`按分類篩選: ${currentCategory}, 篩選前文章數: ${filteredPosts.length}`);
           
           filteredPosts = filteredPosts.filter(function(post) {
-            const result = post && post.category === currentCategory;
-            return result;
+            return post && post.category === currentCategory;
           });
           
           console.log(`分類篩選後文章數: ${filteredPosts.length}`);
@@ -1006,6 +1046,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
       
+      // 計算分頁信息
       const totalPosts = filteredPosts.length;
       const totalPages = Math.max(1, Math.ceil(totalPosts / POSTS_PER_PAGE));
       
@@ -1023,24 +1064,24 @@ document.addEventListener('DOMContentLoaded', function() {
       console.log(`顯示第 ${startIndex+1} 到 ${endIndex} 篇文章`);
       
       // 統計各分類的文章數量
-      const categoryStats = {};
-      filteredPosts.forEach(function(post) {
-        if (post && post.category) {
-          categoryStats[post.category] = (categoryStats[post.category] || 0) + 1;
+      if (currentCategory === 'all' && !currentTag && !currentSearchQuery && !currentSeries) {
+        const categoryStats = {};
+        filteredPosts.forEach(function(post) {
+          if (post && post.category) {
+            categoryStats[post.category] = (categoryStats[post.category] || 0) + 1;
+          }
+        });
+        
+        // 通知分類加載器更新
+        if (typeof window.updateBlogCategoryStats === 'function') {
+          window.updateBlogCategoryStats(categoryStats);
         }
-      });
-      
-      // 通知分類加載器更新
-      if (typeof window.updateBlogCategoryStats === 'function' && 
-          currentCategory === 'all' && 
-          !currentTag && 
-          !currentSearchQuery && 
-          !currentSeries) {
-        window.updateBlogCategoryStats(categoryStats);
       }
       
+      // 顯示文章和分頁
       displayPosts(paginatedPosts);
       generatePagination(currentPage, totalPages);
+      
     } catch (error) {
       console.error('過濾和顯示文章時發生錯誤:', error);
       showError('顯示文章時發生錯誤。請刷新頁面重試。');
@@ -1095,14 +1136,7 @@ document.addEventListener('DOMContentLoaded', function() {
       allImages.forEach(function(img) {
         if (img) {
           img.addEventListener('error', function() {
-            const cardElement = this.closest('.blog-card');
-            if (cardElement && cardElement.dataset) {
-              const postCategory = cardElement.dataset.category || 'default';
-              // 使用隨機圖片
-              this.src = getRandomImage();
-            } else {
-              this.src = getRandomImage();
-            }
+            this.src = getRandomImage();
           });
         }
       });
@@ -1138,11 +1172,12 @@ document.addEventListener('DOMContentLoaded', function() {
       imageUrl = '/' + imageUrl;
     }
     
+    // 處理標籤 - 支援物件和字串格式
     const tagsHTML = post.tags && post.tags.length > 0
       ? post.tags.slice(0, 3).map(function(tag) {
           // 檢查標籤是否是物件
           if (typeof tag === 'object' && tag !== null) {
-            return `<a href="/blog.html?tag=${encodeURIComponent(tag.slug)}" class="blog-tag">${tag.name}</a>`;
+            return `<a href="/blog.html?tag=${encodeURIComponent(tag.slug || tag.name)}" class="blog-tag">${tag.name}</a>`;
           } else {
             // 處理字符串標籤的情況
             return `<a href="/blog.html?tag=${encodeURIComponent(tag)}" class="blog-tag">${tag}</a>`;
@@ -1150,12 +1185,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('')
       : '';
     
+    // 系列文章徽章
     const seriesBadge = post.is_series && post.series_name && post.episode
-      ? `<div class="series-badge" title="${post.series_name} EP${post.episode}">${post.series_name} EP${post.episode}</div>` 
+      ? `<div class="series-badge" title="${escapeHtml(post.series_name)} EP${post.episode}">${escapeHtml(post.series_name)} EP${post.episode}</div>` 
       : '';
     
+    // 系列文章屬性
     const seriesAttr = post.is_series && post.series_name && post.episode 
-      ? `data-series="${post.series_name}" data-episode="${post.episode}"` 
+      ? `data-series="${escapeHtml(post.series_name)}" data-episode="${post.episode}"` 
       : '';
     
     return `
@@ -1193,9 +1230,10 @@ document.addEventListener('DOMContentLoaded', function() {
           return post && post.tags && post.tags.some(function(postTag) {
             // 檢查標籤是否是物件
             if (typeof postTag === 'object' && postTag !== null) {
-              return postTag.slug === tag.slug || postTag.name === tag.name;
+              return postTag.slug === (typeof tag === 'object' ? tag.slug : tag) || 
+                     postTag.name === (typeof tag === 'object' ? tag.name : tag);
             } else {
-              return postTag === tag;
+              return postTag === (typeof tag === 'object' ? tag.slug || tag.name : tag);
             }
           });
         });
@@ -1255,7 +1293,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const seriesIndicator = post.is_series && post.series_name && post.episode 
-          ? `<span class="series-indicator">[${post.series_name} EP${post.episode}]</span> ` 
+          ? `<span class="series-indicator">[${escapeHtml(post.series_name)} EP${post.episode}]</span> ` 
           : '';
           
         return `
@@ -1266,7 +1304,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
       }).join('');
       
-      popularPostsContainer.innerHTML = postsHTML;
+      popularPostsContainer.innerHTML = postsHTML || "<li>暫無熱門文章</li>";
     } catch (error) {
       console.error('初始化熱門文章區域時發生錯誤:', error);
       popularPostsContainer.innerHTML = "<li>載入熱門文章時發生錯誤</li>";

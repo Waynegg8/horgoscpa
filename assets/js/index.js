@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function showError() {
     postsContainer.innerHTML = `
       <div class="error-message">
-        <p>無法載入最新文章，顯示備用內容</p>
+        <p>無法載入最新文章</p>
       </div>
     `;
     // 顯示備用文章
@@ -66,8 +66,8 @@ document.addEventListener('DOMContentLoaded', function() {
     postElement.className = 'blog-card';
     
     postElement.innerHTML = `
-      <!-- 添加覆盖整个卡片的链接 -->
-      <a href="${post.url}" class="blog-card-link">阅读完整文章</a>
+      <!-- 添加覆蓋整個卡片的連結 -->
+      <a href="${post.url}" class="blog-card-link">閱讀完整文章</a>
       <div class="blog-image">
         <img src="${post.image}" alt="${post.title}">
       </div>
@@ -103,11 +103,17 @@ document.addEventListener('DOMContentLoaded', function() {
   
   /**
    * 從JSON格式加載博客數據
+   * 同時處理新舊兩種格式的JSON
    */
   async function loadPosts() {
     try {
-      // 延遲1秒，顯示載入中狀態
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 顯示載入中狀態（可選）
+      postsContainer.innerHTML = `
+        <div class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>正在載入最新文章...</p>
+        </div>
+      `;
       
       // 嘗試加載最新文章資料
       const response = await fetch('/assets/data/latest-posts.json');
@@ -116,7 +122,20 @@ document.addEventListener('DOMContentLoaded', function() {
         throw new Error('無法獲取文章資料');
       }
       
-      const posts = await response.json();
+      let responseData = await response.json();
+      
+      // 處理可能的資料結構差異 - 支援新舊格式
+      // 1. 如果資料是陣列，則直接使用
+      // 2. 如果資料有 latest_posts 欄位，則使用該欄位的值
+      let posts = Array.isArray(responseData) ? responseData : 
+                  (responseData.latest_posts ? responseData.latest_posts : []);
+      
+      // 如果取得的不是陣列或無資料，顯示錯誤
+      if (!Array.isArray(posts) || posts.length === 0) {
+        console.error('文章資料格式不正確或無資料');
+        showError();
+        return;
+      }
       
       // 清空容器
       postsContainer.innerHTML = '';
