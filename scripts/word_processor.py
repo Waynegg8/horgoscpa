@@ -9,7 +9,7 @@ Word 處理及翻譯模組
 import os
 import re
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from loguru import logger
 import docx
@@ -63,13 +63,19 @@ class WordProcessor:
         """
         if current_date is None:
             current_date = datetime.now().date()
+            
+        # 設置只處理前一天及更早的文件
+        yesterday = current_date - timedelta(days=1)
         
         documents = []
+        skipped_current_future = []
         
         # 支持的 Word 文檔擴展名
         word_extensions = [".docx", ".doc"]
         
         # 掃描目錄
+        logger.info(f"開始掃描文件夾: {self.word_dir}, 當前日期: {current_date}, 只處理{yesterday}及更早的文件")
+        
         for file in self.word_dir.glob("*"):
             # 跳過目錄
             if file.is_dir():
@@ -108,13 +114,18 @@ class WordProcessor:
                     logger.info(f"處理特定日期文件: {file.name}, 日期: {file_date}")
                     documents.append(file)
             else:
-                # 修改：只處理日期早於當天的文件（排除當天及未來日期的文件）
-                if file_date < current_date:
-                    logger.info(f"處理日期早於當天的文件: {file.name}, 日期: {file_date}, 當前日期: {current_date}")
+                # 修改：只處理昨天及更早的文件（排除當天及未來日期的文件）
+                if file_date <= yesterday:
+                    logger.info(f"處理更早日期的文件: {file.name}, 日期: {file_date}, 當前日期: {current_date}")
                     documents.append(file)
                 else:
-                    logger.info(f"跳過當天或未來日期的文件: {file.name}, 日期: {file_date}, 當前日期: {current_date}")
+                    logger.warning(f"跳過當天或未來日期的文件: {file.name}, 日期: {file_date}, 當前日期: {current_date}")
+                    skipped_current_future.append(str(file))
         
+        if skipped_current_future:
+            logger.warning(f"跳過了{len(skipped_current_future)}個當天或未來日期的文件: {', '.join(skipped_current_future)}")
+        
+        logger.info(f"掃描完成，找到{len(documents)}個需要處理的文件")
         return documents
     
     def extract_content(self, doc_path):
@@ -173,7 +184,8 @@ class WordProcessor:
             "title": title,
             "content": content,
             "summary": summary,
-            "date": file_info["date"]
+            "date": file_info["date"],
+            "source_path": str(doc_path)  # 保存原始文件路徑
         }
         
         # 如果是系列文章，添加相關信息
@@ -353,9 +365,69 @@ class WordProcessor:
         
         return url
     
+    def prepare_document(self, doc_path):
+        """
+        準備文檔處理，提取內容和生成SEO URL，但不移動文件
+        
+        Args:
+            doc_path: Word 文檔路徑
+            
+        Returns:
+            dict: 文檔信息字典
+        """
+        try:
+            # 提取內容
+            doc_info = self.extract_content(doc_path)
+            
+            # 生成 SEO URL
+            doc_info["url"] = self.generate_seo_url(doc_info)
+            
+            # 記錄翻譯使用的統計信息
+            translation_stats = self.translator.get_stats()
+            doc_info["translation_stats"] = {
+                "total_translations": translation_stats["total_translations"],
+                "cache_hits": translation_stats["cache_hits"],
+                "dictionary_size": translation_stats["dictionary_size"]
+            }
+            
+            # 標記為準備就緒
+            doc_info["prepared"] = True
+            
+            logger.info(f"文檔準備完成: {doc_path}")
+            return doc_info
+            
+        except Exception as e:
+            logger.error(f"準備文檔時出錯: {doc_path} - {str(e)}")
+            return {
+                "prepared": False,
+                "error": str(e),
+                "source_path": str(doc_path)
+            }
+    
+    def mark_as_processed(self, doc_path):
+        """
+        將文件標記為已處理，但不移動文件
+        
+        Args:
+            doc_path: 文件路徑
+            
+        Returns:
+            bool: 是否成功標記
+        """
+        doc_path_str = str(Path(doc_path))
+        
+        if doc_path_str not in self.processed_files["files"]:
+            self.processed_files["files"].append(doc_path_str)
+            write_json(self.processed_files_file, self.processed_files)
+            logger.info(f"文件已標記為已處理: {doc_path}")
+            return True
+        else:
+            logger.info(f"文件已經被標記為已處理: {doc_path}")
+            return False
+    
     def move_processed_file(self, doc_path):
         """
-        移動處理過的文件到 processed 目錄
+        移動處理過的文件到 processed 目錄並標記為已處理
         
         Args:
             doc_path: 文件路徑
@@ -366,50 +438,66 @@ class WordProcessor:
         doc_path = Path(doc_path)
         target_path = self.processed_dir / doc_path.name
         
-        # 移動文件
-        logger.info(f"移動已處理文件: {doc_path} -> {target_path}")
-        shutil.move(str(doc_path), str(target_path))
-        
-        # 更新已處理文件記錄
-        if str(doc_path) not in self.processed_files["files"]:
-            self.processed_files["files"].append(str(doc_path))
-            write_json(self.processed_files_file, self.processed_files)
-        
-        return target_path
+        try:
+            # 確保目標目錄存在
+            self.processed_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 檢查文件是否存在
+            if not doc_path.exists():
+                logger.error(f"要移動的文件不存在: {doc_path}")
+                return None
+            
+            # 檢查目標路徑是否已存在文件
+            if target_path.exists():
+                logger.warning(f"目標路徑已存在文件: {target_path}，將生成新的文件名")
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                target_path = self.processed_dir / f"{doc_path.stem}_{timestamp}{doc_path.suffix}"
+            
+            # 移動文件
+            logger.info(f"移動已處理文件: {doc_path} -> {target_path}")
+            shutil.move(str(doc_path), str(target_path))
+            
+            # 標記為已處理
+            self.mark_as_processed(doc_path)
+            
+            return target_path
+            
+        except Exception as e:
+            logger.error(f"移動文件時出錯: {doc_path} -> {target_path} - {str(e)}")
+            return None
     
-    def process_document(self, doc_path, html_content=None):
+    def finalize_document_processing(self, doc_info, success=True):
         """
-        處理單個 Word 文檔
+        完成文檔處理，如果成功則移動文件
         
         Args:
-            doc_path: Word 文檔路徑
-            html_content: 生成的HTML內容，如果為None表示處理失敗
+            doc_info: 文檔信息字典
+            success: 處理是否成功
             
         Returns:
-            dict: 處理結果字典
+            dict: 更新後的文檔信息字典
         """
-        # 提取內容
-        doc_info = self.extract_content(doc_path)
-        
-        # 生成 SEO URL
-        doc_info["url"] = self.generate_seo_url(doc_info)
-        
-        # 記錄翻譯使用的統計信息
-        translation_stats = self.translator.get_stats()
-        doc_info["translation_stats"] = {
-            "total_translations": translation_stats["total_translations"],
-            "cache_hits": translation_stats["cache_hits"],
-            "dictionary_size": translation_stats["dictionary_size"]
-        }
-        
-        # 僅在HTML生成成功時才移動文件（如果提供了HTML內容）
-        if html_content is not None:
-            processed_path = self.move_processed_file(doc_path)
-            doc_info["processed_path"] = str(processed_path)
-            logger.info(f"文件處理成功並已移動: {doc_path}")
-        else:
-            logger.warning(f"文件處理未完成，不移動文件: {doc_path}")
+        if not success:
+            logger.warning(f"文檔處理失敗，不移動文件: {doc_info.get('source_path', '未知文件')}")
             doc_info["processed"] = False
+            return doc_info
+        
+        # 從doc_info中獲取原始文件路徑
+        source_path = doc_info.get("source_path")
+        if not source_path:
+            logger.error("文檔信息中缺少源文件路徑")
+            doc_info["processed"] = False
+            return doc_info
+        
+        # 移動文件
+        processed_path = self.move_processed_file(source_path)
+        if processed_path:
+            doc_info["processed_path"] = str(processed_path)
+            doc_info["processed"] = True
+            logger.info(f"文件處理成功並已移動: {source_path} -> {processed_path}")
+        else:
+            doc_info["processed"] = False
+            logger.error(f"移動文件失敗: {source_path}")
         
         return doc_info
     
