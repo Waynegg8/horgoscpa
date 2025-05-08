@@ -20,7 +20,7 @@ if scripts_dir not in sys.path:
 from loguru import logger
 
 from word_processor import WordProcessor
-from html_generator import HTMLGenerator  # 假設有此模組
+from html_generator import HtmlGenerator  # 假設有此模組
 from utils import setup_logging, read_json, write_json
 
 
