@@ -11,6 +11,12 @@ import sys
 import argparse
 from datetime import datetime
 from pathlib import Path
+
+# 添加 scripts 目錄到 Python 模組搜尋路徑
+scripts_dir = os.path.join(os.path.dirname(__file__), 'scripts')
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
+
 from loguru import logger
 
 from word_processor import WordProcessor
