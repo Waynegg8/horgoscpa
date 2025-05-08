@@ -148,26 +148,71 @@ jobs:
         id: process_word
         if: github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article') || (github.event_name == 'push' && contains(github.event.head_commit.modified, 'word-docs/'))
         run: |
-          if [ -d "word-docs" ] && [ "$(find word-docs -maxdepth 1 -type f -name "*.docx" | wc -l)" -gt 0 ]; then
-            echo "開始處理word-docs目錄中的Word文檔..."
+          echo "===== 處理Word文檔步驟開始 ====="
+          echo "觸發條件："
+          echo "process_word input: ${{ github.event.inputs.process_word }}"
+          echo "event_name: ${{ github.event_name }}"
+          echo "event.action: ${{ github.event.action }}"
+          
+          echo "檢查工作環境："
+          echo "當前工作目錄："
+          pwd
+          echo "根目錄內容："
+          ls -la
+          
+          echo "檢查word-docs目錄："
+          if [ -d "word-docs" ]; then
+            echo "✅ word-docs目錄存在"
+            echo "word-docs目錄內容："
+            ls -la word-docs/
             
-            # 使用main.py執行完整的文檔處理流程
-            # translator.py會從環境變數獲取DeepL API密鑰，或使用默認值
-            python main.py --word-dir word-docs --output-dir blog --assets-dir assets --debug
+            # 檢查是否有Word文檔
+            echo "搜尋.docx文件..."
+            find word-docs -maxdepth 1 -type f -name "*.docx" -ls
             
-            # 檢查處理結果
-            if [ $? -eq 0 ]; then
-              echo "Word文檔處理成功"
-              echo "html_changed=true" >> $GITHUB_OUTPUT
+            DOCX_FILES=$(find word-docs -maxdepth 1 -type f -name "*.docx")
+            DOCX_COUNT=$(echo "$DOCX_FILES" | grep -c "\.docx$" || echo "0")
+            echo "找到 $DOCX_COUNT 個 .docx 文件"
+            
+            if [ "$DOCX_COUNT" -gt 0 ]; then
+              echo "列出所有待處理的Word文檔："
+              echo "$DOCX_FILES"
+              
+              echo "開始處理word-docs目錄中的Word文檔..."
+              echo "執行命令: python main.py --word-dir word-docs --output-dir blog --assets-dir assets --debug"
+              
+              # 使用main.py執行完整的文檔處理流程
+              python main.py --word-dir word-docs --output-dir blog --assets-dir assets --debug
+              
+              # 檢查處理結果
+              PROCESS_RESULT=$?
+              echo "處理結果返回碼: $PROCESS_RESULT"
+              
+              if [ $PROCESS_RESULT -eq 0 ]; then
+                echo "✅ Word文檔處理成功"
+                echo "html_changed=true" >> $GITHUB_OUTPUT
+              else
+                echo "❌ Word文檔處理失敗，請檢查日誌"
+                echo "html_changed=false" >> $GITHUB_OUTPUT
+                # 不退出工作流程，以便其他步驟可以繼續執行
+                # exit 1
+              fi
             else
-              echo "Word文檔處理失敗，請檢查日誌"
+              echo "⚠️ word-docs 目錄中沒有 .docx 文件，跳過處理"
               echo "html_changed=false" >> $GITHUB_OUTPUT
-              exit 1
             fi
           else
-            echo "word-docs 目錄中沒有 .docx 文件，跳過處理"
+            echo "❌ word-docs 目錄不存在，跳過處理"
             echo "html_changed=false" >> $GITHUB_OUTPUT
           fi
+          
+          # 檢查logs目錄是否有日誌文件
+          if [ -d "logs" ]; then
+            echo "logs目錄內容："
+            ls -la logs/
+          fi
+          
+          echo "===== 處理Word文檔步驟結束 ====="
 
       # 8. 上傳並提交轉換後的 HTML
       - name: 上傳並提交轉換後的 HTML
