@@ -407,8 +407,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const isButton = e.target.tagName === 'BUTTON' || e.target.closest('button');
       
       if (!isLink && !isButton && cardEl.dataset) {
-        const cardUrl = cardEl.dataset.url;
-        if (cardUrl && cardUrl.startsWith('/blog/')) {
+        let cardUrl = cardEl.dataset.url;
+        
+        // 確保URL有/blog/前綴
+        if (cardUrl && !cardUrl.startsWith("/blog/")) {
+          cardUrl = "/blog/" + cardUrl.replace(/^\//, '');
+        }
+        
+        if (cardUrl) {
           window.location.href = cardUrl;
         } else {
           console.error('無效的文章URL:', cardUrl);
@@ -1106,7 +1112,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const postTitle = post.title || "無標題文章";
     const postDate = post.date || new Date().toISOString().split('T')[0];
-    const postUrl = post.url || "#";
+    
+    // 確保URL有/blog/前綴
+    let postUrl = post.url || "#";
+    if (postUrl !== "#" && !postUrl.startsWith("/blog/")) {
+      postUrl = "/blog/" + postUrl.replace(/^\//, '');
+    }
+    
     const postCategory = post.category || "default";
     
     let summary = post.summary || '';
@@ -1208,13 +1220,19 @@ document.addEventListener('DOMContentLoaded', function() {
       const postsHTML = popularPosts.map(function(post) {
         if (!post) return '';
         
+        // 確保URL有/blog/前綴
+        let postUrl = post.url || "#";
+        if (postUrl !== "#" && !postUrl.startsWith("/blog/")) {
+          postUrl = "/blog/" + postUrl.replace(/^\//, '');
+        }
+        
         const seriesIndicator = post.is_series && post.series_name && post.episode 
           ? `<span class="series-indicator">[${post.series_name} EP${post.episode}]</span> ` 
           : '';
           
         return `
           <li>
-            <a href="${post.url}">${seriesIndicator}${post.title}</a>
+            <a href="${postUrl}">${seriesIndicator}${post.title}</a>
             <span class="post-date">${post.date}</span>
           </li>
         `;

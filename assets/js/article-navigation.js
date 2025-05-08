@@ -82,8 +82,12 @@ document.addEventListener('DOMContentLoaded', function() {
   function processUrl(url) {
     if (!url) return '';
     
-    url = url.replace(/\.html$/, '');
+    // 確保URL有/blog/前綴
+    if (!url.startsWith("/blog/")) {
+      url = "/blog/" + url.replace(/^\//, '');
+    }
     
+    // 如果需要絕對URL，可以添加域名
     if (url.startsWith('/')) {
       url = 'https://horgoscpa.com' + url;
     }
