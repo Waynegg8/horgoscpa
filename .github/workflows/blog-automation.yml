@@ -191,6 +191,12 @@ jobs:
               if [ $PROCESS_RESULT -eq 0 ]; then
                 echo "✅ Word文檔處理成功"
                 echo "html_changed=true" >> $GITHUB_OUTPUT
+                
+                # 立即提交更新後的翻譯字典 - 在Word處理完成後立即執行
+                echo "提交更新後的翻譯字典..."
+                git add assets/data/translation_dict.json || true
+                git commit -m "更新翻譯字典 (Word處理後)" || echo "無需提交翻譯字典"
+                git push || echo "無需推送翻譯字典"
               else
                 echo "❌ Word文檔處理失敗，請檢查日誌"
                 echo "html_changed=false" >> $GITHUB_OUTPUT

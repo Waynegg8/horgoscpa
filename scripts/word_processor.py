@@ -267,28 +267,84 @@ class WordProcessor:
         # 提取日期
         date = doc_info["date"]
         
-        # 生成 URL 組件
+        # 初始化 URL 組件列表
         url_components = [date]
         
-        # 如果是系列文章，添加系列信息
+        # 獲取分類(如果存在)並添加到組件中
+        category_slug = doc_info.get("category", "")
+        if category_slug:
+            url_components.append(category_slug)
+        
+        # 處理系列文章
         if doc_info.get("is_series", False):
-            series_url = self.translate_keywords(doc_info["series_name"])
-            url_components.append(series_url)
+            # 翻譯系列名稱並限制長度
+            series_name = doc_info.get("series_name", "")
+            if series_name:
+                series_url = self.translate_keywords(series_name)
+                
+                # 限制系列名稱長度，只取前面2個關鍵詞
+                series_words = series_url.split('-')
+                if len(series_words) > 2:
+                    series_url = '-'.join(series_words[:2])
+                
+                url_components.append(series_url)
+            
+            # 添加集數標識
             url_components.append(f"ep{doc_info['episode']}")
         
-        # 添加標題
-        title_url = self.translate_keywords(doc_info["title"])
-        url_components.append(title_url)
+        # 翻譯標題並限制為2-3個關鍵詞
+        title = doc_info.get("title", "")
+        if title:
+            title_url = self.translate_keywords(title)
+            
+            # 取前3個關鍵詞
+            title_words = title_url.split('-')
+            if len(title_words) > 3:
+                title_url = '-'.join(title_words[:3])
+            
+            url_components.append(title_url)
         
         # 組合 URL
         url = "-".join(url_components)
         
-        # 確保 URL 的唯一性（這裡可以添加檢查邏輯）
-        # 截斷過長的 URL
-        if len(url) > 100:
-            url = url[:100]
-            # 確保不以連字符結尾
-            url = url.rstrip("-")
+        # 確保 URL 長度適當
+        max_url_length = 70  # 降低最大長度限制
+        if len(url) > max_url_length:
+            # 保留必要組件
+            essential_parts = [date]  # 日期必須保留
+            
+            # 添加分類(如果有)
+            if category_slug:
+                essential_parts.append(category_slug)
+            
+            # 如果是系列文章，保留系列標識(縮短)和集數
+            if doc_info.get("is_series", False):
+                # 取系列簡稱 - 如果有系列URL
+                series_url = series_url if 'series_url' in locals() else ""
+                if series_url and len(series_url.split('-')) > 0:
+                    essential_parts.append(series_url.split('-')[0])
+                
+                # 添加集數
+                essential_parts.append(f"ep{doc_info['episode']}")
+            
+            # 構建必要部分
+            essential_url = "-".join(essential_parts)
+            
+            # 為標題保留空間
+            remaining_length = max_url_length - len(essential_url) - 1  # -1 為連字符
+            
+            if remaining_length > 5 and title_words:
+                # 取標題最重要的關鍵詞
+                title_part = title_words[0]
+                if len(title_part) > remaining_length:
+                    title_part = title_part[:remaining_length]
+                url = f"{essential_url}-{title_part}"
+            else:
+                # 空間不足，只用必要部分
+                url = essential_url
+        
+        # 確保不以連字符結尾
+        url = url.rstrip("-")
         
         return url
     

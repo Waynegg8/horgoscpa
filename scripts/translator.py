@@ -51,6 +51,9 @@ class Translator:
         self.translation_count = 0
         self.cache_hit_count = 0
         
+        # 記錄上次保存時間，用於控制保存頻率
+        self._last_save_time = time.time()
+        
         logger.info(f"翻譯服務初始化完成，已載入 {len(self.translation_dict['translations'])} 個翻譯詞條")
     
     def _load_dict(self):
@@ -76,14 +79,24 @@ class Translator:
             logger.error(f"載入翻譯字典失敗: {e}，建立新字典")
             return {"translations": {}, "last_updated": None}
     
-    def _save_dict(self):
-        """保存翻譯字典"""
-        try:
-            with open(self.dict_file, 'w', encoding='utf-8') as f:
-                self.translation_dict["last_updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
-                json.dump(self.translation_dict, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            logger.error(f"保存翻譯字典失敗: {e}")
+    def _save_dict(self, force_save=False):
+        """
+        保存翻譯字典
+        
+        Args:
+            force_save: 是否強制立即保存，不考慮緩存時間
+        """
+        # 增加防抖功能，避免頻繁保存
+        current_time = time.time()
+        if force_save or not hasattr(self, '_last_save_time') or current_time - self._last_save_time > 30:  # 設定最小保存間隔為30秒
+            try:
+                with open(self.dict_file, 'w', encoding='utf-8') as f:
+                    self.translation_dict["last_updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                    json.dump(self.translation_dict, f, ensure_ascii=False, indent=2)
+                self._last_save_time = current_time
+                logger.debug(f"翻譯字典已保存，共 {len(self.translation_dict['translations'])} 個詞條")
+            except Exception as e:
+                logger.error(f"保存翻譯字典失敗: {e}")
     
     def _translate_with_deepl(self, text, source_lang="ZH", target_lang="EN-US"):
         """
@@ -250,7 +263,8 @@ class Translator:
                     result = self._clean_for_url(result)
                 
                 self.translation_dict["translations"][text] = result
-                self._save_dict()
+                # 每次成功翻譯後立即保存字典 (有防抖機制)
+                self._save_dict(force_save=True)
                 
                 # 重置服務失敗計數
                 self.service_failures[i] = 0
@@ -270,7 +284,7 @@ class Translator:
         
         # 保存到字典
         self.translation_dict["translations"][text] = result
-        self._save_dict()
+        self._save_dict(force_save=True)
         
         return result
     
@@ -300,6 +314,9 @@ class Translator:
             futures = [executor.submit(self.translate, text, clean_url) for text in to_translate]
             for future in futures:
                 future.result()  # 等待所有翻譯完成
+        
+        # 完成批量翻譯後立即保存字典
+        self._save_dict(force_save=True)
         
         # 返回結果
         return [self.translation_dict["translations"].get(text, "") for text in texts]
@@ -438,7 +455,7 @@ class Translator:
             self.translation_dict["last_updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
             
             # 保存字典
-            self._save_dict()
+            self._save_dict(force_save=True)
             
             logger.info(f"翻譯字典導入成功: {import_file}，{'合併' if merge else '替換'}模式")
             return True
@@ -464,37 +481,3 @@ def get_translator(dict_file=None, api_key=None):
     if _translator_instance is None:
         _translator_instance = Translator(dict_file, api_key)
     return _translator_instance
-
-# 測試代碼
-if __name__ == "__main__":
-    # 設置日誌級別
-    logger.remove()
-    logger.add(lambda msg: print(msg, end=''), level="DEBUG")
-    
-    # 測試翻譯
-    translator = get_translator()
-    
-    test_texts = [
-        "稅務規劃入門指南",
-        "如何節省個人所得稅",
-        "企業財務報表分析",
-        "會計師事務所服務內容"
-    ]
-    
-    for text in test_texts:
-        result = translator.translate(text)
-        print(f"原文: {text}")
-        print(f"翻譯: {result}")
-        print("---")
-    
-    # 測試批量翻譯
-    batch_results = translator.translate_batch(test_texts)
-    print("批量翻譯結果:")
-    for i, result in enumerate(batch_results):
-        print(f"{test_texts[i]} -> {result}")
-    
-    # 顯示統計信息
-    stats = translator.get_stats()
-    print("\n統計信息:")
-    for key, value in stats.items():
-        print(f"{key}: {value}")
