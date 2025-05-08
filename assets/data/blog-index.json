@@ -1,6 +1,926 @@
 {
   "posts": [
     {
+      "title": "房地合一稅2.0制度概覽",
+      "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
+      "date": "2025-05-06",
+      "summary": "前言 房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx",
+      "is_series": true,
+      "series_name": "房地合一稅2.0",
+      "series_slug": "房地合一稅2.0",
+      "episode": 1,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "房地產稅務",
+          "slug": "property-tax"
+        }
+      ]
+    },
+    {
+      "title": "小規模營利事業規定與短漏報處理",
+      "url": "/blog/2025-05-06-expanded-written-ep4-requirements-for-small",
+      "date": "2025-05-06",
+      "summary": "前言 在營利事業所得稅結算申報中，小規模營利事業與免用統一發票業者具有特殊的申報規定，同時短漏報情形的處理也有明確的規範。本文將基於一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點，詳細說明小規模營利事業的申報特殊規定、短漏報的補稅處罰方式，以及獨資合夥組織的稅務處理特點，幫助相關營利事業正確申報所得稅，避免不必要的稅務爭議。",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-05-06-營所稅擴大書面審核解析EP4-小規模營利事業規定與短漏報處理.docx",
+      "is_series": true,
+      "series_name": "營所稅擴大書面審核解析",
+      "series_slug": "營所稅擴大書面審核解析",
+      "episode": 4,
+      "tags": [
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        }
+      ]
+    },
+    {
+      "title": "不適用案件類型與特殊情況處理",
+      "url": "/blog/2025-05-04-expanded-written-ep3-not-applicable-case",
+      "date": "2025-05-04",
+      "summary": "前言 擴大書面審核制度為符合條件的營利事業提供了簡化申報程序的便利，但並非所有營利事業都適用此制度。財政部在一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點中，明確規定了不適用擴大書面審核的案件類型及特殊情況。本文將詳細解析這些不適用情況，同時說明土地及不動產交易的特殊處理方式，幫助營利事業了解自身是否符合擴大書面審核的條件。",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-05-04-營所稅擴大書面審核解析EP3-不適用案件類型與特殊情況處理.docx",
+      "is_series": true,
+      "series_name": "營所稅擴大書面審核解析",
+      "series_slug": "營所稅擴大書面審核解析",
+      "episode": 3,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        }
+      ]
+    },
+    {
+      "title": "各行業純益率標準完整指南",
+      "url": "/blog/2025-05-02-expanded-written-ep2-a-complete-guide",
+      "date": "2025-05-02",
+      "summary": "前言 在營利事業所得稅結算申報中，純益率標準是擴大書面審核制度的核心指標。依據一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點，不同行業別的營利事業適用不同的純益率標準。本文將詳細介紹各行業的純益率標準，幫助納稅義務人更準確地判斷自身是否符合擴大書面審核的條件，正確申報營利事業所得稅。",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-05-02-營所稅擴大書面審核解析EP2-各行業純益率標準完整指南.docx",
+      "is_series": true,
+      "series_name": "營所稅擴大書面審核解析",
+      "series_slug": "營所稅擴大書面審核解析",
+      "episode": 2,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        },
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        }
+      ]
+    },
+    {
+      "title": "制度概要與適用條件",
+      "url": "/blog/2025-04-30-expanded-written-ep1-outline-of-the",
+      "date": "2025-04-30",
+      "summary": "前言 營利事業所得稅結算申報是企業每年必須面對的稅務作業，為了簡化稅務機關的稽徵作業並提供納稅義務人更便捷的申報方式，財政部訂定了「營利事業所得稅結算申報案件擴大書面審核實施要點」。本文將介紹113年度營利事業所得稅結算申報的擴大書面審核制度，包括其立法目的、適用條件及相關規定，幫助營利事業了解如何符合擴大書面審核的標準，以簡化申報程序。",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-30-營所稅擴大書面審核解析EP1-制度概要與適用條件.docx",
+      "is_series": true,
+      "series_name": "營所稅擴大書面審核解析",
+      "series_slug": "營所稅擴大書面審核解析",
+      "episode": 1,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        }
+      ]
+    },
+    {
+      "title": "CFC制度實務案例分析",
+      "url": "/blog/2025-04-28-profit-making-ep8-case-study-on",
+      "date": "2025-04-28",
+      "summary": "前言 本系列文章前七篇從理論層面解析了CFC制度的各個面向，從制度緣起到稽查重點，為營利事業提供了全面的知識框架。在本系列的最後一篇，我們將透過實務案例，綜合運用前述原理，展示不同投資架構及經營情境下CFC制度的適用。這些案例涵蓋了常見的跨境投資安排及稅務處理難點，旨在幫助企業在實務操作中更好地適用CFC規定，合理規劃跨境投資策略。",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-28-營利事業CFC稅務解析EP8-CFC制度實務案例分析.docx",
+      "is_series": true,
+      "series_name": "營利事業CFC稅務解析",
+      "series_slug": "營利事業cfc稅務解析",
+      "episode": 8,
+      "tags": [
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "創業資訊",
+          "slug": "startup"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        }
+      ]
+    },
+    {
+      "title": "CFC稽查重點與常見錯誤態樣",
+      "url": "/blog/2025-04-26-profit-making-ep7-cfc-audit-highlights",
+      "date": "2025-04-26",
+      "summary": "前言 CFC制度實施初期，稅務機關與企業都處於學習適應階段。然而，稅務機關已開始針對CFC申報案件進行選案查核，確保企業正確適用相關規定。根據財政部北區國稅局於2024年11月11日的公開資訊，稅局已鎖定CFC選案查核的三大重點。本文將詳細解析稅務機關的查核重點及企業常見的錯誤態樣，協助營利事業提前防範稅務風險，完善CFC申報工作。",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-26-營利事業CFC稅務解析EP7-CFC稽查重點與常見錯誤態樣.docx",
+      "is_series": true,
+      "series_name": "營利事業CFC稅務解析",
+      "series_slug": "營利事業cfc稅務解析",
+      "episode": 7,
+      "tags": [
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "財務報表",
+          "slug": "financial-statements"
+        }
+      ]
+    },
+    {
+      "title": "CFC申報程序與應備文件",
+      "url": "/blog/2025-04-24-profit-making-ep6-cfc-reporting-procedures",
+      "date": "2025-04-24",
+      "summary": "前言 CFC制度的實施為企業帶來全新的稅務申報挑戰，如何正確填報所得稅申報書、提供必要文件，成為納稅人必須面對的實務問題。完整且正確的申報不僅是法律義務，也是避免稅務爭議的重要環節。本文將詳細介紹CFC申報的程序、申報書填寫方法及應備文件，協助營利事業順利完成CFC相關稅務申報工作。",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-24-營利事業CFC稅務解析EP6-CFC申報程序與應備文件.docx",
+      "is_series": true,
+      "series_name": "營利事業CFC稅務解析",
+      "series_slug": "營利事業cfc稅務解析",
+      "episode": 6,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        }
+      ]
+    },
+    {
+      "title": "CFC投資收益歸課與避免重複課稅",
+      "url": "/blog/2025-04-22-profit-making-ep5-cfc-investment-income",
+      "date": "2025-04-22",
+      "summary": "前言 在確定CFC當年度盈餘後，接下來的重要步驟是計算歸屬於國內營利事業的CFC投資收益，並正確處理後續的稅務問題。CFC制度的核心在於將境外企業未分配的盈餘視同分配課稅，但為了避免同一筆所得被重複課稅，法規設計了多項配套措施。本文將深入探討CFC投資收益的歸課計算方法，以及避免重複課稅的各項機制，幫助企業正確適用相關規定，合理管理稅負。",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-22-營利事業CFC稅務解析EP5-CFC投資收益歸課與避免重複課稅.docx",
+      "is_series": true,
+      "series_name": "營利事業CFC稅務解析",
+      "series_slug": "營利事業cfc稅務解析",
+      "episode": 5,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
+      "title": "CFC當年度盈餘計算方法",
+      "url": "/blog/2025-04-20-profit-making-ep4-calculation-of-cfcs",
+      "date": "2025-04-20",
+      "summary": "前言 營利事業一旦判定境外企業符合CFC定義且無法適用豁免條件，接下來便需面對CFC當年度盈餘的計算問題。CFC當年度盈餘是確定最終歸課所得的基礎，涉及多項調節項目及專業判斷。本文將詳細解析CFC當年度盈餘的計算方法、調節項目處理及相關實務案例，幫助企業準確計算CFC所得，確保稅務申報合規。",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-20-營利事業CFC稅務解析EP4-CFC當年度盈餘計算方法.docx",
+      "is_series": true,
+      "series_name": "營利事業CFC稅務解析",
+      "series_slug": "營利事業cfc稅務解析",
+      "episode": 4,
+      "tags": [
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        }
+      ]
+    },
+    {
+      "title": "CFC豁免條件詳解",
+      "url": "/blog/2025-04-18-profit-making-ep3-details-of-cfc",
+      "date": "2025-04-18",
+      "summary": "前言 受控外國企業(CFC)制度雖然是反避稅的重要機制，但為了維護正常商業活動，不對真正從事實質經營的企業造成過度負擔，我國CFC制度設計了豁免條款。營利事業即使持有符合CFC定義的境外企業，若符合特定豁免條件，仍可免依CFC制度計算課稅。本文將詳細解析CFC的兩大豁免條件，並透過實務案例，協助企業正確判斷是否符合豁免規定。",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-18-營利事業CFC稅務解析EP3-CFC豁免條件詳解.docx",
+      "is_series": true,
+      "series_name": "營利事業CFC稅務解析",
+      "series_slug": "營利事業cfc稅務解析",
+      "episode": 3,
+      "tags": [
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        }
+      ]
+    },
+    {
+      "title": "CFC定義與判斷實務",
+      "url": "/blog/2025-04-16-profit-making-ep2-cfc-definition-and",
+      "date": "2025-04-16",
+      "summary": "前言 受控外國企業(CFC)制度實施後，企業首先面臨的關鍵問題是如何判斷境外投資是否符合CFC定義。明確判斷CFC身分對於企業遵循稅法規定、進行跨國投資規劃至關重要。本文將詳細解析CFC的定義要件及其判斷標準，幫助營利事業在實務操作中準確辨識CFC，合理安排跨境投資架構。",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-16-營利事業CFC稅務解析EP2-CFC定義與判斷實務.docx",
+      "is_series": true,
+      "series_name": "營利事業CFC稅務解析",
+      "series_slug": "營利事業cfc稅務解析",
+      "episode": 2,
+      "tags": [
+        {
+          "name": "創業資訊",
+          "slug": "startup"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        }
+      ]
+    },
+    {
+      "title": "CFC制度緣起與法規架構",
+      "url": "/blog/2025-04-14-profit-making-ep1-origins-of-the",
+      "date": "2025-04-14",
+      "summary": "前言 隨著全球經濟整合及跨國投資日益頻繁，企業運用低稅負國家或地區進行稅務規劃的現象也日趨普遍。為避免營利事業透過在低稅負國家或地區設立控制性公司，將盈餘留置境外而延緩課稅，我國參考國際反避稅趨勢，建立了受控外國企業(Controlled Foreign Company, CFC)制度。本文將介紹CFC制度的緣起、法規架構及實施現況，為讀者提供全面的認識。",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-14-營利事業CFC稅務解析EP1-CFC制度緣起與法規架構.docx",
+      "is_series": true,
+      "series_name": "營利事業CFC稅務解析",
+      "series_slug": "營利事業cfc稅務解析",
+      "episode": 1,
+      "tags": [
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        }
+      ]
+    },
+    {
+      "title": "減資實務與程序",
+      "url": "/blog/2025-04-12-company-registration-ep10-capital-reduction-practices",
+      "date": "2025-04-12",
+      "summary": "發布日期：2025-04-12 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-12-公司登記增資實務系列EP10-減資實務與程序.docx",
+      "is_series": true,
+      "series_name": "公司登記增資實務系列",
+      "series_slug": "公司登記增資實務系列",
+      "episode": 10,
+      "tags": [
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        }
+      ]
+    },
+    {
+      "title": "資本變更實務常見疑義解析",
+      "url": "/blog/2025-04-10-company-registration-ep9-explanation-of-frequently",
+      "date": "2025-04-10",
+      "summary": "發布日期：2025-04-10 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-10-公司登記增資實務系列EP9-資本變更實務常見疑義解析.docx",
+      "is_series": true,
+      "series_name": "公司登記增資實務系列",
+      "series_slug": "公司登記增資實務系列",
+      "episode": 9,
+      "tags": [
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        }
+      ]
+    },
+    {
+      "title": "股份轉換與可轉換公司債增資實務",
+      "url": "/blog/2025-04-08-company-registration-ep8-share-conversion-and",
+      "date": "2025-04-08",
+      "summary": "發布日期：2025-04-08 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-08-公司登記增資實務系列EP8-股份轉換與可轉換公司債增資實務.docx",
+      "is_series": true,
+      "series_name": "公司登記增資實務系列",
+      "series_slug": "公司登記增資實務系列",
+      "episode": 8,
+      "tags": [
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        },
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "創業資訊",
+          "slug": "startup"
+        }
+      ]
+    },
+    {
+      "title": "股份交換增資實務與程序",
+      "url": "/blog/2025-04-06-company-registration-ep7-share-exchange-practices",
+      "date": "2025-04-06",
+      "summary": "發布日期：2025-04-06 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-06-公司登記增資實務系列EP7-股份交換增資實務與程序.docx",
+      "is_series": true,
+      "series_name": "公司登記增資實務系列",
+      "series_slug": "公司登記增資實務系列",
+      "episode": 7,
+      "tags": [
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        },
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        }
+      ]
+    },
+    {
+      "title": "員工酬勞轉增資實務",
+      "url": "/blog/2025-04-04-company-registration-ep6-employee-compensation-to",
+      "date": "2025-04-04",
+      "summary": "發布日期：2025-04-04 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-04-公司登記增資實務系列EP6-員工酬勞轉增資實務.docx",
+      "is_series": true,
+      "series_name": "公司登記增資實務系列",
+      "series_slug": "公司登記增資實務系列",
+      "episode": 6,
+      "tags": [
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        }
+      ]
+    },
+    {
+      "title": "公積轉增資實務與案例解析",
+      "url": "/blog/2025-04-02-company-registration-ep5-practice-and-case",
+      "date": "2025-04-02",
+      "summary": "發布日期：2025-04-02 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-04-02-公司登記增資實務系列EP5-公積轉增資實務與案例解析.docx",
+      "is_series": true,
+      "series_name": "公司登記增資實務系列",
+      "series_slug": "公司登記增資實務系列",
+      "episode": 5,
+      "tags": [
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        }
+      ]
+    },
+    {
+      "title": "盈餘轉增資實務與程序",
+      "url": "/blog/2025-03-31-company-registration-ep4-practices-and-procedures",
+      "date": "2025-03-31",
+      "summary": "發布日期：2025-03-31 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-31-公司登記增資實務系列EP4-盈餘轉增資實務與程序.docx",
+      "is_series": true,
+      "series_name": "公司登記增資實務系列",
+      "series_slug": "公司登記增資實務系列",
+      "episode": 4,
+      "tags": [
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        },
+        {
+          "name": "財務報表",
+          "slug": "financial-statements"
+        }
+      ]
+    },
+    {
+      "title": "勞務出資與閉鎖性股份有限公司特色",
+      "url": "/blog/2025-03-29-company-registration-ep3-characteristics-of-labor",
+      "date": "2025-03-29",
+      "summary": "發布日期：2025-03-29 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-29-公司登記增資實務系列EP3-勞務出資與閉鎖性股份有限公司特色.docx",
+      "is_series": true,
+      "series_name": "公司登記增資實務系列",
+      "series_slug": "公司登記增資實務系列",
+      "episode": 3,
+      "tags": [
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "創業資訊",
+          "slug": "startup"
+        },
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        }
+      ]
+    },
+    {
+      "title": "債權抵繳與財產抵繳股款實務",
+      "url": "/blog/2025-03-27-company-registration-ep2-debt-service-and",
+      "date": "2025-03-27",
+      "summary": "發布日期：2025-03-27 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-27-公司登記增資實務系列EP2-債權抵繳與財產抵繳股款實務.docx",
+      "is_series": true,
+      "series_name": "公司登記增資實務系列",
+      "series_slug": "公司登記增資實務系列",
+      "episode": 2,
+      "tags": [
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        },
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        }
+      ]
+    },
+    {
+      "title": "資本變更基本概念與現金增資實務",
+      "url": "/blog/2025-03-25-company-registration-ep1-basic-concepts-of",
+      "date": "2025-03-25",
+      "summary": "發布日期：2025-03-25 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-25-公司登記增資實務系列EP1-資本變更基本概念與現金增資實務.docx",
+      "is_series": true,
+      "series_name": "公司登記增資實務系列",
+      "series_slug": "公司登記增資實務系列",
+      "episode": 1,
+      "tags": [
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        },
+        {
+          "name": "投資理財",
+          "slug": "investment"
+        }
+      ]
+    },
+    {
+      "title": "最新法規動態與實務發展趨勢",
+      "url": "/blog/2025-03-18-analysis-of-ep10-the-latest-regulatory",
+      "date": "2025-03-18",
+      "summary": "虛設行號相關的稅務法規與實務認定標準正不斷演變，本文將探討近年來的重要法規變化、實務發展趨勢以及未來可能的發展方向，幫助企業了解最新的法規環境，及時調整稅務管理策略。 稅務違章裁罰標準的修正",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-18-營業稅虛設行號剖析EP10-最新法規動態與實務發展趨勢.docx",
+      "is_series": true,
+      "series_name": "營業稅虛設行號剖析",
+      "series_slug": "營業稅虛設行號剖析",
+      "episode": 10,
+      "tags": [
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        }
+      ]
+    },
+    {
+      "title": "營業稅與營所稅處理的差異",
+      "url": "/blog/2025-03-16-analysis-of-ep9-differences-in-the",
+      "date": "2025-03-16",
+      "summary": "在實務中，取得虛設行號開立的發票不僅涉及營業稅問題，還會影響營利事業所得稅的處理。本文將深入分析同一虛設行號案件在營業稅與營所稅兩個稅目下的處理差異，幫助企業全面了解稅務影響，並提供綜合性的風險管理策略。 法規依據比較",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-16-營業稅虛設行號剖析EP9-營業稅與營所稅處理的差異.docx",
+      "is_series": true,
+      "series_name": "營業稅虛設行號剖析",
+      "series_slug": "營業稅虛設行號剖析",
+      "episode": 9,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        }
+      ]
+    },
+    {
+      "title": "故意、過失與不正當方法的認定標準",
+      "url": "/blog/2025-03-14-analysis-of-ep8-standards-for-recognizing",
+      "date": "2025-03-14",
+      "summary": "在稅務案件中，「故意」、「過失」與「不正當方法」的認定對處罰結果有重大影響。本文將從稅法角度分析這些主觀要件的認定標準，並透過實務案例說明其在稅務爭議中的應用，幫助企業了解其差異及影響。 故意、過失與不正當方法的概念解析",
+      "category": "legal",
+      "category_name": "法律法規",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-14-營業稅虛設行號剖析EP8-故意、過失與不正當方法的認定標準.docx",
+      "is_series": true,
+      "series_name": "營業稅虛設行號剖析",
+      "series_slug": "營業稅虛設行號剖析",
+      "episode": 8,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        }
+      ]
+    },
+    {
+      "title": "進貨事實判斷原則與實務",
+      "url": "/blog/2025-03-12-analysis-of-ep7-principles-and-practices",
+      "date": "2025-03-12",
+      "summary": "在營業稅實務中，「進貨事實」的認定直接影響處罰的程度與方式。本文將深入探討進貨事實的判斷原則、稽徵機關的查核方式，以及實務案例分析，幫助企業了解如何在稅務爭議中有效證明進貨事實的存在。 進貨事實判斷的重要性",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-12-營業稅虛設行號剖析EP7-進貨事實判斷原則與實務.docx",
+      "is_series": true,
+      "series_name": "營業稅虛設行號剖析",
+      "series_slug": "營業稅虛設行號剖析",
+      "episode": 7,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        }
+      ]
+    },
+    {
+      "title": "降低取得不實發票傷害的因應之道",
+      "url": "/blog/2025-03-10-analysis-of-ep6-ways-to-reduce",
+      "date": "2025-03-10",
+      "summary": "即使企業已盡最大努力篩選交易對象，仍可能在不知情的情況下取得不實發票。一旦發現這種情況，及時採取適當的因應措施至關重要。本文將介紹多種降低取得不實發票傷害的實用方法，幫助企業有效管理稅務風險。 自動補報補繳：化解風險的首選方案",
+      "category": "legal",
+      "category_name": "法律法規",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-10-營業稅虛設行號剖析 EP6-降低取得不實發票傷害的因應之道.docx",
+      "is_series": true,
+      "series_name": "營業稅虛設行號剖析 ",
+      "series_slug": "營業稅虛設行號剖析-",
+      "episode": 6,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "財富管理",
+          "slug": "wealth-management"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        }
+      ]
+    },
+    {
+      "title": "交易真實性的舉證責任與方法",
+      "url": "/blog/2025-03-08-analysis-of-ep5-burden-of-proof",
+      "date": "2025-03-08",
+      "summary": "在稅務爭議中，交易真實性的舉證常是決定案件勝敗的關鍵。本文將分析舉證責任的分配原則，並提供實用的舉證方法，幫助企業在稅務稽查時有效證明交易的真實性。 舉證責任分配原則",
+      "category": "legal",
+      "category_name": "法律法規",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-08-營業稅虛設行號剖析EP5-交易真實性的舉證責任與方法.docx",
+      "is_series": true,
+      "series_name": "營業稅虛設行號剖析",
+      "series_slug": "營業稅虛設行號剖析",
+      "episode": 5,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        }
+      ]
+    },
+    {
+      "title": "取得不實發票的法律責任與稅務影響",
+      "url": "/blog/2025-03-06-analysis-of-ep4-legal-liability-and",
+      "date": "2025-03-06",
+      "summary": "取得虛設行號開立的不實發票，不僅可能面臨行政處罰，還可能涉及刑事責任，同時對企業的稅務權益也有重大影響。本文將詳細說明取得不實發票可能導致的各種法律責任與稅務影響，幫助企業全面了解相關風險。 法律責任分析",
+      "category": "legal",
+      "category_name": "法律法規",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-06-營業稅虛設行號剖析EP4-取得不實發票的法律責任與稅務影響.docx",
+      "is_series": true,
+      "series_name": "營業稅虛設行號剖析",
+      "series_slug": "營業稅虛設行號剖析",
+      "episode": 4,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        }
+      ]
+    },
+    {
+      "title": "如何避免取得虛設行號開立的發票",
+      "url": "/blog/2025-03-04-analysis-of-ep3-how-to-avoid",
+      "date": "2025-03-04",
+      "summary": "在營業稅實務中，取得虛設行號開立的發票可能導致嚴重的稅務風險。本文將提供實用的方法，協助企業避免取得不實發票，並介紹稽徵機關常用的查核方式，幫助企業建立完善的內部控制機制。 一般交易應注意事項",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-04-營業稅虛設行號剖析EP3-如何避免取得虛設行號開立的發票.docx",
+      "is_series": true,
+      "series_name": "營業稅虛設行號剖析",
+      "series_slug": "營業稅虛設行號剖析",
+      "episode": 3,
+      "tags": [
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        },
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        }
+      ]
+    },
+    {
+      "title": "虛設行號常見違章類型與案例分析",
+      "url": "/blog/2025-03-02-analysis-of-ep2-common-types-of",
+      "date": "2025-03-02",
+      "summary": "虛設行號的運作手法多樣，稅務機關近年來已查獲許多重大案例。本文將透過實際案例，剖析虛設行號的常見違章類型，幫助讀者認識其運作模式與風險。 常見違章類型",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-03-02-營業稅虛設行號剖析EP2-虛設行號常見違章類型與案例分析.docx",
+      "is_series": true,
+      "series_name": "營業稅虛設行號剖析",
+      "series_slug": "營業稅虛設行號剖析",
+      "episode": 2,
+      "tags": [
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        }
+      ]
+    },
+    {
+      "title": "虛設行號的定義與成立動機",
+      "url": "/blog/2025-02-28-analysis-of-ep1-definition-and-motivation",
+      "date": "2025-02-28",
+      "summary": "在台灣稅務實務中，虛設行號一直是稅務機關關注的重點。究竟什麼是虛設行號？它為何會存在？本文將為您深入解析虛設行號的定義與背後的成立動機。 虛設行號的定義",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-02-28-營業稅虛設行號剖析EP1-虛設行號的定義與成立動機.docx",
+      "is_series": true,
+      "series_name": "營業稅虛設行號剖析",
+      "series_slug": "營業稅虛設行號剖析",
+      "episode": 1,
+      "tags": [
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        }
+      ]
+    },
+    {
       "title": "遺贈稅申報常見錯誤與案例分享",
       "url": "/blog/2025-02-21-estate-and-ep12-common-mistakes-and",
       "date": "2025-02-21",
@@ -15,16 +935,16 @@
       "episode": 12,
       "tags": [
         {
-          "name": "退休規劃",
-          "slug": "retirement"
+          "name": "所得稅",
+          "slug": "income-tax"
         },
         {
           "name": "稅務規劃",
           "slug": "tax-planning"
         },
         {
-          "name": "所得稅",
-          "slug": "income-tax"
+          "name": "個人稅務",
+          "slug": "personal-tax"
         }
       ]
     },
@@ -71,12 +991,12 @@
       "episode": 10,
       "tags": [
         {
-          "name": "稅務規劃",
-          "slug": "tax-planning"
-        },
-        {
           "name": "所得稅",
           "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
         },
         {
           "name": "個人稅務",
@@ -99,16 +1019,16 @@
       "episode": 9,
       "tags": [
         {
-          "name": "稅務規劃",
-          "slug": "tax-planning"
-        },
-        {
           "name": "所得稅",
           "slug": "income-tax"
         },
         {
-          "name": "投資理財",
-          "slug": "investment"
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
         }
       ]
     },
@@ -135,8 +1055,8 @@
           "slug": "tax-planning"
         },
         {
-          "name": "財富管理",
-          "slug": "wealth-management"
+          "name": "個人稅務",
+          "slug": "personal-tax"
         }
       ]
     },
@@ -159,12 +1079,12 @@
           "slug": "income-tax"
         },
         {
-          "name": "個人稅務",
-          "slug": "personal-tax"
+          "name": "稅務規劃",
+          "slug": "tax-planning"
         },
         {
-          "name": "房地產稅務",
-          "slug": "property-tax"
+          "name": "個人稅務",
+          "slug": "personal-tax"
         }
       ]
     },
@@ -187,12 +1107,12 @@
           "slug": "income-tax"
         },
         {
-          "name": "個人稅務",
-          "slug": "personal-tax"
-        },
-        {
           "name": "稅務規劃",
           "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
         }
       ]
     },
@@ -211,16 +1131,16 @@
       "episode": 5,
       "tags": [
         {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
           "name": "稅務規劃",
           "slug": "tax-planning"
         },
         {
-          "name": "人壽保險",
-          "slug": "life-insurance"
-        },
-        {
-          "name": "所得稅",
-          "slug": "income-tax"
+          "name": "個人稅務",
+          "slug": "personal-tax"
         }
       ]
     },
@@ -271,12 +1191,12 @@
           "slug": "income-tax"
         },
         {
-          "name": "個人稅務",
-          "slug": "personal-tax"
+          "name": "稅務規劃",
+          "slug": "tax-planning"
         },
         {
-          "name": "投資理財",
-          "slug": "investment"
+          "name": "個人稅務",
+          "slug": "personal-tax"
         }
       ]
     },
@@ -320,16 +1240,16 @@
       "episode": 2,
       "tags": [
         {
-          "name": "投資理財",
-          "slug": "investment"
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
         },
         {
           "name": "個人稅務",
           "slug": "personal-tax"
-        },
-        {
-          "name": "所得稅",
-          "slug": "income-tax"
         }
       ]
     },
@@ -348,16 +1268,16 @@
       "episode": 1,
       "tags": [
         {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
           "name": "稅務規劃",
           "slug": "tax-planning"
         },
         {
-          "name": "投資理財",
-          "slug": "investment"
-        },
-        {
-          "name": "房地產稅務",
-          "slug": "property-tax"
+          "name": "個人稅務",
+          "slug": "personal-tax"
         }
       ]
     },
@@ -643,6 +1563,1148 @@
     }
   ],
   "series": {
+    "房地合一稅2.0": {
+      "name": "房地合一稅2.0",
+      "slug": "房地合一稅2.0",
+      "posts": [
+        {
+          "title": "房地合一稅2.0制度概覽",
+          "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
+          "date": "2025-05-06",
+          "summary": "前言 房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            }
+          ]
+        }
+      ],
+      "count": 1,
+      "latest": {
+        "title": "房地合一稅2.0制度概覽",
+        "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
+        "date": "2025-05-06",
+        "summary": "前言 房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
+        "category": "tax",
+        "category_name": "稅務相關",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx",
+        "is_series": true,
+        "series_name": "房地合一稅2.0",
+        "series_slug": "房地合一稅2.0",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "稅務規劃",
+            "slug": "tax-planning"
+          },
+          {
+            "name": "房地產稅務",
+            "slug": "property-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-05-06",
+      "latest_post_date": "2025-05-06"
+    },
+    "營所稅擴大書面審核解析": {
+      "name": "營所稅擴大書面審核解析",
+      "slug": "營所稅擴大書面審核解析",
+      "posts": [
+        {
+          "title": "制度概要與適用條件",
+          "url": "/blog/2025-04-30-expanded-written-ep1-outline-of-the",
+          "date": "2025-04-30",
+          "summary": "前言 營利事業所得稅結算申報是企業每年必須面對的稅務作業，為了簡化稅務機關的稽徵作業並提供納稅義務人更便捷的申報方式，財政部訂定了「營利事業所得稅結算申報案件擴大書面審核實施要點」。本文將介紹113年度營利事業所得稅結算申報的擴大書面審核制度，包括其立法目的、適用條件及相關規定，幫助營利事業了解如何符合擴大書面審核的標準，以簡化申報程序。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-30-營所稅擴大書面審核解析EP1-制度概要與適用條件.docx",
+          "is_series": true,
+          "series_name": "營所稅擴大書面審核解析",
+          "series_slug": "營所稅擴大書面審核解析",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "各行業純益率標準完整指南",
+          "url": "/blog/2025-05-02-expanded-written-ep2-a-complete-guide",
+          "date": "2025-05-02",
+          "summary": "前言 在營利事業所得稅結算申報中，純益率標準是擴大書面審核制度的核心指標。依據一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點，不同行業別的營利事業適用不同的純益率標準。本文將詳細介紹各行業的純益率標準，幫助納稅義務人更準確地判斷自身是否符合擴大書面審核的條件，正確申報營利事業所得稅。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-02-營所稅擴大書面審核解析EP2-各行業純益率標準完整指南.docx",
+          "is_series": true,
+          "series_name": "營所稅擴大書面審核解析",
+          "series_slug": "營所稅擴大書面審核解析",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            }
+          ]
+        },
+        {
+          "title": "不適用案件類型與特殊情況處理",
+          "url": "/blog/2025-05-04-expanded-written-ep3-not-applicable-case",
+          "date": "2025-05-04",
+          "summary": "前言 擴大書面審核制度為符合條件的營利事業提供了簡化申報程序的便利，但並非所有營利事業都適用此制度。財政部在一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點中，明確規定了不適用擴大書面審核的案件類型及特殊情況。本文將詳細解析這些不適用情況，同時說明土地及不動產交易的特殊處理方式，幫助營利事業了解自身是否符合擴大書面審核的條件。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-04-營所稅擴大書面審核解析EP3-不適用案件類型與特殊情況處理.docx",
+          "is_series": true,
+          "series_name": "營所稅擴大書面審核解析",
+          "series_slug": "營所稅擴大書面審核解析",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        },
+        {
+          "title": "小規模營利事業規定與短漏報處理",
+          "url": "/blog/2025-05-06-expanded-written-ep4-requirements-for-small",
+          "date": "2025-05-06",
+          "summary": "前言 在營利事業所得稅結算申報中，小規模營利事業與免用統一發票業者具有特殊的申報規定，同時短漏報情形的處理也有明確的規範。本文將基於一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點，詳細說明小規模營利事業的申報特殊規定、短漏報的補稅處罰方式，以及獨資合夥組織的稅務處理特點，幫助相關營利事業正確申報所得稅，避免不必要的稅務爭議。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-06-營所稅擴大書面審核解析EP4-小規模營利事業規定與短漏報處理.docx",
+          "is_series": true,
+          "series_name": "營所稅擴大書面審核解析",
+          "series_slug": "營所稅擴大書面審核解析",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        }
+      ],
+      "count": 4,
+      "latest": {
+        "title": "制度概要與適用條件",
+        "url": "/blog/2025-04-30-expanded-written-ep1-outline-of-the",
+        "date": "2025-04-30",
+        "summary": "前言 營利事業所得稅結算申報是企業每年必須面對的稅務作業，為了簡化稅務機關的稽徵作業並提供納稅義務人更便捷的申報方式，財政部訂定了「營利事業所得稅結算申報案件擴大書面審核實施要點」。本文將介紹113年度營利事業所得稅結算申報的擴大書面審核制度，包括其立法目的、適用條件及相關規定，幫助營利事業了解如何符合擴大書面審核的標準，以簡化申報程序。",
+        "category": "tax",
+        "category_name": "稅務相關",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-04-30-營所稅擴大書面審核解析EP1-制度概要與適用條件.docx",
+        "is_series": true,
+        "series_name": "營所稅擴大書面審核解析",
+        "series_slug": "營所稅擴大書面審核解析",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "企業稅務",
+            "slug": "corporate-tax"
+          },
+          {
+            "name": "工商登記",
+            "slug": "business-registration"
+          }
+        ]
+      },
+      "first_post_date": "2025-05-06",
+      "latest_post_date": "2025-04-30"
+    },
+    "營利事業cfc稅務解析": {
+      "name": "營利事業CFC稅務解析",
+      "slug": "營利事業cfc稅務解析",
+      "posts": [
+        {
+          "title": "CFC制度緣起與法規架構",
+          "url": "/blog/2025-04-14-profit-making-ep1-origins-of-the",
+          "date": "2025-04-14",
+          "summary": "前言 隨著全球經濟整合及跨國投資日益頻繁，企業運用低稅負國家或地區進行稅務規劃的現象也日趨普遍。為避免營利事業透過在低稅負國家或地區設立控制性公司，將盈餘留置境外而延緩課稅，我國參考國際反避稅趨勢，建立了受控外國企業(Controlled Foreign Company, CFC)制度。本文將介紹CFC制度的緣起、法規架構及實施現況，為讀者提供全面的認識。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-14-營利事業CFC稅務解析EP1-CFC制度緣起與法規架構.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "CFC定義與判斷實務",
+          "url": "/blog/2025-04-16-profit-making-ep2-cfc-definition-and",
+          "date": "2025-04-16",
+          "summary": "前言 受控外國企業(CFC)制度實施後，企業首先面臨的關鍵問題是如何判斷境外投資是否符合CFC定義。明確判斷CFC身分對於企業遵循稅法規定、進行跨國投資規劃至關重要。本文將詳細解析CFC的定義要件及其判斷標準，幫助營利事業在實務操作中準確辨識CFC，合理安排跨境投資架構。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-16-營利事業CFC稅務解析EP2-CFC定義與判斷實務.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "創業資訊",
+              "slug": "startup"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "CFC豁免條件詳解",
+          "url": "/blog/2025-04-18-profit-making-ep3-details-of-cfc",
+          "date": "2025-04-18",
+          "summary": "前言 受控外國企業(CFC)制度雖然是反避稅的重要機制，但為了維護正常商業活動，不對真正從事實質經營的企業造成過度負擔，我國CFC制度設計了豁免條款。營利事業即使持有符合CFC定義的境外企業，若符合特定豁免條件，仍可免依CFC制度計算課稅。本文將詳細解析CFC的兩大豁免條件，並透過實務案例，協助企業正確判斷是否符合豁免規定。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-18-營利事業CFC稅務解析EP3-CFC豁免條件詳解.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
+        },
+        {
+          "title": "CFC當年度盈餘計算方法",
+          "url": "/blog/2025-04-20-profit-making-ep4-calculation-of-cfcs",
+          "date": "2025-04-20",
+          "summary": "前言 營利事業一旦判定境外企業符合CFC定義且無法適用豁免條件，接下來便需面對CFC當年度盈餘的計算問題。CFC當年度盈餘是確定最終歸課所得的基礎，涉及多項調節項目及專業判斷。本文將詳細解析CFC當年度盈餘的計算方法、調節項目處理及相關實務案例，幫助企業準確計算CFC所得，確保稅務申報合規。",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-20-營利事業CFC稅務解析EP4-CFC當年度盈餘計算方法.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "CFC投資收益歸課與避免重複課稅",
+          "url": "/blog/2025-04-22-profit-making-ep5-cfc-investment-income",
+          "date": "2025-04-22",
+          "summary": "前言 在確定CFC當年度盈餘後，接下來的重要步驟是計算歸屬於國內營利事業的CFC投資收益，並正確處理後續的稅務問題。CFC制度的核心在於將境外企業未分配的盈餘視同分配課稅，但為了避免同一筆所得被重複課稅，法規設計了多項配套措施。本文將深入探討CFC投資收益的歸課計算方法，以及避免重複課稅的各項機制，幫助企業正確適用相關規定，合理管理稅負。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-22-營利事業CFC稅務解析EP5-CFC投資收益歸課與避免重複課稅.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 5,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "CFC申報程序與應備文件",
+          "url": "/blog/2025-04-24-profit-making-ep6-cfc-reporting-procedures",
+          "date": "2025-04-24",
+          "summary": "前言 CFC制度的實施為企業帶來全新的稅務申報挑戰，如何正確填報所得稅申報書、提供必要文件，成為納稅人必須面對的實務問題。完整且正確的申報不僅是法律義務，也是避免稅務爭議的重要環節。本文將詳細介紹CFC申報的程序、申報書填寫方法及應備文件，協助營利事業順利完成CFC相關稅務申報工作。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-24-營利事業CFC稅務解析EP6-CFC申報程序與應備文件.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            }
+          ]
+        },
+        {
+          "title": "CFC稽查重點與常見錯誤態樣",
+          "url": "/blog/2025-04-26-profit-making-ep7-cfc-audit-highlights",
+          "date": "2025-04-26",
+          "summary": "前言 CFC制度實施初期，稅務機關與企業都處於學習適應階段。然而，稅務機關已開始針對CFC申報案件進行選案查核，確保企業正確適用相關規定。根據財政部北區國稅局於2024年11月11日的公開資訊，稅局已鎖定CFC選案查核的三大重點。本文將詳細解析稅務機關的查核重點及企業常見的錯誤態樣，協助營利事業提前防範稅務風險，完善CFC申報工作。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-26-營利事業CFC稅務解析EP7-CFC稽查重點與常見錯誤態樣.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            }
+          ]
+        },
+        {
+          "title": "CFC制度實務案例分析",
+          "url": "/blog/2025-04-28-profit-making-ep8-case-study-on",
+          "date": "2025-04-28",
+          "summary": "前言 本系列文章前七篇從理論層面解析了CFC制度的各個面向，從制度緣起到稽查重點，為營利事業提供了全面的知識框架。在本系列的最後一篇，我們將透過實務案例，綜合運用前述原理，展示不同投資架構及經營情境下CFC制度的適用。這些案例涵蓋了常見的跨境投資安排及稅務處理難點，旨在幫助企業在實務操作中更好地適用CFC規定，合理規劃跨境投資策略。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-28-營利事業CFC稅務解析EP8-CFC制度實務案例分析.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 8,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "創業資訊",
+              "slug": "startup"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        }
+      ],
+      "count": 8,
+      "latest": {
+        "title": "CFC制度緣起與法規架構",
+        "url": "/blog/2025-04-14-profit-making-ep1-origins-of-the",
+        "date": "2025-04-14",
+        "summary": "前言 隨著全球經濟整合及跨國投資日益頻繁，企業運用低稅負國家或地區進行稅務規劃的現象也日趨普遍。為避免營利事業透過在低稅負國家或地區設立控制性公司，將盈餘留置境外而延緩課稅，我國參考國際反避稅趨勢，建立了受控外國企業(Controlled Foreign Company, CFC)制度。本文將介紹CFC制度的緣起、法規架構及實施現況，為讀者提供全面的認識。",
+        "category": "business",
+        "category_name": "企業經營",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-04-14-營利事業CFC稅務解析EP1-CFC制度緣起與法規架構.docx",
+        "is_series": true,
+        "series_name": "營利事業CFC稅務解析",
+        "series_slug": "營利事業cfc稅務解析",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "稅務規劃",
+            "slug": "tax-planning"
+          },
+          {
+            "name": "投資理財",
+            "slug": "investment"
+          },
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-04-28",
+      "latest_post_date": "2025-04-14"
+    },
+    "公司登記增資實務系列": {
+      "name": "公司登記增資實務系列",
+      "slug": "公司登記增資實務系列",
+      "posts": [
+        {
+          "title": "資本變更基本概念與現金增資實務",
+          "url": "/blog/2025-03-25-company-registration-ep1-basic-concepts-of",
+          "date": "2025-03-25",
+          "summary": "發布日期：2025-03-25 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-25-公司登記增資實務系列EP1-資本變更基本概念與現金增資實務.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            }
+          ]
+        },
+        {
+          "title": "債權抵繳與財產抵繳股款實務",
+          "url": "/blog/2025-03-27-company-registration-ep2-debt-service-and",
+          "date": "2025-03-27",
+          "summary": "發布日期：2025-03-27 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-27-公司登記增資實務系列EP2-債權抵繳與財產抵繳股款實務.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "勞務出資與閉鎖性股份有限公司特色",
+          "url": "/blog/2025-03-29-company-registration-ep3-characteristics-of-labor",
+          "date": "2025-03-29",
+          "summary": "發布日期：2025-03-29 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-29-公司登記增資實務系列EP3-勞務出資與閉鎖性股份有限公司特色.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "創業資訊",
+              "slug": "startup"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            }
+          ]
+        },
+        {
+          "title": "盈餘轉增資實務與程序",
+          "url": "/blog/2025-03-31-company-registration-ep4-practices-and-procedures",
+          "date": "2025-03-31",
+          "summary": "發布日期：2025-03-31 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-31-公司登記增資實務系列EP4-盈餘轉增資實務與程序.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            }
+          ]
+        },
+        {
+          "title": "公積轉增資實務與案例解析",
+          "url": "/blog/2025-04-02-company-registration-ep5-practice-and-case",
+          "date": "2025-04-02",
+          "summary": "發布日期：2025-04-02 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-02-公司登記增資實務系列EP5-公積轉增資實務與案例解析.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 5,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "員工酬勞轉增資實務",
+          "url": "/blog/2025-04-04-company-registration-ep6-employee-compensation-to",
+          "date": "2025-04-04",
+          "summary": "發布日期：2025-04-04 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-04-公司登記增資實務系列EP6-員工酬勞轉增資實務.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "股份交換增資實務與程序",
+          "url": "/blog/2025-04-06-company-registration-ep7-share-exchange-practices",
+          "date": "2025-04-06",
+          "summary": "發布日期：2025-04-06 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-06-公司登記增資實務系列EP7-股份交換增資實務與程序.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "股份轉換與可轉換公司債增資實務",
+          "url": "/blog/2025-04-08-company-registration-ep8-share-conversion-and",
+          "date": "2025-04-08",
+          "summary": "發布日期：2025-04-08 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-08-公司登記增資實務系列EP8-股份轉換與可轉換公司債增資實務.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 8,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "創業資訊",
+              "slug": "startup"
+            }
+          ]
+        },
+        {
+          "title": "資本變更實務常見疑義解析",
+          "url": "/blog/2025-04-10-company-registration-ep9-explanation-of-frequently",
+          "date": "2025-04-10",
+          "summary": "發布日期：2025-04-10 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-10-公司登記增資實務系列EP9-資本變更實務常見疑義解析.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 9,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            }
+          ]
+        },
+        {
+          "title": "減資實務與程序",
+          "url": "/blog/2025-04-12-company-registration-ep10-capital-reduction-practices",
+          "date": "2025-04-12",
+          "summary": "發布日期：2025-04-12 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-12-公司登記增資實務系列EP10-減資實務與程序.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 10,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            }
+          ]
+        }
+      ],
+      "count": 10,
+      "latest": {
+        "title": "資本變更基本概念與現金增資實務",
+        "url": "/blog/2025-03-25-company-registration-ep1-basic-concepts-of",
+        "date": "2025-03-25",
+        "summary": "發布日期：2025-03-25 前言",
+        "category": "business",
+        "category_name": "企業經營",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-03-25-公司登記增資實務系列EP1-資本變更基本概念與現金增資實務.docx",
+        "is_series": true,
+        "series_name": "公司登記增資實務系列",
+        "series_slug": "公司登記增資實務系列",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "工商登記",
+            "slug": "business-registration"
+          },
+          {
+            "name": "會計實務",
+            "slug": "accounting-practice"
+          },
+          {
+            "name": "投資理財",
+            "slug": "investment"
+          }
+        ]
+      },
+      "first_post_date": "2025-04-12",
+      "latest_post_date": "2025-03-25"
+    },
+    "營業稅虛設行號剖析": {
+      "name": "營業稅虛設行號剖析",
+      "slug": "營業稅虛設行號剖析",
+      "posts": [
+        {
+          "title": "虛設行號的定義與成立動機",
+          "url": "/blog/2025-02-28-analysis-of-ep1-definition-and-motivation",
+          "date": "2025-02-28",
+          "summary": "在台灣稅務實務中，虛設行號一直是稅務機關關注的重點。究竟什麼是虛設行號？它為何會存在？本文將為您深入解析虛設行號的定義與背後的成立動機。 虛設行號的定義",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-02-28-營業稅虛設行號剖析EP1-虛設行號的定義與成立動機.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        },
+        {
+          "title": "虛設行號常見違章類型與案例分析",
+          "url": "/blog/2025-03-02-analysis-of-ep2-common-types-of",
+          "date": "2025-03-02",
+          "summary": "虛設行號的運作手法多樣，稅務機關近年來已查獲許多重大案例。本文將透過實際案例，剖析虛設行號的常見違章類型，幫助讀者認識其運作模式與風險。 常見違章類型",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-02-營業稅虛設行號剖析EP2-虛設行號常見違章類型與案例分析.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "如何避免取得虛設行號開立的發票",
+          "url": "/blog/2025-03-04-analysis-of-ep3-how-to-avoid",
+          "date": "2025-03-04",
+          "summary": "在營業稅實務中，取得虛設行號開立的發票可能導致嚴重的稅務風險。本文將提供實用的方法，協助企業避免取得不實發票，並介紹稽徵機關常用的查核方式，幫助企業建立完善的內部控制機制。 一般交易應注意事項",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-04-營業稅虛設行號剖析EP3-如何避免取得虛設行號開立的發票.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            }
+          ]
+        },
+        {
+          "title": "取得不實發票的法律責任與稅務影響",
+          "url": "/blog/2025-03-06-analysis-of-ep4-legal-liability-and",
+          "date": "2025-03-06",
+          "summary": "取得虛設行號開立的不實發票，不僅可能面臨行政處罰，還可能涉及刑事責任，同時對企業的稅務權益也有重大影響。本文將詳細說明取得不實發票可能導致的各種法律責任與稅務影響，幫助企業全面了解相關風險。 法律責任分析",
+          "category": "legal",
+          "category_name": "法律法規",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-06-營業稅虛設行號剖析EP4-取得不實發票的法律責任與稅務影響.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        },
+        {
+          "title": "交易真實性的舉證責任與方法",
+          "url": "/blog/2025-03-08-analysis-of-ep5-burden-of-proof",
+          "date": "2025-03-08",
+          "summary": "在稅務爭議中，交易真實性的舉證常是決定案件勝敗的關鍵。本文將分析舉證責任的分配原則，並提供實用的舉證方法，幫助企業在稅務稽查時有效證明交易的真實性。 舉證責任分配原則",
+          "category": "legal",
+          "category_name": "法律法規",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-08-營業稅虛設行號剖析EP5-交易真實性的舉證責任與方法.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 5,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "進貨事實判斷原則與實務",
+          "url": "/blog/2025-03-12-analysis-of-ep7-principles-and-practices",
+          "date": "2025-03-12",
+          "summary": "在營業稅實務中，「進貨事實」的認定直接影響處罰的程度與方式。本文將深入探討進貨事實的判斷原則、稽徵機關的查核方式，以及實務案例分析，幫助企業了解如何在稅務爭議中有效證明進貨事實的存在。 進貨事實判斷的重要性",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-12-營業稅虛設行號剖析EP7-進貨事實判斷原則與實務.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        },
+        {
+          "title": "故意、過失與不正當方法的認定標準",
+          "url": "/blog/2025-03-14-analysis-of-ep8-standards-for-recognizing",
+          "date": "2025-03-14",
+          "summary": "在稅務案件中，「故意」、「過失」與「不正當方法」的認定對處罰結果有重大影響。本文將從稅法角度分析這些主觀要件的認定標準，並透過實務案例說明其在稅務爭議中的應用，幫助企業了解其差異及影響。 故意、過失與不正當方法的概念解析",
+          "category": "legal",
+          "category_name": "法律法規",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-14-營業稅虛設行號剖析EP8-故意、過失與不正當方法的認定標準.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 8,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "營業稅與營所稅處理的差異",
+          "url": "/blog/2025-03-16-analysis-of-ep9-differences-in-the",
+          "date": "2025-03-16",
+          "summary": "在實務中，取得虛設行號開立的發票不僅涉及營業稅問題，還會影響營利事業所得稅的處理。本文將深入分析同一虛設行號案件在營業稅與營所稅兩個稅目下的處理差異，幫助企業全面了解稅務影響，並提供綜合性的風險管理策略。 法規依據比較",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-16-營業稅虛設行號剖析EP9-營業稅與營所稅處理的差異.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 9,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "最新法規動態與實務發展趨勢",
+          "url": "/blog/2025-03-18-analysis-of-ep10-the-latest-regulatory",
+          "date": "2025-03-18",
+          "summary": "虛設行號相關的稅務法規與實務認定標準正不斷演變，本文將探討近年來的重要法規變化、實務發展趨勢以及未來可能的發展方向，幫助企業了解最新的法規環境，及時調整稅務管理策略。 稅務違章裁罰標準的修正",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-18-營業稅虛設行號剖析EP10-最新法規動態與實務發展趨勢.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 10,
+          "tags": [
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        }
+      ],
+      "count": 9,
+      "latest": {
+        "title": "虛設行號的定義與成立動機",
+        "url": "/blog/2025-02-28-analysis-of-ep1-definition-and-motivation",
+        "date": "2025-02-28",
+        "summary": "在台灣稅務實務中，虛設行號一直是稅務機關關注的重點。究竟什麼是虛設行號？它為何會存在？本文將為您深入解析虛設行號的定義與背後的成立動機。 虛設行號的定義",
+        "category": "tax",
+        "category_name": "稅務相關",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-02-28-營業稅虛設行號剖析EP1-虛設行號的定義與成立動機.docx",
+        "is_series": true,
+        "series_name": "營業稅虛設行號剖析",
+        "series_slug": "營業稅虛設行號剖析",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "工商登記",
+            "slug": "business-registration"
+          },
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "企業稅務",
+            "slug": "corporate-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-03-18",
+      "latest_post_date": "2025-02-28"
+    },
+    "營業稅虛設行號剖析-": {
+      "name": "營業稅虛設行號剖析 ",
+      "slug": "營業稅虛設行號剖析-",
+      "posts": [
+        {
+          "title": "降低取得不實發票傷害的因應之道",
+          "url": "/blog/2025-03-10-analysis-of-ep6-ways-to-reduce",
+          "date": "2025-03-10",
+          "summary": "即使企業已盡最大努力篩選交易對象，仍可能在不知情的情況下取得不實發票。一旦發現這種情況，及時採取適當的因應措施至關重要。本文將介紹多種降低取得不實發票傷害的實用方法，幫助企業有效管理稅務風險。 自動補報補繳：化解風險的首選方案",
+          "category": "legal",
+          "category_name": "法律法規",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-10-營業稅虛設行號剖析 EP6-降低取得不實發票傷害的因應之道.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析 ",
+          "series_slug": "營業稅虛設行號剖析-",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "財富管理",
+              "slug": "wealth-management"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        }
+      ],
+      "count": 1,
+      "latest": {
+        "title": "降低取得不實發票傷害的因應之道",
+        "url": "/blog/2025-03-10-analysis-of-ep6-ways-to-reduce",
+        "date": "2025-03-10",
+        "summary": "即使企業已盡最大努力篩選交易對象，仍可能在不知情的情況下取得不實發票。一旦發現這種情況，及時採取適當的因應措施至關重要。本文將介紹多種降低取得不實發票傷害的實用方法，幫助企業有效管理稅務風險。 自動補報補繳：化解風險的首選方案",
+        "category": "legal",
+        "category_name": "法律法規",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-03-10-營業稅虛設行號剖析 EP6-降低取得不實發票傷害的因應之道.docx",
+        "is_series": true,
+        "series_name": "營業稅虛設行號剖析 ",
+        "series_slug": "營業稅虛設行號剖析-",
+        "episode": 6,
+        "tags": [
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "財富管理",
+            "slug": "wealth-management"
+          },
+          {
+            "name": "企業稅務",
+            "slug": "corporate-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-03-10",
+      "latest_post_date": "2025-03-10"
+    },
     "遺產及贈與稅與財富傳承": {
       "name": "遺產及贈與稅與財富傳承",
       "slug": "遺產及贈與稅與財富傳承",
@@ -662,16 +2724,16 @@
           "episode": 1,
           "tags": [
             {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
               "name": "稅務規劃",
               "slug": "tax-planning"
             },
             {
-              "name": "投資理財",
-              "slug": "investment"
-            },
-            {
-              "name": "房地產稅務",
-              "slug": "property-tax"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -690,16 +2752,16 @@
           "episode": 2,
           "tags": [
             {
-              "name": "投資理財",
-              "slug": "investment"
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
             },
             {
               "name": "個人稅務",
               "slug": "personal-tax"
-            },
-            {
-              "name": "所得稅",
-              "slug": "income-tax"
             }
           ]
         },
@@ -722,12 +2784,12 @@
               "slug": "income-tax"
             },
             {
-              "name": "個人稅務",
-              "slug": "personal-tax"
+              "name": "稅務規劃",
+              "slug": "tax-planning"
             },
             {
-              "name": "投資理財",
-              "slug": "investment"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -774,16 +2836,16 @@
           "episode": 5,
           "tags": [
             {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
               "name": "稅務規劃",
               "slug": "tax-planning"
             },
             {
-              "name": "人壽保險",
-              "slug": "life-insurance"
-            },
-            {
-              "name": "所得稅",
-              "slug": "income-tax"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -806,12 +2868,12 @@
               "slug": "income-tax"
             },
             {
-              "name": "個人稅務",
-              "slug": "personal-tax"
-            },
-            {
               "name": "稅務規劃",
               "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -834,12 +2896,12 @@
               "slug": "income-tax"
             },
             {
-              "name": "個人稅務",
-              "slug": "personal-tax"
+              "name": "稅務規劃",
+              "slug": "tax-planning"
             },
             {
-              "name": "房地產稅務",
-              "slug": "property-tax"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -866,8 +2928,8 @@
               "slug": "tax-planning"
             },
             {
-              "name": "財富管理",
-              "slug": "wealth-management"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -886,16 +2948,16 @@
           "episode": 9,
           "tags": [
             {
-              "name": "稅務規劃",
-              "slug": "tax-planning"
-            },
-            {
               "name": "所得稅",
               "slug": "income-tax"
             },
             {
-              "name": "投資理財",
-              "slug": "investment"
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -914,12 +2976,12 @@
           "episode": 10,
           "tags": [
             {
-              "name": "稅務規劃",
-              "slug": "tax-planning"
-            },
-            {
               "name": "所得稅",
               "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
             },
             {
               "name": "個人稅務",
@@ -970,16 +3032,16 @@
           "episode": 12,
           "tags": [
             {
-              "name": "退休規劃",
-              "slug": "retirement"
+              "name": "所得稅",
+              "slug": "income-tax"
             },
             {
               "name": "稅務規劃",
               "slug": "tax-planning"
             },
             {
-              "name": "所得稅",
-              "slug": "income-tax"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         }
@@ -1000,16 +3062,16 @@
         "episode": 1,
         "tags": [
           {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
             "name": "稅務規劃",
             "slug": "tax-planning"
           },
           {
-            "name": "投資理財",
-            "slug": "investment"
-          },
-          {
-            "name": "房地產稅務",
-            "slug": "property-tax"
+            "name": "個人稅務",
+            "slug": "personal-tax"
           }
         ]
       },
@@ -1336,6 +3398,1148 @@
   },
   "series_list": [
     {
+      "name": "房地合一稅2.0",
+      "slug": "房地合一稅2.0",
+      "posts": [
+        {
+          "title": "房地合一稅2.0制度概覽",
+          "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
+          "date": "2025-05-06",
+          "summary": "前言 房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            }
+          ]
+        }
+      ],
+      "count": 1,
+      "latest": {
+        "title": "房地合一稅2.0制度概覽",
+        "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
+        "date": "2025-05-06",
+        "summary": "前言 房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
+        "category": "tax",
+        "category_name": "稅務相關",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx",
+        "is_series": true,
+        "series_name": "房地合一稅2.0",
+        "series_slug": "房地合一稅2.0",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "稅務規劃",
+            "slug": "tax-planning"
+          },
+          {
+            "name": "房地產稅務",
+            "slug": "property-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-05-06",
+      "latest_post_date": "2025-05-06"
+    },
+    {
+      "name": "營所稅擴大書面審核解析",
+      "slug": "營所稅擴大書面審核解析",
+      "posts": [
+        {
+          "title": "制度概要與適用條件",
+          "url": "/blog/2025-04-30-expanded-written-ep1-outline-of-the",
+          "date": "2025-04-30",
+          "summary": "前言 營利事業所得稅結算申報是企業每年必須面對的稅務作業，為了簡化稅務機關的稽徵作業並提供納稅義務人更便捷的申報方式，財政部訂定了「營利事業所得稅結算申報案件擴大書面審核實施要點」。本文將介紹113年度營利事業所得稅結算申報的擴大書面審核制度，包括其立法目的、適用條件及相關規定，幫助營利事業了解如何符合擴大書面審核的標準，以簡化申報程序。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-30-營所稅擴大書面審核解析EP1-制度概要與適用條件.docx",
+          "is_series": true,
+          "series_name": "營所稅擴大書面審核解析",
+          "series_slug": "營所稅擴大書面審核解析",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "各行業純益率標準完整指南",
+          "url": "/blog/2025-05-02-expanded-written-ep2-a-complete-guide",
+          "date": "2025-05-02",
+          "summary": "前言 在營利事業所得稅結算申報中，純益率標準是擴大書面審核制度的核心指標。依據一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點，不同行業別的營利事業適用不同的純益率標準。本文將詳細介紹各行業的純益率標準，幫助納稅義務人更準確地判斷自身是否符合擴大書面審核的條件，正確申報營利事業所得稅。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-02-營所稅擴大書面審核解析EP2-各行業純益率標準完整指南.docx",
+          "is_series": true,
+          "series_name": "營所稅擴大書面審核解析",
+          "series_slug": "營所稅擴大書面審核解析",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            }
+          ]
+        },
+        {
+          "title": "不適用案件類型與特殊情況處理",
+          "url": "/blog/2025-05-04-expanded-written-ep3-not-applicable-case",
+          "date": "2025-05-04",
+          "summary": "前言 擴大書面審核制度為符合條件的營利事業提供了簡化申報程序的便利，但並非所有營利事業都適用此制度。財政部在一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點中，明確規定了不適用擴大書面審核的案件類型及特殊情況。本文將詳細解析這些不適用情況，同時說明土地及不動產交易的特殊處理方式，幫助營利事業了解自身是否符合擴大書面審核的條件。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-04-營所稅擴大書面審核解析EP3-不適用案件類型與特殊情況處理.docx",
+          "is_series": true,
+          "series_name": "營所稅擴大書面審核解析",
+          "series_slug": "營所稅擴大書面審核解析",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        },
+        {
+          "title": "小規模營利事業規定與短漏報處理",
+          "url": "/blog/2025-05-06-expanded-written-ep4-requirements-for-small",
+          "date": "2025-05-06",
+          "summary": "前言 在營利事業所得稅結算申報中，小規模營利事業與免用統一發票業者具有特殊的申報規定，同時短漏報情形的處理也有明確的規範。本文將基於一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點，詳細說明小規模營利事業的申報特殊規定、短漏報的補稅處罰方式，以及獨資合夥組織的稅務處理特點，幫助相關營利事業正確申報所得稅，避免不必要的稅務爭議。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-06-營所稅擴大書面審核解析EP4-小規模營利事業規定與短漏報處理.docx",
+          "is_series": true,
+          "series_name": "營所稅擴大書面審核解析",
+          "series_slug": "營所稅擴大書面審核解析",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        }
+      ],
+      "count": 4,
+      "latest": {
+        "title": "制度概要與適用條件",
+        "url": "/blog/2025-04-30-expanded-written-ep1-outline-of-the",
+        "date": "2025-04-30",
+        "summary": "前言 營利事業所得稅結算申報是企業每年必須面對的稅務作業，為了簡化稅務機關的稽徵作業並提供納稅義務人更便捷的申報方式，財政部訂定了「營利事業所得稅結算申報案件擴大書面審核實施要點」。本文將介紹113年度營利事業所得稅結算申報的擴大書面審核制度，包括其立法目的、適用條件及相關規定，幫助營利事業了解如何符合擴大書面審核的標準，以簡化申報程序。",
+        "category": "tax",
+        "category_name": "稅務相關",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-04-30-營所稅擴大書面審核解析EP1-制度概要與適用條件.docx",
+        "is_series": true,
+        "series_name": "營所稅擴大書面審核解析",
+        "series_slug": "營所稅擴大書面審核解析",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "企業稅務",
+            "slug": "corporate-tax"
+          },
+          {
+            "name": "工商登記",
+            "slug": "business-registration"
+          }
+        ]
+      },
+      "first_post_date": "2025-05-06",
+      "latest_post_date": "2025-04-30"
+    },
+    {
+      "name": "營利事業CFC稅務解析",
+      "slug": "營利事業cfc稅務解析",
+      "posts": [
+        {
+          "title": "CFC制度緣起與法規架構",
+          "url": "/blog/2025-04-14-profit-making-ep1-origins-of-the",
+          "date": "2025-04-14",
+          "summary": "前言 隨著全球經濟整合及跨國投資日益頻繁，企業運用低稅負國家或地區進行稅務規劃的現象也日趨普遍。為避免營利事業透過在低稅負國家或地區設立控制性公司，將盈餘留置境外而延緩課稅，我國參考國際反避稅趨勢，建立了受控外國企業(Controlled Foreign Company, CFC)制度。本文將介紹CFC制度的緣起、法規架構及實施現況，為讀者提供全面的認識。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-14-營利事業CFC稅務解析EP1-CFC制度緣起與法規架構.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "CFC定義與判斷實務",
+          "url": "/blog/2025-04-16-profit-making-ep2-cfc-definition-and",
+          "date": "2025-04-16",
+          "summary": "前言 受控外國企業(CFC)制度實施後，企業首先面臨的關鍵問題是如何判斷境外投資是否符合CFC定義。明確判斷CFC身分對於企業遵循稅法規定、進行跨國投資規劃至關重要。本文將詳細解析CFC的定義要件及其判斷標準，幫助營利事業在實務操作中準確辨識CFC，合理安排跨境投資架構。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-16-營利事業CFC稅務解析EP2-CFC定義與判斷實務.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "創業資訊",
+              "slug": "startup"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "CFC豁免條件詳解",
+          "url": "/blog/2025-04-18-profit-making-ep3-details-of-cfc",
+          "date": "2025-04-18",
+          "summary": "前言 受控外國企業(CFC)制度雖然是反避稅的重要機制，但為了維護正常商業活動，不對真正從事實質經營的企業造成過度負擔，我國CFC制度設計了豁免條款。營利事業即使持有符合CFC定義的境外企業，若符合特定豁免條件，仍可免依CFC制度計算課稅。本文將詳細解析CFC的兩大豁免條件，並透過實務案例，協助企業正確判斷是否符合豁免規定。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-18-營利事業CFC稅務解析EP3-CFC豁免條件詳解.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
+        },
+        {
+          "title": "CFC當年度盈餘計算方法",
+          "url": "/blog/2025-04-20-profit-making-ep4-calculation-of-cfcs",
+          "date": "2025-04-20",
+          "summary": "前言 營利事業一旦判定境外企業符合CFC定義且無法適用豁免條件，接下來便需面對CFC當年度盈餘的計算問題。CFC當年度盈餘是確定最終歸課所得的基礎，涉及多項調節項目及專業判斷。本文將詳細解析CFC當年度盈餘的計算方法、調節項目處理及相關實務案例，幫助企業準確計算CFC所得，確保稅務申報合規。",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-20-營利事業CFC稅務解析EP4-CFC當年度盈餘計算方法.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "CFC投資收益歸課與避免重複課稅",
+          "url": "/blog/2025-04-22-profit-making-ep5-cfc-investment-income",
+          "date": "2025-04-22",
+          "summary": "前言 在確定CFC當年度盈餘後，接下來的重要步驟是計算歸屬於國內營利事業的CFC投資收益，並正確處理後續的稅務問題。CFC制度的核心在於將境外企業未分配的盈餘視同分配課稅，但為了避免同一筆所得被重複課稅，法規設計了多項配套措施。本文將深入探討CFC投資收益的歸課計算方法，以及避免重複課稅的各項機制，幫助企業正確適用相關規定，合理管理稅負。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-22-營利事業CFC稅務解析EP5-CFC投資收益歸課與避免重複課稅.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 5,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "CFC申報程序與應備文件",
+          "url": "/blog/2025-04-24-profit-making-ep6-cfc-reporting-procedures",
+          "date": "2025-04-24",
+          "summary": "前言 CFC制度的實施為企業帶來全新的稅務申報挑戰，如何正確填報所得稅申報書、提供必要文件，成為納稅人必須面對的實務問題。完整且正確的申報不僅是法律義務，也是避免稅務爭議的重要環節。本文將詳細介紹CFC申報的程序、申報書填寫方法及應備文件，協助營利事業順利完成CFC相關稅務申報工作。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-24-營利事業CFC稅務解析EP6-CFC申報程序與應備文件.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            }
+          ]
+        },
+        {
+          "title": "CFC稽查重點與常見錯誤態樣",
+          "url": "/blog/2025-04-26-profit-making-ep7-cfc-audit-highlights",
+          "date": "2025-04-26",
+          "summary": "前言 CFC制度實施初期，稅務機關與企業都處於學習適應階段。然而，稅務機關已開始針對CFC申報案件進行選案查核，確保企業正確適用相關規定。根據財政部北區國稅局於2024年11月11日的公開資訊，稅局已鎖定CFC選案查核的三大重點。本文將詳細解析稅務機關的查核重點及企業常見的錯誤態樣，協助營利事業提前防範稅務風險，完善CFC申報工作。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-26-營利事業CFC稅務解析EP7-CFC稽查重點與常見錯誤態樣.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            }
+          ]
+        },
+        {
+          "title": "CFC制度實務案例分析",
+          "url": "/blog/2025-04-28-profit-making-ep8-case-study-on",
+          "date": "2025-04-28",
+          "summary": "前言 本系列文章前七篇從理論層面解析了CFC制度的各個面向，從制度緣起到稽查重點，為營利事業提供了全面的知識框架。在本系列的最後一篇，我們將透過實務案例，綜合運用前述原理，展示不同投資架構及經營情境下CFC制度的適用。這些案例涵蓋了常見的跨境投資安排及稅務處理難點，旨在幫助企業在實務操作中更好地適用CFC規定，合理規劃跨境投資策略。",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-28-營利事業CFC稅務解析EP8-CFC制度實務案例分析.docx",
+          "is_series": true,
+          "series_name": "營利事業CFC稅務解析",
+          "series_slug": "營利事業cfc稅務解析",
+          "episode": 8,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "創業資訊",
+              "slug": "startup"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        }
+      ],
+      "count": 8,
+      "latest": {
+        "title": "CFC制度緣起與法規架構",
+        "url": "/blog/2025-04-14-profit-making-ep1-origins-of-the",
+        "date": "2025-04-14",
+        "summary": "前言 隨著全球經濟整合及跨國投資日益頻繁，企業運用低稅負國家或地區進行稅務規劃的現象也日趨普遍。為避免營利事業透過在低稅負國家或地區設立控制性公司，將盈餘留置境外而延緩課稅，我國參考國際反避稅趨勢，建立了受控外國企業(Controlled Foreign Company, CFC)制度。本文將介紹CFC制度的緣起、法規架構及實施現況，為讀者提供全面的認識。",
+        "category": "business",
+        "category_name": "企業經營",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-04-14-營利事業CFC稅務解析EP1-CFC制度緣起與法規架構.docx",
+        "is_series": true,
+        "series_name": "營利事業CFC稅務解析",
+        "series_slug": "營利事業cfc稅務解析",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "稅務規劃",
+            "slug": "tax-planning"
+          },
+          {
+            "name": "投資理財",
+            "slug": "investment"
+          },
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-04-28",
+      "latest_post_date": "2025-04-14"
+    },
+    {
+      "name": "公司登記增資實務系列",
+      "slug": "公司登記增資實務系列",
+      "posts": [
+        {
+          "title": "資本變更基本概念與現金增資實務",
+          "url": "/blog/2025-03-25-company-registration-ep1-basic-concepts-of",
+          "date": "2025-03-25",
+          "summary": "發布日期：2025-03-25 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-25-公司登記增資實務系列EP1-資本變更基本概念與現金增資實務.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            }
+          ]
+        },
+        {
+          "title": "債權抵繳與財產抵繳股款實務",
+          "url": "/blog/2025-03-27-company-registration-ep2-debt-service-and",
+          "date": "2025-03-27",
+          "summary": "發布日期：2025-03-27 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-27-公司登記增資實務系列EP2-債權抵繳與財產抵繳股款實務.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "勞務出資與閉鎖性股份有限公司特色",
+          "url": "/blog/2025-03-29-company-registration-ep3-characteristics-of-labor",
+          "date": "2025-03-29",
+          "summary": "發布日期：2025-03-29 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-29-公司登記增資實務系列EP3-勞務出資與閉鎖性股份有限公司特色.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "創業資訊",
+              "slug": "startup"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            }
+          ]
+        },
+        {
+          "title": "盈餘轉增資實務與程序",
+          "url": "/blog/2025-03-31-company-registration-ep4-practices-and-procedures",
+          "date": "2025-03-31",
+          "summary": "發布日期：2025-03-31 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-31-公司登記增資實務系列EP4-盈餘轉增資實務與程序.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            }
+          ]
+        },
+        {
+          "title": "公積轉增資實務與案例解析",
+          "url": "/blog/2025-04-02-company-registration-ep5-practice-and-case",
+          "date": "2025-04-02",
+          "summary": "發布日期：2025-04-02 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-02-公司登記增資實務系列EP5-公積轉增資實務與案例解析.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 5,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "員工酬勞轉增資實務",
+          "url": "/blog/2025-04-04-company-registration-ep6-employee-compensation-to",
+          "date": "2025-04-04",
+          "summary": "發布日期：2025-04-04 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-04-公司登記增資實務系列EP6-員工酬勞轉增資實務.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "股份交換增資實務與程序",
+          "url": "/blog/2025-04-06-company-registration-ep7-share-exchange-practices",
+          "date": "2025-04-06",
+          "summary": "發布日期：2025-04-06 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-06-公司登記增資實務系列EP7-股份交換增資實務與程序.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "股份轉換與可轉換公司債增資實務",
+          "url": "/blog/2025-04-08-company-registration-ep8-share-conversion-and",
+          "date": "2025-04-08",
+          "summary": "發布日期：2025-04-08 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-08-公司登記增資實務系列EP8-股份轉換與可轉換公司債增資實務.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 8,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            },
+            {
+              "name": "創業資訊",
+              "slug": "startup"
+            }
+          ]
+        },
+        {
+          "title": "資本變更實務常見疑義解析",
+          "url": "/blog/2025-04-10-company-registration-ep9-explanation-of-frequently",
+          "date": "2025-04-10",
+          "summary": "發布日期：2025-04-10 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-10-公司登記增資實務系列EP9-資本變更實務常見疑義解析.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 9,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "投資理財",
+              "slug": "investment"
+            }
+          ]
+        },
+        {
+          "title": "減資實務與程序",
+          "url": "/blog/2025-04-12-company-registration-ep10-capital-reduction-practices",
+          "date": "2025-04-12",
+          "summary": "發布日期：2025-04-12 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-04-12-公司登記增資實務系列EP10-減資實務與程序.docx",
+          "is_series": true,
+          "series_name": "公司登記增資實務系列",
+          "series_slug": "公司登記增資實務系列",
+          "episode": 10,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            }
+          ]
+        }
+      ],
+      "count": 10,
+      "latest": {
+        "title": "資本變更基本概念與現金增資實務",
+        "url": "/blog/2025-03-25-company-registration-ep1-basic-concepts-of",
+        "date": "2025-03-25",
+        "summary": "發布日期：2025-03-25 前言",
+        "category": "business",
+        "category_name": "企業經營",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-03-25-公司登記增資實務系列EP1-資本變更基本概念與現金增資實務.docx",
+        "is_series": true,
+        "series_name": "公司登記增資實務系列",
+        "series_slug": "公司登記增資實務系列",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "工商登記",
+            "slug": "business-registration"
+          },
+          {
+            "name": "會計實務",
+            "slug": "accounting-practice"
+          },
+          {
+            "name": "投資理財",
+            "slug": "investment"
+          }
+        ]
+      },
+      "first_post_date": "2025-04-12",
+      "latest_post_date": "2025-03-25"
+    },
+    {
+      "name": "營業稅虛設行號剖析 ",
+      "slug": "營業稅虛設行號剖析-",
+      "posts": [
+        {
+          "title": "降低取得不實發票傷害的因應之道",
+          "url": "/blog/2025-03-10-analysis-of-ep6-ways-to-reduce",
+          "date": "2025-03-10",
+          "summary": "即使企業已盡最大努力篩選交易對象，仍可能在不知情的情況下取得不實發票。一旦發現這種情況，及時採取適當的因應措施至關重要。本文將介紹多種降低取得不實發票傷害的實用方法，幫助企業有效管理稅務風險。 自動補報補繳：化解風險的首選方案",
+          "category": "legal",
+          "category_name": "法律法規",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-10-營業稅虛設行號剖析 EP6-降低取得不實發票傷害的因應之道.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析 ",
+          "series_slug": "營業稅虛設行號剖析-",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "財富管理",
+              "slug": "wealth-management"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        }
+      ],
+      "count": 1,
+      "latest": {
+        "title": "降低取得不實發票傷害的因應之道",
+        "url": "/blog/2025-03-10-analysis-of-ep6-ways-to-reduce",
+        "date": "2025-03-10",
+        "summary": "即使企業已盡最大努力篩選交易對象，仍可能在不知情的情況下取得不實發票。一旦發現這種情況，及時採取適當的因應措施至關重要。本文將介紹多種降低取得不實發票傷害的實用方法，幫助企業有效管理稅務風險。 自動補報補繳：化解風險的首選方案",
+        "category": "legal",
+        "category_name": "法律法規",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-03-10-營業稅虛設行號剖析 EP6-降低取得不實發票傷害的因應之道.docx",
+        "is_series": true,
+        "series_name": "營業稅虛設行號剖析 ",
+        "series_slug": "營業稅虛設行號剖析-",
+        "episode": 6,
+        "tags": [
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "財富管理",
+            "slug": "wealth-management"
+          },
+          {
+            "name": "企業稅務",
+            "slug": "corporate-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-03-10",
+      "latest_post_date": "2025-03-10"
+    },
+    {
+      "name": "營業稅虛設行號剖析",
+      "slug": "營業稅虛設行號剖析",
+      "posts": [
+        {
+          "title": "虛設行號的定義與成立動機",
+          "url": "/blog/2025-02-28-analysis-of-ep1-definition-and-motivation",
+          "date": "2025-02-28",
+          "summary": "在台灣稅務實務中，虛設行號一直是稅務機關關注的重點。究竟什麼是虛設行號？它為何會存在？本文將為您深入解析虛設行號的定義與背後的成立動機。 虛設行號的定義",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-02-28-營業稅虛設行號剖析EP1-虛設行號的定義與成立動機.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        },
+        {
+          "title": "虛設行號常見違章類型與案例分析",
+          "url": "/blog/2025-03-02-analysis-of-ep2-common-types-of",
+          "date": "2025-03-02",
+          "summary": "虛設行號的運作手法多樣，稅務機關近年來已查獲許多重大案例。本文將透過實際案例，剖析虛設行號的常見違章類型，幫助讀者認識其運作模式與風險。 常見違章類型",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-02-營業稅虛設行號剖析EP2-虛設行號常見違章類型與案例分析.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "如何避免取得虛設行號開立的發票",
+          "url": "/blog/2025-03-04-analysis-of-ep3-how-to-avoid",
+          "date": "2025-03-04",
+          "summary": "在營業稅實務中，取得虛設行號開立的發票可能導致嚴重的稅務風險。本文將提供實用的方法，協助企業避免取得不實發票，並介紹稽徵機關常用的查核方式，幫助企業建立完善的內部控制機制。 一般交易應注意事項",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-04-營業稅虛設行號剖析EP3-如何避免取得虛設行號開立的發票.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            }
+          ]
+        },
+        {
+          "title": "取得不實發票的法律責任與稅務影響",
+          "url": "/blog/2025-03-06-analysis-of-ep4-legal-liability-and",
+          "date": "2025-03-06",
+          "summary": "取得虛設行號開立的不實發票，不僅可能面臨行政處罰，還可能涉及刑事責任，同時對企業的稅務權益也有重大影響。本文將詳細說明取得不實發票可能導致的各種法律責任與稅務影響，幫助企業全面了解相關風險。 法律責任分析",
+          "category": "legal",
+          "category_name": "法律法規",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-06-營業稅虛設行號剖析EP4-取得不實發票的法律責任與稅務影響.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        },
+        {
+          "title": "交易真實性的舉證責任與方法",
+          "url": "/blog/2025-03-08-analysis-of-ep5-burden-of-proof",
+          "date": "2025-03-08",
+          "summary": "在稅務爭議中，交易真實性的舉證常是決定案件勝敗的關鍵。本文將分析舉證責任的分配原則，並提供實用的舉證方法，幫助企業在稅務稽查時有效證明交易的真實性。 舉證責任分配原則",
+          "category": "legal",
+          "category_name": "法律法規",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-08-營業稅虛設行號剖析EP5-交易真實性的舉證責任與方法.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 5,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "進貨事實判斷原則與實務",
+          "url": "/blog/2025-03-12-analysis-of-ep7-principles-and-practices",
+          "date": "2025-03-12",
+          "summary": "在營業稅實務中，「進貨事實」的認定直接影響處罰的程度與方式。本文將深入探討進貨事實的判斷原則、稽徵機關的查核方式，以及實務案例分析，幫助企業了解如何在稅務爭議中有效證明進貨事實的存在。 進貨事實判斷的重要性",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-12-營業稅虛設行號剖析EP7-進貨事實判斷原則與實務.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            }
+          ]
+        },
+        {
+          "title": "故意、過失與不正當方法的認定標準",
+          "url": "/blog/2025-03-14-analysis-of-ep8-standards-for-recognizing",
+          "date": "2025-03-14",
+          "summary": "在稅務案件中，「故意」、「過失」與「不正當方法」的認定對處罰結果有重大影響。本文將從稅法角度分析這些主觀要件的認定標準，並透過實務案例說明其在稅務爭議中的應用，幫助企業了解其差異及影響。 故意、過失與不正當方法的概念解析",
+          "category": "legal",
+          "category_name": "法律法規",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-14-營業稅虛設行號剖析EP8-故意、過失與不正當方法的認定標準.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 8,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "營業稅與營所稅處理的差異",
+          "url": "/blog/2025-03-16-analysis-of-ep9-differences-in-the",
+          "date": "2025-03-16",
+          "summary": "在實務中，取得虛設行號開立的發票不僅涉及營業稅問題，還會影響營利事業所得稅的處理。本文將深入分析同一虛設行號案件在營業稅與營所稅兩個稅目下的處理差異，幫助企業全面了解稅務影響，並提供綜合性的風險管理策略。 法規依據比較",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-16-營業稅虛設行號剖析EP9-營業稅與營所稅處理的差異.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 9,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        },
+        {
+          "title": "最新法規動態與實務發展趨勢",
+          "url": "/blog/2025-03-18-analysis-of-ep10-the-latest-regulatory",
+          "date": "2025-03-18",
+          "summary": "虛設行號相關的稅務法規與實務認定標準正不斷演變，本文將探討近年來的重要法規變化、實務發展趨勢以及未來可能的發展方向，幫助企業了解最新的法規環境，及時調整稅務管理策略。 稅務違章裁罰標準的修正",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-18-營業稅虛設行號剖析EP10-最新法規動態與實務發展趨勢.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 10,
+          "tags": [
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            }
+          ]
+        }
+      ],
+      "count": 9,
+      "latest": {
+        "title": "虛設行號的定義與成立動機",
+        "url": "/blog/2025-02-28-analysis-of-ep1-definition-and-motivation",
+        "date": "2025-02-28",
+        "summary": "在台灣稅務實務中，虛設行號一直是稅務機關關注的重點。究竟什麼是虛設行號？它為何會存在？本文將為您深入解析虛設行號的定義與背後的成立動機。 虛設行號的定義",
+        "category": "tax",
+        "category_name": "稅務相關",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-02-28-營業稅虛設行號剖析EP1-虛設行號的定義與成立動機.docx",
+        "is_series": true,
+        "series_name": "營業稅虛設行號剖析",
+        "series_slug": "營業稅虛設行號剖析",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "工商登記",
+            "slug": "business-registration"
+          },
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "企業稅務",
+            "slug": "corporate-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-03-18",
+      "latest_post_date": "2025-02-28"
+    },
+    {
       "name": "遺產及贈與稅與財富傳承",
       "slug": "遺產及贈與稅與財富傳承",
       "posts": [
@@ -1354,16 +4558,16 @@
           "episode": 1,
           "tags": [
             {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
               "name": "稅務規劃",
               "slug": "tax-planning"
             },
             {
-              "name": "投資理財",
-              "slug": "investment"
-            },
-            {
-              "name": "房地產稅務",
-              "slug": "property-tax"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -1382,16 +4586,16 @@
           "episode": 2,
           "tags": [
             {
-              "name": "投資理財",
-              "slug": "investment"
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
             },
             {
               "name": "個人稅務",
               "slug": "personal-tax"
-            },
-            {
-              "name": "所得稅",
-              "slug": "income-tax"
             }
           ]
         },
@@ -1414,12 +4618,12 @@
               "slug": "income-tax"
             },
             {
-              "name": "個人稅務",
-              "slug": "personal-tax"
+              "name": "稅務規劃",
+              "slug": "tax-planning"
             },
             {
-              "name": "投資理財",
-              "slug": "investment"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -1466,16 +4670,16 @@
           "episode": 5,
           "tags": [
             {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
               "name": "稅務規劃",
               "slug": "tax-planning"
             },
             {
-              "name": "人壽保險",
-              "slug": "life-insurance"
-            },
-            {
-              "name": "所得稅",
-              "slug": "income-tax"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -1498,12 +4702,12 @@
               "slug": "income-tax"
             },
             {
-              "name": "個人稅務",
-              "slug": "personal-tax"
-            },
-            {
               "name": "稅務規劃",
               "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -1526,12 +4730,12 @@
               "slug": "income-tax"
             },
             {
-              "name": "個人稅務",
-              "slug": "personal-tax"
+              "name": "稅務規劃",
+              "slug": "tax-planning"
             },
             {
-              "name": "房地產稅務",
-              "slug": "property-tax"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -1558,8 +4762,8 @@
               "slug": "tax-planning"
             },
             {
-              "name": "財富管理",
-              "slug": "wealth-management"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -1578,16 +4782,16 @@
           "episode": 9,
           "tags": [
             {
-              "name": "稅務規劃",
-              "slug": "tax-planning"
-            },
-            {
               "name": "所得稅",
               "slug": "income-tax"
             },
             {
-              "name": "投資理財",
-              "slug": "investment"
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         },
@@ -1606,12 +4810,12 @@
           "episode": 10,
           "tags": [
             {
-              "name": "稅務規劃",
-              "slug": "tax-planning"
-            },
-            {
               "name": "所得稅",
               "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
             },
             {
               "name": "個人稅務",
@@ -1662,16 +4866,16 @@
           "episode": 12,
           "tags": [
             {
-              "name": "退休規劃",
-              "slug": "retirement"
+              "name": "所得稅",
+              "slug": "income-tax"
             },
             {
               "name": "稅務規劃",
               "slug": "tax-planning"
             },
             {
-              "name": "所得稅",
-              "slug": "income-tax"
+              "name": "個人稅務",
+              "slug": "personal-tax"
             }
           ]
         }
@@ -1692,16 +4896,16 @@
         "episode": 1,
         "tags": [
           {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
             "name": "稅務規劃",
             "slug": "tax-planning"
           },
           {
-            "name": "投資理財",
-            "slug": "investment"
-          },
-          {
-            "name": "房地產稅務",
-            "slug": "property-tax"
+            "name": "個人稅務",
+            "slug": "personal-tax"
           }
         ]
       },
@@ -2027,25 +5231,25 @@
     }
   ],
   "pagination": {
-    "total_posts": 23,
-    "total_pages": 3,
+    "total_posts": 56,
+    "total_pages": 6,
     "items_per_page": 10
   },
   "categories": [
     {
       "name": "稅務相關",
       "slug": "tax",
-      "count": 12
+      "count": 21
     },
     {
       "name": "會計資訊",
       "slug": "accounting",
-      "count": 1
+      "count": 2
     },
     {
       "name": "企業經營",
       "slug": "business",
-      "count": 0
+      "count": 19
     },
     {
       "name": "財務規劃",
@@ -2060,29 +5264,29 @@
     {
       "name": "法律法規",
       "slug": "legal",
-      "count": 0
+      "count": 4
     }
   ],
   "tags": [
     {
       "name": "稅務規劃",
       "slug": "tax-planning",
-      "count": 20
+      "count": 29
     },
     {
       "name": "所得稅",
       "slug": "income-tax",
-      "count": 11
+      "count": 32
     },
     {
       "name": "工商登記",
       "slug": "business-registration",
-      "count": 0
+      "count": 20
     },
     {
       "name": "財務報表",
       "slug": "financial-statements",
-      "count": 0
+      "count": 2
     },
     {
       "name": "財富管理",
@@ -2092,22 +5296,22 @@
     {
       "name": "人壽保險",
       "slug": "life-insurance",
-      "count": 11
+      "count": 10
     },
     {
       "name": "創業資訊",
       "slug": "startup",
-      "count": 1
+      "count": 5
     },
     {
       "name": "企業稅務",
       "slug": "corporate-tax",
-      "count": 1
+      "count": 15
     },
     {
       "name": "個人稅務",
       "slug": "personal-tax",
-      "count": 7
+      "count": 13
     },
     {
       "name": "財務規劃",
@@ -2117,23 +5321,23 @@
     {
       "name": "投資理財",
       "slug": "investment",
-      "count": 4
+      "count": 17
     },
     {
       "name": "退休規劃",
       "slug": "retirement",
-      "count": 1
+      "count": 0
     },
     {
       "name": "會計實務",
       "slug": "accounting-practice",
-      "count": 0
+      "count": 12
     },
     {
       "name": "房地產稅務",
       "slug": "property-tax",
-      "count": 2
+      "count": 1
     }
   ],
-  "generated_time": "2025-05-08T11:17:27.967351"
+  "generated_time": "2025-05-08T13:33:19.546980"
 }
