@@ -1,45 +1,45 @@
 {
   "latest_posts": [
     {
-      "title": "保險契約變更的稅務影響分析",
-      "url": "/blog/2025-01-15-life-insurance-ep6-analysis-of-the",
-      "date": "2025-01-15",
+      "title": "遺贈稅申報常見錯誤與案例分享",
+      "url": "/blog/2025-02-21-estate-and-ep12-common-mistakes-and",
+      "date": "2025-02-21",
       "image": "/assets/images/blog/default.jpg",
-      "summary": "前言 保險契約在存續期間經常因應情況變化而進行各種調整，包括變更要保人、受益人、保險金額或保單條款等。這些變更不僅影響保險保障內容，也可能產生重要的稅務效果。本文將深入分析保險契約變更在稅務上的影響，探討各類變更情境下的稅務處理原則，以及實務案例解析，幫助讀者理解保險契約變更的稅務風險與機會。",
-      "category": "insurance",
-      "category_name": "保險資訊",
+      "summary": "前言 遺產及贈與稅的申報因涉及法規複雜且不甚熟悉，許多納稅義務人經常因理解錯誤或疏忽而導致短漏報情形，不僅需補繳稅款，更可能面臨罰鍰處罰。本文彙整遺贈稅申報實務中最常見的錯誤態樣及案例分享，協助讀者避免踩雷，順利完成申報。",
+      "category": "tax",
+      "category_name": "稅務相關",
       "is_series": true,
-      "series_name": "人壽保險稅務規劃",
-      "series_slug": "人壽保險稅務規劃",
-      "episode": 6
+      "series_name": "遺產及贈與稅與財富傳承",
+      "series_slug": "遺產及贈與稅與財富傳承",
+      "episode": 12
     },
     {
-      "title": "人壽保險與課稅的實質課稅原則應用",
-      "url": "/blog/2025-01-13-life-insurance-ep5-application-of-substantive",
-      "date": "2025-01-13",
+      "title": "生前贈與與繼承規劃比較分析",
+      "url": "/blog/2025-02-19-estate-and-ep11-comparative-analysis-of",
+      "date": "2025-02-19",
       "image": "/assets/images/blog/default.jpg",
-      "summary": "前言 人壽保險作為保障工具同時具備節稅功能，在實務上常被用於稅務規劃。然而，稅務機關對明顯以規避稅負為目的的保險安排，往往會援引「實質課稅原則」進行審查。本文將探討實質課稅原則在人壽保險稅務中的應用，分析稅務機關的審查標準、相關法規依據、實務案例，以及如何進行合法且不違反實質課稅原則的保險規劃。",
-      "category": "insurance",
-      "category_name": "保險資訊",
+      "summary": "前言 在家族財富傳承規劃中，常見的兩種方式是生前贈與與死後繼承。究竟哪一種方式更能節省稅負？本文將深入分析生前贈與與死後繼承的稅負差異，並透過實際案例說明，協助讀者在不同情境下做出最佳的財產規劃選擇。",
+      "category": "tax",
+      "category_name": "稅務相關",
       "is_series": true,
-      "series_name": "人壽保險稅務規劃",
-      "series_slug": "人壽保險稅務規劃",
-      "episode": 5
+      "series_name": "遺產及贈與稅與財富傳承",
+      "series_slug": "遺產及贈與稅與財富傳承",
+      "episode": 11
     },
     {
-      "title": "所得稅與保險給付：最低稅負制解析",
-      "url": "/blog/2025-01-11-life-insurance-ep4-income-taxes-and",
-      "date": "2025-01-11",
+      "title": "特殊土地優惠與遺產稅減免",
+      "url": "/blog/2025-02-17-estate-and-ep10-special-land-concessions",
+      "date": "2025-02-17",
       "image": "/assets/images/blog/default.jpg",
-      "summary": "前言 除了遺產稅與贈與稅外，保險給付在所得稅方面同樣存在重要稅務議題，特別是與最低稅負制的關聯。自2006年實施的最低稅負制(又稱基本稅額制)對特定保險給付的課稅，改變了保險規劃的稅務考量。本文將詳細解析保險給付與所得稅的關係，特別是在最低稅負制下的課稅規定、計算方式及實務案例，幫助讀者全面了解保險規劃所涉及的所得稅議題。",
-      "category": "insurance",
-      "category_name": "保險資訊",
+      "summary": "前言 台灣地狹人稠，土地資源珍貴，因此在遺產稅制度中，立法者針對特定類型的土地提供了多項稅負優惠。了解並善用這些特殊土地的優惠規定，可以大幅降低遺產稅負擔。本文將詳細介紹公共設施保留地、農業用地、政府開闢道路等特殊土地的稅負優惠，並透過實例說明如何運用這些規定進行合法節稅，協助讀者在財產規劃中做出更明智的決策。",
+      "category": "tax",
+      "category_name": "稅務相關",
       "is_series": true,
-      "series_name": "人壽保險稅務規劃",
-      "series_slug": "人壽保險稅務規劃",
-      "episode": 4
+      "series_name": "遺產及贈與稅與財富傳承",
+      "series_slug": "遺產及贈與稅與財富傳承",
+      "episode": 10
     }
   ],
   "count": 3,
-  "generated_time": "2025-05-08T10:53:01.925055"
+  "generated_time": "2025-05-08T11:17:27.971967"
 }
