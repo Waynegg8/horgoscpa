@@ -1,7 +1,7 @@
 /**
  * blog.js - 霍爾果斯會計師事務所部落格功能腳本
- * 最後更新日期: 2025-05-08
- * 優化: 修正系列文章顯示問題、標籤雲問題，完善系列數據解析與顯示
+ * 最後更新日期: 2025-05-09
+ * 優化: 修正系列文章顯示問題、標籤雲問題，完善系列數據解析與顯示，修復圖片閃爍問題
  */
 document.addEventListener('DOMContentLoaded', function() {
   // 常量定義
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const POSTS_PER_PAGE = 6;
   const SUMMARY_MAX_LENGTH = 120; // 摘要最大長度
   
-  // 隨機圖片選擇功能 - 預設圖片庫
+  // 預設圖片庫
   const DEFAULT_IMAGES = [
     '/assets/images/blog/accounting_default.jpg',
     '/assets/images/blog/tax_default.jpg',
@@ -19,10 +19,39 @@ document.addEventListener('DOMContentLoaded', function() {
     '/assets/images/blog/default.jpg'
   ];
   
-  // 隨機選擇圖片函數
-  function getRandomImage() {
-    const randomIndex = Math.floor(Math.random() * DEFAULT_IMAGES.length);
-    return DEFAULT_IMAGES[randomIndex];
+  // 分類預設圖片映射
+  const DEFAULT_IMAGES_BY_CATEGORY = {
+    'tax': '/assets/images/blog/tax_default.jpg',
+    'accounting': '/assets/images/blog/accounting_default.jpg',
+    'business': '/assets/images/blog/business_default.jpg',
+    'finance': '/assets/images/blog/finance_default.jpg',
+    'legal': '/assets/images/blog/consulting_default.jpg',
+    'insurance': '/assets/images/blog/consulting_default.jpg',
+    'investment': '/assets/images/blog/finance_default.jpg',
+    'international': '/assets/images/blog/tax_default.jpg'
+  };
+  
+  // 獲取預設圖片函數 - 改進版，根據分類返回固定圖片
+  function getDefaultImage(category) {
+    // 根據分類選擇預設圖片，如果沒有指定分類，返回固定的預設圖片
+    if (category && DEFAULT_IMAGES_BY_CATEGORY[category]) {
+      return DEFAULT_IMAGES_BY_CATEGORY[category];
+    }
+    // 使用固定的預設圖片避免閃爍
+    return '/assets/images/blog/default.jpg';
+  }
+  
+  // 預載入所有預設圖片以確保可用性
+  function preloadDefaultImages() {
+    const imagesToPreload = [
+      ...DEFAULT_IMAGES,
+      ...Object.values(DEFAULT_IMAGES_BY_CATEGORY)
+    ];
+    
+    imagesToPreload.forEach(imageSrc => {
+      const img = new Image();
+      img.src = imageSrc;
+    });
   }
   
   // DOM 元素
@@ -43,6 +72,12 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentTag = '';
   let currentSearchQuery = '';
   let currentSeries = '';
+  
+  // 錯誤追蹤
+  window.imageLoadErrors = {
+    count: 0,
+    sources: {}
+  };
   
   // 暴露當前狀態給其他腳本
   window.currentCategory = currentCategory;
@@ -72,6 +107,9 @@ document.addEventListener('DOMContentLoaded', function() {
       series: currentSeries,
       page: currentPage
     });
+    
+    // 預載入預設圖片
+    preloadDefaultImages();
     
     // 發出資料載入開始事件
     document.dispatchEvent(new CustomEvent('blogLoadingStarted'));
@@ -466,6 +504,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
+  // 輔助函數：獲取系列主要分類
+  function getSeriesMainCategory(seriesData, seriesPosts) {
+    // 首先嘗試從系列數據中獲取
+    if (seriesData && seriesData.category) {
+      return seriesData.category;
+    }
+    
+    // 如果系列數據中沒有分類，則從文章中統計最常見的分類
+    if (seriesPosts && seriesPosts.length > 0) {
+      const categoryCount = {};
+      seriesPosts.forEach(post => {
+        if (post && post.category) {
+          categoryCount[post.category] = (categoryCount[post.category] || 0) + 1;
+        }
+      });
+      
+      // 找出出現最多的分類
+      let mainCategory = 'tax'; // 預設分類
+      let maxCount = 0;
+      
+      for (const category in categoryCount) {
+        if (categoryCount[category] > maxCount) {
+          maxCount = categoryCount[category];
+          mainCategory = category;
+        }
+      }
+      
+      return mainCategory;
+    }
+    
+    // 如果無法確定分類，返回預設分類
+    return 'tax';
+  }
+  
   // 修改: 改進系列文章分類統一邏輯
   function normalizeSeriesCategories(data) {
     if (!data) return data;
@@ -778,12 +850,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // 使用系列識別碼，優先使用 slug
         const seriesId = series.slug || '';
         const seriesName = series.name || '';
+        const mainCategory = series.category || getSeriesMainCategory(series, series.posts);
         
-        // 使用隨機圖片或特定圖片
-        const seriesImage = series.image || getRandomImage();
+        // 使用固定圖片而不是隨機圖片
+        const seriesImage = series.image || getDefaultImage(mainCategory);
         const episodeCount = series.count || (series.posts ? series.posts.length : 0) || 0;
         
-        seriesHTML += buildSeriesCardHTML(seriesId, seriesName, seriesImage, episodeCount);
+        seriesHTML += buildSeriesCardHTML(seriesId, seriesName, seriesImage, episodeCount, mainCategory);
       });
       
       if (seriesHTML) {
@@ -837,10 +910,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         seriesCount++;
         
-        // 獲取系列圖片
-        const seriesImage = (seriesData.image || (seriesPosts[0] && seriesPosts[0].image)) || getRandomImage();
+        // 獲取主要分類
+        const mainCategory = getSeriesMainCategory(seriesData, seriesPosts);
         
-        seriesHTML += buildSeriesCardHTML(seriesSlug, seriesName, seriesImage, seriesPosts.length);
+        // 獲取系列圖片，使用分類的預設圖片而不是隨機圖片
+        const seriesImage = (seriesData.image || (seriesPosts[0] && seriesPosts[0].image)) || getDefaultImage(mainCategory);
+        
+        seriesHTML += buildSeriesCardHTML(seriesSlug, seriesName, seriesImage, seriesPosts.length, mainCategory);
       }
       
       if (seriesCount > 0) {
@@ -869,13 +945,17 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // 建立系列卡片HTML
-    function buildSeriesCardHTML(seriesId, seriesName, seriesImage, episodeCount) {
+    // 建立系列卡片HTML - 修改版本，改進圖片錯誤處理
+    function buildSeriesCardHTML(seriesId, seriesName, seriesImage, episodeCount, category) {
+      // 確保有備用圖片
+      const defaultSeriesImage = getDefaultImage(category);
+      
       return `
-        <div class="sidebar-series-card" data-series="${escapeHtml(seriesId)}">
+        <div class="sidebar-series-card" data-series="${escapeHtml(seriesId)}" data-category="${escapeHtml(category || 'tax')}">
           <div class="sidebar-series-image">
             <img src="${escapeHtml(seriesImage)}" alt="${escapeHtml(seriesName)}" loading="lazy" 
-                onerror="this.src='${getRandomImage()}';">
+                 data-original-src="${escapeHtml(seriesImage)}"
+                 onerror="if(!this.dataset.fallbackApplied){this.dataset.fallbackApplied='true';this.src='${defaultSeriesImage}';}">
           </div>
           <div class="sidebar-series-content">
             <h4>${escapeHtml(seriesName)}</h4>
@@ -1314,12 +1394,31 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 100);
     }
 
+    // 優化圖片錯誤處理
     const allImages = blogPostsContainer.querySelectorAll('.blog-image img');
     if (allImages) {
       allImages.forEach(function(img) {
         if (img) {
+          // 保存原始圖片地址
+          const originalSrc = img.getAttribute('src');
+          if (originalSrc) {
+            img.setAttribute('data-original-src', originalSrc);
+          }
+          
+          // 添加錯誤處理
           img.addEventListener('error', function() {
-            this.src = getRandomImage();
+            if (!this.dataset.fallbackApplied) {
+              this.dataset.fallbackApplied = 'true';
+              
+              // 記錄錯誤
+              window.imageLoadErrors.count++;
+              const originalSrc = this.getAttribute('data-original-src') || this.src;
+              window.imageLoadErrors.sources[originalSrc] = (window.imageLoadErrors.sources[originalSrc] || 0) + 1;
+              
+              // 應用備用圖片
+              const category = this.closest('[data-category]')?.dataset.category || 'tax';
+              this.src = getDefaultImage(category);
+            }
           });
         }
       });
@@ -1350,7 +1449,8 @@ document.addEventListener('DOMContentLoaded', function() {
       summary = summary.substring(0, SUMMARY_MAX_LENGTH) + '...';
     }
     
-    let imageUrl = post.image || getRandomImage();
+    // 使用固定的預設圖片而非隨機圖片
+    let imageUrl = post.image || getDefaultImage(postCategory);
     if (!imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
       imageUrl = '/' + imageUrl;
     }
@@ -1378,11 +1478,14 @@ document.addEventListener('DOMContentLoaded', function() {
       ? `data-series="${escapeHtml(post.series_name)}" data-episode="${post.episode}"` 
       : '';
     
+    // 改進的圖片錯誤處理
     return `
       <article class="blog-card" data-url="${postUrl}" data-category="${postCategory}" ${seriesAttr}>
         <a href="${postUrl}" class="blog-card-link" aria-label="閱讀文章：${postTitle}">閱讀全文</a>
         <div class="blog-image">
-          <img src="${imageUrl}" alt="${postTitle}" loading="lazy" onerror="this.src='${getRandomImage()}';">
+          <img src="${imageUrl}" alt="${postTitle}" loading="lazy" 
+               data-original-src="${imageUrl}"
+               onerror="if(!this.dataset.fallbackApplied){this.dataset.fallbackApplied='true';this.src='${getDefaultImage(postCategory)}';}">
           ${seriesBadge}
         </div>
         <div class="blog-content">
@@ -1483,7 +1586,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (tagsHTML) {
         tagCloudContainer.innerHTML = tagsHTML;
       } else {
-        tagCloudContainer.innerHTML = "<p>目前沒有標籤。</p>";
+tagCloudContainer.innerHTML = "<p>目前沒有標籤。</p>";
       }
     } catch (error) {
       console.error('初始化標籤雲時發生錯誤:', error);
