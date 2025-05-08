@@ -764,23 +764,23 @@
       "category": "legal",
       "category_name": "法律法規",
       "image": "/assets/images/blog/default.jpg",
-      "original_filename": "2025-03-10-營業稅虛設行號剖析 EP6-降低取得不實發票傷害的因應之道.docx",
+      "original_filename": "2025-03-10-營業稅虛設行號剖析EP6-降低取得不實發票傷害的因應之道.docx",
       "is_series": true,
-      "series_name": "營業稅虛設行號剖析 ",
-      "series_slug": "營業稅虛設行號剖析-",
+      "series_name": "營業稅虛設行號剖析",
+      "series_slug": "營業稅虛設行號剖析",
       "episode": 6,
       "tags": [
         {
-          "name": "所得稅",
-          "slug": "income-tax"
-        },
-        {
-          "name": "財富管理",
-          "slug": "wealth-management"
-        },
-        {
           "name": "企業稅務",
           "slug": "corporate-tax"
+        },
+        {
+          "name": "工商登記",
+          "slug": "business-registration"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
         }
       ]
     },

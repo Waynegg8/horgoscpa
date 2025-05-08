@@ -937,6 +937,34 @@
           ]
         },
         {
+          "title": "降低取得不實發票傷害的因應之道",
+          "url": "/blog/2025-03-10-analysis-of-ep6-ways-to-reduce",
+          "date": "2025-03-10",
+          "summary": "即使企業已盡最大努力篩選交易對象，仍可能在不知情的情況下取得不實發票。一旦發現這種情況，及時採取適當的因應措施至關重要。本文將介紹多種降低取得不實發票傷害的實用方法，幫助企業有效管理稅務風險。 自動補報補繳：化解風險的首選方案",
+          "category": "legal",
+          "category_name": "法律法規",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-10-營業稅虛設行號剖析EP6-降低取得不實發票傷害的因應之道.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
           "title": "進貨事實判斷原則與實務",
           "url": "/blog/2025-03-12-analysis-of-ep7-principles-and-practices",
           "date": "2025-03-12",
@@ -1049,7 +1077,7 @@
           ]
         }
       ],
-      "count": 9,
+      "count": 10,
       "latest": {
         "title": "虛設行號的定義與成立動機",
         "url": "/blog/2025-02-28-analysis-of-ep1-definition-and-motivation",
@@ -1080,71 +1108,6 @@
       },
       "first_post_date": "2025-03-18",
       "latest_post_date": "2025-02-28"
-    },
-    "營業稅虛設行號剖析-": {
-      "name": "營業稅虛設行號剖析 ",
-      "slug": "營業稅虛設行號剖析-",
-      "posts": [
-        {
-          "title": "降低取得不實發票傷害的因應之道",
-          "url": "/blog/2025-03-10-analysis-of-ep6-ways-to-reduce",
-          "date": "2025-03-10",
-          "summary": "即使企業已盡最大努力篩選交易對象，仍可能在不知情的情況下取得不實發票。一旦發現這種情況，及時採取適當的因應措施至關重要。本文將介紹多種降低取得不實發票傷害的實用方法，幫助企業有效管理稅務風險。 自動補報補繳：化解風險的首選方案",
-          "category": "legal",
-          "category_name": "法律法規",
-          "image": "/assets/images/blog/default.jpg",
-          "original_filename": "2025-03-10-營業稅虛設行號剖析 EP6-降低取得不實發票傷害的因應之道.docx",
-          "is_series": true,
-          "series_name": "營業稅虛設行號剖析 ",
-          "series_slug": "營業稅虛設行號剖析-",
-          "episode": 6,
-          "tags": [
-            {
-              "name": "所得稅",
-              "slug": "income-tax"
-            },
-            {
-              "name": "財富管理",
-              "slug": "wealth-management"
-            },
-            {
-              "name": "企業稅務",
-              "slug": "corporate-tax"
-            }
-          ]
-        }
-      ],
-      "count": 1,
-      "latest": {
-        "title": "降低取得不實發票傷害的因應之道",
-        "url": "/blog/2025-03-10-analysis-of-ep6-ways-to-reduce",
-        "date": "2025-03-10",
-        "summary": "即使企業已盡最大努力篩選交易對象，仍可能在不知情的情況下取得不實發票。一旦發現這種情況，及時採取適當的因應措施至關重要。本文將介紹多種降低取得不實發票傷害的實用方法，幫助企業有效管理稅務風險。 自動補報補繳：化解風險的首選方案",
-        "category": "legal",
-        "category_name": "法律法規",
-        "image": "/assets/images/blog/default.jpg",
-        "original_filename": "2025-03-10-營業稅虛設行號剖析 EP6-降低取得不實發票傷害的因應之道.docx",
-        "is_series": true,
-        "series_name": "營業稅虛設行號剖析 ",
-        "series_slug": "營業稅虛設行號剖析-",
-        "episode": 6,
-        "tags": [
-          {
-            "name": "所得稅",
-            "slug": "income-tax"
-          },
-          {
-            "name": "財富管理",
-            "slug": "wealth-management"
-          },
-          {
-            "name": "企業稅務",
-            "slug": "corporate-tax"
-          }
-        ]
-      },
-      "first_post_date": "2025-03-10",
-      "latest_post_date": "2025-03-10"
     },
     "遺產及贈與稅與財富傳承": {
       "name": "遺產及贈與稅與財富傳承",
@@ -2631,71 +2594,6 @@
       "latest_post_date": "2025-03-25"
     },
     {
-      "name": "營業稅虛設行號剖析 ",
-      "slug": "營業稅虛設行號剖析-",
-      "posts": [
-        {
-          "title": "降低取得不實發票傷害的因應之道",
-          "url": "/blog/2025-03-10-analysis-of-ep6-ways-to-reduce",
-          "date": "2025-03-10",
-          "summary": "即使企業已盡最大努力篩選交易對象，仍可能在不知情的情況下取得不實發票。一旦發現這種情況，及時採取適當的因應措施至關重要。本文將介紹多種降低取得不實發票傷害的實用方法，幫助企業有效管理稅務風險。 自動補報補繳：化解風險的首選方案",
-          "category": "legal",
-          "category_name": "法律法規",
-          "image": "/assets/images/blog/default.jpg",
-          "original_filename": "2025-03-10-營業稅虛設行號剖析 EP6-降低取得不實發票傷害的因應之道.docx",
-          "is_series": true,
-          "series_name": "營業稅虛設行號剖析 ",
-          "series_slug": "營業稅虛設行號剖析-",
-          "episode": 6,
-          "tags": [
-            {
-              "name": "所得稅",
-              "slug": "income-tax"
-            },
-            {
-              "name": "財富管理",
-              "slug": "wealth-management"
-            },
-            {
-              "name": "企業稅務",
-              "slug": "corporate-tax"
-            }
-          ]
-        }
-      ],
-      "count": 1,
-      "latest": {
-        "title": "降低取得不實發票傷害的因應之道",
-        "url": "/blog/2025-03-10-analysis-of-ep6-ways-to-reduce",
-        "date": "2025-03-10",
-        "summary": "即使企業已盡最大努力篩選交易對象，仍可能在不知情的情況下取得不實發票。一旦發現這種情況，及時採取適當的因應措施至關重要。本文將介紹多種降低取得不實發票傷害的實用方法，幫助企業有效管理稅務風險。 自動補報補繳：化解風險的首選方案",
-        "category": "legal",
-        "category_name": "法律法規",
-        "image": "/assets/images/blog/default.jpg",
-        "original_filename": "2025-03-10-營業稅虛設行號剖析 EP6-降低取得不實發票傷害的因應之道.docx",
-        "is_series": true,
-        "series_name": "營業稅虛設行號剖析 ",
-        "series_slug": "營業稅虛設行號剖析-",
-        "episode": 6,
-        "tags": [
-          {
-            "name": "所得稅",
-            "slug": "income-tax"
-          },
-          {
-            "name": "財富管理",
-            "slug": "wealth-management"
-          },
-          {
-            "name": "企業稅務",
-            "slug": "corporate-tax"
-          }
-        ]
-      },
-      "first_post_date": "2025-03-10",
-      "latest_post_date": "2025-03-10"
-    },
-    {
       "name": "營業稅虛設行號剖析",
       "slug": "營業稅虛設行號剖析",
       "posts": [
@@ -2840,6 +2738,34 @@
           ]
         },
         {
+          "title": "降低取得不實發票傷害的因應之道",
+          "url": "/blog/2025-03-10-analysis-of-ep6-ways-to-reduce",
+          "date": "2025-03-10",
+          "summary": "即使企業已盡最大努力篩選交易對象，仍可能在不知情的情況下取得不實發票。一旦發現這種情況，及時採取適當的因應措施至關重要。本文將介紹多種降低取得不實發票傷害的實用方法，幫助企業有效管理稅務風險。 自動補報補繳：化解風險的首選方案",
+          "category": "legal",
+          "category_name": "法律法規",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-03-10-營業稅虛設行號剖析EP6-降低取得不實發票傷害的因應之道.docx",
+          "is_series": true,
+          "series_name": "營業稅虛設行號剖析",
+          "series_slug": "營業稅虛設行號剖析",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "企業稅務",
+              "slug": "corporate-tax"
+            },
+            {
+              "name": "工商登記",
+              "slug": "business-registration"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
           "title": "進貨事實判斷原則與實務",
           "url": "/blog/2025-03-12-analysis-of-ep7-principles-and-practices",
           "date": "2025-03-12",
@@ -2952,7 +2878,7 @@
           ]
         }
       ],
-      "count": 9,
+      "count": 10,
       "latest": {
         "title": "虛設行號的定義與成立動機",
         "url": "/blog/2025-02-28-analysis-of-ep1-definition-and-motivation",
@@ -3675,5 +3601,5 @@
       "latest_post_date": "2025-01-05"
     }
   ],
-  "generated_time": "2025-05-08T14:02:23.216024"
+  "generated_time": "2025-05-08T15:29:39.694350"
 }
