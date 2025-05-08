@@ -100,15 +100,20 @@ class WordProcessor:
             # 根據日期過濾文件
             if process_all:
                 # 處理所有文件
+                logger.info(f"處理所有文件: {file.name}")
                 documents.append(file)
             elif process_date:
                 # 處理特定日期的文件
                 if file_date == process_date:
+                    logger.info(f"處理特定日期文件: {file.name}, 日期: {file_date}")
                     documents.append(file)
             else:
-                # 只處理日期不晚於當天的文件
-                if file_date <= current_date:
+                # 修改：只處理日期早於當天的文件（排除當天及未來日期的文件）
+                if file_date < current_date:
+                    logger.info(f"處理日期早於當天的文件: {file.name}, 日期: {file_date}, 當前日期: {current_date}")
                     documents.append(file)
+                else:
+                    logger.info(f"跳過當天或未來日期的文件: {file.name}, 日期: {file_date}, 當前日期: {current_date}")
         
         return documents
     
@@ -362,6 +367,7 @@ class WordProcessor:
         target_path = self.processed_dir / doc_path.name
         
         # 移動文件
+        logger.info(f"移動已處理文件: {doc_path} -> {target_path}")
         shutil.move(str(doc_path), str(target_path))
         
         # 更新已處理文件記錄
@@ -371,12 +377,13 @@ class WordProcessor:
         
         return target_path
     
-    def process_document(self, doc_path):
+    def process_document(self, doc_path, html_content=None):
         """
         處理單個 Word 文檔
         
         Args:
             doc_path: Word 文檔路徑
+            html_content: 生成的HTML內容，如果為None表示處理失敗
             
         Returns:
             dict: 處理結果字典
@@ -387,10 +394,6 @@ class WordProcessor:
         # 生成 SEO URL
         doc_info["url"] = self.generate_seo_url(doc_info)
         
-        # 移動處理過的文件
-        processed_path = self.move_processed_file(doc_path)
-        doc_info["processed_path"] = str(processed_path)
-        
         # 記錄翻譯使用的統計信息
         translation_stats = self.translator.get_stats()
         doc_info["translation_stats"] = {
@@ -398,6 +401,15 @@ class WordProcessor:
             "cache_hits": translation_stats["cache_hits"],
             "dictionary_size": translation_stats["dictionary_size"]
         }
+        
+        # 僅在HTML生成成功時才移動文件（如果提供了HTML內容）
+        if html_content is not None:
+            processed_path = self.move_processed_file(doc_path)
+            doc_info["processed_path"] = str(processed_path)
+            logger.info(f"文件處理成功並已移動: {doc_path}")
+        else:
+            logger.warning(f"文件處理未完成，不移動文件: {doc_path}")
+            doc_info["processed"] = False
         
         return doc_info
     
