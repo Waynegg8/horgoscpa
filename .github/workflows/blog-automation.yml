@@ -304,13 +304,7 @@ jobs:
           echo "檢查並更新翻譯字典..."
           
           # 使用 translator.py 匯出目前翻譯字典
-          python -c "
-import sys
-sys.path.append('scripts')
-from translator import get_translator
-translator = get_translator()
-translator.export_dictionary('assets/data/translation_dict_export.json')
-          "
+          python -c "import sys; sys.path.append('scripts'); from translator import get_translator; translator = get_translator(); translator.export_dictionary('assets/data/translation_dict_export.json')"
           
           # 提交更新後的翻譯字典
           git add assets/data/translation_dict.json assets/data/translation_dict_export.json || true
