@@ -34,3 +34,5 @@ sentry-sdk>=1.5.1
 # 測試
 pytest>=6.2.5
 pytest-cov>=2.12.1
+
+jieba>=0.42.1
