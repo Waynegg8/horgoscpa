@@ -583,6 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function fetchBlogPosts() {
     showLoading();
     
+    // 先加載blog-posts.json
     fetch(BLOG_POSTS_JSON)
       .then(function(response) {
         if (!response.ok) {
@@ -590,11 +591,41 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return response.json();
       })
-      .then(function(data) {
-        console.log('獲取到的博客數據:', data);
+      .then(function(blogData) {
+        console.log('獲取到的博客數據:', blogData);
         
-        if (!data) {
-          throw new Error('獲取的數據為空');
+        if (!blogData) {
+          throw new Error('獲取的博客數據為空');
+        }
+        
+        // 再加載series.json
+        return fetch('/assets/data/series.json')
+          .then(function(response) {
+            if (!response.ok) {
+              console.warn('無法獲取系列數據，將只使用博客數據');
+              return { blogData: blogData, seriesData: null };
+            }
+            return response.json()
+              .then(function(seriesData) {
+                console.log('獲取到的系列數據:', seriesData);
+                return { blogData: blogData, seriesData: seriesData };
+              });
+          })
+          .catch(function(error) {
+            console.warn('獲取系列數據失敗:', error);
+            return { blogData: blogData, seriesData: null };
+          });
+      })
+      .then(function(result) {
+        const { blogData, seriesData } = result;
+        // 合併數據
+        let data = blogData;
+        
+        if (seriesData) {
+          // 合併系列數據到博客數據
+          data.series = seriesData.series || {};
+          data.series_list = seriesData.series_list || [];
+          console.log('合併後的數據:', data);
         }
         
         try {
@@ -610,6 +641,8 @@ document.addEventListener('DOMContentLoaded', function() {
             initializeTagCloud(data.tags);
           } else {
             console.warn('未檢測到標籤數據');
+            // 從文章數據生成標籤雲
+            generateTagsFromPosts(data.posts);
           }
           
           // 初始化系列列表
@@ -646,6 +679,49 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('獲取博客數據失敗:', error);
         showError('無法加載博客數據。請稍後再試。');
       });
+  }
+  
+  // 新增: 從文章中生成標籤雲
+  function generateTagsFromPosts(posts) {
+    if (!posts || !Array.isArray(posts) || posts.length === 0) {
+      console.warn('沒有文章數據可以生成標籤');
+      return;
+    }
+    
+    // 收集所有標籤
+    const allTags = {};
+    
+    posts.forEach(function(post) {
+      if (post && post.tags && Array.isArray(post.tags)) {
+        post.tags.forEach(function(tag) {
+          if (typeof tag === 'object' && tag !== null) {
+            const tagSlug = tag.slug || '';
+            const tagName = tag.name || '';
+            
+            if (tagSlug && tagName) {
+              allTags[tagSlug] = tagName;
+            }
+          } else if (typeof tag === 'string') {
+            allTags[tag] = tag;
+          }
+        });
+      }
+    });
+    
+    // 轉換為陣列格式
+    const tags = Object.keys(allTags).map(function(slug) {
+      return {
+        slug: slug,
+        name: allTags[slug]
+      };
+    });
+    
+    console.log('從文章中收集了 ' + tags.length + ' 個標籤');
+    
+    // 初始化標籤雲
+    if (tags.length > 0) {
+      initializeTagCloud(tags);
+    }
   }
   
   function initializeSidebarSeriesList(data) {
