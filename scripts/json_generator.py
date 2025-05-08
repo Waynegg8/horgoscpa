@@ -113,11 +113,138 @@ class JsonGenerator:
         """
         return read_json(self.tags_file, default={"tags": []})
     
-    def filter_posts_by_date(self, current_date=None):
+    def _scan_html_files(self):
+        """
+        掃描blog目錄中的所有HTML文件，提取文章信息
+        
+        Returns:
+            list: 文章信息列表
+        """
+        blog_dir = Path("blog")
+        if not blog_dir.exists():
+            logger.warning(f"部落格目錄不存在: {blog_dir}")
+            return []
+        
+        posts = []
+        html_files = list(blog_dir.glob("**/*.html"))
+        
+        logger.info(f"找到 {len(html_files)} 個HTML文件")
+        
+        for html_file in html_files:
+            try:
+                # 從HTML文件提取文章信息
+                post_info = self._extract_info_from_html(html_file)
+                if post_info:
+                    posts.append(post_info)
+            except Exception as e:
+                logger.error(f"處理HTML文件 {html_file} 時發生錯誤: {e}")
+        
+        logger.info(f"成功提取 {len(posts)} 篇文章信息")
+        
+        # 按發布日期排序（新到舊）
+        posts.sort(key=lambda x: x["date"], reverse=True)
+        
+        return posts
+
+    def _extract_info_from_html(self, html_file):
+        """
+        從HTML文件提取文章信息
+        
+        Args:
+            html_file: HTML文件路徑
+            
+        Returns:
+            dict: 文章信息字典，如果提取失敗則返回None
+        """
+        try:
+            with open(html_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 使用BeautifulSoup解析HTML
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(content, 'html.parser')
+            
+            # 提取META資訊
+            title = soup.title.string.split(" | ")[0] if soup.title else ""
+            
+            # 提取META標籤信息
+            meta_tags = {}
+            for meta in soup.find_all('meta'):
+                if meta.get('name') and meta.get('content'):
+                    meta_tags[meta['name']] = meta['content']
+            
+            # 提取主要數據
+            post_info = {
+                "title": title,
+                "url": html_file.stem,  # 使用文件名作為URL (不含.html)
+                "date": meta_tags.get("date", ""),
+                "summary": meta_tags.get("description", ""),
+                "category": meta_tags.get("main-category-code", ""),
+                "category_name": meta_tags.get("main-category", ""),
+                "image": meta_tags.get("image-url", self.settings["default_image"]),
+                "original_filename": meta_tags.get("original-filename", "")
+            }
+            
+            # 處理系列文章信息
+            if "series-name" in meta_tags and meta_tags["series-name"]:
+                post_info["is_series"] = True
+                post_info["series_name"] = meta_tags["series-name"]
+                
+                # 處理系列標識 (slug)
+                if "series-slug" in meta_tags:
+                    post_info["series_slug"] = meta_tags["series-slug"]
+                else:
+                    # 如果沒有提供series-slug，則從series-name生成
+                    from utils import sanitize_filename
+                    series_slug = sanitize_filename(post_info["series_name"].lower())
+                    series_slug = series_slug.replace(" ", "-")
+                    post_info["series_slug"] = series_slug
+                
+                # 處理集數
+                if "series-episode" in meta_tags:
+                    try:
+                        post_info["episode"] = int(meta_tags["series-episode"])
+                    except ValueError:
+                        post_info["episode"] = 1
+            else:
+                post_info["is_series"] = False
+            
+            # 提取標籤信息 - 從article-tag類查找
+            tags = []
+            for tag_element in soup.select(".article-tag"):
+                tag_name = tag_element.text.strip()
+                tag_href = tag_element.get("href", "")
+                tag_slug = ""
+                
+                # 從href提取標籤標識
+                if tag_href:
+                    import re
+                    tag_match = re.search(r'tag=([^&]+)', tag_href)
+                    if tag_match:
+                        tag_slug = tag_match.group(1)
+                
+                if tag_name and tag_slug:
+                    tags.append({"name": tag_name, "slug": tag_slug})
+                elif tag_name:
+                    # 如果沒有找到slug，則自動生成
+                    from utils import sanitize_filename
+                    tag_slug = sanitize_filename(tag_name.lower())
+                    tag_slug = tag_slug.replace(" ", "-")
+                    tags.append({"name": tag_name, "slug": tag_slug})
+            
+            post_info["tags"] = tags
+            
+            return post_info
+        except Exception as e:
+            logger.error(f"從HTML文件 {html_file} 提取信息時發生錯誤: {e}")
+            return None
+    
+    def _filter_posts_by_date(self, posts, current_date=None):
         """
         按日期過濾文章
         
         Args:
+            posts: 文章列表
             current_date: 當前日期，預設為今天
             
         Returns:
@@ -131,7 +258,7 @@ class JsonGenerator:
         
         # 過濾文章
         filtered_posts = []
-        for post in self.blog_posts["posts"]:
+        for post in posts:
             try:
                 post_date = datetime.strptime(post["date"], "%Y-%m-%d").date()
                 if post_date <= current_date:
@@ -194,7 +321,7 @@ class JsonGenerator:
     
     def generate_latest_posts(self, current_date=None):
         """
-        生成最新文章檔案
+        生成最新文章檔案 - 基於掃描結果而非舊數據
         
         Args:
             current_date: 當前日期，預設為今天
@@ -202,8 +329,8 @@ class JsonGenerator:
         Returns:
             dict: 最新文章資料
         """
-        # 過濾可發布的文章
-        filtered_posts = self.filter_posts_by_date(current_date)
+        # 過濾可發布的文章 - 使用掃描的HTML數據
+        filtered_posts = self._filter_posts_by_date(self.blog_posts["posts"], current_date)
         
         # 獲取最新文章數量設定
         latest_count = self.settings.get("latest_posts_count", 3)
@@ -233,7 +360,7 @@ class JsonGenerator:
             
             latest_posts_data.append(latest_post)
         
-        # 建立最新文章資料
+        # 建立最新文章資料 - 完全重新生成
         latest_data = {
             "latest_posts": latest_posts_data,
             "count": len(latest_posts_data),
@@ -248,7 +375,7 @@ class JsonGenerator:
     
     def generate_blog_index(self, current_date=None):
         """
-        生成部落格索引
+        生成部落格索引 - 基於掃描結果而非舊數據
         
         Args:
             current_date: 當前日期，預設為今天
@@ -257,7 +384,7 @@ class JsonGenerator:
             dict: 部落格索引資料
         """
         # 過濾可發布的文章
-        filtered_posts = self.filter_posts_by_date(current_date)
+        filtered_posts = self._filter_posts_by_date(self.blog_posts["posts"], current_date)
         
         # 計算分頁信息
         items_per_page = self.settings["pagination"]["items_per_page"]
@@ -269,7 +396,7 @@ class JsonGenerator:
         series_list = list(series_info.values())
         series_list.sort(key=lambda x: x["latest_post_date"], reverse=True)
         
-        # 建立索引資料
+        # 建立索引資料 - 完全重新生成
         index_data = {
             "posts": filtered_posts,
             "series": series_info,
@@ -286,9 +413,37 @@ class JsonGenerator:
         
         # 儲存索引資料
         write_json(self.blog_index_file, index_data)
-        logger.info(f"已生成部落格索引: {self.blog_index_file}")
+        logger.info(f"已生成部落格索引: {self.blog_index_file}，共 {total_posts} 篇文章")
         
         return index_data
+    
+    def generate_series_json(self):
+        """
+        生成系列文章 JSON - 基於掃描結果而非舊數據
+        
+        Returns:
+            dict: 系列文章資料
+        """
+        # 過濾可發布的文章 - 使用掃描的HTML數據
+        filtered_posts = self._filter_posts_by_date(self.blog_posts["posts"])
+        
+        # 組織系列文章
+        series_info = self._organize_posts_by_series(filtered_posts)
+        series_list = list(series_info.values())
+        series_list.sort(key=lambda x: x["latest_post_date"], reverse=True)
+        
+        # 建立系列文章資料 - 完全重新生成
+        series_data = {
+            "series": series_info,
+            "series_list": series_list,
+            "generated_time": datetime.now().isoformat()
+        }
+        
+        # 儲存系列文章資料
+        write_json(self.series_file, series_data)
+        logger.info(f"已生成系列文章資料: {self.series_file}，共 {len(series_list)} 個系列")
+        
+        return series_data
     
     def update_blog_post(self, post_info):
         """
@@ -397,37 +552,9 @@ class JsonGenerator:
         write_json(self.tags_file, self.tags)
         logger.info(f"已更新標籤計數: {self.tags_file}")
     
-    def generate_series_json(self):
-        """
-        生成系列文章 JSON
-        
-        Returns:
-            dict: 系列文章資料
-        """
-        # 過濾可發布的文章
-        filtered_posts = self.filter_posts_by_date()
-        
-        # 組織系列文章
-        series_info = self._organize_posts_by_series(filtered_posts)
-        series_list = list(series_info.values())
-        series_list.sort(key=lambda x: x["latest_post_date"], reverse=True)
-        
-        # 建立系列文章資料
-        series_data = {
-            "series": series_info,
-            "series_list": series_list,
-            "generated_time": datetime.now().isoformat()
-        }
-        
-        # 儲存系列文章資料
-        write_json(self.series_file, series_data)
-        logger.info(f"已生成系列文章資料: {self.series_file}")
-        
-        return series_data
-    
     def generate_all_json(self, current_date=None):
         """
-        生成所有 JSON 資料
+        生成所有 JSON 資料 - 徹底重寫，基於實際HTML文件掃描
         
         Args:
             current_date: 當前日期，預設為今天
@@ -435,18 +562,33 @@ class JsonGenerator:
         Returns:
             dict: 生成結果
         """
-        # 更新分類和標籤計數
+        logger.info("開始重新生成所有JSON數據...")
+        
+        # 先掃描所有HTML文件，提取文章信息
+        all_posts = self._scan_html_files()
+        logger.info(f"掃描到 {len(all_posts)} 篇文章")
+        
+        # 使用掃描結果覆蓋現有的blog_posts數據
+        self.blog_posts = {"posts": all_posts}
+        
+        # 保存更新後的文章資料 - 這將完全替換舊有數據
+        write_json(self.blog_posts_file, self.blog_posts)
+        logger.info(f"已更新文章資料: {self.blog_posts_file}")
+        
+        # 更新分類和標籤計數 - 基於最新的掃描結果
         self._update_categories_count()
         self._update_tags_count()
         
-        # 生成部落格索引
+        # 生成部落格索引 - 使用掃描的HTML文件數據
         blog_index = self.generate_blog_index(current_date)
         
-        # 生成系列文章資料
+        # 生成系列文章資料 - 使用掃描的HTML文件數據
         series_data = self.generate_series_json()
         
-        # 生成最新文章資料
+        # 生成最新文章資料 - 使用掃描的HTML文件數據
         latest_posts = self.generate_latest_posts(current_date)
+        
+        logger.info("所有JSON數據已重新生成")
         
         # 返回生成結果
         return {

@@ -86,6 +86,15 @@ def process_document(doc_path, word_processor, html_generator, content_manager, 
         # 提取文檔內容
         doc_info = word_processor.extract_content(doc_path)
         
+        # 檢查文檔日期
+        doc_date = datetime.strptime(doc_info["date"], "%Y-%m-%d").date()
+        current_date = datetime.now().date()
+        
+        # 如果文檔日期晚於當前日期，不處理但記錄日誌
+        if doc_date > current_date:
+            logger.info(f"文檔 {doc_path} 的日期 {doc_info['date']} 晚於當前日期，跳過處理")
+            return False
+        
         # 生成 SEO URL
         doc_info["url"] = word_processor.generate_seo_url(doc_info)
         
@@ -104,7 +113,7 @@ def process_document(doc_path, word_processor, html_generator, content_manager, 
         # 更新文章 JSON 資料
         json_generator.update_blog_post(doc_info)
         
-        # 移動處理過的文件
+        # 只有成功生成HTML後才移動文件
         processed_path = word_processor.move_processed_file(doc_path)
         
         logger.info(f"成功處理文檔: {doc_path}")

@@ -143,51 +143,43 @@ jobs:
             echo "警告: 找不到要刪除的文件 ${{ github.event.client_payload.file_path }}"
           fi
 
-      # 7. 處理Word文檔 - 使用 main.py 統一處理
+      # 7. 檢查Word文檔
+      - name: 檢查Word文檔
+        id: check_word_docs
+        run: |
+          # 找出word-docs目錄中的.docx文件，但排除processed子目錄
+          DOCX_COUNT=$(find word-docs -maxdepth 1 -type f -name "*.docx" | wc -l)
+          
+          if [ "$DOCX_COUNT" -gt 0 ]; then
+            echo "has_word_docs=true" >> $GITHUB_OUTPUT
+            echo "發現 $DOCX_COUNT 個Word文檔，將進行處理"
+            # 列出找到的文件
+            find word-docs -maxdepth 1 -type f -name "*.docx"
+          else
+            echo "has_word_docs=false" >> $GITHUB_OUTPUT
+            echo "未發現需要處理的Word文檔"
+          fi
+
+      # 8. 處理Word文檔
       - name: 處理Word文檔
         id: process_word
-        if: github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article') || (github.event_name == 'push' && contains(github.event.head_commit.modified, 'word-docs/'))
+        if: github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article') || steps.check_word_docs.outputs.has_word_docs == 'true'
         run: |
           echo "===== 處理Word文檔步驟開始 ====="
-          echo "觸發條件："
-          echo "process_word input: ${{ github.event.inputs.process_word }}"
-          echo "event_name: ${{ github.event_name }}"
-          echo "event.action: ${{ github.event.action }}"
           
-          echo "檢查工作環境："
-          echo "當前工作目錄："
-          pwd
-          echo "根目錄內容："
-          ls -la
-          
-          echo "檢查word-docs目錄："
           if [ -d "word-docs" ]; then
-            echo "✅ word-docs目錄存在"
-            echo "word-docs目錄內容："
-            ls -la word-docs/
-            
             # 檢查是否有Word文檔
-            echo "搜尋.docx文件..."
-            find word-docs -maxdepth 1 -type f -name "*.docx" -ls
-            
             DOCX_FILES=$(find word-docs -maxdepth 1 -type f -name "*.docx")
             DOCX_COUNT=$(echo "$DOCX_FILES" | grep -c "\.docx$" || echo "0")
-            echo "找到 $DOCX_COUNT 個 .docx 文件"
             
             if [ "$DOCX_COUNT" -gt 0 ]; then
-              echo "列出所有待處理的Word文檔："
-              echo "$DOCX_FILES"
+              echo "開始處理$DOCX_COUNT個Word文檔..."
               
-              echo "開始處理word-docs目錄中的Word文檔..."
-              echo "執行命令: python main.py --word-dir word-docs --output-dir blog --assets-dir assets --debug"
-              
-              # 使用main.py執行完整的文檔處理流程
+              # 執行python處理腳本
               python main.py --word-dir word-docs --output-dir blog --assets-dir assets --debug
               
               # 檢查處理結果
               PROCESS_RESULT=$?
-              echo "處理結果返回碼: $PROCESS_RESULT"
-              
               if [ $PROCESS_RESULT -eq 0 ]; then
                 echo "✅ Word文檔處理成功"
                 echo "html_changed=true" >> $GITHUB_OUTPUT
@@ -200,27 +192,19 @@ jobs:
               else
                 echo "❌ Word文檔處理失敗，請檢查日誌"
                 echo "html_changed=false" >> $GITHUB_OUTPUT
-                # 不退出工作流程，以便其他步驟可以繼續執行
-                # exit 1
               fi
             else
-              echo "⚠️ word-docs 目錄中沒有 .docx 文件，跳過處理"
+              echo "⚠️ 沒有要處理的Word文檔"
               echo "html_changed=false" >> $GITHUB_OUTPUT
             fi
           else
-            echo "❌ word-docs 目錄不存在，跳過處理"
+            echo "❌ word-docs目錄不存在"
             echo "html_changed=false" >> $GITHUB_OUTPUT
           fi
           
-          # 檢查logs目錄是否有日誌文件
-          if [ -d "logs" ]; then
-            echo "logs目錄內容："
-            ls -la logs/
-          fi
-          
           echo "===== 處理Word文檔步驟結束 ====="
-
-      # 8. 上傳並提交轉換後的 HTML
+      
+      # 9. 上傳並提交轉換後的 HTML
       - name: 上傳並提交轉換後的 HTML
         if: steps.process_word.outputs.html_changed == 'true'
         run: |
@@ -244,7 +228,7 @@ jobs:
             git reset HEAD blog/*.html
           fi
           
-      # 9. 檢查是否有文章被刪除
+      # 10. 檢查是否有文章被刪除
       - name: 檢查是否有文章被刪除
         id: check_deleted
         if: github.event.inputs.handle_deletion == 'true' || github.event_name == 'delete'
@@ -261,7 +245,7 @@ jobs:
             echo "html_deleted=false" >> $GITHUB_OUTPUT
           fi
       
-      # 10. 更新博客JSON文件 - 使用獨立腳本
+      # 11. 更新博客JSON文件 - 使用獨立腳本
       - name: 更新博客JSON文件
         id: update_blog_json
         if: steps.process_word.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles' || github.event.action == 'publish-scheduled'))
@@ -279,7 +263,7 @@ jobs:
           git commit -m "更新博客JSON文件" || echo "無需提交JSON文件"
           git push || echo "無需推送"
 
-      # 11. 更新影片數據
+      # 12. 更新影片數據
       - name: 更新影片數據
         id: update_videos
         if: github.event.inputs.update_videos == 'true' || (github.event_name == 'push' && contains(github.event.head_commit.modified, 'video/videos.txt')) || (github.event_name == 'repository_dispatch' && github.event.action == 'update-video')
@@ -303,7 +287,7 @@ jobs:
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
 
-      # 12. 清理已處理的Word文檔
+      # 13. 清理已處理的Word文檔
       - name: 清理已處理的Word文檔
         if: steps.process_word.outputs.html_changed == 'true'
         run: |
@@ -329,7 +313,7 @@ jobs:
             echo "沒有需要處理的 Word 文檔"
           fi
       
-      # 13. 更新網站 Sitemap
+      # 14. 更新網站 Sitemap
       - name: 更新網站 Sitemap
         id: update_sitemap
         if: github.event.inputs.update_sitemap == 'true' || github.event_name == 'schedule' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-sitemap') || steps.process_word.outputs.html_changed == 'true' || steps.update_blog_json.outputs.blog_json_updated == 'true'
@@ -348,7 +332,7 @@ jobs:
             echo "警告: sitemap.xml 文件不存在或生成失敗"
           fi
           
-      # 14. 更新翻譯字典 (如果有變更)
+      # 15. 更新翻譯字典 (如果有變更)
       - name: 更新翻譯字典
         if: github.event.inputs.update_dictionary == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'update-dictionary')
         run: |
@@ -362,7 +346,7 @@ jobs:
           git commit -m "更新翻譯字典" || echo "無需提交翻譯字典"
           git push || echo "無需推送翻譯字典"
       
-      # 15. 結果通知
+      # 16. 結果通知
       - name: 工作流執行結果通知
         run: |
           echo "工作流程完成執行"
