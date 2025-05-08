@@ -1,0 +1,358 @@
+Word 文檔到部落格 HTML 自動轉換系統 - 需求與方案統整
+系統主要功能
+此系統將 Word 文檔自動轉換為 HTML 部落格文章，並建立相關的 JSON 索引和管理機制，最終通過 GitHub Actions 自動化整個處理流程。
+1. Word 文檔處理
+
+掃描文件：掃描 word-docs 目錄下的 Word 文檔
+內容提取：提取文檔的內容、結構和格式
+檔名解析：分析檔名獲取日期、系列信息和標題
+處理後歸檔：將處理過的文件移至 word-docs/processed 目錄
+
+2. 翻譯與 SEO 處理
+
+字典管理：維護中英文翻譯字典，無上限擴充
+翻譯優先級：優先使用 DeepL API，自動切換備用免費服務
+URL 生成：基於翻譯結果創建 SEO 友善的 URL
+避免重複：每次翻譯前檢查字典避免重複翻譯
+
+3. HTML 生成
+
+模板應用：從 JSON 讀取模板資訊（Navbar、Footer）
+META 標籤：生成完整的 META 標籤，包含分類和標籤信息
+結構化資料：生成 JSON-LD 結構化資料
+圖片選擇：從 assets/images/blog 隨機選擇相關圖片
+內容優化：清理 HTML，移除空段落等
+
+4. 文章管理
+
+自動分類：根據內容將文章分類
+標籤生成：為每篇文章生成最多 3 個標籤
+系列文章：維護系列文章的關聯和一致標籤
+排程發布：只發布日期不晚於當天的文章
+
+5. JSON 資料管理
+
+文章 JSON：生成包含所有文章詳細信息的 JSON
+索引 JSON：生成分類、標籤和系列文章索引
+中央資料：將所有配置和資料集中存儲在 JSON 文件中
+
+6. 自動化流程
+
+定時執行：通過 GitHub Actions 每天自動執行
+日期控制：按檔名日期控制文章發布時間
+錯誤處理：提供完善的錯誤處理和恢復機制
+
+系統架構
+檔案結構
+project/
+├── scripts/
+│   ├── word_processor.py      # Word 處理及翻譯
+│   ├── html_generator.py      # HTML 生成
+│   ├── content_manager.py     # 文章分類和標籤
+│   ├── json_generator.py      # JSON 資料生成
+│   ├── utils.py               # 共用工具函數
+│   └── error_handler.py       # 錯誤處理與恢復
+├── assets/
+│   ├── data/                  # JSON 資料
+│   │   ├── blog-posts.json    # 文章資料
+│   │   ├── categories.json    # 分類資料
+│   │   ├── tags.json          # 標籤資料
+│   │   ├── templates.json     # HTML 模板資料
+│   │   ├── translation_dict.json # 翻譯字典
+│   │   └── processed_files.json # 已處理文件記錄
+│   ├── css/                   # 現有 CSS
+│   ├── js/                    # 現有 JS
+│   └── images/
+│       └── blog/              # 文章圖片
+├── blog/                      # 生成的 HTML 文章
+├── word-docs/                 # 原始 Word 文件
+│   └── processed/             # 已處理的 Word 文件
+├── main.py                    # 主程序入口
+├── requirements.txt           # 依賴套件
+├── README.md                  # 使用文檔
+└── .github/
+    └── workflows/
+        └── publish_posts.yml  # GitHub Action 配置
+模組功能
+
+word_processor.py
+
+掃描並讀取 Word 文檔
+提取內容和結構
+翻譯關鍵詞
+生成 SEO URL
+處理後移動文件
+
+
+html_generator.py
+
+載入 HTML 模板
+生成 META 和結構化資料
+選擇隨機圖片
+生成完整 HTML
+清理 HTML 內容
+
+
+content_manager.py
+
+載入分類和標籤資料
+分析文章內容進行分類
+生成專業標籤
+確保系列文章標籤一致
+
+
+json_generator.py
+
+生成文章 JSON 結構
+更新 blog-posts.json
+管理系列文章關係
+過濾按日期發布文章
+
+
+utils.py
+
+提供通用工具函數
+檔案和目錄操作
+JSON 讀寫功能
+日誌記錄
+
+
+error_handler.py
+
+記錄處理狀態
+處理和報告錯誤
+提供恢復機制
+
+
+main.py
+
+解析命令行參數
+協調整體流程
+管理日期控制
+執行文件處理
+
+
+
+資料結構
+
+文章 JSON 格式
+
+json{
+  "title": "文章中文標題",
+  "summary": "文章中文摘要...",
+  "date": "2025-01-05",
+  "url": "/blog/2025-01-05-life-insurance-tax-planning-ep1.html",
+  "image": "/assets/images/blog/tax/image1.jpg",
+  "category": "tax",
+  "category_name": "稅務相關",
+  "tags": [
+    {"name": "人壽保險", "slug": "life-insurance"},
+    {"name": "稅務規劃", "slug": "tax-planning"},
+    {"name": "財富管理", "slug": "wealth-management"}
+  ],
+  "is_series": true,
+  "series_name": "人壽保險稅務規劃",
+  "series_slug": "life-insurance-tax-planning",
+  "episode": 1,
+  "original_filename": "2025-01-05-人壽保險稅務規劃EP1-人壽保險稅務規劃入門指南.docx"
+}
+
+部落格索引 JSON 格式
+
+json{
+  "posts": [
+    // 所有文章資料
+  ],
+  "series": {
+    // 以系列名稱為鍵的系列文章集合
+  },
+  "series_list": [
+    // 系列文章摘要列表
+  ],
+  "pagination": {
+    "total_posts": 50,
+    "total_pages": 10,
+    "items_per_page": 5
+  },
+  "categories": [
+    {"name": "稅務相關", "slug": "tax", "count": 20}
+  ],
+  "tags": [
+    {"name": "人壽保險", "slug": "life-insurance", "count": 15}
+  ]
+}
+核心功能說明
+檔名格式與解析
+系統支援兩種檔名格式：
+
+系列文章：YYYY-MM-DD-系列名稱EP數字-文章標題.docx
+例如：2025-01-05-人壽保險稅務規劃EP1-人壽保險稅務規劃入門指南.docx
+非系列文章：YYYY-MM-DD-文章標題.docx
+例如：2025-02-03-台灣創業指南：會計師的角色與價值.docx
+
+翻譯機制
+
+翻譯優先級：
+
+首先檢查翻譯字典
+如果未找到，優先使用 DeepL API
+若 DeepL 不可用，切換至其他免費翻譯服務
+
+
+字典管理：
+
+持續擴充翻譯字典
+無上限記錄所有翻譯過的詞彙
+每次翻譯前檢查現有字典，避免重複翻譯
+
+
+
+HTML 生成
+
+META 標籤：
+
+包含標題、描述、關鍵詞
+加入分類和標籤信息
+添加區域標記（台灣）
+
+
+結構化資料：
+
+使用 JSON-LD 格式
+包含文章基本信息
+對系列文章添加專門標記
+
+
+模板應用：
+
+從 JSON 讀取 Navbar 和 Footer
+引用現有 CSS 和 JS
+保持網站風格一致性
+
+
+
+文章管理
+
+分類系統：
+
+基於內容自動分類
+使用預定義的分類詞庫
+支援多層級分類
+
+
+標籤系統：
+
+每篇文章最多 3 個標籤
+系列文章保持相同標籤
+基於專業詞彙自動生成
+
+
+系列文章處理：
+
+識別並組織系列文章
+確保按集數正確排序
+維護系列內文章的關聯
+
+
+
+發布控制
+
+日期過濾：
+
+只發布檔名日期不晚於當天的文章
+未來日期的文章會等到適當日期自動發布
+
+
+定時執行：
+
+通過 GitHub Actions 每天自動執行
+檢查並發布當天日期的文章
+
+
+手動控制：
+
+支援指定發布日期參數
+可強制處理所有文章（忽略日期限制）
+
+
+
+處理流程
+
+初始化：
+
+載入配置和字典
+設置日誌系統
+檢查目錄結構
+
+
+掃描文件：
+
+掃描 word-docs 目錄
+解析檔名獲取日期和信息
+過濾符合發布條件的文件
+
+
+處理文件：
+
+提取 Word 內容
+生成標題和摘要
+翻譯關鍵詞生成 URL
+分類和生成標籤
+
+
+生成 HTML：
+
+載入模板
+生成 META 和結構化資料
+選擇隨機圖片
+生成完整 HTML
+保存 HTML 文件
+
+
+更新 JSON：
+
+過濾可發布文章
+更新主要 JSON 文件
+更新最新文章列表
+處理系列文章關係
+
+
+後置處理：
+
+移動處理過的文件
+記錄處理狀態
+提交 GitHub 變更
+
+
+
+特殊需求和說明
+
+日期處理：
+
+使用檔名中的日期作為文章發布日期
+只發布當天及之前日期的文章
+未來日期的文章會等待至適當日期自動發布
+
+
+圖片選擇：
+
+從 assets/images/blog 目錄隨機選擇圖片
+優先選擇與文章分類相關的圖片
+
+
+META 標籤：
+
+詳細完整的 META 及結構化資料
+包含分類和標籤信息
+
+
+資料存儲：
+
+所有配置和資料集中存儲在 JSON 文件中
+盡可能精簡代碼，避免硬編碼配置
+
+
+錯誤處理：
+
+完善的錯誤處理和報告
+支援從中斷點恢復處理

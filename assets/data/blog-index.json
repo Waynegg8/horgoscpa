@@ -1,0 +1,35 @@
+{
+  "posts": [],
+  "series": {},
+  "series_list": [],
+  "pagination": {
+    "total_posts": 0,
+    "total_pages": 0,
+    "items_per_page": 10
+  },
+  "categories": [
+    {"name": "稅務相關", "slug": "tax", "count": 0},
+    {"name": "會計資訊", "slug": "accounting", "count": 0},
+    {"name": "企業經營", "slug": "business", "count": 0},
+    {"name": "財務規劃", "slug": "finance", "count": 0},
+    {"name": "保險資訊", "slug": "insurance", "count": 0},
+    {"name": "法律法規", "slug": "legal", "count": 0}
+  ],
+  "tags": [
+    {"name": "稅務規劃", "slug": "tax-planning", "count": 0},
+    {"name": "所得稅", "slug": "income-tax", "count": 0},
+    {"name": "工商登記", "slug": "business-registration", "count": 0},
+    {"name": "財務報表", "slug": "financial-statements", "count": 0},
+    {"name": "財富管理", "slug": "wealth-management", "count": 0},
+    {"name": "人壽保險", "slug": "life-insurance", "count": 0},
+    {"name": "創業資訊", "slug": "startup", "count": 0},
+    {"name": "企業稅務", "slug": "corporate-tax", "count": 0},
+    {"name": "個人稅務", "slug": "personal-tax", "count": 0},
+    {"name": "財務規劃", "slug": "financial-planning", "count": 0},
+    {"name": "投資理財", "slug": "investment", "count": 0},
+    {"name": "退休規劃", "slug": "retirement", "count": 0},
+    {"name": "會計實務", "slug": "accounting-practice", "count": 0},
+    {"name": "房地產稅務", "slug": "property-tax", "count": 0}
+  ],
+  "generated_time": null
+}
