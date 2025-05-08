@@ -5,6 +5,8 @@
       "date": "2025-03-15",
       "description": "本影片詳細介紹台灣報稅流程，包含申報時間、必要文件與常見問題解析。",
       "embedUrl": "https://www.youtube.com/embed/FvRgth0j_P0",
+      "videoId": "FvRgth0j_P0",
+      "thumbnailUrl": "https://img.youtube.com/vi/FvRgth0j_P0/default.jpg",
       "category": "tax",
       "tags": [
         "台灣",
@@ -19,6 +21,8 @@
       "date": "2025-03-10",
       "description": "針對新創企業的會計實務指南，說明創業初期常見的會計問題與解決方案，包含成本控制、現金流管理與稅務規劃。",
       "embedUrl": "https://www.youtube.com/embed/MJlb2OEBuvA",
+      "videoId": "MJlb2OEBuvA",
+      "thumbnailUrl": "https://img.youtube.com/vi/MJlb2OEBuvA/default.jpg",
       "category": "business",
       "tags": [
         "會計",
