@@ -90,7 +90,7 @@ def process_document(doc_path, word_processor, html_generator, content_manager, 
         doc_date = datetime.strptime(doc_info["date"], "%Y-%m-%d").date()
         current_date = datetime.now().date()
         
-        # 如果文檔日期晚於當前日期，不處理但記錄日誌
+        # 如果文檔日期晚於當前日期，不處理並跳過
         if doc_date > current_date:
             logger.info(f"文檔 {doc_path} 的日期 {doc_info['date']} 晚於當前日期，跳過處理")
             return False
