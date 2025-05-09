@@ -287,7 +287,7 @@ jobs:
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
 
-      # 13. 清理已處理的Word文檔 - 使用簡單的Python代碼
+      # 13. 清理已處理的Word文檔 - 使用純Shell腳本
       - name: 清理已處理的Word文檔
         if: steps.process_word.outputs.html_changed == 'true'
         run: |
@@ -299,45 +299,53 @@ jobs:
           # 檢查是否有文件需要移動
           if [ -d "word-docs" ] && [ -f "assets/data/processed_files.json" ]; then
             echo "開始移動已處理的Word文檔..."
-            python -c "
-import json, os, shutil, datetime
-# 讀取已處理文件列表
-with open('assets/data/processed_files.json', 'r') as f:
-    processed_data = json.load(f)
-processed_files = processed_data.get('files', [])
-# 確保目標目錄存在
-os.makedirs('word-docs/processed', exist_ok=True)
-# 計數
-moved_count = 0
-# 只移動已處理的文件
-for file_path in processed_files:
-    if os.path.exists(file_path) and os.path.dirname(file_path) == 'word-docs':
-        file_name = os.path.basename(file_path)
-        target_path = os.path.join('word-docs/processed', file_name)
-        if os.path.exists(target_path):
-            timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-            filename, ext = os.path.splitext(file_name)
-            target_path = os.path.join('word-docs/processed', f'{filename}_{timestamp}{ext}')
-        try:
-            shutil.move(file_path, target_path)
-            print(f'已移動: {file_path} -> {target_path}')
-            moved_count += 1
-        except Exception as e:
-            print(f'移動失敗: {file_path} - {e}')
-print(f'總共移動了 {moved_count} 個已處理的文件')
-"
+            
+            # 創建一個用於存儲已處理文件路徑的臨時文件
+            TEMP_FILES_LIST=$(mktemp)
+            
+            # 從processed_files.json提取文件路徑
+            grep -o '"word-docs/[^"]*"' assets/data/processed_files.json | tr -d '"' > "$TEMP_FILES_LIST"
+            
+            # 確保processed目錄存在
+            mkdir -p word-docs/processed
+            
+            # 計數器
+            MOVED_COUNT=0
+            
+            # 逐行讀取文件路徑
+            while IFS= read -r FILE_PATH; do
+              if [ -f "$FILE_PATH" ]; then
+                # 獲取文件名
+                FILE_NAME=$(basename "$FILE_PATH")
+                
+                # 生成目標路徑
+                TARGET_PATH="word-docs/processed/$FILE_NAME"
+                
+                # 如果目標文件已存在，添加時間戳
+                if [ -f "$TARGET_PATH" ]; then
+                  TIMESTAMP=$(date +%Y%m%d%H%M%S)
+                  FILE_BASE="${FILE_NAME%.*}"
+                  FILE_EXT="${FILE_NAME##*.}"
+                  TARGET_PATH="word-docs/processed/${FILE_BASE}_${TIMESTAMP}.${FILE_EXT}"
+                fi
+                
+                # 移動文件
+                mv "$FILE_PATH" "$TARGET_PATH"
+                echo "已移動: $FILE_PATH -> $TARGET_PATH"
+                MOVED_COUNT=$((MOVED_COUNT + 1))
+              fi
+            done < "$TEMP_FILES_LIST"
+            
+            rm -f "$TEMP_FILES_LIST"
+            echo "總共移動了 $MOVED_COUNT 個已處理的文件"
+            
+            # 提交更改
+            git add word-docs/ assets/data/processed_files.json
+            git commit -m "移動已處理的Word文檔" || echo "無需提交"
+            git push || echo "無需推送"
           else
             echo "沒有需要處理的 Word 文檔或找不到已處理文件記錄"
           fi
-
-      # 提交已處理的 Word 文檔更改
-      - name: 提交已處理的 Word 文檔更改
-        if: steps.process_word.outputs.html_changed == 'true'
-        run: |
-          # 提交更改
-          git add word-docs/ assets/data/processed_files.json
-          git commit -m "移動已處理的Word文檔" || echo "無需提交"
-          git push || echo "無需推送"
       
       # 14. 更新網站 Sitemap
       - name: 更新網站 Sitemap
