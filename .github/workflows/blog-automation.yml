@@ -304,8 +304,8 @@ jobs:
           if [ -d "word-docs" ] && [ -f "assets/data/processed_files.json" ]; then
             echo "開始處理已處理文件的移動..."
             
-            # 使用Python腳本讀取processed_files.json並只移動已處理的文件
-            python -c '
+            # 創建臨時Python腳本
+            cat > move_processed_files.py << 'EOF'
 import json
 import os
 import shutil
@@ -340,8 +340,11 @@ for file_path in processed_files:
         except Exception as e:
             print(f"移動失敗: {file_path} - {e}")
 
-print(f"總共移動了 {moved_count} a個已處理的文件")
-            '
+print(f"總共移動了 {moved_count} 個已處理的文件")
+EOF
+            
+            # 執行Python腳本
+            python move_processed_files.py
             
             # 提交更改
             git add word-docs/ assets/data/processed_files.json
