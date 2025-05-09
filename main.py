@@ -20,8 +20,9 @@ if scripts_dir not in sys.path:
 from loguru import logger
 
 from word_processor import WordProcessor
-from html_generator import HtmlGenerator  # 假設有此模組
-from utils import setup_logging, read_json, write_json
+from html_generator import HtmlGenerator  # 正確導入
+from content_manager import ContentManager  # 導入內容管理器
+from utils import setup_logging, ensure_directories
 
 
 def parse_args():
@@ -42,8 +43,11 @@ def parse_args():
     parser.add_argument('--assets-dir', type=str, default='assets',
                         help='資源文件目錄 (默認: assets)')
     
-    parser.add_argument('--process-all', action='store_true',
-                        help='處理所有文件，忽略日期限制')
+    parser.add_argument('--process-all', action='store_true', default=True,
+                        help='處理所有文件，忽略日期限制 (默認: 啟用)')
+    
+    parser.add_argument('--only-before-today', action='store_true',
+                        help='僅處理當天日期之前的文件')
     
     parser.add_argument('--process-date', type=str,
                         help='處理特定日期的文件，格式: YYYY-MM-DD')
@@ -70,9 +74,13 @@ def process_word_documents(args):
     Returns:
         tuple: (成功處理的文檔數, 失敗的文檔數)
     """
-    # 確保輸出目錄存在
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    # 確保目錄結構存在
+    ensure_directories({
+        'output': args.output_dir,
+        'assets': args.assets_dir,
+        'data': f"{args.assets_dir}/data",
+        'images': f"{args.assets_dir}/images/blog"
+    })
     
     # 初始化Word處理器
     word_processor = WordProcessor(
@@ -80,8 +88,13 @@ def process_word_documents(args):
         translation_dict_file=f"{args.assets_dir}/data/translation_dict.json"
     )
     
-    # 初始化HTML生成器
-    html_generator = HTMLGenerator(
+    # 初始化內容管理器
+    content_manager = ContentManager(
+        data_dir=f"{args.assets_dir}/data"
+    )
+    
+    # 初始化HTML生成器 - 使用正確的類
+    html_generator = HtmlGenerator(
         output_dir=args.output_dir,
         assets_dir=args.assets_dir
     )
@@ -95,6 +108,11 @@ def process_word_documents(args):
         except ValueError:
             logger.error(f"無效的日期格式: {args.process_date}, 應為YYYY-MM-DD")
             return 0, 0
+    
+    # 如果指定只處理當天之前的文件，禁用處理所有文件的選項
+    if args.only_before_today:
+        args.process_all = False
+        logger.info("已啟用僅處理當天日期之前的文件模式")
     
     # 掃描Word文檔目錄
     documents = word_processor.scan_documents(
@@ -125,15 +143,28 @@ def process_word_documents(args):
                 fail_count += 1
                 continue
             
-            # 步驟2: 生成HTML
-            html_content, success = html_generator.generate_html(doc_info)
+            # 步驟2: 處理文章信息 - 生成分類和標籤
+            doc_info, category, tags = content_manager.process_article(doc_info)
+            
+            # 提升日誌層級，包含關鍵信息
+            logger.info(f"文章「{doc_info['title']}」處理成功，分類：{category['name']}，標籤數：{len(tags)}")
+            
+            # 步驟3: 生成HTML
+            html, output_file = html_generator.generate_html(doc_info, category, tags)
+            success = output_file is not None
+            
+            # 更新內容管理器的博客文章資料庫
+            if success:
+                # 將包含 URL 的 doc_info 添加到博客資料庫
+                content_manager.update_blog_post(doc_info)
+                logger.info(f"文章已加入博客資料庫：{doc_info['url']}")
             
             if not success:
                 logger.error(f"HTML生成失敗: {doc_path}")
                 fail_count += 1
                 continue
             
-            # 步驟3: 完成處理 - 如果成功則移動文件
+            # 步驟4: 完成處理 - 如果成功則移動文件
             doc_info = word_processor.finalize_document_processing(doc_info, success=success)
             
             if doc_info.get("processed", False):
@@ -162,9 +193,10 @@ def main():
     
     # 設置日誌級別
     log_level = "DEBUG" if args.debug else "INFO"
-    setup_logging(level=log_level)
+    setup_logging(log_level)  # 使用 utils.py 中的版本
     
     logger.info("開始運行Word文檔處理工具")
+    logger.info(f"處理模式: {'處理所有文件' if args.process_all else '僅處理當天日期之前的文件'}")
     logger.debug(f"命令行參數: {args}")
     
     # 處理Word文檔
@@ -180,106 +212,6 @@ def main():
     else:
         logger.warning(f"處理完成，但有{fail_count}個文檔失敗")
         sys.exit(1)
-
-
-# 假設的HTML生成器類，您需要替換為實際的實現
-class HTMLGenerator:
-    """HTML生成器類，負責將Word文檔內容轉換為HTML格式"""
-    
-    def __init__(self, output_dir, assets_dir):
-        """
-        初始化HTML生成器
-        
-        Args:
-            output_dir: HTML輸出目錄
-            assets_dir: 資源文件目錄
-        """
-        self.output_dir = Path(output_dir)
-        self.assets_dir = Path(assets_dir)
-        
-        # 確保輸出目錄存在
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-    
-    def generate_html(self, doc_info):
-        """
-        生成HTML內容
-        
-        Args:
-            doc_info: 文檔信息字典
-            
-        Returns:
-            tuple: (生成的HTML內容, 是否成功)
-        """
-        try:
-            # 這裡應該是實際的HTML生成邏輯
-            # 使用doc_info中的內容生成HTML
-            
-            # 生成HTML文件名
-            url_path = doc_info["url"]
-            html_filename = f"{url_path}.html"
-            html_path = self.output_dir / html_filename
-            
-            # 生成HTML內容
-            # 這裡是示例，您需要替換為實際的實現
-            title = doc_info["title"]
-            content = "\n".join(doc_info["content"])
-            
-            html_content = f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>{title}</title>
-</head>
-<body>
-    <h1>{title}</h1>
-    <div>{content}</div>
-</body>
-</html>
-"""
-            
-            # 寫入HTML文件
-            html_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(html_path, "w", encoding="utf-8") as f:
-                f.write(html_content)
-            
-            logger.info(f"生成HTML文件: {html_path}")
-            
-            return html_content, True
-            
-        except Exception as e:
-            logger.exception(f"生成HTML時發生錯誤: {str(e)}")
-            return None, False
-
-
-# 自定義的日誌設置函數，您需要替換為實際的實現
-def setup_logging(level="INFO"):
-    """
-    設置日誌配置
-    
-    Args:
-        level: 日誌級別
-    """
-    # 配置loguru
-    logger.remove()  # 移除默認處理器
-    
-    # 添加控制台處理器
-    logger.add(
-        sys.stderr,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-        level=level
-    )
-    
-    # 添加文件處理器
-    logs_dir = Path("logs")
-    logs_dir.mkdir(parents=True, exist_ok=True)
-    
-    logger.add(
-        logs_dir / "word_processor_{time:YYYY-MM-DD}.log",
-        rotation="1 day",
-        retention="30 days",
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
-        level=level
-    )
 
 
 if __name__ == "__main__":
