@@ -21,7 +21,35 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(data => {
       console.log('成功加載文章數據:', data.posts.length, '篇文章');
-      findAdjacentArticles(data, seriesInfo);
+      // 在加載 blog-posts.json 後再加載 series.json
+      return fetch('/assets/data/series.json?nocache=' + Date.now())
+        .then(response => {
+          if (!response.ok) {
+            console.warn('無法獲取系列數據，將只使用文章數據');
+            return { blogData: data, seriesData: null };
+          }
+          return response.json()
+            .then(seriesData => {
+              console.log('獲取到系列數據，系列數量:', Object.keys(seriesData.series || {}).length);
+              return { blogData: data, seriesData: seriesData };
+            });
+        })
+        .catch(error => {
+          console.warn('獲取系列數據時出錯:', error);
+          return { blogData: data, seriesData: null };
+        });
+    })
+    .then(result => {
+      const { blogData, seriesData } = result;
+      
+      // 合併數據
+      let combinedData = blogData;
+      if (seriesData) {
+        combinedData.series = seriesData.series || {};
+        combinedData.series_list = seriesData.series_list || [];
+      }
+      
+      findAdjacentArticles(combinedData, seriesInfo);
     })
     .catch(error => {
       console.error('加載文章數據時出錯:', error);
@@ -111,21 +139,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const allPosts = data.posts || [];
     
-    // 檢查是否存在系列數據
-    if (!data.series) {
-      console.log('沒有發現系列數據');
-      data.series = {};
+    // 確保數據完整性
+    if (!allPosts || allPosts.length === 0) {
+      console.error('沒有文章數據');
+      setDefaultState();
+      return;
     }
     
     if (seriesInfo.isSeries) {
       console.log('處理系列文章導航');
-      handleSeriesArticles(allPosts, data.series, seriesInfo);
+      handleSeriesArticles(data, seriesInfo);
     } else {
       console.log('處理非系列文章導航');
-      handleNonSeriesArticles(allPosts, data.series, seriesInfo);
+      handleNonSeriesArticles(allPosts, data, seriesInfo);
     }
     
-    function handleSeriesArticles(posts, seriesData, info) {
+    function handleSeriesArticles(data, info) {
       const seriesName = info.seriesName;
       const currentEpisode = info.episode;
       
@@ -135,45 +164,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      let seriesPosts = [];
+      console.log(`尋找系列 "${seriesName}" 文章，當前集數: ${currentEpisode}`);
       
-      console.log(`尋找系列 "${seriesName}" 的文章`);
-      
-      // 從seriesData中獲取系列文章
-      if (seriesData && seriesData[seriesName]) {
-        if (seriesData[seriesName].posts && Array.isArray(seriesData[seriesName].posts)) {
-          seriesPosts = seriesData[seriesName].posts;
-          console.log(`從series對象中找到 ${seriesPosts.length} 篇 "${seriesName}" 系列文章`);
-        } else if (Array.isArray(seriesData[seriesName])) {
-          seriesPosts = seriesData[seriesName];
-          console.log(`從series陣列中找到 ${seriesPosts.length} 篇 "${seriesName}" 系列文章`);
-        } else {
-          console.log(`系列 "${seriesName}" 的格式不支援，嘗試其他方法`);
-        }
-      } else {
-        console.log(`在系列數據中找不到 "${seriesName}"，嘗試從所有文章中篩選`);
-      }
-      
-      // 如果從seriesData中找不到，嘗試從所有文章中過濾
-      if (seriesPosts.length === 0) {
-        seriesPosts = posts.filter(post => 
-          post && post.is_series && 
-          (post.series_name === seriesName || post.series_slug === seriesName)
-        );
-        console.log(`從所有文章中過濾出 ${seriesPosts.length} 篇 "${seriesName}" 系列文章`);
-      }
-      
-      // 如果仍然沒有找到，嘗試在series_list中尋找
-      if (seriesPosts.length === 0 && data.series_list) {
-        const seriesItem = data.series_list.find(series => 
-          series && (series.name === seriesName || series.slug === seriesName)
-        );
-        
-        if (seriesItem && seriesItem.posts && Array.isArray(seriesItem.posts)) {
-          seriesPosts = seriesItem.posts;
-          console.log(`從series_list中找到 ${seriesPosts.length} 篇 "${seriesName}" 系列文章`);
-        }
-      }
+      // 從多個來源獲取系列文章
+      let seriesPosts = findSeriesPosts(data, seriesName);
       
       if (seriesPosts.length === 0) {
         console.error(`找不到系列 "${seriesName}" 的文章`);
@@ -181,11 +175,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
+      console.log(`找到系列 "${seriesName}" 的 ${seriesPosts.length} 篇文章`);
+      
       // 對系列文章按集數排序
       try {
         seriesPosts.sort((a, b) => {
-          const epA = a && a.episode ? parseInt(a.episode) : 0;
-          const epB = b && b.episode ? parseInt(b.episode) : 0;
+          const epA = parseInt(a.episode || 0);
+          const epB = parseInt(b.episode || 0);
           return epA - epB;
         });
         console.log(`系列文章已按集數排序`);
@@ -219,21 +215,21 @@ document.addEventListener('DOMContentLoaded', function() {
           
           // 檢查是否是第一集
           if (currentEpisode === 1 || currentEpisode === Math.min(...seriesPosts.map(post => parseInt(post.episode || 0)))) {
-            console.log(`當前是系列第一集，尋找其他系列的第一集作為上一篇`);
-            const otherSeriesFirstEpisodes = getOtherSeriesFirstEpisodes(seriesData, seriesName);
-            console.log(`找到 ${otherSeriesFirstEpisodes.length} 個其他系列的第一集`);
+            console.log(`當前是系列第一集，尋找其他系列的最後一集作為上一篇`);
+            const otherSeriesLastEpisodes = getOtherSeriesLastEpisodes(data, seriesName);
+            console.log(`找到 ${otherSeriesLastEpisodes.length} 個其他系列的最後一集`);
             
-            if (otherSeriesFirstEpisodes.length > 0) {
-              prevPost = getRandomItem(otherSeriesFirstEpisodes);
+            if (otherSeriesLastEpisodes.length > 0) {
+              prevPost = getRandomItem(otherSeriesLastEpisodes);
               if (prevPost) {
                 prevPost.url = processUrl(prevPost.url);
-                prevMessage = '離開此系列，前往其他系列的第一篇';
-                console.log(`系列第一集，推薦其他系列的第一篇: ${prevPost.title}`);
+                prevMessage = '離開此系列，前往其他系列的最後一篇';
+                console.log(`系列第一集，推薦其他系列的最後一篇: ${prevPost.title}`);
               } else {
-                console.log(`未能選取其他系列的第一集`);
+                console.log(`未能選取其他系列的最後一集`);
               }
             } else {
-              console.log(`沒有找到其他系列的第一集`);
+              console.log(`沒有找到其他系列的最後一集`);
             }
           }
         }
@@ -254,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // 檢查是否是最後一集
           if (currentEpisode === maxEpisode || currentEpisode === Math.max(...seriesPosts.map(post => parseInt(post.episode || 0)))) {
             console.log(`當前是系列最後一集，尋找其他系列的第一集作為下一篇`);
-            const otherSeriesFirstEpisodes = getOtherSeriesFirstEpisodes(seriesData, seriesName);
+            const otherSeriesFirstEpisodes = getOtherSeriesFirstEpisodes(data, seriesName);
             console.log(`找到 ${otherSeriesFirstEpisodes.length} 個其他系列的第一集`);
             
             if (otherSeriesFirstEpisodes.length > 0) {
@@ -280,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
       updateNavigation(prevPost, nextPost, prevMessage, nextMessage);
     }
     
-    function handleNonSeriesArticles(posts, seriesData, info) {
+    function handleNonSeriesArticles(posts, data, info) {
       const sortedPosts = [...posts].sort((a, b) => new Date(b.date) - new Date(a.date));
       let currentIndex = -1;
       
@@ -324,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
           console.log(`當前文章已經是最舊的，嘗試推薦系列文章`);
           
-          const seriesFirstEpisodes = getAllSeriesFirstEpisodes(seriesData);
+          const seriesFirstEpisodes = getAllSeriesFirstEpisodes(data);
           if (seriesFirstEpisodes.length > 0) {
             nextPost = getRandomItem(seriesFirstEpisodes);
             nextPost.url = processUrl(nextPost.url);
@@ -371,122 +367,381 @@ document.addEventListener('DOMContentLoaded', function() {
       updateNavigation(prevPost, nextPost, prevMessage, nextMessage);
     }
     
-    function getOtherSeriesFirstEpisodes(seriesData, excludedSeriesName) {
+    // 改進的函數：從多個數據來源尋找系列文章
+    function findSeriesPosts(data, seriesName) {
+      let seriesPosts = [];
+      
+      // 方法1: 從 series 物件中尋找
+      if (data.series && data.series[seriesName]) {
+        console.log(`嘗試從 series 物件中獲取系列 "${seriesName}" 的文章`);
+        const seriesData = data.series[seriesName];
+        
+        if (seriesData) {
+          if (Array.isArray(seriesData)) {
+            seriesPosts = seriesData;
+            console.log(`從 series 物件中獲取到 ${seriesPosts.length} 篇文章（陣列格式）`);
+          } else if (seriesData.posts && Array.isArray(seriesData.posts)) {
+            seriesPosts = seriesData.posts;
+            console.log(`從 series 物件中獲取到 ${seriesPosts.length} 篇文章（物件格式）`);
+          }
+        }
+      }
+      
+      // 方法2: 從 series_list 陣列中尋找
+      if (seriesPosts.length === 0 && data.series_list && Array.isArray(data.series_list)) {
+        console.log(`嘗試從 series_list 陣列中獲取系列 "${seriesName}" 的文章`);
+        
+        const seriesItem = data.series_list.find(series => 
+          series && (series.name === seriesName || series.slug === seriesName)
+        );
+        
+        if (seriesItem && seriesItem.posts && Array.isArray(seriesItem.posts)) {
+          seriesPosts = seriesItem.posts;
+          console.log(`從 series_list 中獲取到 ${seriesPosts.length} 篇文章`);
+        }
+      }
+      
+      // 方法3: 從所有文章中過濾
+      if (seriesPosts.length === 0 && data.posts && Array.isArray(data.posts)) {
+        console.log(`嘗試從所有文章中過濾系列 "${seriesName}" 的文章`);
+        
+        seriesPosts = data.posts.filter(post => 
+          post && post.is_series && 
+          (post.series_name === seriesName || post.series_slug === seriesName)
+        );
+        
+        console.log(`從所有文章中過濾出 ${seriesPosts.length} 篇文章`);
+      }
+      
+      return seriesPosts;
+    }
+    
+    // 改進的函數：獲取其他系列的第一篇文章
+    function getOtherSeriesFirstEpisodes(data, excludedSeriesName) {
+      console.log(`開始獲取除 "${excludedSeriesName}" 外的其他系列第一篇文章`);
       let firstEpisodes = [];
       
-      if (!seriesData) {
-        console.log('seriesData為空，無法獲取其他系列');
-        return firstEpisodes;
-      }
-      
-      console.log(`開始尋找除 "${excludedSeriesName}" 外的其他系列`);
-      
-      // 計算檢查了多少系列
-      let checkedSeries = 0;
-      let validSeries = 0;
-      
-      for (const seriesName in seriesData) {
-        checkedSeries++;
-        
-        if (seriesName === excludedSeriesName) {
-          continue;
-        }
-        
-        console.log(`檢查系列: ${seriesName}`);
-        validSeries++;
-        
-        let seriesPosts = [];
-        
-        // 處理不同的數據結構
-        if (seriesData[seriesName]) {
-          if (Array.isArray(seriesData[seriesName])) {
-            seriesPosts = [...seriesData[seriesName]];
-            console.log(`從陣列中取得 ${seriesPosts.length} 篇文章`);
-          } else if (typeof seriesData[seriesName] === 'object') {
-            if (seriesData[seriesName].posts && Array.isArray(seriesData[seriesName].posts)) {
-              seriesPosts = [...seriesData[seriesName].posts];
-              console.log(`從物件的posts屬性中取得 ${seriesPosts.length} 篇文章`);
-            } else {
-              console.log(`系列 ${seriesName} 的數據格式不支援，無posts屬性`);
+      try {
+        // 方法1: 從 series 物件中獲取
+        if (data.series && typeof data.series === 'object') {
+          console.log(`從 series 物件中查找其他系列，共 ${Object.keys(data.series).length} 個系列`);
+          
+          for (const seriesName in data.series) {
+            if (seriesName === excludedSeriesName) continue;
+            
+            console.log(`處理系列: ${seriesName}`);
+            const seriesData = data.series[seriesName];
+            
+            if (!seriesData) continue;
+            
+            let seriesPosts = [];
+            
+            if (Array.isArray(seriesData)) {
+              seriesPosts = seriesData;
+            } else if (seriesData.posts && Array.isArray(seriesData.posts)) {
+              seriesPosts = seriesData.posts;
+            }
+            
+            if (seriesPosts.length > 0) {
+              // 排序並取第一集
+              seriesPosts.sort((a, b) => {
+                const epA = parseInt(a.episode || 0);
+                const epB = parseInt(b.episode || 0);
+                return epA - epB;
+              });
               
-              // 嘗試從所有文章中過濾
-              if (allPosts && allPosts.length > 0) {
-                const filteredPosts = allPosts.filter(post => 
-                  post && post.is_series && 
-                  (post.series_name === seriesName || post.series_slug === seriesName)
-                );
-                
-                if (filteredPosts.length > 0) {
-                  seriesPosts = filteredPosts;
-                  console.log(`從所有文章中過濾出 ${seriesPosts.length} 篇 "${seriesName}" 系列文章`);
-                }
+              const firstEpisode = seriesPosts[0];
+              if (firstEpisode) {
+                console.log(`添加系列 ${seriesName} 的第一集: ${firstEpisode.title || '無標題'}`);
+                firstEpisodes.push(firstEpisode);
               }
             }
-          } else {
-            console.log(`系列 ${seriesName} 的數據格式不支援`);
-          }
-        } else {
-          console.log(`系列 ${seriesName} 無效或為空`);
-        }
-        
-        // 排序並取第一集
-        if (seriesPosts.length > 0) {
-          try {
-            seriesPosts.sort((a, b) => {
-              const epA = a && a.episode ? parseInt(a.episode) : 0;
-              const epB = b && b.episode ? parseInt(b.episode) : 0;
-              return epA - epB;
-            });
-            const firstEpisode = seriesPosts[0];
-            if (firstEpisode) {
-              console.log(`添加系列 ${seriesName} 的第一集: ${firstEpisode.title}`);
-              firstEpisodes.push(firstEpisode);
-            }
-          } catch (error) {
-            console.error(`排序系列 ${seriesName} 文章時出錯:`, error);
           }
         }
-      }
-      
-      // 如果seriesData中沒有找到足夠的系列，嘗試使用series_list
-      if (firstEpisodes.length === 0 && data.series_list && Array.isArray(data.series_list)) {
-        console.log(`從seriesData中沒有找到其他系列，嘗試使用series_list`);
         
-        for (const series of data.series_list) {
-          if (!series || !series.name || series.name === excludedSeriesName) {
-            continue;
-          }
+        // 方法2: 從 series_list 陣列中獲取
+        if (data.series_list && Array.isArray(data.series_list)) {
+          console.log(`從 series_list 陣列中查找其他系列，共 ${data.series_list.length} 個系列`);
           
-          if (series.posts && Array.isArray(series.posts) && series.posts.length > 0) {
-            try {
+          for (const series of data.series_list) {
+            if (!series || !series.name || series.name === excludedSeriesName) continue;
+            
+            console.log(`處理系列列表中的: ${series.name}`);
+            
+            if (series.posts && Array.isArray(series.posts) && series.posts.length > 0) {
+              // 排序並取第一集
               const sortedPosts = [...series.posts].sort((a, b) => {
-                const epA = a && a.episode ? parseInt(a.episode) : 0;
-                const epB = b && b.episode ? parseInt(b.episode) : 0;
+                const epA = parseInt(a.episode || 0);
+                const epB = parseInt(b.episode || 0);
                 return epA - epB;
               });
               
               if (sortedPosts.length > 0) {
-                console.log(`從series_list添加系列 ${series.name} 的第一集: ${sortedPosts[0].title}`);
+                console.log(`添加系列 ${series.name} 的第一集: ${sortedPosts[0].title || '無標題'}`);
                 firstEpisodes.push(sortedPosts[0]);
               }
-            } catch (error) {
-              console.error(`處理series_list中的系列 ${series.name} 時出錯:`, error);
             }
           }
         }
+        
+        // 方法3: 從所有文章中獲取
+        if (firstEpisodes.length === 0 && data.posts && Array.isArray(data.posts)) {
+          console.log(`嘗試從所有文章中獲取其他系列的第一集`);
+          
+          // 獲取所有系列名稱
+          const seriesNames = new Set();
+          data.posts.forEach(post => {
+            if (post && post.is_series && post.series_name && post.series_name !== excludedSeriesName) {
+              seriesNames.add(post.series_name);
+            }
+          });
+          
+          console.log(`找到 ${seriesNames.size} 個其他系列名稱`);
+          
+          // 對每個系列，找出第一集
+          seriesNames.forEach(seriesName => {
+            const seriesPosts = data.posts.filter(post => 
+              post && post.is_series && post.series_name === seriesName
+            );
+            
+            if (seriesPosts.length > 0) {
+              // 排序並取第一集
+              seriesPosts.sort((a, b) => {
+                const epA = parseInt(a.episode || 0);
+                const epB = parseInt(b.episode || 0);
+                return epA - epB;
+              });
+              
+              console.log(`添加系列 ${seriesName} 的第一集: ${seriesPosts[0].title || '無標題'}`);
+              firstEpisodes.push(seriesPosts[0]);
+            }
+          });
+        }
+        
+        console.log(`共找到 ${firstEpisodes.length} 個其他系列的第一集`);
+        return firstEpisodes;
+      } catch (error) {
+        console.error('獲取其他系列第一篇文章時出錯:', error);
+        return [];
       }
+    }
+    
+    // 新增函數：獲取其他系列的最後一篇文章
+    function getOtherSeriesLastEpisodes(data, excludedSeriesName) {
+      console.log(`開始獲取除 "${excludedSeriesName}" 外的其他系列最後一篇文章`);
+      let lastEpisodes = [];
       
-      console.log(`總共檢查了 ${checkedSeries} 個系列，找到 ${validSeries} 個有效系列，獲取 ${firstEpisodes.length} 個其他系列的第一集`);
-      return firstEpisodes;
+      try {
+        // 方法1: 從 series 物件中獲取
+        if (data.series && typeof data.series === 'object') {
+          console.log(`從 series 物件中查找其他系列，共 ${Object.keys(data.series).length} 個系列`);
+          
+          for (const seriesName in data.series) {
+            if (seriesName === excludedSeriesName) continue;
+            
+            console.log(`處理系列: ${seriesName}`);
+            const seriesData = data.series[seriesName];
+            
+            if (!seriesData) continue;
+            
+            let seriesPosts = [];
+            
+            if (Array.isArray(seriesData)) {
+              seriesPosts = seriesData;
+            } else if (seriesData.posts && Array.isArray(seriesData.posts)) {
+              seriesPosts = seriesData.posts;
+            }
+            
+            if (seriesPosts.length > 0) {
+              // 排序並取最後一集
+              seriesPosts.sort((a, b) => {
+                const epA = parseInt(a.episode || 0);
+                const epB = parseInt(b.episode || 0);
+                return epB - epA; // 降序排列
+              });
+              
+              const lastEpisode = seriesPosts[0];
+              if (lastEpisode) {
+                console.log(`添加系列 ${seriesName} 的最後一集: ${lastEpisode.title || '無標題'}`);
+                lastEpisodes.push(lastEpisode);
+              }
+            }
+          }
+        }
+        
+        // 方法2: 從 series_list 陣列中獲取
+        if (data.series_list && Array.isArray(data.series_list)) {
+          console.log(`從 series_list 陣列中查找其他系列，共 ${data.series_list.length} 個系列`);
+          
+          for (const series of data.series_list) {
+            if (!series || !series.name || series.name === excludedSeriesName) continue;
+            
+            console.log(`處理系列列表中的: ${series.name}`);
+            
+            if (series.posts && Array.isArray(series.posts) && series.posts.length > 0) {
+              // 排序並取最後一集
+              const sortedPosts = [...series.posts].sort((a, b) => {
+                const epA = parseInt(a.episode || 0);
+                const epB = parseInt(b.episode || 0);
+                return epB - epA; // 降序排列
+              });
+              
+              if (sortedPosts.length > 0) {
+                console.log(`添加系列 ${series.name} 的最後一集: ${sortedPosts[0].title || '無標題'}`);
+                lastEpisodes.push(sortedPosts[0]);
+              }
+            }
+          }
+        }
+        
+        // 方法3: 從所有文章中獲取
+        if (lastEpisodes.length === 0 && data.posts && Array.isArray(data.posts)) {
+          console.log(`嘗試從所有文章中獲取其他系列的最後一集`);
+          
+          // 獲取所有系列名稱
+          const seriesNames = new Set();
+          data.posts.forEach(post => {
+            if (post && post.is_series && post.series_name && post.series_name !== excludedSeriesName) {
+              seriesNames.add(post.series_name);
+            }
+          });
+          
+          console.log(`找到 ${seriesNames.size} 個其他系列名稱`);
+          
+          // 對每個系列，找出最後一集
+          seriesNames.forEach(seriesName => {
+            const seriesPosts = data.posts.filter(post => 
+              post && post.is_series && post.series_name === seriesName
+            );
+            
+            if (seriesPosts.length > 0) {
+              // 排序並取最後一集
+              seriesPosts.sort((a, b) => {
+                const epA = parseInt(a.episode || 0);
+                const epB = parseInt(b.episode || 0);
+                return epB - epA; // 降序排列
+              });
+              
+              console.log(`添加系列 ${seriesName} 的最後一集: ${seriesPosts[0].title || '無標題'}`);
+              lastEpisodes.push(seriesPosts[0]);
+            }
+          });
+        }
+        
+        console.log(`共找到 ${lastEpisodes.length} 個其他系列的最後一集`);
+        return lastEpisodes;
+      } catch (error) {
+        console.error('獲取其他系列最後一篇文章時出錯:', error);
+        return [];
+      }
     }
 
-    function getAllSeriesFirstEpisodes(seriesData) {
+    // 改進的函數：獲取所有系列的第一篇文章
+    function getAllSeriesFirstEpisodes(data) {
+      console.log('開始獲取所有系列的第一篇文章');
       let firstEpisodes = [];
       
-      // 使用改進版的getOtherSeriesFirstEpisodes，但不排除任何系列
-      firstEpisodes = getOtherSeriesFirstEpisodes(seriesData, "");
-      
-      return firstEpisodes;
+      try {
+        // 方法1: 從 series 物件中獲取
+        if (data.series && typeof data.series === 'object') {
+          console.log(`從 series 物件中查找系列，共 ${Object.keys(data.series).length} 個系列`);
+          
+          for (const seriesName in data.series) {
+            console.log(`處理系列: ${seriesName}`);
+            const seriesData = data.series[seriesName];
+            
+            if (!seriesData) continue;
+            
+            let seriesPosts = [];
+            
+            if (Array.isArray(seriesData)) {
+              seriesPosts = seriesData;
+            } else if (seriesData.posts && Array.isArray(seriesData.posts)) {
+              seriesPosts = seriesData.posts;
+            }
+            
+            if (seriesPosts.length > 0) {
+              // 排序並取第一集
+              seriesPosts.sort((a, b) => {
+                const epA = parseInt(a.episode || 0);
+                const epB = parseInt(b.episode || 0);
+                return epA - epB;
+              });
+              
+              const firstEpisode = seriesPosts[0];
+              if (firstEpisode) {
+                console.log(`添加系列 ${seriesName} 的第一集: ${firstEpisode.title || '無標題'}`);
+                firstEpisodes.push(firstEpisode);
+              }
+            }
+          }
+        }
+        
+        // 方法2: 從 series_list 陣列中獲取
+        if (firstEpisodes.length === 0 && data.series_list && Array.isArray(data.series_list)) {
+          console.log(`從 series_list 陣列中查找系列，共 ${data.series_list.length} 個系列`);
+          
+          for (const series of data.series_list) {
+            if (!series || !series.name) continue;
+            
+            console.log(`處理系列列表中的: ${series.name}`);
+            
+            if (series.posts && Array.isArray(series.posts) && series.posts.length > 0) {
+              // 排序並取第一集
+              const sortedPosts = [...series.posts].sort((a, b) => {
+                const epA = parseInt(a.episode || 0);
+                const epB = parseInt(b.episode || 0);
+                return epA - epB;
+              });
+              
+              if (sortedPosts.length > 0) {
+                console.log(`添加系列 ${series.name} 的第一集: ${sortedPosts[0].title || '無標題'}`);
+                firstEpisodes.push(sortedPosts[0]);
+              }
+            }
+          }
+        }
+        
+        // 方法3: 從所有文章中獲取
+        if (firstEpisodes.length === 0 && data.posts && Array.isArray(data.posts)) {
+          console.log(`嘗試從所有文章中獲取系列的第一集`);
+          
+          // 獲取所有系列名稱
+          const seriesNames = new Set();
+          data.posts.forEach(post => {
+            if (post && post.is_series && post.series_name) {
+              seriesNames.add(post.series_name);
+            }
+          });
+          
+          console.log(`找到 ${seriesNames.size} 個系列名稱`);
+          
+          // 對每個系列，找出第一集
+          seriesNames.forEach(seriesName => {
+            const seriesPosts = data.posts.filter(post => 
+              post && post.is_series && post.series_name === seriesName
+            );
+            
+            if (seriesPosts.length > 0) {
+              // 排序並取第一集
+              seriesPosts.sort((a, b) => {
+                const epA = parseInt(a.episode || 0);
+                const epB = parseInt(b.episode || 0);
+                return epA - epB;
+              });
+              
+              console.log(`添加系列 ${seriesName} 的第一集: ${seriesPosts[0].title || '無標題'}`);
+              firstEpisodes.push(seriesPosts[0]);
+            }
+          });
+        }
+        
+        console.log(`共找到 ${firstEpisodes.length} 個系列的第一集`);
+        return firstEpisodes;
+      } catch (error) {
+        console.error('獲取所有系列第一篇文章時出錯:', error);
+        return [];
+      }
     }
   }
   
