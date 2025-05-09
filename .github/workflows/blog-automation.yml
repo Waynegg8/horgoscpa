@@ -287,137 +287,57 @@ jobs:
             echo "videos_updated=false" >> $GITHUB_OUTPUT
           fi
 
-      # 13. 清理已處理的Word文檔
+      # 13. 清理已處理的Word文檔 - 使用簡單的Python代碼
       - name: 清理已處理的Word文檔
         if: steps.process_word.outputs.html_changed == 'true'
         run: |
           # 確保工作區乾淨
           git stash -u || true
-          
-          # 先拉取最新變更以避免衝突
           git pull origin ${GITHUB_REF##*/} || true
-          
-          # 應用stash (如果需要)
           git stash pop || true
-          
-          # 創建移動文件的Python腳本
-          cat > .github/scripts/move_processed_files.py << 'EOF'
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""
-移動已處理的Word文檔
-從processed_files.json讀取已處理文件列表，並將它們移動到processed目錄
-"""
-
-import json
-import os
-import sys
-import shutil
-import datetime
-from pathlib import Path
-
-def move_processed_files(processed_files_json="assets/data/processed_files.json", 
-                        word_dir="word-docs",
-                        processed_dir="word-docs/processed"):
-    """
-    移動已處理的文件到processed目錄
-    
-    Args:
-        processed_files_json: 已處理文件記錄的JSON文件路徑
-        word_dir: Word文檔目錄
-        processed_dir: 處理後的文件目錄
-    
-    Returns:
-        int: 移動的文件數量
-    """
-    print(f"開始處理已處理文件的移動...")
-    
-    # 檢查文件是否存在
-    if not os.path.exists(processed_files_json):
-        print(f"錯誤: 找不到已處理文件記錄 {processed_files_json}")
-        return 0
-    
-    # 讀取已處理文件列表
-    try:
-        with open(processed_files_json, 'r', encoding='utf-8') as f:
-            processed_data = json.load(f)
-        
-        processed_files = processed_data.get("files", [])
-        print(f"找到 {len(processed_files)} 個已處理文件記錄")
-    except Exception as e:
-        print(f"讀取已處理文件記錄時出錯: {e}")
-        return 0
-    
-    # 確保目標目錄存在
-    os.makedirs(processed_dir, exist_ok=True)
-    
-    # 移動文件計數
-    moved_count = 0
-    
-    # 只移動已處理的文件
-    for file_path in processed_files:
-        # 檢查是否為word_dir目錄中的文件
-        if os.path.exists(file_path) and os.path.dirname(file_path) == word_dir:
-            file_name = os.path.basename(file_path)
-            target_path = os.path.join(processed_dir, file_name)
-            
-            # 如果目標路徑已存在，添加時間戳
-            if os.path.exists(target_path):
-                timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-                filename, ext = os.path.splitext(file_name)
-                target_path = os.path.join(processed_dir, f"{filename}_{timestamp}{ext}")
-            
-            try:
-                # 移動文件
-                shutil.move(file_path, target_path)
-                print(f"已移動: {file_path} -> {target_path}")
-                moved_count += 1
-            except Exception as e:
-                print(f"移動失敗: {file_path} - {e}")
-    
-    print(f"總共移動了 {moved_count} 個已處理的文件")
-    return moved_count
-
-def main():
-    """主函數"""
-    # 獲取命令行參數
-    processed_files_json = "assets/data/processed_files.json"
-    word_dir = "word-docs"
-    processed_dir = "word-docs/processed"
-    
-    # 檢查命令行參數
-    if len(sys.argv) > 1:
-        processed_files_json = sys.argv[1]
-    if len(sys.argv) > 2:
-        word_dir = sys.argv[2]
-    if len(sys.argv) > 3:
-        processed_dir = sys.argv[3]
-    
-    # 執行移動操作
-    move_processed_files(processed_files_json, word_dir, processed_dir)
-
-if __name__ == "__main__":
-    main()
-EOF
-          
-          # 設置執行權限
-          chmod +x .github/scripts/move_processed_files.py
           
           # 檢查是否有文件需要移動
           if [ -d "word-docs" ] && [ -f "assets/data/processed_files.json" ]; then
             echo "開始移動已處理的Word文檔..."
-            
-            # 執行Python腳本
-            python .github/scripts/move_processed_files.py
-            
-            # 提交更改
-            git add word-docs/ assets/data/processed_files.json .github/scripts/move_processed_files.py
-            git commit -m "移動已處理的Word文檔" || echo "無需提交"
-            git push || echo "無需推送"
+            python -c "
+import json, os, shutil, datetime
+# 讀取已處理文件列表
+with open('assets/data/processed_files.json', 'r') as f:
+    processed_data = json.load(f)
+processed_files = processed_data.get('files', [])
+# 確保目標目錄存在
+os.makedirs('word-docs/processed', exist_ok=True)
+# 計數
+moved_count = 0
+# 只移動已處理的文件
+for file_path in processed_files:
+    if os.path.exists(file_path) and os.path.dirname(file_path) == 'word-docs':
+        file_name = os.path.basename(file_path)
+        target_path = os.path.join('word-docs/processed', file_name)
+        if os.path.exists(target_path):
+            timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+            filename, ext = os.path.splitext(file_name)
+            target_path = os.path.join('word-docs/processed', f'{filename}_{timestamp}{ext}')
+        try:
+            shutil.move(file_path, target_path)
+            print(f'已移動: {file_path} -> {target_path}')
+            moved_count += 1
+        except Exception as e:
+            print(f'移動失敗: {file_path} - {e}')
+print(f'總共移動了 {moved_count} 個已處理的文件')
+"
           else
             echo "沒有需要處理的 Word 文檔或找不到已處理文件記錄"
           fi
+
+      # 提交已處理的 Word 文檔更改
+      - name: 提交已處理的 Word 文檔更改
+        if: steps.process_word.outputs.html_changed == 'true'
+        run: |
+          # 提交更改
+          git add word-docs/ assets/data/processed_files.json
+          git commit -m "移動已處理的Word文檔" || echo "無需提交"
+          git push || echo "無需推送"
       
       # 14. 更新網站 Sitemap
       - name: 更新網站 Sitemap
