@@ -213,23 +213,23 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
           console.log(`沒有找到上一集 (EP${currentEpisode - 1})`);
           
-          // 檢查是否是第一集
+          // 修正：檢查是否是第一集，如果是則顯示其他系列的第一篇
           if (currentEpisode === 1 || currentEpisode === Math.min(...seriesPosts.map(post => parseInt(post.episode || 0)))) {
-            console.log(`當前是系列第一集，尋找其他系列的最後一集作為上一篇`);
-            const otherSeriesLastEpisodes = getOtherSeriesLastEpisodes(data, seriesName);
-            console.log(`找到 ${otherSeriesLastEpisodes.length} 個其他系列的最後一集`);
+            console.log(`當前是系列第一集，尋找其他系列的第一篇作為上一篇`);
+            const otherSeriesFirstEpisodes = getOtherSeriesFirstEpisodes(data, seriesName);
+            console.log(`找到 ${otherSeriesFirstEpisodes.length} 個其他系列的第一集`);
             
-            if (otherSeriesLastEpisodes.length > 0) {
-              prevPost = getRandomItem(otherSeriesLastEpisodes);
+            if (otherSeriesFirstEpisodes.length > 0) {
+              prevPost = getRandomItem(otherSeriesFirstEpisodes);
               if (prevPost) {
                 prevPost.url = processUrl(prevPost.url);
-                prevMessage = '離開此系列，前往其他系列的最後一篇';
-                console.log(`系列第一集，推薦其他系列的最後一篇: ${prevPost.title}`);
+                prevMessage = '離開此系列，前往其他系列的第一篇';
+                console.log(`系列第一集，推薦其他系列的第一篇: ${prevPost.title}`);
               } else {
-                console.log(`未能選取其他系列的最後一集`);
+                console.log(`未能選取其他系列的第一篇`);
               }
             } else {
-              console.log(`沒有找到其他系列的最後一集`);
+              console.log(`沒有找到其他系列的第一篇`);
             }
           }
         }
@@ -522,116 +522,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return firstEpisodes;
       } catch (error) {
         console.error('獲取其他系列第一篇文章時出錯:', error);
-        return [];
-      }
-    }
-    
-    // 新增函數：獲取其他系列的最後一篇文章
-    function getOtherSeriesLastEpisodes(data, excludedSeriesName) {
-      console.log(`開始獲取除 "${excludedSeriesName}" 外的其他系列最後一篇文章`);
-      let lastEpisodes = [];
-      
-      try {
-        // 方法1: 從 series 物件中獲取
-        if (data.series && typeof data.series === 'object') {
-          console.log(`從 series 物件中查找其他系列，共 ${Object.keys(data.series).length} 個系列`);
-          
-          for (const seriesName in data.series) {
-            if (seriesName === excludedSeriesName) continue;
-            
-            console.log(`處理系列: ${seriesName}`);
-            const seriesData = data.series[seriesName];
-            
-            if (!seriesData) continue;
-            
-            let seriesPosts = [];
-            
-            if (Array.isArray(seriesData)) {
-              seriesPosts = seriesData;
-            } else if (seriesData.posts && Array.isArray(seriesData.posts)) {
-              seriesPosts = seriesData.posts;
-            }
-            
-            if (seriesPosts.length > 0) {
-              // 排序並取最後一集
-              seriesPosts.sort((a, b) => {
-                const epA = parseInt(a.episode || 0);
-                const epB = parseInt(b.episode || 0);
-                return epB - epA; // 降序排列
-              });
-              
-              const lastEpisode = seriesPosts[0];
-              if (lastEpisode) {
-                console.log(`添加系列 ${seriesName} 的最後一集: ${lastEpisode.title || '無標題'}`);
-                lastEpisodes.push(lastEpisode);
-              }
-            }
-          }
-        }
-        
-        // 方法2: 從 series_list 陣列中獲取
-        if (data.series_list && Array.isArray(data.series_list)) {
-          console.log(`從 series_list 陣列中查找其他系列，共 ${data.series_list.length} 個系列`);
-          
-          for (const series of data.series_list) {
-            if (!series || !series.name || series.name === excludedSeriesName) continue;
-            
-            console.log(`處理系列列表中的: ${series.name}`);
-            
-            if (series.posts && Array.isArray(series.posts) && series.posts.length > 0) {
-              // 排序並取最後一集
-              const sortedPosts = [...series.posts].sort((a, b) => {
-                const epA = parseInt(a.episode || 0);
-                const epB = parseInt(b.episode || 0);
-                return epB - epA; // 降序排列
-              });
-              
-              if (sortedPosts.length > 0) {
-                console.log(`添加系列 ${series.name} 的最後一集: ${sortedPosts[0].title || '無標題'}`);
-                lastEpisodes.push(sortedPosts[0]);
-              }
-            }
-          }
-        }
-        
-        // 方法3: 從所有文章中獲取
-        if (lastEpisodes.length === 0 && data.posts && Array.isArray(data.posts)) {
-          console.log(`嘗試從所有文章中獲取其他系列的最後一集`);
-          
-          // 獲取所有系列名稱
-          const seriesNames = new Set();
-          data.posts.forEach(post => {
-            if (post && post.is_series && post.series_name && post.series_name !== excludedSeriesName) {
-              seriesNames.add(post.series_name);
-            }
-          });
-          
-          console.log(`找到 ${seriesNames.size} 個其他系列名稱`);
-          
-          // 對每個系列，找出最後一集
-          seriesNames.forEach(seriesName => {
-            const seriesPosts = data.posts.filter(post => 
-              post && post.is_series && post.series_name === seriesName
-            );
-            
-            if (seriesPosts.length > 0) {
-              // 排序並取最後一集
-              seriesPosts.sort((a, b) => {
-                const epA = parseInt(a.episode || 0);
-                const epB = parseInt(b.episode || 0);
-                return epB - epA; // 降序排列
-              });
-              
-              console.log(`添加系列 ${seriesName} 的最後一集: ${seriesPosts[0].title || '無標題'}`);
-              lastEpisodes.push(seriesPosts[0]);
-            }
-          });
-        }
-        
-        console.log(`共找到 ${lastEpisodes.length} 個其他系列的最後一集`);
-        return lastEpisodes;
-      } catch (error) {
-        console.error('獲取其他系列最後一篇文章時出錯:', error);
         return [];
       }
     }
