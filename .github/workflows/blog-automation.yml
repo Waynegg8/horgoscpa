@@ -301,16 +301,54 @@ jobs:
           git stash pop || true
           
           # 檢查是否有文件需要移動
-          if [ -d "word-docs" ] && [ "$(find word-docs -maxdepth 1 -type f -name "*.docx" | wc -l)" -gt 0 ]; then
-            # 移動已處理的文件到processed目錄
-            find word-docs -maxdepth 1 -type f -name "*.docx" -exec mv {} word-docs/processed/ \;
+          if [ -d "word-docs" ] && [ -f "assets/data/processed_files.json" ]; then
+            echo "開始處理已處理文件的移動..."
+            
+            # 使用Python腳本讀取processed_files.json並只移動已處理的文件
+            python -c '
+import json
+import os
+import shutil
+
+# 讀取已處理文件列表
+with open("assets/data/processed_files.json", "r") as f:
+    processed_data = json.load(f)
+
+processed_files = processed_data.get("files", [])
+moved_count = 0
+
+# 確保目標目錄存在
+os.makedirs("word-docs/processed", exist_ok=True)
+
+# 只移動已處理的文件
+for file_path in processed_files:
+    if os.path.exists(file_path) and os.path.dirname(file_path) == "word-docs":
+        file_name = os.path.basename(file_path)
+        target_path = os.path.join("word-docs/processed", file_name)
+        
+        # 如果目標路徑已存在，添加時間戳
+        if os.path.exists(target_path):
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            filename, ext = os.path.splitext(file_name)
+            target_path = os.path.join("word-docs/processed", f"{filename}_{timestamp}{ext}")
+        
+        try:
+            shutil.move(file_path, target_path)
+            print(f"已移動: {file_path} -> {target_path}")
+            moved_count += 1
+        except Exception as e:
+            print(f"移動失敗: {file_path} - {e}")
+
+print(f"總共移動了 {moved_count} a個已處理的文件")
+            '
             
             # 提交更改
-            git add word-docs/
+            git add word-docs/ assets/data/processed_files.json
             git commit -m "移動已處理的Word文檔" || echo "無需提交"
             git push || echo "無需推送"
           else
-            echo "沒有需要處理的 Word 文檔"
+            echo "沒有需要處理的 Word 文檔或找不到已處理文件記錄"
           fi
       
       # 14. 更新網站 Sitemap

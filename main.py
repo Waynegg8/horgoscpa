@@ -43,8 +43,8 @@ def parse_args():
     parser.add_argument('--assets-dir', type=str, default='assets',
                         help='資源文件目錄 (默認: assets)')
     
-    parser.add_argument('--process-all', action='store_true', default=True,
-                        help='處理所有文件，忽略日期限制 (默認: 啟用)')
+    parser.add_argument('--process-all', action='store_true',
+                        help='處理所有文件，忽略日期限制')
     
     parser.add_argument('--only-before-today', action='store_true',
                         help='僅處理當天日期之前的文件')
@@ -108,11 +108,6 @@ def process_word_documents(args):
         except ValueError:
             logger.error(f"無效的日期格式: {args.process_date}, 應為YYYY-MM-DD")
             return 0, 0
-    
-    # 如果指定只處理當天之前的文件，禁用處理所有文件的選項
-    if args.only_before_today:
-        args.process_all = False
-        logger.info("已啟用僅處理當天日期之前的文件模式")
     
     # 掃描Word文檔目錄
     documents = word_processor.scan_documents(
@@ -196,7 +191,7 @@ def main():
     setup_logging(log_level)  # 使用 utils.py 中的版本
     
     logger.info("開始運行Word文檔處理工具")
-    logger.info(f"處理模式: {'處理所有文件' if args.process_all else '僅處理當天日期之前的文件'}")
+    logger.info(f"處理模式: {'處理所有文件' if args.process_all else '處理當前日期及更早的文件'}")
     logger.debug(f"命令行參數: {args}")
     
     # 處理Word文檔

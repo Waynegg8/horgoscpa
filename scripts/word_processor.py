@@ -63,9 +63,6 @@ class WordProcessor:
         """
         if current_date is None:
             current_date = datetime.now().date()
-            
-        # 設置只處理前一天及更早的文件
-        yesterday = current_date - timedelta(days=1)
         
         documents = []
         skipped_current_future = []
@@ -74,7 +71,7 @@ class WordProcessor:
         word_extensions = [".docx", ".doc"]
         
         # 掃描目錄
-        logger.info(f"開始掃描文件夾: {self.word_dir}, 當前日期: {current_date}, 只處理{yesterday}及更早的文件")
+        logger.info(f"開始掃描文件夾: {self.word_dir}, 當前日期: {current_date}, 處理模式: {'所有文件' if process_all else '特定日期限制'}")
         
         for file in self.word_dir.glob("*"):
             # 跳過目錄
@@ -114,16 +111,16 @@ class WordProcessor:
                     logger.info(f"處理特定日期文件: {file.name}, 日期: {file_date}")
                     documents.append(file)
             else:
-                # 修改：只處理昨天及更早的文件（排除當天及未來日期的文件）
-                if file_date <= yesterday:
-                    logger.info(f"處理更早日期的文件: {file.name}, 日期: {file_date}, 當前日期: {current_date}")
+                # 修改: 處理當天及更早的文件（只排除未來日期的文件）
+                if file_date <= current_date:
+                    logger.info(f"處理當天或更早日期的文件: {file.name}, 日期: {file_date}, 當前日期: {current_date}")
                     documents.append(file)
                 else:
-                    logger.warning(f"跳過當天或未來日期的文件: {file.name}, 日期: {file_date}, 當前日期: {current_date}")
+                    logger.warning(f"跳過未來日期的文件: {file.name}, 日期: {file_date}, 當前日期: {current_date}")
                     skipped_current_future.append(str(file))
         
         if skipped_current_future:
-            logger.warning(f"跳過了{len(skipped_current_future)}個當天或未來日期的文件: {', '.join(skipped_current_future)}")
+            logger.warning(f"跳過了{len(skipped_current_future)}個未來日期的文件: {', '.join(skipped_current_future)}")
         
         logger.info(f"掃描完成，找到{len(documents)}個需要處理的文件")
         return documents
