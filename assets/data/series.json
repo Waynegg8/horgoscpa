@@ -31,9 +31,37 @@
               "slug": "tax-planning"
             }
           ]
+        },
+        {
+          "title": "繼承與贈與取得房地的課稅處理",
+          "url": "/blog/2025-05-13-unified-premises-ep2-tax-treatment-of",
+          "date": "2025-05-13",
+          "summary": "前言 在房地產交易中，繼承與贈與取得的房地在稅務處理上存在許多特殊規定。尤其是在房地合一稅制度下，如何正確認定取得日期、計算取得成本，以及判斷適用舊制或新制課稅，常讓納稅義務人感到困惑。本文將詳細解析繼承與贈與取得房地的課稅處理原則，並透過實際案例說明，幫助納稅義務人全面了解相關稅務規定。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-13-房地合一稅2.0EP2-繼承與贈與取得房地的課稅處理.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
         }
       ],
-      "count": 1,
+      "count": 2,
       "latest": {
         "title": "房地合一稅2.0制度概覽",
         "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
@@ -62,7 +90,7 @@
           }
         ]
       },
-      "first_post_date": "2025-05-06",
+      "first_post_date": "2025-05-13",
       "latest_post_date": "2025-05-06"
     },
     "營所稅擴大書面審核解析": {
@@ -1832,9 +1860,37 @@
               "slug": "tax-planning"
             }
           ]
+        },
+        {
+          "title": "繼承與贈與取得房地的課稅處理",
+          "url": "/blog/2025-05-13-unified-premises-ep2-tax-treatment-of",
+          "date": "2025-05-13",
+          "summary": "前言 在房地產交易中，繼承與贈與取得的房地在稅務處理上存在許多特殊規定。尤其是在房地合一稅制度下，如何正確認定取得日期、計算取得成本，以及判斷適用舊制或新制課稅，常讓納稅義務人感到困惑。本文將詳細解析繼承與贈與取得房地的課稅處理原則，並透過實際案例說明，幫助納稅義務人全面了解相關稅務規定。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-13-房地合一稅2.0EP2-繼承與贈與取得房地的課稅處理.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
         }
       ],
-      "count": 1,
+      "count": 2,
       "latest": {
         "title": "房地合一稅2.0制度概覽",
         "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
@@ -1863,7 +1919,7 @@
           }
         ]
       },
-      "first_post_date": "2025-05-06",
+      "first_post_date": "2025-05-13",
       "latest_post_date": "2025-05-06"
     },
     {
@@ -3601,5 +3657,5 @@
       "latest_post_date": "2025-01-05"
     }
   ],
-  "generated_time": "2025-05-12T03:36:06.791059"
+  "generated_time": "2025-05-13T03:34:51.629712"
 }
