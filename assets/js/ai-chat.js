@@ -1,188 +1,90 @@
-/**
- * ai-chat.js - 霍爾果斯會計師事務所AI客服聊天功能
- * 最後更新日期: 2025-05-17
- */
-
-// 當DOM加載完成後初始化聊天組件
-document.addEventListener('DOMContentLoaded', function() {
-  // 創建聊天UI元素
-  initChatUI();
-  
-  // 初始化聊天事件監聽器
-  initChatEvents();
-});
-
-// Gemini API Worker URL - 替換為您的Cloudflare Worker URL
-const GEMINI_WORKER_URL = '/api/chat'; // 使用相對路徑
-
-// 創建聊天UI元素並添加到頁面
-function initChatUI() {
-  // 創建聊天按鈕
-  const chatButton = document.createElement('button');
-  chatButton.className = 'ai-chat-button';
-  chatButton.id = 'ai-chat-button';
-  chatButton.innerHTML = `
-    <span class="material-symbols-rounded open-icon">smart_toy</span>
-    <span class="material-symbols-rounded close-icon">close</span>
-  `;
-  
-  // 創建聊天窗口
-  const chatWindow = document.createElement('div');
-  chatWindow.className = 'ai-chat-window';
-  chatWindow.id = 'ai-chat-window';
-  chatWindow.innerHTML = `
-    <div class="ai-chat-header">
-      <h2 class="ai-chat-header-title">
-        <span class="material-symbols-rounded">support_agent</span>
-        AI 客服助理
-      </h2>
-      <button class="ai-chat-close" id="ai-chat-close">
-        <span class="material-symbols-rounded">close</span>
-      </button>
-    </div>
-    <div class="ai-chat-messages" id="ai-chat-messages">
-      <div class="ai-chat-message bot">
-        您好，我是霍爾果斯會計師事務所的AI助理，有什麼財稅問題我可以協助您解答？
-      </div>
-    </div>
-    <div class="ai-chat-input-area">
-      <input type="text" class="ai-chat-input" id="ai-chat-input" placeholder="輸入您的問題...">
-      <button class="ai-chat-send" id="ai-chat-send" disabled>
-        <span class="material-symbols-rounded">send</span>
-      </button>
-    </div>
-  `;
-  
-  // 將元素添加到頁面
-  document.body.appendChild(chatButton);
-  document.body.appendChild(chatWindow);
-}
-
-// 初始化聊天事件監聽器
-function initChatEvents() {
-  const chatButton = document.getElementById('ai-chat-button');
-  const chatWindow = document.getElementById('ai-chat-window');
-  const chatClose = document.getElementById('ai-chat-close');
-  const chatInput = document.getElementById('ai-chat-input');
-  const chatSend = document.getElementById('ai-chat-send');
-  const chatMessages = document.getElementById('ai-chat-messages');
-  
-  // 啟用發送按鈕
-  chatInput.addEventListener('input', function() {
-    chatSend.disabled = this.value.trim() === '';
-  });
-  
-  // 點擊聊天按鈕打開/關閉聊天窗口
-  chatButton.addEventListener('click', function() {
-    chatButton.classList.toggle('open');
-    chatWindow.classList.toggle('open');
-    
-    // 如果窗口被打開，聚焦到輸入框
-    if (chatWindow.classList.contains('open')) {
-      chatInput.focus();
-    }
-  });
-  
-  // 點擊關閉按鈕關閉聊天窗口
-  chatClose.addEventListener('click', function() {
-    chatButton.classList.remove('open');
-    chatWindow.classList.remove('open');
-  });
-  
-  // 發送消息事件（點擊發送按鈕）
-  chatSend.addEventListener('click', function() {
-    sendMessage();
-  });
-  
-  // 發送消息事件（按下Enter鍵）
-  chatInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && this.value.trim() !== '') {
-      sendMessage();
-    }
-  });
-  
-  // 發送消息函數
-  async function sendMessage() {
-    const message = chatInput.value.trim();
-    
-    // 如果消息為空，不發送
-    if (!message) return;
-    
-    // 添加用戶消息到聊天區域
-    addMessage(message, 'user');
-    
-    // 清空輸入框並禁用發送按鈕
-    chatInput.value = '';
-    chatSend.disabled = true;
-    
-    // 顯示機器人正在輸入
-    showTypingIndicator();
-    
+// 調用Gemini API
+async function callGeminiApi(userMessage) {
+  try {
+    // 從環境變數獲取API金鑰
+    let API_KEY;
     try {
-      // 調用 Gemini API Worker
-      const response = await fetch(GEMINI_WORKER_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message }),
-      });
-      
-      const data = await response.json();
-      
-      // 隱藏正在輸入指示器
-      hideTypingIndicator();
-      
-      if (data.error) {
-        // 顯示錯誤訊息
-        addMessage('抱歉，我遇到了一些問題。請稍後再試或直接撥打我們的服務專線：04-2220-5606', 'bot');
-        console.error('API Error:', data.error);
-      } else {
-        // 顯示AI回應
-        addMessage(data.response, 'bot');
+      API_KEY = GEMINI_API_KEY;
+      if (!API_KEY) {
+        console.error('API key not found in environment variables');
+        return { error: true, details: 'API key not configured' };
       }
+      console.log('API key found, first 5 chars:', API_KEY.substring(0, 5));
     } catch (error) {
-      // 隱藏正在輸入指示器
-      hideTypingIndicator();
-      
-      // 顯示錯誤訊息
-      addMessage('抱歉，連線出現問題。請稍後再試或直接撥打我們的服務專線：04-2220-5606', 'bot');
-      console.error('Fetch Error:', error);
+      console.error('Error accessing API key:', error);
+      return { error: true, details: 'Error accessing API key: ' + error.message };
     }
-  }
-  
-  // 添加消息到聊天區域
-  function addMessage(text, sender) {
-    const messageElement = document.createElement('div');
-    messageElement.className = `ai-chat-message ${sender}`;
-    messageElement.textContent = text;
     
-    chatMessages.appendChild(messageElement);
+    // 使用有效的模型名稱 - gemini-1.5-flash-002 (根據模型列表)
+    const API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-002:generateContent';
     
-    // 滾動到最新消息
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
-  
-  // 顯示正在輸入指示器
-  function showTypingIndicator() {
-    const typingIndicator = document.createElement('div');
-    typingIndicator.className = 'ai-typing-indicator';
-    typingIndicator.id = 'ai-typing-indicator';
-    typingIndicator.innerHTML = `
-      <span></span>
-      <span></span>
-      <span></span>
-    `;
+    // 改進的系統提示，要求AI提供具體資訊而非建議聯繫客服
+    const systemPrompt = `你是霍爾果斯會計師事務所的AI客服助理，專精於提供稅務和會計相關的專業諮詢。
+作為專業的財稅顧問，你應該直接回答用戶的問題，提供具體、詳細且專業的資訊，而不是簡單地建議用戶撥打客服電話。
+
+一定要提供實質內容，包括步驟、流程或相關規定，讓用戶獲得真正有價值的資訊。
+只有在非常專業、特殊或需要個案處理的情況下，才建議用戶聯繫客服。
+
+台灣設立公司的基本流程：
+1. 公司名稱預查：至經濟部商業司網站查詢名稱是否可用
+2. 準備設立文件：包括公司章程、股東名冊、董事名冊等
+3. 資本額確認：依公司類型決定最低資本額
+4. 辦理設立登記：向經濟部商業司申請
+5. 申請統一編號：完成設立登記後向稅務機關申請
+6. 辦理營業登記：依營業項目向相關單位申請
+
+記住，一定要先提供實質內容，再視情況補充建議用戶聯繫客服電話(04-2220-5606)。
+
+始終使用繁體中文回應。
+
+用戶問題：${userMessage}`;
+
+    // 標準請求體格式
+    const requestBody = {
+      contents: [{
+        parts: [{ text: systemPrompt }]
+      }]
+    };
     
-    chatMessages.appendChild(typingIndicator);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
-  
-  // 隱藏正在輸入指示器
-  function hideTypingIndicator() {
-    const typingIndicator = document.getElementById('ai-typing-indicator');
-    if (typingIndicator) {
-      typingIndicator.remove();
+    console.log('Calling Gemini API...');
+    console.log('API URL:', `${API_URL}?key=${API_KEY.substring(0, 5)}...`);
+    console.log('Request body:', JSON.stringify(requestBody));
+    
+    // 發送API請求
+    const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    console.log('API response status:', response.status);
+    
+    // 檢查回應
+    if (!response.ok) {
+      // 嘗試獲取錯誤詳情
+      const errorText = await response.text();
+      console.error('API returned error status:', response.status);
+      console.error('API error text:', errorText);
+      return { error: true, details: `Status: ${response.status}, Error: ${errorText}` };
     }
+    
+    // 解析成功回應
+    const responseData = await response.json();
+    console.log('API response successful, structure:', JSON.stringify(Object.keys(responseData)));
+    
+    // 從回應中提取文本
+    const botResponse = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!botResponse) {
+      console.error('Unexpected API response format:', JSON.stringify(responseData).substring(0, 200));
+      return { error: true, details: 'Unexpected response format: ' + JSON.stringify(responseData).substring(0, 200) };
+    }
+    
+    console.log('Bot response (first 50 chars):', botResponse.substring(0, 50) + '...');
+    return { response: botResponse };
+  } catch (error) {
+    console.error('Error calling Gemini API:', error.message, error.stack);
+    return { error: true, details: 'API call error: ' + error.message };
   }
 }
