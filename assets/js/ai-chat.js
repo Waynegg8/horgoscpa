@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Gemini API Worker URL - 替換為您的Cloudflare Worker URL
-const GEMINI_WORKER_URL = 'https://billowing-waterfall-98a3.hergscpa.workers.dev';
+const GEMINI_WORKER_URL = '/api/chat'; // 使用相對路徑
 
 // 創建聊天UI元素並添加到頁面
 function initChatUI() {
