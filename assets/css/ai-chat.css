@@ -3,11 +3,11 @@
  * 最後更新日期: 2025-05-17
  */
 
-/* 聊天按鈕 */
+/* 聊天按鈕 - 調整位置避免與回到頂部按鈕重疊 */
 .ai-chat-button {
   position: fixed;
   bottom: 30px;
-  right: 30px;
+  left: 30px; /* 改為左側放置 */
   width: 60px;
   height: 60px;
   background-color: var(--secondary-color);
@@ -48,11 +48,11 @@
   display: flex;
 }
 
-/* 聊天窗口 - 調整尺寸更大 */
+/* 聊天窗口 - 調整位置與尺寸 */
 .ai-chat-window {
   position: fixed;
   bottom: 100px;
-  right: 30px;
+  left: 30px; /* 改為左側與按鈕對齊 */
   width: 450px; /* 增加寬度 (原本350px) */
   height: 550px; /* 增加高度 (原本450px) */
   background-color: white;
@@ -273,19 +273,19 @@
   }
 }
 
-/* 支援行動裝置的媒體查詢 - 調整移動裝置的尺寸 */
+/* 支援行動裝置的媒體查詢 - 調整移動裝置的尺寸與位置 */
 @media (max-width: 768px) {
   .ai-chat-window {
     width: calc(100% - 40px);
     height: 70vh; /* 增加高度比例 */
-    right: 20px;
+    left: 20px; /* 左側對齊 */
     bottom: 90px;
   }
   
   .ai-chat-button {
     width: 50px;
     height: 50px;
-    right: 20px;
+    left: 20px; /* 左側對齊 */
     bottom: 20px;
   }
 }
@@ -294,14 +294,14 @@
   .ai-chat-window {
     width: calc(100% - 30px);
     height: 75vh; /* 增加高度比例 */
-    right: 15px;
+    left: 15px; /* 左側對齊 */
     bottom: 80px;
   }
   
   .ai-chat-button {
     width: 45px;
     height: 45px;
-    right: 15px;
+    left: 15px; /* 左側對齊 */
     bottom: 15px;
   }
 }
