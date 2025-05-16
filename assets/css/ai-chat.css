@@ -52,9 +52,9 @@
 .ai-chat-window {
   position: fixed;
   bottom: 100px;
-  left: 30px; /* 改為左側與按鈕對齊 */
-  width: 450px; /* 增加寬度 (原本350px) */
-  height: 550px; /* 增加高度 (原本450px) */
+  left: 30px; /* 左側與按鈕對齊 */
+  width: 500px; /* 增加寬度 (原本350px) */
+  height: 450px; /* 恢復原來的高度 */
   background-color: white;
   border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -277,7 +277,7 @@
 @media (max-width: 768px) {
   .ai-chat-window {
     width: calc(100% - 40px);
-    height: 70vh; /* 增加高度比例 */
+    height: 60vh; /* 恢復原來的高度比例 */
     left: 20px; /* 左側對齊 */
     bottom: 90px;
   }
