@@ -44,6 +44,11 @@ on:
         required: true
         default: 'true'
         type: boolean
+      deploy_ai_chat:
+        description: '部署AI客服功能'
+        required: true
+        default: 'true'
+        type: boolean
   
   # 當有任何文件變更時觸發
   push:
@@ -63,7 +68,7 @@ on:
     
   # 接收從網頁界面觸發的事件
   repository_dispatch:
-    types: [delete-article, upload-article, scan-articles, update-video, update-sitemap, publish-scheduled, update-dictionary]
+    types: [delete-article, upload-article, scan-articles, update-video, update-sitemap, publish-scheduled, update-dictionary, deploy-ai-chat]
 
 jobs:
   content-automation:
@@ -105,6 +110,8 @@ jobs:
           mkdir -p blog
           mkdir -p assets/data
           mkdir -p assets/images/blog
+          mkdir -p assets/css
+          mkdir -p assets/js
           mkdir -p word-docs/processed
           mkdir -p video
           mkdir -p .github/scripts
@@ -379,8 +386,79 @@ jobs:
           git add assets/data/translation_dict.json assets/data/translation_dict_export.json || true
           git commit -m "更新翻譯字典" || echo "無需提交翻譯字典"
           git push || echo "無需推送翻譯字典"
+          
+      # 16. 部署AI客服功能
+      - name: 部署AI客服功能
+        id: deploy_ai_chat
+        if: github.event.inputs.deploy_ai_chat == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'deploy-ai-chat') || (github.event_name == 'push' && (contains(github.event.head_commit.modified, 'assets/css/ai-chat.css') || contains(github.event.head_commit.modified, 'assets/js/ai-chat.js')))
+        run: |
+          echo "部署AI客服功能..."
+          
+          # 檢查是否有AI客服相關文件的更新
+          AI_CHAT_FILES_CHANGED=false
+          
+          # 檢查CSS文件
+          if [ -f "assets/css/ai-chat.css" ]; then
+            git add assets/css/ai-chat.css
+            if [ $(git diff --cached --name-only | grep -c "assets/css/ai-chat.css") -gt 0 ]; then
+              AI_CHAT_FILES_CHANGED=true
+              echo "AI客服CSS文件已更新"
+            fi
+          fi
+          
+          # 檢查JS文件
+          if [ -f "assets/js/ai-chat.js" ]; then
+            git add assets/js/ai-chat.js
+            if [ $(git diff --cached --name-only | grep -c "assets/js/ai-chat.js") -gt 0 ]; then
+              AI_CHAT_FILES_CHANGED=true
+              echo "AI客服JS文件已更新"
+            fi
+          fi
+          
+          # 如果有更新，則提交更改
+          if [ "$AI_CHAT_FILES_CHANGED" = true ]; then
+            git commit -m "更新AI客服功能文件" || echo "無需提交AI客服文件"
+            git push || echo "無需推送AI客服文件"
+            echo "ai_chat_updated=true" >> $GITHUB_OUTPUT
+          else
+            echo "AI客服文件無更改，跳過提交"
+            # 重置已添加的文件
+            git reset HEAD assets/css/ai-chat.css assets/js/ai-chat.js
+            echo "ai_chat_updated=false" >> $GITHUB_OUTPUT
+          fi
       
-      # 16. 結果通知
+      # 17. 一次性將AI客服功能添加到所有HTML頁面
+      - name: 添加AI客服功能到HTML頁面
+        if: github.event.inputs.deploy_ai_chat == 'true' && (github.event_name == 'repository_dispatch' && github.event.action == 'deploy-ai-chat')
+        run: |
+          echo "將AI客服功能添加到所有HTML頁面..."
+          
+          # 查找所有HTML文件
+          HTML_FILES=$(find . -type f -name "*.html")
+          MODIFIED_FILES=0
+          
+          for FILE in $HTML_FILES; do
+            # 檢查文件是否已包含AI客服引用
+            if ! grep -q "ai-chat.css" "$FILE" && ! grep -q "ai-chat.js" "$FILE"; then
+              # 在</body>標籤前添加AI客服引用
+              sed -i 's|</body>|<!-- AI客服聊天功能 -->\n<link rel="stylesheet" href="/assets/css/ai-chat.css">\n<script src="/assets/js/ai-chat.js"></script>\n</body>|' "$FILE"
+              MODIFIED_FILES=$((MODIFIED_FILES + 1))
+              echo "已更新: $FILE"
+            fi
+          done
+          
+          echo "共更新了 $MODIFIED_FILES 個HTML文件"
+          
+          # 如果有更改，提交更改
+          if [ $MODIFIED_FILES -gt 0 ]; then
+            git add *.html blog/**/*.html services/**/*.html
+            git commit -m "將AI客服功能添加到HTML頁面" || echo "無需提交HTML更改"
+            git push || echo "無需推送HTML更改"
+          else
+            echo "所有HTML文件已包含AI客服功能，無需更新"
+          fi
+      
+      # 18. 結果通知
       - name: 工作流執行結果通知
         run: |
           echo "工作流程完成執行"
