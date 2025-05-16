@@ -151,14 +151,20 @@ function initChatEvents() {
     }
   }
   
-  // 添加消息到聊天區域
+  // 添加消息到聊天區域 - 修改以保留換行
   function addMessage(text, sender) {
     const messageElement = document.createElement('div');
     messageElement.className = `ai-chat-message ${sender}`;
     
-    // 處理換行符
-    const formattedText = text.replace(/\n/g, '<br>');
-    messageElement.innerHTML = formattedText;
+    // 處理文本中的換行符，轉換為HTML段落
+    const processedText = text
+      .replace(/\r\n\r\n/g, '</p><p>') // 處理段落換行
+      .replace(/\r\n/g, '<br>') // 處理單行換行
+      .replace(/\n\n/g, '</p><p>') // 處理段落換行（僅\n的情況）
+      .replace(/\n/g, '<br>'); // 處理單行換行（僅\n的情況）
+    
+    // 使用innerHTML而不是textContent來保留HTML標籤
+    messageElement.innerHTML = `<p>${processedText}</p>`;
     
     chatMessages.appendChild(messageElement);
     

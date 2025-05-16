@@ -48,13 +48,13 @@
   display: flex;
 }
 
-/* 聊天窗口 */
+/* 聊天窗口 - 調整尺寸更大 */
 .ai-chat-window {
   position: fixed;
   bottom: 100px;
   right: 30px;
-  width: 350px;
-  height: 450px;
+  width: 450px; /* 增加寬度 (原本350px) */
+  height: 550px; /* 增加高度 (原本450px) */
   background-color: white;
   border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -120,15 +120,25 @@
   background-color: #f8f9fa;
 }
 
-/* 聊天氣泡 */
+/* 聊天氣泡 - 改進段落顯示 */
 .ai-chat-message {
-  max-width: 80%;
+  max-width: 85%; /* 稍微加寬以容納更多文字 */
   padding: 12px 15px;
   border-radius: 15px;
   position: relative;
   line-height: 1.5;
   font-size: 0.95rem;
   animation: fadeIn 0.3s ease;
+  white-space: pre-line; /* 保留換行 */
+}
+
+/* 確保段落正確顯示 */
+.ai-chat-message p {
+  margin: 0 0 8px 0; /* 段落間距 */
+}
+
+.ai-chat-message p:last-child {
+  margin-bottom: 0; /* 最後一個段落無底部間距 */
 }
 
 .ai-chat-message.user {
@@ -144,6 +154,17 @@
   color: var(--text-color);
   border-bottom-left-radius: 4px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* 增加數字列表樣式，確保AI回覆列表正確顯示 */
+.ai-chat-message ol, 
+.ai-chat-message ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.ai-chat-message li {
+  margin-bottom: 4px;
 }
 
 /* 输入区域 */
@@ -252,11 +273,11 @@
   }
 }
 
-/* 支援行動裝置的媒體查詢 */
+/* 支援行動裝置的媒體查詢 - 調整移動裝置的尺寸 */
 @media (max-width: 768px) {
   .ai-chat-window {
     width: calc(100% - 40px);
-    height: 60vh;
+    height: 70vh; /* 增加高度比例 */
     right: 20px;
     bottom: 90px;
   }
@@ -272,7 +293,7 @@
 @media (max-width: 480px) {
   .ai-chat-window {
     width: calc(100% - 30px);
-    height: 70vh;
+    height: 75vh; /* 增加高度比例 */
     right: 15px;
     bottom: 80px;
   }
