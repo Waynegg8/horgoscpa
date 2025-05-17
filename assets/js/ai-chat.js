@@ -1,6 +1,6 @@
 /**
  * ai-chat.js - 霍爾果斯會計師事務所AI客服聊天功能
- * 最後更新日期: 2025-05-17
+ * 最後更新日期: 2025-05-18
  */
 
 // 當DOM加載完成後初始化聊天組件
@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
   initChatEvents();
 });
 
-// Gemini API Worker URL - 替換為您的Cloudflare Worker URL
-const GEMINI_WORKER_URL = 'https://billowing-waterfall-98a3.hergscpa.workers.dev';
+// AI API Worker URL - 替換為您的新Worker URL
+const AI_API_URL = 'https://taiwan-accounting-ai.hergscpa.workers.dev/api/query';
 
 // 創建聊天UI元素並添加到頁面
 function initChatUI() {
@@ -119,13 +119,13 @@ function initChatEvents() {
     showTypingIndicator();
     
     try {
-      // 調用 Gemini API Worker
-      const response = await fetch(GEMINI_WORKER_URL, {
+      // 調用新的AI API端點
+      const response = await fetch(AI_API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ query: message }), // 改用query作為參數名
       });
       
       const data = await response.json();
@@ -138,8 +138,8 @@ function initChatEvents() {
         addMessage('抱歉，我遇到了一些問題。請稍後再試或直接撥打我們的服務專線：04-2220-5606', 'bot');
         console.error('API Error:', data.error);
       } else {
-        // 顯示AI回應
-        addMessage(data.response, 'bot');
+        // 顯示AI回應 - 使用answer而不是response
+        addMessage(data.answer, 'bot');
       }
     } catch (error) {
       // 隱藏正在輸入指示器
@@ -151,20 +151,11 @@ function initChatEvents() {
     }
   }
   
-  // 添加消息到聊天區域 - 修改以保留換行
+  // 添加消息到聊天區域
   function addMessage(text, sender) {
     const messageElement = document.createElement('div');
     messageElement.className = `ai-chat-message ${sender}`;
-    
-    // 處理文本中的換行符，轉換為HTML段落
-    const processedText = text
-      .replace(/\r\n\r\n/g, '</p><p>') // 處理段落換行
-      .replace(/\r\n/g, '<br>') // 處理單行換行
-      .replace(/\n\n/g, '</p><p>') // 處理段落換行（僅\n的情況）
-      .replace(/\n/g, '<br>'); // 處理單行換行（僅\n的情況）
-    
-    // 使用innerHTML而不是textContent來保留HTML標籤
-    messageElement.innerHTML = `<p>${processedText}</p>`;
+    messageElement.textContent = text;
     
     chatMessages.appendChild(messageElement);
     
