@@ -21,6 +21,9 @@ jobs:
           pip install requests beautifulsoup4
           
       - name: Run crawler
+        env:
+          GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
+          GOOGLE_SEARCH_ENGINE_ID: ${{ secrets.GOOGLE_SEARCH_ENGINE_ID }}
         run: |
           mkdir -p crawler-results
           python scripts/crawler.py "${{ github.event.client_payload.query }}" "${{ github.event.client_payload.request_id }}"

@@ -3,46 +3,43 @@ import json
 import requests
 import os
 import time
-from bs4 import BeautifulSoup
-from urllib.parse import quote
 
-def search_google(query):
-    # 格式化搜索查詢
-    search_query = f"{query} 台灣 會計師 稅務"
-    search_url = f"https://www.google.com/search?q={quote(search_query)}&num=10&hl=zh-TW"
+def search_google_api(query, api_key, cse_id):
+    print(f"Using Google Custom Search API for query: {query}")
     
-    # 模擬瀏覽器請求
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7"
+    url = "https://www.googleapis.com/customsearch/v1"
+    params = {
+        "key": api_key,
+        "cx": cse_id,
+        "q": f"{query} 台灣 會計師 稅務",
+        "num": 10,
+        "hl": "zh-TW"
     }
     
     try:
-        response = requests.get(search_url, headers=headers)
+        response = requests.get(url, params=params)
         response.raise_for_status()
         
-        # 解析HTML
-        soup = BeautifulSoup(response.text, 'html.parser')
+        results = response.json()
+        print(f"API response received, status: {response.status_code}")
         
-        # 提取搜索結果URLs
         urls = []
-        for result in soup.select("div.g a"):
-            href = result.get("href")
-            if href and href.startswith("http") and not href.startswith(("https://accounts.google", "https://www.google", "https://youtube")):
-                urls.append(href)
         
-        # 如果上面的方法沒找到結果，嘗試另一種選擇器
-        if not urls:
-            for result in soup.select("a[href^='http']"):
-                href = result.get("href")
-                if href and not href.startswith(("https://accounts.google", "https://www.google", "https://youtube")):
-                    urls.append(href)
+        if "items" in results:
+            for item in results["items"]:
+                urls.append(item["link"])
+            print(f"Extracted {len(urls)} URLs from search results")
+        else:
+            print("No items found in search results")
+            if "error" in results:
+                print(f"API Error: {results['error']['message']}")
         
-        # 去重
-        urls = list(dict.fromkeys(urls))
-        return urls[:10]  # 返回前10個結果
+        return urls
     except Exception as e:
-        print(f"Error searching Google: {e}")
+        print(f"Error using Google Search API: {e}")
+        if 'response' in locals():
+            print(f"Response status: {response.status_code}")
+            print(f"Response body: {response.text[:200]}...")  # 只打印前200個字符
         return []
 
 if __name__ == "__main__":
@@ -53,11 +50,37 @@ if __name__ == "__main__":
     query = sys.argv[1]
     request_id = sys.argv[2]
     
-    print(f"Searching for: {query}")
+    print(f"Starting crawler with query: {query}, request_id: {request_id}")
+    
+    # 獲取API密鑰，從環境變量獲取
+    api_key = os.environ.get("GOOGLE_SEARCH_API_KEY")
+    cse_id = os.environ.get("GOOGLE_SEARCH_ENGINE_ID")
+    
+    if not api_key:
+        print("ERROR: GOOGLE_SEARCH_API_KEY environment variable not set")
+        sys.exit(1)
+    
+    if not cse_id:
+        print("ERROR: GOOGLE_SEARCH_ENGINE_ID environment variable not set")
+        sys.exit(1)
+    
+    print(f"API Key available: Yes (length: {len(api_key)})")
+    print(f"CSE ID available: Yes (length: {len(cse_id)})")
+    
+    # 確保結果目錄存在
+    os.makedirs("crawler-results", exist_ok=True)
     
     # 搜索並獲取URLs
-    urls = search_google(query)
+    urls = search_google_api(query, api_key, cse_id)
     print(f"Found {len(urls)} URLs for query: {query}")
+    
+    # 打印找到的URLs (方便調試)
+    if urls:
+        print("URLs found:")
+        for i, url in enumerate(urls, 1):
+            print(f"{i}. {url}")
+    else:
+        print("No URLs found")
     
     # 保存結果
     output_file = f"crawler-results/{request_id}.json"
