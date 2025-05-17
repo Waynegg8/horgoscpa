@@ -27,7 +27,9 @@ jobs:
           ZENSCRAPE_API_KEY: ${{ secrets.ZENSCRAPE_API_KEY }}
         run: |
           mkdir -p crawler-results
-          python scripts/official_crawler.py "${{ github.event.client_payload.crawl_id }}" "${{ toJson(github.event.client_payload.config) }}"
+          echo "Crawl ID: ${{ github.event.client_payload.crawl_id }}"
+          echo "Config: ${{ toJson(github.event.client_payload.config) }}"
+          python scripts/official_crawler.py "${{ github.event.client_payload.crawl_id }}" '${{ toJson(github.event.client_payload.config) }}'
           
       - name: Commit and push results
         run: |

@@ -365,10 +365,15 @@ def main():
     crawl_id = sys.argv[1]
     config_json = sys.argv[2]
     
+    logger.info(f"Starting official crawler with crawl_id: {crawl_id}")
+    logger.info(f"Config JSON: {config_json}")
+    
     try:
         config = json.loads(config_json)
-    except json.JSONDecodeError:
-        logger.error("Invalid JSON config")
+        logger.info(f"Parsed config: {config}")
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON config: {e}")
+        logger.error(f"Received config string: {config_json}")
         sys.exit(1)
     
     # 獲取 ZenScrape API key
@@ -377,8 +382,7 @@ def main():
         logger.error("ZENSCRAPE_API_KEY environment variable is not set")
         sys.exit(1)
     
-    logger.info(f"Starting official crawler with crawl_id: {crawl_id}")
-    logger.info(f"Config: {config}")
+    logger.info(f"ZenScrape API key available: {bool(zenscrape_api_key)}")
     
     # 創建爬蟲實例
     crawler = OfficialCrawler(config, crawl_id, zenscrape_api_key)
