@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # 獲取完整的git歷史
       
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -18,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4
+          pip install requests
           
       - name: Run crawler
         env:
@@ -32,6 +34,13 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
+          
+          # 先拉取最新變更，解決可能的衝突
+          git pull origin main --rebase
+          
+          # 添加並提交更改
           git add crawler-results/
           git commit -m "Add search results for query: ${{ github.event.client_payload.query }}" || echo "No changes to commit"
+          
+          # 推送變更
           git push
