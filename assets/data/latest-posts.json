@@ -1,5 +1,18 @@
 [
   {
+    "title": "房地交易可認列之成本項目詳解",
+    "url": "/blog/2025-05-20-unified-premises-ep3-detailed-description-of",
+    "date": "2025-05-20",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "前言 在房地合一稅制度下，正確認列房地交易的各項成本與費用，對於降低稅負具有重要意義。許多納稅義務人對於哪些支出可以列為成本，哪些須於年度綜合所得稅申報，常感到困惑。本文將詳細解析房地交易可認列的成本項目，包括取得時的必要費用、持有期間的資本支出，以及出售時可扣除的費用，協助納稅義務人正確計算房地交易所得，合理節稅。",
+    "category": "accounting",
+    "category_name": "會計資訊",
+    "is_series": true,
+    "series_name": "房地合一稅2.0",
+    "series_slug": "房地合一稅2.0",
+    "episode": 3
+  },
+  {
     "title": "繼承與贈與取得房地的課稅處理",
     "url": "/blog/2025-05-13-unified-premises-ep2-tax-treatment-of",
     "date": "2025-05-13",
@@ -24,18 +37,5 @@
     "series_name": "房地合一稅2.0",
     "series_slug": "房地合一稅2.0",
     "episode": 1
-  },
-  {
-    "title": "小規模營利事業規定與短漏報處理",
-    "url": "/blog/2025-05-06-expanded-written-ep4-requirements-for-small",
-    "date": "2025-05-06",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "前言 在營利事業所得稅結算申報中，小規模營利事業與免用統一發票業者具有特殊的申報規定，同時短漏報情形的處理也有明確的規範。本文將基於一百十三年度營利事業所得稅結算申報案件擴大書面審核實施要點，詳細說明小規模營利事業的申報特殊規定、短漏報的補稅處罰方式，以及獨資合夥組織的稅務處理特點，幫助相關營利事業正確申報所得稅，避免不必要的稅務爭議。",
-    "category": "tax",
-    "category_name": "稅務相關",
-    "is_series": true,
-    "series_name": "營所稅擴大書面審核解析",
-    "series_slug": "營所稅擴大書面審核解析",
-    "episode": 4
   }
 ]
