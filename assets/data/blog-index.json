@@ -1620,6 +1620,31 @@
           "slug": "tax-planning"
         }
       ]
+    },
+    {
+      "title": "2025年台灣稅務行事曆全攻略：企業與個人不可不知的關鍵時程",
+      "url": "/blog/2025-01-02-taiwan-tax-calendar",
+      "date": "2025-01-02",
+      "summary": "前言 在競爭激烈的商業環境中，稅務管理不僅是法規遵循的必要手段，更是企業財務規劃的重要環節。對台中及中部地區的企業主與個人納稅義務人而言，掌握年度稅務期程不僅能避免因逾期而產生的罰鍰與滯納金，更能透過前瞻性規劃，合理安排資金運用，降低稅務遵循成本。然而，台灣稅制多元複雜，各類稅目的申報與繳納時間分散全年，許多企業與個人常因未能及時掌握稅務期限而陷入被動。本文整合2025年度(民國114年)國稅與地...",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-01-02-2025年台灣稅務行事曆全攻略：企業與個人不可不知的關鍵時程.docx",
+      "is_series": false,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
+        }
+      ]
     }
   ],
   "series": {
@@ -5337,7 +5362,7 @@
     }
   ],
   "pagination": {
-    "total_posts": 58,
+    "total_posts": 59,
     "total_pages": 6,
     "items_per_page": 10
   },
@@ -5345,7 +5370,7 @@
     {
       "name": "稅務相關",
       "slug": "tax",
-      "count": 22
+      "count": 23
     },
     {
       "name": "會計資訊",
@@ -5375,75 +5400,50 @@
   ],
   "tags": [
     {
-      "name": "稅務規劃",
-      "slug": "tax-planning",
-      "count": 26
-    },
-    {
-      "name": "所得稅",
       "slug": "income-tax",
-      "count": 47
+      "name": "所得稅",
+      "count": 48
     },
     {
-      "name": "工商登記",
-      "slug": "business-registration",
-      "count": 20
+      "slug": "property-tax",
+      "name": "房地產稅務",
+      "count": 3
     },
     {
-      "name": "財務報表",
-      "slug": "financial-statements",
-      "count": 0
+      "slug": "tax-planning",
+      "name": "稅務規劃",
+      "count": 27
     },
     {
-      "name": "財富管理",
-      "slug": "wealth-management",
-      "count": 0
-    },
-    {
-      "name": "人壽保險",
-      "slug": "life-insurance",
-      "count": 22
-    },
-    {
-      "name": "創業資訊",
-      "slug": "startup",
-      "count": 1
-    },
-    {
-      "name": "企業稅務",
       "slug": "corporate-tax",
-      "count": 15
+      "name": "企業稅務",
+      "count": 16
     },
     {
-      "name": "個人稅務",
-      "slug": "personal-tax",
-      "count": 0
-    },
-    {
-      "name": "財務規劃",
-      "slug": "financial-planning",
-      "count": 0
-    },
-    {
-      "name": "投資理財",
       "slug": "investment",
+      "name": "投資理財",
       "count": 22
     },
     {
-      "name": "退休規劃",
-      "slug": "retirement",
-      "count": 0
-    },
-    {
-      "name": "會計實務",
       "slug": "accounting-practice",
+      "name": "會計實務",
       "count": 18
     },
     {
-      "name": "房地產稅務",
-      "slug": "property-tax",
-      "count": 3
+      "slug": "business-registration",
+      "name": "工商登記",
+      "count": 20
+    },
+    {
+      "slug": "life-insurance",
+      "name": "人壽保險",
+      "count": 22
+    },
+    {
+      "slug": "startup",
+      "name": "創業資訊",
+      "count": 1
     }
   ],
-  "generated_time": "2025-05-21T19:18:42.588048"
+  "generated_time": "2025-05-21T19:20:15.574213"
 }
