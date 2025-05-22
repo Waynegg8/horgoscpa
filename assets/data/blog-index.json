@@ -1,6 +1,31 @@
 {
   "posts": [
     {
+      "title": "擬制遺產課稅制度重大變革：遺產及贈與稅法修正草案深度解析",
+      "url": "/blog/2025-05-22-major-changes-to",
+      "date": "2025-05-22",
+      "summary": "前言 2024年10月28日，憲法法庭作成憲判字第11號判決，宣告《遺產及贈與稅法》第15條第1項第1款關於配偶擬制遺產的規定牴觸憲法。判決主文明確指出兩項違憲之處：一是擬制遺產的受贈人為被繼承人配偶時，缺乏明確規範使其他繼承人須為配偶受贈財產增益負擔稅負；二是對配偶受贈的擬制遺產，欠缺相當於剩餘財產差額分配請求權的扣除規定。",
+      "category": "finance",
+      "category_name": "財務規劃",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-05-22-擬制遺產課稅制度重大變革：遺產及贈與稅法修正草案深度解析.docx",
+      "is_series": false,
+      "tags": [
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
       "title": "房地交易可認列之成本項目詳解",
       "url": "/blog/2025-05-20-unified-premises-ep3-detailed-description-of",
       "date": "2025-05-20",
@@ -5362,7 +5387,7 @@
     }
   ],
   "pagination": {
-    "total_posts": 59,
+    "total_posts": 60,
     "total_pages": 6,
     "items_per_page": 10
   },
@@ -5385,7 +5410,7 @@
     {
       "name": "財務規劃",
       "slug": "finance",
-      "count": 0
+      "count": 1
     },
     {
       "name": "保險資訊",
@@ -5402,7 +5427,7 @@
     {
       "slug": "income-tax",
       "name": "所得稅",
-      "count": 48
+      "count": 49
     },
     {
       "slug": "property-tax",
@@ -5412,7 +5437,7 @@
     {
       "slug": "tax-planning",
       "name": "稅務規劃",
-      "count": 27
+      "count": 28
     },
     {
       "slug": "corporate-tax",
@@ -5443,7 +5468,12 @@
       "slug": "startup",
       "name": "創業資訊",
       "count": 1
+    },
+    {
+      "slug": "personal-tax",
+      "name": "個人稅務",
+      "count": 1
     }
   ],
-  "generated_time": "2025-05-21T19:20:15.574213"
+  "generated_time": "2025-05-22T03:34:47.011883"
 }
