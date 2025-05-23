@@ -148,7 +148,7 @@ jobs:
               # 創建基本的空白模組文件
               case "$filename" in
                 "word_processor.py")
-                  cat > "$filename" << 'EOFILE'
+                  cat > "$filename" << 'EOF'
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -164,10 +164,10 @@ class WordProcessor:
     
     def finalize_document_processing(self, *args, **kwargs):
         return {"processed": False}
-EOFILE
+EOF
                   ;;
                 "html_generator.py")
-                  cat > "$filename" << 'EOFILE'
+                  cat > "$filename" << 'EOF'
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -177,10 +177,10 @@ class HtmlGenerator:
     
     def generate_html(self, *args, **kwargs):
         return None, None
-EOFILE
+EOF
                   ;;
                 "content_manager.py")
-                  cat > "$filename" << 'EOFILE'
+                  cat > "$filename" << 'EOF'
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -193,10 +193,10 @@ class ContentManager:
     
     def update_blog_post(self, *args, **kwargs):
         pass
-EOFILE
+EOF
                   ;;
                 "translator.py")
-                  cat > "$filename" << 'EOFILE'
+                  cat > "$filename" << 'EOF'
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -206,10 +206,10 @@ class DummyTranslator:
 
 def get_translator(*args, **kwargs):
     return DummyTranslator()
-EOFILE
+EOF
                   ;;
                 "utils.py")
-                  cat > "$filename" << 'EOFILE'
+                  cat > "$filename" << 'EOF'
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -237,10 +237,10 @@ def setup_logging(level):
 def ensure_directories(dirs):
     for name, path in dirs.items():
         Path(path).mkdir(parents=True, exist_ok=True)
-EOFILE
+EOF
                   ;;
                 "json_generator.py")
-                  cat > "$filename" << 'EOFILE'
+                  cat > "$filename" << 'EOF'
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -250,7 +250,7 @@ class JsonGenerator:
     
     def generate_all_json(self):
         print("JSON生成器執行完成")
-EOFILE
+EOF
                   ;;
               esac
               echo "✓ 已創建基本的 $filename 文件"
@@ -321,31 +321,31 @@ EOFILE
           echo "創建基本配置文件..."
           
           # 創建translation_dict.json
-          cat > assets/data/translation_dict.json << 'EOFILE'
+          cat > assets/data/translation_dict.json << 'EOF'
 {
   "稅務": "tax",
   "保險": "insurance",
   "會計": "accounting",
   "財務": "finance"
 }
-EOFILE
+EOF
           
           # 創建processed_files.json
-          cat > assets/data/processed_files.json << 'EOFILE'
+          cat > assets/data/processed_files.json << 'EOF'
 {
   "files": []
 }
-EOFILE
+EOF
           
           # 創建keyword_mappings.json
-          cat > assets/data/keyword_mappings.json << 'EOFILE'
+          cat > assets/data/keyword_mappings.json << 'EOF'
 {
   "稅務": "tax",
   "稅法": "tax-law",
   "保險": "insurance",
   "會計": "accounting"
 }
-EOFILE
+EOF
 
       # 7. 增強的Python模組測試
       - name: 增強的Python模組測試
@@ -515,7 +515,7 @@ EOFILE
                   BASENAME=$(basename "$FIRST_DOCX" .docx)
                   
                   # 創建一個基本的HTML文件
-                  cat > "blog/2025-01-01-${BASENAME,,}.html" << 'EOFILE'
+                  cat > "blog/2025-01-01-${BASENAME,,}.html" << 'EOF'
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -527,7 +527,7 @@ EOFILE
 <p>此文檔正在處理中，請稍後再查看。</p>
 </body>
 </html>
-EOFILE
+EOF
                   echo "已創建備用HTML文件"
                   echo "html_changed=true" >> $GITHUB_OUTPUT
                 fi
