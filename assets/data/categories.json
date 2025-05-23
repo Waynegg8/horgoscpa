@@ -1,10 +1,24 @@
 {
   "categories": [
-    {"name": "稅務相關", "slug": "tax", "count": 0},
-    {"name": "會計資訊", "slug": "accounting", "count": 0},
-    {"name": "企業經營", "slug": "business", "count": 0},
-    {"name": "財務規劃", "slug": "finance", "count": 0},
-    {"name": "保險資訊", "slug": "insurance", "count": 0},
-    {"name": "法律法規", "slug": "legal", "count": 0}
+    {
+      "slug": "tax",
+      "name": "稅務相關",
+      "count": 66
+    },
+    {
+      "slug": "insurance",
+      "name": "保險規劃",
+      "count": 0
+    },
+    {
+      "slug": "accounting",
+      "name": "會計實務",
+      "count": 4
+    },
+    {
+      "slug": "business",
+      "name": "企業服務",
+      "count": 11
+    }
   ]
 }
