@@ -604,28 +604,22 @@ document.addEventListener('DOMContentLoaded', function() {
       if (currentIndex !== -1) {
         console.log(`找到當前文章在排序後的索引位置: ${currentIndex}`);
         
-        // 處理上一篇 - 增加隨機推薦系列文章的機會
+        // 處理上一篇 - 100% 推薦混合內容（其他系列第一集 + 其他非系列文章）
         if (currentIndex > 0) {
-          // 30% 機率推薦系列文章，70% 機率推薦時間順序的上一篇
-          if (Math.random() < 0.3) {
-            console.log(`隨機決定推薦系列文章作為上一篇`);
-            const seriesRecommendation = getRandomSeriesRecommendation(data, info.title);
-            if (seriesRecommendation) {
-              prevPost = seriesRecommendation;
-              prevMessage = '推薦系列文章';
-              console.log(`推薦系列文章作為上一篇: ${prevPost.title}`);
-            } else {
-              prevPost = sortedPosts[currentIndex - 1];
-              prevPost.url = processUrl(prevPost.url);
-              console.log(`找到時間順序上一篇文章: ${prevPost.title}`);
-            }
+          console.log(`為非系列文章推薦混合內容作為上一篇`);
+          const mixedRecommendation = getMixedRecommendation(data, info.title);
+          if (mixedRecommendation) {
+            prevPost = mixedRecommendation;
+            prevMessage = '推薦閱讀';
+            console.log(`推薦混合內容作為上一篇: ${prevPost.title}`);
           } else {
+            console.log(`混合推薦失敗，回退到時間順序上一篇`);
             prevPost = sortedPosts[currentIndex - 1];
             prevPost.url = processUrl(prevPost.url);
-            console.log(`找到時間順序上一篇文章: ${prevPost.title}`);
+            console.log(`回退使用時間順序上一篇文章: ${prevPost.title}`);
           }
         } else {
-          console.log(`當前文章已經是最新的，嘗試混合推薦`);
+          console.log(`當前文章已經是最新的，使用混合推薦`);
           prevPost = getMixedRecommendation(data, info.title);
           if (prevPost) {
             prevMessage = '推薦閱讀';
@@ -633,28 +627,22 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         }
         
-        // 處理下一篇 - 增加隨機推薦系列文章的機會
+        // 處理下一篇 - 100% 推薦混合內容（其他系列第一集 + 其他非系列文章）
         if (currentIndex < sortedPosts.length - 1) {
-          // 30% 機率推薦系列文章，70% 機率推薦時間順序的下一篇
-          if (Math.random() < 0.3) {
-            console.log(`隨機決定推薦系列文章作為下一篇`);
-            const seriesRecommendation = getRandomSeriesRecommendation(data, info.title);
-            if (seriesRecommendation) {
-              nextPost = seriesRecommendation;
-              nextMessage = '推薦系列文章';
-              console.log(`推薦系列文章作為下一篇: ${nextPost.title}`);
-            } else {
-              nextPost = sortedPosts[currentIndex + 1];
-              nextPost.url = processUrl(nextPost.url);
-              console.log(`找到時間順序下一篇文章: ${nextPost.title}`);
-            }
+          console.log(`為非系列文章推薦混合內容作為下一篇`);
+          const mixedRecommendation = getMixedRecommendation(data, info.title);
+          if (mixedRecommendation) {
+            nextPost = mixedRecommendation;
+            nextMessage = '推薦閱讀';
+            console.log(`推薦混合內容作為下一篇: ${nextPost.title}`);
           } else {
+            console.log(`混合推薦失敗，回退到時間順序下一篇`);
             nextPost = sortedPosts[currentIndex + 1];
             nextPost.url = processUrl(nextPost.url);
-            console.log(`找到時間順序下一篇文章: ${nextPost.title}`);
+            console.log(`回退使用時間順序下一篇文章: ${nextPost.title}`);
           }
         } else {
-          console.log(`當前文章已經是最舊的，嘗試混合推薦`);
+          console.log(`當前文章已經是最舊的，使用混合推薦`);
           nextPost = getMixedRecommendation(data, info.title);
           if (nextPost) {
             nextMessage = '推薦閱讀';
