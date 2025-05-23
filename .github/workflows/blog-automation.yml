@@ -8,230 +8,123 @@ on:
         required: true
         default: 'true'
         type: boolean
-      update_json:
-        description: 'Update JSON files'
-        required: true
-        default: 'true'
-        type: boolean
   push:
     branches:
       - main
-    paths:
-      - 'word-docs/*.docx'
-  schedule:
-    - cron: '0 1 * * *'
 
 jobs:
   process:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
     
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          
+        
       - name: Setup Git
         run: |
           git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.email "actions@github.com"
       
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
       
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests beautifulsoup4
-      
       - name: Create directories
-        run: |
-          mkdir -p blog assets/data word-docs/processed
+        run: mkdir -p blog assets/data word-docs/processed
       
-      - name: Create config files
+      - name: Write processor script
         run: |
-          echo '{"files": []}' > assets/data/processed_files.json
-          echo '{"posts": []}' > assets/data/blog_posts.json
-      
-      - name: Create processor script
-        run: |
-          cat > processor.py << 'EOF'
-import os
-import glob
-import json
-import shutil
-from datetime import datetime
-from pathlib import Path
-
-def clean_name(name):
-    import re
-    name = name.lower().replace(' ', '-').replace('_', '-')
-    name = re.sub(r'[^\w\-]', '', name)
-    return re.sub(r'-+', '-', name).strip('-')
-
-def create_html(title, filename):
-    date_str = datetime.now().strftime('%Y-%m-%d')
-    content = f"""<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-<meta charset="utf-8"/>
-<title>{title}</title>
-<meta name="description" content="{title} 專業分析"/>
-</head>
-<body>
-<h1>{title}</h1>
-<p>發布日期: {date_str}</p>
-<p>本文檔包含專業的財稅分析內容。</p>
-<p>如需詳細諮詢，請聯繫霍爾果斯會計師事務所。</p>
-</body>
-</html>"""
-    
-    with open(filename, 'w', encoding='utf-8') as f:
-        f.write(content)
-
-def process_docs():
-    processed = 0
-    docx_files = glob.glob('word-docs/*.docx')
-    docx_files = [f for f in docx_files if not os.path.basename(f).startswith('~')]
-    
-    for docx_file in docx_files:
-        basename = os.path.basename(docx_file).replace('.docx', '')
-        clean_filename = clean_name(basename)
-        
-        date_str = datetime.now().strftime('%Y-%m-%d')
-        html_file = f'blog/{date_str}-{clean_filename}.html'
-        
-        create_html(basename, html_file)
-        print(f'Created: {html_file}')
-        
-        # Move processed file
-        dest = f'word-docs/processed/{os.path.basename(docx_file)}'
-        if os.path.exists(docx_file):
-            shutil.move(docx_file, dest)
-            print(f'Moved: {dest}')
-        
-        processed += 1
-    
-    return processed
-
-def update_json():
-    posts = []
-    html_files = glob.glob('blog/*.html')
-    
-    for html_file in html_files:
-        filename = os.path.basename(html_file).replace('.html', '')
-        parts = filename.split('-')
-        
-        if len(parts) >= 4:
-            date_str = '-'.join(parts[:3])
-            title = ' '.join(parts[3:]).replace('-', ' ').title()
-        else:
-            date_str = datetime.now().strftime('%Y-%m-%d')
-            title = filename.replace('-', ' ').title()
-        
-        post = {
-            'title': title,
-            'url': filename,
-            'date': date_str,
-            'summary': f'{title} 的專業分析'
-        }
-        posts.append(post)
-    
-    posts.sort(key=lambda x: x['date'], reverse=True)
-    
-    blog_data = {
-        'posts': posts,
-        'total': len(posts),
-        'updated': datetime.now().isoformat()
-    }
-    
-    with open('assets/data/blog_posts.json', 'w', encoding='utf-8') as f:
-        json.dump(blog_data, f, ensure_ascii=False, indent=2)
-    
-    print(f'Updated JSON with {len(posts)} posts')
-
-def create_sitemap():
-    sitemap = '''<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url>
-<loc>https://www.horgoscpa.com/</loc>
-<lastmod>{}</lastmod>
-<priority>1.0</priority>
-</url>'''.format(datetime.now().strftime('%Y-%m-%d'))
-    
-    html_files = glob.glob('blog/*.html')
-    for html_file in html_files:
-        filename = os.path.basename(html_file)
-        sitemap += f'''
-<url>
-<loc>https://www.horgoscpa.com/blog/{filename}</loc>
-<lastmod>{datetime.now().strftime('%Y-%m-%d')}</lastmod>
-<priority>0.8</priority>
-</url>'''
-    
-    sitemap += '\n</urlset>'
-    
-    with open('sitemap.xml', 'w', encoding='utf-8') as f:
-        f.write(sitemap)
-    
-    print('Sitemap created')
-
-def main():
-    processed = process_docs()
-    if processed > 0:
-        print(f'Processed {processed} documents')
-    
-    update_json()
-    create_sitemap()
-    
-    # Set output for GitHub Actions
-    github_output = os.environ.get('GITHUB_OUTPUT')
-    if github_output:
-        with open(github_output, 'a') as f:
-            f.write(f'files_changed={str(processed > 0).lower()}\n')
-
-if __name__ == '__main__':
-    main()
-EOF
-
-      - name: Check for Word docs
-        id: check
-        run: |
-          if [ -d "word-docs" ]; then
-            count=$(find word-docs -maxdepth 1 -name "*.docx" ! -name "~*" | wc -l)
-            if [ "$count" -gt 0 ]; then
-              echo "has_docs=true" >> $GITHUB_OUTPUT
-              echo "Found $count Word documents"
-            else
-              echo "has_docs=false" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "has_docs=false" >> $GITHUB_OUTPUT
-          fi
+          cat > process.py << 'END_SCRIPT'
+          import os
+          import glob
+          import json
+          import shutil
+          from datetime import datetime
+          
+          def process_word_docs():
+              count = 0
+              docx_files = glob.glob('word-docs/*.docx')
+              
+              for docx_file in docx_files:
+                  if os.path.basename(docx_file).startswith('~'):
+                      continue
+                      
+                  basename = os.path.basename(docx_file).replace('.docx', '')
+                  clean_name = basename.lower().replace(' ', '-')
+                  
+                  html_file = f'blog/2025-01-01-{clean_name}.html'
+                  
+                  html_content = f'''<!DOCTYPE html>
+          <html>
+          <head>
+          <title>{basename}</title>
+          <meta charset="utf-8">
+          </head>
+          <body>
+          <h1>{basename}</h1>
+          <p>Content processed on {datetime.now().strftime('%Y-%m-%d')}</p>
+          </body>
+          </html>'''
+                  
+                  with open(html_file, 'w', encoding='utf-8') as f:
+                      f.write(html_content)
+                  
+                  dest_file = f'word-docs/processed/{os.path.basename(docx_file)}'
+                  shutil.move(docx_file, dest_file)
+                  
+                  count += 1
+                  print(f'Processed: {basename}')
+              
+              return count
+          
+          def update_json():
+              html_files = glob.glob('blog/*.html')
+              posts = []
+              
+              for html_file in html_files:
+                  filename = os.path.basename(html_file).replace('.html', '')
+                  title = filename.replace('-', ' ').title()
+                  
+                  post = {
+                      'title': title,
+                      'url': filename,
+                      'date': '2025-01-01'
+                  }
+                  posts.append(post)
+              
+              data = {
+                  'posts': posts,
+                  'total': len(posts),
+                  'updated': datetime.now().isoformat()
+              }
+              
+              with open('assets/data/blog_posts.json', 'w', encoding='utf-8') as f:
+                  json.dump(data, f, indent=2)
+              
+              print(f'Updated JSON with {len(posts)} posts')
+          
+          if __name__ == '__main__':
+              processed = process_word_docs()
+              update_json()
+              print(f'Total processed: {processed}')
+          END_SCRIPT
 
       - name: Run processor
-        id: run
-        if: github.event.inputs.process_word == 'true' || steps.check.outputs.has_docs == 'true' || github.event.inputs.update_json == 'true'
-        run: python processor.py
+        run: python process.py
 
       - name: Commit changes
-        if: steps.run.outputs.files_changed == 'true' || github.event.inputs.update_json == 'true'
         run: |
           git add .
           if ! git diff --cached --quiet; then
-            git commit -m "Auto update $(date '+%Y-%m-%d %H:%M:%S')"
+            git commit -m "Auto process $(date)"
             git push
           fi
 
-      - name: Report results
+      - name: Show results
         run: |
-          echo "=== Processing Complete ==="
-          echo "Time: $(date)"
-          echo "HTML files: $(find blog -name "*.html" 2>/dev/null | wc -l)"
-          echo "Word docs: $(find word-docs -name "*.docx" 2>/dev/null | wc -l)"
-          echo "Processed: $(find word-docs/processed -name "*.docx" 2>/dev/null | wc -l)"
+          echo "Processing complete"
+          echo "HTML files: $(ls blog/*.html 2>/dev/null | wc -l)"
+          echo "Processed docs: $(ls word-docs/processed/*.docx 2>/dev/null | wc -l)"
