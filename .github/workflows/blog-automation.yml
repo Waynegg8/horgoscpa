@@ -160,7 +160,10 @@ jobs:
                       "節稅": "tax-saving", "規劃": "planning", "申報": "filing",
                       "法規": "regulation", "個人": "personal", "公司": "corporate",
                       "所得稅": "income-tax", "營業稅": "business-tax", "遺產稅": "estate-tax",
-                      "指南": "guide", "攻略": "tips", "解析": "analysis", "案例": "case-study"
+                      "指南": "guide", "攻略": "tips", "解析": "analysis", "案例": "case-study",
+                      "合建分屋": "joint-construction", "合理分配": "tax-allocation",
+                      "稅務規劃": "tax-planning", "會計實務": "accounting-practice",
+                      "實務": "practice", "策略": "strategy", "優化": "optimization"
                   },
                   "last_updated": None
               },
@@ -285,9 +288,9 @@ jobs:
             echo "未找到主要處理腳本，使用內建處理邏輯"
           fi
           
-          # 內建智能處理邏輯
+          # 改進的內建智能處理邏輯
           if [ "$PROCESSING_SUCCESS" = "false" ]; then
-            echo "執行內建Word文檔處理邏輯..."
+            echo "執行改進的內建Word文檔處理邏輯..."
             
             python3 << 'EOF'
           import os
@@ -296,10 +299,82 @@ jobs:
           from pathlib import Path
           from datetime import datetime
           
-          def extract_theme_from_title(title):
-              """從標題提取主題關鍵詞，生成語義化URL"""
+          def parse_filename_advanced(filename):
+              """改進的文件名解析，正確識別系列文章"""
               
-              # 財稅主題映射表
+              # 移除文件擴展名
+              name_without_ext = os.path.splitext(filename)[0]
+              
+              # 系列文章格式: YYYY-MM-DD-系列名稱EP數字-副標題
+              series_pattern = r'^(\d{4}-\d{2}-\d{2})-(.+?)EP(\d+)-(.+)$'
+              
+              # 普通文章格式: YYYY-MM-DD-標題
+              normal_pattern = r'^(\d{4}-\d{2}-\d{2})-(.+)$'
+              
+              print(f"解析文件名: {name_without_ext}")
+              
+              # 嘗試匹配系列文章格式
+              series_match = re.match(series_pattern, name_without_ext)
+              if series_match:
+                  date_str, series_name, episode_str, subtitle = series_match.groups()
+                  print(f"識別為系列文章 - 系列: {series_name}, 集數: {episode_str}, 副標題: {subtitle}")
+                  return {
+                      'date': date_str,
+                      'is_series': True,
+                      'series_name': series_name,
+                      'episode': int(episode_str),
+                      'subtitle': subtitle,
+                      'title': f"{series_name}EP{episode_str}-{subtitle}"
+                  }
+              
+              # 嘗試匹配普通文章格式
+              normal_match = re.match(normal_pattern, name_without_ext)
+              if normal_match:
+                  date_str, title = normal_match.groups()
+                  print(f"識別為普通文章 - 標題: {title}")
+                  return {
+                      'date': date_str,
+                      'is_series': False,
+                      'title': title
+                  }
+              
+              print(f"無法解析文件名格式: {name_without_ext}")
+              return None
+          
+          def should_process_file(file_date_str, force_process=False):
+              """檢查是否應該處理該文件（日期檢查）"""
+              if force_process:
+                  return True
+              
+              try:
+                  file_date = datetime.strptime(file_date_str, '%Y-%m-%d').date()
+                  current_date = datetime.now().date()
+                  should_process = file_date <= current_date
+                  
+                  if not should_process:
+                      print(f"跳過未來日期文件: {file_date_str} (當前日期: {current_date})")
+                  
+                  return should_process
+              except ValueError:
+                  print(f"無效日期格式: {file_date_str}")
+                  return False
+          
+          def get_series_mapping():
+              """獲取系列名稱映射表"""
+              return {
+                  "合建分屋": "joint-construction",
+                  "合理分配": "tax-allocation", 
+                  "稅務規劃": "tax-planning",
+                  "會計實務": "accounting-practice",
+                  "保險規劃": "insurance-planning",
+                  "企業管理": "business-management",
+                  "投資理財": "investment-planning"
+              }
+          
+          def extract_theme_keywords(title, is_series=False, series_name=None, subtitle=None):
+              """提取主題關鍵詞，用於URL生成"""
+              
+              # 主題映射表
               theme_mapping = {
                   # 稅務相關
                   '所得稅': 'income-tax',
@@ -312,12 +387,20 @@ jobs:
                   '綜合所得稅': 'income-tax',
                   '營所稅': 'corporate-tax',
                   '個人所得稅': 'personal-income-tax',
+                  '稅負': 'tax-burden',
+                  '稅務': 'tax',
+                  '節稅': 'tax-saving',
+                  '避稅': 'tax-avoidance',
+                  '扣繳': 'withholding',
                   
                   # 保險相關
                   '人壽保險': 'life-insurance',
                   '保險規劃': 'insurance-planning',
                   '保險給付': 'insurance-benefit',
                   '保單': 'insurance-policy',
+                  '受益人': 'beneficiary',
+                  '要保人': 'policyholder',
+                  '被保險人': 'insured',
                   
                   # 會計相關  
                   '會計': 'accounting',
@@ -325,12 +408,19 @@ jobs:
                   '財務報表': 'financial-statement',
                   '成本控制': 'cost-control',
                   '審計': 'audit',
+                  '帳務': 'bookkeeping',
+                  '財務': 'finance',
+                  '財報': 'financial-report',
                   
                   # 企業相關
                   '公司設立': 'company-setup',
                   '企業營運': 'business-operation',
                   '投資': 'investment',
                   '理財': 'financial-planning',
+                  '營運': 'operation',
+                  '管理': 'management',
+                  '策略': 'strategy',
+                  '優化': 'optimization',
                   
                   # 文檔類型
                   '指南': 'guide',
@@ -340,56 +430,149 @@ jobs:
                   '注意事項': 'considerations',
                   '實務': 'practice',
                   '流程': 'process',
-                  '申報': 'filing'
+                  '申報': 'filing',
+                  '規劃': 'planning',
+                  '錯誤': 'errors',
+                  '常見': 'common'
               }
               
-              # 提取關鍵詞
               keywords = []
-              title_lower = title.lower()
               
-              # 按重要性排序匹配
+              if is_series:
+                  # 系列文章：從副標題提取關鍵詞
+                  text_to_analyze = subtitle or ""
+                  print(f"系列文章關鍵詞分析文本: {text_to_analyze}")
+              else:
+                  # 普通文章：從整個標題提取關鍵詞
+                  text_to_analyze = title
+                  print(f"普通文章關鍵詞分析文本: {text_to_analyze}")
+              
+              # 按詞長度排序，優先匹配較長的專業詞彙
               matched_terms = []
               for zh_term, en_term in theme_mapping.items():
-                  if zh_term in title:
+                  if zh_term in text_to_analyze:
                       matched_terms.append((len(zh_term), zh_term, en_term))
               
-              # 按詞長度排序，優先選擇較長的專業詞彙
+              # 按詞長度降序排序
               matched_terms.sort(reverse=True)
               
               # 選擇前3個最重要的關鍵詞
               for _, zh_term, en_term in matched_terms[:3]:
                   if en_term not in keywords:
                       keywords.append(en_term)
+                      print(f"匹配關鍵詞: {zh_term} -> {en_term}")
               
               # 如果關鍵詞不足，添加通用關鍵詞
               if len(keywords) < 2:
-                  if any(tax in title for tax in ['稅', '報稅', '扣繳']):
-                      keywords.append('tax')
-                  elif any(acc in title for acc in ['會計', '帳務', '財務']):
-                      keywords.append('accounting')
-                  elif any(ins in title for ins in ['保險', '保單']):
-                      keywords.append('insurance')
+                  if any(tax_term in text_to_analyze for tax_term in ['稅', '報稅', '扣繳', '稅務']):
+                      if 'tax' not in keywords:
+                          keywords.append('tax')
+                  elif any(acc_term in text_to_analyze for acc_term in ['會計', '帳務', '財務', '財報']):
+                      if 'accounting' not in keywords:
+                          keywords.append('accounting')
+                  elif any(ins_term in text_to_analyze for ins_term in ['保險', '保單']):
+                      if 'insurance' not in keywords:
+                          keywords.append('insurance')
                   else:
-                      keywords.append('business')
+                      if 'business' not in keywords:
+                          keywords.append('business')
               
               return keywords[:3]  # 限制最多3個關鍵詞
           
-          def generate_semantic_url(date_str, title):
+          def generate_semantic_url(file_info):
               """生成語義化URL"""
               
-              # 提取主題關鍵詞
-              theme_keywords = extract_theme_from_title(title)
+              date_str = file_info['date']
+              is_series = file_info.get('is_series', False)
               
-              # 構建URL
-              url_parts = [date_str] + theme_keywords
+              url_parts = [date_str]
+              
+              if is_series:
+                  # 系列文章URL格式: 日期-系列名稱-ep集數-主題關鍵詞
+                  series_name = file_info['series_name']
+                  episode = file_info['episode']
+                  subtitle = file_info.get('subtitle', '')
+                  
+                  # 獲取系列名稱映射
+                  series_mapping = get_series_mapping()
+                  series_slug = series_mapping.get(series_name, series_name.lower().replace(' ', '-'))
+                  url_parts.append(series_slug)
+                  
+                  # 添加集數
+                  url_parts.append(f"ep{episode}")
+                  
+                  # 從副標題提取主題關鍵詞
+                  theme_keywords = extract_theme_keywords(file_info['title'], True, series_name, subtitle)
+                  url_parts.extend(theme_keywords[:2])  # 最多2個主題關鍵詞
+                  
+                  print(f"系列文章URL組件: {url_parts}")
+              else:
+                  # 普通文章URL格式: 日期-主題關鍵詞
+                  title = file_info['title']
+                  theme_keywords = extract_theme_keywords(title, False)
+                  url_parts.extend(theme_keywords)
+                  
+                  print(f"普通文章URL組件: {url_parts}")
+              
+              # 組合URL
               url = '-'.join(url_parts)
               
-              # 確保URL長度合理（小於60字符）
-              if len(url) > 60:
-                  # 保留日期和前兩個關鍵詞
-                  url = '-'.join([date_str] + theme_keywords[:2])
+              # 確保URL長度合理（小於80字符）
+              if len(url) > 80:
+                  if is_series:
+                      # 保留日期、系列名稱、集數和一個關鍵詞
+                      url = '-'.join([date_str, url_parts[1], url_parts[2], url_parts[3] if len(url_parts) > 3 else ''])
+                  else:
+                      # 保留日期和前兩個關鍵詞
+                      url = '-'.join([date_str] + url_parts[1:3])
               
+              print(f"生成的URL: {url}")
               return url
+          
+          def determine_category_from_content(title):
+              """根據內容判斷分類"""
+              title_lower = title.lower()
+              
+              if any(term in title for term in ['稅', '報稅', '所得稅', '營業稅', '遺產稅', '贈與稅', '稅務', '稅負']):
+                  return 'tax', '稅務相關'
+              elif any(term in title for term in ['保險', '保單', '受益人', '要保人']):
+                  return 'insurance', '保險規劃'
+              elif any(term in title for term in ['會計', '帳務', '財務', '財報', '審計', '記帳']):
+                  return 'accounting', '會計實務'
+              else:
+                  return 'business', '企業服務'
+          
+          def generate_tags_from_content(title, is_series=False, subtitle=None):
+              """根據內容生成標籤"""
+              text_to_analyze = subtitle if is_series and subtitle else title
+              
+              tags = []
+              
+              # 常見標籤映射
+              tag_mapping = {
+                  '規劃': 'planning',
+                  '實務': 'practice', 
+                  '策略': 'strategy',
+                  '優化': 'optimization',
+                  '分析': 'analysis',
+                  '指南': 'guide',
+                  '案例': 'case-study',
+                  '申報': 'filing',
+                  '注意事項': 'considerations',
+                  '錯誤': 'errors',
+                  '常見': 'common'
+              }
+              
+              for zh_tag, en_tag in tag_mapping.items():
+                  if zh_tag in text_to_analyze:
+                      tag_name = zh_tag
+                      tags.append({"slug": en_tag, "name": tag_name})
+              
+              # 確保至少有一個標籤
+              if not tags:
+                  tags.append({"slug": "business", "name": "企業服務"})
+              
+              return tags[:3]  # 最多3個標籤
           
           def process_word_documents():
               """處理Word文檔並生成HTML"""
@@ -399,10 +582,13 @@ jobs:
               
               processed_count = 0
               processed_files = []
+              force_process = "${{ github.event.inputs.force_process }}" == "true"
               
               if not word_dir.exists():
                   print("word-docs 目錄不存在")
                   return 0, []
+              
+              print(f"強制處理模式: {force_process}")
               
               # 處理所有Word文檔
               for doc_file in word_dir.glob('*.docx'):
@@ -410,91 +596,143 @@ jobs:
                       continue
                   
                   try:
-                      print(f"處理文檔: {doc_file.name}")
+                      print(f"\n處理文檔: {doc_file.name}")
                       
                       # 解析文件名
-                      filename = doc_file.stem
+                      file_info = parse_filename_advanced(doc_file.name)
+                      if not file_info:
+                          print(f"跳過無法解析的文件: {doc_file.name}")
+                          continue
                       
-                      # 嘗試解析日期和標題
-                      date_match = re.match(r'(\d{4}-\d{2}-\d{2})-(.+)', filename)
-                      if date_match:
-                          date_str, title = date_match.groups()
-                          
-                          # 驗證日期格式
-                          try:
-                              datetime.strptime(date_str, '%Y-%m-%d')
-                          except ValueError:
-                              print(f"無效日期格式: {date_str}")
-                              continue
-                              
-                      else:
-                          print(f"無法解析文件名格式: {filename}")
-                          # 使用當前日期
-                          date_str = datetime.now().strftime('%Y-%m-%d')
-                          title = filename
+                      # 檢查日期（除非強制處理）
+                      if not should_process_file(file_info['date'], force_process):
+                          continue
                       
                       # 生成語義化URL
-                      url_slug = generate_semantic_url(date_str, title)
+                      url_slug = generate_semantic_url(file_info)
                       html_filename = f'{url_slug}.html'
                       html_path = blog_dir / html_filename
                       
                       # 檢查文件是否已存在
-                      if html_path.exists():
+                      if html_path.exists() and not force_process:
                           print(f"HTML文件已存在: {html_filename}")
                           processed_files.append(str(doc_file))
                           continue
                       
-                      # 判斷主要分類
-                      if any(term in title for term in ['稅', '報稅', '所得稅', '營業稅']):
-                          category = 'tax'
-                          category_name = '稅務相關'
-                      elif any(term in title for term in ['保險', '保單']):
-                          category = 'insurance'
-                          category_name = '保險規劃'
-                      elif any(term in title for term in ['會計', '帳務', '財務']):
-                          category = 'accounting'
-                          category_name = '會計實務'
-                      else:
-                          category = 'business'
-                          category_name = '企業服務'
+                      # 判斷分類
+                      category, category_name = determine_category_from_content(file_info['title'])
                       
                       # 生成標籤
-                      tags = []
-                      theme_keywords = extract_theme_from_title(title)
-                      for keyword in theme_keywords:
-                          tag_name = keyword.replace('-', ' ').title()
-                          tags.append(f'<a class="article-tag" href="/blog.html?tag={keyword}">{tag_name}</a>')
+                      tags = generate_tags_from_content(
+                          file_info['title'], 
+                          file_info.get('is_series', False), 
+                          file_info.get('subtitle')
+                      )
                       
-                      tags_html = '\n          '.join(tags) if tags else ''
+                      # 構建標籤HTML
+                      tags_html = []
+                      for tag in tags:
+                          tags_html.append(f'<a class="article-tag" href="/blog.html?tag={tag["slug"]}">{tag["name"]}</a>')
+                      tags_html_str = '\n          '.join(tags_html) if tags_html else ''
                       
-                      # 創建HTML內容（使用改進的模板）
+                      # 構建系列信息HTML（如果是系列文章）
+                      series_info_html = ''
+                      series_meta_html = ''
+                      
+                      if file_info.get('is_series', False):
+                          series_name = file_info['series_name']
+                          episode = file_info['episode']
+                          series_mapping = get_series_mapping()
+                          series_slug = series_mapping.get(series_name, series_name.lower().replace(' ', '-'))
+                          
+                          series_info_html = f'''<div class="series-info">
+          <span class="series-badge">系列文章</span>
+          <span class="series-name">{series_name}</span>
+          <span class="series-episode">第 {episode} 集</span>
+          </div>'''
+                          
+                          series_meta_html = f'''<meta name="series-name" content="{series_name}"/>
+          <meta name="series-episode" content="{episode}"/>
+          <meta name="series-slug" content="{series_slug}"/>'''
+                      
+                      # 創建完整的HTML內容
                       html_content = f'''<!DOCTYPE html>
           <html lang="zh-TW">
           <head>
           <meta charset="utf-8"/>
           <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-          <meta name="description" content="{title} - 霍爾果斯會計師事務所專業服務，提供{category_name}相關諮詢"/>
+          <meta name="description" content="{file_info['title']} - 霍爾果斯會計師事務所專業服務，提供{category_name}相關諮詢"/>
           <meta name="keywords" content="{category_name}, 霍爾果斯, 會計師, 稅務, 保險, 企業服務"/>
-          <meta name="date" content="{date_str}"/>
+          <meta name="date" content="{file_info['date']}"/>
           <meta name="main-category" content="{category_name}"/>
           <meta name="main-category-code" content="{category}"/>
           <meta name="original-filename" content="{doc_file.name}"/>
-          <title>{title} | 霍爾果斯會計師事務所</title>
+          {series_meta_html}
+          <title>{file_info['title']} | 霍爾果斯會計師事務所</title>
           <link rel="canonical" href="https://www.horgoscpa.com/blog/{html_filename}"/>
+          
+          <!-- Favicon -->
+          <link rel="icon" type="image/x-icon" href="/favicon.ico">
+          
+          <!-- Material Symbols 圖示庫 -->
+          <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+          
+          <!-- 引用全站共用樣式 -->
+          <link href="/assets/css/common.css" rel="stylesheet">
+          <link href="/assets/css/navbar.css" rel="stylesheet">
+          <link href="/assets/css/footer.css" rel="stylesheet">
+          <link href="/assets/css/blog-article-modern.css" rel="stylesheet"/>
+          
+          <!-- 系列文章樣式 -->
+          <style>
+          .series-info {{
+              display: flex;
+              align-items: center;
+              gap: 1rem;
+              margin-bottom: 1.5rem;
+              padding: 1rem;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              border-radius: 8px;
+              color: white;
+          }}
+          
+          .series-badge {{
+              background: rgba(255, 255, 255, 0.2);
+              padding: 0.3rem 0.8rem;
+              border-radius: 20px;
+              font-size: 0.85rem;
+              font-weight: 500;
+          }}
+          
+          .series-name {{
+              font-weight: 600;
+              flex-grow: 1;
+          }}
+          
+          .series-episode {{
+              background: rgba(255, 255, 255, 0.2);
+              padding: 0.3rem 0.8rem;
+              border-radius: 20px;
+              font-size: 0.85rem;
+          }}
+          </style>
           </head>
           <body>
           <article class="article-card">
           <div class="article-meta">
           <div class="article-date">
           <span class="material-symbols-rounded">calendar_month</span>
-          {date_str}
+          {file_info['date']}
           </div>
           <div class="article-category">
           <span class="material-symbols-rounded">sell</span>
           {category_name}
           </div>
           </div>
-          <h1 class="article-title">{title}</h1>
+          
+          {series_info_html}
+          
+          <h1 class="article-title">{file_info['title']}</h1>
           <div class="article-body">
           <p>本文檔正在處理中，完整內容即將推出。我們的專業團隊正在為您準備最詳細的{category_name}指導。</p>
           <p>如需立即諮詢相關服務，請聯繫霍爾果斯會計師事務所，我們將為您提供專業的解決方案。</p>
@@ -506,7 +744,7 @@ jobs:
           </div>
           <div class="article-footer">
           <div class="article-tags">
-          {tags_html}
+          {tags_html_str}
           </div>
           </div>
           </article>
@@ -523,15 +761,17 @@ jobs:
                       
                   except Exception as e:
                       print(f"處理文件 {doc_file.name} 時出錯: {e}")
+                      import traceback
+                      traceback.print_exc()
                       continue
               
               return processed_count, processed_files
           
           try:
-              print("開始處理Word文檔...")
+              print("開始改進的Word文檔處理...")
               processed_count, processed_files = process_word_documents()
               
-              print(f"處理完成，共處理 {processed_count} 個文檔")
+              print(f"\n處理完成，共處理 {processed_count} 個文檔")
               
               # 更新處理記錄
               processed_data = {'files': processed_files}
@@ -654,13 +894,28 @@ jobs:
             echo "使用內建JSON生成邏輯..."
           fi
           
-          # 內建JSON生成邏輯
+          # 改進的內建JSON生成邏輯
           python3 << 'EOF'
           import json
           import re
           from pathlib import Path
           from datetime import datetime
           from collections import defaultdict
+          
+          def extract_series_info_from_html(content):
+              """從HTML內容提取系列信息"""
+              series_name_match = re.search(r'<meta name="series-name" content="([^"]+)"', content)
+              series_episode_match = re.search(r'<meta name="series-episode" content="([^"]+)"', content)
+              series_slug_match = re.search(r'<meta name="series-slug" content="([^"]+)"', content)
+              
+              if series_name_match and series_episode_match:
+                  return {
+                      'is_series': True,
+                      'series_name': series_name_match.group(1),
+                      'series_episode': int(series_episode_match.group(1)),
+                      'series_slug': series_slug_match.group(1) if series_slug_match else ''
+                  }
+              return {'is_series': False}
           
           def generate_blog_data():
               """生成完整的博客數據"""
@@ -696,6 +951,9 @@ jobs:
                       category = category_match.group(1) if category_match else 'business'
                       category_name = category_name_match.group(1) if category_name_match else '企業服務'
                       
+                      # 提取系列信息
+                      series_info = extract_series_info_from_html(content)
+                      
                       # 從HTML中提取標籤
                       tags = []
                       tag_matches = re.findall(r'<a class="article-tag" href="[^"]*tag=([^"]+)"[^>]*>([^<]+)</a>', content)
@@ -712,8 +970,14 @@ jobs:
                           "category_name": category_name,
                           "tags": tags,
                           "image": "/assets/images/blog/default.jpg",
-                          "is_series": False
+                          "is_series": series_info['is_series']
                       }
+                      
+                      # 添加系列相關信息
+                      if series_info['is_series']:
+                          post["series_name"] = series_info['series_name']
+                          post["series_slug"] = series_info['series_slug']
+                          post["episode"] = series_info['series_episode']
                       
                       posts.append(post)
                       
@@ -746,6 +1010,38 @@ jobs:
                   tag_name = tag_slug.replace('-', ' ').title()
                   tags_data.append({"slug": tag_slug, "name": tag_name, "count": count})
               
+              # 組織系列文章
+              series_dict = defaultdict(list)
+              for post in posts:
+                  if post.get('is_series', False) and post.get('series_slug'):
+                      series_dict[post['series_slug']].append(post)
+              
+              # 生成系列信息
+              series_info = {}
+              series_list = []
+              
+              for series_slug, series_posts in series_dict.items():
+                  # 按集數排序
+                  series_posts.sort(key=lambda x: x.get('episode', 0))
+                  
+                  series_name = series_posts[0].get('series_name', series_slug) if series_posts else series_slug
+                  
+                  series_data = {
+                      "name": series_name,
+                      "slug": series_slug,
+                      "posts": series_posts,
+                      "count": len(series_posts),
+                      "latest": series_posts[0] if series_posts else None,
+                      "first_post_date": series_posts[-1]["date"] if series_posts else None,
+                      "latest_post_date": series_posts[0]["date"] if series_posts else None
+                  }
+                  
+                  series_info[series_slug] = series_data
+                  series_list.append(series_data)
+              
+              # 按最新文章日期排序
+              series_list.sort(key=lambda x: x["latest_post_date"], reverse=True)
+              
               # 生成完整博客數據
               blog_data = {
                   "posts": posts,
@@ -756,8 +1052,8 @@ jobs:
                   },
                   "categories": categories,
                   "tags": tags_data,
-                  "series": {},
-                  "series_list": [],
+                  "series": series_info,
+                  "series_list": series_list,
                   "generated_time": datetime.now().isoformat()
               }
               
@@ -770,7 +1066,7 @@ jobs:
                   'blog-posts.json': {"posts": posts},
                   'blog-index.json': blog_data,
                   'latest-posts.json': posts[:3],
-                  'series.json': {"series": {}, "series_list": []},
+                  'series.json': {"series": series_info, "series_list": series_list},
                   'categories.json': {"categories": categories},
                   'tags.json': {"tags": tags_data}
               }
@@ -782,6 +1078,11 @@ jobs:
                   print(f"生成JSON文件: {filename}")
               
               print(f"JSON數據生成完成，共處理 {len(posts)} 篇文章")
+              if series_list:
+                  print(f"包含 {len(series_list)} 個系列文章")
+                  for series in series_list:
+                      print(f"  - {series['name']}: {series['count']} 篇文章")
+              
               return len(posts)
           
           try:
@@ -1095,6 +1396,40 @@ jobs:
           echo "  ├─ 磁盤使用: $(df -h . | tail -1 | awk '{print $5}') (已使用)"
           echo "  ├─ 內存使用: $(free -h | grep Mem: | awk '{print $3"/"$2}')"
           echo "  └─ 執行時長: $SECONDS 秒"
+          
+          echo ""
+          echo "URL生成示例:"
+          if [ -d "blog" ]; then
+            echo "  最新生成的文章URL:"
+            find blog -name "*.html" -type f | head -5 | while read file; do
+              echo "    - $(basename "$file")"
+            done
+          fi
+          
+          echo ""
+          echo "系列文章統計:"
+          python3 << 'EOF'
+          import json
+          from pathlib import Path
+          
+          try:
+              series_file = Path('assets/data/series.json')
+              if series_file.exists():
+                  with open(series_file, 'r', encoding='utf-8') as f:
+                      series_data = json.load(f)
+                  
+                  series_list = series_data.get('series_list', [])
+                  if series_list:
+                      print(f"  發現 {len(series_list)} 個系列:")
+                      for series in series_list[:5]:  # 顯示前5個系列
+                          print(f"    - {series['name']}: {series['count']} 篇文章")
+                  else:
+                      print("  目前沒有系列文章")
+              else:
+                  print("  系列數據文件不存在")
+          except Exception as e:
+              print(f"  讀取系列數據失敗: {e}")
+          EOF
           
           echo ""
           echo "=================================================="
