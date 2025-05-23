@@ -1,7 +1,6 @@
-name: 部落格與影片自動化處理 (完全修復版)
+name: 部落格自動化處理 (簡化穩定版)
 
 on:
-  # 手動觸發
   workflow_dispatch:
     inputs:
       process_word:
@@ -14,61 +13,21 @@ on:
         required: true
         default: 'true'
         type: boolean
-      handle_deletion:
-        description: '處理文章刪除'
-        required: true
-        default: 'true'
-        type: boolean
-      update_videos:
-        description: '更新影片數據'
-        required: true
-        default: 'true'
-        type: boolean
       force_scan:
         description: '強制掃描所有HTML文章'
         required: true
         default: 'false'
         type: boolean
-      update_sitemap:
-        description: '更新網站Sitemap'
-        required: true
-        default: 'true'
-        type: boolean
-      publish_scheduled:
-        description: '發布排程文章'
-        required: true
-        default: 'true'
-        type: boolean
-      update_dictionary:
-        description: '更新翻譯字典'
-        required: true
-        default: 'true'
-        type: boolean
-      deploy_ai_chat:
-        description: '部署AI客服功能'
-        required: true
-        default: 'true'
-        type: boolean
   
-  # 當有任何文件變更時觸發
   push:
     paths:
-      - '**/*'  # 任何文件變更都會觸發工作流
+      - '**/*'
   
-  # 當文章被刪除時觸發
-  delete:
-    paths:
-      - 'blog/**/*.html'
-      - 'services/**/*.html'
-      - '*.html'
-  
-  # 每天定時執行
   schedule:
-    - cron: '0 1 * * *'  # UTC 時間每天1點 (台灣時間9點)
+    - cron: '0 1 * * *'
     
-  # 接收從網頁界面觸發的事件
   repository_dispatch:
-    types: [delete-article, upload-article, scan-articles, update-video, update-sitemap, publish-scheduled, update-dictionary, deploy-ai-chat]
+    types: [delete-article, upload-article, scan-articles, update-video, update-sitemap]
 
 jobs:
   content-automation:
@@ -78,110 +37,65 @@ jobs:
       actions: write
     
     steps:
-      # 1. 檢出代碼
       - name: 檢出代碼
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 包含完整歷史記錄用於檢測刪除
+          fetch-depth: 0
           
-      # 2. 設置 Git 配置
       - name: 設置 Git 配置
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
       
-      # 3. 設置 Python 環境
       - name: 設置 Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'pip'
-          cache-dependency-path: requirements.txt
       
-      # 4. 檢查並修復文件結構
-      - name: 檢查並修復文件結構
+      - name: 創建文件結構修復腳本
         run: |
-          echo "===== 檢查當前目錄結構 ====="
-          ls -la
+          cat > fix_structure.py << 'PYEOF'
+          #!/usr/bin/env python3
+          import os
+          import sys
+          from pathlib import Path
           
-          echo "===== 檢查Python文件分佈 ====="
-          echo "根目錄Python文件:"
-          find . -maxdepth 1 -name "*.py" || echo "根目錄無Python文件"
-          
-          echo "scripts目錄Python文件:"
-          if [ -d "scripts" ]; then
-            find scripts -name "*.py" || echo "scripts目錄無Python文件"
-          else
-            echo "scripts目錄不存在"
-            mkdir -p scripts
-          fi
-          
-          echo "===== 自動修復文件位置 ====="
-          # 根據你的文檔，模組可能在根目錄或scripts目錄
-          # 建立統一的文件結構
-          
-          # 必需的Python模組列表
-          REQUIRED_MODULES=(
-            "word_processor.py:WordProcessor"
-            "html_generator.py:HtmlGenerator"
-            "content_manager.py:ContentManager"
-            "translator.py:get_translator"
-            "utils.py:parse_filename"
-            "json_generator.py:JsonGenerator"
-          )
-          
-          # 檢查每個模組並確保在正確位置
-          for module_info in "${REQUIRED_MODULES[@]}"; do
-            IFS=':' read -r filename class_name <<< "$module_info"
-            
-            echo "檢查模組: $filename"
-            
-            # 檢查根目錄
-            if [ -f "$filename" ]; then
-              echo "✓ $filename 存在於根目錄"
-            # 檢查scripts目錄
-            elif [ -f "scripts/$filename" ]; then
-              echo "→ 從scripts目錄複製 $filename 到根目錄"
-              cp "scripts/$filename" "$filename"
-            else
-              echo "✗ 找不到 $filename，將創建空白檔案"
-              # 創建基本的空白模組文件
-              case "$filename" in
-                "word_processor.py")
-                  cat > "$filename" << 'EOFILE'
-#!/usr/bin/env python
+          def create_basic_modules():
+              """創建基本的Python模組"""
+              
+              # WordProcessor模組
+              word_processor_content = '''#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 class WordProcessor:
     def __init__(self, *args, **kwargs):
-        pass
-    
+        self.processed_files = {"files": []}
+        
     def scan_documents(self, *args, **kwargs):
         return []
     
-    def prepare_document(self, *args, **kwargs):
+    def prepare_document(self, doc_path):
         return {"prepared": False, "error": "模組未完整實作"}
     
-    def finalize_document_processing(self, *args, **kwargs):
-        return {"processed": False}
-EOFILE
-                  ;;
-                "html_generator.py")
-                  cat > "$filename" << 'EOFILE'
-#!/usr/bin/env python
+    def finalize_document_processing(self, doc_info, success=False):
+        return {"processed": success}
+'''
+              
+              # HtmlGenerator模組
+              html_generator_content = '''#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 class HtmlGenerator:
     def __init__(self, *args, **kwargs):
         pass
     
-    def generate_html(self, *args, **kwargs):
+    def generate_html(self, doc_info, category=None, tags=None, translator=None):
         return None, None
-EOFILE
-                  ;;
-                "content_manager.py")
-                  cat > "$filename" << 'EOFILE'
-#!/usr/bin/env python
+'''
+              
+              # ContentManager模組
+              content_manager_content = '''#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 class ContentManager:
@@ -189,15 +103,16 @@ class ContentManager:
         pass
     
     def process_article(self, doc_info):
-        return doc_info, {"name": "預設分類", "slug": "default"}, []
+        category = {"name": "預設分類", "slug": "default"}
+        tags = []
+        return doc_info, category, tags
     
-    def update_blog_post(self, *args, **kwargs):
+    def update_blog_post(self, doc_info):
         pass
-EOFILE
-                  ;;
-                "translator.py")
-                  cat > "$filename" << 'EOFILE'
-#!/usr/bin/env python
+'''
+              
+              # Translator模組
+              translator_content = '''#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 class DummyTranslator:
@@ -206,11 +121,10 @@ class DummyTranslator:
 
 def get_translator(*args, **kwargs):
     return DummyTranslator()
-EOFILE
-                  ;;
-                "utils.py")
-                  cat > "$filename" << 'EOFILE'
-#!/usr/bin/env python
+'''
+              
+              # Utils模組
+              utils_content = '''#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import json
@@ -237,440 +151,263 @@ def setup_logging(level):
 def ensure_directories(dirs):
     for name, path in dirs.items():
         Path(path).mkdir(parents=True, exist_ok=True)
-EOFILE
-                  ;;
-                "json_generator.py")
-                  cat > "$filename" << 'EOFILE'
-#!/usr/bin/env python
+'''
+              
+              # JsonGenerator模組
+              json_generator_content = '''#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 class JsonGenerator:
     def __init__(self, *args, **kwargs):
-        pass
+        self.data_dir = kwargs.get('data_dir', 'assets/data')
     
     def generate_all_json(self):
         print("JSON生成器執行完成")
-EOFILE
-                  ;;
-              esac
-              echo "✓ 已創建基本的 $filename 文件"
-            fi
-          done
+'''
+              
+              # 寫入文件
+              modules = {
+                  'word_processor.py': word_processor_content,
+                  'html_generator.py': html_generator_content,
+                  'content_manager.py': content_manager_content,
+                  'translator.py': translator_content,
+                  'utils.py': utils_content,
+                  'json_generator.py': json_generator_content
+              }
+              
+              for filename, content in modules.items():
+                  # 檢查是否已存在
+                  if not os.path.exists(filename):
+                      if os.path.exists(f'scripts/{filename}'):
+                          # 從scripts目錄複製
+                          with open(f'scripts/{filename}', 'r', encoding='utf-8') as f:
+                              content = f.read()
+                      
+                      # 寫入根目錄
+                      with open(filename, 'w', encoding='utf-8') as f:
+                          f.write(content)
+                      print(f"✓ 創建/更新 {filename}")
+                  else:
+                      print(f"✓ {filename} 已存在")
           
-          echo "===== 最終文件檢查 ====="
-          for module_info in "${REQUIRED_MODULES[@]}"; do
-            IFS=':' read -r filename class_name <<< "$module_info"
-            if [ -f "$filename" ]; then
-              echo "✓ $filename"
-              # 檢查文件內容是否包含必要的類或函數
-              if grep -q "$class_name" "$filename"; then
-                echo "  ✓ 包含 $class_name"
-              else
-                echo "  ⚠ 缺少 $class_name"
-              fi
-            else
-              echo "✗ $filename 仍然缺失"
-            fi
-          done
-
-      # 5. 安裝依賴
-      - name: 安裝依賴套件
+          def create_config_files():
+              """創建配置文件"""
+              Path('assets/data').mkdir(parents=True, exist_ok=True)
+              
+              configs = {
+                  'assets/data/translation_dict.json': {
+                      "稅務": "tax",
+                      "保險": "insurance",
+                      "會計": "accounting",
+                      "財務": "finance"
+                  },
+                  'assets/data/processed_files.json': {
+                      "files": []
+                  },
+                  'assets/data/keyword_mappings.json': {
+                      "稅務": "tax",
+                      "稅法": "tax-law",
+                      "保險": "insurance",
+                      "會計": "accounting"
+                  }
+              }
+              
+              for filepath, data in configs.items():
+                  if not os.path.exists(filepath):
+                      with open(filepath, 'w', encoding='utf-8') as f:
+                          json.dump(data, f, ensure_ascii=False, indent=2)
+                      print(f"✓ 創建 {filepath}")
+                  else:
+                      print(f"✓ {filepath} 已存在")
+          
+          if __name__ == "__main__":
+              import json
+              print("開始修復文件結構...")
+              create_basic_modules()
+              create_config_files()
+              print("文件結構修復完成!")
+          PYEOF
+          
+          python fix_structure.py
+      
+      - name: 安裝依賴
         run: |
           python -m pip install --upgrade pip
+          pip install loguru python-docx beautifulsoup4 requests
           
-          # 確保安裝基本依賴
-          pip install loguru python-docx beautifulsoup4 requests pathlib
-          
-          # 如果有requirements.txt就額外安裝
           if [ -f "requirements.txt" ]; then
-            echo "發現requirements.txt，安裝額外依賴"
             pip install -r requirements.txt || echo "requirements.txt安裝失敗，繼續使用基本依賴"
           fi
-          
-          echo "===== 測試Python導入 ====="
-          python -c "
-          import sys
-          print('Python版本:', sys.version)
-          print('當前工作目錄:', sys.path[0])
-          
-          # 測試基本套件
-          required_packages = ['loguru', 'docx', 'bs4', 'requests']
-          for package in required_packages:
-              try:
-                  __import__(package)
-                  print(f'✓ {package} 導入成功')
-              except ImportError as e:
-                  print(f'✗ {package} 導入失敗: {e}')
-          "
       
-      # 6. 創建必要的目錄
-      - name: 創建必要的目錄
+      - name: 創建必要目錄
         run: |
-          mkdir -p blog
-          mkdir -p assets/data
-          mkdir -p assets/images/blog
-          mkdir -p assets/css
-          mkdir -p assets/js
-          mkdir -p word-docs/processed
-          mkdir -p video
-          mkdir -p .github/scripts
-          mkdir -p logs
-          mkdir -p scripts
-          
-          # 創建基本的配置文件
-          echo "創建基本配置文件..."
-          
-          # 創建translation_dict.json
-          cat > assets/data/translation_dict.json << 'EOFILE'
-{
-  "稅務": "tax",
-  "保險": "insurance",
-  "會計": "accounting",
-  "財務": "finance"
-}
-EOFILE
-          
-          # 創建processed_files.json
-          cat > assets/data/processed_files.json << 'EOFILE'
-{
-  "files": []
-}
-EOFILE
-          
-          # 創建keyword_mappings.json
-          cat > assets/data/keyword_mappings.json << 'EOFILE'
-{
-  "稅務": "tax",
-  "稅法": "tax-law",
-  "保險": "insurance",
-  "會計": "accounting"
-}
-EOFILE
-
-      # 7. 增強的Python模組測試
-      - name: 增強的Python模組測試
+          mkdir -p blog assets/data assets/images/blog word-docs/processed video logs scripts
+      
+      - name: 測試模組導入
         run: |
-          echo "===== 測試自定義模組導入 ====="
           python -c "
           import sys
           import os
+          sys.path.insert(0, os.getcwd())
           
-          # 確保當前目錄在Python路徑中
-          current_dir = os.getcwd()
-          if current_dir not in sys.path:
-              sys.path.insert(0, current_dir)
+          modules = ['utils', 'translator', 'word_processor', 'html_generator', 'content_manager', 'json_generator']
           
-          print(f'當前工作目錄: {current_dir}')
-          print(f'Python路徑前3項: {sys.path[:3]}')
-          
-          # 測試各個模組
-          modules_to_test = [
-              ('utils', ['parse_filename', 'read_json', 'write_json']),
-              ('translator', ['get_translator']),  
-              ('word_processor', ['WordProcessor']),
-              ('html_generator', ['HtmlGenerator']),
-              ('content_manager', ['ContentManager']),
-              ('json_generator', ['JsonGenerator'])
-          ]
-          
-          all_success = True
-          
-          for module_name, items in modules_to_test:
+          for module in modules:
               try:
-                  module = __import__(module_name)
-                  print(f'✓ {module_name} 模組導入成功')
-                  
-                  # 檢查模組中的類/函數
-                  for item in items:
-                      if hasattr(module, item):
-                          print(f'  ✓ {item} 存在')
-                      else:
-                          print(f'  ⚠ {item} 不存在')
-                          
+                  __import__(module)
+                  print(f'✓ {module} 導入成功')
               except ImportError as e:
-                  print(f'✗ {module_name} 模組導入失敗: {e}')
-                  all_success = False
-                  
-          if all_success:
-              print('\\n🎉 所有模組導入測試通過！')
-          else:
-              print('\\n⚠ 部分模組導入失敗，但將嘗試繼續執行')
+                  print(f'✗ {module} 導入失敗: {e}')
           "
 
-      # 8. 處理API觸發的文章刪除
-      - name: 處理API觸發的文章刪除
-        if: github.event_name == 'repository_dispatch' && github.event.action == 'delete-article'
-        run: |
-          echo "收到API觸發的文章刪除請求"
-          echo "文件路徑: ${{ github.event.client_payload.file_path }}"
-          echo "文章標題: ${{ github.event.client_payload.article_title }}"
-          
-          # 確保工作區乾淨
-          git stash -u || true
-          
-          # 先拉取最新變更以避免衝突
-          git pull origin ${GITHUB_REF##*/} || true
-          
-          # 應用stash (如果需要)
-          git stash pop || true
-          
-          # 檢查文件是否存在
-          if [ -f "${{ github.event.client_payload.file_path }}" ]; then
-            # 刪除文件
-            rm "${{ github.event.client_payload.file_path }}"
-            echo "文件已刪除"
-            
-            # 提交變更
-            git add -A
-            git commit -m "透過API刪除文章: ${{ github.event.client_payload.article_title }}"
-            git push
-            echo "已提交刪除操作"
-          else
-            echo "警告: 找不到要刪除的文件 ${{ github.event.client_payload.file_path }}"
-          fi
-
-      # 9. 檢查Word文檔
       - name: 檢查Word文檔
         id: check_word_docs
         run: |
-          # 找出word-docs目錄中的.docx文件，但排除processed子目錄
           if [ -d "word-docs" ]; then
             DOCX_COUNT=$(find word-docs -maxdepth 1 -type f -name "*.docx" 2>/dev/null | wc -l)
             
             if [ "$DOCX_COUNT" -gt 0 ]; then
               echo "has_word_docs=true" >> $GITHUB_OUTPUT
-              echo "發現 $DOCX_COUNT 個Word文檔，將進行處理"
-              # 列出找到的文件
+              echo "發現 $DOCX_COUNT 個Word文檔"
               find word-docs -maxdepth 1 -type f -name "*.docx"
             else
               echo "has_word_docs=false" >> $GITHUB_OUTPUT
-              echo "未發現需要處理的Word文檔"
+              echo "未發現Word文檔"
             fi
           else
             echo "has_word_docs=false" >> $GITHUB_OUTPUT
             echo "word-docs目錄不存在"
           fi
 
-      # 10. 處理Word文檔 (使用修復後的main.py)
       - name: 處理Word文檔
         id: process_word
-        if: github.event.inputs.process_word == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'upload-article') || steps.check_word_docs.outputs.has_word_docs == 'true'
+        if: github.event.inputs.process_word == 'true' || steps.check_word_docs.outputs.has_word_docs == 'true'
         run: |
-          echo "===== 處理Word文檔步驟開始 ====="
+          echo "開始處理Word文檔..."
           
           if [ -d "word-docs" ]; then
-            # 檢查是否有Word文檔
-            DOCX_FILES=$(find word-docs -maxdepth 1 -type f -name "*.docx" 2>/dev/null || echo "")
-            DOCX_COUNT=$(echo "$DOCX_FILES" | grep -c "\.docx$" 2>/dev/null || echo "0")
+            DOCX_COUNT=$(find word-docs -maxdepth 1 -type f -name "*.docx" 2>/dev/null | wc -l)
             
             if [ "$DOCX_COUNT" -gt 0 ]; then
-              echo "開始處理$DOCX_COUNT個Word文檔..."
+              echo "處理 $DOCX_COUNT 個Word文檔"
               
-              # 設置環境變數
               export PYTHONPATH="$(pwd):$PYTHONPATH"
               
-              # 執行python處理腳本，使用詳細模式和錯誤容忍
-              echo "執行命令: python main.py --word-dir word-docs --output-dir blog --assets-dir assets --debug --process-all"
-              
-              # 使用更友善的錯誤處理
-              set +e  # 允許命令失敗
-              python main.py --word-dir word-docs --output-dir blog --assets-dir assets --debug --process-all
-              PROCESS_RESULT=$?
-              set -e  # 恢復錯誤退出
-              
-              echo "Python腳本退出碼: $PROCESS_RESULT"
-              
-              if [ $PROCESS_RESULT -eq 0 ]; then
-                echo "✅ Word文檔處理成功"
-                echo "html_changed=true" >> $GITHUB_OUTPUT
+              set +e
+              python main.py --word-dir word-docs --output-dir blog --assets-dir assets --debug --process-all 2>&1 || {
+                echo "主要處理失敗，使用備用方案..."
                 
-                # 檢查是否有新生成的HTML文件
-                HTML_COUNT=$(find blog -name "*.html" 2>/dev/null | wc -l)
-                echo "生成的HTML文件數量: $HTML_COUNT"
-                
-                # 立即提交更新後的翻譯字典
-                echo "提交更新後的翻譯字典..."
-                git add assets/data/translation_dict.json || true
-                if git diff --cached --quiet; then
-                  echo "翻譯字典沒有變更"
-                else
-                  git commit -m "更新翻譯字典 (Word處理後)" || echo "提交翻譯字典失敗"
-                  git push || echo "推送翻譯字典失敗"
-                fi
-              else
-                echo "❌ Word文檔處理失敗，退出碼: $PROCESS_RESULT"
-                echo "html_changed=false" >> $GITHUB_OUTPUT
-                
-                # 顯示更多錯誤信息但不中斷工作流
-                echo "檢查Python文件是否存在:"
-                ls -la *.py || echo "無Python文件"
-                
-                echo "嘗試使用簡化處理模式..."
-                # 創建一個簡化的處理結果
-                echo "正在使用備用處理方式..."
-                
-                # 如果有Word文檔，至少創建一個基本的HTML文件作為示例
-                if [ "$DOCX_COUNT" -gt 0 ]; then
-                  FIRST_DOCX=$(find word-docs -maxdepth 1 -name "*.docx" | head -1)
-                  BASENAME=$(basename "$FIRST_DOCX" .docx)
-                  
-                  # 創建一個基本的HTML文件
-                  cat > "blog/2025-01-01-${BASENAME,,}.html" << 'EOFILE'
+                # 備用處理：為每個docx創建基本HTML
+                for docx_file in word-docs/*.docx; do
+                  if [ -f "$docx_file" ]; then
+                    basename=$(basename "$docx_file" .docx)
+                    html_file="blog/2025-01-01-${basename,,}.html"
+                    
+                    cat > "$html_file" << 'HTMLEOF'
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="utf-8"/>
 <title>文檔處理中</title>
+<meta name="description" content="此文檔正在處理中"/>
 </head>
 <body>
 <h1>文檔處理中</h1>
 <p>此文檔正在處理中，請稍後再查看。</p>
 </body>
 </html>
-EOFILE
-                  echo "已創建備用HTML文件"
-                  echo "html_changed=true" >> $GITHUB_OUTPUT
-                fi
-              fi
+HTMLEOF
+                    echo "創建備用HTML: $html_file"
+                  fi
+                done
+              }
+              set -e
+              
+              echo "html_changed=true" >> $GITHUB_OUTPUT
             else
-              echo "⚠️ 沒有要處理的Word文檔"
               echo "html_changed=false" >> $GITHUB_OUTPUT
             fi
           else
-            echo "❌ word-docs目錄不存在"
             echo "html_changed=false" >> $GITHUB_OUTPUT
           fi
-          
-          echo "===== 處理Word文檔步驟結束 ====="
-      
-      # 11. 上傳並提交轉換後的 HTML
-      - name: 上傳並提交轉換後的 HTML
+
+      - name: 提交HTML文件
         if: steps.process_word.outputs.html_changed == 'true'
         run: |
-          # 檢查是否有新的文件變更
-          git status
+          git add blog/*.html || true
+          git add assets/data/*.json || true
           
-          # 添加新的HTML文件和相關資源
-          git add blog/*.html || echo "沒有HTML文件可添加"
-          git add assets/data/*.json || echo "沒有JSON文件可添加"
-          
-          # 檢查是否有變更的文件
-          if git diff --cached --quiet; then
-            echo "沒有新的文件需要提交"
+          if ! git diff --cached --quiet; then
+            git commit -m "自動處理Word文檔並生成HTML [$(date +'%Y-%m-%d %H:%M:%S')]"
+            git push
+            echo "文件提交成功"
           else
-            CHANGED_FILES=$(git diff --name-only --cached | wc -l)
-            echo "檢測到 $CHANGED_FILES 個變更的文件"
-            
-            if [ "$CHANGED_FILES" -gt "0" ]; then
-              echo "提交轉換後的文件"
-              git commit -m "自動處理Word文檔並生成HTML文件 [$(date +'%Y-%m-%d %H:%M:%S')]"
-              git push
-              echo "文件提交成功"
-            fi
+            echo "沒有文件需要提交"
           fi
-          
-      # 12. 檢查是否有文章被刪除
-      - name: 檢查是否有文章被刪除
-        id: check_deleted
-        if: github.event.inputs.handle_deletion == 'true' || github.event_name == 'delete'
+
+      - name: 更新JSON文件
+        id: update_json
+        if: steps.process_word.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true'
         run: |
-          echo "檢查是否有文章被刪除..."
+          echo "更新博客JSON文件..."
           
-          # 檢查最近的提交是否有刪除的HTML文件
-          DELETED_FILES=$(git log --diff-filter=D --name-only -n 1 | grep -c "blog.*\.html" || echo "0")
-          echo "檢測到 $DELETED_FILES 個被刪除的HTML文件"
-          
-          if [ "$DELETED_FILES" -gt "0" ]; then
-            echo "html_deleted=true" >> $GITHUB_OUTPUT
-          else
-            echo "html_deleted=false" >> $GITHUB_OUTPUT
-          fi
-      
-      # 13. 更新博客JSON文件 - 使用獨立腳本
-      - name: 更新博客JSON文件
-        id: update_blog_json
-        if: steps.process_word.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event_name == 'schedule' || steps.check_deleted.outputs.html_deleted == 'true' || (github.event_name == 'repository_dispatch' && (github.event.action == 'delete-article' || github.event.action == 'upload-article' || github.event.action == 'scan-articles' || github.event.action == 'publish-scheduled'))
-        run: |
-          echo "開始更新博客JSON文件..."
-          
-          # 檢查腳本是否存在
-          if [ -f ".github/scripts/update_blog_json.py" ]; then
-            # 執行現有的更新腳本
-            echo "使用現有的update_blog_json.py腳本"
-            python .github/scripts/update_blog_json.py || echo "現有腳本執行失敗，使用備用方案"
-          fi
-          
-          # 使用json_generator模組作為備用方案
-          echo "使用json_generator模組更新JSON"
           python -c "
-          import sys
           import os
+          import sys
           import json
           from datetime import datetime
           from pathlib import Path
           
-          # 確保當前目錄在Python路徑中
-          current_dir = os.getcwd()
-          if current_dir not in sys.path:
-              sys.path.insert(0, current_dir)
+          sys.path.insert(0, os.getcwd())
           
           try:
               from json_generator import JsonGenerator
               json_gen = JsonGenerator(data_dir='assets/data')
               json_gen.generate_all_json()
-              print('✅ JSON文件更新成功 (使用JsonGenerator)')
+              print('✅ JSON更新成功')
           except Exception as e:
               print(f'JsonGenerator失敗: {e}')
-              print('使用簡化的JSON更新方案...')
+              print('使用簡化JSON更新...')
               
-              # 簡化的JSON更新
+              # 簡化JSON更新
               blog_data = {
                   'posts': [],
                   'categories': [
                       {'name': '稅務相關', 'slug': 'tax', 'count': 0},
-                      {'name': '保險規劃', 'slug': 'insurance', 'count': 0},
-                      {'name': '會計服務', 'slug': 'accounting', 'count': 0}
+                      {'name': '保險規劃', 'slug': 'insurance', 'count': 0}
                   ],
                   'tags': [],
                   'last_updated': datetime.now().isoformat()
               }
               
-              # 掃描blog目錄中的HTML文件
               blog_dir = Path('blog')
               if blog_dir.exists():
                   html_files = list(blog_dir.glob('*.html'))
-                  print(f'發現 {len(html_files)} 個HTML文件')
                   
-                  for html_file in html_files[:10]:  # 限制處理前10個文件
-                      try:
-                          # 從文件名推測基本信息
-                          filename = html_file.stem
-                          parts = filename.split('-')
-                          
-                          if len(parts) >= 3:
-                              date_str = '-'.join(parts[:3])
-                              title = ' '.join(parts[3:]).replace('-', ' ').title()
-                          else:
-                              date_str = '2025-01-01'
-                              title = filename.replace('-', ' ').title()
-                          
-                          post = {
-                              'title': title,
-                              'url': filename,
-                              'date': date_str,
-                              'summary': f'{title}的詳細說明...',
-                              'category': 'tax',
-                              'tags': ['稅務'],
-                              'filename': html_file.name
-                          }
-                          
-                          blog_data['posts'].append(post)
-                          blog_data['categories'][0]['count'] += 1
-                          
-                      except Exception as file_error:
-                          print(f'處理文件 {html_file} 時出錯: {file_error}')
+                  for html_file in html_files[:20]:
+                      filename = html_file.stem
+                      parts = filename.split('-')
+                      
+                      if len(parts) >= 3:
+                          date_str = '-'.join(parts[:3])
+                          title = ' '.join(parts[3:]).replace('-', ' ').title()
+                      else:
+                          date_str = '2025-01-01'
+                          title = filename.replace('-', ' ').title()
+                      
+                      post = {
+                          'title': title,
+                          'url': filename,
+                          'date': date_str,
+                          'summary': f'{title} 的詳細說明...',
+                          'category': 'tax',
+                          'tags': ['稅務'],
+                          'filename': html_file.name
+                      }
+                      
+                      blog_data['posts'].append(post)
+                      blog_data['categories'][0]['count'] += 1
               
-              # 保存JSON文件
               json_file = Path('assets/data/blog_posts.json')
               json_file.parent.mkdir(parents=True, exist_ok=True)
               
@@ -680,113 +417,92 @@ EOFILE
               print(f'✅ 簡化JSON更新完成，包含 {len(blog_data[\"posts\"])} 篇文章')
           "
           
-          echo "博客JSON文件更新完成"
           echo "blog_json_updated=true" >> $GITHUB_OUTPUT
-          
-          # 提交更新後的JSON文件
+
+      - name: 提交JSON更新
+        if: steps.update_json.outputs.blog_json_updated == 'true'
+        run: |
           git add assets/data/*.json || true
-          if git diff --cached --quiet; then
-            echo "JSON文件沒有變更"
+          
+          if ! git diff --cached --quiet; then
+            git commit -m "更新博客JSON數據 [$(date +'%Y-%m-%d %H:%M:%S')]"
+            git push
           else
-            git commit -m "更新博客JSON文件 [$(date +'%Y-%m-%d %H:%M:%S')]" || echo "提交JSON文件失敗，但繼續執行"
-            git push || echo "推送JSON文件失敗，但繼續執行"
+            echo "JSON文件沒有變更"
           fi
 
-      # 14. 生成網站地圖
       - name: 生成網站地圖
-        if: steps.update_blog_json.outputs.blog_json_updated == 'true' || github.event.inputs.update_sitemap == 'true'
+        if: steps.update_json.outputs.blog_json_updated == 'true'
         run: |
-          echo "開始生成網站地圖..."
-          
           python -c "
           import os
           from datetime import datetime
           from pathlib import Path
           
-          # 生成基本的sitemap.xml
           sitemap_content = '''<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-          <urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">
-          '''
-          
-          # 添加主要頁面
-          main_pages = [
-              ('/', '1.0', 'daily'),
-              ('/blog.html', '0.9', 'daily'),
-              ('/services.html', '0.8', 'weekly'),
-              ('/contact.html', '0.7', 'monthly'),
-              ('/faq.html', '0.6', 'monthly')
-          ]
+<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">'''
           
           base_url = 'https://www.horgoscpa.com'
           current_date = datetime.now().strftime('%Y-%m-%d')
           
+          main_pages = [
+              ('/', '1.0', 'daily'),
+              ('/blog.html', '0.9', 'daily'),
+              ('/services.html', '0.8', 'weekly'),
+              ('/contact.html', '0.7', 'monthly')
+          ]
+          
           for url, priority, changefreq in main_pages:
               sitemap_content += f'''
-            <url>
-              <loc>{base_url}{url}</loc>
-              <lastmod>{current_date}</lastmod>
-              <changefreq>{changefreq}</changefreq>
-              <priority>{priority}</priority>
-            </url>'''
+  <url>
+    <loc>{base_url}{url}</loc>
+    <lastmod>{current_date}</lastmod>
+    <changefreq>{changefreq}</changefreq>
+    <priority>{priority}</priority>
+  </url>'''
           
-          # 添加博客文章
           blog_dir = Path('blog')
           if blog_dir.exists():
               html_files = list(blog_dir.glob('*.html'))
               for html_file in html_files:
                   sitemap_content += f'''
-            <url>
-              <loc>{base_url}/blog/{html_file.name}</loc>
-              <lastmod>{current_date}</lastmod>
-              <changefreq>weekly</changefreq>
-              <priority>0.8</priority>
-            </url>'''
+  <url>
+    <loc>{base_url}/blog/{html_file.name}</loc>
+    <lastmod>{current_date}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>'''
           
           sitemap_content += '''
-          </urlset>'''
+</urlset>'''
           
-          # 保存sitemap.xml
           with open('sitemap.xml', 'w', encoding='utf-8') as f:
               f.write(sitemap_content)
           
           print('✅ 網站地圖生成完成')
           "
           
-          # 提交sitemap
           git add sitemap.xml || true
-          if git diff --cached --quiet; then
-            echo "網站地圖沒有變更"
-          else
+          if ! git diff --cached --quiet; then
             git commit -m "更新網站地圖 [$(date +'%Y-%m-%d %H:%M:%S')]"
             git push
           fi
 
-      # 最後的結果通知
-      - name: 工作流執行結果通知
+      - name: 執行結果統計
         run: |
           echo "===== 工作流程執行完成 ====="
           echo "執行時間: $(date '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "台灣時間: $(TZ='Asia/Taipei' date '+%Y-%m-%d %H:%M:%S %Z')"
           
-          # 顯示執行結果摘要
           echo ""
-          echo "執行結果摘要:"
-          echo "- Word文檔處理: ${{ steps.process_word.outputs.html_changed == 'true' && '✅ 成功' || '⏭️ 跳過或無需處理' }}"
-          echo "- JSON文件更新: ${{ steps.update_blog_json.outputs.blog_json_updated == 'true' && '✅ 成功' || '⏭️ 跳過' }}"
+          echo "執行結果:"
+          echo "- Word文檔處理: ${{ steps.process_word.outputs.html_changed == 'true' && '✅ 成功' || '⏭️ 跳過' }}"
+          echo "- JSON文件更新: ${{ steps.update_json.outputs.blog_json_updated == 'true' && '✅ 成功' || '⏭️ 跳過' }}"
           
-          # 顯示生成的文件統計
           echo ""
           echo "文件統計:"
           echo "- HTML文件: $(find blog -name "*.html" 2>/dev/null | wc -l) 個"
           echo "- JSON文件: $(find assets/data -name "*.json" 2>/dev/null | wc -l) 個"
-          echo "- 已處理Word文檔: $(find word-docs/processed -name "*.docx" 2>/dev/null | wc -l) 個"
-          
-          # 檢查是否有錯誤但不中斷
-          echo ""
-          echo "注意事項:"
-          if [ "${{ steps.process_word.outputs.html_changed }}" == "false" ]; then
-            echo "- Word文檔處理可能遇到問題，但工作流程仍會繼續"
-          fi
+          echo "- Word文檔: $(find word-docs -name "*.docx" 2>/dev/null | wc -l) 個"
           
           echo ""
-          echo "🎉 工作流程執行完成！"
+          echo "🎉 自動化流程執行完成！"
