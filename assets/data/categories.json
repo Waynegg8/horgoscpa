@@ -3,7 +3,7 @@
     {
       "slug": "tax",
       "name": "稅務相關",
-      "count": 66
+      "count": 0
     },
     {
       "slug": "insurance",
@@ -13,12 +13,12 @@
     {
       "slug": "accounting",
       "name": "會計實務",
-      "count": 4
+      "count": 0
     },
     {
       "slug": "business",
       "name": "企業服務",
-      "count": 11
+      "count": 0
     }
   ]
 }
