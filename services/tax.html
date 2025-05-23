@@ -6,7 +6,7 @@
   <meta name="description" content="霍爾果斯會計師事務所稅務申報服務 - 專業協助企業與個人進行各類稅務申報、節稅規劃與稅務諮詢。" />
   <title>稅務申報 | 霍爾果斯會計師事務所</title>
 
-<!-- hreflang 標籤 -->
+  <!-- hreflang 標籤 -->
   <link rel="alternate" hreflang="zh-TW" href="https://www.horgoscpa.com/tax.html" />
   
   <!-- Favicon -->
@@ -18,10 +18,10 @@
   <!-- Material Symbols 圖示庫 -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <!-- 移動版導航欄樣式 -->
-<link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
+  <link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
 
-<!-- 確保Material Icons可用 -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <!-- 確保Material Icons可用 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <!-- 引用全站共用樣式 -->
   <link rel="stylesheet" href="/assets/css/common.css" />
   <link rel="stylesheet" href="/assets/css/navbar.css" />
@@ -32,6 +32,18 @@
   
   <!-- 服務頁面特定樣式 -->
   <style>
+    /* === 基礎重置 === */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      overflow-x: hidden;
+    }
+    
     /* 頁面標題樣式調整 - 與team.html一致 */
     .service-header {
       text-align: left;
@@ -572,6 +584,199 @@
       flex-wrap: wrap;
     }
     
+    /* === FOOTER 修復樣式 === */
+    .site-footer {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      background: linear-gradient(135deg, #1a365d 0%, #2d5282 50%, #3182ce 100%);
+      color: white;
+      padding: 60px 0 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .site-footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    
+    .footer-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .footer-content {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    
+    .footer-logo {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .footer-logo-img {
+      width: 180px;
+      height: auto;
+      margin-bottom: 15px;
+      filter: brightness(1.1);
+    }
+    
+    .footer-logo p {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 25px;
+    }
+    
+    .footer-line-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #00C300;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      width: fit-content;
+    }
+    
+    .footer-line-btn:hover {
+      background: #00a300;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,195,0,0.3);
+    }
+    
+    .line-icon {
+      width: 20px;
+      height: 20px;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.859H6.753c-.349 0-.63-.283-.63-.63 0-.345.281-.63.63-.63h4.063c.347 0 .627.285.627.63 0 .347-.28.63-.627.63H8.769v3.651z"/></svg>') center/contain no-repeat;
+    }
+    
+    .footer-contact h3,
+    .footer-links h3,
+    .footer-services h3 {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      color: white;
+      font-weight: 600;
+      position: relative;
+    }
+    
+    .footer-contact h3::after,
+    .footer-links h3::after,
+    .footer-services h3::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 40px;
+      height: 3px;
+      background: linear-gradient(to right, #4299e1, #63b3ed);
+      border-radius: 2px;
+    }
+    
+    .contact-info,
+    .quick-links,
+    .services-list {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .contact-info li,
+    .quick-links li,
+    .services-list li {
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .contact-info li:last-child,
+    .quick-links li:last-child,
+    .services-list li:last-child {
+      margin-bottom: 0;
+    }
+    
+    .icon-contact,
+    .icon-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      color: #4299e1;
+    }
+    
+    .contact-info a,
+    .quick-links a,
+    .services-list a {
+      color: rgba(255,255,255,0.9);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    
+    .contact-info a:hover,
+    .quick-links a:hover,
+    .services-list a:hover {
+      color: #4299e1;
+    }
+    
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.2);
+      padding-top: 20px;
+      text-align: center;
+    }
+    
+    .footer-text p {
+      color: rgba(255,255,255,0.8);
+      font-size: 0.95rem;
+    }
+    
+    .back-to-top {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #3182ce, #2d5282);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0;
+      visibility: hidden;
+      z-index: 1000;
+    }
+    
+    .back-to-top.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .back-to-top:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(49,130,206,0.4);
+    }
+    
     /* 響應式調整 */
     @media (max-width: 992px) {
       .detail-card {
@@ -605,6 +810,11 @@
       
       .cta-content h2 {
         font-size: 2.2rem;
+      }
+      
+      .footer-content {
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
       }
     }
     
@@ -649,7 +859,16 @@
       }
       
       .documents-container, .advantages-container {
-        grid-template-columns: 1fr; /* 手機版單列顯示 */
+        grid-template-columns: 1fr;
+      }
+      
+      .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+      
+      .footer-logo-img {
+        width: 150px;
       }
     }
   </style>
@@ -662,7 +881,7 @@
     gtag('js', new Date());
     gtag('config', 'G-RKMCS9WVS5');
   </script>
-  </head>
+</head>
 <body>
 
 <!-- 導航欄 -->
@@ -691,6 +910,7 @@
     </ul>
   </div>
 </nav>
+
 <!-- 移動版導航欄 -->
 <div class="mobile-navbar" style="display: none;">
   <div class="mobile-nav-container">
@@ -720,6 +940,7 @@
     </ul>
   </div>
 </div>
+
 <!-- 頁面標題 -->
 <header class="service-header">
   <div class="container">
@@ -760,18 +981,20 @@
       </div>
     </div>
     
-<div class="detail-card">
-  <div class="detail-icon">
-    <img src="/assets/images/real-estate-tax.jpg" alt="不動產稅務規劃">
-  </div>
-  <div class="detail-content">
-    <h2 class="detail-title">不動產稅務規劃</h2>
-    <div class="detail-text">
-      <p>在房地產交易與持有過程中，稅負規劃至關重要，我們提供專業的不動產稅務規劃服務，協助客戶處理土地增值稅、房地合一稅、房屋稅與地價稅等各項稅務問題，讓您的不動產投資或自用決策更具效益。</p>
-      <p>我們的服務包括不動產交易前的稅負評估、持有期間的節稅規劃、贈與與繼承的稅務安排、不動產信託規劃等，確保您在不動產相關決策中能在合法合規的前提下，達到最佳的稅務效益。</p>
+    <div class="detail-card">
+      <div class="detail-icon">
+        <img src="/assets/images/real-estate-tax.jpg" alt="不動產稅務規劃">
+      </div>
+      <div class="detail-content">
+        <h2 class="detail-title">不動產稅務規劃</h2>
+        <div class="detail-text">
+          <p>在房地產交易與持有過程中，稅負規劃至關重要，我們提供專業的不動產稅務規劃服務，協助客戶處理土地增值稅、房地合一稅、房屋稅與地價稅等各項稅務問題，讓您的不動產投資或自用決策更具效益。</p>
+          <p>我們的服務包括不動產交易前的稅負評估、持有期間的節稅規劃、贈與與繼承的稅務安排、不動產信託規劃等，確保您在不動產相關決策中能在合法合規的前提下，達到最佳的稅務效益。</p>
+        </div>
+      </div>
     </div>
   </div>
-</div>
+</section>
 
 <!-- 服務流程區塊 -->
 <section class="process-section">
@@ -999,7 +1222,7 @@
         </ul>
       </div>
       
-      <!-- 服務項目 - 更新為與首頁一致 -->
+      <!-- 服務項目 -->
       <div class="footer-services">
         <h3>服務項目</h3>
         <ul class="services-list">
@@ -1184,6 +1407,7 @@
     });
   });
 </script>
+
 <!-- 移動版導航欄功能腳本 -->
 <script src="/assets/js/mobile-navbar.js"></script>
 </body>
