@@ -82,11 +82,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const seriesEpisodeMeta = document.querySelector('meta[name="series-episode"]');
     
     if (seriesNameMeta && seriesEpisodeMeta) {
-      result.isSeries = true;
-      result.seriesName = seriesNameMeta.getAttribute('content');
-      result.episode = parseInt(seriesEpisodeMeta.getAttribute('content'));
-      console.log(`找到系列信息: ${result.seriesName} EP${result.episode}`);
-      return result;
+      const seriesName = seriesNameMeta.getAttribute('content');
+      const episode = seriesEpisodeMeta.getAttribute('content');
+      
+      if (seriesName && seriesName.trim() && episode && episode.trim()) {
+        result.isSeries = true;
+        result.seriesName = seriesName;
+        result.episode = parseInt(episode);
+        console.log(`找到系列信息: ${result.seriesName} EP${result.episode}`);
+        return result;
+      }
     }
     
     const scriptTags = document.querySelectorAll('script[type="application/ld+json"]');
@@ -116,11 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
       url = "/blog/" + url.replace(/^\//, '');
     }
     
-    // 如果需要絕對URL，可以添加域名
-    if (url.startsWith('/')) {
-      url = 'https://horgoscpa.com' + url;
-    }
-    
     return url;
   }
   
@@ -129,6 +129,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const randomIndex = Math.floor(Math.random() * array.length);
     console.log(`隨機選擇索引 ${randomIndex}，共 ${array.length} 個元素`);
     return array[randomIndex];
+  }
+
+  // 新增：獲取隨機推薦文章的函數
+  function getRandomRecommendation(data, excludeCurrentTitle) {
+    console.log('開始獲取隨機推薦文章');
+    let recommendations = [];
+    
+    // 1. 優先推薦系列文章的第一集
+    const seriesFirstEpisodes = getAllSeriesFirstEpisodes(data);
+    if (seriesFirstEpisodes.length > 0) {
+      recommendations = recommendations.concat(seriesFirstEpisodes);
+      console.log(`添加 ${seriesFirstEpisodes.length} 個系列第一集到推薦列表`);
+    }
+    
+    // 2. 添加其他非系列文章（排除當前文章）
+    if (data.posts && Array.isArray(data.posts)) {
+      const nonSeriesArticles = data.posts.filter(post => 
+        post && 
+        !post.is_series && 
+        post.title !== excludeCurrentTitle
+      );
+      
+      recommendations = recommendations.concat(nonSeriesArticles);
+      console.log(`添加 ${nonSeriesArticles.length} 個非系列文章到推薦列表`);
+    }
+    
+    console.log(`推薦列表總數: ${recommendations.length}`);
+    
+    if (recommendations.length > 0) {
+      const selected = getRandomItem(recommendations);
+      if (selected) {
+        selected.url = processUrl(selected.url);
+        console.log(`隨機選擇推薦文章: ${selected.title}`);
+      }
+      return selected;
+    }
+    
+    return null;
   }
 
   function findAdjacentArticles(data, seriesInfo) {
@@ -225,11 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 prevPost.url = processUrl(prevPost.url);
                 prevMessage = '離開此系列，前往其他系列的第一篇';
                 console.log(`系列第一集，推薦其他系列的第一篇: ${prevPost.title}`);
-              } else {
-                console.log(`未能選取其他系列的第一篇`);
               }
-            } else {
-              console.log(`沒有找到其他系列的第一篇`);
             }
           }
         }
@@ -259,14 +293,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 nextPost.url = processUrl(nextPost.url);
                 nextMessage = '此系列已結束，查看其他系列的第一篇';
                 console.log(`系列最後一集，推薦其他系列的第一篇: ${nextPost.title}`);
-              } else {
-                console.log(`未能選取其他系列的第一集`);
               }
-            } else {
-              console.log(`沒有找到其他系列的第一集`);
             }
-          } else {
-            console.log(`當前集數 ${currentEpisode} 不是最後一集 ${maxEpisode}，但找不到下一集`);
           }
         }
       } catch (error) {
@@ -305,63 +333,75 @@ document.addEventListener('DOMContentLoaded', function() {
       if (currentIndex !== -1) {
         console.log(`找到當前文章在排序後的索引位置: ${currentIndex}`);
         
+        // 處理上一篇
         if (currentIndex > 0) {
           prevPost = sortedPosts[currentIndex - 1];
           prevPost.url = processUrl(prevPost.url);
           console.log(`找到上一篇文章: ${prevPost.title}`);
         } else {
-          console.log(`當前文章已經是最新的，沒有上一篇`);
+          console.log(`當前文章已經是最新的，嘗試隨機推薦`);
+          prevPost = getRandomRecommendation(data, info.title);
+          if (prevPost) {
+            prevMessage = '推薦閱讀';
+            console.log(`隨機推薦上一篇: ${prevPost.title}`);
+          }
         }
         
+        // 處理下一篇
         if (currentIndex < sortedPosts.length - 1) {
           nextPost = sortedPosts[currentIndex + 1];
           nextPost.url = processUrl(nextPost.url);
           console.log(`找到下一篇文章: ${nextPost.title}`);
         } else {
-          console.log(`當前文章已經是最舊的，嘗試推薦系列文章`);
-          
-          const seriesFirstEpisodes = getAllSeriesFirstEpisodes(data);
-          if (seriesFirstEpisodes.length > 0) {
-            nextPost = getRandomItem(seriesFirstEpisodes);
-            nextPost.url = processUrl(nextPost.url);
-            nextMessage = '即將進入系列文章';
-            console.log(`推薦系列文章: ${nextPost.title}`);
-          } else {
-            console.log(`沒有找到可推薦的系列文章`);
+          console.log(`當前文章已經是最舊的，嘗試隨機推薦`);
+          nextPost = getRandomRecommendation(data, info.title);
+          if (nextPost) {
+            nextMessage = '推薦閱讀';
+            console.log(`隨機推薦下一篇: ${nextPost.title}`);
           }
         }
       } else {
-        console.log(`未能找到當前文章，嘗試根據日期進行比較`);
+        console.log(`未能找到當前文章，提供隨機推薦`);
         
-        if (info.date) {
-          const currentDate = new Date(info.date);
-          
-          const earlierPosts = sortedPosts.filter(post => 
-            new Date(post.date) < currentDate
+        // 當找不到當前文章時，提供隨機推薦
+        prevPost = getRandomRecommendation(data, info.title);
+        nextPost = getRandomRecommendation(data, info.title);
+        
+        // 確保上一篇和下一篇不是同一篇文章
+        if (prevPost && nextPost && prevPost.title === nextPost.title) {
+          const allRecommendations = [];
+          const seriesFirstEpisodes = getAllSeriesFirstEpisodes(data);
+          const nonSeriesArticles = data.posts.filter(post => 
+            post && !post.is_series && post.title !== info.title
           );
           
-          const laterPosts = sortedPosts.filter(post => 
-            new Date(post.date) > currentDate
-          );
+          allRecommendations.push(...seriesFirstEpisodes, ...nonSeriesArticles);
           
-          console.log(`找到 ${earlierPosts.length} 篇早於當前文章的文章, ${laterPosts.length} 篇晚於當前文章的文章`);
-          
-          if (earlierPosts.length > 0) {
-            earlierPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-            prevPost = earlierPosts[0];
-            prevPost.url = processUrl(prevPost.url);
-            console.log(`根據日期找到上一篇文章: ${prevPost.title}`);
-          }
-          
-          if (laterPosts.length > 0) {
-            laterPosts.sort((a, b) => new Date(a.date) - new Date(b.date));
-            nextPost = laterPosts[0];
-            nextPost.url = processUrl(nextPost.url);
-            console.log(`根據日期找到下一篇文章: ${nextPost.title}`);
+          if (allRecommendations.length >= 2) {
+            // 隨機選擇兩篇不同的文章
+            const shuffled = allRecommendations.sort(() => 0.5 - Math.random());
+            prevPost = shuffled[0];
+            nextPost = shuffled[1];
+            
+            if (prevPost) {
+              prevPost.url = processUrl(prevPost.url);
+              prevMessage = '推薦閱讀';
+            }
+            if (nextPost) {
+              nextPost.url = processUrl(nextPost.url);
+              nextMessage = '推薦閱讀';
+            }
           }
         } else {
-          console.log(`無法確定當前文章的日期，無法進行比較`);
+          if (prevPost) {
+            prevMessage = '推薦閱讀';
+          }
+          if (nextPost) {
+            nextMessage = '推薦閱讀';
+          }
         }
+        
+        console.log(`提供隨機推薦 - 上一篇: ${prevPost ? prevPost.title : '無'}, 下一篇: ${nextPost ? nextPost.title : '無'}`);
       }
       
       updateNavigation(prevPost, nextPost, prevMessage, nextMessage);
