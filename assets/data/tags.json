@@ -1,109 +1,18 @@
 {
   "tags": [
-    {
-      "slug": "tax",
-      "name": "Tax",
-      "count": 36
-    },
-    {
-      "slug": "practice",
-      "name": "Practice",
-      "count": 20
-    },
-    {
-      "slug": "business-tax",
-      "name": "Business Tax",
-      "count": 11
-    },
-    {
-      "slug": "process",
-      "name": "Process",
-      "count": 3
-    },
-    {
-      "slug": "case-study",
-      "name": "Case Study",
-      "count": 7
-    },
-    {
-      "slug": "analysis",
-      "name": "Analysis",
-      "count": 20
-    },
-    {
-      "slug": "financial-statement",
-      "name": "Financial Statement",
-      "count": 2
-    },
-    {
-      "slug": "guide",
-      "name": "Guide",
-      "count": 4
-    },
-    {
-      "slug": "bookkeeping",
-      "name": "Bookkeeping",
-      "count": 1
-    },
-    {
-      "slug": "accounting",
-      "name": "Accounting",
-      "count": 3
-    },
-    {
-      "slug": "gift-tax",
-      "name": "Gift Tax",
-      "count": 14
-    },
-    {
-      "slug": "corporate-tax",
-      "name": "Corporate Tax",
-      "count": 5
-    },
-    {
-      "slug": "filing",
-      "name": "Filing",
-      "count": 4
-    },
-    {
-      "slug": "investment",
-      "name": "Investment",
-      "count": 1
-    },
-    {
-      "slug": "business",
-      "name": "Business",
-      "count": 8
-    },
-    {
-      "slug": "estate-tax",
-      "name": "Estate Tax",
-      "count": 7
-    },
-    {
-      "slug": "life-insurance",
-      "name": "Life Insurance",
-      "count": 10
-    },
-    {
-      "slug": "insurance-policy",
-      "name": "Insurance Policy",
-      "count": 1
-    },
-    {
-      "slug": "insurance-benefit",
-      "name": "Insurance Benefit",
-      "count": 3
-    },
-    {
-      "slug": "income-tax",
-      "name": "Income Tax",
-      "count": 1
-    },
-    {
-      "slug": "tips",
-      "name": "Tips",
-      "count": 1
-    }
+    {"name": "稅務規劃", "slug": "tax-planning", "count": 0},
+    {"name": "所得稅", "slug": "income-tax", "count": 0},
+    {"name": "工商登記", "slug": "business-registration", "count": 0},
+    {"name": "財務報表", "slug": "financial-statements", "count": 0},
+    {"name": "財富管理", "slug": "wealth-management", "count": 0},
+    {"name": "人壽保險", "slug": "life-insurance", "count": 0},
+    {"name": "創業資訊", "slug": "startup", "count": 0},
+    {"name": "企業稅務", "slug": "corporate-tax", "count": 0},
+    {"name": "個人稅務", "slug": "personal-tax", "count": 0},
+    {"name": "財務規劃", "slug": "financial-planning", "count": 0},
+    {"name": "投資理財", "slug": "investment", "count": 0},
+    {"name": "退休規劃", "slug": "retirement", "count": 0},
+    {"name": "會計實務", "slug": "accounting-practice", "count": 0},
+    {"name": "房地產稅務", "slug": "property-tax", "count": 0}
   ]
 }

@@ -1,58 +1,37 @@
 [
   {
-    "title": "合建分屋EP10-熱門問答合建分屋稅務十大常見問題",
-    "url": "/blog/2025-09-18-tax.html",
-    "date": "2025-09-18",
-    "summary": "合建分屋EP10-熱門問答合建分屋稅務十大常見問題 - 霍爾果斯會計師事務所專業服務，提供稅務相關相關諮詢",
-    "category": "tax",
-    "category_name": "稅務相關",
-    "tags": [
-      {
-        "slug": "tax",
-        "name": "Tax"
-      }
-    ],
+    "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
+    "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
+    "date": "2025-05-23",
     "image": "/assets/images/blog/default.jpg",
-    "is_series": false
+    "summary": "前言 在現代商業環境中，對於中小企業及創業者而言，會計師事務所扮演著至關重要的角色，不僅提供傳統的記帳、報稅服務，更擴展至企業成立登記、稅務規劃等多元面向。然而，許多創業者或中小企業主對於會計師事務所能提供的專業服務範圍與內容不甚了解，導致無法充分利用專業資源來優化企業營運。本文將詳細解析會計師事務所對中小企業的核心工作內容及服務項目，協助企業主了解如何與會計師事務所合作，以確保企業財務健全、稅務...",
+    "category": "accounting",
+    "category_name": "會計資訊",
+    "is_series": true,
+    "series_name": "中小企業基礎服務篇",
+    "series_slug": "中小企業基礎服務篇",
+    "episode": 1
   },
   {
-    "title": "合建分屋EP9-實務策略合建分屋稅負優化與常見錯誤",
-    "url": "/blog/2025-09-11-practice-tax.html",
-    "date": "2025-09-11",
-    "summary": "合建分屋EP9-實務策略合建分屋稅負優化與常見錯誤 - 霍爾果斯會計師事務所專業服務，提供稅務相關相關諮詢",
-    "category": "tax",
-    "category_name": "稅務相關",
-    "tags": [
-      {
-        "slug": "practice",
-        "name": "Practice"
-      },
-      {
-        "slug": "tax",
-        "name": "Tax"
-      }
-    ],
+    "title": "擬制遺產課稅制度重大變革：遺產及贈與稅法修正草案深度解析",
+    "url": "/blog/2025-05-22-major-changes-to",
+    "date": "2025-05-22",
     "image": "/assets/images/blog/default.jpg",
-    "is_series": false
+    "summary": "前言 2024年10月28日，憲法法庭作成憲判字第11號判決，宣告《遺產及贈與稅法》第15條第1項第1款關於配偶擬制遺產的規定牴觸憲法。判決主文明確指出兩項違憲之處：一是擬制遺產的受贈人為被繼承人配偶時，缺乏明確規範使其他繼承人須為配偶受贈財產增益負擔稅負；二是對配偶受贈的擬制遺產，欠缺相當於剩餘財產差額分配請求權的扣除規定。",
+    "category": "finance",
+    "category_name": "財務規劃"
   },
   {
-    "title": "合建分屋EP8-建設公司II發票開立規定與營業稅處理",
-    "url": "/blog/2025-09-04-business-tax-tax.html",
-    "date": "2025-09-04",
-    "summary": "合建分屋EP8-建設公司II發票開立規定與營業稅處理 - 霍爾果斯會計師事務所專業服務，提供稅務相關相關諮詢",
-    "category": "tax",
-    "category_name": "稅務相關",
-    "tags": [
-      {
-        "slug": "business-tax",
-        "name": "Business Tax"
-      },
-      {
-        "slug": "tax",
-        "name": "Tax"
-      }
-    ],
+    "title": "房地交易可認列之成本項目詳解",
+    "url": "/blog/2025-05-20-unified-premises-ep3-detailed-description-of",
+    "date": "2025-05-20",
     "image": "/assets/images/blog/default.jpg",
-    "is_series": false
+    "summary": "前言 在房地合一稅制度下，正確認列房地交易的各項成本與費用，對於降低稅負具有重要意義。許多納稅義務人對於哪些支出可以列為成本，哪些須於年度綜合所得稅申報，常感到困惑。本文將詳細解析房地交易可認列的成本項目，包括取得時的必要費用、持有期間的資本支出，以及出售時可扣除的費用，協助納稅義務人正確計算房地交易所得，合理節稅。",
+    "category": "accounting",
+    "category_name": "會計資訊",
+    "is_series": true,
+    "series_name": "房地合一稅2.0",
+    "series_slug": "房地合一稅2.0",
+    "episode": 3
   }
 ]
