@@ -1,5 +1,70 @@
 {
   "series": {
+    "中小企業基礎服務篇": {
+      "name": "中小企業基礎服務篇",
+      "slug": "中小企業基礎服務篇",
+      "posts": [
+        {
+          "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
+          "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
+          "date": "2025-05-23",
+          "summary": "前言 在現代商業環境中，對於中小企業及創業者而言，會計師事務所扮演著至關重要的角色，不僅提供傳統的記帳、報稅服務，更擴展至企業成立登記、稅務規劃等多元面向。然而，許多創業者或中小企業主對於會計師事務所能提供的專業服務範圍與內容不甚了解，導致無法充分利用專業資源來優化企業營運。本文將詳細解析會計師事務所對中小企業的核心工作內容及服務項目，協助企業主了解如何與會計師事務所合作，以確保企業財務健全、稅務...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-23-中小企業基礎服務篇EP1-會計師事務所工作內容與服務項目.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        }
+      ],
+      "count": 1,
+      "latest": {
+        "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
+        "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
+        "date": "2025-05-23",
+        "summary": "前言 在現代商業環境中，對於中小企業及創業者而言，會計師事務所扮演著至關重要的角色，不僅提供傳統的記帳、報稅服務，更擴展至企業成立登記、稅務規劃等多元面向。然而，許多創業者或中小企業主對於會計師事務所能提供的專業服務範圍與內容不甚了解，導致無法充分利用專業資源來優化企業營運。本文將詳細解析會計師事務所對中小企業的核心工作內容及服務項目，協助企業主了解如何與會計師事務所合作，以確保企業財務健全、稅務...",
+        "category": "accounting",
+        "category_name": "會計資訊",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-05-23-中小企業基礎服務篇EP1-會計師事務所工作內容與服務項目.docx",
+        "is_series": true,
+        "series_name": "中小企業基礎服務篇",
+        "series_slug": "中小企業基礎服務篇",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "會計實務",
+            "slug": "accounting-practice"
+          },
+          {
+            "name": "財務報表",
+            "slug": "financial-statements"
+          },
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-05-23",
+      "latest_post_date": "2025-05-23"
+    },
     "房地合一稅2.0": {
       "name": "房地合一稅2.0",
       "slug": "房地合一稅2.0",
@@ -1858,6 +1923,71 @@
   },
   "series_list": [
     {
+      "name": "中小企業基礎服務篇",
+      "slug": "中小企業基礎服務篇",
+      "posts": [
+        {
+          "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
+          "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
+          "date": "2025-05-23",
+          "summary": "前言 在現代商業環境中，對於中小企業及創業者而言，會計師事務所扮演著至關重要的角色，不僅提供傳統的記帳、報稅服務，更擴展至企業成立登記、稅務規劃等多元面向。然而，許多創業者或中小企業主對於會計師事務所能提供的專業服務範圍與內容不甚了解，導致無法充分利用專業資源來優化企業營運。本文將詳細解析會計師事務所對中小企業的核心工作內容及服務項目，協助企業主了解如何與會計師事務所合作，以確保企業財務健全、稅務...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-23-中小企業基礎服務篇EP1-會計師事務所工作內容與服務項目.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        }
+      ],
+      "count": 1,
+      "latest": {
+        "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
+        "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
+        "date": "2025-05-23",
+        "summary": "前言 在現代商業環境中，對於中小企業及創業者而言，會計師事務所扮演著至關重要的角色，不僅提供傳統的記帳、報稅服務，更擴展至企業成立登記、稅務規劃等多元面向。然而，許多創業者或中小企業主對於會計師事務所能提供的專業服務範圍與內容不甚了解，導致無法充分利用專業資源來優化企業營運。本文將詳細解析會計師事務所對中小企業的核心工作內容及服務項目，協助企業主了解如何與會計師事務所合作，以確保企業財務健全、稅務...",
+        "category": "accounting",
+        "category_name": "會計資訊",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-05-23-中小企業基礎服務篇EP1-會計師事務所工作內容與服務項目.docx",
+        "is_series": true,
+        "series_name": "中小企業基礎服務篇",
+        "series_slug": "中小企業基礎服務篇",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "會計實務",
+            "slug": "accounting-practice"
+          },
+          {
+            "name": "財務報表",
+            "slug": "financial-statements"
+          },
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-05-23",
+      "latest_post_date": "2025-05-23"
+    },
+    {
       "name": "房地合一稅2.0",
       "slug": "房地合一稅2.0",
       "posts": [
@@ -3713,5 +3843,5 @@
       "latest_post_date": "2025-01-05"
     }
   ],
-  "generated_time": "2025-05-22T22:34:27.061259"
+  "generated_time": "2025-05-23T03:34:28.080078"
 }
