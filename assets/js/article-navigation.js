@@ -389,62 +389,20 @@ document.addEventListener('DOMContentLoaded', function() {
       if (currentIndex !== -1) {
         console.log(`找到當前文章在排序後的索引位置: ${currentIndex}`);
         
-        // 處理上一篇
-        if (currentIndex > 0) {
-          // 30% 機率推薦系列第一集，70% 機率推薦時間順序的上一篇
-          if (Math.random() < 0.3) {
-            console.log(`隨機決定推薦系列第一集作為上一篇`);
-            const seriesRecommendation = getRandomSeriesRecommendation(data, info.title);
-            if (seriesRecommendation) {
-              prevPost = seriesRecommendation;
-              prevMessage = '推薦系列';
-              console.log(`推薦系列第一集作為上一篇: ${prevPost.title}`);
-            } else {
-              prevPost = sortedPosts[currentIndex - 1];
-              prevPost.url = processUrl(prevPost.url);
-              console.log(`找到時間順序上一篇文章: ${prevPost.title}`);
-            }
-          } else {
-            prevPost = sortedPosts[currentIndex - 1];
-            prevPost.url = processUrl(prevPost.url);
-            console.log(`找到時間順序上一篇文章: ${prevPost.title}`);
-          }
-        } else {
-          console.log(`當前文章已經是最新的，嘗試隨機推薦`);
-          prevPost = getRandomRecommendation(data, info.title);
-          if (prevPost) {
-            prevMessage = '推薦閱讀';
-            console.log(`隨機推薦上一篇: ${prevPost.title}`);
-          }
+        // 處理上一篇 - 只推薦非系列文章或系列第一集
+        console.log(`處理非系列文章的上一篇推薦`);
+        prevPost = getRandomRecommendation(data, info.title);
+        if (prevPost) {
+          prevMessage = '推薦閱讀';
+          console.log(`推薦上一篇: ${prevPost.title}`);
         }
         
-        // 處理下一篇
-        if (currentIndex < sortedPosts.length - 1) {
-          // 30% 機率推薦系列第一集，70% 機率推薦時間順序的下一篇
-          if (Math.random() < 0.3) {
-            console.log(`隨機決定推薦系列第一集作為下一篇`);
-            const seriesRecommendation = getRandomSeriesRecommendation(data, info.title);
-            if (seriesRecommendation) {
-              nextPost = seriesRecommendation;
-              nextMessage = '推薦系列';
-              console.log(`推薦系列第一集作為下一篇: ${nextPost.title}`);
-            } else {
-              nextPost = sortedPosts[currentIndex + 1];
-              nextPost.url = processUrl(nextPost.url);
-              console.log(`找到時間順序下一篇文章: ${nextPost.title}`);
-            }
-          } else {
-            nextPost = sortedPosts[currentIndex + 1];
-            nextPost.url = processUrl(nextPost.url);
-            console.log(`找到時間順序下一篇文章: ${nextPost.title}`);
-          }
-        } else {
-          console.log(`當前文章已經是最舊的，嘗試隨機推薦`);
-          nextPost = getRandomRecommendation(data, info.title);
-          if (nextPost) {
-            nextMessage = '推薦閱讀';
-            console.log(`隨機推薦下一篇: ${nextPost.title}`);
-          }
+        // 處理下一篇 - 只推薦非系列文章或系列第一集
+        console.log(`處理非系列文章的下一篇推薦`);
+        nextPost = getRandomRecommendation(data, info.title);
+        if (nextPost) {
+          nextMessage = '推薦閱讀';
+          console.log(`推薦下一篇: ${nextPost.title}`);
         }
       } else {
         console.log(`未能找到當前文章，提供隨機推薦`);
@@ -455,6 +413,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 確保上一篇和下一篇不是同一篇文章
         if (prevPost && nextPost && prevPost.title === nextPost.title) {
+          console.log(`上一篇和下一篇是同一篇文章，重新選擇`);
           const allRecommendations = [];
           const seriesFirstEpisodes = getAllSeriesFirstEpisodes(data);
           const nonSeriesArticles = data.posts.filter(post => 
@@ -477,13 +436,6 @@ document.addEventListener('DOMContentLoaded', function() {
               nextPost.url = processUrl(nextPost.url);
               nextMessage = '推薦閱讀';
             }
-          }
-        } else {
-          if (prevPost) {
-            prevMessage = '推薦閱讀';
-          }
-          if (nextPost) {
-            nextMessage = '推薦閱讀';
           }
         }
         
