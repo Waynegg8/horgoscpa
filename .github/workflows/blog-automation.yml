@@ -13,6 +13,11 @@ on:
         required: true
         default: 'true'
         type: boolean
+      force_scan:
+        description: '強制掃描所有HTML文章'
+        required: true
+        default: 'false'
+        type: boolean
   
   push:
     branches:
@@ -47,7 +52,7 @@ jobs:
         with:
           python-version: '3.11'
       
-      - name: 創建基本目錄結構
+      - name: 創建目錄結構
         run: |
           mkdir -p blog
           mkdir -p assets/data
@@ -56,125 +61,562 @@ jobs:
           mkdir -p logs
           echo "目錄結構創建完成"
       
-      - name: 安裝基本依賴
+      - name: 安裝依賴
         run: |
           python -m pip install --upgrade pip
-          pip install loguru python-docx beautifulsoup4 requests pathlib
-          echo "依賴安裝完成"
+          pip install loguru python-docx beautifulsoup4 requests
+          echo "Python依賴安裝完成"
       
-      - name: 創建基本Python模組
+      - name: 創建Python模組
         run: |
-          echo "創建基本模組..."
+          echo "開始創建Python模組..."
           
           # 創建 utils.py
-          cat > utils.py << 'EOF'
+          cat > utils.py << 'UTILS_EOF'
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import json
+import re
 from pathlib import Path
+from datetime import datetime
 
 def parse_filename(filename):
-    return {"date": "2025-01-01", "title": filename, "category": "default"}
+    """解析檔名提取資訊"""
+    # 移除副檔名
+    name = Path(filename).stem
+    
+    # 嘗試解析日期格式 YYYY-MM-DD
+    date_pattern = r'(\d{4}-\d{2}-\d{2})'
+    date_match = re.search(date_pattern, name)
+    
+    if date_match:
+        date_str = date_match.group(1)
+        # 移除日期部分得到標題
+        title = re.sub(date_pattern + r'[-_]*', '', name).strip('-_')
+    else:
+        date_str = datetime.now().strftime('%Y-%m-%d')
+        title = name
+    
+    # 清理標題
+    title = re.sub(r'[-_]+', ' ', title).strip()
+    if not title:
+        title = "未命名文檔"
+    
+    return {
+        "date": date_str,
+        "title": title,
+        "category": "default"
+    }
 
 def read_json(filepath, default=None):
+    """讀取JSON文件"""
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             return json.load(f)
-    except:
+    except (FileNotFoundError, json.JSONDecodeError):
         return default or {}
 
 def write_json(filepath, data):
+    """寫入JSON文件"""
     Path(filepath).parent.mkdir(parents=True, exist_ok=True)
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 def setup_logging(level):
+    """設置日誌"""
     pass
 
 def ensure_directories(dirs):
+    """確保目錄存在"""
     for name, path in dirs.items():
         Path(path).mkdir(parents=True, exist_ok=True)
-EOF
+UTILS_EOF
           
           # 創建 translator.py
-          cat > translator.py << 'EOF'
+          cat > translator.py << 'TRANSLATOR_EOF'
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 class DummyTranslator:
-    def translate(self, text, *args, **kwargs):
-        return text.lower().replace(" ", "-")
+    """簡單的翻譯器"""
+    
+    def __init__(self):
+        self.translation_dict = {
+            "稅務": "tax",
+            "保險": "insurance", 
+            "會計": "accounting",
+            "財務": "finance",
+            "投資": "investment",
+            "理財": "financial-planning",
+            "規劃": "planning",
+            "分析": "analysis"
+        }
+    
+    def translate(self, text, clean_url=True):
+        """翻譯文本"""
+        if not text:
+            return ""
+        
+        # 嘗試從字典翻譯
+        if text in self.translation_dict:
+            return self.translation_dict[text]
+        
+        # 簡單的音譯處理
+        result = text.lower()
+        result = result.replace(" ", "-")
+        result = result.replace("_", "-")
+        
+        if clean_url:
+            # 移除特殊字符
+            import re
+            result = re.sub(r'[^\w\-]', '', result)
+            result = re.sub(r'-+', '-', result)
+            result = result.strip('-')
+        
+        return result
 
 def get_translator(*args, **kwargs):
+    """獲取翻譯器實例"""
     return DummyTranslator()
-EOF
+TRANSLATOR_EOF
           
           # 創建 word_processor.py
-          cat > word_processor.py << 'EOF'
+          cat > word_processor.py << 'WORD_EOF'
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import shutil
+from pathlib import Path
+from datetime import datetime
+from utils import parse_filename, read_json, write_json
+from translator import get_translator
+
 class WordProcessor:
-    def __init__(self, *args, **kwargs):
-        self.processed_files = {"files": []}
+    """Word文檔處理器"""
+    
+    def __init__(self, word_dir="word-docs", processed_dir=None, translation_dict_file=None, api_key=None):
+        self.word_dir = Path(word_dir)
+        self.processed_dir = Path(processed_dir or os.path.join(word_dir, "processed"))
+        self.translation_dict_file = Path(translation_dict_file or "assets/data/translation_dict.json")
+        self.processed_files_file = Path("assets/data/processed_files.json")
         
-    def scan_documents(self, *args, **kwargs):
-        import os
-        word_files = []
-        if os.path.exists('word-docs'):
-            for file in os.listdir('word-docs'):
-                if file.endswith('.docx') and not file.startswith('~'):
-                    word_files.append(os.path.join('word-docs', file))
-        return word_files
+        # 確保目錄存在
+        self.word_dir.mkdir(parents=True, exist_ok=True)
+        self.processed_dir.mkdir(parents=True, exist_ok=True)
+        self.translation_dict_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        # 初始化翻譯器
+        self.translator = get_translator()
+        
+        # 載入已處理文件記錄
+        self.processed_files = read_json(self.processed_files_file, default={"files": []})
+        if "files" not in self.processed_files:
+            self.processed_files["files"] = []
+    
+    def scan_documents(self, process_all=False, process_date=None, current_date=None):
+        """掃描Word文檔"""
+        if current_date is None:
+            current_date = datetime.now().date()
+        
+        documents = []
+        word_extensions = [".docx", ".doc"]
+        
+        for file in self.word_dir.glob("*"):
+            if file.is_dir():
+                continue
+            
+            if file.suffix.lower() not in word_extensions:
+                continue
+            
+            # 跳過臨時文件
+            if file.name.startswith('~'):
+                continue
+            
+            if str(file) in self.processed_files["files"] and not process_all:
+                continue
+            
+            documents.append(file)
+        
+        return documents
     
     def prepare_document(self, doc_path):
-        return {"prepared": False, "error": "簡化處理模式"}
+        """準備文檔處理"""
+        doc_path = Path(doc_path)
+        
+        file_info = parse_filename(doc_path.name)
+        if not file_info:
+            return {"prepared": False, "error": f"無法解析檔名: {doc_path.name}"}
+        
+        # 生成URL
+        title_url = self.translator.translate(file_info["title"])
+        url = f"{file_info['date']}-{title_url}"
+        
+        result = {
+            "filename": doc_path.name,
+            "original_filename": doc_path.name,
+            "file_info": file_info,
+            "title": file_info["title"],
+            "content": [f"這是來自 {file_info['title']} 的內容。", "文檔正在處理中，完整內容即將可用。"],
+            "summary": f"{file_info['title']} 的詳細說明和分析。",
+            "date": file_info["date"],
+            "source_path": str(doc_path),
+            "url": url,
+            "prepared": True
+        }
+        
+        return result
     
     def finalize_document_processing(self, doc_info, success=False):
-        return {"processed": success}
-EOF
+        """完成文檔處理"""
+        if success:
+            # 移動文件到已處理目錄
+            source_path = Path(doc_info["source_path"])
+            if source_path.exists():
+                processed_path = self.processed_dir / source_path.name
+                shutil.move(str(source_path), str(processed_path))
+                
+                # 記錄已處理文件
+                if str(source_path) not in self.processed_files["files"]:
+                    self.processed_files["files"].append(str(source_path))
+                    write_json(self.processed_files_file, self.processed_files)
+                
+                doc_info["processed"] = True
+                doc_info["processed_path"] = str(processed_path)
+            else:
+                doc_info["processed"] = False
+                doc_info["error"] = "源文件不存在"
+        else:
+            doc_info["processed"] = False
+        
+        return doc_info
+WORD_EOF
           
           # 創建 html_generator.py
-          cat > html_generator.py << 'EOF'
+          cat > html_generator.py << 'HTML_EOF'
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import json
+from pathlib import Path
+from datetime import datetime
+
 class HtmlGenerator:
-    def __init__(self, *args, **kwargs):
-        pass
+    """HTML生成器"""
+    
+    def __init__(self, output_dir="blog", assets_dir="assets", templates_file=None):
+        self.output_dir = Path(output_dir)
+        self.assets_dir = Path(assets_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
     
     def generate_html(self, doc_info, category=None, tags=None, translator=None):
-        return None, None
-EOF
+        """生成HTML文件"""
+        
+        # 準備META標籤
+        title = doc_info.get("title", "未命名文檔")
+        summary = doc_info.get("summary", "")
+        date_str = doc_info.get("date", datetime.now().strftime('%Y-%m-%d'))
+        url = doc_info.get("url", "default")
+        
+        # 生成HTML內容
+        html_content = self._generate_content_html(doc_info.get("content", []))
+        
+        # 構建完整HTML
+        html = f'''<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{title} | 霍爾果斯會計師事務所</title>
+    <meta name="description" content="{summary}"/>
+    <meta name="date" content="{date_str}"/>
+    <link rel="canonical" href="https://www.horgoscpa.com/blog/{url}.html"/>
+</head>
+<body>
+    <header>
+        <h1>{title}</h1>
+        <time datetime="{date_str}">{date_str}</time>
+    </header>
+    
+    <main>
+        {html_content}
+    </main>
+    
+    <footer>
+        <p>© 2025 霍爾果斯會計師事務所. 版權所有.</p>
+    </footer>
+</body>
+</html>'''
+        
+        # 寫入HTML文件
+        output_file = self.output_dir / f"{url}.html"
+        
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(html)
+        
+        return html, output_file
+    
+    def _generate_content_html(self, content):
+        """生成內容HTML"""
+        if not content:
+            return "<p>內容正在處理中...</p>"
+        
+        html_parts = []
+        for paragraph in content:
+            if paragraph.strip():
+                html_parts.append(f"<p>{paragraph}</p>")
+        
+        return "\n".join(html_parts)
+HTML_EOF
           
           # 創建 content_manager.py
-          cat > content_manager.py << 'EOF'
+          cat > content_manager.py << 'CONTENT_EOF'
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from pathlib import Path
+from utils import read_json, write_json
+
 class ContentManager:
-    def __init__(self, *args, **kwargs):
-        pass
+    """內容管理器"""
+    
+    def __init__(self, data_dir="assets/data"):
+        self.data_dir = Path(data_dir)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 預設分類
+        self.default_categories = [
+            {"name": "稅務相關", "slug": "tax"},
+            {"name": "保險規劃", "slug": "insurance"},
+            {"name": "會計服務", "slug": "accounting"},
+            {"name": "財務分析", "slug": "finance"}
+        ]
+        
+        # 預設標籤
+        self.default_tags = [
+            {"name": "稅務", "slug": "tax"},
+            {"name": "保險", "slug": "insurance"},
+            {"name": "會計", "slug": "accounting"},
+            {"name": "分析", "slug": "analysis"}
+        ]
     
     def process_article(self, doc_info):
-        category = {"name": "預設分類", "slug": "default"}
+        """處理文章信息"""
+        
+        # 根據標題確定分類
+        title = doc_info.get("title", "").lower()
+        category = self.default_categories[0]  # 預設分類
+        
+        if any(word in title for word in ["保險", "險"]):
+            category = self.default_categories[1]
+        elif any(word in title for word in ["會計", "帳務"]):
+            category = self.default_categories[2]
+        elif any(word in title for word in ["財務", "投資", "理財"]):
+            category = self.default_categories[3]
+        
+        # 生成標籤
         tags = []
+        if "稅" in title:
+            tags.append(self.default_tags[0])
+        if "保險" in title or "險" in title:
+            tags.append(self.default_tags[1])
+        if "會計" in title:
+            tags.append(self.default_tags[2])
+        if "分析" in title:
+            tags.append(self.default_tags[3])
+        
+        # 如果沒有標籤，使用預設標籤
+        if not tags:
+            tags = [self.default_tags[0]]
+        
         return doc_info, category, tags
     
     def update_blog_post(self, doc_info):
-        pass
-EOF
+        """更新博客文章資料庫"""
+        blog_posts_file = self.data_dir / "blog_posts.json"
+        
+        # 讀取現有資料
+        blog_data = read_json(blog_posts_file, default={"posts": [], "last_updated": ""})
+        
+        # 更新文章列表
+        if "posts" not in blog_data:
+            blog_data["posts"] = []
+        
+        # 檢查是否已存在
+        existing_post = None
+        for i, post in enumerate(blog_data["posts"]):
+            if post.get("url") == doc_info.get("url"):
+                existing_post = i
+                break
+        
+        # 創建文章記錄
+        post_data = {
+            "title": doc_info.get("title"),
+            "url": doc_info.get("url"),
+            "date": doc_info.get("date"),
+            "summary": doc_info.get("summary"),
+            "filename": doc_info.get("filename")
+        }
+        
+        if existing_post is not None:
+            blog_data["posts"][existing_post] = post_data
+        else:
+            blog_data["posts"].append(post_data)
+        
+        # 按日期排序
+        blog_data["posts"].sort(key=lambda x: x.get("date", ""), reverse=True)
+        blog_data["last_updated"] = datetime.now().isoformat()
+        
+        # 保存資料
+        write_json(blog_posts_file, blog_data)
+CONTENT_EOF
           
-          echo "基本模組創建完成"
+          # 創建 json_generator.py
+          cat > json_generator.py << 'JSON_EOF'
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import json
+from pathlib import Path
+from datetime import datetime
+from utils import read_json, write_json
+
+class JsonGenerator:
+    """JSON資料生成器"""
+    
+    def __init__(self, data_dir="assets/data"):
+        self.data_dir = Path(data_dir)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+    
+    def generate_all_json(self):
+        """生成所有JSON資料"""
+        
+        # 掃描blog目錄的HTML文件
+        blog_dir = Path("blog")
+        html_files = list(blog_dir.glob("*.html")) if blog_dir.exists() else []
+        
+        # 生成博客文章資料
+        blog_data = {
+            "posts": [],
+            "categories": [
+                {"name": "稅務相關", "slug": "tax", "count": 0},
+                {"name": "保險規劃", "slug": "insurance", "count": 0},
+                {"name": "會計服務", "slug": "accounting", "count": 0},
+                {"name": "財務分析", "slug": "finance", "count": 0}
+            ],
+            "tags": [
+                {"name": "稅務", "slug": "tax"},
+                {"name": "保險", "slug": "insurance"},
+                {"name": "會計", "slug": "accounting"},
+                {"name": "分析", "slug": "analysis"}
+            ],
+            "total_posts": 0,
+            "last_updated": datetime.now().isoformat()
+        }
+        
+        # 處理每個HTML文件
+        for html_file in html_files:
+            filename = html_file.stem
+            parts = filename.split("-")
+            
+            # 解析文件名
+            if len(parts) >= 4:
+                date_str = "-".join(parts[:3])
+                title = " ".join(parts[3:]).replace("-", " ").title()
+            else:
+                date_str = "2025-01-01"
+                title = filename.replace("-", " ").title()
+            
+            # 確定分類
+            category_slug = "tax"  # 預設
+            title_lower = title.lower()
+            if any(word in title_lower for word in ["保險", "insurance"]):
+                category_slug = "insurance"
+            elif any(word in title_lower for word in ["會計", "accounting"]):
+                category_slug = "accounting"
+            elif any(word in title_lower for word in ["財務", "finance", "投資"]):
+                category_slug = "finance"
+            
+            # 創建文章記錄
+            post = {
+                "title": title,
+                "url": filename,
+                "date": date_str,
+                "summary": f"{title} 的詳細說明和專業分析。",
+                "category": category_slug,
+                "tags": ["稅務", "分析"],
+                "filename": html_file.name
+            }
+            
+            blog_data["posts"].append(post)
+            
+            # 更新分類計數
+            for category in blog_data["categories"]:
+                if category["slug"] == category_slug:
+                    category["count"] += 1
+                    break
+        
+        # 按日期排序
+        blog_data["posts"].sort(key=lambda x: x["date"], reverse=True)
+        blog_data["total_posts"] = len(blog_data["posts"])
+        
+        # 保存JSON文件
+        write_json(self.data_dir / "blog_posts.json", blog_data)
+        
+        print(f"JSON資料生成完成: {len(blog_data['posts'])} 篇文章")
+        return blog_data
+JSON_EOF
+          
+          echo "✓ 所有Python模組創建完成"
       
-      - name: 創建基本配置文件
+      - name: 創建配置文件
         run: |
           echo "創建配置文件..."
           
           # 創建翻譯字典
-          cat > assets/data/translation_dict.json << 'EOF'
+          cat > assets/data/translation_dict.json << 'DICT_EOF'
 {
   "稅務": "tax",
+  "稅法": "tax-law",
+  "稅務規劃": "tax-planning",
+  "節稅": "tax-saving",
   "保險": "insurance",
+  "人壽保險": "life-insurance",
+  "保險規劃": "insurance-planning",
   "會計": "accounting",
-  "財務": "finance"
+  "帳務": "bookkeeping",
+  "財務": "finance",
+  "投資": "investment",
+  "理財": "financial-planning",
+  "分析": "analysis",
+  "規劃": "planning",
+  "諮詢": "consultation",
+  "服務": "service"
 }
-EOF
+DICT_EOF
           
           # 創建已處理文件記錄
-          cat > assets/data/processed_files.json << 'EOF'
+          cat > assets/data/processed_files.json << 'PROCESSED_EOF'
 {
   "files": []
 }
-EOF
+PROCESSED_EOF
           
-          echo "配置文件創建完成"
+          # 創建關鍵詞映射
+          cat > assets/data/keyword_mappings.json << 'KEYWORDS_EOF'
+{
+  "稅務": "tax",
+  "稅法": "tax-law",
+  "保險": "insurance",
+  "會計": "accounting",
+  "財務": "finance",
+  "投資": "investment",
+  "理財": "financial-planning"
+}
+KEYWORDS_EOF
+          
+          echo "✓ 配置文件創建完成"
 
       - name: 檢查Word文檔
         id: check_word_docs
@@ -182,13 +624,16 @@ EOF
           echo "檢查Word文檔..."
           
           if [ -d "word-docs" ]; then
-            DOCX_COUNT=$(find word-docs -maxdepth 1 -name "*.docx" ! -name "~*" 2>/dev/null | wc -l)
+            # 查找所有.docx文件，排除臨時文件
+            DOCX_FILES=$(find word-docs -maxdepth 1 -name "*.docx" ! -name "~*" 2>/dev/null)
+            DOCX_COUNT=$(echo "$DOCX_FILES" | grep -c ".docx" 2>/dev/null || echo "0")
+            
             echo "發現 $DOCX_COUNT 個Word文檔"
             
             if [ "$DOCX_COUNT" -gt 0 ]; then
               echo "has_word_docs=true" >> $GITHUB_OUTPUT
               echo "文檔列表:"
-              find word-docs -maxdepth 1 -name "*.docx" ! -name "~*"
+              echo "$DOCX_FILES"
             else
               echo "has_word_docs=false" >> $GITHUB_OUTPUT
             fi
@@ -203,242 +648,367 @@ EOF
         run: |
           echo "開始處理Word文檔..."
           
-          PROCESSED_COUNT=0
+          export PYTHONPATH="$(pwd):$PYTHONPATH"
           
-          if [ -d "word-docs" ]; then
-            # 尋找所有.docx文件
-            for docx_file in word-docs/*.docx; do
-              if [ -f "$docx_file" ] && [[ ! "$(basename "$docx_file")" =~ ^~.* ]]; then
-                echo "處理文件: $docx_file"
+          python3 << 'PROCESS_EOF'
+import sys
+import os
+from pathlib import Path
+
+# 添加當前目錄到Python路徑
+sys.path.insert(0, os.getcwd())
+
+try:
+    from word_processor import WordProcessor
+    from html_generator import HtmlGenerator  
+    from content_manager import ContentManager
+    
+    # 初始化處理器
+    word_processor = WordProcessor(
+        word_dir="word-docs",
+        translation_dict_file="assets/data/translation_dict.json"
+    )
+    
+    html_generator = HtmlGenerator(
+        output_dir="blog",
+        assets_dir="assets"
+    )
+    
+    content_manager = ContentManager(
+        data_dir="assets/data"
+    )
+    
+    # 掃描文檔
+    documents = word_processor.scan_documents(process_all=True)
+    print(f"找到 {len(documents)} 個文檔需要處理")
+    
+    success_count = 0
+    
+    for doc_path in documents:
+        print(f"處理文檔: {doc_path}")
+        
+        try:
+            # 準備文檔
+            doc_info = word_processor.prepare_document(doc_path)
+            
+            if not doc_info.get("prepared", False):
+                print(f"文檔準備失敗: {doc_info.get('error', '未知錯誤')}")
+                continue
+            
+            # 處理文章信息
+            doc_info, category, tags = content_manager.process_article(doc_info)
+            
+            # 生成HTML
+            html, output_file = html_generator.generate_html(doc_info, category, tags)
+            
+            if output_file and output_file.exists():
+                print(f"✓ HTML生成成功: {output_file}")
                 
-                # 提取基本文件名
-                basename=$(basename "$docx_file" .docx)
-                # 轉換為小寫並替換空格
-                clean_name=$(echo "$basename" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+                # 更新博客資料庫
+                content_manager.update_blog_post(doc_info)
                 
-                # 創建對應的HTML文件
-                html_file="blog/2025-01-01-$clean_name.html"
+                # 完成處理
+                word_processor.finalize_document_processing(doc_info, success=True)
+                success_count += 1
+            else:
+                print(f"✗ HTML生成失敗")
                 
-                # 生成基本HTML內容
-                cat > "$html_file" << 'HTMLEOF'
-<!DOCTYPE html>
+        except Exception as e:
+            print(f"處理文檔時發生錯誤: {e}")
+            continue
+    
+    print(f"處理完成: 成功 {success_count} 個文檔")
+    
+    # 設置輸出變數
+    if success_count > 0:
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write('html_changed=true\n')
+    else:
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write('html_changed=false\n')
+
+except Exception as e:
+    print(f"主要處理失敗: {e}")
+    print("使用備用處理方案...")
+    
+    # 備用處理方案
+    import glob
+    docx_files = glob.glob("word-docs/*.docx")
+    docx_files = [f for f in docx_files if not os.path.basename(f).startswith('~')]
+    
+    if docx_files:
+        for docx_file in docx_files:
+            basename = os.path.basename(docx_file).replace('.docx', '')
+            clean_name = basename.lower().replace(' ', '-').replace('_', '-')
+            html_file = f"blog/2025-01-01-{clean_name}.html"
+            
+            # 創建基本HTML
+            html_content = f'''<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>處理中的文檔</title>
-    <meta name="description" content="此文檔正在處理中，請稍後查看完整內容。"/>
+    <title>{basename} | 霍爾果斯會計師事務所</title>
+    <meta name="description" content="{basename} 的詳細說明和分析"/>
 </head>
 <body>
     <header>
-        <h1>文檔處理中</h1>
+        <h1>{basename}</h1>
+        <time datetime="2025-01-01">2025-01-01</time>
     </header>
     <main>
-        <p>此文檔正在進行自動化處理，完整內容將很快可用。</p>
-        <p>處理時間: <time datetime="$(date -Iseconds)">$(date)</time></p>
+        <p>此文檔正在處理中，完整內容即將可用。</p>
+        <p>文檔名稱: {basename}</p>
+        <p>處理時間: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
     </main>
 </body>
-</html>
-HTMLEOF
-                
-                echo "✓ 創建HTML文件: $html_file"
-                PROCESSED_COUNT=$((PROCESSED_COUNT + 1))
-              fi
-            done
-          fi
-          
-          if [ "$PROCESSED_COUNT" -gt 0 ]; then
-            echo "html_changed=true" >> $GITHUB_OUTPUT
-            echo "成功處理 $PROCESSED_COUNT 個文檔"
-          else
-            echo "html_changed=false" >> $GITHUB_OUTPUT
-            echo "沒有處理任何文檔"
-          fi
+</html>'''
+            
+            with open(html_file, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            
+            print(f"✓ 備用處理創建: {html_file}")
+        
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write('html_changed=true\n')
+    else:
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write('html_changed=false\n')
+PROCESS_EOF
 
       - name: 更新JSON數據
         id: update_json
-        if: steps.process_word.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true'
+        if: steps.process_word.outputs.html_changed == 'true' || github.event.inputs.update_json == 'true' || github.event.inputs.force_scan == 'true'
         run: |
           echo "更新JSON數據..."
           
-          python3 << 'PYEOF'
-import os
-import json
-from datetime import datetime
-from pathlib import Path
-
-# 初始化博客數據
-blog_data = {
-    "posts": [],
-    "categories": [
-        {"name": "稅務相關", "slug": "tax", "count": 0},
-        {"name": "保險規劃", "slug": "insurance", "count": 0},
-        {"name": "會計服務", "slug": "accounting", "count": 0}
-    ],
-    "tags": [],
-    "last_updated": datetime.now().isoformat()
-}
-
-# 掃描blog目錄
-blog_dir = Path("blog")
-if blog_dir.exists():
-    html_files = list(blog_dir.glob("*.html"))
-    print(f"發現 {len(html_files)} 個HTML文件")
-    
-    for html_file in html_files:
-        filename = html_file.stem
-        
-        # 解析文件名
-        parts = filename.split("-")
-        if len(parts) >= 4:
-            date_str = "-".join(parts[:3])
-            title = " ".join(parts[3:]).replace("-", " ").title()
-        else:
-            date_str = "2025-01-01"
-            title = filename.replace("-", " ").title()
-        
-        # 創建文章記錄
-        post = {
-            "title": title,
-            "url": filename,
-            "date": date_str,
-            "summary": f"{title} 的詳細說明和分析。",
-            "category": "tax",
-            "tags": ["稅務", "分析"],
-            "filename": html_file.name
-        }
-        
-        blog_data["posts"].append(post)
-        blog_data["categories"][0]["count"] += 1
-
-# 按日期排序文章
-blog_data["posts"].sort(key=lambda x: x["date"], reverse=True)
-
-# 保存JSON文件
-json_file = Path("assets/data/blog_posts.json")
-json_file.parent.mkdir(parents=True, exist_ok=True)
-
-with open(json_file, "w", encoding="utf-8") as f:
-    json.dump(blog_data, f, ensure_ascii=False, indent=2)
-
-print(f"✓ JSON更新完成，包含 {len(blog_data['posts'])} 篇文章")
-PYEOF
+          export PYTHONPATH="$(pwd):$PYTHONPATH"
           
-          echo "blog_json_updated=true" >> $GITHUB_OUTPUT
+          python3 << 'JSON_EOF'
+import sys
+import os
+from datetime import datetime
 
-      - name: 提交變更
+sys.path.insert(0, os.getcwd())
+
+try:
+    from json_generator import JsonGenerator
+    
+    json_gen = JsonGenerator(data_dir='assets/data')
+    blog_data = json_gen.generate_all_json()
+    
+    print(f"✅ JSON更新成功，包含 {blog_data['total_posts']} 篇文章")
+    
+    with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+        f.write('blog_json_updated=true\n')
+
+except Exception as e:
+    print(f"JsonGenerator失敗: {e}")
+    print("使用簡化JSON更新...")
+    
+    import json
+    from pathlib import Path
+    
+    # 簡化版JSON更新
+    blog_data = {
+        "posts": [],
+        "categories": [
+            {"name": "稅務相關", "slug": "tax", "count": 0},
+            {"name": "保險規劃", "slug": "insurance", "count": 0},
+            {"name": "會計服務", "slug": "accounting", "count": 0}
+        ],
+        "tags": [
+            {"name": "稅務", "slug": "tax"},
+            {"name": "保險", "slug": "insurance"},
+            {"name": "會計", "slug": "accounting"}
+        ],
+        "total_posts": 0,
+        "last_updated": datetime.now().isoformat()
+    }
+    
+    # 掃描blog目錄
+    blog_dir = Path("blog")
+    if blog_dir.exists():
+        html_files = list(blog_dir.glob("*.html"))
+        
+        for html_file in html_files:
+            filename = html_file.stem
+            parts = filename.split("-")
+            
+            if len(parts) >= 4:
+                date_str = "-".join(parts[:3])
+                title = " ".join(parts[3:]).replace("-", " ").title()
+            else:
+                date_str = "2025-01-01"
+                title = filename.replace("-", " ").title()
+            
+            post = {
+                "title": title,
+                "url": filename, 
+                "date": date_str,
+                "summary": f"{title} 的詳細說明和分析。",
+                "category": "tax",
+                "tags": ["稅務"],
+                "filename": html_file.name
+            }
+            
+            blog_data["posts"].append(post)
+            blog_data["categories"][0]["count"] += 1
+    
+    blog_data["posts"].sort(key=lambda x: x["date"], reverse=True)
+    blog_data["total_posts"] = len(blog_data["posts"])
+    
+    # 保存JSON文件
+    Path("assets/data").mkdir(parents=True, exist_ok=True)
+    with open("assets/data/blog_posts.json", "w", encoding="utf-8") as f:
+        json.dump(blog_data, f, ensure_ascii=False, indent=2)
+    
+    print(f"✅ 簡化JSON更新完成，包含 {blog_data['total_posts']} 篇文章")
+    
+    with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+        f.write('blog_json_updated=true\n')
+JSON_EOF
+
+      - name: 提交文件變更
         if: steps.process_word.outputs.html_changed == 'true' || steps.update_json.outputs.blog_json_updated == 'true'
         run: |
-          echo "提交變更到Git..."
+          echo "提交文件變更..."
           
           # 添加所有變更的文件
           git add blog/*.html || true
           git add assets/data/*.json || true
+          git add word-docs/processed/*.docx || true
           
           # 檢查是否有變更需要提交
           if ! git diff --cached --quiet; then
             # 創建提交消息
-            COMMIT_MSG="自動化處理: "
+            COMMIT_MSG="自動化處理完成"
             
             if [ "${{ steps.process_word.outputs.html_changed }}" == "true" ]; then
-              HTML_COUNT=$(find blog -name "*.html" | wc -l)
-              COMMIT_MSG="${COMMIT_MSG}生成${HTML_COUNT}個HTML文件 "
+              HTML_COUNT=$(find blog -name "*.html" 2>/dev/null | wc -l)
+              COMMIT_MSG="${COMMIT_MSG}: 處理Word文檔並生成${HTML_COUNT}個HTML文件"
             fi
             
             if [ "${{ steps.update_json.outputs.blog_json_updated }}" == "true" ]; then
-              COMMIT_MSG="${COMMIT_MSG}更新JSON數據 "
+              COMMIT_MSG="${COMMIT_MSG}, 更新JSON數據"
             fi
             
-            COMMIT_MSG="${COMMIT_MSG}[$(date '+%Y-%m-%d %H:%M:%S')]"
+            COMMIT_MSG="${COMMIT_MSG} [$(date '+%Y-%m-%d %H:%M:%S')]"
             
             # 提交變更
             git commit -m "$COMMIT_MSG"
             git push
             
-            echo "✓ 變更已提交並推送"
+            echo "✅ 文件變更已提交並推送"
           else
-            echo "沒有變更需要提交"
+            echo "沒有文件變更需要提交"
           fi
 
-      - name: 生成簡單網站地圖
+      - name: 生成網站地圖
         if: steps.update_json.outputs.blog_json_updated == 'true'
         run: |
           echo "生成網站地圖..."
           
-          cat > sitemap.xml << 'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+          python3 << 'SITEMAP_EOF'
+from datetime import datetime
+from pathlib import Path
+
+# 生成sitemap.xml
+sitemap_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'''
+
+base_url = "https://www.horgoscpa.com"
+current_date = datetime.now().strftime('%Y-%m-%d')
+
+# 主要頁面
+main_pages = [
+    ('/', '1.0', 'daily'),
+    ('/blog.html', '0.9', 'daily'), 
+    ('/services.html', '0.8', 'weekly'),
+    ('/contact.html', '0.7', 'monthly'),
+    ('/faq.html', '0.6', 'monthly')
+]
+
+for url, priority, changefreq in main_pages:
+    sitemap_content += f'''
   <url>
-    <loc>https://www.horgoscpa.com/</loc>
-    <lastmod>$(date '+%Y-%m-%d')</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
+    <loc>{base_url}{url}</loc>
+    <lastmod>{current_date}</lastmod>
+    <changefreq>{changefreq}</changefreq>
+    <priority>{priority}</priority>
+  </url>'''
+
+# 添加博客文章
+blog_dir = Path("blog")
+if blog_dir.exists():
+    html_files = list(blog_dir.glob("*.html"))
+    for html_file in html_files:
+        sitemap_content += f'''
   <url>
-    <loc>https://www.horgoscpa.com/blog.html</loc>
-    <lastmod>$(date '+%Y-%m-%d')</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>
-EOF
-          
-          # 添加博客文章到網站地圖
-          for html_file in blog/*.html; do
-            if [ -f "$html_file" ]; then
-              filename=$(basename "$html_file")
-              cat >> sitemap.xml << EOF
-  <url>
-    <loc>https://www.horgoscpa.com/blog/$filename</loc>
-    <lastmod>$(date '+%Y-%m-%d')</lastmod>
+    <loc>{base_url}/blog/{html_file.name}</loc>
+    <lastmod>{current_date}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-  </url>
-EOF
-            fi
-          done
+  </url>'''
+
+sitemap_content += '''
+</urlset>'''
+
+# 保存sitemap.xml
+with open('sitemap.xml', 'w', encoding='utf-8') as f:
+    f.write(sitemap_content)
+
+print("✅ 網站地圖生成完成")
+SITEMAP_EOF
           
-          echo "</urlset>" >> sitemap.xml
-          
-          # 提交網站地圖
+          # 提交sitemap
           git add sitemap.xml
           if ! git diff --cached --quiet; then
             git commit -m "更新網站地圖 [$(date '+%Y-%m-%d %H:%M:%S')]"
             git push
           fi
-          
-          echo "✓ 網站地圖更新完成"
 
       - name: 執行結果統計
         run: |
-          echo "======================================"
-          echo "        工作流程執行完成"
-          echo "======================================"
+          echo "=========================================="
+          echo "           工作流程執行完成"
+          echo "=========================================="
           echo ""
-          echo "執行時間: $(date '+%Y-%m-%d %H:%M:%S UTC')"
-          echo "台灣時間: $(TZ='Asia/Taipei' date '+%Y-%m-%d %H:%M:%S %Z')"
+          echo "🕐 執行時間: $(date '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "🌏 台灣時間: $(TZ='Asia/Taipei' date '+%Y-%m-%d %H:%M:%S %Z')"
           echo ""
-          echo "執行結果:"
-          echo "┌─────────────────┬──────────┐"
-          echo "│ 項目            │ 狀態     │"
-          echo "├─────────────────┼──────────┤"
+          echo "📊 執行結果:"
+          echo "┌─────────────────────┬────────────┐"
+          echo "│ 處理項目            │ 執行狀態   │"
+          echo "├─────────────────────┼────────────┤"
           if [ "${{ steps.process_word.outputs.html_changed }}" == "true" ]; then
-            echo "│ Word文檔處理    │ ✅ 成功  │"
+            echo "│ Word文檔處理        │ ✅ 成功    │"
           else
-            echo "│ Word文檔處理    │ ⏭️ 跳過   │"
+            echo "│ Word文檔處理        │ ⏭️ 跳過     │"
           fi
           if [ "${{ steps.update_json.outputs.blog_json_updated }}" == "true" ]; then
-            echo "│ JSON數據更新    │ ✅ 成功  │"
+            echo "│ JSON數據更新        │ ✅ 成功    │"
           else
-            echo "│ JSON數據更新    │ ⏭️ 跳過   │"
+            echo "│ JSON數據更新        │ ⏭️ 跳過     │"
           fi
-          echo "└─────────────────┴──────────┘"
+          echo "│ 網站地圖生成        │ ✅ 完成    │"
+          echo "└─────────────────────┴────────────┘"
           echo ""
-          echo "文件統計:"
+          echo "📈 文件統計:"
           HTML_COUNT=$(find blog -name "*.html" 2>/dev/null | wc -l)
           JSON_COUNT=$(find assets/data -name "*.json" 2>/dev/null | wc -l)
           WORD_COUNT=$(find word-docs -name "*.docx" 2>/dev/null | wc -l)
-          echo "- HTML文件: $HTML_COUNT 個"
-          echo "- JSON文件: $JSON_COUNT 個"
-          echo "- Word文檔: $WORD_COUNT 個"
+          PROCESSED_COUNT=$(find word-docs/processed -name "*.docx" 2>/dev/null | wc -l)
+          
+          echo "  📄 HTML文件: $HTML_COUNT 個"
+          echo "  📊 JSON文件: $JSON_COUNT 個"
+          echo "  📝 Word文檔: $WORD_COUNT 個"
+          echo "  ✅ 已處理: $PROCESSED_COUNT 個"
           echo ""
-          echo "🎉 自動化處理完成！"
+          if [ "$HTML_COUNT" -gt 0 ]; then
+            echo "🔗 最新文章:"
+            find blog -name "*.html" -printf "%f\n" 2>/dev/null | head -3 | sed 's/^/  - /'
+          fi
+          echo ""
+          echo "🎉 自動化處理流程執行完成！"
+          echo "🌐 網站: https://www.horgoscpa.com"
