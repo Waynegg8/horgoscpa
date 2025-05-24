@@ -1,6 +1,34 @@
 {
   "posts": [
     {
+      "title": "專業記帳服務內容與流程解析",
+      "url": "/blog/2025-05-24-basic-services-ep2-explanation-of-the",
+      "date": "2025-05-24",
+      "summary": "前言 在現代商業環境中，專業的記帳服務是確保企業財務資訊準確性和合規性的關鍵環節。特別對於台灣中小企業而言，由於人力和專業知識的限制，委託會計師事務所提供專業記帳服務已成為明智選擇。然而，許多企業主對於會計師事務所能提供的記帳服務內容與價值認識不足，導致無法充分利用這項專業服務來優化企業財務管理。本文將詳細解析會計師事務所提供的專業記帳服務內容、流程與價值，協助中小企業主了解如何借助專業記帳服務，...",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-05-24-中小企業基礎服務篇EP2-專業記帳服務內容與流程解析.docx",
+      "is_series": true,
+      "series_name": "中小企業基礎服務篇",
+      "series_slug": "中小企業基礎服務篇",
+      "episode": 2,
+      "tags": [
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        },
+        {
+          "name": "財務報表",
+          "slug": "financial-statements"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        }
+      ]
+    },
+    {
       "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
       "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
       "date": "2025-05-23",
@@ -1732,9 +1760,37 @@
               "slug": "income-tax"
             }
           ]
+        },
+        {
+          "title": "專業記帳服務內容與流程解析",
+          "url": "/blog/2025-05-24-basic-services-ep2-explanation-of-the",
+          "date": "2025-05-24",
+          "summary": "前言 在現代商業環境中，專業的記帳服務是確保企業財務資訊準確性和合規性的關鍵環節。特別對於台灣中小企業而言，由於人力和專業知識的限制，委託會計師事務所提供專業記帳服務已成為明智選擇。然而，許多企業主對於會計師事務所能提供的記帳服務內容與價值認識不足，導致無法充分利用這項專業服務來優化企業財務管理。本文將詳細解析會計師事務所提供的專業記帳服務內容、流程與價值，協助中小企業主了解如何借助專業記帳服務，...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-24-中小企業基礎服務篇EP2-專業記帳服務內容與流程解析.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
         }
       ],
-      "count": 1,
+      "count": 2,
       "latest": {
         "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
         "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
@@ -1763,7 +1819,7 @@
           }
         ]
       },
-      "first_post_date": "2025-05-23",
+      "first_post_date": "2025-05-24",
       "latest_post_date": "2025-05-23"
     },
     "房地合一稅2.0": {
@@ -3654,9 +3710,37 @@
               "slug": "income-tax"
             }
           ]
+        },
+        {
+          "title": "專業記帳服務內容與流程解析",
+          "url": "/blog/2025-05-24-basic-services-ep2-explanation-of-the",
+          "date": "2025-05-24",
+          "summary": "前言 在現代商業環境中，專業的記帳服務是確保企業財務資訊準確性和合規性的關鍵環節。特別對於台灣中小企業而言，由於人力和專業知識的限制，委託會計師事務所提供專業記帳服務已成為明智選擇。然而，許多企業主對於會計師事務所能提供的記帳服務內容與價值認識不足，導致無法充分利用這項專業服務來優化企業財務管理。本文將詳細解析會計師事務所提供的專業記帳服務內容、流程與價值，協助中小企業主了解如何借助專業記帳服務，...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-24-中小企業基礎服務篇EP2-專業記帳服務內容與流程解析.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
         }
       ],
-      "count": 1,
+      "count": 2,
       "latest": {
         "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
         "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
@@ -3685,7 +3769,7 @@
           }
         ]
       },
-      "first_post_date": "2025-05-23",
+      "first_post_date": "2025-05-24",
       "latest_post_date": "2025-05-23"
     },
     {
@@ -5545,7 +5629,7 @@
     }
   ],
   "pagination": {
-    "total_posts": 61,
+    "total_posts": 62,
     "total_pages": 7,
     "items_per_page": 10
   },
@@ -5558,7 +5642,7 @@
     {
       "name": "會計資訊",
       "slug": "accounting",
-      "count": 4
+      "count": 5
     },
     {
       "name": "企業經營",
@@ -5583,75 +5667,60 @@
   ],
   "tags": [
     {
-      "name": "稅務規劃",
-      "slug": "tax-planning",
-      "count": 28
-    },
-    {
-      "name": "所得稅",
-      "slug": "income-tax",
-      "count": 50
-    },
-    {
-      "name": "工商登記",
-      "slug": "business-registration",
+      "slug": "accounting-practice",
+      "name": "會計實務",
       "count": 20
     },
     {
-      "name": "財務報表",
       "slug": "financial-statements",
+      "name": "財務報表",
+      "count": 2
+    },
+    {
+      "slug": "income-tax",
+      "name": "所得稅",
+      "count": 51
+    },
+    {
+      "slug": "tax-planning",
+      "name": "稅務規劃",
+      "count": 28
+    },
+    {
+      "slug": "personal-tax",
+      "name": "個人稅務",
       "count": 1
     },
     {
-      "name": "財富管理",
-      "slug": "wealth-management",
-      "count": 0
+      "slug": "property-tax",
+      "name": "房地產稅務",
+      "count": 3
     },
     {
-      "name": "人壽保險",
-      "slug": "life-insurance",
-      "count": 22
-    },
-    {
-      "name": "創業資訊",
-      "slug": "startup",
-      "count": 1
-    },
-    {
-      "name": "企業稅務",
       "slug": "corporate-tax",
+      "name": "企業稅務",
       "count": 16
     },
     {
-      "name": "個人稅務",
-      "slug": "personal-tax",
-      "count": 1
-    },
-    {
-      "name": "財務規劃",
-      "slug": "financial-planning",
-      "count": 0
-    },
-    {
-      "name": "投資理財",
       "slug": "investment",
+      "name": "投資理財",
       "count": 22
     },
     {
-      "name": "退休規劃",
-      "slug": "retirement",
-      "count": 0
+      "slug": "business-registration",
+      "name": "工商登記",
+      "count": 20
     },
     {
-      "name": "會計實務",
-      "slug": "accounting-practice",
-      "count": 19
+      "slug": "life-insurance",
+      "name": "人壽保險",
+      "count": 22
     },
     {
-      "name": "房地產稅務",
-      "slug": "property-tax",
-      "count": 3
+      "slug": "startup",
+      "name": "創業資訊",
+      "count": 1
     }
   ],
-  "generated_time": "2025-05-23T22:35:10.698512"
+  "generated_time": "2025-05-24T03:29:21.176155"
 }
