@@ -59,9 +59,37 @@
               "slug": "income-tax"
             }
           ]
+        },
+        {
+          "title": "財務報表分析與應用指南",
+          "url": "/blog/2025-05-25-basic-services-ep3-financial-statement-analysis",
+          "date": "2025-05-25",
+          "summary": "前言 在台灣競爭激烈的商業環境中，財務報表不僅是企業財務狀況的歷史記錄，更是指引決策方向的重要工具。然而，許多台灣中小企業主面對專業的財務報表時常感到困惑，無法充分理解和運用其中蘊含的豐富信息。會計師事務所提供的專業財務報表分析服務，能幫助企業主透析數字背後的真實含義，發掘潛在問題與機會。本文將深入解析會計師如何協助中小企業解讀三大財務報表，運用財務比率分析評估企業績效，識別財務警訊，並做出更精準...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-25-中小企業基礎服務篇EP3-財務報表分析與應用指南.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
         }
       ],
-      "count": 2,
+      "count": 3,
       "latest": {
         "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
         "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
@@ -90,7 +118,7 @@
           }
         ]
       },
-      "first_post_date": "2025-05-24",
+      "first_post_date": "2025-05-25",
       "latest_post_date": "2025-05-23"
     },
     "房地合一稅2.0": {
@@ -2009,9 +2037,37 @@
               "slug": "income-tax"
             }
           ]
+        },
+        {
+          "title": "財務報表分析與應用指南",
+          "url": "/blog/2025-05-25-basic-services-ep3-financial-statement-analysis",
+          "date": "2025-05-25",
+          "summary": "前言 在台灣競爭激烈的商業環境中，財務報表不僅是企業財務狀況的歷史記錄，更是指引決策方向的重要工具。然而，許多台灣中小企業主面對專業的財務報表時常感到困惑，無法充分理解和運用其中蘊含的豐富信息。會計師事務所提供的專業財務報表分析服務，能幫助企業主透析數字背後的真實含義，發掘潛在問題與機會。本文將深入解析會計師如何協助中小企業解讀三大財務報表，運用財務比率分析評估企業績效，識別財務警訊，並做出更精準...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-25-中小企業基礎服務篇EP3-財務報表分析與應用指南.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
         }
       ],
-      "count": 2,
+      "count": 3,
       "latest": {
         "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
         "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
@@ -2040,7 +2096,7 @@
           }
         ]
       },
-      "first_post_date": "2025-05-24",
+      "first_post_date": "2025-05-25",
       "latest_post_date": "2025-05-23"
     },
     {
@@ -3899,5 +3955,5 @@
       "latest_post_date": "2025-01-05"
     }
   ],
-  "generated_time": "2025-05-24T03:29:21.182685"
+  "generated_time": "2025-05-25T03:51:30.723186"
 }
