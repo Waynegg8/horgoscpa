@@ -1,5 +1,18 @@
 [
   {
+    "title": "財務報表簽證實務與重點",
+    "url": "/blog/2025-05-26-basic-services-ep4-financial-statement-signing",
+    "date": "2025-05-26",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "前言 隨著台灣經濟發展及法規要求日趨嚴謹，財務報表簽證已成為許多企業必要的財務程序。對於台中及中部地區的中小企業而言，了解財務報表簽證的重要性、流程及實務重點，不僅是法規遵循的需要，更是提升企業財務透明度和獲取外部資源的關鍵。許多企業主對於何時需要財務簽證、如何準備相關資料，以及會計師執行查核的重點缺乏全面了解，導致簽證過程耗時費力甚至衍生不必要的問題。本文將從專業會計角度，詳細解析財務報表簽證的...",
+    "category": "accounting",
+    "category_name": "會計資訊",
+    "is_series": true,
+    "series_name": "中小企業基礎服務篇",
+    "series_slug": "中小企業基礎服務篇",
+    "episode": 4
+  },
+  {
     "title": "財務報表分析與應用指南",
     "url": "/blog/2025-05-25-basic-services-ep3-financial-statement-analysis",
     "date": "2025-05-25",
@@ -24,18 +37,5 @@
     "series_name": "中小企業基礎服務篇",
     "series_slug": "中小企業基礎服務篇",
     "episode": 2
-  },
-  {
-    "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
-    "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
-    "date": "2025-05-23",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "前言 在現代商業環境中，對於中小企業及創業者而言，會計師事務所扮演著至關重要的角色，不僅提供傳統的記帳、報稅服務，更擴展至企業成立登記、稅務規劃等多元面向。然而，許多創業者或中小企業主對於會計師事務所能提供的專業服務範圍與內容不甚了解，導致無法充分利用專業資源來優化企業營運。本文將詳細解析會計師事務所對中小企業的核心工作內容及服務項目，協助企業主了解如何與會計師事務所合作，以確保企業財務健全、稅務...",
-    "category": "accounting",
-    "category_name": "會計資訊",
-    "is_series": true,
-    "series_name": "中小企業基礎服務篇",
-    "series_slug": "中小企業基礎服務篇",
-    "episode": 1
   }
 ]
