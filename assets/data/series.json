@@ -1,5 +1,154 @@
 {
   "series": {
+    "房地合一稅2.0": {
+      "name": "房地合一稅2.0",
+      "slug": "房地合一稅2.0",
+      "posts": [
+        {
+          "title": "房地合一稅2.0制度概覽",
+          "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
+          "date": "2025-05-06",
+          "summary": "前言 房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
+        },
+        {
+          "title": "繼承與贈與取得房地的課稅處理",
+          "url": "/blog/2025-05-13-unified-premises-ep2-tax-treatment-of",
+          "date": "2025-05-13",
+          "summary": "前言 在房地產交易中，繼承與贈與取得的房地在稅務處理上存在許多特殊規定。尤其是在房地合一稅制度下，如何正確認定取得日期、計算取得成本，以及判斷適用舊制或新制課稅，常讓納稅義務人感到困惑。本文將詳細解析繼承與贈與取得房地的課稅處理原則，並透過實際案例說明，幫助納稅義務人全面了解相關稅務規定。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-13-房地合一稅2.0EP2-繼承與贈與取得房地的課稅處理.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
+        },
+        {
+          "title": "房地交易可認列之成本項目詳解",
+          "url": "/blog/2025-05-20-unified-premises-ep3-detailed-description-of",
+          "date": "2025-05-20",
+          "summary": "前言 在房地合一稅制度下，正確認列房地交易的各項成本與費用，對於降低稅負具有重要意義。許多納稅義務人對於哪些支出可以列為成本，哪些須於年度綜合所得稅申報，常感到困惑。本文將詳細解析房地交易可認列的成本項目，包括取得時的必要費用、持有期間的資本支出，以及出售時可扣除的費用，協助納稅義務人正確計算房地交易所得，合理節稅。",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-20-房地合一稅2.0EP3-房地交易可認列之成本項目詳解.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
+        },
+        {
+          "title": "房地交易費用列報與審查重點",
+          "url": "/blog/2025-05-27-unified-premises-ep4-highlights-of-premises",
+          "date": "2025-05-27",
+          "summary": "前言 在房地合一稅的課稅所得計算中，除了取得成本外，交易過程中產生的各項費用也是可以減除的重要項目。然而，許多納稅義務人對於哪些費用可以列報、如何計算，以及稽徵機關的審查重點不甚了解，導致申報時可能面臨補稅或罰鍰的風險。本文將詳細解析房地交易費用的列報規定，特別是3%推計費用的計算原則，並說明稽徵機關的審查重點，幫助納稅義務人正確申報，減少稅務爭議。",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-27-房地合一稅2.0EP4-房地交易費用列報與審查重點.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
+        }
+      ],
+      "count": 4,
+      "latest": {
+        "title": "房地合一稅2.0制度概覽",
+        "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
+        "date": "2025-05-06",
+        "summary": "前言 房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
+        "category": "tax",
+        "category_name": "稅務相關",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx",
+        "is_series": true,
+        "series_name": "房地合一稅2.0",
+        "series_slug": "房地合一稅2.0",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "房地產稅務",
+            "slug": "property-tax"
+          },
+          {
+            "name": "稅務規劃",
+            "slug": "tax-planning"
+          }
+        ]
+      },
+      "first_post_date": "2025-05-27",
+      "latest_post_date": "2025-05-06"
+    },
     "中小企業基礎服務篇": {
       "name": "中小企業基礎服務篇",
       "slug": "中小企業基礎服務篇",
@@ -148,127 +297,6 @@
       },
       "first_post_date": "2025-05-26",
       "latest_post_date": "2025-05-23"
-    },
-    "房地合一稅2.0": {
-      "name": "房地合一稅2.0",
-      "slug": "房地合一稅2.0",
-      "posts": [
-        {
-          "title": "房地合一稅2.0制度概覽",
-          "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
-          "date": "2025-05-06",
-          "summary": "前言 房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
-          "category": "tax",
-          "category_name": "稅務相關",
-          "image": "/assets/images/blog/default.jpg",
-          "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx",
-          "is_series": true,
-          "series_name": "房地合一稅2.0",
-          "series_slug": "房地合一稅2.0",
-          "episode": 1,
-          "tags": [
-            {
-              "name": "所得稅",
-              "slug": "income-tax"
-            },
-            {
-              "name": "房地產稅務",
-              "slug": "property-tax"
-            },
-            {
-              "name": "稅務規劃",
-              "slug": "tax-planning"
-            }
-          ]
-        },
-        {
-          "title": "繼承與贈與取得房地的課稅處理",
-          "url": "/blog/2025-05-13-unified-premises-ep2-tax-treatment-of",
-          "date": "2025-05-13",
-          "summary": "前言 在房地產交易中，繼承與贈與取得的房地在稅務處理上存在許多特殊規定。尤其是在房地合一稅制度下，如何正確認定取得日期、計算取得成本，以及判斷適用舊制或新制課稅，常讓納稅義務人感到困惑。本文將詳細解析繼承與贈與取得房地的課稅處理原則，並透過實際案例說明，幫助納稅義務人全面了解相關稅務規定。",
-          "category": "tax",
-          "category_name": "稅務相關",
-          "image": "/assets/images/blog/default.jpg",
-          "original_filename": "2025-05-13-房地合一稅2.0EP2-繼承與贈與取得房地的課稅處理.docx",
-          "is_series": true,
-          "series_name": "房地合一稅2.0",
-          "series_slug": "房地合一稅2.0",
-          "episode": 2,
-          "tags": [
-            {
-              "name": "所得稅",
-              "slug": "income-tax"
-            },
-            {
-              "name": "房地產稅務",
-              "slug": "property-tax"
-            },
-            {
-              "name": "稅務規劃",
-              "slug": "tax-planning"
-            }
-          ]
-        },
-        {
-          "title": "房地交易可認列之成本項目詳解",
-          "url": "/blog/2025-05-20-unified-premises-ep3-detailed-description-of",
-          "date": "2025-05-20",
-          "summary": "前言 在房地合一稅制度下，正確認列房地交易的各項成本與費用，對於降低稅負具有重要意義。許多納稅義務人對於哪些支出可以列為成本，哪些須於年度綜合所得稅申報，常感到困惑。本文將詳細解析房地交易可認列的成本項目，包括取得時的必要費用、持有期間的資本支出，以及出售時可扣除的費用，協助納稅義務人正確計算房地交易所得，合理節稅。",
-          "category": "accounting",
-          "category_name": "會計資訊",
-          "image": "/assets/images/blog/default.jpg",
-          "original_filename": "2025-05-20-房地合一稅2.0EP3-房地交易可認列之成本項目詳解.docx",
-          "is_series": true,
-          "series_name": "房地合一稅2.0",
-          "series_slug": "房地合一稅2.0",
-          "episode": 3,
-          "tags": [
-            {
-              "name": "所得稅",
-              "slug": "income-tax"
-            },
-            {
-              "name": "房地產稅務",
-              "slug": "property-tax"
-            },
-            {
-              "name": "稅務規劃",
-              "slug": "tax-planning"
-            }
-          ]
-        }
-      ],
-      "count": 3,
-      "latest": {
-        "title": "房地合一稅2.0制度概覽",
-        "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
-        "date": "2025-05-06",
-        "summary": "前言 房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
-        "category": "tax",
-        "category_name": "稅務相關",
-        "image": "/assets/images/blog/default.jpg",
-        "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx",
-        "is_series": true,
-        "series_name": "房地合一稅2.0",
-        "series_slug": "房地合一稅2.0",
-        "episode": 1,
-        "tags": [
-          {
-            "name": "所得稅",
-            "slug": "income-tax"
-          },
-          {
-            "name": "房地產稅務",
-            "slug": "property-tax"
-          },
-          {
-            "name": "稅務規劃",
-            "slug": "tax-planning"
-          }
-        ]
-      },
-      "first_post_date": "2025-05-20",
-      "latest_post_date": "2025-05-06"
     },
     "營所稅擴大書面審核解析": {
       "name": "營所稅擴大書面審核解析",
@@ -2242,9 +2270,37 @@
               "slug": "tax-planning"
             }
           ]
+        },
+        {
+          "title": "房地交易費用列報與審查重點",
+          "url": "/blog/2025-05-27-unified-premises-ep4-highlights-of-premises",
+          "date": "2025-05-27",
+          "summary": "前言 在房地合一稅的課稅所得計算中，除了取得成本外，交易過程中產生的各項費用也是可以減除的重要項目。然而，許多納稅義務人對於哪些費用可以列報、如何計算，以及稽徵機關的審查重點不甚了解，導致申報時可能面臨補稅或罰鍰的風險。本文將詳細解析房地交易費用的列報規定，特別是3%推計費用的計算原則，並說明稽徵機關的審查重點，幫助納稅義務人正確申報，減少稅務爭議。",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-27-房地合一稅2.0EP4-房地交易費用列報與審查重點.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
         }
       ],
-      "count": 3,
+      "count": 4,
       "latest": {
         "title": "房地合一稅2.0制度概覽",
         "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
@@ -2273,7 +2329,7 @@
           }
         ]
       },
-      "first_post_date": "2025-05-20",
+      "first_post_date": "2025-05-27",
       "latest_post_date": "2025-05-06"
     },
     {
@@ -4011,5 +4067,5 @@
       "latest_post_date": "2025-01-05"
     }
   ],
-  "generated_time": "2025-05-26T03:50:05.450325"
+  "generated_time": "2025-05-27T03:34:19.127509"
 }

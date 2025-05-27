@@ -1,5 +1,18 @@
 [
   {
+    "title": "房地交易費用列報與審查重點",
+    "url": "/blog/2025-05-27-unified-premises-ep4-highlights-of-premises",
+    "date": "2025-05-27",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "前言 在房地合一稅的課稅所得計算中，除了取得成本外，交易過程中產生的各項費用也是可以減除的重要項目。然而，許多納稅義務人對於哪些費用可以列報、如何計算，以及稽徵機關的審查重點不甚了解，導致申報時可能面臨補稅或罰鍰的風險。本文將詳細解析房地交易費用的列報規定，特別是3%推計費用的計算原則，並說明稽徵機關的審查重點，幫助納稅義務人正確申報，減少稅務爭議。",
+    "category": "accounting",
+    "category_name": "會計資訊",
+    "is_series": true,
+    "series_name": "房地合一稅2.0",
+    "series_slug": "房地合一稅2.0",
+    "episode": 4
+  },
+  {
     "title": "財務報表簽證實務與重點",
     "url": "/blog/2025-05-26-basic-services-ep4-financial-statement-signing",
     "date": "2025-05-26",
@@ -24,18 +37,5 @@
     "series_name": "中小企業基礎服務篇",
     "series_slug": "中小企業基礎服務篇",
     "episode": 3
-  },
-  {
-    "title": "專業記帳服務內容與流程解析",
-    "url": "/blog/2025-05-24-basic-services-ep2-explanation-of-the",
-    "date": "2025-05-24",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "前言 在現代商業環境中，專業的記帳服務是確保企業財務資訊準確性和合規性的關鍵環節。特別對於台灣中小企業而言，由於人力和專業知識的限制，委託會計師事務所提供專業記帳服務已成為明智選擇。然而，許多企業主對於會計師事務所能提供的記帳服務內容與價值認識不足，導致無法充分利用這項專業服務來優化企業財務管理。本文將詳細解析會計師事務所提供的專業記帳服務內容、流程與價值，協助中小企業主了解如何借助專業記帳服務，...",
-    "category": "accounting",
-    "category_name": "會計資訊",
-    "is_series": true,
-    "series_name": "中小企業基礎服務篇",
-    "series_slug": "中小企業基礎服務篇",
-    "episode": 2
   }
 ]
