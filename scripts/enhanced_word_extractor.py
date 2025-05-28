@@ -229,70 +229,8 @@ class EnhancedWordProcessor:
         
         logger.info(f"文檔提取統計: {stats}")
         
-        # 提取标题 - 从第一个有内容的段落
-        title = "未命名文档"
-        for para in enhanced_paragraphs:
-            if para['clean_text'].strip():
-                # 优先使用标题格式的段落
-                if para.get('is_heading') or para.get('is_chinese_numbered_title') or para.get('is_bold_title'):
-                    title = para['clean_text'].strip()
-                    break
-                # 否则使用第一个非空段落
-                elif len(para['clean_text'].strip()) > 10:
-                    title = para['clean_text'].strip()
-                    if len(title) > 100:
-                        title = title[:100] + "..."
-                    break
-        
-        # 从文件名提取日期和其他信息
-        from pathlib import Path
-        import re
-        
-        file_name = Path(doc_path).stem
-        date_match = re.match(r'^(\d{4}-\d{2}-\d{2})', file_name)
-        date = date_match.group(1) if date_match else None
-        
-        # 提取系列信息
-        is_series = False
-        series_name = ""
-        episode = 0
-        series_match = re.match(r'^\d{4}-\d{2}-\d{2}-(.+?)EP(\d+)-', file_name)
-        if series_match:
-            is_series = True
-            series_name = series_match.group(1)
-            episode = int(series_match.group(2))
-        
-        # 生成摘要
-        summary = ""
-        if len(content_list) > 0:
-            # 从前几个段落生成摘要
-            summary_parts = []
-            for content in content_list[:5]:
-                if content.strip() and not content.startswith('**'):  # 跳过标题
-                    summary_parts.append(content.strip())
-                    if len(' '.join(summary_parts)) > 200:
-                        break
-            summary = ' '.join(summary_parts)
-            if len(summary) > 300:
-                summary = summary[:297] + "..."
-        
-        result = {
+        return {
             'content': content_list,  # 原有格式兼容
             'enhanced_paragraphs': enhanced_info,  # 增強信息
-            'extraction_stats': stats,  # 統計信息
-            'title': title,
-            'date': date,
-            'filename': Path(doc_path).name,
-            'summary': summary,
-            'is_series': is_series,
-            'series_name': series_name,
-            'episode': episode
+            'extraction_stats': stats  # 統計信息
         }
-        
-        # 如果是系列文章，生成series_slug
-        if is_series:
-            series_slug = re.sub(r'[^\w\s-]', '', series_name.lower())
-            series_slug = re.sub(r'[-\s]+', '-', series_slug).strip('-')
-            result['series_slug'] = series_slug
-        
-        return result
