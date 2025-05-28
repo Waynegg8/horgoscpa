@@ -20,21 +20,56 @@ if scripts_dir not in sys.path:
 
 from loguru import logger
 
-# 🔧 導入重構後的組件
+# 🔧 修正：從正確的模組導入IntegratedWordProcessor
 try:
-    from integrated_word_processor import IntegratedWordProcessor
+    # 🔧 修正：IntegratedWordProcessor實際在word_processor.py中
+    from word_processor import IntegratedWordProcessor
     from content_validation_tool import ContentValidationTool
     ENHANCED_VERSION_AVAILABLE = True
     logger.info("✅ 使用增強版Word處理器")
 except ImportError as e:
-    logger.warning(f"⚠️  增強版組件不可用，回退到標準版本: {e}")
-    from word_processor import WordProcessor as IntegratedWordProcessor
-    ContentValidationTool = None
-    ENHANCED_VERSION_AVAILABLE = False
+    logger.warning(f"⚠️  增強版組件不可用，嘗試回退: {e}")
+    try:
+        # 🔧 回退選項：嘗試導入基本的WordProcessor
+        from word_processor import WordProcessor as IntegratedWordProcessor
+        ContentValidationTool = None
+        ENHANCED_VERSION_AVAILABLE = False
+        logger.warning("使用基本版Word處理器")
+    except ImportError as e2:
+        logger.error(f"❌ 無法導入任何Word處理器: {e2}")
+        # 🔧 最後的回退：創建一個基本的處理器類
+        class IntegratedWordProcessor:
+            def __init__(self, **kwargs):
+                raise ImportError("未找到可用的Word處理器")
+        ContentValidationTool = None
+        ENHANCED_VERSION_AVAILABLE = False
 
-from html_generator import HtmlGenerator
-from content_manager import ContentManager
-from utils import setup_logging, ensure_directories
+# 🔧 導入其他必要組件，添加錯誤處理
+try:
+    from html_generator import HtmlGenerator
+except ImportError as e:
+    logger.error(f"❌ 無法導入HtmlGenerator: {e}")
+    class HtmlGenerator:
+        def __init__(self, **kwargs):
+            raise ImportError("未找到HtmlGenerator")
+
+try:
+    from content_manager import ContentManager
+except ImportError as e:
+    logger.error(f"❌ 無法導入ContentManager: {e}")
+    class ContentManager:
+        def __init__(self, **kwargs):
+            raise ImportError("未找到ContentManager")
+
+try:
+    from utils import setup_logging, ensure_directories
+except ImportError as e:
+    logger.error(f"❌ 無法導入utils: {e}")
+    def setup_logging(level):
+        pass
+    def ensure_directories(dirs):
+        for name, path in dirs.items():
+            Path(path).mkdir(parents=True, exist_ok=True)
 
 
 def parse_args():
@@ -85,6 +120,10 @@ def parse_args():
     
     parser.add_argument('--fail-on-validation-error', action='store_true',
                         help='驗證失敗時終止程序')
+    
+    # 🔧 新增：增強版處理器參數
+    parser.add_argument('--enhanced', action='store_true',
+                        help='強制使用增強版處理器')
     
     return parser.parse_args()
 
@@ -156,36 +195,60 @@ def process_word_documents(args):
     Returns:
         tuple: (成功處理的文檔數, 失敗的文檔數, 驗證失敗的文檔數)
     """
-    # 確保目錄結構存在
-    ensure_directories({
-        'output': args.output_dir,
-        'assets': args.assets_dir,
-        'data': f"{args.assets_dir}/data",
-        'images': f"{args.assets_dir}/images/blog"
-    })
-    
-    # 🔧 初始化增強版Word處理器
-    word_processor = IntegratedWordProcessor(
-        word_dir=args.word_dir,
-        translation_dict_file=f"{args.assets_dir}/data/translation_dict.json"
-    )
-    
-    # 🔧 初始化內容驗證器
-    validator = None
-    if ENHANCED_VERSION_AVAILABLE and ContentValidationTool and not args.skip_validation:
-        validator = ContentValidationTool()
-        logger.info("✅ 內容驗證器已初始化")
-    
-    # 初始化內容管理器
-    content_manager = ContentManager(
-        data_dir=f"{args.assets_dir}/data"
-    )
-    
-    # 初始化HTML生成器
-    html_generator = HtmlGenerator(
-        output_dir=args.output_dir,
-        assets_dir=args.assets_dir
-    )
+    # 🔧 增加錯誤檢查
+    try:
+        # 確保目錄結構存在
+        ensure_directories({
+            'output': args.output_dir,
+            'assets': args.assets_dir,
+            'data': f"{args.assets_dir}/data",
+            'images': f"{args.assets_dir}/images/blog"
+        })
+        
+        # 🔧 初始化增強版Word處理器，添加錯誤處理
+        try:
+            word_processor = IntegratedWordProcessor(
+                word_dir=args.word_dir,
+                translation_dict_file=f"{args.assets_dir}/data/translation_dict.json"
+            )
+            logger.success("✅ Word處理器初始化成功")
+        except Exception as e:
+            logger.error(f"❌ Word處理器初始化失敗: {e}")
+            return 0, 1, 0
+        
+        # 🔧 初始化內容驗證器
+        validator = None
+        if ENHANCED_VERSION_AVAILABLE and ContentValidationTool and not args.skip_validation:
+            try:
+                validator = ContentValidationTool()
+                logger.info("✅ 內容驗證器已初始化")
+            except Exception as e:
+                logger.warning(f"⚠️  內容驗證器初始化失敗: {e}")
+        
+        # 初始化內容管理器
+        try:
+            content_manager = ContentManager(
+                data_dir=f"{args.assets_dir}/data"
+            )
+            logger.success("✅ 內容管理器初始化成功")
+        except Exception as e:
+            logger.error(f"❌ 內容管理器初始化失敗: {e}")
+            return 0, 1, 0
+        
+        # 初始化HTML生成器
+        try:
+            html_generator = HtmlGenerator(
+                output_dir=args.output_dir,
+                assets_dir=args.assets_dir
+            )
+            logger.success("✅ HTML生成器初始化成功")
+        except Exception as e:
+            logger.error(f"❌ HTML生成器初始化失敗: {e}")
+            return 0, 1, 0
+        
+    except Exception as e:
+        logger.error(f"❌ 初始化過程中發生錯誤: {e}")
+        return 0, 1, 0
     
     # 設置處理日期
     process_date = None
@@ -198,10 +261,14 @@ def process_word_documents(args):
             return 0, 0, 0
     
     # 掃描Word文檔目錄
-    documents = word_processor.scan_documents(
-        process_all=args.process_all,
-        process_date=process_date
-    )
+    try:
+        documents = word_processor.scan_documents(
+            process_all=args.process_all,
+            process_date=process_date
+        )
+    except Exception as e:
+        logger.error(f"❌ 掃描文檔時發生錯誤: {e}")
+        return 0, 1, 0
     
     if not documents:
         logger.info("沒有找到需要處理的Word文檔")
@@ -230,7 +297,7 @@ def process_word_documents(args):
                 fail_count += 1
                 continue
             
-            # 🔧 顯示處理統計信息
+            # 🔧 顯示處理統計信息（如果有的話）
             if 'extraction_stats' in doc_info:
                 stats = doc_info['extraction_stats']
                 logger.info(f"📊 提取統計: {stats}")
@@ -298,10 +365,13 @@ def process_word_documents(args):
         logger.info(f"⚠️  驗證警告: {validation_fail_count} 個")
     logger.info(f"📄 總計文檔: {len(documents)} 個")
     
-    # 🔧 輸出翻譯統計
+    # 🔧 輸出翻譯統計（如果有的話）
     if hasattr(word_processor, 'get_translation_stats'):
-        translation_stats = word_processor.get_translation_stats()
-        logger.info(f"🌐 翻譯統計: {translation_stats}")
+        try:
+            translation_stats = word_processor.get_translation_stats()
+            logger.info(f"🌐 翻譯統計: {translation_stats}")
+        except:
+            pass
     
     return success_count, fail_count, validation_fail_count
 
@@ -325,6 +395,11 @@ def main():
     
     logger.info(f"🔧 處理模式: {'處理所有文件' if args.process_all else '處理當前日期及更早的文件'}")
     logger.debug(f"📋 命令行參數: {args}")
+    
+    # 🔧 增加強制增強版處理器的檢查
+    if args.enhanced and not ENHANCED_VERSION_AVAILABLE:
+        logger.error("❌ 要求使用增強版處理器，但增強版組件不可用")
+        sys.exit(1)
     
     # 處理Word文檔
     success_count, fail_count, validation_fail_count = process_word_documents(args)
