@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 
 """
-主程序模块 v3.0 - 统一智能文档处理器 (修复版)
+主程序模块 v3.0 - 统一智能文档处理器
 支持新的统一处理架构，解决所有已知问题
 """
 
 import os
 import sys
 import argparse
-import json
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, List
@@ -150,13 +149,7 @@ def validate_args(args) -> Dict:
         'force_process_all': args.force_process_all,
         'process_date': args.process_date,
         'generate_report': args.generate_report,
-        'debug': args.debug,
-        # 🔧 v3.0 新增配置
-        'enable_auto_categorization': True,
-        'enable_seo_optimization': True,
-        'enable_highlight_validation': True,
-        'decimal_number_fix': True,  # 小数点修复
-        'highlight_conflict_resolution': True  # 高亮冲突解决
+        'debug': args.debug
     })
     
     # 验证路径
@@ -182,18 +175,15 @@ def try_import_unified_processor():
         return UnifiedDocumentProcessor, process_documents_batch, True
     except ImportError as e:
         logger.warning(f"⚠️ 统一处理器不可用: {e}")
-        logger.debug(f"错误详情: {e}", exc_info=True)
-        return None, None, False
-    except Exception as e:
-        logger.error(f"❌ 统一处理器导入时发生未知错误: {e}")
         return None, None, False
 
 def try_import_legacy_processor():
     """尝试导入传统处理器作为回退"""
     try:
         from word_processor import IntegratedWordProcessor
+        from content_validation_tool import ContentValidationTool
         logger.warning("⚠️ 使用传统处理器作为回退")
-        return IntegratedWordProcessor, None, True
+        return IntegratedWordProcessor, ContentValidationTool, True
     except ImportError as e:
         logger.error(f"❌ 传统处理器也不可用: {e}")
         return None, None, False
@@ -267,18 +257,14 @@ def process_with_unified_processor(docs: List[Path], config: Dict) -> Dict:
     # 转换为字符串路径
     doc_paths = [str(doc) for doc in docs]
     
-    # 🔧 确保配置格式正确
-    try:
-        # 批量处理
-        results = process_batch(doc_paths, config)
-        return results
-    except Exception as e:
-        logger.error(f"统一处理器执行失败: {e}")
-        raise
+    # 批量处理
+    results = process_batch(doc_paths, config)
+    
+    return results
 
 def process_with_legacy_processor(docs: List[Path], config: Dict) -> Dict:
     """使用传统处理器处理文档（回退方案）"""
-    IntegratedProcessor, _, available = try_import_legacy_processor()
+    IntegratedProcessor, ValidationTool, available = try_import_legacy_processor()
     
     if not available:
         raise ImportError("传统处理器不可用")
@@ -286,14 +272,10 @@ def process_with_legacy_processor(docs: List[Path], config: Dict) -> Dict:
     logger.warning("⚠️ 使用传统处理器（回退模式）")
     
     # 初始化传统处理器
-    try:
-        processor = IntegratedProcessor(
-            word_dir=config['word_dir'],
-            translation_dict_file=f"{config['assets_dir']}/data/translation_dict.json"
-        )
-    except Exception as e:
-        logger.error(f"传统处理器初始化失败: {e}")
-        raise
+    processor = IntegratedProcessor(
+        word_dir=config['word_dir'],
+        translation_dict_file=f"{config['assets_dir']}/data/translation_dict.json"
+    )
     
     # 模拟批量处理结果
     results = {
@@ -407,15 +389,11 @@ def generate_processing_report(results: Dict, config: Dict) -> str:
 """
 
     # 保存报告
-    try:
-        with open(report_file, 'w', encoding='utf-8') as f:
-            f.write(report_content)
-        
-        logger.success(f"📋 处理报告已生成: {report_file}")
-        return str(report_file)
-    except Exception as e:
-        logger.error(f"生成报告失败: {e}")
-        raise
+    with open(report_file, 'w', encoding='utf-8') as f:
+        f.write(report_content)
+    
+    logger.success(f"📋 处理报告已生成: {report_file}")
+    return str(report_file)
 
 def main():
     """主函数"""
@@ -458,38 +436,26 @@ def main():
     logger.info(f"📄 开始处理 {len(documents)} 个文档...")
     
     try:
-        # 🔧 优先尝试使用统一处理器
+        # 尝试使用统一处理器
+        results = process_with_unified_processor(documents, config)
+        processor_used = "统一智能处理器 v3.0"
+        
+    except ImportError:
+        logger.warning("⚠️ 统一处理器不可用，尝试传统处理器...")
+        
         try:
-            results = process_with_unified_processor(documents, config)
-            processor_used = "统一智能处理器 v3.0"
+            results = process_with_legacy_processor(documents, config)
+            processor_used = "传统处理器（回退模式）"
             
         except ImportError:
-            logger.warning("⚠️ 统一处理器不可用，尝试传统处理器...")
-            
-            try:
-                results = process_with_legacy_processor(documents, config)
-                processor_used = "传统处理器（回退模式）"
-                
-            except ImportError:
-                logger.error("❌ 没有可用的处理器")
-                sys.exit(1)
-            except Exception as e:
-                logger.error(f"❌ 传统处理器执行失败: {e}")
-                sys.exit(1)
-                
+            logger.error("❌ 没有可用的处理器")
+            sys.exit(1)
         except Exception as e:
-            logger.error(f"❌ 统一处理器执行失败: {e}")
-            logger.warning("⚠️ 尝试使用传统处理器作为回退...")
+            logger.error(f"❌ 传统处理器执行失败: {e}")
+            sys.exit(1)
             
-            try:
-                results = process_with_legacy_processor(documents, config)
-                processor_used = "传统处理器（回退模式）"
-            except Exception as fallback_error:
-                logger.error(f"❌ 回退处理器也失败了: {fallback_error}")
-                sys.exit(1)
-    
     except Exception as e:
-        logger.error(f"❌ 文档处理过程中发生未预期错误: {e}")
+        logger.error(f"❌ 统一处理器执行失败: {e}")
         sys.exit(1)
     
     # 输出结果
