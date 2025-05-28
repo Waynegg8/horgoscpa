@@ -141,7 +141,6 @@
       ]
     },
     {
-<<<<<<< HEAD
       "title": "台灣稅務指南",
       "url": "/blog/business",
       "date": "",
@@ -334,7 +333,6 @@
       "category": "business",
       "category_name": "企業經營",
       "image": "/assets/images/blog/default.jpg",
-<<<<<<< HEAD
       "original_filename": "",
       "is_series": false,
       "tags": []
@@ -1485,7 +1483,6 @@
       ]
     },
     {
-<<<<<<< HEAD
       "title": "台灣稅務指南",
       "url": "/blog/tax-calendar",
       "date": "",
@@ -6493,7 +6490,6 @@
     }
   ],
   "pagination": {
-<<<<<<< HEAD
     "total_posts": 87,
     "total_pages": 9,
 =======
@@ -6606,7 +6602,6 @@
       "count": 4
     }
   ],
-<<<<<<< HEAD
   "generated_time": "2025-05-28T14:15:48.453992"
 =======
   "generated_time": "2025-05-28T03:36:05.748293"
