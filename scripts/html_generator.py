@@ -222,7 +222,7 @@ class HtmlGenerator:
     
     def _convert_content_to_html(self, content):
         """
-        將內容轉換為 HTML
+        將內容轉換為 HTML（備用方法，當 processed_html 不可用時使用）
         
         Args:
             content: 內容列表（段落）
@@ -318,6 +318,18 @@ class HtmlGenerator:
         Returns:
             tuple: (HTML 內容, 輸出文件路徑)
         """
+        # 🔧 添加調試信息
+        logger.info("=== HTML 生成開始 ===")
+        logger.info(f"文章標題: {article_info.get('title', '未知')}")
+        logger.info(f"是否有 processed_html: {'processed_html' in article_info}")
+        
+        if 'processed_html' in article_info:
+            logger.info(f"processed_html 長度: {len(article_info['processed_html'])}")
+            logger.info(f"processed_html 前100字符: {article_info['processed_html'][:100]}")
+        else:
+            logger.warning("article_info 中沒有 processed_html 字段")
+            logger.info(f"可用字段: {list(article_info.keys())}")
+        
         # 生成 META 標籤
         meta_tags = self._generate_meta_tags(article_info, category, tags)
         
@@ -331,8 +343,17 @@ class HtmlGenerator:
         else:
             image_path = article_info["image"]
         
-        # 轉換內容為 HTML
-        html_content = self._convert_content_to_html(article_info["content"])
+        # 🔧 修復：優先使用處理後的 HTML 內容
+        if "processed_html" in article_info and article_info["processed_html"]:
+            html_content = article_info["processed_html"]
+            logger.success("✅ 使用 WordProcessor 處理後的 HTML 內容")
+        else:
+            # 回退到舊方法
+            html_content = self._convert_content_to_html(article_info["content"])
+            logger.warning("⚠️  processed_html 不存在，使用原始內容處理方法")
+        
+        logger.info(f"最終 HTML 內容長度: {len(html_content)}")
+        logger.info(f"最終 HTML 前200字符: {html_content[:200]}")
         
         # 構建文章標籤 HTML
         tags_html = ""
@@ -470,7 +491,8 @@ class HtmlGenerator:
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(html)
         
-        logger.info(f"生成 HTML 文件: {output_file}")
+        logger.success(f"✅ 生成 HTML 文件: {output_file}")
+        logger.info("=== HTML 生成完成 ===\n")
         
         return html, output_file
     
