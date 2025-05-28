@@ -18,7 +18,6 @@ from docx.opc.exceptions import PackageNotFoundError
 from utils import parse_filename, read_json, write_json
 from translator import get_translator  # 引入翻譯器
 
-<<<<<<< HEAD
 class HTMLContentProcessor:
     """HTML內容結構化處理器"""
     
@@ -225,8 +224,6 @@ class HTMLContentProcessor:
         
         return None
 
-=======
->>>>>>> parent of 671b82a (1)
 class WordProcessor:
     """Word 文檔處理類"""
     
@@ -389,10 +386,8 @@ class WordProcessor:
             "file_info": file_info,
             "title": title,
             "content": content,
-<<<<<<< HEAD
             "processed_html": processed_html,  # 新增處理後的HTML
-=======
->>>>>>> parent of 671b82a (1)
+
             "summary": summary,
             "date": file_info["date"],
             "source_path": str(doc_path)  # 保存原始文件路徑
