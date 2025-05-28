@@ -61,6 +61,18 @@
       "tags": []
     },
     {
+      "title": "台灣稅務指南",
+      "url": "/blog/business",
+      "date": "",
+      "summary": "制度概要與適用條件 前言",
+      "category": "",
+      "category_name": "",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "",
+      "is_series": false,
+      "tags": []
+    },
+    {
       "title": "贈與稅課稅範圍與計算方式 - 完整攻略",
       "url": "/blog/2025-02-05-tax-calendar-article",
       "date": "",
@@ -221,6 +233,30 @@
       "url": "/blog/2025-03-08-comparison-article",
       "date": "",
       "summary": "交易真實性的舉證責任與方法 在稅務爭議中，交易真實性的舉證常是決定案件勝敗的關鍵。本文將分析舉證責任的分配原則，並提供實用的舉證方法，幫助企業在稅務稽查時有效證明交易的真實性...",
+      "category": "",
+      "category_name": "",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "",
+      "is_series": false,
+      "tags": []
+    },
+    {
+      "title": "台灣稅務指南",
+      "url": "/blog/tutorial",
+      "date": "",
+      "summary": "【營利事業I】營利事業地主稅率與持有期間認定EP5 發布日期：2025-08-14",
+      "category": "",
+      "category_name": "",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "",
+      "is_series": false,
+      "tags": []
+    },
+    {
+      "title": "台灣稅務指南",
+      "url": "/blog/comparison",
+      "date": "",
+      "summary": "交易真實性的舉證責任與方法 在稅務爭議中，交易真實性的舉證常是決定案件勝敗的關鍵。本文將分析舉證責任的分配原則，並提供實用的舉證方法，幫助企業在稅務稽查時有效證明交易的真實性。",
       "category": "",
       "category_name": "",
       "image": "/assets/images/blog/default.jpg",
@@ -589,6 +625,18 @@
       "tags": []
     },
     {
+      "title": "台灣稅務指南",
+      "url": "/blog/investment",
+      "date": "",
+      "summary": "CFC定義與判斷實務 前言",
+      "category": "",
+      "category_name": "",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "",
+      "is_series": false,
+      "tags": []
+    },
+    {
       "title": "保險稅務規劃最佳實務與常見陷阱 - 深度比較",
       "url": "/blog/2025-01-23-comparison-article",
       "date": "",
@@ -617,6 +665,18 @@
       "url": "/blog/2025-07-17-tutorial-article",
       "date": "",
       "summary": "【入門篇】合建分屋基本模式與稅務差異 *發布日期：**2025-07-17* 前言 合建分屋是現今不動產開發常見的模式，許多地主與建設公司合作，透過土地與建物的交換達成互利。然而，不同的合建模式在稅務處理上有顯著差異，若未能正確理解，可能導致稅負增加甚至衍生稅務爭議...",
+      "category": "",
+      "category_name": "",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "",
+      "is_series": false,
+      "tags": []
+    },
+    {
+      "title": "台灣稅務指南",
+      "url": "/blog/tax-guide",
+      "date": "",
+      "summary": "勞務出資與閉鎖性股份有限公司特色 **發布日期：****2025-03-29**",
       "category": "",
       "category_name": "",
       "image": "/assets/images/blog/default.jpg",
@@ -829,6 +889,18 @@
       "tags": []
     },
     {
+      "title": "台灣稅務指南",
+      "url": "/blog/tax-calendar",
+      "date": "",
+      "summary": "**擬制遺產課稅制度重大變革：遺產及贈與稅法修正草案深度解析** **前言**",
+      "category": "",
+      "category_name": "",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "",
+      "is_series": false,
+      "tags": []
+    },
+    {
       "title": "小規模營利事業規定與短漏報處理 - 詳細指南",
       "url": "/blog/2025-05-06-tax-guide-article",
       "date": "",
@@ -976,7 +1048,7 @@
   "series": {},
   "series_list": [],
   "pagination": {
-    "total_posts": 81,
+    "total_posts": 87,
     "total_pages": 9,
     "items_per_page": 10
   },
@@ -1084,5 +1156,5 @@
       "count": 0
     }
   ],
-  "generated_time": "2025-05-28T14:40:29.641568"
+  "generated_time": "2025-05-28T14:15:48.453992"
 }
