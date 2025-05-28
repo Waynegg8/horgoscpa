@@ -547,6 +547,24 @@ class UnifiedDocumentProcessor:
         except Exception as e:
             logger.warning(f"序列化文档分析结果失败: {e}")
             return {'error': str(e)}
+    
+    def _serialize_doc_analysis(self, doc_analysis: Optional[Any]) -> Optional[Dict]:
+        """序列化文档分析结果"""
+        if not doc_analysis:
+            return None
+        
+        try:
+            return {
+                'document_type': doc_analysis.document_type.value if hasattr(doc_analysis, 'document_type') else 'unknown',
+                'content_theme': doc_analysis.content_theme.value if hasattr(doc_analysis, 'content_theme') else 'unknown',
+                'confidence_score': getattr(doc_analysis, 'confidence_score', 0),
+                'keywords': getattr(doc_analysis, 'keywords', []),
+                'seo_category': getattr(doc_analysis, 'seo_category', ''),
+                'content_tags': getattr(doc_analysis, 'content_tags', [])
+            }
+        except Exception as e:
+            logger.warning(f"序列化文档分析结果失败: {e}")
+            return {'error': str(e)}
 
     def _serialize_doc_analysis(self, doc_analysis: Optional[Any]) -> Optional[Dict]:
         """序列化文档分析结果"""
