@@ -387,7 +387,7 @@ class UnifiedDocumentProcessor:
             metadata = {
                 'title': enhanced_data.get('title', ''),
                 'summary': enhanced_data.get('summary', ''),
-                'seo_data': seo_data,
+                'seo_data': self._serialize_seo_data(seo_data),
                 'doc_analysis': self._serialize_doc_analysis(doc_analysis),
                 'processing_version': self.version,
                 'processed_at': datetime.now().isoformat(),
