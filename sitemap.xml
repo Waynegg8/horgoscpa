@@ -242,6 +242,7 @@
   </url>
   <url>
 <<<<<<< HEAD
+<<<<<<< HEAD
     <loc>https://www.horgoscpa.com/blog/business.html</loc>
     <lastmod>2025-05-28</lastmod>
     <changefreq>weekly</changefreq>
@@ -388,6 +389,8 @@
   <url>
     <loc>https://www.horgoscpa.com/blog/2025-05-27-tax-guide-article.html</loc>
 =======
+=======
+>>>>>>> parent of d3ff13f (更新網站Sitemap)
     <loc>https://www.horgoscpa.com/blog/2025-05-27-unified-premises-ep4-highlights-of-premises.html</loc>
 >>>>>>> parent of d3ff13f (更新網站Sitemap)
     <lastmod>2025-05-27</lastmod>
@@ -422,6 +425,30 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://www.horgoscpa.com/services/accounting.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/services/audit.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/services/tax.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/services/consulting.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://www.horgoscpa.com/blog/2025-05-27-unified-premises-ep4-highlights-of-premises.html</loc>
 >>>>>>> parent of d3ff13f (更新網站Sitemap)
     <lastmod>2025-05-27</lastmod>
@@ -432,6 +459,54 @@
 <<<<<<< HEAD
     <loc>https://www.horgoscpa.com/blog/2025-05-26-tax-guide-article.html</loc>
 =======
+    <loc>https://www.horgoscpa.com/services/accounting.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/services/audit.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/services/tax.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/services/consulting.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/team.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/contact.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/faq.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/video.html</loc>
+    <lastmod>2025-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.horgoscpa.com/services/accounting.html</loc>
     <lastmod>2025-05-27</lastmod>
     <changefreq>monthly</changefreq>
