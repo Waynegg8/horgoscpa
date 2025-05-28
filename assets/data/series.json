@@ -1,7 +1,4 @@
 {
-  "series": {},
-  "series_list": [],
-  "generated_time": "2025-05-28T14:15:48.459400"
   "series": {
     "房地合一稅2.0": {
       "name": "房地合一稅2.0",
@@ -4070,6 +4067,5 @@
       "latest_post_date": "2025-01-05"
     }
   ],
-  "generated_time": "2025-05-28T03:36:05.755178"
->>>>>>> parent of 9ec2bb9 (Merge branch 'main' of https://github.com/Waynegg8/horgoscpa)
+  "generated_time": "2025-05-28T15:00:50.608001"
 }
