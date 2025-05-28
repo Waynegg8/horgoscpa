@@ -489,65 +489,6 @@ class UnifiedDocumentProcessor:
         
         return '\n'.join(html_parts)
     
-    def _serialize_seo_data(self, seo_data: Optional[Dict]) -> Optional[Dict]:
-        """序列化SEO数据"""
-        if not seo_data:
-            return None
-        
-        try:
-            # 将SEO数据转换为可序列化的格式
-            serialized = {}
-            
-            # 处理metadata
-            if 'metadata' in seo_data and hasattr(seo_data['metadata'], '__dict__'):
-                metadata = seo_data['metadata']
-                serialized['metadata'] = {
-                    'title': getattr(metadata, 'title', ''),
-                    'meta_description': getattr(metadata, 'meta_description', ''),
-                    'keywords': getattr(metadata, 'keywords', []),
-                    'canonical_url': getattr(metadata, 'canonical_url', ''),
-                    'og_title': getattr(metadata, 'og_title', ''),
-                    'og_description': getattr(metadata, 'og_description', '')
-                }
-            
-            # 处理URL优化数据
-            if 'url_optimization' in seo_data and hasattr(seo_data['url_optimization'], '__dict__'):
-                url_opt = seo_data['url_optimization']
-                serialized['url_optimization'] = {
-                    'semantic_url': getattr(url_opt, 'semantic_url', ''),
-                    'seo_score': getattr(url_opt, 'seo_score', 0),
-                    'optimization_notes': getattr(url_opt, 'optimization_notes', [])
-                }
-            
-            # 直接复制其他字段
-            for key in ['seo_score', 'recommendations', 'content_optimization', 'optimization_timestamp']:
-                if key in seo_data:
-                    serialized[key] = seo_data[key]
-            
-            return serialized
-            
-        except Exception as e:
-            logger.warning(f"序列化SEO数据失败: {e}")
-            return {'error': str(e)}
-    
-    def _serialize_doc_analysis(self, doc_analysis: Optional[Any]) -> Optional[Dict]:
-        """序列化文档分析结果"""
-        if not doc_analysis:
-            return None
-        
-        try:
-            return {
-                'document_type': doc_analysis.document_type.value if hasattr(doc_analysis, 'document_type') else 'unknown',
-                'content_theme': doc_analysis.content_theme.value if hasattr(doc_analysis, 'content_theme') else 'unknown',
-                'confidence_score': getattr(doc_analysis, 'confidence_score', 0),
-                'keywords': getattr(doc_analysis, 'keywords', []),
-                'seo_category': getattr(doc_analysis, 'seo_category', ''),
-                'content_tags': getattr(doc_analysis, 'content_tags', [])
-            }
-        except Exception as e:
-            logger.warning(f"序列化文档分析结果失败: {e}")
-            return {'error': str(e)}
-
     def _serialize_doc_analysis(self, doc_analysis: Optional[Any]) -> Optional[Dict]:
         """序列化文档分析结果"""
         if not doc_analysis:
