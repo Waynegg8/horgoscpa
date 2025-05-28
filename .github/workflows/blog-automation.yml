@@ -44,18 +44,17 @@ on:
         required: true
         default: 'true'
         type: boolean
-      deploy_ai_chat:
-        description: '部署AI客服功能'
-        required: true
-        default: 'true'
-        type: boolean
-      # 🔧 新增：內容驗證選項
+      # 🔧 移除：deploy_ai_chat - 拿掉AI客服功能
+      # deploy_ai_chat:
+      #   description: '部署AI客服功能'
+      #   required: true
+      #   default: 'true'
+      #   type: boolean
       validate_content:
         description: '執行內容完整性驗證'
         required: true
         default: 'true'
         type: boolean
-      # 🔧 新增：使用增強版處理器選項
       use_enhanced_processor:
         description: '使用增強版Word處理器'
         required: true
@@ -78,9 +77,9 @@ on:
   schedule:
     - cron: '0 1 * * *'  # UTC 時間每天1點 (台灣時間9點)
     
-  # 接收從網頁界面觸發的事件
+  # 接收從網頁界面觸發的事件 - 移除AI客服相關事件
   repository_dispatch:
-    types: [delete-article, upload-article, scan-articles, update-video, update-sitemap, publish-scheduled, update-dictionary, deploy-ai-chat, validate-content]
+    types: [delete-article, upload-article, scan-articles, update-video, update-sitemap, publish-scheduled, update-dictionary, validate-content]
 
 jobs:
   content-automation:
@@ -455,78 +454,10 @@ jobs:
           git commit -m "🌐 更新翻譯字典 (增強版)" || echo "無需提交翻譯字典"
           git push || echo "無需推送翻譯字典"
           
-      # 17. 部署AI客服功能
-      - name: 部署AI客服功能
-        id: deploy_ai_chat
-        if: github.event.inputs.deploy_ai_chat == 'true' || (github.event_name == 'repository_dispatch' && github.event.action == 'deploy-ai-chat') || (github.event_name == 'push' && (contains(github.event.head_commit.modified, 'assets/css/ai-chat.css') || contains(github.event.head_commit.modified, 'assets/js/ai-chat.js')))
-        run: |
-          echo "🤖 部署AI客服功能..."
-          
-          # 檢查是否有AI客服相關文件的更新
-          AI_CHAT_FILES_CHANGED=false
-          
-          # 檢查CSS文件
-          if [ -f "assets/css/ai-chat.css" ]; then
-            git add assets/css/ai-chat.css
-            if [ $(git diff --cached --name-only | grep -c "assets/css/ai-chat.css") -gt 0 ]; then
-              AI_CHAT_FILES_CHANGED=true
-              echo "🎨 AI客服CSS文件已更新"
-            fi
-          fi
-          
-          # 檢查JS文件
-          if [ -f "assets/js/ai-chat.js" ]; then
-            git add assets/js/ai-chat.js
-            if [ $(git diff --cached --name-only | grep -c "assets/js/ai-chat.js") -gt 0 ]; then
-              AI_CHAT_FILES_CHANGED=true
-              echo "⚡ AI客服JS文件已更新"
-            fi
-          fi
-          
-          # 如果有更新，則提交更改
-          if [ "$AI_CHAT_FILES_CHANGED" = true ]; then
-            git commit -m "🤖 更新AI客服功能文件" || echo "無需提交AI客服文件"
-            git push || echo "無需推送AI客服文件"
-            echo "ai_chat_updated=true" >> $GITHUB_OUTPUT
-          else
-            echo "ℹ️ AI客服文件無更改，跳過提交"
-            # 重置已添加的文件
-            git reset HEAD assets/css/ai-chat.css assets/js/ai-chat.js
-            echo "ai_chat_updated=false" >> $GITHUB_OUTPUT
-          fi
+      # 🔧 移除：AI客服功能相關步驟 (步驟17和18)
+      # 原本的步驟17和18關於AI客服功能已被移除
       
-      # 18. 一次性將AI客服功能添加到所有HTML頁面
-      - name: 添加AI客服功能到HTML頁面
-        if: github.event.inputs.deploy_ai_chat == 'true' && (github.event_name == 'repository_dispatch' && github.event.action == 'deploy-ai-chat')
-        run: |
-          echo "🤖 將AI客服功能添加到所有HTML頁面..."
-          
-          # 查找所有HTML文件
-          HTML_FILES=$(find . -type f -name "*.html")
-          MODIFIED_FILES=0
-          
-          for FILE in $HTML_FILES; do
-            # 檢查文件是否已包含AI客服引用
-            if ! grep -q "ai-chat.css" "$FILE" && ! grep -q "ai-chat.js" "$FILE"; then
-              # 在</body>標籤前添加AI客服引用
-              sed -i 's|</body>|<!-- AI客服聊天功能 -->\n<link rel="stylesheet" href="/assets/css/ai-chat.css">\n<script src="/assets/js/ai-chat.js"></script>\n</body>|' "$FILE"
-              MODIFIED_FILES=$((MODIFIED_FILES + 1))
-              echo "✅ 已更新: $FILE"
-            fi
-          done
-          
-          echo "📊 共更新了 $MODIFIED_FILES 個HTML文件"
-          
-          # 如果有更改，提交更改
-          if [ $MODIFIED_FILES -gt 0 ]; then
-            git add *.html blog/**/*.html services/**/*.html
-            git commit -m "🤖 將AI客服功能添加到HTML頁面 (增強版)" || echo "無需提交HTML更改"
-            git push || echo "無需推送HTML更改"
-          else
-            echo "ℹ️ 所有HTML文件已包含AI客服功能，無需更新"
-          fi
-      
-      # 19. 🔧 新增：生成處理報告
+      # 17. 🔧 重新編號：生成處理報告
       - name: 生成處理報告
         if: steps.process_word.outputs.html_changed == 'true' || steps.validate_content.outputs.validation_completed == 'true'
         run: |
@@ -565,7 +496,7 @@ jobs:
           git commit -m "📊 增強版處理器執行報告" || echo "無需提交報告"
           git push || echo "無需推送報告"
       
-      # 20. 結果通知 - 增強版
+      # 18. 🔧 重新編號：結果通知 - 增強版
       - name: 工作流執行結果通知 - 增強版
         run: |
           echo "🎉 增強版Word處理器工作流程完成執行"
@@ -578,7 +509,6 @@ jobs:
           echo "- Word文檔處理: ${{ steps.process_word.outputs.html_changed }}"
           echo "- 內容驗證: ${{ steps.validate_content.outputs.validation_completed }}"
           echo "- JSON更新: ${{ steps.update_blog_json.outputs.blog_json_updated }}"
-          echo "- AI客服更新: ${{ steps.deploy_ai_chat.outputs.ai_chat_updated }}"
           
           echo ""
           echo "✨ 增強版功能特色:"
@@ -588,4 +518,5 @@ jobs:
           echo "- ✅ 智能高亮系統"
           echo "- ✅ 自動內容驗證"
           
-          # 可以在這裡添加其他通知方式，如發送郵件或Slack通知
+          echo ""
+          echo "ℹ️  注意: AI客服功能已移除，如需要可單獨部署"
