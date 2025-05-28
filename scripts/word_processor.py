@@ -18,6 +18,7 @@ from docx.opc.exceptions import PackageNotFoundError
 from utils import parse_filename, read_json, write_json
 from translator import get_translator  # 引入翻譯器
 
+<<<<<<< HEAD
 class HTMLContentProcessor:
     """HTML內容結構化處理器"""
     
@@ -224,6 +225,8 @@ class HTMLContentProcessor:
         
         return None
 
+=======
+>>>>>>> parent of 671b82a (1)
 class WordProcessor:
     """Word 文檔處理類"""
     
@@ -249,9 +252,6 @@ class WordProcessor:
         
         # 初始化翻譯器
         self.translator = get_translator(self.translation_dict_file, api_key)
-        
-        # 初始化HTML內容處理器
-        self.html_processor = HTMLContentProcessor()
         
         # 載入已處理文件記錄
         self.processed_files = read_json(self.processed_files_file, default={"files": []})
@@ -374,19 +374,13 @@ class WordProcessor:
             # 收集段落內容
             content.append(para.text)
         
-        # 使用HTML處理器處理內容
-        processed_html = self.html_processor.process_content_list(content)
-        
-        # 提取摘要（使用前兩段的純文字）
+        # 提取摘要（使用前兩段）
         summary = ""
         if content:
             summary = content[0]
             if len(content) > 1:
                 summary += " " + content[1]
             summary = summary[:200] + "..." if len(summary) > 200 else summary
-            # 移除markdown標記
-            summary = re.sub(r'\*\*(.*?)\*\*', r'\1', summary)
-            summary = re.sub(r'#{1,6}\s*', '', summary)
         
         # 組織結果
         result = {
@@ -395,7 +389,10 @@ class WordProcessor:
             "file_info": file_info,
             "title": title,
             "content": content,
+<<<<<<< HEAD
             "processed_html": processed_html,  # 新增處理後的HTML
+=======
+>>>>>>> parent of 671b82a (1)
             "summary": summary,
             "date": file_info["date"],
             "source_path": str(doc_path)  # 保存原始文件路徑
