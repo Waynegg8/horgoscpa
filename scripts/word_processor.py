@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Word 處理及翻譯模組
-負責掃描、讀取 Word 文檔、提取內容並進行翻譯處理
+改進的Word處理及翻譯模組
+負責掃描、讀取 Word 文檔、提取內容並進行翻譯處理，並改善HTML結構
 """
 
 import os
@@ -17,6 +17,185 @@ from docx.opc.exceptions import PackageNotFoundError
 
 from utils import parse_filename, read_json, write_json
 from translator import get_translator  # 引入翻譯器
+
+class HTMLContentProcessor:
+    """HTML內容結構化處理器"""
+    
+    def __init__(self):
+        """初始化處理器"""
+        # 標題模式匹配規則
+        self.title_patterns = [
+            # 中文編號標題 (一、二、三、...)
+            (r'^([一二三四五六七八九十]+)、(.+)$', 'h2'),
+            # 阿拉伯數字標題 (1. 2. 3. ...)
+            (r'^(\d+)\.?\s*(.+)$', 'h3'),
+            # 帶括號的子標題 ((1) (2) (3) ...)
+            (r'^\((\d+)\)\s*(.+)$', 'h4'),
+            # 英文字母標題 (A. B. C. ...)
+            (r'^([A-Z])\.?\s*(.+)$', 'h4'),
+            # 粗體標題 (**文字**)
+            (r'^\*\*(.+)\*\*$', 'h3'),
+            # 前言、結語等關鍵字標題
+            (r'^(前言|結語|摘要|總結|結論)$', 'h2'),
+        ]
+        
+        # 列表項目模式
+        self.list_patterns = [
+            # 數字列表 (1. 2. 3.)
+            (r'^\d+\.\s+(.+)$', 'ordered'),
+            # 項目符號列表 (-、•、*)
+            (r'^[-•*]\s+(.+)$', 'unordered'),
+            # 中文項目符號
+            (r'^[（(]\d+[）)]\s*(.+)$', 'ordered'),
+        ]
+        
+        # 重要內容模式（日期、金額、百分比等）
+        self.highlight_patterns = [
+            # 日期格式
+            (r'\b(\d{4}年\d{1,2}月\d{1,2}日|\d{4}-\d{1,2}-\d{1,2}|\d{1,2}月\d{1,2}日)\b', 'date-highlight'),
+            # 金額格式
+            (r'\b(\d+(?:,\d{3})*(?:\.\d+)?(?:元|萬|億)?)\b', 'amount-highlight'),
+            # 百分比格式
+            (r'\b(\d+(?:\.\d+)?%|百分之\d+(?:\.\d+)?)\b', 'percent-highlight'),
+            # 法條格式
+            (r'(第\d+條(?:第\d+款)?(?:第\d+項)?)', 'law-highlight'),
+        ]
+
+    def process_content_list(self, content_list):
+        """
+        處理內容列表，重新結構化為HTML
+        
+        Args:
+            content_list: 段落文本列表
+            
+        Returns:
+            str: 處理後的HTML內容
+        """
+        if not content_list:
+            return ""
+        
+        html_parts = []
+        current_list = []
+        current_list_type = None
+        
+        for text in content_list:
+            text = text.strip()
+            if not text:
+                continue
+            
+            # 檢查是否為標題
+            title_tag, title_text = self._identify_title(text)
+            if title_tag:
+                # 結束當前列表
+                if current_list:
+                    html_parts.append(self._build_list_html(current_list, current_list_type))
+                    current_list = []
+                    current_list_type = None
+                
+                # 添加標題
+                html_parts.append(f'<{title_tag}>{title_text}</{title_tag}>')
+                continue
+            
+            # 檢查是否為列表項目
+            list_item_text, list_type = self._identify_list_item(text)
+            if list_item_text:
+                # 如果列表類型不同，結束當前列表
+                if current_list_type and current_list_type != list_type:
+                    html_parts.append(self._build_list_html(current_list, current_list_type))
+                    current_list = []
+                
+                current_list.append(list_item_text)
+                current_list_type = list_type
+                continue
+            
+            # 結束當前列表
+            if current_list:
+                html_parts.append(self._build_list_html(current_list, current_list_type))
+                current_list = []
+                current_list_type = None
+            
+            # 處理普通段落
+            processed_text = self._add_highlights(text)
+            html_parts.append(f'<p>{processed_text}</p>')
+        
+        # 添加最後的列表
+        if current_list:
+            html_parts.append(self._build_list_html(current_list, current_list_type))
+        
+        return '\n'.join(html_parts)
+    
+    def _identify_title(self, text):
+        """
+        識別是否為標題
+        
+        Args:
+            text: 文本內容
+            
+        Returns:
+            tuple: (標題標籤, 標題文本) 或 (None, None)
+        """
+        for pattern, tag in self.title_patterns:
+            match = re.match(pattern, text)
+            if match:
+                if len(match.groups()) == 2:
+                    return tag, match.group(2).strip()
+                else:
+                    return tag, match.group(1).strip()
+        
+        return None, None
+    
+    def _identify_list_item(self, text):
+        """
+        識別是否為列表項目
+        
+        Args:
+            text: 文本內容
+            
+        Returns:
+            tuple: (列表項目文本, 列表類型) 或 (None, None)
+        """
+        for pattern, list_type in self.list_patterns:
+            match = re.match(pattern, text)
+            if match:
+                return match.group(1).strip(), list_type
+        
+        return None, None
+    
+    def _build_list_html(self, items, list_type):
+        """
+        構建列表HTML
+        
+        Args:
+            items: 列表項目
+            list_type: 列表類型 ('ordered' 或 'unordered')
+            
+        Returns:
+            str: 列表HTML
+        """
+        tag = 'ol' if list_type == 'ordered' else 'ul'
+        list_items = [f'<li>{item}</li>' for item in items]
+        return f'<{tag}>\n' + '\n'.join(list_items) + f'\n</{tag}>'
+    
+    def _add_highlights(self, text):
+        """
+        為文本添加重點標記
+        
+        Args:
+            text: 原始文本
+            
+        Returns:
+            str: 添加高亮標記的文本
+        """
+        processed_text = text
+        
+        for pattern, css_class in self.highlight_patterns:
+            processed_text = re.sub(
+                pattern,
+                lambda m: f'<span class="{css_class}">{m.group(1)}</span>',
+                processed_text
+            )
+        
+        return processed_text
 
 class WordProcessor:
     """Word 文檔處理類"""
@@ -43,6 +222,9 @@ class WordProcessor:
         
         # 初始化翻譯器
         self.translator = get_translator(self.translation_dict_file, api_key)
+        
+        # 初始化HTML內容處理器
+        self.html_processor = HTMLContentProcessor()
         
         # 載入已處理文件記錄
         self.processed_files = read_json(self.processed_files_file, default={"files": []})
@@ -165,13 +347,19 @@ class WordProcessor:
             # 收集段落內容
             content.append(para.text)
         
-        # 提取摘要（使用前兩段）
+        # 使用HTML處理器處理內容
+        processed_html = self.html_processor.process_content_list(content)
+        
+        # 提取摘要（使用前兩段的純文字）
         summary = ""
         if content:
             summary = content[0]
             if len(content) > 1:
                 summary += " " + content[1]
             summary = summary[:200] + "..." if len(summary) > 200 else summary
+            # 移除markdown標記
+            summary = re.sub(r'\*\*(.*?)\*\*', r'\1', summary)
+            summary = re.sub(r'#{1,6}\s*', '', summary)
         
         # 組織結果
         result = {
@@ -179,7 +367,8 @@ class WordProcessor:
             "original_filename": doc_path.name,  # 保存原始檔名
             "file_info": file_info,
             "title": title,
-            "content": content,
+            "content": content,  # 保留原始內容列表
+            "processed_html": processed_html,  # 新增處理後的HTML
             "summary": summary,
             "date": file_info["date"],
             "source_path": str(doc_path)  # 保存原始文件路徑
@@ -195,46 +384,19 @@ class WordProcessor:
         
         return result
     
+    # 其他方法保持不變...
     def translate_keywords(self, text, update_dict=True):
-        """
-        翻譯關鍵詞，用於生成 URL
-        
-        Args:
-            text: 要翻譯的文本
-            update_dict: 是否更新翻譯字典
-            
-        Returns:
-            str: 翻譯後的文本
-        """
-        # 使用翻譯器進行翻譯
+        """翻譯關鍵詞，用於生成 URL"""
         result = self.translator.translate(text, clean_url=True)
         logger.debug(f"翻譯: {text} -> {result}")
         return result
     
     def translate_batch(self, texts):
-        """
-        批量翻譯文本
-        
-        Args:
-            texts: 要翻譯的文本列表
-            
-        Returns:
-            list: 翻譯後的文本列表
-        """
+        """批量翻譯文本"""
         return self.translator.translate_batch(texts, clean_url=True)
     
     def generate_meta_keywords(self, doc_info, category=None, tags=None):
-        """
-        生成 META 關鍵詞
-        
-        Args:
-            doc_info: 文檔信息
-            category: 分類
-            tags: 標籤
-            
-        Returns:
-            dict: 中英文對照的 META 關鍵詞
-        """
+        """生成 META 關鍵詞"""
         keywords = []
         
         # 添加標題關鍵詞
@@ -269,15 +431,7 @@ class WordProcessor:
         return result
     
     def generate_seo_url(self, doc_info):
-        """
-        生成 SEO 友善的 URL
-        
-        Args:
-            doc_info: 文檔信息字典
-            
-        Returns:
-            str: SEO 友善的 URL
-        """
+        """生成 SEO 友善的 URL"""
         # 提取日期
         date = doc_info["date"]
         
@@ -363,15 +517,7 @@ class WordProcessor:
         return url
     
     def prepare_document(self, doc_path):
-        """
-        準備文檔處理，提取內容和生成SEO URL，但不移動文件
-        
-        Args:
-            doc_path: Word 文檔路徑
-            
-        Returns:
-            dict: 文檔信息字典
-        """
+        """準備文檔處理，提取內容和生成SEO URL，但不移動文件"""
         try:
             # 提取內容
             doc_info = self.extract_content(doc_path)
@@ -402,15 +548,7 @@ class WordProcessor:
             }
     
     def mark_as_processed(self, doc_path):
-        """
-        將文件標記為已處理，但不移動文件
-        
-        Args:
-            doc_path: 文件路徑
-            
-        Returns:
-            bool: 是否成功標記
-        """
+        """將文件標記為已處理，但不移動文件"""
         doc_path_str = str(Path(doc_path))
         
         if doc_path_str not in self.processed_files["files"]:
@@ -423,15 +561,7 @@ class WordProcessor:
             return False
     
     def move_processed_file(self, doc_path):
-        """
-        移動處理過的文件到 processed 目錄並標記為已處理
-        
-        Args:
-            doc_path: 文件路徑
-            
-        Returns:
-            Path: 移動後的文件路徑
-        """
+        """移動處理過的文件到 processed 目錄並標記為已處理"""
         doc_path = Path(doc_path)
         target_path = self.processed_dir / doc_path.name
         
@@ -464,16 +594,7 @@ class WordProcessor:
             return None
     
     def finalize_document_processing(self, doc_info, success=True):
-        """
-        完成文檔處理，如果成功則移動文件
-        
-        Args:
-            doc_info: 文檔信息字典
-            success: 處理是否成功
-            
-        Returns:
-            dict: 更新後的文檔信息字典
-        """
+        """完成文檔處理，如果成功則移動文件"""
         if not success:
             logger.warning(f"文檔處理失敗，不移動文件: {doc_info.get('source_path', '未知文件')}")
             doc_info["processed"] = False
@@ -499,10 +620,5 @@ class WordProcessor:
         return doc_info
     
     def get_translation_stats(self):
-        """
-        獲取翻譯統計信息
-        
-        Returns:
-            dict: 翻譯統計信息
-        """
+        """獲取翻譯統計信息"""
         return self.translator.get_stats()
