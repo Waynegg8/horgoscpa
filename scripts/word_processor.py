@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-整合重構組件的WordProcessor - 改進版
-新增智能URL生成和更好的標題提取邏輯
+整合重構組件的WordProcessor - 替換原有的HTMLContentProcessor
 """
 
 import os
@@ -23,7 +22,7 @@ from utils import parse_filename, read_json, write_json
 from translator import get_translator
 
 class IntegratedWordProcessor:
-    """整合重構組件的Word處理器 - 改進版"""
+    """整合重構組件的Word處理器"""
     
     def __init__(self, word_dir="word-docs", processed_dir=None, translation_dict_file=None, api_key=None):
         """
@@ -146,8 +145,8 @@ class IntegratedWordProcessor:
         logger.info("🔄 開始HTML處理...")
         processed_html = self.html_processor.process_enhanced_content(enhanced_data)
         
-        # 🔧 改進的標題提取
-        title = self._extract_smart_title(enhanced_paragraphs, file_info)
+        # 提取標題
+        title = self._extract_title(enhanced_paragraphs, file_info)
         
         # 生成摘要
         summary = self._generate_summary(enhanced_paragraphs)
@@ -182,15 +181,9 @@ class IntegratedWordProcessor:
         
         return result
     
-    def _extract_smart_title(self, enhanced_paragraphs, file_info):
+    def _extract_title(self, enhanced_paragraphs, file_info):
         """
-        🔧 智能提取文檔標題 - 改進版
-        優先順序：
-        1. 第一個標題級別段落
-        2. 第一個粗體段落
-        3. 第一個中文編號標題
-        4. 第一個非空段落
-        5. 檔名中的標題
+        從增強段落中提取標題
         
         Args:
             enhanced_paragraphs: 增強段落信息
@@ -199,97 +192,16 @@ class IntegratedWordProcessor:
         Returns:
             str: 文檔標題
         """
-        
-        # 策略1: 查找真正的標題級別
-        for para in enhanced_paragraphs[:3]:  # 只在前3個段落中查找
-            if para.get('is_heading') and para['clean_text'].strip():
-                title = para['clean_text'].strip()
-                title = self._clean_title_text(title)
-                if len(title) > 5:  # 標題長度合理
-                    logger.info(f"找到標題級別標題: {title}")
-                    return title
-        
-        # 策略2: 查找粗體段落
-        for para in enhanced_paragraphs[:5]:
-            if para.get('is_bold_title') and para.get('title_text'):
-                title = para['title_text'].strip()
-                title = self._clean_title_text(title)
-                if len(title) > 5:
-                    logger.info(f"找到粗體標題: {title}")
-                    return title
-            
-            # 檢查格式化文本中的粗體
-            formatted_text = para.get('formatted_text', '')
-            if formatted_text.startswith('**') and formatted_text.endswith('**'):
-                title = formatted_text[2:-2].strip()
-                title = self._clean_title_text(title)
-                if len(title) > 5:
-                    logger.info(f"找到格式化粗體標題: {title}")
-                    return title
-        
-        # 策略3: 查找中文編號標題
-        for para in enhanced_paragraphs[:5]:
-            if para.get('is_chinese_numbered_title') and para.get('title_text'):
-                title = para['title_text'].strip()
-                title = self._clean_title_text(title)
-                if len(title) > 5:
-                    logger.info(f"找到中文編號標題: {title}")
-                    return title
-        
-        # 策略4: 第一個有實質內容的段落
-        for para in enhanced_paragraphs[:3]:
+        # 查找第一個非空段落作為標題
+        for para in enhanced_paragraphs:
             if para['clean_text'].strip():
-                text = para['clean_text'].strip()
-                # 排除明顯不是標題的內容
-                if not self._is_likely_content_paragraph(text):
-                    title = self._clean_title_text(text)
-                    if 8 <= len(title) <= 100:  # 標題長度合理
-                        logger.info(f"使用第一個段落作為標題: {title}")
-                        return title
+                # 移除可能的粗體標記
+                title = para['clean_text'].strip()
+                title = re.sub(r'^\*\*(.*)\*\*$', r'\1', title)
+                return title
         
-        # 策略5: 使用檔名中的標題
-        filename_title = file_info.get("title", "")
-        if filename_title:
-            logger.info(f"使用檔名標題: {filename_title}")
-            return filename_title
-            
-        logger.warning("無法提取到合適的標題，使用預設標題")
-        return "未命名文檔"
-    
-    def _clean_title_text(self, text):
-        """清理標題文本"""
-        if not text:
-            return ""
-        
-        # 移除格式標記
-        text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-        text = re.sub(r'\*(.*?)\*', r'\1', text)
-        text = re.sub(r'__(.*?)__', r'\1', text)
-        
-        # 移除多餘空白
-        text = ' '.join(text.split())
-        
-        # 移除開頭的編號
-        text = re.sub(r'^[一二三四五六七八九十]+、', '', text)
-        text = re.sub(r'^\d+\.?\s*', '', text)
-        
-        return text.strip()
-    
-    def _is_likely_content_paragraph(self, text):
-        """判斷是否為內容段落而非標題"""
-        # 太長的通常是內容
-        if len(text) > 100:
-            return True
-        
-        # 包含句號的通常是內容
-        if '。' in text or '.' in text:
-            return True
-        
-        # 包含日期格式的通常是內容
-        if re.search(r'\d{4}年\d{1,2}月\d{1,2}日', text):
-            return True
-            
-        return False
+        # 如果沒找到，使用檔名中的標題
+        return file_info["title"]
     
     def _generate_summary(self, enhanced_paragraphs):
         """
@@ -304,324 +216,28 @@ class IntegratedWordProcessor:
         summary_parts = []
         
         # 找前幾個非標題段落作為摘要
-        for para in enhanced_paragraphs[:8]:  # 檢查前8個段落
+        for para in enhanced_paragraphs[:5]:  # 檢查前5個段落
             if (not para.get('is_heading') and 
                 not para.get('is_chinese_numbered_title') and 
                 not para.get('is_arabic_numbered_title') and
-                not para.get('is_bold_title') and
-                len(para['clean_text'].strip()) > 25):  # 至少25個字符
+                len(para['clean_text'].strip()) > 20):  # 至少20個字符
                 
                 text = para['clean_text'].strip()
                 # 移除格式標記
                 text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
                 text = re.sub(r'\*(.*?)\*', r'\1', text)
                 
-                # 排除純數字、日期等
-                if not re.match(r'^[\d\s\-月日年：:]+$', text):
-                    summary_parts.append(text)
-                    if len(' '.join(summary_parts)) > 200:  # 摘要長度控制
-                        break
+                summary_parts.append(text)
+                if len(' '.join(summary_parts)) > 150:  # 摘要長度控制
+                    break
         
         if summary_parts:
             summary = ' '.join(summary_parts)
-            return summary[:300] + "..." if len(summary) > 300 else summary
+            return summary[:200] + "..." if len(summary) > 200 else summary
         
         return ""
     
-    # 🔧 全新的URL生成邏輯
-    def generate_seo_url(self, doc_info):
-        """
-        🔧 生成SEO友善的URL - 完全重寫版
-        使用語義化翻譯而非逐詞翻譯
-        """
-        date = doc_info["date"]
-        url_components = [date]
-        
-        # 獲取分類slug
-        category_slug = doc_info.get("category", "")
-        if category_slug and len(category_slug) <= 15:
-            url_components.append(category_slug)
-        
-        # 處理系列文章
-        if doc_info.get("is_series", False):
-            series_name = doc_info.get("series_name", "")
-            if series_name:
-                series_slug = self._generate_semantic_slug(series_name, max_words=2)
-                if series_slug:
-                    url_components.append(series_slug)
-            url_components.append(f"ep{doc_info['episode']}")
-        
-        # 🔧 核心改進：標題的語義化處理
-        title = doc_info.get("title", "")
-        if title:
-            title_slug = self._generate_semantic_slug(title, max_words=4, is_title=True)
-            if title_slug:
-                url_components.append(title_slug)
-        
-        # 組合URL
-        url = "-".join(filter(None, url_components))
-        
-        # 確保URL長度合理 (SEO最佳實踐: 50-60字符)
-        if len(url) > 55:
-            url = self._optimize_url_length(url, date, category_slug, doc_info)
-        
-        logger.info(f"生成SEO URL: {url}")
-        return url.rstrip("-")
-    
-    def _generate_semantic_slug(self, text, max_words=3, is_title=False):
-        """
-        🔧 生成語義化slug - 核心改進方法
-        使用整句理解而非逐詞翻譯
-        """
-        if not text or not text.strip():
-            return ""
-        
-        # 預處理：提取關鍵概念
-        cleaned_text = self._extract_key_concepts(text)
-        
-        if not cleaned_text:
-            cleaned_text = text.strip()
-        
-        # 🔧 關鍵改進：使用整句翻譯
-        try:
-            # 構建更好的翻譯提示
-            translation_prompt = cleaned_text
-            if is_title:
-                # 對標題進行更精準的翻譯
-                translated_text = self.translator.translate(translation_prompt, clean_url=True)
-            else:
-                translated_text = self.translator.translate(translation_prompt, clean_url=True)
-            
-            # 進一步優化slug
-            slug = self._optimize_slug_for_seo(translated_text, max_words)
-            
-            logger.debug(f"語義翻譯: '{text}' -> '{translated_text}' -> '{slug}'")
-            return slug
-            
-        except Exception as e:
-            logger.warning(f"翻譯失敗，使用備用方法: {e}")
-            # 備用方法：直接處理中文
-            return self._fallback_slug_generation(text, max_words)
-    
-    def _extract_key_concepts(self, text):
-        """
-        🔧 提取文本關鍵概念
-        移除無意義的詞彙，保留核心概念
-        """
-        if not text:
-            return ""
-        
-        # 移除常見的無意義前綴/後綴
-        text = re.sub(r'^(關於|有關|針對|對於)', '', text)
-        text = re.sub(r'(的說明|的介紹|的分析|的探討|的研究)$', '', text)
-        
-        # 移除日期表達
-        text = re.sub(r'\d{4}年\d{1,2}月\d{1,2}日', '', text)
-        text = re.sub(r'\d{1,2}月\d{1,2}日', '', text)
-        
-        # 移除多餘的標點符號
-        text = re.sub(r'[：:；;，,。.！!？?]+', ' ', text)
-        
-        # 移除多餘空白
-        text = ' '.join(text.split())
-        
-        return text.strip()
-    
-    def _optimize_slug_for_seo(self, translated_text, max_words=3):
-        """
-        🔧 為SEO優化slug
-        移除SEO不友好的詞彙，保留關鍵詞
-        """
-        if not translated_text:
-            return ""
-        
-        # 轉為小寫
-        text = translated_text.lower()
-        
-        # 🔧 更全面的SEO不友好詞彙清單
-        seo_stop_words = {
-            # 英文停用詞
-            'of', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'with', 
-            'by', 'from', 'up', 'about', 'into', 'through', 'during', 'before', 
-            'after', 'above', 'below', 'between', 'among', 'throughout', 'despite',
-            'the', 'a', 'an', 'this', 'that', 'these', 'those', 'is', 'are', 'was', 
-            'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
-            'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can',
-            # 常見連接詞
-            'how', 'what', 'when', 'where', 'why', 'which', 'who', 'whom',
-            # 其他無SEO價值的詞
-            'some', 'any', 'many', 'much', 'most', 'more', 'less', 'few', 'several',
-            'all', 'both', 'each', 'every', 'other', 'another', 'such', 'same',
-            'own', 'very', 'just', 'now', 'here', 'there', 'then', 'than'
-        }
-        
-        # 提取有意義的單詞
-        words = re.findall(r'[a-zA-Z0-9]+', text)
-        
-        # 過濾停用詞，保留有價值的關鍵詞
-        meaningful_words = []
-        for word in words:
-            if (len(word) >= 3 and  # 至少3個字符
-                word not in seo_stop_words and  # 不是停用詞
-                not word.isdigit()):  # 不是純數字
-                meaningful_words.append(word)
-            elif len(word) == 2 and word.isalnum() and word not in ['of', 'in', 'on', 'at', 'to', 'by', 'or']:
-                # 保留有意義的2字符詞（如縮寫）
-                meaningful_words.append(word)
-        
-        # 如果過濾後沒有詞，使用原始詞的前幾個
-        if not meaningful_words:
-            meaningful_words = [w for w in words if len(w) >= 3][:max_words]
-        
-        # 限制詞數
-        if len(meaningful_words) > max_words:
-            meaningful_words = meaningful_words[:max_words]
-        
-        return '-'.join(meaningful_words) if meaningful_words else ""
-    
-    def _fallback_slug_generation(self, text, max_words=3):
-        """
-        備用的slug生成方法（當翻譯失敗時使用）
-        """
-        # 使用拼音或其他方法
-        # 這裡可以集成pypinyin等庫
-        # 暫時返回簡化處理
-        words = text.split()[:max_words]
-        return '-'.join([re.sub(r'[^\w]', '', word) for word in words if word.strip()])
-    
-    def _optimize_url_length(self, url, date, category_slug, doc_info):
-        """
-        🔧 優化URL長度 - 確保SEO友好
-        """
-        max_url_length = 55  # SEO最佳長度
-        
-        if len(url) <= max_url_length:
-            return url
-        
-        # 重新構建精簡版URL
-        essential_parts = [date]
-        
-        # 分類（如果不太長）
-        if category_slug and len(category_slug) <= 10:
-            essential_parts.append(category_slug)
-        
-        # 系列信息精簡處理
-        if doc_info.get("is_series", False):
-            series_name = doc_info.get("series_name", "")
-            if series_name:
-                # 只取系列名稱的第一個關鍵詞
-                series_slug = self._generate_semantic_slug(series_name, max_words=1)
-                if series_slug and len(series_slug) <= 8:
-                    essential_parts.append(series_slug)
-            essential_parts.append(f"ep{doc_info['episode']}")
-        
-        # 計算標題可用空間
-        base_url = "-".join(essential_parts)
-        remaining_space = max_url_length - len(base_url) - 1
-        
-        # 為標題生成精簡slug
-        title = doc_info.get("title", "")
-        if title and remaining_space > 8:
-            title_slug = self._generate_semantic_slug(title, max_words=2, is_title=True)
-            if title_slug and len(title_slug) <= remaining_space:
-                return f"{base_url}-{title_slug}"
-        
-        return base_url
-    
-    # 🔧 新增：高級語義URL生成（可選）
-    def generate_advanced_semantic_url(self, doc_info):
-        """
-        🔧 高級語義URL生成
-        基於文檔內容分析生成更有意義的URL
-        """
-        date = doc_info["date"]
-        
-        # 分析文檔內容主題
-        title = doc_info.get("title", "")
-        summary = doc_info.get("summary", "")
-        
-        # 結合標題和摘要進行主題分析
-        content_for_analysis = f"{title}. {summary[:100]}".strip()
-        
-        # 提取主題關鍵詞
-        theme_keywords = self._extract_document_themes(content_for_analysis)
-        
-        # 構建URL
-        url_parts = [date]
-        
-        category_slug = doc_info.get("category", "")
-        if category_slug and len(category_slug) <= 10:
-            url_parts.append(category_slug)
-        
-        if doc_info.get("is_series", False):
-            url_parts.append(f"ep{doc_info['episode']}")
-        
-        # 使用主題關鍵詞
-        if theme_keywords:
-            theme_slug = '-'.join(theme_keywords[:3])  # 最多3個主題詞
-            url_parts.append(theme_slug)
-        else:
-            # 回退到標準方法
-            title_slug = self._generate_semantic_slug(title, max_words=3, is_title=True)
-            if title_slug:
-                url_parts.append(title_slug)
-        
-        url = "-".join(filter(None, url_parts))
-        
-        # 確保長度合適
-        if len(url) > 55:
-            url = url[:55].rstrip('-')
-        
-        return url
-    
-    def _extract_document_themes(self, content):
-        """
-        從文檔內容中提取主題關鍵詞
-        這裡可以使用更sophisticated的NLP技術
-        """
-        if not content:
-            return []
-        
-        # 簡單的主題提取邏輯
-        # 在實際應用中可以使用jieba、BERT等工具
-        
-        # 移除無意義的詞語
-        content = re.sub(r'[的、了、是、在、和、與、或、但、而且、然而、因此、所以、由於]', ' ', content)
-        
-        # 提取名詞性詞語（簡單規則）
-        potential_keywords = re.findall(r'[\u4e00-\u9fff]{2,}', content)
-        
-        # 過濾和排序
-        keyword_freq = {}
-        for keyword in potential_keywords:
-            if len(keyword) >= 2 and len(keyword) <= 8:
-                keyword_freq[keyword] = keyword_freq.get(keyword, 0) + 1
-        
-        # 返回頻率最高的關鍵詞
-        sorted_keywords = sorted(keyword_freq.items(), key=lambda x: x[1], reverse=True)
-        
-        # 翻譯前3個關鍵詞
-        top_keywords = [kw[0] for kw in sorted_keywords[:3]]
-        
-        if top_keywords:
-            try:
-                translated_keywords = []
-                for keyword in top_keywords:
-                    translated = self.translator.translate(keyword, clean_url=True)
-                    if translated and len(translated) <= 15:
-                        # 進一步清理
-                        cleaned = self._optimize_slug_for_seo(translated, max_words=1)
-                        if cleaned:
-                            translated_keywords.append(cleaned)
-                
-                return translated_keywords[:2]  # 最多返回2個
-                
-            except Exception as e:
-                logger.warning(f"主題詞翻譯失敗: {e}")
-        
-        return []
-    
-    # 保持原有的其他方法不變...
+    # 以下方法保持與原有WordProcessor兼容
     def translate_keywords(self, text, update_dict=True):
         """翻譯關鍵詞"""
         result = self.translator.translate(text, clean_url=True)
@@ -657,16 +273,63 @@ class IntegratedWordProcessor:
             "en": ", ".join(en_keywords)
         }
     
+    def generate_seo_url(self, doc_info):
+        """生成SEO友善的URL"""
+        date = doc_info["date"]
+        url_components = [date]
+        
+        category_slug = doc_info.get("category", "")
+        if category_slug:
+            url_components.append(category_slug)
+        
+        if doc_info.get("is_series", False):
+            series_name = doc_info.get("series_name", "")
+            if series_name:
+                series_url = self.translate_keywords(series_name)
+                series_words = series_url.split('-')
+                if len(series_words) > 2:
+                    series_url = '-'.join(series_words[:2])
+                url_components.append(series_url)
+            url_components.append(f"ep{doc_info['episode']}")
+        
+        title = doc_info.get("title", "")
+        if title:
+            title_url = self.translate_keywords(title)
+            title_words = title_url.split('-')
+            if len(title_words) > 3:
+                title_url = '-'.join(title_words[:3])
+            url_components.append(title_url)
+        
+        url = "-".join(url_components)
+        
+        max_url_length = 70
+        if len(url) > max_url_length:
+            essential_parts = [date]
+            if category_slug:
+                essential_parts.append(category_slug)
+            if doc_info.get("is_series", False):
+                if 'series_url' in locals() and series_url.split('-'):
+                    essential_parts.append(series_url.split('-')[0])
+                essential_parts.append(f"ep{doc_info['episode']}")
+            
+            essential_url = "-".join(essential_parts)
+            remaining_length = max_url_length - len(essential_url) - 1
+            
+            if remaining_length > 5 and 'title_words' in locals() and title_words:
+                title_part = title_words[0]
+                if len(title_part) > remaining_length:
+                    title_part = title_part[:remaining_length]
+                url = f"{essential_url}-{title_part}"
+            else:
+                url = essential_url
+        
+        return url.rstrip("-")
+    
     def prepare_document(self, doc_path):
         """準備文檔處理"""
         try:
             doc_info = self.extract_content(doc_path)
-            
-            # 🔧 使用改進的URL生成
             doc_info["url"] = self.generate_seo_url(doc_info)
-            
-            # 可選：也生成高級語義URL供參考
-            doc_info["semantic_url"] = self.generate_advanced_semantic_url(doc_info)
             
             translation_stats = self.translator.get_stats()
             doc_info["translation_stats"] = {
@@ -677,9 +340,6 @@ class IntegratedWordProcessor:
             
             doc_info["prepared"] = True
             logger.success(f"✅ 文檔準備完成: {doc_path}")
-            logger.info(f"🔗 生成URL: {doc_info['url']}")
-            logger.info(f"🎯 語義URL: {doc_info['semantic_url']}")
-            
             return doc_info
             
         except Exception as e:
@@ -690,7 +350,6 @@ class IntegratedWordProcessor:
                 "source_path": str(doc_path)
             }
     
-    # 其他方法保持不變...
     def mark_as_processed(self, doc_path):
         """標記文件為已處理"""
         doc_path_str = str(Path(doc_path))
