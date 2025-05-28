@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-改進的Word處理及翻譯模組
-負責掃描、讀取 Word 文檔、提取內容並進行翻譯處理，並改善HTML結構
+Word 處理及翻譯模組
+負責掃描、讀取 Word 文檔、提取內容並進行翻譯處理
 """
 
 import os
@@ -116,7 +116,13 @@ class HTMLContentProcessor:
             
             # 處理普通段落
             processed_text = self._add_highlights(text)
-            html_parts.append(f'<p>{processed_text}</p>')
+            
+            # 檢查是否為特殊段落
+            p_class = self._get_paragraph_class(text)
+            if p_class:
+                html_parts.append(f'<p class="{p_class}">{processed_text}</p>')
+            else:
+                html_parts.append(f'<p>{processed_text}</p>')
         
         # 添加最後的列表
         if current_list:
@@ -196,6 +202,27 @@ class HTMLContentProcessor:
             )
         
         return processed_text
+    
+    def _get_paragraph_class(self, text):
+        """
+        獲取段落的CSS類名
+        
+        Args:
+            text: 段落文本
+            
+        Returns:
+            str: CSS類名或None
+        """
+        # 前言和結語段落
+        if text.startswith(('前言', '結語', '摘要')):
+            return 'intro-conclusion'
+        
+        # 包含重要關鍵字的段落
+        important_keywords = ['注意', '重要', '提醒', '警告', '建議']
+        if any(keyword in text for keyword in important_keywords):
+            return 'important-note'
+        
+        return None
 
 class WordProcessor:
     """Word 文檔處理類"""
@@ -367,7 +394,7 @@ class WordProcessor:
             "original_filename": doc_path.name,  # 保存原始檔名
             "file_info": file_info,
             "title": title,
-            "content": content,  # 保留原始內容列表
+            "content": content,
             "processed_html": processed_html,  # 新增處理後的HTML
             "summary": summary,
             "date": file_info["date"],
@@ -384,19 +411,46 @@ class WordProcessor:
         
         return result
     
-    # 其他方法保持不變...
     def translate_keywords(self, text, update_dict=True):
-        """翻譯關鍵詞，用於生成 URL"""
+        """
+        翻譯關鍵詞，用於生成 URL
+        
+        Args:
+            text: 要翻譯的文本
+            update_dict: 是否更新翻譯字典
+            
+        Returns:
+            str: 翻譯後的文本
+        """
+        # 使用翻譯器進行翻譯
         result = self.translator.translate(text, clean_url=True)
         logger.debug(f"翻譯: {text} -> {result}")
         return result
     
     def translate_batch(self, texts):
-        """批量翻譯文本"""
+        """
+        批量翻譯文本
+        
+        Args:
+            texts: 要翻譯的文本列表
+            
+        Returns:
+            list: 翻譯後的文本列表
+        """
         return self.translator.translate_batch(texts, clean_url=True)
     
     def generate_meta_keywords(self, doc_info, category=None, tags=None):
-        """生成 META 關鍵詞"""
+        """
+        生成 META 關鍵詞
+        
+        Args:
+            doc_info: 文檔信息
+            category: 分類
+            tags: 標籤
+            
+        Returns:
+            dict: 中英文對照的 META 關鍵詞
+        """
         keywords = []
         
         # 添加標題關鍵詞
@@ -431,7 +485,15 @@ class WordProcessor:
         return result
     
     def generate_seo_url(self, doc_info):
-        """生成 SEO 友善的 URL"""
+        """
+        生成 SEO 友善的 URL
+        
+        Args:
+            doc_info: 文檔信息字典
+            
+        Returns:
+            str: SEO 友善的 URL
+        """
         # 提取日期
         date = doc_info["date"]
         
@@ -517,7 +579,15 @@ class WordProcessor:
         return url
     
     def prepare_document(self, doc_path):
-        """準備文檔處理，提取內容和生成SEO URL，但不移動文件"""
+        """
+        準備文檔處理，提取內容和生成SEO URL，但不移動文件
+        
+        Args:
+            doc_path: Word 文檔路徑
+            
+        Returns:
+            dict: 文檔信息字典
+        """
         try:
             # 提取內容
             doc_info = self.extract_content(doc_path)
@@ -548,7 +618,15 @@ class WordProcessor:
             }
     
     def mark_as_processed(self, doc_path):
-        """將文件標記為已處理，但不移動文件"""
+        """
+        將文件標記為已處理，但不移動文件
+        
+        Args:
+            doc_path: 文件路徑
+            
+        Returns:
+            bool: 是否成功標記
+        """
         doc_path_str = str(Path(doc_path))
         
         if doc_path_str not in self.processed_files["files"]:
@@ -561,7 +639,15 @@ class WordProcessor:
             return False
     
     def move_processed_file(self, doc_path):
-        """移動處理過的文件到 processed 目錄並標記為已處理"""
+        """
+        移動處理過的文件到 processed 目錄並標記為已處理
+        
+        Args:
+            doc_path: 文件路徑
+            
+        Returns:
+            Path: 移動後的文件路徑
+        """
         doc_path = Path(doc_path)
         target_path = self.processed_dir / doc_path.name
         
@@ -594,7 +680,16 @@ class WordProcessor:
             return None
     
     def finalize_document_processing(self, doc_info, success=True):
-        """完成文檔處理，如果成功則移動文件"""
+        """
+        完成文檔處理，如果成功則移動文件
+        
+        Args:
+            doc_info: 文檔信息字典
+            success: 處理是否成功
+            
+        Returns:
+            dict: 更新後的文檔信息字典
+        """
         if not success:
             logger.warning(f"文檔處理失敗，不移動文件: {doc_info.get('source_path', '未知文件')}")
             doc_info["processed"] = False
@@ -620,5 +715,10 @@ class WordProcessor:
         return doc_info
     
     def get_translation_stats(self):
-        """獲取翻譯統計信息"""
+        """
+        獲取翻譯統計信息
+        
+        Returns:
+            dict: 翻譯統計信息
+        """
         return self.translator.get_stats()
