@@ -893,3 +893,449 @@
     white-space: nowrap;
   }
 }
+/* 增強版文章樣式 - 支持重構後的HTML結構 */
+
+/* ========== 稅務期程列表特殊樣式 ========== */
+.tax-schedule-list {
+  margin: 2rem 0;
+  padding: 0;
+  list-style: none;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 12px;
+  border-left: 5px solid var(--secondary-color);
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+}
+
+.tax-schedule-list li {
+  position: relative;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 102, 204, 0.1);
+  transition: all 0.3s ease;
+  line-height: 1.6;
+}
+
+.tax-schedule-list li:last-child {
+  border-bottom: none;
+}
+
+.tax-schedule-list li:hover {
+  background: rgba(0, 102, 204, 0.05);
+  transform: translateX(5px);
+}
+
+.tax-schedule-list li::before {
+  content: "📅";
+  position: absolute;
+  left: 0.5rem;
+  top: 1.2rem;
+  font-size: 1.1rem;
+  opacity: 0.7;
+}
+
+.tax-schedule-list li strong {
+  color: var(--primary-color);
+  font-weight: 600;
+  background: rgba(0, 102, 204, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* ========== 改進的標題樣式 ========== */
+.article-body h2 {
+  font-size: 1.8rem !important;
+  margin-top: 3rem;
+  margin-bottom: 1.5rem;
+  color: #00428e;
+  position: relative;
+  padding-left: 1.2rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.article-body h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0.8rem;
+  width: 5px;
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  border-radius: 3px;
+}
+
+.article-body h2::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 80px;
+  height: 2px;
+  background: var(--secondary-color);
+  border-radius: 1px;
+}
+
+.article-body h3 {
+  font-size: 1.5rem !important;
+  margin-top: 2.5rem;
+  margin-bottom: 1.2rem;
+  color: #005096;
+  position: relative;
+  padding-left: 1rem;
+}
+
+.article-body h3::before {  
+  content: '▶';
+  color: var(--secondary-color);
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 0.9em;
+  transition: transform 0.3s ease;
+}
+
+.article-body h3:hover::before {
+  transform: translateX(3px);
+}
+
+.article-body h4 {
+  font-size: 1.3rem !important;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #0062b9;
+  font-weight: 600;
+  position: relative;
+  padding-left: 0.8rem;
+}
+
+.article-body h4::before {
+  content: '●';
+  color: var(--secondary-color);
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 0.7em;
+}
+
+/* ========== 改進的列表樣式 ========== */
+.article-body ul:not(.tax-schedule-list) {
+  margin: 1.5rem 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.article-body ul:not(.tax-schedule-list) li {
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: 1rem;
+  line-height: 1.7;
+  font-size: 1.05rem !important;
+  transition: all 0.2s ease;
+}
+
+.article-body ul:not(.tax-schedule-list) li::before {
+  content: "•";
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  color: var(--secondary-color);
+  font-size: 1.3em;
+  font-weight: bold;
+}
+
+.article-body ul:not(.tax-schedule-list) li:hover {
+  padding-left: 2.2rem;
+  color: var(--primary-color);
+}
+
+.article-body ol {
+  margin: 1.5rem 0;
+  padding-left: 0;
+  list-style: none;
+  counter-reset: custom-counter;
+}
+
+.article-body ol li {
+  position: relative;
+  padding-left: 2.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.7;
+  counter-increment: custom-counter;
+  font-size: 1.05rem !important;
+  transition: all 0.2s ease;
+}
+
+.article-body ol li::before {
+  content: counter(custom-counter);
+  position: absolute;
+  left: 0;
+  top: 0.1rem;
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  color: white;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0, 102, 204, 0.2);
+}
+
+.article-body ol li:hover {
+  padding-left: 2.7rem;
+}
+
+.article-body ol li:hover::before {
+  transform: scale(1.1);
+  box-shadow: 0 3px 8px rgba(0, 102, 204, 0.3);
+}
+
+/* ========== 高亮樣式改進 ========== */
+.date-highlight {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  color: #1565c0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  border: 1px solid #90caf9;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(21, 101, 192, 0.2);
+  transition: all 0.2s ease;
+}
+
+.date-highlight:hover {
+  background: linear-gradient(135deg, #bbdefb, #90caf9);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(21, 101, 192, 0.3);
+}
+
+.amount-highlight {
+  background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+  color: #2e7d32;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  border: 1px solid #81c784;
+  box-shadow: 0 1px 3px rgba(46, 125, 50, 0.2);
+  transition: all 0.2s ease;
+}
+
+.amount-highlight:hover {
+  background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(46, 125, 50, 0.3);
+}
+
+.percent-highlight {
+  background: linear-gradient(135deg, #fff3e0, #ffcc02);
+  color: #ef6c00;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  border: 1px solid #ffb74d;
+  box-shadow: 0 1px 3px rgba(239, 108, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.percent-highlight:hover {
+  background: linear-gradient(135deg, #ffcc02, #ffb74d);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(239, 108, 0, 0.3);
+}
+
+.law-highlight {
+  background: linear-gradient(135deg, #fce4ec, #f8bbd9);
+  color: #c2185b;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  border: 1px solid #f48fb1;
+  box-shadow: 0 1px 3px rgba(194, 24, 91, 0.2);
+  transition: all 0.2s ease;
+}
+
+.law-highlight:hover {
+  background: linear-gradient(135deg, #f8bbd9, #f48fb1);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(194, 24, 91, 0.3);
+}
+
+/* ========== 特殊段落樣式改進 ========== */
+.intro-conclusion {
+  background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+  border-left: 5px solid var(--secondary-color);
+  border-radius: 0 12px 12px 0;
+  padding: 2rem;
+  margin: 2.5rem 0;
+  font-style: italic;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.intro-conclusion::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+}
+
+.intro-conclusion::after {
+  content: '📖';
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  opacity: 0.3;
+}
+
+.important-note {
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+  border-left: 5px solid #ff9800;
+  border-radius: 0 12px 12px 0;
+  padding: 1.8rem;
+  margin: 2rem 0;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(255, 152, 0, 0.15);
+  overflow: hidden;
+}
+
+.important-note::before {
+  content: '💡';
+  position: absolute;
+  left: -15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ff9800;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.4);
+}
+
+.important-note::after {
+  content: '';
+  position: absolute;
+  top: 0;  
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff9800, #ffa726);
+}
+
+/* ========== 響應式調整 ========== */
+@media (max-width: 768px) {
+  .tax-schedule-list li {
+    padding: 1rem 1.2rem 1rem 2.5rem;
+  }
+  
+  .tax-schedule-list li::before {
+    left: 0.8rem;
+    top: 1rem;
+  }
+  
+  .article-body h2 {
+    font-size: 1.6rem !important;
+    padding-left: 1rem;
+  }
+  
+  .article-body h3 {
+    font-size: 1.4rem !important;
+    padding-left: 0.8rem;
+  }
+  
+  .article-body h4 {
+    font-size: 1.2rem !important;
+    padding-left: 0.6rem;
+  }
+  
+  .intro-conclusion,
+  .important-note {
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  
+  .date-highlight,
+  .amount-highlight,
+  .percent-highlight,
+  .law-highlight {
+    padding: 2px 6px;
+    font-size: 0.9em;
+  }
+}
+
+@media (max-width: 480px) {
+  .tax-schedule-list {
+    margin: 1.5rem 0;
+  }
+  
+  .tax-schedule-list li {
+    padding: 0.8rem 1rem 0.8rem 2.2rem;
+    font-size: 0.95rem;
+  }
+  
+  .tax-schedule-list li::before {
+    left: 0.5rem;
+    top: 0.8rem;
+    font-size: 1rem;
+  }
+  
+  .article-body ul:not(.tax-schedule-list) li,
+  .article-body ol li {
+    padding-left: 1.8rem;
+    font-size: 1rem !important;
+  }
+  
+  .article-body ol li::before {
+    width: 1.4rem;
+    height: 1.4rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* ========== 打印樣式 ========== */
+@media print {
+  .tax-schedule-list {
+    background: none;
+    border: 1px solid #333;
+    box-shadow: none;
+  }
+  
+  .tax-schedule-list li::before {
+    content: "•";
+    color: #333;
+  }
+  
+  .date-highlight,
+  .amount-highlight,
+  .percent-highlight,
+  .law-highlight {
+    background: none !important;
+    border: 1px solid #333;
+    color: #000 !important;
+    box-shadow: none;
+  }
+  
+  .intro-conclusion,
+  .important-note {
+    background: none !important;
+    border: 1px solid #666;
+    page-break-inside: avoid;
+  }
+  
+  .intro-conclusion::before,
+  .intro-conclusion::after,
+  .important-note::before,
+  .important-note::after {
+    display: none;
+  }
+}
