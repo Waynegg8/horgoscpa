@@ -1,6 +1,0 @@
-This favicon was generated using the following font:
-
-- Font Title: Noto Sans Symbols
-- Font Author: undefined
-- Font Source: https://fonts.gstatic.com/s/notosanssymbols/v44/rP2up3q65FkAtHfwd-eIS2brbDN6gxP34F9jRRCe4W3gmgggavVFRkzrbQ.ttf
-- Font License: undefined)
