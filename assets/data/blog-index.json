@@ -1,6 +1,118 @@
 {
   "posts": [
     {
+      "title": "自住房屋免稅條件與實務認定",
+      "url": "/blog/2025-06-05-unified-premises-ep5-conditions-and-practical",
+      "date": "2025-06-05",
+      "summary": "前言 房地合一稅制度在課徵不動產交易所得的同時，特別為自住房屋提供租稅優惠，以保障民眾基本居住權益。然而，何謂「自住房屋」？如何符合免稅條件？實務上又如何認定？這些問題常讓納稅義務人感到困惑。本文將詳細解析自住房屋免稅的法定條件、實務認定標準、特殊情形處理，以及常見爭議，幫助納稅義務人充分了解並適用這項重要的租稅優惠。",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-06-05-房地合一稅2.0EP5-自住房屋免稅條件與實務認定.docx",
+      "is_series": true,
+      "series_name": "房地合一稅2.0",
+      "series_slug": "房地合一稅2.0",
+      "episode": 5,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "房地產稅務",
+          "slug": "property-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        }
+      ]
+    },
+    {
+      "title": "房地交易費用列報與審查重點",
+      "url": "/blog/2025-05-27-unified-premises-ep4-highlights-of-premises",
+      "date": "2025-05-27",
+      "summary": "前言 在房地合一稅的課稅所得計算中，除了取得成本外，交易過程中產生的各項費用也是可以減除的重要項目。然而，許多納稅義務人對於哪些費用可以列報、如何計算，以及稽徵機關的審查重點不甚了解，導致申報時可能面臨補稅或罰鍰的風險。本文將詳細解析房地交易費用的列報規定，特別是3%推計費用的計算原則，並說明稽徵機關的審查重點，幫助納稅義務人正確申報，減少稅務爭議。",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-05-27-房地合一稅2.0EP4-房地交易費用列報與審查重點.docx",
+      "is_series": true,
+      "series_name": "房地合一稅2.0",
+      "series_slug": "房地合一稅2.0",
+      "episode": 4,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "房地產稅務",
+          "slug": "property-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        }
+      ]
+    },
+    {
+      "title": "財務報表簽證實務與重點",
+      "url": "/blog/2025-05-26-basic-services-ep4-financial-statement-signing",
+      "date": "2025-05-26",
+      "summary": "前言 隨著台灣經濟發展及法規要求日趨嚴謹，財務報表簽證已成為許多企業必要的財務程序。對於台中及中部地區的中小企業而言，了解財務報表簽證的重要性、流程及實務重點，不僅是法規遵循的需要，更是提升企業財務透明度和獲取外部資源的關鍵。許多企業主對於何時需要財務簽證、如何準備相關資料，以及會計師執行查核的重點缺乏全面了解，導致簽證過程耗時費力甚至衍生不必要的問題。本文將從專業會計角度，詳細解析財務報表簽證的...",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-05-26-中小企業基礎服務篇EP4-財務報表簽證實務與重點.docx",
+      "is_series": true,
+      "series_name": "中小企業基礎服務篇",
+      "series_slug": "中小企業基礎服務篇",
+      "episode": 4,
+      "tags": [
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        },
+        {
+          "name": "財務報表",
+          "slug": "financial-statements"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        }
+      ]
+    },
+    {
+      "title": "財務報表分析與應用指南",
+      "url": "/blog/2025-05-25-basic-services-ep3-financial-statement-analysis",
+      "date": "2025-05-25",
+      "summary": "前言 在台灣競爭激烈的商業環境中，財務報表不僅是企業財務狀況的歷史記錄，更是指引決策方向的重要工具。然而，許多台灣中小企業主面對專業的財務報表時常感到困惑，無法充分理解和運用其中蘊含的豐富信息。會計師事務所提供的專業財務報表分析服務，能幫助企業主透析數字背後的真實含義，發掘潛在問題與機會。本文將深入解析會計師如何協助中小企業解讀三大財務報表，運用財務比率分析評估企業績效，識別財務警訊，並做出更精準...",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-05-25-中小企業基礎服務篇EP3-財務報表分析與應用指南.docx",
+      "is_series": true,
+      "series_name": "中小企業基礎服務篇",
+      "series_slug": "中小企業基礎服務篇",
+      "episode": 3,
+      "tags": [
+        {
+          "name": "會計實務",
+          "slug": "accounting-practice"
+        },
+        {
+          "name": "財務報表",
+          "slug": "financial-statements"
+        },
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        }
+      ]
+    },
+    {
       "title": "專業記帳服務內容與流程解析",
       "url": "/blog/2025-05-24-basic-services-ep2-explanation-of-the",
       "date": "2025-05-24",
@@ -1729,99 +1841,6 @@
     }
   ],
   "series": {
-    "中小企業基礎服務篇": {
-      "name": "中小企業基礎服務篇",
-      "slug": "中小企業基礎服務篇",
-      "posts": [
-        {
-          "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
-          "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
-          "date": "2025-05-23",
-          "summary": "前言 在現代商業環境中，對於中小企業及創業者而言，會計師事務所扮演著至關重要的角色，不僅提供傳統的記帳、報稅服務，更擴展至企業成立登記、稅務規劃等多元面向。然而，許多創業者或中小企業主對於會計師事務所能提供的專業服務範圍與內容不甚了解，導致無法充分利用專業資源來優化企業營運。本文將詳細解析會計師事務所對中小企業的核心工作內容及服務項目，協助企業主了解如何與會計師事務所合作，以確保企業財務健全、稅務...",
-          "category": "accounting",
-          "category_name": "會計資訊",
-          "image": "/assets/images/blog/default.jpg",
-          "original_filename": "2025-05-23-中小企業基礎服務篇EP1-會計師事務所工作內容與服務項目.docx",
-          "is_series": true,
-          "series_name": "中小企業基礎服務篇",
-          "series_slug": "中小企業基礎服務篇",
-          "episode": 1,
-          "tags": [
-            {
-              "name": "會計實務",
-              "slug": "accounting-practice"
-            },
-            {
-              "name": "財務報表",
-              "slug": "financial-statements"
-            },
-            {
-              "name": "所得稅",
-              "slug": "income-tax"
-            }
-          ]
-        },
-        {
-          "title": "專業記帳服務內容與流程解析",
-          "url": "/blog/2025-05-24-basic-services-ep2-explanation-of-the",
-          "date": "2025-05-24",
-          "summary": "前言 在現代商業環境中，專業的記帳服務是確保企業財務資訊準確性和合規性的關鍵環節。特別對於台灣中小企業而言，由於人力和專業知識的限制，委託會計師事務所提供專業記帳服務已成為明智選擇。然而，許多企業主對於會計師事務所能提供的記帳服務內容與價值認識不足，導致無法充分利用這項專業服務來優化企業財務管理。本文將詳細解析會計師事務所提供的專業記帳服務內容、流程與價值，協助中小企業主了解如何借助專業記帳服務，...",
-          "category": "accounting",
-          "category_name": "會計資訊",
-          "image": "/assets/images/blog/default.jpg",
-          "original_filename": "2025-05-24-中小企業基礎服務篇EP2-專業記帳服務內容與流程解析.docx",
-          "is_series": true,
-          "series_name": "中小企業基礎服務篇",
-          "series_slug": "中小企業基礎服務篇",
-          "episode": 2,
-          "tags": [
-            {
-              "name": "會計實務",
-              "slug": "accounting-practice"
-            },
-            {
-              "name": "財務報表",
-              "slug": "financial-statements"
-            },
-            {
-              "name": "所得稅",
-              "slug": "income-tax"
-            }
-          ]
-        }
-      ],
-      "count": 2,
-      "latest": {
-        "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
-        "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
-        "date": "2025-05-23",
-        "summary": "前言 在現代商業環境中，對於中小企業及創業者而言，會計師事務所扮演著至關重要的角色，不僅提供傳統的記帳、報稅服務，更擴展至企業成立登記、稅務規劃等多元面向。然而，許多創業者或中小企業主對於會計師事務所能提供的專業服務範圍與內容不甚了解，導致無法充分利用專業資源來優化企業營運。本文將詳細解析會計師事務所對中小企業的核心工作內容及服務項目，協助企業主了解如何與會計師事務所合作，以確保企業財務健全、稅務...",
-        "category": "accounting",
-        "category_name": "會計資訊",
-        "image": "/assets/images/blog/default.jpg",
-        "original_filename": "2025-05-23-中小企業基礎服務篇EP1-會計師事務所工作內容與服務項目.docx",
-        "is_series": true,
-        "series_name": "中小企業基礎服務篇",
-        "series_slug": "中小企業基礎服務篇",
-        "episode": 1,
-        "tags": [
-          {
-            "name": "會計實務",
-            "slug": "accounting-practice"
-          },
-          {
-            "name": "財務報表",
-            "slug": "financial-statements"
-          },
-          {
-            "name": "所得稅",
-            "slug": "income-tax"
-          }
-        ]
-      },
-      "first_post_date": "2025-05-24",
-      "latest_post_date": "2025-05-23"
-    },
     "房地合一稅2.0": {
       "name": "房地合一稅2.0",
       "slug": "房地合一稅2.0",
@@ -1909,9 +1928,65 @@
               "slug": "tax-planning"
             }
           ]
+        },
+        {
+          "title": "房地交易費用列報與審查重點",
+          "url": "/blog/2025-05-27-unified-premises-ep4-highlights-of-premises",
+          "date": "2025-05-27",
+          "summary": "前言 在房地合一稅的課稅所得計算中，除了取得成本外，交易過程中產生的各項費用也是可以減除的重要項目。然而，許多納稅義務人對於哪些費用可以列報、如何計算，以及稽徵機關的審查重點不甚了解，導致申報時可能面臨補稅或罰鍰的風險。本文將詳細解析房地交易費用的列報規定，特別是3%推計費用的計算原則，並說明稽徵機關的審查重點，幫助納稅義務人正確申報，減少稅務爭議。",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-27-房地合一稅2.0EP4-房地交易費用列報與審查重點.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
+        },
+        {
+          "title": "自住房屋免稅條件與實務認定",
+          "url": "/blog/2025-06-05-unified-premises-ep5-conditions-and-practical",
+          "date": "2025-06-05",
+          "summary": "前言 房地合一稅制度在課徵不動產交易所得的同時，特別為自住房屋提供租稅優惠，以保障民眾基本居住權益。然而，何謂「自住房屋」？如何符合免稅條件？實務上又如何認定？這些問題常讓納稅義務人感到困惑。本文將詳細解析自住房屋免稅的法定條件、實務認定標準、特殊情形處理，以及常見爭議，幫助納稅義務人充分了解並適用這項重要的租稅優惠。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-06-05-房地合一稅2.0EP5-自住房屋免稅條件與實務認定.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 5,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
         }
       ],
-      "count": 3,
+      "count": 5,
       "latest": {
         "title": "房地合一稅2.0制度概覽",
         "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
@@ -1940,8 +2015,157 @@
           }
         ]
       },
-      "first_post_date": "2025-05-20",
+      "first_post_date": "2025-06-05",
       "latest_post_date": "2025-05-06"
+    },
+    "中小企業基礎服務篇": {
+      "name": "中小企業基礎服務篇",
+      "slug": "中小企業基礎服務篇",
+      "posts": [
+        {
+          "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
+          "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
+          "date": "2025-05-23",
+          "summary": "前言 在現代商業環境中，對於中小企業及創業者而言，會計師事務所扮演著至關重要的角色，不僅提供傳統的記帳、報稅服務，更擴展至企業成立登記、稅務規劃等多元面向。然而，許多創業者或中小企業主對於會計師事務所能提供的專業服務範圍與內容不甚了解，導致無法充分利用專業資源來優化企業營運。本文將詳細解析會計師事務所對中小企業的核心工作內容及服務項目，協助企業主了解如何與會計師事務所合作，以確保企業財務健全、稅務...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-23-中小企業基礎服務篇EP1-會計師事務所工作內容與服務項目.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "專業記帳服務內容與流程解析",
+          "url": "/blog/2025-05-24-basic-services-ep2-explanation-of-the",
+          "date": "2025-05-24",
+          "summary": "前言 在現代商業環境中，專業的記帳服務是確保企業財務資訊準確性和合規性的關鍵環節。特別對於台灣中小企業而言，由於人力和專業知識的限制，委託會計師事務所提供專業記帳服務已成為明智選擇。然而，許多企業主對於會計師事務所能提供的記帳服務內容與價值認識不足，導致無法充分利用這項專業服務來優化企業財務管理。本文將詳細解析會計師事務所提供的專業記帳服務內容、流程與價值，協助中小企業主了解如何借助專業記帳服務，...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-24-中小企業基礎服務篇EP2-專業記帳服務內容與流程解析.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "財務報表分析與應用指南",
+          "url": "/blog/2025-05-25-basic-services-ep3-financial-statement-analysis",
+          "date": "2025-05-25",
+          "summary": "前言 在台灣競爭激烈的商業環境中，財務報表不僅是企業財務狀況的歷史記錄，更是指引決策方向的重要工具。然而，許多台灣中小企業主面對專業的財務報表時常感到困惑，無法充分理解和運用其中蘊含的豐富信息。會計師事務所提供的專業財務報表分析服務，能幫助企業主透析數字背後的真實含義，發掘潛在問題與機會。本文將深入解析會計師如何協助中小企業解讀三大財務報表，運用財務比率分析評估企業績效，識別財務警訊，並做出更精準...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-25-中小企業基礎服務篇EP3-財務報表分析與應用指南.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "財務報表簽證實務與重點",
+          "url": "/blog/2025-05-26-basic-services-ep4-financial-statement-signing",
+          "date": "2025-05-26",
+          "summary": "前言 隨著台灣經濟發展及法規要求日趨嚴謹，財務報表簽證已成為許多企業必要的財務程序。對於台中及中部地區的中小企業而言，了解財務報表簽證的重要性、流程及實務重點，不僅是法規遵循的需要，更是提升企業財務透明度和獲取外部資源的關鍵。許多企業主對於何時需要財務簽證、如何準備相關資料，以及會計師執行查核的重點缺乏全面了解，導致簽證過程耗時費力甚至衍生不必要的問題。本文將從專業會計角度，詳細解析財務報表簽證的...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-26-中小企業基礎服務篇EP4-財務報表簽證實務與重點.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        }
+      ],
+      "count": 4,
+      "latest": {
+        "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
+        "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
+        "date": "2025-05-23",
+        "summary": "前言 在現代商業環境中，對於中小企業及創業者而言，會計師事務所扮演著至關重要的角色，不僅提供傳統的記帳、報稅服務，更擴展至企業成立登記、稅務規劃等多元面向。然而，許多創業者或中小企業主對於會計師事務所能提供的專業服務範圍與內容不甚了解，導致無法充分利用專業資源來優化企業營運。本文將詳細解析會計師事務所對中小企業的核心工作內容及服務項目，協助企業主了解如何與會計師事務所合作，以確保企業財務健全、稅務...",
+        "category": "accounting",
+        "category_name": "會計資訊",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-05-23-中小企業基礎服務篇EP1-會計師事務所工作內容與服務項目.docx",
+        "is_series": true,
+        "series_name": "中小企業基礎服務篇",
+        "series_slug": "中小企業基礎服務篇",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "會計實務",
+            "slug": "accounting-practice"
+          },
+          {
+            "name": "財務報表",
+            "slug": "financial-statements"
+          },
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-05-26",
+      "latest_post_date": "2025-05-23"
     },
     "營所稅擴大書面審核解析": {
       "name": "營所稅擴大書面審核解析",
@@ -3738,9 +3962,65 @@
               "slug": "income-tax"
             }
           ]
+        },
+        {
+          "title": "財務報表分析與應用指南",
+          "url": "/blog/2025-05-25-basic-services-ep3-financial-statement-analysis",
+          "date": "2025-05-25",
+          "summary": "前言 在台灣競爭激烈的商業環境中，財務報表不僅是企業財務狀況的歷史記錄，更是指引決策方向的重要工具。然而，許多台灣中小企業主面對專業的財務報表時常感到困惑，無法充分理解和運用其中蘊含的豐富信息。會計師事務所提供的專業財務報表分析服務，能幫助企業主透析數字背後的真實含義，發掘潛在問題與機會。本文將深入解析會計師如何協助中小企業解讀三大財務報表，運用財務比率分析評估企業績效，識別財務警訊，並做出更精準...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-25-中小企業基礎服務篇EP3-財務報表分析與應用指南.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
+        },
+        {
+          "title": "財務報表簽證實務與重點",
+          "url": "/blog/2025-05-26-basic-services-ep4-financial-statement-signing",
+          "date": "2025-05-26",
+          "summary": "前言 隨著台灣經濟發展及法規要求日趨嚴謹，財務報表簽證已成為許多企業必要的財務程序。對於台中及中部地區的中小企業而言，了解財務報表簽證的重要性、流程及實務重點，不僅是法規遵循的需要，更是提升企業財務透明度和獲取外部資源的關鍵。許多企業主對於何時需要財務簽證、如何準備相關資料，以及會計師執行查核的重點缺乏全面了解，導致簽證過程耗時費力甚至衍生不必要的問題。本文將從專業會計角度，詳細解析財務報表簽證的...",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-26-中小企業基礎服務篇EP4-財務報表簽證實務與重點.docx",
+          "is_series": true,
+          "series_name": "中小企業基礎服務篇",
+          "series_slug": "中小企業基礎服務篇",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "會計實務",
+              "slug": "accounting-practice"
+            },
+            {
+              "name": "財務報表",
+              "slug": "financial-statements"
+            },
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            }
+          ]
         }
       ],
-      "count": 2,
+      "count": 4,
       "latest": {
         "title": "基礎會計服務EP1-會計師事務所工作內容與服務項目",
         "url": "/blog/2025-05-23-basic-services-ep1-basic-accounting-services",
@@ -3769,7 +4049,7 @@
           }
         ]
       },
-      "first_post_date": "2025-05-24",
+      "first_post_date": "2025-05-26",
       "latest_post_date": "2025-05-23"
     },
     {
@@ -3859,9 +4139,65 @@
               "slug": "tax-planning"
             }
           ]
+        },
+        {
+          "title": "房地交易費用列報與審查重點",
+          "url": "/blog/2025-05-27-unified-premises-ep4-highlights-of-premises",
+          "date": "2025-05-27",
+          "summary": "前言 在房地合一稅的課稅所得計算中，除了取得成本外，交易過程中產生的各項費用也是可以減除的重要項目。然而，許多納稅義務人對於哪些費用可以列報、如何計算，以及稽徵機關的審查重點不甚了解，導致申報時可能面臨補稅或罰鍰的風險。本文將詳細解析房地交易費用的列報規定，特別是3%推計費用的計算原則，並說明稽徵機關的審查重點，幫助納稅義務人正確申報，減少稅務爭議。",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-05-27-房地合一稅2.0EP4-房地交易費用列報與審查重點.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
+        },
+        {
+          "title": "自住房屋免稅條件與實務認定",
+          "url": "/blog/2025-06-05-unified-premises-ep5-conditions-and-practical",
+          "date": "2025-06-05",
+          "summary": "前言 房地合一稅制度在課徵不動產交易所得的同時，特別為自住房屋提供租稅優惠，以保障民眾基本居住權益。然而，何謂「自住房屋」？如何符合免稅條件？實務上又如何認定？這些問題常讓納稅義務人感到困惑。本文將詳細解析自住房屋免稅的法定條件、實務認定標準、特殊情形處理，以及常見爭議，幫助納稅義務人充分了解並適用這項重要的租稅優惠。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-06-05-房地合一稅2.0EP5-自住房屋免稅條件與實務認定.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 5,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
         }
       ],
-      "count": 3,
+      "count": 5,
       "latest": {
         "title": "房地合一稅2.0制度概覽",
         "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
@@ -3890,7 +4226,7 @@
           }
         ]
       },
-      "first_post_date": "2025-05-20",
+      "first_post_date": "2025-06-05",
       "latest_post_date": "2025-05-06"
     },
     {
@@ -5629,7 +5965,7 @@
     }
   ],
   "pagination": {
-    "total_posts": 62,
+    "total_posts": 66,
     "total_pages": 7,
     "items_per_page": 10
   },
@@ -5637,12 +5973,12 @@
     {
       "name": "稅務相關",
       "slug": "tax",
-      "count": 23
+      "count": 24
     },
     {
       "name": "會計資訊",
       "slug": "accounting",
-      "count": 5
+      "count": 8
     },
     {
       "name": "企業經營",
@@ -5669,22 +6005,22 @@
     {
       "slug": "accounting-practice",
       "name": "會計實務",
-      "count": 20
+      "count": 22
     },
     {
       "slug": "financial-statements",
       "name": "財務報表",
-      "count": 2
+      "count": 4
     },
     {
       "slug": "income-tax",
       "name": "所得稅",
-      "count": 51
+      "count": 55
     },
     {
       "slug": "tax-planning",
       "name": "稅務規劃",
-      "count": 28
+      "count": 30
     },
     {
       "slug": "personal-tax",
@@ -5694,7 +6030,7 @@
     {
       "slug": "property-tax",
       "name": "房地產稅務",
-      "count": 3
+      "count": 5
     },
     {
       "slug": "corporate-tax",
@@ -5722,5 +6058,5 @@
       "count": 1
     }
   ],
-  "generated_time": "2025-05-24T03:29:21.176155"
+  "generated_time": "2025-06-05T07:03:30.311353"
 }
