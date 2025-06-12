@@ -1,6 +1,34 @@
 {
   "posts": [
     {
+      "title": "部分自用部分出租房屋之稅務處理",
+      "url": "/blog/2025-06-12-unified-premises-ep6-taxation-of-partially",
+      "date": "2025-06-12",
+      "summary": "前言 在現代都市生活中，不少房屋所有權人將自己的房屋部分空間出租或用於營業，既可增加收入，又能滿足自住需求。然而，出售這類「部分自用部分出租」的房屋時，稅務處理較為複雜，尤其是在房地合一稅制度下，如何正確區分自用與出租部分的課稅方式，以及如何適用相應的稅率與免稅額度，常讓納稅義務人感到困惑。本文將詳細解析部分自用部分出租房屋的稅務處理原則，並透過實際案例說明申報要點，幫助納稅義務人合理規劃稅負，避...",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-06-12-房地合一稅2.0EP6-部分自用部分出租房屋之稅務處理.docx",
+      "is_series": true,
+      "series_name": "房地合一稅2.0",
+      "series_slug": "房地合一稅2.0",
+      "episode": 6,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "房地產稅務",
+          "slug": "property-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        }
+      ]
+    },
+    {
       "title": "自住房屋免稅條件與實務認定",
       "url": "/blog/2025-06-05-unified-premises-ep5-conditions-and-practical",
       "date": "2025-06-05",
@@ -1984,9 +2012,37 @@
               "slug": "tax-planning"
             }
           ]
+        },
+        {
+          "title": "部分自用部分出租房屋之稅務處理",
+          "url": "/blog/2025-06-12-unified-premises-ep6-taxation-of-partially",
+          "date": "2025-06-12",
+          "summary": "前言 在現代都市生活中，不少房屋所有權人將自己的房屋部分空間出租或用於營業，既可增加收入，又能滿足自住需求。然而，出售這類「部分自用部分出租」的房屋時，稅務處理較為複雜，尤其是在房地合一稅制度下，如何正確區分自用與出租部分的課稅方式，以及如何適用相應的稅率與免稅額度，常讓納稅義務人感到困惑。本文將詳細解析部分自用部分出租房屋的稅務處理原則，並透過實際案例說明申報要點，幫助納稅義務人合理規劃稅負，避...",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-06-12-房地合一稅2.0EP6-部分自用部分出租房屋之稅務處理.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
         }
       ],
-      "count": 5,
+      "count": 6,
       "latest": {
         "title": "房地合一稅2.0制度概覽",
         "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
@@ -2015,7 +2071,7 @@
           }
         ]
       },
-      "first_post_date": "2025-06-05",
+      "first_post_date": "2025-06-12",
       "latest_post_date": "2025-05-06"
     },
     "中小企業基礎服務篇": {
@@ -4195,9 +4251,37 @@
               "slug": "tax-planning"
             }
           ]
+        },
+        {
+          "title": "部分自用部分出租房屋之稅務處理",
+          "url": "/blog/2025-06-12-unified-premises-ep6-taxation-of-partially",
+          "date": "2025-06-12",
+          "summary": "前言 在現代都市生活中，不少房屋所有權人將自己的房屋部分空間出租或用於營業，既可增加收入，又能滿足自住需求。然而，出售這類「部分自用部分出租」的房屋時，稅務處理較為複雜，尤其是在房地合一稅制度下，如何正確區分自用與出租部分的課稅方式，以及如何適用相應的稅率與免稅額度，常讓納稅義務人感到困惑。本文將詳細解析部分自用部分出租房屋的稅務處理原則，並透過實際案例說明申報要點，幫助納稅義務人合理規劃稅負，避...",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-06-12-房地合一稅2.0EP6-部分自用部分出租房屋之稅務處理.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
         }
       ],
-      "count": 5,
+      "count": 6,
       "latest": {
         "title": "房地合一稅2.0制度概覽",
         "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
@@ -4226,7 +4310,7 @@
           }
         ]
       },
-      "first_post_date": "2025-06-05",
+      "first_post_date": "2025-06-12",
       "latest_post_date": "2025-05-06"
     },
     {
@@ -5965,7 +6049,7 @@
     }
   ],
   "pagination": {
-    "total_posts": 66,
+    "total_posts": 67,
     "total_pages": 7,
     "items_per_page": 10
   },
@@ -5973,7 +6057,7 @@
     {
       "name": "稅務相關",
       "slug": "tax",
-      "count": 24
+      "count": 25
     },
     {
       "name": "會計資訊",
@@ -6003,75 +6087,60 @@
   ],
   "tags": [
     {
-      "name": "稅務規劃",
-      "slug": "tax-planning",
-      "count": 30
-    },
-    {
-      "name": "所得稅",
       "slug": "income-tax",
-      "count": 55
+      "name": "所得稅",
+      "count": 56
     },
     {
-      "name": "工商登記",
-      "slug": "business-registration",
-      "count": 20
+      "slug": "property-tax",
+      "name": "房地產稅務",
+      "count": 6
     },
     {
-      "name": "財務報表",
+      "slug": "tax-planning",
+      "name": "稅務規劃",
+      "count": 31
+    },
+    {
+      "slug": "accounting-practice",
+      "name": "會計實務",
+      "count": 22
+    },
+    {
       "slug": "financial-statements",
+      "name": "財務報表",
       "count": 4
     },
     {
-      "name": "財富管理",
-      "slug": "wealth-management",
-      "count": 0
-    },
-    {
-      "name": "人壽保險",
-      "slug": "life-insurance",
-      "count": 22
-    },
-    {
-      "name": "創業資訊",
-      "slug": "startup",
+      "slug": "personal-tax",
+      "name": "個人稅務",
       "count": 1
     },
     {
-      "name": "企業稅務",
       "slug": "corporate-tax",
+      "name": "企業稅務",
       "count": 16
     },
     {
-      "name": "個人稅務",
-      "slug": "personal-tax",
-      "count": 1
-    },
-    {
-      "name": "財務規劃",
-      "slug": "financial-planning",
-      "count": 0
-    },
-    {
-      "name": "投資理財",
       "slug": "investment",
+      "name": "投資理財",
       "count": 22
     },
     {
-      "name": "退休規劃",
-      "slug": "retirement",
-      "count": 0
+      "slug": "business-registration",
+      "name": "工商登記",
+      "count": 20
     },
     {
-      "name": "會計實務",
-      "slug": "accounting-practice",
+      "slug": "life-insurance",
+      "name": "人壽保險",
       "count": 22
     },
     {
-      "name": "房地產稅務",
-      "slug": "property-tax",
-      "count": 5
+      "slug": "startup",
+      "name": "創業資訊",
+      "count": 1
     }
   ],
-  "generated_time": "2025-06-11T02:46:49.394743"
+  "generated_time": "2025-06-12T02:45:46.266501"
 }

@@ -1,5 +1,18 @@
 [
   {
+    "title": "部分自用部分出租房屋之稅務處理",
+    "url": "/blog/2025-06-12-unified-premises-ep6-taxation-of-partially",
+    "date": "2025-06-12",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "前言 在現代都市生活中，不少房屋所有權人將自己的房屋部分空間出租或用於營業，既可增加收入，又能滿足自住需求。然而，出售這類「部分自用部分出租」的房屋時，稅務處理較為複雜，尤其是在房地合一稅制度下，如何正確區分自用與出租部分的課稅方式，以及如何適用相應的稅率與免稅額度，常讓納稅義務人感到困惑。本文將詳細解析部分自用部分出租房屋的稅務處理原則，並透過實際案例說明申報要點，幫助納稅義務人合理規劃稅負，避...",
+    "category": "tax",
+    "category_name": "稅務相關",
+    "is_series": true,
+    "series_name": "房地合一稅2.0",
+    "series_slug": "房地合一稅2.0",
+    "episode": 6
+  },
+  {
     "title": "自住房屋免稅條件與實務認定",
     "url": "/blog/2025-06-05-unified-premises-ep5-conditions-and-practical",
     "date": "2025-06-05",
@@ -23,19 +36,6 @@
     "is_series": true,
     "series_name": "房地合一稅2.0",
     "series_slug": "房地合一稅2.0",
-    "episode": 4
-  },
-  {
-    "title": "財務報表簽證實務與重點",
-    "url": "/blog/2025-05-26-basic-services-ep4-financial-statement-signing",
-    "date": "2025-05-26",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "前言 隨著台灣經濟發展及法規要求日趨嚴謹，財務報表簽證已成為許多企業必要的財務程序。對於台中及中部地區的中小企業而言，了解財務報表簽證的重要性、流程及實務重點，不僅是法規遵循的需要，更是提升企業財務透明度和獲取外部資源的關鍵。許多企業主對於何時需要財務簽證、如何準備相關資料，以及會計師執行查核的重點缺乏全面了解，導致簽證過程耗時費力甚至衍生不必要的問題。本文將從專業會計角度，詳細解析財務報表簽證的...",
-    "category": "accounting",
-    "category_name": "會計資訊",
-    "is_series": true,
-    "series_name": "中小企業基礎服務篇",
-    "series_slug": "中小企業基礎服務篇",
     "episode": 4
   }
 ]
