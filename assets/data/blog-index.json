@@ -1,6 +1,34 @@
 {
   "posts": [
     {
+      "title": "重購自用住宅退稅機制解析",
+      "url": "/blog/2025-06-19-unified-premises-ep7-explanation-of-tax",
+      "date": "2025-06-19",
+      "summary": "前言 在房地合一稅制度下，出售自住房地往往涉及不小的稅負，尤其是對於換屋需求的民眾而言。為保障民眾基本居住權益，稅法特別提供了重購自用住宅的退稅優惠。這項機制允許納稅義務人在出售自住房地後，若符合特定條件重購自住房地，可申請退還已繳納的部分或全部房地合一稅。本文將詳細解析重購自用住宅退稅機制的法源依據、適用條件、計算方式，以及實務上的注意事項，幫助納稅義務人充分掌握並正確運用這項重要的稅務優惠。",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-06-19-房地合一稅2.0EP7-重購自用住宅退稅機制解析.docx",
+      "is_series": true,
+      "series_name": "房地合一稅2.0",
+      "series_slug": "房地合一稅2.0",
+      "episode": 7,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "房地產稅務",
+          "slug": "property-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        }
+      ]
+    },
+    {
       "title": "部分自用部分出租房屋之稅務處理",
       "url": "/blog/2025-06-12-unified-premises-ep6-taxation-of-partially",
       "date": "2025-06-12",
@@ -2040,9 +2068,37 @@
               "slug": "tax-planning"
             }
           ]
+        },
+        {
+          "title": "重購自用住宅退稅機制解析",
+          "url": "/blog/2025-06-19-unified-premises-ep7-explanation-of-tax",
+          "date": "2025-06-19",
+          "summary": "前言 在房地合一稅制度下，出售自住房地往往涉及不小的稅負，尤其是對於換屋需求的民眾而言。為保障民眾基本居住權益，稅法特別提供了重購自用住宅的退稅優惠。這項機制允許納稅義務人在出售自住房地後，若符合特定條件重購自住房地，可申請退還已繳納的部分或全部房地合一稅。本文將詳細解析重購自用住宅退稅機制的法源依據、適用條件、計算方式，以及實務上的注意事項，幫助納稅義務人充分掌握並正確運用這項重要的稅務優惠。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-06-19-房地合一稅2.0EP7-重購自用住宅退稅機制解析.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
         }
       ],
-      "count": 6,
+      "count": 7,
       "latest": {
         "title": "房地合一稅2.0制度概覽",
         "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
@@ -2071,7 +2127,7 @@
           }
         ]
       },
-      "first_post_date": "2025-06-12",
+      "first_post_date": "2025-06-19",
       "latest_post_date": "2025-05-06"
     },
     "中小企業基礎服務篇": {
@@ -4279,9 +4335,37 @@
               "slug": "tax-planning"
             }
           ]
+        },
+        {
+          "title": "重購自用住宅退稅機制解析",
+          "url": "/blog/2025-06-19-unified-premises-ep7-explanation-of-tax",
+          "date": "2025-06-19",
+          "summary": "前言 在房地合一稅制度下，出售自住房地往往涉及不小的稅負，尤其是對於換屋需求的民眾而言。為保障民眾基本居住權益，稅法特別提供了重購自用住宅的退稅優惠。這項機制允許納稅義務人在出售自住房地後，若符合特定條件重購自住房地，可申請退還已繳納的部分或全部房地合一稅。本文將詳細解析重購自用住宅退稅機制的法源依據、適用條件、計算方式，以及實務上的注意事項，幫助納稅義務人充分掌握並正確運用這項重要的稅務優惠。",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-06-19-房地合一稅2.0EP7-重購自用住宅退稅機制解析.docx",
+          "is_series": true,
+          "series_name": "房地合一稅2.0",
+          "series_slug": "房地合一稅2.0",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "房地產稅務",
+              "slug": "property-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            }
+          ]
         }
       ],
-      "count": 6,
+      "count": 7,
       "latest": {
         "title": "房地合一稅2.0制度概覽",
         "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
@@ -4310,7 +4394,7 @@
           }
         ]
       },
-      "first_post_date": "2025-06-12",
+      "first_post_date": "2025-06-19",
       "latest_post_date": "2025-05-06"
     },
     {
@@ -6049,7 +6133,7 @@
     }
   ],
   "pagination": {
-    "total_posts": 67,
+    "total_posts": 68,
     "total_pages": 7,
     "items_per_page": 10
   },
@@ -6057,7 +6141,7 @@
     {
       "name": "稅務相關",
       "slug": "tax",
-      "count": 25
+      "count": 26
     },
     {
       "name": "會計資訊",
@@ -6087,75 +6171,60 @@
   ],
   "tags": [
     {
-      "name": "稅務規劃",
-      "slug": "tax-planning",
-      "count": 31
-    },
-    {
-      "name": "所得稅",
       "slug": "income-tax",
-      "count": 56
+      "name": "所得稅",
+      "count": 57
     },
     {
-      "name": "工商登記",
-      "slug": "business-registration",
-      "count": 20
+      "slug": "property-tax",
+      "name": "房地產稅務",
+      "count": 7
     },
     {
-      "name": "財務報表",
+      "slug": "tax-planning",
+      "name": "稅務規劃",
+      "count": 32
+    },
+    {
+      "slug": "accounting-practice",
+      "name": "會計實務",
+      "count": 22
+    },
+    {
       "slug": "financial-statements",
+      "name": "財務報表",
       "count": 4
     },
     {
-      "name": "財富管理",
-      "slug": "wealth-management",
-      "count": 0
-    },
-    {
-      "name": "人壽保險",
-      "slug": "life-insurance",
-      "count": 22
-    },
-    {
-      "name": "創業資訊",
-      "slug": "startup",
+      "slug": "personal-tax",
+      "name": "個人稅務",
       "count": 1
     },
     {
-      "name": "企業稅務",
       "slug": "corporate-tax",
+      "name": "企業稅務",
       "count": 16
     },
     {
-      "name": "個人稅務",
-      "slug": "personal-tax",
-      "count": 1
-    },
-    {
-      "name": "財務規劃",
-      "slug": "financial-planning",
-      "count": 0
-    },
-    {
-      "name": "投資理財",
       "slug": "investment",
+      "name": "投資理財",
       "count": 22
     },
     {
-      "name": "退休規劃",
-      "slug": "retirement",
-      "count": 0
+      "slug": "business-registration",
+      "name": "工商登記",
+      "count": 20
     },
     {
-      "name": "會計實務",
-      "slug": "accounting-practice",
+      "slug": "life-insurance",
+      "name": "人壽保險",
       "count": 22
     },
     {
-      "name": "房地產稅務",
-      "slug": "property-tax",
-      "count": 6
+      "slug": "startup",
+      "name": "創業資訊",
+      "count": 1
     }
   ],
-  "generated_time": "2025-06-18T02:46:03.525449"
+  "generated_time": "2025-06-19T02:47:25.671479"
 }
