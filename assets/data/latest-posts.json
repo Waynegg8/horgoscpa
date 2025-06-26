@@ -1,5 +1,18 @@
 [
   {
+    "title": "重購退稅實務案例詳解",
+    "url": "/blog/2025-06-26-unified-premises-ep8-detailed-case-study",
+    "date": "2025-06-26",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "前言 重購自用住宅退稅制度為換屋民眾提供了稅負減輕的機會，然而在實務操作過程中，由於各種複雜情境的存在，常會遇到各種疑難問題。本文將透過多個實際案例，詳細說明不同情境下重購退稅的適用方式及計算方法，包括夫妻共同與個別重購、部分自住部分出租房屋的處理、婚姻狀態變化的影響等，協助納稅義務人妥善規劃房屋交易，合理運用重購退稅優惠，降低稅務負擔。",
+    "category": "tax",
+    "category_name": "稅務相關",
+    "is_series": true,
+    "series_name": "房地合一稅2.0",
+    "series_slug": "房地合一稅2.0",
+    "episode": 8
+  },
+  {
     "title": "重購自用住宅退稅機制解析",
     "url": "/blog/2025-06-19-unified-premises-ep7-explanation-of-tax",
     "date": "2025-06-19",
@@ -24,18 +37,5 @@
     "series_name": "房地合一稅2.0",
     "series_slug": "房地合一稅2.0",
     "episode": 6
-  },
-  {
-    "title": "自住房屋免稅條件與實務認定",
-    "url": "/blog/2025-06-05-unified-premises-ep5-conditions-and-practical",
-    "date": "2025-06-05",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "前言 房地合一稅制度在課徵不動產交易所得的同時，特別為自住房屋提供租稅優惠，以保障民眾基本居住權益。然而，何謂「自住房屋」？如何符合免稅條件？實務上又如何認定？這些問題常讓納稅義務人感到困惑。本文將詳細解析自住房屋免稅的法定條件、實務認定標準、特殊情形處理，以及常見爭議，幫助納稅義務人充分了解並適用這項重要的租稅優惠。",
-    "category": "tax",
-    "category_name": "稅務相關",
-    "is_series": true,
-    "series_name": "房地合一稅2.0",
-    "series_slug": "房地合一稅2.0",
-    "episode": 5
   }
 ]
