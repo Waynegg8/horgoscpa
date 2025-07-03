@@ -1,5 +1,18 @@
 [
   {
+    "title": "重購退稅常見爭議與解決方案",
+    "url": "/blog/2025-07-03-unified-premises-ep9-common-disputes-and",
+    "date": "2025-07-03",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "前言 重購自用住宅退稅制度雖為換屋民眾提供了稅負減輕的機會，但在實務操作過程中，因條件認定、法令解釋及特殊情形處理等問題，常引發納稅義務人與稽徵機關之間的爭議。本文將針對重購退稅申請過程中的常見爭議點進行深入分析，說明稽徵機關的審查重點及裁判實務見解，並提供相應的解決方案，幫助納稅義務人合理規避風險，順利申請重購退稅優惠。",
+    "category": "tax",
+    "category_name": "稅務相關",
+    "is_series": true,
+    "series_name": "房地合一稅2.0",
+    "series_slug": "房地合一稅2.0",
+    "episode": 9
+  },
+  {
     "title": "重購退稅實務案例詳解",
     "url": "/blog/2025-06-26-unified-premises-ep8-detailed-case-study",
     "date": "2025-06-26",
@@ -24,18 +37,5 @@
     "series_name": "房地合一稅2.0",
     "series_slug": "房地合一稅2.0",
     "episode": 7
-  },
-  {
-    "title": "部分自用部分出租房屋之稅務處理",
-    "url": "/blog/2025-06-12-unified-premises-ep6-taxation-of-partially",
-    "date": "2025-06-12",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "前言 在現代都市生活中，不少房屋所有權人將自己的房屋部分空間出租或用於營業，既可增加收入，又能滿足自住需求。然而，出售這類「部分自用部分出租」的房屋時，稅務處理較為複雜，尤其是在房地合一稅制度下，如何正確區分自用與出租部分的課稅方式，以及如何適用相應的稅率與免稅額度，常讓納稅義務人感到困惑。本文將詳細解析部分自用部分出租房屋的稅務處理原則，並透過實際案例說明申報要點，幫助納稅義務人合理規劃稅負，避...",
-    "category": "tax",
-    "category_name": "稅務相關",
-    "is_series": true,
-    "series_name": "房地合一稅2.0",
-    "series_slug": "房地合一稅2.0",
-    "episode": 6
   }
 ]
