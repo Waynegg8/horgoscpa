@@ -2,121 +2,133 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.horgoscpa.com/blog.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/team.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/video.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/contact.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/services.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/booking.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/faq.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/blog/2025-07-03-unified-premises-ep9-common-disputes-and.html</loc>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/services/audit.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/services/tax.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/services/accounting.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/services/consulting.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.horgoscpa.com/blog/2025-07-03-unified-premises-ep9-common-disputes-and.html</loc>
+    <lastmod>2025-07-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/services/audit.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/services/tax.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/services/accounting.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/services/consulting.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/team.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/contact.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/faq.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://www.horgoscpa.com/video.html</loc>
-    <lastmod>2025-07-02</lastmod>
+    <lastmod>2025-07-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
