@@ -1,5 +1,18 @@
 [
   {
+    "title": "房地合一稅與重購退稅規劃建議",
+    "url": "/blog/2025-07-10-unified-premises-ep10-unified-premises-tax",
+    "date": "2025-07-10",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "前言 在房地產交易日益頻繁的今日，如何合理規劃稅負成為許多房屋所有權人關注的焦點。房地合一稅制度的實施，雖然加重了短期投機炒作的稅負，但同時也為自住民眾提供了多項優惠措施，其中重購退稅機制便是重要的一環。本文將綜合前述文章的內容，提供房地合一稅與重購退稅的整體規劃建議，從交易時機選擇、成本認列技巧、自住條件維持，到重購退稅的有效運用等方面，協助納稅義務人在合法前提下最大化稅務效益，降低不必要的稅負...",
+    "category": "tax",
+    "category_name": "稅務相關",
+    "is_series": true,
+    "series_name": "房地合一稅2.0",
+    "series_slug": "房地合一稅2.0",
+    "episode": 10
+  },
+  {
     "title": "重購退稅常見爭議與解決方案",
     "url": "/blog/2025-07-03-unified-premises-ep9-common-disputes-and",
     "date": "2025-07-03",
@@ -24,18 +37,5 @@
     "series_name": "房地合一稅2.0",
     "series_slug": "房地合一稅2.0",
     "episode": 8
-  },
-  {
-    "title": "重購自用住宅退稅機制解析",
-    "url": "/blog/2025-06-19-unified-premises-ep7-explanation-of-tax",
-    "date": "2025-06-19",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "前言 在房地合一稅制度下，出售自住房地往往涉及不小的稅負，尤其是對於換屋需求的民眾而言。為保障民眾基本居住權益，稅法特別提供了重購自用住宅的退稅優惠。這項機制允許納稅義務人在出售自住房地後，若符合特定條件重購自住房地，可申請退還已繳納的部分或全部房地合一稅。本文將詳細解析重購自用住宅退稅機制的法源依據、適用條件、計算方式，以及實務上的注意事項，幫助納稅義務人充分掌握並正確運用這項重要的稅務優惠。",
-    "category": "tax",
-    "category_name": "稅務相關",
-    "is_series": true,
-    "series_name": "房地合一稅2.0",
-    "series_slug": "房地合一稅2.0",
-    "episode": 7
   }
 ]
