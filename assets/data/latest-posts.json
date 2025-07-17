@@ -1,5 +1,18 @@
 [
   {
+    "title": "【入門篇】合建分屋基本模式與稅務差異",
+    "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
+    "date": "2025-07-17",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "發布日期：2025-07-17 前言",
+    "category": "tax",
+    "category_name": "稅務相關",
+    "is_series": true,
+    "series_name": "合建分屋",
+    "series_slug": "合建分屋",
+    "episode": 1
+  },
+  {
     "title": "房地合一稅與重購退稅規劃建議",
     "url": "/blog/2025-07-10-unified-premises-ep10-unified-premises-tax",
     "date": "2025-07-10",
@@ -24,18 +37,5 @@
     "series_name": "房地合一稅2.0",
     "series_slug": "房地合一稅2.0",
     "episode": 9
-  },
-  {
-    "title": "重購退稅實務案例詳解",
-    "url": "/blog/2025-06-26-unified-premises-ep8-detailed-case-study",
-    "date": "2025-06-26",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "前言 重購自用住宅退稅制度為換屋民眾提供了稅負減輕的機會，然而在實務操作過程中，由於各種複雜情境的存在，常會遇到各種疑難問題。本文將透過多個實際案例，詳細說明不同情境下重購退稅的適用方式及計算方法，包括夫妻共同與個別重購、部分自住部分出租房屋的處理、婚姻狀態變化的影響等，協助納稅義務人妥善規劃房屋交易，合理運用重購退稅優惠，降低稅務負擔。",
-    "category": "tax",
-    "category_name": "稅務相關",
-    "is_series": true,
-    "series_name": "房地合一稅2.0",
-    "series_slug": "房地合一稅2.0",
-    "episode": 8
   }
 ]

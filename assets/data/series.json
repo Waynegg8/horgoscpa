@@ -1,5 +1,70 @@
 {
   "series": {
+    "合建分屋": {
+      "name": "合建分屋",
+      "slug": "合建分屋",
+      "posts": [
+        {
+          "title": "【入門篇】合建分屋基本模式與稅務差異",
+          "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
+          "date": "2025-07-17",
+          "summary": "發布日期：2025-07-17 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-07-17-合建分屋EP1-入門篇合建分屋基本模式與稅務差異.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        }
+      ],
+      "count": 1,
+      "latest": {
+        "title": "【入門篇】合建分屋基本模式與稅務差異",
+        "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
+        "date": "2025-07-17",
+        "summary": "發布日期：2025-07-17 前言",
+        "category": "tax",
+        "category_name": "稅務相關",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-07-17-合建分屋EP1-入門篇合建分屋基本模式與稅務差異.docx",
+        "is_series": true,
+        "series_name": "合建分屋",
+        "series_slug": "合建分屋",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "稅務規劃",
+            "slug": "tax-planning"
+          },
+          {
+            "name": "個人稅務",
+            "slug": "personal-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-07-17",
+      "latest_post_date": "2025-07-17"
+    },
     "房地合一稅2.0": {
       "name": "房地合一稅2.0",
       "slug": "房地合一稅2.0",
@@ -2203,6 +2268,71 @@
   },
   "series_list": [
     {
+      "name": "合建分屋",
+      "slug": "合建分屋",
+      "posts": [
+        {
+          "title": "【入門篇】合建分屋基本模式與稅務差異",
+          "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
+          "date": "2025-07-17",
+          "summary": "發布日期：2025-07-17 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-07-17-合建分屋EP1-入門篇合建分屋基本模式與稅務差異.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        }
+      ],
+      "count": 1,
+      "latest": {
+        "title": "【入門篇】合建分屋基本模式與稅務差異",
+        "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
+        "date": "2025-07-17",
+        "summary": "發布日期：2025-07-17 前言",
+        "category": "tax",
+        "category_name": "稅務相關",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-07-17-合建分屋EP1-入門篇合建分屋基本模式與稅務差異.docx",
+        "is_series": true,
+        "series_name": "合建分屋",
+        "series_slug": "合建分屋",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "稅務規劃",
+            "slug": "tax-planning"
+          },
+          {
+            "name": "個人稅務",
+            "slug": "personal-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-07-17",
+      "latest_post_date": "2025-07-17"
+    },
+    {
       "name": "中小企業基礎服務篇",
       "slug": "中小企業基礎服務篇",
       "posts": [
@@ -4403,5 +4533,5 @@
       "latest_post_date": "2025-01-05"
     }
   ],
-  "generated_time": "2025-07-16T02:55:47.734387"
+  "generated_time": "2025-07-17T02:56:04.104152"
 }
