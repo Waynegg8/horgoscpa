@@ -1,6 +1,34 @@
 {
   "posts": [
     {
+      "title": "【個人稅務II】個人地主成本認定與計算案例EP3",
+      "url": "/blog/2025-07-31-joint-building-ep3-personal-taxation-ii",
+      "date": "2025-07-31",
+      "summary": "發布日期：2025-07-31 前言",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-07-31-合建分屋EP3-個人稅務II個人地主成本認定與計算案例.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 3,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
       "title": "【個人稅務I】個人地主房地合一稅規定重點EP2",
       "url": "/blog/2025-07-24-joint-building-ep2-individual-taxation-i",
       "date": "2025-07-24",

@@ -1,5 +1,18 @@
 [
   {
+    "title": "【個人稅務II】個人地主成本認定與計算案例EP3",
+    "url": "/blog/2025-07-31-joint-building-ep3-personal-taxation-ii",
+    "date": "2025-07-31",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "發布日期：2025-07-31 前言",
+    "category": "accounting",
+    "category_name": "會計資訊",
+    "is_series": true,
+    "series_name": "合建分屋",
+    "series_slug": "合建分屋",
+    "episode": 3
+  },
+  {
     "title": "【個人稅務I】個人地主房地合一稅規定重點EP2",
     "url": "/blog/2025-07-24-joint-building-ep2-individual-taxation-i",
     "date": "2025-07-24",
@@ -24,18 +37,5 @@
     "series_name": "合建分屋",
     "series_slug": "合建分屋",
     "episode": 1
-  },
-  {
-    "title": "房地合一稅與重購退稅規劃建議",
-    "url": "/blog/2025-07-10-unified-premises-ep10-unified-premises-tax",
-    "date": "2025-07-10",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "前言 在房地產交易日益頻繁的今日，如何合理規劃稅負成為許多房屋所有權人關注的焦點。房地合一稅制度的實施，雖然加重了短期投機炒作的稅負，但同時也為自住民眾提供了多項優惠措施，其中重購退稅機制便是重要的一環。本文將綜合前述文章的內容，提供房地合一稅與重購退稅的整體規劃建議，從交易時機選擇、成本認列技巧、自住條件維持，到重購退稅的有效運用等方面，協助納稅義務人在合法前提下最大化稅務效益，降低不必要的稅負...",
-    "category": "tax",
-    "category_name": "稅務相關",
-    "is_series": true,
-    "series_name": "房地合一稅2.0",
-    "series_slug": "房地合一稅2.0",
-    "episode": 10
   }
 ]
