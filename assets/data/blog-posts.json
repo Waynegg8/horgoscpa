@@ -1,6 +1,34 @@
 {
   "posts": [
     {
+      "title": "【營利事業I】營利事業地主稅率與持有期間認定EP5",
+      "url": "/blog/2025-08-14-joint-building-ep5-profit-making-business",
+      "date": "2025-08-14",
+      "summary": "發布日期：2025-08-14 前言",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-08-14-合建分屋EP5-營利事業I營利事業地主稅率與持有期間認定.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 5,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
       "title": "【個人稅務III】自住與差額補貼稅務處理EP4",
       "url": "/blog/2025-08-07-joint-building-ep4-personal-taxation-iii",
       "date": "2025-08-07",
