@@ -1,5 +1,18 @@
 [
   {
+    "title": "【營利事業II】營利事業成本認定與課稅所得計算EP6",
+    "url": "/blog/2025-08-21-joint-building-ep6-profit-making-business",
+    "date": "2025-08-21",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "發布日期：2025-08-21 前言",
+    "category": "accounting",
+    "category_name": "會計資訊",
+    "is_series": true,
+    "series_name": "合建分屋",
+    "series_slug": "合建分屋",
+    "episode": 6
+  },
+  {
     "title": "【營利事業I】營利事業地主稅率與持有期間認定EP5",
     "url": "/blog/2025-08-14-joint-building-ep5-profit-making-business",
     "date": "2025-08-14",
@@ -24,18 +37,5 @@
     "series_name": "合建分屋",
     "series_slug": "合建分屋",
     "episode": 4
-  },
-  {
-    "title": "【個人稅務II】個人地主成本認定與計算案例EP3",
-    "url": "/blog/2025-07-31-joint-building-ep3-personal-taxation-ii",
-    "date": "2025-07-31",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "發布日期：2025-07-31 前言",
-    "category": "accounting",
-    "category_name": "會計資訊",
-    "is_series": true,
-    "series_name": "合建分屋",
-    "series_slug": "合建分屋",
-    "episode": 3
   }
 ]
