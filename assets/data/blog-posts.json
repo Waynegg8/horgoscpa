@@ -1,6 +1,34 @@
 {
   "posts": [
     {
+      "title": "【建設公司I】建設公司合建分屋交易流程與稅務處理EP7",
+      "url": "/blog/2025-08-28-joint-building-ep7-construction-company-i",
+      "date": "2025-08-28",
+      "summary": "發布日期：2025-08-28 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-08-28-合建分屋EP7-建設公司I建設公司合建分屋交易流程與稅務處理.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 7,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
       "title": "【營利事業II】營利事業成本認定與課稅所得計算EP6",
       "url": "/blog/2025-08-21-joint-building-ep6-profit-making-business",
       "date": "2025-08-21",
@@ -1734,31 +1762,6 @@
       ]
     },
     {
-      "title": "台灣創業指南：會計師的角色與價值",
-      "url": "/blog/2025-02-03-taiwan-entrepreneurship-guide",
-      "date": "2025-02-03",
-      "summary": "文章簡介 踏上創業旅程的新手老闆，除了對未來的憧憬，往往也面臨著繁瑣事務的挑戰。公司財務與稅務相關的數字和法規，常讓創業者感到頭昏腦脹。本文將探討會計師對新創企業的重要價值，以及如何選擇適合的專業財稅顧問。",
-      "category": "accounting",
-      "category_name": "會計資訊",
-      "image": "/assets/images/blog/default.jpg",
-      "original_filename": "2025-02-03-台灣創業指南：會計師的角色與價值.docx",
-      "is_series": false,
-      "tags": [
-        {
-          "name": "創業資訊",
-          "slug": "startup"
-        },
-        {
-          "name": "稅務規劃",
-          "slug": "tax-planning"
-        },
-        {
-          "name": "企業稅務",
-          "slug": "corporate-tax"
-        }
-      ]
-    },
-    {
       "title": "遺產稅課稅範圍與計算方式",
       "url": "/blog/2025-02-03-estate-and-ep3-scope-and-calculation",
       "date": "2025-02-03",
@@ -1783,6 +1786,31 @@
         {
           "name": "所得稅",
           "slug": "income-tax"
+        }
+      ]
+    },
+    {
+      "title": "台灣創業指南：會計師的角色與價值",
+      "url": "/blog/2025-02-03-taiwan-entrepreneurship-guide",
+      "date": "2025-02-03",
+      "summary": "文章簡介 踏上創業旅程的新手老闆，除了對未來的憧憬，往往也面臨著繁瑣事務的挑戰。公司財務與稅務相關的數字和法規，常讓創業者感到頭昏腦脹。本文將探討會計師對新創企業的重要價值，以及如何選擇適合的專業財稅顧問。",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-02-03-台灣創業指南：會計師的角色與價值.docx",
+      "is_series": false,
+      "tags": [
+        {
+          "name": "創業資訊",
+          "slug": "startup"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
         }
       ]
     },

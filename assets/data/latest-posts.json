@@ -1,5 +1,18 @@
 [
   {
+    "title": "【建設公司I】建設公司合建分屋交易流程與稅務處理EP7",
+    "url": "/blog/2025-08-28-joint-building-ep7-construction-company-i",
+    "date": "2025-08-28",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "發布日期：2025-08-28 前言",
+    "category": "business",
+    "category_name": "企業經營",
+    "is_series": true,
+    "series_name": "合建分屋",
+    "series_slug": "合建分屋",
+    "episode": 7
+  },
+  {
     "title": "【營利事業II】營利事業成本認定與課稅所得計算EP6",
     "url": "/blog/2025-08-21-joint-building-ep6-profit-making-business",
     "date": "2025-08-21",
@@ -24,18 +37,5 @@
     "series_name": "合建分屋",
     "series_slug": "合建分屋",
     "episode": 5
-  },
-  {
-    "title": "【個人稅務III】自住與差額補貼稅務處理EP4",
-    "url": "/blog/2025-08-07-joint-building-ep4-personal-taxation-iii",
-    "date": "2025-08-07",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "發布日期：2025-08-07 前言",
-    "category": "tax",
-    "category_name": "稅務相關",
-    "is_series": true,
-    "series_name": "合建分屋",
-    "series_slug": "合建分屋",
-    "episode": 4
   }
 ]

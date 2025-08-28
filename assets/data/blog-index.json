@@ -1,6 +1,34 @@
 {
   "posts": [
     {
+      "title": "【建設公司I】建設公司合建分屋交易流程與稅務處理EP7",
+      "url": "/blog/2025-08-28-joint-building-ep7-construction-company-i",
+      "date": "2025-08-28",
+      "summary": "發布日期：2025-08-28 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-08-28-合建分屋EP7-建設公司I建設公司合建分屋交易流程與稅務處理.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 7,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
       "title": "【營利事業II】營利事業成本認定與課稅所得計算EP6",
       "url": "/blog/2025-08-21-joint-building-ep6-profit-making-business",
       "date": "2025-08-21",
@@ -1734,31 +1762,6 @@
       ]
     },
     {
-      "title": "台灣創業指南：會計師的角色與價值",
-      "url": "/blog/2025-02-03-taiwan-entrepreneurship-guide",
-      "date": "2025-02-03",
-      "summary": "文章簡介 踏上創業旅程的新手老闆，除了對未來的憧憬，往往也面臨著繁瑣事務的挑戰。公司財務與稅務相關的數字和法規，常讓創業者感到頭昏腦脹。本文將探討會計師對新創企業的重要價值，以及如何選擇適合的專業財稅顧問。",
-      "category": "accounting",
-      "category_name": "會計資訊",
-      "image": "/assets/images/blog/default.jpg",
-      "original_filename": "2025-02-03-台灣創業指南：會計師的角色與價值.docx",
-      "is_series": false,
-      "tags": [
-        {
-          "name": "創業資訊",
-          "slug": "startup"
-        },
-        {
-          "name": "稅務規劃",
-          "slug": "tax-planning"
-        },
-        {
-          "name": "企業稅務",
-          "slug": "corporate-tax"
-        }
-      ]
-    },
-    {
       "title": "遺產稅課稅範圍與計算方式",
       "url": "/blog/2025-02-03-estate-and-ep3-scope-and-calculation",
       "date": "2025-02-03",
@@ -1783,6 +1786,31 @@
         {
           "name": "所得稅",
           "slug": "income-tax"
+        }
+      ]
+    },
+    {
+      "title": "台灣創業指南：會計師的角色與價值",
+      "url": "/blog/2025-02-03-taiwan-entrepreneurship-guide",
+      "date": "2025-02-03",
+      "summary": "文章簡介 踏上創業旅程的新手老闆，除了對未來的憧憬，往往也面臨著繁瑣事務的挑戰。公司財務與稅務相關的數字和法規，常讓創業者感到頭昏腦脹。本文將探討會計師對新創企業的重要價值，以及如何選擇適合的專業財稅顧問。",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-02-03-台灣創業指南：會計師的角色與價值.docx",
+      "is_series": false,
+      "tags": [
+        {
+          "name": "創業資訊",
+          "slug": "startup"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
         }
       ]
     },
@@ -2320,9 +2348,37 @@
               "slug": "personal-tax"
             }
           ]
+        },
+        {
+          "title": "【建設公司I】建設公司合建分屋交易流程與稅務處理EP7",
+          "url": "/blog/2025-08-28-joint-building-ep7-construction-company-i",
+          "date": "2025-08-28",
+          "summary": "發布日期：2025-08-28 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-08-28-合建分屋EP7-建設公司I建設公司合建分屋交易流程與稅務處理.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
         }
       ],
-      "count": 6,
+      "count": 7,
       "latest": {
         "title": "【入門篇】合建分屋基本模式與稅務差異",
         "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
@@ -2351,7 +2407,7 @@
           }
         ]
       },
-      "first_post_date": "2025-08-21",
+      "first_post_date": "2025-08-28",
       "latest_post_date": "2025-07-17"
     },
     "房地合一稅2.0": {
@@ -4727,9 +4783,37 @@
               "slug": "personal-tax"
             }
           ]
+        },
+        {
+          "title": "【建設公司I】建設公司合建分屋交易流程與稅務處理EP7",
+          "url": "/blog/2025-08-28-joint-building-ep7-construction-company-i",
+          "date": "2025-08-28",
+          "summary": "發布日期：2025-08-28 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-08-28-合建分屋EP7-建設公司I建設公司合建分屋交易流程與稅務處理.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
         }
       ],
-      "count": 6,
+      "count": 7,
       "latest": {
         "title": "【入門篇】合建分屋基本模式與稅務差異",
         "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
@@ -4758,7 +4842,7 @@
           }
         ]
       },
-      "first_post_date": "2025-08-21",
+      "first_post_date": "2025-08-28",
       "latest_post_date": "2025-07-17"
     },
     {
@@ -6963,7 +7047,7 @@
     }
   ],
   "pagination": {
-    "total_posts": 77,
+    "total_posts": 78,
     "total_pages": 8,
     "items_per_page": 10
   },
@@ -6981,7 +7065,7 @@
     {
       "name": "企業經營",
       "slug": "business",
-      "count": 19
+      "count": 20
     },
     {
       "name": "財務規劃",
@@ -7001,75 +7085,60 @@
   ],
   "tags": [
     {
-      "name": "稅務規劃",
-      "slug": "tax-planning",
-      "count": 41
-    },
-    {
-      "name": "所得稅",
       "slug": "income-tax",
-      "count": 66
+      "name": "所得稅",
+      "count": 67
     },
     {
-      "name": "工商登記",
-      "slug": "business-registration",
-      "count": 20
+      "slug": "tax-planning",
+      "name": "稅務規劃",
+      "count": 42
     },
     {
-      "name": "財務報表",
+      "slug": "personal-tax",
+      "name": "個人稅務",
+      "count": 8
+    },
+    {
+      "slug": "property-tax",
+      "name": "房地產稅務",
+      "count": 10
+    },
+    {
+      "slug": "accounting-practice",
+      "name": "會計實務",
+      "count": 22
+    },
+    {
       "slug": "financial-statements",
+      "name": "財務報表",
       "count": 4
     },
     {
-      "name": "財富管理",
-      "slug": "wealth-management",
-      "count": 0
-    },
-    {
-      "name": "人壽保險",
-      "slug": "life-insurance",
-      "count": 22
-    },
-    {
-      "name": "創業資訊",
-      "slug": "startup",
-      "count": 1
-    },
-    {
-      "name": "企業稅務",
       "slug": "corporate-tax",
+      "name": "企業稅務",
       "count": 16
     },
     {
-      "name": "個人稅務",
-      "slug": "personal-tax",
-      "count": 7
-    },
-    {
-      "name": "財務規劃",
-      "slug": "financial-planning",
-      "count": 0
-    },
-    {
-      "name": "投資理財",
       "slug": "investment",
+      "name": "投資理財",
       "count": 22
     },
     {
-      "name": "退休規劃",
-      "slug": "retirement",
-      "count": 0
+      "slug": "business-registration",
+      "name": "工商登記",
+      "count": 20
     },
     {
-      "name": "會計實務",
-      "slug": "accounting-practice",
+      "slug": "life-insurance",
+      "name": "人壽保險",
       "count": 22
     },
     {
-      "name": "房地產稅務",
-      "slug": "property-tax",
-      "count": 10
+      "slug": "startup",
+      "name": "創業資訊",
+      "count": 1
     }
   ],
-  "generated_time": "2025-08-27T02:25:50.886866"
+  "generated_time": "2025-08-28T02:25:19.822084"
 }
