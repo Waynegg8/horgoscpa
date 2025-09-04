@@ -1,5 +1,18 @@
 [
   {
+    "title": "【建設公司II】發票開立規定與營業稅處理EP8",
+    "url": "/blog/2025-09-04-joint-building-ep8-construction-company-ii",
+    "date": "2025-09-04",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "發布日期：2025-09-04 前言",
+    "category": "tax",
+    "category_name": "稅務相關",
+    "is_series": true,
+    "series_name": "合建分屋",
+    "series_slug": "合建分屋",
+    "episode": 8
+  },
+  {
     "title": "【建設公司I】建設公司合建分屋交易流程與稅務處理EP7",
     "url": "/blog/2025-08-28-joint-building-ep7-construction-company-i",
     "date": "2025-08-28",
@@ -24,18 +37,5 @@
     "series_name": "合建分屋",
     "series_slug": "合建分屋",
     "episode": 6
-  },
-  {
-    "title": "【營利事業I】營利事業地主稅率與持有期間認定EP5",
-    "url": "/blog/2025-08-14-joint-building-ep5-profit-making-business",
-    "date": "2025-08-14",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "發布日期：2025-08-14 前言",
-    "category": "tax",
-    "category_name": "稅務相關",
-    "is_series": true,
-    "series_name": "合建分屋",
-    "series_slug": "合建分屋",
-    "episode": 5
   }
 ]
