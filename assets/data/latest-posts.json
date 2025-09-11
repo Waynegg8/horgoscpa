@@ -1,5 +1,18 @@
 [
   {
+    "title": "【實務策略】合建分屋稅負優化與常見錯誤EP9",
+    "url": "/blog/2025-09-11-joint-building-ep9-practical-strategy-tax",
+    "date": "2025-09-11",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "發布日期：2025-09-11 前言",
+    "category": "tax",
+    "category_name": "稅務相關",
+    "is_series": true,
+    "series_name": "合建分屋",
+    "series_slug": "合建分屋",
+    "episode": 9
+  },
+  {
     "title": "【建設公司II】發票開立規定與營業稅處理EP8",
     "url": "/blog/2025-09-04-joint-building-ep8-construction-company-ii",
     "date": "2025-09-04",
@@ -24,18 +37,5 @@
     "series_name": "合建分屋",
     "series_slug": "合建分屋",
     "episode": 7
-  },
-  {
-    "title": "【營利事業II】營利事業成本認定與課稅所得計算EP6",
-    "url": "/blog/2025-08-21-joint-building-ep6-profit-making-business",
-    "date": "2025-08-21",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "發布日期：2025-08-21 前言",
-    "category": "accounting",
-    "category_name": "會計資訊",
-    "is_series": true,
-    "series_name": "合建分屋",
-    "series_slug": "合建分屋",
-    "episode": 6
   }
 ]
