@@ -255,9 +255,37 @@
               "slug": "personal-tax"
             }
           ]
+        },
+        {
+          "title": "【熱門問答】合建分屋稅務十大常見問題EP10",
+          "url": "/blog/2025-09-18-joint-building-ep10-hot-qatop-ten",
+          "date": "2025-09-18",
+          "summary": "發布日期：2025-09-18 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-09-18-合建分屋EP10-熱門問答合建分屋稅務十大常見問題.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 10,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
         }
       ],
-      "count": 9,
+      "count": 10,
       "latest": {
         "title": "【入門篇】合建分屋基本模式與稅務差異",
         "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
@@ -286,7 +314,7 @@
           }
         ]
       },
-      "first_post_date": "2025-09-11",
+      "first_post_date": "2025-09-18",
       "latest_post_date": "2025-07-17"
     },
     "房地合一稅2.0": {
@@ -2746,9 +2774,37 @@
               "slug": "personal-tax"
             }
           ]
+        },
+        {
+          "title": "【熱門問答】合建分屋稅務十大常見問題EP10",
+          "url": "/blog/2025-09-18-joint-building-ep10-hot-qatop-ten",
+          "date": "2025-09-18",
+          "summary": "發布日期：2025-09-18 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-09-18-合建分屋EP10-熱門問答合建分屋稅務十大常見問題.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 10,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
         }
       ],
-      "count": 9,
+      "count": 10,
       "latest": {
         "title": "【入門篇】合建分屋基本模式與稅務差異",
         "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
@@ -2777,7 +2833,7 @@
           }
         ]
       },
-      "first_post_date": "2025-09-11",
+      "first_post_date": "2025-09-18",
       "latest_post_date": "2025-07-17"
     },
     {
@@ -4981,5 +5037,5 @@
       "latest_post_date": "2025-01-05"
     }
   ],
-  "generated_time": "2025-09-17T02:19:41.374659"
+  "generated_time": "2025-09-18T02:20:14.903598"
 }

@@ -1,5 +1,18 @@
 [
   {
+    "title": "【熱門問答】合建分屋稅務十大常見問題EP10",
+    "url": "/blog/2025-09-18-joint-building-ep10-hot-qatop-ten",
+    "date": "2025-09-18",
+    "image": "/assets/images/blog/default.jpg",
+    "summary": "發布日期：2025-09-18 前言",
+    "category": "tax",
+    "category_name": "稅務相關",
+    "is_series": true,
+    "series_name": "合建分屋",
+    "series_slug": "合建分屋",
+    "episode": 10
+  },
+  {
     "title": "【實務策略】合建分屋稅負優化與常見錯誤EP9",
     "url": "/blog/2025-09-11-joint-building-ep9-practical-strategy-tax",
     "date": "2025-09-11",
@@ -24,18 +37,5 @@
     "series_name": "合建分屋",
     "series_slug": "合建分屋",
     "episode": 8
-  },
-  {
-    "title": "【建設公司I】建設公司合建分屋交易流程與稅務處理EP7",
-    "url": "/blog/2025-08-28-joint-building-ep7-construction-company-i",
-    "date": "2025-08-28",
-    "image": "/assets/images/blog/default.jpg",
-    "summary": "發布日期：2025-08-28 前言",
-    "category": "business",
-    "category_name": "企業經營",
-    "is_series": true,
-    "series_name": "合建分屋",
-    "series_slug": "合建分屋",
-    "episode": 7
   }
 ]

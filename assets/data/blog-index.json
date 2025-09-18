@@ -1,6 +1,34 @@
 {
   "posts": [
     {
+      "title": "【熱門問答】合建分屋稅務十大常見問題EP10",
+      "url": "/blog/2025-09-18-joint-building-ep10-hot-qatop-ten",
+      "date": "2025-09-18",
+      "summary": "發布日期：2025-09-18 前言",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-09-18-合建分屋EP10-熱門問答合建分屋稅務十大常見問題.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 10,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
       "title": "【實務策略】合建分屋稅負優化與常見錯誤EP9",
       "url": "/blog/2025-09-11-joint-building-ep9-practical-strategy-tax",
       "date": "2025-09-11",
@@ -2488,9 +2516,37 @@
               "slug": "personal-tax"
             }
           ]
+        },
+        {
+          "title": "【熱門問答】合建分屋稅務十大常見問題EP10",
+          "url": "/blog/2025-09-18-joint-building-ep10-hot-qatop-ten",
+          "date": "2025-09-18",
+          "summary": "發布日期：2025-09-18 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-09-18-合建分屋EP10-熱門問答合建分屋稅務十大常見問題.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 10,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
         }
       ],
-      "count": 9,
+      "count": 10,
       "latest": {
         "title": "【入門篇】合建分屋基本模式與稅務差異",
         "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
@@ -2519,7 +2575,7 @@
           }
         ]
       },
-      "first_post_date": "2025-09-11",
+      "first_post_date": "2025-09-18",
       "latest_post_date": "2025-07-17"
     },
     "房地合一稅2.0": {
@@ -4979,9 +5035,37 @@
               "slug": "personal-tax"
             }
           ]
+        },
+        {
+          "title": "【熱門問答】合建分屋稅務十大常見問題EP10",
+          "url": "/blog/2025-09-18-joint-building-ep10-hot-qatop-ten",
+          "date": "2025-09-18",
+          "summary": "發布日期：2025-09-18 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-09-18-合建分屋EP10-熱門問答合建分屋稅務十大常見問題.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 10,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
         }
       ],
-      "count": 9,
+      "count": 10,
       "latest": {
         "title": "【入門篇】合建分屋基本模式與稅務差異",
         "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
@@ -5010,7 +5094,7 @@
           }
         ]
       },
-      "first_post_date": "2025-09-11",
+      "first_post_date": "2025-09-18",
       "latest_post_date": "2025-07-17"
     },
     {
@@ -7215,15 +7299,15 @@
     }
   ],
   "pagination": {
-    "total_posts": 80,
-    "total_pages": 8,
+    "total_posts": 81,
+    "total_pages": 9,
     "items_per_page": 10
   },
   "categories": [
     {
       "name": "稅務相關",
       "slug": "tax",
-      "count": 35
+      "count": 36
     },
     {
       "name": "會計資訊",
@@ -7253,75 +7337,60 @@
   ],
   "tags": [
     {
-      "name": "稅務規劃",
-      "slug": "tax-planning",
-      "count": 44
-    },
-    {
-      "name": "所得稅",
       "slug": "income-tax",
-      "count": 69
+      "name": "所得稅",
+      "count": 70
     },
     {
-      "name": "工商登記",
-      "slug": "business-registration",
-      "count": 20
+      "slug": "tax-planning",
+      "name": "稅務規劃",
+      "count": 45
     },
     {
-      "name": "財務報表",
+      "slug": "personal-tax",
+      "name": "個人稅務",
+      "count": 11
+    },
+    {
+      "slug": "property-tax",
+      "name": "房地產稅務",
+      "count": 10
+    },
+    {
+      "slug": "accounting-practice",
+      "name": "會計實務",
+      "count": 22
+    },
+    {
       "slug": "financial-statements",
+      "name": "財務報表",
       "count": 4
     },
     {
-      "name": "財富管理",
-      "slug": "wealth-management",
-      "count": 0
-    },
-    {
-      "name": "人壽保險",
-      "slug": "life-insurance",
-      "count": 22
-    },
-    {
-      "name": "創業資訊",
-      "slug": "startup",
-      "count": 1
-    },
-    {
-      "name": "企業稅務",
       "slug": "corporate-tax",
+      "name": "企業稅務",
       "count": 16
     },
     {
-      "name": "個人稅務",
-      "slug": "personal-tax",
-      "count": 10
-    },
-    {
-      "name": "財務規劃",
-      "slug": "financial-planning",
-      "count": 0
-    },
-    {
-      "name": "投資理財",
       "slug": "investment",
+      "name": "投資理財",
       "count": 22
     },
     {
-      "name": "退休規劃",
-      "slug": "retirement",
-      "count": 0
+      "slug": "business-registration",
+      "name": "工商登記",
+      "count": 20
     },
     {
-      "name": "會計實務",
-      "slug": "accounting-practice",
+      "slug": "life-insurance",
+      "name": "人壽保險",
       "count": 22
     },
     {
-      "name": "房地產稅務",
-      "slug": "property-tax",
-      "count": 10
+      "slug": "startup",
+      "name": "創業資訊",
+      "count": 1
     }
   ],
-  "generated_time": "2025-09-17T02:19:41.366311"
+  "generated_time": "2025-09-18T02:20:14.895259"
 }
