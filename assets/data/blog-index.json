@@ -1,6 +1,286 @@
 {
   "posts": [
     {
+      "title": "【熱門問答】合建分屋稅務十大常見問題EP10",
+      "url": "/blog/2025-09-18-joint-building-ep10-hot-qatop-ten",
+      "date": "2025-09-18",
+      "summary": "發布日期：2025-09-18 前言",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-09-18-合建分屋EP10-熱門問答合建分屋稅務十大常見問題.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 10,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
+      "title": "【實務策略】合建分屋稅負優化與常見錯誤EP9",
+      "url": "/blog/2025-09-11-joint-building-ep9-practical-strategy-tax",
+      "date": "2025-09-11",
+      "summary": "發布日期：2025-09-11 前言",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-09-11-合建分屋EP9-實務策略合建分屋稅負優化與常見錯誤.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 9,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
+      "title": "【建設公司II】發票開立規定與營業稅處理EP8",
+      "url": "/blog/2025-09-04-joint-building-ep8-construction-company-ii",
+      "date": "2025-09-04",
+      "summary": "發布日期：2025-09-04 前言",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-09-04-合建分屋EP8-建設公司II發票開立規定與營業稅處理.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 8,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
+      "title": "【建設公司I】建設公司合建分屋交易流程與稅務處理EP7",
+      "url": "/blog/2025-08-28-joint-building-ep7-construction-company-i",
+      "date": "2025-08-28",
+      "summary": "發布日期：2025-08-28 前言",
+      "category": "business",
+      "category_name": "企業經營",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-08-28-合建分屋EP7-建設公司I建設公司合建分屋交易流程與稅務處理.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 7,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
+      "title": "【營利事業II】營利事業成本認定與課稅所得計算EP6",
+      "url": "/blog/2025-08-21-joint-building-ep6-profit-making-business",
+      "date": "2025-08-21",
+      "summary": "發布日期：2025-08-21 前言",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-08-21-合建分屋EP6-營利事業II營利事業成本認定與課稅所得計算.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 6,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
+      "title": "【營利事業I】營利事業地主稅率與持有期間認定EP5",
+      "url": "/blog/2025-08-14-joint-building-ep5-profit-making-business",
+      "date": "2025-08-14",
+      "summary": "發布日期：2025-08-14 前言",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-08-14-合建分屋EP5-營利事業I營利事業地主稅率與持有期間認定.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 5,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
+      "title": "【個人稅務III】自住與差額補貼稅務處理EP4",
+      "url": "/blog/2025-08-07-joint-building-ep4-personal-taxation-iii",
+      "date": "2025-08-07",
+      "summary": "發布日期：2025-08-07 前言",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-08-07-合建分屋EP4-個人稅務III自住與差額補貼稅務處理.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 4,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
+      "title": "【個人稅務II】個人地主成本認定與計算案例EP3",
+      "url": "/blog/2025-07-31-joint-building-ep3-personal-taxation-ii",
+      "date": "2025-07-31",
+      "summary": "發布日期：2025-07-31 前言",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-07-31-合建分屋EP3-個人稅務II個人地主成本認定與計算案例.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 3,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
+      "title": "【個人稅務I】個人地主房地合一稅規定重點EP2",
+      "url": "/blog/2025-07-24-joint-building-ep2-individual-taxation-i",
+      "date": "2025-07-24",
+      "summary": "發布日期：2025-07-24 前言",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-07-24-合建分屋EP2-個人稅務I個人地主房地合一稅規定重點.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 2,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
+      "title": "【入門篇】合建分屋基本模式與稅務差異",
+      "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
+      "date": "2025-07-17",
+      "summary": "發布日期：2025-07-17 前言",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-07-17-合建分屋EP1-入門篇合建分屋基本模式與稅務差異.docx",
+      "is_series": true,
+      "series_name": "合建分屋",
+      "series_slug": "合建分屋",
+      "episode": 1,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "個人稅務",
+          "slug": "personal-tax"
+        }
+      ]
+    },
+    {
       "title": "房地合一稅與重購退稅規劃建議",
       "url": "/blog/2025-07-10-unified-premises-ep10-unified-premises-tax",
       "date": "2025-07-10",
@@ -1566,31 +1846,6 @@
       ]
     },
     {
-      "title": "台灣創業指南：會計師的角色與價值",
-      "url": "/blog/2025-02-03-taiwan-entrepreneurship-guide",
-      "date": "2025-02-03",
-      "summary": "文章簡介 踏上創業旅程的新手老闆，除了對未來的憧憬，往往也面臨著繁瑣事務的挑戰。公司財務與稅務相關的數字和法規，常讓創業者感到頭昏腦脹。本文將探討會計師對新創企業的重要價值，以及如何選擇適合的專業財稅顧問。",
-      "category": "accounting",
-      "category_name": "會計資訊",
-      "image": "/assets/images/blog/default.jpg",
-      "original_filename": "2025-02-03-台灣創業指南：會計師的角色與價值.docx",
-      "is_series": false,
-      "tags": [
-        {
-          "name": "創業資訊",
-          "slug": "startup"
-        },
-        {
-          "name": "稅務規劃",
-          "slug": "tax-planning"
-        },
-        {
-          "name": "企業稅務",
-          "slug": "corporate-tax"
-        }
-      ]
-    },
-    {
       "title": "遺產稅課稅範圍與計算方式",
       "url": "/blog/2025-02-03-estate-and-ep3-scope-and-calculation",
       "date": "2025-02-03",
@@ -1615,6 +1870,31 @@
         {
           "name": "所得稅",
           "slug": "income-tax"
+        }
+      ]
+    },
+    {
+      "title": "台灣創業指南：會計師的角色與價值",
+      "url": "/blog/2025-02-03-taiwan-entrepreneurship-guide",
+      "date": "2025-02-03",
+      "summary": "文章簡介 踏上創業旅程的新手老闆，除了對未來的憧憬，往往也面臨著繁瑣事務的挑戰。公司財務與稅務相關的數字和法規，常讓創業者感到頭昏腦脹。本文將探討會計師對新創企業的重要價值，以及如何選擇適合的專業財稅顧問。",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-02-03-台灣創業指南：會計師的角色與價值.docx",
+      "is_series": false,
+      "tags": [
+        {
+          "name": "創業資訊",
+          "slug": "startup"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
         }
       ]
     },
@@ -1981,6 +2261,323 @@
     }
   ],
   "series": {
+    "合建分屋": {
+      "name": "合建分屋",
+      "slug": "合建分屋",
+      "posts": [
+        {
+          "title": "【入門篇】合建分屋基本模式與稅務差異",
+          "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
+          "date": "2025-07-17",
+          "summary": "發布日期：2025-07-17 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-07-17-合建分屋EP1-入門篇合建分屋基本模式與稅務差異.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【個人稅務I】個人地主房地合一稅規定重點EP2",
+          "url": "/blog/2025-07-24-joint-building-ep2-individual-taxation-i",
+          "date": "2025-07-24",
+          "summary": "發布日期：2025-07-24 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-07-24-合建分屋EP2-個人稅務I個人地主房地合一稅規定重點.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【個人稅務II】個人地主成本認定與計算案例EP3",
+          "url": "/blog/2025-07-31-joint-building-ep3-personal-taxation-ii",
+          "date": "2025-07-31",
+          "summary": "發布日期：2025-07-31 前言",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-07-31-合建分屋EP3-個人稅務II個人地主成本認定與計算案例.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【個人稅務III】自住與差額補貼稅務處理EP4",
+          "url": "/blog/2025-08-07-joint-building-ep4-personal-taxation-iii",
+          "date": "2025-08-07",
+          "summary": "發布日期：2025-08-07 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-08-07-合建分屋EP4-個人稅務III自住與差額補貼稅務處理.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【營利事業I】營利事業地主稅率與持有期間認定EP5",
+          "url": "/blog/2025-08-14-joint-building-ep5-profit-making-business",
+          "date": "2025-08-14",
+          "summary": "發布日期：2025-08-14 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-08-14-合建分屋EP5-營利事業I營利事業地主稅率與持有期間認定.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 5,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【營利事業II】營利事業成本認定與課稅所得計算EP6",
+          "url": "/blog/2025-08-21-joint-building-ep6-profit-making-business",
+          "date": "2025-08-21",
+          "summary": "發布日期：2025-08-21 前言",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-08-21-合建分屋EP6-營利事業II營利事業成本認定與課稅所得計算.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【建設公司I】建設公司合建分屋交易流程與稅務處理EP7",
+          "url": "/blog/2025-08-28-joint-building-ep7-construction-company-i",
+          "date": "2025-08-28",
+          "summary": "發布日期：2025-08-28 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-08-28-合建分屋EP7-建設公司I建設公司合建分屋交易流程與稅務處理.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【建設公司II】發票開立規定與營業稅處理EP8",
+          "url": "/blog/2025-09-04-joint-building-ep8-construction-company-ii",
+          "date": "2025-09-04",
+          "summary": "發布日期：2025-09-04 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-09-04-合建分屋EP8-建設公司II發票開立規定與營業稅處理.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 8,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【實務策略】合建分屋稅負優化與常見錯誤EP9",
+          "url": "/blog/2025-09-11-joint-building-ep9-practical-strategy-tax",
+          "date": "2025-09-11",
+          "summary": "發布日期：2025-09-11 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-09-11-合建分屋EP9-實務策略合建分屋稅負優化與常見錯誤.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 9,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【熱門問答】合建分屋稅務十大常見問題EP10",
+          "url": "/blog/2025-09-18-joint-building-ep10-hot-qatop-ten",
+          "date": "2025-09-18",
+          "summary": "發布日期：2025-09-18 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-09-18-合建分屋EP10-熱門問答合建分屋稅務十大常見問題.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 10,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        }
+      ],
+      "count": 10,
+      "latest": {
+        "title": "【入門篇】合建分屋基本模式與稅務差異",
+        "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
+        "date": "2025-07-17",
+        "summary": "發布日期：2025-07-17 前言",
+        "category": "tax",
+        "category_name": "稅務相關",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-07-17-合建分屋EP1-入門篇合建分屋基本模式與稅務差異.docx",
+        "is_series": true,
+        "series_name": "合建分屋",
+        "series_slug": "合建分屋",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "稅務規劃",
+            "slug": "tax-planning"
+          },
+          {
+            "name": "個人稅務",
+            "slug": "personal-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-09-18",
+      "latest_post_date": "2025-07-17"
+    },
     "房地合一稅2.0": {
       "name": "房地合一稅2.0",
       "slug": "房地合一稅2.0",
@@ -4184,6 +4781,323 @@
   },
   "series_list": [
     {
+      "name": "合建分屋",
+      "slug": "合建分屋",
+      "posts": [
+        {
+          "title": "【入門篇】合建分屋基本模式與稅務差異",
+          "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
+          "date": "2025-07-17",
+          "summary": "發布日期：2025-07-17 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-07-17-合建分屋EP1-入門篇合建分屋基本模式與稅務差異.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 1,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【個人稅務I】個人地主房地合一稅規定重點EP2",
+          "url": "/blog/2025-07-24-joint-building-ep2-individual-taxation-i",
+          "date": "2025-07-24",
+          "summary": "發布日期：2025-07-24 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-07-24-合建分屋EP2-個人稅務I個人地主房地合一稅規定重點.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 2,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【個人稅務II】個人地主成本認定與計算案例EP3",
+          "url": "/blog/2025-07-31-joint-building-ep3-personal-taxation-ii",
+          "date": "2025-07-31",
+          "summary": "發布日期：2025-07-31 前言",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-07-31-合建分屋EP3-個人稅務II個人地主成本認定與計算案例.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 3,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【個人稅務III】自住與差額補貼稅務處理EP4",
+          "url": "/blog/2025-08-07-joint-building-ep4-personal-taxation-iii",
+          "date": "2025-08-07",
+          "summary": "發布日期：2025-08-07 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-08-07-合建分屋EP4-個人稅務III自住與差額補貼稅務處理.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 4,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【營利事業I】營利事業地主稅率與持有期間認定EP5",
+          "url": "/blog/2025-08-14-joint-building-ep5-profit-making-business",
+          "date": "2025-08-14",
+          "summary": "發布日期：2025-08-14 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-08-14-合建分屋EP5-營利事業I營利事業地主稅率與持有期間認定.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 5,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【營利事業II】營利事業成本認定與課稅所得計算EP6",
+          "url": "/blog/2025-08-21-joint-building-ep6-profit-making-business",
+          "date": "2025-08-21",
+          "summary": "發布日期：2025-08-21 前言",
+          "category": "accounting",
+          "category_name": "會計資訊",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-08-21-合建分屋EP6-營利事業II營利事業成本認定與課稅所得計算.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 6,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【建設公司I】建設公司合建分屋交易流程與稅務處理EP7",
+          "url": "/blog/2025-08-28-joint-building-ep7-construction-company-i",
+          "date": "2025-08-28",
+          "summary": "發布日期：2025-08-28 前言",
+          "category": "business",
+          "category_name": "企業經營",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-08-28-合建分屋EP7-建設公司I建設公司合建分屋交易流程與稅務處理.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 7,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【建設公司II】發票開立規定與營業稅處理EP8",
+          "url": "/blog/2025-09-04-joint-building-ep8-construction-company-ii",
+          "date": "2025-09-04",
+          "summary": "發布日期：2025-09-04 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-09-04-合建分屋EP8-建設公司II發票開立規定與營業稅處理.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 8,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【實務策略】合建分屋稅負優化與常見錯誤EP9",
+          "url": "/blog/2025-09-11-joint-building-ep9-practical-strategy-tax",
+          "date": "2025-09-11",
+          "summary": "發布日期：2025-09-11 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-09-11-合建分屋EP9-實務策略合建分屋稅負優化與常見錯誤.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 9,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        },
+        {
+          "title": "【熱門問答】合建分屋稅務十大常見問題EP10",
+          "url": "/blog/2025-09-18-joint-building-ep10-hot-qatop-ten",
+          "date": "2025-09-18",
+          "summary": "發布日期：2025-09-18 前言",
+          "category": "tax",
+          "category_name": "稅務相關",
+          "image": "/assets/images/blog/default.jpg",
+          "original_filename": "2025-09-18-合建分屋EP10-熱門問答合建分屋稅務十大常見問題.docx",
+          "is_series": true,
+          "series_name": "合建分屋",
+          "series_slug": "合建分屋",
+          "episode": 10,
+          "tags": [
+            {
+              "name": "所得稅",
+              "slug": "income-tax"
+            },
+            {
+              "name": "稅務規劃",
+              "slug": "tax-planning"
+            },
+            {
+              "name": "個人稅務",
+              "slug": "personal-tax"
+            }
+          ]
+        }
+      ],
+      "count": 10,
+      "latest": {
+        "title": "【入門篇】合建分屋基本模式與稅務差異",
+        "url": "/blog/2025-07-17-joint-building-ep1-the-basic-model",
+        "date": "2025-07-17",
+        "summary": "發布日期：2025-07-17 前言",
+        "category": "tax",
+        "category_name": "稅務相關",
+        "image": "/assets/images/blog/default.jpg",
+        "original_filename": "2025-07-17-合建分屋EP1-入門篇合建分屋基本模式與稅務差異.docx",
+        "is_series": true,
+        "series_name": "合建分屋",
+        "series_slug": "合建分屋",
+        "episode": 1,
+        "tags": [
+          {
+            "name": "所得稅",
+            "slug": "income-tax"
+          },
+          {
+            "name": "稅務規劃",
+            "slug": "tax-planning"
+          },
+          {
+            "name": "個人稅務",
+            "slug": "personal-tax"
+          }
+        ]
+      },
+      "first_post_date": "2025-09-18",
+      "latest_post_date": "2025-07-17"
+    },
+    {
       "name": "中小企業基礎服務篇",
       "slug": "中小企業基礎服務篇",
       "posts": [
@@ -6385,25 +7299,25 @@
     }
   ],
   "pagination": {
-    "total_posts": 71,
-    "total_pages": 8,
+    "total_posts": 81,
+    "total_pages": 9,
     "items_per_page": 10
   },
   "categories": [
     {
       "name": "稅務相關",
       "slug": "tax",
-      "count": 29
+      "count": 36
     },
     {
       "name": "會計資訊",
       "slug": "accounting",
-      "count": 8
+      "count": 10
     },
     {
       "name": "企業經營",
       "slug": "business",
-      "count": 19
+      "count": 20
     },
     {
       "name": "財務規劃",
@@ -6425,12 +7339,12 @@
     {
       "name": "稅務規劃",
       "slug": "tax-planning",
-      "count": 35
+      "count": 45
     },
     {
       "name": "所得稅",
       "slug": "income-tax",
-      "count": 60
+      "count": 70
     },
     {
       "name": "工商登記",
@@ -6465,7 +7379,7 @@
     {
       "name": "個人稅務",
       "slug": "personal-tax",
-      "count": 1
+      "count": 11
     },
     {
       "name": "財務規劃",
@@ -6493,5 +7407,5 @@
       "count": 10
     }
   ],
-  "generated_time": "2025-07-14T03:00:36.919174"
+  "generated_time": "2025-10-07T02:20:54.737843"
 }
