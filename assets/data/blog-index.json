@@ -670,34 +670,6 @@
       ]
     },
     {
-      "title": "房地合一稅2.0制度概覽",
-      "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
-      "date": "2025-05-06",
-      "summary": "前言 房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
-      "category": "tax",
-      "category_name": "稅務相關",
-      "image": "/assets/images/blog/default.jpg",
-      "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx",
-      "is_series": true,
-      "series_name": "房地合一稅2.0",
-      "series_slug": "房地合一稅2.0",
-      "episode": 1,
-      "tags": [
-        {
-          "name": "所得稅",
-          "slug": "income-tax"
-        },
-        {
-          "name": "房地產稅務",
-          "slug": "property-tax"
-        },
-        {
-          "name": "稅務規劃",
-          "slug": "tax-planning"
-        }
-      ]
-    },
-    {
       "title": "小規模營利事業規定與短漏報處理",
       "url": "/blog/2025-05-06-expanded-written-ep4-requirements-for-small",
       "date": "2025-05-06",
@@ -722,6 +694,34 @@
         {
           "name": "投資理財",
           "slug": "investment"
+        }
+      ]
+    },
+    {
+      "title": "房地合一稅2.0制度概覽",
+      "url": "/blog/2025-05-06-unified-premises-ep1-overview-of-the",
+      "date": "2025-05-06",
+      "summary": "前言 房地合一稅制度自105年1月1日實施以來，對於不動產交易市場產生重大影響。隨著社會經濟環境變化，政府於110年7月1日起實施「房地合一稅2.0」，調整了課稅範圍與稅率結構，進一步強化不動產交易課稅制度。本文將從稅制背景、課稅範圍與稅率等方面，為讀者全面解析房地合一稅2.0的制度概況，協助納稅義務人掌握相關稅務規定。",
+      "category": "tax",
+      "category_name": "稅務相關",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-05-06-房地合一稅2.0EP1-房地合一稅2.0制度概覽.docx",
+      "is_series": true,
+      "series_name": "房地合一稅2.0",
+      "series_slug": "房地合一稅2.0",
+      "episode": 1,
+      "tags": [
+        {
+          "name": "所得稅",
+          "slug": "income-tax"
+        },
+        {
+          "name": "房地產稅務",
+          "slug": "property-tax"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
         }
       ]
     },
@@ -1846,31 +1846,6 @@
       ]
     },
     {
-      "title": "台灣創業指南：會計師的角色與價值",
-      "url": "/blog/2025-02-03-taiwan-entrepreneurship-guide",
-      "date": "2025-02-03",
-      "summary": "文章簡介 踏上創業旅程的新手老闆，除了對未來的憧憬，往往也面臨著繁瑣事務的挑戰。公司財務與稅務相關的數字和法規，常讓創業者感到頭昏腦脹。本文將探討會計師對新創企業的重要價值，以及如何選擇適合的專業財稅顧問。",
-      "category": "accounting",
-      "category_name": "會計資訊",
-      "image": "/assets/images/blog/default.jpg",
-      "original_filename": "2025-02-03-台灣創業指南：會計師的角色與價值.docx",
-      "is_series": false,
-      "tags": [
-        {
-          "name": "創業資訊",
-          "slug": "startup"
-        },
-        {
-          "name": "稅務規劃",
-          "slug": "tax-planning"
-        },
-        {
-          "name": "企業稅務",
-          "slug": "corporate-tax"
-        }
-      ]
-    },
-    {
       "title": "遺產稅課稅範圍與計算方式",
       "url": "/blog/2025-02-03-estate-and-ep3-scope-and-calculation",
       "date": "2025-02-03",
@@ -1895,6 +1870,31 @@
         {
           "name": "所得稅",
           "slug": "income-tax"
+        }
+      ]
+    },
+    {
+      "title": "台灣創業指南：會計師的角色與價值",
+      "url": "/blog/2025-02-03-taiwan-entrepreneurship-guide",
+      "date": "2025-02-03",
+      "summary": "文章簡介 踏上創業旅程的新手老闆，除了對未來的憧憬，往往也面臨著繁瑣事務的挑戰。公司財務與稅務相關的數字和法規，常讓創業者感到頭昏腦脹。本文將探討會計師對新創企業的重要價值，以及如何選擇適合的專業財稅顧問。",
+      "category": "accounting",
+      "category_name": "會計資訊",
+      "image": "/assets/images/blog/default.jpg",
+      "original_filename": "2025-02-03-台灣創業指南：會計師的角色與價值.docx",
+      "is_series": false,
+      "tags": [
+        {
+          "name": "創業資訊",
+          "slug": "startup"
+        },
+        {
+          "name": "稅務規劃",
+          "slug": "tax-planning"
+        },
+        {
+          "name": "企業稅務",
+          "slug": "corporate-tax"
         }
       ]
     },
@@ -7407,5 +7407,5 @@
       "count": 10
     }
   ],
-  "generated_time": "2025-10-20T02:44:43.384789"
+  "generated_time": "2025-10-21T02:27:37.797284"
 }
