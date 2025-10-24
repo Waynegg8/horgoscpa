@@ -1,10 +1,9 @@
-/* * 這是您【最終版】的 src/index.js 檔案
- * 它 100% 複製了您 VBA 中的核心業務邏輯
+/* * 修正版：Cloudflare Worker 兼容 D1 回傳格式
+ * 修正錯誤：Cannot read properties of undefined (reading 'forEach')
  */
 
 export default {
   async fetch(request, env, ctx) {
-    // env.DB 就是我們在 wrangler.jsonc 中綁定的 "DB"
     const url = new URL(request.url);
     const method = request.method;
 
@@ -16,8 +15,6 @@ export default {
       // ----------------------------------------------------
       // API 路由 (Router)
       // ----------------------------------------------------
-
-      // --- 讀取 API (與之前相同) ---
       if (url.pathname === "/api/employees" && method === "GET") {
         return await handleGetEmployees(env.DB);
       }
@@ -36,392 +33,264 @@ export default {
       if (url.pathname === "/api/timesheet-data" && method === "GET") {
         return await handleGetTimesheetData(env.DB, url.searchParams);
       }
-      
-      // --- 【全新】讀取 API：取得所有工時類型 ---
+
+      // 讀取工時類型
       if (url.pathname === "/api/work-types" && method === "GET") {
-        // 我們直接從 VBA 常數中複製
         const workTypes = [
-          "正常工時", "平日加班(1.34)", "平日加班(1.67)", "休息日加班(1.34)", 
+          "正常工時", "平日加班(1.34)", "平日加班(1.67)", "休息日加班(1.34)",
           "休息日加班(1.67)", "休息日加班(2.67)", "本月例假日加班", "本月例假日加班(2)",
           "本月國定假日加班", "本月國定假日加班(1.34)", "本月國定假日加班(1.67)"
         ];
-        return jsonResponse(workTypes.map(t => ({ type_name: t })));
+        return jsonResponse(workTypes);
       }
 
-      // --- 【全新】儲存 API (取代舊的) ---
-      // POST /api/save-timesheet
-      // (完美複製 VBA 的 Save_Timesheet_Data 邏輯)
+      // 寫入工時資料
       if (url.pathname === "/api/save-timesheet" && method === "POST") {
-        return await handleSaveTimesheet(request, env.DB);
+        const payload = await request.json();
+        return await handleSaveTimesheet(env.DB, payload);
       }
-      // ----------------------------------------------------
 
-      return jsonResponse({ error: "API Not Found" }, 404);
-
-    } catch (e) {
-      console.error(e);
-      return jsonResponse({ error: e.message }, 500);
+      return new Response("Not Found", { status: 404 });
+    } catch (err) {
+      return jsonResponse({ error: err.message }, 500);
     }
-  },
+  }
 };
 
 // =================================================================
-// 儲存邏輯 (VBA: Save_Timesheet_Data)
+// 工具：統一抓出 rows
 // =================================================================
-async function handleSaveTimesheet(request, db) {
-  const data = await request.json();
-  const { employeeName, year, month, workEntries, leaveEntries } = data;
-
-  if (!employeeName || !year || !month || !Array.isArray(workEntries) || !Array.isArray(leaveEntries)) {
-    return jsonResponse({ error: "傳入的資料格式不正確" }, 400);
-  }
-  
-  // 1. 讀取所有「加班費率規則」，我們將在後端計算加權工時
-  const { results: rateRules } = await db.prepare("SELECT * FROM overtime_rates").all();
-
-  // 2. 準備 SQL 交易 (Transaction)
-  const statements = [];
-
-  // 3. (VBA 邏輯) 刪除該員工該月的舊資料
-  statements.push(
-    db.prepare("DELETE FROM timesheets WHERE employee_name = ? AND work_year = ? AND work_month = ?")
-      .bind(employeeName, year, month)
-  );
-  
-  const insertStmt = db.prepare(
-    "INSERT INTO timesheets (employee_name, client_name, work_date, day_of_week, work_year, work_month, " +
-    "hours_normal, hours_ot_weekday_134, hours_ot_weekday_167, hours_ot_rest_134, hours_ot_rest_167, " +
-    "hours_ot_rest_267, hours_ot_offday_100, hours_ot_offday_200, hours_ot_holiday_100, hours_ot_holiday_134, " +
-    "hours_ot_holiday_167, leave_type, leave_hours, business_type, weighted_hours) " +
-    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-  );
-
-  // 4. (VBA 邏輯) 遍歷 1 到 31 天
-  const daysInMonth = new Date(year, month, 0).getDate();
-  for (let i = 1; i <= daysInMonth; i++) {
-    const workDate = new Date(Date.UTC(year, month - 1, i));
-    const workDateStr = workDate.toISOString().split('T')[0];
-    const dayOfWeekStr = "週" + ["日", "一", "二", "三", "四", "五", "六"][workDate.getUTCDay()];
-
-    // 5. (VBA 邏輯) 處理請假資料
-    // (前端傳來的格式: [{ leave_type: '特休', hours: [0,0,8,...] }, ...])
-    for (const entry of leaveEntries) {
-      const leaveHours = parseFloat(entry.hours[i - 1] || 0);
-      if (leaveHours > 0) {
-        statements.push(
-          insertStmt.bind(
-            employeeName, null, workDateStr, dayOfWeekStr, year, month,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // No work hours
-            entry.leave_type, // 請假類型
-            leaveHours,       // 請假時數
-            '請假',           // 業務類型
-            0                 // 請假沒有加權工時
-          )
-        );
-      }
-    }
-    
-    // 6. (VBA 邏輯) 處理工時資料
-    // (前端傳來的格式: [{ client: 'A', business: '記帳', work_type: '正常', hours: [8,8,0,...] }, ...])
-    for (const entry of workEntries) {
-      const hours = parseFloat(entry.hours[i - 1] || 0);
-      if (hours > 0) {
-        // 建立一個空的 SQL 紀錄
-        let record = {
-          employee_name: employeeName,
-          client_name: entry.client,
-          work_date: workDateStr,
-          day_of_week: dayOfWeekStr,
-          work_year: year,
-          work_month: month,
-          hours_normal: 0,
-          hours_ot_weekday_134: 0,
-          hours_ot_weekday_167: 0,
-          hours_ot_rest_134: 0,
-          hours_ot_rest_167: 0,
-          hours_ot_rest_267: 0,
-          hours_ot_offday_100: 0,
-          hours_ot_offday_200: 0,
-          hours_ot_holiday_100: 0,
-          hours_ot_holiday_134: 0,
-          hours_ot_holiday_167: 0,
-          leave_type: null,
-          leave_hours: 0,
-          business_type: entry.business,
-          weighted_hours: 0,
-        };
-        
-        // 7. (VBA 邏輯) 根據 "工時類型" 填入正確的欄位
-        // (VBA: Save_Timesheet_Data 中的 Select Case)
-        processWorkType(record, entry.work_type, hours);
-        
-        // 8. (VBA 邏輯) 計算加權工時
-        // (VBA: Get_Weighted_Hours)
-        calculateWeightedHours(record, rateRules);
-        
-        // 9. 將這筆處理好的紀錄加入交易
-        statements.push(
-          insertStmt.bind(
-            record.employee_name, record.client_name, record.work_date, record.day_of_week, 
-            record.work_year, record.work_month, record.hours_normal, record.hours_ot_weekday_134,
-            record.hours_ot_weekday_167, record.hours_ot_rest_134, record.hours_ot_rest_167,
-            record.hours_ot_rest_267, record.hours_ot_offday_100, record.hours_ot_offday_200,
-            record.hours_ot_holiday_100, record.hours_ot_holiday_134, record.hours_ot_holiday_167,
-            record.leave_type, record.leave_hours, record.business_type, record.weighted_hours
-          )
-        );
-      }
-    }
-  }
-
-  // 10. 執行 D1 的批次交易
-  await db.batch(statements);
-  return jsonResponse({ success: true, message: `已成功儲存 ${employeeName} ${year}-${month} 的資料` });
+function getRows(result) {
+  if (!result) return [];
+  if (Array.isArray(result)) return result;
+  if (result.results && Array.isArray(result.results)) return result.results;
+  return [];
 }
 
 // =================================================================
-// 輔助函數 (VBA 邏輯)
+// 讀取 API
 // =================================================================
-
-/**
- * 複製 VBA: Save_Timesheet_Data 中的 Select Case 邏輯
- * 根據工時類型，將時數填入 record 物件的正確欄位
- */
-function processWorkType(record, workType, hours) {
-  switch (workType) {
-    case "正常工時":
-      record.hours_normal = hours;
-      break;
-    case "平日加班(1.34)":
-      record.hours_ot_weekday_134 = hours;
-      break;
-    case "平日加班(1.67)":
-      record.hours_ot_weekday_167 = hours;
-      break;
-    case "休息日加班(1.34)":
-      record.hours_ot_rest_134 = hours;
-      break;
-    case "休息日加班(1.67)":
-      record.hours_ot_rest_167 = hours;
-      break;
-    case "休息日加班(2.67)":
-      record.hours_ot_rest_267 = hours;
-      break;
-    case "本月例假日加班":
-      record.hours_ot_offday_100 = hours;
-      break;
-    case "本月例假日加班(2)":
-      record.hours_ot_offday_200 = hours;
-      break;
-    case "本月國定假日加班":
-      record.hours_ot_holiday_100 = hours;
-      break;
-    case "本月國定假日加班(1.34)":
-      record.hours_ot_holiday_134 = hours;
-      break;
-    case "本月國定假日加班(1.67)":
-      record.hours_ot_holiday_167 = hours;
-      break;
-  }
-}
-
-/**
- * 複製 VBA: Get_Weighted_Hours 邏輯
- * 根據 D1 中的費率規則，計算加權工時
- */
-function calculateWeightedHours(record, rateRules) {
-  let totalWeighted = 0;
-  
-  // 正常工時
-  totalWeighted += record.hours_normal; // 權重為 1
-  
-  // 平日加班 (合併 1.34 和 1.67)
-  const weekdayHours = record.hours_ot_weekday_134 + record.hours_ot_weekday_167;
-  totalWeighted += getWeightedSum('平日加班', weekdayHours, rateRules);
-
-  // 休息日加班 (合併 1.34, 1.67, 2.67)
-  const restDayHours = record.hours_ot_rest_134 + record.hours_ot_rest_167 + record.hours_ot_rest_267;
-  totalWeighted += getWeightedSum('休息日加班', restDayHours, rateRules);
-
-  // 國定假日加班 (合併 1, 1.34, 1.67)
-  const holidayHours = record.hours_ot_holiday_100 + record.hours_ot_holiday_134 + record.hours_ot_holiday_167;
-  totalWeighted += getWeightedSum('國定假日加班', holidayHours, rateRules);
-  
-  // 例假日加班 (合併 1, 2)
-  const offDayHours = record.hours_ot_offday_100 + record.hours_ot_offday_200;
-  totalWeighted += getWeightedSum('例假日加班', offDayHours, rateRules);
-
-  record.weighted_hours = totalWeighted;
-}
-
-/**
- * 複製 VBA: Get_Weighted_Hours 內部的迴圈邏輯
- * 根據單一加班類型 (如 '平日加班') 及其總時數，計算加權後的時數
- */
-function getWeightedSum(rateType, totalHours, allRateRules) {
-  if (totalHours <= 0) return 0;
-  
-  let weightedTotal = 0;
-  let hoursRemaining = totalHours;
-  
-  // 1. 篩選出此類型的規則，並排序
-  const rules = allRateRules
-    .filter(r => r.rate_type === rateType)
-    .sort((a, b) => a.hour_start - b.hour_start);
-
-  // 2. 遍歷費率規則 (VBA: For Each r In ratesTbl.ListRows)
-  for (const rule of rules) {
-    if (hoursRemaining <= 0) break;
-    
-    // (VBA: hoursInTier = Application.WorksheetFunction.Min(hoursToCalculate, endTier) - startTier)
-    // 我們的邏輯稍有不同：計算此級距 "能處理" 的時數
-    const tierCapacity = rule.hour_end - rule.hour_start;
-    const hoursInThisTier = Math.min(hoursRemaining, tierCapacity);
-    
-    if (hoursInThisTier > 0) {
-      weightedTotal += hoursInThisTier * rule.rate_multiplier;
-      hoursRemaining -= hoursInThisTier;
-    }
-  }
-  
-  // 如果遍歷完規則後還有剩餘時數 (例如 超過 12 小時)，
-  // 則使用最後一個級距的費率
-  if (hoursRemaining > 0 && rules.length > 0) {
-    const lastRule = rules[rules.length - 1];
-    weightedTotal += hoursRemaining * lastRule.rate_multiplier;
-  }
-  
-  return weightedTotal;
-}
-
-// =================================================================
-// 讀取 API (與之前相同)
-// =================================================================
-
 async function handleGetEmployees(db) {
-  const { results } = await db.prepare("SELECT name, hire_date FROM employees ORDER BY name").all();
-  return jsonResponse(results);
+  const res = await db.prepare("SELECT name, hire_date FROM employees ORDER BY name").all();
+  const rows = getRows(res);
+  return jsonResponse(rows);
 }
 
 async function handleGetClients(db, params) {
-  const employeeName = params.get('employee_name');
-  if (!employeeName) {
-    return jsonResponse({ error: "缺少 employee_name 參數" }, 400);
-  }
-  
-  const stmt = db.prepare("SELECT T1.client_name FROM client_assignments AS T1 " +
-                          "INNER JOIN clients AS T2 ON T1.client_name = T2.name " +
-                          "WHERE T1.employee_name = ? " +
-                          "ORDER BY T1.client_name");
-  const { results } = await stmt.bind(employeeName).all();
-  
-  const clientList = [{ client_name: "無指定客戶" }];
-  results.forEach(row => clientList.push(row));
-  
-  return jsonResponse(clientList);
+  const employee = params.get("employee");
+  if (!employee) return jsonResponse({ error: "Missing employee parameter" }, 400);
+  const res = await db.prepare(`
+    SELECT c.name
+    FROM clients c
+    JOIN client_assignments ca ON c.name = ca.client_name
+    WHERE ca.employee_name = ?
+    ORDER BY c.name
+  `).bind(employee).all();
+  const rows = getRows(res);
+  return jsonResponse(rows.map(r => r.name));
 }
 
 async function handleGetBusinessTypes(db) {
-  const { results } = await db.prepare("SELECT type_name FROM business_types ORDER BY type_name").all();
-  return jsonResponse(results);
+  const res = await db.prepare("SELECT type_name FROM business_types ORDER BY type_name").all();
+  const rows = getRows(res);
+  return jsonResponse(rows.map(r => r.type_name));
 }
 
 async function handleGetLeaveTypes(db) {
-  const { results } = await db.prepare("SELECT type_name FROM leave_types WHERE type_name != '喪假' ORDER BY type_name").all();
-  return jsonResponse(results);
+  const res = await db.prepare("SELECT type_name FROM leave_types ORDER BY type_name").all();
+  const rows = getRows(res);
+  return jsonResponse(rows.map(r => r.type_name));
 }
 
 async function handleGetHolidays(db, params) {
-  const year = params.get('year');
-  if (!year) {
-    return jsonResponse({ error: "缺少 year 參數" }, 400);
-  }
-  const { results } = await db.prepare("SELECT holiday_date FROM holidays WHERE holiday_date LIKE ?")
-                            .bind(year + '-%')
-                            .all();
-  // 前端只需要日期陣列
-  return jsonResponse(results.map(r => r.holiday_date));
+  const year = params.get("year");
+  if (!year) return jsonResponse({ error: "Missing year parameter" }, 400);
+  const res = await db.prepare("SELECT holiday_date FROM holidays WHERE holiday_date LIKE ? ORDER BY holiday_date")
+    .bind(`${year}-%`).all();
+  const rows = getRows(res);
+  return jsonResponse(rows.map(r => r.holiday_date));
 }
 
 async function handleGetTimesheetData(db, params) {
-  const employeeName = params.get('employee_name');
-  const year = params.get('year');
-  const month = params.get('month');
+  const employee = params.get("employee");
+  const year = params.get("year");
+  const month = params.get("month");
+  if (!employee || !year || !month) return jsonResponse({ error: "Missing parameters" }, 400);
 
-  if (!employeeName || !year || !month) {
-    return jsonResponse({ error: "缺少 employee_name, year 或 month 參數" }, 400);
-  }
-  
-  const stmt = db.prepare("SELECT * FROM timesheets WHERE employee_name = ? AND work_year = ? AND work_month = ?");
-  const { results } = await stmt.bind(employeeName, parseInt(year), parseInt(month)).all();
-  
-  // 我們將資料庫的 "扁平" 紀錄，轉換為前端網格需要的 "彙整" 格式
-  // (VBA: Refresh_Timesheet_Display 的邏輯)
-  const { workEntries, leaveEntries } = reformatDataForFrontend(results);
-  
-  return jsonResponse({ workEntries, leaveEntries });
+  const res = await db.prepare(`
+    SELECT *
+    FROM timesheets
+    WHERE employee_name = ? AND work_year = ? AND work_month = ?
+    ORDER BY work_date
+  `).bind(employee, year, month).all();
+  const rows = getRows(res);
+  return jsonResponse(aggregateTimesheetData(rows));
 }
 
-/**
- * 輔助函數：將資料庫的扁平紀錄，轉換為前端網格需要的格式
- * (VBA: Refresh_Timesheet_Display 的迴圈邏輯)
- */
-function reformatDataForFrontend(dbResults) {
-  const workEntryMap = new Map();
-  const leaveEntryMap = new Map();
-  const daysInMonth = 31; // 我們始終回傳 31 天的陣列
+// =================================================================
+// 寫入 API
+// =================================================================
+async function handleSaveTimesheet(db, payload) {
+  const { employee, year, month, workEntries = [], leaveEntries = [] } = payload;
 
-  for (const row of dbResults) {
-    const date = new Date(row.work_date + 'T00:00:00Z'); // 使用 UTC
-    const dayIndex = date.getUTCDate() - 1; // 1號 -> 索引 0
+  try {
+    await db.prepare(`DELETE FROM timesheets WHERE employee_name = ? AND work_year = ? AND work_month = ?`)
+      .bind(employee, year, month).run();
 
-    if (row.leave_hours > 0 && row.leave_type) {
-      // 處理請假
-      const leaveType = row.leave_type;
-      if (!leaveEntryMap.has(leaveType)) {
-        leaveEntryMap.set(leaveType, {
-          leave_type: leaveType,
-          hours: Array(daysInMonth).fill(0),
-        });
+    for (const entry of workEntries) {
+      const { clientName, businessType, workType } = entry;
+      for (const day in entry.hours) {
+        const hours = entry.hours[day];
+        if (hours > 0) {
+          const workDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const dayOfWeek = new Date(workDate).toLocaleString('zh-TW', { weekday: 'long' });
+          const weightedHours = await calculateWeightedHours(db, workType, hours);
+
+          let col = {
+            hours_normal: 0, hours_ot_weekday_134: 0, hours_ot_weekday_167: 0,
+            hours_ot_rest_134: 0, hours_ot_rest_167: 0, hours_ot_rest_267: 0,
+            hours_ot_offday_100: 0, hours_ot_offday_200: 0,
+            hours_ot_holiday_100: 0, hours_ot_holiday_134: 0, hours_ot_holiday_167: 0
+          };
+
+          const match = {
+            "正常工時": "hours_normal",
+            "平日加班(1.34)": "hours_ot_weekday_134",
+            "平日加班(1.67)": "hours_ot_weekday_167",
+            "休息日加班(1.34)": "hours_ot_rest_134",
+            "休息日加班(1.67)": "hours_ot_rest_167",
+            "休息日加班(2.67)": "hours_ot_rest_267",
+            "本月例假日加班": "hours_ot_offday_100",
+            "本月例假日加班(2)": "hours_ot_offday_200",
+            "本月國定假日加班": "hours_ot_holiday_100",
+            "本月國定假日加班(1.34)": "hours_ot_holiday_134",
+            "本月國定假日加班(1.67)": "hours_ot_holiday_167",
+          };
+          if (match[workType]) col[match[workType]] = hours;
+
+          await db.prepare(`
+            INSERT INTO timesheets (
+              employee_name, client_name, work_date, day_of_week, work_year, work_month,
+              hours_normal, hours_ot_weekday_134, hours_ot_weekday_167,
+              hours_ot_rest_134, hours_ot_rest_167, hours_ot_rest_267,
+              hours_ot_offday_100, hours_ot_offday_200,
+              hours_ot_holiday_100, hours_ot_holiday_134, hours_ot_holiday_167,
+              weighted_hours, business_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            employee, clientName, workDate, dayOfWeek, year, month,
+            col.hours_normal, col.hours_ot_weekday_134, col.hours_ot_weekday_167,
+            col.hours_ot_rest_134, col.hours_ot_rest_167, col.hours_ot_rest_267,
+            col.hours_ot_offday_100, col.hours_ot_offday_200,
+            col.hours_ot_holiday_100, col.hours_ot_holiday_134, col.hours_ot_holiday_167,
+            weightedHours, businessType
+          ).run();
+        }
       }
-      leaveEntryMap.get(leaveType).hours[dayIndex] = row.leave_hours;
+    }
 
-    } else if (row.client_name) {
-      // 處理工時
-      // (VBA: clientKey = clientName & "|" & businessType & "|" & otType)
+    for (const entry of leaveEntries) {
+      const { leaveType, hours } = entry;
+      for (const day in hours) {
+        const h = hours[day];
+        if (h > 0) {
+          const workDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const dayOfWeek = new Date(workDate).toLocaleString('zh-TW', { weekday: 'long' });
+          await db.prepare(`
+            INSERT INTO timesheets (
+              employee_name, work_date, day_of_week, work_year, work_month,
+              leave_type, leave_hours
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).bind(employee, workDate, dayOfWeek, year, month, leaveType, h).run();
+        }
+      }
+    }
+
+    return jsonResponse({ success: true });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+// =================================================================
+// 加權小時計算
+// =================================================================
+async function calculateWeightedHours(db, workType, hours) {
+  const rateType = getRateTypeFromWorkType(workType);
+  if (!rateType) return hours;
+
+  const res = await db.prepare(`
+    SELECT hour_start, hour_end, rate_multiplier
+    FROM overtime_rates
+    WHERE rate_type = ?
+    ORDER BY hour_start
+  `).bind(rateType).all();
+
+  const rates = getRows(res);
+  let weighted = 0;
+  let remaining = hours;
+
+  for (const r of rates) {
+    const tierHours = Math.min(remaining, r.hour_end - r.hour_start);
+    if (tierHours > 0) {
+      weighted += tierHours * r.rate_multiplier;
+      remaining -= tierHours;
+    }
+    if (remaining <= 0) break;
+  }
+
+  if (remaining > 0 && rates.length > 0) {
+    weighted += remaining * rates[rates.length - 1].rate_multiplier;
+  }
+  return weighted;
+}
+
+function getRateTypeFromWorkType(wt) {
+  if (wt.includes("平日加班")) return "平日加班";
+  if (wt.includes("休息日加班")) return "休息日加班";
+  if (wt.includes("例假日加班")) return "例假日加班";
+  if (wt.includes("國定假日加班")) return "國定假日加班";
+  return null;
+}
+
+// =================================================================
+// 聚合 Timesheet Data
+// =================================================================
+function aggregateTimesheetData(rows = []) {
+  const workMap = new Map();
+  const leaveMap = new Map();
+
+  for (const row of rows) {
+    if (row.leave_hours > 0) {
+      const key = row.leave_type;
+      if (!leaveMap.has(key)) {
+        leaveMap.set(key, { leaveType: key, hours: {} });
+      }
+      const d = new Date(row.work_date).getDate();
+      leaveMap.get(key).hours[d] = row.leave_hours;
+    } else {
+      const clientName = row.client_name || '';
+      const businessType = row.business_type || '';
       const workType = getWorkTypeFromRow(row);
-      const key = `${row.client_name}|${row.business_type}|${workType}`;
-      
-      if (!workEntryMap.has(key)) {
-        workEntryMap.set(key, {
-          client: row.client_name,
-          business: row.business_type,
-          work_type: workType,
-          hours: Array(daysInMonth).fill(0),
-        });
+      const key = `${clientName}|${businessType}|${workType}`;
+      if (!workMap.has(key)) {
+        workMap.set(key, { clientName, businessType, workType, hours: {} });
       }
-      
-      // 找出該行是哪個時數
-      const hours = 
-        row.hours_normal || row.hours_ot_weekday_134 || row.hours_ot_weekday_167 ||
+      const d = new Date(row.work_date).getDate();
+      const h = row.hours_normal || row.hours_ot_weekday_134 || row.hours_ot_weekday_167 ||
         row.hours_ot_rest_134 || row.hours_ot_rest_167 || row.hours_ot_rest_267 ||
-        row.hours_ot_offday_100 || row.hours_ot_offday_200 || row.hours_ot_holiday_100 ||
-        row.hours_ot_holiday_134 || row.hours_ot_holiday_167 || 0;
-        
-      workEntryMap.get(key).hours[dayIndex] = hours;
+        row.hours_ot_offday_100 || row.hours_ot_offday_200 ||
+        row.hours_ot_holiday_100 || row.hours_ot_holiday_134 || row.hours_ot_holiday_167 || 0;
+      workMap.get(key).hours[d] = h;
     }
   }
 
   return {
-    workEntries: Array.from(workEntryMap.values()),
-    leaveEntries: Array.from(leaveEntryMap.values()),
+    workEntries: Array.from(workMap.values()),
+    leaveEntries: Array.from(leaveMap.values()),
   };
 }
 
-/**
- * 輔助函數：從資料庫紀錄反向推導 "工時類型"
- * (VBA: GetLoadedOtType 的邏輯)
- */
 function getWorkTypeFromRow(row) {
   if (row.hours_normal > 0) return "正常工時";
   if (row.hours_ot_weekday_134 > 0) return "平日加班(1.34)";
@@ -434,30 +303,28 @@ function getWorkTypeFromRow(row) {
   if (row.hours_ot_holiday_100 > 0) return "本月國定假日加班";
   if (row.hours_ot_holiday_134 > 0) return "本月國定假日加班(1.34)";
   if (row.hours_ot_holiday_167 > 0) return "本月國定假日加班(1.67)";
-  return "正常工時"; // 預設
+  return "正常工時";
 }
 
 // =================================================================
-// CORS 輔助函數
+// CORS & JSON
 // =================================================================
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization", // 允許 Authorization
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-function handleOptions(request) {
+function handleOptions() {
   return new Response(null, { headers: corsHeaders });
 }
 
 function jsonResponse(data, status = 200) {
-  const init = {
-    status: status,
+  return new Response(JSON.stringify(data), {
+    status,
     headers: {
       "content-type": "application/json;charset=UTF-8",
       ...corsHeaders,
     },
-  };
-  return new Response(JSON.stringify(data), init);
+  });
 }
