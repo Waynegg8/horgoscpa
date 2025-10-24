@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工時回報系統 | 霍爾果斯會計師事務所</title>
+  
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <link rel="stylesheet" href="/assets/css/common.css" />
+  <link rel="stylesheet" href="/assets/css/navbar.css" />
+  <link rel="stylesheet" href="/assets/css/footer.css" />
+  <link rel="stylesheet" href="/assets/css/mobile-navbar.css" />
+  
+  <style>
+    body {
+      background-color: #f4f7f6;
+    }
+    .main-content {
+      padding: 60px 0;
+      min-height: 70vh;
+    }
+    .container-full {
+      width: 98%;
+      max-width: 1800px;
+      margin: 0 auto;
+      padding: 0 10px;
+    }
+    .control-panel {
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: flex-end;
+    }
+    .control-panel .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .control-panel label {
+      font-weight: 600;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+    .control-panel select,
+    .control-panel input {
+      padding: 8px 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      min-width: 120px;
+    }
+    .control-panel input[type="number"] {
+      width: 80px;
+    }
+    .btn {
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background-color: #337ab7;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn-secondary {
+      background-color: #6c757d;
+    }
+    .btn-success {
+      background-color: #28a745;
+      margin-left: auto; /* 將儲存按鈕推到最右邊 */
+    }
+    .btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* 工時表網格 */
+    .timesheet-grid {
+      width: 100%;
+      overflow-x: auto; /* 允許水平滾動 */
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    #timesheet-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 2500px; /* 確保表格足夠寬以顯示31天 */
+    }
+    #timesheet-table th,
+    #timesheet-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+      min-width: 60px; /* 每日欄位寬度 */
+      height: 40px;
+    }
+    
+    /* 表頭固定 */
+    #timesheet-table thead th {
+      position: sticky;
+      top: 0;
+      background-color: #f8f9fa;
+      z-index: 10;
+    }
+    /* 左側欄位固定 */
+    #timesheet-table th:nth-child(1), td:nth-child(1),
+    #timesheet-table th:nth-child(2), td:nth-child(2),
+    #timesheet-table th:nth-child(3), td:nth-child(3) {
+      position: sticky;
+      left: 0;
+      background-color: #fdfdfd;
+      z-index: 5;
+    }
+    #timesheet-table th:nth-child(1), td:nth-child(1) { left: 0; min-width: 180px; }
+    #timesheet-table th:nth-child(2), td:nth-child(2) { left: 180px; min-width: 120px; }
+    #timesheet-table th:nth-child(3), td:nth-child(3) { left: 300px; min-width: 150px; }
+    
+    /* 每日表頭 */
+    .day-header {
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+    .weekday-header {
+      font-size: 0.8rem;
+      color: #555;
+    }
+    .day-holiday {
+      background-color: #ffe8e8; /* 假日 (紅) */
+    }
+    .day-weekend {
+      background-color: #e6f3ff; /* 休息日 (藍) */
+    }
+    
+    /* 內容儲存格 */
+    #timesheet-table tbody select {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 5px;
+    }
+    #timesheet-table tbody input[type="number"] {
+      width: 100%;
+      border: 1px solid #eee;
+      padding: 5px;
+      box-sizing: border-box;
+      text-align: center;
+      -moz-appearance: textfield; /* 隱藏 number 的箭頭 */
+    }
+    #timesheet-table tbody input[type="number"]::-webkit-outer-spin-button,
+    #timesheet-table tbody input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+    }
+
+    /* 合計列 */
+    .summary-row td {
+      background-color: #f3f3f3;
+      font-weight: bold;
+    }
+    .section-divider-row td {
+      background-color: #337ab7;
+      color: white;
+      font-weight: bold;
+      text-align: left;
+      padding-left: 20px;
+    }
+    
+    #loading-spinner {
+      text-align: center;
+      padding: 40px;
+      font-size: 1.2rem;
+      display: none; /* 預設隱藏 */
+    }
+    #status-message {
+      margin-left: 20px;
+      font-weight: bold;
+    }
+    
+  </style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-container">
+    <div class="logo">
+  <a href="/index.html">
+    <div class="logo-container">
+      <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
+      <div class="logo-sub">HorgosCPA</div>
+    </div>
+  </a>
+</div>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-toggle-label"><span></span></label>
+    <ul class="nav-menu">
+      <li><a href="/services.html">專業服務</a></li>
+      <li><a href="/team.html">專業團隊</a></li>
+      <li><a href="/blog.html">專欄文章</a></li>
+      <li><a href="/faq.html">常見問題</a></li>
+      <li><a href="/video.html">影音專區</a></li>
+      <li><a href="/contact.html">聯繫我們</a></li>
+      <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
+    </ul>
+  </div>
+</nav>
+<div class="mobile-navbar" style="display: none;">
+  <div class="mobile-nav-container">
+    <div class="mobile-menu-btn" id="mobileMenuBtn">
+      <span class="material-symbols-rounded">menu</span>
+    </div>
+   <div class="logo">
+  <a href="/index.html">
+    <div class="logo-container">
+      <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
+      <div class="logo-sub">HorgosCPA</div>
+    </div>
+  </a>
+</div>
+    <div class="mobile-nav-spacer"></div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <ul class="mobile-menu-links">
+      <li><a href="/services.html" class="mobile-nav-link">專業服務</a></li>
+      <li><a href="/team.html" class="mobile-nav-link">專業團隊</a></li>
+      <li><a href="/blog.html" class="mobile-nav-link">專欄文章</a></li>
+      <li><a href="/faq.html" class="mobile-nav-link">常見問題</a></li>
+      <li><a href="/video.html" class="mobile-nav-link">影音專區</a></li>
+      <li><a href="/contact.html" class="mobile-nav-link">聯繫我們</a></li>
+      <li><a href="/booking.html" class="mobile-consult-btn">免費諮詢</a></li>
+    </ul>
+  </div>
+</div>
+
+<main class="main-content">
+  <div class="container-full">
+    
+    <div class="control-panel">
+      <div class="form-group">
+        <label for="select-employee">選擇員工</label>
+        <select id="select-employee">
+          <option value="">載入中...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="input-year">年份</label>
+        <input type="number" id="input-year" value="2025">
+      </div>
+      <div class="form-group">
+        <label for="select-month">月份</label>
+        <select id="select-month">
+          <option value="1">1月</option>
+          <option value="2">2月</option>
+          <option value="3">3月</option>
+          <option value="4">4月</option>
+          <option value="5">5月</option>
+          <option value="6">6月</option>
+          <option value="7">7月</option>
+          <option value="8">8月</option>
+          <option value="9">9月</option>
+          <option value="10">10月</option>
+          <option value="11">11月</option>
+          <option value="12">12月</option>
+        </select>
+      </div>
+      <button id="btn-load-data" class="btn">載入資料</button>
+      
+      <button id="btn-add-work-row" class="btn btn-secondary">增加工時記錄</button>
+      <button id="btn-add-leave-row" class="btn btn-secondary">增加請假記錄</button>
+      
+      <button id="btn-save-data" class="btn btn-success">儲存本月變更</button>
+      <span id="status-message"></span>
+    </div>
+    
+    <div id="loading-spinner">
+      <p>正在載入資料，請稍候...</p>
+    </div>
+
+    <div class="timesheet-grid">
+      <table id="timesheet-table">
+        <thead id="grid-header">
+          </thead>
+        <tbody id="grid-body-work">
+          </tbody>
+        <tbody>
+          <tr class="section-divider-row"><td colspan="34">請假紀錄</td></tr>
+        </tbody>
+        <tbody id="grid-body-leave">
+          </tbody>
+        <tbody>
+          <tr class="section-divider-row"><td colspan="34">工時合計</td></tr>
+        </tbody>
+        <tbody id="grid-body-summary">
+          </tbody>
+      </table>
+    </div>
+
+  </div>
+</main>
+
+
+<footer class="site-footer">
+   <div class="footer-container">
+     <div class="footer-content">
+       <div class="footer-logo">
+         <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="footer-logo-img">
+         <div class="logo-sub" style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 15px;">HorgosCPA</div>
+         <p>專業、誠信、創新的財稅顧問夥伴。</p>
+       </div>
+       <div class="footer-contact">
+         <h3>聯絡我們</h3>
+         <ul class="contact-info">
+           <li><i class="icon-contact"><span class="material-symbols-rounded">location_on</span></i><span>台中市西區建國路21號3樓之1</span></li>
+           <li><i class="icon-contact"><span class="material-symbols-rounded">call</span></i><a href="tel:+886422205606">04-2220-5606</a></li>
+         </ul>
+       </div>
+     </div>
+     <div class="footer-bottom">
+       <div class="footer-text"><p>&copy; 2025 霍爾果斯會計師事務所</p></div>
+     </div>
+   </div>
+   <div class="back-to-top"><span class="material-symbols-rounded">arrow_upward</span></div>
+</footer>
+
+<script src="/assets/js/mobile-navbar.js" defer></script>
+<script src="/assets/js/navbar.js"></script>
+<script>
+  // 沿用您首頁的「返回頂部」按鈕功能
+  document.addEventListener('DOMContentLoaded', function() {
+    const backToTopButton = document.querySelector('.back-to-top');
+    if(backToTopButton) {
+      backToTopButton.classList.remove('visible');
+      window.addEventListener('scroll', function() {
+        if (window.pageYOffset > 300) {
+          backToTopButton.classList.add('visible');
+        } else {
+          backToTopButton.classList.remove('visible');
+        }
+      });
+      backToTopButton.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+  });
+</script>
+
+<script>
+  // ！！！ 這是您在第 4 階段部署的 Worker API 位址 ！！！
+  // ！！！ 請務必替換成您自己的 URL ！！！
+  const WORKER_URL = 'https://timesheet-api.hergscpa.workers.dev'; 
+
+  // --- API 輔助工具 ---
+  const api = {
+    // 取得基礎資料
+    getEmployees: () => fetch(`${WORKER_URL}/api/employees`).then(res => res.json()),
+    getClients: (employee) => fetch(`${WORKER_URL}/api/clients?employee_name=${encodeURIComponent(employee)}`).then(res => res.json()),
+    getBusinessTypes: () => fetch(`${WORKER_URL}/api/business-types`).then(res => res.json()),
+    getLeaveTypes: () => fetch(`${WORKER_URL}/api/leave-types`).then(res => res.json()),
+    getWorkTypes: () => fetch(`${WORKER_URL}/api/work-types`).then(res => res.json()),
+    // 取得動態資料
+    getHolidays: (year) => fetch(`${WORKER_URL}/api/holidays?year=${year}`).then(res => res.json()),
+    getTimesheetData: (employee, year, month) => fetch(`${WORKER_URL}/api/timesheet-data?employee_name=${encodeURIComponent(employee)}&year=${year}&month=${month}`).then(res => res.json()),
+    // 儲存資料
+    saveTimesheetData: (payload) => fetch(`${WORKER_URL}/api/save-timesheet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(res => res.json())
+  };
+
+  // --- 全域狀態 (用來快取下拉選單) ---
+  const globalStore = {
+    employees: [],
+    clients: [],
+    businessTypes: [],
+    leaveTypes: [],
+    workTypes: [],
+    holidays: new Set(),
+    daysInMonth: 31
+  };
+
+  // --- DOM 元素 ---
+  const el = {
+    employeeSelect: document.getElementById('select-employee'),
+    yearInput: document.getElementById('input-year'),
+    monthSelect: document.getElementById('select-month'),
+    loadButton: document.getElementById('btn-load-data'),
+    addWorkRowButton: document.getElementById('btn-add-work-row'),
+    addLeaveRowButton: document.getElementById('btn-add-leave-row'),
+    saveButton: document.getElementById('btn-save-data'),
+    gridHeader: document.getElementById('grid-header'),
+    gridBodyWork: document.getElementById('grid-body-work'),
+    gridBodyLeave: document.getElementById('grid-body-leave'),
+    gridBodySummary: document.getElementById('grid-body-summary'),
+    loadingSpinner: document.getElementById('loading-spinner'),
+    statusMessage: document.getElementById('status-message')
+  };
+
+  /**
+   * 頁面載入時的初始化函數
+   */
+  async function initializePage() {
+    try {
+      // 1. 設定預設年月 (例如，設為本月)
+      const today = new Date();
+      el.yearInput.value = today.getFullYear();
+      el.monthSelect.value = today.getMonth() + 1;
+
+      // 2. 載入所有基礎下拉選單資料
+      const [employees, businessTypes, leaveTypes, workTypes] = await Promise.all([
+        api.getEmployees(),
+        api.getBusinessTypes(),
+        api.getLeaveTypes(),
+        api.getWorkTypes()
+      ]);
+
+      // 3. 儲存到全域
+      globalStore.employees = employees;
+      globalStore.businessTypes = businessTypes;
+      globalStore.leaveTypes = leaveTypes;
+      globalStore.workTypes = workTypes;
+
+      // 4. 填入員工下拉選單
+      el.employeeSelect.innerHTML = '<option value="">-- 選擇員工 --</option>';
+      employees.forEach(emp => {
+        el.employeeSelect.innerHTML += `<option value="${emp.name}">${emp.name}</option>`;
+      });
+
+      // 5. 啟用按鈕
+      el.loadButton.disabled = false;
+      el.addWorkRowButton.disabled = false;
+      el.addLeaveRowButton.disabled = false;
+      el.saveButton.disabled = false;
+
+    } catch (err) {
+      showStatus(`初始化失敗: ${err.message}`, true);
+    }
+  }
+
+  /**
+   * 當員工下拉選單變更時
+   */
+  async function handleEmployeeChange() {
+    const employeeName = el.employeeSelect.value;
+    if (!employeeName) {
+      globalStore.clients = [];
+      return;
+    }
+    
+    try {
+      // 載入 "該員工" 的客戶清單
+      globalStore.clients = await api.getClients(employeeName);
+    } catch (err) {
+      showStatus(`載入客戶清單失敗: ${err.message}`, true);
+    }
+  }
+
+  /**
+   * 點擊「載入資料」按鈕
+   */
+  async function handleLoadData() {
+    const employee = el.employeeSelect.value;
+    const year = el.yearInput.value;
+    const month = el.monthSelect.value;
+
+    if (!employee || !year || !month) {
+      showStatus("請先選擇員工、年份和月份。", true);
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // 1. 取得該年假日 和 該員工該月工時
+      const [holidays, timesheetData] = await Promise.all([
+        api.getHolidays(year),
+        api.getTimesheetData(employee, year, month)
+      ]);
+      globalStore.holidays = new Set(holidays);
+      
+      // 2. 繪製表頭 (包含週幾)
+      renderGridHeader(year, month);
+
+      // 3. 繪製工時表身
+      renderGridBody(timesheetData.workEntries, timesheetData.leaveEntries);
+      
+      showStatus("資料載入成功！", false);
+
+    } catch (err) {
+      showStatus(`載入資料時發生錯誤: ${err.message}`, true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /**
+   * 繪製網格表頭 (1-31天 + 週幾)
+   */
+  function renderGridHeader(year, month) {
+    globalStore.daysInMonth = new Date(year, month, 0).getDate();
+    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    
+    let headerHTML = '<tr>';
+    headerHTML += '<th style="left: 0;">客戶名稱</th>';
+    headerHTML += '<th style="left: 180px;">業務類型</th>';
+    headerHTML += '<th style="left: 300px;">工時類型</th>';
+    
+    for (let i = 1; i <= 31; i++) {
+      if (i <= globalStore.daysInMonth) {
+        const date = new Date(Date.UTC(year, month - 1, i));
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+        const weekday = date.getUTCDay(); // 0 = 週日, 6 = 週六
+        
+        // 檢查是否為假日或週末
+        let dayClass = '';
+        if (globalStore.holidays.has(dateStr)) {
+          dayClass = 'day-holiday'; // 國定假日 (紅)
+        } else if (weekday === 0 || weekday === 6) {
+          dayClass = 'day-weekend'; // 休息日 (藍)
+        }
+        
+        headerHTML += `<th class="${dayClass}">
+                         <div class="day-header">${i}</div>
+                         <div class="weekday-header">週${weekdays[weekday]}</div>
+                       </th>`;
+      } else {
+        // 超出月份的天數
+        headerHTML += `<th style="background-color: #eee;"></th>`;
+      }
+    }
+    headerHTML += '<th>月合計</th></tr>';
+    el.gridHeader.innerHTML = headerHTML;
+  }
+  
+  /**
+   * 繪製網格表身 (工時 + 請假 + 合計)
+   */
+  function renderGridBody(workEntries, leaveEntries) {
+    // 1. 清空
+    el.gridBodyWork.innerHTML = '';
+    el.gridBodyLeave.innerHTML = '';
+    el.gridBodySummary.innerHTML = '';
+    
+    // 2. 繪製工時列
+    workEntries.forEach(entry => addWorkRow(entry));
+    
+    // 3. 繪製請假列
+    leaveEntries.forEach(entry => addLeaveRow(entry));
+    
+    // 4. 繪製合計列
+    renderSummary();
+  }
+  
+  /**
+   * (輔助) 動態新增一列「工時」
+   */
+  function addWorkRow(entry = null) {
+    const tr = document.createElement('tr');
+    tr.className = 'work-row';
+    
+    // 產生 3 個下拉選單的 HTML
+    const clientOptions = globalStore.clients.map(c => 
+      `<option value="${c.client_name}" ${entry && entry.client === c.client_name ? 'selected' : ''}>${c.client_name}</option>`
+    ).join('');
+    
+    const businessOptions = globalStore.businessTypes.map(b => 
+      `<option value="${b.type_name}" ${entry && entry.business === b.type_name ? 'selected' : ''}>${b.type_name}</option>`
+    ).join('');
+    
+    const workTypeOptions = globalStore.workTypes.map(w => 
+      `<option value="${w.type_name}" ${entry && entry.work_type === w.type_name ? 'selected' : ''}>${w.type_name}</option>`
+    ).join('');
+    
+    let rowHTML = `
+      <td><select class="cell-client">${clientOptions}</select></td>
+      <td><select class="cell-business">${businessOptions}</select></td>
+      <td><select class="cell-work-type">${workTypeOptions}</select></td>
+    `;
+    
+    // 產生 31 個 input 欄位
+    let total = 0;
+    for (let i = 1; i <= 31; i++) {
+      let value = 0;
+      if (entry && i <= entry.hours.length) {
+        value = entry.hours[i - 1] || 0;
+      }
+      total += value;
+      
+      const disabled = (i > globalStore.daysInMonth) ? 'disabled' : '';
+      rowHTML += `<td><input type="number" class="cell-hour" min="0" max="24" step="0.1" value="${value}" ${disabled}></td>`;
+    }
+    
+    rowHTML += `<td class="cell-total">${total}</td>`;
+    tr.innerHTML = rowHTML;
+    el.gridBodyWork.appendChild(tr);
+  }
+  
+  /**
+   * (輔助) 動態新增一列「請假」
+   */
+  function addLeaveRow(entry = null) {
+    const tr = document.createElement('tr');
+    tr.className = 'leave-row';
+    
+    const leaveTypeOptions = globalStore.leaveTypes.map(l => 
+      `<option value="${l.type_name}" ${entry && entry.leave_type === l.type_name ? 'selected' : ''}>${l.type_name}</option>`
+    ).join('');
+
+    let rowHTML = `
+      <td colspan="2" style="background-color: #f3f3f3;"></td>
+      <td><select class="cell-leave-type">${leaveTypeOptions}</select></td>
+    `;
+    
+    let total = 0;
+    for (let i = 1; i <= 31; i++) {
+      let value = 0;
+      if (entry && i <= entry.hours.length) {
+        value = entry.hours[i - 1] || 0;
+      }
+      total += value;
+      
+      const disabled = (i > globalStore.daysInMonth) ? 'disabled' : '';
+      rowHTML += `<td><input type="number" class="cell-hour" min="0" max="24" step="0.1" value="${value}" ${disabled}></td>`;
+    }
+    
+    rowHTML += `<td class="cell-total">${total}</td>`;
+    tr.innerHTML = rowHTML;
+    el.gridBodyLeave.appendChild(tr);
+  }
+
+  /**
+   * (輔助) 繪製合計列
+   */
+  function renderSummary() {
+    let summaryHTML = `
+      <tr class="summary-row" id="summary-normal">
+        <td colspan="3" style="text-align: right;">工時合計 (正常)</td>
+      </tr>
+      <tr class="summary-row" id="summary-ot">
+        <td colspan="3" style="text-align: right;">工時合計 (加班)</td>
+      </tr>
+      <tr class="summary-row" id="summary-leave">
+        <td colspan="3" style="text-align: right;">請假時數合計</td>
+      </tr>
+      <tr class="summary-row" id="summary-total">
+        <td colspan="3" style="text-align: right; font-size: 1.2rem;">總時數</td>
+      </tr>
+    `;
+    el.gridBodySummary.innerHTML = summaryHTML;
+    
+    // 我們將在 "儲存" 時才真正計算合計，這裡只是顯示靜態標題
+    // (一個更進階的版本會在 input 變更時即時更新合計)
+  }
+
+  /**
+   * 點擊「儲存本月變更」按鈕
+   */
+  async function handleSaveData() {
+    const employeeName = el.employeeSelect.value;
+    const year = parseInt(el.yearInput.value);
+    const month = parseInt(el.monthSelect.value);
+
+    if (!employeeName) {
+      showStatus("請先選擇員工。", true);
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // 1. 讀取所有「工時列」
+      const workEntries = [];
+      el.gridBodyWork.querySelectorAll('.work-row').forEach(tr => {
+        const hours = [];
+        tr.querySelectorAll('.cell-hour').forEach(input => {
+          hours.push(parseFloat(input.value) || 0);
+        });
+        
+        workEntries.push({
+          client: tr.querySelector('.cell-client').value,
+          business: tr.querySelector('.cell-business').value,
+          work_type: tr.querySelector('.cell-work-type').value,
+          hours: hours.slice(0, globalStore.daysInMonth) // 只取當月的天數
+        });
+      });
+      
+      // 2. 讀取所有「請假列」
+      const leaveEntries = [];
+      el.gridBodyLeave.querySelectorAll('.leave-row').forEach(tr => {
+        const hours = [];
+        tr.querySelectorAll('.cell-hour').forEach(input => {
+          hours.push(parseFloat(input.value) || 0);
+        });
+        
+        leaveEntries.push({
+          leave_type: tr.querySelector('.cell-leave-type').value,
+          hours: hours.slice(0, globalStore.daysInMonth)
+        });
+      });
+
+      // 3. 組合 API 需要的 JSON Payload
+      const payload = {
+        employeeName,
+        year,
+        month,
+        workEntries,
+        leaveEntries
+      };
+      
+      // 4. 發送 API 請求
+      const result = await api.saveTimesheetData(payload);
+      
+      if (result.success) {
+        showStatus("儲存成功！", false);
+        // (可選) 重新載入一次資料，確保資料同步
+        await handleLoadData();
+      } else {
+        throw new Error(result.error || "儲存失敗");
+      }
+      
+    } catch (err) {
+      showStatus(`儲存時發生錯誤: ${err.message}`, true);
+    } finally {
+      setLoading(false);
+    }
+  }
+  
+
+  /**
+   * 輔助函數：顯示/隱藏載入中
+   */
+  function setLoading(isLoading) {
+    if (isLoading) {
+      el.loadingSpinner.style.display = 'block';
+      el.gridHeader.innerHTML = '';
+      el.gridBodyWork.innerHTML = '';
+      el.gridBodyLeave.innerHTML = '';
+      el.gridBodySummary.innerHTML = '';
+      showStatus(""); // 清除狀態
+    } else {
+      el.loadingSpinner.style.display = 'none';
+    }
+    
+    el.loadButton.disabled = isLoading;
+    el.saveButton.disabled = isLoading;
+    el.addWorkRowButton.disabled = isLoading;
+    el.addLeaveRowButton.disabled = isLoading;
+  }
+  
+  /**
+   * 輔助函數：顯示狀態訊息
+   */
+  function showStatus(message, isError = false) {
+    el.statusMessage.textContent = message;
+    el.statusMessage.style.color = isError ? 'red' : 'green';
+  }
+
+  // --- 綁定所有事件監聽 ---
+  document.addEventListener('DOMContentLoaded', initializePage);
+  el.employeeSelect.addEventListener('change', handleEmployeeChange);
+  el.loadButton.addEventListener('click', handleLoadData);
+  el.addWorkRowButton.addEventListener('click', () => addWorkRow(null));
+  el.addLeaveRowButton.addEventListener('click', () => addLeaveRow(null));
+  el.saveButton.addEventListener('click', handleSaveData);
+
+</script>
+
+</body>
+</html>

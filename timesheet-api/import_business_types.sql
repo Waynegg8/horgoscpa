@@ -1,0 +1,13 @@
+INSERT INTO clients (name) VALUES ('營業稅');
+INSERT INTO clients (name) VALUES ('營所稅');
+INSERT INTO clients (name) VALUES ('工商登記');
+INSERT INTO clients (name) VALUES ('扣繳');
+INSERT INTO clients (name) VALUES ('暫繳');
+INSERT INTO clients (name) VALUES ('記帳');
+INSERT INTO clients (name) VALUES ('查帳');
+INSERT INTO clients (name) VALUES ('財簽');
+INSERT INTO clients (name) VALUES ('稅簽');
+INSERT INTO clients (name) VALUES ('內部會議');
+INSERT INTO clients (name) VALUES ('內部行政-輸入客戶明細');
+INSERT INTO clients (name) VALUES ('內部行政');
+INSERT INTO clients (name) VALUES ('教育訓練');
