@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>資源中心 | 霍爾果斯會計師事務所</title>
+  <link rel="stylesheet" href="/assets/css/internal-system.css" />
+</head>
+<body>
+  <nav class="internal-navbar">
+    <div class="internal-nav-container">
+      <a href="/index.html" class="internal-nav-brand">
+        <img src="/assets/images/logo-white.png" alt="霍爾果斯" />
+        <span>資源中心</span>
+      </a>
+      <button class="internal-mobile-toggle" id="mobileToggle">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="internal-nav-links" id="navLinks">
+        <a href="/blog.html" class="internal-nav-link">專欄</a>
+        <a href="/resources.html" class="internal-nav-link active">資源中心</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="internal-main">
+    <div class="internal-container">
+      <div class="report-filters" style="background:#fff; padding:20px; border-radius:8px; margin-bottom:16px;">
+        <div class="filter-row" style="display:flex; gap:12px; flex-wrap:wrap;">
+          <div class="filter-group">
+            <label>關鍵字</label>
+            <input id="resSearch" type="text" placeholder="搜尋資源..." />
+          </div>
+          <div class="filter-group">
+            <label>類型</label>
+            <select id="resType">
+              <option value="">全部</option>
+              <option value="guide">指南</option>
+              <option value="template">範本</option>
+              <option value="checklist">檢核表</option>
+              <option value="law-update">法規更新</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="resourcesList"></div>
+    </div>
+  </main>
+
+  <footer class="internal-footer">
+    &copy; 2025 霍爾果斯會計師事務所
+  </footer>
+
+  <script src="/assets/js/resources.js"></script>
+</body>
+</html>
+
+
