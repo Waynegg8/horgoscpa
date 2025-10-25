@@ -71,6 +71,15 @@ import {
   updateChecklistItem
 } from './projects.js';
 
+import {
+  getPosts,
+  createPost,
+  updatePost,
+  getPublicPosts,
+  getPublicPost,
+  getPublicResources
+} from './cms.js';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -440,6 +449,38 @@ export default {
       if (url.pathname.match(/^\/api\/checklist\/\d+$/) && method === "PUT") {
         const itemId = url.pathname.split("/")[3];
         return await updateChecklistItem(request, env, itemId);
+      }
+
+      // ========================================
+      // CMS - 文章管理 API (需認證)
+      // ========================================
+      
+      // 後台文章管理
+      if (url.pathname === "/api/posts" && method === "GET") {
+        return await getPosts(request, env);
+      }
+      
+      if (url.pathname === "/api/posts" && method === "POST") {
+        return await createPost(request, env);
+      }
+      
+      if (url.pathname.match(/^\/api\/posts\/\d+$/) && method === "PUT") {
+        const postId = url.pathname.split("/")[3];
+        return await updatePost(request, env, postId);
+      }
+      
+      // 前台公開 API（無需認證）
+      if (url.pathname === "/api/public/posts" && method === "GET") {
+        return await getPublicPosts(request, env);
+      }
+      
+      if (url.pathname.match(/^\/api\/public\/posts\/[^\/]+$/) && method === "GET") {
+        const slug = decodeURIComponent(url.pathname.split("/")[4]);
+        return await getPublicPost(request, env, slug);
+      }
+      
+      if (url.pathname === "/api/public/resources" && method === "GET") {
+        return await getPublicResources(request, env);
       }
 
       // ========================================
