@@ -634,28 +634,24 @@
     &copy; 2024 霍爾果斯會計師事務所 工時管理系統
   </footer>
 
-  <!-- 主腳本 -->
+  <!-- 導航欄腳本 -->
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const backToTopButton = document.querySelector('.back-to-top');
+    // 移動端選單切換
+    const mobileToggle = document.getElementById('mobileToggle');
+    const navLinks = document.getElementById('navLinks');
+    
+    if (mobileToggle && navLinks) {
+      mobileToggle.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+      });
       
-      backToTopButton.classList.remove('visible');
-      
-      window.addEventListener('scroll', function() {
-        if (window.pageYOffset > 300) {
-          backToTopButton.classList.add('visible');
-        } else {
-          backToTopButton.classList.remove('visible');
+      // 點擊選單外部關閉選單
+      document.addEventListener('click', (e) => {
+        if (!mobileToggle.contains(e.target) && !navLinks.contains(e.target)) {
+          navLinks.classList.remove('active');
         }
       });
-      
-      backToTopButton.addEventListener('click', function() {
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-      });
-    });
+    }
   </script>
 
   <!-- 工時系統主要功能腳本 -->
@@ -709,18 +705,19 @@
     
     // 更新使用者資訊顯示
     function updateUserInfo() {
-      const userInfoEl = document.getElementById('userInfo');
-      const adminMenuLink = document.getElementById('adminMenuLink');
+      const userNameEl = document.getElementById('userName');
+      const userRoleEl = document.getElementById('userRole');
       const employeeSelect = document.getElementById('employee');
       
       if (currentUser) {
         const displayName = currentUser.employee_name || currentUser.username;
         const roleText = currentUser.role === 'admin' ? '管理員' : '員工';
-        userInfoEl.textContent = `${displayName} (${roleText})`;
+        userNameEl.textContent = displayName;
+        userRoleEl.textContent = roleText;
         
-        // 如果是管理員，顯示管理選單
+        // 如果是管理員，不需要顯示額外的管理選單（已經在導航欄中有設定鏈接）
         if (currentUser.role === 'admin') {
-          adminMenuLink.style.display = 'block';
+          // 管理員可以選擇任何員工的工時表
         }
         
         // 如果是員工，只能看自己的資料
