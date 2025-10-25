@@ -1,2 +1,22 @@
-[]
-
+[
+  {
+    "id": "company-setup-checklist",
+    "title": "公司設立檢核表",
+    "slug": "company-setup-checklist",
+    "type": "checklist",
+    "category": "創業工具",
+    "tags": [
+      "檢核表",
+      "公司設立",
+      "創業準備"
+    ],
+    "summary": "完整的公司設立檢核清單，確保您不會遺漏任何重要步驟。",
+    "updated_at": "2025-10-25T10:00:00+08:00",
+    "download_url": "/downloads/company-setup-checklist.pdf",
+    "file_size": "1.2MB",
+    "calculator_urls": [
+      "https://example.com/capital-calculator"
+    ],
+    "body": "# 公司設立檢核表\n\n## 前置準備\n\n- [ ] 確認公司名稱可用性\n- [ ] 決定公司型態（有限公司 / 股份有限公司）\n- [ ] 規劃資本額與股權結構\n- [ ] 準備股東與董事名冊\n\n## 文件準備\n\n- [ ] 公司章程\n- [ ] 股東同意書\n- [ ] 董事同意書\n- [ ] 辦公處所證明\n\n## 申請流程\n\n- [ ] 公司名稱預查\n- [ ] 送件公司登記\n- [ ] 領取公司執照\n- [ ] 稅籍登記\n- [ ] 開立銀行帳戶\n\n## 後續事項\n\n- [ ] 刻製公司印鑑\n- [ ] 申請營業登記\n- [ ] 設置會計帳簿\n- [ ] 申請發票\n\n---\n\n*本檢核表由霍爾果斯會計師事務所提供*"
+  }
+]

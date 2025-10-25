@@ -1,0 +1,8 @@
+# 資料庫備份目錄
+
+此目錄用於存放每日自動備份的資料庫檔案。
+
+- `daily-backup.sql`：每日覆寫的最新備份（提交至 git）
+- `backup-YYYYMMDD-HHMMSS.sql`：時間戳記版本（保留 30 天，不提交至 git）
+
+
