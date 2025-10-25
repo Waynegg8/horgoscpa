@@ -311,8 +311,7 @@
             <div class="tabs-container">
                 <div class="tab-nav" id="tabNav">
                     <!-- 所有員工可見的標籤 -->
-                    <button class="tab-button active" data-tab="clients">客戶管理</button>
-                    <button class="tab-button" data-tab="clients-extended">客戶詳細資料</button>
+                    <button class="tab-button active" data-tab="clients-extended">客戶管理</button>
                     <button class="tab-button" data-tab="assignments">客戶指派</button>
                     <button class="tab-button" data-tab="business-types">業務類型</button>
                     <button class="tab-button" data-tab="leave-events">假期事件</button>
@@ -326,32 +325,8 @@
                     <button class="tab-button" data-tab="account">帳號設定</button>
                 </div>
 
-                <!-- 客戶管理 -->
-                <div id="clients-tab" class="tab-content active">
-                    <div class="toolbar">
-                        <div class="toolbar-left">
-                            <div class="search-box">
-                                <input type="text" id="clientSearch" placeholder="搜尋客戶名稱...">
-                                <span class="material-symbols-outlined search-icon">search</span>
-                            </div>
-                        </div>
-                        <div class="toolbar-right">
-                            <button class="btn btn-primary" onclick="showAddClientModal()">
-                                <span class="material-symbols-outlined">add</span>
-                                新增客戶
-                            </button>
-                        </div>
-                    </div>
-                    <div id="clientsTableContainer">
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            載入中...
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 客戶詳細資料 -->
-                <div id="clients-extended-tab" class="tab-content">
+                <!-- 客戶管理（客戶詳細資料） -->
+                <div id="clients-extended-tab" class="tab-content active">
                     <div class="toolbar">
                         <div class="toolbar-left">
                             <div class="search-box">
@@ -372,6 +347,10 @@
                             </select>
                         </div>
                         <div class="toolbar-right">
+                            <button class="btn btn-primary" onclick="showAddNewClientModal()">
+                                <span class="material-symbols-outlined">add</span>
+                                新增客戶
+                            </button>
                             <button class="btn btn-secondary" onclick="showImportCSVModal()">
                                 <span class="material-symbols-outlined">upload_file</span>
                                 匯入 CSV

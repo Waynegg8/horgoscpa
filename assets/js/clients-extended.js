@@ -11,6 +11,11 @@ let serviceScheduleData = [];
 let clientInteractionsData = [];
 let currentEditingClient = null;
 
+// 通知函數
+function showNotification(message, type = 'info') {
+    alert(message);
+}
+
 // 在主頁面初始化後調用
 function initClientsExtended() {
     // 添加搜尋和篩選功能
@@ -37,7 +42,7 @@ async function loadClientsExtended() {
         
         renderClientsExtendedTable();
     } catch (error) {
-        showNotification('載入失敗: ' + error.message, 'error');
+        alert('載入失敗: ' + error.message);
         document.getElementById('clientsExtendedTableContainer').innerHTML = `
             <div class="error-state">
                 <span class="material-symbols-outlined">error</span>
@@ -162,6 +167,202 @@ function filterClientsExtended() {
     }
     
     renderClientsExtendedTable(filtered);
+}
+
+// =========================================
+// 新增客戶 Modal
+// =========================================
+async function showAddNewClientModal() {
+    currentEditingClient = null;
+    
+    // 直接插入 modal HTML
+    const container = document.getElementById('modalContainer');
+    container.innerHTML = renderNewClientForm();
+}
+
+function renderNewClientForm() {
+    return `
+        <div class="modal active" id="newClientModal">
+            <div class="modal-dialog" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2>新增客戶</h2>
+                    <button class="close-btn" onclick="closeNewClientModal()">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                        <div class="form-group">
+                            <label>客戶名稱 *</label>
+                            <input type="text" id="newClientName" placeholder="請輸入客戶名稱" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>統一編號 *</label>
+                            <input type="text" id="newTaxId" placeholder="12345678" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>地區</label>
+                            <select id="newRegion">
+                                <option value="">請選擇</option>
+                                <option value="台中">台中</option>
+                                <option value="台北">台北</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>聯絡人</label>
+                            <input type="text" id="newContactPerson1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>電話</label>
+                            <input type="text" id="newPhone">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="newEmail">
+                        </div>
+                        
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>地址</label>
+                            <input type="text" id="newAddress">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>月費</label>
+                            <input type="number" id="newMonthlyFee" value="0" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>狀態</label>
+                            <select id="newClientStatus">
+                                <option value="active">活躍</option>
+                                <option value="inactive">停用</option>
+                                <option value="potential">潛在客戶</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label>服務項目</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newServiceAccounting">
+                                <span>記帳</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newServiceTaxReturn">
+                                <span>報稅</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newServiceIncomeTax">
+                                <span>所得稅申報</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newServiceRegistration">
+                                <span>登記</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newServiceWithholding">
+                                <span>扣繳</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newServicePrepayment">
+                                <span>預估</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newServicePayroll">
+                                <span>薪資</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newServiceAnnualReport">
+                                <span>年報</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newServiceAudit">
+                                <span>審計</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>備註</label>
+                        <textarea id="newClientNotes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeNewClientModal()">取消</button>
+                    <button class="btn btn-primary" onclick="saveNewClient()">儲存</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function closeNewClientModal() {
+    const modal = document.getElementById('newClientModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function saveNewClient() {
+    const clientName = document.getElementById('newClientName').value.trim();
+    const taxId = document.getElementById('newTaxId').value.trim();
+    
+    if (!clientName || !taxId) {
+        alert('請填寫客戶名稱和統一編號');
+        return;
+    }
+    
+    try {
+        // 先創建基本客戶記錄
+        await apiRequest('/api/clients', {
+            method: 'POST',
+            body: {
+                name: clientName,
+                contact_person: document.getElementById('newContactPerson1').value
+            }
+        });
+        
+        // 再創建詳細資料
+        const data = {
+            tax_id: taxId,
+            contact_person_1: document.getElementById('newContactPerson1').value,
+            contact_person_2: '',
+            phone: document.getElementById('newPhone').value,
+            email: document.getElementById('newEmail').value,
+            address: document.getElementById('newAddress').value,
+            monthly_fee: parseInt(document.getElementById('newMonthlyFee').value) || 0,
+            region: document.getElementById('newRegion').value,
+            status: document.getElementById('newClientStatus').value,
+            service_accounting: document.getElementById('newServiceAccounting').checked,
+            service_tax_return: document.getElementById('newServiceTaxReturn').checked,
+            service_income_tax: document.getElementById('newServiceIncomeTax').checked,
+            service_registration: document.getElementById('newServiceRegistration').checked,
+            service_withholding: document.getElementById('newServiceWithholding').checked,
+            service_prepayment: document.getElementById('newServicePrepayment').checked,
+            service_payroll: document.getElementById('newServicePayroll').checked,
+            service_annual_report: document.getElementById('newServiceAnnualReport').checked,
+            service_audit: document.getElementById('newServiceAudit').checked,
+            notes: document.getElementById('newClientNotes').value
+        };
+        
+        await apiRequest(`/api/clients/${encodeURIComponent(clientName)}/extended`, {
+            method: 'POST',
+            body: data
+        });
+        
+        alert('新增成功');
+        closeNewClientModal();
+        loadClientsExtended();
+    } catch (error) {
+        alert('新增失敗: ' + error.message);
+    }
 }
 
 // =========================================
@@ -550,6 +751,9 @@ function escapeHtml(text) {
 // 導出函數供全域使用
 window.initClientsExtended = initClientsExtended;
 window.loadClientsExtended = loadClientsExtended;
+window.showAddNewClientModal = showAddNewClientModal;
+window.closeNewClientModal = closeNewClientModal;
+window.saveNewClient = saveNewClient;
 window.showEditClientExtendedModal = showEditClientExtendedModal;
 window.closeClientExtendedModal = closeClientExtendedModal;
 window.switchModalTab = switchModalTab;

@@ -544,18 +544,20 @@ async function loadAssignments() {
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>員工姓名</th>
                             <th>客戶名稱</th>
+                            <th>建立時間</th>
+                            <th>最後更新</th>
                             <th style="width: 100px;">操作</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${data.map(assignment => `
                             <tr>
-                                <td>${assignment.id}</td>
                                 <td>${assignment.employee_name}</td>
                                 <td>${assignment.client_name}</td>
+                                <td>${assignment.created_at ? new Date(assignment.created_at).toLocaleString('zh-TW') : '-'}</td>
+                                <td>${assignment.updated_at ? new Date(assignment.updated_at).toLocaleString('zh-TW') : '-'}</td>
                                 <td>
                                     <button class="btn btn-small btn-danger" onclick="deleteAssignment('${assignment.employee_name.replace(/'/g, "\\'")}', '${assignment.client_name.replace(/'/g, "\\'")}')">
                                         <span class="material-symbols-outlined">delete</span>
@@ -665,16 +667,18 @@ async function loadBusinessTypes() {
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>業務類型名稱</th>
+                            <th>建立時間</th>
+                            <th>最後更新</th>
                             <th style="width: 150px;">操作</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${data.map((type, idx) => `
+                        ${data.map(type => `
                             <tr>
-                                <td>${idx + 1}</td>
-                                <td>${type.name}</td>
+                                <td><strong>${type.name}</strong></td>
+                                <td>${type.created_at ? new Date(type.created_at).toLocaleString('zh-TW') : '-'}</td>
+                                <td>${type.updated_at ? new Date(type.updated_at).toLocaleString('zh-TW') : '-'}</td>
                                 <td>
                                     <div class="table-actions">
                                         <button class="btn btn-small btn-secondary" onclick="editBusinessType('${type.name.replace(/'/g, "\\'")}')">
@@ -1188,10 +1192,13 @@ async function loadUsers() {
                                 <td>${new Date(user.created_at).toLocaleString('zh-TW')}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btn btn-small btn-secondary" onclick="editUser(${user.id})">
+                                        <button class="btn btn-small btn-secondary" onclick="editUser(${user.id})" title="編輯">
                                             <span class="material-symbols-outlined">edit</span>
                                         </button>
-                                        <button class="btn btn-small btn-danger" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''}>
+                                        <button class="btn btn-small btn-warning" onclick="resetUserPassword('${user.username}')" title="重設密碼">
+                                            <span class="material-symbols-outlined">lock_reset</span>
+                                        </button>
+                                        <button class="btn btn-small btn-danger" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''} title="刪除">
                                             <span class="material-symbols-outlined">delete</span>
                                         </button>
                                     </div>
@@ -1347,6 +1354,32 @@ async function editUser(id) {
         });
     } catch (error) {
         showAlert('載入資料失敗', 'error');
+    }
+}
+
+async function resetUserPassword(username) {
+    const newPassword = prompt(`請輸入 ${username} 的新密碼（至少 6 個字元）:`);
+    
+    if (!newPassword) return;
+    
+    if (newPassword.length < 6) {
+        showAlert('密碼至少需要 6 個字元', 'error');
+        return;
+    }
+    
+    if (!confirm(`確定要將 ${username} 的密碼重設為新密碼嗎？`)) {
+        return;
+    }
+    
+    try {
+        await apiRequest(`/api/admin/users/${encodeURIComponent(username)}/reset-password`, {
+            method: 'POST',
+            body: { new_password: newPassword }
+        });
+        
+        showAlert(`已成功重設 ${username} 的密碼`);
+    } catch (error) {
+        showAlert('密碼重設失敗: ' + error.message, 'error');
     }
 }
 

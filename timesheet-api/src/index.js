@@ -115,6 +115,12 @@ export default {
         return await handleChangePassword(env.DB, request);
       }
       
+      // 管理員重設用戶密碼
+      if (url.pathname.match(/^\/api\/admin\/users\/[^\/]+\/reset-password$/) && method === "POST") {
+        const username = decodeURIComponent(url.pathname.split("/")[4]);
+        return await handleAdminResetPassword(env.DB, request, username);
+      }
+      
       // 登出 (別名)
       if (url.pathname === "/api/auth/logout" && method === "POST") {
         return await handleLogout(env.DB, request);
@@ -1077,6 +1083,47 @@ async function handleChangePassword(db, request) {
   }
 }
 
+// 管理員重設用戶密碼
+async function handleAdminResetPassword(db, request, username) {
+  try {
+    const auth = await requireAdmin(db, request);
+    if (!auth.authorized) {
+      return jsonResponse({ error: auth.error }, 403);
+    }
+    
+    const body = await request.json();
+    const newPassword = body.new_password || body.newPassword;
+    
+    if (!newPassword) {
+      return jsonResponse({ error: '請提供新密碼' }, 400);
+    }
+    
+    if (newPassword.length < 6) {
+      return jsonResponse({ error: '新密碼至少需要 6 個字元' }, 400);
+    }
+    
+    // 檢查用戶是否存在
+    const user = await db.prepare(`
+      SELECT id FROM users WHERE username = ?
+    `).bind(username).first();
+    
+    if (!user) {
+      return jsonResponse({ error: '使用者不存在' }, 404);
+    }
+    
+    // 更新密碼
+    const newHash = await hashPassword(newPassword);
+    await db.prepare(`
+      UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?
+    `).bind(newHash, username).run();
+    
+    return jsonResponse({ success: true, message: `已成功重設 ${username} 的密碼` });
+  } catch (err) {
+    console.error('Admin reset password error:', err);
+    return jsonResponse({ error: err.message || '密碼重設失敗' }, 500);
+  }
+}
+
 // 取得所有使用者（管理員）
 async function handleGetUsers(db) {
   try {
@@ -1303,7 +1350,7 @@ async function handleUpdateClient(db, oldName, payload) {
 
     // 因為 name 是主鍵，需要更新所有關聯表
     const res = await db.prepare(`
-      UPDATE clients SET name = ? WHERE name = ?
+      UPDATE clients SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE name = ?
     `).bind(name, oldName).run();
 
     // 如果沒有任何列被更新，代表舊名稱不存在或未變更
@@ -1321,7 +1368,7 @@ async function handleUpdateClient(db, oldName, payload) {
 
     // 更新關聯表（若資料庫未開啟 ON UPDATE CASCADE，手動同步）
     await db.prepare(`
-      UPDATE client_assignments SET client_name = ? WHERE client_name = ?
+      UPDATE client_assignments SET client_name = ?, updated_at = CURRENT_TIMESTAMP WHERE client_name = ?
     `).bind(name, oldName).run();
     await db.prepare(`
       UPDATE timesheets SET client_name = ? WHERE client_name = ?
@@ -1464,7 +1511,7 @@ async function handleUpdateBusinessType(db, oldName, payload) {
     }
 
     await db.prepare(`
-      UPDATE business_types SET type_name = ? WHERE type_name = ?
+      UPDATE business_types SET type_name = ?, updated_at = CURRENT_TIMESTAMP WHERE type_name = ?
     `).bind(name, oldName).run();
 
     return jsonResponse({ success: true, message: '業務類型已更新' });
