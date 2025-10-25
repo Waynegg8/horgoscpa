@@ -597,8 +597,8 @@ async function generatePivotAnalysis() {
 
         const grouped = {};
 
-        const results = await Promise.all(requests);
-        for (const { res: response, emp } of results) {
+        const responses = await Promise.all(requests);
+        for (const { res: response, emp } of responses) {
             // 工時
             (response.workEntries || []).forEach(entry => {
                 let key = '';

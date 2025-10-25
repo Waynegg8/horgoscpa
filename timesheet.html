@@ -1405,6 +1405,33 @@
 
       // 更新總工時
       document.getElementById('totalHours').textContent = totalAllHours.toFixed(1);
+      
+      // 追加一行每日合計
+      const dailyTotals = new Array(daysInMonth + 1).fill(0);
+      allEntries.forEach(entry => {
+        for (let day = 1; day <= daysInMonth; day++) {
+          const val = parseFloat(entry.hours[day] || 0);
+          if (!isNaN(val)) dailyTotals[day] += val;
+        }
+      });
+      const totalRow = document.createElement('tr');
+      const totalTitle1 = document.createElement('td'); totalTitle1.textContent = '—'; totalRow.appendChild(totalTitle1);
+      const totalTitle2 = document.createElement('td'); totalTitle2.textContent = '—'; totalRow.appendChild(totalTitle2);
+      const totalTitle3 = document.createElement('td'); totalTitle3.textContent = '當日合計'; totalTitle3.style.fontWeight='700'; totalRow.appendChild(totalTitle3);
+      let monthlySum = 0;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const td = document.createElement('td');
+        td.className = 'day-cell';
+        td.style.fontWeight = '700';
+        td.textContent = dailyTotals[day] ? dailyTotals[day].toFixed(1) : '';
+        totalRow.appendChild(td);
+        monthlySum += dailyTotals[day];
+      }
+      const monthlyTotalCell = document.createElement('td');
+      monthlyTotalCell.className = 'total-cell';
+      monthlyTotalCell.textContent = monthlySum.toFixed(1);
+      totalRow.appendChild(monthlyTotalCell);
+      tableBody.appendChild(totalRow);
     }
 
     // 顯示錯誤訊息
