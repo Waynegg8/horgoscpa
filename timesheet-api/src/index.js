@@ -488,9 +488,10 @@ async function handleGetLeaveQuota(db, params) {
   const year = parseInt(params.get('year'));
   if (!employee || !year) return jsonResponse({ error: 'Missing parameters' }, 400);
 
-  // 取得員工到職日
-  const emp = await db.prepare(`SELECT hire_date FROM employees WHERE name = ?`).bind(employee).first();
+  // 取得員工到職日與性別
+  const emp = await db.prepare(`SELECT hire_date, gender FROM employees WHERE name = ?`).bind(employee).first();
   const hireDate = emp?.hire_date || null;
+  const gender = emp?.gender || null;
 
   // 特休規則
   const annualRules = await db.prepare(`SELECT seniority_years, leave_days FROM annual_leave_rules ORDER BY seniority_years`).all();
@@ -528,10 +529,37 @@ async function handleGetLeaveQuota(db, params) {
   const annualDays = computeAnnualDays(hireDate);
   quota.push({ type: '特休', quota_hours: (annualDays * 8) + carryoverHours });
 
+  // 先加入其他假別配額，並記錄病假年度上限（以小時）
+  let sickCapHours = 0;
   for (const r of otherRules) {
-    // 年度給假以天數換算時數；事件給假留著 0 由前端顯示僅按事件產生
-    const hours = r.grant_type === '年度給假' ? (r.leave_days * 8) : 0;
+    let hours = 0;
+    if (r.grant_type === '年度給假') {
+      hours = (r.leave_days * 8);
+    } else if (r.grant_type === '事件給假') {
+      // 事件給假：需在 leave_events 中出現相符事件才給配額
+      const eventCount = await db.prepare(`
+        SELECT COUNT(*) AS cnt
+        FROM leave_events
+        WHERE employee_name = ? AND strftime('%Y', event_date) = ? AND event_type = ?
+      `).bind(employee, String(year), r.leave_type).first();
+      const hasEvent = eventCount && eventCount.cnt > 0;
+      hours = hasEvent ? (r.leave_days * 8) : 0;
+    }
     quota.push({ type: r.leave_type, quota_hours: hours, grant_type: r.grant_type });
+    if (r.leave_type === '病假') sickCapHours = hours;
+  }
+
+  // 生理假規則：女性每月上限 1 天（8 小時），不逐月累積；與病假合併年度上限
+  if (gender && (gender === 'female' || gender === '女' || gender === 'F')) {
+    quota.push({ 
+      type: '生理假', 
+      quota_hours: 8,                 // 顯示每月上限值
+      grant_type: '每月上限',
+      per_month_cap_hours: 8,
+      non_carryover: true,
+      combined_with: '病假', 
+      combined_cap_hours: sickCapHours || (30 * 8) 
+    });
   }
 
   return jsonResponse({ employee, year, quota });
@@ -851,14 +879,14 @@ async function handleGetEmployees(db, user) {
       return jsonResponse({ error: '無權限' }, 403);
     }
     const res = await db.prepare(
-      "SELECT name, hire_date FROM employees WHERE name = ?"
+      "SELECT name, hire_date, gender FROM employees WHERE name = ?"
     ).bind(user.employee_name).all();
     const rows = getRows(res);
     return jsonResponse(rows);
   }
   
   // 管理員可以看全部
-  const res = await db.prepare("SELECT name, hire_date FROM employees ORDER BY name").all();
+  const res = await db.prepare("SELECT name, hire_date, gender FROM employees ORDER BY name").all();
   const rows = getRows(res);
   return jsonResponse(rows);
 }
@@ -1485,16 +1513,16 @@ async function handleGetAllEmployees(db) {
 
 async function handleCreateEmployee(db, payload) {
   try {
-    const { name, hire_date } = payload;
+    const { name, hire_date, gender } = payload;
     
     if (!name) {
       return jsonResponse({ error: '員工姓名為必填' }, 400);
     }
     
     await db.prepare(`
-      INSERT INTO employees (name, hire_date)
-      VALUES (?, ?)
-    `).bind(name, hire_date || null).run();
+      INSERT INTO employees (name, hire_date, gender)
+      VALUES (?, ?, ?)
+    `).bind(name, hire_date || null, gender || null).run();
     
     return jsonResponse({ success: true, message: '員工已新增' });
   } catch (err) {
@@ -1507,7 +1535,7 @@ async function handleCreateEmployee(db, payload) {
 
 async function handleUpdateEmployee(db, oldName, payload) {
   try {
-    const { name, hire_date } = payload;
+    const { name, hire_date, gender } = payload;
     
     if (!name) {
       return jsonResponse({ error: '員工姓名為必填' }, 400);
@@ -1515,8 +1543,8 @@ async function handleUpdateEmployee(db, oldName, payload) {
     
     // 因為 name 是主鍵，需要更新所有關聯表
     await db.prepare(`
-      UPDATE employees SET name = ?, hire_date = ? WHERE name = ?
-    `).bind(name, hire_date || null, oldName).run();
+      UPDATE employees SET name = ?, hire_date = ?, gender = ? WHERE name = ?
+    `).bind(name, hire_date || null, gender || null, oldName).run();
     
     return jsonResponse({ success: true, message: '員工已更新' });
   } catch (err) {

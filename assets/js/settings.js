@@ -1600,6 +1600,7 @@ async function loadEmployeesAdmin() {
                             <th>ID</th>
                             <th>員工姓名</th>
                             <th>到職日期</th>
+                            <th>性別</th>
                             <th style="width: 150px;">操作</th>
                         </tr>
                     </thead>
@@ -1609,9 +1610,10 @@ async function loadEmployeesAdmin() {
                                 <td>${index + 1}</td>
                                 <td>${emp.name}</td>
                                 <td>${emp.hire_date || '-'}</td>
+                                <td>${emp.gender || '-'}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btn btn-small btn-secondary" onclick="editEmployee('${emp.name.replace(/'/g, "\\'")}', '${emp.hire_date || ''}')">
+                                        <button class="btn btn-small btn-secondary" onclick="editEmployee('${emp.name.replace(/'/g, "\\'")}', '${emp.hire_date || ''}', '${emp.gender || ''}')">
                                             <span class="material-symbols-outlined">edit</span>
                                         </button>
                                         <button class="btn btn-small btn-danger" onclick="deleteEmployee('${emp.name.replace(/'/g, "\\'")}')">
@@ -1642,11 +1644,20 @@ function showAddEmployeeModal() {
             <label>到職日期</label>
             <input type="date" id="employeeHireDate">
         </div>
+        <div class="form-group">
+            <label>性別</label>
+            <select id="employeeGender">
+                <option value="">未設定</option>
+                <option value="male">男</option>
+                <option value="female">女</option>
+            </select>
+        </div>
     `;
     
     showModal('新增員工', content, async () => {
         const name = document.getElementById('employeeName').value.trim();
         const hire_date = document.getElementById('employeeHireDate').value || null;
+        const gender = document.getElementById('employeeGender').value || null;
         
         if (!name) {
             showAlert('請輸入員工姓名', 'error');
@@ -1656,7 +1667,7 @@ function showAddEmployeeModal() {
         try {
             await apiRequest('/api/admin/employees', {
                 method: 'POST',
-                body: { name, hire_date }
+                body: { name, hire_date, gender }
             });
             
             closeModal();
@@ -1670,7 +1681,7 @@ function showAddEmployeeModal() {
     });
 }
 
-function editEmployee(employeeName, hireDate) {
+function editEmployee(employeeName, hireDate, gender) {
     const content = `
         <div class="form-group">
             <label>員工姓名 <span class="required">*</span></label>
@@ -1680,11 +1691,20 @@ function editEmployee(employeeName, hireDate) {
             <label>到職日期</label>
             <input type="date" id="employeeHireDate" value="${hireDate}">
         </div>
+        <div class="form-group">
+            <label>性別</label>
+            <select id="employeeGender">
+                <option value="" ${!gender ? 'selected' : ''}>未設定</option>
+                <option value="male" ${gender === 'male' ? 'selected' : ''}>男</option>
+                <option value="female" ${gender === 'female' ? 'selected' : ''}>女</option>
+            </select>
+        </div>
     `;
     
     showModal('編輯員工', content, async () => {
         const name = document.getElementById('employeeName').value.trim();
         const hire_date = document.getElementById('employeeHireDate').value || null;
+        const genderVal = document.getElementById('employeeGender').value || null;
         
         if (!name) {
             showAlert('請輸入員工姓名', 'error');
@@ -1694,7 +1714,7 @@ function editEmployee(employeeName, hireDate) {
         try {
             await apiRequest(`/api/admin/employees/${encodeURIComponent(employeeName)}`, {
                 method: 'PUT',
-                body: { name, hire_date }
+                body: { name, hire_date, gender: genderVal }
             });
             
             closeModal();

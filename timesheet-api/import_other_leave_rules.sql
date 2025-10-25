@@ -9,3 +9,7 @@ INSERT INTO other_leave_rules (leave_type, leave_days, grant_type) VALUES ('喪�
 INSERT INTO other_leave_rules (leave_type, leave_days, grant_type) VALUES ('喪假-配偶父母', 6, '事件給假');
 INSERT INTO other_leave_rules (leave_type, leave_days, grant_type) VALUES ('喪假-兄弟姊妹', 3, '事件給假');
 INSERT INTO other_leave_rules (leave_type, leave_days, grant_type) VALUES ('喪假-祖父母', 3, '事件給假');
+-- 產假/陪產假/產檢假（事件給假，可依實務自行調整天數）
+INSERT INTO other_leave_rules (leave_type, leave_days, grant_type) VALUES ('產假', 56, '事件給假');
+INSERT INTO other_leave_rules (leave_type, leave_days, grant_type) VALUES ('陪產假', 7, '事件給假');
+INSERT INTO other_leave_rules (leave_type, leave_days, grant_type) VALUES ('產檢假', 5, '事件給假');

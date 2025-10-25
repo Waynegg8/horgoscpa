@@ -50,7 +50,8 @@ DROP TABLE IF EXISTS employees;
 CREATE TABLE employees (
   name TEXT PRIMARY KEY NOT NULL, -- 員工姓名
   hire_date TEXT NOT NULL,        -- 到職日期 (格式: 'YYYY-MM-DD')
-  email TEXT
+  email TEXT,
+  gender TEXT                     -- 性別：'male' | 'female' | NULL
 );
 
 

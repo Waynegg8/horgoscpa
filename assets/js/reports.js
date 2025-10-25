@@ -451,9 +451,14 @@ async function generateLeaveOverview() {
             { name: '陪產假', key: '陪產假' },
         ];
         let quotaMap = {};
+        let combinedCapSickMenstrual = null; // 病+生合併上限（小時）
         try {
             const quotaData = await apiRequest(`/api/leave-quota?employee=${encodeURIComponent(employee)}&year=${year}`);
             (quotaData.quota || []).forEach(q => { quotaMap[q.type] = q.quota_hours || 0; });
+            const menstrualRule = (quotaData.quota || []).find(q => q.type === '生理假');
+            if (menstrualRule && menstrualRule.combined_cap_hours) {
+                combinedCapSickMenstrual = menstrualRule.combined_cap_hours;
+            }
         } catch (_) {}
 
         let totalUsed = 0;
@@ -539,7 +544,14 @@ async function generateLeaveOverview() {
                                     const used = leaveStats[type.key] || 0;
                                     // 依據資料庫配額（若無資料則 0），特休優先採用 annualLeaveHours（含結轉）
                                     const quota = type.key === '特休' ? annualLeaveHours : (quotaMap[type.key] || 0);
-                                    const remaining = Math.max(0, quota - used);
+                                    let remaining = Math.max(0, quota - used);
+                                    // 病假與生理假合併上限處理
+                                    if ((type.key === '病假' || type.key === '生理假') && combinedCapSickMenstrual !== null) {
+                                        const sickUsed = leaveStats['病假'] || 0;
+                                        const menstrualUsed = leaveStats['生理假'] || 0;
+                                        const combinedRemaining = Math.max(0, combinedCapSickMenstrual - sickUsed - menstrualUsed);
+                                        remaining = Math.min(remaining, combinedRemaining);
+                                    }
                                     return `
                                         <tr>
                                             <td>${type.name}</td>
