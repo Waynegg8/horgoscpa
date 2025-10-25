@@ -639,9 +639,14 @@ function renderServiceScheduleList() {
                         </p>
                         ${schedule.service_details ? `<p style="margin: 5px 0; font-size: 14px;">詳情: ${escapeHtml(schedule.service_details)}</p>` : ''}
                     </div>
-                    <button class="btn btn-sm btn-danger" onclick="deleteServiceSchedule(${schedule.id})">
-                        <span class="material-symbols-outlined">delete</span>
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-sm btn-secondary" onclick='editServiceSchedule(${JSON.stringify(schedule).replace(/'/g, "&#39;")})' title="編輯">
+                            <span class="material-symbols-outlined">edit</span>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteServiceSchedule(${schedule.id})" title="刪除">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -649,12 +654,155 @@ function renderServiceScheduleList() {
 }
 
 function showAddServiceScheduleForm() {
-    // 簡化版：直接用 prompt（之後可以改成完整的 modal）
-    const serviceType = prompt('服務類型:');
-    if (!serviceType) return;
+    showServiceScheduleEditor(null);
+}
+
+function editServiceSchedule(schedule) {
+    showServiceScheduleEditor(schedule);
+}
+
+function showServiceScheduleEditor(schedule = null) {
+    const isEdit = schedule !== null;
+    const title = isEdit ? '編輯服務排程' : '新增服務排程';
     
-    // 這裡可以創建一個完整的表單，暫時簡化
-    showNotification('請在專案後續開發中實作完整的服務排程編輯器', 'info');
+    const modal = `
+        <div class="modal active" id="serviceScheduleEditorModal">
+            <div class="modal-dialog" style="max-width: 900px;">
+                <div class="modal-header">
+                    <h2>${title}</h2>
+                    <button class="close-btn" onclick="closeServiceScheduleEditor()">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    ${isEdit ? `<input type="hidden" id="scheduleId" value="${schedule.id}">` : ''}
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>服務類型 *</label>
+                            <input type="text" id="scheduleServiceType" value="${escapeHtml(schedule?.service_type || '')}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>頻率</label>
+                            <select id="scheduleFrequency">
+                                <option value="每月" ${schedule?.frequency === '每月' ? 'selected' : ''}>每月</option>
+                                <option value="每兩月" ${schedule?.frequency === '每兩月' ? 'selected' : ''}>每兩月</option>
+                                <option value="每季" ${schedule?.frequency === '每季' ? 'selected' : ''}>每季</option>
+                                <option value="半年" ${schedule?.frequency === '半年' ? 'selected' : ''}>半年</option>
+                                <option value="每年" ${schedule?.frequency === '每年' ? 'selected' : ''}>每年</option>
+                                <option value="不定期" ${schedule?.frequency === '不定期' ? 'selected' : ''}>不定期</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>月費</label>
+                            <input type="number" id="scheduleMonthlyFee" value="${schedule?.monthly_fee || 0}" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>服務月份（勾選執行月份）</label>
+                        <div class="month-selector" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 10px;">
+                            ${Array.from({length: 12}, (_, i) => i + 1).map(month => `
+                                <label class="checkbox-card" style="display: flex; flex-direction: column; align-items: center; padding: 15px; border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: all 0.3s;">
+                                    <input type="checkbox" id="month_${month}" ${schedule?.[`month_${month}`] ? 'checked' : ''} style="margin-bottom: 8px; transform: scale(1.3);">
+                                    <span style="font-weight: 600; font-size: 14px;">${month}月</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>服務詳情</label>
+                        <textarea id="scheduleServiceDetails" rows="2">${escapeHtml(schedule?.service_details || '')}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>備註</label>
+                        <textarea id="scheduleNotes" rows="2">${escapeHtml(schedule?.notes || '')}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeServiceScheduleEditor()">取消</button>
+                    <button class="btn btn-primary" onclick="saveServiceSchedule(${isEdit})">
+                        <span class="material-symbols-outlined">save</span>
+                        儲存
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modal);
+    
+    // 添加月份勾選框的視覺效果
+    document.querySelectorAll('.checkbox-card input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const card = this.closest('.checkbox-card');
+            if (this.checked) {
+                card.style.borderColor = 'var(--primary-color)';
+                card.style.background = 'linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(90, 158, 229, 0.05))';
+                card.style.boxShadow = '0 2px 8px rgba(74, 144, 226, 0.2)';
+            } else {
+                card.style.borderColor = 'var(--border-color)';
+                card.style.background = 'white';
+                card.style.boxShadow = 'none';
+            }
+        });
+        // 初始化樣式
+        checkbox.dispatchEvent(new Event('change'));
+    });
+}
+
+function closeServiceScheduleEditor() {
+    const modal = document.getElementById('serviceScheduleEditorModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function saveServiceSchedule(isEdit) {
+    try {
+        const data = {
+            tax_id: currentClientExtendedData?.tax_id || '',
+            client_name: currentEditingClient,
+            service_type: document.getElementById('scheduleServiceType').value,
+            frequency: document.getElementById('scheduleFrequency').value,
+            monthly_fee: parseInt(document.getElementById('scheduleMonthlyFee').value) || 0,
+            service_details: document.getElementById('scheduleServiceDetails').value,
+            notes: document.getElementById('scheduleNotes').value
+        };
+        
+        // 12個月的勾選狀態
+        for (let i = 1; i <= 12; i++) {
+            data[`month_${i}`] = document.getElementById(`month_${i}`).checked;
+        }
+        
+        if (!data.service_type) {
+            showNotification('請輸入服務類型', 'error');
+            return;
+        }
+        
+        if (isEdit) {
+            const scheduleId = document.getElementById('scheduleId').value;
+            await apiRequest(`/api/service-schedule/${scheduleId}`, {
+                method: 'PUT',
+                body: data
+            });
+        } else {
+            await apiRequest('/api/service-schedule', {
+                method: 'POST',
+                body: data
+            });
+        }
+        
+        showNotification('儲存成功', 'success');
+        closeServiceScheduleEditor();
+        
+        // 重新載入客戶資料
+        await showEditClientExtendedModal(currentEditingClient);
+    } catch (error) {
+        showNotification('儲存失敗: ' + error.message, 'error');
+    }
 }
 
 async function deleteServiceSchedule(scheduleId) {
@@ -711,7 +859,114 @@ function renderInteractionsList() {
 }
 
 function showAddInteractionForm() {
-    showNotification('請在專案後續開發中實作完整的互動記錄編輯器', 'info');
+    showInteractionEditor(null);
+}
+
+function showInteractionEditor(interaction = null) {
+    const isEdit = interaction !== null;
+    const title = isEdit ? '編輯互動記錄' : '新增互動記錄';
+    
+    const modal = `
+        <div class="modal active" id="interactionEditorModal">
+            <div class="modal-dialog" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h2>${title}</h2>
+                    <button class="close-btn" onclick="closeInteractionEditor()">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    ${isEdit ? `<input type="hidden" id="interactionId" value="${interaction.id}">` : ''}
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>類型 *</label>
+                            <select id="interactionType">
+                                <option value="meeting" ${interaction?.interaction_type === 'meeting' ? 'selected' : ''}>會議</option>
+                                <option value="phone" ${interaction?.interaction_type === 'phone' ? 'selected' : ''}>電話</option>
+                                <option value="email" ${interaction?.interaction_type === 'email' ? 'selected' : ''}>郵件</option>
+                                <option value="service" ${interaction?.interaction_type === 'service' ? 'selected' : ''}>服務</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>日期 *</label>
+                            <input type="date" id="interactionDate" value="${interaction?.interaction_date || new Date().toISOString().split('T')[0]}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>主旨</label>
+                        <input type="text" id="interactionSubject" value="${escapeHtml(interaction?.subject || '')}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>內容</label>
+                        <textarea id="interactionContent" rows="4">${escapeHtml(interaction?.content || '')}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>處理人</label>
+                        <input type="text" id="interactionHandledBy" value="${escapeHtml(interaction?.handled_by || '')}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeInteractionEditor()">取消</button>
+                    <button class="btn btn-primary" onclick="saveInteraction(${isEdit})">
+                        <span class="material-symbols-outlined">save</span>
+                        儲存
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modal);
+}
+
+function closeInteractionEditor() {
+    const modal = document.getElementById('interactionEditorModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function saveInteraction(isEdit) {
+    try {
+        const data = {
+            client_name: currentEditingClient,
+            interaction_type: document.getElementById('interactionType').value,
+            interaction_date: document.getElementById('interactionDate').value,
+            subject: document.getElementById('interactionSubject').value,
+            content: document.getElementById('interactionContent').value,
+            handled_by: document.getElementById('interactionHandledBy').value
+        };
+        
+        if (!data.interaction_date) {
+            showNotification('請選擇日期', 'error');
+            return;
+        }
+        
+        if (isEdit) {
+            const interactionId = document.getElementById('interactionId').value;
+            await apiRequest(`/api/client-interactions/${interactionId}`, {
+                method: 'PUT',
+                body: data
+            });
+        } else {
+            await apiRequest('/api/client-interactions', {
+                method: 'POST',
+                body: data
+            });
+        }
+        
+        showNotification('儲存成功', 'success');
+        closeInteractionEditor();
+        
+        // 重新載入客戶資料
+        await showEditClientExtendedModal(currentEditingClient);
+    } catch (error) {
+        showNotification('儲存失敗: ' + error.message, 'error');
+    }
 }
 
 async function deleteClientInteraction(interactionId) {
