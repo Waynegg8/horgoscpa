@@ -402,7 +402,7 @@ async function generateWorkAnalysis() {
 }
 
 // =========================================
-// 請假總覽報表
+// 請假總覽報表（優化版 - 使用聚合 API + 快取）
 // =========================================
 async function generateLeaveOverview() {
     const employee = document.getElementById('leaveOverviewEmployee').value;
@@ -416,26 +416,18 @@ async function generateLeaveOverview() {
     showLoading('leaveOverviewResult');
 
     try {
-        // 統計各種假別的使用時數
-        const leaveStats = {};
+        // 🚀 優化：一次 API 調用取得全年資料（而不是 12 次循環請求）
+        const startTime = performance.now();
+        const response = await apiRequest(`/api/reports/annual-leave?employee=${encodeURIComponent(employee)}&year=${year}`);
+        const endTime = performance.now();
         
-        // 獲取該年度的每個月份
-        for (let month = 1; month <= 12; month++) {
-            const response = await apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(employee)}&year=${year}&month=${month}`);
-            
-            if (response.leaveEntries && Array.isArray(response.leaveEntries)) {
-                response.leaveEntries.forEach(entry => {
-                    const leaveType = entry.leaveType;
-                    if (!leaveStats[leaveType]) {
-                        leaveStats[leaveType] = 0;
-                    }
-                    
-                    // 累計該假別的所有時數
-                    for (const day in entry.hours) {
-                        leaveStats[leaveType] += parseFloat(entry.hours[day] || 0);
-                    }
-                });
-            }
+        const leaveStats = response.leave_stats || {};
+        
+        // 顯示效能資訊（開發用）
+        console.log(`報表生成時間: ${Math.round(endTime - startTime)}ms`);
+        console.log(`快取狀態: ${response.cached ? '✅ 命中快取' : '⚠️ 重新計算'}`);
+        if (response.execution_time_ms) {
+            console.log(`後端執行時間: ${response.execution_time_ms}ms`);
         }
 
         // 讀取 DB 配額（含事假、病假等所有假別）
@@ -589,7 +581,7 @@ async function generateLeaveOverview() {
 }
 
 // =========================================
-// 樞紐分析報表
+// 樞紐分析報表（優化版 - 使用聚合 API + 快取）
 // =========================================
 async function generatePivotAnalysis() {
     const year = document.getElementById('pivotYear').value;
@@ -604,86 +596,64 @@ async function generatePivotAnalysis() {
     showLoading('pivotAnalysisResult');
 
     try {
-        // 追蹤各群組的加班類型時數
-        const otByType = {};
-        // 並行載入所有員工
-        const employees = await apiRequest('/api/employees');
-        const months = month ? [parseInt(month)] : [1,2,3,4,5,6,7,8,9,10,11,12];
-
-        // 並行請求所有 (員工×月份) 的 timesheet
-        const requests = [];
-        for (const emp of employees) {
-            for (const m of months) {
-                requests.push(apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(emp.name)}&year=${year}&month=${m}`).then(res => ({ res, emp })));
-            }
+        // 🚀 優化：一次 API 調用（而不是 36+ 次請求）
+        const startTime = performance.now();
+        let url = `/api/reports/pivot?year=${year}&groupBy=${groupBy}`;
+        if (month) url += `&month=${month}`;
+        
+        const response = await apiRequest(url);
+        const endTime = performance.now();
+        
+        // 顯示效能資訊
+        console.log(`報表生成時間: ${Math.round(endTime - startTime)}ms`);
+        console.log(`快取狀態: ${response.cached ? '✅ 命中快取' : '⚠️ 重新計算'}`);
+        if (response.execution_time_ms) {
+            console.log(`後端執行時間: ${response.execution_time_ms}ms`);
         }
-
-        const grouped = {};
-
-        const responses = await Promise.all(requests);
-        for (const { res: response, emp } of responses) {
-            // 工時
-            (response.workEntries || []).forEach(entry => {
-                let key = '';
-                switch (groupBy) {
-                    case 'employee': key = emp.name; break;
-                    case 'client': key = entry.clientName || '未分類'; break;
-                    case 'business_type': key = entry.businessType || '未分類'; break;
-                }
-                if (!grouped[key]) grouped[key] = { name: key, normalHours: 0, overtimeHours: 0, weightedHours: 0, leaveHours: 0 };
-                for (const day in entry.hours) {
-                    const hours = parseFloat(entry.hours[day] || 0);
-                    const wt = entry.workType || '';
-                    const isOT = wt.includes('加班');
-                    if (isOT) grouped[key].overtimeHours += hours; else grouped[key].normalHours += hours;
-                    // 加權工時：根據類型估算倍率
-                    let multiplier = 1;
-                    if (wt.includes('1.34')) multiplier = 1.34;
-                    else if (wt.includes('1.67')) multiplier = 1.67;
-                    else if (wt.includes('2.67')) multiplier = 2.67;
-                    else if (wt.includes('加班(2)')) multiplier = 2;
-                    grouped[key].weightedHours += hours * multiplier;
-
-                    // 類型分類統計
-                    const mapKey = (() => {
-                        if (wt.includes('平日加班(1.34)')) return '平日1.34';
-                        if (wt.includes('平日加班(1.67)')) return '平日1.67';
-                        if (wt.includes('休息日加班(1.34)')) return '休1.34';
-                        if (wt.includes('休息日加班(1.67)')) return '休1.67';
-                        if (wt.includes('休息日加班(2.67)')) return '休2.67';
-                        if (wt.includes('例假日加班(2)')) return '例2.0';
-                        if (wt.includes('例假日加班')) return '例1.0';
-                        if (wt.includes('國定假日加班(1.34)')) return '國1.34';
-                        if (wt.includes('國定假日加班(1.67)')) return '國1.67';
-                        if (wt.includes('國定假日加班')) return '國1.0';
-                        return '';
-                    })();
-                    if (mapKey) {
-                        if (!otByType[key]) otByType[key] = {};
-                        otByType[key][mapKey] = (otByType[key][mapKey] || 0) + hours;
-                    }
-                }
-            });
-
-            // 請假
-            (response.leaveEntries || []).forEach(entry => {
-                let key = groupBy === 'employee' ? emp.name : '請假';
-                if (!grouped[key]) grouped[key] = { name: key, normalHours: 0, overtimeHours: 0, weightedHours: 0, leaveHours: 0 };
-                for (const day in entry.hours) grouped[key].leaveHours += parseFloat(entry.hours[day] || 0);
-            });
+        
+        const results = response.data || [];
+        
+        if (results.length === 0) {
+            showEmpty('pivotAnalysisResult', '該期間沒有資料');
+            return;
         }
+        
+        // 轉換資料格式以符合顯示需求
+        const formattedResults = results.map(row => ({
+            name: row.group_name || '未分類',
+            normalHours: parseFloat(row.normal_hours) || 0,
+            overtimeHours: parseFloat(row.overtime_hours) || 0,
+            weightedHours: parseFloat(row.weighted_hours) || 0,
+            leaveHours: parseFloat(row.leave_hours) || 0,
+            otWeekday134: parseFloat(row.ot_weekday_134) || 0,
+            otWeekday167: parseFloat(row.ot_weekday_167) || 0,
+            otRest134: parseFloat(row.ot_rest_134) || 0,
+            otRest167: parseFloat(row.ot_rest_167) || 0,
+            otRest267: parseFloat(row.ot_rest_267) || 0,
+            otOffday200: parseFloat(row.ot_offday_200) || 0,
+            otHoliday134: parseFloat(row.ot_holiday_134) || 0,
+            otHoliday167: parseFloat(row.ot_holiday_167) || 0
+        }));
 
-        const results = Object.values(grouped).sort((a, b) => 
-            b.weightedHours - a.weightedHours
-        );
-
-        // 計算總計
-        const totals = results.reduce((acc, item) => ({
+        // 計算總計（使用格式化後的資料）
+        const totals = formattedResults.reduce((acc, item) => ({
             normalHours: acc.normalHours + item.normalHours,
             overtimeHours: acc.overtimeHours + item.overtimeHours,
             weightedHours: acc.weightedHours + item.weightedHours,
-            leaveHours: acc.leaveHours + item.leaveHours
-        }), { normalHours: 0, overtimeHours: 0, weightedHours: 0, leaveHours: 0 });
+            leaveHours: acc.leaveHours + item.leaveHours,
+            otWeekday134: acc.otWeekday134 + item.otWeekday134,
+            otWeekday167: acc.otWeekday167 + item.otWeekday167,
+            otRest134: acc.otRest134 + item.otRest134,
+            otRest167: acc.otRest167 + item.otRest167,
+            otRest267: acc.otRest267 + item.otRest267,
+            otOffday200: acc.otOffday200 + item.otOffday200,
+            otHoliday134: acc.otHoliday134 + item.otHoliday134,
+            otHoliday167: acc.otHoliday167 + item.otHoliday167
+        }), { 
+            normalHours: 0, overtimeHours: 0, weightedHours: 0, leaveHours: 0,
+            otWeekday134: 0, otWeekday167: 0, otRest134: 0, otRest167: 0,
+            otRest267: 0, otOffday200: 0, otHoliday134: 0, otHoliday167: 0
+        });
 
         const groupByText = {
             'employee': '員工',
@@ -747,21 +717,21 @@ async function generatePivotAnalysis() {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${results.map(item => `
+                                ${formattedResults.map(item => `
                                     <tr>
                                         <td>${item.name}</td>
                                         <td class="number">${item.normalHours.toFixed(2)}</td>
                                         <td class="number">${item.overtimeHours.toFixed(2)}</td>
                                         <td class="number">${item.weightedHours.toFixed(2)}</td>
                                         <td class="number">${item.leaveHours.toFixed(2)}</td>
-                                        <td class="number">${(otByType[item.name]?.['平日1.34']||0).toFixed(2)}</td>
-                                        <td class="number">${(otByType[item.name]?.['平日1.67']||0).toFixed(2)}</td>
-                                        <td class="number">${(otByType[item.name]?.['休1.34']||0).toFixed(2)}</td>
-                                        <td class="number">${(otByType[item.name]?.['休1.67']||0).toFixed(2)}</td>
-                                        <td class="number">${(otByType[item.name]?.['休2.67']||0).toFixed(2)}</td>
-                                        <td class="number">${(otByType[item.name]?.['例2.0']||0).toFixed(2)}</td>
-                                        <td class="number">${(otByType[item.name]?.['國1.34']||0).toFixed(2)}</td>
-                                        <td class="number">${(otByType[item.name]?.['國1.67']||0).toFixed(2)}</td>
+                                        <td class="number">${item.otWeekday134.toFixed(2)}</td>
+                                        <td class="number">${item.otWeekday167.toFixed(2)}</td>
+                                        <td class="number">${item.otRest134.toFixed(2)}</td>
+                                        <td class="number">${item.otRest167.toFixed(2)}</td>
+                                        <td class="number">${item.otRest267.toFixed(2)}</td>
+                                        <td class="number">${item.otOffday200.toFixed(2)}</td>
+                                        <td class="number">${item.otHoliday134.toFixed(2)}</td>
+                                        <td class="number">${item.otHoliday167.toFixed(2)}</td>
                                     </tr>
                                 `).join('')}
                                 <tr class="total-row">
@@ -770,14 +740,14 @@ async function generatePivotAnalysis() {
                                     <td class="number">${totals.overtimeHours.toFixed(2)}</td>
                                     <td class="number">${totals.weightedHours.toFixed(2)}</td>
                                     <td class="number">${totals.leaveHours.toFixed(2)}</td>
-                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['平日1.34']||0),0).toFixed(2)}</td>
-                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['平日1.67']||0),0).toFixed(2)}</td>
-                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['休1.34']||0),0).toFixed(2)}</td>
-                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['休1.67']||0),0).toFixed(2)}</td>
-                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['休2.67']||0),0).toFixed(2)}</td>
-                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['例2.0']||0),0).toFixed(2)}</td>
-                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['國1.34']||0),0).toFixed(2)}</td>
-                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['國1.67']||0),0).toFixed(2)}</td>
+                                    <td class="number">${totals.otWeekday134.toFixed(2)}</td>
+                                    <td class="number">${totals.otWeekday167.toFixed(2)}</td>
+                                    <td class="number">${totals.otRest134.toFixed(2)}</td>
+                                    <td class="number">${totals.otRest167.toFixed(2)}</td>
+                                    <td class="number">${totals.otRest267.toFixed(2)}</td>
+                                    <td class="number">${totals.otOffday200.toFixed(2)}</td>
+                                    <td class="number">${totals.otHoliday134.toFixed(2)}</td>
+                                    <td class="number">${totals.otHoliday167.toFixed(2)}</td>
                                 </tr>
                             </tbody>
                         </table>

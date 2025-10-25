@@ -321,6 +321,7 @@
                     <button class="tab-button admin-only" data-tab="users" style="display:none;">用戶管理</button>
                     <button class="tab-button admin-only" data-tab="leave-types" style="display:none;">假別設定</button>
                     <button class="tab-button admin-only" data-tab="system-params" style="display:none;">系統參數</button>
+                    <button class="tab-button admin-only" data-tab="cache-management" style="display:none;">快取管理</button>
                     <button class="tab-button" data-tab="account">帳號設定</button>
                 </div>
 
@@ -530,6 +531,55 @@
                         <div class="loading">
                             <div class="loading-spinner"></div>
                             載入中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快取管理（管理員專用） -->
+                <div id="cache-management-tab" class="tab-content">
+                    <h3 style="color: var(--primary-color); margin-bottom: 20px;">報表快取管理</h3>
+                    
+                    <div class="info-box" style="margin-bottom: 20px;">
+                        <span class="material-symbols-outlined">info</span>
+                        <p>快取系統可大幅提升報表生成速度。當工時資料無變動時，系統會自動使用快取資料。</p>
+                    </div>
+
+                    <!-- 快取統計 -->
+                    <div id="cacheStatsContainer" style="margin-bottom: 30px;">
+                        <h4>快取統計</h4>
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            載入中...
+                        </div>
+                    </div>
+
+                    <!-- 快取管理操作 -->
+                    <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <h4 style="margin-bottom: 15px;">快取操作</h4>
+                        
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" onclick="clearCache('all')">
+                                <span class="material-symbols-outlined">delete_sweep</span>
+                                清除所有快取
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearCache('annual_leave')">
+                                清除請假報表快取
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearCache('work_analysis')">
+                                清除工時分析快取
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearCache('pivot')">
+                                清除樞紐分析快取
+                            </button>
+                            <button class="btn btn-primary" onclick="loadCacheStats()">
+                                <span class="material-symbols-outlined">refresh</span>
+                                重新整理統計
+                            </button>
+                        </div>
+
+                        <div class="info-box" style="margin-top: 15px;">
+                            <span class="material-symbols-outlined">warning</span>
+                            <p>清除快取後，下次生成報表時會重新計算，可能需要較長時間。</p>
                         </div>
                     </div>
                 </div>

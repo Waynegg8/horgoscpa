@@ -169,6 +169,11 @@ function loadTabData(tabName) {
         case 'holidays':
             loadHolidays();
             break;
+        case 'cache-management':
+            if (currentUser.role === 'admin') {
+                loadCacheStats();
+            }
+            break;
         case 'users':
             if (currentUser.role === 'admin') {
                 loadUsers();
@@ -1742,6 +1747,148 @@ async function deleteEmployee(employeeName) {
         setTimeout(() => {
             loadEmployeesAdmin();
         }, 500);
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
+
+// =========================================
+// 快取管理（管理員專用）
+// =========================================
+
+async function loadCacheStats() {
+    const container = document.getElementById('cacheStatsContainer');
+    container.innerHTML = '<div class="loading"><div class="loading-spinner"></div>載入中...</div>';
+    
+    try {
+        const response = await apiRequest('/api/admin/cache/stats');
+        
+        const performanceStats = response.performance_stats || [];
+        const cacheStorage = response.cache_storage || [];
+        
+        // 生成統計表格
+        let html = '<h4>效能統計（最近 7 天）</h4>';
+        
+        if (performanceStats.length > 0) {
+            html += `
+                <div class="table-container" style="margin-bottom: 20px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>報表類型</th>
+                                <th>總請求數</th>
+                                <th>快取命中數</th>
+                                <th>命中率</th>
+                                <th>平均執行時間</th>
+                                <th>快取時間</th>
+                                <th>計算時間</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${performanceStats.map(stat => `
+                                <tr>
+                                    <td>${getReportTypeName(stat.report_type)}</td>
+                                    <td>${stat.total_requests}</td>
+                                    <td>${stat.cache_hits}</td>
+                                    <td><strong style="color: var(--primary-color);">${stat.hit_rate}</strong></td>
+                                    <td>${stat.avg_execution_time}</td>
+                                    <td>${stat.avg_cache_time}</td>
+                                    <td>${stat.avg_compute_time}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            html += '<p style="color: #666; margin: 20px 0;">尚無統計資料（生成報表後會顯示）</p>';
+        }
+        
+        html += '<h4>快取儲存狀態</h4>';
+        
+        if (cacheStorage.length > 0) {
+            html += `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>報表類型</th>
+                                <th>快取數量</th>
+                                <th>儲存大小</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${cacheStorage.map(cache => `
+                                <tr>
+                                    <td>${getReportTypeName(cache.report_type)}</td>
+                                    <td>${cache.cache_count} 筆</td>
+                                    <td>${formatBytes(cache.total_size || 0)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            html += '<p style="color: #666; margin: 20px 0;">目前無快取資料</p>';
+        }
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="material-symbols-outlined">error</span>
+                <p>載入失敗: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+function getReportTypeName(type) {
+    const names = {
+        'annual_leave': '年度請假總覽',
+        'work_analysis': '工時分析',
+        'pivot': '樞紐分析'
+    };
+    return names[type] || type;
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+async function clearCache(type) {
+    const confirmMessages = {
+        'all': '確定要清除所有報表快取嗎？',
+        'annual_leave': '確定要清除年度請假總覽的快取嗎？',
+        'work_analysis': '確定要清除工時分析的快取嗎？',
+        'pivot': '確定要清除樞紐分析的快取嗎？'
+    };
+    
+    if (!confirm(confirmMessages[type] || '確定要清除快取嗎？')) {
+        return;
+    }
+    
+    try {
+        let url = '/api/admin/cache/clear';
+        if (type !== 'all') {
+            url += `?type=${type}`;
+        }
+        
+        const response = await apiRequest(url, { method: 'POST' });
+        
+        showAlert(response.message || '快取已清除', 'success');
+        
+        // 重新載入統計
+        setTimeout(() => {
+            loadCacheStats();
+        }, 500);
+        
     } catch (error) {
         showAlert(error.message, 'error');
     }

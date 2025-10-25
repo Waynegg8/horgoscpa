@@ -15,6 +15,14 @@ import {
   canAccessEmployee
 } from './auth.js';
 
+import {
+  handleAnnualLeaveReport,
+  handleWorkAnalysisReport,
+  handlePivotReport,
+  handleClearCache,
+  handleCacheStats
+} from './reports.js';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -376,6 +384,40 @@ export default {
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
         const id = url.pathname.split("/")[4];
         return await handleDeleteUser(env.DB, id);
+      }
+
+      // ========================================
+      // 報表 API（優化版，含快取）
+      // ========================================
+      if (url.pathname === "/api/reports/annual-leave" && method === "GET") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handleAnnualLeaveReport(env.DB, url.searchParams, auth.user);
+      }
+
+      if (url.pathname === "/api/reports/work-analysis" && method === "GET") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handleWorkAnalysisReport(env.DB, url.searchParams, auth.user);
+      }
+
+      if (url.pathname === "/api/reports/pivot" && method === "GET") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handlePivotReport(env.DB, url.searchParams, auth.user);
+      }
+
+      // 快取管理（管理員專用）
+      if (url.pathname === "/api/admin/cache/clear" && method === "POST") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handleClearCache(env.DB, url.searchParams);
+      }
+
+      if (url.pathname === "/api/admin/cache/stats" && method === "GET") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handleCacheStats(env.DB);
       }
 
       return new Response("Not Found", { status: 404 });

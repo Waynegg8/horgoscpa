@@ -6,7 +6,14 @@
 
 ### 📖 新手必讀
 
-- **[HOW_TO_ADD_DOCS.md](./HOW_TO_ADD_DOCS.md)** - 📝 如何新增說明文檔（必讀！）
+- **[PROJECT_PREFERENCES.md](./PROJECT_PREFERENCES.md)** - ⚙️ 專案偏好設置（重要！）
+- **[HOW_TO_ADD_DOCS.md](./HOW_TO_ADD_DOCS.md)** - 📝 如何新增說明文檔
+- **[HOW_TO_CONTINUE.md](./HOW_TO_CONTINUE.md)** - 🔄 如何繼續系統擴展工作（必讀！）
+
+### 🚀 系統擴展專案
+
+- **[SYSTEM_EXPANSION_PLAN.md](./SYSTEM_EXPANSION_PLAN.md)** - 📋 完整實施計畫（極度詳細）
+- **[SYSTEM_EXPANSION_PROGRESS.md](./SYSTEM_EXPANSION_PROGRESS.md)** - 📊 進度追蹤（即時更新）
 
 ### 🌐 網站相關文檔
 
@@ -25,6 +32,11 @@
 
 - **[timesheet-api/README.md](./timesheet-api/README.md)** - Timesheet API 完整說明
 - **[timesheet-api/RESTORE_DATABASE_GUIDE.md](./timesheet-api/RESTORE_DATABASE_GUIDE.md)** - 資料庫復原完整指南
+
+### ⚡ 效能優化
+
+- **[REPORT_OPTIMIZATION_GUIDE.md](./REPORT_OPTIMIZATION_GUIDE.md)** - 報表效能優化完整指南（10-120倍速度提升）
+- **[QUICK_DEPLOY_OPTIMIZATION.md](./QUICK_DEPLOY_OPTIMIZATION.md)** - 快速部署報表優化（3分鐘完成）
 
 ## 🚀 快速開始
 
