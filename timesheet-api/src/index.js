@@ -76,6 +76,7 @@ import {
   getPosts,
   createPost,
   updatePost,
+  deletePost,
   getPublicPosts,
   getPublicPost,
   getPublicResources
@@ -511,7 +512,12 @@ export default {
         return await addCorsHeaders(await updatePost(request, env, postId));
       }
       
-      // 重台提供 API（無假認�假?
+      if (url.pathname.match(/^\/api\/posts\/\d+$/) && method === "DELETE") {
+        const postId = url.pathname.split("/")[3];
+        return await addCorsHeaders(await deletePost(request, env, postId));
+      }
+      
+      // 前台公開 API（無需認證）
       if (url.pathname === "/api/public/posts" && method === "GET") {
         return await addCorsHeaders(await getPublicPosts(request, env));
       }
@@ -664,7 +670,7 @@ export default {
       }
 
       // ========================================
-      // 客戶假派 CRUD (假假員工可??
+      // 客戶指派 CRUD (所有員工可讀)
       // ========================================
       if (url.pathname === "/api/assignments" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
@@ -687,7 +693,7 @@ export default {
       }
 
       // ========================================
-      // 業指類指 CRUD (假假員工可??
+      // 業務類別 CRUD (所有員工可讀)
       // ========================================
       if (url.pathname === "/api/business-types" && method === "POST") {
         const auth = await requireAuth(env.DB, request);
@@ -712,7 +718,7 @@ export default {
       }
 
       // ========================================
-      // 查詢事件 CRUD (假假員工可??
+      // 請假事件 CRUD (所有員工可讀)
       // ========================================
       if (url.pathname === "/api/leave-events" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
@@ -743,7 +749,7 @@ export default {
       }
 
       // ========================================
-      // 查詢假日 CRUD (假假員工可??
+      // 國定假日 CRUD (所有員工可讀)
       // ========================================
       if (url.pathname === "/api/holidays" && method === "POST") {
         const auth = await requireAuth(env.DB, request);
@@ -768,7 +774,7 @@ export default {
       }
 
       // ========================================
-      // 重別類指 CRUD (假管假員)
+      // 假別類型 CRUD (僅管理員)
       // ========================================
       if (url.pathname === "/api/admin/leave-types" && method === "POST") {
         const auth = await requireAdmin(env.DB, request);
@@ -793,7 +799,7 @@ export default {
       }
 
       // ========================================
-      // 系統假數 (假管假員)
+      // 系統參數 (僅管理員)
       // ========================================
       if (url.pathname === "/api/admin/system-params" && method === "GET") {
         const auth = await requireAdmin(env.DB, request);
@@ -809,7 +815,7 @@ export default {
       }
 
       // ========================================
-      // 重工管指 CRUD (假管假員)
+      // 員工管理 CRUD (僅管理員)
       // ========================================
       if (url.pathname === "/api/admin/employees" && method === "GET") {
         const auth = await requireAdmin(env.DB, request);
@@ -840,7 +846,7 @@ export default {
       }
       
       // ========================================
-      // 重戶管指 CRUD (假管假員)
+      // 用戶管理 CRUD (僅管理員)
       // ========================================
       if (url.pathname.startsWith("/api/admin/users/") && method === "PUT") {
         const auth = await requireAdmin(env.DB, request);
@@ -858,7 +864,7 @@ export default {
       }
 
       // ========================================
-      // 重表 API（優提供，含快�假?
+      // 報表 API（優化版，含快取）
       // ========================================
       if (url.pathname === "/api/reports/annual-leave" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
@@ -878,7 +884,7 @@ export default {
         return await handlePivotReport(env.DB, url.searchParams, auth.user);
       }
 
-      // 快指管指（管假員專用指
+      // 快取管理（管理員專用）
       if (url.pathname === "/api/admin/cache/clear" && method === "POST") {
         const auth = await requireAdmin(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
@@ -900,7 +906,7 @@ export default {
 };
 
 // =================================================================
-// 工具：統一假出 rows
+// 工具：統一輸出 rows
 // =================================================================
 function getRows(result) {
   if (!result) return [];
@@ -910,10 +916,10 @@ function getRows(result) {
 }
 
 // =================================================================
-// 查詢讀??API (不指要特殊指提供輯指)
+// 基本讀取API (不需要特殊邏輯)
 // =================================================================
 
-// 查詢假假客提供假於設指假面指
+// 查詢所有客戶（用於設定頁面）
 async function handleGetAllClients(db) {
   try {
     const res = await db.prepare(`
@@ -922,7 +928,7 @@ async function handleGetAllClients(db) {
       ORDER BY name
     `).all();
     const rows = getRows(res);
-    // 轉指提供端指提供提供
+    // 轉換為前端格式
     return jsonResponse(rows.map((r, index) => ({
       id: index + 1,
       name: r.name,
@@ -933,12 +939,12 @@ async function handleGetAllClients(db) {
   }
 }
 
-// 查詢提供假工假客提供表指假於工指表指
+// 查詢單一員工的客戶列表（用於工時表）
 async function handleGetClients(db, params, user) {
   const employee = params.get("employee");
   if (!employee) return jsonResponse({ error: "Missing employee parameter" }, 400);
   
-  // 檢查權指
+  // 檢查權限
   if (!canAccessEmployee(user, employee)) {
     return jsonResponse({ error: "無權查看此員工資料" }, 403);
   }
@@ -957,7 +963,7 @@ async function handleGetClients(db, params, user) {
 async function handleGetBusinessTypes(db) {
   const res = await db.prepare("SELECT type_name FROM business_types ORDER BY type_name").all();
   const rows = getRows(res);
-  // 轉指提供端指提供提供
+  // 轉換為前端格式
   return jsonResponse(rows.map((r, index) => ({
     id: index + 1,
     name: r.type_name
@@ -967,7 +973,7 @@ async function handleGetBusinessTypes(db) {
 async function handleGetLeaveTypes(db) {
   const res = await db.prepare("SELECT type_name FROM leave_types ORDER BY type_name").all();
   const rows = getRows(res);
-  // 轉指提供端指提供提供
+  // 轉換為前端格式
   return jsonResponse(rows.map((r, index) => ({
     id: index + 1,
     type_name: r.type_name
@@ -977,7 +983,7 @@ async function handleGetLeaveTypes(db) {
 async function handleGetHolidays(db, params) {
   const year = params.get("year");
   
-  // 如指假年份指提供返指該年份指假日提供假表（用假工假表標示指
+  // 如果有年份參數，返回該年份的假日列表（用於工時表標示）
   if (year) {
     const res = await db.prepare("SELECT holiday_date FROM holidays WHERE holiday_date LIKE ? ORDER BY holiday_date")
       .bind(`${year}-%`).all();
@@ -985,10 +991,10 @@ async function handleGetHolidays(db, params) {
     return jsonResponse(rows.map(r => r.holiday_date));
   }
   
-  // 查詢返指假提供提供完整資指（用假設定指提供
+  // 否則返回所有完整資料（用於設定頁面）
   const res = await db.prepare("SELECT holiday_date, holiday_name FROM holidays ORDER BY holiday_date DESC").all();
   const rows = getRows(res);
-  // 轉指提供端指提供提供（使??holiday_date 作為 id指
+  // 轉換為前端格式（使用holiday_date作為id）
   return jsonResponse(rows.map((r, index) => ({
     id: index + 1,
     holiday_date: r.holiday_date,
@@ -996,18 +1002,18 @@ async function handleGetHolidays(db, params) {
   })));
 }
 
-// 依指資指庫指提供假年度指提供指
+// 依照資料庫計算年度假別配額
 async function handleGetLeaveQuota(db, params) {
   const employee = params.get('employee');
   const year = parseInt(params.get('year'));
   if (!employee || !year) return jsonResponse({ error: 'Missing parameters' }, 400);
 
-  // 查詢假工假職提供假別
+  // 查詢員工的職務和性別
   const emp = await db.prepare(`SELECT hire_date, gender FROM employees WHERE name = ?`).bind(employee).first();
   const hireDate = emp?.hire_date || null;
   const gender = emp?.gender || null;
 
-  // 查詢規指
+  // 查詢規則
   const annualRules = await db.prepare(`SELECT seniority_years, leave_days FROM annual_leave_rules ORDER BY seniority_years`).all();
   const annualRows = getRows(annualRules);
 
@@ -1016,7 +1022,7 @@ async function handleGetLeaveQuota(db, params) {
     const h = new Date(hire);
     const y = year;
     if (h.getFullYear() === y) {
-      // 重職年指滿指年給 3 指
+      // 在職年資滿該年給天數
       const months = 12 - h.getMonth();
       return months >= 6 ? 3 : 0;
     }
@@ -1028,11 +1034,11 @@ async function handleGetLeaveQuota(db, params) {
     return days;
   }
 
-  // 查詢假別規指（指假、指假、指提供提供假、喪??..指
+  // 查詢假別規則（病假、事假、婚假、喪假等）
   const otherRulesRes = await db.prepare(`SELECT leave_type, leave_days, grant_type FROM other_leave_rules`).all();
   const otherRules = getRows(otherRulesRes);
 
-  // 查詢結指
+  // 查詢結轉
   let carryoverHours = 0;
   try {
     const carry = await db.prepare(`SELECT carryover_days FROM annual_leave_carryover WHERE employee_name = ?`).bind(employee).first();
@@ -1080,7 +1086,7 @@ async function handleGetLeaveQuota(db, params) {
 }
 
 // =================================================================
-// 查詢小指計指
+// 查詢時數計算
 // =================================================================
 async function calculateWeightedHours(db, workType, hours) {
   const rateType = getRateTypeFromWorkType(workType);
@@ -1174,10 +1180,10 @@ function getWorkTypeFromRow(row) {
 }
 
 // =================================================================
-// 認指提供 Handler
+// 認證相關 Handler
 // =================================================================
 
-// 重入
+// 登入
 async function handleLogin(db, request) {
   try {
     const { username, password } = await request.json();
@@ -1186,7 +1192,7 @@ async function handleLogin(db, request) {
       return jsonResponse({ error: '請提供使用者名稱和密碼' }, 400);
     }
     
-    // 重詢使用??
+    // 查詢使用者
     const user = await db.prepare(`
       SELECT id, username, password_hash, role, employee_name, is_active
       FROM users
@@ -1203,7 +1209,7 @@ async function handleLogin(db, request) {
       return jsonResponse({ error: '使用者名稱或密碼錯誤' }, 401);
     }
     
-    // 重建 session
+    // 創建 session
     const sessionToken = await createSession(db, user.id);
     
     return jsonResponse({
@@ -1221,7 +1227,7 @@ async function handleLogin(db, request) {
   }
 }
 
-// 重出
+// 登出
 async function handleLogout(db, request) {
   try {
     const sessionToken = getSessionToken(request);
@@ -1266,7 +1272,7 @@ async function handleChangePassword(db, request) {
     }
     
     const body = await request.json();
-    // 查詢假種提供提供
+    // 支援兩種參數格式
     const oldPassword = body.old_password || body.currentPassword;
     const newPassword = body.new_password || body.newPassword;
     
@@ -1456,7 +1462,7 @@ async function handleGetTimesheetData(db, params, user) {
     return jsonResponse({ error: "Missing parameters" }, 400);
   }
   
-  // 檢查權指
+  // 檢查權限
   if (!canAccessEmployee(user, employee)) {
     return jsonResponse({ error: "無權查看此員工資料" }, 403);
   }
@@ -1476,7 +1482,7 @@ async function handleGetTimesheetData(db, params, user) {
 async function handleSaveTimesheet(db, payload, user) {
   const { employee, year, month, workEntries = [], leaveEntries = [] } = payload;
   
-  // 檢查權指
+  // 檢查權限
   if (!canAccessEmployee(user, employee)) {
     return jsonResponse({ error: "無權修改此員工資料" }, 403);
   }
@@ -1648,7 +1654,7 @@ async function handleGetAssignments(db, searchParams) {
       `;
       const res = await db.prepare(query).bind(employeeName).all();
       const rows = getRows(res);
-      // 轉指提供端指提供提供
+      // 轉換為前端格式
       return jsonResponse(rows.map((r, index) => ({
         id: index + 1,
         employee_name: r.employee_name,
@@ -1659,7 +1665,7 @@ async function handleGetAssignments(db, searchParams) {
 
     const res = await db.prepare(query).all();
     const rows = getRows(res);
-    // 轉指提供端指提供提供
+    // 轉換為前端格式
     return jsonResponse(rows.map((r, index) => ({
       id: index + 1,
       employee_name: r.employee_name,

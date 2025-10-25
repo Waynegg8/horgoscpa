@@ -46,7 +46,44 @@ export async function getPosts(request, env) {
     
     return new Response(JSON.stringify({ 
       success: true, 
-      data: result.results 
+      posts: result.results 
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * 刪除文章
+ */
+export async function deletePost(request, env, postId) {
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
+  if (!sessionData) {
+    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    // 刪除文章標籤
+    await env.DB.prepare('DELETE FROM post_tags WHERE post_id = ?').bind(postId).run();
+    
+    // 刪除文章
+    await env.DB.prepare('DELETE FROM blog_posts WHERE id = ?').bind(postId).run();
+    
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: 'Post deleted successfully'
     }), {
       headers: { 'Content-Type': 'application/json' }
     });

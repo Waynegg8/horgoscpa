@@ -5,6 +5,8 @@
 const API_BASE = 'https://timesheet-api.hergscpa.workers.dev';
 let currentUser = null;
 let allServices = [];
+let allClients = [];
+let allEmployees = [];
 
 // =========================================
 // 初始化
@@ -12,6 +14,7 @@ let allServices = [];
 document.addEventListener('DOMContentLoaded', async () => {
     await initAuth();
     initMobileMenu();
+    await loadClientsAndEmployees();
     await loadServices();
 });
 
@@ -177,5 +180,210 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// =========================================
+// 載入客戶和員工資料
+// =========================================
+async function loadClientsAndEmployees() {
+    try {
+        // 載入客戶
+        const clientsResponse = await apiRequest('/api/clients');
+        allClients = clientsResponse || [];
+        
+        // 載入員工
+        const employeesResponse = await apiRequest('/api/employees');
+        allEmployees = employeesResponse || [];
+    } catch (error) {
+        console.error('載入客戶/員工資料失敗:', error);
+    }
+}
+
+// =========================================
+// 服務配置對話框
+// =========================================
+function showServiceDialog(serviceId = null) {
+    const dialog = document.getElementById('serviceDialog');
+    const title = document.getElementById('dialogTitle');
+    
+    // 重置表單
+    document.getElementById('serviceId').value = '';
+    document.getElementById('clientName').value = '';
+    document.getElementById('clientTaxId').value = '';
+    document.getElementById('serviceName').value = '';
+    document.getElementById('serviceCategory').value = '';
+    document.getElementById('frequency').value = '每月';
+    document.getElementById('assignedTo').value = '';
+    document.getElementById('fee').value = '0';
+    document.getElementById('estimatedHours').value = '0';
+    document.getElementById('billingTiming').value = '';
+    document.getElementById('billingNotes').value = '';
+    document.getElementById('serviceNotes').value = '';
+    document.querySelectorAll('.month-checkbox').forEach(cb => cb.checked = false);
+    
+    // 填充客戶下拉選單
+    const clientSelect = document.getElementById('clientName');
+    clientSelect.innerHTML = '<option value="">選擇客戶</option>' + 
+        allClients.map(client => `<option value="${escapeHtml(client.name)}">${escapeHtml(client.name)}</option>`).join('');
+    
+    // 填充員工下拉選單
+    const employeeSelect = document.getElementById('assignedTo');
+    employeeSelect.innerHTML = '<option value="">選擇員工</option>' + 
+        allEmployees.map(emp => `<option value="${escapeHtml(emp.name)}">${escapeHtml(emp.name)}</option>`).join('');
+    
+    if (serviceId) {
+        // 編輯模式
+        title.textContent = '編輯服務配置';
+        const service = allServices.find(s => s.id === serviceId);
+        if (service) {
+            document.getElementById('serviceId').value = service.id;
+            document.getElementById('clientName').value = service.client_name;
+            document.getElementById('clientTaxId').value = service.client_tax_id || '';
+            document.getElementById('serviceName').value = service.service_name;
+            document.getElementById('serviceCategory').value = service.service_category;
+            document.getElementById('frequency').value = service.frequency;
+            document.getElementById('assignedTo').value = service.assigned_to || '';
+            document.getElementById('fee').value = service.fee || 0;
+            document.getElementById('estimatedHours').value = service.estimated_hours || 0;
+            document.getElementById('billingTiming').value = service.billing_timing || '';
+            document.getElementById('billingNotes').value = service.billing_notes || '';
+            document.getElementById('serviceNotes').value = service.service_notes || '';
+            
+            // 設定月份勾選
+            const schedule = service.monthly_schedule || {};
+            document.querySelectorAll('.month-checkbox').forEach(cb => {
+                const month = cb.dataset.month;
+                cb.checked = schedule[month] === true;
+            });
+        }
+    } else {
+        // 新增模式
+        title.textContent = '新增服務配置';
+    }
+    
+    dialog.style.display = 'flex';
+}
+
+function closeServiceDialog() {
+    document.getElementById('serviceDialog').style.display = 'none';
+}
+
+async function saveService() {
+    const serviceId = document.getElementById('serviceId').value;
+    const clientName = document.getElementById('clientName').value;
+    const serviceName = document.getElementById('serviceName').value;
+    const serviceCategory = document.getElementById('serviceCategory').value;
+    const assignedTo = document.getElementById('assignedTo').value;
+    
+    if (!clientName || !serviceName || !serviceCategory || !assignedTo) {
+        alert('請填寫所有必填欄位');
+        return;
+    }
+    
+    // 收集月份配置
+    const monthlySchedule = {};
+    document.querySelectorAll('.month-checkbox').forEach(cb => {
+        monthlySchedule[cb.dataset.month] = cb.checked;
+    });
+    
+    // 檢查是否至少選擇一個月份
+    const hasAnyMonth = Object.values(monthlySchedule).some(v => v === true);
+    if (!hasAnyMonth) {
+        alert('請至少選擇一個執行月份');
+        return;
+    }
+    
+    const data = {
+        id: serviceId || undefined,
+        client_name: clientName,
+        client_tax_id: document.getElementById('clientTaxId').value,
+        service_name: serviceName,
+        service_category: serviceCategory,
+        frequency: document.getElementById('frequency').value,
+        fee: parseFloat(document.getElementById('fee').value) || 0,
+        estimated_hours: parseFloat(document.getElementById('estimatedHours').value) || 0,
+        monthly_schedule: monthlySchedule,
+        billing_timing: document.getElementById('billingTiming').value,
+        billing_notes: document.getElementById('billingNotes').value,
+        service_notes: document.getElementById('serviceNotes').value,
+        assigned_to: assignedTo
+    };
+    
+    try {
+        await apiRequest('/api/services', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        
+        showNotification('儲存成功！', 'success');
+        closeServiceDialog();
+        await loadServices();
+    } catch (error) {
+        showNotification('儲存失敗: ' + error.message, 'error');
+    }
+}
+
+async function deleteService(serviceId) {
+    if (!confirm('確定要刪除此服務配置嗎？\n\n注意：刪除後無法恢復，且會影響相關的週期性任務生成。')) {
+        return;
+    }
+    
+    try {
+        await apiRequest(`/api/services/${serviceId}`, {
+            method: 'DELETE'
+        });
+        
+        showNotification('刪除成功', 'success');
+        await loadServices();
+    } catch (error) {
+        showNotification('刪除失敗: ' + error.message, 'error');
+    }
+}
+
+// =========================================
+// 月份選擇輔助函數
+// =========================================
+function selectAllMonths() {
+    document.querySelectorAll('.month-checkbox').forEach(cb => cb.checked = true);
+}
+
+function deselectAllMonths() {
+    document.querySelectorAll('.month-checkbox').forEach(cb => cb.checked = false);
+}
+
+function selectQuarterMonths() {
+    // 選擇每季末月：3, 6, 9, 12
+    document.querySelectorAll('.month-checkbox').forEach(cb => {
+        const month = parseInt(cb.dataset.month);
+        cb.checked = (month % 3 === 0);
+    });
+}
+
+// =========================================
+// 通知功能
+// =========================================
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+        color: white;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 

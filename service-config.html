@@ -178,7 +178,7 @@
             </div>
 
             <div class="toolbar" style="margin-bottom: 20px;">
-                <div style="display: flex; gap: 15px; align-items: center;">
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
                     <select id="categoryFilter" onchange="loadServices()" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
                         <option value="">所有類別</option>
                         <option value="記帳">記帳</option>
@@ -188,9 +188,13 @@
                         <option value="其他">其他</option>
                     </select>
                     <input type="text" id="clientSearch" placeholder="搜尋客戶..." onkeyup="filterServices()" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 300px;">
-                    <button onclick="loadServices()" class="btn-primary">
+                    <button onclick="loadServices()" class="btn-secondary">
                         <span class="material-symbols-outlined">refresh</span>
                         重新載入
+                    </button>
+                    <button onclick="showServiceDialog()" class="btn-primary">
+                        <span class="material-symbols-outlined">add</span>
+                        新增服務配置
                     </button>
                 </div>
             </div>
@@ -202,6 +206,155 @@
     <footer class="internal-footer">
         &copy; 2025 霍爾果斯會計師事務所 內部管理系統
     </footer>
+
+    <!-- 服務配置編輯對話框 -->
+    <div id="serviceDialog" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center; overflow-y: auto;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; margin: 20px;">
+            <h2 id="dialogTitle">新增服務配置</h2>
+            <input type="hidden" id="serviceId">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>客戶 *</label>
+                    <select id="clientName" required>
+                        <option value="">選擇客戶</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>統一編號</label>
+                    <input type="text" id="clientTaxId" placeholder="選填">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>服務名稱 *</label>
+                    <input type="text" id="serviceName" placeholder="例：月度記帳、營業稅申報" required>
+                </div>
+                <div class="form-group">
+                    <label>服務類別 *</label>
+                    <select id="serviceCategory" required>
+                        <option value="">選擇類別</option>
+                        <option value="記帳">記帳</option>
+                        <option value="工商">工商</option>
+                        <option value="財簽">財簽</option>
+                        <option value="稅簽">稅簽</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>執行頻率 *</label>
+                    <select id="frequency" required>
+                        <option value="每月">每月</option>
+                        <option value="每季">每季</option>
+                        <option value="每年">每年</option>
+                        <option value="不定期">不定期</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>負責員工 *</label>
+                    <select id="assignedTo" required>
+                        <option value="">選擇員工</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>收費金額</label>
+                    <input type="number" id="fee" placeholder="0" min="0" step="100">
+                </div>
+                <div class="form-group">
+                    <label>預計工時（小時）</label>
+                    <input type="number" id="estimatedHours" placeholder="0" min="0" step="0.5">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>每月執行配置 *</label>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">勾選需要執行此服務的月份</p>
+                <div class="monthly-schedule-editor" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;">
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="1">
+                        <span>1月</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="2">
+                        <span>2月</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="3">
+                        <span>3月</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="4">
+                        <span>4月</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="5">
+                        <span>5月</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="6">
+                        <span>6月</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="7">
+                        <span>7月</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="8">
+                        <span>8月</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="9">
+                        <span>9月</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="10">
+                        <span>10月</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="11">
+                        <span>11月</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        <input type="checkbox" class="month-checkbox" data-month="12">
+                        <span>12月</span>
+                    </label>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="selectAllMonths()">全選</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="deselectAllMonths()">全不選</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="selectQuarterMonths()">每季末月</button>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>收款時機</label>
+                    <input type="text" id="billingTiming" placeholder="例：每月、季末、年底">
+                </div>
+                <div class="form-group">
+                    <label>收款備註</label>
+                    <input type="text" id="billingNotes" placeholder="收款相關說明">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>服務備註</label>
+                <textarea id="serviceNotes" rows="3" placeholder="其他需要記錄的資訊..."></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveService()">儲存</button>
+                <button class="btn btn-secondary" onclick="closeServiceDialog()">取消</button>
+            </div>
+        </div>
+    </div>
 
     <script src="assets/js/service-config.js"></script>
 </body>

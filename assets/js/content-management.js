@@ -628,17 +628,413 @@ async function bulkChangeStatus(newStatus) {
 }
 
 // =====================================
-// 資源管理（待實現）
+// 資源管理
 // =====================================
-function loadResources() {
-    console.log('載入資源...');
+let allResources = [];
+
+async function loadResources() {
+    try {
+        const token = localStorage.getItem('session_token');
+        const response = await fetch(`${API_BASE}/api/public/resources`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load resources');
+        
+        const data = await response.json();
+        allResources = data.data || [];
+        
+        renderResourcesUI();
+    } catch (error) {
+        console.error('載入資源失敗:', error);
+        const section = document.getElementById('resources-section');
+        section.innerHTML = `
+            <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                <div style="text-align: center; color: var(--text-secondary);">
+                    <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3; color: #f44336;">error</span>
+                    <h3>載入失敗</h3>
+                    <p>${error.message}</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function renderResourcesUI() {
+    const section = document.getElementById('resources-section');
+    section.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2 style="margin: 0;">資源管理</h2>
+                <button class="btn btn-primary" onclick="showResourceUploadDialog()">
+                    <span class="material-symbols-outlined">upload_file</span>
+                    上傳資源
+                </button>
+            </div>
+            
+            <div id="resourcesList">
+                ${allResources.length === 0 ? `
+                    <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+                        <span class="material-symbols-outlined" style="font-size: 80px; opacity: 0.3;">folder_open</span>
+                        <h3>尚無資源</h3>
+                        <p>點擊「上傳資源」開始新增可下載的資源檔案</p>
+                    </div>
+                ` : allResources.map(resource => `
+                    <div class="resource-item" style="border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0 0 5px 0;">${escapeHtml(resource.title)}</h4>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">${escapeHtml(resource.description || '')}</p>
+                            <div style="margin-top: 8px; font-size: 13px; color: var(--text-secondary);">
+                                <span>📁 ${escapeHtml(resource.type || '其他')}</span>
+                                <span style="margin-left: 15px;">📂 ${escapeHtml(resource.category || '未分類')}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="${resource.file_url}" target="_blank" class="btn btn-sm btn-secondary" title="下載">
+                                <span class="material-symbols-outlined">download</span>
+                            </a>
+                            <button class="btn btn-sm btn-danger" onclick="deleteResource(${resource.id})" title="刪除">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        
+        <!-- 上傳對話框 -->
+        <div id="resourceUploadDialog" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%;">
+                <h3>上傳資源檔案</h3>
+                <div class="form-group">
+                    <label>資源標題 *</label>
+                    <input type="text" id="resourceTitle" placeholder="輸入資源標題">
+                </div>
+                <div class="form-group">
+                    <label>資源描述</label>
+                    <textarea id="resourceDescription" rows="3" placeholder="簡短描述此資源"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>類型</label>
+                        <select id="resourceType">
+                            <option value="模板">模板</option>
+                            <option value="指南">指南</option>
+                            <option value="表單">表單</option>
+                            <option value="文件">文件</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>分類</label>
+                        <select id="resourceCategory">
+                            <option value="稅務">稅務</option>
+                            <option value="會計">會計</option>
+                            <option value="創業">創業</option>
+                            <option value="營運">營運</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>選擇檔案 * (PDF, DOC, DOCX, XLS, XLSX)</label>
+                    <input type="file" id="resourceFile" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="uploadResource()">上傳</button>
+                    <button class="btn btn-secondary" onclick="closeResourceUploadDialog()">取消</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function showResourceUploadDialog() {
+    const dialog = document.getElementById('resourceUploadDialog');
+    dialog.style.display = 'flex';
+}
+
+function closeResourceUploadDialog() {
+    const dialog = document.getElementById('resourceUploadDialog');
+    dialog.style.display = 'none';
+    document.getElementById('resourceTitle').value = '';
+    document.getElementById('resourceDescription').value = '';
+    document.getElementById('resourceFile').value = '';
+}
+
+async function uploadResource() {
+    const title = document.getElementById('resourceTitle').value.trim();
+    const description = document.getElementById('resourceDescription').value.trim();
+    const type = document.getElementById('resourceType').value;
+    const category = document.getElementById('resourceCategory').value;
+    const file = document.getElementById('resourceFile').files[0];
+    
+    if (!title || !file) {
+        showNotification('請填寫標題並選擇檔案', 'error');
+        return;
+    }
+    
+    try {
+        showNotification('上傳中...', 'info');
+        
+        // 這裡需要實作資源上傳 API
+        // 目前使用圖片上傳 API 作為示範，實際應該要有專門的資源上傳 API
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', title);
+        formData.append('description', description);
+        formData.append('type', type);
+        formData.append('category', category);
+        
+        const token = localStorage.getItem('session_token');
+        const response = await fetch(`${API_BASE}/api/upload/resource`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        if (!response.ok) throw new Error('Upload failed');
+        
+        showNotification('上傳成功！', 'success');
+        closeResourceUploadDialog();
+        loadResources();
+    } catch (error) {
+        showNotification('上傳失敗: ' + error.message, 'error');
+    }
+}
+
+async function deleteResource(resourceId) {
+    if (!confirm('確定要刪除此資源嗎？')) return;
+    
+    try {
+        const token = localStorage.getItem('session_token');
+        const response = await fetch(`${API_BASE}/api/resources/${resourceId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) throw new Error('Delete failed');
+        
+        showNotification('刪除成功', 'success');
+        loadResources();
+    } catch (error) {
+        showNotification('刪除失敗: ' + error.message, 'error');
+    }
 }
 
 // =====================================
-// 媒體庫（待實現）
+// 媒體庫
 // =====================================
-function loadMediaLibrary() {
-    console.log('載入媒體庫...');
+let allMedia = [];
+
+async function loadMediaLibrary() {
+    try {
+        const token = localStorage.getItem('session_token');
+        const response = await fetch(`${API_BASE}/api/media?type=image&limit=100`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load media');
+        
+        const data = await response.json();
+        allMedia = data.data || [];
+        
+        renderMediaLibraryUI();
+    } catch (error) {
+        console.error('載入媒體庫失敗:', error);
+        const section = document.getElementById('media-section');
+        section.innerHTML = `
+            <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                <div style="text-align: center; color: var(--text-secondary);">
+                    <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3; color: #f44336;">error</span>
+                    <h3>載入失敗</h3>
+                    <p>${error.message}</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function renderMediaLibraryUI() {
+    const section = document.getElementById('media-section');
+    section.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <div>
+                    <h2 style="margin: 0;">媒體庫</h2>
+                    <p style="color: var(--text-secondary); margin: 5px 0 0;">統一管理網站圖片資源</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="file" id="mediaFileInput" accept="image/*" style="display: none;" onchange="handleMediaUpload()">
+                    <button class="btn btn-primary" onclick="document.getElementById('mediaFileInput').click()">
+                        <span class="material-symbols-outlined">add_photo_alternate</span>
+                        上傳圖片
+                    </button>
+                </div>
+            </div>
+            
+            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px; padding: 10px; background: var(--light-bg); border-radius: 6px;">
+                <strong>提示：</strong>支援 JPEG、PNG、GIF、WebP 格式，單張圖片不超過 5MB
+            </div>
+            
+            <div id="mediaGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                ${allMedia.length === 0 ? `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+                        <span class="material-symbols-outlined" style="font-size: 80px; opacity: 0.3;">photo_library</span>
+                        <h3>尚無圖片</h3>
+                        <p>點擊「上傳圖片」開始新增媒體資源</p>
+                    </div>
+                ` : allMedia.map(media => `
+                    <div class="media-item" style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; transition: all 0.3s;">
+                        <div style="aspect-ratio: 16/9; background: #f5f5f5; position: relative; overflow: hidden;">
+                            <img src="${media.file_url}" alt="${escapeHtml(media.filename)}" 
+                                 style="width: 100%; height: 100%; object-fit: cover;"
+                                 onclick="showMediaPreview('${media.file_url}', '${escapeHtml(media.filename)}')">
+                        </div>
+                        <div style="padding: 10px;">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 5px; word-break: break-all;">
+                                ${escapeHtml(media.filename)}
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">
+                                ${formatFileSize(media.file_size)}
+                            </div>
+                            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                <button class="btn btn-sm btn-secondary" onclick="copyMediaUrl('${media.file_url}')" title="複製連結" style="flex: 1;">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">content_copy</span>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteMedia(${media.id})" title="刪除" style="flex: 1;">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        
+        <!-- 圖片預覽對話框 -->
+        <div id="mediaPreviewDialog" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center;" onclick="closeMediaPreview()">
+            <div style="max-width: 90%; max-height: 90%; position: relative;">
+                <img id="mediaPreviewImage" src="" alt="" style="max-width: 100%; max-height: 90vh; border-radius: 8px;">
+                <div id="mediaPreviewFilename" style="color: white; margin-top: 10px; text-align: center;"></div>
+            </div>
+        </div>
+    `;
+    
+    // 添加 hover 效果
+    document.querySelectorAll('.media-item').forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            this.style.transform = 'translateY(-2px)';
+        });
+        item.addEventListener('mouseleave', function() {
+            this.style.boxShadow = 'none';
+            this.style.transform = 'translateY(0)';
+        });
+    });
+}
+
+async function handleMediaUpload() {
+    const fileInput = document.getElementById('mediaFileInput');
+    const file = fileInput.files[0];
+    
+    if (!file) return;
+    
+    // 檢查檔案類型
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+        showNotification('只支援 JPEG、PNG、GIF、WebP 格式的圖片', 'error');
+        fileInput.value = '';
+        return;
+    }
+    
+    // 檢查檔案大小
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+        showNotification('圖片大小不能超過 5MB', 'error');
+        fileInput.value = '';
+        return;
+    }
+    
+    try {
+        showNotification('上傳中...', 'info');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const token = localStorage.getItem('session_token');
+        const response = await fetch(`${API_BASE}/api/upload/image`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Upload failed');
+        }
+        
+        showNotification('上傳成功！', 'success');
+        fileInput.value = '';
+        loadMediaLibrary();
+    } catch (error) {
+        showNotification('上傳失敗: ' + error.message, 'error');
+        fileInput.value = '';
+    }
+}
+
+async function deleteMedia(mediaId) {
+    if (!confirm('確定要刪除此圖片嗎？')) return;
+    
+    try {
+        const token = localStorage.getItem('session_token');
+        const response = await fetch(`${API_BASE}/api/media/${mediaId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) throw new Error('Delete failed');
+        
+        showNotification('刪除成功', 'success');
+        loadMediaLibrary();
+    } catch (error) {
+        showNotification('刪除失敗: ' + error.message, 'error');
+    }
+}
+
+function copyMediaUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        showNotification('連結已複製到剪貼簿', 'success');
+    }).catch(() => {
+        showNotification('複製失敗', 'error');
+    });
+}
+
+function showMediaPreview(url, filename) {
+    const dialog = document.getElementById('mediaPreviewDialog');
+    const img = document.getElementById('mediaPreviewImage');
+    const filenameDiv = document.getElementById('mediaPreviewFilename');
+    
+    img.src = url;
+    filenameDiv.textContent = filename;
+    dialog.style.display = 'flex';
+}
+
+function closeMediaPreview() {
+    const dialog = document.getElementById('mediaPreviewDialog');
+    dialog.style.display = 'none';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
 // =====================================
