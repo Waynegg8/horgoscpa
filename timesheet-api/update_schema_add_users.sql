@@ -34,17 +34,17 @@ CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 -- 插入預設管理員帳號 (密碼: admin123)
 -- 注意: 實際部署時應該修改密碼
 INSERT OR IGNORE INTO users (username, password_hash, role, employee_name, is_active) 
-VALUES ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'admin', NULL, 1);
+VALUES ('admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin', NULL, 1);
 
 -- 為現有員工創建帳號 (預設密碼: employee123)
 INSERT OR IGNORE INTO users (username, password_hash, role, employee_name, is_active) 
-VALUES ('zhuang', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'employee', '莊凱閔', 1);
+VALUES ('zhuang', '5b2f8e27e2e5b4081c03ce70b288c87bd1263140cbd1bd9ae078123509b7caff', 'employee', '莊凱閔', 1);
 
 INSERT OR IGNORE INTO users (username, password_hash, role, employee_name, is_active) 
-VALUES ('zhang', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'employee', '張紜蓁', 1);
+VALUES ('zhang', '5b2f8e27e2e5b4081c03ce70b288c87bd1263140cbd1bd9ae078123509b7caff', 'employee', '張紜蓁', 1);
 
 INSERT OR IGNORE INTO users (username, password_hash, role, employee_name, is_active) 
-VALUES ('lu', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'employee', '呂柏澄', 1);
+VALUES ('lu', '5b2f8e27e2e5b4081c03ce70b288c87bd1263140cbd1bd9ae078123509b7caff', 'employee', '呂柏澄', 1);
 
 -- 清理過期會話的定期任務 (需要定期執行)
 -- DELETE FROM sessions WHERE expires_at < datetime('now');
