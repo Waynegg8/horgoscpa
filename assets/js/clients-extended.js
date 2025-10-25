@@ -182,7 +182,9 @@ async function showEditClientExtendedModal(clientName) {
         const interactionsResponse = await apiRequest(`/api/client-interactions?client=${encodeURIComponent(clientName)}`);
         clientInteractionsData = interactionsResponse.data || [];
         
-        showModal('editClientExtendedModal', renderEditClientExtendedForm(client, clientName));
+        // 直接插入 modal HTML
+        const container = document.getElementById('modalContainer');
+        container.innerHTML = renderEditClientExtendedForm(client, clientName);
     } catch (error) {
         showNotification('載入客戶資料失敗: ' + error.message, 'error');
     }
@@ -194,7 +196,7 @@ function renderEditClientExtendedForm(client, clientName) {
             <div class="modal-dialog" style="max-width: 900px;">
                 <div class="modal-header">
                     <h2>${escapeHtml(clientName)} - 詳細資料</h2>
-                    <button class="close-btn" onclick="closeModal('editClientExtendedModal')">
+                    <button class="close-btn" onclick="closeClientExtendedModal()">
                         <span class="material-symbols-outlined">close</span>
                     </button>
                 </div>
@@ -335,7 +337,7 @@ function renderEditClientExtendedForm(client, clientName) {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="closeModal('editClientExtendedModal')">取消</button>
+                    <button class="btn btn-secondary" onclick="closeClientExtendedModal()">取消</button>
                     <button class="btn btn-primary" onclick="saveClientExtended()">儲存</button>
                 </div>
             </div>
@@ -356,6 +358,15 @@ function switchModalTab(tabName) {
         content.style.display = 'none';
     });
     document.getElementById(`${tabName}-content`).style.display = 'block';
+}
+
+// 關閉 Modal
+function closeClientExtendedModal() {
+    const modal = document.getElementById('editClientExtendedModal');
+    if (modal) {
+        modal.remove();
+    }
+    currentEditingClient = null;
 }
 
 // =========================================
@@ -391,7 +402,7 @@ async function saveClientExtended() {
         });
         
         showNotification('儲存成功', 'success');
-        closeModal('editClientExtendedModal');
+        closeClientExtendedModal();
         loadClientsExtended();
     } catch (error) {
         showNotification('儲存失敗: ' + error.message, 'error');
@@ -540,6 +551,7 @@ function escapeHtml(text) {
 window.initClientsExtended = initClientsExtended;
 window.loadClientsExtended = loadClientsExtended;
 window.showEditClientExtendedModal = showEditClientExtendedModal;
+window.closeClientExtendedModal = closeClientExtendedModal;
 window.switchModalTab = switchModalTab;
 window.saveClientExtended = saveClientExtended;
 window.showAddServiceScheduleForm = showAddServiceScheduleForm;
