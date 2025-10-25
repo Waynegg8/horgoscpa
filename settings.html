@@ -317,6 +317,7 @@
                     <button class="tab-button" data-tab="leave-events">假期事件</button>
                     <button class="tab-button" data-tab="holidays">國定假日</button>
                     <!-- 管理員專屬標籤（透過 JS 動態顯示） -->
+                    <button class="tab-button admin-only" data-tab="employees" style="display:none;">員工管理</button>
                     <button class="tab-button admin-only" data-tab="users" style="display:none;">用戶管理</button>
                     <button class="tab-button admin-only" data-tab="leave-types" style="display:none;">假別設定</button>
                     <button class="tab-button admin-only" data-tab="system-params" style="display:none;">系統參數</button>
@@ -439,6 +440,30 @@
                         </div>
                     </div>
                     <div id="holidaysTableContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            載入中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 員工管理（僅管理員） -->
+                <div id="employees-tab" class="tab-content">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-box">
+                                <input type="text" id="employeeSearch" placeholder="搜尋員工...">
+                                <span class="material-symbols-outlined search-icon">search</span>
+                            </div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary" onclick="showAddEmployeeModal()">
+                                <span class="material-symbols-outlined">add</span>
+                                新增員工
+                            </button>
+                        </div>
+                    </div>
+                    <div id="employeesTableContainer">
                         <div class="loading">
                             <div class="loading-spinner"></div>
                             載入中...

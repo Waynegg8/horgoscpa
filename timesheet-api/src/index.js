@@ -325,6 +325,37 @@ export default {
       }
 
       // ========================================
+      // 員工管理 CRUD (僅管理員)
+      // ========================================
+      if (url.pathname === "/api/admin/employees" && method === "GET") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handleGetAllEmployees(env.DB);
+      }
+      
+      if (url.pathname === "/api/admin/employees" && method === "POST") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const payload = await request.json();
+        return await handleCreateEmployee(env.DB, payload);
+      }
+      
+      if (url.pathname.startsWith("/api/admin/employees/") && method === "PUT") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const oldName = decodeURIComponent(url.pathname.split("/")[4]);
+        const payload = await request.json();
+        return await handleUpdateEmployee(env.DB, oldName, payload);
+      }
+      
+      if (url.pathname.startsWith("/api/admin/employees/") && method === "DELETE") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const name = decodeURIComponent(url.pathname.split("/")[4]);
+        return await handleDeleteEmployee(env.DB, name);
+      }
+      
+      // ========================================
       // 用戶管理 CRUD (僅管理員)
       // ========================================
       if (url.pathname.startsWith("/api/admin/users/") && method === "PUT") {
@@ -1362,6 +1393,94 @@ async function handleDeleteUser(db, id) {
     await db.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(id).run();
 
     return jsonResponse({ success: true, message: '使用者已刪除' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+// =================================================================
+// 員工管理 CRUD (僅管理員)
+// =================================================================
+async function handleGetAllEmployees(db) {
+  try {
+    const res = await db.prepare(`
+      SELECT name, hire_date
+      FROM employees
+      ORDER BY name
+    `).all();
+    const rows = getRows(res);
+    return jsonResponse(rows);
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleCreateEmployee(db, payload) {
+  try {
+    const { name, hire_date } = payload;
+    
+    if (!name) {
+      return jsonResponse({ error: '員工姓名為必填' }, 400);
+    }
+    
+    await db.prepare(`
+      INSERT INTO employees (name, hire_date)
+      VALUES (?, ?)
+    `).bind(name, hire_date || null).run();
+    
+    return jsonResponse({ success: true, message: '員工已新增' });
+  } catch (err) {
+    if (err.message.includes('UNIQUE')) {
+      return jsonResponse({ error: '此員工姓名已存在' }, 400);
+    }
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleUpdateEmployee(db, oldName, payload) {
+  try {
+    const { name, hire_date } = payload;
+    
+    if (!name) {
+      return jsonResponse({ error: '員工姓名為必填' }, 400);
+    }
+    
+    // 因為 name 是主鍵，需要更新所有關聯表
+    await db.prepare(`
+      UPDATE employees SET name = ?, hire_date = ? WHERE name = ?
+    `).bind(name, hire_date || null, oldName).run();
+    
+    return jsonResponse({ success: true, message: '員工已更新' });
+  } catch (err) {
+    if (err.message.includes('UNIQUE')) {
+      return jsonResponse({ error: '此員工姓名已存在' }, 400);
+    }
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleDeleteEmployee(db, employeeName) {
+  try {
+    // 檢查是否有關聯的客戶指派
+    const assignments = await db.prepare(`
+      SELECT COUNT(*) as count FROM client_assignments WHERE employee_name = ?
+    `).bind(employeeName).first();
+    
+    if (assignments && assignments.count > 0) {
+      return jsonResponse({ error: '無法刪除：此員工仍有客戶指派記錄' }, 400);
+    }
+    
+    // 檢查是否有關聯的使用者帳號
+    const users = await db.prepare(`
+      SELECT COUNT(*) as count FROM users WHERE employee_name = ?
+    `).bind(employeeName).first();
+    
+    if (users && users.count > 0) {
+      return jsonResponse({ error: '無法刪除：此員工已綁定使用者帳號' }, 400);
+    }
+    
+    await db.prepare(`DELETE FROM employees WHERE name = ?`).bind(employeeName).run();
+    return jsonResponse({ success: true, message: '員工已刪除' });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }

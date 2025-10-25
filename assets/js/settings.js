@@ -13,7 +13,8 @@ let currentData = {
     holidays: [],
     users: [],
     leaveTypes: [],
-    systemParams: []
+    systemParams: [],
+    employees: []
 };
 
 // =========================================
@@ -177,6 +178,11 @@ function loadTabData(tabName) {
                 loadSystemParams();
             }
             break;
+        case 'employees':
+            if (currentUser.role === 'admin') {
+                loadEmployees();
+            }
+            break;
     }
 }
 
@@ -235,6 +241,11 @@ function initSearchFilters() {
     // 假別搜尋
     document.getElementById('leaveTypeSearch')?.addEventListener('input', (e) => {
         filterTable('leave-types', e.target.value);
+    });
+    
+    // 員工搜尋
+    document.getElementById('employeeSearch')?.addEventListener('input', (e) => {
+        filterTable('employees', e.target.value);
     });
 }
 
@@ -431,7 +442,7 @@ function showAddClientModal() {
         try {
             await apiRequest('/api/clients', {
                 method: 'POST',
-                body: JSON.stringify({ name })
+                body: { name }
             });
             
             closeModal();
@@ -464,7 +475,7 @@ function editClient(clientName) {
         try {
             await apiRequest(`/api/clients/${encodeURIComponent(clientName)}`, {
                 method: 'PUT',
-                body: JSON.stringify({ name })
+                body: { name }
             });
             
             closeModal();
@@ -585,7 +596,7 @@ async function showAddAssignmentModal() {
             try {
                 await apiRequest('/api/assignments', {
                     method: 'POST',
-                    body: JSON.stringify({ employee_name, client_name })
+                    body: { employee_name, client_name }
                 });
                 
                 closeModal();
@@ -690,7 +701,7 @@ function showAddBusinessTypeModal() {
         try {
             await apiRequest('/api/business-types', {
                 method: 'POST',
-                body: JSON.stringify({ name })
+                body: { name }
             });
             
             closeModal();
@@ -723,7 +734,7 @@ function editBusinessType(typeName) {
         try {
             await apiRequest(`/api/business-types/${encodeURIComponent(typeName)}`, {
                 method: 'PUT',
-                body: JSON.stringify({ name })
+                body: { name }
             });
             
             closeModal();
@@ -744,12 +755,15 @@ async function deleteBusinessType(typeName) {
     }
     
     try {
-        await apiRequest(`/api/business-types/${encodeURIComponent(typeName)}`, {
+        const result = await apiRequest(`/api/business-types/${encodeURIComponent(typeName)}`, {
             method: 'DELETE'
         });
         
         showAlert('業務類型已成功刪除');
-        loadBusinessTypes();
+        // 等待一小段時間讓用戶看到成功訊息，然後刷新列表
+        setTimeout(() => {
+            loadBusinessTypes();
+        }, 500);
     } catch (error) {
         showAlert(error.message, 'error');
     }
@@ -856,7 +870,7 @@ async function showAddLeaveEventModal() {
             try {
                 await apiRequest('/api/leave-events', {
                     method: 'POST',
-                    body: JSON.stringify({ employee_name, event_date, event_type })
+                    body: { employee_name, event_date, event_type }
                 });
                 
                 closeModal();
@@ -920,7 +934,7 @@ async function editLeaveEvent(id) {
             try {
                 await apiRequest(`/api/leave-events/${id}`, {
                     method: 'PUT',
-                    body: JSON.stringify({ employee_name, event_date, event_type })
+                    body: { employee_name, event_date, event_type }
                 });
                 
                 closeModal();
@@ -1048,7 +1062,7 @@ function showAddHolidayModal() {
         try {
             await apiRequest('/api/holidays', {
                 method: 'POST',
-                body: JSON.stringify({ holiday_date, holiday_name })
+                body: { holiday_date, holiday_name }
             });
             
             closeModal();
@@ -1087,7 +1101,7 @@ function editHoliday(holidayDate) {
         try {
             await apiRequest(`/api/holidays/${encodeURIComponent(holidayDate)}`, {
                 method: 'PUT',
-                body: JSON.stringify({ holiday_date: new_holiday_date, holiday_name })
+                body: { holiday_date: new_holiday_date, holiday_name }
             });
             
             closeModal();
@@ -1228,12 +1242,14 @@ async function showAddUserModal() {
             try {
                 await apiRequest('/api/admin/users', {
                     method: 'POST',
-                    body: JSON.stringify({ username, password, role, employee_name })
+                    body: { username, password, role, employee_name }
                 });
                 
                 closeModal();
                 showAlert('使用者已成功新增');
-                loadUsers();
+                setTimeout(() => {
+                    loadUsers();
+                }, 500);
             } catch (error) {
                 showAlert(error.message, 'error');
             }
@@ -1294,7 +1310,7 @@ async function editUser(id) {
             try {
                 await apiRequest(`/api/admin/users/${id}`, {
                     method: 'PUT',
-                    body: JSON.stringify({ username, role, employee_name, is_active })
+                    body: { username, role, employee_name, is_active }
                 });
                 
                 closeModal();
@@ -1405,7 +1421,7 @@ function showAddLeaveTypeModal() {
         try {
             await apiRequest('/api/admin/leave-types', {
                 method: 'POST',
-                body: JSON.stringify({ name })
+                body: { name }
             });
             
             closeModal();
@@ -1438,7 +1454,7 @@ function editLeaveType(typeName) {
         try {
             await apiRequest(`/api/admin/leave-types/${encodeURIComponent(typeName)}`, {
                 method: 'PUT',
-                body: JSON.stringify({ name })
+                body: { name }
             });
             
             closeModal();
@@ -1459,12 +1475,15 @@ async function deleteLeaveType(typeName) {
     }
     
     try {
-        await apiRequest(`/api/admin/leave-types/${encodeURIComponent(typeName)}`, {
+        const result = await apiRequest(`/api/admin/leave-types/${encodeURIComponent(typeName)}`, {
             method: 'DELETE'
         });
         
         showAlert('假別已成功刪除');
-        loadLeaveTypes();
+        // 等待一小段時間讓用戶看到成功訊息，然後刷新列表
+        setTimeout(() => {
+            loadLeaveTypes();
+        }, 500);
     } catch (error) {
         showAlert(error.message, 'error');
     }
@@ -1536,11 +1555,161 @@ async function saveSystemParams() {
         
         await apiRequest('/api/admin/system-params', {
             method: 'PUT',
-            body: JSON.stringify({ params })
+            body: { params }
         });
         
         showAlert('系統參數已成功儲存');
         loadSystemParams();
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
+
+// =========================================
+// 員工管理 CRUD (僅管理員)
+// =========================================
+async function loadEmployees() {
+    showLoading('employeesTableContainer');
+    
+    try {
+        const data = await apiRequest('/api/admin/employees');
+        currentData.employees = data;
+        
+        if (data.length === 0) {
+            showEmpty('employeesTableContainer', 'people', '尚無員工資料', '點擊「新增員工」按鈕開始');
+            return;
+        }
+        
+        const html = `
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>員工姓名</th>
+                            <th>到職日期</th>
+                            <th style="width: 150px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map((emp, index) => `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${emp.name}</td>
+                                <td>${emp.hire_date || '-'}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn btn-small btn-secondary" onclick="editEmployee('${emp.name.replace(/'/g, "\\'")}', '${emp.hire_date || ''}')">
+                                            <span class="material-symbols-outlined">edit</span>
+                                        </button>
+                                        <button class="btn btn-small btn-danger" onclick="deleteEmployee('${emp.name.replace(/'/g, "\\'")}')">
+                                            <span class="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        document.getElementById('employeesTableContainer').innerHTML = html;
+    } catch (error) {
+        showError('employeesTableContainer', error.message);
+    }
+}
+
+function showAddEmployeeModal() {
+    const content = `
+        <div class="form-group">
+            <label>員工姓名 <span class="required">*</span></label>
+            <input type="text" id="employeeName" placeholder="請輸入員工姓名" autofocus>
+        </div>
+        <div class="form-group">
+            <label>到職日期</label>
+            <input type="date" id="employeeHireDate">
+        </div>
+    `;
+    
+    showModal('新增員工', content, async () => {
+        const name = document.getElementById('employeeName').value.trim();
+        const hire_date = document.getElementById('employeeHireDate').value || null;
+        
+        if (!name) {
+            showAlert('請輸入員工姓名', 'error');
+            return;
+        }
+        
+        try {
+            await apiRequest('/api/admin/employees', {
+                method: 'POST',
+                body: { name, hire_date }
+            });
+            
+            closeModal();
+            showAlert('員工已成功新增');
+            setTimeout(() => {
+                loadEmployees();
+            }, 500);
+        } catch (error) {
+            showAlert(error.message, 'error');
+        }
+    });
+}
+
+function editEmployee(employeeName, hireDate) {
+    const content = `
+        <div class="form-group">
+            <label>員工姓名 <span class="required">*</span></label>
+            <input type="text" id="employeeName" value="${employeeName}" autofocus>
+        </div>
+        <div class="form-group">
+            <label>到職日期</label>
+            <input type="date" id="employeeHireDate" value="${hireDate}">
+        </div>
+    `;
+    
+    showModal('編輯員工', content, async () => {
+        const name = document.getElementById('employeeName').value.trim();
+        const hire_date = document.getElementById('employeeHireDate').value || null;
+        
+        if (!name) {
+            showAlert('請輸入員工姓名', 'error');
+            return;
+        }
+        
+        try {
+            await apiRequest(`/api/admin/employees/${encodeURIComponent(employeeName)}`, {
+                method: 'PUT',
+                body: { name, hire_date }
+            });
+            
+            closeModal();
+            showAlert('員工已成功更新');
+            setTimeout(() => {
+                loadEmployees();
+            }, 500);
+        } catch (error) {
+            showAlert(error.message, 'error');
+        }
+    });
+}
+
+async function deleteEmployee(employeeName) {
+    if (!confirm(`確定要刪除員工「${employeeName}」嗎？`)) {
+        return;
+    }
+    
+    try {
+        await apiRequest(`/api/admin/employees/${encodeURIComponent(employeeName)}`, {
+            method: 'DELETE'
+        });
+        
+        showAlert('員工已成功刪除');
+        setTimeout(() => {
+            loadEmployees();
+        }, 500);
     } catch (error) {
         showAlert(error.message, 'error');
     }
