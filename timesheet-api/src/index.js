@@ -56,6 +56,21 @@ import {
   deleteMedia
 } from './media.js';
 
+import {
+  getProjects,
+  getProject,
+  createProject,
+  updateProject,
+  deleteProject,
+  getProjectTasks,
+  createTask,
+  updateTask,
+  deleteTask,
+  getTaskChecklist,
+  addChecklistItem,
+  updateChecklistItem
+} from './projects.js';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -355,6 +370,70 @@ export default {
       if (url.pathname.match(/^\/api\/media\/\d+$/) && method === "DELETE") {
         const mediaId = url.pathname.split("/")[3];
         return await deleteMedia(request, env, mediaId);
+      }
+
+      // ========================================
+      // 專案與任務管理 API (需認證)
+      // ========================================
+      
+      // 專案
+      if (url.pathname === "/api/projects" && method === "GET") {
+        return await getProjects(request, env);
+      }
+      
+      if (url.pathname.match(/^\/api\/projects\/\d+$/) && method === "GET") {
+        const projectId = url.pathname.split("/")[3];
+        return await getProject(request, env, projectId);
+      }
+      
+      if (url.pathname === "/api/projects" && method === "POST") {
+        return await createProject(request, env);
+      }
+      
+      if (url.pathname.match(/^\/api\/projects\/\d+$/) && method === "PUT") {
+        const projectId = url.pathname.split("/")[3];
+        return await updateProject(request, env, projectId);
+      }
+      
+      if (url.pathname.match(/^\/api\/projects\/\d+$/) && method === "DELETE") {
+        const projectId = url.pathname.split("/")[3];
+        return await deleteProject(request, env, projectId);
+      }
+      
+      // 專案任務
+      if (url.pathname.match(/^\/api\/projects\/\d+\/tasks$/) && method === "GET") {
+        const projectId = url.pathname.split("/")[3];
+        return await getProjectTasks(request, env, projectId);
+      }
+      
+      // 任務
+      if (url.pathname === "/api/tasks" && method === "POST") {
+        return await createTask(request, env);
+      }
+      
+      if (url.pathname.match(/^\/api\/tasks\/\d+$/) && method === "PUT") {
+        const taskId = url.pathname.split("/")[3];
+        return await updateTask(request, env, taskId);
+      }
+      
+      if (url.pathname.match(/^\/api\/tasks\/\d+$/) && method === "DELETE") {
+        const taskId = url.pathname.split("/")[3];
+        return await deleteTask(request, env, taskId);
+      }
+      
+      // 任務檢核清單
+      if (url.pathname.match(/^\/api\/tasks\/\d+\/checklist$/) && method === "GET") {
+        const taskId = url.pathname.split("/")[3];
+        return await getTaskChecklist(request, env, taskId);
+      }
+      
+      if (url.pathname === "/api/checklist" && method === "POST") {
+        return await addChecklistItem(request, env);
+      }
+      
+      if (url.pathname.match(/^\/api\/checklist\/\d+$/) && method === "PUT") {
+        const itemId = url.pathname.split("/")[3];
+        return await updateChecklistItem(request, env, itemId);
       }
 
       // ========================================
