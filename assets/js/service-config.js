@@ -111,7 +111,17 @@ function displayServices(services) {
     const grid = document.getElementById('serviceGrid');
     
     if (services.length === 0) {
-        grid.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">沒有服務配置</div>';
+        grid.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary); background: white; border-radius: 12px;">
+                <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">settings_suggest</span>
+                <h3 style="margin: 20px 0 10px;">尚無服務配置</h3>
+                <p>點擊「新增服務配置」開始設定客戶的週期性服務項目</p>
+                <button onclick="showServiceDialog()" class="btn-primary" style="margin-top: 20px;">
+                    <span class="material-symbols-outlined">add</span>
+                    新增服務配置
+                </button>
+            </div>
+        `;
         return;
     }
     
@@ -122,9 +132,17 @@ function displayServices(services) {
                     <div class="client-name">${escapeHtml(service.client_name)}</div>
                     <div class="service-name">${escapeHtml(service.service_name)}</div>
                 </div>
-                <span class="category-badge category-${service.service_category}">
-                    ${service.service_category}
-                </span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="category-badge category-${service.service_category}">
+                        ${service.service_category}
+                    </span>
+                    <button class="btn btn-sm btn-secondary" onclick="showServiceDialog(${service.id}); event.stopPropagation();" title="編輯">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">edit</span>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteService(${service.id}); event.stopPropagation();" title="刪除">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+                    </button>
+                </div>
             </div>
             
             <div class="service-meta">

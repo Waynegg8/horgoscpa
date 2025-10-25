@@ -366,13 +366,9 @@
       messageBox.innerHTML = `<span class="material-symbols-rounded">error</span><span>${message}</span>`;
     }
     
-    // 跳轉到應用程式
+    // 跳轉到應用程式（統一跳轉到工作台）
     function redirectToApp(user) {
-      if (user.role === 'admin') {
-        window.location.href = '/settings.html';
-      } else {
-        window.location.href = '/timesheet.html';
-      }
+      window.location.href = '/dashboard.html';
     }
   </script>
 </body>

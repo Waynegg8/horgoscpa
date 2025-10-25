@@ -91,6 +91,10 @@
                     <span class="material-symbols-outlined">repeat</span>
                     週期任務
                 </a>
+                <a href="service-config.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">tune</span>
+                    服務配置
+                </a>
                 <a href="content-editor.html" class="internal-nav-link active">
                     <span class="material-symbols-outlined">article</span>
                     內容
@@ -113,18 +117,28 @@
 
     <main class="internal-main">
         <div class="internal-container">
+            <!-- 頁面標題 -->
+            <div class="page-header" style="margin-bottom: 25px;">
+                <h1>知識庫管理</h1>
+                <p>管理文章、資源文件和媒體素材</p>
+            </div>
+
             <div class="content-tabs">
                 <button class="content-tab-btn active" onclick="switchContentTab('posts')">
                     <span class="material-symbols-outlined">article</span>
-                    文章管理
+                    知識文章
+                </button>
+                <button class="content-tab-btn" onclick="switchContentTab('sop')">
+                    <span class="material-symbols-outlined">description</span>
+                    SOP 文件
                 </button>
                 <button class="content-tab-btn" onclick="switchContentTab('resources')">
                     <span class="material-symbols-outlined">folder</span>
-                    資源管理
+                    文件資源
                 </button>
                 <button class="content-tab-btn" onclick="switchContentTab('media')">
                     <span class="material-symbols-outlined">photo_library</span>
-                    媒體庫
+                    圖片素材
                 </button>
             </div>
 
@@ -265,39 +279,24 @@
                 </div>
             </div>
 
+            <!-- SOP 文件 -->
+            <div id="sop-section" class="content-section">
+                <div id="sop-list-container">
+                    <!-- SOP 列表將通過 JavaScript 載入 -->
+                </div>
+            </div>
+
             <!-- 資源管理 -->
             <div id="resources-section" class="content-section">
-                <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;">
-                    <span class="material-symbols-outlined" style="font-size: 80px; opacity: 0.3; color: var(--primary-color);">folder</span>
-                    <h2 style="margin: 20px 0 10px;">資源管理系統</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                        資源管理功能已整合到資料庫<br>
-                        可透過 API 端點進行管理
-                    </p>
-                    <div style="background: var(--light-bg); padding: 15px; border-radius: 8px; text-align: left; max-width: 600px; margin: 0 auto;">
-                        <strong>可用 API：</strong><br>
-                        <code style="display: block; margin: 5px 0;">GET /api/public/resources</code>
-                        <code style="display: block; margin: 5px 0;">前台資源頁面已就緒</code>
-                    </div>
+                <div id="resources-list-container">
+                    <!-- 資源列表將通過 JavaScript 載入 -->
                 </div>
             </div>
 
             <!-- 媒體庫 -->
             <div id="media-section" class="content-section">
-                <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;">
-                    <span class="material-symbols-outlined" style="font-size: 80px; opacity: 0.3; color: var(--primary-color);">photo_library</span>
-                    <h2 style="margin: 20px 0 10px;">媒體庫</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                        統一媒體管理系統<br>
-                        已整合到 SOP 編輯器（圖片上傳）
-                    </p>
-                    <div style="background: var(--light-bg); padding: 15px; border-radius: 8px; text-align: left; max-width: 600px; margin: 0 auto;">
-                        <strong>功能：</strong><br>
-                        • 圖片上傳（5MB 限制）<br>
-                        • R2 儲存整合<br>
-                        • 資料庫記錄追蹤<br>
-                        • 已在 SOP 編輯器中使用
-                    </div>
+                <div id="media-list-container">
+                    <!-- 媒體列表將通過 JavaScript 載入 -->
                 </div>
             </div>
         </div>

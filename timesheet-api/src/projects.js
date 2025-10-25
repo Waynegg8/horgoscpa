@@ -64,8 +64,13 @@ export async function getProjects(request, env) {
     
     // 非管理員只能看到自己相關的專案
     if (sessionData.role !== 'admin') {
-      query += ` AND (p.assigned_to = ? OR p.created_by = ?)`;
-      params.push(sessionData.employee_name, sessionData.username);
+      if (sessionData.employee_name) {
+        query += ` AND (p.assigned_to = ? OR p.created_by = ?)`;
+        params.push(sessionData.employee_name, sessionData.username);
+      } else {
+        query += ` AND p.created_by = ?`;
+        params.push(sessionData.username);
+      }
     }
     
     query += ` GROUP BY p.id ORDER BY p.updated_at DESC`;

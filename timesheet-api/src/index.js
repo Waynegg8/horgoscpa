@@ -86,6 +86,7 @@ import {
   getClientServices,
   getClientServicesByClient,
   upsertClientService,
+  deleteClientService,
   getRecurringTemplates,
   generateRecurringTasks,
   getRecurringTaskInstances,
@@ -550,12 +551,18 @@ export default {
         return await addCorsHeaders(await getClientServicesByClient(env, clientName));
       }
       
-      // 創建或更新客戶服務配置
+      // 創建或更新客戶服務配置（所有員工可用）
       if (url.pathname === "/api/services" && method === "POST") {
         const auth = await requireAuth(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
         const data = await request.json();
-        return await addCorsHeaders(await upsertClientService(env, data));
+        return await addCorsHeaders(await upsertClientService(request, env, data));
+      }
+      
+      // 刪除客戶服務配置（僅管理員）
+      if (url.pathname.match(/^\/api\/services\/\d+$/) && method === "DELETE") {
+        const serviceId = parseInt(url.pathname.split("/")[3]);
+        return await addCorsHeaders(await deleteClientService(request, env, serviceId));
       }
       
       // 獲取週期性任務模板
@@ -1298,7 +1305,7 @@ async function handleChangePassword(db, request) {
       return jsonResponse({ error: '舊密碼錯誤' }, 401);
     }
     
-    // 重新密碼
+    // 更新密碼
     const newHash = await hashPassword(newPassword);
     await db.prepare(`
       UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
@@ -1311,7 +1318,7 @@ async function handleChangePassword(db, request) {
   }
 }
 
-// 管指提供設用提供指
+// 管理員重設用戶密碼
 async function handleAdminResetPassword(db, request, username) {
   try {
     const auth = await requireAdmin(db, request);
@@ -1339,7 +1346,7 @@ async function handleAdminResetPassword(db, request, username) {
       return jsonResponse({ error: '使用者不存在' }, 404);
     }
     
-    // 重新密碼
+    // 更新密碼
     const newHash = await hashPassword(newPassword);
     await db.prepare(`
       UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?
@@ -1352,7 +1359,7 @@ async function handleAdminResetPassword(db, request, username) {
   }
 }
 
-// 查詢假假使假者指管指提供
+// 查詢所有使用者（管理員）
 async function handleGetUsers(db) {
   try {
     const res = await db.prepare(`
@@ -1389,7 +1396,7 @@ async function handleCreateUser(db, payload) {
   }
 }
 
-// 重建客戶（管假員指
+// 創建客戶（管理員）
 async function handleCreateClient(db, payload) {
   try {
     const { name } = payload;
@@ -1408,7 +1415,7 @@ async function handleCreateClient(db, payload) {
   }
 }
 
-// 重建假工客戶對指（管假員指
+// 創建員工客戶對應（管理員）
 async function handleCreateAssignment(db, payload) {
   try {
     const { employee_name, client_name } = payload;
@@ -1446,13 +1453,13 @@ async function handleGetEmployees(db, user) {
     return jsonResponse(rows);
   }
   
-  // 管指假可以指假部
+  // 管理員可以查詢全部
   const res = await db.prepare("SELECT name, hire_date, gender FROM employees ORDER BY name").all();
   const rows = getRows(res);
   return jsonResponse(rows);
 }
 
-// 修改 handleGetTimesheetData 以支提供??
+// 修改 handleGetTimesheetData 以支持權限檢查
 async function handleGetTimesheetData(db, params, user) {
   const employee = params.get("employee");
   const year = params.get("year");
@@ -1478,7 +1485,7 @@ async function handleGetTimesheetData(db, params, user) {
   return jsonResponse(aggregateTimesheetData(rows));
 }
 
-// 修改 handleSaveTimesheet 以支提供??
+// 修改 handleSaveTimesheet 以支持權限檢查
 async function handleSaveTimesheet(db, payload, user) {
   const { employee, year, month, workEntries = [], leaveEntries = [] } = payload;
   
@@ -1630,7 +1637,7 @@ async function handleDeleteClient(db, clientName) {
 }
 
 // =================================================================
-// 客戶假派 CRUD
+// 客戶指派 CRUD
 // =================================================================
 async function handleGetAssignments(db, searchParams) {
   try {
@@ -1679,7 +1686,7 @@ async function handleGetAssignments(db, searchParams) {
 
 async function handleDeleteAssignment(db, assignmentId) {
   try {
-    // assignmentId 提供??"employee_name|client_name"
+    // assignmentId 格式為 "employee_name|client_name"
     const decoded = decodeURIComponent(assignmentId.toString());
     const [employeeName, clientName] = decoded.split('|');
     
@@ -1803,7 +1810,7 @@ async function handleGetLeaveEvents(db, searchParams) {
       : await db.prepare(query).all();
 
     const rows = getRows(res);
-    // 添指 notes 欄指（即使指假庫中指提供
+    // 添加 notes 欄位（即使資料庫中沒有）
     return jsonResponse(rows);
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
@@ -1863,7 +1870,7 @@ async function handleDeleteLeaveEvent(db, id) {
 }
 
 // =================================================================
-// 查詢假日 CRUD
+// 國定假日 CRUD
 // =================================================================
 async function handleCreateHoliday(db, payload) {
   try {
@@ -1898,7 +1905,7 @@ async function handleUpdateHoliday(db, oldDate, payload) {
       return jsonResponse({ error: '假日日期和名稱為必填' }, 400);
     }
 
-    // 重為 holiday_date 假主提供假要指假除提供??
+    // 因為 holiday_date 是主鍵，要刪除舊記錄
     await db.prepare(`DELETE FROM holidays WHERE holiday_date = ?`).bind(oldDate).run();
     await db.prepare(`
       INSERT INTO holidays (holiday_date, holiday_name)
@@ -1921,7 +1928,7 @@ async function handleDeleteHoliday(db, holidayDate) {
 }
 
 // =================================================================
-// 重別類指 CRUD (假管假員)
+// 假別類型 CRUD (僅管理員)
 // =================================================================
 async function handleCreateLeaveType(db, payload) {
   try {
@@ -1973,7 +1980,7 @@ async function handleDeleteLeaveType(db, typeName) {
 }
 
 // =================================================================
-// 系統假數 CRUD (假管假員)
+// 系統參數 CRUD (僅管理員)
 // =================================================================
 async function handleGetSystemParams(db) {
   try {
@@ -1984,7 +1991,7 @@ async function handleGetSystemParams(db) {
     `).all();
     
     const rows = getRows(res);
-    // 添指 description 欄指（即使指假庫中指提供
+    // 添加 description 欄位（即使資料庫中沒有）
     return jsonResponse(rows.map(r => ({
       param_name: r.param_name,
       param_value: r.param_value,
@@ -1995,7 +2002,7 @@ async function handleGetSystemParams(db) {
   }
 }
 
-// 重數說指對照指
+// 參數說明對照表
 function getParamDescription(paramName) {
   const descriptions = {
     'max_work_hours': '每日最大工時',
@@ -2014,7 +2021,7 @@ async function handleUpdateSystemParams(db, payload) {
       return jsonResponse({ error: '參數格式錯誤' }, 400);
     }
 
-    // 重次假新假數
+    // 逐次更新參數
     for (const param of params) {
       await db.prepare(`
         UPDATE system_parameters 
@@ -2030,7 +2037,7 @@ async function handleUpdateSystemParams(db, payload) {
 }
 
 // =================================================================
-// 重戶管指 CRUD (假管假員)
+// 用戶管理 CRUD (僅管理員)
 // =================================================================
 async function handleUpdateUser(db, id, payload) {
   try {
@@ -2057,7 +2064,7 @@ async function handleUpdateUser(db, id, payload) {
 
 async function handleDeleteUser(db, id) {
   try {
-    // 檢查用否假唯一假管假員
+    // 檢查是否為唯一的管理員
     const adminCount = await db.prepare(`
       SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND is_active = 1
     `).first();
@@ -2080,7 +2087,7 @@ async function handleDeleteUser(db, id) {
 }
 
 // =================================================================
-// 重工管指 CRUD (假管假員)
+// 員工管理 CRUD (僅管理員)
 // =================================================================
 async function handleGetAllEmployees(db) {
   try {
@@ -2126,7 +2133,7 @@ async function handleUpdateEmployee(db, oldName, payload) {
       return jsonResponse({ error: '員工姓名不可為空' }, 400);
     }
     
-    // 重為 name 假主提供假要更提供提供假表
+    // 因為 name 是主鍵，要更新關聯表
     await db.prepare(`
       UPDATE employees SET name = ?, hire_date = ?, gender = ? WHERE name = ?
     `).bind(name, hire_date || null, gender || null, oldName).run();
@@ -2142,7 +2149,7 @@ async function handleUpdateEmployee(db, oldName, payload) {
 
 async function handleDeleteEmployee(db, employeeName) {
   try {
-    // 檢查用否提供提供客戶假派
+    // 檢查是否有客戶指派
     const assignments = await db.prepare(`
       SELECT COUNT(*) as count FROM client_assignments WHERE employee_name = ?
     `).bind(employeeName).first();
@@ -2151,7 +2158,7 @@ async function handleDeleteEmployee(db, employeeName) {
       return jsonResponse({ error: '無法刪除：此員工仍有客戶指派記錄' }, 400);
     }
     
-    // 檢查用否提供提供使用假帳??
+    // 檢查是否有使用者帳號
     const users = await db.prepare(`
       SELECT COUNT(*) as count FROM users WHERE employee_name = ?
     `).bind(employeeName).first();

@@ -3,6 +3,8 @@
  * 處理每月固定任務、客戶服務配置
  */
 
+import { verifySession, getSessionToken } from './auth.js';
+
 // =========================================
 // 客戶服務配置
 // =========================================
@@ -80,10 +82,81 @@ export async function getClientServicesByClient(env, clientName) {
 }
 
 /**
- * 創建或更新客戶服務配置
+ * 刪除客戶服務配置（僅管理員）
  */
-export async function upsertClientService(env, data) {
+export async function deleteClientService(request, env, serviceId) {
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
+  
+  // 檢查是否為管理員
+  if (!sessionData || sessionData.role !== 'admin') {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: '只有管理員可以刪除服務配置' 
+    }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    // 檢查是否有關聯的任務實例
+    const instanceCheck = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM recurring_task_instances
+      WHERE client_service_id = ?
+    `).bind(serviceId).first();
+    
+    if (instanceCheck.count > 0) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: `此服務配置有 ${instanceCheck.count} 個關聯任務，建議將其設為停用而非刪除` 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 執行刪除
+    await env.DB.prepare('DELETE FROM client_services WHERE id = ?')
+      .bind(serviceId)
+      .run();
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: 'Service deleted successfully'
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * 創建或更新客戶服務配置（所有員工可用）
+ */
+export async function upsertClientService(request, env, data) {
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
+  
+  if (!sessionData) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Unauthorized' 
+    }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   const { DB } = env;
+  
   const {
     id,
     client_name,
@@ -102,54 +175,82 @@ export async function upsertClientService(env, data) {
   
   const monthly_schedule_json = JSON.stringify(monthly_schedule);
   
-  if (id) {
-    // 更新
-    const stmt = DB.prepare(`
-      UPDATE client_services
-      SET client_tax_id = ?,
-          service_name = ?,
-          service_category = ?,
-          frequency = ?,
-          fee = ?,
-          estimated_hours = ?,
-          monthly_schedule = ?,
-          billing_timing = ?,
-          billing_notes = ?,
-          service_notes = ?,
-          assigned_to = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `);
-    
-    await stmt.bind(
-      client_tax_id, service_name, service_category, frequency,
-      fee, estimated_hours, monthly_schedule_json,
-      billing_timing, billing_notes, service_notes, assigned_to, id
-    ).run();
-    
-    return new Response(JSON.stringify({ success: true, id }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } else {
-    // 創建
-    const stmt = DB.prepare(`
-      INSERT INTO client_services (
-        client_name, client_tax_id, service_name, service_category,
-        frequency, fee, estimated_hours, monthly_schedule,
-        billing_timing, billing_notes, service_notes, assigned_to
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = await stmt.bind(
-      client_name, client_tax_id, service_name, service_category,
-      frequency, fee, estimated_hours, monthly_schedule_json,
-      billing_timing, billing_notes, service_notes, assigned_to
-    ).run();
-    
+  try {
+    if (id) {
+      // 更新
+      const stmt = DB.prepare(`
+        UPDATE client_services
+        SET client_tax_id = ?,
+            service_name = ?,
+            service_category = ?,
+            frequency = ?,
+            fee = ?,
+            estimated_hours = ?,
+            monthly_schedule = ?,
+            billing_timing = ?,
+            billing_notes = ?,
+            service_notes = ?,
+            assigned_to = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `);
+      
+      await stmt.bind(
+        client_tax_id || null,
+        service_name,
+        service_category,
+        frequency,
+        fee,
+        estimated_hours,
+        monthly_schedule_json,
+        billing_timing || null,
+        billing_notes || null,
+        service_notes || null,
+        assigned_to || null,
+        id
+      ).run();
+      
+      return new Response(JSON.stringify({ success: true, id }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } else {
+      // 創建
+      const stmt = DB.prepare(`
+        INSERT INTO client_services (
+          client_name, client_tax_id, service_name, service_category,
+          frequency, fee, estimated_hours, monthly_schedule,
+          billing_timing, billing_notes, service_notes, assigned_to
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      const result = await stmt.bind(
+        client_name,
+        client_tax_id || null,
+        service_name,
+        service_category,
+        frequency,
+        fee,
+        estimated_hours,
+        monthly_schedule_json,
+        billing_timing || null,
+        billing_notes || null,
+        service_notes || null,
+        assigned_to || null
+      ).run();
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        id: result.meta.last_row_id 
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  } catch (error) {
     return new Response(JSON.stringify({ 
-      success: true, 
-      id: result.meta.last_row_id 
+      success: false, 
+      error: error.message 
     }), {
+      status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
   }

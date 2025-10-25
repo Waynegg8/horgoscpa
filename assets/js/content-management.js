@@ -78,6 +78,8 @@ function switchContentTab(tab) {
     // 載入對應數據
     if (tab === 'posts') {
         loadPosts();
+    } else if (tab === 'sop') {
+        loadSOPs();
     } else if (tab === 'resources') {
         loadResources();
     } else if (tab === 'media') {
@@ -628,6 +630,92 @@ async function bulkChangeStatus(newStatus) {
 }
 
 // =====================================
+// SOP 文件管理（整合到知識庫）
+// =====================================
+let allSOPs = [];
+
+async function loadSOPs() {
+    try {
+        const token = localStorage.getItem('session_token');
+        const response = await fetch(`${API_BASE}/api/sops`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load SOPs');
+        
+        const data = await response.json();
+        allSOPs = data.sops || [];
+        
+        renderSOPsUI();
+    } catch (error) {
+        console.error('載入SOP失敗:', error);
+        const container = document.getElementById('sop-list-container');
+        container.innerHTML = `
+            <div style="background: white; padding: 40px; border-radius: 12px; text-align: center;">
+                <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3; color: #f44336;">error</span>
+                <h3>載入失敗</h3>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+function renderSOPsUI() {
+    const container = document.getElementById('sop-list-container');
+    
+    const sopsByCategory = {};
+    allSOPs.forEach(sop => {
+        const cat = sop.category_name || '未分類';
+        if (!sopsByCategory[cat]) sopsByCategory[cat] = [];
+        sopsByCategory[cat].push(sop);
+    });
+    
+    container.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2 style="margin: 0;">SOP 文件</h2>
+                <a href="sop.html" class="btn btn-primary">
+                    <span class="material-symbols-outlined">open_in_new</span>
+                    前往 SOP 編輯器
+                </a>
+            </div>
+            
+            ${Object.entries(sopsByCategory).map(([category, sops]) => `
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">
+                        📁 ${escapeHtml(category)} (${sops.length})
+                    </h3>
+                    <div style="display: grid; gap: 10px;">
+                        ${sops.map(sop => `
+                            <a href="sop.html#${sop.id}" style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--light-bg); border-radius: 6px; text-decoration: none; color: inherit; transition: all 0.2s;">
+                                <span class="material-symbols-outlined" style="color: var(--primary-color);">description</span>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600;">${escapeHtml(sop.title)}</div>
+                                    <div style="font-size: 13px; color: var(--text-secondary);">版本 ${sop.version} | 更新於 ${new Date(sop.updated_at).toLocaleDateString('zh-TW')}</div>
+                                </div>
+                                <span class="material-symbols-outlined" style="color: var(--text-secondary);">arrow_forward</span>
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('')}
+            
+            ${allSOPs.length === 0 ? `
+                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                    <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">description</span>
+                    <h3>尚無 SOP 文件</h3>
+                    <p>前往 SOP 編輯器開始創建標準作業程序</p>
+                    <a href="sop.html" class="btn btn-primary" style="margin-top: 15px;">
+                        <span class="material-symbols-outlined">add</span>
+                        前往 SOP 編輯器
+                    </a>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// =====================================
 // 資源管理
 // =====================================
 let allResources = [];
@@ -661,11 +749,14 @@ async function loadResources() {
 }
 
 function renderResourcesUI() {
-    const section = document.getElementById('resources-section');
-    section.innerHTML = `
-        <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+    const container = document.getElementById('resources-list-container');
+    container.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h2 style="margin: 0;">資源管理</h2>
+                <div>
+                    <h2 style="margin: 0;">文件資源</h2>
+                    <p style="color: var(--text-secondary); margin: 5px 0 0;">管理可下載的文件、表單、範本</p>
+                </div>
                 <button class="btn btn-primary" onclick="showResourceUploadDialog()">
                     <span class="material-symbols-outlined">upload_file</span>
                     上傳資源
@@ -858,13 +949,13 @@ async function loadMediaLibrary() {
 }
 
 function renderMediaLibraryUI() {
-    const section = document.getElementById('media-section');
-    section.innerHTML = `
-        <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+    const container = document.getElementById('media-list-container');
+    container.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                 <div>
-                    <h2 style="margin: 0;">媒體庫</h2>
-                    <p style="color: var(--text-secondary); margin: 5px 0 0;">統一管理網站圖片資源</p>
+                    <h2 style="margin: 0;">圖片素材庫</h2>
+                    <p style="color: var(--text-secondary); margin: 5px 0 0;">統一管理網站使用的圖片資源</p>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <input type="file" id="mediaFileInput" accept="image/*" style="display: none;" onchange="handleMediaUpload()">

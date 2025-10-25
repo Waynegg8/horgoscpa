@@ -1,0 +1,144 @@
+/* 增強型導航欄 - 帶有下拉選單 */
+
+.internal-nav-dropdown {
+    position: relative;
+}
+
+.internal-nav-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 12px 16px;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.internal-nav-dropdown-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.internal-nav-dropdown-toggle.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.internal-nav-dropdown-toggle .material-symbols-outlined {
+    font-size: 20px;
+}
+
+.dropdown-arrow {
+    font-size: 16px !important;
+    transition: transform 0.3s;
+}
+
+.internal-nav-dropdown.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.internal-nav-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    min-width: 200px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 8px 0;
+    margin-top: 8px;
+    z-index: 1000;
+}
+
+.internal-nav-dropdown.open .internal-nav-dropdown-menu {
+    display: block;
+    animation: dropdownFadeIn 0.2s ease;
+}
+
+.internal-nav-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.internal-nav-dropdown-item:hover {
+    background: var(--light-bg);
+    color: var(--primary-color);
+}
+
+.internal-nav-dropdown-item.active {
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1), rgba(90, 158, 229, 0.1));
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.internal-nav-dropdown-item .material-symbols-outlined {
+    font-size: 18px;
+    opacity: 0.7;
+}
+
+/* 分隔線 */
+.dropdown-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 8px 0;
+}
+
+/* 響應式處理 */
+@media (max-width: 1200px) {
+    .internal-nav-dropdown-menu {
+        position: static;
+        box-shadow: none;
+        background: rgba(255, 255, 255, 0.05);
+        margin: 5px 0;
+        padding: 5px 0;
+    }
+    
+    .internal-nav-dropdown-item {
+        color: rgba(255, 255, 255, 0.9);
+        padding-left: 32px;
+    }
+    
+    .internal-nav-dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+    
+    .internal-nav-dropdown-item.active {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 桌面版：隱藏在主選單中的下拉 */
+@media (min-width: 1201px) {
+    .internal-nav-links {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+}
+
