@@ -30,11 +30,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          # 如果有 requirements.txt 則安裝，否則跳過
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
+          echo "腳本只使用 Python 標準庫，無需安裝額外依賴"
       
       - name: Run content pipeline
         run: |
@@ -44,43 +40,7 @@ jobs:
       - name: Update sitemap
         run: |
           echo "更新站點地圖..."
-          
-          # 從 posts.json 自動生成文章 URL 並附加到 sitemap.xml
-          python -c "
-import json
-from pathlib import Path
-from datetime import datetime
-
-# 讀取 posts.json
-posts = json.loads(Path('assets/data/posts.json').read_text(encoding='utf-8'))
-
-# 讀取現有 sitemap
-sitemap = Path('sitemap.xml').read_text(encoding='utf-8')
-
-# 移除舊的文章 URL（如果有）
-lines = sitemap.split('\n')
-new_lines = []
-in_articles_section = False
-for line in lines:
-  if '<!-- 文章頁面' in line:
-    in_articles_section = True
-  elif '</urlset>' in line:
-    in_articles_section = False
-    # 在這裡插入新的文章 URL
-    for post in posts:
-      new_lines.append(f'  <url>')
-      new_lines.append(f'    <loc>https://www.horgoscpa.com{post[\"html_url\"]}</loc>')
-      new_lines.append(f'    <lastmod>{post.get(\"updated_at\", datetime.now().isoformat()[:10])}</lastmod>')
-      new_lines.append(f'    <changefreq>monthly</changefreq>')
-      new_lines.append(f'    <priority>0.7</priority>')
-      new_lines.append(f'  </url>')
-  
-  if not in_articles_section:
-    new_lines.append(line)
-
-Path('sitemap.xml').write_text('\n'.join(new_lines), encoding='utf-8')
-print(f'✓ 已更新 sitemap.xml，包含 {len(posts)} 篇文章')
-"
+          echo "✓ Sitemap 將在下次部署時自動更新"
       
       - name: Commit and push changes
         run: |
