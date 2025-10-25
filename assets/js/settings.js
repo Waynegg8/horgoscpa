@@ -392,10 +392,10 @@ async function loadClients() {
                                 <td>${new Date(client.created_at).toLocaleString('zh-TW')}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btn btn-small btn-secondary" onclick="editClient(${client.id})">
+                                        <button class="btn btn-small btn-secondary" onclick="editClient('${client.name.replace(/'/g, "\\'")}')">
                                             <span class="material-symbols-outlined">edit</span>
                                         </button>
-                                        <button class="btn btn-small btn-danger" onclick="deleteClient(${client.id})">
+                                        <button class="btn btn-small btn-danger" onclick="deleteClient('${client.name.replace(/'/g, "\\'")}')">
                                             <span class="material-symbols-outlined">delete</span>
                                         </button>
                                     </div>
@@ -443,8 +443,8 @@ function showAddClientModal() {
     });
 }
 
-function editClient(id) {
-    const client = currentData.clients.find(c => c.id === id);
+function editClient(clientName) {
+    const client = currentData.clients.find(c => c.name === clientName);
     if (!client) return;
     
     const content = `
@@ -462,7 +462,7 @@ function editClient(id) {
         }
         
         try {
-            await apiRequest(`/api/clients/${id}`, {
+            await apiRequest(`/api/clients/${encodeURIComponent(clientName)}`, {
                 method: 'PUT',
                 body: JSON.stringify({ name })
             });
@@ -476,8 +476,8 @@ function editClient(id) {
     });
 }
 
-async function deleteClient(id) {
-    const client = currentData.clients.find(c => c.id === id);
+async function deleteClient(clientName) {
+    const client = currentData.clients.find(c => c.name === clientName);
     if (!client) return;
     
     if (!confirm(`確定要刪除客戶「${client.name}」嗎？`)) {
@@ -485,7 +485,7 @@ async function deleteClient(id) {
     }
     
     try {
-        await apiRequest(`/api/clients/${id}`, {
+        await apiRequest(`/api/clients/${encodeURIComponent(clientName)}`, {
             method: 'DELETE'
         });
         
@@ -531,7 +531,7 @@ async function loadAssignments() {
                                 <td>${assignment.client_name}</td>
                                 <td>${new Date(assignment.created_at).toLocaleString('zh-TW')}</td>
                                 <td>
-                                    <button class="btn btn-small btn-danger" onclick="deleteAssignment(${assignment.id})">
+                                    <button class="btn btn-small btn-danger" onclick="deleteAssignment('${assignment.employee_name.replace(/'/g, "\\'")}', '${assignment.client_name.replace(/'/g, "\\'")}')">
                                         <span class="material-symbols-outlined">delete</span>
                                     </button>
                                 </td>
@@ -600,16 +600,15 @@ async function showAddAssignmentModal() {
     }
 }
 
-async function deleteAssignment(id) {
-    const assignment = currentData.assignments.find(a => a.id === id);
-    if (!assignment) return;
-    
-    if (!confirm(`確定要刪除「${assignment.employee_name} - ${assignment.client_name}」的指派嗎？`)) {
+async function deleteAssignment(employeeName, clientName) {
+    if (!confirm(`確定要刪除「${employeeName} - ${clientName}」的指派嗎？`)) {
         return;
     }
     
     try {
-        await apiRequest(`/api/assignments/${id}`, {
+        // 使用 employee|client 格式作為 ID
+        const id = `${employeeName}|${clientName}`;
+        await apiRequest(`/api/assignments/${encodeURIComponent(id)}`, {
             method: 'DELETE'
         });
         
@@ -652,10 +651,10 @@ async function loadBusinessTypes() {
                                 <td>${type.name}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btn btn-small btn-secondary" onclick="editBusinessType(${type.id})">
+                                        <button class="btn btn-small btn-secondary" onclick="editBusinessType('${type.name.replace(/'/g, "\\'")}')">
                                             <span class="material-symbols-outlined">edit</span>
                                         </button>
-                                        <button class="btn btn-small btn-danger" onclick="deleteBusinessType(${type.id})">
+                                        <button class="btn btn-small btn-danger" onclick="deleteBusinessType('${type.name.replace(/'/g, "\\'")}')">
                                             <span class="material-symbols-outlined">delete</span>
                                         </button>
                                     </div>
@@ -703,8 +702,8 @@ function showAddBusinessTypeModal() {
     });
 }
 
-function editBusinessType(id) {
-    const type = currentData.businessTypes.find(t => t.id === id);
+function editBusinessType(typeName) {
+    const type = currentData.businessTypes.find(t => t.name === typeName);
     if (!type) return;
     
     const content = `
@@ -722,7 +721,7 @@ function editBusinessType(id) {
         }
         
         try {
-            await apiRequest(`/api/business-types/${id}`, {
+            await apiRequest(`/api/business-types/${encodeURIComponent(typeName)}`, {
                 method: 'PUT',
                 body: JSON.stringify({ name })
             });
@@ -736,8 +735,8 @@ function editBusinessType(id) {
     });
 }
 
-async function deleteBusinessType(id) {
-    const type = currentData.businessTypes.find(t => t.id === id);
+async function deleteBusinessType(typeName) {
+    const type = currentData.businessTypes.find(t => t.name === typeName);
     if (!type) return;
     
     if (!confirm(`確定要刪除業務類型「${type.name}」嗎？`)) {
@@ -745,7 +744,7 @@ async function deleteBusinessType(id) {
     }
     
     try {
-        await apiRequest(`/api/business-types/${id}`, {
+        await apiRequest(`/api/business-types/${encodeURIComponent(typeName)}`, {
             method: 'DELETE'
         });
         
@@ -780,7 +779,6 @@ async function loadLeaveEvents() {
                             <th>員工姓名</th>
                             <th>事件日期</th>
                             <th>事件類型</th>
-                            <th>備註</th>
                             <th style="width: 150px;">操作</th>
                         </tr>
                     </thead>
@@ -791,7 +789,6 @@ async function loadLeaveEvents() {
                                 <td>${event.employee_name}</td>
                                 <td>${event.event_date}</td>
                                 <td>${event.event_type}</td>
-                                <td>${event.notes || '-'}</td>
                                 <td>
                                     <div class="table-actions">
                                         <button class="btn btn-small btn-secondary" onclick="editLeaveEvent(${event.id})">
@@ -844,17 +841,12 @@ async function showAddLeaveEventModal() {
                     <option value="陪產假">陪產假</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>備註</label>
-                <textarea id="leaveEventNotes" rows="3" placeholder="選填"></textarea>
-            </div>
         `;
         
         showModal('新增假期事件', content, async () => {
             const employee_name = document.getElementById('leaveEventEmployee').value;
             const event_date = document.getElementById('leaveEventDate').value;
             const event_type = document.getElementById('leaveEventType').value;
-            const notes = document.getElementById('leaveEventNotes').value.trim();
             
             if (!employee_name || !event_date || !event_type) {
                 showAlert('請填寫所有必填欄位', 'error');
@@ -864,7 +856,7 @@ async function showAddLeaveEventModal() {
             try {
                 await apiRequest('/api/leave-events', {
                     method: 'POST',
-                    body: JSON.stringify({ employee_name, event_date, event_type, notes })
+                    body: JSON.stringify({ employee_name, event_date, event_type })
                 });
                 
                 closeModal();
@@ -913,17 +905,12 @@ async function editLeaveEvent(id) {
                     <option value="陪產假" ${event.event_type === '陪產假' ? 'selected' : ''}>陪產假</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>備註</label>
-                <textarea id="leaveEventNotes" rows="3">${event.notes || ''}</textarea>
-            </div>
         `;
         
         showModal('編輯假期事件', content, async () => {
             const employee_name = document.getElementById('leaveEventEmployee').value;
             const event_date = document.getElementById('leaveEventDate').value;
             const event_type = document.getElementById('leaveEventType').value;
-            const notes = document.getElementById('leaveEventNotes').value.trim();
             
             if (!employee_name || !event_date || !event_type) {
                 showAlert('請填寫所有必填欄位', 'error');
@@ -933,7 +920,7 @@ async function editLeaveEvent(id) {
             try {
                 await apiRequest(`/api/leave-events/${id}`, {
                     method: 'PUT',
-                    body: JSON.stringify({ employee_name, event_date, event_type, notes })
+                    body: JSON.stringify({ employee_name, event_date, event_type })
                 });
                 
                 closeModal();
@@ -1016,10 +1003,10 @@ async function loadHolidays() {
                                 <td>${holiday.holiday_name}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btn btn-small btn-secondary" onclick="editHoliday(${holiday.id})">
+                                        <button class="btn btn-small btn-secondary" onclick="editHoliday('${holiday.holiday_date}')">
                                             <span class="material-symbols-outlined">edit</span>
                                         </button>
-                                        <button class="btn btn-small btn-danger" onclick="deleteHoliday(${holiday.id})">
+                                        <button class="btn btn-small btn-danger" onclick="deleteHoliday('${holiday.holiday_date}')">
                                             <span class="material-symbols-outlined">delete</span>
                                         </button>
                                     </div>
@@ -1073,8 +1060,8 @@ function showAddHolidayModal() {
     });
 }
 
-function editHoliday(id) {
-    const holiday = currentData.holidays.find(h => h.id === id);
+function editHoliday(holidayDate) {
+    const holiday = currentData.holidays.find(h => h.holiday_date === holidayDate);
     if (!holiday) return;
     
     const content = `
@@ -1089,18 +1076,18 @@ function editHoliday(id) {
     `;
     
     showModal('編輯國定假日', content, async () => {
-        const holiday_date = document.getElementById('holidayDate').value;
+        const new_holiday_date = document.getElementById('holidayDate').value;
         const holiday_name = document.getElementById('holidayName').value.trim();
         
-        if (!holiday_date || !holiday_name) {
+        if (!new_holiday_date || !holiday_name) {
             showAlert('請填寫所有必填欄位', 'error');
             return;
         }
         
         try {
-            await apiRequest(`/api/holidays/${id}`, {
+            await apiRequest(`/api/holidays/${encodeURIComponent(holidayDate)}`, {
                 method: 'PUT',
-                body: JSON.stringify({ holiday_date, holiday_name })
+                body: JSON.stringify({ holiday_date: new_holiday_date, holiday_name })
             });
             
             closeModal();
@@ -1112,8 +1099,8 @@ function editHoliday(id) {
     });
 }
 
-async function deleteHoliday(id) {
-    const holiday = currentData.holidays.find(h => h.id === id);
+async function deleteHoliday(holidayDate) {
+    const holiday = currentData.holidays.find(h => h.holiday_date === holidayDate);
     if (!holiday) return;
     
     if (!confirm(`確定要刪除「${holiday.holiday_name} (${holiday.holiday_date})」嗎？`)) {
@@ -1121,7 +1108,7 @@ async function deleteHoliday(id) {
     }
     
     try {
-        await apiRequest(`/api/holidays/${id}`, {
+        await apiRequest(`/api/holidays/${encodeURIComponent(holidayDate)}`, {
             method: 'DELETE'
         });
         
@@ -1379,10 +1366,10 @@ async function loadLeaveTypes() {
                                 <td>${type.type_name}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btn btn-small btn-secondary" onclick="editLeaveType(${type.id})">
+                                        <button class="btn btn-small btn-secondary" onclick="editLeaveType('${type.type_name.replace(/'/g, "\\'")}')">
                                             <span class="material-symbols-outlined">edit</span>
                                         </button>
-                                        <button class="btn btn-small btn-danger" onclick="deleteLeaveType(${type.id})">
+                                        <button class="btn btn-small btn-danger" onclick="deleteLeaveType('${type.type_name.replace(/'/g, "\\'")}')">
                                             <span class="material-symbols-outlined">delete</span>
                                         </button>
                                     </div>
@@ -1430,8 +1417,8 @@ function showAddLeaveTypeModal() {
     });
 }
 
-function editLeaveType(id) {
-    const type = currentData.leaveTypes.find(t => t.id === id);
+function editLeaveType(typeName) {
+    const type = currentData.leaveTypes.find(t => t.type_name === typeName);
     if (!type) return;
     
     const content = `
@@ -1449,7 +1436,7 @@ function editLeaveType(id) {
         }
         
         try {
-            await apiRequest(`/api/admin/leave-types/${id}`, {
+            await apiRequest(`/api/admin/leave-types/${encodeURIComponent(typeName)}`, {
                 method: 'PUT',
                 body: JSON.stringify({ name })
             });
@@ -1463,8 +1450,8 @@ function editLeaveType(id) {
     });
 }
 
-async function deleteLeaveType(id) {
-    const type = currentData.leaveTypes.find(t => t.id === id);
+async function deleteLeaveType(typeName) {
+    const type = currentData.leaveTypes.find(t => t.type_name === typeName);
     if (!type) return;
     
     if (!confirm(`確定要刪除假別「${type.type_name}」嗎？`)) {
@@ -1472,7 +1459,7 @@ async function deleteLeaveType(id) {
     }
     
     try {
-        await apiRequest(`/api/admin/leave-types/${id}`, {
+        await apiRequest(`/api/admin/leave-types/${encodeURIComponent(typeName)}`, {
             method: 'DELETE'
         });
         

@@ -1372,13 +1372,15 @@
           }
           
           const input = document.createElement('input');
-          input.type = 'number';
-          input.min = '0';
-          input.max = '24';
-          input.step = '0.5';
+          input.type = 'text';
+          input.inputMode = 'decimal';
+          input.pattern = '[0-9]*\\.?[0-9]*';
           input.value = hours;
           input.placeholder = '';
+          input.style.textAlign = 'center';
           input.addEventListener('input', (e) => {
+            // 只允許數字和小數點
+            e.target.value = e.target.value.replace(/[^0-9.]/g, '');
             updateCellValue(entry.type, entry.index, day, e.target.value);
           });
           

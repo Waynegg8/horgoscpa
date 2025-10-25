@@ -372,12 +372,17 @@ function getRows(result) {
 async function handleGetAllClients(db) {
   try {
     const res = await db.prepare(`
-      SELECT id, name, created_at
+      SELECT name
       FROM clients
       ORDER BY name
     `).all();
     const rows = getRows(res);
-    return jsonResponse(rows);
+    // 轉換為前端期望的格式
+    return jsonResponse(rows.map((r, index) => ({
+      id: index + 1,
+      name: r.name,
+      created_at: null
+    })));
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
@@ -405,15 +410,25 @@ async function handleGetClients(db, params, user) {
 }
 
 async function handleGetBusinessTypes(db) {
-  const res = await db.prepare("SELECT id, type_name as name, created_at FROM business_types ORDER BY type_name").all();
+  const res = await db.prepare("SELECT type_name FROM business_types ORDER BY type_name").all();
   const rows = getRows(res);
-  return jsonResponse(rows);
+  // 轉換為前端期望的格式
+  return jsonResponse(rows.map((r, index) => ({
+    id: index + 1,
+    name: r.type_name,
+    created_at: null
+  })));
 }
 
 async function handleGetLeaveTypes(db) {
-  const res = await db.prepare("SELECT id, type_name, created_at FROM leave_types ORDER BY type_name").all();
+  const res = await db.prepare("SELECT type_name FROM leave_types ORDER BY type_name").all();
   const rows = getRows(res);
-  return jsonResponse(rows);
+  // 轉換為前端期望的格式
+  return jsonResponse(rows.map((r, index) => ({
+    id: index + 1,
+    type_name: r.type_name,
+    created_at: null
+  })));
 }
 
 async function handleGetHolidays(db, params) {
@@ -428,9 +443,15 @@ async function handleGetHolidays(db, params) {
   }
   
   // 否則返回所有假日的完整資料（用於設定頁面）
-  const res = await db.prepare("SELECT id, holiday_date, holiday_name, created_at FROM holidays ORDER BY holiday_date DESC").all();
+  const res = await db.prepare("SELECT holiday_date, holiday_name FROM holidays ORDER BY holiday_date DESC").all();
   const rows = getRows(res);
-  return jsonResponse(rows);
+  // 轉換為前端期望的格式（使用 holiday_date 作為 id）
+  return jsonResponse(rows.map((r, index) => ({
+    id: index + 1,
+    holiday_date: r.holiday_date,
+    holiday_name: r.holiday_name,
+    created_at: null
+  })));
 }
 
 // =================================================================
@@ -876,16 +897,17 @@ async function handleSaveTimesheet(db, payload, user) {
 // =================================================================
 // 客戶管理 CRUD
 // =================================================================
-async function handleUpdateClient(db, id, payload) {
+async function handleUpdateClient(db, oldName, payload) {
   try {
     const { name } = payload;
     if (!name) {
       return jsonResponse({ error: '客戶名稱為必填' }, 400);
     }
 
+    // 因為 name 是主鍵，需要更新所有關聯表
     await db.prepare(`
-      UPDATE clients SET name = ? WHERE id = ?
-    `).bind(name, id).run();
+      UPDATE clients SET name = ? WHERE name = ?
+    `).bind(name, oldName).run();
 
     return jsonResponse({ success: true, message: '客戶已更新' });
   } catch (err) {
@@ -893,18 +915,18 @@ async function handleUpdateClient(db, id, payload) {
   }
 }
 
-async function handleDeleteClient(db, id) {
+async function handleDeleteClient(db, clientName) {
   try {
     // 檢查是否有關聯的客戶指派
     const assignments = await db.prepare(`
-      SELECT COUNT(*) as count FROM client_assignments WHERE client_name = (SELECT name FROM clients WHERE id = ?)
-    `).bind(id).first();
+      SELECT COUNT(*) as count FROM client_assignments WHERE client_name = ?
+    `).bind(clientName).first();
 
     if (assignments && assignments.count > 0) {
       return jsonResponse({ error: '無法刪除：此客戶仍有指派記錄' }, 400);
     }
 
-    await db.prepare(`DELETE FROM clients WHERE id = ?`).bind(id).run();
+    await db.prepare(`DELETE FROM clients WHERE name = ?`).bind(clientName).run();
     return jsonResponse({ success: true, message: '客戶已刪除' });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
@@ -918,40 +940,61 @@ async function handleGetAssignments(db, searchParams) {
   try {
     let query = `
       SELECT 
-        ca.id,
-        ca.employee_name,
-        ca.client_name,
-        ca.created_at
-      FROM client_assignments ca
-      ORDER BY ca.employee_name, ca.client_name
+        employee_name,
+        client_name
+      FROM client_assignments
+      ORDER BY employee_name, client_name
     `;
 
     const employeeName = searchParams.get('employee');
     if (employeeName) {
       query = `
         SELECT 
-          ca.id,
-          ca.employee_name,
-          ca.client_name,
-          ca.created_at
-        FROM client_assignments ca
-        WHERE ca.employee_name = ?
-        ORDER BY ca.client_name
+          employee_name,
+          client_name
+        FROM client_assignments
+        WHERE employee_name = ?
+        ORDER BY client_name
       `;
       const res = await db.prepare(query).bind(employeeName).all();
-      return jsonResponse(getRows(res));
+      const rows = getRows(res);
+      // 轉換為前端期望的格式
+      return jsonResponse(rows.map((r, index) => ({
+        id: index + 1,
+        employee_name: r.employee_name,
+        client_name: r.client_name,
+        created_at: null
+      })));
     }
 
     const res = await db.prepare(query).all();
-    return jsonResponse(getRows(res));
+    const rows = getRows(res);
+    // 轉換為前端期望的格式
+    return jsonResponse(rows.map((r, index) => ({
+      id: index + 1,
+      employee_name: r.employee_name,
+      client_name: r.client_name,
+      created_at: null
+    })));
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
 }
 
-async function handleDeleteAssignment(db, id) {
+async function handleDeleteAssignment(db, assignmentId) {
   try {
-    await db.prepare(`DELETE FROM client_assignments WHERE id = ?`).bind(id).run();
+    // assignmentId 格式為 "employee_name|client_name"
+    const [employeeName, clientName] = assignmentId.toString().split('|');
+    
+    if (!employeeName || !clientName) {
+      return jsonResponse({ error: '無效的指派 ID' }, 400);
+    }
+    
+    await db.prepare(`
+      DELETE FROM client_assignments 
+      WHERE employee_name = ? AND client_name = ?
+    `).bind(employeeName, clientName).run();
+    
     return jsonResponse({ success: true, message: '指派已刪除' });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
@@ -968,14 +1011,13 @@ async function handleCreateBusinessType(db, payload) {
       return jsonResponse({ error: '業務類型名稱為必填' }, 400);
     }
 
-    const result = await db.prepare(`
-      INSERT INTO business_types (name) VALUES (?)
+    await db.prepare(`
+      INSERT INTO business_types (type_name) VALUES (?)
     `).bind(name).run();
 
     return jsonResponse({ 
       success: true, 
-      message: '業務類型已新增',
-      id: result.meta.last_row_id 
+      message: '業務類型已新增'
     });
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
@@ -985,7 +1027,7 @@ async function handleCreateBusinessType(db, payload) {
   }
 }
 
-async function handleUpdateBusinessType(db, id, payload) {
+async function handleUpdateBusinessType(db, oldName, payload) {
   try {
     const { name } = payload;
     if (!name) {
@@ -993,8 +1035,8 @@ async function handleUpdateBusinessType(db, id, payload) {
     }
 
     await db.prepare(`
-      UPDATE business_types SET name = ? WHERE id = ?
-    `).bind(name, id).run();
+      UPDATE business_types SET type_name = ? WHERE type_name = ?
+    `).bind(name, oldName).run();
 
     return jsonResponse({ success: true, message: '業務類型已更新' });
   } catch (err) {
@@ -1002,9 +1044,9 @@ async function handleUpdateBusinessType(db, id, payload) {
   }
 }
 
-async function handleDeleteBusinessType(db, id) {
+async function handleDeleteBusinessType(db, typeName) {
   try {
-    await db.prepare(`DELETE FROM business_types WHERE id = ?`).bind(id).run();
+    await db.prepare(`DELETE FROM business_types WHERE type_name = ?`).bind(typeName).run();
     return jsonResponse({ success: true, message: '業務類型已刪除' });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
@@ -1021,9 +1063,7 @@ async function handleGetLeaveEvents(db, searchParams) {
         id,
         employee_name,
         event_date,
-        event_type,
-        notes,
-        created_at
+        event_type
       FROM leave_events
       ORDER BY event_date DESC, employee_name
     `;
@@ -1047,9 +1087,7 @@ async function handleGetLeaveEvents(db, searchParams) {
           id,
           employee_name,
           event_date,
-          event_type,
-          notes,
-          created_at
+          event_type
         FROM leave_events
         WHERE ${conditions.join(' AND ')}
         ORDER BY event_date DESC
@@ -1060,7 +1098,13 @@ async function handleGetLeaveEvents(db, searchParams) {
       ? await db.prepare(query).bind(...params).all()
       : await db.prepare(query).all();
 
-    return jsonResponse(getRows(res));
+    const rows = getRows(res);
+    // 添加 notes 和 created_at 欄位（即使資料庫中沒有）
+    return jsonResponse(rows.map(r => ({
+      ...r,
+      notes: '',
+      created_at: null
+    })));
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1068,16 +1112,16 @@ async function handleGetLeaveEvents(db, searchParams) {
 
 async function handleCreateLeaveEvent(db, payload) {
   try {
-    const { employee_name, event_date, event_type, notes } = payload;
+    const { employee_name, event_date, event_type } = payload;
     
     if (!employee_name || !event_date || !event_type) {
       return jsonResponse({ error: '員工姓名、事件日期和事件類型為必填' }, 400);
     }
 
     const result = await db.prepare(`
-      INSERT INTO leave_events (employee_name, event_date, event_type, notes)
-      VALUES (?, ?, ?, ?)
-    `).bind(employee_name, event_date, event_type, notes || '').run();
+      INSERT INTO leave_events (employee_name, event_date, event_type)
+      VALUES (?, ?, ?)
+    `).bind(employee_name, event_date, event_type).run();
 
     return jsonResponse({ 
       success: true, 
@@ -1091,7 +1135,7 @@ async function handleCreateLeaveEvent(db, payload) {
 
 async function handleUpdateLeaveEvent(db, id, payload) {
   try {
-    const { employee_name, event_date, event_type, notes } = payload;
+    const { employee_name, event_date, event_type } = payload;
     
     if (!employee_name || !event_date || !event_type) {
       return jsonResponse({ error: '員工姓名、事件日期和事件類型為必填' }, 400);
@@ -1099,9 +1143,9 @@ async function handleUpdateLeaveEvent(db, id, payload) {
 
     await db.prepare(`
       UPDATE leave_events 
-      SET employee_name = ?, event_date = ?, event_type = ?, notes = ?
+      SET employee_name = ?, event_date = ?, event_type = ?
       WHERE id = ?
-    `).bind(employee_name, event_date, event_type, notes || '', id).run();
+    `).bind(employee_name, event_date, event_type, id).run();
 
     return jsonResponse({ success: true, message: '假期事件已更新' });
   } catch (err) {
@@ -1129,15 +1173,14 @@ async function handleCreateHoliday(db, payload) {
       return jsonResponse({ error: '假日日期和名稱為必填' }, 400);
     }
 
-    const result = await db.prepare(`
+    await db.prepare(`
       INSERT INTO holidays (holiday_date, holiday_name)
       VALUES (?, ?)
     `).bind(holiday_date, holiday_name).run();
 
     return jsonResponse({ 
       success: true, 
-      message: '國定假日已新增',
-      id: result.meta.last_row_id 
+      message: '國定假日已新增'
     });
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
@@ -1147,7 +1190,7 @@ async function handleCreateHoliday(db, payload) {
   }
 }
 
-async function handleUpdateHoliday(db, id, payload) {
+async function handleUpdateHoliday(db, oldDate, payload) {
   try {
     const { holiday_date, holiday_name } = payload;
     
@@ -1155,11 +1198,12 @@ async function handleUpdateHoliday(db, id, payload) {
       return jsonResponse({ error: '假日日期和名稱為必填' }, 400);
     }
 
+    // 因為 holiday_date 是主鍵，需要先刪除再插入
+    await db.prepare(`DELETE FROM holidays WHERE holiday_date = ?`).bind(oldDate).run();
     await db.prepare(`
-      UPDATE holidays 
-      SET holiday_date = ?, holiday_name = ?
-      WHERE id = ?
-    `).bind(holiday_date, holiday_name, id).run();
+      INSERT INTO holidays (holiday_date, holiday_name)
+      VALUES (?, ?)
+    `).bind(holiday_date, holiday_name).run();
 
     return jsonResponse({ success: true, message: '國定假日已更新' });
   } catch (err) {
@@ -1167,9 +1211,9 @@ async function handleUpdateHoliday(db, id, payload) {
   }
 }
 
-async function handleDeleteHoliday(db, id) {
+async function handleDeleteHoliday(db, holidayDate) {
   try {
-    await db.prepare(`DELETE FROM holidays WHERE id = ?`).bind(id).run();
+    await db.prepare(`DELETE FROM holidays WHERE holiday_date = ?`).bind(holidayDate).run();
     return jsonResponse({ success: true, message: '國定假日已刪除' });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
@@ -1186,14 +1230,13 @@ async function handleCreateLeaveType(db, payload) {
       return jsonResponse({ error: '假別名稱為必填' }, 400);
     }
 
-    const result = await db.prepare(`
-      INSERT INTO leave_types (name) VALUES (?)
+    await db.prepare(`
+      INSERT INTO leave_types (type_name) VALUES (?)
     `).bind(name).run();
 
     return jsonResponse({ 
       success: true, 
-      message: '假別已新增',
-      id: result.meta.last_row_id 
+      message: '假別已新增'
     });
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
@@ -1203,7 +1246,7 @@ async function handleCreateLeaveType(db, payload) {
   }
 }
 
-async function handleUpdateLeaveType(db, id, payload) {
+async function handleUpdateLeaveType(db, oldName, payload) {
   try {
     const { name } = payload;
     if (!name) {
@@ -1211,8 +1254,8 @@ async function handleUpdateLeaveType(db, id, payload) {
     }
 
     await db.prepare(`
-      UPDATE leave_types SET name = ? WHERE id = ?
-    `).bind(name, id).run();
+      UPDATE leave_types SET type_name = ? WHERE type_name = ?
+    `).bind(name, oldName).run();
 
     return jsonResponse({ success: true, message: '假別已更新' });
   } catch (err) {
@@ -1220,9 +1263,9 @@ async function handleUpdateLeaveType(db, id, payload) {
   }
 }
 
-async function handleDeleteLeaveType(db, id) {
+async function handleDeleteLeaveType(db, typeName) {
   try {
-    await db.prepare(`DELETE FROM leave_types WHERE id = ?`).bind(id).run();
+    await db.prepare(`DELETE FROM leave_types WHERE type_name = ?`).bind(typeName).run();
     return jsonResponse({ success: true, message: '假別已刪除' });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
@@ -1235,15 +1278,32 @@ async function handleDeleteLeaveType(db, id) {
 async function handleGetSystemParams(db) {
   try {
     const res = await db.prepare(`
-      SELECT param_name, param_value, description
+      SELECT param_name, param_value
       FROM system_parameters
       ORDER BY param_name
     `).all();
     
-    return jsonResponse(getRows(res));
+    const rows = getRows(res);
+    // 添加 description 欄位（即使資料庫中沒有）
+    return jsonResponse(rows.map(r => ({
+      param_name: r.param_name,
+      param_value: r.param_value,
+      description: getParamDescription(r.param_name)
+    })));
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
+}
+
+// 參數說明對照表
+function getParamDescription(paramName) {
+  const descriptions = {
+    'max_work_hours': '每日最大工時',
+    'min_work_hours': '每日最小工時',
+    'overtime_threshold': '加班時數門檻',
+    'default_work_hours': '預設工作時數'
+  };
+  return descriptions[paramName] || '';
 }
 
 async function handleUpdateSystemParams(db, payload) {
