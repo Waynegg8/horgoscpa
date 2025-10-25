@@ -29,12 +29,12 @@ body {
 
 /* 簡潔的內部導航欄 */
 .internal-navbar {
-    background: white;
-    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(135deg, #2c5f7c 0%, #1e4258 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .internal-nav-container {
@@ -53,7 +53,7 @@ body {
     gap: 10px;
     font-size: 18px;
     font-weight: 600;
-    color: var(--primary-color);
+    color: white;
     text-decoration: none;
 }
 
@@ -70,7 +70,7 @@ body {
 
 .internal-nav-link {
     padding: 8px 16px;
-    color: var(--text-secondary);
+    color: rgba(255,255,255,0.8);
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
@@ -82,13 +82,14 @@ body {
 }
 
 .internal-nav-link:hover {
-    background: var(--light-bg);
-    color: var(--primary-color);
+    background: rgba(255,255,255,0.15);
+    color: white;
 }
 
 .internal-nav-link.active {
-    background: var(--primary-color);
+    background: rgba(255,255,255,0.25);
     color: white;
+    font-weight: 600;
 }
 
 .internal-nav-user {
@@ -96,28 +97,28 @@ body {
     align-items: center;
     gap: 10px;
     padding-left: 20px;
-    border-left: 1px solid var(--border-color);
+    border-left: 1px solid rgba(255,255,255,0.2);
 }
 
 .internal-user-name {
     font-size: 14px;
-    color: var(--text-primary);
+    color: white;
     font-weight: 500;
 }
 
 .internal-user-role {
     font-size: 12px;
-    color: var(--text-secondary);
-    background: var(--light-bg);
+    color: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.2);
     padding: 2px 8px;
     border-radius: 10px;
 }
 
 .internal-logout-btn {
     padding: 6px 12px;
-    background: white;
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
     border-radius: 4px;
     cursor: pointer;
     font-size: 13px;
@@ -143,7 +144,7 @@ body {
     display: block;
     width: 25px;
     height: 2px;
-    background: var(--text-primary);
+    background: white;
     margin: 5px 0;
     transition: all 0.3s ease;
 }

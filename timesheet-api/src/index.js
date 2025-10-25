@@ -72,11 +72,6 @@ export default {
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
         return await handleGetEmployees(env.DB, auth.user);
       }
-      if (url.pathname === "/api/clients" && method === "GET") {
-        const auth = await requireAuth(env.DB, request);
-        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        return await handleGetClients(env.DB, url.searchParams, auth.user);
-      }
       if (url.pathname === "/api/business-types" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
@@ -381,7 +376,7 @@ async function handleGetAllClients(db) {
     return jsonResponse(rows.map((r, index) => ({
       id: index + 1,
       name: r.name,
-      created_at: null
+      created_at: '1970-01-01T00:00:00.000Z'
     })));
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
@@ -415,8 +410,7 @@ async function handleGetBusinessTypes(db) {
   // 轉換為前端期望的格式
   return jsonResponse(rows.map((r, index) => ({
     id: index + 1,
-    name: r.type_name,
-    created_at: null
+    name: r.type_name
   })));
 }
 
@@ -426,8 +420,7 @@ async function handleGetLeaveTypes(db) {
   // 轉換為前端期望的格式
   return jsonResponse(rows.map((r, index) => ({
     id: index + 1,
-    type_name: r.type_name,
-    created_at: null
+    type_name: r.type_name
   })));
 }
 
@@ -449,8 +442,7 @@ async function handleGetHolidays(db, params) {
   return jsonResponse(rows.map((r, index) => ({
     id: index + 1,
     holiday_date: r.holiday_date,
-    holiday_name: r.holiday_name,
-    created_at: null
+    holiday_name: r.holiday_name
   })));
 }
 
@@ -963,7 +955,7 @@ async function handleGetAssignments(db, searchParams) {
         id: index + 1,
         employee_name: r.employee_name,
         client_name: r.client_name,
-        created_at: null
+        created_at: '1970-01-01T00:00:00.000Z'
       })));
     }
 
@@ -974,7 +966,7 @@ async function handleGetAssignments(db, searchParams) {
       id: index + 1,
       employee_name: r.employee_name,
       client_name: r.client_name,
-      created_at: null
+      created_at: '1970-01-01T00:00:00.000Z'
     })));
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
@@ -1099,12 +1091,8 @@ async function handleGetLeaveEvents(db, searchParams) {
       : await db.prepare(query).all();
 
     const rows = getRows(res);
-    // 添加 notes 和 created_at 欄位（即使資料庫中沒有）
-    return jsonResponse(rows.map(r => ({
-      ...r,
-      notes: '',
-      created_at: null
-    })));
+    // 添加 notes 欄位（即使資料庫中沒有）
+    return jsonResponse(rows);
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
