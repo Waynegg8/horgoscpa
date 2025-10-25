@@ -44,9 +44,24 @@ export default {
         return await handleVerifySession(env.DB, request);
       }
       
+      // 驗證當前 session (別名)
+      if (url.pathname === "/api/auth/me" && method === "GET") {
+        return await handleVerifySession(env.DB, request);
+      }
+      
       // 修改密碼
       if (url.pathname === "/api/change-password" && method === "POST") {
         return await handleChangePassword(env.DB, request);
+      }
+      
+      // 修改密碼 (別名)
+      if (url.pathname === "/api/auth/change-password" && method === "POST") {
+        return await handleChangePassword(env.DB, request);
+      }
+      
+      // 登出 (別名)
+      if (url.pathname === "/api/auth/logout" && method === "POST") {
+        return await handleLogout(env.DB, request);
       }
 
       // ----------------------------------------------------
@@ -129,6 +144,194 @@ export default {
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
         const payload = await request.json();
         return await handleCreateAssignment(env.DB, payload);
+      }
+
+      // ========================================
+      // 客戶管理 CRUD (所有員工可用)
+      // ========================================
+      if (url.pathname === "/api/clients" && method === "POST") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const payload = await request.json();
+        return await handleCreateClient(env.DB, payload);
+      }
+
+      if (url.pathname.startsWith("/api/clients/") && method === "PUT") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[3];
+        const payload = await request.json();
+        return await handleUpdateClient(env.DB, id, payload);
+      }
+
+      if (url.pathname.startsWith("/api/clients/") && method === "DELETE") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[3];
+        return await handleDeleteClient(env.DB, id);
+      }
+
+      // ========================================
+      // 客戶指派 CRUD (所有員工可用)
+      // ========================================
+      if (url.pathname === "/api/assignments" && method === "GET") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handleGetAssignments(env.DB, url.searchParams);
+      }
+
+      if (url.pathname === "/api/assignments" && method === "POST") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const payload = await request.json();
+        return await handleCreateAssignment(env.DB, payload);
+      }
+
+      if (url.pathname.startsWith("/api/assignments/") && method === "DELETE") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[3];
+        return await handleDeleteAssignment(env.DB, id);
+      }
+
+      // ========================================
+      // 業務類型 CRUD (所有員工可用)
+      // ========================================
+      if (url.pathname === "/api/business-types" && method === "POST") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const payload = await request.json();
+        return await handleCreateBusinessType(env.DB, payload);
+      }
+
+      if (url.pathname.startsWith("/api/business-types/") && method === "PUT") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[3];
+        const payload = await request.json();
+        return await handleUpdateBusinessType(env.DB, id, payload);
+      }
+
+      if (url.pathname.startsWith("/api/business-types/") && method === "DELETE") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[3];
+        return await handleDeleteBusinessType(env.DB, id);
+      }
+
+      // ========================================
+      // 假期事件 CRUD (所有員工可用)
+      // ========================================
+      if (url.pathname === "/api/leave-events" && method === "GET") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handleGetLeaveEvents(env.DB, url.searchParams);
+      }
+
+      if (url.pathname === "/api/leave-events" && method === "POST") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const payload = await request.json();
+        return await handleCreateLeaveEvent(env.DB, payload);
+      }
+
+      if (url.pathname.startsWith("/api/leave-events/") && method === "PUT") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[3];
+        const payload = await request.json();
+        return await handleUpdateLeaveEvent(env.DB, id, payload);
+      }
+
+      if (url.pathname.startsWith("/api/leave-events/") && method === "DELETE") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[3];
+        return await handleDeleteLeaveEvent(env.DB, id);
+      }
+
+      // ========================================
+      // 國定假日 CRUD (所有員工可用)
+      // ========================================
+      if (url.pathname === "/api/holidays" && method === "POST") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const payload = await request.json();
+        return await handleCreateHoliday(env.DB, payload);
+      }
+
+      if (url.pathname.startsWith("/api/holidays/") && method === "PUT") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[3];
+        const payload = await request.json();
+        return await handleUpdateHoliday(env.DB, id, payload);
+      }
+
+      if (url.pathname.startsWith("/api/holidays/") && method === "DELETE") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[3];
+        return await handleDeleteHoliday(env.DB, id);
+      }
+
+      // ========================================
+      // 假別類型 CRUD (僅管理員)
+      // ========================================
+      if (url.pathname === "/api/admin/leave-types" && method === "POST") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const payload = await request.json();
+        return await handleCreateLeaveType(env.DB, payload);
+      }
+
+      if (url.pathname.startsWith("/api/admin/leave-types/") && method === "PUT") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[4];
+        const payload = await request.json();
+        return await handleUpdateLeaveType(env.DB, id, payload);
+      }
+
+      if (url.pathname.startsWith("/api/admin/leave-types/") && method === "DELETE") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[4];
+        return await handleDeleteLeaveType(env.DB, id);
+      }
+
+      // ========================================
+      // 系統參數 (僅管理員)
+      // ========================================
+      if (url.pathname === "/api/admin/system-params" && method === "GET") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handleGetSystemParams(env.DB);
+      }
+
+      if (url.pathname === "/api/admin/system-params" && method === "PUT") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const payload = await request.json();
+        return await handleUpdateSystemParams(env.DB, payload);
+      }
+
+      // ========================================
+      // 用戶管理 CRUD (僅管理員)
+      // ========================================
+      if (url.pathname.startsWith("/api/admin/users/") && method === "PUT") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[4];
+        const payload = await request.json();
+        return await handleUpdateUser(env.DB, id, payload);
+      }
+
+      if (url.pathname.startsWith("/api/admin/users/") && method === "DELETE") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = url.pathname.split("/")[4];
+        return await handleDeleteUser(env.DB, id);
       }
 
       return new Response("Not Found", { status: 404 });
@@ -379,10 +582,17 @@ async function handleChangePassword(db, request) {
       return jsonResponse({ error: auth.error }, 401);
     }
     
-    const { old_password, new_password } = await request.json();
+    const body = await request.json();
+    // 支持兩種命名方式
+    const oldPassword = body.old_password || body.currentPassword;
+    const newPassword = body.new_password || body.newPassword;
     
-    if (!old_password || !new_password) {
-      return jsonResponse({ error: '請提供舊密碼和新密碼' }, 400);
+    if (!oldPassword || !newPassword) {
+      return jsonResponse({ error: '請提供目前密碼和新密碼' }, 400);
+    }
+    
+    if (newPassword.length < 6) {
+      return jsonResponse({ error: '新密碼至少需要 6 個字元' }, 400);
     }
     
     // 驗證舊密碼
@@ -390,20 +600,25 @@ async function handleChangePassword(db, request) {
       SELECT password_hash FROM users WHERE id = ?
     `).bind(auth.user.id).first();
     
-    const isValid = await verifyPassword(old_password, user.password_hash);
+    if (!user) {
+      return jsonResponse({ error: '使用者不存在' }, 404);
+    }
+    
+    const isValid = await verifyPassword(oldPassword, user.password_hash);
     if (!isValid) {
-      return jsonResponse({ error: '舊密碼錯誤' }, 401);
+      return jsonResponse({ error: '目前密碼錯誤' }, 401);
     }
     
     // 更新密碼
-    const newHash = await hashPassword(new_password);
+    const newHash = await hashPassword(newPassword);
     await db.prepare(`
       UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
     `).bind(newHash, auth.user.id).run();
     
-    return jsonResponse({ success: true });
+    return jsonResponse({ success: true, message: '密碼已成功更新' });
   } catch (err) {
-    return jsonResponse({ error: err.message }, 500);
+    console.error('Change password error:', err);
+    return jsonResponse({ error: err.message || '密碼更新失敗' }, 500);
   }
 }
 
@@ -622,11 +837,457 @@ async function handleSaveTimesheet(db, payload, user) {
 }
 
 // =================================================================
+// 客戶管理 CRUD
+// =================================================================
+async function handleUpdateClient(db, id, payload) {
+  try {
+    const { name } = payload;
+    if (!name) {
+      return jsonResponse({ error: '客戶名稱為必填' }, 400);
+    }
+
+    await db.prepare(`
+      UPDATE clients SET name = ? WHERE id = ?
+    `).bind(name, id).run();
+
+    return jsonResponse({ success: true, message: '客戶已更新' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleDeleteClient(db, id) {
+  try {
+    // 檢查是否有關聯的客戶指派
+    const assignments = await db.prepare(`
+      SELECT COUNT(*) as count FROM client_assignments WHERE client_name = (SELECT name FROM clients WHERE id = ?)
+    `).bind(id).first();
+
+    if (assignments && assignments.count > 0) {
+      return jsonResponse({ error: '無法刪除：此客戶仍有指派記錄' }, 400);
+    }
+
+    await db.prepare(`DELETE FROM clients WHERE id = ?`).bind(id).run();
+    return jsonResponse({ success: true, message: '客戶已刪除' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+// =================================================================
+// 客戶指派 CRUD
+// =================================================================
+async function handleGetAssignments(db, searchParams) {
+  try {
+    let query = `
+      SELECT 
+        ca.id,
+        ca.employee_name,
+        ca.client_name,
+        ca.created_at
+      FROM client_assignments ca
+      ORDER BY ca.employee_name, ca.client_name
+    `;
+
+    const employeeName = searchParams.get('employee');
+    if (employeeName) {
+      query = `
+        SELECT 
+          ca.id,
+          ca.employee_name,
+          ca.client_name,
+          ca.created_at
+        FROM client_assignments ca
+        WHERE ca.employee_name = ?
+        ORDER BY ca.client_name
+      `;
+      const res = await db.prepare(query).bind(employeeName).all();
+      return jsonResponse(getRows(res));
+    }
+
+    const res = await db.prepare(query).all();
+    return jsonResponse(getRows(res));
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleDeleteAssignment(db, id) {
+  try {
+    await db.prepare(`DELETE FROM client_assignments WHERE id = ?`).bind(id).run();
+    return jsonResponse({ success: true, message: '指派已刪除' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+// =================================================================
+// 業務類型 CRUD
+// =================================================================
+async function handleCreateBusinessType(db, payload) {
+  try {
+    const { name } = payload;
+    if (!name) {
+      return jsonResponse({ error: '業務類型名稱為必填' }, 400);
+    }
+
+    const result = await db.prepare(`
+      INSERT INTO business_types (name) VALUES (?)
+    `).bind(name).run();
+
+    return jsonResponse({ 
+      success: true, 
+      message: '業務類型已新增',
+      id: result.meta.last_row_id 
+    });
+  } catch (err) {
+    if (err.message.includes('UNIQUE')) {
+      return jsonResponse({ error: '此業務類型已存在' }, 400);
+    }
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleUpdateBusinessType(db, id, payload) {
+  try {
+    const { name } = payload;
+    if (!name) {
+      return jsonResponse({ error: '業務類型名稱為必填' }, 400);
+    }
+
+    await db.prepare(`
+      UPDATE business_types SET name = ? WHERE id = ?
+    `).bind(name, id).run();
+
+    return jsonResponse({ success: true, message: '業務類型已更新' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleDeleteBusinessType(db, id) {
+  try {
+    await db.prepare(`DELETE FROM business_types WHERE id = ?`).bind(id).run();
+    return jsonResponse({ success: true, message: '業務類型已刪除' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+// =================================================================
+// 假期事件 CRUD
+// =================================================================
+async function handleGetLeaveEvents(db, searchParams) {
+  try {
+    let query = `
+      SELECT 
+        id,
+        employee_name,
+        event_date,
+        event_type,
+        notes,
+        created_at
+      FROM leave_events
+      ORDER BY event_date DESC, employee_name
+    `;
+
+    const params = [];
+    const employeeName = searchParams.get('employee');
+    const year = searchParams.get('year');
+
+    if (employeeName || year) {
+      const conditions = [];
+      if (employeeName) {
+        conditions.push('employee_name = ?');
+        params.push(employeeName);
+      }
+      if (year) {
+        conditions.push('strftime("%Y", event_date) = ?');
+        params.push(year);
+      }
+      query = `
+        SELECT 
+          id,
+          employee_name,
+          event_date,
+          event_type,
+          notes,
+          created_at
+        FROM leave_events
+        WHERE ${conditions.join(' AND ')}
+        ORDER BY event_date DESC
+      `;
+    }
+
+    const res = params.length > 0 
+      ? await db.prepare(query).bind(...params).all()
+      : await db.prepare(query).all();
+
+    return jsonResponse(getRows(res));
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleCreateLeaveEvent(db, payload) {
+  try {
+    const { employee_name, event_date, event_type, notes } = payload;
+    
+    if (!employee_name || !event_date || !event_type) {
+      return jsonResponse({ error: '員工姓名、事件日期和事件類型為必填' }, 400);
+    }
+
+    const result = await db.prepare(`
+      INSERT INTO leave_events (employee_name, event_date, event_type, notes)
+      VALUES (?, ?, ?, ?)
+    `).bind(employee_name, event_date, event_type, notes || '').run();
+
+    return jsonResponse({ 
+      success: true, 
+      message: '假期事件已新增',
+      id: result.meta.last_row_id 
+    });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleUpdateLeaveEvent(db, id, payload) {
+  try {
+    const { employee_name, event_date, event_type, notes } = payload;
+    
+    if (!employee_name || !event_date || !event_type) {
+      return jsonResponse({ error: '員工姓名、事件日期和事件類型為必填' }, 400);
+    }
+
+    await db.prepare(`
+      UPDATE leave_events 
+      SET employee_name = ?, event_date = ?, event_type = ?, notes = ?
+      WHERE id = ?
+    `).bind(employee_name, event_date, event_type, notes || '', id).run();
+
+    return jsonResponse({ success: true, message: '假期事件已更新' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleDeleteLeaveEvent(db, id) {
+  try {
+    await db.prepare(`DELETE FROM leave_events WHERE id = ?`).bind(id).run();
+    return jsonResponse({ success: true, message: '假期事件已刪除' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+// =================================================================
+// 國定假日 CRUD
+// =================================================================
+async function handleCreateHoliday(db, payload) {
+  try {
+    const { holiday_date, holiday_name } = payload;
+    
+    if (!holiday_date || !holiday_name) {
+      return jsonResponse({ error: '假日日期和名稱為必填' }, 400);
+    }
+
+    const result = await db.prepare(`
+      INSERT INTO holidays (holiday_date, holiday_name)
+      VALUES (?, ?)
+    `).bind(holiday_date, holiday_name).run();
+
+    return jsonResponse({ 
+      success: true, 
+      message: '國定假日已新增',
+      id: result.meta.last_row_id 
+    });
+  } catch (err) {
+    if (err.message.includes('UNIQUE')) {
+      return jsonResponse({ error: '此日期已存在假日' }, 400);
+    }
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleUpdateHoliday(db, id, payload) {
+  try {
+    const { holiday_date, holiday_name } = payload;
+    
+    if (!holiday_date || !holiday_name) {
+      return jsonResponse({ error: '假日日期和名稱為必填' }, 400);
+    }
+
+    await db.prepare(`
+      UPDATE holidays 
+      SET holiday_date = ?, holiday_name = ?
+      WHERE id = ?
+    `).bind(holiday_date, holiday_name, id).run();
+
+    return jsonResponse({ success: true, message: '國定假日已更新' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleDeleteHoliday(db, id) {
+  try {
+    await db.prepare(`DELETE FROM holidays WHERE id = ?`).bind(id).run();
+    return jsonResponse({ success: true, message: '國定假日已刪除' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+// =================================================================
+// 假別類型 CRUD (僅管理員)
+// =================================================================
+async function handleCreateLeaveType(db, payload) {
+  try {
+    const { name } = payload;
+    if (!name) {
+      return jsonResponse({ error: '假別名稱為必填' }, 400);
+    }
+
+    const result = await db.prepare(`
+      INSERT INTO leave_types (name) VALUES (?)
+    `).bind(name).run();
+
+    return jsonResponse({ 
+      success: true, 
+      message: '假別已新增',
+      id: result.meta.last_row_id 
+    });
+  } catch (err) {
+    if (err.message.includes('UNIQUE')) {
+      return jsonResponse({ error: '此假別已存在' }, 400);
+    }
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleUpdateLeaveType(db, id, payload) {
+  try {
+    const { name } = payload;
+    if (!name) {
+      return jsonResponse({ error: '假別名稱為必填' }, 400);
+    }
+
+    await db.prepare(`
+      UPDATE leave_types SET name = ? WHERE id = ?
+    `).bind(name, id).run();
+
+    return jsonResponse({ success: true, message: '假別已更新' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleDeleteLeaveType(db, id) {
+  try {
+    await db.prepare(`DELETE FROM leave_types WHERE id = ?`).bind(id).run();
+    return jsonResponse({ success: true, message: '假別已刪除' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+// =================================================================
+// 系統參數 CRUD (僅管理員)
+// =================================================================
+async function handleGetSystemParams(db) {
+  try {
+    const res = await db.prepare(`
+      SELECT param_name, param_value, description
+      FROM system_parameters
+      ORDER BY param_name
+    `).all();
+    
+    return jsonResponse(getRows(res));
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleUpdateSystemParams(db, payload) {
+  try {
+    const { params } = payload;
+    
+    if (!params || !Array.isArray(params)) {
+      return jsonResponse({ error: '參數格式錯誤' }, 400);
+    }
+
+    // 批次更新參數
+    for (const param of params) {
+      await db.prepare(`
+        UPDATE system_parameters 
+        SET param_value = ?
+        WHERE param_name = ?
+      `).bind(param.value, param.name).run();
+    }
+
+    return jsonResponse({ success: true, message: '系統參數已更新' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+// =================================================================
+// 用戶管理 CRUD (僅管理員)
+// =================================================================
+async function handleUpdateUser(db, id, payload) {
+  try {
+    const { username, role, employee_name, is_active } = payload;
+    
+    if (!username || !role) {
+      return jsonResponse({ error: '使用者名稱和角色為必填' }, 400);
+    }
+
+    await db.prepare(`
+      UPDATE users 
+      SET username = ?, role = ?, employee_name = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(username, role, employee_name || null, is_active ? 1 : 0, id).run();
+
+    return jsonResponse({ success: true, message: '使用者已更新' });
+  } catch (err) {
+    if (err.message.includes('UNIQUE')) {
+      return jsonResponse({ error: '使用者名稱已存在' }, 400);
+    }
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleDeleteUser(db, id) {
+  try {
+    // 檢查是否為唯一的管理員
+    const adminCount = await db.prepare(`
+      SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND is_active = 1
+    `).first();
+
+    const user = await db.prepare(`
+      SELECT role FROM users WHERE id = ?
+    `).bind(id).first();
+
+    if (user && user.role === 'admin' && adminCount.count <= 1) {
+      return jsonResponse({ error: '無法刪除：至少需要保留一個管理員帳號' }, 400);
+    }
+
+    await db.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
+    await db.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(id).run();
+
+    return jsonResponse({ success: true, message: '使用者已刪除' });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+// =================================================================
 // CORS & JSON
 // =================================================================
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 

@@ -1,602 +1,373 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>報表查詢 | 霍爾果斯工時管理系統</title>
-  <link rel="icon" type="image/png" href="/assets/images/favicon-32x32.png">
-  
-  <!-- Material Symbols 圖示庫 -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  
-  <!-- 引用全站共用樣式 -->
-  <link rel="stylesheet" href="/assets/css/common.css" />
-  <link rel="stylesheet" href="/assets/css/navbar.css" />
-  <link rel="stylesheet" href="/assets/css/footer.css" />
-  
-  <style>
-    main {
-      max-width: 1400px;
-      margin: 120px auto 80px;
-      padding: 20px;
-    }
-    
-    .page-header {
-      background: linear-gradient(135deg, #1b65b8 0%, #0f4f94 100%);
-      color: white;
-      padding: 30px;
-      border-radius: 12px;
-      margin-bottom: 30px;
-    }
-    
-    .page-header h1 {
-      font-size: 32px;
-      margin-bottom: 8px;
-    }
-    
-    .card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 25px;
-      margin-bottom: 20px;
-    }
-    
-    .card h2 {
-      color: #333;
-      font-size: 20px;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #f0f0f0;
-    }
-    
-    .filter-row {
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-      padding: 20px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      align-items: flex-end;
-    }
-    
-    .form-group {
-      flex: 1;
-      min-width: 200px;
-    }
-    
-    .form-group label {
-      display: block;
-      color: #333;
-      font-weight: 600;
-      margin-bottom: 6px;
-      font-size: 14px;
-    }
-    
-    .form-group input,
-    .form-group select {
-      width: 100%;
-      padding: 10px;
-      border: 2px solid #e0e0e0;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-    
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    
-    .btn-primary {
-      background: #1b65b8;
-      color: white;
-    }
-    
-    .btn-primary:hover {
-      background: #0f4f94;
-    }
-    
-    .btn-success {
-      background: #28a745;
-      color: white;
-    }
-    
-    .btn-success:hover {
-      background: #218838;
-    }
-    
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-    
-    .stat-card {
-      background: white;
-      border-radius: 12px;
-      padding: 25px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      text-align: center;
-      transition: transform 0.3s;
-    }
-    
-    .stat-card:hover {
-      transform: translateY(-5px);
-    }
-    
-    .stat-card .icon {
-      font-size: 48px;
-      margin-bottom: 10px;
-    }
-    
-    .stat-card.primary .icon {
-      color: #1b65b8;
-    }
-    
-    .stat-card.success .icon {
-      color: #28a745;
-    }
-    
-    .stat-card.warning .icon {
-      color: #ffc107;
-    }
-    
-    .stat-card.info .icon {
-      color: #17a2b8;
-    }
-    
-    .stat-card .number {
-      font-size: 36px;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 5px;
-    }
-    
-    .stat-card .label {
-      color: #666;
-      font-size: 14px;
-      font-weight: 500;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      font-size: 14px;
-    }
-    
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #e0e0e0;
-    }
-    
-    th {
-      background: #1b65b8;
-      color: white;
-      font-weight: 600;
-    }
-    
-    tr:hover {
-      background: #f8f9fa;
-    }
-    
-    .message-box {
-      padding: 12px 16px;
-      border-radius: 6px;
-      margin-bottom: 20px;
-      display: none;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .message-box.show {
-      display: flex;
-    }
-    
-    .error-message {
-      background: #fff3cd;
-      border-left: 4px solid #ffc107;
-      color: #856404;
-    }
-    
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: #999;
-    }
-    
-    .empty-state .material-symbols-rounded {
-      font-size: 64px;
-      color: #ddd;
-      margin-bottom: 15px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>報表分析 - 霍爾果斯會計師事務所</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="assets/css/internal-system.css">
+    <style>
+        /* 報表特定樣式 */
+        .report-filters {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .report-content {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .report-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        .report-header h2 {
+            margin: 0 0 5px 0;
+            font-size: 24px;
+        }
+
+        .report-header .subtitle {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .report-body {
+            padding: 20px;
+        }
+
+        .report-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: var(--light-bg);
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .summary-card .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .summary-card .unit {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-left: 5px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead {
+            background: var(--light-bg);
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        th.number, td.number {
+            text-align: right;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .total-row {
+            font-weight: 600;
+            background: #f5f5f5 !important;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .chart-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--light-bg);
+            border-radius: 6px;
+        }
+
+        @media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .report-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-  <!-- 導覽列 -->
-  <nav class="site-nav">
-    <div class="nav-container">
-      <div class="logo">
-        <a href="/index.html">
-          <div class="logo-container">
-            <img src="/assets/images/logo-white.png" alt="霍爾果斯會計師事務所" class="logo-img">
-            <div class="logo-sub">HorgosCPA</div>
-          </div>
-        </a>
-      </div>
-      <ul class="nav-menu">
-        <li><a href="/timesheet.html">工時記錄</a></li>
-        <li><a href="/reports.html">報表查詢</a></li>
-        <li id="adminMenuLink" style="display:none;"><a href="/admin.html">系統管理</a></li>
-        <li>
-          <span id="userInfo" style="color: white; padding: 0 15px;">載入中...</span>
-        </li>
-        <li>
-          <a href="#" id="logoutBtn" class="nav-consult-btn" style="cursor: pointer;">登出</a>
-        </li>
-      </ul>
-    </div>
-  </nav>
+    <!-- 簡潔的內部導航欄 -->
+    <nav class="internal-navbar">
+        <div class="internal-nav-container">
+            <a href="index.html" class="internal-nav-brand">
+                <img src="assets/images/logo-white.png" alt="霍爾果斯">
+                <span>工時管理系統</span>
+            </a>
+            
+            <button class="internal-mobile-toggle" id="mobileToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
 
-  <main>
-    <div class="page-header">
-      <h1><span class="material-symbols-rounded" style="vertical-align: middle;">assessment</span> 工時報表查詢</h1>
-      <p>查詢和分析工時統計資料</p>
-    </div>
+            <div class="internal-nav-links" id="navLinks">
+                <a href="timesheet.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    工時表
+                </a>
+                <a href="reports.html" class="internal-nav-link active">
+                    <span class="material-symbols-outlined">assessment</span>
+                    報表
+                </a>
+                <a href="settings.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">settings</span>
+                    設定
+                </a>
+                
+                <div class="internal-nav-user">
+                    <div>
+                        <div class="internal-user-name" id="userName">載入中...</div>
+                        <div class="internal-user-role" id="userRole"></div>
+                    </div>
+                    <button class="internal-logout-btn" id="logoutBtn">登出</button>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-    <div id="messageBox" class="message-box error-message"></div>
+    <main class="internal-main">
+        <div class="internal-container">
+            <!-- 報表類型選擇 -->
+            <div class="tabs-container">
+                <div class="tab-nav">
+                    <button class="tab-button active" data-tab="work-analysis">工時分析</button>
+                    <button class="tab-button" data-tab="leave-overview">請假總覽</button>
+                    <button class="tab-button" data-tab="pivot-analysis">樞紐分析</button>
+                </div>
 
-    <div class="card">
-      <h2>查詢條件</h2>
-      <div class="filter-row">
-        <div class="form-group">
-          <label>員工</label>
-          <select id="employeeSelect">
-            <option value="">載入中...</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>年份</label>
-          <input type="number" id="yearInput" value="2025" min="2020" max="2030" />
-        </div>
-        <div class="form-group">
-          <label>月份</label>
-          <select id="monthSelect">
-            <option value="1">1月</option>
-            <option value="2">2月</option>
-            <option value="3">3月</option>
-            <option value="4">4月</option>
-            <option value="5">5月</option>
-            <option value="6">6月</option>
-            <option value="7">7月</option>
-            <option value="8">8月</option>
-            <option value="9">9月</option>
-            <option value="10">10月</option>
-            <option value="11">11月</option>
-            <option value="12">12月</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <button id="queryBtn" class="btn btn-primary">
-            <span class="material-symbols-rounded">search</span>
-            查詢
-          </button>
-        </div>
-      </div>
-    </div>
+                <!-- 工時分析報表 -->
+                <div id="work-analysis-tab" class="tab-content active">
+                    <div style="padding: 20px;">
+                        <div class="report-filters">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label>員工姓名</label>
+                                    <select id="workAnalysisEmployee">
+                                        <option value="">載入中...</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>年度</label>
+                                    <select id="workAnalysisYear">
+                                        <option value="">請選擇年度</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>月份</label>
+                                    <select id="workAnalysisMonth">
+                                        <option value="">請選擇月份</option>
+                                        <option value="1">1月</option>
+                                        <option value="2">2月</option>
+                                        <option value="3">3月</option>
+                                        <option value="4">4月</option>
+                                        <option value="5">5月</option>
+                                        <option value="6">6月</option>
+                                        <option value="7">7月</option>
+                                        <option value="8">8月</option>
+                                        <option value="9">9月</option>
+                                        <option value="10">10月</option>
+                                        <option value="11">11月</option>
+                                        <option value="12">12月</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <button class="btn btn-primary" onclick="generateWorkAnalysis()">
+                                        <span class="material-symbols-outlined">refresh</span>
+                                        生成報表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-    <div id="statsContainer" style="display: none;">
-      <div class="stats-grid">
-        <div class="stat-card primary">
-          <div class="material-symbols-rounded icon">schedule</div>
-          <div class="number" id="totalHours">0</div>
-          <div class="label">總工時</div>
-        </div>
-        
-        <div class="stat-card success">
-          <div class="material-symbols-rounded icon">work</div>
-          <div class="number" id="normalHours">0</div>
-          <div class="label">正常工時</div>
-        </div>
-        
-        <div class="stat-card warning">
-          <div class="material-symbols-rounded icon">more_time</div>
-          <div class="number" id="overtimeHours">0</div>
-          <div class="label">加班時數</div>
-        </div>
-        
-        <div class="stat-card info">
-          <div class="material-symbols-rounded icon">event_busy</div>
-          <div class="number" id="leaveHours">0</div>
-          <div class="label">請假時數</div>
-        </div>
-      </div>
+                        <div id="workAnalysisResult"></div>
+                    </div>
+                </div>
 
-      <div class="card">
-        <h2>詳細記錄</h2>
-        <table id="detailTable">
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>客戶</th>
-              <th>業務類型</th>
-              <th>工時類型</th>
-              <th>時數</th>
-            </tr>
-          </thead>
-          <tbody id="detailTableBody">
-            <tr>
-              <td colspan="5" class="empty-state">
-                <div class="material-symbols-rounded">inbox</div>
-                <div>請先查詢資料</div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </main>
+                <!-- 請假總覽報表 -->
+                <div id="leave-overview-tab" class="tab-content">
+                    <div style="padding: 20px;">
+                        <div class="report-filters">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label>員工姓名</label>
+                                    <select id="leaveOverviewEmployee">
+                                        <option value="">載入中...</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>年度</label>
+                                    <select id="leaveOverviewYear">
+                                        <option value="">請選擇年度</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <button class="btn btn-primary" onclick="generateLeaveOverview()">
+                                        <span class="material-symbols-outlined">refresh</span>
+                                        生成報表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-  <footer class="site-footer">
-    <div class="footer-container">
-      <p style="text-align:center;color:#ccc;">© 2025 霍爾果斯會計師事務所</p>
-    </div>
-  </footer>
+                        <div id="leaveOverviewResult"></div>
+                    </div>
+                </div>
 
-  <script>
-    const API_BASE_URL = 'https://timesheet-api.hergscpa.workers.dev';
-    let sessionToken = null;
-    let currentUser = null;
+                <!-- 樞紐分析報表 -->
+                <div id="pivot-analysis-tab" class="tab-content">
+                    <div style="padding: 20px;">
+                        <div class="report-filters">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label>年度</label>
+                                    <select id="pivotYear">
+                                        <option value="">請選擇年度</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>月份（選填）</label>
+                                    <select id="pivotMonth">
+                                        <option value="">全年</option>
+                                        <option value="1">1月</option>
+                                        <option value="2">2月</option>
+                                        <option value="3">3月</option>
+                                        <option value="4">4月</option>
+                                        <option value="5">5月</option>
+                                        <option value="6">6月</option>
+                                        <option value="7">7月</option>
+                                        <option value="8">8月</option>
+                                        <option value="9">9月</option>
+                                        <option value="10">10月</option>
+                                        <option value="11">11月</option>
+                                        <option value="12">12月</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label>分組方式</label>
+                                    <select id="pivotGroupBy">
+                                        <option value="employee">員工</option>
+                                        <option value="client">客戶</option>
+                                        <option value="business_type">業務類型</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <button class="btn btn-primary" onclick="generatePivotAnalysis()">
+                                        <span class="material-symbols-outlined">refresh</span>
+                                        生成報表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-    // 初始化
-    document.addEventListener('DOMContentLoaded', async () => {
-      if (!await checkAuth()) {
-        window.location.href = '/login.html';
-        return;
-      }
-      
-      updateUserInfo();
-      setCurrentMonth();
-      await loadEmployees();
-      
-      // 綁定查詢按鈕
-      document.getElementById('queryBtn').addEventListener('click', queryReport);
-      
-      // 綁定登出
-      document.getElementById('logoutBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        await apiRequest(`${API_BASE_URL}/api/logout`, { method: 'POST' });
-        localStorage.clear();
-        window.location.href = '/login.html';
-      });
-    });
-    
-    // 檢查認證
-    async function checkAuth() {
-      sessionToken = localStorage.getItem('session_token');
-      if (!sessionToken) return false;
-      
-      try {
-        const response = await apiRequest(`${API_BASE_URL}/api/verify`);
-        if (response && response.ok) {
-          const data = await response.json();
-          currentUser = data.user;
-          return true;
-        }
-      } catch (err) {
-        console.error('驗證失敗:', err);
-      }
-      return false;
-    }
-    
-    // API 請求
-    async function apiRequest(url, options = {}) {
-      const headers = {
-        ...options.headers,
-        'Authorization': `Bearer ${sessionToken}`
-      };
-      
-      if (options.body && typeof options.body === 'object') {
-        headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(options.body);
-      }
-      
-      const response = await fetch(url, { ...options, headers });
-      
-      if (response.status === 401) {
-        localStorage.removeItem('session_token');
-        window.location.href = '/login.html';
-        return null;
-      }
-      
-      return response;
-    }
-    
-    // 更新使用者資訊
-    function updateUserInfo() {
-      const userInfoEl = document.getElementById('userInfo');
-      const adminMenuLink = document.getElementById('adminMenuLink');
-      
-      if (currentUser) {
-        const displayName = currentUser.employee_name || currentUser.username;
-        const roleText = currentUser.role === 'admin' ? '管理員' : '員工';
-        userInfoEl.textContent = `${displayName} (${roleText})`;
-        
-        if (currentUser.role === 'admin') {
-          adminMenuLink.style.display = 'block';
-        }
-      }
-    }
-    
-    // 設定當前月份
-    function setCurrentMonth() {
-      const now = new Date();
-      document.getElementById('monthSelect').value = now.getMonth() + 1;
-      document.getElementById('yearInput').value = now.getFullYear();
-    }
-    
-    // 載入員工
-    async function loadEmployees() {
-      try {
-        const response = await apiRequest(`${API_BASE_URL}/api/employees`);
-        if (!response) return;
-        
-        const employees = await response.json();
-        const select = document.getElementById('employeeSelect');
-        
-        select.innerHTML = employees.map(emp => 
-          `<option value="${emp.name}">${emp.name}</option>`
-        ).join('');
-        
-        // 如果是員工，自動選擇自己
-        if (currentUser.role === 'employee' && currentUser.employee_name) {
-          select.value = currentUser.employee_name;
-          select.disabled = true;
-        }
-      } catch (err) {
-        showError('載入員工失敗：' + err.message);
-      }
-    }
-    
-    // 查詢報表
-    async function queryReport() {
-      const employee = document.getElementById('employeeSelect').value;
-      const year = document.getElementById('yearInput').value;
-      const month = document.getElementById('monthSelect').value;
-      
-      if (!employee) {
-        showError('請選擇員工');
-        return;
-      }
-      
-      try {
-        const response = await apiRequest(
-          `${API_BASE_URL}/api/timesheet-data?employee=${encodeURIComponent(employee)}&year=${year}&month=${month}`
-        );
-        
-        if (!response) return;
-        const data = await response.json();
-        
-        if (data.error) {
-          showError(data.error);
-          return;
-        }
-        
-        displayReport(data, year, month);
-      } catch (err) {
-        showError('查詢失敗：' + err.message);
-      }
-    }
-    
-    // 顯示報表
-    function displayReport(data, year, month) {
-      document.getElementById('statsContainer').style.display = 'block';
-      
-      let totalHours = 0;
-      let normalHours = 0;
-      let overtimeHours = 0;
-      let leaveHours = 0;
-      
-      const rows = [];
-      
-      // 處理工時資料
-      (data.workEntries || []).forEach(entry => {
-        for (const day in entry.hours) {
-          const hours = entry.hours[day];
-          const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          
-          rows.push({
-            date,
-            client: entry.clientName,
-            businessType: entry.businessType,
-            type: entry.workType,
-            hours
-          });
-          
-          totalHours += hours;
-          if (entry.workType === '正常工時') {
-            normalHours += hours;
-          } else {
-            overtimeHours += hours;
-          }
-        }
-      });
-      
-      // 處理請假資料
-      (data.leaveEntries || []).forEach(entry => {
-        for (const day in entry.hours) {
-          const hours = entry.hours[day];
-          const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          
-          rows.push({
-            date,
-            client: '-',
-            businessType: '-',
-            type: entry.leaveType,
-            hours
-          });
-          
-          leaveHours += hours;
-        }
-      });
-      
-      // 更新統計卡片
-      document.getElementById('totalHours').textContent = totalHours.toFixed(1);
-      document.getElementById('normalHours').textContent = normalHours.toFixed(1);
-      document.getElementById('overtimeHours').textContent = overtimeHours.toFixed(1);
-      document.getElementById('leaveHours').textContent = leaveHours.toFixed(1);
-      
-      // 更新表格
-      const tbody = document.getElementById('detailTableBody');
-      
-      if (rows.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5" class="empty-state">
-              <div class="material-symbols-rounded">event_busy</div>
-              <div>本月無記錄</div>
-            </td>
-          </tr>
-        `;
-        return;
-      }
-      
-      // 排序並顯示
-      rows.sort((a, b) => a.date.localeCompare(b.date));
-      
-      tbody.innerHTML = rows.map(row => `
-        <tr>
-          <td>${row.date}</td>
-          <td>${row.client}</td>
-          <td>${row.businessType}</td>
-          <td>${row.type}</td>
-          <td>${row.hours}</td>
-        </tr>
-      `).join('');
-    }
-    
-    // 顯示錯誤
-    function showError(message) {
-      const msgBox = document.getElementById('messageBox');
-      msgBox.innerHTML = `<span class="material-symbols-rounded">error</span><span>${message}</span>`;
-      msgBox.classList.add('show');
-      
-      setTimeout(() => {
-        msgBox.classList.remove('show');
-      }, 3000);
-    }
-  </script>
+                        <div id="pivotAnalysisResult"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 簡化的頁尾 -->
+    <footer class="internal-footer">
+        &copy; 2024 霍爾果斯會計師事務所 工時管理系統
+    </footer>
+
+    <script src="assets/js/reports.js"></script>
 </body>
 </html>
-

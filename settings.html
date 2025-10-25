@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系統設定 - 霍爾果斯會計師事務所</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="assets/css/internal-system.css">
+    <style>
+        /* 標籤頁樣式 */
+        .tabs-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid var(--light-bg);
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .tab-nav::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .tab-nav::-webkit-scrollbar-track {
+            background: var(--light-bg);
+        }
+
+        .tab-nav::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .tab-button {
+            flex: 0 0 auto;
+            min-width: 140px;
+            padding: 15px 20px;
+            background: white;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: var(--light-bg);
+            color: var(--primary-color);
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background: white;
+        }
+
+        .tab-content {
+            padding: 20px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 工具列 */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-left, .toolbar-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .search-box .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            pointer-events: none;
+        }
+
+        /* 表格樣式 */
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead {
+            background: var(--light-bg);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        /* 模態框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-dialog {
+            background: white;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 20px;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 徽章 */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-primary {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .badge-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .badge-warning {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .badge-danger {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .toolbar-left, .toolbar-right {
+                width: 100%;
+            }
+
+            .search-box {
+                min-width: auto;
+            }
+
+            .tab-button {
+                min-width: 120px;
+            }
+
+            .modal-dialog {
+                max-width: 100%;
+                margin: 0;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 簡潔的內部導航欄 -->
+    <nav class="internal-navbar">
+        <div class="internal-nav-container">
+            <a href="index.html" class="internal-nav-brand">
+                <img src="assets/images/logo-white.png" alt="霍爾果斯">
+                <span>工時管理系統</span>
+            </a>
+            
+            <button class="internal-mobile-toggle" id="mobileToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div class="internal-nav-links" id="navLinks">
+                <a href="timesheet.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    工時表
+                </a>
+                <a href="reports.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">assessment</span>
+                    報表
+                </a>
+                <a href="settings.html" class="internal-nav-link active">
+                    <span class="material-symbols-outlined">settings</span>
+                    設定
+                </a>
+                
+                <div class="internal-nav-user">
+                    <div>
+                        <div class="internal-user-name" id="userName">載入中...</div>
+                        <div class="internal-user-role" id="userRole"></div>
+                    </div>
+                    <button class="internal-logout-btn" id="logoutBtn">登出</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="internal-main">
+        <div class="internal-container">
+            <div class="tabs-container">
+                <div class="tab-nav" id="tabNav">
+                    <!-- 所有員工可見的標籤 -->
+                    <button class="tab-button active" data-tab="clients">客戶管理</button>
+                    <button class="tab-button" data-tab="assignments">客戶指派</button>
+                    <button class="tab-button" data-tab="business-types">業務類型</button>
+                    <button class="tab-button" data-tab="leave-events">假期事件</button>
+                    <button class="tab-button" data-tab="holidays">國定假日</button>
+                    <!-- 管理員專屬標籤（透過 JS 動態顯示） -->
+                    <button class="tab-button admin-only" data-tab="users" style="display:none;">用戶管理</button>
+                    <button class="tab-button admin-only" data-tab="leave-types" style="display:none;">假別設定</button>
+                    <button class="tab-button admin-only" data-tab="system-params" style="display:none;">系統參數</button>
+                    <button class="tab-button" data-tab="account">帳號設定</button>
+                </div>
+
+                <!-- 客戶管理 -->
+                <div id="clients-tab" class="tab-content active">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-box">
+                                <input type="text" id="clientSearch" placeholder="搜尋客戶名稱...">
+                                <span class="material-symbols-outlined search-icon">search</span>
+                            </div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary" onclick="showAddClientModal()">
+                                <span class="material-symbols-outlined">add</span>
+                                新增客戶
+                            </button>
+                        </div>
+                    </div>
+                    <div id="clientsTableContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            載入中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 客戶指派管理 -->
+                <div id="assignments-tab" class="tab-content">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-box">
+                                <input type="text" id="assignmentSearch" placeholder="搜尋員工或客戶...">
+                                <span class="material-symbols-outlined search-icon">search</span>
+                            </div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary" onclick="showAddAssignmentModal()">
+                                <span class="material-symbols-outlined">add</span>
+                                新增指派
+                            </button>
+                        </div>
+                    </div>
+                    <div id="assignmentsTableContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            載入中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 業務類型管理 -->
+                <div id="business-types-tab" class="tab-content">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-box">
+                                <input type="text" id="businessTypeSearch" placeholder="搜尋業務類型...">
+                                <span class="material-symbols-outlined search-icon">search</span>
+                            </div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary" onclick="showAddBusinessTypeModal()">
+                                <span class="material-symbols-outlined">add</span>
+                                新增業務類型
+                            </button>
+                        </div>
+                    </div>
+                    <div id="businessTypesTableContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            載入中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 假期事件管理 -->
+                <div id="leave-events-tab" class="tab-content">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-box">
+                                <input type="text" id="leaveEventSearch" placeholder="搜尋員工或事件...">
+                                <span class="material-symbols-outlined search-icon">search</span>
+                            </div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary" onclick="showAddLeaveEventModal()">
+                                <span class="material-symbols-outlined">add</span>
+                                新增假期事件
+                            </button>
+                        </div>
+                    </div>
+                    <div id="leaveEventsTableContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            載入中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 國定假日管理 -->
+                <div id="holidays-tab" class="tab-content">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-box">
+                                <input type="text" id="holidaySearch" placeholder="搜尋假日名稱...">
+                                <span class="material-symbols-outlined search-icon">search</span>
+                            </div>
+                            <select id="holidayYearFilter" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 14px;">
+                                <option value="">所有年份</option>
+                            </select>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary" onclick="showAddHolidayModal()">
+                                <span class="material-symbols-outlined">add</span>
+                                新增國定假日
+                            </button>
+                        </div>
+                    </div>
+                    <div id="holidaysTableContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            載入中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用戶管理（僅管理員） -->
+                <div id="users-tab" class="tab-content">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-box">
+                                <input type="text" id="userSearch" placeholder="搜尋使用者...">
+                                <span class="material-symbols-outlined search-icon">search</span>
+                            </div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary" onclick="showAddUserModal()">
+                                <span class="material-symbols-outlined">add</span>
+                                新增使用者
+                            </button>
+                        </div>
+                    </div>
+                    <div id="usersTableContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            載入中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 假別設定（僅管理員） -->
+                <div id="leave-types-tab" class="tab-content">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-box">
+                                <input type="text" id="leaveTypeSearch" placeholder="搜尋假別...">
+                                <span class="material-symbols-outlined search-icon">search</span>
+                            </div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-primary" onclick="showAddLeaveTypeModal()">
+                                <span class="material-symbols-outlined">add</span>
+                                新增假別
+                            </button>
+                        </div>
+                    </div>
+                    <div id="leaveTypesTableContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            載入中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系統參數（僅管理員） -->
+                <div id="system-params-tab" class="tab-content">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <h3 style="margin: 0; color: var(--primary-color);">系統參數設定</h3>
+                        </div>
+                    </div>
+                    <div id="systemParamsContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            載入中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 帳號設定 -->
+                <div id="account-tab" class="tab-content">
+                    <div style="max-width: 600px;">
+                        <h3 style="color: var(--primary-color); margin-bottom: 20px;">帳號資訊</h3>
+                        
+                        <div class="form-group">
+                            <label>使用者名稱</label>
+                            <input type="text" id="accountUsername" disabled style="background: var(--light-bg);">
+                        </div>
+
+                        <div class="form-group">
+                            <label>角色</label>
+                            <input type="text" id="accountRole" disabled style="background: var(--light-bg);">
+                        </div>
+
+                        <div class="form-group">
+                            <label>員工姓名</label>
+                            <input type="text" id="accountEmployeeName" disabled style="background: var(--light-bg);">
+                        </div>
+
+                        <div style="margin-top: 30px;">
+                            <a href="change-password.html" class="btn btn-primary">
+                                <span class="material-symbols-outlined">lock</span>
+                                修改密碼
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 模態框容器 -->
+    <div id="modalContainer"></div>
+
+    <!-- 簡化的頁尾 -->
+    <footer class="internal-footer">
+        &copy; 2024 霍爾果斯會計師事務所 工時管理系統
+    </footer>
+
+    <script>
+        const API_BASE = 'https://timesheet-api.hergscpa.workers.dev';
+        let currentUser = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initAuth();
+            initTabs();
+            initMobileMenu();
+        });
+
+        // 驗證登入
+        async function initAuth() {
+            const token = localStorage.getItem('session_token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error('驗證失敗');
+                }
+
+                currentUser = await response.json();
+                updateUserInfo(currentUser);
+                
+                // 如果是管理員，顯示管理員專屬標籤
+                if (currentUser.user.role === 'admin') {
+                    document.querySelectorAll('.admin-only').forEach(el => {
+                        el.style.display = '';
+                    });
+                }
+                
+                // 載入當前標籤頁資料
+                loadCurrentTabData();
+            } catch (error) {
+                console.error('驗證錯誤:', error);
+                localStorage.removeItem('session_token');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // 更新用戶資訊
+        function updateUserInfo(userData) {
+            const user = userData.user || userData;
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('userRole').textContent = user.role === 'admin' ? '管理員' : '員工';
+            
+            // 更新帳號設定頁面
+            document.getElementById('accountUsername').value = user.username;
+            document.getElementById('accountRole').value = user.role === 'admin' ? '管理員' : '員工';
+            document.getElementById('accountEmployeeName').value = user.employee_name || '無';
+        }
+
+        // 登出
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            const token = localStorage.getItem('session_token');
+            if (token) {
+                try {
+                    await fetch(`${API_BASE}/api/auth/logout`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                } catch (error) {
+                    console.error('登出錯誤:', error);
+                }
+            }
+            localStorage.removeItem('session_token');
+            window.location.href = 'login.html';
+        });
+
+        // 初始化標籤頁
+        function initTabs() {
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabName = button.dataset.tab;
+                    switchTab(tabName);
+                });
+            });
+        }
+
+        // 切換標籤頁
+        function switchTab(tabName) {
+            // 更新按鈕狀態
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            // 更新內容顯示
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
+            // 載入該標籤頁的資料
+            loadTabData(tabName);
+        }
+
+        // 載入當前標籤頁資料
+        function loadCurrentTabData() {
+            const activeTab = document.querySelector('.tab-button.active');
+            if (activeTab) {
+                loadTabData(activeTab.dataset.tab);
+            }
+        }
+
+        // 載入標籤頁資料
+        function loadTabData(tabName) {
+            switch (tabName) {
+                case 'clients':
+                    loadClients();
+                    break;
+                case 'assignments':
+                    loadAssignments();
+                    break;
+                case 'business-types':
+                    loadBusinessTypes();
+                    break;
+                case 'leave-events':
+                    loadLeaveEvents();
+                    break;
+                case 'holidays':
+                    loadHolidays();
+                    break;
+                case 'users':
+                    if (currentUser.user.role === 'admin') {
+                        loadUsers();
+                    }
+                    break;
+                case 'leave-types':
+                    if (currentUser.user.role === 'admin') {
+                        loadLeaveTypes();
+                    }
+                    break;
+                case 'system-params':
+                    if (currentUser.user.role === 'admin') {
+                        loadSystemParams();
+                    }
+                    break;
+            }
+        }
+
+        // 初始化移動端選單
+        function initMobileMenu() {
+            const toggle = document.getElementById('mobileToggle');
+            const navLinks = document.getElementById('navLinks');
+            
+            toggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
+
+        // 佔位函數 - 後續實現
+        function loadClients() {
+            document.getElementById('clientsTableContainer').innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">business</span><h3>功能開發中</h3><p>客戶管理功能即將推出</p></div>';
+        }
+        function loadAssignments() {
+            document.getElementById('assignmentsTableContainer').innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">assignment_ind</span><h3>功能開發中</h3><p>客戶指派功能即將推出</p></div>';
+        }
+        function loadBusinessTypes() {
+            document.getElementById('businessTypesTableContainer').innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">category</span><h3>功能開發中</h3><p>業務類型管理功能即將推出</p></div>';
+        }
+        function loadLeaveEvents() {
+            document.getElementById('leaveEventsTableContainer').innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">event</span><h3>功能開發中</h3><p>假期事件管理功能即將推出</p></div>';
+        }
+        function loadHolidays() {
+            document.getElementById('holidaysTableContainer').innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">calendar_today</span><h3>功能開發中</h3><p>國定假日管理功能即將推出</p></div>';
+        }
+        function loadUsers() {
+            document.getElementById('usersTableContainer').innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">people</span><h3>功能開發中</h3><p>用戶管理功能即將推出</p></div>';
+        }
+        function loadLeaveTypes() {
+            document.getElementById('leaveTypesTableContainer').innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">beach_access</span><h3>功能開發中</h3><p>假別設定功能即將推出</p></div>';
+        }
+        function loadSystemParams() {
+            document.getElementById('systemParamsContainer').innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">tune</span><h3>功能開發中</h3><p>系統參數設定功能即將推出</p></div>';
+        }
+
+        // 模態框佔位函數
+        function showAddClientModal() { alert('新增客戶功能開發中'); }
+        function showAddAssignmentModal() { alert('新增指派功能開發中'); }
+        function showAddBusinessTypeModal() { alert('新增業務類型功能開發中'); }
+        function showAddLeaveEventModal() { alert('新增假期事件功能開發中'); }
+        function showAddHolidayModal() { alert('新增國定假日功能開發中'); }
+        function showAddUserModal() { alert('新增使用者功能開發中'); }
+        function showAddLeaveTypeModal() { alert('新增假別功能開發中'); }
+    </script>
+</body>
+</html>
