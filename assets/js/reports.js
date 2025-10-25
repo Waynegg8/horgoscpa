@@ -287,6 +287,8 @@ async function generateWorkAnalysis() {
 
         // 按客戶和業務類型分組統計
         const grouped = {};
+        // 另外累計每種加班類型
+        const otByType = {}; // key -> { '平日1.34':x, '平日1.67':y, '休1.34':z, '休1.67':..., '例假日2':..., '國假1.34':... }
         
         data.forEach(record => {
             if (!record.client_name) return;
@@ -436,19 +438,24 @@ async function generateLeaveOverview() {
             }
         }
 
-        // 準備報表資料
-        const leaveTypes = [
+        // 讀取 DB 配額
+        let leaveTypes = [
             { name: '特休', key: '特休', hasQuota: true },
-            { name: '加班補休', key: '加班補休', hasQuota: false },
-            { name: '事假', key: '事假', hasQuota: false },
+            { name: '事假', key: '事假', hasQuota: true },
             { name: '病假', key: '病假', hasQuota: true },
-            { name: '生理假', key: '生理假', hasQuota: false },
+            { name: '生理假', key: '生理假', hasQuota: true },
             { name: '婚假', key: '婚假', hasQuota: true },
             { name: '喪假-直系血親', key: '喪假-直系血親', hasQuota: true },
             { name: '喪假-祖父母', key: '喪假-祖父母', hasQuota: true },
             { name: '產假', key: '產假', hasQuota: true },
             { name: '陪產假', key: '陪產假', hasQuota: true }
         ];
+        let quotaMap = {};
+        try {
+            const quotaRes = await apiRequest(`/api/leave-quota?employee=${encodeURIComponent(employee)}&year=${year}`);
+            const quotaData = await quotaRes.json();
+            (quotaData.quota || []).forEach(q => { quotaMap[q.type] = q.quota_hours || 0; });
+        } catch (_) {}
 
         let totalUsed = 0;
         leaveTypes.forEach(type => {
@@ -487,8 +494,7 @@ async function generateLeaveOverview() {
         }
 
         const empObj = employeesCache.find(e => e.name === employee);
-        const annualLeaveDays = getAnnualLeaveDays(empObj?.hire_date, year);
-        const annualLeaveHours = annualLeaveDays * 8;
+        const annualLeaveHours = quotaMap['特休'] ?? (getAnnualLeaveDays(empObj?.hire_date, year) * 8);
         const usedAnnualLeaveHours = leaveStats['特休'] || 0;
         const remainingAnnualLeaveHours = Math.max(0, annualLeaveHours - usedAnnualLeaveHours);
 
@@ -610,9 +616,35 @@ async function generatePivotAnalysis() {
                 if (!grouped[key]) grouped[key] = { name: key, normalHours: 0, overtimeHours: 0, weightedHours: 0, leaveHours: 0 };
                 for (const day in entry.hours) {
                     const hours = parseFloat(entry.hours[day] || 0);
-                    const isOvertime = entry.workType && entry.workType.includes('加班');
-                    if (isOvertime) grouped[key].overtimeHours += hours; else grouped[key].normalHours += hours;
-                    grouped[key].weightedHours += hours;
+                    const wt = entry.workType || '';
+                    const isOT = wt.includes('加班');
+                    if (isOT) grouped[key].overtimeHours += hours; else grouped[key].normalHours += hours;
+                    // 加權工時：根據類型估算倍率
+                    let multiplier = 1;
+                    if (wt.includes('1.34')) multiplier = 1.34;
+                    else if (wt.includes('1.67')) multiplier = 1.67;
+                    else if (wt.includes('2.67')) multiplier = 2.67;
+                    else if (wt.includes('加班(2)')) multiplier = 2;
+                    grouped[key].weightedHours += hours * multiplier;
+
+                    // 類型分類統計
+                    const mapKey = (() => {
+                        if (wt.includes('平日加班(1.34)')) return '平日1.34';
+                        if (wt.includes('平日加班(1.67)')) return '平日1.67';
+                        if (wt.includes('休息日加班(1.34)')) return '休1.34';
+                        if (wt.includes('休息日加班(1.67)')) return '休1.67';
+                        if (wt.includes('休息日加班(2.67)')) return '休2.67';
+                        if (wt.includes('例假日加班(2)')) return '例2.0';
+                        if (wt.includes('例假日加班')) return '例1.0';
+                        if (wt.includes('國定假日加班(1.34)')) return '國1.34';
+                        if (wt.includes('國定假日加班(1.67)')) return '國1.67';
+                        if (wt.includes('國定假日加班')) return '國1.0';
+                        return '';
+                    })();
+                    if (mapKey) {
+                        if (!otByType[key]) otByType[key] = {};
+                        otByType[key][mapKey] = (otByType[key][mapKey] || 0) + hours;
+                    }
                 }
             });
 
@@ -687,6 +719,14 @@ async function generatePivotAnalysis() {
                                     <th class="number">加班工時</th>
                                     <th class="number">加權總時數</th>
                                     <th class="number">請假時數</th>
+                                    <th class="number">平日1.34</th>
+                                    <th class="number">平日1.67</th>
+                                    <th class="number">休1.34</th>
+                                    <th class="number">休1.67</th>
+                                    <th class="number">休2.67</th>
+                                    <th class="number">例2.0</th>
+                                    <th class="number">國1.34</th>
+                                    <th class="number">國1.67</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -697,6 +737,14 @@ async function generatePivotAnalysis() {
                                         <td class="number">${item.overtimeHours.toFixed(2)}</td>
                                         <td class="number">${item.weightedHours.toFixed(2)}</td>
                                         <td class="number">${item.leaveHours.toFixed(2)}</td>
+                                        <td class="number">${(otByType[item.name]?.['平日1.34']||0).toFixed(2)}</td>
+                                        <td class="number">${(otByType[item.name]?.['平日1.67']||0).toFixed(2)}</td>
+                                        <td class="number">${(otByType[item.name]?.['休1.34']||0).toFixed(2)}</td>
+                                        <td class="number">${(otByType[item.name]?.['休1.67']||0).toFixed(2)}</td>
+                                        <td class="number">${(otByType[item.name]?.['休2.67']||0).toFixed(2)}</td>
+                                        <td class="number">${(otByType[item.name]?.['例2.0']||0).toFixed(2)}</td>
+                                        <td class="number">${(otByType[item.name]?.['國1.34']||0).toFixed(2)}</td>
+                                        <td class="number">${(otByType[item.name]?.['國1.67']||0).toFixed(2)}</td>
                                     </tr>
                                 `).join('')}
                                 <tr class="total-row">
@@ -705,6 +753,14 @@ async function generatePivotAnalysis() {
                                     <td class="number">${totals.overtimeHours.toFixed(2)}</td>
                                     <td class="number">${totals.weightedHours.toFixed(2)}</td>
                                     <td class="number">${totals.leaveHours.toFixed(2)}</td>
+                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['平日1.34']||0),0).toFixed(2)}</td>
+                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['平日1.67']||0),0).toFixed(2)}</td>
+                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['休1.34']||0),0).toFixed(2)}</td>
+                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['休1.67']||0),0).toFixed(2)}</td>
+                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['休2.67']||0),0).toFixed(2)}</td>
+                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['例2.0']||0),0).toFixed(2)}</td>
+                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['國1.34']||0),0).toFixed(2)}</td>
+                                    <td class="number">${results.reduce((s,i)=>s+(otByType[i.name]?.['國1.67']||0),0).toFixed(2)}</td>
                                 </tr>
                             </tbody>
                         </table>

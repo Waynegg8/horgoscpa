@@ -87,6 +87,11 @@ export default {
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
         return await handleGetHolidays(env.DB, url.searchParams);
       }
+      if (url.pathname === "/api/leave-quota" && method === "GET") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handleGetLeaveQuota(env.DB, url.searchParams);
+      }
       if (url.pathname === "/api/timesheet-data" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
@@ -475,6 +480,61 @@ async function handleGetHolidays(db, params) {
     holiday_date: r.holiday_date,
     holiday_name: r.holiday_name
   })));
+}
+
+// 依據資料庫規則回傳年度假別配額
+async function handleGetLeaveQuota(db, params) {
+  const employee = params.get('employee');
+  const year = parseInt(params.get('year'));
+  if (!employee || !year) return jsonResponse({ error: 'Missing parameters' }, 400);
+
+  // 取得員工到職日
+  const emp = await db.prepare(`SELECT hire_date FROM employees WHERE name = ?`).bind(employee).first();
+  const hireDate = emp?.hire_date || null;
+
+  // 特休規則
+  const annualRules = await db.prepare(`SELECT seniority_years, leave_days FROM annual_leave_rules ORDER BY seniority_years`).all();
+  const annualRows = getRows(annualRules);
+
+  function computeAnnualDays(hire) {
+    if (!hire) return 0;
+    const h = new Date(hire);
+    const y = year;
+    if (h.getFullYear() === y) {
+      // 入職年，滿半年給 3 天
+      const months = 12 - h.getMonth();
+      return months >= 6 ? 3 : 0;
+    }
+    const seniority = Math.max(0, y - h.getFullYear());
+    let days = 0;
+    for (const r of annualRows) {
+      if (seniority >= r.seniority_years) days = r.leave_days;
+    }
+    return days;
+  }
+
+  // 其他假別規則（病假、事假、生理假、婚假、喪假...）
+  const otherRulesRes = await db.prepare(`SELECT leave_type, leave_days, grant_type FROM other_leave_rules`).all();
+  const otherRules = getRows(otherRulesRes);
+
+  // 特休結轉
+  let carryoverHours = 0;
+  try {
+    const carry = await db.prepare(`SELECT carryover_days FROM annual_leave_carryover WHERE employee_name = ?`).bind(employee).first();
+    if (carry) carryoverHours = (carry.carryover_days || 0) * 8;
+  } catch (_) {}
+
+  const quota = [];
+  const annualDays = computeAnnualDays(hireDate);
+  quota.push({ type: '特休', quota_hours: (annualDays * 8) + carryoverHours });
+
+  for (const r of otherRules) {
+    // 年度給假以天數換算時數；事件給假留著 0 由前端顯示僅按事件產生
+    const hours = r.grant_type === '年度給假' ? (r.leave_days * 8) : 0;
+    quota.push({ type: r.leave_type, quota_hours: hours, grant_type: r.grant_type });
+  }
+
+  return jsonResponse({ employee, year, quota });
 }
 
 // =================================================================
@@ -1007,7 +1067,8 @@ async function handleGetAssignments(db, searchParams) {
 async function handleDeleteAssignment(db, assignmentId) {
   try {
     // assignmentId 格式為 "employee_name|client_name"
-    const [employeeName, clientName] = assignmentId.toString().split('|');
+    const decoded = decodeURIComponent(assignmentId.toString());
+    const [employeeName, clientName] = decoded.split('|');
     
     if (!employeeName || !clientName) {
       return jsonResponse({ error: '無效的指派 ID' }, 400);

@@ -1226,10 +1226,18 @@ async function showAddUserModal() {
         `;
         
         showModal('新增使用者', content, async () => {
-            const username = document.getElementById('userName').value.trim();
-            const password = document.getElementById('userPassword').value;
-            const role = document.getElementById('userRole').value;
-            const employee_name = document.getElementById('userEmployee').value || null;
+            const usernameEl = document.getElementById('userName');
+            const passwordEl = document.getElementById('userPassword');
+            const roleEl = document.getElementById('userRole');
+            const employeeEl = document.getElementById('userEmployee');
+            if (!usernameEl || !passwordEl || !roleEl || !employeeEl) {
+                showAlert('表單元素初始化失敗', 'error');
+                return;
+            }
+            const username = (usernameEl.value || '').trim();
+            const password = passwordEl.value || '';
+            const role = roleEl.value || 'employee';
+            const employee_name = employeeEl.value ? employeeEl.value : null;
             
             if (!username || !password || !role) {
                 showAlert('請填寫所有必填欄位', 'error');
