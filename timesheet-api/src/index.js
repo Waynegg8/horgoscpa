@@ -494,10 +494,10 @@ export default {
       }
 
       // ========================================
-      // CMS - 提供管指 API (假認指)
+      // CMS - 內容管理 API (需認證)
       // ========================================
       
-      // 後台提供管指
+      // 後台內容管理
       if (url.pathname === "/api/posts" && method === "GET") {
         return await addCorsHeaders(await getPosts(request, env));
       }

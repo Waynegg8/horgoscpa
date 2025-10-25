@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客戶服務配置 - 霍爾果斯會計師事務所</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="assets/css/internal-system.css">
+    <style>
+        .service-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .client-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .service-name {
+            font-size: 16px;
+            color: var(--primary-color);
+            margin: 5px 0;
+        }
+
+        .service-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+            padding: 15px;
+            background: var(--light-bg);
+            border-radius: 8px;
+        }
+
+        .meta-item {
+            font-size: 14px;
+        }
+
+        .meta-label {
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+        }
+
+        .meta-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .monthly-schedule {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 5px;
+            margin-top: 15px;
+        }
+
+        .month-cell {
+            text-align: center;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .month-cell.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .month-cell.inactive {
+            background: #f0f0f0;
+            color: #999;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .category-記帳 { background: #e3f2fd; color: #1976d2; }
+        .category-工商 { background: #fff3e0; color: #f57c00; }
+        .category-財簽 { background: #f3e5f5; color: #7b1fa2; }
+        .category-稅簽 { background: #e8f5e9; color: #388e3c; }
+        .category-其他 { background: #f5f5f5; color: #616161; }
+    </style>
+</head>
+<body>
+    <!-- 簡潔的內部導航欄 -->
+    <nav class="internal-navbar">
+        <div class="internal-nav-container">
+            <a href="timesheet.html" class="internal-nav-brand">
+                <img src="assets/images/logo-white.png" alt="霍爾果斯">
+                <span>內部管理系統</span>
+            </a>
+            
+            <button class="internal-mobile-toggle" id="mobileToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div class="internal-nav-links" id="navLinks">
+                <a href="timesheet.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    工時表
+                </a>
+                <a href="reports.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">assessment</span>
+                    報表
+                </a>
+                <a href="sop.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">description</span>
+                    SOP
+                </a>
+                <a href="projects.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">account_tree</span>
+                    專案
+                </a>
+                <a href="multi-stage-tasks.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">timeline</span>
+                    多階段任務
+                </a>
+                <a href="recurring-tasks.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">repeat</span>
+                    週期任務
+                </a>
+                <a href="service-config.html" class="internal-nav-link active">
+                    <span class="material-symbols-outlined">tune</span>
+                    服務配置
+                </a>
+                <a href="content-editor.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">article</span>
+                    內容
+                </a>
+                <a href="settings.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">settings</span>
+                    設定
+                </a>
+                
+                <div class="internal-nav-user">
+                    <div>
+                        <div class="internal-user-name" id="userName">載入中...</div>
+                        <div class="internal-user-role" id="userRole"></div>
+                    </div>
+                    <button class="internal-logout-btn" id="logoutBtn">登出</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="internal-main">
+        <div class="internal-container">
+            <div class="page-header" style="margin-bottom: 30px;">
+                <h1>客戶服務配置管理</h1>
+                <p>管理客戶的服務項目、每月執行配置</p>
+            </div>
+
+            <div class="toolbar" style="margin-bottom: 20px;">
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <select id="categoryFilter" onchange="loadServices()" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="">所有類別</option>
+                        <option value="記帳">記帳</option>
+                        <option value="工商">工商</option>
+                        <option value="財簽">財簽</option>
+                        <option value="稅簽">稅簽</option>
+                        <option value="其他">其他</option>
+                    </select>
+                    <input type="text" id="clientSearch" placeholder="搜尋客戶..." onkeyup="filterServices()" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 300px;">
+                    <button onclick="loadServices()" class="btn-primary">
+                        <span class="material-symbols-outlined">refresh</span>
+                        重新載入
+                    </button>
+                </div>
+            </div>
+
+            <div class="service-grid" id="serviceGrid"></div>
+        </div>
+    </main>
+
+    <footer class="internal-footer">
+        &copy; 2025 霍爾果斯會計師事務所 內部管理系統
+    </footer>
+
+    <script src="assets/js/service-config.js"></script>
+</body>
+</html>
+
