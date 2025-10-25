@@ -5,6 +5,7 @@
 // ================================================================
 
 import { verifySession, getSessionToken } from './auth.js';
+import { jsonResponse } from './utils.js';
 
 // ============================================================
 // 1. 客戶詳細資料 API
@@ -17,10 +18,7 @@ export async function getClientsExtended(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -36,20 +34,15 @@ export async function getClientsExtended(request, env) {
     
     const result = await env.DB.prepare(query).all();
     
-    return new Response(JSON.stringify({ 
+    return jsonResponse({ 
       success: true, 
       data: result.results 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ 
+    return jsonResponse({ 
       success: false, 
       error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    }, 500);
   }
 }
 
@@ -60,10 +53,7 @@ export async function getClientExtended(request, env, clientName) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -79,29 +69,21 @@ export async function getClientExtended(request, env, clientName) {
     const result = await env.DB.prepare(query).bind(clientName).first();
     
     if (!result) {
-      return new Response(JSON.stringify({ 
+      return jsonResponse({ 
         success: false, 
         error: 'Client not found' 
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, 404);
     }
     
-    return new Response(JSON.stringify({ 
+    return jsonResponse({ 
       success: true, 
       data: result 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ 
+    return jsonResponse({ 
       success: false, 
       error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    }, 500);
   }
 }
 

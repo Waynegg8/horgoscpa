@@ -734,8 +734,195 @@ async function deleteClientInteraction(interactionId) {
 // CSV 匯入功能
 // =========================================
 function showImportCSVModal() {
-    showNotification('CSV 匯入功能將在後續實作', 'info');
-    // TODO: 實作 CSV 上傳和解析
+    const modal = `
+        <div class="modal active" id="importCSVModal">
+            <div class="modal-dialog" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2>匯入客戶資料（CSV）</h2>
+                    <button class="close-btn" onclick="closeImportModal()">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="info-box" style="margin-bottom: 20px;">
+                        <span class="material-symbols-outlined">info</span>
+                        <div>
+                            <p><strong>匯入說明：</strong></p>
+                            <p>1. 下載 CSV 模板並填寫客戶資料</p>
+                            <p>2. 服務項目欄位請填「是」或「否」</p>
+                            <p>3. 狀態可填：active（活躍）、inactive（停用）、potential（潛在）</p>
+                            <p>4. <strong style="color: #f44336;">匯入模式：自動合併（已存在則更新，不存在則新增）</strong></p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button class="btn btn-secondary" onclick="downloadTemplate()">
+                            <span class="material-symbols-outlined">download</span>
+                            下載 CSV 模板
+                        </button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>選擇 CSV 檔案</label>
+                        <input type="file" id="csvFileInput" accept=".csv" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; width: 100%;">
+                    </div>
+                    
+                    <div id="csvPreview" style="display: none; margin-top: 20px;">
+                        <h4>預覽（前 5 筆）</h4>
+                        <div id="csvPreviewContent" style="max-height: 200px; overflow: auto; background: var(--light-bg); padding: 10px; border-radius: 4px; font-size: 12px;"></div>
+                        <p style="margin-top: 10px; color: var(--text-secondary);" id="csvCount"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeImportModal()">取消</button>
+                    <button class="btn btn-primary" id="importBtn" onclick="executeImport()" disabled>開始匯入</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('modalContainer').innerHTML = modal;
+    
+    // 綁定檔案選擇事件
+    document.getElementById('csvFileInput').addEventListener('change', handleCSVFileSelect);
+}
+
+function closeImportModal() {
+    const modal = document.getElementById('importCSVModal');
+    if (modal) modal.remove();
+}
+
+function downloadTemplate() {
+    const csv = `客戶名稱,統一編號,地區,聯絡人1,聯絡人2,電話,Email,地址,月費,狀態,服務_記帳,服務_報稅,服務_所得稅,服務_登記,服務_扣繳,服務_預估,服務_薪資,服務_年報,服務_審計,備註
+範例公司,12345678,台中,王小明,李小華,04-12345678,example@example.com,台中市西區五權路100號,5000,active,是,是,否,否,是,是,否,是,否,這是範例資料`;
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = '客戶匯入模板.csv';
+    link.click();
+}
+
+let parsedCSVData = [];
+
+function handleCSVFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        parsedCSVData = parseCSV(text);
+        
+        if (parsedCSVData.length === 0) {
+            alert('CSV 檔案為空或格式錯誤');
+            return;
+        }
+        
+        // 顯示預覽
+        const preview = parsedCSVData.slice(0, 5);
+        const previewHTML = `
+            <table style="width: 100%; font-size: 11px;">
+                <tr style="background: white;">
+                    <th>客戶名稱</th>
+                    <th>統編</th>
+                    <th>地區</th>
+                    <th>聯絡人</th>
+                    <th>狀態</th>
+                </tr>
+                ${preview.map(row => `
+                    <tr>
+                        <td>${escapeHtml(row.client_name)}</td>
+                        <td>${escapeHtml(row.tax_id)}</td>
+                        <td>${escapeHtml(row.region)}</td>
+                        <td>${escapeHtml(row.contact_person_1)}</td>
+                        <td>${escapeHtml(row.status)}</td>
+                    </tr>
+                `).join('')}
+            </table>
+        `;
+        
+        document.getElementById('csvPreviewContent').innerHTML = previewHTML;
+        document.getElementById('csvCount').textContent = `共 ${parsedCSVData.length} 筆資料（自動合併模式：已存在則更新，不存在則新增）`;
+        document.getElementById('csvPreview').style.display = 'block';
+        document.getElementById('importBtn').disabled = false;
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+    
+    const headers = lines[0].split(',').map(h => h.trim());
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',');
+        const row = {
+            client_name: values[0]?.trim() || '',
+            tax_id: values[1]?.trim() || '',
+            region: values[2]?.trim() || '',
+            contact_person_1: values[3]?.trim() || '',
+            contact_person_2: values[4]?.trim() || '',
+            phone: values[5]?.trim() || '',
+            email: values[6]?.trim() || '',
+            address: values[7]?.trim() || '',
+            monthly_fee: parseInt(values[8]) || 0,
+            status: values[9]?.trim() || 'active',
+            service_accounting: values[10]?.trim() === '是',
+            service_tax_return: values[11]?.trim() === '是',
+            service_income_tax: values[12]?.trim() === '是',
+            service_registration: values[13]?.trim() === '是',
+            service_withholding: values[14]?.trim() === '是',
+            service_prepayment: values[15]?.trim() === '是',
+            service_payroll: values[16]?.trim() === '是',
+            service_annual_report: values[17]?.trim() === '是',
+            service_audit: values[18]?.trim() === '是',
+            notes: values[19]?.trim() || ''
+        };
+        
+        if (row.client_name && row.tax_id) {
+            data.push(row);
+        }
+    }
+    
+    return data;
+}
+
+async function executeImport() {
+    if (parsedCSVData.length === 0) {
+        alert('沒有資料可匯入');
+        return;
+    }
+    
+    if (!confirm(`確定要匯入 ${parsedCSVData.length} 筆客戶資料嗎？\n\n匯入模式：自動合併\n- 客戶已存在 → 更新資料\n- 客戶不存在 → 新增資料`)) {
+        return;
+    }
+    
+    const importBtn = document.getElementById('importBtn');
+    importBtn.disabled = true;
+    importBtn.textContent = '匯入中...';
+    
+    try {
+        const response = await apiRequest('/api/import/clients', {
+            method: 'POST',
+            body: { records: parsedCSVData }
+        });
+        
+        alert(`匯入完成！\n成功：${response.successCount} 筆\n失敗：${response.errorCount} 筆`);
+        
+        if (response.errors && response.errors.length > 0) {
+            console.error('匯入錯誤：', response.errors);
+        }
+        
+        closeImportModal();
+        loadClientsExtended();
+    } catch (error) {
+        alert('匯入失敗：' + error.message);
+        importBtn.disabled = false;
+        importBtn.textContent = '開始匯入';
+    }
 }
 
 // =========================================
@@ -763,4 +950,7 @@ window.deleteServiceSchedule = deleteServiceSchedule;
 window.showAddInteractionForm = showAddInteractionForm;
 window.deleteClientInteraction = deleteClientInteraction;
 window.showImportCSVModal = showImportCSVModal;
+window.closeImportModal = closeImportModal;
+window.downloadTemplate = downloadTemplate;
+window.executeImport = executeImport;
 
