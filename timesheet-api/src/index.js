@@ -1074,10 +1074,17 @@ async function handleDeleteAssignment(db, assignmentId) {
       return jsonResponse({ error: '無效的指派 ID' }, 400);
     }
     
-    await db.prepare(`
+    const res = await db.prepare(`
       DELETE FROM client_assignments 
       WHERE employee_name = ? AND client_name = ?
     `).bind(employeeName, clientName).run();
+    
+    // D1 失敗時 meta.changes 可能為 0，手動檢查是否仍存在
+    if (res?.meta?.changes === 0) {
+      const check = await db.prepare(`SELECT 1 FROM client_assignments WHERE employee_name = ? AND client_name = ?`)
+        .bind(employeeName, clientName).first();
+      if (check) return jsonResponse({ error: '刪除失敗：指派仍存在' }, 400);
+    }
     
     return jsonResponse({ success: true, message: '指派已刪除' });
   } catch (err) {

@@ -1660,7 +1660,7 @@ function showAddEmployeeModal() {
             closeModal();
             showAlert('員工已成功新增');
             setTimeout(() => {
-                loadEmployees();
+                loadEmployeesAdmin();
             }, 500);
         } catch (error) {
             showAlert(error.message, 'error');
@@ -1698,7 +1698,7 @@ function editEmployee(employeeName, hireDate) {
             closeModal();
             showAlert('員工已成功更新');
             setTimeout(() => {
-                loadEmployees();
+                loadEmployeesAdmin();
             }, 500);
         } catch (error) {
             showAlert(error.message, 'error');
@@ -1718,7 +1718,7 @@ async function deleteEmployee(employeeName) {
         
         showAlert('員工已成功刪除');
         setTimeout(() => {
-            loadEmployees();
+            loadEmployeesAdmin();
         }, 500);
     } catch (error) {
         showAlert(error.message, 'error');

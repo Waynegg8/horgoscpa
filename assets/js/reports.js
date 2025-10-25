@@ -452,8 +452,7 @@ async function generateLeaveOverview() {
         ];
         let quotaMap = {};
         try {
-            const quotaRes = await apiRequest(`/api/leave-quota?employee=${encodeURIComponent(employee)}&year=${year}`);
-            const quotaData = await quotaRes.json();
+            const quotaData = await apiRequest(`/api/leave-quota?employee=${encodeURIComponent(employee)}&year=${year}`);
             (quotaData.quota || []).forEach(q => { quotaMap[q.type] = q.quota_hours || 0; });
         } catch (_) {}
 
