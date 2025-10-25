@@ -349,15 +349,19 @@
 
                             <div class="form-group">
                                 <label>內容 *</label>
-                                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                                     <button type="button" class="btn btn-secondary btn-sm" onclick="triggerImageUpload()">
                                         <span class="material-symbols-outlined">image</span>
                                         插入圖片
                                     </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="insertTable()">
+                                        <span class="material-symbols-outlined">table_chart</span>
+                                        插入表格
+                                    </button>
                                     <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
                                     <span id="uploadStatus" style="color: var(--text-secondary); align-self: center;"></span>
                                 </div>
-                                <textarea id="sopContent" class="content-editor" placeholder="輸入 SOP 內容...&#10;&#10;插入圖片後會自動產生 Markdown 語法：![圖片說明](圖片URL)"></textarea>
+                                <textarea id="sopContent" class="content-editor" placeholder="輸入 SOP 內容...&#10;&#10;支援 Markdown 格式：&#10;- 插入圖片：![圖片說明](圖片URL)&#10;- 插入表格：使用「插入表格」按鈕"></textarea>
                             </div>
 
                             <div style="display: flex; gap: 10px;">

@@ -532,6 +532,51 @@ function logout() {
 }
 
 // =========================================
+// 插入表格
+// =========================================
+function insertTable() {
+    const rows = prompt('請輸入行數（包含標題列）:', '3');
+    const cols = prompt('請輸入列數:', '3');
+    
+    if (!rows || !cols) return;
+    
+    const rowCount = parseInt(rows);
+    const colCount = parseInt(cols);
+    
+    if (isNaN(rowCount) || isNaN(colCount) || rowCount < 2 || colCount < 1) {
+        showNotification('請輸入有效的行列數（至少 2 行 1 列）', 'error');
+        return;
+    }
+    
+    // 生成 Markdown 表格
+    let table = '\n';
+    
+    // 標題列
+    table += '| ' + Array(colCount).fill('標題').map((h, i) => h + (i + 1)).join(' | ') + ' |\n';
+    
+    // 分隔線
+    table += '| ' + Array(colCount).fill('---').join(' | ') + ' |\n';
+    
+    // 資料列
+    for (let i = 1; i < rowCount; i++) {
+        table += '| ' + Array(colCount).fill('內容').join(' | ') + ' |\n';
+    }
+    
+    table += '\n';
+    
+    // 插入到游標位置
+    const textarea = document.getElementById('sopContent');
+    const cursorPos = textarea.selectionStart;
+    const textBefore = textarea.value.substring(0, cursorPos);
+    const textAfter = textarea.value.substring(cursorPos);
+    textarea.value = textBefore + table + textAfter;
+    textarea.selectionStart = textarea.selectionEnd = cursorPos + table.length;
+    textarea.focus();
+    
+    showNotification('✓ 表格已插入，請修改內容', 'success');
+}
+
+// =========================================
 // 圖片上傳
 // =========================================
 function triggerImageUpload() {
@@ -605,6 +650,7 @@ window.saveSop = saveSop;
 window.selectCategory = selectCategory;
 window.removeTag = removeTag;
 window.viewVersionHistory = viewVersionHistory;
+window.insertTable = insertTable;
 window.triggerImageUpload = triggerImageUpload;
 window.handleImageUpload = handleImageUpload;
 
