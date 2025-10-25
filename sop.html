@@ -513,18 +513,43 @@
                                     <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
                                     <span id="uploadStatus" style="color: var(--text-secondary); align-self: center;"></span>
                                 </div>
-                                <textarea id="sopContent" class="content-editor" placeholder="輸入 SOP 內容...&#10;&#10;支援 Markdown 格式：&#10;- 插入圖片：![圖片說明](圖片URL)&#10;- 插入表格：使用「插入表格」按鈕"></textarea>
+                                <textarea id="sopContent" class="content-editor" placeholder="輸入 SOP 內容...&#10;&#10;支援 Markdown 格式：&#10;- 插入圖片：![圖片說明](圖片URL)&#10;- 插入表格：使用「插入表格」按鈕" oninput="updateSopPreview()"></textarea>
+                                <div id="sopPreview" style="display: none; border: 2px solid var(--border-color); border-radius: 8px; padding: 20px; background: white; min-height: 400px; max-height: 600px; overflow-y: auto;"></div>
                             </div>
 
-                            <div style="display: flex; gap: 10px;">
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                 <button class="btn btn-primary" onclick="saveSop()">
                                     <span class="material-symbols-outlined">save</span>
                                     儲存
+                                </button>
+                                <button class="btn btn-secondary" onclick="toggleSopPreview()">
+                                    <span class="material-symbols-outlined">visibility</span>
+                                    預覽
                                 </button>
                                 <button class="btn btn-secondary" onclick="viewVersionHistory()" id="versionBtn" style="display: none;">
                                     <span class="material-symbols-outlined">history</span>
                                     版本歷史
                                 </button>
+                                <div style="position: relative;">
+                                    <button class="btn btn-secondary" onclick="document.getElementById('exportMenu').style.display='block'">
+                                        <span class="material-symbols-outlined">download</span>
+                                        導出
+                                    </button>
+                                    <div id="exportMenu" style="display: none; position: absolute; top: 100%; left: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; margin-top: 5px; z-index: 1000; min-width: 150px;">
+                                        <button onclick="exportSopAsMarkdown(); document.getElementById('exportMenu').style.display='none'" 
+                                                style="display: block; width: 100%; text-align: left; padding: 10px 15px; border: none; background: none; cursor: pointer;">
+                                            Markdown (.md)
+                                        </button>
+                                        <button onclick="exportSopAsHTML(); document.getElementById('exportMenu').style.display='none'" 
+                                                style="display: block; width: 100%; text-align: left; padding: 10px 15px; border: none; background: none; cursor: pointer;">
+                                            HTML
+                                        </button>
+                                        <button onclick="exportSopAsPDF(); document.getElementById('exportMenu').style.display='none'" 
+                                                style="display: block; width: 100%; text-align: left; padding: 10px 15px; border: none; background: none; cursor: pointer;">
+                                            PDF (開發中)
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
                             <div id="versionHistory" class="version-history" style="display: none;"></div>

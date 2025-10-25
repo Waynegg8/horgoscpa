@@ -121,10 +121,13 @@
                 <div id="posts-list-view">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                         <h2>文章管理</h2>
-                        <button class="btn btn-primary" onclick="showPostEditor(null)">
-                            <span class="material-symbols-outlined">add</span>
-                            新增文章
-                        </button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-secondary" id="selectAllBtn" onclick="toggleSelectAll()">全選</button>
+                            <button class="btn btn-primary" onclick="showPostEditor(null)">
+                                <span class="material-symbols-outlined">add</span>
+                                新增文章
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="search-box" style="margin-bottom: 20px;">
@@ -140,11 +143,20 @@
                 <!-- 文章編輯器視圖 -->
                 <div id="post-editor-view" style="display: none;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 id="post-editor-title">新增文章</h2>
-                        <button class="btn btn-secondary" onclick="closePostEditor()">
-                            <span class="material-symbols-outlined">close</span>
-                            返回列表
-                        </button>
+                        <div>
+                            <h2 id="post-editor-title">新增文章</h2>
+                            <span id="autoSaveIndicator" style="font-size: 13px; color: var(--text-secondary);"></span>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-secondary" onclick="togglePreview()">
+                                <span class="material-symbols-outlined">visibility</span>
+                                預覽
+                            </button>
+                            <button class="btn btn-secondary" onclick="closePostEditor()">
+                                <span class="material-symbols-outlined">close</span>
+                                返回列表
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="editor-container">
@@ -172,27 +184,34 @@
                             <textarea id="postSummary" rows="2" placeholder="簡短描述文章內容..."></textarea>
                         </div>
                         
-                        <div class="form-group">
-                            <label>內容 * (支援 Markdown)</label>
-                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('**', '**', '粗體文字')">
-                                    <strong>B</strong> 粗體
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('*', '*', '斜體文字')">
-                                    <em>I</em> 斜體
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('## ', '', '標題')">
-                                    H2 標題
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('[', '](url)', '連結文字')">
-                                    🔗 連結
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('- ', '', '列表項目')">
-                                    • 列表
-                                </button>
+                            <div class="form-group">
+                                <label>內容 * (支援 Markdown)</label>
+                                <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('**', '**', '粗體文字')">
+                                        <strong>B</strong> 粗體
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('*', '*', '斜體文字')">
+                                        <em>I</em> 斜體
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('## ', '', '標題')">
+                                        H2 標題
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('[', '](url)', '連結文字')">
+                                        🔗 連結
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('- ', '', '列表項目')">
+                                        • 列表
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('![', '](url)', '圖片說明')">
+                                        🖼️ 圖片
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="insertMarkdown('\n```\n', '\n```\n', '程式碼')">
+                                        💻 程式碼
+                                    </button>
+                                </div>
+                                <textarea id="postContent" rows="15" placeholder="使用 Markdown 格式撰寫文章內容..." style="font-family: 'Consolas', 'Monaco', 'Courier New', monospace;"></textarea>
+                                <div id="markdownPreview" style="display: none; border: 2px solid var(--border-color); border-radius: 8px; padding: 20px; background: white; min-height: 400px; max-height: 600px; overflow-y: auto;"></div>
                             </div>
-                            <textarea id="postContent" rows="15" placeholder="使用 Markdown 格式撰寫文章內容..."></textarea>
-                        </div>
                         
                         <div class="form-row">
                             <div class="form-group">

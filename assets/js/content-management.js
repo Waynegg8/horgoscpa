@@ -5,6 +5,9 @@
 const API_BASE = 'https://timesheet-api.hergscpa.workers.dev';
 let allPosts = [];
 let currentEditingPost = null;
+let autoSaveTimer = null;
+let selectedPosts = new Set();
+let isPreviewMode = false;
 
 // =====================================
 // 初始化
@@ -123,7 +126,26 @@ function renderPostsList(posts) {
         return;
     }
     
-    container.innerHTML = posts.map(post => {
+    // 添加批量操作工具列
+    const bulkActionsBar = `
+        <div id="bulkActions" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; align-items: center; gap: 15px;">
+            <span><strong id="selectedCount">0</strong> 篇已選</span>
+            <button class="btn btn-sm" style="background: white; color: #667eea;" onclick="bulkChangeStatus('published')">
+                <span class="material-symbols-outlined">publish</span> 發布
+            </button>
+            <button class="btn btn-sm" style="background: white; color: #667eea;" onclick="bulkChangeStatus('draft')">
+                <span class="material-symbols-outlined">drafts</span> 設為草稿
+            </button>
+            <button class="btn btn-sm" style="background: white; color: #667eea;" onclick="bulkChangeStatus('archived')">
+                <span class="material-symbols-outlined">archive</span> 封存
+            </button>
+            <button class="btn btn-sm" style="background: #f44336; color: white;" onclick="bulkDelete()">
+                <span class="material-symbols-outlined">delete</span> 刪除
+            </button>
+        </div>
+    `;
+    
+    const postCards = posts.map(post => {
         const statusLabels = {
             'draft': '草稿',
             'published': '已發布',
@@ -138,10 +160,13 @@ function renderPostsList(posts) {
         
         return `
             <div class="post-card" style="background: white; border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; margin-bottom: 15px; transition: all 0.3s;">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div style="display: flex; gap: 15px; align-items: start;">
+                    <input type="checkbox" class="post-checkbox" ${selectedPosts.has(post.id) ? 'checked' : ''} 
+                           onclick="togglePostSelection(${post.id})" 
+                           style="width: 18px; height: 18px; cursor: pointer; margin-top: 4px;">
                     <div style="flex: 1;">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                            <h3 style="margin: 0; font-size: 18px;">${escapeHtml(post.title)}</h3>
+                            <h3 style="margin: 0; font-size: 18px; cursor: pointer;" onclick="editPost(${post.id})">${escapeHtml(post.title)}</h3>
                             <span class="badge" style="background: ${statusColors[post.status]}15; color: ${statusColors[post.status]}; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
                                 ${statusLabels[post.status]}
                             </span>
@@ -154,10 +179,10 @@ function renderPostsList(posts) {
                         </div>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <button class="btn btn-sm btn-secondary" onclick="editPost(${post.id})" title="編輯">
+                        <button class="btn btn-sm btn-secondary" onclick="editPost(${post.id}); event.stopPropagation();" title="編輯">
                             <span class="material-symbols-outlined">edit</span>
                         </button>
-                        <button class="btn btn-sm btn-danger" onclick="deletePost(${post.id})" title="刪除">
+                        <button class="btn btn-sm btn-danger" onclick="deletePost(${post.id}); event.stopPropagation();" title="刪除">
                             <span class="material-symbols-outlined">delete</span>
                         </button>
                     </div>
@@ -165,6 +190,8 @@ function renderPostsList(posts) {
             </div>
         `;
     }).join('');
+    
+    container.innerHTML = bulkActionsBar + postCards;
     
     // 添加hover效果
     document.querySelectorAll('.post-card').forEach(card => {
@@ -177,6 +204,8 @@ function renderPostsList(posts) {
             this.style.transform = 'translateY(0)';
         });
     });
+    
+    updateBulkActions();
 }
 
 function filterPosts() {
@@ -226,11 +255,22 @@ function showPostEditor(postId) {
         document.getElementById('postPublishedAt').value = '';
         
         currentEditingPost = null;
+        
+        // 檢查是否有草稿
+        loadDraft(null);
     }
     
     // 切換視圖
     document.getElementById('posts-list-view').style.display = 'none';
     document.getElementById('post-editor-view').style.display = 'block';
+    
+    // 重置預覽模式
+    isPreviewMode = false;
+    document.getElementById('postContent').style.display = 'block';
+    document.getElementById('markdownPreview').style.display = 'none';
+    
+    // 啟用自動保存
+    enableAutoSave();
     
     // 自動生成slug
     document.getElementById('postTitle').addEventListener('input', function() {
@@ -244,9 +284,14 @@ function showPostEditor(postId) {
 }
 
 function closePostEditor() {
+    if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+    }
+    
     document.getElementById('posts-list-view').style.display = 'block';
     document.getElementById('post-editor-view').style.display = 'none';
     currentEditingPost = null;
+    isPreviewMode = false;
 }
 
 async function savePost() {
@@ -289,6 +334,7 @@ async function savePost() {
         }
         
         showNotification('儲存成功！', 'success');
+        clearDraft(postId);
         closePostEditor();
         loadPosts();
     } catch (error) {
@@ -342,6 +388,243 @@ function insertMarkdown(prefix, suffix, placeholder) {
     }
     
     textarea.focus();
+    updatePreview();
+}
+
+// =====================================
+// Markdown 預覽功能
+// =====================================
+function togglePreview() {
+    isPreviewMode = !isPreviewMode;
+    const editor = document.getElementById('postContent');
+    const preview = document.getElementById('markdownPreview');
+    const toggleBtn = document.querySelector('[onclick="togglePreview()"]');
+    
+    if (isPreviewMode) {
+        editor.style.display = 'none';
+        preview.style.display = 'block';
+        toggleBtn.innerHTML = '<span class="material-symbols-outlined">edit</span> 編輯模式';
+        updatePreview();
+    } else {
+        editor.style.display = 'block';
+        preview.style.display = 'none';
+        toggleBtn.innerHTML = '<span class="material-symbols-outlined">visibility</span> 預覽';
+    }
+}
+
+function updatePreview() {
+    if (!isPreviewMode) return;
+    
+    const content = document.getElementById('postContent').value;
+    const preview = document.getElementById('markdownPreview');
+    
+    // 簡單的 Markdown 轉 HTML（生產環境建議使用 marked.js 等專業庫）
+    let html = content
+        // 標題
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        // 粗體
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        // 斜體
+        .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+        // 連結
+        .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank">$1</a>')
+        // 圖片
+        .replace(/!\[(.*?)\]\((.*?)\)/gim, '<img src="$2" alt="$1" style="max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0;">')
+        // 列表
+        .replace(/^\- (.*$)/gim, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>')
+        // 段落
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    
+    html = '<p>' + html + '</p>';
+    
+    preview.innerHTML = html;
+}
+
+// =====================================
+// 自動保存功能
+// =====================================
+function enableAutoSave() {
+    const fields = ['postTitle', 'postSlug', 'postCategory', 'postSummary', 'postContent', 
+                    'postMetaTitle', 'postMetaDescription', 'postStatus', 'postPublishedAt'];
+    
+    fields.forEach(fieldId => {
+        const element = document.getElementById(fieldId);
+        if (element) {
+            element.addEventListener('input', scheduleAutoSave);
+        }
+    });
+}
+
+function scheduleAutoSave() {
+    if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+    }
+    
+    autoSaveTimer = setTimeout(() => {
+        autoSaveDraft();
+    }, 3000); // 3秒後自動保存
+}
+
+function autoSaveDraft() {
+    const postId = document.getElementById('postId').value;
+    const title = document.getElementById('postTitle').value.trim();
+    
+    if (!title) return; // 沒有標題不保存
+    
+    const draftData = {
+        id: postId,
+        title: title,
+        slug: document.getElementById('postSlug').value,
+        category: document.getElementById('postCategory').value,
+        summary: document.getElementById('postSummary').value,
+        content: document.getElementById('postContent').value,
+        meta_title: document.getElementById('postMetaTitle').value,
+        meta_description: document.getElementById('postMetaDescription').value,
+        status: document.getElementById('postStatus').value,
+        published_at: document.getElementById('postPublishedAt').value
+    };
+    
+    localStorage.setItem('post_draft_' + (postId || 'new'), JSON.stringify(draftData));
+    
+    // 顯示自動保存提示
+    const indicator = document.getElementById('autoSaveIndicator');
+    if (indicator) {
+        indicator.textContent = '✓ 已自動儲存';
+        indicator.style.color = '#4CAF50';
+        setTimeout(() => {
+            indicator.textContent = '';
+        }, 2000);
+    }
+}
+
+function loadDraft(postId) {
+    const draftKey = 'post_draft_' + (postId || 'new');
+    const draft = localStorage.getItem(draftKey);
+    
+    if (draft && confirm('發現未儲存的草稿，是否載入？')) {
+        const data = JSON.parse(draft);
+        document.getElementById('postTitle').value = data.title || '';
+        document.getElementById('postSlug').value = data.slug || '';
+        document.getElementById('postCategory').value = data.category || '';
+        document.getElementById('postSummary').value = data.summary || '';
+        document.getElementById('postContent').value = data.content || '';
+        document.getElementById('postMetaTitle').value = data.meta_title || '';
+        document.getElementById('postMetaDescription').value = data.meta_description || '';
+        document.getElementById('postStatus').value = data.status || 'draft';
+        document.getElementById('postPublishedAt').value = data.published_at || '';
+    }
+}
+
+function clearDraft(postId) {
+    const draftKey = 'post_draft_' + (postId || 'new');
+    localStorage.removeItem(draftKey);
+}
+
+// =====================================
+// 批量操作功能
+// =====================================
+function toggleSelectAll() {
+    const checkboxes = document.querySelectorAll('.post-checkbox');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    
+    if (selectedPosts.size === allPosts.length) {
+        // 全部取消選擇
+        selectedPosts.clear();
+        checkboxes.forEach(cb => cb.checked = false);
+        selectAllBtn.textContent = '全選';
+    } else {
+        // 全部選擇
+        selectedPosts.clear();
+        allPosts.forEach(post => selectedPosts.add(post.id));
+        checkboxes.forEach(cb => cb.checked = true);
+        selectAllBtn.textContent = '取消全選';
+    }
+    
+    updateBulkActions();
+}
+
+function togglePostSelection(postId) {
+    if (selectedPosts.has(postId)) {
+        selectedPosts.delete(postId);
+    } else {
+        selectedPosts.add(postId);
+    }
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    if (selectedPosts.size > 0) {
+        bulkActions.style.display = 'flex';
+        selectedCount.textContent = selectedPosts.size;
+    } else {
+        bulkActions.style.display = 'none';
+    }
+}
+
+async function bulkDelete() {
+    if (selectedPosts.size === 0) return;
+    
+    if (!confirm(`確定要刪除選中的 ${selectedPosts.size} 篇文章嗎？`)) return;
+    
+    try {
+        const token = localStorage.getItem('session_token');
+        const deletePromises = Array.from(selectedPosts).map(postId => 
+            fetch(`${API_BASE}/api/posts/${postId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+        );
+        
+        await Promise.all(deletePromises);
+        
+        showNotification(`成功刪除 ${selectedPosts.size} 篇文章`, 'success');
+        selectedPosts.clear();
+        updateBulkActions();
+        loadPosts();
+    } catch (error) {
+        showNotification('批量刪除失敗: ' + error.message, 'error');
+    }
+}
+
+async function bulkChangeStatus(newStatus) {
+    if (selectedPosts.size === 0) return;
+    
+    const statusLabels = {
+        'draft': '草稿',
+        'published': '已發布',
+        'archived': '已封存'
+    };
+    
+    try {
+        const token = localStorage.getItem('session_token');
+        const updatePromises = Array.from(selectedPosts).map(postId => {
+            const post = allPosts.find(p => p.id === postId);
+            return fetch(`${API_BASE}/api/posts/${postId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ...post, status: newStatus })
+            });
+        });
+        
+        await Promise.all(updatePromises);
+        
+        showNotification(`成功將 ${selectedPosts.size} 篇文章改為${statusLabels[newStatus]}`, 'success');
+        selectedPosts.clear();
+        updateBulkActions();
+        loadPosts();
+    } catch (error) {
+        showNotification('批量更新失敗: ' + error.message, 'error');
+    }
 }
 
 // =====================================

@@ -10,6 +10,8 @@ let businessTypes = [];
 let sops = [];
 let currentSopId = null;
 let currentTags = [];
+let isPreviewMode = false;
+let sopTemplates = [];
 
 // =========================================
 // 初始化
@@ -99,11 +101,116 @@ async function loadInitialData() {
         await Promise.all([
             loadCategories(),
             loadBusinessTypes(),
-            loadSops()
+            loadSops(),
+            loadTemplates()
         ]);
     } catch (error) {
         showNotification('載入資料失敗: ' + error.message, 'error');
     }
+}
+
+async function loadTemplates() {
+    // 預設模板（未來可從API載入）
+    sopTemplates = [
+        {
+            id: 'accounting',
+            name: '會計作業 SOP',
+            content: `# 會計作業標準流程
+
+## 1. 目的
+說明此作業的目的和範圍
+
+## 2. 適用範圍
+- 適用對象
+- 適用業務類型
+
+## 3. 作業流程
+### 3.1 準備階段
+1. 準備所需文件
+2. 檢查相關資料
+
+### 3.2 執行階段
+1. 執行步驟一
+2. 執行步驟二
+
+### 3.3 檢核階段
+1. 檢核項目一
+2. 檢核項目二
+
+## 4. 注意事項
+- 注意事項一
+- 注意事項二
+
+## 5. 相關表單
+列出相關表單和文件`
+        },
+        {
+            id: 'tax',
+            name: '稅務申報 SOP',
+            content: `# 稅務申報標準流程
+
+## 1. 申報前準備
+### 1.1 資料蒐集
+- 收入憑證
+- 支出憑證
+- 扣繳憑單
+
+### 1.2 資料檢核
+- 檢查憑證完整性
+- 核對金額正確性
+
+## 2. 申報流程
+### 2.1 系統登入
+1. 進入申報系統
+2. 輸入帳號密碼
+
+### 2.2 資料輸入
+1. 填寫基本資料
+2. 輸入收入資料
+3. 輸入扣除額
+
+### 2.3 檢核與送出
+1. 檢核試算
+2. 確認無誤後送出
+
+## 3. 申報後作業
+- 列印申報證明
+- 歸檔相關文件
+- 追蹤退稅進度`
+        },
+        {
+            id: 'audit',
+            name: '查核作業 SOP',
+            content: `# 查核作業標準流程
+
+## 1. 查核計畫
+### 1.1 了解受查者
+- 產業特性
+- 營運模式
+- 內部控制
+
+### 1.2 風險評估
+- 識別重大風險
+- 評估查核重點
+
+## 2. 查核執行
+### 2.1 證據蒐集
+- 詢問
+- 觀察
+- 檢查文件
+
+### 2.2 查核測試
+- 控制測試
+- 實質測試
+
+## 3. 查核結論
+### 3.1 查核發現
+記錄查核過程中的發現
+
+### 3.2 建議事項
+提出改善建議`
+        }
+    ];
 }
 
 async function loadCategories() {
@@ -270,6 +377,7 @@ function selectCategory(categoryId) {
 function showNewSopEditor() {
     currentSopId = null;
     currentTags = [];
+    isPreviewMode = false;
     
     document.getElementById('editorTitle').textContent = '新增 SOP';
     document.getElementById('sopId').value = '';
@@ -282,11 +390,72 @@ function showNewSopEditor() {
     document.getElementById('versionBtn').style.display = 'none';
     document.getElementById('versionHistory').style.display = 'none';
     
+    // 重置預覽
+    document.getElementById('sopContent').style.display = 'block';
+    const preview = document.getElementById('sopPreview');
+    if (preview) {
+        preview.style.display = 'none';
+    }
+    
     renderTags();
+    
+    // 顯示模板選擇
+    showTemplateSelector();
     
     // 顯示編輯器，隱藏列表
     document.getElementById('sopListView').style.display = 'none';
     document.getElementById('sopEditorView').style.display = 'block';
+}
+
+function showTemplateSelector() {
+    if (sopTemplates.length === 0) return;
+    
+    const templateHtml = `
+        <div style="background: var(--light-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <label style="font-weight: 600; margin-bottom: 10px; display: block;">
+                <span class="material-symbols-outlined" style="vertical-align: middle;">description</span>
+                使用範本快速建立
+            </label>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                ${sopTemplates.map(template => `
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="applyTemplate('${template.id}')">
+                        ${template.name}
+                    </button>
+                `).join('')}
+                <button type="button" class="btn btn-sm" style="background: white; border: 1px solid var(--border-color);" onclick="closeTemplateSelector()">
+                    略過
+                </button>
+            </div>
+        </div>
+    `;
+    
+    const editor = document.querySelector('#sopEditorView .sop-editor');
+    const existingSelector = document.getElementById('templateSelector');
+    if (existingSelector) {
+        existingSelector.remove();
+    }
+    
+    const div = document.createElement('div');
+    div.id = 'templateSelector';
+    div.innerHTML = templateHtml;
+    editor.insertBefore(div, editor.firstChild);
+}
+
+function applyTemplate(templateId) {
+    const template = sopTemplates.find(t => t.id === templateId);
+    if (template) {
+        document.getElementById('sopContent').value = template.content;
+        document.getElementById('sopTitle').value = template.name;
+        showNotification('範本已套用', 'success');
+        closeTemplateSelector();
+    }
+}
+
+function closeTemplateSelector() {
+    const selector = document.getElementById('templateSelector');
+    if (selector) {
+        selector.remove();
+    }
 }
 
 async function editSop(sopId) {
@@ -296,6 +465,7 @@ async function editSop(sopId) {
         
         currentSopId = sopId;
         currentTags = sop.tags || [];
+        isPreviewMode = false;
         
         document.getElementById('editorTitle').textContent = '編輯 SOP';
         document.getElementById('sopId').value = sopId;
@@ -306,6 +476,13 @@ async function editSop(sopId) {
         document.getElementById('sopStatus').value = sop.status || 'draft';
         document.getElementById('sopContent').value = sop.content || '';
         document.getElementById('versionBtn').style.display = 'inline-flex';
+        
+        // 重置預覽
+        document.getElementById('sopContent').style.display = 'block';
+        const preview = document.getElementById('sopPreview');
+        if (preview) {
+            preview.style.display = 'none';
+        }
         
         renderTags();
         
@@ -320,6 +497,135 @@ async function editSop(sopId) {
 function closeSopEditor() {
     document.getElementById('sopListView').style.display = 'block';
     document.getElementById('sopEditorView').style.display = 'none';
+    isPreviewMode = false;
+}
+
+// =========================================
+// Markdown 預覽功能
+// =========================================
+function toggleSopPreview() {
+    isPreviewMode = !isPreviewMode;
+    const editor = document.getElementById('sopContent');
+    const preview = document.getElementById('sopPreview');
+    const toggleBtn = document.querySelector('[onclick="toggleSopPreview()"]');
+    
+    if (isPreviewMode) {
+        editor.style.display = 'none';
+        preview.style.display = 'block';
+        if (toggleBtn) {
+            toggleBtn.innerHTML = '<span class="material-symbols-outlined">edit</span> 編輯模式';
+        }
+        updateSopPreview();
+    } else {
+        editor.style.display = 'block';
+        preview.style.display = 'none';
+        if (toggleBtn) {
+            toggleBtn.innerHTML = '<span class="material-symbols-outlined">visibility</span> 預覽';
+        }
+    }
+}
+
+function updateSopPreview() {
+    if (!isPreviewMode) return;
+    
+    const content = document.getElementById('sopContent').value;
+    const preview = document.getElementById('sopPreview');
+    
+    // 簡單的 Markdown 轉 HTML
+    let html = content
+        .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+        .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank">$1</a>')
+        .replace(/!\[(.*?)\]\((.*?)\)/gim, '<img src="$2" alt="$1" style="max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0;">')
+        .replace(/^\- (.*$)/gim, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>')
+        .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    
+    html = '<p>' + html + '</p>';
+    preview.innerHTML = html;
+}
+
+// =========================================
+// 導出功能
+// =========================================
+function exportSopAsPDF() {
+    showNotification('PDF 導出功能開發中...可使用瀏覽器列印功能', 'info');
+    // 未來可整合 jsPDF 或其他 PDF 生成庫
+}
+
+function exportSopAsMarkdown() {
+    const content = document.getElementById('sopContent').value;
+    const title = document.getElementById('sopTitle').value || 'sop';
+    
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification('Markdown 文件已導出', 'success');
+}
+
+function exportSopAsHTML() {
+    const content = document.getElementById('sopContent').value;
+    const title = document.getElementById('sopTitle').value || 'sop';
+    
+    // 轉換 Markdown 為 HTML
+    let html = content
+        .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+        .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank">$1</a>')
+        .replace(/!\[(.*?)\]\((.*?)\)/gim, '<img src="$2" alt="$1" style="max-width: 100%;">')
+        .replace(/^\- (.*$)/gim, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    
+    const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${title}</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        h3 { color: #7f8c8d; }
+        ul { line-height: 1.8; }
+        img { max-width: 100%; height: auto; }
+    </style>
+</head>
+<body>
+    <h1>${title}</h1>
+    ${html}
+</body>
+</html>`;
+    
+    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification('HTML 文件已導出', 'success');
 }
 
 async function saveSop() {
