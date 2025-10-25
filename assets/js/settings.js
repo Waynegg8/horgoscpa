@@ -67,12 +67,18 @@ async function apiRequest(url, options = {}) {
         }
     };
 
+    // 自動序列化 JSON body
+    const finalOptions = { ...options };
+    if (finalOptions.body && typeof finalOptions.body === 'object') {
+        finalOptions.body = JSON.stringify(finalOptions.body);
+    }
+
     const response = await fetch(`${API_BASE}${url}`, {
         ...defaultOptions,
-        ...options,
+        ...finalOptions,
         headers: {
             ...defaultOptions.headers,
-            ...options.headers
+            ...finalOptions.headers
         }
     });
 

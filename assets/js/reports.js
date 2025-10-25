@@ -5,6 +5,7 @@
 
 const API_BASE = 'https://timesheet-api.hergscpa.workers.dev';
 let currentUser = null;
+let employeesCache = [];
 
 // =========================================
 // 初始化
@@ -129,6 +130,7 @@ function initMobileMenu() {
 async function loadEmployees() {
     try {
         const employees = await apiRequest('/api/employees');
+        employeesCache = employees || [];
         
         // 填充工時分析的員工下拉選單
         const workAnalysisSelect = document.getElementById('workAnalysisEmployee');
@@ -455,6 +457,41 @@ async function generateLeaveOverview() {
             }
         });
 
+        // 計算特休配額（依到職日與年資）
+        function getAnnualLeaveDays(hireDateStr, y) {
+            if (!hireDateStr) return 0;
+            const hire = new Date(hireDateStr);
+            const yearStart = new Date(parseInt(y), 0, 1);
+            const yearEnd = new Date(parseInt(y), 11, 31);
+            // 年初到年尾在職月數
+            let months = 0;
+            // 若到職當年即 y 年，按月份計算是否大於等於 6 個月 → 3 天
+            if (hire.getFullYear() === parseInt(y)) {
+                months = (yearEnd.getMonth() - hire.getMonth()) + 1;
+                if (months >= 6) return 3; // 半年 3 天
+                return 0;
+            }
+            // 否則用年資計算
+            const seniorityYears = Math.max(0, parseInt(y) - hire.getFullYear());
+            const rule = [
+                { y: 0.5, d: 3 }, { y: 1, d: 7 }, { y: 2, d: 10 }, { y: 3, d: 14 },
+                { y: 4, d: 14 }, { y: 5, d: 15 }, { y: 10, d: 15 }, { y: 11, d: 16 },
+                { y: 12, d: 17 }, { y: 13, d: 18 }, { y: 14, d: 19 }, { y: 15, d: 20 }
+            ];
+            // 找到不大於年資的最大規則
+            let days = 0;
+            for (const r of rule) {
+                if (seniorityYears >= r.y) days = r.d;
+            }
+            return days;
+        }
+
+        const empObj = employeesCache.find(e => e.name === employee);
+        const annualLeaveDays = getAnnualLeaveDays(empObj?.hire_date, year);
+        const annualLeaveHours = annualLeaveDays * 8;
+        const usedAnnualLeaveHours = leaveStats['特休'] || 0;
+        const remainingAnnualLeaveHours = Math.max(0, annualLeaveHours - usedAnnualLeaveHours);
+
         // 生成報表 HTML
         const html = `
             <div class="report-content">
@@ -486,7 +523,9 @@ async function generateLeaveOverview() {
                             <thead>
                                 <tr>
                                     <th>假別類型</th>
+                                    <th class="number">配額(時)</th>
                                     <th class="number">已使用時數</th>
+                                    <th class="number">剩餘時數</th>
                                     <th class="number">已使用天數</th>
                                 </tr>
                             </thead>
@@ -494,10 +533,14 @@ async function generateLeaveOverview() {
                                 ${leaveTypes.map(type => {
                                     const used = leaveStats[type.key] || 0;
                                     if (used === 0 && !type.hasQuota) return '';
+                                    const quota = type.key === '特休' ? annualLeaveHours : 0;
+                                    const remaining = type.key === '特休' ? remainingAnnualLeaveHours : 0;
                                     return `
                                         <tr>
                                             <td>${type.name}</td>
+                                            <td class="number">${quota.toFixed(1)}</td>
                                             <td class="number">${used.toFixed(1)}</td>
+                                            <td class="number">${remaining.toFixed(1)}</td>
                                             <td class="number">${(used / 8).toFixed(1)}</td>
                                         </tr>
                                     `;
@@ -505,7 +548,9 @@ async function generateLeaveOverview() {
                                 ${totalUsed > 0 ? `
                                     <tr class="total-row">
                                         <td>總計</td>
+                                        <td class="number">${annualLeaveHours.toFixed(1)}</td>
                                         <td class="number">${totalUsed.toFixed(1)}</td>
+                                        <td class="number">${remainingAnnualLeaveHours.toFixed(1)}</td>
                                         <td class="number">${(totalUsed / 8).toFixed(1)}</td>
                                     </tr>
                                 ` : ''}
@@ -538,93 +583,45 @@ async function generatePivotAnalysis() {
     showLoading('pivotAnalysisResult');
 
     try {
-        // 獲取所有員工
+        // 並行載入所有員工
         const employees = await apiRequest('/api/employees');
-        
-        // 根據分組方式統計
-        const grouped = {};
-        
-        // 需要查詢的月份範圍
         const months = month ? [parseInt(month)] : [1,2,3,4,5,6,7,8,9,10,11,12];
-        
-        // 遍歷每個員工和月份
+
+        // 並行請求所有 (員工×月份) 的 timesheet
+        const requests = [];
         for (const emp of employees) {
             for (const m of months) {
-                const response = await apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(emp.name)}&year=${year}&month=${m}`);
-                
-                // 處理工時記錄
-                if (response.workEntries && Array.isArray(response.workEntries)) {
-                    response.workEntries.forEach(entry => {
-                        let key = '';
-                        switch (groupBy) {
-                            case 'employee':
-                                key = emp.name;
-                                break;
-                            case 'client':
-                                key = entry.clientName || '未分類';
-                                break;
-                            case 'business_type':
-                                key = entry.businessType || '未分類';
-                                break;
-                        }
-
-                        if (!grouped[key]) {
-                            grouped[key] = {
-                                name: key,
-                                normalHours: 0,
-                                overtimeHours: 0,
-                                weightedHours: 0,
-                                leaveHours: 0
-                            };
-                        }
-
-                        // 累計該條目的所有時數
-                        for (const day in entry.hours) {
-                            const hours = parseFloat(entry.hours[day] || 0);
-                            const isOvertime = entry.workType && entry.workType.includes('加班');
-                            
-                            if (isOvertime) {
-                                grouped[key].overtimeHours += hours;
-                            } else {
-                                grouped[key].normalHours += hours;
-                            }
-                            grouped[key].weightedHours += hours;
-                        }
-                    });
-                }
-                
-                // 處理請假記錄
-                if (response.leaveEntries && Array.isArray(response.leaveEntries)) {
-                    response.leaveEntries.forEach(entry => {
-                        let key = '';
-                        switch (groupBy) {
-                            case 'employee':
-                                key = emp.name;
-                                break;
-                            case 'client':
-                                key = '請假';
-                                break;
-                            case 'business_type':
-                                key = '請假';
-                                break;
-                        }
-
-                        if (!grouped[key]) {
-                            grouped[key] = {
-                                name: key,
-                                normalHours: 0,
-                                overtimeHours: 0,
-                                weightedHours: 0,
-                                leaveHours: 0
-                            };
-                        }
-
-                        for (const day in entry.hours) {
-                            grouped[key].leaveHours += parseFloat(entry.hours[day] || 0);
-                        }
-                    });
-                }
+                requests.push(apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(emp.name)}&year=${year}&month=${m}`).then(res => ({ res, emp })));
             }
+        }
+
+        const grouped = {};
+
+        const results = await Promise.all(requests);
+        for (const { res: response, emp } of results) {
+            // 工時
+            (response.workEntries || []).forEach(entry => {
+                let key = '';
+                switch (groupBy) {
+                    case 'employee': key = emp.name; break;
+                    case 'client': key = entry.clientName || '未分類'; break;
+                    case 'business_type': key = entry.businessType || '未分類'; break;
+                }
+                if (!grouped[key]) grouped[key] = { name: key, normalHours: 0, overtimeHours: 0, weightedHours: 0, leaveHours: 0 };
+                for (const day in entry.hours) {
+                    const hours = parseFloat(entry.hours[day] || 0);
+                    const isOvertime = entry.workType && entry.workType.includes('加班');
+                    if (isOvertime) grouped[key].overtimeHours += hours; else grouped[key].normalHours += hours;
+                    grouped[key].weightedHours += hours;
+                }
+            });
+
+            // 請假
+            (response.leaveEntries || []).forEach(entry => {
+                let key = groupBy === 'employee' ? emp.name : '請假';
+                if (!grouped[key]) grouped[key] = { name: key, normalHours: 0, overtimeHours: 0, weightedHours: 0, leaveHours: 0 };
+                for (const day in entry.hours) grouped[key].leaveHours += parseFloat(entry.hours[day] || 0);
+            });
         }
 
         const results = Object.values(grouped).sort((a, b) => 
