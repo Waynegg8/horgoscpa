@@ -172,7 +172,7 @@ export default {
       if (url.pathname.startsWith("/api/clients/") && method === "PUT") {
         const auth = await requireAuth(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        const id = url.pathname.split("/")[3];
+        const id = decodeURIComponent(url.pathname.split("/")[3]);
         const payload = await request.json();
         return await handleUpdateClient(env.DB, id, payload);
       }
@@ -180,7 +180,7 @@ export default {
       if (url.pathname.startsWith("/api/clients/") && method === "DELETE") {
         const auth = await requireAuth(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        const id = url.pathname.split("/")[3];
+        const id = decodeURIComponent(url.pathname.split("/")[3]);
         return await handleDeleteClient(env.DB, id);
       }
 
@@ -1016,12 +1016,36 @@ async function handleUpdateClient(db, oldName, payload) {
     }
 
     // 因為 name 是主鍵，需要更新所有關聯表
-    await db.prepare(`
+    const res = await db.prepare(`
       UPDATE clients SET name = ? WHERE name = ?
+    `).bind(name, oldName).run();
+
+    // 如果沒有任何列被更新，代表舊名稱不存在或未變更
+    if (!res?.meta || res.meta.changes === 0) {
+      // 再檢查是否實際上名稱未變更（舊名等於新名），如果是則視為成功
+      if (oldName === name) {
+        return jsonResponse({ success: true, message: '客戶已更新' });
+      }
+      // 檢查舊名稱是否存在
+      const exists = await db.prepare(`SELECT 1 FROM clients WHERE name = ?`).bind(oldName).first();
+      if (!exists) {
+        return jsonResponse({ error: '找不到要更新的客戶' }, 404);
+      }
+    }
+
+    // 更新關聯表（若資料庫未開啟 ON UPDATE CASCADE，手動同步）
+    await db.prepare(`
+      UPDATE client_assignments SET client_name = ? WHERE client_name = ?
+    `).bind(name, oldName).run();
+    await db.prepare(`
+      UPDATE timesheets SET client_name = ? WHERE client_name = ?
     `).bind(name, oldName).run();
 
     return jsonResponse({ success: true, message: '客戶已更新' });
   } catch (err) {
+    if (err.message && err.message.includes('UNIQUE')) {
+      return jsonResponse({ error: '此客戶名稱已存在' }, 400);
+    }
     return jsonResponse({ error: err.message }, 500);
   }
 }
