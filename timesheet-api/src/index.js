@@ -38,6 +38,18 @@ import {
   importClients
 } from './clients.js';
 
+import {
+  getSopCategories,
+  createSopCategory,
+  getSops,
+  getSop,
+  createSop,
+  updateSop,
+  deleteSop,
+  getSopVersions,
+  searchSops
+} from './sop.js';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -269,6 +281,54 @@ export default {
       // CSV 匯入
       if (url.pathname === "/api/import/clients" && method === "POST") {
         return await importClients(request, env);
+      }
+
+      // ========================================
+      // SOP 文件管理 API (需認證)
+      // ========================================
+      
+      // SOP 分類
+      if (url.pathname === "/api/sop/categories" && method === "GET") {
+        return await getSopCategories(request, env);
+      }
+      
+      if (url.pathname === "/api/sop/categories" && method === "POST") {
+        return await createSopCategory(request, env);
+      }
+      
+      // SOP 文檔
+      if (url.pathname === "/api/sops" && method === "GET") {
+        return await getSops(request, env);
+      }
+      
+      if (url.pathname.match(/^\/api\/sops\/\d+$/) && method === "GET") {
+        const sopId = url.pathname.split("/")[3];
+        return await getSop(request, env, sopId);
+      }
+      
+      if (url.pathname === "/api/sops" && method === "POST") {
+        return await createSop(request, env);
+      }
+      
+      if (url.pathname.match(/^\/api\/sops\/\d+$/) && method === "PUT") {
+        const sopId = url.pathname.split("/")[3];
+        return await updateSop(request, env, sopId);
+      }
+      
+      if (url.pathname.match(/^\/api\/sops\/\d+$/) && method === "DELETE") {
+        const sopId = url.pathname.split("/")[3];
+        return await deleteSop(request, env, sopId);
+      }
+      
+      // SOP 版本歷史
+      if (url.pathname.match(/^\/api\/sops\/\d+\/versions$/) && method === "GET") {
+        const sopId = url.pathname.split("/")[3];
+        return await getSopVersions(request, env, sopId);
+      }
+      
+      // SOP 搜尋
+      if (url.pathname === "/api/sops/search" && method === "GET") {
+        return await searchSops(request, env);
       }
 
       // ========================================
