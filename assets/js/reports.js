@@ -552,6 +552,10 @@ async function generateLeaveOverview() {
                                         const combinedRemaining = Math.max(0, combinedCapSickMenstrual - sickUsed - menstrualUsed);
                                         remaining = Math.min(remaining, combinedRemaining);
                                     }
+                                    // 男性（或無配額者）若生理假配額與使用均為 0，隱藏該列
+                                    if (type.key === '生理假' && quota === 0 && used === 0) {
+                                        return '';
+                                    }
                                     return `
                                         <tr>
                                             <td>${type.name}</td>
