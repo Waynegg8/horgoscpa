@@ -5,7 +5,7 @@
 // 描述: 文章和資源管理，整合現有前端頁面
 // ================================================================
 
-import { verifySession } from './auth.js';
+import { verifySession, getSessionToken } from './auth.js';
 
 // ============================================================
 // 1. 文章管理 API (後台)
@@ -15,7 +15,8 @@ import { verifySession } from './auth.js';
  * 獲取所有文章（後台）
  */
 export async function getPosts(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -64,7 +65,8 @@ export async function getPosts(request, env) {
  * 創建文章
  */
 export async function createPost(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -132,7 +134,8 @@ export async function createPost(request, env) {
  * 更新文章
  */
 export async function updatePost(request, env, postId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,

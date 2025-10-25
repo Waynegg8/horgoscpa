@@ -5,7 +5,7 @@
 // 描述: 整合客戶、員工、工時的專案管理系統
 // ================================================================
 
-import { verifySession } from './auth.js';
+import { verifySession, getSessionToken } from './auth.js';
 
 // ============================================================
 // 1. 專案 API
@@ -15,7 +15,8 @@ import { verifySession } from './auth.js';
  * 獲取所有專案（支援篩選）
  */
 export async function getProjects(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -91,7 +92,8 @@ export async function getProjects(request, env) {
  * 獲取單一專案詳情
  */
 export async function getProject(request, env, projectId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -159,7 +161,8 @@ export async function getProject(request, env, projectId) {
  * 創建專案
  */
 export async function createProject(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -212,7 +215,8 @@ export async function createProject(request, env) {
  * 更新專案
  */
 export async function updateProject(request, env, projectId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -274,7 +278,8 @@ export async function updateProject(request, env, projectId) {
  * 刪除專案
  */
 export async function deleteProject(request, env, projectId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData || sessionData.role !== 'admin') {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized - Admin only' }), {
       status: 403,
@@ -310,7 +315,8 @@ export async function deleteProject(request, env, projectId) {
  * 獲取專案的所有任務
  */
 export async function getProjectTasks(request, env, projectId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -354,7 +360,8 @@ export async function getProjectTasks(request, env, projectId) {
  * 創建任務
  */
 export async function createTask(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -406,7 +413,8 @@ export async function createTask(request, env) {
  * 更新任務
  */
 export async function updateTask(request, env, taskId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -464,7 +472,8 @@ export async function updateTask(request, env, taskId) {
  * 刪除任務
  */
 export async function deleteTask(request, env, taskId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -500,7 +509,8 @@ export async function deleteTask(request, env, taskId) {
  * 獲取任務檢核清單
  */
 export async function getTaskChecklist(request, env, taskId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -533,7 +543,8 @@ export async function getTaskChecklist(request, env, taskId) {
  * 添加檢核項目
  */
 export async function addChecklistItem(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -576,7 +587,8 @@ export async function addChecklistItem(request, env) {
  * 更新檢核項目
  */
 export async function updateChecklistItem(request, env, itemId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,

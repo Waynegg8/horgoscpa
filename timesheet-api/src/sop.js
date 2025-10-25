@@ -4,7 +4,7 @@
 // 日期: 2025-10-25
 // ================================================================
 
-import { verifySession } from './auth.js';
+import { verifySession, getSessionToken } from './auth.js';
 
 // ============================================================
 // 1. SOP 分類 API
@@ -14,7 +14,8 @@ import { verifySession } from './auth.js';
  * 獲取所有 SOP 分類
  */
 export async function getSopCategories(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -51,7 +52,8 @@ export async function getSopCategories(request, env) {
  * 創建 SOP 分類
  */
 export async function createSopCategory(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData || sessionData.role !== 'admin') {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 403,
@@ -101,7 +103,8 @@ export async function createSopCategory(request, env) {
  * 獲取所有 SOP（支援篩選）
  */
 export async function getSops(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -170,7 +173,8 @@ export async function getSops(request, env) {
  * 獲取單一 SOP
  */
 export async function getSop(request, env, sopId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -228,7 +232,8 @@ export async function getSop(request, env, sopId) {
  * 創建 SOP
  */
 export async function createSop(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -302,7 +307,8 @@ export async function createSop(request, env) {
  * 更新 SOP
  */
 export async function updateSop(request, env, sopId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -400,7 +406,8 @@ export async function updateSop(request, env, sopId) {
  * 刪除 SOP
  */
 export async function deleteSop(request, env, sopId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData || sessionData.role !== 'admin') {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 403,
@@ -436,7 +443,8 @@ export async function deleteSop(request, env, sopId) {
  * 獲取 SOP 版本歷史
  */
 export async function getSopVersions(request, env, sopId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -478,7 +486,8 @@ export async function getSopVersions(request, env, sopId) {
  * 搜尋 SOP
  */
 export async function searchSops(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,

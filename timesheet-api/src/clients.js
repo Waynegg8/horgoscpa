@@ -4,7 +4,7 @@
 // 日期: 2025-10-25
 // ================================================================
 
-import { verifySession } from './auth.js';
+import { verifySession, getSessionToken } from './auth.js';
 
 // ============================================================
 // 1. 客戶詳細資料 API
@@ -14,7 +14,8 @@ import { verifySession } from './auth.js';
  * 獲取所有客戶詳細資料
  */
 export async function getClientsExtended(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -27,7 +28,6 @@ export async function getClientsExtended(request, env) {
     const query = `
       SELECT 
         c.name,
-        c.contact_person,
         ce.*
       FROM clients c
       LEFT JOIN clients_extended ce ON c.name = ce.client_name
@@ -57,7 +57,8 @@ export async function getClientsExtended(request, env) {
  * 獲取單一客戶詳細資料
  */
 export async function getClientExtended(request, env, clientName) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -69,7 +70,6 @@ export async function getClientExtended(request, env, clientName) {
     const query = `
       SELECT 
         c.name,
-        c.contact_person,
         ce.*
       FROM clients c
       LEFT JOIN clients_extended ce ON c.name = ce.client_name
@@ -109,7 +109,8 @@ export async function getClientExtended(request, env, clientName) {
  * 創建或更新客戶詳細資料
  */
 export async function upsertClientExtended(request, env, clientName) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -205,7 +206,8 @@ export async function upsertClientExtended(request, env, clientName) {
  * 獲取所有服務排程（可依客戶篩選）
  */
 export async function getServiceSchedule(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -254,7 +256,8 @@ export async function getServiceSchedule(request, env) {
  * 創建服務排程
  */
 export async function createServiceSchedule(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -318,7 +321,8 @@ export async function createServiceSchedule(request, env) {
  * 更新服務排程
  */
 export async function updateServiceSchedule(request, env, scheduleId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -389,7 +393,8 @@ export async function updateServiceSchedule(request, env, scheduleId) {
  * 刪除服務排程
  */
 export async function deleteServiceSchedule(request, env, scheduleId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -427,7 +432,8 @@ export async function deleteServiceSchedule(request, env, scheduleId) {
  * 獲取客戶互動記錄（可依客戶篩選）
  */
 export async function getClientInteractions(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -476,7 +482,8 @@ export async function getClientInteractions(request, env) {
  * 創建客戶互動記錄
  */
 export async function createClientInteraction(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -525,7 +532,8 @@ export async function createClientInteraction(request, env) {
  * 更新客戶互動記錄
  */
 export async function updateClientInteraction(request, env, interactionId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -578,7 +586,8 @@ export async function updateClientInteraction(request, env, interactionId) {
  * 刪除客戶互動記錄
  */
 export async function deleteClientInteraction(request, env, interactionId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -616,7 +625,8 @@ export async function deleteClientInteraction(request, env, interactionId) {
  * 匯入客戶資料（從 CSV）
  */
 export async function importClients(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData || sessionData.role !== 'admin') {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized - Admin only' }), {
       status: 403,

@@ -5,7 +5,7 @@
 // 描述: 統一的媒體上傳與管理，供 SOP、CMS 等功能使用
 // ================================================================
 
-import { verifySession } from './auth.js';
+import { verifySession, getSessionToken } from './auth.js';
 
 // ============================================================
 // 圖片上傳
@@ -15,7 +15,8 @@ import { verifySession } from './auth.js';
  * 上傳圖片到 R2
  */
 export async function uploadImage(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -114,7 +115,8 @@ export async function uploadImage(request, env) {
  * 獲取媒體列表
  */
 export async function getMediaList(request, env) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 401,
@@ -157,7 +159,8 @@ export async function getMediaList(request, env) {
  * 刪除媒體檔案
  */
 export async function deleteMedia(request, env, mediaId) {
-  const sessionData = await verifySession(request, env);
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
   if (!sessionData || sessionData.role !== 'admin') {
     return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
       status: 403,
