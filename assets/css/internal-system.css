@@ -60,6 +60,7 @@ body {
 .internal-nav-brand img {
     height: 35px;
     width: auto;
+    filter: brightness(0) invert(1);
 }
 
 .internal-nav-links {

@@ -180,7 +180,7 @@ function loadTabData(tabName) {
             break;
         case 'employees':
             if (currentUser.role === 'admin') {
-                loadEmployees();
+                loadEmployeesAdmin();
             }
             break;
     }
@@ -391,7 +391,6 @@ async function loadClients() {
                         <tr>
                             <th>ID</th>
                             <th>客戶名稱</th>
-                            <th>建立時間</th>
                             <th style="width: 150px;">操作</th>
                         </tr>
                     </thead>
@@ -400,7 +399,6 @@ async function loadClients() {
                             <tr>
                                 <td>${client.id}</td>
                                 <td>${client.name}</td>
-                                <td>${new Date(client.created_at).toLocaleString('zh-TW')}</td>
                                 <td>
                                     <div class="table-actions">
                                         <button class="btn btn-small btn-secondary" onclick="editClient('${client.name.replace(/'/g, "\\'")}')">
@@ -530,7 +528,6 @@ async function loadAssignments() {
                             <th>ID</th>
                             <th>員工姓名</th>
                             <th>客戶名稱</th>
-                            <th>建立時間</th>
                             <th style="width: 100px;">操作</th>
                         </tr>
                     </thead>
@@ -540,7 +537,6 @@ async function loadAssignments() {
                                 <td>${assignment.id}</td>
                                 <td>${assignment.employee_name}</td>
                                 <td>${assignment.client_name}</td>
-                                <td>${new Date(assignment.created_at).toLocaleString('zh-TW')}</td>
                                 <td>
                                     <button class="btn btn-small btn-danger" onclick="deleteAssignment('${assignment.employee_name.replace(/'/g, "\\'")}', '${assignment.client_name.replace(/'/g, "\\'")}')">
                                         <span class="material-symbols-outlined">delete</span>
@@ -656,9 +652,9 @@ async function loadBusinessTypes() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${data.map(type => `
+                        ${data.map((type, idx) => `
                             <tr>
-                                <td>${type.id}</td>
+                                <td>${idx + 1}</td>
                                 <td>${type.name}</td>
                                 <td>
                                     <div class="table-actions">
@@ -1376,9 +1372,9 @@ async function loadLeaveTypes() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${data.map(type => `
+                        ${data.map((type, idx) => `
                             <tr>
-                                <td>${type.id}</td>
+                                <td>${idx + 1}</td>
                                 <td>${type.type_name}</td>
                                 <td>
                                     <div class="table-actions">
@@ -1568,7 +1564,7 @@ async function saveSystemParams() {
 // =========================================
 // 員工管理 CRUD (僅管理員)
 // =========================================
-async function loadEmployees() {
+async function loadEmployeesAdmin() {
     showLoading('employeesTableContainer');
     
     try {
