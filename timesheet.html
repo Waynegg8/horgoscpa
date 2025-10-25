@@ -508,13 +508,15 @@
         <span></span>
       </label>
       <ul class="nav-menu">
-        <li><a href="/services.html">專業服務</a></li>
-        <li><a href="/team.html">專業團隊</a></li>
-        <li><a href="/blog.html">專欄文章</a></li>
-        <li><a href="/faq.html">常見問題</a></li>
-        <li><a href="/video.html">影音專區</a></li>
-        <li><a href="/contact.html">聯繫我們</a></li>
-        <li><a href="/booking.html" class="nav-consult-btn">免費諮詢</a></li>
+        <li><a href="/timesheet.html">工時記錄</a></li>
+        <li><a href="/reports.html">報表查詢</a></li>
+        <li id="adminMenuLink" style="display:none;"><a href="/admin.html">系統管理</a></li>
+        <li>
+          <span id="userInfo" style="color: white; padding: 0 15px;">載入中...</span>
+        </li>
+        <li>
+          <a href="#" id="logoutBtn" class="nav-consult-btn" style="cursor: pointer;">登出</a>
+        </li>
       </ul>
     </div>
   </nav>
@@ -746,13 +748,133 @@
   <script>
     const WORKER_URL = 'https://timesheet-api.hergscpa.workers.dev';
     let holidaysCache = null;
+    let currentUser = null;
+    let sessionToken = null;
 
     // 頁面載入時初始化
     document.addEventListener('DOMContentLoaded', async () => {
+      // 檢查登入狀態
+      if (!await checkAuth()) {
+        window.location.href = '/login.html';
+        return;
+      }
+      
       setCurrentMonth();
       await loadEmployees();
       setupEventListeners();
     });
+    
+    // 檢查認證狀態
+    async function checkAuth() {
+      sessionToken = localStorage.getItem('session_token');
+      if (!sessionToken) {
+        return false;
+      }
+      
+      try {
+        const response = await fetch(`${WORKER_URL}/api/verify`, {
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          currentUser = data.user;
+          
+          // 顯示使用者資訊
+          updateUserInfo();
+          return true;
+        }
+      } catch (err) {
+        console.error('驗證失敗:', err);
+      }
+      
+      return false;
+    }
+    
+    // 更新使用者資訊顯示
+    function updateUserInfo() {
+      const userInfoEl = document.getElementById('userInfo');
+      const adminMenuLink = document.getElementById('adminMenuLink');
+      const employeeSelect = document.getElementById('employee');
+      
+      if (currentUser) {
+        const displayName = currentUser.employee_name || currentUser.username;
+        const roleText = currentUser.role === 'admin' ? '管理員' : '員工';
+        userInfoEl.textContent = `${displayName} (${roleText})`;
+        
+        // 如果是管理員，顯示管理選單
+        if (currentUser.role === 'admin') {
+          adminMenuLink.style.display = 'block';
+        }
+        
+        // 如果是員工，只能看自己的資料
+        if (currentUser.role === 'employee' && currentUser.employee_name) {
+          // 員工載入後自動選擇自己
+          setTimeout(() => {
+            if (employeeSelect && employeeSelect.options.length > 0) {
+              employeeSelect.value = currentUser.employee_name;
+              // 觸發載入
+              loadTimesheetData();
+            }
+          }, 100);
+        }
+      }
+    }
+    
+    // 登出功能
+    document.addEventListener('DOMContentLoaded', () => {
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          
+          try {
+            await apiRequest(`${WORKER_URL}/api/logout`, {
+              method: 'POST'
+            });
+          } catch (err) {
+            console.error('登出錯誤:', err);
+          }
+          
+          // 清除本地資料
+          localStorage.removeItem('session_token');
+          localStorage.removeItem('user_info');
+          
+          // 跳轉到登入頁
+          window.location.href = '/login.html';
+        });
+      }
+    });
+    
+    // API 請求包裝函數（自動加入認證標頭）
+    async function apiRequest(url, options = {}) {
+      const headers = {
+        ...options.headers,
+        'Authorization': `Bearer ${sessionToken}`
+      };
+      
+      if (options.body && typeof options.body === 'object') {
+        headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(options.body);
+      }
+      
+      const response = await fetch(url, {
+        ...options,
+        headers
+      });
+      
+      // 如果未授權，跳轉到登入頁面
+      if (response.status === 401) {
+        localStorage.removeItem('session_token');
+        localStorage.removeItem('user_info');
+        window.location.href = '/login.html';
+        return null;
+      }
+      
+      return response;
+    }
 
     // 設定事件監聽器
     function setupEventListeners() {
@@ -771,7 +893,8 @@
       const employeeSelect = document.getElementById('employee');
       
       try {
-        const res = await fetch(`${WORKER_URL}/api/employees`);
+        const res = await apiRequest(`${WORKER_URL}/api/employees`);
+        if (!res) return;
         const employees = await res.json();
 
         if (!res.ok || !Array.isArray(employees)) {
@@ -823,7 +946,8 @@
     // 載入國定假日
     async function loadHolidays(year) {
       try {
-        const res = await fetch(`${WORKER_URL}/api/holidays?year=${year}`);
+        const res = await apiRequest(`${WORKER_URL}/api/holidays?year=${year}`);
+        if (!res) return [];
         const holidays = await res.json();
         holidaysCache = holidays || [];
         return holidaysCache;
@@ -880,7 +1004,8 @@
       try {
         // 載入假日和工時資料
         await loadHolidays(year);
-        const res = await fetch(`${WORKER_URL}/api/timesheet-data?employee=${encodeURIComponent(emp)}&year=${year}&month=${month}`);
+        const res = await apiRequest(`${WORKER_URL}/api/timesheet-data?employee=${encodeURIComponent(emp)}&year=${year}&month=${month}`);
+        if (!res) return;
         const data = await res.json();
 
         showLoading(false);
