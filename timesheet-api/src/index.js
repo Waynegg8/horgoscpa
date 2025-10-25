@@ -1,6 +1,6 @@
-/* * 修正版：Cloudflare Worker 兼容 D1 回傳格式
- * 修正錯誤：Cannot read properties of undefined (reading 'forEach')
- * 新增：使用者認證和權限管理
+/* * 修正?��?Cloudflare Worker ?�容 D1 ?�傳?��?
+ * 修正?�誤：Cannot read properties of undefined (reading 'forEach')
+ * ?��?：使?�者�?證�?權�?管�?
  */
 
 import {
@@ -80,6 +80,20 @@ import {
   getPublicResources
 } from './cms.js';
 
+// 添�? CORS headers ?��???
+async function addCorsHeaders(response) {
+  const newHeaders = new Headers(response.headers);
+  newHeaders.set("Access-Control-Allow-Origin", "*");
+  newHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  newHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders
+  });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -91,25 +105,25 @@ export default {
 
     try {
       // ----------------------------------------------------
-      // 認證相關 API
+      // 認�??��? API
       // ----------------------------------------------------
       
-      // 登入
+      // ?�入
       if (url.pathname === "/api/login" && method === "POST") {
         return await handleLogin(env.DB, request);
       }
       
-      // 登出
+      // ?�出
       if (url.pathname === "/api/logout" && method === "POST") {
         return await handleLogout(env.DB, request);
       }
       
-      // 驗證當前 session
+      // 驗�??��? session
       if (url.pathname === "/api/verify" && method === "GET") {
         return await handleVerifySession(env.DB, request);
       }
       
-      // 驗證當前 session (別名)
+      // 驗�??��? session (?��?)
       if (url.pathname === "/api/auth/me" && method === "GET") {
         return await handleVerifySession(env.DB, request);
       }
@@ -119,24 +133,24 @@ export default {
         return await handleChangePassword(env.DB, request);
       }
       
-      // 修改密碼 (別名)
+      // 修改密碼 (?��?)
       if (url.pathname === "/api/auth/change-password" && method === "POST") {
         return await handleChangePassword(env.DB, request);
       }
       
-      // 管理員重設用戶密碼
+      // 管�??��?設用?��?�?
       if (url.pathname.match(/^\/api\/admin\/users\/[^\/]+\/reset-password$/) && method === "POST") {
         const username = decodeURIComponent(url.pathname.split("/")[4]);
         return await handleAdminResetPassword(env.DB, request, username);
       }
       
-      // 登出 (別名)
+      // ?�出 (?��?)
       if (url.pathname === "/api/auth/logout" && method === "POST") {
         return await handleLogout(env.DB, request);
       }
 
       // ----------------------------------------------------
-      // 資料 API（需要認證）
+      // 資�? API（�?要�?證�?
       // ----------------------------------------------------
       if (url.pathname === "/api/employees" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
@@ -169,19 +183,19 @@ export default {
         return await handleGetTimesheetData(env.DB, url.searchParams, auth.user);
       }
 
-      // 讀取工時類型
+      // 讀?�工?��???
       if (url.pathname === "/api/work-types" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
         const workTypes = [
-          "正常工時", "平日加班(1.34)", "平日加班(1.67)", "休息日加班(1.34)",
-          "休息日加班(1.67)", "休息日加班(2.67)", "本月例假日加班", "本月例假日加班(2)",
-          "本月國定假日加班", "本月國定假日加班(1.34)", "本月國定假日加班(1.67)"
+          "�?��工�?", "平日?�班(1.34)", "平日?�班(1.67)", "休息?��???1.34)",
+          "休息?��???1.67)", "休息?��???2.67)", "?��?例�??��???, "?��?例�??��???2)",
+          "?��??��??�日?�班", "?��??��??�日?�班(1.34)", "?��??��??�日?�班(1.67)"
         ];
         return jsonResponse(workTypes);
       }
 
-      // 寫入工時資料
+      // 寫入工�?資�?
       if (url.pathname === "/api/save-timesheet" && method === "POST") {
         const auth = await requireAuth(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
@@ -189,7 +203,7 @@ export default {
         return await handleSaveTimesheet(env.DB, payload, auth.user);
       }
       
-      // 管理員專用 API
+      // 管�??��???API
       if (url.pathname === "/api/admin/users" && method === "GET") {
         const auth = await requireAdmin(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
@@ -218,18 +232,18 @@ export default {
       }
 
       // ========================================
-      // 客戶管理 CRUD (所有員工可用)
+      // 客戶管�? CRUD (?�?�員工可??
       // ========================================
       if (url.pathname === "/api/clients" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
         
-        // 如果有 employee 參數，返回該員工的客戶列表（用於工時表）
+        // 如�???employee ?�數，�??�該?�工?�客?��?表�??�於工�?表�?
         if (url.searchParams.has('employee')) {
           return await handleGetClients(env.DB, url.searchParams, auth.user);
         }
         
-        // 否則返回所有客戶（用於設定頁面）
+        // ?��?返�??�?�客?��??�於設�??�面�?
         return await handleGetAllClients(env.DB);
       }
       
@@ -256,235 +270,235 @@ export default {
       }
 
       // ========================================
-      // 客戶擴展資料 API (需認證)
+      // 客戶?��?資�? API (?�認�?)
       // ========================================
       
-      // 獲取所有客戶詳細資料
+      // ?��??�?�客?�詳細�???
       if (url.pathname === "/api/clients/extended" && method === "GET") {
-        return await getClientsExtended(request, env);
+        return await addCorsHeaders(await getClientsExtended(request, env));
       }
       
-      // 獲取單一客戶詳細資料
+      // ?��??��?客戶詳細資�?
       if (url.pathname.match(/^\/api\/clients\/[^\/]+\/extended$/) && method === "GET") {
         const clientName = decodeURIComponent(url.pathname.split("/")[3]);
-        return await getClientExtended(request, env, clientName);
+        return await addCorsHeaders(await getClientExtended(request, env, clientName));
       }
       
-      // 創建或更新客戶詳細資料
+      // ?�建?�更?�客?�詳細�???
       if (url.pathname.match(/^\/api\/clients\/[^\/]+\/extended$/) && (method === "POST" || method === "PUT")) {
         const clientName = decodeURIComponent(url.pathname.split("/")[3]);
-        return await upsertClientExtended(request, env, clientName);
+        return await addCorsHeaders(await upsertClientExtended(request, env, clientName));
       }
       
-      // 服務排程管理
+      // ?��??��?管�?
       if (url.pathname === "/api/service-schedule" && method === "GET") {
-        return await getServiceSchedule(request, env);
+        return await addCorsHeaders(await getServiceSchedule(request, env));
       }
       
       if (url.pathname === "/api/service-schedule" && method === "POST") {
-        return await createServiceSchedule(request, env);
+        return await addCorsHeaders(await createServiceSchedule(request, env));
       }
       
       if (url.pathname.match(/^\/api\/service-schedule\/\d+$/) && method === "PUT") {
         const scheduleId = url.pathname.split("/")[3];
-        return await updateServiceSchedule(request, env, scheduleId);
+        return await addCorsHeaders(await updateServiceSchedule(request, env, scheduleId));
       }
       
       if (url.pathname.match(/^\/api\/service-schedule\/\d+$/) && method === "DELETE") {
         const scheduleId = url.pathname.split("/")[3];
-        return await deleteServiceSchedule(request, env, scheduleId);
+        return await addCorsHeaders(await deleteServiceSchedule(request, env, scheduleId));
       }
       
-      // 客戶互動記錄
+      // 客戶互�?記�?
       if (url.pathname === "/api/client-interactions" && method === "GET") {
-        return await getClientInteractions(request, env);
+        return await addCorsHeaders(await getClientInteractions(request, env);
       }
       
       if (url.pathname === "/api/client-interactions" && method === "POST") {
-        return await createClientInteraction(request, env);
+        return await addCorsHeaders(await createClientInteraction(request, env));
       }
       
       if (url.pathname.match(/^\/api\/client-interactions\/\d+$/) && method === "PUT") {
         const interactionId = url.pathname.split("/")[3];
-        return await updateClientInteraction(request, env, interactionId);
+        return await addCorsHeaders(await updateClientInteraction(request, env, interactionId));
       }
       
       if (url.pathname.match(/^\/api\/client-interactions\/\d+$/) && method === "DELETE") {
         const interactionId = url.pathname.split("/")[3];
-        return await deleteClientInteraction(request, env, interactionId);
+        return await addCorsHeaders(await deleteClientInteraction(request, env, interactionId));
       }
       
-      // CSV 匯入
+      // CSV ?�入
       if (url.pathname === "/api/import/clients" && method === "POST") {
         return await importClients(request, env);
       }
 
       // ========================================
-      // SOP 文件管理 API (需認證)
+      // SOP ?�件管�? API (?�認�?)
       // ========================================
       
-      // SOP 分類
+      // SOP ?��?
       if (url.pathname === "/api/sop/categories" && method === "GET") {
-        return await getSopCategories(request, env);
+        return await addCorsHeaders(await getSopCategories(request, env));
       }
       
       if (url.pathname === "/api/sop/categories" && method === "POST") {
-        return await createSopCategory(request, env);
+        return await addCorsHeaders(await createSopCategory(request, env));
       }
       
-      // SOP 文檔
+      // SOP ?��?
       if (url.pathname === "/api/sops" && method === "GET") {
-        return await getSops(request, env);
+        return await addCorsHeaders(await getSops(request, env));
       }
       
       if (url.pathname.match(/^\/api\/sops\/\d+$/) && method === "GET") {
         const sopId = url.pathname.split("/")[3];
-        return await getSop(request, env, sopId);
+        return await addCorsHeaders(await getSop(request, env, sopId));
       }
       
       if (url.pathname === "/api/sops" && method === "POST") {
-        return await createSop(request, env);
+        return await addCorsHeaders(await createSop(request, env));
       }
       
       if (url.pathname.match(/^\/api\/sops\/\d+$/) && method === "PUT") {
         const sopId = url.pathname.split("/")[3];
-        return await updateSop(request, env, sopId);
+        return await addCorsHeaders(await updateSop(request, env, sopId));
       }
       
       if (url.pathname.match(/^\/api\/sops\/\d+$/) && method === "DELETE") {
         const sopId = url.pathname.split("/")[3];
-        return await deleteSop(request, env, sopId);
+        return await addCorsHeaders(await deleteSop(request, env, sopId));
       }
       
-      // SOP 版本歷史
+      // SOP ?�本歷史
       if (url.pathname.match(/^\/api\/sops\/\d+\/versions$/) && method === "GET") {
         const sopId = url.pathname.split("/")[3];
-        return await getSopVersions(request, env, sopId);
+        return await addCorsHeaders(await getSopVersions(request, env, sopId));
       }
       
-      // SOP 搜尋
+      // SOP ?��?
       if (url.pathname === "/api/sops/search" && method === "GET") {
-        return await searchSops(request, env);
+        return await addCorsHeaders(await searchSops(request, env));
       }
 
       // ========================================
-      // 媒體管理 API (需認證)
+      // 媒�?管�? API (?�認�?)
       // ========================================
       
-      // 上傳圖片
+      // 上傳?��?
       if (url.pathname === "/api/upload/image" && method === "POST") {
         return await uploadImage(request, env);
       }
       
-      // 獲取媒體列表
+      // ?��?媒�??�表
       if (url.pathname === "/api/media" && method === "GET") {
-        return await getMediaList(request, env);
+        return await addCorsHeaders(await getMediaList(request, env));
       }
       
-      // 刪除媒體
+      // ?�除媒�?
       if (url.pathname.match(/^\/api\/media\/\d+$/) && method === "DELETE") {
         const mediaId = url.pathname.split("/")[3];
-        return await deleteMedia(request, env, mediaId);
+        return await addCorsHeaders(await deleteMedia(request, env, mediaId));
       }
 
       // ========================================
-      // 專案與任務管理 API (需認證)
+      // 專�??�任?�管??API (?�認�?)
       // ========================================
       
-      // 專案
+      // 專�?
       if (url.pathname === "/api/projects" && method === "GET") {
-        return await getProjects(request, env);
+        return await addCorsHeaders(await getProjects(request, env));
       }
       
       if (url.pathname.match(/^\/api\/projects\/\d+$/) && method === "GET") {
         const projectId = url.pathname.split("/")[3];
-        return await getProject(request, env, projectId);
+        return await addCorsHeaders(await getProject(request, env, projectId));
       }
       
       if (url.pathname === "/api/projects" && method === "POST") {
-        return await createProject(request, env);
+        return await addCorsHeaders(await createProject(request, env));
       }
       
       if (url.pathname.match(/^\/api\/projects\/\d+$/) && method === "PUT") {
         const projectId = url.pathname.split("/")[3];
-        return await updateProject(request, env, projectId);
+        return await addCorsHeaders(await updateProject(request, env, projectId));
       }
       
       if (url.pathname.match(/^\/api\/projects\/\d+$/) && method === "DELETE") {
         const projectId = url.pathname.split("/")[3];
-        return await deleteProject(request, env, projectId);
+        return await addCorsHeaders(await deleteProject(request, env, projectId));
       }
       
-      // 專案任務
+      // 專�?任�?
       if (url.pathname.match(/^\/api\/projects\/\d+\/tasks$/) && method === "GET") {
         const projectId = url.pathname.split("/")[3];
-        return await getProjectTasks(request, env, projectId);
+        return await addCorsHeaders(await getProjectTasks(request, env, projectId));
       }
       
-      // 任務
+      // 任�?
       if (url.pathname === "/api/tasks" && method === "POST") {
-        return await createTask(request, env);
+        return await addCorsHeaders(await createTask(request, env));
       }
       
       if (url.pathname.match(/^\/api\/tasks\/\d+$/) && method === "PUT") {
         const taskId = url.pathname.split("/")[3];
-        return await updateTask(request, env, taskId);
+        return await addCorsHeaders(await updateTask(request, env, taskId));
       }
       
       if (url.pathname.match(/^\/api\/tasks\/\d+$/) && method === "DELETE") {
         const taskId = url.pathname.split("/")[3];
-        return await deleteTask(request, env, taskId);
+        return await addCorsHeaders(await deleteTask(request, env, taskId));
       }
       
-      // 任務檢核清單
+      // 任�?檢核清單
       if (url.pathname.match(/^\/api\/tasks\/\d+\/checklist$/) && method === "GET") {
         const taskId = url.pathname.split("/")[3];
-        return await getTaskChecklist(request, env, taskId);
+        return await addCorsHeaders(await getTaskChecklist(request, env, taskId));
       }
       
       if (url.pathname === "/api/checklist" && method === "POST") {
-        return await addChecklistItem(request, env);
+        return await addCorsHeaders(await addChecklistItem(request, env));
       }
       
       if (url.pathname.match(/^\/api\/checklist\/\d+$/) && method === "PUT") {
         const itemId = url.pathname.split("/")[3];
-        return await updateChecklistItem(request, env, itemId);
+        return await addCorsHeaders(await updateChecklistItem(request, env, itemId));
       }
 
       // ========================================
-      // CMS - 文章管理 API (需認證)
+      // CMS - ?��?管�? API (?�認�?)
       // ========================================
       
-      // 後台文章管理
+      // 後台?��?管�?
       if (url.pathname === "/api/posts" && method === "GET") {
-        return await getPosts(request, env);
+        return await addCorsHeaders(await getPosts(request, env));
       }
       
       if (url.pathname === "/api/posts" && method === "POST") {
-        return await createPost(request, env);
+        return await addCorsHeaders(await createPost(request, env));
       }
       
       if (url.pathname.match(/^\/api\/posts\/\d+$/) && method === "PUT") {
         const postId = url.pathname.split("/")[3];
-        return await updatePost(request, env, postId);
+        return await addCorsHeaders(await updatePost(request, env, postId));
       }
       
-      // 前台公開 API（無需認證）
+      // ?�台?��? API（無?�認�?�?
       if (url.pathname === "/api/public/posts" && method === "GET") {
-        return await getPublicPosts(request, env);
+        return await addCorsHeaders(await getPublicPosts(request, env));
       }
       
       if (url.pathname.match(/^\/api\/public\/posts\/[^\/]+$/) && method === "GET") {
         const slug = decodeURIComponent(url.pathname.split("/")[4]);
-        return await getPublicPost(request, env, slug);
+        return await addCorsHeaders(await getPublicPost(request, env, slug));
       }
       
       if (url.pathname === "/api/public/resources" && method === "GET") {
-        return await getPublicResources(request, env);
+        return await addCorsHeaders(await getPublicResources(request, env));
       }
 
       // ========================================
-      // 客戶指派 CRUD (所有員工可用)
+      // 客戶?�派 CRUD (?�?�員工可??
       // ========================================
       if (url.pathname === "/api/assignments" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
@@ -507,7 +521,7 @@ export default {
       }
 
       // ========================================
-      // 業務類型 CRUD (所有員工可用)
+      // 業�?類�? CRUD (?�?�員工可??
       // ========================================
       if (url.pathname === "/api/business-types" && method === "POST") {
         const auth = await requireAuth(env.DB, request);
@@ -532,7 +546,7 @@ export default {
       }
 
       // ========================================
-      // 假期事件 CRUD (所有員工可用)
+      // ?��?事件 CRUD (?�?�員工可??
       // ========================================
       if (url.pathname === "/api/leave-events" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
@@ -563,7 +577,7 @@ export default {
       }
 
       // ========================================
-      // 國定假日 CRUD (所有員工可用)
+      // ?��??�日 CRUD (?�?�員工可??
       // ========================================
       if (url.pathname === "/api/holidays" && method === "POST") {
         const auth = await requireAuth(env.DB, request);
@@ -588,7 +602,7 @@ export default {
       }
 
       // ========================================
-      // 假別類型 CRUD (僅管理員)
+      // ?�別類�? CRUD (?�管?�員)
       // ========================================
       if (url.pathname === "/api/admin/leave-types" && method === "POST") {
         const auth = await requireAdmin(env.DB, request);
@@ -613,7 +627,7 @@ export default {
       }
 
       // ========================================
-      // 系統參數 (僅管理員)
+      // 系統?�數 (?�管?�員)
       // ========================================
       if (url.pathname === "/api/admin/system-params" && method === "GET") {
         const auth = await requireAdmin(env.DB, request);
@@ -629,7 +643,7 @@ export default {
       }
 
       // ========================================
-      // 員工管理 CRUD (僅管理員)
+      // ?�工管�? CRUD (?�管?�員)
       // ========================================
       if (url.pathname === "/api/admin/employees" && method === "GET") {
         const auth = await requireAdmin(env.DB, request);
@@ -660,7 +674,7 @@ export default {
       }
       
       // ========================================
-      // 用戶管理 CRUD (僅管理員)
+      // ?�戶管�? CRUD (?�管?�員)
       // ========================================
       if (url.pathname.startsWith("/api/admin/users/") && method === "PUT") {
         const auth = await requireAdmin(env.DB, request);
@@ -678,7 +692,7 @@ export default {
       }
 
       // ========================================
-      // 報表 API（優化版，含快取）
+      // ?�表 API（優?��?，含快�?�?
       // ========================================
       if (url.pathname === "/api/reports/annual-leave" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
@@ -698,7 +712,7 @@ export default {
         return await handlePivotReport(env.DB, url.searchParams, auth.user);
       }
 
-      // 快取管理（管理員專用）
+      // 快�?管�?（管?�員專用�?
       if (url.pathname === "/api/admin/cache/clear" && method === "POST") {
         const auth = await requireAdmin(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
@@ -719,7 +733,7 @@ export default {
 };
 
 // =================================================================
-// 工具：統一抓出 rows
+// 工具：統一?�出 rows
 // =================================================================
 function getRows(result) {
   if (!result) return [];
@@ -729,10 +743,10 @@ function getRows(result) {
 }
 
 // =================================================================
-// 其他讀取 API (不需要特殊權限邏輯的)
+// ?��?讀??API (不�?要特殊�??��?輯�?)
 // =================================================================
 
-// 獲取所有客戶（用於設定頁面）
+// ?��??�?�客?��??�於設�??�面�?
 async function handleGetAllClients(db) {
   try {
     const res = await db.prepare(`
@@ -741,7 +755,7 @@ async function handleGetAllClients(db) {
       ORDER BY name
     `).all();
     const rows = getRows(res);
-    // 轉換為前端期望的格式
+    // 轉�??��?端�??��??��?
     return jsonResponse(rows.map((r, index) => ({
       id: index + 1,
       name: r.name,
@@ -752,14 +766,14 @@ async function handleGetAllClients(db) {
   }
 }
 
-// 獲取指定員工的客戶列表（用於工時表）
+// ?��??��??�工?�客?��?表�??�於工�?表�?
 async function handleGetClients(db, params, user) {
   const employee = params.get("employee");
   if (!employee) return jsonResponse({ error: "Missing employee parameter" }, 400);
   
-  // 檢查權限
+  // 檢查權�?
   if (!canAccessEmployee(user, employee)) {
-    return jsonResponse({ error: "無權限存取此員工資料" }, 403);
+    return jsonResponse({ error: "?��??��??�此?�工資�?" }, 403);
   }
   
   const res = await db.prepare(`
@@ -776,7 +790,7 @@ async function handleGetClients(db, params, user) {
 async function handleGetBusinessTypes(db) {
   const res = await db.prepare("SELECT type_name FROM business_types ORDER BY type_name").all();
   const rows = getRows(res);
-  // 轉換為前端期望的格式
+  // 轉�??��?端�??��??��?
   return jsonResponse(rows.map((r, index) => ({
     id: index + 1,
     name: r.type_name
@@ -786,7 +800,7 @@ async function handleGetBusinessTypes(db) {
 async function handleGetLeaveTypes(db) {
   const res = await db.prepare("SELECT type_name FROM leave_types ORDER BY type_name").all();
   const rows = getRows(res);
-  // 轉換為前端期望的格式
+  // 轉�??��?端�??��??��?
   return jsonResponse(rows.map((r, index) => ({
     id: index + 1,
     type_name: r.type_name
@@ -796,7 +810,7 @@ async function handleGetLeaveTypes(db) {
 async function handleGetHolidays(db, params) {
   const year = params.get("year");
   
-  // 如果有年份參數，返回該年份的假日日期列表（用於工時表標示）
+  // 如�??�年份�??��?返�?該年份�??�日?��??�表（用?�工?�表標示�?
   if (year) {
     const res = await db.prepare("SELECT holiday_date FROM holidays WHERE holiday_date LIKE ? ORDER BY holiday_date")
       .bind(`${year}-%`).all();
@@ -804,10 +818,10 @@ async function handleGetHolidays(db, params) {
     return jsonResponse(rows.map(r => r.holiday_date));
   }
   
-  // 否則返回所有假日的完整資料（用於設定頁面）
+  // ?��?返�??�?��??��?完整資�?（用?�設定�??��?
   const res = await db.prepare("SELECT holiday_date, holiday_name FROM holidays ORDER BY holiday_date DESC").all();
   const rows = getRows(res);
-  // 轉換為前端期望的格式（使用 holiday_date 作為 id）
+  // 轉�??��?端�??��??��?（使??holiday_date 作為 id�?
   return jsonResponse(rows.map((r, index) => ({
     id: index + 1,
     holiday_date: r.holiday_date,
@@ -815,18 +829,18 @@ async function handleGetHolidays(db, params) {
   })));
 }
 
-// 依據資料庫規則回傳年度假別配額
+// 依�?資�?庫�??��??�年度�??��?�?
 async function handleGetLeaveQuota(db, params) {
   const employee = params.get('employee');
   const year = parseInt(params.get('year'));
   if (!employee || !year) return jsonResponse({ error: 'Missing parameters' }, 400);
 
-  // 取得員工到職日與性別
+  // ?��??�工?�職?��??�別
   const emp = await db.prepare(`SELECT hire_date, gender FROM employees WHERE name = ?`).bind(employee).first();
   const hireDate = emp?.hire_date || null;
   const gender = emp?.gender || null;
 
-  // 特休規則
+  // ?��?規�?
   const annualRules = await db.prepare(`SELECT seniority_years, leave_days FROM annual_leave_rules ORDER BY seniority_years`).all();
   const annualRows = getRows(annualRules);
 
@@ -835,7 +849,7 @@ async function handleGetLeaveQuota(db, params) {
     const h = new Date(hire);
     const y = year;
     if (h.getFullYear() === y) {
-      // 入職年，滿半年給 3 天
+      // ?�職年�?滿�?年給 3 �?
       const months = 12 - h.getMonth();
       return months >= 6 ? 3 : 0;
     }
@@ -847,11 +861,11 @@ async function handleGetLeaveQuota(db, params) {
     return days;
   }
 
-  // 其他假別規則（病假、事假、生理假、婚假、喪假...）
+  // ?��??�別規�?（�??�、�??�、�??��??��??�、喪??..�?
   const otherRulesRes = await db.prepare(`SELECT leave_type, leave_days, grant_type FROM other_leave_rules`).all();
   const otherRules = getRows(otherRulesRes);
 
-  // 特休結轉
+  // ?��?結�?
   let carryoverHours = 0;
   try {
     const carry = await db.prepare(`SELECT carryover_days FROM annual_leave_carryover WHERE employee_name = ?`).bind(employee).first();
@@ -860,16 +874,16 @@ async function handleGetLeaveQuota(db, params) {
 
   const quota = [];
   const annualDays = computeAnnualDays(hireDate);
-  quota.push({ type: '特休', quota_hours: (annualDays * 8) + carryoverHours });
+  quota.push({ type: '?��?', quota_hours: (annualDays * 8) + carryoverHours });
 
-  // 先加入其他假別配額，並記錄病假年度上限（以小時）
+  // ?��??�其他�??��?額�?並�??��??�年度�??��?以�??��?
   let sickCapHours = 0;
   for (const r of otherRules) {
     let hours = 0;
-    if (r.grant_type === '年度給假') {
+    if (r.grant_type === '年度給�?') {
       hours = (r.leave_days * 8);
-    } else if (r.grant_type === '事件給假') {
-      // 事件給假：需在 leave_events 中出現相符事件才給配額
+    } else if (r.grant_type === '事件給�?') {
+      // 事件給�?：�???leave_events 中出?�相符�?件�?給�?�?
       const eventCount = await db.prepare(`
         SELECT COUNT(*) AS cnt
         FROM leave_events
@@ -879,18 +893,18 @@ async function handleGetLeaveQuota(db, params) {
       hours = hasEvent ? (r.leave_days * 8) : 0;
     }
     quota.push({ type: r.leave_type, quota_hours: hours, grant_type: r.grant_type });
-    if (r.leave_type === '病假') sickCapHours = hours;
+    if (r.leave_type === '?��?') sickCapHours = hours;
   }
 
-  // 生理假規則：女性每月上限 1 天（8 小時），不逐月累積；與病假合併年度上限
-  if (gender && (gender === 'female' || gender === '女' || gender === 'F')) {
+  // ?��??��??��?女性�??��???1 天�?8 小�?）�?不逐�?累�?；�??��??�併年度上�?
+  if (gender && (gender === 'female' || gender === '�? || gender === 'F')) {
     quota.push({ 
-      type: '生理假', 
-      quota_hours: 8,                 // 顯示每月上限值
-      grant_type: '每月上限',
+      type: '?��???, 
+      quota_hours: 8,                 // 顯示每�?上�???
+      grant_type: '每�?上�?',
       per_month_cap_hours: 8,
       non_carryover: true,
-      combined_with: '病假', 
+      combined_with: '?��?', 
       combined_cap_hours: sickCapHours || (30 * 8) 
     });
   }
@@ -899,7 +913,7 @@ async function handleGetLeaveQuota(db, params) {
 }
 
 // =================================================================
-// 加權小時計算
+// ?��?小�?計�?
 // =================================================================
 async function calculateWeightedHours(db, workType, hours) {
   const rateType = getRateTypeFromWorkType(workType);
@@ -932,15 +946,15 @@ async function calculateWeightedHours(db, workType, hours) {
 }
 
 function getRateTypeFromWorkType(wt) {
-  if (wt.includes("平日加班")) return "平日加班";
-  if (wt.includes("休息日加班")) return "休息日加班";
-  if (wt.includes("例假日加班")) return "例假日加班";
-  if (wt.includes("國定假日加班")) return "國定假日加班";
+  if (wt.includes("平日?�班")) return "平日?�班";
+  if (wt.includes("休息?��???)) return "休息?��???;
+  if (wt.includes("例�??��???)) return "例�??��???;
+  if (wt.includes("?��??�日?�班")) return "?��??�日?�班";
   return null;
 }
 
 // =================================================================
-// 聚合 Timesheet Data
+// ?��? Timesheet Data
 // =================================================================
 function aggregateTimesheetData(rows = []) {
   const workMap = new Map();
@@ -978,34 +992,34 @@ function aggregateTimesheetData(rows = []) {
 }
 
 function getWorkTypeFromRow(row) {
-  if (row.hours_normal > 0) return "正常工時";
-  if (row.hours_ot_weekday_134 > 0) return "平日加班(1.34)";
-  if (row.hours_ot_weekday_167 > 0) return "平日加班(1.67)";
-  if (row.hours_ot_rest_134 > 0) return "休息日加班(1.34)";
-  if (row.hours_ot_rest_167 > 0) return "休息日加班(1.67)";
-  if (row.hours_ot_rest_267 > 0) return "休息日加班(2.67)";
-  if (row.hours_ot_offday_100 > 0) return "本月例假日加班";
-  if (row.hours_ot_offday_200 > 0) return "本月例假日加班(2)";
-  if (row.hours_ot_holiday_100 > 0) return "本月國定假日加班";
-  if (row.hours_ot_holiday_134 > 0) return "本月國定假日加班(1.34)";
-  if (row.hours_ot_holiday_167 > 0) return "本月國定假日加班(1.67)";
-  return "正常工時";
+  if (row.hours_normal > 0) return "�?��工�?";
+  if (row.hours_ot_weekday_134 > 0) return "平日?�班(1.34)";
+  if (row.hours_ot_weekday_167 > 0) return "平日?�班(1.67)";
+  if (row.hours_ot_rest_134 > 0) return "休息?��???1.34)";
+  if (row.hours_ot_rest_167 > 0) return "休息?��???1.67)";
+  if (row.hours_ot_rest_267 > 0) return "休息?��???2.67)";
+  if (row.hours_ot_offday_100 > 0) return "?��?例�??��???;
+  if (row.hours_ot_offday_200 > 0) return "?��?例�??��???2)";
+  if (row.hours_ot_holiday_100 > 0) return "?��??��??�日?�班";
+  if (row.hours_ot_holiday_134 > 0) return "?��??��??�日?�班(1.34)";
+  if (row.hours_ot_holiday_167 > 0) return "?��??��??�日?�班(1.67)";
+  return "�?��工�?";
 }
 
 // =================================================================
-// 認證相關 Handler
+// 認�??��? Handler
 // =================================================================
 
-// 登入
+// ?�入
 async function handleLogin(db, request) {
   try {
     const { username, password } = await request.json();
     
     if (!username || !password) {
-      return jsonResponse({ error: '請提供使用者名稱和密碼' }, 400);
+      return jsonResponse({ error: '請�?供使?�者�?稱�?密碼' }, 400);
     }
     
-    // 查詢使用者
+    // ?�詢使用??
     const user = await db.prepare(`
       SELECT id, username, password_hash, role, employee_name, is_active
       FROM users
@@ -1013,16 +1027,16 @@ async function handleLogin(db, request) {
     `).bind(username).first();
     
     if (!user) {
-      return jsonResponse({ error: '使用者名稱或密碼錯誤' }, 401);
+      return jsonResponse({ error: '使用?��?稱�?密碼?�誤' }, 401);
     }
     
-    // 驗證密碼
+    // 驗�?密碼
     const isValid = await verifyPassword(password, user.password_hash);
     if (!isValid) {
-      return jsonResponse({ error: '使用者名稱或密碼錯誤' }, 401);
+      return jsonResponse({ error: '使用?��?稱�?密碼?�誤' }, 401);
     }
     
-    // 創建 session
+    // ?�建 session
     const sessionToken = await createSession(db, user.id);
     
     return jsonResponse({
@@ -1040,7 +1054,7 @@ async function handleLogin(db, request) {
   }
 }
 
-// 登出
+// ?�出
 async function handleLogout(db, request) {
   try {
     const sessionToken = getSessionToken(request);
@@ -1053,14 +1067,14 @@ async function handleLogout(db, request) {
   }
 }
 
-// 驗證 session
+// 驗�? session
 async function handleVerifySession(db, request) {
   try {
     const sessionToken = getSessionToken(request);
     const user = await verifySession(db, sessionToken);
     
     if (!user) {
-      return jsonResponse({ error: '未授權' }, 401);
+      return jsonResponse({ error: '?��?�? }, 401);
     }
     
     return jsonResponse({
@@ -1085,46 +1099,46 @@ async function handleChangePassword(db, request) {
     }
     
     const body = await request.json();
-    // 支持兩種命名方式
+    // ?��??�種?��??��?
     const oldPassword = body.old_password || body.currentPassword;
     const newPassword = body.new_password || body.newPassword;
     
     if (!oldPassword || !newPassword) {
-      return jsonResponse({ error: '請提供目前密碼和新密碼' }, 400);
+      return jsonResponse({ error: '請�?供目?��?碼�??��?�? }, 400);
     }
     
     if (newPassword.length < 6) {
-      return jsonResponse({ error: '新密碼至少需要 6 個字元' }, 400);
+      return jsonResponse({ error: '?��?碼至少�?�?6 ?��??? }, 400);
     }
     
-    // 驗證舊密碼
+    // 驗�??��?�?
     const user = await db.prepare(`
       SELECT password_hash FROM users WHERE id = ?
     `).bind(auth.user.id).first();
     
     if (!user) {
-      return jsonResponse({ error: '使用者不存在' }, 404);
+      return jsonResponse({ error: '使用?��?存在' }, 404);
     }
     
     const isValid = await verifyPassword(oldPassword, user.password_hash);
     if (!isValid) {
-      return jsonResponse({ error: '目前密碼錯誤' }, 401);
+      return jsonResponse({ error: '?��?密碼?�誤' }, 401);
     }
     
-    // 更新密碼
+    // ?�新密碼
     const newHash = await hashPassword(newPassword);
     await db.prepare(`
       UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
     `).bind(newHash, auth.user.id).run();
     
-    return jsonResponse({ success: true, message: '密碼已成功更新' });
+    return jsonResponse({ success: true, message: '密碼已�??�更?? });
   } catch (err) {
     console.error('Change password error:', err);
-    return jsonResponse({ error: err.message || '密碼更新失敗' }, 500);
+    return jsonResponse({ error: err.message || '密碼?�新失�?' }, 500);
   }
 }
 
-// 管理員重設用戶密碼
+// 管�??��?設用?��?�?
 async function handleAdminResetPassword(db, request, username) {
   try {
     const auth = await requireAdmin(db, request);
@@ -1136,36 +1150,36 @@ async function handleAdminResetPassword(db, request, username) {
     const newPassword = body.new_password || body.newPassword;
     
     if (!newPassword) {
-      return jsonResponse({ error: '請提供新密碼' }, 400);
+      return jsonResponse({ error: '請�?供新密碼' }, 400);
     }
     
     if (newPassword.length < 6) {
-      return jsonResponse({ error: '新密碼至少需要 6 個字元' }, 400);
+      return jsonResponse({ error: '?��?碼至少�?�?6 ?��??? }, 400);
     }
     
-    // 檢查用戶是否存在
+    // 檢查?�戶?�否存在
     const user = await db.prepare(`
       SELECT id FROM users WHERE username = ?
     `).bind(username).first();
     
     if (!user) {
-      return jsonResponse({ error: '使用者不存在' }, 404);
+      return jsonResponse({ error: '使用?��?存在' }, 404);
     }
     
-    // 更新密碼
+    // ?�新密碼
     const newHash = await hashPassword(newPassword);
     await db.prepare(`
       UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?
     `).bind(newHash, username).run();
     
-    return jsonResponse({ success: true, message: `已成功重設 ${username} 的密碼` });
+    return jsonResponse({ success: true, message: `已�??��?�?${username} ?��?碼` });
   } catch (err) {
     console.error('Admin reset password error:', err);
-    return jsonResponse({ error: err.message || '密碼重設失敗' }, 500);
+    return jsonResponse({ error: err.message || '密碼?�設失�?' }, 500);
   }
 }
 
-// 取得所有使用者（管理員）
+// ?��??�?�使?�者�?管�??��?
 async function handleGetUsers(db) {
   try {
     const res = await db.prepare(`
@@ -1180,13 +1194,13 @@ async function handleGetUsers(db) {
   }
 }
 
-// 創建使用者（管理員）
+// ?�建使用?��?管�??��?
 async function handleCreateUser(db, payload) {
   try {
     const { username, password, role, employee_name } = payload;
     
     if (!username || !password || !role) {
-      return jsonResponse({ error: '請提供完整資訊' }, 400);
+      return jsonResponse({ error: '請�?供�??��?�? }, 400);
     }
     
     const passwordHash = await hashPassword(password);
@@ -1202,13 +1216,13 @@ async function handleCreateUser(db, payload) {
   }
 }
 
-// 創建客戶（管理員）
+// ?�建客戶（管?�員�?
 async function handleCreateClient(db, payload) {
   try {
     const { name } = payload;
     
     if (!name) {
-      return jsonResponse({ error: '請提供客戶名稱' }, 400);
+      return jsonResponse({ error: '請�?供客?��?�? }, 400);
     }
     
     await db.prepare(`
@@ -1221,13 +1235,13 @@ async function handleCreateClient(db, payload) {
   }
 }
 
-// 創建員工客戶對應（管理員）
+// ?�建?�工客戶對�?（管?�員�?
 async function handleCreateAssignment(db, payload) {
   try {
     const { employee_name, client_name } = payload;
     
     if (!employee_name || !client_name) {
-      return jsonResponse({ error: '請提供完整資訊' }, 400);
+      return jsonResponse({ error: '請�?供�??��?�? }, 400);
     }
     
     await db.prepare(`
@@ -1242,15 +1256,15 @@ async function handleCreateAssignment(db, payload) {
 }
 
 // =================================================================
-// 修改現有 Handler 以支援權限檢查
+// 修改?��? Handler 以支?��??�檢??
 // =================================================================
 
-// 修改 handleGetEmployees 以支援權限
+// 修改 handleGetEmployees 以支?��???
 async function handleGetEmployees(db, user) {
-  // 員工只能看到自己
+  // ?�工?�能?�到?�己
   if (user.role === 'employee') {
     if (!user.employee_name) {
-      return jsonResponse({ error: '無權限' }, 403);
+      return jsonResponse({ error: '?��??? }, 403);
     }
     const res = await db.prepare(
       "SELECT name, hire_date, gender FROM employees WHERE name = ?"
@@ -1259,13 +1273,13 @@ async function handleGetEmployees(db, user) {
     return jsonResponse(rows);
   }
   
-  // 管理員可以看全部
+  // 管�??�可以�??�部
   const res = await db.prepare("SELECT name, hire_date, gender FROM employees ORDER BY name").all();
   const rows = getRows(res);
   return jsonResponse(rows);
 }
 
-// 修改 handleGetTimesheetData 以支援權限
+// 修改 handleGetTimesheetData 以支?��???
 async function handleGetTimesheetData(db, params, user) {
   const employee = params.get("employee");
   const year = params.get("year");
@@ -1275,9 +1289,9 @@ async function handleGetTimesheetData(db, params, user) {
     return jsonResponse({ error: "Missing parameters" }, 400);
   }
   
-  // 檢查權限
+  // 檢查權�?
   if (!canAccessEmployee(user, employee)) {
-    return jsonResponse({ error: "無權限存取此員工資料" }, 403);
+    return jsonResponse({ error: "?��??��??�此?�工資�?" }, 403);
   }
   
   const res = await db.prepare(`
@@ -1291,13 +1305,13 @@ async function handleGetTimesheetData(db, params, user) {
   return jsonResponse(aggregateTimesheetData(rows));
 }
 
-// 修改 handleSaveTimesheet 以支援權限
+// 修改 handleSaveTimesheet 以支?��???
 async function handleSaveTimesheet(db, payload, user) {
   const { employee, year, month, workEntries = [], leaveEntries = [] } = payload;
   
-  // 檢查權限
+  // 檢查權�?
   if (!canAccessEmployee(user, employee)) {
-    return jsonResponse({ error: "無權限修改此員工資料" }, 403);
+    return jsonResponse({ error: "?��??�修?�此?�工資�?" }, 403);
   }
   
   try {
@@ -1321,17 +1335,17 @@ async function handleSaveTimesheet(db, payload, user) {
           };
 
           const match = {
-            "正常工時": "hours_normal",
-            "平日加班(1.34)": "hours_ot_weekday_134",
-            "平日加班(1.67)": "hours_ot_weekday_167",
-            "休息日加班(1.34)": "hours_ot_rest_134",
-            "休息日加班(1.67)": "hours_ot_rest_167",
-            "休息日加班(2.67)": "hours_ot_rest_267",
-            "本月例假日加班": "hours_ot_offday_100",
-            "本月例假日加班(2)": "hours_ot_offday_200",
-            "本月國定假日加班": "hours_ot_holiday_100",
-            "本月國定假日加班(1.34)": "hours_ot_holiday_134",
-            "本月國定假日加班(1.67)": "hours_ot_holiday_167",
+            "�?��工�?": "hours_normal",
+            "平日?�班(1.34)": "hours_ot_weekday_134",
+            "平日?�班(1.67)": "hours_ot_weekday_167",
+            "休息?��???1.34)": "hours_ot_rest_134",
+            "休息?��???1.67)": "hours_ot_rest_167",
+            "休息?��???2.67)": "hours_ot_rest_267",
+            "?��?例�??��???: "hours_ot_offday_100",
+            "?��?例�??��???2)": "hours_ot_offday_200",
+            "?��??��??�日?�班": "hours_ot_holiday_100",
+            "?��??��??�日?�班(1.34)": "hours_ot_holiday_134",
+            "?��??��??�日?�班(1.67)": "hours_ot_holiday_167",
           };
           if (match[workType]) col[match[workType]] = hours;
 
@@ -1380,34 +1394,34 @@ async function handleSaveTimesheet(db, payload, user) {
 }
 
 // =================================================================
-// 客戶管理 CRUD
+// 客戶管�? CRUD
 // =================================================================
 async function handleUpdateClient(db, oldName, payload) {
   try {
     const { name } = payload;
     if (!name) {
-      return jsonResponse({ error: '客戶名稱為必填' }, 400);
+      return jsonResponse({ error: '客戶?�稱?��?�? }, 400);
     }
 
-    // 因為 name 是主鍵，需要更新所有關聯表
+    // ?�為 name ?�主?��??�要更?��??��??�表
     const res = await db.prepare(`
       UPDATE clients SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE name = ?
     `).bind(name, oldName).run();
 
-    // 如果沒有任何列被更新，代表舊名稱不存在或未變更
+    // 如�?沒�?任�??�被?�新，代表�??�稱不�??��??��???
     if (!res?.meta || res.meta.changes === 0) {
-      // 再檢查是否實際上名稱未變更（舊名等於新名），如果是則視為成功
+      // ?�檢?�是?�實?��??�稱?��??��??��?等於?��?）�?如�??��?視為?��?
       if (oldName === name) {
-        return jsonResponse({ success: true, message: '客戶已更新' });
+        return jsonResponse({ success: true, message: '客戶已更?? });
       }
-      // 檢查舊名稱是否存在
+      // 檢查?��?稱是?��???
       const exists = await db.prepare(`SELECT 1 FROM clients WHERE name = ?`).bind(oldName).first();
       if (!exists) {
-        return jsonResponse({ error: '找不到要更新的客戶' }, 404);
+        return jsonResponse({ error: '?��??��??�新?�客?? }, 404);
       }
     }
 
-    // 更新關聯表（若資料庫未開啟 ON UPDATE CASCADE，手動同步）
+    // ?�新?�聯表�??��??�庫?��???ON UPDATE CASCADE，�??��?步�?
     await db.prepare(`
       UPDATE client_assignments SET client_name = ?, updated_at = CURRENT_TIMESTAMP WHERE client_name = ?
     `).bind(name, oldName).run();
@@ -1415,10 +1429,10 @@ async function handleUpdateClient(db, oldName, payload) {
       UPDATE timesheets SET client_name = ? WHERE client_name = ?
     `).bind(name, oldName).run();
 
-    return jsonResponse({ success: true, message: '客戶已更新' });
+    return jsonResponse({ success: true, message: '客戶已更?? });
   } catch (err) {
     if (err.message && err.message.includes('UNIQUE')) {
-      return jsonResponse({ error: '此客戶名稱已存在' }, 400);
+      return jsonResponse({ error: '此客?��?稱已存在' }, 400);
     }
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1426,24 +1440,24 @@ async function handleUpdateClient(db, oldName, payload) {
 
 async function handleDeleteClient(db, clientName) {
   try {
-    // 檢查是否有關聯的客戶指派
+    // 檢查?�否?��??��?客戶?�派
     const assignments = await db.prepare(`
       SELECT COUNT(*) as count FROM client_assignments WHERE client_name = ?
     `).bind(clientName).first();
 
     if (assignments && assignments.count > 0) {
-      return jsonResponse({ error: '無法刪除：此客戶仍有指派記錄' }, 400);
+      return jsonResponse({ error: '?��??�除：此客戶仍�??�派記�?' }, 400);
     }
 
     await db.prepare(`DELETE FROM clients WHERE name = ?`).bind(clientName).run();
-    return jsonResponse({ success: true, message: '客戶已刪除' });
+    return jsonResponse({ success: true, message: '客戶已刪?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
 }
 
 // =================================================================
-// 客戶指派 CRUD
+// 客戶?�派 CRUD
 // =================================================================
 async function handleGetAssignments(db, searchParams) {
   try {
@@ -1467,7 +1481,7 @@ async function handleGetAssignments(db, searchParams) {
       `;
       const res = await db.prepare(query).bind(employeeName).all();
       const rows = getRows(res);
-      // 轉換為前端期望的格式
+      // 轉�??��?端�??��??��?
       return jsonResponse(rows.map((r, index) => ({
         id: index + 1,
         employee_name: r.employee_name,
@@ -1478,7 +1492,7 @@ async function handleGetAssignments(db, searchParams) {
 
     const res = await db.prepare(query).all();
     const rows = getRows(res);
-    // 轉換為前端期望的格式
+    // 轉�??��?端�??��??��?
     return jsonResponse(rows.map((r, index) => ({
       id: index + 1,
       employee_name: r.employee_name,
@@ -1492,12 +1506,12 @@ async function handleGetAssignments(db, searchParams) {
 
 async function handleDeleteAssignment(db, assignmentId) {
   try {
-    // assignmentId 格式為 "employee_name|client_name"
+    // assignmentId ?��???"employee_name|client_name"
     const decoded = decodeURIComponent(assignmentId.toString());
     const [employeeName, clientName] = decoded.split('|');
     
     if (!employeeName || !clientName) {
-      return jsonResponse({ error: '無效的指派 ID' }, 400);
+      return jsonResponse({ error: '?��??��?�?ID' }, 400);
     }
     
     const res = await db.prepare(`
@@ -1505,27 +1519,27 @@ async function handleDeleteAssignment(db, assignmentId) {
       WHERE employee_name = ? AND client_name = ?
     `).bind(employeeName, clientName).run();
     
-    // D1 失敗時 meta.changes 可能為 0，手動檢查是否仍存在
+    // D1 失�???meta.changes ?�能??0，�??�檢?�是?��?存在
     if (res?.meta?.changes === 0) {
       const check = await db.prepare(`SELECT 1 FROM client_assignments WHERE employee_name = ? AND client_name = ?`)
         .bind(employeeName, clientName).first();
-      if (check) return jsonResponse({ error: '刪除失敗：指派仍存在' }, 400);
+      if (check) return jsonResponse({ error: '?�除失�?：�?派�?存在' }, 400);
     }
     
-    return jsonResponse({ success: true, message: '指派已刪除' });
+    return jsonResponse({ success: true, message: '?�派已刪?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
 }
 
 // =================================================================
-// 業務類型 CRUD
+// 業�?類�? CRUD
 // =================================================================
 async function handleCreateBusinessType(db, payload) {
   try {
     const { name } = payload;
     if (!name) {
-      return jsonResponse({ error: '業務類型名稱為必填' }, 400);
+      return jsonResponse({ error: '業�?類�??�稱?��?�? }, 400);
     }
 
     await db.prepare(`
@@ -1534,11 +1548,11 @@ async function handleCreateBusinessType(db, payload) {
 
     return jsonResponse({ 
       success: true, 
-      message: '業務類型已新增'
+      message: '業�?類�?已新�?
     });
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
-      return jsonResponse({ error: '此業務類型已存在' }, 400);
+      return jsonResponse({ error: '此業?��??�已存在' }, 400);
     }
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1548,14 +1562,14 @@ async function handleUpdateBusinessType(db, oldName, payload) {
   try {
     const { name } = payload;
     if (!name) {
-      return jsonResponse({ error: '業務類型名稱為必填' }, 400);
+      return jsonResponse({ error: '業�?類�??�稱?��?�? }, 400);
     }
 
     await db.prepare(`
       UPDATE business_types SET type_name = ?, updated_at = CURRENT_TIMESTAMP WHERE type_name = ?
     `).bind(name, oldName).run();
 
-    return jsonResponse({ success: true, message: '業務類型已更新' });
+    return jsonResponse({ success: true, message: '業�?類�?已更?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1564,14 +1578,14 @@ async function handleUpdateBusinessType(db, oldName, payload) {
 async function handleDeleteBusinessType(db, typeName) {
   try {
     await db.prepare(`DELETE FROM business_types WHERE type_name = ?`).bind(typeName).run();
-    return jsonResponse({ success: true, message: '業務類型已刪除' });
+    return jsonResponse({ success: true, message: '業�?類�?已刪?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
 }
 
 // =================================================================
-// 假期事件 CRUD
+// ?��?事件 CRUD
 // =================================================================
 async function handleGetLeaveEvents(db, searchParams) {
   try {
@@ -1616,7 +1630,7 @@ async function handleGetLeaveEvents(db, searchParams) {
       : await db.prepare(query).all();
 
     const rows = getRows(res);
-    // 添加 notes 欄位（即使資料庫中沒有）
+    // 添�? notes 欄�?（即使�??�庫中�??��?
     return jsonResponse(rows);
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
@@ -1628,7 +1642,7 @@ async function handleCreateLeaveEvent(db, payload) {
     const { employee_name, event_date, event_type } = payload;
     
     if (!employee_name || !event_date || !event_type) {
-      return jsonResponse({ error: '員工姓名、事件日期和事件類型為必填' }, 400);
+      return jsonResponse({ error: '?�工姓�??��?件日?��?事件類�??��?�? }, 400);
     }
 
     const result = await db.prepare(`
@@ -1638,7 +1652,7 @@ async function handleCreateLeaveEvent(db, payload) {
 
     return jsonResponse({ 
       success: true, 
-      message: '假期事件已新增',
+      message: '?��?事件已新�?,
       id: result.meta.last_row_id 
     });
   } catch (err) {
@@ -1651,7 +1665,7 @@ async function handleUpdateLeaveEvent(db, id, payload) {
     const { employee_name, event_date, event_type } = payload;
     
     if (!employee_name || !event_date || !event_type) {
-      return jsonResponse({ error: '員工姓名、事件日期和事件類型為必填' }, 400);
+      return jsonResponse({ error: '?�工姓�??��?件日?��?事件類�??��?�? }, 400);
     }
 
     await db.prepare(`
@@ -1660,7 +1674,7 @@ async function handleUpdateLeaveEvent(db, id, payload) {
       WHERE id = ?
     `).bind(employee_name, event_date, event_type, id).run();
 
-    return jsonResponse({ success: true, message: '假期事件已更新' });
+    return jsonResponse({ success: true, message: '?��?事件已更?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1669,21 +1683,21 @@ async function handleUpdateLeaveEvent(db, id, payload) {
 async function handleDeleteLeaveEvent(db, id) {
   try {
     await db.prepare(`DELETE FROM leave_events WHERE id = ?`).bind(id).run();
-    return jsonResponse({ success: true, message: '假期事件已刪除' });
+    return jsonResponse({ success: true, message: '?��?事件已刪?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
 }
 
 // =================================================================
-// 國定假日 CRUD
+// ?��??�日 CRUD
 // =================================================================
 async function handleCreateHoliday(db, payload) {
   try {
     const { holiday_date, holiday_name } = payload;
     
     if (!holiday_date || !holiday_name) {
-      return jsonResponse({ error: '假日日期和名稱為必填' }, 400);
+      return jsonResponse({ error: '?�日?��??��?稱為必填' }, 400);
     }
 
     await db.prepare(`
@@ -1693,11 +1707,11 @@ async function handleCreateHoliday(db, payload) {
 
     return jsonResponse({ 
       success: true, 
-      message: '國定假日已新增'
+      message: '?��??�日已新�?
     });
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
-      return jsonResponse({ error: '此日期已存在假日' }, 400);
+      return jsonResponse({ error: '此日?�已存在?�日' }, 400);
     }
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1708,17 +1722,17 @@ async function handleUpdateHoliday(db, oldDate, payload) {
     const { holiday_date, holiday_name } = payload;
     
     if (!holiday_date || !holiday_name) {
-      return jsonResponse({ error: '假日日期和名稱為必填' }, 400);
+      return jsonResponse({ error: '?�日?��??��?稱為必填' }, 400);
     }
 
-    // 因為 holiday_date 是主鍵，需要先刪除再插入
+    // ?�為 holiday_date ?�主?��??�要�??�除?��???
     await db.prepare(`DELETE FROM holidays WHERE holiday_date = ?`).bind(oldDate).run();
     await db.prepare(`
       INSERT INTO holidays (holiday_date, holiday_name)
       VALUES (?, ?)
     `).bind(holiday_date, holiday_name).run();
 
-    return jsonResponse({ success: true, message: '國定假日已更新' });
+    return jsonResponse({ success: true, message: '?��??�日已更?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1727,20 +1741,20 @@ async function handleUpdateHoliday(db, oldDate, payload) {
 async function handleDeleteHoliday(db, holidayDate) {
   try {
     await db.prepare(`DELETE FROM holidays WHERE holiday_date = ?`).bind(holidayDate).run();
-    return jsonResponse({ success: true, message: '國定假日已刪除' });
+    return jsonResponse({ success: true, message: '?��??�日已刪?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
 }
 
 // =================================================================
-// 假別類型 CRUD (僅管理員)
+// ?�別類�? CRUD (?�管?�員)
 // =================================================================
 async function handleCreateLeaveType(db, payload) {
   try {
     const { name } = payload;
     if (!name) {
-      return jsonResponse({ error: '假別名稱為必填' }, 400);
+      return jsonResponse({ error: '?�別?�稱?��?�? }, 400);
     }
 
     await db.prepare(`
@@ -1749,11 +1763,11 @@ async function handleCreateLeaveType(db, payload) {
 
     return jsonResponse({ 
       success: true, 
-      message: '假別已新增'
+      message: '?�別已新�?
     });
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
-      return jsonResponse({ error: '此假別已存在' }, 400);
+      return jsonResponse({ error: '此�??�已存在' }, 400);
     }
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1763,14 +1777,14 @@ async function handleUpdateLeaveType(db, oldName, payload) {
   try {
     const { name } = payload;
     if (!name) {
-      return jsonResponse({ error: '假別名稱為必填' }, 400);
+      return jsonResponse({ error: '?�別?�稱?��?�? }, 400);
     }
 
     await db.prepare(`
       UPDATE leave_types SET type_name = ? WHERE type_name = ?
     `).bind(name, oldName).run();
 
-    return jsonResponse({ success: true, message: '假別已更新' });
+    return jsonResponse({ success: true, message: '?�別已更?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1779,14 +1793,14 @@ async function handleUpdateLeaveType(db, oldName, payload) {
 async function handleDeleteLeaveType(db, typeName) {
   try {
     await db.prepare(`DELETE FROM leave_types WHERE type_name = ?`).bind(typeName).run();
-    return jsonResponse({ success: true, message: '假別已刪除' });
+    return jsonResponse({ success: true, message: '?�別已刪?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
 }
 
 // =================================================================
-// 系統參數 CRUD (僅管理員)
+// 系統?�數 CRUD (?�管?�員)
 // =================================================================
 async function handleGetSystemParams(db) {
   try {
@@ -1797,7 +1811,7 @@ async function handleGetSystemParams(db) {
     `).all();
     
     const rows = getRows(res);
-    // 添加 description 欄位（即使資料庫中沒有）
+    // 添�? description 欄�?（即使�??�庫中�??��?
     return jsonResponse(rows.map(r => ({
       param_name: r.param_name,
       param_value: r.param_value,
@@ -1808,13 +1822,13 @@ async function handleGetSystemParams(db) {
   }
 }
 
-// 參數說明對照表
+// ?�數說�?對照�?
 function getParamDescription(paramName) {
   const descriptions = {
-    'max_work_hours': '每日最大工時',
-    'min_work_hours': '每日最小工時',
-    'overtime_threshold': '加班時數門檻',
-    'default_work_hours': '預設工作時數'
+    'max_work_hours': '每日?�大工??,
+    'min_work_hours': '每日?�小工??,
+    'overtime_threshold': '?�班?�數?��?,
+    'default_work_hours': '?�設工�??�數'
   };
   return descriptions[paramName] || '';
 }
@@ -1824,10 +1838,10 @@ async function handleUpdateSystemParams(db, payload) {
     const { params } = payload;
     
     if (!params || !Array.isArray(params)) {
-      return jsonResponse({ error: '參數格式錯誤' }, 400);
+      return jsonResponse({ error: '?�數?��??�誤' }, 400);
     }
 
-    // 批次更新參數
+    // ?�次?�新?�數
     for (const param of params) {
       await db.prepare(`
         UPDATE system_parameters 
@@ -1836,21 +1850,21 @@ async function handleUpdateSystemParams(db, payload) {
       `).bind(param.value, param.name).run();
     }
 
-    return jsonResponse({ success: true, message: '系統參數已更新' });
+    return jsonResponse({ success: true, message: '系統?�數已更?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
 }
 
 // =================================================================
-// 用戶管理 CRUD (僅管理員)
+// ?�戶管�? CRUD (?�管?�員)
 // =================================================================
 async function handleUpdateUser(db, id, payload) {
   try {
     const { username, role, employee_name, is_active } = payload;
     
     if (!username || !role) {
-      return jsonResponse({ error: '使用者名稱和角色為必填' }, 400);
+      return jsonResponse({ error: '使用?��?稱�?角色?��?�? }, 400);
     }
 
     await db.prepare(`
@@ -1859,10 +1873,10 @@ async function handleUpdateUser(db, id, payload) {
       WHERE id = ?
     `).bind(username, role, employee_name || null, is_active ? 1 : 0, id).run();
 
-    return jsonResponse({ success: true, message: '使用者已更新' });
+    return jsonResponse({ success: true, message: '使用?�已?�新' });
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
-      return jsonResponse({ error: '使用者名稱已存在' }, 400);
+      return jsonResponse({ error: '使用?��?稱已存在' }, 400);
     }
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1870,7 +1884,7 @@ async function handleUpdateUser(db, id, payload) {
 
 async function handleDeleteUser(db, id) {
   try {
-    // 檢查是否為唯一的管理員
+    // 檢查?�否?�唯一?�管?�員
     const adminCount = await db.prepare(`
       SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND is_active = 1
     `).first();
@@ -1880,20 +1894,20 @@ async function handleDeleteUser(db, id) {
     `).bind(id).first();
 
     if (user && user.role === 'admin' && adminCount.count <= 1) {
-      return jsonResponse({ error: '無法刪除：至少需要保留一個管理員帳號' }, 400);
+      return jsonResponse({ error: '?��??�除：至少�?要�??��??�管?�員帳�?' }, 400);
     }
 
     await db.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
     await db.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(id).run();
 
-    return jsonResponse({ success: true, message: '使用者已刪除' });
+    return jsonResponse({ success: true, message: '使用?�已?�除' });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
 }
 
 // =================================================================
-// 員工管理 CRUD (僅管理員)
+// ?�工管�? CRUD (?�管?�員)
 // =================================================================
 async function handleGetAllEmployees(db) {
   try {
@@ -1914,7 +1928,7 @@ async function handleCreateEmployee(db, payload) {
     const { name, hire_date, gender } = payload;
     
     if (!name) {
-      return jsonResponse({ error: '員工姓名為必填' }, 400);
+      return jsonResponse({ error: '?�工姓�??��?�? }, 400);
     }
     
     await db.prepare(`
@@ -1922,10 +1936,10 @@ async function handleCreateEmployee(db, payload) {
       VALUES (?, ?, ?)
     `).bind(name, hire_date || null, gender || null).run();
     
-    return jsonResponse({ success: true, message: '員工已新增' });
+    return jsonResponse({ success: true, message: '?�工已新�? });
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
-      return jsonResponse({ error: '此員工姓名已存在' }, 400);
+      return jsonResponse({ error: '此員工�??�已存在' }, 400);
     }
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1936,18 +1950,18 @@ async function handleUpdateEmployee(db, oldName, payload) {
     const { name, hire_date, gender } = payload;
     
     if (!name) {
-      return jsonResponse({ error: '員工姓名為必填' }, 400);
+      return jsonResponse({ error: '?�工姓�??��?�? }, 400);
     }
     
-    // 因為 name 是主鍵，需要更新所有關聯表
+    // ?�為 name ?�主?��??�要更?��??��??�表
     await db.prepare(`
       UPDATE employees SET name = ?, hire_date = ?, gender = ? WHERE name = ?
     `).bind(name, hire_date || null, gender || null, oldName).run();
     
-    return jsonResponse({ success: true, message: '員工已更新' });
+    return jsonResponse({ success: true, message: '?�工已更?? });
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
-      return jsonResponse({ error: '此員工姓名已存在' }, 400);
+      return jsonResponse({ error: '此員工�??�已存在' }, 400);
     }
     return jsonResponse({ error: err.message }, 500);
   }
@@ -1955,26 +1969,26 @@ async function handleUpdateEmployee(db, oldName, payload) {
 
 async function handleDeleteEmployee(db, employeeName) {
   try {
-    // 檢查是否有關聯的客戶指派
+    // 檢查?�否?��??��?客戶?�派
     const assignments = await db.prepare(`
       SELECT COUNT(*) as count FROM client_assignments WHERE employee_name = ?
     `).bind(employeeName).first();
     
     if (assignments && assignments.count > 0) {
-      return jsonResponse({ error: '無法刪除：此員工仍有客戶指派記錄' }, 400);
+      return jsonResponse({ error: '?��??�除：此?�工仍�?客戶?�派記�?' }, 400);
     }
     
-    // 檢查是否有關聯的使用者帳號
+    // 檢查?�否?��??��?使用?�帳??
     const users = await db.prepare(`
       SELECT COUNT(*) as count FROM users WHERE employee_name = ?
     `).bind(employeeName).first();
     
     if (users && users.count > 0) {
-      return jsonResponse({ error: '無法刪除：此員工已綁定使用者帳號' }, 400);
+      return jsonResponse({ error: '?��??�除：此?�工已�?定使?�者帳?? }, 400);
     }
     
     await db.prepare(`DELETE FROM employees WHERE name = ?`).bind(employeeName).run();
-    return jsonResponse({ success: true, message: '員工已刪除' });
+    return jsonResponse({ success: true, message: '?�工已刪?? });
   } catch (err) {
     return jsonResponse({ error: err.message }, 500);
   }
