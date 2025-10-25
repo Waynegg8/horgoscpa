@@ -1226,10 +1226,12 @@ async function showAddUserModal() {
         `;
         
         showModal('新增使用者', content, async () => {
-            const usernameEl = document.getElementById('userName');
-            const passwordEl = document.getElementById('userPassword');
-            const roleEl = document.getElementById('userRole');
-            const employeeEl = document.getElementById('userEmployee');
+            // 僅在彈窗內查找表單元素，避免被頁面上其他同名元素干擾
+            const modal = document.getElementById('dynamicModal');
+            const usernameEl = modal?.querySelector('#userName');
+            const passwordEl = modal?.querySelector('#userPassword');
+            const roleEl = modal?.querySelector('#userRole');
+            const employeeEl = modal?.querySelector('#userEmployee');
             if (!usernameEl || !passwordEl || !roleEl || !employeeEl) {
                 showAlert('表單元素初始化失敗', 'error');
                 return;

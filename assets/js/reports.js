@@ -438,17 +438,17 @@ async function generateLeaveOverview() {
             }
         }
 
-        // 讀取 DB 配額
+        // 讀取 DB 配額（含事假、病假等所有假別）
         let leaveTypes = [
-            { name: '特休', key: '特休', hasQuota: true },
-            { name: '事假', key: '事假', hasQuota: true },
-            { name: '病假', key: '病假', hasQuota: true },
-            { name: '生理假', key: '生理假', hasQuota: true },
-            { name: '婚假', key: '婚假', hasQuota: true },
-            { name: '喪假-直系血親', key: '喪假-直系血親', hasQuota: true },
-            { name: '喪假-祖父母', key: '喪假-祖父母', hasQuota: true },
-            { name: '產假', key: '產假', hasQuota: true },
-            { name: '陪產假', key: '陪產假', hasQuota: true }
+            { name: '特休', key: '特休' },
+            { name: '事假', key: '事假' },
+            { name: '病假', key: '病假' },
+            { name: '生理假', key: '生理假' },
+            { name: '婚假', key: '婚假' },
+            { name: '喪假-直系血親', key: '喪假-直系血親' },
+            { name: '喪假-祖父母', key: '喪假-祖父母' },
+            { name: '產假', key: '產假' },
+            { name: '陪產假', key: '陪產假' },
         ];
         let quotaMap = {};
         try {
@@ -537,9 +537,9 @@ async function generateLeaveOverview() {
                             <tbody>
                                 ${leaveTypes.map(type => {
                                     const used = leaveStats[type.key] || 0;
-                                    if (used === 0 && !type.hasQuota) return '';
-                                    const quota = type.key === '特休' ? annualLeaveHours : 0;
-                                    const remaining = type.key === '特休' ? remainingAnnualLeaveHours : 0;
+                                    // 依據資料庫配額（若無資料則 0），特休優先採用 annualLeaveHours（含結轉）
+                                    const quota = type.key === '特休' ? annualLeaveHours : (quotaMap[type.key] || 0);
+                                    const remaining = Math.max(0, quota - used);
                                     return `
                                         <tr>
                                             <td>${type.name}</td>
@@ -588,6 +588,8 @@ async function generatePivotAnalysis() {
     showLoading('pivotAnalysisResult');
 
     try {
+        // 追蹤各群組的加班類型時數
+        const otByType = {};
         // 並行載入所有員工
         const employees = await apiRequest('/api/employees');
         const months = month ? [parseInt(month)] : [1,2,3,4,5,6,7,8,9,10,11,12];
