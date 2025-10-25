@@ -149,6 +149,19 @@ export default {
       // ========================================
       // 客戶管理 CRUD (所有員工可用)
       // ========================================
+      if (url.pathname === "/api/clients" && method === "GET") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        
+        // 如果有 employee 參數，返回該員工的客戶列表（用於工時表）
+        if (url.searchParams.has('employee')) {
+          return await handleGetClients(env.DB, url.searchParams, auth.user);
+        }
+        
+        // 否則返回所有客戶（用於設定頁面）
+        return await handleGetAllClients(env.DB);
+      }
+      
       if (url.pathname === "/api/clients" && method === "POST") {
         const auth = await requireAuth(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
@@ -355,6 +368,22 @@ function getRows(result) {
 // 其他讀取 API (不需要特殊權限邏輯的)
 // =================================================================
 
+// 獲取所有客戶（用於設定頁面）
+async function handleGetAllClients(db) {
+  try {
+    const res = await db.prepare(`
+      SELECT id, name, created_at
+      FROM clients
+      ORDER BY name
+    `).all();
+    const rows = getRows(res);
+    return jsonResponse(rows);
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+// 獲取指定員工的客戶列表（用於工時表）
 async function handleGetClients(db, params, user) {
   const employee = params.get("employee");
   if (!employee) return jsonResponse({ error: "Missing employee parameter" }, 400);
@@ -376,24 +405,32 @@ async function handleGetClients(db, params, user) {
 }
 
 async function handleGetBusinessTypes(db) {
-  const res = await db.prepare("SELECT type_name FROM business_types ORDER BY type_name").all();
+  const res = await db.prepare("SELECT id, type_name as name, created_at FROM business_types ORDER BY type_name").all();
   const rows = getRows(res);
-  return jsonResponse(rows.map(r => r.type_name));
+  return jsonResponse(rows);
 }
 
 async function handleGetLeaveTypes(db) {
-  const res = await db.prepare("SELECT type_name FROM leave_types ORDER BY type_name").all();
+  const res = await db.prepare("SELECT id, type_name, created_at FROM leave_types ORDER BY type_name").all();
   const rows = getRows(res);
-  return jsonResponse(rows.map(r => r.type_name));
+  return jsonResponse(rows);
 }
 
 async function handleGetHolidays(db, params) {
   const year = params.get("year");
-  if (!year) return jsonResponse({ error: "Missing year parameter" }, 400);
-  const res = await db.prepare("SELECT holiday_date FROM holidays WHERE holiday_date LIKE ? ORDER BY holiday_date")
-    .bind(`${year}-%`).all();
+  
+  // 如果有年份參數，返回該年份的假日日期列表（用於工時表標示）
+  if (year) {
+    const res = await db.prepare("SELECT holiday_date FROM holidays WHERE holiday_date LIKE ? ORDER BY holiday_date")
+      .bind(`${year}-%`).all();
+    const rows = getRows(res);
+    return jsonResponse(rows.map(r => r.holiday_date));
+  }
+  
+  // 否則返回所有假日的完整資料（用於設定頁面）
+  const res = await db.prepare("SELECT id, holiday_date, holiday_name, created_at FROM holidays ORDER BY holiday_date DESC").all();
   const rows = getRows(res);
-  return jsonResponse(rows.map(r => r.holiday_date));
+  return jsonResponse(rows);
 }
 
 // =================================================================

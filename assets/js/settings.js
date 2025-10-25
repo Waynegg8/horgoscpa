@@ -1133,20 +1133,429 @@ async function deleteHoliday(id) {
 }
 
 // =========================================
-// 管理員功能佔位（後續實現）
+// 用戶管理（管理員）
 // =========================================
-function loadUsers() {
-    showEmpty('usersTableContainer', 'people', '功能開發中', '用戶管理功能即將推出');
+async function loadUsers() {
+    showLoading('usersTableContainer');
+    
+    try {
+        const data = await apiRequest('/api/admin/users');
+        currentData.users = data;
+        
+        if (data.length === 0) {
+            showEmpty('usersTableContainer', 'people', '尚無使用者資料', '點擊「新增使用者」按鈕開始');
+            return;
+        }
+        
+        const html = `
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>使用者名稱</th>
+                            <th>角色</th>
+                            <th>員工姓名</th>
+                            <th>狀態</th>
+                            <th>建立時間</th>
+                            <th style="width: 150px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(user => `
+                            <tr>
+                                <td>${user.id}</td>
+                                <td>${user.username}</td>
+                                <td><span class="badge ${user.role === 'admin' ? 'badge-primary' : 'badge-success'}">${user.role === 'admin' ? '管理員' : '員工'}</span></td>
+                                <td>${user.employee_name || '-'}</td>
+                                <td><span class="badge ${user.is_active ? 'badge-success' : 'badge-danger'}">${user.is_active ? '啟用' : '停用'}</span></td>
+                                <td>${new Date(user.created_at).toLocaleString('zh-TW')}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn btn-small btn-secondary" onclick="editUser(${user.id})">
+                                            <span class="material-symbols-outlined">edit</span>
+                                        </button>
+                                        <button class="btn btn-small btn-danger" onclick="deleteUser(${user.id})" ${user.id === currentUser.id ? 'disabled' : ''}>
+                                            <span class="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        document.getElementById('usersTableContainer').innerHTML = html;
+    } catch (error) {
+        showError('usersTableContainer', error.message);
+    }
 }
 
-function loadLeaveTypes() {
-    showEmpty('leaveTypesTableContainer', 'beach_access', '功能開發中', '假別設定功能即將推出');
+async function showAddUserModal() {
+    try {
+        const employees = await apiRequest('/api/employees');
+        
+        const content = `
+            <div class="form-group">
+                <label>使用者名稱 <span class="required">*</span></label>
+                <input type="text" id="userName" placeholder="請輸入使用者名稱" autofocus>
+            </div>
+            <div class="form-group">
+                <label>密碼 <span class="required">*</span></label>
+                <input type="password" id="userPassword" placeholder="至少 6 個字元">
+            </div>
+            <div class="form-group">
+                <label>角色 <span class="required">*</span></label>
+                <select id="userRole">
+                    <option value="employee">員工</option>
+                    <option value="admin">管理員</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>綁定員工</label>
+                <select id="userEmployee">
+                    <option value="">不綁定</option>
+                    ${employees.map(emp => `<option value="${emp.name}">${emp.name}</option>`).join('')}
+                </select>
+            </div>
+        `;
+        
+        showModal('新增使用者', content, async () => {
+            const username = document.getElementById('userName').value.trim();
+            const password = document.getElementById('userPassword').value;
+            const role = document.getElementById('userRole').value;
+            const employee_name = document.getElementById('userEmployee').value || null;
+            
+            if (!username || !password || !role) {
+                showAlert('請填寫所有必填欄位', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showAlert('密碼至少需要 6 個字元', 'error');
+                return;
+            }
+            
+            try {
+                await apiRequest('/api/admin/users', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password, role, employee_name })
+                });
+                
+                closeModal();
+                showAlert('使用者已成功新增');
+                loadUsers();
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        });
+    } catch (error) {
+        showAlert('載入資料失敗', 'error');
+    }
 }
 
-function loadSystemParams() {
-    showEmpty('systemParamsContainer', 'tune', '功能開發中', '系統參數設定功能即將推出');
+async function editUser(id) {
+    const user = currentData.users.find(u => u.id === id);
+    if (!user) return;
+    
+    try {
+        const employees = await apiRequest('/api/employees');
+        
+        const content = `
+            <div class="form-group">
+                <label>使用者名稱 <span class="required">*</span></label>
+                <input type="text" id="userName" value="${user.username}" autofocus>
+            </div>
+            <div class="form-group">
+                <label>角色 <span class="required">*</span></label>
+                <select id="userRole">
+                    <option value="employee" ${user.role === 'employee' ? 'selected' : ''}>員工</option>
+                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>管理員</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>綁定員工</label>
+                <select id="userEmployee">
+                    <option value="">不綁定</option>
+                    ${employees.map(emp => 
+                        `<option value="${emp.name}" ${emp.name === user.employee_name ? 'selected' : ''}>${emp.name}</option>`
+                    ).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>狀態</label>
+                <select id="userActive">
+                    <option value="1" ${user.is_active ? 'selected' : ''}>啟用</option>
+                    <option value="0" ${!user.is_active ? 'selected' : ''}>停用</option>
+                </select>
+            </div>
+        `;
+        
+        showModal('編輯使用者', content, async () => {
+            const username = document.getElementById('userName').value.trim();
+            const role = document.getElementById('userRole').value;
+            const employee_name = document.getElementById('userEmployee').value || null;
+            const is_active = document.getElementById('userActive').value === '1';
+            
+            if (!username || !role) {
+                showAlert('請填寫所有必填欄位', 'error');
+                return;
+            }
+            
+            try {
+                await apiRequest(`/api/admin/users/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ username, role, employee_name, is_active })
+                });
+                
+                closeModal();
+                showAlert('使用者已成功更新');
+                loadUsers();
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        });
+    } catch (error) {
+        showAlert('載入資料失敗', 'error');
+    }
 }
 
-function showAddUserModal() { showAlert('功能開發中', 'info'); }
-function showAddLeaveTypeModal() { showAlert('功能開發中', 'info'); }
+async function deleteUser(id) {
+    const user = currentData.users.find(u => u.id === id);
+    if (!user) return;
+    
+    if (user.id === currentUser.id) {
+        showAlert('無法刪除自己的帳號', 'error');
+        return;
+    }
+    
+    if (!confirm(`確定要刪除使用者「${user.username}」嗎？`)) {
+        return;
+    }
+    
+    try {
+        await apiRequest(`/api/admin/users/${id}`, {
+            method: 'DELETE'
+        });
+        
+        showAlert('使用者已成功刪除');
+        loadUsers();
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
+
+// =========================================
+// 假別設定（管理員）
+// =========================================
+async function loadLeaveTypes() {
+    showLoading('leaveTypesTableContainer');
+    
+    try {
+        const data = await apiRequest('/api/leave-types');
+        currentData.leaveTypes = data;
+        
+        if (data.length === 0) {
+            showEmpty('leaveTypesTableContainer', 'beach_access', '尚無假別資料', '點擊「新增假別」按鈕開始');
+            return;
+        }
+        
+        const html = `
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>假別名稱</th>
+                            <th style="width: 150px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(type => `
+                            <tr>
+                                <td>${type.id}</td>
+                                <td>${type.type_name}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn btn-small btn-secondary" onclick="editLeaveType(${type.id})">
+                                            <span class="material-symbols-outlined">edit</span>
+                                        </button>
+                                        <button class="btn btn-small btn-danger" onclick="deleteLeaveType(${type.id})">
+                                            <span class="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        document.getElementById('leaveTypesTableContainer').innerHTML = html;
+    } catch (error) {
+        showError('leaveTypesTableContainer', error.message);
+    }
+}
+
+function showAddLeaveTypeModal() {
+    const content = `
+        <div class="form-group">
+            <label>假別名稱 <span class="required">*</span></label>
+            <input type="text" id="leaveTypeName" placeholder="例如：特休、病假、事假" autofocus>
+        </div>
+    `;
+    
+    showModal('新增假別', content, async () => {
+        const name = document.getElementById('leaveTypeName').value.trim();
+        if (!name) {
+            showAlert('請輸入假別名稱', 'error');
+            return;
+        }
+        
+        try {
+            await apiRequest('/api/admin/leave-types', {
+                method: 'POST',
+                body: JSON.stringify({ name })
+            });
+            
+            closeModal();
+            showAlert('假別已成功新增');
+            loadLeaveTypes();
+        } catch (error) {
+            showAlert(error.message, 'error');
+        }
+    });
+}
+
+function editLeaveType(id) {
+    const type = currentData.leaveTypes.find(t => t.id === id);
+    if (!type) return;
+    
+    const content = `
+        <div class="form-group">
+            <label>假別名稱 <span class="required">*</span></label>
+            <input type="text" id="leaveTypeName" value="${type.type_name}" autofocus>
+        </div>
+    `;
+    
+    showModal('編輯假別', content, async () => {
+        const name = document.getElementById('leaveTypeName').value.trim();
+        if (!name) {
+            showAlert('請輸入假別名稱', 'error');
+            return;
+        }
+        
+        try {
+            await apiRequest(`/api/admin/leave-types/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ name })
+            });
+            
+            closeModal();
+            showAlert('假別已成功更新');
+            loadLeaveTypes();
+        } catch (error) {
+            showAlert(error.message, 'error');
+        }
+    });
+}
+
+async function deleteLeaveType(id) {
+    const type = currentData.leaveTypes.find(t => t.id === id);
+    if (!type) return;
+    
+    if (!confirm(`確定要刪除假別「${type.type_name}」嗎？`)) {
+        return;
+    }
+    
+    try {
+        await apiRequest(`/api/admin/leave-types/${id}`, {
+            method: 'DELETE'
+        });
+        
+        showAlert('假別已成功刪除');
+        loadLeaveTypes();
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
+
+// =========================================
+// 系統參數（管理員）
+// =========================================
+async function loadSystemParams() {
+    showLoading('systemParamsContainer');
+    
+    try {
+        const data = await apiRequest('/api/admin/system-params');
+        currentData.systemParams = data;
+        
+        if (data.length === 0) {
+            showEmpty('systemParamsContainer', 'tune', '尚無系統參數', '系統參數將由管理員設定');
+            return;
+        }
+        
+        const html = `
+            <div style="max-width: 800px;">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">參數名稱</th>
+                                <th style="width: 30%;">參數值</th>
+                                <th>說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(param => `
+                                <tr>
+                                    <td><strong>${param.param_name}</strong></td>
+                                    <td>
+                                        <input type="text" 
+                                               id="param_${param.param_name}" 
+                                               value="${param.param_value || ''}"
+                                               style="width: 100%; padding: 5px; border: 1px solid var(--border-color); border-radius: 4px;">
+                                    </td>
+                                    <td style="font-size: 13px; color: var(--text-secondary);">${param.description || ''}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-primary" onclick="saveSystemParams()">
+                        <span class="material-symbols-outlined">save</span>
+                        儲存參數
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('systemParamsContainer').innerHTML = html;
+    } catch (error) {
+        showError('systemParamsContainer', error.message);
+    }
+}
+
+async function saveSystemParams() {
+    try {
+        const params = currentData.systemParams.map(param => ({
+            name: param.param_name,
+            value: document.getElementById(`param_${param.param_name}`).value
+        }));
+        
+        await apiRequest('/api/admin/system-params', {
+            method: 'PUT',
+            body: JSON.stringify({ params })
+        });
+        
+        showAlert('系統參數已成功儲存');
+        loadSystemParams();
+    } catch (error) {
+        showAlert(error.message, 'error');
+    }
+}
 

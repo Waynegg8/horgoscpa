@@ -341,11 +341,168 @@
       color: #155724;
     }
     
+    /* 可編輯的儲存格 */
+    .day-cell.editable {
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .day-cell.editable:hover {
+      background: #fff9c4 !important;
+      box-shadow: inset 0 0 0 2px #1b65b8;
+    }
+    
+    .day-cell input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      text-align: center;
+      font-size: inherit;
+      padding: 2px;
+      outline: none;
+    }
+    
+    .day-cell input:focus {
+      background: #fff;
+      box-shadow: inset 0 0 0 2px #1b65b8;
+    }
+    
     /* 請假標示 */
     .leave-cell {
       background: #d1ecf1 !important;
       font-weight: 600;
       color: #0c5460;
+    }
+    
+    /* 刪除按鈕 */
+    .delete-row-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.2s;
+    }
+    
+    .delete-row-btn:hover {
+      background: #c82333;
+    }
+    
+    .delete-row-btn .material-symbols-rounded {
+      font-size: 16px;
+    }
+    
+    /* 對話框 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.show {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .modal-header {
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .modal-header h3 {
+      margin: 0;
+      color: #1b65b8;
+      font-size: 22px;
+    }
+    
+    .modal-body {
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .form-group select,
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    
+    .form-group select:focus,
+    .form-group input:focus {
+      outline: none;
+      border-color: #1b65b8;
+      box-shadow: 0 0 0 3px rgba(27, 101, 184, 0.1);
+    }
+    
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    
+    .btn-cancel {
+      background: #6c757d;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
+    
+    .btn-cancel:hover {
+      background: #5a6268;
+    }
+    
+    .btn-confirm {
+      background: #1b65b8;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
+    
+    .btn-confirm:hover {
+      background: #0f4f94;
     }
     
     .empty-state {
@@ -578,15 +735,15 @@
         </select>
       </div>
 
-      <button class="btn-gray" disabled>
+      <button class="btn-gray" id="addWorkBtn">
         <span class="material-symbols-rounded">add</span>
         增加工時記錄
       </button>
-      <button class="btn-gray" disabled>
+      <button class="btn-gray" id="addLeaveBtn">
         <span class="material-symbols-rounded">event_note</span>
         增加請假記錄
       </button>
-      <button class="btn-success" disabled>
+      <button class="btn-success" id="saveBtn">
         <span class="material-symbols-rounded">save</span>
         儲存本月變更
       </button>
@@ -629,6 +786,60 @@
     </div>
   </div>
 
+  <!-- 增加工時記錄對話框 -->
+  <div id="addWorkModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>增加工時記錄</h3>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>客戶名稱 *</label>
+          <select id="workClient">
+            <option value="">請選擇客戶</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>業務類型 *</label>
+          <select id="workBusinessType">
+            <option value="">請選擇業務類型</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>工時類型 *</label>
+          <select id="workType">
+            <option value="">請選擇工時類型</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="cancelWorkBtn">取消</button>
+        <button class="btn-confirm" id="confirmWorkBtn">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 增加請假記錄對話框 -->
+  <div id="addLeaveModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>增加請假記錄</h3>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>假別 *</label>
+          <select id="leaveType">
+            <option value="">請選擇假別</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="cancelLeaveBtn">取消</button>
+        <button class="btn-confirm" id="confirmLeaveBtn">確定</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 簡化的頁尾 -->
   <footer class="internal-footer">
     &copy; 2024 霍爾果斯會計師事務所 工時管理系統
@@ -660,6 +871,17 @@
     let holidaysCache = null;
     let currentUser = null;
     let sessionToken = null;
+    
+    // 編輯狀態
+    let currentData = {
+      workEntries: [],
+      leaveEntries: []
+    };
+    let clientsCache = [];
+    let businessTypesCache = [];
+    let leaveTypesCache = [];
+    let workTypesCache = [];
+    let hasChanges = false;
 
     // 頁面載入時初始化
     document.addEventListener('DOMContentLoaded', async () => {
@@ -797,6 +1019,25 @@
       employeeSelect.addEventListener('change', loadTimesheetData);
       yearInput.addEventListener('change', loadTimesheetData);
       monthSelect.addEventListener('change', loadTimesheetData);
+      
+      // 按鈕事件
+      document.getElementById('addWorkBtn').addEventListener('click', showAddWorkModal);
+      document.getElementById('addLeaveBtn').addEventListener('click', showAddLeaveModal);
+      document.getElementById('saveBtn').addEventListener('click', saveTimesheet);
+      
+      // 對話框按鈕事件
+      document.getElementById('cancelWorkBtn').addEventListener('click', hideAddWorkModal);
+      document.getElementById('confirmWorkBtn').addEventListener('click', confirmAddWork);
+      document.getElementById('cancelLeaveBtn').addEventListener('click', hideAddLeaveModal);
+      document.getElementById('confirmLeaveBtn').addEventListener('click', confirmAddLeave);
+      
+      // 點擊對話框外部關閉
+      document.getElementById('addWorkModal').addEventListener('click', (e) => {
+        if (e.target.id === 'addWorkModal') hideAddWorkModal();
+      });
+      document.getElementById('addLeaveModal').addEventListener('click', (e) => {
+        if (e.target.id === 'addLeaveModal') hideAddLeaveModal();
+      });
     }
 
     // 載入員工列表
@@ -867,6 +1108,64 @@
         return [];
       }
     }
+    
+    // 載入客戶列表
+    async function loadClients(employee) {
+      try {
+        const res = await apiRequest(`${WORKER_URL}/api/clients?employee=${encodeURIComponent(employee)}`);
+        if (!res) return [];
+        const clients = await res.json();
+        clientsCache = clients || [];
+        return clientsCache;
+      } catch (err) {
+        console.error('載入客戶失敗:', err);
+        return [];
+      }
+    }
+    
+    // 載入業務類型
+    async function loadBusinessTypes() {
+      try {
+        const res = await apiRequest(`${WORKER_URL}/api/business-types`);
+        if (!res) return [];
+        const types = await res.json();
+        // API 現在返回完整對象，需要提取 name 欄位
+        businessTypesCache = types.map(t => t.name || t.type_name || t) || [];
+        return businessTypesCache;
+      } catch (err) {
+        console.error('載入業務類型失敗:', err);
+        return [];
+      }
+    }
+    
+    // 載入請假類型
+    async function loadLeaveTypes() {
+      try {
+        const res = await apiRequest(`${WORKER_URL}/api/leave-types`);
+        if (!res) return [];
+        const types = await res.json();
+        // API 現在返回完整對象，需要提取 type_name 欄位
+        leaveTypesCache = types.map(t => t.type_name || t.name || t) || [];
+        return leaveTypesCache;
+      } catch (err) {
+        console.error('載入請假類型失敗:', err);
+        return [];
+      }
+    }
+    
+    // 載入工時類型
+    async function loadWorkTypes() {
+      try {
+        const res = await apiRequest(`${WORKER_URL}/api/work-types`);
+        if (!res) return [];
+        const types = await res.json();
+        workTypesCache = types || [];
+        return workTypesCache;
+      } catch (err) {
+        console.error('載入工時類型失敗:', err);
+        return [];
+      }
+    }
 
     // 檢查是否為假日
     function isHoliday(dateStr) {
@@ -913,8 +1212,15 @@
       showLoading(true);
 
       try {
-        // 載入假日和工時資料
-        await loadHolidays(year);
+        // 並行載入所有必要資料
+        await Promise.all([
+          loadHolidays(year),
+          loadClients(emp),
+          loadBusinessTypes(),
+          loadLeaveTypes(),
+          loadWorkTypes()
+        ]);
+        
         const res = await apiRequest(`${WORKER_URL}/api/timesheet-data?employee=${encodeURIComponent(emp)}&year=${year}&month=${month}`);
         if (!res) return;
         const data = await res.json();
@@ -930,8 +1236,10 @@
         document.getElementById('monthTitle').textContent = `${year}年${month}月 - ${emp}`;
         monthInfo.style.display = 'flex';
 
-        const workEntries = data.workEntries || [];
-        const leaveEntries = data.leaveEntries || [];
+        // 儲存當前資料
+        currentData.workEntries = data.workEntries || [];
+        currentData.leaveEntries = data.leaveEntries || [];
+        hasChanges = false;
 
         // 計算該月天數
         const daysInMonth = new Date(year, month, 0).getDate();
@@ -940,7 +1248,7 @@
         generateTableHeader(year, month, daysInMonth);
 
         // 生成表格內容
-        generateTableBody(workEntries, leaveEntries, year, month, daysInMonth);
+        generateTableBody(year, month, daysInMonth);
 
       } catch (err) {
         showLoading(false);
@@ -979,16 +1287,17 @@
     }
 
     // 生成表格內容
-    function generateTableBody(workEntries, leaveEntries, year, month, daysInMonth) {
+    function generateTableBody(year, month, daysInMonth) {
       const tableBody = document.getElementById('tableBody');
       
       // 合併工時和請假資料
       const allEntries = [];
       
       // 處理工時資料
-      workEntries.forEach(entry => {
+      currentData.workEntries.forEach((entry, index) => {
         allEntries.push({
           type: 'work',
+          index: index,
           clientName: entry.clientName || '-',
           businessType: entry.businessType || '-',
           workType: entry.workType || '-',
@@ -997,9 +1306,10 @@
       });
 
       // 處理請假資料
-      leaveEntries.forEach(entry => {
+      currentData.leaveEntries.forEach((entry, index) => {
         allEntries.push({
           type: 'leave',
+          index: index,
           clientName: '-',
           businessType: '-',
           workType: entry.leaveType || '-',
@@ -1013,7 +1323,7 @@
           <tr>
             <td colspan="${daysInMonth + 4}" class="empty-state">
               <div class="material-symbols-rounded">event_busy</div>
-              <div>本月尚無工時或請假記錄</div>
+              <div>本月尚無工時或請假記錄，請點選上方按鈕新增</div>
             </td>
           </tr>
         `;
@@ -1025,26 +1335,67 @@
       let totalAllHours = 0;
       tableBody.innerHTML = '';
       
-      allEntries.forEach(entry => {
+      allEntries.forEach((entry, rowIndex) => {
         const tr = document.createElement('tr');
-        let rowHTML = `
-          <td>${entry.clientName}</td>
-          <td>${entry.businessType}</td>
-          <td>${entry.workType}</td>
+        
+        // 第一欄：客戶名稱 + 刪除按鈕
+        const firstCol = document.createElement('td');
+        firstCol.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 5px;">
+            <span>${entry.clientName}</span>
+            <button class="delete-row-btn" onclick="deleteEntry('${entry.type}', ${entry.index})">
+              <span class="material-symbols-rounded">delete</span>
+            </button>
+          </div>
         `;
+        tr.appendChild(firstCol);
+        
+        // 第二欄：業務類型
+        const secondCol = document.createElement('td');
+        secondCol.textContent = entry.businessType;
+        tr.appendChild(secondCol);
+        
+        // 第三欄：工時/假別類型
+        const thirdCol = document.createElement('td');
+        thirdCol.textContent = entry.workType;
+        tr.appendChild(thirdCol);
 
+        // 日期欄位（可編輯）
         let rowTotal = 0;
         for (let day = 1; day <= daysInMonth; day++) {
           const hours = entry.hours[day] || '';
-          const cellClass = hours ? (entry.type === 'leave' ? 'leave-cell' : 'has-value') : '';
-          rowHTML += `<td class="day-cell ${cellClass}">${hours}</td>`;
+          const td = document.createElement('td');
+          td.className = 'day-cell editable';
+          
+          if (hours) {
+            td.classList.add(entry.type === 'leave' ? 'leave-cell' : 'has-value');
+          }
+          
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.min = '0';
+          input.max = '24';
+          input.step = '0.5';
+          input.value = hours;
+          input.placeholder = '';
+          input.addEventListener('input', (e) => {
+            updateCellValue(entry.type, entry.index, day, e.target.value);
+          });
+          
+          td.appendChild(input);
+          tr.appendChild(td);
+          
           if (hours) rowTotal += parseFloat(hours);
         }
 
-        rowHTML += `<td class="total-cell">${rowTotal.toFixed(1)}</td>`;
-        tr.innerHTML = rowHTML;
+        // 月總計欄
+        const totalCol = document.createElement('td');
+        totalCol.className = 'total-cell';
+        totalCol.textContent = rowTotal.toFixed(1);
+        totalCol.id = `total-${entry.type}-${entry.index}`;
+        tr.appendChild(totalCol);
+        
         tableBody.appendChild(tr);
-
         totalAllHours += rowTotal;
       });
 
@@ -1078,6 +1429,303 @@
     function hideMessages() {
       document.getElementById('errorMsg').classList.remove('show');
       document.getElementById('loadingMsg').classList.remove('show');
+    }
+    
+    // 更新儲存格值
+    function updateCellValue(type, index, day, value) {
+      const numValue = value ? parseFloat(value) : 0;
+      
+      if (type === 'work') {
+        if (!currentData.workEntries[index].hours) {
+          currentData.workEntries[index].hours = {};
+        }
+        if (numValue > 0) {
+          currentData.workEntries[index].hours[day] = numValue;
+        } else {
+          delete currentData.workEntries[index].hours[day];
+        }
+      } else if (type === 'leave') {
+        if (!currentData.leaveEntries[index].hours) {
+          currentData.leaveEntries[index].hours = {};
+        }
+        if (numValue > 0) {
+          currentData.leaveEntries[index].hours[day] = numValue;
+        } else {
+          delete currentData.leaveEntries[index].hours[day];
+        }
+      }
+      
+      hasChanges = true;
+      updateRowTotal(type, index);
+      updateGrandTotal();
+    }
+    
+    // 更新單行總計
+    function updateRowTotal(type, index) {
+      const entry = type === 'work' ? currentData.workEntries[index] : currentData.leaveEntries[index];
+      let total = 0;
+      for (const day in entry.hours) {
+        total += entry.hours[day];
+      }
+      const totalEl = document.getElementById(`total-${type}-${index}`);
+      if (totalEl) {
+        totalEl.textContent = total.toFixed(1);
+      }
+    }
+    
+    // 更新總工時
+    function updateGrandTotal() {
+      let total = 0;
+      
+      currentData.workEntries.forEach(entry => {
+        for (const day in entry.hours) {
+          total += entry.hours[day];
+        }
+      });
+      
+      currentData.leaveEntries.forEach(entry => {
+        for (const day in entry.hours) {
+          total += entry.hours[day];
+        }
+      });
+      
+      document.getElementById('totalHours').textContent = total.toFixed(1);
+    }
+    
+    // 刪除條目
+    function deleteEntry(type, index) {
+      if (!confirm('確定要刪除這筆記錄嗎？')) return;
+      
+      if (type === 'work') {
+        currentData.workEntries.splice(index, 1);
+      } else {
+        currentData.leaveEntries.splice(index, 1);
+      }
+      
+      hasChanges = true;
+      
+      // 重新生成表格
+      const year = parseInt(document.getElementById('year').value);
+      const month = parseInt(document.getElementById('month').value);
+      const daysInMonth = new Date(year, month, 0).getDate();
+      generateTableBody(year, month, daysInMonth);
+    }
+    
+    // 顯示增加工時對話框
+    function showAddWorkModal() {
+      const emp = document.getElementById('employee').value;
+      if (!emp) {
+        showError('請先選擇員工');
+        return;
+      }
+      
+      // 填充客戶下拉選單
+      const clientSelect = document.getElementById('workClient');
+      clientSelect.innerHTML = '<option value="">請選擇客戶</option>';
+      clientsCache.forEach(client => {
+        const option = document.createElement('option');
+        option.value = client;
+        option.textContent = client;
+        clientSelect.appendChild(option);
+      });
+      
+      // 填充業務類型下拉選單
+      const businessTypeSelect = document.getElementById('workBusinessType');
+      businessTypeSelect.innerHTML = '<option value="">請選擇業務類型</option>';
+      businessTypesCache.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        businessTypeSelect.appendChild(option);
+      });
+      
+      // 填充工時類型下拉選單
+      const workTypeSelect = document.getElementById('workType');
+      workTypeSelect.innerHTML = '<option value="">請選擇工時類型</option>';
+      workTypesCache.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        workTypeSelect.appendChild(option);
+      });
+      
+      document.getElementById('addWorkModal').classList.add('show');
+    }
+    
+    // 隱藏增加工時對話框
+    function hideAddWorkModal() {
+      document.getElementById('addWorkModal').classList.remove('show');
+      document.getElementById('workClient').value = '';
+      document.getElementById('workBusinessType').value = '';
+      document.getElementById('workType').value = '';
+    }
+    
+    // 確認增加工時
+    function confirmAddWork() {
+      const clientName = document.getElementById('workClient').value;
+      const businessType = document.getElementById('workBusinessType').value;
+      const workType = document.getElementById('workType').value;
+      
+      if (!clientName || !businessType || !workType) {
+        alert('請填寫所有必填欄位');
+        return;
+      }
+      
+      // 檢查是否已存在相同的記錄
+      const exists = currentData.workEntries.some(entry => 
+        entry.clientName === clientName && 
+        entry.businessType === businessType && 
+        entry.workType === workType
+      );
+      
+      if (exists) {
+        alert('此工時記錄已存在，請直接在表格中編輯');
+        return;
+      }
+      
+      // 新增記錄
+      currentData.workEntries.push({
+        clientName,
+        businessType,
+        workType,
+        hours: {}
+      });
+      
+      hasChanges = true;
+      hideAddWorkModal();
+      
+      // 重新生成表格
+      const year = parseInt(document.getElementById('year').value);
+      const month = parseInt(document.getElementById('month').value);
+      const daysInMonth = new Date(year, month, 0).getDate();
+      generateTableBody(year, month, daysInMonth);
+    }
+    
+    // 顯示增加請假對話框
+    function showAddLeaveModal() {
+      const emp = document.getElementById('employee').value;
+      if (!emp) {
+        showError('請先選擇員工');
+        return;
+      }
+      
+      // 填充請假類型下拉選單
+      const leaveTypeSelect = document.getElementById('leaveType');
+      leaveTypeSelect.innerHTML = '<option value="">請選擇假別</option>';
+      leaveTypesCache.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        leaveTypeSelect.appendChild(option);
+      });
+      
+      document.getElementById('addLeaveModal').classList.add('show');
+    }
+    
+    // 隱藏增加請假對話框
+    function hideAddLeaveModal() {
+      document.getElementById('addLeaveModal').classList.remove('show');
+      document.getElementById('leaveType').value = '';
+    }
+    
+    // 確認增加請假
+    function confirmAddLeave() {
+      const leaveType = document.getElementById('leaveType').value;
+      
+      if (!leaveType) {
+        alert('請選擇假別');
+        return;
+      }
+      
+      // 檢查是否已存在相同的記錄
+      const exists = currentData.leaveEntries.some(entry => entry.leaveType === leaveType);
+      
+      if (exists) {
+        alert('此請假記錄已存在，請直接在表格中編輯');
+        return;
+      }
+      
+      // 新增記錄
+      currentData.leaveEntries.push({
+        leaveType,
+        hours: {}
+      });
+      
+      hasChanges = true;
+      hideAddLeaveModal();
+      
+      // 重新生成表格
+      const year = parseInt(document.getElementById('year').value);
+      const month = parseInt(document.getElementById('month').value);
+      const daysInMonth = new Date(year, month, 0).getDate();
+      generateTableBody(year, month, daysInMonth);
+    }
+    
+    // 儲存工時表
+    async function saveTimesheet() {
+      if (!hasChanges) {
+        alert('沒有變更需要儲存');
+        return;
+      }
+      
+      const emp = document.getElementById('employee').value;
+      const year = parseInt(document.getElementById('year').value);
+      const month = parseInt(document.getElementById('month').value);
+      
+      if (!emp) {
+        showError('請選擇員工');
+        return;
+      }
+      
+      if (!confirm('確定要儲存本月的工時記錄嗎？')) {
+        return;
+      }
+      
+      showLoading(true);
+      
+      try {
+        const payload = {
+          employee: emp,
+          year: year,
+          month: month,
+          workEntries: currentData.workEntries,
+          leaveEntries: currentData.leaveEntries
+        };
+        
+        const res = await apiRequest(`${WORKER_URL}/api/save-timesheet`, {
+          method: 'POST',
+          body: payload
+        });
+        
+        if (!res) return;
+        
+        const result = await res.json();
+        
+        showLoading(false);
+        
+        if (!res.ok || result.error) {
+          showError(`儲存失敗：${result.error || res.status}`);
+          return;
+        }
+        
+        hasChanges = false;
+        showSuccess('工時記錄已成功儲存');
+        
+        // 重新載入資料
+        setTimeout(() => {
+          loadTimesheetData();
+        }, 1000);
+        
+      } catch (err) {
+        showLoading(false);
+        showError('儲存時發生錯誤：' + err.message);
+      }
+    }
+    
+    // 顯示成功訊息
+    function showSuccess(message) {
+      // 暫時使用 alert，之後可以改成更好的 UI
+      alert(message);
     }
   </script>
 </body>

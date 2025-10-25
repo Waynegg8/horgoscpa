@@ -258,7 +258,25 @@ async function generateWorkAnalysis() {
 
     try {
         // 獲取該員工該月的工時資料
-        const data = await apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(employee)}&year=${year}&month=${month}`);
+        const response = await apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(employee)}&year=${year}&month=${month}`);
+        
+        // 從 API 回應中提取工時記錄
+        const data = [];
+        if (response.workEntries && Array.isArray(response.workEntries)) {
+            response.workEntries.forEach(entry => {
+                for (const day in entry.hours) {
+                    if (entry.hours[day] > 0) {
+                        data.push({
+                            client_name: entry.clientName,
+                            business_type: entry.businessType,
+                            work_type: entry.workType,
+                            normal_hours: entry.workType === '正常工時' ? entry.hours[day] : 0,
+                            weighted_hours: entry.hours[day] // 簡化處理
+                        });
+                    }
+                }
+            });
+        }
         
         if (!data || data.length === 0) {
             showEmpty('workAnalysisResult', '該期間沒有工時記錄');
@@ -282,23 +300,16 @@ async function generateWorkAnalysis() {
                 };
             }
 
-            // 累計正常工時
-            grouped[key].normalHours += parseFloat(record.normal_hours || 0);
+            // 累計工時（根據工時類型）
+            const hours = parseFloat(record.normal_hours || 0);
+            const isOvertime = record.work_type && record.work_type.includes('加班');
             
-            // 累計加班工時（所有加班類型）
-            grouped[key].overtimeHours += 
-                parseFloat(record.weekday_ot_134 || 0) +
-                parseFloat(record.weekday_ot_167 || 0) +
-                parseFloat(record.restday_ot_134 || 0) +
-                parseFloat(record.restday_ot_167 || 0) +
-                parseFloat(record.restday_ot_267 || 0) +
-                parseFloat(record.exception_ot_1 || 0) +
-                parseFloat(record.exception_ot_2 || 0) +
-                parseFloat(record.holiday_ot_1 || 0) +
-                parseFloat(record.holiday_ot_134 || 0) +
-                parseFloat(record.holiday_ot_167 || 0);
-
-            // 累計加權工時
+            if (isOvertime) {
+                grouped[key].overtimeHours += hours;
+            } else {
+                grouped[key].normalHours += hours;
+            }
+            
             grouped[key].weightedHours += parseFloat(record.weighted_hours || 0);
         });
 
@@ -401,21 +412,27 @@ async function generateLeaveOverview() {
     showLoading('leaveOverviewResult');
 
     try {
-        // 獲取該員工該年的所有工時資料
-        const data = await apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(employee)}&year=${year}`);
-        
         // 統計各種假別的使用時數
         const leaveStats = {};
         
-        data.forEach(record => {
-            if (!record.leave_type) return;
+        // 獲取該年度的每個月份
+        for (let month = 1; month <= 12; month++) {
+            const response = await apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(employee)}&year=${year}&month=${month}`);
             
-            const leaveType = record.leave_type;
-            if (!leaveStats[leaveType]) {
-                leaveStats[leaveType] = 0;
+            if (response.leaveEntries && Array.isArray(response.leaveEntries)) {
+                response.leaveEntries.forEach(entry => {
+                    const leaveType = entry.leaveType;
+                    if (!leaveStats[leaveType]) {
+                        leaveStats[leaveType] = 0;
+                    }
+                    
+                    // 累計該假別的所有時數
+                    for (const day in entry.hours) {
+                        leaveStats[leaveType] += parseFloat(entry.hours[day] || 0);
+                    }
+                });
             }
-            leaveStats[leaveType] += parseFloat(record.leave_hours || 0);
-        });
+        }
 
         // 準備報表資料
         const leaveTypes = [
@@ -521,60 +538,94 @@ async function generatePivotAnalysis() {
     showLoading('pivotAnalysisResult');
 
     try {
-        let url = `/api/timesheet-data?year=${year}`;
-        if (month) {
-            url += `&month=${month}`;
-        }
-
-        const data = await apiRequest(url);
+        // 獲取所有員工
+        const employees = await apiRequest('/api/employees');
         
-        if (!data || data.length === 0) {
-            showEmpty('pivotAnalysisResult', '該期間沒有工時記錄');
-            return;
-        }
-
         // 根據分組方式統計
         const grouped = {};
         
-        data.forEach(record => {
-            let key = '';
-            switch (groupBy) {
-                case 'employee':
-                    key = record.employee_name || '未知';
-                    break;
-                case 'client':
-                    key = record.client_name || '未分類';
-                    break;
-                case 'business_type':
-                    key = record.business_type || '未分類';
-                    break;
-            }
+        // 需要查詢的月份範圍
+        const months = month ? [parseInt(month)] : [1,2,3,4,5,6,7,8,9,10,11,12];
+        
+        // 遍歷每個員工和月份
+        for (const emp of employees) {
+            for (const m of months) {
+                const response = await apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(emp.name)}&year=${year}&month=${m}`);
+                
+                // 處理工時記錄
+                if (response.workEntries && Array.isArray(response.workEntries)) {
+                    response.workEntries.forEach(entry => {
+                        let key = '';
+                        switch (groupBy) {
+                            case 'employee':
+                                key = emp.name;
+                                break;
+                            case 'client':
+                                key = entry.clientName || '未分類';
+                                break;
+                            case 'business_type':
+                                key = entry.businessType || '未分類';
+                                break;
+                        }
 
-            if (!grouped[key]) {
-                grouped[key] = {
-                    name: key,
-                    normalHours: 0,
-                    overtimeHours: 0,
-                    weightedHours: 0,
-                    leaveHours: 0
-                };
-            }
+                        if (!grouped[key]) {
+                            grouped[key] = {
+                                name: key,
+                                normalHours: 0,
+                                overtimeHours: 0,
+                                weightedHours: 0,
+                                leaveHours: 0
+                            };
+                        }
 
-            grouped[key].normalHours += parseFloat(record.normal_hours || 0);
-            grouped[key].overtimeHours += 
-                parseFloat(record.weekday_ot_134 || 0) +
-                parseFloat(record.weekday_ot_167 || 0) +
-                parseFloat(record.restday_ot_134 || 0) +
-                parseFloat(record.restday_ot_167 || 0) +
-                parseFloat(record.restday_ot_267 || 0) +
-                parseFloat(record.exception_ot_1 || 0) +
-                parseFloat(record.exception_ot_2 || 0) +
-                parseFloat(record.holiday_ot_1 || 0) +
-                parseFloat(record.holiday_ot_134 || 0) +
-                parseFloat(record.holiday_ot_167 || 0);
-            grouped[key].weightedHours += parseFloat(record.weighted_hours || 0);
-            grouped[key].leaveHours += parseFloat(record.leave_hours || 0);
-        });
+                        // 累計該條目的所有時數
+                        for (const day in entry.hours) {
+                            const hours = parseFloat(entry.hours[day] || 0);
+                            const isOvertime = entry.workType && entry.workType.includes('加班');
+                            
+                            if (isOvertime) {
+                                grouped[key].overtimeHours += hours;
+                            } else {
+                                grouped[key].normalHours += hours;
+                            }
+                            grouped[key].weightedHours += hours;
+                        }
+                    });
+                }
+                
+                // 處理請假記錄
+                if (response.leaveEntries && Array.isArray(response.leaveEntries)) {
+                    response.leaveEntries.forEach(entry => {
+                        let key = '';
+                        switch (groupBy) {
+                            case 'employee':
+                                key = emp.name;
+                                break;
+                            case 'client':
+                                key = '請假';
+                                break;
+                            case 'business_type':
+                                key = '請假';
+                                break;
+                        }
+
+                        if (!grouped[key]) {
+                            grouped[key] = {
+                                name: key,
+                                normalHours: 0,
+                                overtimeHours: 0,
+                                weightedHours: 0,
+                                leaveHours: 0
+                            };
+                        }
+
+                        for (const day in entry.hours) {
+                            grouped[key].leaveHours += parseFloat(entry.hours[day] || 0);
+                        }
+                    });
+                }
+            }
+        }
 
         const results = Object.values(grouped).sort((a, b) => 
             b.weightedHours - a.weightedHours
