@@ -50,6 +50,12 @@ import {
   searchSops
 } from './sop.js';
 
+import {
+  uploadImage,
+  getMediaList,
+  deleteMedia
+} from './media.js';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -329,6 +335,26 @@ export default {
       // SOP 搜尋
       if (url.pathname === "/api/sops/search" && method === "GET") {
         return await searchSops(request, env);
+      }
+
+      // ========================================
+      // 媒體管理 API (需認證)
+      // ========================================
+      
+      // 上傳圖片
+      if (url.pathname === "/api/upload/image" && method === "POST") {
+        return await uploadImage(request, env);
+      }
+      
+      // 獲取媒體列表
+      if (url.pathname === "/api/media" && method === "GET") {
+        return await getMediaList(request, env);
+      }
+      
+      // 刪除媒體
+      if (url.pathname.match(/^\/api\/media\/\d+$/) && method === "DELETE") {
+        const mediaId = url.pathname.split("/")[3];
+        return await deleteMedia(request, env, mediaId);
       }
 
       // ========================================

@@ -10,7 +10,6 @@
 	"observability": {
 		"enabled": true
 	}, // <--- 1. 我在這裡幫您加了一個逗號
-
 	// ----------------------------------------------------
 	// 2. 這是您需要的 D1 資料庫綁定
 	// ----------------------------------------------------
@@ -20,9 +19,15 @@
 			"database_name": "timesheet-db",
 			"database_id": "8b7ba538-d3f6-419e-a8a8-4fb3f025a67f"
 		}
+	],
+	// R2 媒體儲存（用於 SOP 圖片、CMS 等）
+	"r2_buckets": [
+		{
+			"binding": "MEDIA_BUCKET",
+			"bucket_name": "horgoscpa-media"
+		}
 	]
 	// ----------------------------------------------------
-
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

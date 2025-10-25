@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOP 文件管理 - 霍爾果斯會計師事務所</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="assets/css/internal-system.css">
+    <style>
+        .content-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+            height: calc(100vh - 120px);
+        }
+
+        @media (max-width: 968px) {
+            .content-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .sidebar {
+                height: auto !important;
+                margin-bottom: 20px;
+            }
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .category-tree {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .category-item {
+            padding: 10px;
+            margin: 5px 0;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .category-item:hover {
+            background: var(--light-bg);
+        }
+
+        .category-item.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .sop-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sop-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sop-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .sop-card h3 {
+            margin: 0 0 10px 0;
+            color: var(--primary-color);
+        }
+
+        .sop-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
+
+        .sop-editor {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: 100%;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        textarea.content-editor {
+            min-height: 400px;
+            font-family: monospace;
+            line-height: 1.6;
+        }
+
+        .tag-input-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            min-height: 45px;
+        }
+
+        .tag {
+            background: var(--primary-color);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tag .remove-tag {
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .version-history {
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+            margin-top: 20px;
+        }
+
+        .version-item {
+            padding: 10px;
+            border-left: 3px solid var(--primary-color);
+            margin: 10px 0;
+            background: var(--light-bg);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .material-symbols-outlined {
+            font-size: 64px;
+            opacity: 0.3;
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        #uploadStatus.uploading {
+            color: var(--primary-color);
+        }
+
+        #uploadStatus.success {
+            color: #4CAF50;
+        }
+
+        #uploadStatus.error {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <!-- 導航 -->
+    <nav class="internal-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="logo-text">霍爾果斯 CPA</span>
+                <span class="logo-sub">SOP 管理</span>
+            </div>
+            <button class="mobile-toggle" id="mobileToggle">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <div class="nav-menu" id="navMenu">
+                <a href="timesheet.html" class="nav-item">
+                    <span class="material-symbols-outlined">schedule</span>
+                    <span>工時系統</span>
+                </a>
+                <a href="reports.html" class="nav-item">
+                    <span class="material-symbols-outlined">analytics</span>
+                    <span>報表中心</span>
+                </a>
+                <a href="sop.html" class="nav-item active">
+                    <span class="material-symbols-outlined">description</span>
+                    <span>SOP 管理</span>
+                </a>
+                <a href="settings.html" class="nav-item">
+                    <span class="material-symbols-outlined">settings</span>
+                    <span>系統設定</span>
+                </a>
+            </div>
+            <div class="nav-user">
+                <span class="user-name" id="userName">載入中...</span>
+                <span class="user-role" id="userRole">...</span>
+                <button class="logout-btn" id="logoutBtn">
+                    <span class="material-symbols-outlined">logout</span>
+                    登出
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="internal-main">
+        <div class="internal-container">
+            <!-- 工具列 -->
+            <div class="toolbar" style="margin-bottom: 20px;">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <input type="text" id="sopSearch" placeholder="搜尋 SOP 標題或內容...">
+                        <span class="material-symbols-outlined search-icon">search</span>
+                    </div>
+                    <select id="businessTypeFilter" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px;">
+                        <option value="">所有業務類型</option>
+                    </select>
+                    <select id="statusFilter" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px;">
+                        <option value="">所有狀態</option>
+                        <option value="draft">草稿</option>
+                        <option value="published">已發布</option>
+                        <option value="archived">已封存</option>
+                    </select>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn btn-primary" onclick="showNewSopEditor()">
+                        <span class="material-symbols-outlined">add</span>
+                        新增 SOP
+                    </button>
+                </div>
+            </div>
+
+            <!-- 主要內容 -->
+            <div class="content-layout">
+                <!-- 側邊欄：分類 -->
+                <div class="sidebar">
+                    <h3 style="margin-top: 0;">分類</h3>
+                    <ul class="category-tree" id="categoryTree">
+                        <li class="category-item active" data-category-id="all">
+                            <span class="material-symbols-outlined">folder</span>
+                            <span>全部 SOP</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 主內容區 -->
+                <div class="main-content">
+                    <!-- SOP 列表視圖 -->
+                    <div id="sopListView">
+                        <h2 style="margin-top: 0;">SOP 文件</h2>
+                        <div id="sopList" class="sop-list">
+                            <div class="loading">
+                                <div class="loading-spinner"></div>
+                                載入中...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SOP 編輯器視圖（初始隱藏） -->
+                    <div id="sopEditorView" style="display: none;">
+                        <div class="sop-editor">
+                            <div class="editor-header">
+                                <h2 id="editorTitle">新增 SOP</h2>
+                                <button class="btn btn-secondary" onclick="closeSopEditor()">
+                                    <span class="material-symbols-outlined">close</span>
+                                    關閉
+                                </button>
+                            </div>
+
+                            <input type="hidden" id="sopId">
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>標題 *</label>
+                                    <input type="text" id="sopTitle" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>版本</label>
+                                    <input type="text" id="sopVersion" value="1.0">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>分類</label>
+                                    <select id="sopCategory"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>業務類型</label>
+                                    <select id="sopBusinessType">
+                                        <option value="">無</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>狀態</label>
+                                    <select id="sopStatus">
+                                        <option value="draft">草稿</option>
+                                        <option value="published">已發布</option>
+                                        <option value="archived">已封存</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>標籤（按 Enter 新增）</label>
+                                    <div class="tag-input-container" id="tagContainer">
+                                        <input type="text" id="tagInput" style="border: none; flex: 1; min-width: 100px; outline: none;" placeholder="輸入標籤...">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>內容 *</label>
+                                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="triggerImageUpload()">
+                                        <span class="material-symbols-outlined">image</span>
+                                        插入圖片
+                                    </button>
+                                    <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
+                                    <span id="uploadStatus" style="color: var(--text-secondary); align-self: center;"></span>
+                                </div>
+                                <textarea id="sopContent" class="content-editor" placeholder="輸入 SOP 內容...&#10;&#10;插入圖片後會自動產生 Markdown 語法：![圖片說明](圖片URL)"></textarea>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-primary" onclick="saveSop()">
+                                    <span class="material-symbols-outlined">save</span>
+                                    儲存
+                                </button>
+                                <button class="btn btn-secondary" onclick="viewVersionHistory()" id="versionBtn" style="display: none;">
+                                    <span class="material-symbols-outlined">history</span>
+                                    版本歷史
+                                </button>
+                            </div>
+
+                            <div id="versionHistory" class="version-history" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 簡化的頁尾 -->
+    <footer class="internal-footer">
+        &copy; 2025 霍爾果斯會計師事務所 SOP 管理系統
+    </footer>
+
+    <script src="assets/js/sop-management.js"></script>
+</body>
+</html>
+
