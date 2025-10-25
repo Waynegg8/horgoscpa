@@ -310,7 +310,7 @@
   <main>
     <div class="admin-header">
       <h1><span class="material-symbols-rounded" style="vertical-align: middle;">admin_panel_settings</span> 系統管理</h1>
-      <p>管理使用者、客戶和系統設定</p>
+      <p>本頁面已整合至《設定》頁。正在為您跳轉...</p>
     </div>
 
     <div id="messageBox" class="message-box"></div>
@@ -454,6 +454,10 @@
     </div>
   </footer>
 
+  <script>
+    // 直接整合：導向至單一維護頁 settings.html，避免重複功能與資料不同步
+    window.location.replace('/settings.html');
+  </script>
   <script>
     const API_BASE_URL = 'https://timesheet-api.hergscpa.workers.dev';
     let sessionToken = null;
