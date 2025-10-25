@@ -312,6 +312,7 @@
                 <div class="tab-nav" id="tabNav">
                     <!-- 所有員工可見的標籤 -->
                     <button class="tab-button active" data-tab="clients">客戶管理</button>
+                    <button class="tab-button" data-tab="clients-extended">客戶詳細資料</button>
                     <button class="tab-button" data-tab="assignments">客戶指派</button>
                     <button class="tab-button" data-tab="business-types">業務類型</button>
                     <button class="tab-button" data-tab="leave-events">假期事件</button>
@@ -342,6 +343,42 @@
                         </div>
                     </div>
                     <div id="clientsTableContainer">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            載入中...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 客戶詳細資料 -->
+                <div id="clients-extended-tab" class="tab-content">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-box">
+                                <input type="text" id="clientExtendedSearch" placeholder="搜尋客戶名稱、統編、地區...">
+                                <span class="material-symbols-outlined search-icon">search</span>
+                            </div>
+                            <select id="regionFilter" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px;">
+                                <option value="">所有地區</option>
+                                <option value="台中">台中</option>
+                                <option value="台北">台北</option>
+                                <option value="其他">其他</option>
+                            </select>
+                            <select id="statusFilter" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px;">
+                                <option value="">所有狀態</option>
+                                <option value="active">活躍</option>
+                                <option value="inactive">停用</option>
+                                <option value="potential">潛在客戶</option>
+                            </select>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-secondary" onclick="showImportCSVModal()">
+                                <span class="material-symbols-outlined">upload_file</span>
+                                匯入 CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div id="clientsExtendedTableContainer">
                         <div class="loading">
                             <div class="loading-spinner"></div>
                             載入中...
@@ -625,5 +662,6 @@
     </footer>
     
     <script src="assets/js/settings.js"></script>
+    <script src="assets/js/clients-extended.js"></script>
 </body>
 </html>

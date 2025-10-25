@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTabs();
     initMobileMenu();
     initSearchFilters();
+    if (typeof initClientsExtended === 'function') {
+        initClientsExtended();
+    }
 });
 
 // =========================================
@@ -156,6 +159,11 @@ function loadTabData(tabName) {
     switch (tabName) {
         case 'clients':
             loadClients();
+            break;
+        case 'clients-extended':
+            if (typeof loadClientsExtended === 'function') {
+                loadClientsExtended();
+            }
             break;
         case 'assignments':
             loadAssignments();

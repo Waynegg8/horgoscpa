@@ -23,6 +23,21 @@ import {
   handleCacheStats
 } from './reports.js';
 
+import {
+  getClientsExtended,
+  getClientExtended,
+  upsertClientExtended,
+  getServiceSchedule,
+  createServiceSchedule,
+  updateServiceSchedule,
+  deleteServiceSchedule,
+  getClientInteractions,
+  createClientInteraction,
+  updateClientInteraction,
+  deleteClientInteraction,
+  importClients
+} from './clients.js';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -190,6 +205,70 @@ export default {
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
         const id = decodeURIComponent(url.pathname.split("/")[3]);
         return await handleDeleteClient(env.DB, id);
+      }
+
+      // ========================================
+      // 客戶擴展資料 API (需認證)
+      // ========================================
+      
+      // 獲取所有客戶詳細資料
+      if (url.pathname === "/api/clients/extended" && method === "GET") {
+        return await getClientsExtended(request, env);
+      }
+      
+      // 獲取單一客戶詳細資料
+      if (url.pathname.match(/^\/api\/clients\/[^\/]+\/extended$/) && method === "GET") {
+        const clientName = decodeURIComponent(url.pathname.split("/")[3]);
+        return await getClientExtended(request, env, clientName);
+      }
+      
+      // 創建或更新客戶詳細資料
+      if (url.pathname.match(/^\/api\/clients\/[^\/]+\/extended$/) && (method === "POST" || method === "PUT")) {
+        const clientName = decodeURIComponent(url.pathname.split("/")[3]);
+        return await upsertClientExtended(request, env, clientName);
+      }
+      
+      // 服務排程管理
+      if (url.pathname === "/api/service-schedule" && method === "GET") {
+        return await getServiceSchedule(request, env);
+      }
+      
+      if (url.pathname === "/api/service-schedule" && method === "POST") {
+        return await createServiceSchedule(request, env);
+      }
+      
+      if (url.pathname.match(/^\/api\/service-schedule\/\d+$/) && method === "PUT") {
+        const scheduleId = url.pathname.split("/")[3];
+        return await updateServiceSchedule(request, env, scheduleId);
+      }
+      
+      if (url.pathname.match(/^\/api\/service-schedule\/\d+$/) && method === "DELETE") {
+        const scheduleId = url.pathname.split("/")[3];
+        return await deleteServiceSchedule(request, env, scheduleId);
+      }
+      
+      // 客戶互動記錄
+      if (url.pathname === "/api/client-interactions" && method === "GET") {
+        return await getClientInteractions(request, env);
+      }
+      
+      if (url.pathname === "/api/client-interactions" && method === "POST") {
+        return await createClientInteraction(request, env);
+      }
+      
+      if (url.pathname.match(/^\/api\/client-interactions\/\d+$/) && method === "PUT") {
+        const interactionId = url.pathname.split("/")[3];
+        return await updateClientInteraction(request, env, interactionId);
+      }
+      
+      if (url.pathname.match(/^\/api\/client-interactions\/\d+$/) && method === "DELETE") {
+        const interactionId = url.pathname.split("/")[3];
+        return await deleteClientInteraction(request, env, interactionId);
+      }
+      
+      // CSV 匯入
+      if (url.pathname === "/api/import/clients" && method === "POST") {
+        return await importClients(request, env);
       }
 
       // ========================================
