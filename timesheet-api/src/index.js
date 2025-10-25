@@ -1500,7 +1500,7 @@ async function handleDeleteUser(db, id) {
 async function handleGetAllEmployees(db) {
   try {
     const res = await db.prepare(`
-      SELECT name, hire_date
+      SELECT name, hire_date, gender
       FROM employees
       ORDER BY name
     `).all();
