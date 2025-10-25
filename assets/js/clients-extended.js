@@ -1021,6 +1021,12 @@ function showImportCSVModal() {
                         <label>選擇 CSV 檔案</label>
                         <input type="file" id="csvFileInput" accept=".csv" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; width: 100%;">
                     </div>
+
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>
+                            <input type="checkbox" id="csvIsSchedule"> 這份 CSV 來自活頁簿2（服務排程），匯入月度任務
+                        </label>
+                    </div>
                     
                     <div id="csvPreview" style="display: none; margin-top: 20px;">
                         <h4>預覽（前 5 筆）</h4>
@@ -1160,12 +1166,31 @@ async function executeImport() {
     importBtn.textContent = '匯入中...';
     
     try {
-        const response = await apiRequest('/api/import/clients', {
-            method: 'POST',
-            body: { records: parsedCSVData }
-        });
-        
-        alert(`匯入完成！\n成功：${response.successCount} 筆\n失敗：${response.errorCount} 筆`);
+        const isSchedule = document.getElementById('csvIsSchedule')?.checked;
+        if (isSchedule) {
+            // 轉換活頁簿2格式（活頁簿2.csv 的 parse 在 scripts 內；此處提供簡化版以支援直接上傳 UTF-8 CSV）
+            const scheduleRecords = parsedCSVData.map(r => ({
+                tax_id: r.tax_id || '',
+                client_name: r.client_name,
+                service_type: r.service_type || '定期服務',
+                frequency: r.frequency || '每月',
+                monthly_fee: r.monthly_fee || 0,
+                months: r.months || {},
+                service_details: r.service_details || '',
+                notes: r.notes || ''
+            }));
+            const response = await apiRequest('/api/import/service-schedule', {
+                method: 'POST',
+                body: { records: scheduleRecords }
+            });
+            alert(`匯入完成！\n成功：${response.successCount} 筆\n失敗：${response.errorCount} 筆`);
+        } else {
+            const response = await apiRequest('/api/import/clients', {
+                method: 'POST',
+                body: { records: parsedCSVData }
+            });
+            alert(`匯入完成！\n成功：${response.successCount} 筆\n失敗：${response.errorCount} 筆`);
+        }
         
         if (response.errors && response.errors.length > 0) {
             console.error('匯入錯誤：', response.errors);

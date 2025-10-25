@@ -84,11 +84,11 @@ function updateUserInfo(user) {
 
 function initMobileMenu() {
     const toggle = document.getElementById('mobileToggle');
-    const menu = document.getElementById('navMenu');
+    const navLinks = document.getElementById('navLinks');
     
-    if (toggle && menu) {
+    if (toggle && navLinks) {
         toggle.addEventListener('click', () => {
-            menu.classList.toggle('active');
+            navLinks.classList.toggle('active');
         });
     }
 }

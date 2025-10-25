@@ -346,48 +346,61 @@
 </head>
 <body>
     <!-- 導航 -->
-    <nav class="internal-nav">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <span class="logo-text">霍爾果斯 CPA</span>
-                <span class="logo-sub">內部管理系統</span>
-            </div>
-            <button class="mobile-toggle" id="mobileToggle">
-                <span class="material-symbols-outlined">menu</span>
+    <!-- 簡潔的內部導航欄 -->
+    <nav class="internal-navbar">
+        <div class="internal-nav-container">
+            <a href="timesheet.html" class="internal-nav-brand">
+                <img src="assets/images/logo-white.png" alt="霍爾果斯">
+                <span>內部管理系統</span>
+            </a>
+            
+            <button class="internal-mobile-toggle" id="mobileToggle">
+                <span></span>
+                <span></span>
+                <span></span>
             </button>
-            <div class="nav-menu" id="navMenu">
-                <a href="timesheet.html" class="nav-item">
-                    <span class="material-symbols-outlined">schedule</span>
-                    <span>工時系統</span>
+
+            <div class="internal-nav-links" id="navLinks">
+                <a href="timesheet.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    工時表
                 </a>
-                <a href="reports.html" class="nav-item">
-                    <span class="material-symbols-outlined">analytics</span>
-                    <span>報表中心</span>
+                <a href="reports.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">assessment</span>
+                    報表
                 </a>
-                <a href="sop.html" class="nav-item active">
+                <a href="sop.html" class="internal-nav-link active">
                     <span class="material-symbols-outlined">description</span>
-                    <span>SOP 管理</span>
+                    SOP
                 </a>
-                <a href="projects.html" class="nav-item">
+                <a href="projects.html" class="internal-nav-link">
                     <span class="material-symbols-outlined">account_tree</span>
-                    <span>專案管理</span>
+                    專案
                 </a>
-                <a href="content-editor.html" class="nav-item">
+                <a href="multi-stage-tasks.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">timeline</span>
+                    多階段任務
+                </a>
+                <a href="recurring-tasks.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">repeat</span>
+                    週期任務
+                </a>
+                <a href="content-editor.html" class="internal-nav-link">
                     <span class="material-symbols-outlined">article</span>
-                    <span>內容管理</span>
+                    內容
                 </a>
-                <a href="settings.html" class="nav-item">
+                <a href="settings.html" class="internal-nav-link">
                     <span class="material-symbols-outlined">settings</span>
-                    <span>系統設定</span>
+                    設定
                 </a>
-            </div>
-            <div class="nav-user">
-                <span class="user-name" id="userName">載入中...</span>
-                <span class="user-role" id="userRole">...</span>
-                <button class="logout-btn" id="logoutBtn">
-                    <span class="material-symbols-outlined">logout</span>
-                    登出
-                </button>
+                
+                <div class="internal-nav-user">
+                    <div>
+                        <div class="internal-user-name" id="userName">載入中...</div>
+                        <div class="internal-user-role" id="userRole"></div>
+                    </div>
+                    <button class="internal-logout-btn" id="logoutBtn">登出</button>
+                </div>
             </div>
         </div>
     </nav>

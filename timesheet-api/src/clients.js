@@ -407,6 +407,79 @@ export async function deleteServiceSchedule(request, env, scheduleId) {
 }
 
 // ============================================================
+// 5. 匯入服務排程（批次）
+// ============================================================
+
+export async function importServiceSchedule(request, env) {
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
+  if (!sessionData || sessionData.role !== 'admin') {
+    return new Response(JSON.stringify({ success: false, error: 'Unauthorized - Admin only' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    const payload = await request.json();
+    const records = payload.records || [];
+    let success = 0; let failed = 0; const errors = [];
+
+    for (const r of records) {
+      try {
+        // 以 client_name + service_type 當自然鍵（資料可能重覆匯入，因此使用 UPSERT）
+        const exists = await env.DB.prepare(`
+          SELECT id FROM service_schedule WHERE client_name = ? AND service_type = ?
+        `).bind(r.client_name, r.service_type).first();
+
+        if (exists) {
+          await env.DB.prepare(`
+            UPDATE service_schedule SET
+              tax_id = ?, frequency = ?, monthly_fee = ?,
+              month_1 = ?, month_2 = ?, month_3 = ?, month_4 = ?, month_5 = ?, month_6 = ?,
+              month_7 = ?, month_8 = ?, month_9 = ?, month_10 = ?, month_11 = ?, month_12 = ?,
+              service_details = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `).bind(
+            r.tax_id || '', r.frequency || '每月', r.monthly_fee || 0,
+            r.months?.['1'] ? 1 : 0, r.months?.['2'] ? 1 : 0, r.months?.['3'] ? 1 : 0,
+            r.months?.['4'] ? 1 : 0, r.months?.['5'] ? 1 : 0, r.months?.['6'] ? 1 : 0,
+            r.months?.['7'] ? 1 : 0, r.months?.['8'] ? 1 : 0, r.months?.['9'] ? 1 : 0,
+            r.months?.['10'] ? 1 : 0, r.months?.['11'] ? 1 : 0, r.months?.['12'] ? 1 : 0,
+            r.service_details || null, r.notes || null,
+            exists.id
+          ).run();
+        } else {
+          await env.DB.prepare(`
+            INSERT INTO service_schedule (
+              tax_id, client_name, service_type, frequency, monthly_fee,
+              month_1, month_2, month_3, month_4, month_5, month_6,
+              month_7, month_8, month_9, month_10, month_11, month_12,
+              service_details, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            r.tax_id || '', r.client_name, r.service_type, r.frequency || '每月', r.monthly_fee || 0,
+            r.months?.['1'] ? 1 : 0, r.months?.['2'] ? 1 : 0, r.months?.['3'] ? 1 : 0,
+            r.months?.['4'] ? 1 : 0, r.months?.['5'] ? 1 : 0, r.months?.['6'] ? 1 : 0,
+            r.months?.['7'] ? 1 : 0, r.months?.['8'] ? 1 : 0, r.months?.['9'] ? 1 : 0,
+            r.months?.['10'] ? 1 : 0, r.months?.['11'] ? 1 : 0, r.months?.['12'] ? 1 : 0,
+            r.service_details || null, r.notes || null
+          ).run();
+        }
+        success++;
+      } catch (err) {
+        failed++;
+        errors.push({ client_name: r.client_name, service_type: r.service_type, error: err.message });
+      }
+    }
+
+    return jsonResponse({ success: true, successCount: success, errorCount: failed, errors });
+  } catch (error) {
+    return jsonResponse({ success: false, error: error.message }, 500);
+  }
+}
+
+// ============================================================
 // 3. 客戶互動記錄 API
 // ============================================================
 

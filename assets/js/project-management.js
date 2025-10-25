@@ -84,17 +84,18 @@ function updateUserInfo(user) {
 
 function initMobileMenu() {
     const toggle = document.getElementById('mobileToggle');
-    const menu = document.getElementById('navMenu');
+    const navLinks = document.getElementById('navLinks');
     
-    if (toggle && menu) {
+    if (toggle && navLinks) {
         toggle.addEventListener('click', () => {
-            menu.classList.toggle('active');
+            navLinks.classList.toggle('active');
         });
     }
 }
 
 function initEventListeners() {
     document.getElementById('projectSearch')?.addEventListener('input', handleSearch);
+    document.getElementById('categoryFilter')?.addEventListener('change', applyFilters);
     document.getElementById('clientFilter')?.addEventListener('change', applyFilters);
     document.getElementById('assigneeFilter')?.addEventListener('change', applyFilters);
     document.getElementById('logoutBtn')?.addEventListener('click', logout);
@@ -123,6 +124,7 @@ async function loadInitialData() {
 function renderFilters() {
     const clientFilter = document.getElementById('clientFilter');
     const assigneeFilter = document.getElementById('assigneeFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
     
     if (clientFilter) {
         clientFilter.innerHTML = '<option value="">所有客戶</option>' +
@@ -133,11 +135,26 @@ function renderFilters() {
         assigneeFilter.innerHTML = '<option value="">所有負責人</option>' +
             employees.map(e => `<option value="${escapeHtml(e.name)}">${escapeHtml(e.name)}</option>`).join('');
     }
+
+    if (categoryFilter) {
+        categoryFilter.innerHTML = `
+            <option value="">所有類別</option>
+            <option value="記帳">記帳</option>
+            <option value="工商">工商</option>
+            <option value="財簽">財簽</option>
+            <option value="稅簽">稅簽</option>
+            <option value="其他" selected>其他</option>
+        `;
+    }
 }
 
 async function loadProjects() {
     try {
-        const response = await apiRequest('/api/projects');
+        const searchParams = new URLSearchParams();
+        const cat = document.getElementById('categoryFilter')?.value;
+        if (cat) searchParams.set('category', cat);
+        const url = '/api/projects' + (searchParams.toString() ? `?${searchParams.toString()}` : '');
+        const response = await apiRequest(url);
         projects = response.data || [];
         
         if (currentView === 'kanban') {
@@ -196,6 +213,7 @@ function renderKanbanView() {
 function renderProjectCard(project) {
     const priorityClass = `priority-${project.priority}`;
     const progress = project.progress || 0;
+    const categoryBadge = project.category ? `<span class="badge badge-primary" style="margin-left: 6px;">${escapeHtml(project.category)}</span>` : '';
     
     return `
         <div class="project-card" 
@@ -207,7 +225,7 @@ function renderProjectCard(project) {
              onclick="viewProjectDetails(${project.id})">
             <div class="project-card-header">
                 <div style="flex: 1;">
-                    <h4 class="project-title">${escapeHtml(project.name)}</h4>
+                    <h4 class="project-title">${escapeHtml(project.name)} ${categoryBadge}</h4>
                     ${project.client_name ? `
                         <p class="project-client">
                             <span class="material-symbols-outlined" style="font-size: 16px;">business</span>
@@ -372,6 +390,16 @@ function showNewProjectModal() {
                     
                     <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="form-group">
+                            <label>類別</label>
+                            <select id="projectCategory">
+                                <option value="記帳">記帳</option>
+                                <option value="工商">工商</option>
+                                <option value="財簽">財簽</option>
+                                <option value="稅簽">稅簽</option>
+                                <option value="其他" selected>其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label>客戶</label>
                             <select id="projectClient">
                                 <option value="">無</option>
@@ -451,6 +479,7 @@ async function saveProject() {
         const data = {
             name,
             client_name: document.getElementById('projectClient').value || null,
+            category: document.getElementById('projectCategory').value || '其他',
             assigned_to: document.getElementById('projectAssignee').value || null,
             priority: document.getElementById('projectPriority').value,
             status: document.getElementById('projectStatus').value,

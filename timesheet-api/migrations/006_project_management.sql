@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS projects (
   name TEXT NOT NULL,
   client_name TEXT,
   description TEXT,
+  -- 新增：專案類別（記帳/工商/財簽/稅簽/其他）
+  category TEXT DEFAULT '其他' CHECK(category IN ('記帳','工商','財簽','稅簽','其他')),
   status TEXT DEFAULT 'planning' 
     CHECK(status IN ('planning', 'in_progress', 'on_hold', 'completed', 'cancelled')),
   priority TEXT DEFAULT 'medium' 
@@ -114,6 +116,7 @@ CREATE INDEX IF NOT EXISTS idx_projects_client ON projects(client_name);
 CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 CREATE INDEX IF NOT EXISTS idx_projects_assigned_to ON projects(assigned_to);
 CREATE INDEX IF NOT EXISTS idx_projects_due_date ON projects(due_date);
+CREATE INDEX IF NOT EXISTS idx_projects_category ON projects(category);
 
 CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assigned_to);

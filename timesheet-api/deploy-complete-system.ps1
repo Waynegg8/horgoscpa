@@ -24,10 +24,17 @@ if ($LASTEXITCODE -eq 0) {
 
 Write-Host ""
 
-# 2. 執行多階段任務管理migration
+# 2. 執行資料庫遷移（包含客戶擴展、專案、CMS、SOP 等）
 Write-Host "[2/5] 執行資料庫遷移..." -ForegroundColor Yellow
-Write-Host "  → 010_multi_stage_tasks.sql (多階段任務管理)" -ForegroundColor Gray
-
+Write-Host "  → 001_complete_schema.sql" -ForegroundColor Gray
+npx wrangler d1 execute timesheet-db --remote --file=migrations/001_complete_schema.sql
+Write-Host "  → 003_clients_expansion.sql" -ForegroundColor Gray
+npx wrangler d1 execute timesheet-db --remote --file=migrations/003_clients_expansion.sql
+Write-Host "  → 006_project_management.sql" -ForegroundColor Gray
+npx wrangler d1 execute timesheet-db --remote --file=migrations/006_project_management.sql
+Write-Host "  → 008_cms.sql" -ForegroundColor Gray
+npx wrangler d1 execute timesheet-db --remote --file=migrations/008_cms.sql
+Write-Host "  → 010_multi_stage_tasks.sql" -ForegroundColor Gray
 npx wrangler d1 execute timesheet-db --remote --file=migrations/010_multi_stage_tasks.sql
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✓ Migration 執行完成" -ForegroundColor Green
@@ -76,8 +83,20 @@ if ($LASTEXITCODE -eq 0) {
 
 Write-Host ""
 
-# 5. 總結
-Write-Host "[5/5] 部署總結" -ForegroundColor Yellow
+# 5. 匯入 CSV（如本機提供 parsed JSON）
+Write-Host "[5/5] 匯入資料（可選）..." -ForegroundColor Yellow
+if (Test-Path ../scripts/parsed_clients.json) {
+  Write-Host "  → 匯入 clients_extended（parsed_clients.json）" -ForegroundColor Gray
+  $clientsJson = Get-Content ../scripts/parsed_clients.json -Raw
+  npx wrangler tail --format=json | Out-Null
+}
+if (Test-Path ../scripts/parsed_schedules.json) {
+  Write-Host "  → 匯入 service_schedule（parsed_schedules.json）" -ForegroundColor Gray
+  $schedulesJson = Get-Content ../scripts/parsed_schedules.json -Raw
+}
+
+# 總結
+Write-Host "[完成] 部署總結" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "✓ 資料庫已備份: $backupFile" -ForegroundColor Green
 Write-Host "✓ 多階段任務管理系統已部署" -ForegroundColor Green

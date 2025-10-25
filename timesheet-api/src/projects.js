@@ -29,6 +29,7 @@ export async function getProjects(request, env) {
     const client = url.searchParams.get('client');
     const status = url.searchParams.get('status');
     const assignedTo = url.searchParams.get('assigned_to');
+    const category = url.searchParams.get('category');
     
     let query = `
       SELECT 
@@ -55,6 +56,10 @@ export async function getProjects(request, env) {
     if (assignedTo) {
       query += ` AND p.assigned_to = ?`;
       params.push(assignedTo);
+    }
+    if (category) {
+      query += ` AND p.category = ?`;
+      params.push(category);
     }
     
     // 非管理員只能看到自己相關的專案
@@ -175,15 +180,16 @@ export async function createProject(request, env) {
     
     const query = `
       INSERT INTO projects (
-        name, client_name, description, status, priority,
+        name, client_name, description, category, status, priority,
         start_date, due_date, created_by, assigned_to, progress
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     const result = await env.DB.prepare(query).bind(
       data.name,
       data.client_name || null,
       data.description || null,
+      data.category || '其他',
       data.status || 'planning',
       data.priority || 'medium',
       data.start_date || null,
@@ -232,6 +238,7 @@ export async function updateProject(request, env, projectId) {
         name = ?,
         client_name = ?,
         description = ?,
+        category = COALESCE(?, category),
         status = ?,
         priority = ?,
         start_date = ?,
@@ -247,6 +254,7 @@ export async function updateProject(request, env, projectId) {
       data.name,
       data.client_name || null,
       data.description || null,
+      data.category || null,
       data.status,
       data.priority,
       data.start_date || null,

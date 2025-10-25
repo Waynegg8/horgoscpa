@@ -27,7 +27,7 @@ body {
     flex-direction: column;
 }
 
-/* 簡潔的內部導航欄 */
+/* 簡潔的內部導航欄（新版命名） */
 .internal-navbar {
     background: linear-gradient(135deg, #1e4258 0%, #0d2a3a 100%);
     border-bottom: 1px solid rgba(255,255,255,0.15);
@@ -172,6 +172,51 @@ body {
     text-align: center;
     font-size: 13px;
     color: var(--text-secondary);
+}
+
+/* 舊版頁面（sop/projects/content-editor）使用的 internal-nav 樣式修補 */
+.internal-nav {
+  background: linear-gradient(135deg, #1e4258 0%, #0d2a3a 100%);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  color: #fff;
+}
+.internal-nav .nav-container { 
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+.internal-nav .nav-brand { 
+  display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 600; 
+}
+.internal-nav .nav-menu { 
+  display: flex; gap: 8px; align-items: center; 
+}
+.internal-nav .nav-item { 
+  display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.9); text-decoration: none; padding: 8px 12px; border-radius: 6px; 
+}
+.internal-nav .nav-item.active, .internal-nav .nav-item:hover { 
+  background: rgba(255,255,255,0.2); color: #fff; 
+}
+.internal-nav .nav-user { 
+  display: flex; align-items: center; gap: 10px; color: #fff; 
+}
+.internal-nav .logout-btn { 
+  padding: 6px 10px; border: 1px solid rgba(255,255,255,0.4); background: transparent; color: #fff; border-radius: 4px; cursor: pointer; 
+}
+.internal-nav .mobile-toggle { 
+  display: none; background: transparent; border: none; color: #fff; 
+}
+
+@media (max-width: 850px) {
+  .internal-nav .mobile-toggle { display: block; }
+  .internal-nav .nav-menu { display: none; }
+  .internal-nav .nav-menu.active { display: flex; flex-direction: column; position: absolute; left: 0; right: 0; top: 60px; background: #123447; padding: 10px; }
 }
 
 /* 移動端響應 */

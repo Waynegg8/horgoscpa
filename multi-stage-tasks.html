@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多階段任務管理 - 霍爾果斯會計師事務所</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="assets/css/internal-system.css">
+    <style>
+        .stage-timeline {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        .stage-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stage-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 30px;
+            left: 60%;
+            width: 100%;
+            height: 3px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
+
+        .stage-item.completed:not(:last-child)::after {
+            background: var(--primary-color);
+        }
+
+        .stage-number {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            z-index: 1;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .stage-item.in_progress .stage-number {
+            background: var(--primary-color);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .stage-item.completed .stage-number {
+            background: #198754;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .stage-name {
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .stage-item.completed .stage-name {
+            color: #198754;
+        }
+
+        .stage-item.in_progress .stage-name {
+            color: var(--primary-color);
+        }
+
+        .task-detail-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <!-- 簡潔的內部導航欄 -->
+    <nav class="internal-navbar">
+        <div class="internal-nav-container">
+            <a href="timesheet.html" class="internal-nav-brand">
+                <img src="assets/images/logo-white.png" alt="霍爾果斯">
+                <span>內部管理系統</span>
+            </a>
+            
+            <button class="internal-mobile-toggle" id="mobileToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div class="internal-nav-links" id="navLinks">
+                <a href="timesheet.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    工時表
+                </a>
+                <a href="reports.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">assessment</span>
+                    報表
+                </a>
+                <a href="sop.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">description</span>
+                    SOP
+                </a>
+                <a href="projects.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">account_tree</span>
+                    專案
+                </a>
+                <a href="multi-stage-tasks.html" class="internal-nav-link active">
+                    <span class="material-symbols-outlined">timeline</span>
+                    多階段任務
+                </a>
+                <a href="recurring-tasks.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">repeat</span>
+                    週期任務
+                </a>
+                <a href="content-editor.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">article</span>
+                    內容
+                </a>
+                <a href="settings.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">settings</span>
+                    設定
+                </a>
+                
+                <div class="internal-nav-user">
+                    <div>
+                        <div class="internal-user-name" id="userName">載入中...</div>
+                        <div class="internal-user-role" id="userRole"></div>
+                    </div>
+                    <button class="internal-logout-btn" id="logoutBtn">登出</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="internal-main">
+        <div class="internal-container">
+            <div class="page-header" style="margin-bottom: 30px;">
+                <h1>多階段任務管理</h1>
+                <p>追蹤工商登記等複雜多階段工作流程</p>
+            </div>
+
+            <div class="toolbar" style="margin-bottom: 20px;">
+                <button onclick="showCreateModal()" class="btn-primary">
+                    <span class="material-symbols-outlined">add</span>
+                    創建新任務
+                </button>
+                <select id="statusFilter" onchange="loadTasks()" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-left: 15px;">
+                    <option value="">全部狀態</option>
+                    <option value="not_started">未開始</option>
+                    <option value="in_progress">進行中</option>
+                    <option value="on_hold">暫停</option>
+                    <option value="completed">已完成</option>
+                </select>
+            </div>
+
+            <div id="tasksList"></div>
+        </div>
+    </main>
+
+    <!-- 創建任務對話框 -->
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>創建多階段任務</h2>
+                <button class="close-btn" onclick="hideCreateModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>選擇模板</label>
+                <select id="templateSelect"></select>
+            </div>
+            <div class="form-group">
+                <label>客戶名稱</label>
+                <input type="text" id="clientNameInput" placeholder="請輸入客戶名稱">
+            </div>
+            <div class="form-group">
+                <label>任務名稱</label>
+                <input type="text" id="taskNameInput" placeholder="例：新創科技有限公司設立">
+            </div>
+            <div class="form-group">
+                <label>負責人</label>
+                <input type="text" id="assignedToInput" placeholder="請輸入負責人姓名">
+            </div>
+            <div class="form-group">
+                <label>備註</label>
+                <textarea id="notesInput" placeholder="選填"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="hideCreateModal()" class="btn-secondary">取消</button>
+                <button onclick="createTask()" class="btn-primary">創建</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="internal-footer">
+        &copy; 2025 霍爾果斯會計師事務所 內部管理系統
+    </footer>
+
+    <script src="assets/js/multi-stage-tasks.js"></script>
+</body>
+</html>
+
