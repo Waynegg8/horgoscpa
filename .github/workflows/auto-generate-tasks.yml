@@ -1,55 +1,117 @@
 name: 自動生成客戶服務任務
 
 on:
+  # 每日台北時間 00:00 執行（UTC 16:00）
   schedule:
-    # 每天凌晨 00:00 (台北時間 UTC+8)
-    # UTC 16:00 = 台北時間 00:00 (隔天)
     - cron: '0 16 * * *'
   
+  # 允許手動觸發
   workflow_dispatch:
     inputs:
-      target_date:
-        description: '目標日期 (YYYY-MM-DD，選填)'
+      date:
+        description: '目標日期 (YYYY-MM-DD，留空則使用今天)'
         required: false
         type: string
+      service_type:
+        description: '服務類型過濾 (選填)'
+        required: false
+        type: choice
+        options:
+          - ''
+          - accounting
+          - vat
+          - income_tax
+          - withholding
+          - prepayment
+          - dividend
+          - nhi
+          - shareholder_tax
+          - audit
+          - company_setup
 
 jobs:
   generate-tasks:
     runs-on: ubuntu-latest
+    name: 生成客戶服務任務
     
     steps:
-      - name: Checkout 代碼
-        uses: actions/checkout@v4
-      
-      - name: 設置 Node.js 環境
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-      
-      - name: 安裝依賴
-        working-directory: ./timesheet-api
-        run: npm ci
-      
-      - name: 生成任務
-        working-directory: ./timesheet-api
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: 📝 設定執行參數
+        id: params
         run: |
-          if [ -n "${{ github.event.inputs.target_date }}" ]; then
-            node scripts/generate-tasks.js --date "${{ github.event.inputs.target_date }}"
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            echo "date=${{ github.event.inputs.date }}" >> $GITHUB_OUTPUT
           else
-            node scripts/generate-tasks.js
+            echo "date=$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
+          fi
+          
+          if [ -n "${{ github.event.inputs.service_type }}" ]; then
+            echo "service_type=${{ github.event.inputs.service_type }}" >> $GITHUB_OUTPUT
           fi
       
-      - name: 發送通知（成功）
-        if: success()
+      - name: 🚀 呼叫 API 生成任務
+        id: generate
         run: |
-          echo "✅ 任務生成成功"
-          echo "時間: $(date)"
+          # 準備 API 請求資料
+          if [ -n "${{ steps.params.outputs.service_type }}" ]; then
+            DATA="{\"date\":\"${{ steps.params.outputs.date }}\",\"service_type\":\"${{ steps.params.outputs.service_type }}\"}"
+          else
+            DATA="{\"date\":\"${{ steps.params.outputs.date }}\"}"
+          fi
+          
+          # 呼叫 Cloudflare Workers API
+          RESPONSE=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.API_TOKEN }}" \
+            -d "$DATA" \
+            "${{ secrets.API_BASE_URL }}/api/automated-tasks/generate")
+          
+          echo "$RESPONSE" > response.json
+          echo "response<<EOF" >> $GITHUB_OUTPUT
+          cat response.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          # 檢查是否成功
+          SUCCESS=$(echo "$RESPONSE" | jq -r '.success')
+          if [ "$SUCCESS" != "true" ]; then
+            echo "❌ 任務生成失敗"
+            exit 1
+          fi
       
-      - name: 發送通知（失敗）
+      - name: 📊 顯示生成結果
+        run: |
+          echo "### 📋 任務生成結果" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # 解析結果
+          TOTAL=$(cat response.json | jq -r '.results.total')
+          GENERATED=$(cat response.json | jq -r '.results.generated | length')
+          SKIPPED=$(cat response.json | jq -r '.results.skipped | length')
+          ERRORS=$(cat response.json | jq -r '.results.errors | length')
+          
+          echo "- 📊 總服務數: $TOTAL" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ 成功生成: $GENERATED" >> $GITHUB_STEP_SUMMARY
+          echo "- ⏭️ 跳過: $SKIPPED" >> $GITHUB_STEP_SUMMARY
+          echo "- ❌ 錯誤: $ERRORS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$GENERATED" -gt 0 ]; then
+            echo "#### ✅ 成功生成的任務" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| 客戶 | 服務類型 | 負責人 | 執行期間 | 截止日期 |" >> $GITHUB_STEP_SUMMARY
+            echo "|------|----------|--------|----------|----------|" >> $GITHUB_STEP_SUMMARY
+            
+            cat response.json | jq -r '.results.generated[] | "| \(.client_name) | \(.service_type) | \(.assigned_to) | \(.execution_period) | \(.due_date) |"' >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "#### ❌ 錯誤列表" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat response.json | jq -r '.results.errors[] | "- Service ID \(.service_id): \(.error)"' >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: 💬 發送通知 (如有錯誤)
         if: failure()
         run: |
-          echo "❌ 任務生成失敗"
-          echo "時間: $(date)"
+          echo "⚠️ 任務生成過程中發生錯誤，請檢查日誌"
+          # 這裡可以整合 Slack, Discord, Email 等通知服務
