@@ -139,54 +139,56 @@ async function loadTasks(tabName) {
  */
 async function fetchAllTasks() {
   const data = await apiRequest('/api/tasks/multi-stage');
-  return data.tasks || data.data || data || [];
+  return data.tasks || [];
 }
 
 /**
  * 获取我的任务
  */
 async function fetchMyTasks() {
-  const tasks = await fetchAllTasks();
-  const user = window.currentUser;
-  if (!user) return [];
-  return tasks.filter(task => 
-    task.assigned_user === user.id || 
-    task.assigned_user === user.username ||
-    task.assigned_to === user.username ||
-    task.assigned_to === user.employee_name
-  );
+    if (!window.currentUser || !window.currentUser.id) {
+        console.warn("User not available for fetching tasks.");
+        return [];
+    }
+    const params = new URLSearchParams({ assigned_user_id: window.currentUser.id });
+    const data = await apiRequest(`/api/tasks/multi-stage?${params.toString()}`);
+    return data.tasks || [];
 }
 
 /**
  * 获取周期任务
  */
 async function fetchRecurringTasks() {
-  const tasks = await fetchAllTasks();
-  return tasks.filter(task => task.category === 'recurring');
+    const params = new URLSearchParams({ category: 'recurring' });
+    const data = await apiRequest(`/api/tasks/multi-stage?${params.toString()}`);
+    return data.tasks || [];
 }
 
 /**
  * 获取工商任务
  */
 async function fetchBusinessTasks() {
-  const tasks = await fetchAllTasks();
-  return tasks.filter(task => task.category === 'business');
+    const params = new URLSearchParams({ category: 'business' });
+    const data = await apiRequest(`/api/tasks/multi-stage?${params.toString()}`);
+    return data.tasks || [];
 }
 
 /**
  * 获取财税任务
  */
 async function fetchFinanceTasks() {
-  const tasks = await fetchAllTasks();
-  return tasks.filter(task => task.category === 'finance');
+    const params = new URLSearchParams({ category: 'finance' });
+    const data = await apiRequest(`/api/tasks/multi-stage?${params.toString()}`);
+    return data.tasks || [];
 }
 
 /**
  * 获取客户服务任务
  */
 async function fetchClientServiceTasks() {
-  const tasks = await fetchAllTasks();
-  return tasks.filter(task => task.category === 'client_service');
+    const params = new URLSearchParams({ category: 'client_service' });
+    const data = await apiRequest(`/api/tasks/multi-stage?${params.toString()}`);
+    return data.tasks || [];
 }
 
 /**
@@ -643,22 +645,8 @@ function renderTasks(tasks, container) {
  * 渲染单个任务卡片
  */
 function renderTaskCard(task) {
-  const categoryNames = {
-    'recurring': '周期任务',
-    'business': '工商登记',
-    'finance': '财税签证',
-    'client_service': '客户服务'
-  };
-  
-  const statusNames = {
-    'pending': '未开始',
-    'in_progress': '进行中',
-    'completed': '已完成',
-    'cancelled': '已取消'
-  };
-  
-  const categoryName = categoryNames[task.category] || task.category;
-  const statusName = statusNames[task.status] || task.status;
+  const categoryName = CONFIG.TASK_CATEGORY_NAMES[task.category] || task.category || '一般任務';
+  const statusBadge = getStatusBadge(task.status);
   
   // 计算进度百分比
   const progress = task.completed_stages && task.total_stages 
@@ -677,7 +665,7 @@ function renderTaskCard(task) {
             ${task.due_date ? `<span>截止：${formatDate(task.due_date)}</span>` : ''}
           </div>
         </div>
-        <span class="status-badge ${task.status}">${statusName}</span>
+        ${statusBadge}
       </div>
       
       ${task.total_stages ? `
@@ -717,8 +705,8 @@ async function openTaskDetail(taskId) {
       <div class="task-detail-header">
         <h3>${escapeHtml(task.task_name || task.title || '未命名任務')}</h3>
         <div class="task-detail-meta">
-          <span class="category-badge">${escapeHtml(task.category || '一般任務')}</span>
-          <span class="status-badge status-${task.status}">${getStatusText(task.status)}</span>
+          <span class="category-badge">${escapeHtml(CONFIG.TASK_CATEGORY_NAMES[task.category] || task.category || '一般任務')}</span>
+          ${getStatusBadge(task.status)}
         </div>
       </div>
       ${task.client_name ? `
@@ -777,24 +765,99 @@ function closeTaskDetail() {
  * 加载服务配置
  */
 async function loadServiceConfig() {
-  const container = document.getElementById('tasksContainer');
-  container.innerHTML = '<div class="loading">加载配置中...</div>';
-  
-  try {
-    // TODO: 实现服务配置加载
-    container.innerHTML = `
-      <div class="config-section">
-        <h2>📅 客户服务配置</h2>
-        <p>服务配置管理功能开发中...</p>
-        <button onclick="previewAutomatedTasks()" class="btn-primary">预览待生成任务</button>
-        <button onclick="generateAutomatedTasks()" class="btn-primary">立即生成任务</button>
-      </div>
-    `;
-  } catch (error) {
-    console.error('加载配置失败:', error);
-    container.innerHTML = '<div class="error">加载失败</div>';
-  }
+    const container = document.getElementById('serviceConfigContainer');
+    if (!container) return;
+
+    showLoading('serviceConfigList', '載入服務配置中...');
+
+    try {
+        const response = await apiRequest('/api/client-services');
+        const services = response.data || [];
+
+        if (services.length === 0) {
+            showEmpty('serviceConfigList', 'settings_suggest', '沒有服務配置', '請至「設定」頁面新增客戶服務項目。');
+            return;
+        }
+
+        const list = document.getElementById('serviceConfigList');
+        list.innerHTML = services.map(service => renderServiceConfigCard(service)).join('');
+
+    } catch (error) {
+        console.error('載入服務配置失敗:', error);
+        showError('serviceConfigList', '無法載入服務配置，請稍後再試。');
+    }
 }
+
+/**
+ * 渲染服務配置卡片
+ */
+function renderServiceConfigCard(service) {
+    const serviceName = CONFIG.SERVICE_TYPE_NAMES[service.service_type] || service.service_type;
+    const frequencyName = CONFIG.FREQUENCY_NAMES[service.frequency] || service.frequency;
+
+    return `
+        <div class="config-card ${service.is_active ? 'active' : ''}">
+            <div class="config-card-header">
+                <h4 class="client-name">
+                    <span class="material-symbols-outlined">business_center</span>
+                    ${escapeHtml(service.client_name)}
+                </h4>
+                <div class="status-indicator ${service.is_active ? 'active' : 'inactive'}">
+                    ${service.is_active ? '啟用中' : '已停用'}
+                </div>
+            </div>
+            <div class="config-card-body">
+                <p class="service-name">${escapeHtml(serviceName)}</p>
+                <div class="details-grid">
+                    <div><span class="label">頻率</span><span class="value">${escapeHtml(frequencyName)}</span></div>
+                    <div><span class="label">費用</span><span class="value">$${formatNumber(service.fee)}</span></div>
+                    <div><span class="label">預估工時</span><span class="value">${service.estimated_hours}h</span></div>
+                    <div><span class="label">難度</span><span class="value">${'⭐'.repeat(service.difficulty_level || 1)}</span></div>
+                    <div><span class="label">執行日</span><span class="value">每月 ${service.execution_day} 日</span></div>
+                    <div><span class="label">負責人</span><span class="value">${escapeHtml(service.assigned_to_name || '未指定')}</span></div>
+                </div>
+                <div class="last-generated">
+                    上次生成時間：${service.last_generated_at ? formatDateTime(service.last_generated_at) : '無記錄'}
+                </div>
+            </div>
+            <div class="config-card-footer">
+                <button class="btn btn-sm btn-outline" onclick="goToClientSettings(${service.client_id})">
+                    <span class="material-symbols-outlined">edit</span> 編輯
+                </button>
+                <button class="btn btn-sm btn-secondary" onclick="generateSingleService(${service.id})">
+                    <span class="material-symbols-outlined">play_arrow</span> 手動生成
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 跳轉到客戶設定頁面
+ */
+function goToClientSettings(clientId) {
+    window.location.href = `settings.html?tab=clients&client_id=${clientId}`;
+}
+
+/**
+ * 手動為單一服務生成任務
+ */
+async function generateSingleService(serviceId) {
+    if (!await confirmDialog('確定要為此服務手動生成下一個任務嗎？這將忽略重複生成檢查。')) return;
+    
+    try {
+        showNotification('正在生成任務...', 'info');
+        const data = await apiRequest(`/api/automated-tasks/generate/${serviceId}`, { method: 'POST' });
+        if (data.success && data.task_id) {
+            showNotification(`已成功生成任務 #${data.task_id}`, 'success');
+        } else {
+            throw new Error(data.error || '生成失敗，但未收到錯誤訊息。');
+        }
+    } catch (error) {
+        handleApiError(error, '手動生成任務');
+    }
+}
+
 
 /**
  * 预览自动任务

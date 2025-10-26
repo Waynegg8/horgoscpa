@@ -422,7 +422,7 @@ function renderTaskItem(task) {
     const priorityClass = task.due_date && isPastDue(task.due_date) ? 'high-priority' : 
                           task.status === 'in_progress' ? 'medium-priority' : '';
     
-    const statusBadge = getStatusBadge(task.status);
+    const statusBadge = getStatusBadge(task.status); // Now uses global function
     const dueDateText = task.due_date ? formatDueDate(task.due_date) : '無截止日期';
     
     // Use CONFIG for mapping
@@ -483,20 +483,8 @@ function getNotesForTask(type, category, task) {
     return null;
 }
 
-function getStatusBadge(status) {
-    const statusMap = {
-        'pending': { text: '待處理', class: 'status-pending' },
-        'in_progress': { text: '進行中', class: 'status-in_progress' },
-        'completed': { text: '已完成', class: 'status-completed' },
-        'not_started': { text: '未開始', class: 'status-pending' },
-        'on_hold': { text: '暫停', class: 'status-pending' }
-    };
-    
-    const statusInfo = statusMap[status] || { text: status, class: 'status-pending' };
-    return `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
-}
-
 function formatDueDate(dateStr) {
+    if (!dateStr) return '無截止日期';
     const date = new Date(dateStr);
     const today = new Date();
     today.setHours(0, 0, 0, 0);

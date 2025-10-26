@@ -620,6 +620,18 @@ function getUrlParameter(param) {
 }
 
 /**
+ * 生成狀態徽章 HTML
+ * @param {string} status - 狀態值
+ * @returns {string} HTML 字符串
+ */
+function getStatusBadge(status) {
+    const statusText = window.CONFIG?.TASK_STATUS_NAMES?.[status] || status;
+    // 將 'in_progress' 轉為 'in-progress' 以符合 CSS class 命名慣例
+    const statusClass = `status-${status.replace('_', '-')}`;
+    return `<span class="status-badge ${statusClass}">${escapeHtml(statusText)}</span>`;
+}
+
+/**
  * 設置查詢參數
  * @param {string} param - 參數名
  * @param {string} value - 參數值
@@ -655,6 +667,7 @@ window.confirmDialog = confirmDialog;
 window.promptDialog = promptDialog;
 window.getUrlParameter = getUrlParameter;
 window.setUrlParameter = setUrlParameter;
+window.getStatusBadge = getStatusBadge;
 window.debounce = debounce;
 window.throttle = throttle;
 window.deepClone = deepClone;
