@@ -87,8 +87,9 @@ function loadCurrentTabData() {
 }
 
 function loadTabData(tabName) {
-    // 確保 currentUser 已被設定
-    if (!currentUser) {
+    // 確保 currentUser 已被設定（使用 window.currentUser）
+    const user = window.currentUser;
+    if (!user) {
         console.warn('currentUser 尚未載入，延後執行');
         setTimeout(() => loadTabData(tabName), 100);
         return;
@@ -116,34 +117,34 @@ function loadTabData(tabName) {
             loadHolidays();
             break;
         case 'client-services':
-            if (currentUser.role === 'admin') {
+            if (user.role === 'admin') {
                 loadClientServices();
             }
             break;
         case 'cache-management':
-            if (currentUser.role === 'admin') {
+            if (user.role === 'admin') {
                 loadCacheStats();
             }
             break;
         case 'users':
-            if (currentUser.role === 'admin') {
+            if (user.role === 'admin') {
                 loadUsers();
             }
             break;
         case 'leave-types':
-            if (currentUser.role === 'admin') {
+            if (user.role === 'admin') {
                 loadLeaveTypes();
             }
             break;
         case 'system-params':
-            if (currentUser.role === 'admin') {
+            if (user.role === 'admin') {
                 loadSystemParams();
                 // 載入所有分類的配置
                 loadConfigByCategory('timesheet');
             }
             break;
         case 'employees':
-            if (currentUser.role === 'admin') {
+            if (user.role === 'admin') {
                 loadEmployeesAdmin();
             }
             break;

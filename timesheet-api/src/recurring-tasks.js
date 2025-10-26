@@ -441,6 +441,16 @@ export async function getRecurringTaskInstances(env, searchParams) {
     const category = searchParams.get('category');
     const assignedTo = searchParams.get('assigned_to');
     
+    // 首先檢查表是否存在
+    const tableCheck = await DB.prepare(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='recurring_task_instances'
+    `).first();
+    
+    if (!tableCheck) {
+      console.warn('recurring_task_instances 表不存在，返回空陣列');
+      return jsonResponse({ tasks: [] });
+    }
+    
     let query = `
       SELECT 
         rti.*,
@@ -491,7 +501,8 @@ export async function getRecurringTaskInstances(env, searchParams) {
     return jsonResponse({ tasks });
   } catch (error) {
     console.error('getRecurringTaskInstances error:', error);
-    return jsonResponse({ error: error.message || '查詢週期性任務失敗' }, 500);
+    // 返回空陣列而不是錯誤，避免阻塞前端
+    return jsonResponse({ tasks: [], warning: error.message });
   }
 }
 
