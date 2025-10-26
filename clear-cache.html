@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>清除快取 - 霍爾果斯會計師事務所</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .success {
+            color: #22c55e;
+            font-weight: 600;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 清除快取資料</h1>
+        <p>如果您遇到登入或載入問題，點擊下方按鈕清除瀏覽器快取資料。</p>
+        <p style="font-size: 14px; color: #999;">這將清除：session token、用戶資料快取</p>
+        <button onclick="clearCache()">清除快取並返回登入</button>
+        <div class="success" id="successMsg">✓ 快取已清除！正在跳轉...</div>
+    </div>
+
+    <script>
+        function clearCache() {
+            try {
+                // 清除所有認證相關的快取
+                localStorage.removeItem('session_token');
+                localStorage.removeItem('user_info');
+                sessionStorage.clear();
+                
+                // 顯示成功訊息
+                document.getElementById('successMsg').style.display = 'block';
+                
+                // 1秒後跳轉到登入頁
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 1000);
+            } catch (e) {
+                alert('清除快取時發生錯誤：' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
+

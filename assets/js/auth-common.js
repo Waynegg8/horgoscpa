@@ -38,7 +38,11 @@ async function checkAuth() {
             window.sessionToken = sessionToken;
             window.currentUser = currentUser;
             // 快取用戶資料供離線/錯誤時使用
-            localStorage.setItem('user_info', JSON.stringify(currentUser));
+            try {
+                localStorage.setItem('user_info', JSON.stringify(currentUser));
+            } catch (e) {
+                console.warn('無法儲存用戶快取:', e);
+            }
             updateUserInfo();
             updateUIByRole();
             return true;
@@ -47,6 +51,9 @@ async function checkAuth() {
         // 401 表示 token 無效，需要重新登入
         if (response.status === 401) {
             console.warn('Token 已失效');
+            // 清除損壞的快取
+            localStorage.removeItem('user_info');
+            localStorage.removeItem(SESSION_TOKEN_KEY);
             return false;
         }
         
@@ -56,15 +63,23 @@ async function checkAuth() {
         const cachedUser = localStorage.getItem('user_info');
         if (cachedUser) {
             try {
-                currentUser = JSON.parse(cachedUser);
-                window.sessionToken = sessionToken;
-                window.currentUser = currentUser;
-                updateUserInfo();
-                updateUIByRole();
-                console.warn('使用快取的用戶資料，請檢查網絡連接');
-                return true; // 暫時允許繼續使用
+                const parsed = JSON.parse(cachedUser);
+                // 驗證快取資料的完整性
+                if (parsed && parsed.username && parsed.role) {
+                    currentUser = parsed;
+                    window.sessionToken = sessionToken;
+                    window.currentUser = currentUser;
+                    updateUserInfo();
+                    updateUIByRole();
+                    console.warn('使用快取的用戶資料，請檢查網絡連接');
+                    return true;
+                } else {
+                    console.warn('快取的用戶資料不完整，清除');
+                    localStorage.removeItem('user_info');
+                }
             } catch (e) {
-                console.error('解析快取用戶資料失敗:', e);
+                console.error('解析快取用戶資料失敗，清除損壞的快取:', e);
+                localStorage.removeItem('user_info');
             }
         }
         return false;
@@ -74,15 +89,23 @@ async function checkAuth() {
         const cachedUser = localStorage.getItem('user_info');
         if (cachedUser && sessionToken) {
             try {
-                currentUser = JSON.parse(cachedUser);
-                window.sessionToken = sessionToken;
-                window.currentUser = currentUser;
-                updateUserInfo();
-                updateUIByRole();
-                console.warn('網絡錯誤，使用快取的用戶資料');
-                return true; // 暫時允許繼續使用
+                const parsed = JSON.parse(cachedUser);
+                // 驗證快取資料的完整性
+                if (parsed && parsed.username && parsed.role) {
+                    currentUser = parsed;
+                    window.sessionToken = sessionToken;
+                    window.currentUser = currentUser;
+                    updateUserInfo();
+                    updateUIByRole();
+                    console.warn('網絡錯誤，使用快取的用戶資料');
+                    return true;
+                } else {
+                    console.warn('快取的用戶資料不完整，清除');
+                    localStorage.removeItem('user_info');
+                }
             } catch (e) {
-                console.error('解析快取用戶資料失敗:', e);
+                console.error('解析快取用戶資料失敗，清除損壞的快取:', e);
+                localStorage.removeItem('user_info');
             }
         }
     }
