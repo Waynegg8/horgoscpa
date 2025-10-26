@@ -571,7 +571,9 @@ function goToTaskDetail(type, id) {
     if (type === 'recurring') {
         window.location.href = `tasks.html?tab=recurring#task-${id}`;
     } else if (type === 'multistage') {
-        window.location.href = `multi-stage-tasks.html?id=${id}`;
+        window.location.href = `tasks.html?tab=all&task=${id}`;
+    } else {
+        window.location.href = `tasks.html?task=${id}`;
     }
 }
 

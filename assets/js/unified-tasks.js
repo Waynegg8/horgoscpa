@@ -241,8 +241,9 @@ function renderTaskCard(task) {
  */
 function openTaskDetail(taskId) {
   console.log('打开任务详情:', taskId);
-  // TODO: 实现侧边面板或跳转到详情页
-  window.location.href = `multi-stage-tasks.html?id=${taskId}`;
+  // TODO: 实现侧边面板显示任务详情
+  // 暂时使用 alert，未来应实现侧边面板
+  alert('任務詳情功能開發中...\n任務 ID: ' + taskId);
 }
 
 /**
