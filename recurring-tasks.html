@@ -12,21 +12,22 @@
     <style>
         .category-tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 15px;
             background: white;
-            padding: 15px;
+            padding: 10px 12px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
         .category-tab {
-            padding: 10px 20px;
+            padding: 8px 16px;
             border: 2px solid transparent;
             background: transparent;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
+            font-size: 14px;
             transition: all 0.3s;
         }
 
@@ -49,7 +50,7 @@
         .task-card {
             background: white;
             border-radius: 12px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             border-left: 4px solid var(--primary-color);
             transition: all 0.3s;
@@ -64,7 +65,7 @@
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .task-title {
@@ -168,43 +169,43 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
         }
 
         .stat-card {
             background: white;
-            padding: 20px;
+            padding: 15px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             text-align: center;
         }
 
         .stat-value {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
             color: var(--primary-color);
             margin-bottom: 5px;
         }
 
         .stat-label {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-secondary);
         }
 
         /* Tab 樣式 */
         .content-tabs {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             background: white;
-            padding: 15px;
+            padding: 10px 15px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
         .content-tab-btn {
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: none;
             background: transparent;
             border-radius: 8px;
@@ -214,6 +215,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 14px;
         }
 
         .content-tab-btn:hover {
@@ -229,6 +231,7 @@
         .tab-content {
             display: none;
             animation: fadeIn 0.3s ease;
+            padding: 10px 0;
         }
 
         .tab-content.active {
@@ -244,7 +247,7 @@
         .service-card {
             background: white;
             border-radius: 12px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             border-left: 4px solid var(--primary-color);
             transition: all 0.3s;
@@ -259,7 +262,7 @@
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .client-name {
@@ -421,13 +424,7 @@
                 const container = document.querySelector('.internal-container');
                 if (container) {
                     container.style.maxWidth = '100%';
-                    container.style.padding = '15px';
-                }
-                
-                // 調整頁面標題樣式
-                const pageHeader = document.querySelector('.page-header');
-                if (pageHeader) {
-                    pageHeader.style.marginBottom = '20px';
+                    container.style.padding = '10px 15px';
                 }
                 
                 // 調整body背景
@@ -438,14 +435,8 @@
     
     <main class="internal-main">
         <div class="internal-container">
-            <!-- 頁面標題 -->
-            <div class="page-header" style="margin-bottom: 30px;">
-                <h1>週期性任務管理</h1>
-                <p style="color: var(--text-secondary);">管理客戶的週期性服務與任務執行</p>
-            </div>
-
             <!-- Tab 切換 -->
-            <div class="content-tabs" style="margin-bottom: 25px;">
+            <div class="content-tabs" style="margin-bottom: 20px;">
                 <button class="content-tab-btn" onclick="switchTab('config')">
                     <span class="material-symbols-outlined">tune</span>
                     服務配置
@@ -458,8 +449,8 @@
 
             <!-- 服務配置 Tab -->
             <div id="config-tab" class="tab-content" style="display: none;">
-                <div style="margin-bottom: 20px;">
-                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <select id="configCategoryFilter" onchange="loadServicesInTab()" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
                             <option value="">所有類別</option>
                             <option value="記帳">記帳</option>
@@ -485,8 +476,8 @@
             <!-- 任務執行 Tab -->
             <div id="tasks-tab" class="tab-content">
             <!-- 月份選擇器 -->
-            <div class="toolbar" style="margin-bottom: 20px;">
-                <div style="display: flex; gap: 15px; align-items: center;">
+            <div class="toolbar" style="margin-bottom: 15px;">
+                <div style="display: flex; gap: 10px; align-items: center;">
                     <select id="yearSelect" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
                         <option value="2025">2025年</option>
                         <option value="2024">2024年</option>
