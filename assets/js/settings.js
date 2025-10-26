@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // currentUser 由 auth-common.js 設定
         initTabs();
         initSearchFilters();
+        initConfigInputValidation();
         if (typeof initClientsExtended === 'function') {
             initClientsExtended();
         }
@@ -86,6 +87,13 @@ function loadCurrentTabData() {
 }
 
 function loadTabData(tabName) {
+    // 確保 currentUser 已被設定
+    if (!currentUser) {
+        console.warn('currentUser 尚未載入，延後執行');
+        setTimeout(() => loadTabData(tabName), 100);
+        return;
+    }
+    
     switch (tabName) {
         case 'clients':
             loadClients();
@@ -2029,14 +2037,14 @@ function validateConfigInput(input) {
     return true;
 }
 
-// 為所有配置輸入添加驗證
-document.addEventListener('DOMContentLoaded', () => {
+// 配置輸入驗證由主初始化函數統一處理
+function initConfigInputValidation() {
     const configInputs = document.querySelectorAll('.config-input[type="number"]');
     configInputs.forEach(input => {
         input.addEventListener('input', () => validateConfigInput(input));
         input.addEventListener('blur', () => validateConfigInput(input));
     });
-});
+}
 
 // =========================================
 // 客戶服務配置管理
