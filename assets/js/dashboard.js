@@ -94,13 +94,16 @@ async function loadDashboardData() {
         // 管理員：載入團隊進度和全體工時
         await Promise.all([
             loadTeamProgress(),
-            loadAdminWeeklyStats()
+            loadAdminWeeklyStats(),
+            loadWorkloadBalance()  // 新增：工作量平衡視圖
         ]);
     } else {
         // 員工：載入個人待辦任務和工時
         await Promise.all([
             loadPendingTasks(),
-            loadWeeklyStats()
+            loadWeeklyStats(),
+            loadAnnualLeave(),     // 新增：年假餘額
+            loadReminders()        // 新增：提醒系統
         ]);
     }
 }
@@ -607,4 +610,196 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ==================== 新增：提醒系統 ====================
+
+async function loadReminders() {
+    const container = document.getElementById('remindersList');
+    if (!container) return;
+    
+    try {
+        const response = await apiRequest('/api/reminders');
+        const reminders = response.reminders || [];
+        
+        // 只顯示未讀的高優先級提醒
+        const unreadReminders = reminders.filter(r => !r.is_read);
+        
+        if (unreadReminders.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                    <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.5;">check_circle</span>
+                    <p style="margin-top: 10px;">目前沒有重要提醒</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = unreadReminders.map(reminder => {
+            const priorityColors = {
+                high: '#f44336',
+                normal: '#ffc107',
+                low: '#4caf50'
+            };
+            const priorityIcons = {
+                high: 'error',
+                normal: 'warning',
+                low: 'info'
+            };
+            
+            return `
+                <div style="padding: 12px; background: #fff; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${priorityColors[reminder.priority] || priorityColors.normal}; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <span class="material-symbols-outlined" style="color: ${priorityColors[reminder.priority] || priorityColors.normal}; font-size: 20px;">
+                            ${priorityIcons[reminder.priority] || priorityIcons.normal}
+                        </span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; margin-bottom: 4px; color: var(--text-primary);">
+                                ${escapeHtml(reminder.message)}
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">
+                                ${formatDateTime(reminder.created_at)}
+                            </div>
+                        </div>
+                        <button onclick="markReminderAsRead(${reminder.id})" 
+                                style="background: none; border: none; cursor: pointer; padding: 4px; color: var(--text-secondary);"
+                                title="標記為已讀">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('載入提醒失敗:', error);
+        container.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #f44336;">
+                <p>載入提醒失敗，請稍後再試</p>
+            </div>
+        `;
+    }
+}
+
+async function markReminderAsRead(reminderId) {
+    try {
+        await apiRequest(`/api/reminders/${reminderId}/read`, {
+            method: 'PUT'
+        });
+        await loadReminders(); // 重新載入
+    } catch (error) {
+        console.error('標記失敗:', error);
+    }
+}
+
+// ==================== 新增：年假餘額 ====================
+
+async function loadAnnualLeave() {
+    try {
+        const employeeName = currentUser.employee_name;
+        if (!employeeName) return;
+        
+        const response = await apiRequest(`/api/annual-leave?employee=${encodeURIComponent(employeeName)}`);
+        
+        if (response.success && response.leave) {
+            const leave = response.leave;
+            const remaining = leave.remaining_days || 0;
+            const total = leave.earned_days || 0;
+            const percentage = total > 0 ? (remaining / total * 100) : 0;
+            
+            document.getElementById('annualLeaveRemaining').textContent = `${remaining.toFixed(1)} 天`;
+            document.getElementById('annualLeaveTotal').textContent = `${total.toFixed(1)}`;
+            document.getElementById('annualLeaveProgress').style.width = `${percentage}%`;
+        }
+    } catch (error) {
+        console.error('載入年假餘額失敗:', error);
+        document.getElementById('annualLeaveRemaining').textContent = '-';
+        document.getElementById('annualLeaveTotal').textContent = '-';
+    }
+}
+
+// ==================== 新增：工作量平衡視圖（管理員） ====================
+
+async function loadWorkloadBalance() {
+    const container = document.getElementById('workloadBalanceContainer');
+    if (!container) return;
+    
+    try {
+        const response = await apiRequest('/api/workload/overview');
+        const workloads = response.workloads || [];
+        
+        if (workloads.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                    <p>目前沒有工作量資料</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // 找出最大工時用於比例計算
+        const maxHours = Math.max(...workloads.map(w => w.remaining_hours || 0), 1);
+        
+        container.innerHTML = `
+            <div style="display: grid; gap: 15px;">
+                ${workloads.map(workload => {
+                    const percentage = (workload.remaining_hours / maxHours * 100) || 0;
+                    const taskCount = workload.pending_tasks || 0;
+                    const hours = workload.remaining_hours || 0;
+                    
+                    // 根據工作量設定顏色
+                    let barColor = '#4caf50'; // 綠色：輕鬆
+                    if (percentage > 70) barColor = '#f44336'; // 紅色：超載
+                    else if (percentage > 50) barColor = '#ffc107'; // 黃色：適中
+                    
+                    return `
+                        <div style="background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="material-symbols-outlined" style="color: ${barColor};">person</span>
+                                    <span style="font-weight: 600; font-size: 15px;">${escapeHtml(workload.employee_name)}</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 12px; color: var(--text-secondary);">${taskCount} 個任務</div>
+                                    <div style="font-weight: 700; color: ${barColor};">${hours.toFixed(1)} 小時</div>
+                                </div>
+                            </div>
+                            <div style="background: var(--light-bg); height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div style="background: ${barColor}; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('載入工作量平衡失敗:', error);
+        container.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #f44336;">
+                <p>載入工作量資料失敗</p>
+            </div>
+        `;
+    }
+}
+
+// ==================== 輔助函數 ====================
+
+function formatDateTime(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return '剛剛';
+    if (diffMins < 60) return `${diffMins} 分鐘前`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} 小時前`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} 天前`;
+    
+    return date.toLocaleDateString('zh-TW');
 }
