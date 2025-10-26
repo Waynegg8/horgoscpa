@@ -32,6 +32,18 @@ function handleOptions(request) {
 function createRouter() {
   const router = new Router();
 
+  // 測試端點 - 驗證部署版本
+  router.get('/api/version', async (env, request) => {
+    return new Response(JSON.stringify({
+      version: '3.0',
+      timestamp: new Date().toISOString(),
+      status: 'refactored',
+      modules: ['auth', 'clients', 'tasks']
+    }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  });
+
   // 註冊各模組的路由
   registerAuthRoutes(router);
   registerClientRoutes(router);
