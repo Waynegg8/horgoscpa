@@ -791,3 +791,114 @@ const result = await response.json();
 **最後更新**: 2025-10-25  
 **狀態**: ✅ 所有 API 端點已實現並連接資料庫
 
+## 自動任務生成 API（Automated Tasks）
+
+### POST /api/automated-tasks/generate
+手動觸發批次生成到期任務。
+
+請求:
+```json
+{
+  "date": "2025-10-26"  
+}
+```
+回應:
+```json
+{
+  "results": {
+    "generated": [{"task_id": 123}],
+    "skipped": [],
+    "errors": []
+  }
+}
+```
+
+### GET /api/automated-tasks/preview
+預覽目前到期、將被生成的任務。
+
+回應:
+```json
+{
+  "tasks_to_generate": 12,
+  "tasks": [
+    { "client_name": "ABC", "service_type": "vat", "execution_period": "2025-11" }
+  ]
+}
+```
+
+### POST /api/automated-tasks/generate/:service_id
+為特定 `client_service` 立即生成任務。
+
+---
+
+## 客戶服務配置 API（Client Services）
+
+### GET /api/client-services?client_id=&service_type=&assigned_to=
+查詢服務配置列表（可過濾）。
+
+回應:
+```json
+{
+  "services": [
+    {
+      "id": 10,
+      "client_name": "ABC",
+      "service_type": "accounting",
+      "frequency": "monthly",
+      "assigned_to": "紜蓁",
+      "is_active": 1
+    }
+  ]
+}
+```
+
+### POST /api/client-services
+新增服務配置。
+
+### PUT /api/client-services/:id
+更新服務配置（執行日、提前天數、難度、指派等）。
+
+### POST /api/client-services/:id/toggle
+啟用/停用服務。
+
+### DELETE /api/client-services/:id
+刪除服務配置。
+
+---
+
+## FAQ 內容管理 API
+
+### GET /api/faq/categories
+列出 FAQ 分類。
+
+### POST /api/faq/categories
+新增 FAQ 分類。
+
+### GET /api/faqs?category_id=&status=
+查詢 FAQ 列表。
+
+### POST /api/faqs
+新增 FAQ。
+
+### PUT /api/faqs/:id
+更新 FAQ。
+
+### DELETE /api/faqs/:id
+刪除 FAQ。
+
+---
+
+## 工作量 API
+
+### GET /api/workload/overview?period=YYYY-MM
+取得團隊工作量概覽（任務數、剩餘工時等）。
+
+回應:
+```json
+{
+  "workloads": [
+    { "employee_name": "紜蓁", "pending_tasks": 18, "remaining_hours": 120.5 }
+  ]
+}
+```
+

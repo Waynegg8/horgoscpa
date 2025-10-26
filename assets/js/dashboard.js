@@ -3,13 +3,12 @@
  * 顯示待辦任務、本週工時及團隊進度（管理員）
  */
 
-// 使用共用模組的全局變量
-let currentUser = null;
+// 使用共用模組的全局變量（由 auth-common.js 提供 currentUser）
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 使用統一的初始化函數
     await initPage(async () => {
-        currentUser = window.currentUser; // 從 auth-common.js 獲取
+        // currentUser 由 auth-common.js 設定
         updateDashboardGreeting();
         updateDashboardView();
         await loadDashboardData();

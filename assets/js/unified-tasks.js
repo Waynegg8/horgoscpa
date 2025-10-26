@@ -5,7 +5,6 @@
 
 // 使用共用模組的全局變量
 let currentTab = 'all';
-let currentUser = null;
 
 /**
  * 初始化
@@ -13,8 +12,7 @@ let currentUser = null;
 async function initUnifiedTasks() {
   console.log('初始化统一任务管理系统...');
   
-  // 從共用模組獲取當前用戶
-  currentUser = window.currentUser;
+  // 使用 auth-common.js 設定的 currentUser
   if (!currentUser) {
     console.warn('用戶未登入');
     return;

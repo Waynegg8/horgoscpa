@@ -3,8 +3,7 @@
  * 包含客戶、客戶指派、業務類型、假期事件、國定假日管理
  */
 
-// 使用共用模組的全局變量
-let currentUser = null;
+// 使用共用模組的全局變量（由 auth-common.js 提供 currentUser）
 let currentData = {
     clients: [],
     assignments: [],
@@ -23,7 +22,7 @@ let currentData = {
 document.addEventListener('DOMContentLoaded', async () => {
     // 使用統一的初始化函數
     await initPage(async () => {
-        currentUser = window.currentUser; // 從 auth-common.js 獲取
+        // currentUser 由 auth-common.js 設定
         initTabs();
         initSearchFilters();
         if (typeof initClientsExtended === 'function') {

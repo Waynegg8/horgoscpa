@@ -3,8 +3,7 @@
  * 包含工時分析、請假總覽、樞紐分析報表
  */
 
-// 使用共用模組的全局變量
-let currentUser = null;
+// 使用共用模組的全局變量（由 auth-common.js 提供 currentUser）
 let employeesCache = [];
 
 // =========================================
@@ -13,7 +12,7 @@ let employeesCache = [];
 document.addEventListener('DOMContentLoaded', async () => {
     // 使用統一的初始化函數
     await initPage(async () => {
-        currentUser = window.currentUser; // 從 auth-common.js 獲取
+        // currentUser 由 auth-common.js 設定
         initTabs();
         await loadEmployees();
         populateYearOptions();

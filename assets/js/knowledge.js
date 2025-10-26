@@ -1,12 +1,9 @@
 // 知識庫頁面腳本（抽離自 knowledge.html）
 
-let sessionToken = null;
-let currentUser = null;
+// 使用 auth-common.js 提供的 sessionToken 與 currentUser
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initPage(async () => {
-    sessionToken = window.sessionToken;
-    currentUser = window.currentUser;
     await loadSopCategories();
     await loadSops();
   });
