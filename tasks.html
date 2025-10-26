@@ -202,7 +202,10 @@
                         </button>
                     </div>
                     <div id="serviceConfigList">
-                        <p style="text-align: center; padding: 40px; color: #999;">配置列表功能開發中...</p>
+                        <div class="loading-container">
+                            <div class="spinner"></div>
+                            <div class="loading-text">載入服務配置中...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -474,14 +477,17 @@
                 case 'my-tasks':
                     return tasks.filter(task => 
                         task.assigned_to === currentUser?.username || 
-                        task.assigned_to === currentUser?.employee_name
+                        task.assigned_to === currentUser?.employee_name ||
+                        task.assigned_user === currentUser?.username ||
+                        task.assigned_user === currentUser?.employee_name
                     );
                 case 'recurring':
-                    return tasks.filter(task => task.category === '周期' || task.category === 'recurring');
+                    // 統一使用英文分類名稱
+                    return tasks.filter(task => task.category === 'recurring');
                 case 'business':
-                    return tasks.filter(task => task.category === '工商' || task.category === 'business');
+                    return tasks.filter(task => task.category === 'business');
                 case 'finance':
-                    return tasks.filter(task => task.category === '財稅' || task.category === 'finance');
+                    return tasks.filter(task => task.category === 'finance');
                 case 'client-service':
                     return tasks.filter(task => task.category === 'client_service');
                 default:
@@ -517,10 +523,21 @@
                 'in_progress': '進行中',
                 'on_hold': '暫停',
                 'completed': '已完成',
-                'pending': '待處理'
+                'pending': '待處理',
+                'cancelled': '已取消'
+            };
+            
+            const categoryMap = {
+                'recurring': '周期任務',
+                'business': '工商登記',
+                'finance': '財稅簽證',
+                'client_service': '客戶服務',
+                'project': '專案任務',
+                'general': '一般任務'
             };
             
             const statusText = statusMap[task.status] || task.status;
+            const categoryText = categoryMap[task.category] || task.category;
             const progress = task.total_stages ? Math.round((task.completed_stages || 0) / task.total_stages * 100) : 0;
             
             return `
@@ -529,16 +546,21 @@
                         <div>
                             <div class="task-title">${task.task_name || task.title || '未命名任務'}</div>
                             <div class="task-meta">
+                                ${task.category ? `
+                                    <span class="category-badge" style="background: #e3f2fd; color: #1976d2; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                        ${categoryText}
+                                    </span>
+                                ` : ''}
                                 ${task.client_name ? `
                                     <div class="task-meta-item">
                                         <span class="material-symbols-outlined">person</span>
                                         <span>${task.client_name}</span>
                                     </div>
                                 ` : ''}
-                                ${task.assigned_to ? `
+                                ${task.assigned_to || task.assigned_user ? `
                                     <div class="task-meta-item">
                                         <span class="material-symbols-outlined">assignment_ind</span>
-                                        <span>${task.assigned_to}</span>
+                                        <span>${task.assigned_to || task.assigned_user}</span>
                                     </div>
                                 ` : ''}
                             </div>
@@ -785,6 +807,10 @@
                     <div style="text-align: center; padding: 40px; color: #999;">
                         <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.3;">error_outline</span>
                         <p style="margin-top: 20px;">載入失敗</p>
+                        <button class="btn btn-secondary" onclick="loadServiceConfig()" style="margin-top: 16px;">
+                            <span class="material-symbols-outlined">refresh</span>
+                            重試
+                        </button>
                     </div>
                 `;
             }
@@ -799,7 +825,7 @@
                     <div style="text-align: center; padding: 60px 20px; color: #999;">
                         <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">settings</span>
                         <p style="margin-top: 20px; font-size: 18px;">尚無服務配置</p>
-                        <p style="font-size: 14px; color: #666;">請先在設定頁面添加客戶和服務</p>
+                        <p style="font-size: 14px; color: #666;">請先在設定頁面的「客戶服務配置」標籤添加服務</p>
                     </div>
                 `;
                 return;
@@ -811,75 +837,87 @@
                 'income_tax': '營所稅申報',
                 'withholding': '扣繳申報',
                 'prepayment': '暫繳申報',
-                'audit': '財務簽證'
+                'dividend': '盈餘分配',
+                'nhi': '二代健保補充保費',
+                'shareholder_tax': '股東可扣抵稅額',
+                'audit': '財務簽證',
+                'company_setup': '公司設立登記'
             };
             
             const frequencyNames = {
                 'monthly': '每月',
                 'bimonthly': '雙月',
                 'quarterly': '每季',
+                'biannual': '半年',
                 'annual': '年度'
             };
             
             let html = '<div style="display: grid; gap: 16px;">';
             services.forEach(service => {
                 const isActive = service.is_active !== false && service.is_active !== 0;
+                const difficultyStars = service.difficulty_level ? '⭐'.repeat(service.difficulty_level) : '';
+                
                 html += `
-                    <div class="service-config-card" style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; ${!isActive ? 'opacity: 0.6;' : ''}">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                    <div class="service-config-card" style="background: white; border: 2px solid ${isActive ? '#e0e0e0' : '#f0f0f0'}; border-radius: 12px; padding: 24px; ${!isActive ? 'opacity: 0.6;' : ''} transition: all 0.3s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 2px solid #f5f5f5;">
                             <div>
-                                <h3 style="margin: 0 0 8px 0; font-size: 18px; color: var(--text-primary);">
+                                <h3 style="margin: 0 0 10px 0; font-size: 19px; color: var(--text-primary); font-weight: 700;">
                                     ${service.client_name || '未知客戶'} - ${serviceTypeNames[service.service_type] || service.service_type}
                                 </h3>
-                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <span class="badge" style="background: #e3f2fd; color: #0d6efd;">${frequencyNames[service.frequency] || service.frequency}</span>
-                                    ${service.difficulty_level ? `<span class="badge" style="background: #fff3cd; color: #856404;">${'⭐'.repeat(service.difficulty_level)} 難度</span>` : ''}
-                                    <span class="badge" style="background: ${isActive ? '#d4edda' : '#f8d7da'}; color: ${isActive ? '#155724' : '#721c24'};">${isActive ? '✓ 啟用' : '✗ 停用'}</span>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <span class="badge" style="background: #e3f2fd; color: #0d6efd; padding: 6px 14px; border-radius: 16px; font-size: 12px; font-weight: 700;">${frequencyNames[service.frequency] || service.frequency}</span>
+                                    ${difficultyStars ? `<span class="badge" style="background: #fff3cd; color: #856404; padding: 6px 14px; border-radius: 16px; font-size: 12px; font-weight: 700;">${difficultyStars} 難度</span>` : ''}
+                                    <span class="badge" style="background: ${isActive ? '#d4edda' : '#f8d7da'}; color: ${isActive ? '#155724' : '#721c24'}; padding: 6px 14px; border-radius: 16px; font-size: 12px; font-weight: 700;">${isActive ? '✓ 啟用中' : '✗ 已停用'}</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; font-size: 14px;">
-                            <div>
-                                <strong style="color: var(--text-secondary);">負責人：</strong>
-                                <span>${service.assigned_to || '未指派'}</span>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 18px;">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">負責人</span>
+                                <span style="font-size: 15px; color: var(--text-primary); font-weight: 700;">${service.assigned_to || '未指派'}</span>
                             </div>
-                            <div>
-                                <strong style="color: var(--text-secondary);">執行日：</strong>
-                                <span>每月 ${service.execution_day || 15} 日</span>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">執行日</span>
+                                <span style="font-size: 15px; color: var(--text-primary); font-weight: 700;">每月 ${service.execution_day || 15} 日</span>
                             </div>
-                            <div>
-                                <strong style="color: var(--text-secondary);">提前：</strong>
-                                <span>${service.advance_days || 7} 天</span>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">提前生成</span>
+                                <span style="font-size: 15px; color: var(--text-primary); font-weight: 700;">${service.advance_days || 7} 天</span>
                             </div>
-                            <div>
-                                <strong style="color: var(--text-secondary);">期限：</strong>
-                                <span>${service.due_days || 15} 天</span>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">任務期限</span>
+                                <span style="font-size: 15px; color: var(--text-primary); font-weight: 700;">${service.due_days || 15} 天</span>
                             </div>
-                            <div>
-                                <strong style="color: var(--text-secondary);">費用：</strong>
-                                <span>$${service.fee || 0}</span>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">預估工時</span>
+                                <span style="font-size: 15px; color: var(--text-primary); font-weight: 700;">${service.estimated_hours || 0} 小時</span>
                             </div>
-                            <div>
-                                <strong style="color: var(--text-secondary);">預估工時：</strong>
-                                <span>${service.estimated_hours || 0}h</span>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">服務費用</span>
+                                <span style="font-size: 15px; color: var(--text-primary); font-weight: 700;">$${(service.fee || 0).toLocaleString()}</span>
                             </div>
                         </div>
                         
-                        <div style="display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;">
-                            <button class="btn btn-sm btn-secondary" onclick="testGenerateService(${service.id})" title="測試生成">
+                        <div style="display: flex; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 2px solid #f5f5f5; flex-wrap: wrap;">
+                            <button class="btn btn-sm btn-secondary" onclick="testGenerateService(${service.id})" title="測試生成" style="flex: 1; min-width: 120px;">
                                 <span class="material-symbols-outlined">play_arrow</span>
                                 測試生成
                             </button>
-                            <button class="btn btn-sm btn-secondary" onclick="viewServiceHistory(${service.id})" title="執行歷史">
+                            <button class="btn btn-sm btn-secondary" onclick="viewServiceHistory(${service.id})" title="執行歷史" style="flex: 1; min-width: 120px;">
                                 <span class="material-symbols-outlined">history</span>
-                                歷史
+                                執行歷史
                             </button>
-                            <button class="btn btn-sm ${isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleService(${service.id}, ${!isActive})" title="${isActive ? '停用' : '啟用'}">
+                            <button class="btn btn-sm ${isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleService(${service.id}, ${!isActive})" title="${isActive ? '停用' : '啟用'}" style="flex: 1; min-width: 100px;">
                                 <span class="material-symbols-outlined">${isActive ? 'pause' : 'play_arrow'}</span>
                                 ${isActive ? '停用' : '啟用'}
                             </button>
                         </div>
+                        ${service.notes ? `
+                            <div style="margin-top: 14px; padding: 12px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: var(--text-secondary);">
+                                <strong>備註：</strong>${service.notes}
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             });

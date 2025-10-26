@@ -200,6 +200,8 @@ function loadTabData(tabName) {
         case 'system-params':
             if (currentUser.role === 'admin') {
                 loadSystemParams();
+                // 載入所有分類的配置
+                loadConfigByCategory('timesheet');
             }
             break;
         case 'employees':
@@ -1952,7 +1954,9 @@ function switchConfigTab(category) {
     document.querySelectorAll('.config-tab-button').forEach(btn => {
         btn.classList.remove('active');
     });
-    event.target.closest('.config-tab-button').classList.add('active');
+    if (typeof event !== 'undefined' && event.target) {
+        event.target.closest('.config-tab-button')?.classList.add('active');
+    }
 
     // 更新內容顯示
     document.querySelectorAll('.config-category').forEach(cat => {
@@ -1962,6 +1966,34 @@ function switchConfigTab(category) {
     const targetConfig = document.getElementById(`${category}-config`);
     if (targetConfig) {
         targetConfig.classList.add('active');
+    }
+    
+    // 載入該分類的配置
+    loadConfigByCategory(category);
+}
+
+/**
+ * 載入特定分類的系統配置
+ */
+async function loadConfigByCategory(category) {
+    try {
+        const response = await apiRequest(`/api/system-config/${category}`);
+        
+        if (response.success && response.parameters) {
+            // 填充表單值
+            response.parameters.forEach(param => {
+                const element = document.getElementById(param.param_key);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = param.param_value === 'true' || param.param_value === '1';
+                    } else {
+                        element.value = param.param_value || '';
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error(`載入 ${category} 配置失敗:`, error);
     }
 }
 

@@ -230,11 +230,15 @@ async function loadWeeklyStats() {
                 Object.values(entry.hours || {}).forEach(h => leaveHours += parseFloat(h) || 0);
             });
             
+            // 更新統計卡片
+            document.getElementById('weeklyHours').textContent = totalHours.toFixed(1) + ' 小時';
+            document.getElementById('overtimeHours').textContent = '0';  // 可以進一步計算加班工時
+            
             container.innerHTML = `
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-value">${totalHours.toFixed(1)}</div>
-                        <div class="stat-label">本週工時</div>
+                        <div class="stat-label">本月工時</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value">${leaveHours.toFixed(1)}</div>
@@ -242,6 +246,9 @@ async function loadWeeklyStats() {
                     </div>
                 </div>
             `;
+            
+            // 繪製工時趨勢圖
+            drawWeeklyHoursChart(workEntries, year, month);
         } else {
             container.innerHTML = '<div style="color: var(--text-secondary); text-align: center;">無員工資料</div>';
         }
@@ -249,6 +256,95 @@ async function loadWeeklyStats() {
         console.error('載入工時統計失敗:', error);
         container.innerHTML = '<div style="color: #f44336; text-align: center;">載入失敗</div>';
     }
+}
+
+/**
+ * 繪製本週工時趨勢圖
+ */
+function drawWeeklyHoursChart(workEntries, year, month) {
+    const canvas = document.getElementById('weeklyHoursChart');
+    if (!canvas) return;
+    
+    // 計算每日工時
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const dailyHours = new Array(daysInMonth).fill(0);
+    const labels = [];
+    
+    workEntries.forEach(entry => {
+        Object.entries(entry.hours || {}).forEach(([day, hours]) => {
+            const dayIndex = parseInt(day) - 1;
+            if (dayIndex >= 0 && dayIndex < daysInMonth) {
+                dailyHours[dayIndex] += parseFloat(hours) || 0;
+            }
+        });
+    });
+    
+    // 只顯示最近7天
+    const today = new Date();
+    const currentDay = today.getDate();
+    const startDay = Math.max(1, currentDay - 6);
+    
+    for (let i = startDay; i <= Math.min(currentDay, daysInMonth); i++) {
+        labels.push(`${month}/${i}`);
+    }
+    
+    const chartData = dailyHours.slice(startDay - 1, currentDay);
+    
+    // 銷毀舊圖表（如果存在）
+    if (canvas.chart) {
+        canvas.chart.destroy();
+    }
+    
+    // 創建新圖表
+    canvas.chart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '工時（小時）',
+                data: chartData,
+                backgroundColor: 'rgba(44, 95, 124, 0.8)',
+                borderColor: 'rgba(44, 95, 124, 1)',
+                borderWidth: 2,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 2,
+                        font: { size: 12 }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: { size: 11 }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
 }
 
 async function loadAdminWeeklyStats() {
@@ -278,8 +374,9 @@ async function loadAdminWeeklyStats() {
         });
         
         const employeeStats = await Promise.all(statsPromises);
+        employeeStats.sort((a, b) => b.hours - a.hours);
         
-        // 直接顯示各員工工時，移除團隊總計
+        // 直接顯示各員工工時
         container.innerHTML = `
             <div style="font-size: 14px;">
                 <div style="font-weight: 700; margin-bottom: 16px; color: var(--text-primary); font-size: 16px;">
@@ -287,7 +384,7 @@ async function loadAdminWeeklyStats() {
                     各員工本月工時
                 </div>
                 <div style="display: grid; gap: 12px;">
-                    ${employeeStats.sort((a, b) => b.hours - a.hours).map(emp => `
+                    ${employeeStats.map(emp => `
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: var(--light-bg); border-radius: 8px; border-left: 4px solid var(--primary-color); transition: all 0.2s;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <span class="material-symbols-outlined" style="color: var(--primary-color);">person</span>
@@ -299,10 +396,100 @@ async function loadAdminWeeklyStats() {
                 </div>
             </div>
         `;
+        
+        // 繪製團隊工時對比圖表
+        drawTeamHoursChart(employeeStats);
     } catch (error) {
         console.error('載入管理員工時統計失敗:', error);
         container.innerHTML = '<div style="color: #f44336; text-align: center;">載入失敗</div>';
     }
+}
+
+/**
+ * 繪製團隊工時對比圖表
+ */
+function drawTeamHoursChart(employeeStats) {
+    const canvas = document.getElementById('teamHoursChart');
+    if (!canvas) return;
+    
+    const labels = employeeStats.map(emp => emp.name);
+    const data = employeeStats.map(emp => emp.hours);
+    
+    // 銷毀舊圖表（如果存在）
+    if (canvas.chart) {
+        canvas.chart.destroy();
+    }
+    
+    // 創建新圖表
+    canvas.chart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '本月工時',
+                data: data,
+                backgroundColor: [
+                    'rgba(44, 95, 124, 0.8)',
+                    'rgba(74, 144, 226, 0.8)',
+                    'rgba(90, 158, 229, 0.8)',
+                    'rgba(106, 172, 233, 0.8)',
+                    'rgba(122, 186, 237, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(44, 95, 124, 1)',
+                    'rgba(74, 144, 226, 1)',
+                    'rgba(90, 158, 229, 1)',
+                    'rgba(106, 172, 233, 1)',
+                    'rgba(122, 186, 237, 1)'
+                ],
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        label: function(context) {
+                            return `工時: ${context.parsed.y.toFixed(1)} 小時`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 20,
+                        font: { size: 12 },
+                        callback: function(value) {
+                            return value + 'h';
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: { size: 12, weight: '600' }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
 }
 
 async function loadTeamProgress() {
