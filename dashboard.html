@@ -7,7 +7,6 @@
     <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="assets/css/internal-system.css">
-    <link rel="stylesheet" href="assets/css/navbar-enhanced.css">
     <style>
         .dashboard-grid {
             display: grid;
@@ -100,71 +99,34 @@
                     <span class="material-symbols-outlined">home</span>
                     工作台
                 </a>
-
                 <a href="timesheet.html" class="internal-nav-link">
                     <span class="material-symbols-outlined">calendar_month</span>
                     工時表
                 </a>
-                
-                <div class="internal-nav-dropdown">
-                    <button class="internal-nav-dropdown-toggle">
-                        <span class="material-symbols-outlined">task</span>
-                        <span>任務</span>
-                        <span class="material-symbols-outlined dropdown-arrow">expand_more</span>
-                    </button>
-                    <div class="internal-nav-dropdown-menu">
-                        <a href="tasks.html" class="internal-nav-dropdown-item">
-                            <span class="material-symbols-outlined">view_agenda</span>
-                            任務中心
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="projects.html" class="internal-nav-dropdown-item">
-                            <span class="material-symbols-outlined">account_tree</span>
-                            專案任務
-                        </a>
-                        <a href="recurring-tasks.html" class="internal-nav-dropdown-item">
-                            <span class="material-symbols-outlined">repeat</span>
-                            週期任務
-                        </a>
-                        <a href="multi-stage-tasks.html" class="internal-nav-dropdown-item">
-                            <span class="material-symbols-outlined">timeline</span>
-                            複雜任務
-                        </a>
-                    </div>
-                </div>
-                
+                <a href="recurring-tasks.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">repeat</span>
+                    週期任務
+                </a>
+                <a href="projects.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">account_tree</span>
+                    專案
+                </a>
+                <a href="multi-stage-tasks.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">timeline</span>
+                    複雜任務
+                </a>
                 <a href="settings.html#clients" class="internal-nav-link">
                     <span class="material-symbols-outlined">groups</span>
                     客戶
                 </a>
-                
-                <div class="internal-nav-dropdown">
-                    <button class="internal-nav-dropdown-toggle">
-                        <span class="material-symbols-outlined">library_books</span>
-                        <span>知識庫</span>
-                        <span class="material-symbols-outlined dropdown-arrow">expand_more</span>
-                    </button>
-                    <div class="internal-nav-dropdown-menu">
-                        <a href="sop.html" class="internal-nav-dropdown-item">
-                            <span class="material-symbols-outlined">description</span>
-                            SOP 文件
-                        </a>
-                        <a href="content-editor.html" class="internal-nav-dropdown-item">
-                            <span class="material-symbols-outlined">article</span>
-                            知識文章
-                        </a>
-                        <a href="content-editor.html?tab=media" class="internal-nav-dropdown-item">
-                            <span class="material-symbols-outlined">photo_library</span>
-                            資源中心
-                        </a>
-                    </div>
-                </div>
-                
+                <a href="content-editor.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">library_books</span>
+                    知識庫
+                </a>
                 <a href="reports.html" class="internal-nav-link">
                     <span class="material-symbols-outlined">assessment</span>
                     報表
                 </a>
-                
                 <a href="settings.html" class="internal-nav-link">
                     <span class="material-symbols-outlined">settings</span>
                     設定
@@ -251,7 +213,6 @@
         &copy; 2025 霍爾果斯會計師事務所 內部管理系統
     </footer>
 
-    <script src="assets/js/navbar-enhanced.js"></script>
     <script src="assets/js/dashboard.js"></script>
 </body>
 </html>

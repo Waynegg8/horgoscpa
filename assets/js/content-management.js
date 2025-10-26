@@ -78,6 +78,8 @@ function switchContentTab(tab) {
     // 載入對應數據
     if (tab === 'posts') {
         loadPosts();
+    } else if (tab === 'faq') {
+        loadFAQs();
     } else if (tab === 'sop') {
         loadSOPs();
     } else if (tab === 'resources') {
@@ -627,6 +629,153 @@ async function bulkChangeStatus(newStatus) {
     } catch (error) {
         showNotification('批量更新失敗: ' + error.message, 'error');
     }
+}
+
+// =====================================
+// 常見問答管理
+// =====================================
+let allFAQs = [];
+
+async function loadFAQs() {
+    try {
+        // 載入 FAQ 數據腳本
+        if (typeof faqData === 'undefined') {
+            // 動態載入 faq-data.js
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'assets/js/faq-data.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        // 轉換數據格式
+        const categories = {};
+        faqData.questions.forEach(q => {
+            const catId = q.category;
+            if (!categories[catId]) {
+                const catInfo = faqData.categories.find(c => c.id === catId);
+                categories[catId] = {
+                    category: catInfo ? catInfo.name : catId,
+                    icon: getCategoryIcon(catId),
+                    questions: []
+                };
+            }
+            categories[catId].questions.push({
+                question: q.question,
+                answer: q.answer.replace(/<[^>]*>/g, '').trim() // 移除 HTML 標籤
+            });
+        });
+        
+        allFAQs = Object.values(categories);
+        renderFAQsUI();
+    } catch (error) {
+        console.error('載入常見問答失敗:', error);
+        const container = document.getElementById('faq-list-container');
+        container.innerHTML = `
+            <div style="background: white; padding: 40px; border-radius: 12px; text-align: center;">
+                <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3; color: #f44336;">error</span>
+                <h3>載入失敗</h3>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+function getCategoryIcon(catId) {
+    const icons = {
+        'tax': '💰',
+        'accounting': '📊',
+        'business': '🏢',
+        'service': '🤝'
+    };
+    return icons[catId] || '❓';
+}
+
+function renderFAQsUI() {
+    const container = document.getElementById('faq-list-container');
+    
+    let totalQA = 0;
+    allFAQs.forEach(cat => totalQA += (cat.questions || []).length);
+    
+    container.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <div>
+                    <h2 style="margin: 0;">常見問答</h2>
+                    <p style="color: var(--text-secondary); margin: 5px 0 0;">管理前台常見問題</p>
+                </div>
+                <button class="btn btn-primary" onclick="showFAQEditor()">
+                    <span class="material-symbols-outlined">add</span>
+                    新增問答
+                </button>
+            </div>
+            
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+                <div style="font-size: 32px; font-weight: 700;">${totalQA}</div>
+                <div style="font-size: 14px; opacity: 0.9;">總問答數</div>
+            </div>
+            
+            ${allFAQs.map((category, catIndex) => `
+                <div style="margin-bottom: 30px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <h3 style="color: var(--primary-color); margin: 0;">
+                            ${category.icon} ${escapeHtml(category.category)}
+                        </h3>
+                        <span style="background: var(--light-bg); padding: 4px 12px; border-radius: 12px; font-size: 13px; color: var(--text-secondary);">
+                            ${category.questions.length} 個問題
+                        </span>
+                    </div>
+                    <div style="display: grid; gap: 10px;">
+                        ${category.questions.map((qa, qaIndex) => `
+                            <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; transition: all 0.2s;" onmouseenter="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseleave="this.style.boxShadow='none'">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; margin-bottom: 8px; color: var(--primary-color);">
+                                            Q: ${escapeHtml(qa.question)}
+                                        </div>
+                                        <div style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">
+                                            A: ${escapeHtml(qa.answer)}
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 5px;">
+                                        <button class="btn btn-sm btn-secondary" onclick="editFAQ(${catIndex}, ${qaIndex})" title="編輯">
+                                            <span class="material-symbols-outlined" style="font-size: 16px;">edit</span>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteFAQ(${catIndex}, ${qaIndex})" title="刪除">
+                                            <span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('')}
+            
+            ${totalQA === 0 ? `
+                <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+                    <span class="material-symbols-outlined" style="font-size: 80px; opacity: 0.3;">help</span>
+                    <h3>尚無常見問答</h3>
+                    <p>點擊「新增問答」開始創建</p>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function showFAQEditor() {
+    showNotification('常見問答編輯功能開發中...', 'info');
+}
+
+function editFAQ(catIndex, qaIndex) {
+    showNotification('編輯功能開發中...', 'info');
+}
+
+function deleteFAQ(catIndex, qaIndex) {
+    if (!confirm('確定要刪除此問答嗎？')) return;
+    showNotification('刪除功能開發中...', 'info');
 }
 
 // =====================================

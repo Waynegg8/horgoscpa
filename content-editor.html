@@ -85,19 +85,15 @@
                 </a>
                 <a href="multi-stage-tasks.html" class="internal-nav-link">
                     <span class="material-symbols-outlined">timeline</span>
-                    多階段任務
+                    複雜任務
                 </a>
-                <a href="recurring-tasks.html" class="internal-nav-link">
-                    <span class="material-symbols-outlined">repeat</span>
-                    週期任務
-                </a>
-                <a href="service-config.html" class="internal-nav-link">
-                    <span class="material-symbols-outlined">tune</span>
-                    服務配置
+                <a href="settings.html#clients" class="internal-nav-link">
+                    <span class="material-symbols-outlined">groups</span>
+                    客戶
                 </a>
                 <a href="content-editor.html" class="internal-nav-link active">
-                    <span class="material-symbols-outlined">article</span>
-                    內容
+                    <span class="material-symbols-outlined">library_books</span>
+                    知識庫
                 </a>
                 <a href="settings.html" class="internal-nav-link">
                     <span class="material-symbols-outlined">settings</span>
@@ -127,6 +123,10 @@
                 <button class="content-tab-btn active" onclick="switchContentTab('posts')">
                     <span class="material-symbols-outlined">article</span>
                     知識文章
+                </button>
+                <button class="content-tab-btn" onclick="switchContentTab('faq')">
+                    <span class="material-symbols-outlined">help</span>
+                    常見問答
                 </button>
                 <button class="content-tab-btn" onclick="switchContentTab('sop')">
                     <span class="material-symbols-outlined">description</span>
@@ -276,6 +276,13 @@
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- 常見問答 -->
+            <div id="faq-section" class="content-section">
+                <div id="faq-list-container">
+                    <!-- 常見問答列表將通過 JavaScript 載入 -->
                 </div>
             </div>
 

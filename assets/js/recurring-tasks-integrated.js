@@ -144,9 +144,9 @@ async function loadClientsAndEmployees() {
 }
 
 async function loadServicesInTab() {
-    const category = document.getElementById('configCategoryFilter').value;
-    
     try {
+        const category = document.getElementById('configCategoryFilter')?.value || '';
+        
         let url = '/api/services/clients';
         if (category) {
             url += `?category=${encodeURIComponent(category)}`;
@@ -157,7 +157,16 @@ async function loadServicesInTab() {
         displayServicesInTab(allServices);
     } catch (error) {
         console.error('載入服務配置失敗:', error);
-        showNotification('載入失敗: ' + error.message, 'error');
+        const grid = document.getElementById('serviceGridInTab');
+        if (grid) {
+            grid.innerHTML = `
+                <div style="background: white; padding: 40px; border-radius: 12px; text-align: center;">
+                    <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3; color: #f44336;">error</span>
+                    <h3>載入失敗</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
     }
 }
 
