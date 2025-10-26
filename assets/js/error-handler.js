@@ -131,8 +131,6 @@ if (document.readyState === 'loading') {
     initGlobalErrorHandler();
 }
 
-// 導出供全局使用
+// 導出供全局使用（handleApiError/handleValidationError 已於上方綁定至 window）
 window.initGlobalErrorHandler = initGlobalErrorHandler;
-window.handleApiError = handleApiError;
-window.handleValidationError = handleValidationError;
 
