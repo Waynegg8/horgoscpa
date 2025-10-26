@@ -483,130 +483,123 @@ export async function generateAutomatedTasks(options = {}) {
 }
 
 /**
- * API 路由處理器
+ * Handler: 批量生成任務
+ * POST /api/automated-tasks/generate
  */
-export default {
-  /**
-   * POST /api/automated-tasks/generate
-   * 手動觸發任務生成
-   */
-  async generate(request, env) {
-    try {
-      const body = await request.json().catch(() => ({}));
-      const {
-        date = new Date().toISOString(),
-        service_type = null,
-        client_id = null,
-        assigned_to = null
-      } = body;
-      
-      const targetDate = new Date(date);
-      
-      const results = await generateAutomatedTasks({
-        targetDate,
-        serviceType: service_type,
-        clientId: client_id,
-        assignedTo: assigned_to
-      });
-      
-      return new Response(JSON.stringify({
-        success: true,
-        timestamp: new Date().toISOString(),
-        results
-      }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-    } catch (error) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-  },
-  
-  /**
-   * POST /api/automated-tasks/generate/:service_id
-   * 為特定服務生成任務
-   */
-  async generateForService(request, env, params) {
-    try {
-      const serviceId = parseInt(params.service_id);
-      const db = await getDB();
-      
-      const result = await generateTaskForService(db, serviceId);
-      
-      return new Response(JSON.stringify({
-        success: true,
-        result
-      }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-    } catch (error) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-  },
-  
-  /**
-   * GET /api/automated-tasks/preview
-   * 預覽將要生成的任務
-   */
-  async preview(request, env) {
-    try {
-      const url = new URL(request.url);
-      const targetDate = new Date(url.searchParams.get('date') || new Date());
-      
-      const db = await getDB();
-      const services = await db.all(
-        `SELECT cs.*, u.employee_name as assignee_name
-         FROM client_services cs
-         LEFT JOIN users u ON cs.assigned_to = u.id
-         WHERE cs.is_active = 1`
-      );
-      
-      const preview = [];
-      for (const service of services) {
-        const check = await shouldGenerateTask(db, service, targetDate);
-        if (check.should) {
-          preview.push({
-            service_id: service.id,
-            client_name: service.client_name,
-            service_type: service.service_type,
-            assigned_to: service.assignee_name,
-            execution_date: check.execution_date,
-            execution_period: check.execution_period
-          });
-        }
-      }
-      
-      return new Response(JSON.stringify({
-        success: true,
-        preview_date: targetDate.toISOString(),
-        tasks_to_generate: preview.length,
-        tasks: preview
-      }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-    } catch (error) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: error.message
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+export async function handleGenerateAutomatedTasks(env, request) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const {
+      date = new Date().toISOString(),
+      service_type = null,
+      client_id = null,
+      assigned_to = null
+    } = body;
+    
+    const targetDate = new Date(date);
+    
+    const results = await generateAutomatedTasks({
+      targetDate,
+      serviceType: service_type,
+      clientId: client_id,
+      assignedTo: assigned_to
+    });
+    
+    return new Response(JSON.stringify({
+      success: true,
+      timestamp: new Date().toISOString(),
+      results
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
-};
+}
+
+/**
+ * Handler: 為特定服務生成任務
+ * POST /api/automated-tasks/generate/:service_id
+ */
+export async function handleGenerateForService(env, serviceId) {
+  try {
+    const db = await getDB();
+    const result = await generateTaskForService(db, serviceId);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      result
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * Handler: 預覽待生成任務
+ * GET /api/automated-tasks/preview
+ */
+export async function handlePreviewAutomatedTasks(env, request) {
+  try {
+    const url = new URL(request.url);
+    const targetDate = new Date(url.searchParams.get('date') || new Date());
+    
+    const db = await getDB();
+    const services = await db.all(
+      `SELECT cs.*, u.employee_name as assignee_name
+       FROM client_services cs
+       LEFT JOIN users u ON cs.assigned_to = u.id
+       WHERE cs.is_active = 1`
+    );
+    
+    const preview = [];
+    for (const service of services) {
+      const check = await shouldGenerateTask(db, service, targetDate);
+      if (check.should) {
+        preview.push({
+          service_id: service.id,
+          client_name: service.client_name,
+          service_type: service.service_type,
+          assigned_to: service.assignee_name,
+          execution_date: check.execution_date,
+          execution_period: check.execution_period
+        });
+      }
+    }
+    
+    return new Response(JSON.stringify({
+      success: true,
+      preview_date: targetDate.toISOString(),
+      tasks_to_generate: preview.length,
+      tasks: preview
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
 

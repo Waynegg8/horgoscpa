@@ -133,6 +133,12 @@ import {
   getMultiStageTaskStats
 } from './multi-stage-tasks.js';
 
+import {
+  handleGenerateAutomatedTasks,
+  handleGenerateForService,
+  handlePreviewAutomatedTasks
+} from './automated-tasks.js';
+
 // 添加 CORS headers 支持
 async function addCorsHeaders(response) {
   const newHeaders = new Headers(response.headers);
@@ -766,7 +772,9 @@ export default {
       if (url.pathname === "/api/tasks/multi-stage" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        return await addCorsHeaders(await getMultiStageTasks(env, url.searchParams));
+        const result = await getMultiStageTasks(env, url.searchParams);
+        // 確保統一格式
+        return await addCorsHeaders(result);
       }
       
       // 獲取單個多階段任務詳情
@@ -996,6 +1004,32 @@ export default {
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
         const id = url.pathname.split("/")[4];
         return await handleDeleteUser(env.DB, id);
+      }
+
+      // ========================================
+      // 自動化任務生成 API
+      // ========================================
+      
+      // 批量生成任務
+      if (url.pathname === "/api/automated-tasks/generate" && method === "POST") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handleGenerateAutomatedTasks(env, request);
+      }
+      
+      // 為特定服務生成任務
+      if (url.pathname.match(/^\/api\/automated-tasks\/generate\/\d+$/) && method === "POST") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const serviceId = parseInt(url.pathname.split("/")[4]);
+        return await handleGenerateForService(env, serviceId);
+      }
+      
+      // 預覽待生成任務
+      if (url.pathname === "/api/automated-tasks/preview" && method === "GET") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        return await handlePreviewAutomatedTasks(env, request);
       }
 
       // ========================================

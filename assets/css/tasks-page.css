@@ -19,6 +19,191 @@
 }
 
 /* ============================================
+   任務詳情側邊面板
+   ============================================ */
+
+.side-panel {
+    position: fixed;
+    top: 0;
+    right: -600px;
+    width: 600px;
+    max-width: 90vw;
+    height: 100vh;
+    background: white;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    transition: right 0.3s ease;
+    overflow-y: auto;
+}
+
+.side-panel.active {
+    right: 0;
+}
+
+.panel-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.panel-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.panel-close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.panel-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.panel-body {
+    padding: 24px;
+}
+
+.task-detail-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.task-detail-header h3 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    color: var(--text-primary);
+}
+
+.task-detail-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.detail-section {
+    margin-bottom: 24px;
+}
+
+.detail-section label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-section p {
+    margin: 0;
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.stages-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.stage-detail-item {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: var(--light-bg);
+    border-radius: 8px;
+    border-left: 4px solid #ccc;
+}
+
+.stage-detail-item.completed {
+    border-left-color: var(--success-color);
+    background: #e8f5e9;
+}
+
+.stage-detail-item.in_progress {
+    border-left-color: var(--info-color);
+    background: #e3f2fd;
+}
+
+.stage-detail-item .stage-number {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.stage-detail-item.completed .stage-number {
+    background: var(--success-color);
+    color: white;
+    border-color: var(--success-color);
+}
+
+.stage-info {
+    flex: 1;
+}
+
+.stage-info h4 {
+    margin: 0 0 6px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stage-info p {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.stage-info span {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-right: 12px;
+}
+
+.completed-badge {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+.detail-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 2px solid var(--border-color);
+}
+
+/* ============================================
    任務卡片 - 特別優化
    ============================================ */
 

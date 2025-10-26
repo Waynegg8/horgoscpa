@@ -118,7 +118,7 @@ async function loadPendingTasks() {
         // 載入所有類型的未完成任務
         const [recurringRes, multiStageRes] = await Promise.all([
             apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`).catch(() => ({ tasks: [] })),
-            apiRequest(`/api/multi-stage-tasks`).catch(() => [])
+            apiRequest(`/api/tasks/multi-stage`).catch(() => [])
         ]);
         
         const allTasks = [];
@@ -318,11 +318,12 @@ async function loadTeamProgress() {
         // 獲取所有任務
         const [recurringRes, multiStageRes] = await Promise.all([
             apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`).catch(() => ({ tasks: [] })),
-            apiRequest(`/api/multi-stage-tasks`).catch(() => [])
+            apiRequest(`/api/tasks/multi-stage`).catch(() => [])
         ]);
         
         const allRecurringTasks = recurringRes.tasks || [];
-        const allMultiStageTasks = Array.isArray(multiStageRes) ? multiStageRes : [];
+        // 統一處理響應格式
+        const allMultiStageTasks = multiStageRes.tasks || multiStageRes.data || (Array.isArray(multiStageRes) ? multiStageRes : []);
         
         // 統計每個員工的任務進度
         const employeeProgress = employees.map(emp => {
@@ -590,7 +591,7 @@ async function markTaskComplete(type, id) {
                 body: JSON.stringify({ status: 'completed', completed_at: new Date().toISOString() })
             });
         } else if (type === 'multistage') {
-            await apiRequest(`/api/multi-stage-tasks/${id}`, {
+            await apiRequest(`/api/tasks/multi-stage/${id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({ status: 'completed' })
             });

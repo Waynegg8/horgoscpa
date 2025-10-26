@@ -305,7 +305,7 @@
             const createTaskBtn = document.getElementById('createTaskBtn');
             if (createTaskBtn) {
                 createTaskBtn.addEventListener('click', () => {
-                    window.location.href = 'multi-stage-tasks.html';
+                    showCreateTaskDialog();
                 });
             }
 
@@ -383,7 +383,11 @@
             }
 
             // 載入對應數據
-            loadTasks();
+            if (tabName === 'config') {
+                loadServiceConfig();
+            } else {
+                loadTasks();
+            }
         }
 
         // 載入任務
@@ -406,7 +410,7 @@
             `;
             
             try {
-                const response = await fetch(`${WORKER_URL}/api/multi-stage-tasks`, {
+                const response = await fetch(`${WORKER_URL}/api/tasks/multi-stage`, {
                     headers: {
                         'Authorization': `Bearer ${sessionToken}`
                     }
@@ -416,7 +420,10 @@
                     throw new Error('載入失敗');
                 }
                 
-                let tasks = await response.json();
+                let responseData = await response.json();
+                
+                // 統一處理響應格式
+                let tasks = responseData.tasks || responseData.data || responseData || [];
                 
                 // 根據標籤篩選任務
                 tasks = filterTasksByTab(tasks);
@@ -543,9 +550,143 @@
             return html;
         }
 
-        // 打開任務詳情
-        function openTaskDetail(taskId) {
-            window.location.href = `multi-stage-tasks.html?id=${taskId}`;
+        // 打開任務詳情（使用侧边面板）
+        async function openTaskDetail(taskId) {
+            const panel = document.getElementById('taskDetailPanel');
+            const content = document.getElementById('taskDetailContent');
+            
+            // 显示面板
+            panel.classList.add('active');
+            panel.style.right = '0';
+            
+            // 显示加载状态
+            content.innerHTML = `
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <div class="loading-text">載入任務詳情中...</div>
+                </div>
+            `;
+            
+            try {
+                // 获取任务详情
+                const response = await fetch(`${WORKER_URL}/api/tasks/multi-stage/${taskId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('載入失敗');
+                }
+                
+                const taskData = await response.json();
+                
+                // 渲染任务详情
+                renderTaskDetail(taskData);
+            } catch (err) {
+                console.error('載入任務詳情失敗:', err);
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.3;">error_outline</span>
+                        <p style="margin-top: 20px;">載入失敗</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 渲染任务详情
+        function renderTaskDetail(taskData) {
+            const content = document.getElementById('taskDetailContent');
+            const task = taskData.task || taskData;
+            const stages = taskData.stages || [];
+            
+            let html = `
+                <div class="task-detail-header">
+                    <h3>${task.task_name || task.title || '未命名任務'}</h3>
+                    <div class="task-detail-meta">
+                        <span class="category-badge">${task.category || '一般任務'}</span>
+                        <span class="status-badge status-${task.status}">${getStatusText(task.status)}</span>
+                    </div>
+                </div>
+                
+                ${task.client_name ? `
+                    <div class="detail-section">
+                        <label>客戶</label>
+                        <p>${task.client_name}</p>
+                    </div>
+                ` : ''}
+                
+                ${task.assigned_to ? `
+                    <div class="detail-section">
+                        <label>負責人</label>
+                        <p>${task.assigned_to}</p>
+                    </div>
+                ` : ''}
+                
+                ${task.due_date ? `
+                    <div class="detail-section">
+                        <label>截止日期</label>
+                        <p>${formatDate(task.due_date)}</p>
+                    </div>
+                ` : ''}
+                
+                ${stages.length > 0 ? `
+                    <div class="detail-section">
+                        <label>執行階段 (${task.current_stage || 1}/${task.total_stages || stages.length})</label>
+                        <div class="stages-timeline">
+                            ${stages.map((stage, index) => `
+                                <div class="stage-detail-item ${stage.status}">
+                                    <div class="stage-number">${index + 1}</div>
+                                    <div class="stage-info">
+                                        <h4>${stage.stage_name}</h4>
+                                        ${stage.stage_description ? `<p>${stage.stage_description}</p>` : ''}
+                                        ${stage.estimated_hours ? `<span>預估: ${stage.estimated_hours}h</span>` : ''}
+                                        ${stage.status === 'completed' ? `<span class="completed-badge">✓ 已完成</span>` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${task.notes ? `
+                    <div class="detail-section">
+                        <label>備註</label>
+                        <p>${task.notes}</p>
+                    </div>
+                ` : ''}
+                
+                <div class="detail-actions">
+                    <button class="btn btn-secondary" onclick="closeTaskDetail()">關閉</button>
+                    ${task.status !== 'completed' ? `
+                        <button class="btn btn-primary" onclick="editTask(${task.id})">編輯任務</button>
+                    ` : ''}
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        }
+        
+        function getStatusText(status) {
+            const map = {
+                'pending': '待處理',
+                'in_progress': '進行中',
+                'completed': '已完成',
+                'not_started': '未開始',
+                'on_hold': '暫停',
+                'cancelled': '已取消'
+            };
+            return map[status] || status;
+        }
+        
+        function editTask(taskId) {
+            alert('編輯任務功能開發中...');
+            // TODO: 實現編輯功能
+        }
+        
+        function showCreateTaskDialog() {
+            alert('創建任務功能開發中...\n\n建議使用範本市場功能創建標準化任務。');
+            // TODO: 實現創建任務對話框
         }
 
         // 關閉任務詳情面板
@@ -586,14 +727,264 @@
             });
         }
 
+        // 載入服務配置
+        async function loadServiceConfig() {
+            const container = document.getElementById('serviceConfigList');
+            container.innerHTML = `
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <div class="loading-text">載入服務配置中...</div>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/client-services`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('載入失敗');
+                }
+                
+                const data = await response.json();
+                const services = data.services || data || [];
+                
+                renderServiceConfig(services);
+            } catch (err) {
+                console.error('載入服務配置失敗:', err);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.3;">error_outline</span>
+                        <p style="margin-top: 20px;">載入失敗</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 渲染服務配置
+        function renderServiceConfig(services) {
+            const container = document.getElementById('serviceConfigList');
+            
+            if (!services || services.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">settings</span>
+                        <p style="margin-top: 20px; font-size: 18px;">尚無服務配置</p>
+                        <p style="font-size: 14px; color: #666;">請先在設定頁面添加客戶和服務</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const serviceTypeNames = {
+                'accounting': '記帳服務',
+                'vat': '營業稅申報',
+                'income_tax': '營所稅申報',
+                'withholding': '扣繳申報',
+                'prepayment': '暫繳申報',
+                'audit': '財務簽證'
+            };
+            
+            const frequencyNames = {
+                'monthly': '每月',
+                'bimonthly': '雙月',
+                'quarterly': '每季',
+                'annual': '年度'
+            };
+            
+            let html = '<div style="display: grid; gap: 16px;">';
+            services.forEach(service => {
+                const isActive = service.is_active !== false && service.is_active !== 0;
+                html += `
+                    <div class="service-config-card" style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; ${!isActive ? 'opacity: 0.6;' : ''}">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+                            <div>
+                                <h3 style="margin: 0 0 8px 0; font-size: 18px; color: var(--text-primary);">
+                                    ${service.client_name || '未知客戶'} - ${serviceTypeNames[service.service_type] || service.service_type}
+                                </h3>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <span class="badge" style="background: #e3f2fd; color: #0d6efd;">${frequencyNames[service.frequency] || service.frequency}</span>
+                                    ${service.difficulty_level ? `<span class="badge" style="background: #fff3cd; color: #856404;">${'⭐'.repeat(service.difficulty_level)} 難度</span>` : ''}
+                                    <span class="badge" style="background: ${isActive ? '#d4edda' : '#f8d7da'}; color: ${isActive ? '#155724' : '#721c24'};">${isActive ? '✓ 啟用' : '✗ 停用'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; font-size: 14px;">
+                            <div>
+                                <strong style="color: var(--text-secondary);">負責人：</strong>
+                                <span>${service.assigned_to || '未指派'}</span>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-secondary);">執行日：</strong>
+                                <span>每月 ${service.execution_day || 15} 日</span>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-secondary);">提前：</strong>
+                                <span>${service.advance_days || 7} 天</span>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-secondary);">期限：</strong>
+                                <span>${service.due_days || 15} 天</span>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-secondary);">費用：</strong>
+                                <span>$${service.fee || 0}</span>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-secondary);">預估工時：</strong>
+                                <span>${service.estimated_hours || 0}h</span>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;">
+                            <button class="btn btn-sm btn-secondary" onclick="testGenerateService(${service.id})" title="測試生成">
+                                <span class="material-symbols-outlined">play_arrow</span>
+                                測試生成
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="viewServiceHistory(${service.id})" title="執行歷史">
+                                <span class="material-symbols-outlined">history</span>
+                                歷史
+                            </button>
+                            <button class="btn btn-sm ${isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleService(${service.id}, ${!isActive})" title="${isActive ? '停用' : '啟用'}">
+                                <span class="material-symbols-outlined">${isActive ? 'pause' : 'play_arrow'}</span>
+                                ${isActive ? '停用' : '啟用'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+        
+        // 測試生成服務任務
+        async function testGenerateService(serviceId) {
+            if (!confirm('確定要為此服務立即生成任務嗎？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/automated-tasks/generate/${serviceId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('生成失敗');
+                }
+                
+                const result = await response.json();
+                alert(`任務生成成功！\n\n任務ID: ${result.result?.task_id || '未知'}`);
+                
+                // 切換到客戶服務標籤查看新任務
+                switchMainTab('client-service');
+            } catch (err) {
+                console.error('生成失敗:', err);
+                alert('生成失敗: ' + err.message);
+            }
+        }
+        
+        // 查看服務歷史
+        function viewServiceHistory(serviceId) {
+            alert(`查看服務 ${serviceId} 的執行歷史功能開發中...`);
+            // TODO: 實現歷史查看
+        }
+        
+        // 切換服務狀態
+        async function toggleService(serviceId, enable) {
+            try {
+                const response = await fetch(`${WORKER_URL}/api/client-services/${serviceId}/toggle`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ is_active: enable })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('操作失敗');
+                }
+                
+                alert(enable ? '服務已啟用' : '服務已停用');
+                loadServiceConfig();
+            } catch (err) {
+                console.error('切換狀態失敗:', err);
+                alert('操作失敗: ' + err.message);
+            }
+        }
+        
         // 預覽自動任務
         async function previewAutomatedTasks() {
-            alert('預覽功能開發中...');
+            try {
+                const response = await fetch(`${WORKER_URL}/api/automated-tasks/preview`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('預覽失敗');
+                }
+                
+                const data = await response.json();
+                const tasks = data.tasks || [];
+                
+                if (tasks.length === 0) {
+                    alert('目前沒有需要生成的任務');
+                    return;
+                }
+                
+                const preview = tasks.map(t => 
+                    `- ${t.client_name}: ${t.service_type} (${t.execution_period})`
+                ).join('\n');
+                
+                alert(`將生成 ${tasks.length} 個任務：\n\n${preview}`);
+            } catch (err) {
+                console.error('預覽失敗:', err);
+                alert('預覽失敗: ' + err.message);
+            }
         }
 
         // 生成自動任務
         async function generateAutomatedTasks() {
-            alert('生成功能開發中...');
+            if (!confirm('確定要批量生成所有到期的任務嗎？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/automated-tasks/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('生成失敗');
+                }
+                
+                const result = await response.json();
+                const generated = result.results?.generated || [];
+                const skipped = result.results?.skipped || [];
+                const errors = result.results?.errors || [];
+                
+                alert(`任務生成完成！\n\n成功: ${generated.length} 個\n跳過: ${skipped.length} 個\n錯誤: ${errors.length} 個`);
+                
+                // 切換到客戶服務標籤查看新任務
+                switchMainTab('client-service');
+            } catch (err) {
+                console.error('生成失敗:', err);
+                alert('生成失敗: ' + err.message);
+            }
         }
     </script>
 </body>

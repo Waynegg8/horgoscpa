@@ -25,7 +25,10 @@ export async function getClientsExtended(request, env) {
     // 聯合查詢 clients 和 clients_extended
     const query = `
       SELECT 
+        c.id,
         c.name,
+        c.tax_id,
+        c.status,
         ce.*
       FROM clients c
       LEFT JOIN clients_extended ce ON c.name = ce.client_name
