@@ -121,6 +121,141 @@ async function requireAdmin(db, request) {
   return auth;
 }
 
+// ================================================================
+// Handler functions (moved from index.js)
+// ================================================================
+
+async function handleLogin(db, request) {
+  try {
+    const { username, password } = await request.json();
+    if (!username || !password) {
+      return jsonResponse({ error: '請提供使用者名稱和密碼' }, 400);
+    }
+    const user = await db.prepare(`
+      SELECT id, username, password_hash, role, employee_name, is_active
+      FROM users
+      WHERE username = ? AND is_active = 1
+    `).bind(username).first();
+    if (!user) {
+      return jsonResponse({ error: '使用者名稱或密碼錯誤' }, 401);
+    }
+    const isValid = await verifyPassword(password, user.password_hash);
+    if (!isValid) {
+      return jsonResponse({ error: '使用者名稱或密碼錯誤' }, 401);
+    }
+    const sessionToken = await createSession(db, user.id);
+    return jsonResponse({
+      success: true,
+      session_token: sessionToken,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        employee_name: user.employee_name
+      }
+    });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleLogout(db, request) {
+  try {
+    const sessionToken = getSessionToken(request);
+    if (sessionToken) {
+      await deleteSession(db, sessionToken);
+    }
+    return jsonResponse({ success: true });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleVerifySession(db, request) {
+  try {
+    const sessionToken = getSessionToken(request);
+    const user = await verifySession(db, sessionToken);
+    if (!user) {
+      return jsonResponse({ error: '用戶不存在' }, 401);
+    }
+    return jsonResponse({
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        employee_name: user.employee_name
+      }
+    });
+  } catch (err) {
+    return jsonResponse({ error: err.message }, 500);
+  }
+}
+
+async function handleChangePassword(db, request) {
+  try {
+    const auth = await requireAuth(db, request);
+    if (!auth.authorized) {
+      return jsonResponse({ error: auth.error }, 401);
+    }
+    const body = await request.json();
+    const oldPassword = body.old_password || body.currentPassword;
+    const newPassword = body.new_password || body.newPassword;
+    if (!oldPassword || !newPassword) {
+      return jsonResponse({ error: '請提供目前密碼和新密碼' }, 400);
+    }
+    if (newPassword.length < 6) {
+      return jsonResponse({ error: '新密碼至少需要6個字元' }, 400);
+    }
+    const user = await db.prepare(`
+      SELECT password_hash FROM users WHERE id = ?
+    `).bind(auth.user.id).first();
+    if (!user) {
+      return jsonResponse({ error: '使用者不存在' }, 404);
+    }
+    const isValid = await verifyPassword(oldPassword, user.password_hash);
+    if (!isValid) {
+      return jsonResponse({ error: '舊密碼錯誤' }, 401);
+    }
+    const newHash = await hashPassword(newPassword);
+    await db.prepare(`
+      UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+    `).bind(newHash, auth.user.id).run();
+    return jsonResponse({ success: true, message: '密碼已成功更新' });
+  } catch (err) {
+    return jsonResponse({ error: err.message || '密碼更新失敗' }, 500);
+  }
+}
+
+async function handleAdminResetPassword(db, request, username) {
+  try {
+    const auth = await requireAdmin(db, request);
+    if (!auth.authorized) {
+      return jsonResponse({ error: auth.error }, 403);
+    }
+    const body = await request.json();
+    const newPassword = body.new_password || body.newPassword;
+    if (!newPassword) {
+      return jsonResponse({ error: '請提供新密碼' }, 400);
+    }
+    if (newPassword.length < 6) {
+      return jsonResponse({ error: '新密碼至少需要6個字元' }, 400);
+    }
+    const user = await db.prepare(`
+      SELECT id FROM users WHERE username = ?
+    `).bind(username).first();
+    if (!user) {
+      return jsonResponse({ error: '使用者不存在' }, 404);
+    }
+    const newHash = await hashPassword(newPassword);
+    await db.prepare(`
+      UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?
+    `).bind(newHash, username).run();
+    return jsonResponse({ success: true, message: `已重設 ${username} 的密碼` });
+  } catch (err) {
+    return jsonResponse({ error: err.message || '密碼重設失敗' }, 500);
+  }
+}
+
 export {
   hashPassword,
   verifyPassword,
@@ -132,6 +267,11 @@ export {
   cleanupExpiredSessions,
   canAccessEmployee,
   requireAuth,
-  requireAdmin
+  requireAdmin,
+  handleLogin,
+  handleLogout,
+  handleVerifySession,
+  handleChangePassword,
+  handleAdminResetPassword
 };
 

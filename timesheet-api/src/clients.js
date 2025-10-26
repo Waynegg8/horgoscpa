@@ -17,9 +17,7 @@ import { jsonResponse } from './utils.js';
 export async function getClientsExtended(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
-  if (!sessionData) {
-    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
-  }
+  if (!sessionData) { return jsonResponse({ success: false, error: 'Unauthorized' }, 401); }
 
   try {
     // 聯合查詢 clients 和 clients_extended
@@ -55,9 +53,7 @@ export async function getClientsExtended(request, env) {
 export async function getClientExtended(request, env, clientName) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
-  if (!sessionData) {
-    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
-  }
+  if (!sessionData) { return jsonResponse({ success: false, error: 'Unauthorized' }, 401); }
 
   try {
     const query = `
@@ -193,12 +189,7 @@ export async function upsertClientExtended(request, env, clientName) {
 export async function getServiceSchedule(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
-  if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+  if (!sessionData) { return jsonResponse({ success: false, error: 'Unauthorized' }, 401); }
 
   try {
     const url = new URL(request.url);
@@ -220,20 +211,9 @@ export async function getServiceSchedule(request, env) {
     
     const result = await stmt.all();
     
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: result.results 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, data: result.results });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -284,21 +264,9 @@ export async function createServiceSchedule(request, env) {
       data.notes || null
     ).run();
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      id: result.meta.last_row_id,
-      message: 'Service schedule created successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, id: result.meta.last_row_id, message: 'Service schedule created successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -357,20 +325,9 @@ export async function updateServiceSchedule(request, env, scheduleId) {
       scheduleId
     ).run();
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: 'Service schedule updated successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, message: 'Service schedule updated successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -392,20 +349,9 @@ export async function deleteServiceSchedule(request, env, scheduleId) {
       .bind(scheduleId)
       .run();
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: 'Service schedule deleted successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, message: 'Service schedule deleted successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -416,12 +362,7 @@ export async function deleteServiceSchedule(request, env, scheduleId) {
 export async function importServiceSchedule(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
-  if (!sessionData || sessionData.role !== 'admin') {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized - Admin only' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+  if (!sessionData || sessionData.role !== 'admin') { return jsonResponse({ success: false, error: 'Unauthorized - Admin only' }, 403); }
 
   try {
     const payload = await request.json();
@@ -492,12 +433,7 @@ export async function importServiceSchedule(request, env) {
 export async function getClientInteractions(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
-  if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+  if (!sessionData) { return jsonResponse({ success: false, error: 'Unauthorized' }, 401); }
 
   try {
     const url = new URL(request.url);
@@ -519,20 +455,9 @@ export async function getClientInteractions(request, env) {
     
     const result = await stmt.all();
     
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: result.results 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, data: result.results });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -568,21 +493,9 @@ export async function createClientInteraction(request, env) {
       data.handled_by || null
     ).run();
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      id: result.meta.last_row_id,
-      message: 'Interaction created successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, id: result.meta.last_row_id, message: 'Interaction created successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -623,20 +536,9 @@ export async function updateClientInteraction(request, env, interactionId) {
       interactionId
     ).run();
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: 'Interaction updated successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, message: 'Interaction updated successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -658,20 +560,9 @@ export async function deleteClientInteraction(request, env, interactionId) {
       .bind(interactionId)
       .run();
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: 'Interaction deleted successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, message: 'Interaction deleted successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -685,12 +576,7 @@ export async function deleteClientInteraction(request, env, interactionId) {
 export async function importClients(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
-  if (!sessionData || sessionData.role !== 'admin') {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized - Admin only' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
+  if (!sessionData || sessionData.role !== 'admin') { return jsonResponse({ success: false, error: 'Unauthorized - Admin only' }, 403); }
 
   try {
     const data = await request.json();
@@ -779,23 +665,9 @@ export async function importClients(request, env) {
       }
     }
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      successCount,
-      errorCount,
-      errors,
-      message: `Imported ${successCount} clients successfully, ${errorCount} failed`
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, successCount, errorCount, errors, message: `Imported ${successCount} clients successfully, ${errorCount} failed` });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -810,9 +682,7 @@ export async function importClients(request, env) {
 export async function getClientServices(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
-  if (!sessionData) {
-    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
-  }
+  if (!sessionData) { return jsonResponse({ success: false, error: 'Unauthorized' }, 401); }
 
   try {
     const url = new URL(request.url);
@@ -869,9 +739,7 @@ export async function getClientServices(request, env) {
 export async function createClientService(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
-  if (!sessionData || sessionData.user.role !== 'admin') {
-    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
-  }
+  if (!sessionData || sessionData.user.role !== 'admin') { return jsonResponse({ success: false, error: 'Unauthorized' }, 401); }
 
   try {
     const body = await request.json();
@@ -933,9 +801,7 @@ export async function createClientService(request, env) {
 export async function updateClientService(request, env, serviceId) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
-  if (!sessionData || sessionData.user.role !== 'admin') {
-    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
-  }
+  if (!sessionData || sessionData.user.role !== 'admin') { return jsonResponse({ success: false, error: 'Unauthorized' }, 401); }
 
   try {
     const body = await request.json();
@@ -991,9 +857,7 @@ export async function updateClientService(request, env, serviceId) {
 export async function toggleClientService(request, env, serviceId) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
-  if (!sessionData || sessionData.user.role !== 'admin') {
-    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
-  }
+  if (!sessionData || sessionData.user.role !== 'admin') { return jsonResponse({ success: false, error: 'Unauthorized' }, 401); }
 
   try {
     const body = await request.json();
@@ -1024,9 +888,7 @@ export async function toggleClientService(request, env, serviceId) {
 export async function deleteClientService(request, env, serviceId) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
-  if (!sessionData || sessionData.user.role !== 'admin') {
-    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
-  }
+  if (!sessionData || sessionData.user.role !== 'admin') { return jsonResponse({ success: false, error: 'Unauthorized' }, 401); }
 
   try {
     await env.DB.prepare(`

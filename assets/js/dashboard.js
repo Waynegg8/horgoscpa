@@ -793,26 +793,27 @@ async function loadAnnualLeave() {
     try {
         const employeeName = currentUser.employee_name;
         if (!employeeName) return;
-        
         const currentYear = new Date().getFullYear();
-        
-        // 使用報表API查詢年假資料
-        const response = await apiRequest(`/api/reports/annual-leave?employee=${encodeURIComponent(employeeName)}&year=${currentYear}`);
-        
-        if (response && response.leave_stats) {
-            // 從報表API提取年假數據
-            const annualLeaveUsed = response.leave_stats['特休'] || 0;
-            
-            // 簡化計算：假設標準年假15天（實際應該根據年資計算）
-            // TODO: 可以調用 /api/leave-quota API 獲取準確配額
-            const totalDays = 15; // 暫時使用預設值
-            const remainingDays = Math.max(0, totalDays - (annualLeaveUsed / 8));
-            const percentage = totalDays > 0 ? (remainingDays / totalDays * 100) : 0;
-            
-            document.getElementById('annualLeaveRemaining').textContent = `${remainingDays.toFixed(1)} 天`;
-            document.getElementById('annualLeaveTotal').textContent = `${totalDays.toFixed(1)}`;
-            document.getElementById('annualLeaveProgress').style.width = `${percentage}%`;
-        }
+
+        // 1) 取得年度配額（含特休與其他）
+        const quotaRes = await apiRequest(`/api/leave-quota?employee=${encodeURIComponent(employeeName)}&year=${currentYear}`);
+        const quotaList = quotaRes?.quota || [];
+        const annualQuotaHours = (quotaList.find(q => q.type === '特休')?.quota_hours) || 0;
+
+        // 2) 取得年度已使用（報表）
+        const reportRes = await apiRequest(`/api/reports/annual-leave?employee=${encodeURIComponent(employeeName)}&year=${currentYear}`);
+        const annualLeaveUsedHours = (reportRes?.leave_stats?.['特休']) || 0;
+
+        const totalDays = annualQuotaHours / 8;
+        const remainingDays = Math.max(0, (annualQuotaHours - annualLeaveUsedHours) / 8);
+        const percentage = totalDays > 0 ? (remainingDays / totalDays * 100) : 0;
+
+        const remainingEl = document.getElementById('annualLeaveRemaining');
+        const totalEl = document.getElementById('annualLeaveTotal');
+        const barEl = document.getElementById('annualLeaveProgress');
+        if (remainingEl) remainingEl.textContent = `${remainingDays.toFixed(1)} 天`;
+        if (totalEl) totalEl.textContent = `${totalDays.toFixed(1)}`;
+        if (barEl) barEl.style.width = `${percentage}%`;
     } catch (error) {
         console.error('載入年假餘額失敗:', error);
         document.getElementById('annualLeaveRemaining').textContent = '-';

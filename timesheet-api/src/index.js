@@ -12,7 +12,12 @@ import {
   verifySession,
   requireAuth,
   requireAdmin,
-  canAccessEmployee
+  canAccessEmployee,
+  handleLogin,
+  handleLogout,
+  handleVerifySession,
+  handleChangePassword,
+  handleAdminResetPassword
 } from './auth.js';
 
 import {
@@ -861,7 +866,7 @@ export default {
       }
 
       // ========================================
-      // 請假事件 CRUD (所有員工可讀)
+      // 查詢事件 CRUD
       // ========================================
       if (url.pathname === "/api/leave-events" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
@@ -892,7 +897,7 @@ export default {
       }
 
       // ========================================
-      // 國定假日 CRUD (所有員工可讀)
+      // 國定假日 CRUD
       // ========================================
       if (url.pathname === "/api/holidays" && method === "POST") {
         const auth = await requireAuth(env.DB, request);
@@ -942,7 +947,7 @@ export default {
       }
 
       // ========================================
-      // 系統參數 (僅管理員)
+      // 系統參數 CRUD (僅管理員)
       // ========================================
       if (url.pathname === "/api/admin/system-params" && method === "GET") {
         const auth = await requireAdmin(env.DB, request);
@@ -1350,255 +1355,6 @@ function getWorkTypeFromRow(row) {
 
 // =================================================================
 // 認證相關 Handler
-// =================================================================
-
-// 登入
-async function handleLogin(db, request) {
-  try {
-    const { username, password } = await request.json();
-    
-    if (!username || !password) {
-      return jsonResponse({ error: '請提供使用者名稱和密碼' }, 400);
-    }
-    
-    // 查詢使用者
-    const user = await db.prepare(`
-      SELECT id, username, password_hash, role, employee_name, is_active
-      FROM users
-      WHERE username = ? AND is_active = 1
-    `).bind(username).first();
-    
-    if (!user) {
-      return jsonResponse({ error: '使用者名稱或密碼錯誤' }, 401);
-    }
-    
-    // 驗證密碼
-    const isValid = await verifyPassword(password, user.password_hash);
-    if (!isValid) {
-      return jsonResponse({ error: '使用者名稱或密碼錯誤' }, 401);
-    }
-    
-    // 創建 session
-    const sessionToken = await createSession(db, user.id);
-    
-    return jsonResponse({
-      success: true,
-      session_token: sessionToken,
-      user: {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        employee_name: user.employee_name
-      }
-    });
-  } catch (err) {
-    return jsonResponse({ error: err.message }, 500);
-  }
-}
-
-// 登出
-async function handleLogout(db, request) {
-  try {
-    const sessionToken = getSessionToken(request);
-    if (sessionToken) {
-      await deleteSession(db, sessionToken);
-    }
-    return jsonResponse({ success: true });
-  } catch (err) {
-    return jsonResponse({ error: err.message }, 500);
-  }
-}
-
-// 驗證 session
-async function handleVerifySession(db, request) {
-  try {
-    const sessionToken = getSessionToken(request);
-    const user = await verifySession(db, sessionToken);
-    
-    if (!user) {
-      return jsonResponse({ error: '用戶不存在' }, 401);
-    }
-    
-    return jsonResponse({
-      user: {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        employee_name: user.employee_name
-      }
-    });
-  } catch (err) {
-    return jsonResponse({ error: err.message }, 500);
-  }
-}
-
-// 修改密碼
-async function handleChangePassword(db, request) {
-  try {
-    const auth = await requireAuth(db, request);
-    if (!auth.authorized) {
-      return jsonResponse({ error: auth.error }, 401);
-    }
-    
-    const body = await request.json();
-    // 支援兩種參數格式
-    const oldPassword = body.old_password || body.currentPassword;
-    const newPassword = body.new_password || body.newPassword;
-    
-    if (!oldPassword || !newPassword) {
-      return jsonResponse({ error: '請提供目前密碼和新密碼' }, 400);
-    }
-    
-    if (newPassword.length < 6) {
-      return jsonResponse({ error: '新密碼至少需要6個字元' }, 400);
-    }
-    
-    // 驗證舊密碼
-    const user = await db.prepare(`
-      SELECT password_hash FROM users WHERE id = ?
-    `).bind(auth.user.id).first();
-    
-    if (!user) {
-      return jsonResponse({ error: '使用者不存在' }, 404);
-    }
-    
-    const isValid = await verifyPassword(oldPassword, user.password_hash);
-    if (!isValid) {
-      return jsonResponse({ error: '舊密碼錯誤' }, 401);
-    }
-    
-    // 更新密碼
-    const newHash = await hashPassword(newPassword);
-    await db.prepare(`
-      UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-    `).bind(newHash, auth.user.id).run();
-    
-    return jsonResponse({ success: true, message: '密碼已成功更新' });
-  } catch (err) {
-    console.error('Change password error:', err);
-    return jsonResponse({ error: err.message || '密碼更新失敗' }, 500);
-  }
-}
-
-// 管理員重設用戶密碼
-async function handleAdminResetPassword(db, request, username) {
-  try {
-    const auth = await requireAdmin(db, request);
-    if (!auth.authorized) {
-      return jsonResponse({ error: auth.error }, 403);
-    }
-    
-    const body = await request.json();
-    const newPassword = body.new_password || body.newPassword;
-    
-    if (!newPassword) {
-      return jsonResponse({ error: '請提供新密碼' }, 400);
-    }
-    
-    if (newPassword.length < 6) {
-      return jsonResponse({ error: '新密碼至少需要6個字元' }, 400);
-    }
-    
-    // 檢查用戶是否存在
-    const user = await db.prepare(`
-      SELECT id FROM users WHERE username = ?
-    `).bind(username).first();
-    
-    if (!user) {
-      return jsonResponse({ error: '使用者不存在' }, 404);
-    }
-    
-    // 更新密碼
-    const newHash = await hashPassword(newPassword);
-    await db.prepare(`
-      UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?
-    `).bind(newHash, username).run();
-    
-    return jsonResponse({ success: true, message: `已重設 ${username} 的密碼` });
-  } catch (err) {
-    console.error('Admin reset password error:', err);
-    return jsonResponse({ error: err.message || '密碼重設失敗' }, 500);
-  }
-}
-
-// 查詢所有使用者（管理員）
-async function handleGetUsers(db) {
-  try {
-    const res = await db.prepare(`
-      SELECT id, username, role, employee_name, is_active, created_at
-      FROM users
-      ORDER BY created_at DESC
-    `).all();
-    const rows = getRows(res);
-    return jsonResponse(rows);
-  } catch (err) {
-    return jsonResponse({ error: err.message }, 500);
-  }
-}
-
-// 創建使用者（管理員）
-async function handleCreateUser(db, payload) {
-  try {
-    const { username, password, role, employee_name } = payload;
-    
-    if (!username || !password || !role) {
-      return jsonResponse({ error: '請提供必要欄位' }, 400);
-    }
-    
-    const passwordHash = await hashPassword(password);
-    
-    await db.prepare(`
-      INSERT INTO users (username, password_hash, role, employee_name)
-      VALUES (?, ?, ?, ?)
-    `).bind(username, passwordHash, role, employee_name || null).run();
-    
-    return jsonResponse({ success: true });
-  } catch (err) {
-    return jsonResponse({ error: err.message }, 500);
-  }
-}
-
-// 創建客戶（管理員）
-async function handleCreateClient(db, payload) {
-  try {
-    const { name } = payload;
-    
-    if (!name) {
-      return jsonResponse({ error: '請提供客戶名稱' }, 400);
-    }
-    
-    await db.prepare(`
-      INSERT INTO clients (name) VALUES (?)
-    `).bind(name).run();
-    
-    return jsonResponse({ success: true });
-  } catch (err) {
-    return jsonResponse({ error: err.message }, 500);
-  }
-}
-
-// 創建員工客戶對應（管理員）
-async function handleCreateAssignment(db, payload) {
-  try {
-    const { employee_name, client_name } = payload;
-    
-    if (!employee_name || !client_name) {
-      return jsonResponse({ error: '請提供必要欄位' }, 400);
-    }
-    
-    await db.prepare(`
-      INSERT INTO client_assignments (employee_name, client_name)
-      VALUES (?, ?)
-    `).bind(employee_name, client_name).run();
-    
-    return jsonResponse({ success: true });
-  } catch (err) {
-    return jsonResponse({ error: err.message }, 500);
-  }
-}
-
-// =================================================================
-// 修改 Handler 以支持權限檢查
 // =================================================================
 
 // 修改 handleGetEmployees 以支持權限檢查
