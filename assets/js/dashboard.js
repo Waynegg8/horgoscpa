@@ -71,6 +71,10 @@ async function loadDashboardData() {
 
 async function loadPendingTasks() {
     const container = document.getElementById('tasksList');
+    if (!container) {
+        console.warn("Dashboard task list container not found.");
+        return;
+    }
     
     try {
         const year = new Date().getFullYear();
@@ -78,22 +82,20 @@ async function loadPendingTasks() {
         
         // 載入所有類型的未完成任務
         const [recurringRes, multiStageRes] = await Promise.all([
-            apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`)
-                .catch(err => {
-                    console.warn('載入週期任務失敗:', err);
-                    return { tasks: [] };
-                }),
-            apiRequest(`/api/tasks/multi-stage?status!=completed`)
-                .catch(err => {
-                    console.warn('載入多階段任務失敗:', err);
-                    return { tasks: [] };
-                })
+            apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`).catch(err => {
+                console.warn('載入週期任務失敗:', err);
+                return []; // 直接返回空陣列
+            }),
+            apiRequest(`/api/tasks/multi-stage?status!=completed`).catch(err => {
+                console.warn('載入多階段任務失敗:', err);
+                return { tasks: [] }; // 保持物件結構以兼容
+            })
         ]);
         
         const allTasks = [];
         
-        // 處理週期任務（只顯示員工自己的）
-        const recurringTasks = (recurringRes.tasks || []).filter(task => 
+        // recurringRes 現在直接是陣列
+        const recurringTasks = (recurringRes || []).filter(task => 
             task.status !== 'completed' && 
             (!task.assigned_to || task.assigned_to === currentUser.employee_name)
         );
@@ -375,6 +377,7 @@ async function loadAdminWeeklyStats() {
 
 async function loadTeamProgress() {
     const container = document.getElementById('teamProgress');
+    if (!container) return;
     
     try {
         // 獲取所有員工
@@ -385,13 +388,13 @@ async function loadTeamProgress() {
         
         // 獲取所有任務
         const [recurringRes, multiStageRes] = await Promise.all([
-            apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`).catch(() => ({ tasks: [] })),
-            apiRequest(`/api/tasks/multi-stage`).catch(() => [])
+            apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`).catch(() => []), // 直接返回空陣列
+            apiRequest(`/api/tasks/multi-stage`).catch(() => ({ tasks: [] })) // 保持物件結構
         ]);
         
-        const allRecurringTasks = recurringRes.tasks || [];
-        // 統一處理響應格式
-        const allMultiStageTasks = multiStageRes.tasks || multiStageRes.data || (Array.isArray(multiStageRes) ? multiStageRes : []);
+        const allRecurringTasks = recurringRes || [];
+        // 統一處理響應格式，只依賴 .tasks
+        const allMultiStageTasks = multiStageRes?.tasks || [];
         
         // 統計每個員工的任務進度
         const employeeProgress = employees.map(emp => {

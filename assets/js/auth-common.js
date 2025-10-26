@@ -262,10 +262,43 @@ function initLogoutButton() {
  * @param {Function} callback - 認證成功後的回調函數
  */
 async function initPage(callback) {
-    // 檢查認證
+    // 檢查 token 是否存在
+    const token = localStorage.getItem(SESSION_TOKEN_KEY);
+    if (!token) {
+        // 只有在完全沒有 token 的情況下才立即跳轉
+        window.location.href = '/login.html';
+        return;
+    }
+
+    // 嘗試驗證 token
     const isAuthenticated = await checkAuth();
     if (!isAuthenticated) {
-        window.location.href = '/login.html';
+        // 如果 token 存在但驗證失敗（例如後端錯誤），顯示錯誤提示而非直接跳轉
+        document.body.innerHTML = `
+            <div class="auth-error-page">
+                <span class="material-symbols-outlined">cloud_off</span>
+                <h2>驗證失敗</h2>
+                <p>無法連接到伺服器或您的登入已過期。請檢查您的網路連線，然後重試。</p>
+                <div class="auth-error-actions">
+                    <button onclick="window.location.reload()">重試</button>
+                    <button onclick="handleLogout()">重新登入</button>
+                </div>
+            </div>
+        `;
+        // 為了讓 CSS 生效，需要添加樣式
+        const style = document.createElement('style');
+        style.textContent = `
+            .auth-error-page { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center; color: #333; background-color: #f5f5f5; }
+            .auth-error-page .material-symbols-outlined { font-size: 64px; color: #999; }
+            .auth-error-page h2 { font-size: 24px; margin: 20px 0 10px; }
+            .auth-error-page p { max-width: 400px; color: #666; }
+            .auth-error-actions { margin-top: 30px; display: flex; gap: 15px; }
+            .auth-error-actions button { padding: 10px 20px; font-size: 16px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background-color: white; }
+            .auth-error-actions button:hover { background-color: #eee; }
+            .auth-error-actions button:last-child { background-color: #2c5f7c; color: white; border-color: #2c5f7c; }
+            .auth-error-actions button:last-child:hover { background-color: #1e4258; }
+        `;
+        document.head.appendChild(style);
         return;
     }
     

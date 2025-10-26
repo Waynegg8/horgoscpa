@@ -902,3 +902,26 @@ const result = await response.json();
 }
 ```
 
+### GET /api/tasks/recurring?year={year}&month={month}
+獲取指定月份的週期性任務實例。
+
+**回應**: 直接返回一個任務物件的陣列。
+```json
+[
+  {
+    "id": 1,
+    "template_id": 101,
+    "task_name": "客戶A - 月度記帳",
+    "due_date": "2025-10-15",
+    "status": "pending",
+    "assigned_to": "張紜蓁",
+    "notes": null,
+    "client_name": "客戶A",
+    "service_type": "accounting",
+    "frequency": "monthly"
+  }
+]
+```
+
+### 任務範本 API (Templates)
+

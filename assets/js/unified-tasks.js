@@ -38,48 +38,39 @@ async function initUnifiedTasks() {
  * 切换标签
  */
 function switchTab(tabName) {
-  console.log('切换标签:', tabName);
   currentTab = tabName;
-  
-  // 更新标签按钮状态
-  document.querySelectorAll('.tab-button').forEach(btn => {
-    btn.classList.remove('active');
-  });
-  event.target.closest('.tab-button')?.classList.add('active');
-  
-  // 加载对应的任务
-  loadTasks();
+  updateActiveTab(tabName);
+
+  if (tabName === 'config') {
+    loadServiceConfig();
+  } else {
+    loadTasks(tabName);
+  }
 }
 
 /**
  * 加载任务列表
  */
-async function loadTasks() {
-  // 根據當前標籤取得對應的容器 ID
-  const containerMap = {
-    'all': 'allTasksContainer',
-    'my-tasks': 'myTasksContainer',
-    'recurring': 'recurringTasksContainer',
-    'business': 'businessTasksContainer',
-    'finance': 'financeTasksContainer',
-    'client-service': 'clientServiceTasksContainer',
-    'config': 'serviceConfigList'
-  };
-  
-  const containerId = containerMap[currentTab];
+async function loadTasks(tabName) {
+  const containerId = `${tabName}TasksContainer`;
   const container = document.getElementById(containerId);
-  
+
   if (!container) {
-    console.error(`找不到容器: ${containerId}`);
+    console.error(`Container not found for tab: ${tabName} (expected ID: ${containerId})`);
     return;
   }
-  
-  container.innerHTML = '<div class="loading">載入中...</div>';
-  
+
+  container.innerHTML = `
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <div class="loading-text">載入任務中...</div>
+    </div>
+  `;
+
   try {
     let tasks = [];
     
-    switch (currentTab) {
+    switch (tabName) {
       case 'all':
         tasks = await fetchAllTasks();
         break;
@@ -105,8 +96,8 @@ async function loadTasks() {
     
     renderTasks(tasks, container);
   } catch (error) {
-    console.error('載入任務失敗:', error);
-    container.innerHTML = '<div class="error">載入失敗，請重試</div>';
+    console.error(`Error loading tasks for tab ${tabName}:`, error);
+    container.innerHTML = '<div class="error-message">載入任務失敗，請稍後再試。</div>';
   }
 }
 
@@ -602,21 +593,17 @@ window.closeTemplateEditor = function() {
  */
 function renderTasks(tasks, container) {
   if (!container) {
-    console.error('renderTasks: 容器不存在');
+    console.error('Render container is not specified.');
     return;
   }
-  
+
   if (!tasks || tasks.length === 0) {
-    container.innerHTML = `
-      <div style="text-align: center; padding: 60px 20px; color: #999;">
-        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">assignment</span>
-        <p style="margin-top: 20px; font-size: 16px;">暫無任務</p>
-      </div>
-    `;
+    container.innerHTML = '<div class="empty-state"><span class="material-symbols-outlined">inbox</span><p>目前沒有任何任務</p></div>';
     return;
   }
-  
-  container.innerHTML = tasks.map(task => renderTaskCard(task)).join('');
+
+  const tasksHtml = tasks.map(task => renderTaskCard(task)).join('');
+  container.innerHTML = tasksHtml;
 }
 
 /**
@@ -887,7 +874,7 @@ function setupEventListeners() {
         }
         
         // 載入任務
-        loadTasks();
+        loadTasks(tabName);
       });
     }
   });
