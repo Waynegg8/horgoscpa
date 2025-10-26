@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任務管理 - 霍爾果斯會計師事務所</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="assets/css/internal-system.css">
+    <style>
+        /* 主標籤切換 */
+        .main-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            flex-wrap: wrap;
+        }
+
+        .main-tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .main-tab-btn:hover {
+            background: var(--light-bg);
+        }
+
+        .main-tab-btn.active {
+            background: linear-gradient(135deg, var(--primary-color), #5a9ee5);
+            color: white;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+
+        .main-tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .main-tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 週期任務樣式 */
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid var(--primary-color);
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .task-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .task-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .task-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .task-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .category-記帳 { background: #e3f2fd; color: #1976d2; }
+        .category-工商 { background: #fff3e0; color: #f57c00; }
+        .category-財簽 { background: #f3e5f5; color: #7b1fa2; }
+        .category-稅簽 { background: #e8f5e9; color: #388e3c; }
+        .category-其他 { background: #f5f5f5; color: #616161; }
+
+        /* 多階段任務樣式 */
+        .stage-timeline {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        .stage-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stage-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 30px;
+            left: 60%;
+            width: 100%;
+            height: 3px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
+
+        .stage-item.completed:not(:last-child)::after {
+            background: var(--primary-color);
+        }
+
+        .stage-number {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            z-index: 1;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .stage-item.in_progress .stage-number {
+            background: var(--primary-color);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .stage-item.completed .stage-number {
+            background: #198754;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .stage-name {
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .stage-item.completed .stage-name {
+            color: #198754;
+        }
+
+        .stage-item.in_progress .stage-name {
+            color: var(--primary-color);
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-in_progress {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .status-completed {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .status-not_started {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+
+        .status-on_hold {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .monthly-schedule {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 5px;
+            margin-top: 15px;
+        }
+
+        .month-cell {
+            text-align: center;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .month-cell.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .month-cell.inactive {
+            background: #f0f0f0;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- 簡潔的內部導航欄 -->
+    <nav class="internal-navbar">
+        <div class="internal-nav-container">
+            <a href="dashboard.html" class="internal-nav-brand">
+                <img src="assets/images/logo-white.png" alt="霍爾果斯">
+                <span>內部管理系統</span>
+            </a>
+            
+            <button class="internal-mobile-toggle" id="mobileToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div class="internal-nav-links" id="navLinks">
+                <a href="dashboard.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">home</span>
+                    工作台
+                </a>
+                <a href="timesheet.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    工時表
+                </a>
+                <a href="tasks.html" class="internal-nav-link active">
+                    <span class="material-symbols-outlined">task_alt</span>
+                    任務
+                </a>
+                <a href="content-editor.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">library_books</span>
+                    知識庫
+                </a>
+                <a href="reports.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">assessment</span>
+                    報表
+                </a>
+                <a href="settings.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">settings</span>
+                    設定
+                </a>
+                
+                <div class="internal-nav-user">
+                    <div>
+                        <div class="internal-user-name" id="userName">載入中...</div>
+                        <div class="internal-user-role" id="userRole"></div>
+                    </div>
+                    <button class="internal-logout-btn" id="logoutBtn">登出</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="internal-main">
+        <div class="internal-container">
+            <!-- 頁面標題 -->
+            <div class="page-header" style="margin-bottom: 25px;">
+                <h1>任務管理中心</h1>
+                <p>管理週期任務、工商登記和財稅簽證業務</p>
+            </div>
+
+            <!-- 主標籤切換 -->
+            <div class="main-tabs">
+                <button class="main-tab-btn active" onclick="switchMainTab('recurring')">
+                    <span class="material-symbols-outlined">repeat</span>
+                    週期任務
+                </button>
+                <button class="main-tab-btn" onclick="switchMainTab('business')">
+                    <span class="material-symbols-outlined">business_center</span>
+                    工商
+                </button>
+                <button class="main-tab-btn" onclick="switchMainTab('finance')">
+                    <span class="material-symbols-outlined">account_balance</span>
+                    財稅簽證
+                </button>
+            </div>
+
+            <!-- 週期任務內容 -->
+            <div id="recurring-tab" class="main-tab-content active">
+                <iframe src="recurring-tasks.html" style="width: 100%; height: calc(100vh - 280px); border: none; border-radius: 8px;"></iframe>
+            </div>
+
+            <!-- 工商任務內容 -->
+            <div id="business-tab" class="main-tab-content">
+                <div class="toolbar" style="margin-bottom: 20px;">
+                    <button onclick="window.location.href='multi-stage-tasks.html?category=business'" class="btn-primary">
+                        <span class="material-symbols-outlined">add</span>
+                        創建工商任務
+                    </button>
+                    <select id="businessStatusFilter" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-left: 15px;">
+                        <option value="">全部狀態</option>
+                        <option value="not_started">未開始</option>
+                        <option value="in_progress">進行中</option>
+                        <option value="on_hold">暫停</option>
+                        <option value="completed">已完成</option>
+                    </select>
+                </div>
+                <div id="businessTasksList">
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">business_center</span>
+                        <p style="margin-top: 20px; font-size: 16px;">載入中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 財稅簽證任務內容 -->
+            <div id="finance-tab" class="main-tab-content">
+                <div class="toolbar" style="margin-bottom: 20px;">
+                    <button onclick="window.location.href='multi-stage-tasks.html?category=finance'" class="btn-primary">
+                        <span class="material-symbols-outlined">add</span>
+                        創建財稅任務
+                    </button>
+                    <select id="financeStatusFilter" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-left: 15px;">
+                        <option value="">全部狀態</option>
+                        <option value="not_started">未開始</option>
+                        <option value="in_progress">進行中</option>
+                        <option value="on_hold">暫停</option>
+                        <option value="completed">已完成</option>
+                    </select>
+                </div>
+                <div id="financeTasksList">
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">account_balance</span>
+                        <p style="margin-top: 20px; font-size: 16px;">載入中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="internal-footer">
+        &copy; 2025 霍爾果斯會計師事務所 內部管理系統
+    </footer>
+
+    <script>
+        const WORKER_URL = 'https://timesheet-api.hergscpa.workers.dev';
+        let sessionToken = null;
+        let currentUser = null;
+
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 檢查登入狀態
+            if (!await checkAuth()) {
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            // 檢查URL參數，自動切換標籤
+            const urlParams = new URLSearchParams(window.location.search);
+            const tab = urlParams.get('tab');
+            
+            if (tab === 'business') {
+                // 切換到工商標籤
+                document.querySelectorAll('.main-tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.main-tab-btn')[1].classList.add('active');
+                document.querySelectorAll('.main-tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById('business-tab').classList.add('active');
+                loadBusinessTasks();
+            } else if (tab === 'finance') {
+                // 切換到財稅簽證標籤
+                document.querySelectorAll('.main-tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.main-tab-btn')[2].classList.add('active');
+                document.querySelectorAll('.main-tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById('finance-tab').classList.add('active');
+                loadFinanceTasks();
+            } else {
+                // 預設顯示週期任務
+                loadBusinessTasks();
+                loadFinanceTasks();
+            }
+        });
+
+        // 檢查認證狀態
+        async function checkAuth() {
+            sessionToken = localStorage.getItem('session_token');
+            if (!sessionToken) {
+                return false;
+            }
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/verify`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.user;
+                    updateUserInfo();
+                    return true;
+                }
+            } catch (err) {
+                console.error('驗證失敗:', err);
+            }
+            
+            return false;
+        }
+
+        // 更新使用者資訊顯示
+        function updateUserInfo() {
+            const userNameEl = document.getElementById('userName');
+            const userRoleEl = document.getElementById('userRole');
+            
+            if (currentUser) {
+                const displayName = currentUser.employee_name || currentUser.username;
+                const roleText = currentUser.role === 'admin' ? '管理員' : '員工';
+                userNameEl.textContent = displayName;
+                userRoleEl.textContent = roleText;
+            }
+        }
+
+        // 登出功能
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    
+                    try {
+                        await fetch(`${WORKER_URL}/api/logout`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${sessionToken}`
+                            }
+                        });
+                    } catch (err) {
+                        console.error('登出錯誤:', err);
+                    }
+                    
+                    localStorage.removeItem('session_token');
+                    localStorage.removeItem('user_info');
+                    window.location.href = '/login.html';
+                });
+            }
+        });
+
+        // 切換主標籤
+        function switchMainTab(tabName) {
+            // 更新按鈕狀態
+            document.querySelectorAll('.main-tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.main-tab-btn').classList.add('active');
+
+            // 更新內容顯示
+            document.querySelectorAll('.main-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            const tabMap = {
+                'recurring': 'recurring-tab',
+                'business': 'business-tab',
+                'finance': 'finance-tab'
+            };
+            
+            document.getElementById(tabMap[tabName]).classList.add('active');
+
+            // 載入對應數據
+            if (tabName === 'business') {
+                loadBusinessTasks();
+            } else if (tabName === 'finance') {
+                loadFinanceTasks();
+            }
+        }
+
+        // 載入工商任務
+        async function loadBusinessTasks() {
+            const container = document.getElementById('businessTasksList');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/multi-stage-tasks?category=工商`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('載入失敗');
+                }
+                
+                const tasks = await response.json();
+                displayMultiStageTasks(tasks, container, 'business');
+            } catch (err) {
+                console.error('載入工商任務失敗:', err);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">error_outline</span>
+                        <p style="margin-top: 20px; font-size: 16px;">載入失敗</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 載入財稅簽證任務
+        async function loadFinanceTasks() {
+            const container = document.getElementById('financeTasksList');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/multi-stage-tasks?category=財稅`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('載入失敗');
+                }
+                
+                const tasks = await response.json();
+                displayMultiStageTasks(tasks, container, 'finance');
+            } catch (err) {
+                console.error('載入財稅任務失敗:', err);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">error_outline</span>
+                        <p style="margin-top: 20px; font-size: 16px;">載入失敗</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 顯示多階段任務
+        function displayMultiStageTasks(tasks, container, type) {
+            if (!tasks || tasks.length === 0) {
+                const emptyIcon = type === 'business' ? 'business_center' : 'account_balance';
+                const emptyText = type === 'business' ? '暫無工商任務' : '暫無財稅簽證任務';
+                
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">${emptyIcon}</span>
+                        <p style="margin-top: 20px; font-size: 16px;">${emptyText}</p>
+                        <p style="font-size: 14px;">點擊上方「創建${type === 'business' ? '工商' : '財稅'}任務」按鈕開始</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            tasks.forEach(task => {
+                const statusClass = `status-${task.status || 'not_started'}`;
+                const statusText = getStatusText(task.status);
+                
+                html += `
+                    <div class="task-card" onclick="window.location.href='multi-stage-tasks.html?id=${task.id}'">
+                        <div class="task-header">
+                            <div>
+                                <div class="task-title">${task.task_name || '未命名任務'}</div>
+                                <div class="task-meta">
+                                    <div class="task-meta-item">
+                                        <span class="material-symbols-outlined">person</span>
+                                        <span>${task.client_name || '未指定客戶'}</span>
+                                    </div>
+                                    <div class="task-meta-item">
+                                        <span class="material-symbols-outlined">assignment_ind</span>
+                                        <span>${task.assigned_to || '未指派'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        ${task.stages ? renderStageTimeline(task.stages) : ''}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 渲染階段時間軸
+        function renderStageTimeline(stages) {
+            if (!stages || stages.length === 0) return '';
+            
+            let html = '<div class="stage-timeline">';
+            stages.forEach((stage, index) => {
+                const stageClass = stage.status === 'completed' ? 'completed' : 
+                                  stage.status === 'in_progress' ? 'in_progress' : '';
+                html += `
+                    <div class="stage-item ${stageClass}">
+                        <div class="stage-number">${index + 1}</div>
+                        <div class="stage-name">${stage.stage_name}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        // 獲取狀態文字
+        function getStatusText(status) {
+            const statusMap = {
+                'not_started': '未開始',
+                'in_progress': '進行中',
+                'on_hold': '暫停',
+                'completed': '已完成',
+                'pending': '待處理'
+            };
+            return statusMap[status] || status;
+        }
+
+        // 移動端選單切換
+        const mobileToggle = document.getElementById('mobileToggle');
+        const navLinks = document.getElementById('navLinks');
+        
+        if (mobileToggle && navLinks) {
+            mobileToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!mobileToggle.contains(e.target) && !navLinks.contains(e.target)) {
+                    navLinks.classList.remove('active');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
