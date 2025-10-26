@@ -59,9 +59,16 @@ async function verifySession(db, sessionToken) {
   }
   
   const result = await db.prepare(`
-    SELECT u.id, u.username, u.role, u.employee_name, u.is_active
+    SELECT 
+      u.id, 
+      u.username, 
+      u.role, 
+      u.is_active,
+      u.employee_id,
+      e.name as employee_name
     FROM sessions s
     JOIN users u ON s.user_id = u.id
+    LEFT JOIN employees e ON u.employee_id = e.id
     WHERE s.session_token = ? AND s.expires_at > datetime('now') AND u.is_active = 1
   `).bind(sessionToken).first();
   
