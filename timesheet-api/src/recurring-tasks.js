@@ -442,22 +442,21 @@ export async function getRecurringTaskInstances(request, env, year, month) {
     const instances = await db.prepare(`
       SELECT 
         rti.id,
-        rti.recurring_template_id,
-        rti.instance_date,
+        rti.template_id,
+        rti.task_name,
+        rti.due_date,
         rti.status,
         rti.assigned_to,
         rti.notes,
         c.name AS client_name,
         cs.service_type,
-        cs.frequency,
-        cs.invoice_count,
-        cs.due_days
+        cs.frequency
       FROM recurring_task_instances rti
       JOIN client_services cs ON rti.client_service_id = cs.id
       JOIN clients c ON cs.client_id = c.id
-      WHERE strftime('%Y', rti.instance_date) = ? AND strftime('%m', rti.instance_date) = ?
-      ORDER BY rti.instance_date ASC
-    `).bind(year, month.padStart(2, '0')).all();
+      WHERE rti.year = ? AND rti.month = ?
+      ORDER BY rti.due_date ASC
+    `).bind(parseInt(year), parseInt(month)).all();
 
     return new Response(JSON.stringify(instances.results), { status: 200 });
   } catch (error) {
