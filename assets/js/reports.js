@@ -73,6 +73,12 @@ async function apiRequest(url, options = {}) {
 function updateUserInfo(user) {
     document.getElementById('userName').textContent = user.username;
     document.getElementById('userRole').textContent = user.role === 'admin' ? '管理員' : '員工';
+    // 顯示管理員專屬導航項目
+    if (user.role === 'admin') {
+        document.querySelectorAll('.admin-only').forEach(el => {
+            el.style.display = '';
+        });
+    }
 }
 
 // 登出

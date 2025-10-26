@@ -39,9 +39,17 @@ async function initAuth() {
         document.getElementById('userName').textContent = data.user.username;
         document.getElementById('userRole').textContent = data.user.role === 'admin' ? '管理員' : '員工';
         
+        // 顯示管理員專屬導航項目
+        if (data.user.role === 'admin') {
+            document.querySelectorAll('.admin-only').forEach(el => {
+                el.style.display = '';
+            });
+        }
+        
         // 非管理員隱藏某些功能
         if (data.user.role !== 'admin') {
-            // 可以添加權限限制
+            // CMS 頁面只允許管理員訪問
+            // 已經通過導航欄控制，這裡可以添加額外的頁面級限制
         }
     } catch (error) {
         localStorage.removeItem('session_token');

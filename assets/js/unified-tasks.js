@@ -4,7 +4,7 @@
  */
 
 // API 基础 URL
-const API_BASE = '/api';
+const API_BASE = 'https://timesheet-api.hergscpa.workers.dev/api';
 
 // 当前选中的标签
 let currentTab = 'all';
@@ -35,7 +35,7 @@ async function loadCurrentUser() {
   try {
     const response = await fetch(`${API_BASE}/verify`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('session_token')}`
       }
     });
     
@@ -115,7 +115,7 @@ async function loadTasks() {
 async function fetchAllTasks() {
   const response = await fetch(`${API_BASE}/tasks/multi-stage`, {
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
+      'Authorization': `Bearer ${localStorage.getItem('session_token')}`
     }
   });
   
@@ -176,7 +176,7 @@ async function openTemplateMarket() {
   try {
     const response = await fetch(`${API_BASE}/multi-stage-templates`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('session_token')}`
       }
     });
     
@@ -288,7 +288,7 @@ window.previewTemplate = async function(templateId) {
   try {
     const response = await fetch(`${API_BASE}/multi-stage-templates/${templateId}/stages`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('session_token')}`
       }
     });
     
@@ -371,7 +371,7 @@ function openTemplateEditor(templateId, isCopy = false) {
   // 先獲取範本數據
   fetch(`${API_BASE}/multi-stage-templates/${templateId}/stages`, {
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
+      'Authorization': `Bearer ${localStorage.getItem('session_token')}`
     }
   })
   .then(res => res.json())
@@ -729,7 +729,7 @@ async function previewAutomatedTasks() {
   try {
     const response = await fetch(`${API_BASE}/automated-tasks/preview`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('session_token')}`
       }
     });
     
@@ -754,7 +754,7 @@ async function generateAutomatedTasks() {
     const response = await fetch(`${API_BASE}/automated-tasks/generate`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('session_token')}`,
         'Content-Type': 'application/json'
       }
     });

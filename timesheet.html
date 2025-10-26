@@ -53,7 +53,7 @@
           <span class="material-symbols-outlined">school</span>
           知識庫
         </a>
-        <a href="content-editor.html" class="internal-nav-link">
+        <a href="content-editor.html" class="internal-nav-link admin-only" style="display:none;">
           <span class="material-symbols-outlined">edit_note</span>
           內容
         </a>
@@ -292,6 +292,12 @@
           
           // 顯示使用者資訊
           updateUserInfo();
+          // 顯示管理員專屬導航項目
+          if (data.user.role === 'admin') {
+            document.querySelectorAll('.admin-only').forEach(el => {
+              el.style.display = '';
+            });
+          }
           return true;
         }
       } catch (err) {
