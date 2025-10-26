@@ -78,8 +78,16 @@ async function loadPendingTasks() {
         
         // 載入所有類型的未完成任務
         const [recurringRes, multiStageRes] = await Promise.all([
-            apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`).catch(() => ({ tasks: [] })),
-            apiRequest(`/api/tasks/multi-stage?status!=completed`).catch(() => ({ tasks: [] }))
+            apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`)
+                .catch(err => {
+                    console.warn('載入週期任務失敗:', err);
+                    return { tasks: [] };
+                }),
+            apiRequest(`/api/tasks/multi-stage?status!=completed`)
+                .catch(err => {
+                    console.warn('載入多階段任務失敗:', err);
+                    return { tasks: [] };
+                })
         ]);
         
         const allTasks = [];

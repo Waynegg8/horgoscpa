@@ -239,6 +239,14 @@
 
     <!-- 引入統一任務管理JS -->
     <script src="assets/js/unified-tasks.js"></script>
+    <script>
+        // 頁面初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initPage(async () => {
+                await initUnifiedTasks();
+            });
+        });
+    </script>
 </body>
 </html>
 

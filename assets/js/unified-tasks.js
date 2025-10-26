@@ -12,9 +12,16 @@ let currentTab = 'all';
 async function initUnifiedTasks() {
   console.log('初始化统一任务管理系统...');
   
-  // 使用 auth-common.js 設定的 currentUser
-  if (!currentUser) {
-    console.warn('用戶未登入');
+  // 等待 currentUser 設定完成
+  let retries = 0;
+  while (!window.currentUser && retries < 50) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    retries++;
+  }
+  
+  if (!window.currentUser) {
+    console.error('無法取得使用者資料，請重新整理頁面');
+    showNotification('無法取得使用者資料，請重新整理頁面', 'error');
     return;
   }
   
@@ -100,9 +107,13 @@ async function fetchAllTasks() {
  */
 async function fetchMyTasks() {
   const tasks = await fetchAllTasks();
+  const user = window.currentUser;
+  if (!user) return [];
   return tasks.filter(task => 
-    task.assigned_user === currentUser?.id || 
-    task.assigned_user === currentUser?.username
+    task.assigned_user === user.id || 
+    task.assigned_user === user.username ||
+    task.assigned_to === user.username ||
+    task.assigned_to === user.employee_name
   );
 }
 
