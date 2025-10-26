@@ -1,0 +1,542 @@
+/* 
+ * knowledge-page.css - 知识库页面特定样式
+ * 创建日期: 2025-10-26
+ * 用途: 知识库页面的特定样式（SOP、内部文档、FAQ）
+ */
+
+/* ============================================
+   SOP列表样式
+   ============================================ */
+
+.sop-list {
+    display: grid;
+    gap: 15px;
+}
+
+.sop-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.sop-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateX(5px);
+}
+
+.sop-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.sop-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 5px 0;
+}
+
+.sop-version {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.sop-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 10px 0;
+    flex-wrap: wrap;
+}
+
+.sop-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.sop-description {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 10px 0;
+}
+
+.sop-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+.sop-category-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.sop-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ============================================
+   SOP查看器/编辑器
+   ============================================ */
+
+.sop-viewer {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    margin-top: 20px;
+}
+
+.sop-viewer-header {
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.sop-viewer-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.sop-viewer-meta {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+}
+
+.sop-viewer-content {
+    line-height: 1.8;
+    color: var(--text-primary);
+}
+
+.sop-viewer-content h1 {
+    font-size: 22px;
+    margin: 25px 0 15px;
+}
+
+.sop-viewer-content h2 {
+    font-size: 20px;
+    margin: 20px 0 12px;
+}
+
+.sop-viewer-content h3 {
+    font-size: 18px;
+    margin: 18px 0 10px;
+}
+
+.sop-viewer-content p {
+    margin: 12px 0;
+}
+
+.sop-viewer-content ul,
+.sop-viewer-content ol {
+    margin: 12px 0;
+    padding-left: 25px;
+}
+
+.sop-viewer-content li {
+    margin: 8px 0;
+}
+
+.sop-viewer-content code {
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+}
+
+.sop-viewer-content pre {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 15px 0;
+}
+
+/* ============================================
+   文档分类侧边栏
+   ============================================ */
+
+.knowledge-sidebar {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 80px;
+}
+
+.sidebar-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+}
+
+.category-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.category-item {
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-item:hover {
+    background: var(--light-bg);
+}
+
+.category-item.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.category-name {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.category-count {
+    font-size: 12px;
+    background: rgba(0,0,0,0.1);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+/* ============================================
+   FAQ样式
+   ============================================ */
+
+.faq-container {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+}
+
+.faq-category {
+    margin-bottom: 30px;
+}
+
+.faq-category-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    padding: 15px 20px;
+    background: var(--light-bg);
+    border-radius: 8px;
+}
+
+.faq-list {
+    display: grid;
+    gap: 10px;
+}
+
+.faq-item {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.faq-item:hover {
+    border-color: var(--primary-color);
+}
+
+.faq-question {
+    padding: 15px 20px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.faq-question:hover {
+    background: var(--light-bg);
+}
+
+.faq-question.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.faq-icon {
+    transition: transform 0.3s ease;
+}
+
+.faq-question.active .faq-icon {
+    transform: rotate(180deg);
+}
+
+.faq-answer {
+    padding: 0 20px;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.faq-answer.active {
+    padding: 15px 20px;
+    max-height: 1000px;
+}
+
+.faq-answer-content {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.faq-answer-content p {
+    margin: 10px 0;
+}
+
+.faq-answer-content ul,
+.faq-answer-content ol {
+    margin: 10px 0;
+    padding-left: 25px;
+}
+
+/* ============================================
+   搜索框
+   ============================================ */
+
+.knowledge-search {
+    margin-bottom: 25px;
+}
+
+.knowledge-search-box {
+    position: relative;
+}
+
+.knowledge-search-box input {
+    width: 100%;
+    padding: 12px 45px 12px 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 15px;
+    transition: border-color 0.2s ease;
+}
+
+.knowledge-search-box input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(44, 95, 124, 0.1);
+}
+
+.knowledge-search-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 20px;
+}
+
+/* ============================================
+   版本历史
+   ============================================ */
+
+.version-history {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 25px;
+}
+
+.version-history-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.version-list {
+    display: grid;
+    gap: 10px;
+}
+
+.version-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--light-bg);
+    border-radius: 6px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.version-info {
+    flex: 1;
+}
+
+.version-number {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.version-meta {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+
+.version-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ============================================
+   标签云
+   ============================================ */
+
+.tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.tag {
+    padding: 6px 12px;
+    background: var(--light-bg);
+    border-radius: 16px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.tag:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.tag.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* ============================================
+   响应式调整
+   ============================================ */
+
+@media (max-width: 768px) {
+    .knowledge-sidebar {
+        position: static;
+        margin-bottom: 20px;
+    }
+
+    .sop-viewer {
+        padding: 15px;
+    }
+
+    .sop-viewer-title {
+        font-size: 20px;
+    }
+
+    .sop-viewer-content h1 {
+        font-size: 20px;
+    }
+
+    .sop-viewer-content h2 {
+        font-size: 18px;
+    }
+
+    .sop-viewer-content h3 {
+        font-size: 16px;
+    }
+
+    .faq-category-title {
+        font-size: 18px;
+        padding: 12px 15px;
+    }
+
+    .faq-question,
+    .faq-answer {
+        padding: 12px 15px;
+    }
+
+    .version-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .version-actions {
+        width: 100%;
+    }
+
+    .sop-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sop-card {
+        padding: 12px;
+    }
+
+    .sop-title {
+        font-size: 16px;
+    }
+
+    .sop-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .sop-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .tag-cloud {
+        gap: 6px;
+    }
+
+    .tag {
+        padding: 4px 10px;
+        font-size: 12px;
+    }
+
+    .knowledge-search-box input {
+        font-size: 14px;
+    }
+}
+
