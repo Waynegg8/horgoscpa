@@ -6,6 +6,7 @@
 // ================================================================
 
 import { verifySession, getSessionToken } from './auth.js';
+import { jsonResponse } from './utils.js';
 
 // ============================================================
 // 1. 文章管理 API (後台)
@@ -18,10 +19,7 @@ export async function getPosts(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -44,20 +42,9 @@ export async function getPosts(request, env) {
     
     const result = await stmt.all();
     
-    return new Response(JSON.stringify({ 
-      success: true, 
-      posts: result.results 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, posts: result.results });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -68,10 +55,7 @@ export async function deletePost(request, env, postId) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -81,20 +65,9 @@ export async function deletePost(request, env, postId) {
     // 刪除文章
     await env.DB.prepare('DELETE FROM blog_posts WHERE id = ?').bind(postId).run();
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: 'Post deleted successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, message: 'Post deleted successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -105,10 +78,7 @@ export async function createPost(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -149,21 +119,9 @@ export async function createPost(request, env) {
       }
     }
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      id: postId,
-      message: 'Post created successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, id: postId, message: 'Post created successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -174,10 +132,7 @@ export async function updatePost(request, env, postId) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -228,20 +183,9 @@ export async function updatePost(request, env, postId) {
       }
     }
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: 'Post updated successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, message: 'Post updated successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -277,23 +221,9 @@ export async function getPublicPosts(request, env) {
     
     const result = await env.DB.prepare(query).bind(...params).all();
     
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: result.results 
-    }), {
-      headers: { 
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300'
-      }
-    });
+    return new Response(JSON.stringify({ success: true, data: result.results }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' } });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -309,15 +239,7 @@ export async function getPublicPost(request, env, slug) {
     
     const post = await env.DB.prepare(query).bind(slug).first();
     
-    if (!post) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Post not found' 
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    if (!post) { return jsonResponse({ success: false, error: 'Post not found' }, 404); }
     
     // 增加閱讀數
     await env.DB.prepare(
@@ -331,23 +253,9 @@ export async function getPublicPost(request, env, slug) {
     
     post.tags = tags.results.map(t => t.tag);
     
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: post 
-    }), {
-      headers: { 
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300'
-      }
-    });
+    return new Response(JSON.stringify({ success: true, data: post }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' } });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -381,23 +289,9 @@ export async function getPublicResources(request, env) {
     
     const result = await stmt.all();
     
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: result.results 
-    }), {
-      headers: { 
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300'
-      }
-    });
+    return new Response(JSON.stringify({ success: true, data: result.results }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' } });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 

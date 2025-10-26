@@ -168,12 +168,12 @@
   </div>
 
   <!-- 增加工時記錄對話框 -->
-  <div id="addWorkModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
+  <div id="addWorkModal" class="ts-modal">
+    <div class="ts-modal-content">
+      <div class="ts-modal-header">
         <h3>增加工時記錄</h3>
       </div>
-      <div class="modal-body">
+      <div class="ts-modal-body">
         <div class="form-group">
           <label>客戶名稱 *</label>
           <select id="workClient">
@@ -183,7 +183,7 @@
         <div class="form-group">
           <label>業務類型 *</label>
           <select id="workBusinessType">
-            <option value="">請選擇業務類型</option>
+            <option value="">請選擇類型</option>
           </select>
         </div>
         <div class="form-group">
@@ -193,7 +193,7 @@
           </select>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="ts-modal-footer">
         <button class="btn-cancel" id="cancelWorkBtn">取消</button>
         <button class="btn-confirm" id="confirmWorkBtn">確定</button>
       </div>
@@ -201,12 +201,12 @@
   </div>
 
   <!-- 增加請假記錄對話框 -->
-  <div id="addLeaveModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
+  <div id="addLeaveModal" class="ts-modal">
+    <div class="ts-modal-content">
+      <div class="ts-modal-header">
         <h3>增加請假記錄</h3>
       </div>
-      <div class="modal-body">
+      <div class="ts-modal-body">
         <div class="form-group">
           <label>假別 *</label>
           <select id="leaveType">
@@ -214,7 +214,7 @@
           </select>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="ts-modal-footer">
         <button class="btn-cancel" id="cancelLeaveBtn">取消</button>
         <button class="btn-confirm" id="confirmLeaveBtn">確定</button>
       </div>
@@ -962,7 +962,7 @@
       
       // 填充業務類型下拉選單
       const businessTypeSelect = document.getElementById('workBusinessType');
-      businessTypeSelect.innerHTML = '<option value="">請選擇業務類型</option>';
+      businessTypeSelect.innerHTML = '<option value="">請選擇類型</option>';
       businessTypesCache.forEach(type => {
         const option = document.createElement('option');
         option.value = type;

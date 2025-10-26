@@ -699,3 +699,39 @@ tbody tr:hover td {
         font-size: 9px;
     }
 }
+
+/* ============================================
+   Namespaced Timesheet Modals to avoid conflicts
+   ============================================ */
+
+.ts-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.ts-modal.show { display: flex; animation: fadeIn 0.3s ease; }
+
+.ts-modal-content {
+    background: white;
+    padding: 35px;
+    border-radius: 16px;
+    max-width: 520px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+.ts-modal-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #f0f0f0; }
+.ts-modal-header h3 { margin: 0; color: var(--primary-color); font-size: 24px; font-weight: 700; }
+.ts-modal-body { margin-bottom: 24px; }
+.ts-modal-footer { display: flex; gap: 12px; justify-content: flex-end; }

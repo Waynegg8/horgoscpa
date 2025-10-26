@@ -76,8 +76,8 @@
     <main class="internal-main">
         <div class="internal-container">
             <!-- 報表類型選擇 -->
-            <div style="background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
-                <div style="display: flex; border-bottom: 2px solid var(--light-bg); background: white;">
+            <div class="reports-tab-container">
+                <div class="reports-tab-header">
                     <button class="tab-button active" data-tab="work-analysis" style="flex: 1; padding: 15px 20px; background: white; border: none; border-bottom: 3px solid var(--primary-color); cursor: pointer; font-size: 15px; font-weight: 600; color: var(--primary-color); transition: all 0.2s;">工時分析</button>
                     <button class="tab-button" data-tab="leave-overview" style="flex: 1; padding: 15px 20px; background: white; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; font-weight: 500; color: var(--text-secondary); transition: all 0.2s;">請假總覽</button>
                     <button class="tab-button" data-tab="pivot-analysis" style="flex: 1; padding: 15px 20px; background: white; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 15px; font-weight: 500; color: var(--text-secondary); transition: all 0.2s;">樞紐分析</button>
@@ -85,7 +85,7 @@
 
                 <!-- 工時分析報表 -->
                 <div id="work-analysis-tab" class="tab-content active">
-                    <div style="padding: 20px;">
+                    <div class="reports-section">
                         <div class="report-filters">
                             <div class="filter-row">
                                 <div class="filter-group">
@@ -133,7 +133,7 @@
 
                 <!-- 請假總覽報表 -->
                 <div id="leave-overview-tab" class="tab-content">
-                    <div style="padding: 20px;">
+                    <div class="reports-section">
                         <div class="report-filters">
                             <div class="filter-row">
                                 <div class="filter-group">
@@ -163,7 +163,7 @@
 
                 <!-- 樞紐分析報表 -->
                 <div id="pivot-analysis-tab" class="tab-content">
-                    <div style="padding: 20px;">
+                    <div class="reports-section">
                         <div class="report-filters">
                             <div class="filter-row">
                                 <div class="filter-group">

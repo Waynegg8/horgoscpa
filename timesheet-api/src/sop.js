@@ -5,6 +5,7 @@
 // ================================================================
 
 import { verifySession, getSessionToken } from './auth.js';
+import { jsonResponse } from './utils.js';
 
 // ============================================================
 // 1. SOP 分類 API
@@ -106,10 +107,7 @@ export async function getSops(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -117,6 +115,7 @@ export async function getSops(request, env) {
     const categoryId = url.searchParams.get('category');
     const businessType = url.searchParams.get('business_type');
     const status = url.searchParams.get('status');
+    const documentType = url.searchParams.get('document_type');
     
     let query = `
       SELECT 
@@ -143,6 +142,11 @@ export async function getSops(request, env) {
       query += ` AND s.status = ?`;
       params.push(status);
     }
+
+    if (documentType) {
+      query += ` AND s.document_type = ?`;
+      params.push(documentType);
+    }
     
     query += ` ORDER BY s.updated_at DESC`;
     
@@ -152,20 +156,9 @@ export async function getSops(request, env) {
     
     const result = await stmt.all();
     
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: result.results 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, data: result.results });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -176,10 +169,7 @@ export async function getSop(request, env, sopId) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -195,13 +185,7 @@ export async function getSop(request, env, sopId) {
     const result = await env.DB.prepare(query).bind(sopId).first();
     
     if (!result) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'SOP not found' 
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return jsonResponse({ success: false, error: 'SOP not found' }, 404);
     }
     
     // 獲取標籤
@@ -211,20 +195,9 @@ export async function getSop(request, env, sopId) {
     
     result.tags = tags.results.map(t => t.tag);
     
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: result 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, data: result });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -235,10 +208,7 @@ export async function createSop(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -248,8 +218,8 @@ export async function createSop(request, env) {
     const query = `
       INSERT INTO sops (
         title, category_id, content, version, status,
-        business_type, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        business_type, created_by, document_type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, COALESCE(?, 'SOP'))
     `;
     
     const result = await env.DB.prepare(query).bind(
@@ -259,7 +229,8 @@ export async function createSop(request, env) {
       data.version || '1.0',
       data.status || 'draft',
       data.business_type || null,
-      sessionData.username
+      sessionData.username,
+      data.document_type
     ).run();
     
     const sopId = result.meta.last_row_id;
@@ -285,21 +256,9 @@ export async function createSop(request, env) {
       '初始版本'
     ).run();
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      id: sopId,
-      message: 'SOP created successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, id: sopId, message: 'SOP created successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -310,10 +269,7 @@ export async function updateSop(request, env, sopId) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -324,13 +280,7 @@ export async function updateSop(request, env, sopId) {
       .bind(sopId).first();
     
     if (!oldSop) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'SOP not found' 
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return jsonResponse({ success: false, error: 'SOP not found' }, 404);
     }
     
     // 更新 SOP
@@ -342,6 +292,7 @@ export async function updateSop(request, env, sopId) {
         version = ?,
         status = ?,
         business_type = ?,
+        document_type = COALESCE(?, document_type),
         updated_by = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
@@ -354,6 +305,7 @@ export async function updateSop(request, env, sopId) {
       data.version || oldSop.version,
       data.status || oldSop.status,
       data.business_type !== undefined ? data.business_type : oldSop.business_type,
+      data.document_type || null,
       sessionData.username,
       sopId
     ).run();
@@ -385,20 +337,9 @@ export async function updateSop(request, env, sopId) {
       }
     }
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: 'SOP updated successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, message: 'SOP updated successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -409,29 +350,15 @@ export async function deleteSop(request, env, sopId) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData || sessionData.role !== 'admin') {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 403);
   }
 
   try {
     await env.DB.prepare('DELETE FROM sops WHERE id = ?').bind(sopId).run();
     
-    return new Response(JSON.stringify({ 
-      success: true,
-      message: 'SOP deleted successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, message: 'SOP deleted successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -446,10 +373,7 @@ export async function getSopVersions(request, env, sopId) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -461,20 +385,9 @@ export async function getSopVersions(request, env, sopId) {
     
     const result = await env.DB.prepare(query).bind(sopId).all();
     
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: result.results 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: true, data: result.results });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
@@ -489,27 +402,19 @@ export async function searchSops(request, env) {
   const token = getSessionToken(request);
   const sessionData = await verifySession(env.DB, token);
   if (!sessionData) {
-    return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
   }
 
   try {
     const url = new URL(request.url);
     const q = url.searchParams.get('q');
+    const documentType = url.searchParams.get('document_type');
     
     if (!q) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Search query required' 
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return jsonResponse({ success: false, error: 'Search query required' }, 400);
     }
     
-    const query = `
+    let query = `
       SELECT 
         s.*,
         c.name as category_name
@@ -517,27 +422,23 @@ export async function searchSops(request, env) {
       LEFT JOIN sop_categories c ON s.category_id = c.id
       WHERE s.status = 'published'
         AND (s.title LIKE ? OR s.content LIKE ?)
-      ORDER BY s.updated_at DESC
-      LIMIT 50
     `;
-    
+    const params = [];
     const searchTerm = `%${q}%`;
-    const result = await env.DB.prepare(query).bind(searchTerm, searchTerm).all();
+    params.push(searchTerm, searchTerm);
+
+    if (documentType) {
+      query += ` AND s.document_type = ?`;
+      params.push(documentType);
+    }
+
+    query += ` ORDER BY s.updated_at DESC LIMIT 50`;
     
-    return new Response(JSON.stringify({ 
-      success: true, 
-      data: result.results 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const result = await env.DB.prepare(query).bind(...params).all();
+    
+    return jsonResponse({ success: true, data: result.results });
   } catch (error) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return jsonResponse({ success: false, error: error.message }, 500);
   }
 }
 
