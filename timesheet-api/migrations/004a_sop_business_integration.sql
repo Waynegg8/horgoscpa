@@ -1,17 +1,16 @@
 -- ================================================================
 -- SOP 與業務類型整合 Migration
--- 檔案: 004_sop_business_integration.sql
+-- 檔案: 004a_sop_business_integration.sql
 -- 日期: 2025-10-25
 -- 描述: 添加 SOP 與業務類型的關聯，實現系統整合
 -- ================================================================
 
--- 添加業務類型關聯到 sops 表
-ALTER TABLE sops ADD COLUMN business_type TEXT;
+-- 注意：business_type 欄位已經存在於 sops 表中
+-- 此遷移只確保索引存在
 
--- 建立外鍵約束索引
+-- 建立外鍵約束索引（如果不存在）
 CREATE INDEX IF NOT EXISTS idx_sops_business_type ON sops(business_type);
 
 -- ================================================================
 -- Migration 完成
 -- ================================================================
-

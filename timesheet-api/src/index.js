@@ -116,10 +116,10 @@ import {
 } from './cms.js';
 
 import {
-  getClientServices,
+  getClientServices as getRecurringClientServices,
   getClientServicesByClient,
   upsertClientService,
-  deleteClientService,
+  deleteClientService as deleteRecurringClientService,
   getRecurringTemplates,
   generateRecurringTasks,
   getRecurringTaskInstances,
