@@ -43,6 +43,19 @@ function createRouter() {
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
   });
+  
+  // 測試端點 - 測試登錄（不需認證）
+  router.post('/api/test-login', async (env, request) => {
+    const { username, password } = await request.json();
+    return new Response(JSON.stringify({
+      success: true,
+      test: 'ok',
+      received: { username, password }
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  });
 
   // 註冊各模組的路由
   registerAuthRoutes(router);

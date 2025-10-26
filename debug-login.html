@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入调试工具</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .section {
+            background: #252526;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+        .result {
+            background: #1e1e1e;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        input {
+            background: #3c3c3c;
+            border: 1px solid #555;
+            color: #d4d4d4;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 登入调试工具</h1>
+    
+    <div class="section">
+        <h2>步骤 1：清除所有缓存</h2>
+        <button onclick="clearAll()">清除 LocalStorage + SessionStorage</button>
+        <div id="clearResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>步骤 2：测试 API 连接</h2>
+        <button onclick="testVersion()">测试版本端点</button>
+        <button onclick="testOptions()">测试 OPTIONS</button>
+        <div id="testResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>步骤 3：测试登录</h2>
+        <input type="text" id="username" value="admin" placeholder="用户名">
+        <input type="password" id="password" value="admin123" placeholder="密码">
+        <button onclick="testLogin()">测试登录</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://timesheet-api.hergscpa.workers.dev';
+        
+        function log(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            el.innerHTML += `\n[${timestamp}] ${isError ? '❌' : '✅'} ${message}`;
+            el.scrollTop = el.scrollHeight;
+        }
+        
+        async function clearAll() {
+            const el = document.getElementById('clearResult');
+            el.innerHTML = '';
+            
+            try {
+                // 清除所有存储
+                localStorage.clear();
+                sessionStorage.clear();
+                log('clearResult', 'LocalStorage 已清除');
+                log('clearResult', 'SessionStorage 已清除');
+                
+                // 尝试清除 Service Worker
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for(let registration of registrations) {
+                        await registration.unregister();
+                    }
+                    log('clearResult', 'Service Workers 已清除');
+                }
+                
+                // 尝试清除缓存
+                if ('caches' in window) {
+                    const names = await caches.keys();
+                    await Promise.all(names.map(name => caches.delete(name)));
+                    log('clearResult', `Caches 已清除 (${names.length} 个)`);
+                }
+                
+                log('clearResult', '✅ 所有缓存已清除！');
+            } catch (e) {
+                log('clearResult', `错误: ${e.message}`, true);
+            }
+        }
+        
+        async function testVersion() {
+            const el = document.getElementById('testResult');
+            el.innerHTML = '';
+            
+            try {
+                log('testResult', '正在请求 /api/version...');
+                const response = await fetch(`${API_BASE}/api/version`);
+                const data = await response.json();
+                log('testResult', `响应: ${JSON.stringify(data, null, 2)}`);
+                log('testResult', `Headers: ${JSON.stringify([...response.headers.entries()])}`);
+            } catch (e) {
+                log('testResult', `错误: ${e.message}`, true);
+            }
+        }
+        
+        async function testOptions() {
+            const el = document.getElementById('testResult');
+            
+            try {
+                log('testResult', '正在发送 OPTIONS 预检请求...');
+                const response = await fetch(`${API_BASE}/api/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                log('testResult', `OPTIONS 响应状态: ${response.status}`);
+                log('testResult', `CORS 头: ${response.headers.get('Access-Control-Allow-Origin')}`);
+                log('testResult', `允许的方法: ${response.headers.get('Access-Control-Allow-Methods')}`);
+            } catch (e) {
+                log('testResult', `错误: ${e.message}`, true);
+            }
+        }
+        
+        async function testLogin() {
+            const el = document.getElementById('loginResult');
+            el.innerHTML = '';
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                log('loginResult', `正在登录: ${username}...`);
+                
+                const response = await fetch(`${API_BASE}/api/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                log('loginResult', `响应状态: ${response.status}`);
+                log('loginResult', `CORS 头: ${response.headers.get('Access-Control-Allow-Origin')}`);
+                
+                const data = await response.json();
+                log('loginResult', `响应数据: ${JSON.stringify(data, null, 2)}`);
+                
+                if (data.session_token) {
+                    localStorage.setItem('session_token', data.session_token);
+                    log('loginResult', '✅ 登录成功！Session token 已保存');
+                    log('loginResult', '可以返回登录页面重试');
+                }
+            } catch (e) {
+                log('loginResult', `错误: ${e.message}`, true);
+                log('loginResult', `详细: ${e.stack}`, true);
+            }
+        }
+    </script>
+</body>
+</html>
+
