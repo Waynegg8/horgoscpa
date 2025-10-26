@@ -55,10 +55,26 @@ function switchTab(tabName) {
  * 加载任务列表
  */
 async function loadTasks() {
-  const container = document.getElementById('tasksContainer');
-  if (!container) return;
+  // 根據當前標籤取得對應的容器 ID
+  const containerMap = {
+    'all': 'allTasksContainer',
+    'my-tasks': 'myTasksContainer',
+    'recurring': 'recurringTasksContainer',
+    'business': 'businessTasksContainer',
+    'finance': 'financeTasksContainer',
+    'client-service': 'clientServiceTasksContainer',
+    'config': 'serviceConfigList'
+  };
   
-  container.innerHTML = '<div class="loading">加载中...</div>';
+  const containerId = containerMap[currentTab];
+  const container = document.getElementById(containerId);
+  
+  if (!container) {
+    console.error(`找不到容器: ${containerId}`);
+    return;
+  }
+  
+  container.innerHTML = '<div class="loading">載入中...</div>';
   
   try {
     let tasks = [];
@@ -87,10 +103,10 @@ async function loadTasks() {
         return;
     }
     
-    renderTasks(tasks);
+    renderTasks(tasks, container);
   } catch (error) {
-    console.error('加载任务失败:', error);
-    container.innerHTML = '<div class="error">加载失败，请重试</div>';
+    console.error('載入任務失敗:', error);
+    container.innerHTML = '<div class="error">載入失敗，請重試</div>';
   }
 }
 
@@ -584,11 +600,19 @@ window.closeTemplateEditor = function() {
 /**
  * 渲染任务列表
  */
-function renderTasks(tasks) {
-  const container = document.getElementById('tasksContainer');
+function renderTasks(tasks, container) {
+  if (!container) {
+    console.error('renderTasks: 容器不存在');
+    return;
+  }
   
-  if (tasks.length === 0) {
-    container.innerHTML = '<div class="empty-state">暂无任务</div>';
+  if (!tasks || tasks.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 60px 20px; color: #999;">
+        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">assignment</span>
+        <p style="margin-top: 20px; font-size: 16px;">暫無任務</p>
+      </div>
+    `;
     return;
   }
   
@@ -826,6 +850,48 @@ function filterTasks() {
  * 设置事件监听器
  */
 function setupEventListeners() {
+  // 標籤按鈕切換
+  const tabButtons = document.querySelectorAll('.tab-button[onclick*="switchTab"]');
+  tabButtons.forEach(btn => {
+    // 從 onclick 屬性取得標籤名稱
+    const onclickAttr = btn.getAttribute('onclick');
+    const match = onclickAttr?.match(/switchTab\(['"](.+?)['"]\)/);
+    if (match) {
+      const tabName = match[1];
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        currentTab = tabName;
+        
+        // 更新按鈕狀態
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // 更新標籤內容顯示
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        
+        const contentMap = {
+          'all': 'all-tab',
+          'my-tasks': 'my-tasks-tab',
+          'recurring': 'recurring-tab',
+          'business': 'business-tab',
+          'finance': 'finance-tab',
+          'client-service': 'client-service-tab',
+          'config': 'config-tab'
+        };
+        
+        const targetTab = document.getElementById(contentMap[tabName]);
+        if (targetTab) {
+          targetTab.classList.add('active');
+        }
+        
+        // 載入任務
+        loadTasks();
+      });
+    }
+  });
+  
   // 搜索输入
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
