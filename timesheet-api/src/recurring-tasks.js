@@ -4,6 +4,7 @@
  */
 
 import { verifySession, getSessionToken } from './auth.js';
+import { jsonResponse } from './utils.js';
 
 // =========================================
 // 客戶服務配置
@@ -433,62 +434,65 @@ export async function generateRecurringTasks(env, data, username) {
 export async function getRecurringTaskInstances(env, searchParams) {
   const { DB } = env;
   
-  const year = searchParams.get('year');
-  const month = searchParams.get('month');
-  const status = searchParams.get('status');
-  const category = searchParams.get('category');
-  const assignedTo = searchParams.get('assigned_to');
-  
-  let query = `
-    SELECT 
-      rti.*,
-      cs.client_name,
-      cs.fee,
-      cs.estimated_hours as planned_hours
-    FROM recurring_task_instances rti
-    LEFT JOIN client_services cs ON rti.client_service_id = cs.id
-    WHERE 1=1
-  `;
-  const params = [];
-  
-  if (year) {
-    query += ` AND rti.year = ?`;
-    params.push(parseInt(year));
+  try {
+    const year = searchParams.get('year');
+    const month = searchParams.get('month');
+    const status = searchParams.get('status');
+    const category = searchParams.get('category');
+    const assignedTo = searchParams.get('assigned_to');
+    
+    let query = `
+      SELECT 
+        rti.*,
+        cs.client_name,
+        cs.fee,
+        cs.estimated_hours as planned_hours
+      FROM recurring_task_instances rti
+      LEFT JOIN client_services cs ON rti.client_service_id = cs.id
+      WHERE 1=1
+    `;
+    const params = [];
+    
+    if (year) {
+      query += ` AND rti.year = ?`;
+      params.push(parseInt(year));
+    }
+    
+    if (month) {
+      query += ` AND rti.month = ?`;
+      params.push(parseInt(month));
+    }
+    
+    if (status) {
+      query += ` AND rti.status = ?`;
+      params.push(status);
+    }
+    
+    if (category) {
+      query += ` AND rti.category = ?`;
+      params.push(category);
+    }
+    
+    if (assignedTo) {
+      query += ` AND rti.assigned_to = ?`;
+      params.push(assignedTo);
+    }
+    
+    query += ` ORDER BY rti.due_date, rti.client_service_id`;
+    
+    const stmt = DB.prepare(query);
+    const result = await (params.length > 0 ? stmt.bind(...params).all() : stmt.all());
+    
+    const tasks = (result.results || []).map(task => ({
+      ...task,
+      checklist_data: task.checklist_data ? JSON.parse(task.checklist_data) : { items: [] }
+    }));
+    
+    return jsonResponse({ tasks });
+  } catch (error) {
+    console.error('getRecurringTaskInstances error:', error);
+    return jsonResponse({ error: error.message || '查詢週期性任務失敗' }, 500);
   }
-  
-  if (month) {
-    query += ` AND rti.month = ?`;
-    params.push(parseInt(month));
-  }
-  
-  if (status) {
-    query += ` AND rti.status = ?`;
-    params.push(status);
-  }
-  
-  if (category) {
-    query += ` AND rti.category = ?`;
-    params.push(category);
-  }
-  
-  if (assignedTo) {
-    query += ` AND rti.assigned_to = ?`;
-    params.push(assignedTo);
-  }
-  
-  query += ` ORDER BY rti.due_date, rti.client_service_id`;
-  
-  const stmt = DB.prepare(query);
-  const result = await (params.length > 0 ? stmt.bind(...params).all() : stmt.all());
-  
-  const tasks = result.results.map(task => ({
-    ...task,
-    checklist_data: task.checklist_data ? JSON.parse(task.checklist_data) : { items: [] }
-  }));
-  
-  return new Response(JSON.stringify({ tasks }), {
-    headers: { 'Content-Type': 'application/json' }
-  });
 }
 
 /**

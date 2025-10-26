@@ -34,12 +34,57 @@ async function checkAuth() {
         if (response.ok) {
             const data = await response.json();
             currentUser = data.user;
+            // 同步到 window 供其他腳本使用
+            window.sessionToken = sessionToken;
+            window.currentUser = currentUser;
+            // 快取用戶資料供離線/錯誤時使用
+            localStorage.setItem('user_info', JSON.stringify(currentUser));
             updateUserInfo();
             updateUIByRole();
             return true;
         }
+        
+        // 401 表示 token 無效，需要重新登入
+        if (response.status === 401) {
+            console.warn('Token 已失效');
+            return false;
+        }
+        
+        // 其他錯誤（500等）：視為臨時錯誤，保留 token 但返回 false
+        console.error('驗證請求失敗:', response.status, response.statusText);
+        // 如果有快取的用戶資料，先用著
+        const cachedUser = localStorage.getItem('user_info');
+        if (cachedUser) {
+            try {
+                currentUser = JSON.parse(cachedUser);
+                window.sessionToken = sessionToken;
+                window.currentUser = currentUser;
+                updateUserInfo();
+                updateUIByRole();
+                console.warn('使用快取的用戶資料，請檢查網絡連接');
+                return true; // 暫時允許繼續使用
+            } catch (e) {
+                console.error('解析快取用戶資料失敗:', e);
+            }
+        }
+        return false;
     } catch (err) {
-        console.error('驗證失敗:', err);
+        console.error('驗證失敗（網絡錯誤）:', err);
+        // 網絡錯誤：嘗試使用快取
+        const cachedUser = localStorage.getItem('user_info');
+        if (cachedUser && sessionToken) {
+            try {
+                currentUser = JSON.parse(cachedUser);
+                window.sessionToken = sessionToken;
+                window.currentUser = currentUser;
+                updateUserInfo();
+                updateUIByRole();
+                console.warn('網絡錯誤，使用快取的用戶資料');
+                return true; // 暫時允許繼續使用
+            } catch (e) {
+                console.error('解析快取用戶資料失敗:', e);
+            }
+        }
     }
     
     return false;
