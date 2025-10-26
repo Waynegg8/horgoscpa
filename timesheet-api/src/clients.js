@@ -796,3 +796,249 @@ export async function importClients(request, env) {
   }
 }
 
+// ============================================================
+// 客戶服務配置 API
+// ============================================================
+
+/**
+ * 獲取客戶服務配置列表
+ * GET /api/client-services?client_id=&service_type=&assigned_to=
+ */
+export async function getClientServices(request, env) {
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
+  if (!sessionData) {
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
+  }
+
+  try {
+    const url = new URL(request.url);
+    const clientId = url.searchParams.get('client_id');
+    const serviceType = url.searchParams.get('service_type');
+    const assignedTo = url.searchParams.get('assigned_to');
+    
+    let query = `
+      SELECT 
+        cs.*,
+        ce.client_name
+      FROM client_services cs
+      LEFT JOIN clients_extended ce ON cs.client_id = ce.id
+      WHERE 1=1
+    `;
+    const bindings = [];
+    
+    if (clientId) {
+      query += ` AND cs.client_id = ?`;
+      bindings.push(clientId);
+    }
+    
+    if (serviceType) {
+      query += ` AND cs.service_type = ?`;
+      bindings.push(serviceType);
+    }
+    
+    if (assignedTo) {
+      query += ` AND cs.assigned_to = ?`;
+      bindings.push(assignedTo);
+    }
+    
+    query += ` ORDER BY ce.client_name, cs.service_type`;
+    
+    const stmt = env.DB.prepare(query);
+    const result = await stmt.bind(...bindings).all();
+    
+    return jsonResponse({ 
+      success: true, 
+      services: result.results || []
+    });
+  } catch (error) {
+    return jsonResponse({ 
+      success: false, 
+      error: error.message 
+    }, 500);
+  }
+}
+
+/**
+ * 創建客戶服務配置
+ * POST /api/client-services
+ */
+export async function createClientService(request, env) {
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
+  if (!sessionData || sessionData.user.role !== 'admin') {
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
+  }
+
+  try {
+    const body = await request.json();
+    const {
+      client_id,
+      service_type,
+      frequency,
+      fee,
+      estimated_hours,
+      assigned_to,
+      execution_day,
+      advance_days,
+      due_days,
+      difficulty_level
+    } = body;
+    
+    if (!client_id || !service_type || !frequency) {
+      return jsonResponse({ 
+        success: false, 
+        error: '缺少必要參數' 
+      }, 400);
+    }
+    
+    const result = await env.DB.prepare(`
+      INSERT INTO client_services 
+      (client_id, service_type, frequency, fee, estimated_hours, assigned_to, 
+       execution_day, advance_days, due_days, difficulty_level)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      client_id,
+      service_type,
+      frequency,
+      fee || 0,
+      estimated_hours || 0,
+      assigned_to || null,
+      execution_day || 15,
+      advance_days || 7,
+      due_days || 15,
+      difficulty_level || 3
+    ).run();
+    
+    return jsonResponse({ 
+      success: true,
+      service_id: result.meta.last_row_id,
+      message: '服務配置已創建'
+    });
+  } catch (error) {
+    return jsonResponse({ 
+      success: false, 
+      error: error.message 
+    }, 500);
+  }
+}
+
+/**
+ * 更新客戶服務配置
+ * PUT /api/client-services/:id
+ */
+export async function updateClientService(request, env, serviceId) {
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
+  if (!sessionData || sessionData.user.role !== 'admin') {
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
+  }
+
+  try {
+    const body = await request.json();
+    const fields = [];
+    const bindings = [];
+    
+    // 動態建構 UPDATE 語句
+    const allowedFields = [
+      'service_type', 'frequency', 'fee', 'estimated_hours', 'assigned_to',
+      'backup_assignee', 'execution_day', 'advance_days', 'due_days',
+      'difficulty_level', 'invoice_count', 'is_active', 'notes'
+    ];
+    
+    allowedFields.forEach(field => {
+      if (body[field] !== undefined) {
+        fields.push(`${field} = ?`);
+        bindings.push(body[field]);
+      }
+    });
+    
+    if (fields.length === 0) {
+      return jsonResponse({ 
+        success: false, 
+        error: '無更新欄位' 
+      }, 400);
+    }
+    
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    bindings.push(serviceId);
+    
+    await env.DB.prepare(`
+      UPDATE client_services 
+      SET ${fields.join(', ')}
+      WHERE id = ?
+    `).bind(...bindings).run();
+    
+    return jsonResponse({ 
+      success: true,
+      message: '服務配置已更新'
+    });
+  } catch (error) {
+    return jsonResponse({ 
+      success: false, 
+      error: error.message 
+    }, 500);
+  }
+}
+
+/**
+ * 切換服務啟用狀態
+ * POST /api/client-services/:id/toggle
+ */
+export async function toggleClientService(request, env, serviceId) {
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
+  if (!sessionData || sessionData.user.role !== 'admin') {
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
+  }
+
+  try {
+    const body = await request.json();
+    const isActive = body.is_active !== undefined ? body.is_active : true;
+    
+    await env.DB.prepare(`
+      UPDATE client_services 
+      SET is_active = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(isActive ? 1 : 0, serviceId).run();
+    
+    return jsonResponse({ 
+      success: true,
+      message: isActive ? '服務已啟用' : '服務已停用'
+    });
+  } catch (error) {
+    return jsonResponse({ 
+      success: false, 
+      error: error.message 
+    }, 500);
+  }
+}
+
+/**
+ * 刪除客戶服務配置
+ * DELETE /api/client-services/:id
+ */
+export async function deleteClientService(request, env, serviceId) {
+  const token = getSessionToken(request);
+  const sessionData = await verifySession(env.DB, token);
+  if (!sessionData || sessionData.user.role !== 'admin') {
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
+  }
+
+  try {
+    await env.DB.prepare(`
+      DELETE FROM client_services WHERE id = ?
+    `).bind(serviceId).run();
+    
+    return jsonResponse({ 
+      success: true,
+      message: '服務配置已刪除'
+    });
+  } catch (error) {
+    return jsonResponse({ 
+      success: false, 
+      error: error.message 
+    }, 500);
+  }
+}
+
