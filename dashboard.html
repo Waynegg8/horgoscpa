@@ -11,9 +11,31 @@
         .greeting-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 20px 30px;
             border-radius: 12px;
             margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .greeting-text {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .tasks-container {
@@ -21,6 +43,63 @@
             border-radius: 12px;
             padding: 25px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .stats-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .stats-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: var(--light-bg);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .employee-progress {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--light-bg);
+            border-radius: 8px;
+        }
+
+        .employee-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .progress-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .progress-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .task-item {
@@ -258,21 +337,72 @@
         <div class="internal-container">
             <!-- 問候語標題 -->
             <div class="greeting-header">
-                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;" id="greetingTime">早安</div>
-                <h1 style="margin: 0; font-size: 28px;" id="greetingUser">載入中...</h1>
-                <p style="margin: 10px 0 0; opacity: 0.9;" id="todayDate">今天是 2025/10/26 星期日</p>
+                <h1 class="greeting-text" id="greetingUser">早安，載入中...</h1>
+                <div style="font-size: 14px; opacity: 0.9;" id="todayDate">2025/10/26 星期日</div>
             </div>
 
-            <!-- 待辦任務 -->
-            <div class="tasks-container">
-                <h2 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px;">
-                    <span class="material-symbols-outlined">assignment</span>
-                    待辦任務
-                </h2>
-                <div id="tasksList">
-                    <div class="empty-state">
-                        <span class="material-symbols-outlined">task_alt</span>
-                        <p style="font-weight: 600; font-size: 18px; margin: 10px 0;">載入中...</p>
+            <!-- 員工視圖 -->
+            <div id="employeeView" style="display: none;">
+                <div class="dashboard-grid">
+                    <!-- 待辦任務 -->
+                    <div class="tasks-container">
+                        <h2 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-outlined">assignment</span>
+                            待辦任務
+                        </h2>
+                        <div id="tasksList">
+                            <div class="empty-state">
+                                <span class="material-symbols-outlined">task_alt</span>
+                                <p style="font-weight: 600; font-size: 18px; margin: 10px 0;">載入中...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 本週工時統計 -->
+                    <div class="stats-container">
+                        <h2 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-outlined">schedule</span>
+                            本週工時
+                        </h2>
+                        <div id="weeklyStats">
+                            <div class="empty-state" style="padding: 40px 20px;">
+                                <span class="material-symbols-outlined">hourglass_empty</span>
+                                <p style="font-size: 14px; margin: 10px 0;">載入中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 管理員視圖 -->
+            <div id="adminView" style="display: none;">
+                <div class="dashboard-grid">
+                    <!-- 團隊工作進度 -->
+                    <div class="tasks-container">
+                        <h2 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-outlined">groups</span>
+                            團隊工作進度
+                        </h2>
+                        <div id="teamProgress">
+                            <div class="empty-state">
+                                <span class="material-symbols-outlined">group</span>
+                                <p style="font-weight: 600; font-size: 18px; margin: 10px 0;">載入中...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 本週工時統計 -->
+                    <div class="stats-container">
+                        <h2 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px;">
+                            <span class="material-symbols-outlined">schedule</span>
+                            本週工時
+                        </h2>
+                        <div id="adminWeeklyStats">
+                            <div class="empty-state" style="padding: 40px 20px;">
+                                <span class="material-symbols-outlined">hourglass_empty</span>
+                                <p style="font-size: 14px; margin: 10px 0;">載入中...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

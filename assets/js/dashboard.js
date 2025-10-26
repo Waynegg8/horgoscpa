@@ -1,6 +1,6 @@
 /**
  * 工作台（Dashboard）
- * 顯示待辦任務及相關SOP和注意事項
+ * 顯示待辦任務、本週工時及團隊進度（管理員）
  */
 
 const API_BASE = 'https://timesheet-api.hergscpa.workers.dev';
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initAuth();
     initMobileMenu();
     updateGreeting();
-    await loadPendingTasks();
+    await loadDashboardData();
 });
 
 async function initAuth() {
@@ -26,7 +26,22 @@ async function initAuth() {
         const displayName = currentUser.employee_name || currentUser.username;
         document.getElementById('userName').textContent = displayName;
         document.getElementById('userRole').textContent = currentUser.role === 'admin' ? '管理員' : '員工';
-        document.getElementById('greetingUser').textContent = displayName;
+        
+        // 更新問候語
+        const hour = new Date().getHours();
+        let greeting = '早安';
+        if (hour >= 12 && hour < 18) greeting = '午安';
+        else if (hour >= 18) greeting = '晚安';
+        document.getElementById('greetingUser').textContent = `${greeting}，${displayName}`;
+        
+        // 根據角色顯示不同視圖
+        if (currentUser.role === 'admin') {
+            document.getElementById('adminView').style.display = 'block';
+            document.getElementById('employeeView').style.display = 'none';
+        } else {
+            document.getElementById('employeeView').style.display = 'block';
+            document.getElementById('adminView').style.display = 'none';
+        }
     } catch (error) {
         localStorage.removeItem('session_token');
         window.location.href = 'login.html';
@@ -68,17 +83,26 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 });
 
 function updateGreeting() {
-    const hour = new Date().getHours();
-    let greeting = '早安';
-    if (hour >= 12 && hour < 18) greeting = '午安';
-    else if (hour >= 18) greeting = '晚安';
-    
-    document.getElementById('greetingTime').textContent = greeting;
-    
     const today = new Date();
     const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
     document.getElementById('todayDate').textContent = 
-        `今天是 ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()} ${weekdays[today.getDay()]}`;
+        `${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()} ${weekdays[today.getDay()]}`;
+}
+
+async function loadDashboardData() {
+    if (currentUser && currentUser.role === 'admin') {
+        // 管理員：載入團隊進度和全體工時
+        await Promise.all([
+            loadTeamProgress(),
+            loadAdminWeeklyStats()
+        ]);
+    } else {
+        // 員工：載入個人待辦任務和工時
+        await Promise.all([
+            loadPendingTasks(),
+            loadWeeklyStats()
+        ]);
+    }
 }
 
 async function loadPendingTasks() {
@@ -96,10 +120,10 @@ async function loadPendingTasks() {
         
         const allTasks = [];
         
-        // 處理週期任務
+        // 處理週期任務（只顯示員工自己的）
         const recurringTasks = (recurringRes.tasks || []).filter(task => 
             task.status !== 'completed' && 
-            (!task.assigned_to || task.assigned_to === currentUser.employee_name || currentUser.role === 'admin')
+            (!task.assigned_to || task.assigned_to === currentUser.employee_name)
         );
         
         recurringTasks.forEach(task => {
@@ -117,10 +141,10 @@ async function loadPendingTasks() {
             });
         });
         
-        // 處理多階段任務（工商、財稅）
+        // 處理多階段任務（工商、財稅）- 只顯示員工自己的
         const multiStageTasks = (Array.isArray(multiStageRes) ? multiStageRes : []).filter(task =>
             task.status !== 'completed' &&
-            (!task.assigned_to || task.assigned_to === currentUser.employee_name || currentUser.role === 'admin')
+            (!task.assigned_to || task.assigned_to === currentUser.employee_name)
         );
         
         multiStageTasks.forEach(task => {
@@ -142,6 +166,12 @@ async function loadPendingTasks() {
         
         // 按優先級和到期日期排序
         allTasks.sort((a, b) => {
+            const aOverdue = a.dueDate && isPastDue(a.dueDate);
+            const bOverdue = b.dueDate && isPastDue(b.dueDate);
+            
+            if (aOverdue && !bOverdue) return -1;
+            if (!aOverdue && bOverdue) return 1;
+            
             if (a.dueDate && !b.dueDate) return -1;
             if (!a.dueDate && b.dueDate) return 1;
             if (a.dueDate && b.dueDate) {
@@ -164,6 +194,196 @@ async function loadPendingTasks() {
         container.innerHTML = allTasks.map(task => renderTaskItem(task)).join('');
     } catch (error) {
         console.error('載入任務失敗:', error);
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="material-symbols-outlined">error_outline</span>
+                <p style="font-weight: 600; font-size: 18px; margin: 10px 0; color: #f44336;">載入失敗</p>
+            </div>
+        `;
+    }
+}
+
+async function loadWeeklyStats() {
+    const container = document.getElementById('weeklyStats');
+    
+    try {
+        const year = new Date().getFullYear();
+        const month = new Date().getMonth() + 1;
+        
+        // 員工：只顯示自己的工時
+        const employeeName = currentUser.employee_name;
+        if (employeeName) {
+            const data = await apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(employeeName)}&year=${year}&month=${month}`);
+            const workEntries = data.workEntries || [];
+            const leaveEntries = data.leaveEntries || [];
+            
+            let totalHours = 0;
+            workEntries.forEach(entry => {
+                Object.values(entry.hours || {}).forEach(h => totalHours += parseFloat(h) || 0);
+            });
+            
+            let leaveHours = 0;
+            leaveEntries.forEach(entry => {
+                Object.values(entry.hours || {}).forEach(h => leaveHours += parseFloat(h) || 0);
+            });
+            
+            container.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${totalHours.toFixed(1)}</div>
+                        <div class="stat-label">本週工時</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${leaveHours.toFixed(1)}</div>
+                        <div class="stat-label">請假時數</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            container.innerHTML = '<div style="color: var(--text-secondary); text-align: center;">無員工資料</div>';
+        }
+    } catch (error) {
+        console.error('載入工時統計失敗:', error);
+        container.innerHTML = '<div style="color: #f44336; text-align: center;">載入失敗</div>';
+    }
+}
+
+async function loadAdminWeeklyStats() {
+    const container = document.getElementById('adminWeeklyStats');
+    
+    try {
+        const year = new Date().getFullYear();
+        const month = new Date().getMonth() + 1;
+        
+        // 管理員：顯示所有員工的工時統計
+        const employees = await apiRequest('/api/employees').catch(() => []);
+        
+        const statsPromises = employees.map(async (emp) => {
+            try {
+                const data = await apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(emp.name)}&year=${year}&month=${month}`);
+                const workEntries = data.workEntries || [];
+                
+                let empHours = 0;
+                workEntries.forEach(entry => {
+                    Object.values(entry.hours || {}).forEach(h => empHours += parseFloat(h) || 0);
+                });
+                
+                return { name: emp.name, hours: empHours };
+            } catch {
+                return { name: emp.name, hours: 0 };
+            }
+        });
+        
+        const employeeStats = await Promise.all(statsPromises);
+        const totalHours = employeeStats.reduce((sum, emp) => sum + emp.hours, 0);
+        
+        container.innerHTML = `
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">${totalHours.toFixed(1)}</div>
+                    <div class="stat-label">總工時（全體）</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${employees.length}</div>
+                    <div class="stat-label">團隊人數</div>
+                </div>
+            </div>
+            <div style="margin-top: 20px; font-size: 14px; color: var(--text-secondary);">
+                <div style="font-weight: 600; margin-bottom: 10px;">各員工工時：</div>
+                ${employeeStats.sort((a, b) => b.hours - a.hours).map(emp => `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                        <span>${escapeHtml(emp.name)}</span>
+                        <span style="font-weight: 600; color: var(--primary-color);">${emp.hours.toFixed(1)} 小時</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (error) {
+        console.error('載入管理員工時統計失敗:', error);
+        container.innerHTML = '<div style="color: #f44336; text-align: center;">載入失敗</div>';
+    }
+}
+
+async function loadTeamProgress() {
+    const container = document.getElementById('teamProgress');
+    
+    try {
+        // 獲取所有員工
+        const employees = await apiRequest('/api/employees');
+        
+        const year = new Date().getFullYear();
+        const month = new Date().getMonth() + 1;
+        
+        // 獲取所有任務
+        const [recurringRes, multiStageRes] = await Promise.all([
+            apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`).catch(() => ({ tasks: [] })),
+            apiRequest(`/api/multi-stage-tasks`).catch(() => [])
+        ]);
+        
+        const allRecurringTasks = recurringRes.tasks || [];
+        const allMultiStageTasks = Array.isArray(multiStageRes) ? multiStageRes : [];
+        
+        // 統計每個員工的任務進度
+        const employeeProgress = employees.map(emp => {
+            const empRecurringTasks = allRecurringTasks.filter(t => t.assigned_to === emp.name);
+            const empMultiStageTasks = allMultiStageTasks.filter(t => t.assigned_to === emp.name);
+            
+            const totalTasks = empRecurringTasks.length + empMultiStageTasks.length;
+            const completedTasks = empRecurringTasks.filter(t => t.status === 'completed').length +
+                                   empMultiStageTasks.filter(t => t.status === 'completed').length;
+            const inProgressTasks = empRecurringTasks.filter(t => t.status === 'in_progress').length +
+                                    empMultiStageTasks.filter(t => t.status === 'in_progress').length;
+            const pendingTasks = totalTasks - completedTasks - inProgressTasks;
+            
+            return {
+                name: emp.name,
+                totalTasks,
+                completedTasks,
+                inProgressTasks,
+                pendingTasks
+            };
+        });
+        
+        // 過濾出有任務的員工
+        const activeEmployees = employeeProgress.filter(emp => emp.totalTasks > 0);
+        
+        if (activeEmployees.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <span class="material-symbols-outlined">group</span>
+                    <p style="font-weight: 600; font-size: 18px; margin: 10px 0;">暫無團隊任務</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = activeEmployees.map(emp => `
+            <div class="employee-progress">
+                <div class="employee-name">
+                    <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 5px;">person</span>
+                    ${escapeHtml(emp.name)}
+                </div>
+                <div class="progress-stats">
+                    <div class="progress-item">
+                        <span class="material-symbols-outlined" style="color: #4caf50; font-size: 18px;">check_circle</span>
+                        <span>已完成：<strong>${emp.completedTasks}</strong></span>
+                    </div>
+                    <div class="progress-item">
+                        <span class="material-symbols-outlined" style="color: #2196f3; font-size: 18px;">pending</span>
+                        <span>進行中：<strong>${emp.inProgressTasks}</strong></span>
+                    </div>
+                    <div class="progress-item">
+                        <span class="material-symbols-outlined" style="color: #ff9800; font-size: 18px;">schedule</span>
+                        <span>待處理：<strong>${emp.pendingTasks}</strong></span>
+                    </div>
+                    <div class="progress-item" style="margin-left: auto;">
+                        <span>總計：<strong>${emp.totalTasks}</strong></span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('載入團隊進度失敗:', error);
         container.innerHTML = `
             <div class="empty-state">
                 <span class="material-symbols-outlined">error_outline</span>
@@ -218,7 +438,7 @@ function renderTaskItem(task) {
                     ${task.sop ? `
                         <div style="margin-bottom: 10px;">
                             ${task.sop.map(sop => `
-                                <a href="${sop.link}" class="sop-link" target="_blank">
+                                <a href="${sop.link}" class="sop-link">
                                     <span class="material-symbols-outlined">description</span>
                                     ${escapeHtml(sop.name)}
                                 </a>
