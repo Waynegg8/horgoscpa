@@ -36,7 +36,12 @@ import {
   updateClientInteraction,
   deleteClientInteraction,
   importClients,
-  importServiceSchedule
+  importServiceSchedule,
+  getClientServices,
+  createClientService,
+  updateClientService,
+  toggleClientService,
+  deleteClientService
 } from './clients.js';
 
 import {
@@ -71,6 +76,29 @@ import {
   addChecklistItem,
   updateChecklistItem
 } from './projects.js';
+
+import {
+  getConfigCategories,
+  getConfigByCategory,
+  updateConfig,
+  batchUpdateConfig,
+  resetConfig
+} from './system-config.js';
+
+import {
+  getWorkloadOverview,
+  reassignTask,
+  updateWorkloadStats
+} from './workload.js';
+
+import {
+  getReminders,
+  createReminder,
+  markReminderAsRead,
+  markAllRemindersAsRead,
+  deleteReminder,
+  autoGenerateReminders
+} from './reminders.js';
 
 import {
   getPosts,
@@ -361,6 +389,106 @@ export default {
       // 批次匯入服務排程（從活頁簿2/CSV 解析結果）
       if (url.pathname === "/api/import/service-schedule" && method === "POST") {
         return await addCorsHeaders(await importServiceSchedule(request, env));
+      }
+
+      // ========================================
+      // 客戶服務配置 API (需認證)
+      // ========================================
+      
+      if (url.pathname === "/api/client-services" && method === "GET") {
+        return await addCorsHeaders(await getClientServices(request, env));
+      }
+      
+      if (url.pathname === "/api/client-services" && method === "POST") {
+        return await addCorsHeaders(await createClientService(request, env));
+      }
+      
+      if (url.pathname.match(/^\/api\/client-services\/\d+$/) && method === "PUT") {
+        const serviceId = url.pathname.split("/")[3];
+        return await addCorsHeaders(await updateClientService(request, env, serviceId));
+      }
+      
+      if (url.pathname.match(/^\/api\/client-services\/\d+\/toggle$/) && method === "POST") {
+        const serviceId = url.pathname.split("/")[3];
+        return await addCorsHeaders(await toggleClientService(request, env, serviceId));
+      }
+      
+      if (url.pathname.match(/^\/api\/client-services\/\d+$/) && method === "DELETE") {
+        const serviceId = url.pathname.split("/")[3];
+        return await addCorsHeaders(await deleteClientService(request, env, serviceId));
+      }
+
+      // ========================================
+      // 系統配置管理 API (需認證)
+      // ========================================
+      
+      if (url.pathname === "/api/system-config/categories" && method === "GET") {
+        return await addCorsHeaders(await getConfigCategories(request, env));
+      }
+      
+      if (url.pathname.match(/^\/api\/system-config\/[^\/]+$/) && method === "GET") {
+        const category = url.pathname.split("/")[3];
+        return await addCorsHeaders(await getConfigByCategory(request, env, category));
+      }
+      
+      if (url.pathname.match(/^\/api\/system-config\/[^\/]+$/) && method === "PUT") {
+        const paramKey = url.pathname.split("/")[3];
+        return await addCorsHeaders(await updateConfig(request, env, paramKey));
+      }
+      
+      if (url.pathname === "/api/system-config/batch" && method === "PUT") {
+        return await addCorsHeaders(await batchUpdateConfig(request, env));
+      }
+      
+      if (url.pathname.match(/^\/api\/system-config\/[^\/]+\/reset$/) && method === "POST") {
+        const paramKey = url.pathname.split("/")[3];
+        return await addCorsHeaders(await resetConfig(request, env, paramKey));
+      }
+
+      // ========================================
+      // 工作量管理 API (需認證)
+      // ========================================
+      
+      if (url.pathname === "/api/workload/overview" && method === "GET") {
+        return await addCorsHeaders(await getWorkloadOverview(request, env));
+      }
+      
+      if (url.pathname === "/api/workload/reassign" && method === "POST") {
+        return await addCorsHeaders(await reassignTask(request, env));
+      }
+      
+      if (url.pathname === "/api/workload/update-stats" && method === "POST") {
+        return await addCorsHeaders(await updateWorkloadStats(request, env));
+      }
+
+      // ========================================
+      // 用戶提醒 API (需認證)
+      // ========================================
+      
+      if (url.pathname === "/api/reminders" && method === "GET") {
+        return await addCorsHeaders(await getReminders(request, env));
+      }
+      
+      if (url.pathname === "/api/reminders" && method === "POST") {
+        return await addCorsHeaders(await createReminder(request, env));
+      }
+      
+      if (url.pathname.match(/^\/api\/reminders\/\d+\/read$/) && method === "PUT") {
+        const reminderId = url.pathname.split("/")[3];
+        return await addCorsHeaders(await markReminderAsRead(request, env, reminderId));
+      }
+      
+      if (url.pathname === "/api/reminders/mark-all-read" && method === "PUT") {
+        return await addCorsHeaders(await markAllRemindersAsRead(request, env));
+      }
+      
+      if (url.pathname.match(/^\/api\/reminders\/\d+$/) && method === "DELETE") {
+        const reminderId = url.pathname.split("/")[3];
+        return await addCorsHeaders(await deleteReminder(request, env, reminderId));
+      }
+      
+      if (url.pathname === "/api/reminders/auto-generate" && method === "POST") {
+        return await addCorsHeaders(await autoGenerateReminders(request, env));
       }
 
       // ========================================
