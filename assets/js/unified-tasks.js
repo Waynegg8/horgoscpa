@@ -168,6 +168,459 @@ async function fetchClientServiceTasks() {
 }
 
 /**
+ * 任務範本市場功能
+ */
+
+// 打開範本市場
+async function openTemplateMarket() {
+  try {
+    const response = await fetch(`${API_BASE}/multi-stage-templates`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (!response.ok) throw new Error('獲取範本失敗');
+    const data = await response.json();
+    const templates = data.templates || [];
+    
+    // 創建模態框
+    const modal = createTemplateMarketModal(templates);
+    document.body.appendChild(modal);
+    
+  } catch (error) {
+    console.error('打開範本市場失敗:', error);
+    alert('無法載入範本市場');
+  }
+}
+
+// 創建範本市場模態框
+function createTemplateMarketModal(templates) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'templateMarketModal';
+  
+  const categoryGroups = {
+    business: [],
+    finance: [],
+    recurring: [],
+    general: []
+  };
+  
+  templates.forEach(t => {
+    const cat = t.category || 'general';
+    if (categoryGroups[cat]) {
+      categoryGroups[cat].push(t);
+    }
+  });
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 900px; max-height: 80vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2>📚 任務範本市場</h2>
+        <button class="btn-close" onclick="closeTemplateMarket()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 20px; color: #666;">
+          選擇範本快速創建標準化任務，或複製範本進行客製化
+        </p>
+        
+        ${Object.entries(categoryGroups).map(([cat, temps]) => {
+          if (temps.length === 0) return '';
+          
+          const categoryNames = {
+            business: '工商登記',
+            finance: '財稅簽證',
+            recurring: '周期任務',
+            general: '一般任務'
+          };
+          
+          return `
+            <div class="template-category">
+              <h3>${categoryNames[cat]}</h3>
+              <div class="template-grid">
+                ${temps.map(t => `
+                  <div class="template-card" data-template-id="${t.id}">
+                    <div class="template-header">
+                      <h4>${t.template_name}</h4>
+                      <span class="badge">${t.total_stages} 階段</span>
+                    </div>
+                    <p class="template-description">${t.description || '無描述'}</p>
+                    <div class="template-footer">
+                      <button class="btn btn-sm btn-secondary" onclick="previewTemplate(${t.id})">
+                        <span class="material-symbols-outlined">visibility</span>
+                        預覽
+                      </button>
+                      <button class="btn btn-sm btn-primary" onclick="useTemplate(${t.id})">
+                        <span class="material-symbols-outlined">add</span>
+                        使用
+                      </button>
+                      <button class="btn btn-sm btn-outline" onclick="copyTemplate(${t.id})">
+                        <span class="material-symbols-outlined">content_copy</span>
+                        複製編輯
+                      </button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+  
+  return modal;
+}
+
+// 關閉範本市場
+window.closeTemplateMarket = function() {
+  const modal = document.getElementById('templateMarketModal');
+  if (modal) {
+    modal.remove();
+  }
+};
+
+// 預覽範本
+window.previewTemplate = async function(templateId) {
+  try {
+    const response = await fetch(`${API_BASE}/multi-stage-templates/${templateId}/stages`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (!response.ok) throw new Error('獲取範本詳情失敗');
+    const data = await response.json();
+    const stages = data.stages || [];
+    
+    // 創建預覽對話框
+    const previewModal = document.createElement('div');
+    previewModal.className = 'modal-overlay';
+    previewModal.innerHTML = `
+      <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+          <h3>範本預覽</h3>
+          <button class="btn-close" onclick="this.closest('.modal-overlay').remove()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="stage-timeline-preview">
+            ${stages.map((stage, index) => `
+              <div class="stage-preview-item">
+                <div class="stage-number">${index + 1}</div>
+                <div class="stage-details">
+                  <h4>${stage.stage_name}</h4>
+                  <p>${stage.stage_description || ''}</p>
+                  <div class="stage-meta">
+                    <span>⏱️ ${stage.estimated_hours || 0}h</span>
+                    ${stage.requires_approval ? '<span>✓ 需審核</span>' : ''}
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+            <strong>總預估工時:</strong> ${stages.reduce((sum, s) => sum + (s.estimated_hours || 0), 0)}小時
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" onclick="useTemplate(${templateId}); this.closest('.modal-overlay').remove();">
+            使用此範本
+          </button>
+          <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+            關閉
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(previewModal);
+    
+  } catch (error) {
+    console.error('預覽範本失敗:', error);
+    alert('無法預覽範本');
+  }
+};
+
+// 使用範本創建任務
+window.useTemplate = function(templateId) {
+  // 關閉市場
+  closeTemplateMarket();
+  
+  // 打開創建任務對話框，預選範本
+  openCreateTaskDialog(templateId);
+};
+
+// 複製範本進行編輯
+window.copyTemplate = function(templateId) {
+  // 關閉市場
+  closeTemplateMarket();
+  
+  // 打開編輯器
+  openTemplateEditor(templateId, true);
+};
+
+/**
+ * 拖拽式範本編輯器
+ */
+function openTemplateEditor(templateId, isCopy = false) {
+  // 先獲取範本數據
+  fetch(`${API_BASE}/multi-stage-templates/${templateId}/stages`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    const stages = data.stages || [];
+    showTemplateEditor(templateId, stages, isCopy);
+  })
+  .catch(error => {
+    console.error('獲取範本失敗:', error);
+    alert('無法載入範本');
+  });
+}
+
+function showTemplateEditor(templateId, stages, isCopy) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'templateEditorModal';
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 1000px; max-height: 90vh;">
+      <div class="modal-header">
+        <h2>✏️ 範本編輯器 ${isCopy ? '(複製)' : ''}</h2>
+        <button class="btn-close" onclick="closeTemplateEditor()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal-body" style="overflow-y: auto; max-height: calc(90vh - 200px);">
+        <div class="editor-container">
+          <div class="editor-header">
+            <div class="form-group">
+              <label>範本名稱</label>
+              <input type="text" id="templateName" class="form-control" 
+                     value="${isCopy ? '複製 - ' : ''}範本名稱" placeholder="輸入範本名稱">
+            </div>
+            <div class="form-group">
+              <label>分類</label>
+              <select id="templateCategory" class="form-control">
+                <option value="business">工商登記</option>
+                <option value="finance">財稅簽證</option>
+                <option value="recurring">周期任務</option>
+                <option value="general">一般任務</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="stages-editor" id="stagesEditor">
+            <h3>階段列表 <span style="font-size: 14px; color: #666;">（可拖拽調整順序）</span></h3>
+            <div class="stages-list" id="stagesList">
+              ${stages.map((stage, index) => createStageEditorItem(stage, index)).join('')}
+            </div>
+            <button class="btn btn-outline" onclick="addNewStage()">
+              <span class="material-symbols-outlined">add</span>
+              新增階段
+            </button>
+          </div>
+          
+          <div class="editor-help">
+            <p><strong>💡 提示：</strong></p>
+            <ul>
+              <li>拖拽階段卡片左側的 ⋮⋮ 圖示可調整順序</li>
+              <li>點擊 ✏️ 可編輯階段詳情和檢查清單</li>
+              <li>勾選「需審核」的階段會在完成時要求主管確認</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeTemplateEditor()">取消</button>
+        <button class="btn btn-primary" onclick="saveTemplate(${templateId}, ${isCopy})">
+          ${isCopy ? '另存新範本' : '儲存範本'}
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // 初始化拖拽功能
+  initDragAndDrop();
+}
+
+// 創建階段編輯項目
+function createStageEditorItem(stage, index) {
+  return `
+    <div class="stage-editor-item" draggable="true" data-stage-index="${index}">
+      <div class="drag-handle" title="拖拽調整順序">
+        <span class="material-symbols-outlined">drag_indicator</span>
+      </div>
+      <div class="stage-info">
+        <div class="stage-number">${index + 1}</div>
+        <input type="text" class="stage-name-input" value="${stage.stage_name || ''}" 
+               placeholder="階段名稱">
+        <input type="number" class="stage-hours-input" value="${stage.estimated_hours || 0}" 
+               min="0" step="0.5" placeholder="工時">
+        <label class="checkbox-label">
+          <input type="checkbox" class="stage-approval-check" 
+                 ${stage.requires_approval ? 'checked' : ''}>
+          需審核
+        </label>
+      </div>
+      <div class="stage-actions">
+        <button class="btn-icon" onclick="editStageDetail(${index})" title="編輯詳情">
+          <span class="material-symbols-outlined">edit_note</span>
+        </button>
+        <button class="btn-icon" onclick="deleteStage(${index})" title="刪除階段">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// 初始化拖拽功能
+function initDragAndDrop() {
+  const stagesList = document.getElementById('stagesList');
+  if (!stagesList) return;
+  
+  let draggedElement = null;
+  
+  stagesList.addEventListener('dragstart', (e) => {
+    if (e.target.classList.contains('stage-editor-item')) {
+      draggedElement = e.target;
+      e.target.style.opacity = '0.5';
+    }
+  });
+  
+  stagesList.addEventListener('dragend', (e) => {
+    if (e.target.classList.contains('stage-editor-item')) {
+      e.target.style.opacity = '1';
+    }
+  });
+  
+  stagesList.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const afterElement = getDragAfterElement(stagesList, e.clientY);
+    if (afterElement == null) {
+      stagesList.appendChild(draggedElement);
+    } else {
+      stagesList.insertBefore(draggedElement, afterElement);
+    }
+    
+    // 重新編號
+    updateStageNumbers();
+  });
+}
+
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll('.stage-editor-item:not(.dragging)')];
+  
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function updateStageNumbers() {
+  const stageItems = document.querySelectorAll('.stage-editor-item');
+  stageItems.forEach((item, index) => {
+    const numberEl = item.querySelector('.stage-number');
+    if (numberEl) {
+      numberEl.textContent = index + 1;
+    }
+    item.dataset.stageIndex = index;
+  });
+}
+
+// 新增階段
+window.addNewStage = function() {
+  const stagesList = document.getElementById('stagesList');
+  const currentCount = stagesList.querySelectorAll('.stage-editor-item').length;
+  
+  const newStage = {
+    stage_name: '',
+    estimated_hours: 0,
+    requires_approval: false
+  };
+  
+  const newItem = document.createElement('div');
+  newItem.innerHTML = createStageEditorItem(newStage, currentCount);
+  stagesList.appendChild(newItem.firstElementChild);
+  
+  // 重新初始化拖拽
+  initDragAndDrop();
+};
+
+// 刪除階段
+window.deleteStage = function(index) {
+  if (!confirm('確定要刪除此階段？')) return;
+  
+  const stagesList = document.getElementById('stagesList');
+  const items = stagesList.querySelectorAll('.stage-editor-item');
+  if (items[index]) {
+    items[index].remove();
+    updateStageNumbers();
+  }
+};
+
+// 編輯階段詳情
+window.editStageDetail = function(index) {
+  // 打開階段詳情編輯對話框
+  alert('階段詳情編輯功能開發中');
+};
+
+// 儲存範本
+window.saveTemplate = async function(templateId, isCopy) {
+  try {
+    const stagesList = document.getElementById('stagesList');
+    const stageItems = stagesList.querySelectorAll('.stage-editor-item');
+    
+    const stages = Array.from(stageItems).map((item, index) => ({
+      stage_order: index + 1,
+      stage_name: item.querySelector('.stage-name-input').value,
+      estimated_hours: parseFloat(item.querySelector('.stage-hours-input').value) || 0,
+      requires_approval: item.querySelector('.stage-approval-check').checked
+    }));
+    
+    const templateData = {
+      template_name: document.getElementById('templateName').value,
+      category: document.getElementById('templateCategory').value,
+      total_stages: stages.length,
+      stages: stages
+    };
+    
+    // TODO: 實際保存到後端
+    console.log('保存範本:', templateData);
+    alert('範本儲存功能開發中');
+    
+    closeTemplateEditor();
+    
+  } catch (error) {
+    console.error('儲存範本失敗:', error);
+    alert('儲存失敗');
+  }
+};
+
+window.closeTemplateEditor = function() {
+  const modal = document.getElementById('templateEditorModal');
+  if (modal) {
+    modal.remove();
+  }
+};
+
+/**
  * 渲染任务列表
  */
 function renderTasks(tasks) {
