@@ -79,22 +79,29 @@ function switchTab(tabName) {
     loadTabData(tabName);
 }
 
-function loadCurrentTabData() {
+async function loadCurrentTabData() {
     const activeTab = document.querySelector('.tab-button.active');
     if (activeTab) {
-        loadTabData(activeTab.dataset.tab);
+        await loadTabData(activeTab.dataset.tab);
     }
 }
 
-function loadTabData(tabName) {
-    // 確保 currentUser 已被設定（使用 window.currentUser）
-    const user = window.currentUser;
-    if (!user) {
-        console.warn('currentUser 尚未載入，延後執行');
-        setTimeout(() => loadTabData(tabName), 100);
+async function loadTabData(tabName) {
+    // 使用重試機制確保 currentUser 已載入
+    let retries = 0;
+    while (!window.currentUser && retries < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+    }
+
+    if (!window.currentUser) {
+        showNotification('無法獲取用戶資訊，請重新登入', 'error');
+        window.location.href = '/login.html';
         return;
     }
     
+    const user = window.currentUser;
+
     switch (tabName) {
         case 'clients':
             loadClients();
