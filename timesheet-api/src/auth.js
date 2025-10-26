@@ -2,13 +2,7 @@
 // 認證相關函數
 // =================================================================
 
-// Helper function to create JSON responses
-function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  });
-}
+import { jsonResponse, corsHeaders } from './utils.js';
 
 // 使用 Web Crypto API 進行密碼雜湊
 async function hashPassword(password) {
