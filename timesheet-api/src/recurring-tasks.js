@@ -453,7 +453,7 @@ export async function getRecurringTaskInstances(request, env, year, month) {
         cs.frequency
       FROM recurring_task_instances rti
       JOIN client_services cs ON rti.client_service_id = cs.id
-      JOIN clients c ON cs.client_id = c.id
+      JOIN clients c ON cs.client_id = c.name
       WHERE rti.year = ? AND rti.month = ?
       ORDER BY rti.due_date ASC
     `).bind(parseInt(year), parseInt(month)).all();
