@@ -16,7 +16,8 @@ export class Router {
       POST: new Map(),
       PUT: new Map(),
       DELETE: new Map(),
-      PATCH: new Map()
+      PATCH: new Map(),
+      OPTIONS: new Map()
     };
   }
 
@@ -67,6 +68,16 @@ export class Router {
    */
   patch(path, handler) {
     this.routes.PATCH.set(path, handler);
+    return this;
+  }
+
+  /**
+   * 註冊 OPTIONS 路由
+   * @param {string} path - 路徑
+   * @param {Function} handler - 處理函數
+   */
+  options(path, handler) {
+    this.routes.OPTIONS.set(path, handler);
     return this;
   }
 

@@ -164,17 +164,26 @@
             
             try {
                 log('loginResult', `正在登录: ${username}...`);
+                log('loginResult', `API 地址: ${API_BASE}/api/login`);
+                log('loginResult', `当前页面: ${window.location.origin}`);
+                
+                const requestBody = { username, password };
+                log('loginResult', `请求数据: ${JSON.stringify(requestBody)}`);
                 
                 const response = await fetch(`${API_BASE}/api/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify(requestBody),
+                    mode: 'cors',
+                    credentials: 'omit'
                 });
                 
-                log('loginResult', `响应状态: ${response.status}`);
+                log('loginResult', `响应状态: ${response.status} ${response.statusText}`);
+                log('loginResult', `响应类型: ${response.type}`);
                 log('loginResult', `CORS 头: ${response.headers.get('Access-Control-Allow-Origin')}`);
+                log('loginResult', `Content-Type: ${response.headers.get('Content-Type')}`);
                 
                 const data = await response.json();
                 log('loginResult', `响应数据: ${JSON.stringify(data, null, 2)}`);
@@ -182,11 +191,20 @@
                 if (data.session_token) {
                     localStorage.setItem('session_token', data.session_token);
                     log('loginResult', '✅ 登录成功！Session token 已保存');
-                    log('loginResult', '可以返回登录页面重试');
+                    log('loginResult', '3秒后自动跳转到登录页面...');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 3000);
+                } else if (data.error) {
+                    log('loginResult', `❌ 登录失败: ${data.error}`, true);
                 }
             } catch (e) {
-                log('loginResult', `错误: ${e.message}`, true);
-                log('loginResult', `详细: ${e.stack}`, true);
+                log('loginResult', `❌ 网络错误: ${e.message}`, true);
+                log('loginResult', `错误类型: ${e.name}`, true);
+                log('loginResult', `\n提示：`, true);
+                log('loginResult', `1. 请检查 F12 开发者工具的 Network 标签`, true);
+                log('loginResult', `2. 查看是否有红色的请求`, true);
+                log('loginResult', `3. 点击查看详细的错误信息`, true);
             }
         }
     </script>
