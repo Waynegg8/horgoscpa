@@ -9,27 +9,25 @@ let currentTab = 'all';
 /**
  * 初始化
  */
-async function initUnifiedTasks() {
-  console.log('初始化统一任务管理系统...');
-  
-  // 等待 currentUser 設定完成
-  let retries = 0;
-  while (!window.currentUser && retries < 50) {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    retries++;
-  }
-  
-  if (!window.currentUser) {
-    console.error('無法取得使用者資料，請重新整理頁面');
-    showNotification('無法取得使用者資料，請重新整理頁面', 'error');
-    return;
-  }
-  
-  // 加载任务列表
-  await loadTasks();
-  
-  // 设置事件监听器
-  setupEventListeners();
+function initUnifiedTasks() {
+    // 綁定標籤頁點擊事件
+    document.querySelectorAll('.tab-nav .tab-button').forEach(button => {
+        button.addEventListener('click', (event) => {
+            const tabName = event.currentTarget.dataset.tab;
+            if (tabName) {
+                switchTab(tabName);
+            }
+        });
+    });
+
+    // 初始化頁面時載入第一個標籤的內容
+    const initialTab = document.querySelector('.tab-nav .tab-button.active')?.dataset.tab;
+    if (initialTab) {
+        switchTab(initialTab);
+    } else {
+        // Fallback if no tab is active by default
+        switchTab('all');
+    }
 }
 
 // 移除重複的 loadCurrentUser 函數，使用 auth-common.js 提供的 checkAuth

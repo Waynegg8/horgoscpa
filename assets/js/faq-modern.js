@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const answer = faqItem.querySelector('.faq-answer');
             const icon = question.querySelector('.faq-icon');
 
+            if (!faqItem || !answer || !icon) return;
+
             const isActive = faqItem.classList.contains('active');
 
             // Close all other FAQ items in the same category
@@ -21,9 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (category) {
                 category.querySelectorAll('.faq-item').forEach(item => {
                     if (item !== faqItem) {
+                        const otherAnswer = item.querySelector('.faq-answer');
+                        const otherIcon = item.querySelector('.faq-icon');
                         item.classList.remove('active');
-                        item.querySelector('.faq-answer').style.maxHeight = null;
-                        item.querySelector('.faq-icon').textContent = 'expand_more';
+                        if (otherAnswer) otherAnswer.style.maxHeight = null;
+                        if (otherIcon) otherIcon.textContent = 'expand_more';
                     }
                 });
             }

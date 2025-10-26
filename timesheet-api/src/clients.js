@@ -693,9 +693,9 @@ export async function getClientServices(request, env) {
     let query = `
       SELECT 
         cs.*,
-        ce.client_name
+        c.name as client_name 
       FROM client_services cs
-      LEFT JOIN clients_extended ce ON cs.client_id = ce.id
+      LEFT JOIN clients c ON cs.client_id = c.id
       WHERE 1=1
     `;
     const bindings = [];
@@ -715,10 +715,10 @@ export async function getClientServices(request, env) {
       bindings.push(assignedTo);
     }
     
-    query += ` ORDER BY ce.client_name, cs.service_type`;
+    query += ` ORDER BY c.name, cs.service_type`;
     
     const stmt = env.DB.prepare(query);
-    const result = await stmt.bind(...bindings).all();
+    const result = await (bindings.length > 0 ? stmt.bind(...bindings).all() : stmt.all());
     
     return jsonResponse({ 
       success: true, 
