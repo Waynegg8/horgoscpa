@@ -1,267 +1,402 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-導入客戶服務配置和每月固定任務
-從活頁簿1.csv和活頁簿2.csv導入數據
+客戶服務資料匯入工具
+用途：將 CSV 資料匯入到 client_services 系統
 """
+
 import csv
-import json
 import sqlite3
-import sys
+import json
+from pathlib import Path
 from datetime import datetime
+from typing import Dict, List, Tuple, Any
 
-def parse_csv_big5(filename):
-    """解析Big5編碼的CSV文件"""
-    encodings = ['big5', 'cp950', 'big5hkscs', 'gbk']
+class ClientServicesImporter:
+    """客戶服務資料匯入器"""
     
-    for encoding in encodings:
+    # 服務類型映射
+    SERVICE_TYPE_MAPPING = {
+        '記帳': 'accounting',
+        '營業稅': 'vat',
+        '營所稅': 'income_tax',
+        '扣繳': 'withholding',
+        '暫繳': 'prepayment',
+        '盈餘分配': 'dividend',
+        '二代健保': 'nhi',
+        '股東平台': 'shareholder_tax',
+        '簽證': 'audit',
+    }
+    
+    # 頻率映射
+    FREQUENCY_MAPPING = {
+        '每月': 'monthly',
+        '雙月': 'bimonthly',
+        '每年': 'annual',
+        '每季': 'quarterly',
+    }
+    
+    # 負責人映射（統一編號到系統用戶ID）
+    ASSIGNEE_MAPPING = {
+        '紜蓁': 1,
+        '柏澄': 2,
+        '凱閔': 3,
+    }
+    
+    def __init__(self, db_path: str):
+        """初始化匯入器"""
+        self.db_path = db_path
+        self.conn = None
+        self.stats = {
+            'clients_processed': 0,
+            'clients_created': 0,
+            'clients_updated': 0,
+            'services_created': 0,
+            'services_skipped': 0,
+            'errors': []
+        }
+    
+    def connect_db(self):
+        """連接資料庫"""
+        self.conn = sqlite3.connect(self.db_path)
+        self.conn.row_factory = sqlite3.Row
+        return self.conn
+    
+    def close_db(self):
+        """關閉資料庫連接"""
+        if self.conn:
+            self.conn.close()
+    
+    def read_big5_csv(self, filepath: str) -> List[List[str]]:
+        """讀取 Big5 編碼的 CSV 文件"""
         try:
-            with open(filename, 'r', encoding=encoding, errors='ignore') as f:
+            with open(filepath, 'r', encoding='big5', errors='replace') as f:
                 reader = csv.reader(f)
-                data = list(reader)
-                print(f"✓ 成功使用 {encoding} 編碼讀取 {filename}")
-                return data
+                return list(reader)
         except Exception as e:
-            continue
+            print(f"錯誤讀取 {filepath}: {e}")
+            return []
     
-    print(f"✗ 無法讀取文件 {filename}")
-    return None
-
-def parse_workbook1(data):
-    """解析活頁簿1 - 客戶基本資料"""
-    if not data or len(data) < 2:
-        return []
+    def get_or_create_client(self, tax_id: str, name: str, contact_person: str = '', 
+                            phone: str = '', email: str = '') -> int:
+        """獲取或創建客戶記錄"""
+        cursor = self.conn.cursor()
+        
+        # 檢查客戶是否已存在
+        cursor.execute('SELECT id FROM clients WHERE tax_id = ?', (tax_id,))
+        result = cursor.fetchone()
+        
+        if result:
+            client_id = result[0]
+            # 更新客戶資訊
+            cursor.execute('''
+                UPDATE clients 
+                SET name = ?, contact_person = ?, phone = ?, email = ?, 
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', (name, contact_person, phone, email, client_id))
+            self.stats['clients_updated'] += 1
+            return client_id
+        else:
+            # 創建新客戶
+            cursor.execute('''
+                INSERT INTO clients (tax_id, name, contact_person, phone, email, status)
+                VALUES (?, ?, ?, ?, ?, 'active')
+            ''', (tax_id, name, contact_person, phone, email))
+            self.stats['clients_created'] += 1
+            return cursor.lastrowid
     
-    headers = data[0]
-    clients = []
-    
-    for row in data[1:]:
-        if len(row) < 2 or not row[0].strip():  # 跳過空行
-            continue
+    def create_client_service(self, client_id: int, service_data: Dict[str, Any]) -> bool:
+        """創建客戶服務配置"""
+        cursor = self.conn.cursor()
+        
+        try:
+            # 檢查是否已存在相同的服務配置
+            cursor.execute('''
+                SELECT id FROM client_services 
+                WHERE client_id = ? AND service_type = ? AND is_active = 1
+            ''', (client_id, service_data['service_type']))
             
-        client = {
-            'tax_id': row[0].strip() if len(row) > 0 else '',
-            'name': row[1].strip() if len(row) > 1 else '',
-            'status': row[2].strip() if len(row) > 2 else '',
-            'assigned_to': row[3].strip() if len(row) > 3 else '',
-            'contact1': row[4].strip() if len(row) > 4 else '',
-            'contact2': row[5].strip() if len(row) > 5 else '',
-            'phone': row[6].strip() if len(row) > 6 else '',
-            'email': row[7].strip() if len(row) > 7 else '',
-            'invoice_count': row[8].strip() if len(row) > 8 else '0',
-            'services': {
-                '記帳': row[9].strip() if len(row) > 9 else '',
-                '營業稅': row[10].strip() if len(row) > 10 else '',
-                '營所稅': row[11].strip() if len(row) > 11 else '',
-                '二代健保': row[12].strip() if len(row) > 12 else '',
-                '扣繳': row[13].strip() if len(row) > 13 else '',
-                '暫繳': row[14].strip() if len(row) > 14 else '',
-                '盈餘分配': row[15].strip() if len(row) > 15 else '',
-                '股東平台': row[16].strip() if len(row) > 16 else '',
-                '簽證': row[17].strip() if len(row) > 17 else '',
-                '執行業務': row[18].strip() if len(row) > 18 else '',
-                '機關團體': row[19].strip() if len(row) > 19 else '',
-                '工商': row[20].strip() if len(row) > 20 else '',
-            },
-            'difficulty': row[21].strip() if len(row) > 21 else '',
-            'notes': row[22].strip() if len(row) > 22 else ''
-        }
-        clients.append(client)
+            if cursor.fetchone():
+                self.stats['services_skipped'] += 1
+                return False
+            
+            # 插入服務配置
+            cursor.execute('''
+                INSERT INTO client_services (
+                    client_id, service_type, frequency, fee, assigned_to,
+                    execution_day, start_month, estimated_hours, invoice_count,
+                    difficulty_level, notes, is_active
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            ''', (
+                client_id,
+                service_data['service_type'],
+                service_data.get('frequency', 'monthly'),
+                service_data.get('fee', 0),
+                service_data.get('assigned_to'),
+                service_data.get('execution_day', 15),
+                service_data.get('start_month', 1),
+                service_data.get('estimated_hours', 0),
+                service_data.get('invoice_count', 0),
+                service_data.get('difficulty_level', 3),
+                service_data.get('notes', '')
+            ))
+            
+            self.stats['services_created'] += 1
+            return True
+            
+        except Exception as e:
+            self.stats['errors'].append({
+                'client_id': client_id,
+                'service_type': service_data.get('service_type'),
+                'error': str(e)
+            })
+            return False
     
-    return clients
-
-def parse_workbook2(data):
-    """解析活頁簿2 - 每月固定任務配置"""
-    if not data or len(data) < 2:
-        return []
-    
-    headers = data[0]
-    services = []
-    
-    for row in data[1:]:
-        if len(row) < 2 or not row[0].strip():  # 跳過空行
-            continue
+    def import_workbook6(self, filepath: str):
+        """
+        匯入活頁簿6 - 客戶服務項目總表
+        欄位：統一編號, 公司名稱, 狀態, 負責, 聯絡人1, 聯絡人2, 電話, Mail, 
+              發票數(月), 記帳, 營業稅, 營所稅, 二代健保, 扣繳, 暫繳, 
+              盈餘分配, 股東平台, 簽證, 執行業務, 機關團體, 工商, 難度1-5, 備註
+        """
+        print(f"\n匯入活頁簿6: {filepath}")
+        print("=" * 80)
         
-        # 解析每月執行配置（1月到12月）
-        monthly_schedule = {}
-        for month in range(1, 13):
-            col_index = 7 + month - 1  # 從第8列開始是1月
-            if len(row) > col_index:
-                value = row[col_index].strip()
-                monthly_schedule[str(month)] = (value == 'V' or value.upper() == 'V')
+        data = self.read_big5_csv(filepath)
+        if not data or len(data) < 2:
+            print("無有效資料")
+            return
         
-        service = {
-            'tax_id': row[0].strip() if len(row) > 0 else '',
-            'name': row[1].strip() if len(row) > 1 else '',
-            'assigned_to': row[2].strip() if len(row) > 2 else '',
-            'service_name': row[3].strip() if len(row) > 3 else '',
-            'frequency': row[4].strip() if len(row) > 4 else '',
-            'fee': row[5].strip().replace(',', '').replace(' ', '') if len(row) > 5 else '0',
-            'estimated_hours': row[6].strip() if len(row) > 6 else '0',
-            'monthly_schedule': monthly_schedule,
-            'billing_timing': row[19].strip() if len(row) > 19 else '',
-            'billing_notes': row[20].strip() if len(row) > 20 else '',
-            'service_notes': row[21].strip() if len(row) > 21 else ''
-        }
-        services.append(service)
-    
-    return services
-
-def map_service_to_category(service_name):
-    """將服務項目對應到5大類別"""
-    service_name = service_name.strip()
-    
-    # 記帳類
-    if '記帳' in service_name or '帳' in service_name:
-        return '記帳'
-    
-    # 工商類
-    if '工商' in service_name or '登記' in service_name or '設立' in service_name or '變更' in service_name or '解散' in service_name:
-        return '工商'
-    
-    # 財簽類
-    if '簽證' in service_name or '財簽' in service_name or '查核' in service_name:
-        return '財簽'
-    
-    # 稅簽類
-    if any(x in service_name for x in ['營業稅', '營所稅', '扣繳', '暫繳', '二代健保', '盈餘', '所得稅', '稅']):
-        return '稅簽'
-    
-    # 其他
-    return '其他'
-
-def import_to_database(clients, services, db_path='timesheet-api/.wrangler/state/v3/d1/miniflare-D1DatabaseObject'):
-    """導入數據到SQLite數據庫"""
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        
-        print("\n開始導入數據...")
-        
-        # 1. 導入客戶服務配置（從活頁簿2）
-        inserted_services = 0
-        for service in services:
+        # 跳過標題行
+        for row_idx, row in enumerate(data[1:], start=2):
+            if len(row) < 10 or not row[0].strip():
+                continue
+            
             try:
-                category = map_service_to_category(service['service_name'])
+                tax_id = row[0].strip()
+                name = row[1].strip()
+                status = row[2].strip()
+                assignee_name = row[3].strip()
+                contact_person = row[4].strip() if len(row) > 4 else ''
+                phone = row[6].strip() if len(row) > 6 else ''
+                email = row[7].strip() if len(row) > 7 else ''
+                invoice_count = int(row[8]) if len(row) > 8 and row[8].strip().isdigit() else 0
+                difficulty = int(row[21]) if len(row) > 21 and row[21].strip().isdigit() else 3
+                notes = row[22].strip() if len(row) > 22 else ''
                 
-                # 清理費用數據
-                fee_str = service['fee'].strip()
-                if fee_str == '-' or fee_str == '':
-                    fee = 0
-                else:
-                    fee = float(fee_str)
+                # 如果是停業狀態，跳過
+                if status == '停業':
+                    continue
                 
-                # 清理工時數據
-                hours_str = service['estimated_hours'].strip()
-                if hours_str == '-' or hours_str == '':
-                    hours = 0
-                else:
-                    hours = float(hours_str)
+                # 獲取或創建客戶
+                client_id = self.get_or_create_client(
+                    tax_id=tax_id,
+                    name=name,
+                    contact_person=contact_person,
+                    phone=phone,
+                    email=email
+                )
                 
-                cursor.execute('''
-                    INSERT INTO client_services 
-                    (client_name, client_tax_id, service_name, service_category, frequency, 
-                     fee, estimated_hours, monthly_schedule, billing_timing, billing_notes, 
-                     service_notes, assigned_to, is_active)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-                ''', (
-                    service['name'],
-                    service['tax_id'],
-                    service['service_name'],
-                    category,
-                    service['frequency'],
-                    fee,
-                    hours,
-                    json.dumps(service['monthly_schedule'], ensure_ascii=False),
-                    service['billing_timing'],
-                    service['billing_notes'],
-                    service['service_notes'],
-                    service['assigned_to']
-                ))
-                inserted_services += 1
+                self.stats['clients_processed'] += 1
+                
+                # 獲取負責人ID
+                assigned_to = self.ASSIGNEE_MAPPING.get(assignee_name)
+                
+                # 服務項目欄位索引：9-18
+                # 記帳(9), 營業稅(10), 營所稅(11), 二代健保(12), 扣繳(13), 暫繳(14),
+                # 盈餘分配(15), 股東平台(16), 簽證(17)
+                service_columns = [
+                    (9, '記帳', 'monthly'),
+                    (10, '營業稅', 'bimonthly'),
+                    (11, '營所稅', 'annual'),
+                    (12, '二代健保', 'monthly'),
+                    (13, '扣繳', 'monthly'),
+                    (14, '暫繳', 'biannual'),
+                    (15, '盈餘分配', 'annual'),
+                    (16, '股東平台', 'annual'),
+                    (17, '簽證', 'annual'),
+                ]
+                
+                # 檢查每個服務項目
+                for col_idx, service_name, default_frequency in service_columns:
+                    if len(row) > col_idx and row[col_idx].strip().upper() == 'V':
+                        service_type = self.SERVICE_TYPE_MAPPING.get(service_name)
+                        if service_type:
+                            service_data = {
+                                'service_type': service_type,
+                                'frequency': default_frequency,
+                                'fee': 0,  # 費用需要從活頁簿7補充
+                                'assigned_to': assigned_to,
+                                'execution_day': 15,
+                                'start_month': 1,
+                                'estimated_hours': 0,
+                                'invoice_count': invoice_count,
+                                'difficulty_level': difficulty,
+                                'notes': notes
+                            }
+                            self.create_client_service(client_id, service_data)
+                
+                print(f"✓ 處理客戶: {name} ({tax_id})")
+                
             except Exception as e:
-                print(f"✗ 導入服務失敗: {service['name']} - {service['service_name']}: {e}")
+                error_msg = f"第{row_idx}行錯誤: {str(e)}"
+                print(f"✗ {error_msg}")
+                self.stats['errors'].append({
+                    'row': row_idx,
+                    'error': error_msg
+                })
+    
+    def import_workbook7(self, filepath: str):
+        """
+        匯入活頁簿7 - 服務排程與收費明細表
+        用於補充費用、工時等詳細資訊
+        欄位：統一編號, 公司名稱, 負責, 服務項目, 頻率, 收費, 預計工時, ...
+        """
+        print(f"\n匯入活頁簿7: {filepath}")
+        print("=" * 80)
         
-        conn.commit()
-        print(f"✓ 成功導入 {inserted_services} 條服務配置")
+        data = self.read_big5_csv(filepath)
+        if not data or len(data) < 2:
+            print("無有效資料")
+            return
         
-        # 2. 統計信息
-        cursor.execute('SELECT service_category, COUNT(*) FROM client_services GROUP BY service_category')
-        stats = cursor.fetchall()
-        print("\n按類別統計:")
-        for category, count in stats:
-            print(f"  {category}: {count} 項")
+        updated_count = 0
         
-        conn.close()
-        return True
+        for row_idx, row in enumerate(data[1:], start=2):
+            if len(row) < 6 or not row[0].strip():
+                continue
+            
+            try:
+                tax_id = row[0].strip()
+                service_name = row[3].strip()
+                frequency_name = row[4].strip()
+                fee_str = row[5].strip().replace(',', '') if len(row) > 5 else '0'
+                
+                # 解析費用
+                fee = 0
+                if fee_str and fee_str != '-':
+                    try:
+                        fee = float(fee_str)
+                    except ValueError:
+                        pass
+                
+                # 映射服務類型和頻率
+                service_type = self.SERVICE_TYPE_MAPPING.get(service_name)
+                frequency = self.FREQUENCY_MAPPING.get(frequency_name, 'monthly')
+                
+                if not service_type:
+                    continue
+                
+                # 更新服務配置
+                cursor = self.conn.cursor()
+                cursor.execute('''
+                    UPDATE client_services 
+                    SET fee = ?, frequency = ?
+                    WHERE client_id = (SELECT id FROM clients WHERE tax_id = ?)
+                      AND service_type = ?
+                      AND is_active = 1
+                ''', (fee, frequency, tax_id, service_type))
+                
+                if cursor.rowcount > 0:
+                    updated_count += 1
+                    print(f"✓ 更新費用: {tax_id} - {service_name}: ${fee}")
+                
+            except Exception as e:
+                error_msg = f"第{row_idx}行錯誤: {str(e)}"
+                print(f"✗ {error_msg}")
         
-    except Exception as e:
-        print(f"✗ 數據庫操作失敗: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+        print(f"\n總共更新 {updated_count} 筆服務配置費用")
+    
+    def print_stats(self):
+        """打印匯入統計"""
+        print("\n" + "=" * 80)
+        print("匯入統計")
+        print("=" * 80)
+        print(f"處理客戶總數: {self.stats['clients_processed']}")
+        print(f"新增客戶: {self.stats['clients_created']}")
+        print(f"更新客戶: {self.stats['clients_updated']}")
+        print(f"新增服務配置: {self.stats['services_created']}")
+        print(f"跳過重複服務: {self.stats['services_skipped']}")
+        print(f"錯誤數量: {len(self.stats['errors'])}")
+        
+        if self.stats['errors']:
+            print("\n錯誤詳情:")
+            for error in self.stats['errors'][:10]:  # 只顯示前10個錯誤
+                print(f"  - {error}")
+        
+        print("=" * 80)
+    
+    def run(self, workbook6_path: str, workbook7_path: str = None):
+        """執行完整匯入流程"""
+        try:
+            self.connect_db()
+            
+            # 匯入活頁簿6（主要資料）
+            if Path(workbook6_path).exists():
+                self.import_workbook6(workbook6_path)
+            else:
+                print(f"找不到檔案: {workbook6_path}")
+            
+            # 匯入活頁簿7（補充費用資訊）
+            if workbook7_path and Path(workbook7_path).exists():
+                self.import_workbook7(workbook7_path)
+            
+            # 提交變更
+            self.conn.commit()
+            
+            # 顯示統計
+            self.print_stats()
+            
+        except Exception as e:
+            print(f"\n匯入過程發生錯誤: {e}")
+            if self.conn:
+                self.conn.rollback()
+        finally:
+            self.close_db()
+
 
 def main():
-    print("="*60)
-    print("客戶服務配置導入工具")
-    print("="*60)
+    """主函數"""
+    import sys
     
-    # 1. 解析活頁簿1
-    print("\n[步驟1] 解析活頁簿1.csv（客戶基本資料）")
-    workbook1_data = parse_csv_big5('活頁簿1.csv')
-    if not workbook1_data:
-        print("✗ 無法讀取活頁簿1.csv")
-        return False
+    # 設定路徑
+    project_root = Path(__file__).parent.parent
+    db_path = project_root / 'timesheet-api' / 'database.db'
+    csv_folder = project_root / '新增資料夾'
     
-    clients = parse_workbook1(workbook1_data)
-    print(f"✓ 解析完成，共 {len(clients)} 個客戶")
+    workbook6 = csv_folder / '活頁簿6.csv'
+    workbook7 = csv_folder / '活頁簿7.csv'
     
-    # 2. 解析活頁簿2
-    print("\n[步驟2] 解析活頁簿2.csv（每月固定任務）")
-    workbook2_data = parse_csv_big5('活頁簿2.csv')
-    if not workbook2_data:
-        print("✗ 無法讀取活頁簿2.csv")
-        return False
+    print("=" * 80)
+    print("客戶服務資料匯入工具")
+    print("=" * 80)
+    print(f"資料庫: {db_path}")
+    print(f"CSV 檔案夾: {csv_folder}")
+    print()
     
-    services = parse_workbook2(workbook2_data)
-    print(f"✓ 解析完成，共 {len(services)} 項服務配置")
+    # 檢查檔案
+    if not db_path.exists():
+        print(f"錯誤: 找不到資料庫檔案 {db_path}")
+        print("請先執行 migration 腳本創建資料庫結構")
+        sys.exit(1)
     
-    # 3. 顯示一些樣本
-    print("\n[樣本預覽]")
-    if services:
-        sample = services[0]
-        print(f"客戶: {sample['name']}")
-        print(f"服務: {sample['service_name']}")
-        print(f"頻率: {sample['frequency']}")
-        print(f"收費: {sample['fee']}")
-        print(f"每月執行: {json.dumps(sample['monthly_schedule'], ensure_ascii=False)}")
+    if not workbook6.exists():
+        print(f"錯誤: 找不到 CSV 檔案 {workbook6}")
+        sys.exit(1)
     
-    # 4. 導入到數據庫
-    print("\n[步驟3] 導入到數據庫")
-    response = input("確定要導入數據嗎？(y/n): ")
-    if response.lower() == 'y':
-        success = import_to_database(clients, services)
-        if success:
-            print("\n✓ 數據導入完成！")
-        else:
-            print("\n✗ 數據導入失敗")
-    else:
-        print("\n已取消導入")
+    # 確認執行
+    response = input("\n確定要開始匯入嗎？這將修改資料庫。(y/N): ")
+    if response.lower() != 'y':
+        print("已取消匯入")
+        sys.exit(0)
     
-    # 5. 生成JSON供檢查
-    print("\n[步驟4] 生成JSON文件供檢查")
-    with open('scripts/clients_imported.json', 'w', encoding='utf-8') as f:
-        json.dump(clients, f, ensure_ascii=False, indent=2)
-    print("✓ 已生成 scripts/clients_imported.json")
+    # 執行匯入
+    importer = ClientServicesImporter(str(db_path))
+    importer.run(str(workbook6), str(workbook7) if workbook7.exists() else None)
     
-    with open('scripts/services_imported.json', 'w', encoding='utf-8') as f:
-        json.dump(services, f, ensure_ascii=False, indent=2)
-    print("✓ 已生成 scripts/services_imported.json")
-    
-    print("\n" + "="*60)
-    print("完成！")
-    print("="*60)
+    print("\n匯入完成！")
+
 
 if __name__ == '__main__':
     main()
-

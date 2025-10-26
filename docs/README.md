@@ -1,83 +1,187 @@
-# 📚 文檔中心
+# 霍爾果斯會計師事務所 - 系統文檔
 
-本資料夾包含所有專案的說明文檔、指南和技術文件。
+**版本**: 2.0  
+**最後更新**: 2025-10-26
+
+---
+
+## ⚠️ 開發者必讀
+
+### 修改功能的正確流程
+
+```
+1. 閱讀設計文檔 → 2. 更新設計文檔 → 3. 實施開發 → 4. 測試 → 5. 清理中間檔案
+```
+
+**禁止**直接改代碼！必須先改設計文檔！
+
+---
+
+## 📚 文檔導航
+
+### 🏗️ 系統架構（必讀）
+
+#### ⭐ [系統架構設計.md](./系統架構設計.md)
+**整個系統的總覽設計文檔**
+- 系統定位與技術架構
+- 所有功能模組說明
+- 完整資料庫結構
+- 資料流程與 API 設計原則
+- 專案目錄結構
+- **開發流程原則（先改設計再改代碼）**
+
+**適用對象**: 所有開發人員（新人必讀）
+
+---
+
+### 📋 詳細功能設計
+
+#### [客戶服務自動化系統設計.md](./客戶服務自動化系統設計.md)
+**客戶服務自動化的詳細設計**
+- 自動任務生成邏輯、服務配置與排程、檢查清單範本系統、工作量管理
+
+#### [多階段任務系統設計.md](./多階段任務系統設計.md)
+**多階段任務系統的詳細設計**
+- 任務階段管理、檢查清單、審核流程、範本系統、進度追蹤
+
+#### [工時管理系統設計.md](./工時管理系統設計.md)
+**工時管理系統的詳細設計**
+- 工時記錄、加班管理、請假申請、年假試算、報表統計
+
+#### [SOP知識管理系統設計.md](./SOP知識管理系統設計.md)
+**SOP知識管理的詳細設計**
+- SOP建立與管理、版本控制、分類系統、搜尋功能、Markdown編輯
+
+**適用對象**: 開發對應功能時參考
+
+---
+
+
+### 💻 開發規範
+
+#### [開發與部署指南.md](./開發與部署指南.md)
+**開發規範與部署流程**
+- ⚠️ **核心原則：先改設計再改代碼**
+- 代碼規範（Git、JavaScript、SQL）
+- 資料庫操作規範
+- 部署流程
+- 測試方法
+- 專案整潔原則
+
+**適用對象**: 所有開發人員
+
+---
+
+### 🔌 技術參考
+
+#### [API端點文檔.md](./API端點文檔.md)
+**完整 API 參考手冊**
+- 所有 API 端點列表
+- 請求與回應格式
+- 認證方式
+- 錯誤處理
+
+**適用對象**: 前後端開發人員
+
+---
+
+### ⚙️ 系統配置
+
+#### [GitHub Actions設定.md](./GitHub Actions設定.md)
+自動化配置與 CI/CD
+
+#### [SEO部署指南.md](./SEO部署指南.md)
+SEO 優化與網站部署
+
+#### [timesheet-api/資料庫還原指南.md](./timesheet-api/資料庫還原指南.md)
+資料庫備份與還原
+
+---
+
+## 🔍 快速查找
+
+| 需求 | 文檔 |
+|------|------|
+| 🆕 新人入職 | [系統架構設計.md](./系統架構設計.md) |
+| 🔧 修改功能 | 1. [系統架構設計.md](./系統架構設計.md)<br>2. 對應的詳細設計文檔：<br>   - [客戶服務自動化系統設計.md](./客戶服務自動化系統設計.md)<br>   - [多階段任務系統設計.md](./多階段任務系統設計.md)<br>   - [工時管理系統設計.md](./工時管理系統設計.md)<br>   - [SOP知識管理系統設計.md](./SOP知識管理系統設計.md)<br>3. [開發與部署指南.md](./開發與部署指南.md) |
+| 📖 查詢 API | [API端點文檔.md](./API端點文檔.md) |
+| 🚀 部署上線 | [開發與部署指南.md](./開發與部署指南.md) |
+| 🗄️ 資料庫問題 | [timesheet-api/資料庫還原指南.md](./timesheet-api/資料庫還原指南.md) |
+| 🔄 設定自動化 | [GitHub Actions設定.md](./GitHub Actions設定.md) |
+
+---
 
 ## 📂 文檔結構
 
-### 📖 新手必讀
-
-- **[PROJECT_PREFERENCES.md](./PROJECT_PREFERENCES.md)** - ⚙️ 專案偏好設置（重要！）
-- **[HOW_TO_ADD_DOCS.md](./HOW_TO_ADD_DOCS.md)** - 📝 如何新增說明文檔
-- **[HOW_TO_CONTINUE.md](./HOW_TO_CONTINUE.md)** - 🔄 如何繼續系統擴展工作（必讀！）
-
-### 🚀 系統擴展專案
-
-- **[SYSTEM_EXPANSION_PLAN.md](./SYSTEM_EXPANSION_PLAN.md)** - 📋 完整實施計畫（極度詳細）
-- **[SYSTEM_EXPANSION_PROGRESS.md](./SYSTEM_EXPANSION_PROGRESS.md)** - 📊 進度追蹤（即時更新）
-
-### 🌐 網站相關文檔
-
-- **[API_ENDPOINTS.md](./API_ENDPOINTS.md)** - API 端點說明文檔
-- **[SEO_DEPLOYMENT_GUIDE.md](./SEO_DEPLOYMENT_GUIDE.md)** - SEO 部署指南
-- **[CONTENT_OUTLINE.md](./CONTENT_OUTLINE.md)** - 內容大綱與規劃
-
-### 🛠️ 系統設定文檔
-
-- **[GITHUB_ACTIONS_SETUP.md](./GITHUB_ACTIONS_SETUP.md)** - GitHub Actions 自動化設定指南
-- **[MIGRATION_COMPLETE.md](./MIGRATION_COMPLETE.md)** - 系統遷移完成紀錄
-
-### ⏰ Timesheet API 文檔
-
-專門存放工時系統 API 相關的完整文檔：
-
-- **[timesheet-api/README.md](./timesheet-api/README.md)** - Timesheet API 完整說明
-- **[timesheet-api/RESTORE_DATABASE_GUIDE.md](./timesheet-api/RESTORE_DATABASE_GUIDE.md)** - 資料庫復原完整指南
-
-### ⚡ 效能優化
-
-- **[REPORT_OPTIMIZATION_GUIDE.md](./REPORT_OPTIMIZATION_GUIDE.md)** - 報表效能優化完整指南（10-120倍速度提升）
-- **[QUICK_DEPLOY_OPTIMIZATION.md](./QUICK_DEPLOY_OPTIMIZATION.md)** - 快速部署報表優化（3分鐘完成）
-
-## 🚀 快速開始
-
-### 網站開發者
-- 查看 [API_ENDPOINTS.md](./API_ENDPOINTS.md) 了解可用的 API
-- 查看 [SEO_DEPLOYMENT_GUIDE.md](./SEO_DEPLOYMENT_GUIDE.md) 學習如何優化 SEO
-
-### 系統管理員
-- 查看 [GITHUB_ACTIONS_SETUP.md](./GITHUB_ACTIONS_SETUP.md) 設定自動化流程
-- 查看 [timesheet-api/RESTORE_DATABASE_GUIDE.md](./timesheet-api/RESTORE_DATABASE_GUIDE.md) 學習資料庫備份與復原
-
-### 內容管理者
-- 查看 [CONTENT_OUTLINE.md](./CONTENT_OUTLINE.md) 了解內容架構
-
-## 📝 文檔規範
-
-所有新增的說明文檔請統一放置在此 `docs/` 資料夾中：
-
-### 一般文檔
 ```
 docs/
-  └── YOUR_DOCUMENT.md
+├── README.md                         # 本文件（從這裡開始）
+│
+├── 系統架構設計.md                   # ⭐ 總體架構（必讀）
+│
+├── 功能詳細設計/
+│   ├── 客戶服務自動化系統設計.md
+│   ├── 多階段任務系統設計.md
+│   ├── 工時管理系統設計.md
+│   └── SOP知識管理系統設計.md
+│
+├── 開發與部署指南.md                 # 開發規範
+├── API端點文檔.md                    # API 參考
+├── GitHub Actions設定.md             # 自動化
+├── SEO部署指南.md                    # SEO
+│
+└── timesheet-api/
+    ├── README.md
+    └── 資料庫還原指南.md
 ```
 
-### API 或子系統相關文檔
+---
+
+## 📌 開發流程（重要）
+
+### ✅ 正確的開發流程
+
 ```
-docs/
-  └── [子系統名稱]/
-      └── YOUR_DOCUMENT.md
+1. 讀設計文檔
+   ↓
+2. 更新設計文檔（增加/修改功能描述、資料表、API）
+   ↓
+3. 實施開發（按照設計文檔）
+   ↓
+4. 測試驗證
+   ↓
+5. 刪除測試腳本和中間檔案
+   ↓
+6. 確認設計文檔與代碼同步
 ```
 
-### 文件命名規則
-- 使用大寫字母和底線：`EXAMPLE_GUIDE.md`
-- 使用英文命名（可在內容中使用中文）
-- 使用描述性的名稱，如：
-  - `SETUP_GUIDE.md` - 設定指南
-  - `USER_MANUAL.md` - 使用手冊
-  - `API_REFERENCE.md` - API 參考
-  - `TROUBLESHOOTING.md` - 疑難排解
+### ❌ 錯誤的做法
 
-## 🔄 最後更新
+- ❌ 直接改代碼不改設計
+- ❌ 完成後才更新設計文檔
+- ❌ 保留測試腳本
+- ❌ 生成完成報告、總結等文件
+- ❌ 設計文檔與代碼不同步
 
-- **2025-10-25**: 建立文檔中心，整合所有說明文檔
+---
 
+## 📝 文檔維護原則
+
+1. ✅ **設計優先** - 任何修改先更新設計文檔
+2. ✅ **保持同步** - 設計文檔與代碼必須同步
+3. ✅ **及時清理** - 刪除過時和臨時文檔
+4. ✅ **統整合併** - 相關內容合併到同一文檔
+5. ❌ **不生成報告** - 不需要完成報告、總結、快速啟動等文件
+
+---
+
+## 🆘 需要幫助？
+
+1. **不知道從哪開始？** → 讀 [系統架構設計.md](./系統架構設計.md)
+2. **要修改功能？** → 先找對應設計文檔，先改設計
+3. **查 API？** → 看 [API端點文檔.md](./API端點文檔.md)
+4. **資料庫問題？** → 看 [資料庫還原指南](./timesheet-api/資料庫還原指南.md)
+
+---
+
+**記住：先改設計，再改代碼！**
