@@ -1,6 +1,6 @@
 /**
  * 工作台（Dashboard）
- * 顯示今日概覽和快速操作
+ * 顯示待辦任務及相關SOP和注意事項
  */
 
 const API_BASE = 'https://timesheet-api.hergscpa.workers.dev';
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initAuth();
     initMobileMenu();
     updateGreeting();
-    await loadDashboardData();
+    await loadPendingTasks();
 });
 
 async function initAuth() {
@@ -21,11 +21,12 @@ async function initAuth() {
     }
 
     try {
-        const response = await apiRequest('/api/auth/me');
+        const response = await apiRequest('/api/verify');
         currentUser = response.user;
-        document.getElementById('userName').textContent = currentUser.username;
+        const displayName = currentUser.employee_name || currentUser.username;
+        document.getElementById('userName').textContent = displayName;
         document.getElementById('userRole').textContent = currentUser.role === 'admin' ? '管理員' : '員工';
-        document.getElementById('greetingUser').textContent = currentUser.username;
+        document.getElementById('greetingUser').textContent = displayName;
     } catch (error) {
         localStorage.removeItem('session_token');
         window.location.href = 'login.html';
@@ -80,160 +81,305 @@ function updateGreeting() {
         `今天是 ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()} ${weekdays[today.getDay()]}`;
 }
 
-async function loadDashboardData() {
-    await Promise.all([
-        loadTodayTasks(),
-        loadWeeklyStats(),
-        loadRecentActivity()
-    ]);
-}
-
-async function loadTodayTasks() {
-    const container = document.getElementById('todayTasks');
+async function loadPendingTasks() {
+    const container = document.getElementById('tasksList');
     
     try {
         const year = new Date().getFullYear();
         const month = new Date().getMonth() + 1;
         
-        const response = await apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`);
-        const tasks = (response.tasks || []).filter(task => {
-            if (task.status === 'completed') return false;
-            if (!task.assigned_to || task.assigned_to === currentUser.employee_name || currentUser.role === 'admin') {
-                // 檢查是否今日到期或逾期
-                if (task.due_date) {
-                    const due = new Date(task.due_date);
-                    const today = new Date();
-                    const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
-                    return diffDays <= 2; // 今天和明後天的任務
-                }
-            }
-            return false;
-        });
+        // 載入所有類型的未完成任務
+        const [recurringRes, multiStageRes] = await Promise.all([
+            apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`).catch(() => ({ tasks: [] })),
+            apiRequest(`/api/multi-stage-tasks`).catch(() => [])
+        ]);
         
-        if (tasks.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 30px; color: var(--text-secondary);">
-                    <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.3;">mood</span>
-                    <p style="margin-top: 10px;">今日沒有緊急任務<br>可以規劃其他工作</p>
-                </div>
-            `;
-            return;
-        }
+        const allTasks = [];
         
-        container.innerHTML = tasks.map(task => {
-            const isOverdue = task.due_date && new Date(task.due_date) < new Date();
-            return `
-                <div class="todo-item ${isOverdue ? 'overdue' : ''}" onclick="window.location.href='recurring-tasks.html#task-${task.id}';">
-                    <span class="material-symbols-outlined" style="color: ${isOverdue ? '#f44336' : 'var(--primary-color)'};">
-                        ${task.status === 'in_progress' ? 'schedule' : 'radio_button_unchecked'}
-                    </span>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; margin-bottom: 3px;">${escapeHtml(task.task_name)}</div>
-                        <div style="font-size: 13px; color: var(--text-secondary);">
-                            ${task.due_date ? formatDueDate(task.due_date) : '無期限'}
-                            ${isOverdue ? ' <span style="color: #f44336; font-weight: 600;">⚠️ 已逾期</span>' : ''}
-                        </div>
-                    </div>
-                    <span class="material-symbols-outlined" style="color: var(--text-secondary);">arrow_forward</span>
-                </div>
-            `;
-        }).join('');
-    } catch (error) {
-        container.innerHTML = '<div style="color: #f44336;">載入失敗</div>';
-    }
-}
-
-async function loadWeeklyStats() {
-    const container = document.getElementById('weeklyStats');
-    
-    try {
-        // 獲取本週日期範圍
-        const today = new Date();
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - today.getDay());
-        
-        const year = today.getFullYear();
-        const month = today.getMonth() + 1;
-        
-        // 獲取任務數據
-        const response = await apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`);
-        const tasks = (response.tasks || []).filter(task => 
-            !task.assigned_to || task.assigned_to === currentUser.employee_name || currentUser.role === 'admin'
+        // 處理週期任務
+        const recurringTasks = (recurringRes.tasks || []).filter(task => 
+            task.status !== 'completed' && 
+            (!task.assigned_to || task.assigned_to === currentUser.employee_name || currentUser.role === 'admin')
         );
         
-        const completedThisWeek = tasks.filter(t => {
-            if (t.status !== 'completed' || !t.completed_at) return false;
-            const completedDate = new Date(t.completed_at);
-            return completedDate >= weekStart;
-        }).length;
+        recurringTasks.forEach(task => {
+            allTasks.push({
+                id: task.id,
+                title: task.task_name || '未命名任務',
+                type: 'recurring',
+                category: task.category || '其他',
+                client: task.client_name,
+                status: task.status || 'pending',
+                dueDate: task.due_date,
+                assignedTo: task.assigned_to,
+                sop: getSopForTask('recurring', task.category),
+                notes: getNotesForTask('recurring', task.category, task)
+            });
+        });
         
-        const totalHours = tasks.reduce((sum, t) => sum + (t.actual_hours || 0), 0);
+        // 處理多階段任務（工商、財稅）
+        const multiStageTasks = (Array.isArray(multiStageRes) ? multiStageRes : []).filter(task =>
+            task.status !== 'completed' &&
+            (!task.assigned_to || task.assigned_to === currentUser.employee_name || currentUser.role === 'admin')
+        );
         
-        container.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; text-align: center;">
-                <div>
-                    <div style="font-size: 36px; font-weight: 700; color: var(--primary-color);">${totalHours.toFixed(1)}</div>
-                    <div style="color: var(--text-secondary); font-size: 14px;">總工時</div>
+        multiStageTasks.forEach(task => {
+            const category = task.template_name || '其他';
+            allTasks.push({
+                id: task.id,
+                title: task.task_name || task.client_name || '未命名任務',
+                type: 'multistage',
+                category: category,
+                client: task.client_name,
+                status: task.status || 'not_started',
+                dueDate: task.due_date,
+                assignedTo: task.assigned_to,
+                currentStage: task.current_stage,
+                sop: getSopForTask('multistage', category),
+                notes: getNotesForTask('multistage', category, task)
+            });
+        });
+        
+        // 按優先級和到期日期排序
+        allTasks.sort((a, b) => {
+            if (a.dueDate && !b.dueDate) return -1;
+            if (!a.dueDate && b.dueDate) return 1;
+            if (a.dueDate && b.dueDate) {
+                return new Date(a.dueDate) - new Date(b.dueDate);
+            }
+            return 0;
+        });
+        
+        if (allTasks.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <span class="material-symbols-outlined">task_alt</span>
+                    <p style="font-weight: 600; font-size: 18px; margin: 10px 0;">沒有待辦任務</p>
+                    <p style="font-size: 14px;">所有工作都已完成！</p>
                 </div>
-                <div>
-                    <div style="font-size: 36px; font-weight: 700; color: var(--primary-color);">${completedThisWeek}</div>
-                    <div style="color: var(--text-secondary); font-size: 14px;">本週完成</div>
-                </div>
-                <div>
-                    <div style="font-size: 36px; font-weight: 700; color: var(--primary-color);">${tasks.filter(t => t.status !== 'completed').length}</div>
-                    <div style="color: var(--text-secondary); font-size: 14px;">進行中</div>
-                </div>
-            </div>
-        `;
-    } catch (error) {
-        container.innerHTML = '<div style="color: #f44336;">載入失敗</div>';
-    }
-}
-
-async function loadRecentActivity() {
-    const container = document.getElementById('recentActivity');
-    
-    try {
-        const year = new Date().getFullYear();
-        const month = new Date().getMonth() + 1;
-        
-        const response = await apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`);
-        const tasks = (response.tasks || [])
-            .filter(t => t.completed_at && (t.assigned_to === currentUser.employee_name || currentUser.role === 'admin'))
-            .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at))
-            .slice(0, 5);
-        
-        if (tasks.length === 0) {
-            container.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 20px;">尚無活動記錄</div>';
+            `;
             return;
         }
         
-        container.innerHTML = tasks.map(task => `
-            <div style="display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 8px; background: var(--light-bg); border-radius: 6px;">
-                <span class="material-symbols-outlined" style="color: #4caf50;">check_circle</span>
-                <div style="flex: 1;">
-                    <div style="font-weight: 500;">${escapeHtml(task.task_name)}</div>
-                    <div style="font-size: 13px; color: var(--text-secondary);">
-                        完成於 ${new Date(task.completed_at).toLocaleDateString('zh-TW')}
-                        ${task.actual_hours ? ` | ${task.actual_hours}小時` : ''}
+        container.innerHTML = allTasks.map(task => renderTaskItem(task)).join('');
+    } catch (error) {
+        console.error('載入任務失敗:', error);
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="material-symbols-outlined">error_outline</span>
+                <p style="font-weight: 600; font-size: 18px; margin: 10px 0; color: #f44336;">載入失敗</p>
+            </div>
+        `;
+    }
+}
+
+function renderTaskItem(task) {
+    const priorityClass = task.dueDate && isPastDue(task.dueDate) ? 'high-priority' : 
+                          task.status === 'in_progress' ? 'medium-priority' : '';
+    
+    const statusBadge = getStatusBadge(task.status);
+    const dueDateText = task.dueDate ? formatDueDate(task.dueDate) : '無截止日期';
+    
+    return `
+        <div class="task-item ${priorityClass}">
+            <div class="task-header">
+                <div>
+                    <div class="task-title">${escapeHtml(task.title)}</div>
+                    <div class="task-meta">
+                        ${task.client ? `
+                            <div class="task-meta-item">
+                                <span class="material-symbols-outlined">person</span>
+                                <span>${escapeHtml(task.client)}</span>
+                            </div>
+                        ` : ''}
+                        ${task.category ? `
+                            <div class="task-meta-item">
+                                <span class="material-symbols-outlined">category</span>
+                                <span>${escapeHtml(task.category)}</span>
+                            </div>
+                        ` : ''}
+                        <div class="task-meta-item">
+                            <span class="material-symbols-outlined">event</span>
+                            <span>${dueDateText}</span>
+                        </div>
+                        ${task.currentStage ? `
+                            <div class="task-meta-item">
+                                <span class="material-symbols-outlined">timeline</span>
+                                <span>${escapeHtml(task.currentStage)}</span>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
+                ${statusBadge}
             </div>
-        `).join('');
-    } catch (error) {
-        container.innerHTML = '<div style="color: #f44336;">載入失敗</div>';
-    }
+            
+            ${task.sop || task.notes ? `
+                <div class="task-info-section">
+                    ${task.sop ? `
+                        <div style="margin-bottom: 10px;">
+                            ${task.sop.map(sop => `
+                                <a href="${sop.link}" class="sop-link" target="_blank">
+                                    <span class="material-symbols-outlined">description</span>
+                                    ${escapeHtml(sop.name)}
+                                </a>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    ${task.notes ? `
+                        <div class="task-notes">
+                            <div class="task-notes-title">
+                                <span class="material-symbols-outlined">lightbulb</span>
+                                注意事項
+                            </div>
+                            <div>${escapeHtml(task.notes)}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            ` : ''}
+            
+            <div class="task-actions">
+                <button class="btn-task btn-details" onclick="goToTaskDetail('${task.type}', ${task.id})">
+                    <span class="material-symbols-outlined">visibility</span>
+                    查看詳情
+                </button>
+                ${task.status !== 'completed' ? `
+                    <button class="btn-task btn-complete" onclick="markTaskComplete('${task.type}', ${task.id})">
+                        <span class="material-symbols-outlined">check_circle</span>
+                        標記完成
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function getSopForTask(type, category) {
+    const sopMap = {
+        'recurring': {
+            '記帳': [
+                { name: '記帳作業流程', link: 'knowledge.html?tab=sop&doc=bookkeeping' },
+                { name: '憑證整理規範', link: 'knowledge.html?tab=sop&doc=voucher' }
+            ],
+            '工商': [
+                { name: '工商變更登記流程', link: 'knowledge.html?tab=sop&doc=business-change' }
+            ],
+            '財簽': [
+                { name: '財務報表編製SOP', link: 'knowledge.html?tab=sop&doc=financial-report' }
+            ],
+            '稅簽': [
+                { name: '稅務申報作業流程', link: 'knowledge.html?tab=sop&doc=tax-filing' }
+            ]
+        },
+        'multistage': {
+            '公司設立': [
+                { name: '公司設立完整流程', link: 'knowledge.html?tab=sop&doc=company-setup' }
+            ],
+            '工商變更': [
+                { name: '工商變更登記流程', link: 'knowledge.html?tab=sop&doc=business-change' }
+            ],
+            '財務簽證': [
+                { name: '財務簽證作業規範', link: 'knowledge.html?tab=sop&doc=financial-audit' }
+            ],
+            '稅務簽證': [
+                { name: '稅務簽證查核流程', link: 'knowledge.html?tab=sop&doc=tax-audit' }
+            ]
+        }
+    };
+    
+    return sopMap[type]?.[category] || null;
+}
+
+function getNotesForTask(type, category, task) {
+    const notesMap = {
+        'recurring': {
+            '記帳': '請確認所有憑證已齊全，並注意會計科目的正確性。月底前需完成審核。',
+            '工商': '需準備相關證明文件，注意申請期限。部分變更需股東會決議。',
+            '財簽': '注意查核基準日，確保所有財務資料完整。需與客戶確認特殊交易事項。',
+            '稅簽': '確認申報期限，準備相關扣繳憑單。注意稅法最新修正條文。'
+        },
+        'multistage': {
+            '公司設立': '需按階段完成各項文件準備，注意公司名稱預查有效期限為3個月。',
+            '工商變更': '變更登記需於決議後15日內申請，準備齊全文件可加速審查。',
+            '財務簽證': '查核過程中保持與客戶溝通，重大異常需及時報告。',
+            '稅務簽證': '注意稅務法規遵循，確保所有計算正確無誤。'
+        }
+    };
+    
+    return notesMap[type]?.[category] || null;
+}
+
+function getStatusBadge(status) {
+    const statusMap = {
+        'pending': { text: '待處理', class: 'status-pending' },
+        'in_progress': { text: '進行中', class: 'status-in_progress' },
+        'completed': { text: '已完成', class: 'status-completed' },
+        'not_started': { text: '未開始', class: 'status-pending' },
+        'on_hold': { text: '暫停', class: 'status-pending' }
+    };
+    
+    const statusInfo = statusMap[status] || { text: status, class: 'status-pending' };
+    return `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
 }
 
 function formatDueDate(dateStr) {
     const date = new Date(dateStr);
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
     const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
     
-    if (diffDays < 0) return `${date.toLocaleDateString('zh-TW')}`;
-    if (diffDays === 0) return '今天到期';
-    if (diffDays === 1) return '明天到期';
-    return `${diffDays}天後到期`;
+    if (diffDays < 0) return `已逾期 ${Math.abs(diffDays)} 天`;
+    if (diffDays === 0) return '今天截止';
+    if (diffDays === 1) return '明天截止';
+    if (diffDays <= 7) return `${diffDays} 天後截止`;
+    
+    return date.toLocaleDateString('zh-TW');
+}
+
+function isPastDue(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    
+    return date < today;
+}
+
+function goToTaskDetail(type, id) {
+    if (type === 'recurring') {
+        window.location.href = `tasks.html?tab=recurring#task-${id}`;
+    } else if (type === 'multistage') {
+        window.location.href = `multi-stage-tasks.html?id=${id}`;
+    }
+}
+
+async function markTaskComplete(type, id) {
+    if (!confirm('確定要標記此任務為已完成嗎？')) {
+        return;
+    }
+    
+    try {
+        if (type === 'recurring') {
+            await apiRequest(`/api/tasks/recurring/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: 'completed', completed_at: new Date().toISOString() })
+            });
+        } else if (type === 'multistage') {
+            await apiRequest(`/api/multi-stage-tasks/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: 'completed' })
+            });
+        }
+        
+        // 重新載入任務列表
+        await loadPendingTasks();
+        
+        alert('任務已標記為完成！');
+    } catch (error) {
+        alert('更新失敗：' + error.message);
+    }
 }
 
 function escapeHtml(text) {
@@ -242,4 +388,3 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
-
