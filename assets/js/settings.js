@@ -177,6 +177,11 @@ function loadTabData(tabName) {
         case 'holidays':
             loadHolidays();
             break;
+        case 'client-services':
+            if (currentUser.role === 'admin') {
+                loadClientServices();
+            }
+            break;
         case 'cache-management':
             if (currentUser.role === 'admin') {
                 loadCacheStats();
@@ -1933,5 +1938,424 @@ async function clearCache(type) {
     } catch (error) {
         showAlert(error.message, 'error');
     }
+}
+
+// =========================================
+// 配置管理功能
+// =========================================
+
+/**
+ * 切換配置分類標籤
+ */
+function switchConfigTab(category) {
+    // 更新按鈕狀態
+    document.querySelectorAll('.config-tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.closest('.config-tab-button').classList.add('active');
+
+    // 更新內容顯示
+    document.querySelectorAll('.config-category').forEach(cat => {
+        cat.classList.remove('active');
+    });
+    
+    const targetConfig = document.getElementById(`${category}-config`);
+    if (targetConfig) {
+        targetConfig.classList.add('active');
+    }
+}
+
+/**
+ * 儲存所有參數
+ */
+async function saveAllParameters() {
+    if (!confirm('確定要儲存所有系統參數嗎？')) {
+        return;
+    }
+
+    const updates = [];
+    
+    // 收集所有參數
+    const paramInputs = document.querySelectorAll('.config-input, .toggle-switch input');
+    paramInputs.forEach(input => {
+        const paramKey = input.id;
+        let paramValue;
+        
+        if (input.type === 'checkbox') {
+            paramValue = input.checked ? 'true' : 'false';
+        } else {
+            paramValue = input.value;
+        }
+        
+        if (paramKey && paramValue !== undefined) {
+            updates.push({ param_key: paramKey, param_value: paramValue });
+        }
+    });
+
+    try {
+        // 批量更新（假設API存在）
+        const response = await apiRequest('/api/system-config/batch', {
+            method: 'PUT',
+            body: { updates }
+        });
+        
+        showAlert('系統參數已成功儲存', 'success');
+    } catch (error) {
+        // 如果批量API不存在，逐個更新
+        console.warn('批量API不可用，使用逐個更新:', error);
+        
+        let successCount = 0;
+        for (const update of updates) {
+            try {
+                await apiRequest(`/api/system-parameters/${update.param_key}`, {
+                    method: 'PUT',
+                    body: { param_value: update.param_value }
+                });
+                successCount++;
+            } catch (err) {
+                console.error(`更新參數 ${update.param_key} 失敗:`, err);
+            }
+        }
+        
+        showAlert(`已儲存 ${successCount}/${updates.length} 個參數`, 'info');
+    }
+}
+
+/**
+ * 重置所有參數
+ */
+async function resetAllParameters() {
+    if (!confirm('確定要重置所有參數為預設值嗎？此操作無法還原！')) {
+        return;
+    }
+
+    try {
+        const response = await apiRequest('/api/system-config/reset-all', {
+            method: 'POST'
+        });
+        
+        showAlert('已重置為預設值，請重新載入頁面', 'success');
+        
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    } catch (error) {
+        showAlert('重置失敗: ' + error.message, 'error');
+    }
+}
+
+/**
+ * 輸入驗證
+ */
+function validateConfigInput(input) {
+    const value = input.value;
+    const min = parseFloat(input.min);
+    const max = parseFloat(input.max);
+    const type = input.type;
+
+    // 數字驗證
+    if (type === 'number') {
+        const numValue = parseFloat(value);
+        
+        if (isNaN(numValue)) {
+            input.classList.add('error');
+            input.classList.remove('success');
+            return false;
+        }
+        
+        if ((min !== undefined && numValue < min) || (max !== undefined && numValue > max)) {
+            input.classList.add('error');
+            input.classList.remove('success');
+            return false;
+        }
+    }
+
+    // 驗證成功
+    input.classList.remove('error');
+    input.classList.add('success');
+    return true;
+}
+
+// 為所有配置輸入添加驗證
+document.addEventListener('DOMContentLoaded', () => {
+    const configInputs = document.querySelectorAll('.config-input[type="number"]');
+    configInputs.forEach(input => {
+        input.addEventListener('input', () => validateConfigInput(input));
+        input.addEventListener('blur', () => validateConfigInput(input));
+    });
+});
+
+// =========================================
+// 客戶服務配置管理
+// =========================================
+
+let clientServicesData = [];
+const SERVICE_TYPE_NAMES = {
+    'accounting': '記帳服務',
+    'vat': '營業稅申報',
+    'income_tax': '營所稅申報',
+    'withholding': '扣繳申報',
+    'prepayment': '暫繳申報',
+    'dividend': '盈餘分配',
+    'nhi': '二代健保補充保費',
+    'shareholder_tax': '股東可扣抵稅額',
+    'audit': '財務簽證',
+    'company_setup': '公司設立登記'
+};
+
+const FREQUENCY_NAMES = {
+    'monthly': '每月',
+    'bimonthly': '雙月',
+    'quarterly': '每季',
+    'biannual': '半年',
+    'annual': '年度'
+};
+
+/**
+ * 載入客戶服務配置
+ */
+async function loadClientServices() {
+    const container = document.getElementById('clientServicesContainer');
+    if (!container) return;
+
+    try {
+        const response = await apiRequest('/api/client-services');
+        clientServicesData = response.services || response || [];
+        
+        renderClientServices(clientServicesData);
+        
+        // 填充篩選選項
+        populateClientServiceFilters();
+    } catch (error) {
+        console.error('載入服務配置失敗:', error);
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="material-symbols-outlined">error_outline</span>
+                <p>載入失敗: ${error.message}</p>
+                <button class="btn btn-primary" onclick="loadClientServices()">重試</button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * 渲染客戶服務配置
+ */
+function renderClientServices(services) {
+    const container = document.getElementById('clientServicesContainer');
+    if (!container) return;
+
+    if (!services || services.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="material-symbols-outlined">fact_check</span>
+                <p style="font-size: 16px; margin: 10px 0;">尚無服務配置</p>
+                <p style="font-size: 14px; color: #666;">點擊上方「新增服務配置」按鈕開始</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<div class="services-grid" style="display: flex; flex-direction: column; gap: 16px;">';
+    
+    services.forEach(service => {
+        const serviceTypeName = SERVICE_TYPE_NAMES[service.service_type] || service.service_type;
+        const frequencyName = FREQUENCY_NAMES[service.frequency] || service.frequency;
+        const difficultyStars = '⭐'.repeat(service.difficulty_level || 3);
+        const isActive = service.is_active !== false;
+        
+        html += `
+            <div class="service-config-card ${!isActive ? 'inactive' : ''}" data-service-id="${service.id}">
+                <div class="service-config-header">
+                    <div>
+                        <h3 style="margin: 0; font-size: 18px; color: var(--text-primary);">
+                            ${service.client_name || '未知客戶'} - ${serviceTypeName}
+                        </h3>
+                        <div style="display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap;">
+                            <span class="badge" style="background: #e3f2fd; color: #0d6efd;">${frequencyName}</span>
+                            <span class="badge" style="background: #fff3cd; color: #856404;">${difficultyStars} 難度</span>
+                            ${isActive ? 
+                                '<span class="badge" style="background: #d4edda; color: #155724;">✓ 啟用中</span>' :
+                                '<span class="badge" style="background: #f8d7da; color: #721c24;">✗ 已停用</span>'
+                            }
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="service-config-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 16px 0;">
+                    <div class="config-info-item">
+                        <span class="config-info-label">負責人</span>
+                        <span class="config-info-value">${service.assigned_to || '未指派'}</span>
+                    </div>
+                    <div class="config-info-item">
+                        <span class="config-info-label">執行日</span>
+                        <span class="config-info-value">每月 ${service.execution_day || 15} 日</span>
+                    </div>
+                    <div class="config-info-item">
+                        <span class="config-info-label">提前生成</span>
+                        <span class="config-info-value">${service.advance_days || 7} 天</span>
+                    </div>
+                    <div class="config-info-item">
+                        <span class="config-info-label">任務期限</span>
+                        <span class="config-info-value">${service.due_days || 15} 天</span>
+                    </div>
+                    <div class="config-info-item">
+                        <span class="config-info-label">預估工時</span>
+                        <span class="config-info-value">${service.estimated_hours || 0} 小時</span>
+                    </div>
+                    <div class="config-info-item">
+                        <span class="config-info-label">服務費用</span>
+                        <span class="config-info-value">$${service.fee || 0}</span>
+                    </div>
+                </div>
+                
+                <div class="service-config-footer">
+                    <button class="btn btn-sm btn-secondary" onclick="editClientService(${service.id})">
+                        <span class="material-symbols-outlined">edit</span>
+                        編輯
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="viewServiceHistory(${service.id})">
+                        <span class="material-symbols-outlined">history</span>
+                        執行歷史
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="testGenerateService(${service.id})">
+                        <span class="material-symbols-outlined">play_arrow</span>
+                        測試生成
+                    </button>
+                    <button class="btn btn-sm ${isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleClientService(${service.id}, ${!isActive})">
+                        <span class="material-symbols-outlined">${isActive ? 'pause' : 'play_arrow'}</span>
+                        ${isActive ? '停用' : '啟用'}
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+/**
+ * 填充篩選選項
+ */
+function populateClientServiceFilters() {
+    // 填充客戶選項
+    const clientFilter = document.getElementById('csClientFilter');
+    if (clientFilter && clientServicesData.length > 0) {
+        const clients = [...new Set(clientServicesData.map(s => s.client_name))].sort();
+        clients.forEach(client => {
+            const option = document.createElement('option');
+            option.value = client;
+            option.textContent = client;
+            clientFilter.appendChild(option);
+        });
+    }
+
+    // 填充負責人選項
+    const assignedFilter = document.getElementById('csAssignedFilter');
+    if (assignedFilter && clientServicesData.length > 0) {
+        const assignees = [...new Set(clientServicesData.map(s => s.assigned_to).filter(Boolean))].sort();
+        assignees.forEach(assignee => {
+            const option = document.createElement('option');
+            option.value = assignee;
+            option.textContent = assignee;
+            assignedFilter.appendChild(option);
+        });
+    }
+}
+
+/**
+ * 篩選客戶服務
+ */
+function filterClientServices() {
+    const clientFilter = document.getElementById('csClientFilter')?.value || '';
+    const serviceTypeFilter = document.getElementById('csServiceTypeFilter')?.value || '';
+    const assignedFilter = document.getElementById('csAssignedFilter')?.value || '';
+    const searchText = document.getElementById('csSearch')?.value.toLowerCase() || '';
+
+    const filtered = clientServicesData.filter(service => {
+        if (clientFilter && service.client_name !== clientFilter) return false;
+        if (serviceTypeFilter && service.service_type !== serviceTypeFilter) return false;
+        if (assignedFilter && service.assigned_to !== assignedFilter) return false;
+        
+        if (searchText) {
+            const searchable = `${service.client_name} ${SERVICE_TYPE_NAMES[service.service_type]}`.toLowerCase();
+            if (!searchable.includes(searchText)) return false;
+        }
+        
+        return true;
+    });
+
+    renderClientServices(filtered);
+}
+
+/**
+ * 編輯客戶服務
+ */
+function editClientService(serviceId) {
+    alert(`編輯服務配置功能開發中...\n服務 ID: ${serviceId}`);
+    // TODO: 實現編輯模態框
+}
+
+/**
+ * 查看服務歷史
+ */
+async function viewServiceHistory(serviceId) {
+    alert(`查看執行歷史功能開發中...\n服務 ID: ${serviceId}`);
+    // TODO: 實現歷史查看
+}
+
+/**
+ * 測試生成任務
+ */
+async function testGenerateService(serviceId) {
+    if (!confirm('確定要為此服務立即生成任務嗎？')) {
+        return;
+    }
+
+    try {
+        const response = await apiRequest(`/api/automated-tasks/generate/${serviceId}`, {
+            method: 'POST'
+        });
+        
+        showAlert(`成功生成任務: ${response.task_name || '未命名'}`, 'success');
+    } catch (error) {
+        showAlert('生成失敗: ' + error.message, 'error');
+    }
+}
+
+/**
+ * 切換服務啟用狀態
+ */
+async function toggleClientService(serviceId, enable) {
+    try {
+        const response = await apiRequest(`/api/client-services/${serviceId}/toggle`, {
+            method: 'POST',
+            body: { is_active: enable }
+        });
+        
+        showAlert(enable ? '服務已啟用' : '服務已停用', 'success');
+        
+        // 重新載入列表
+        await loadClientServices();
+    } catch (error) {
+        showAlert('操作失敗: ' + error.message, 'error');
+    }
+}
+
+/**
+ * 新增客戶服務
+ */
+function addNewClientService() {
+    alert('新增服務配置功能開發中...');
+    // TODO: 實現新增模態框
+}
+
+/**
+ * 匯入 CSV
+ */
+function importClientServicesCSV() {
+    alert('CSV 匯入功能開發中...');
+    // TODO: 實現 CSV 匯入
 }
 

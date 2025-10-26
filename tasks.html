@@ -71,47 +71,84 @@
 
     <main class="internal-main">
         <div class="internal-container">
-            <!-- 標籤頁切換 -->
+            <!-- 標籤頁切換 - 統一任務管理中心 -->
             <div class="tabs-container">
                 <div class="tab-nav">
-                    <button class="tab-button active" onclick="switchMainTab('recurring')">
+                    <button class="tab-button active" onclick="switchMainTab('all')">
+                        <span class="material-symbols-outlined">list</span>
+                        全部任務
+                    </button>
+                    <button class="tab-button" onclick="switchMainTab('my-tasks')">
+                        <span class="material-symbols-outlined">person</span>
+                        我的任務
+                    </button>
+                    <button class="tab-button" onclick="switchMainTab('recurring')">
                         <span class="material-symbols-outlined">repeat</span>
                         週期任務
                     </button>
                     <button class="tab-button" onclick="switchMainTab('business')">
                         <span class="material-symbols-outlined">business_center</span>
-                        工商
+                        工商登記
                     </button>
                     <button class="tab-button" onclick="switchMainTab('finance')">
                         <span class="material-symbols-outlined">account_balance</span>
                         財稅簽證
                     </button>
+                    <button class="tab-button" onclick="switchMainTab('client-service')">
+                        <span class="material-symbols-outlined">groups</span>
+                        客戶服務
+                    </button>
+                    <button class="tab-button" onclick="switchMainTab('config')">
+                        <span class="material-symbols-outlined">settings</span>
+                        服務配置
+                    </button>
                 </div>
 
-            <!-- 週期任務內容 -->
-            <div id="recurring-tab" class="tab-content active">
-                <div class="toolbar">
-                    <div class="toolbar-left">
-                        <button class="btn btn-primary" onclick="showCreateRecurringTaskModal()">
-                            <span class="material-symbols-outlined">add</span>
-                            新增週期任務
-                        </button>
-                    </div>
-                    <div class="toolbar-right">
-                        <select class="form-control" id="recurringStatusFilter" style="width: auto; min-width: 150px;">
-                            <option value="">全部狀態</option>
-                            <option value="pending">待處理</option>
-                            <option value="in_progress">進行中</option>
-                            <option value="completed">已完成</option>
-                        </select>
-                        <div class="search-box">
-                            <input type="text" id="recurringSearch" placeholder="搜尋任務...">
-                            <span class="material-symbols-outlined search-icon">search</span>
-                        </div>
+            <!-- 統一工具列 - 所有標籤共用 -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <button class="btn btn-primary" id="createTaskBtn">
+                        <span class="material-symbols-outlined">add</span>
+                        創建任務
+                    </button>
+                </div>
+                <div class="toolbar-right">
+                    <select class="form-control" id="statusFilter" style="width: auto; min-width: 150px;">
+                        <option value="">全部狀態</option>
+                        <option value="pending">待處理</option>
+                        <option value="in_progress">進行中</option>
+                        <option value="completed">已完成</option>
+                    </select>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="搜尋任務或客戶..." onkeyup="searchTasks()">
+                        <span class="material-symbols-outlined search-icon">search</span>
                     </div>
                 </div>
-                
-                <div id="recurringTasksList">
+            </div>
+
+            <!-- 全部任務標籤 -->
+            <div id="all-tab" class="tab-content active">
+                <div id="tasksContainer">
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <div class="loading-text">載入任務中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 我的任務標籤 -->
+            <div id="my-tasks-tab" class="tab-content">
+                <div id="tasksContainer">
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <div class="loading-text">載入我的任務中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 週期任務標籤 -->
+            <div id="recurring-tab" class="tab-content">
+                <div id="tasksContainer">
                     <div class="loading-container">
                         <div class="spinner"></div>
                         <div class="loading-text">載入週期任務中...</div>
@@ -119,56 +156,53 @@
                 </div>
             </div>
 
-            <!-- 工商任務內容 -->
+            <!-- 工商登記標籤 -->
             <div id="business-tab" class="tab-content">
-                <div class="toolbar">
-                    <div class="toolbar-left">
-                        <button class="btn btn-primary" onclick="window.location.href='multi-stage-tasks.html?category=business'">
-                            <span class="material-symbols-outlined">add</span>
-                            創建工商任務
-                        </button>
-                    </div>
-                    <div class="toolbar-right">
-                        <select class="form-control" id="businessStatusFilter" style="width: auto; min-width: 150px;">
-                            <option value="">全部狀態</option>
-                            <option value="not_started">未開始</option>
-                            <option value="in_progress">進行中</option>
-                            <option value="on_hold">暫停</option>
-                            <option value="completed">已完成</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="businessTasksList">
-                    <div style="text-align: center; padding: 60px 20px; color: #999;">
-                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">business_center</span>
-                        <p style="margin-top: 20px; font-size: 16px;">載入中...</p>
+                <div id="tasksContainer">
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <div class="loading-text">載入工商任務中...</div>
                     </div>
                 </div>
             </div>
 
-            <!-- 財稅簽證任務內容 -->
+            <!-- 財稅簽證標籤 -->
             <div id="finance-tab" class="tab-content">
-                <div class="toolbar">
-                    <div class="toolbar-left">
-                        <button class="btn btn-primary" onclick="window.location.href='multi-stage-tasks.html?category=finance'">
-                            <span class="material-symbols-outlined">add</span>
-                            創建財稅任務
-                        </button>
-                    </div>
-                    <div class="toolbar-right">
-                        <select class="form-control" id="financeStatusFilter" style="width: auto; min-width: 150px;">
-                            <option value="">全部狀態</option>
-                            <option value="not_started">未開始</option>
-                            <option value="in_progress">進行中</option>
-                            <option value="on_hold">暫停</option>
-                            <option value="completed">已完成</option>
-                        </select>
+                <div id="tasksContainer">
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <div class="loading-text">載入財稅任務中...</div>
                     </div>
                 </div>
-                <div id="financeTasksList">
-                    <div style="text-align: center; padding: 60px 20px; color: #999;">
-                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">account_balance</span>
-                        <p style="margin-top: 20px; font-size: 16px;">載入中...</p>
+            </div>
+
+            <!-- 客戶服務標籤 -->
+            <div id="client-service-tab" class="tab-content">
+                <div id="tasksContainer">
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <div class="loading-text">載入客戶服務任務中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 服務配置標籤 -->
+            <div id="config-tab" class="tab-content">
+                <div id="serviceConfigContainer" class="config-section">
+                    <h2>📅 客戶服務配置管理</h2>
+                    <p style="margin: 20px 0; color: #666;">管理客戶服務的自動生成配置</p>
+                    <div class="config-toolbar">
+                        <button class="btn btn-secondary" onclick="previewAutomatedTasks()">
+                            <span class="material-symbols-outlined">preview</span>
+                            預覽待生成任務
+                        </button>
+                        <button class="btn btn-primary" onclick="generateAutomatedTasks()">
+                            <span class="material-symbols-outlined">autorenew</span>
+                            立即生成任務
+                        </button>
+                    </div>
+                    <div id="serviceConfigList">
+                        <p style="text-align: center; padding: 40px; color: #999;">配置列表功能開發中...</p>
                     </div>
                 </div>
             </div>
@@ -176,14 +210,33 @@
         </div>
     </main>
 
+    <!-- 任務詳情側邊面板 -->
+    <div id="taskDetailPanel" class="side-panel">
+        <div class="panel-header">
+            <h2 id="taskDetailTitle">任務詳情</h2>
+            <button class="panel-close-btn" onclick="closeTaskDetail()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="panel-body" id="taskDetailContent">
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <div class="loading-text">載入中...</div>
+            </div>
+        </div>
+    </div>
+
     <footer class="internal-footer">
         &copy; 2025 霍爾果斯會計師事務所 內部管理系統
     </footer>
 
+    <!-- 引入統一任務管理JS -->
     <script>
+        // 全局變量
         const WORKER_URL = 'https://timesheet-api.hergscpa.workers.dev';
         let sessionToken = null;
         let currentUser = null;
+        let currentTab = 'all';
 
         // 頁面載入時初始化
         document.addEventListener('DOMContentLoaded', async () => {
@@ -193,29 +246,11 @@
                 return;
             }
             
-            // 檢查URL參數，自動切換標籤
-            const urlParams = new URLSearchParams(window.location.search);
-            const tab = urlParams.get('tab');
+            // 初始化事件監聽
+            initEventListeners();
             
-            if (tab === 'business') {
-                // 切換到工商標籤
-                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.tab-button')[1].classList.add('active');
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                document.getElementById('business-tab').classList.add('active');
-                loadBusinessTasks();
-            } else if (tab === 'finance') {
-                // 切換到財稅簽證標籤
-                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.tab-button')[2].classList.add('active');
-                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-                document.getElementById('finance-tab').classList.add('active');
-                loadFinanceTasks();
-            } else {
-                // 預設顯示週期任務
-                loadBusinessTasks();
-                loadFinanceTasks();
-            }
+            // 加載第一個標籤的任務
+            await loadTasks();
         });
 
         // 檢查認證狀態
@@ -258,33 +293,69 @@
             }
         }
 
-        // 登出功能
-        document.addEventListener('DOMContentLoaded', () => {
+        // 初始化事件監聽器
+        function initEventListeners() {
+            // 登出按鈕
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
-                logoutBtn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    
-                    try {
-                        await fetch(`${WORKER_URL}/api/logout`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${sessionToken}`
-                            }
-                        });
-                    } catch (err) {
-                        console.error('登出錯誤:', err);
-                    }
-                    
-                    localStorage.removeItem('session_token');
-                    localStorage.removeItem('user_info');
-                    window.location.href = '/login.html';
+                logoutBtn.addEventListener('click', handleLogout);
+            }
+
+            // 創建任務按鈕
+            const createTaskBtn = document.getElementById('createTaskBtn');
+            if (createTaskBtn) {
+                createTaskBtn.addEventListener('click', () => {
+                    window.location.href = 'multi-stage-tasks.html';
                 });
             }
-        });
 
-        // 切換主標籤
+            // 狀態篩選
+            const statusFilter = document.getElementById('statusFilter');
+            if (statusFilter) {
+                statusFilter.addEventListener('change', filterTasks);
+            }
+
+            // 移動端選單
+            const mobileToggle = document.getElementById('mobileToggle');
+            const navLinks = document.getElementById('navLinks');
+            
+            if (mobileToggle && navLinks) {
+                mobileToggle.addEventListener('click', () => {
+                    navLinks.classList.toggle('active');
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (!mobileToggle.contains(e.target) && !navLinks.contains(e.target)) {
+                        navLinks.classList.remove('active');
+                    }
+                });
+            }
+        }
+
+        // 登出功能
+        async function handleLogout(e) {
+            e.preventDefault();
+            
+            try {
+                await fetch(`${WORKER_URL}/api/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+            } catch (err) {
+                console.error('登出錯誤:', err);
+            }
+            
+            localStorage.removeItem('session_token');
+            localStorage.removeItem('user_info');
+            window.location.href = '/login.html';
+        }
+
+        // 切換標籤
         function switchMainTab(tabName) {
+            currentTab = tabName;
+
             // 更新按鈕狀態
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('active');
@@ -297,27 +368,45 @@
             });
             
             const tabMap = {
+                'all': 'all-tab',
+                'my-tasks': 'my-tasks-tab',
                 'recurring': 'recurring-tab',
                 'business': 'business-tab',
-                'finance': 'finance-tab'
+                'finance': 'finance-tab',
+                'client-service': 'client-service-tab',
+                'config': 'config-tab'
             };
             
-            document.getElementById(tabMap[tabName]).classList.add('active');
+            const targetTab = document.getElementById(tabMap[tabName]);
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
 
             // 載入對應數據
-            if (tabName === 'business') {
-                loadBusinessTasks();
-            } else if (tabName === 'finance') {
-                loadFinanceTasks();
-            }
+            loadTasks();
         }
 
-        // 載入工商任務
-        async function loadBusinessTasks() {
-            const container = document.getElementById('businessTasksList');
+        // 載入任務
+        async function loadTasks() {
+            // 如果是配置標籤，不加載任務
+            if (currentTab === 'config') {
+                return;
+            }
+
+            const activeTab = document.querySelector('.tab-content.active');
+            const container = activeTab ? activeTab.querySelector('#tasksContainer') : null;
+            
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <div class="loading-text">載入任務中...</div>
+                </div>
+            `;
             
             try {
-                const response = await fetch(`${WORKER_URL}/api/multi-stage-tasks?category=工商`, {
+                const response = await fetch(`${WORKER_URL}/api/multi-stage-tasks`, {
                     headers: {
                         'Authorization': `Bearer ${sessionToken}`
                     }
@@ -327,10 +416,15 @@
                     throw new Error('載入失敗');
                 }
                 
-                const tasks = await response.json();
-                displayMultiStageTasks(tasks, container, 'business');
+                let tasks = await response.json();
+                
+                // 根據標籤篩選任務
+                tasks = filterTasksByTab(tasks);
+                
+                // 顯示任務
+                displayTasks(tasks, container);
             } catch (err) {
-                console.error('載入工商任務失敗:', err);
+                console.error('載入任務失敗:', err);
                 container.innerHTML = `
                     <div style="text-align: center; padding: 60px 20px; color: #999;">
                         <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">error_outline</span>
@@ -340,79 +434,94 @@
             }
         }
 
-        // 載入財稅簽證任務
-        async function loadFinanceTasks() {
-            const container = document.getElementById('financeTasksList');
-            
-            try {
-                const response = await fetch(`${WORKER_URL}/api/multi-stage-tasks?category=財稅`, {
-                    headers: {
-                        'Authorization': `Bearer ${sessionToken}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('載入失敗');
-                }
-                
-                const tasks = await response.json();
-                displayMultiStageTasks(tasks, container, 'finance');
-            } catch (err) {
-                console.error('載入財稅任務失敗:', err);
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 60px 20px; color: #999;">
-                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">error_outline</span>
-                        <p style="margin-top: 20px; font-size: 16px;">載入失敗</p>
-                    </div>
-                `;
+        // 根據標籤篩選任務
+        function filterTasksByTab(tasks) {
+            switch(currentTab) {
+                case 'my-tasks':
+                    return tasks.filter(task => 
+                        task.assigned_to === currentUser?.username || 
+                        task.assigned_to === currentUser?.employee_name
+                    );
+                case 'recurring':
+                    return tasks.filter(task => task.category === '周期' || task.category === 'recurring');
+                case 'business':
+                    return tasks.filter(task => task.category === '工商' || task.category === 'business');
+                case 'finance':
+                    return tasks.filter(task => task.category === '財稅' || task.category === 'finance');
+                case 'client-service':
+                    return tasks.filter(task => task.category === 'client_service');
+                default:
+                    return tasks;
             }
         }
 
-        // 顯示多階段任務
-        function displayMultiStageTasks(tasks, container, type) {
+        // 顯示任務
+        function displayTasks(tasks, container) {
             if (!tasks || tasks.length === 0) {
-                const emptyIcon = type === 'business' ? 'business_center' : 'account_balance';
-                const emptyText = type === 'business' ? '暫無工商任務' : '暫無財稅簽證任務';
-                
                 container.innerHTML = `
                     <div style="text-align: center; padding: 60px 20px; color: #999;">
-                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">${emptyIcon}</span>
-                        <p style="margin-top: 20px; font-size: 16px;">${emptyText}</p>
-                        <p style="font-size: 14px;">點擊上方「創建${type === 'business' ? '工商' : '財稅'}任務」按鈕開始</p>
+                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">assignment</span>
+                        <p style="margin-top: 20px; font-size: 16px;">暫無任務</p>
                     </div>
                 `;
                 return;
             }
 
-            let html = '';
+            let html = '<div class="tasks-grid">';
             tasks.forEach(task => {
-                const statusClass = `status-${task.status || 'not_started'}`;
-                const statusText = getStatusText(task.status);
-                
-                html += `
-                    <div class="task-card" onclick="window.location.href='multi-stage-tasks.html?id=${task.id}'">
-                        <div class="task-header">
-                            <div>
-                                <div class="task-title">${task.task_name || '未命名任務'}</div>
-                                <div class="task-meta">
-                                    <div class="task-meta-item">
-                                        <span class="material-symbols-outlined">person</span>
-                                        <span>${task.client_name || '未指定客戶'}</span>
-                                    </div>
-                                    <div class="task-meta-item">
-                                        <span class="material-symbols-outlined">assignment_ind</span>
-                                        <span>${task.assigned_to || '未指派'}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="status-badge ${statusClass}">${statusText}</span>
-                        </div>
-                        ${task.stages ? renderStageTimeline(task.stages) : ''}
-                    </div>
-                `;
+                html += renderTaskCard(task);
             });
+            html += '</div>';
 
             container.innerHTML = html;
+        }
+
+        // 渲染任務卡片
+        function renderTaskCard(task) {
+            const statusMap = {
+                'not_started': '未開始',
+                'in_progress': '進行中',
+                'on_hold': '暫停',
+                'completed': '已完成',
+                'pending': '待處理'
+            };
+            
+            const statusText = statusMap[task.status] || task.status;
+            const progress = task.total_stages ? Math.round((task.completed_stages || 0) / task.total_stages * 100) : 0;
+            
+            return `
+                <div class="task-card" onclick="openTaskDetail(${task.id})">
+                    <div class="task-header">
+                        <div>
+                            <div class="task-title">${task.task_name || task.title || '未命名任務'}</div>
+                            <div class="task-meta">
+                                ${task.client_name ? `
+                                    <div class="task-meta-item">
+                                        <span class="material-symbols-outlined">person</span>
+                                        <span>${task.client_name}</span>
+                                    </div>
+                                ` : ''}
+                                ${task.assigned_to ? `
+                                    <div class="task-meta-item">
+                                        <span class="material-symbols-outlined">assignment_ind</span>
+                                        <span>${task.assigned_to}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <span class="status-badge status-${task.status}">${statusText}</span>
+                    </div>
+                    ${task.stages ? renderStageTimeline(task.stages) : ''}
+                    ${task.total_stages ? `
+                        <div class="task-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progress}%"></div>
+                            </div>
+                            <span class="progress-text">${task.completed_stages || 0}/${task.total_stages} 階段 (${progress}%)</span>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
         }
 
         // 渲染階段時間軸
@@ -422,7 +531,7 @@
             let html = '<div class="stage-timeline">';
             stages.forEach((stage, index) => {
                 const stageClass = stage.status === 'completed' ? 'completed' : 
-                                  stage.status === 'in_progress' ? 'in_progress' : '';
+                                  stage.status === 'in_progress' ? 'in_progress' : 'pending';
                 html += `
                     <div class="stage-item ${stageClass}">
                         <div class="stage-number">${index + 1}</div>
@@ -434,32 +543,57 @@
             return html;
         }
 
-        // 獲取狀態文字
-        function getStatusText(status) {
-            const statusMap = {
-                'not_started': '未開始',
-                'in_progress': '進行中',
-                'on_hold': '暫停',
-                'completed': '已完成',
-                'pending': '待處理'
-            };
-            return statusMap[status] || status;
+        // 打開任務詳情
+        function openTaskDetail(taskId) {
+            window.location.href = `multi-stage-tasks.html?id=${taskId}`;
         }
 
-        // 移動端選單切換
-        const mobileToggle = document.getElementById('mobileToggle');
-        const navLinks = document.getElementById('navLinks');
-        
-        if (mobileToggle && navLinks) {
-            mobileToggle.addEventListener('click', () => {
-                navLinks.classList.toggle('active');
-            });
+        // 關閉任務詳情面板
+        function closeTaskDetail() {
+            const panel = document.getElementById('taskDetailPanel');
+            if (panel) {
+                panel.classList.remove('active');
+            }
+        }
+
+        // 搜尋任務
+        function searchTasks() {
+            const searchInput = document.getElementById('searchInput');
+            const keyword = searchInput?.value.toLowerCase() || '';
             
-            document.addEventListener('click', (e) => {
-                if (!mobileToggle.contains(e.target) && !navLinks.contains(e.target)) {
-                    navLinks.classList.remove('active');
-                }
+            const taskCards = document.querySelectorAll('.task-card');
+            taskCards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(keyword) ? 'block' : 'none';
             });
+        }
+
+        // 篩選任務
+        function filterTasks() {
+            const statusFilter = document.getElementById('statusFilter');
+            const status = statusFilter?.value || '';
+            
+            const taskCards = document.querySelectorAll('.task-card');
+            taskCards.forEach(card => {
+                if (!status) {
+                    card.style.display = 'block';
+                    return;
+                }
+                
+                const statusBadge = card.querySelector('.status-badge');
+                const hasStatus = statusBadge?.classList.contains(`status-${status}`);
+                card.style.display = hasStatus ? 'block' : 'none';
+            });
+        }
+
+        // 預覽自動任務
+        async function previewAutomatedTasks() {
+            alert('預覽功能開發中...');
+        }
+
+        // 生成自動任務
+        async function generateAutomatedTasks() {
+            alert('生成功能開發中...');
         }
     </script>
 </body>

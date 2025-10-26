@@ -465,3 +465,263 @@ input:checked + .toggle-slider:before {
         grid-template-columns: 1fr;
     }
 }
+
+/* ============================================
+   配置分類標籤（系統參數專用）
+   ============================================ */
+
+.config-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 20px 0;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    flex-wrap: wrap;
+}
+
+.config-tab-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.config-tab-button:hover {
+    background: rgba(0,0,0,0.05);
+    color: var(--text-primary);
+}
+
+.config-tab-button.active {
+    background: white;
+    color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.config-tab-button .material-symbols-outlined {
+    font-size: 20px;
+}
+
+/* 配置分類內容區 */
+.config-category {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.config-category.active {
+    display: block;
+}
+
+.config-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.config-section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 20px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+/* 配置項目佈局 */
+.config-items {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.config-item {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 16px;
+    align-items: start;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.config-item:hover {
+    background: #e9ecef;
+}
+
+.config-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+}
+
+.help-icon {
+    cursor: help;
+    opacity: 0.6;
+    font-size: 16px;
+}
+
+.config-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.config-input {
+    padding: 10px 14px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    transition: all 0.3s ease;
+    flex: 1;
+    max-width: 300px;
+}
+
+.config-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(44, 95, 124, 0.1);
+}
+
+.config-input.error {
+    border-color: var(--danger-color);
+}
+
+.config-input.success {
+    border-color: var(--success-color);
+}
+
+.input-unit {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.config-help {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-top: 4px;
+    grid-column: 2;
+}
+
+/* Toggle 開關樣式 */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 28px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 28px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--success-color);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+/* Info Box（資訊提示框）*/
+.info-box {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left: 4px solid #2196f3;
+    border-radius: 8px;
+    margin: 16px 0;
+}
+
+.info-box .material-symbols-outlined {
+    color: #2196f3;
+    font-size: 24px;
+}
+
+.info-box p {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* 動畫 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 響應式優化 */
+@media (max-width: 768px) {
+    .config-item {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .config-help {
+        grid-column: 1;
+    }
+
+    .config-input {
+        max-width: 100%;
+    }
+
+    .config-tabs {
+        gap: 4px;
+    }
+
+    .config-tab-button {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
