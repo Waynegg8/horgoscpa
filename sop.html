@@ -345,6 +345,38 @@
     </style>
 </head>
 <body>
+    <script>
+        // 檢測是否在 iframe 中運行
+        const isInIframe = window.self !== window.top;
+        
+        // 如果在 iframe 中，隱藏導航欄和footer並調整樣式
+        if (isInIframe) {
+            document.addEventListener('DOMContentLoaded', () => {
+                const navbar = document.querySelector('.internal-navbar');
+                const footer = document.querySelector('.internal-footer');
+                const mainContent = document.querySelector('.internal-main');
+                
+                if (navbar) navbar.style.display = 'none';
+                if (footer) footer.style.display = 'none';
+                if (mainContent) {
+                    mainContent.style.padding = '0';
+                    mainContent.style.marginTop = '0';
+                    mainContent.style.minHeight = 'auto';
+                }
+                
+                // 調整內部容器padding
+                const container = document.querySelector('.internal-container');
+                if (container) {
+                    container.style.maxWidth = '100%';
+                    container.style.padding = '15px';
+                }
+                
+                // 調整body背景
+                document.body.style.background = 'transparent';
+            });
+        }
+    </script>
+    
     <!-- 導航 -->
     <!-- 簡潔的內部導航欄 -->
     <nav class="internal-navbar">

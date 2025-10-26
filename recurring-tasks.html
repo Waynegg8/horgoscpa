@@ -399,8 +399,41 @@
     </nav>
 
     <script>
-        // 自動重定向到新的任務管理中心
-        window.location.href = 'tasks.html';
+        // 檢測是否在 iframe 中運行
+        const isInIframe = window.self !== window.top;
+        
+        // 如果在 iframe 中，隱藏導航欄和footer並調整樣式
+        if (isInIframe) {
+            document.addEventListener('DOMContentLoaded', () => {
+                const navbar = document.querySelector('.internal-navbar');
+                const footer = document.querySelector('.internal-footer');
+                const mainContent = document.querySelector('.internal-main');
+                
+                if (navbar) navbar.style.display = 'none';
+                if (footer) footer.style.display = 'none';
+                if (mainContent) {
+                    mainContent.style.padding = '0';
+                    mainContent.style.marginTop = '0';
+                    mainContent.style.minHeight = 'auto';
+                }
+                
+                // 調整內部容器padding
+                const container = document.querySelector('.internal-container');
+                if (container) {
+                    container.style.maxWidth = '100%';
+                    container.style.padding = '15px';
+                }
+                
+                // 調整頁面標題樣式
+                const pageHeader = document.querySelector('.page-header');
+                if (pageHeader) {
+                    pageHeader.style.marginBottom = '20px';
+                }
+                
+                // 調整body背景
+                document.body.style.background = 'transparent';
+            });
+        }
     </script>
     
     <main class="internal-main">
@@ -408,7 +441,7 @@
             <!-- 頁面標題 -->
             <div class="page-header" style="margin-bottom: 30px;">
                 <h1>週期性任務管理</h1>
-                <p>正在跳轉到任務管理中心...</p>
+                <p style="color: var(--text-secondary);">管理客戶的週期性服務與任務執行</p>
             </div>
 
             <!-- Tab 切換 -->
