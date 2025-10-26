@@ -405,7 +405,7 @@ async function loadClients() {
         
         const html = `
             <div class="table-container">
-                <table>
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -541,7 +541,7 @@ async function loadAssignments() {
         
         const html = `
             <div class="table-container">
-                <table>
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>員工姓名</th>
@@ -664,7 +664,7 @@ async function loadBusinessTypes() {
         
         const html = `
             <div class="table-container">
-                <table>
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>業務類型名稱</th>
@@ -805,7 +805,7 @@ async function loadLeaveEvents() {
         
         const html = `
             <div class="table-container">
-                <table>
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -1019,7 +1019,7 @@ async function loadHolidays() {
         
         const html = `
             <div class="table-container">
-                <table>
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -1169,7 +1169,7 @@ async function loadUsers() {
         
         const html = `
             <div class="table-container">
-                <table>
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -1425,7 +1425,7 @@ async function loadLeaveTypes() {
         
         const html = `
             <div class="table-container">
-                <table>
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -1565,7 +1565,7 @@ async function loadSystemParams() {
         const html = `
             <div style="max-width: 800px;">
                 <div class="table-container">
-                    <table>
+                    <table class="data-table">
                         <thead>
                             <tr>
                                 <th style="width: 30%;">參數名稱</th>
@@ -1640,7 +1640,7 @@ async function loadEmployeesAdmin() {
         
         const html = `
             <div class="table-container">
-                <table>
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>ID</th>
