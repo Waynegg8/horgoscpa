@@ -121,18 +121,22 @@
 
             <!-- 工商任務內容 -->
             <div id="business-tab" class="tab-content">
-                <div class="toolbar" style="margin-bottom: 15px;">
-                    <button onclick="window.location.href='multi-stage-tasks.html?category=business'" class="btn-primary">
-                        <span class="material-symbols-outlined">add</span>
-                        創建工商任務
-                    </button>
-                    <select id="businessStatusFilter" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-left: 15px;">
-                        <option value="">全部狀態</option>
-                        <option value="not_started">未開始</option>
-                        <option value="in_progress">進行中</option>
-                        <option value="on_hold">暫停</option>
-                        <option value="completed">已完成</option>
-                    </select>
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <button class="btn btn-primary" onclick="window.location.href='multi-stage-tasks.html?category=business'">
+                            <span class="material-symbols-outlined">add</span>
+                            創建工商任務
+                        </button>
+                    </div>
+                    <div class="toolbar-right">
+                        <select class="form-control" id="businessStatusFilter" style="width: auto; min-width: 150px;">
+                            <option value="">全部狀態</option>
+                            <option value="not_started">未開始</option>
+                            <option value="in_progress">進行中</option>
+                            <option value="on_hold">暫停</option>
+                            <option value="completed">已完成</option>
+                        </select>
+                    </div>
                 </div>
                 <div id="businessTasksList">
                     <div style="text-align: center; padding: 60px 20px; color: #999;">
@@ -144,18 +148,22 @@
 
             <!-- 財稅簽證任務內容 -->
             <div id="finance-tab" class="tab-content">
-                <div class="toolbar" style="margin-bottom: 15px;">
-                    <button onclick="window.location.href='multi-stage-tasks.html?category=finance'" class="btn-primary">
-                        <span class="material-symbols-outlined">add</span>
-                        創建財稅任務
-                    </button>
-                    <select id="financeStatusFilter" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-left: 15px;">
-                        <option value="">全部狀態</option>
-                        <option value="not_started">未開始</option>
-                        <option value="in_progress">進行中</option>
-                        <option value="on_hold">暫停</option>
-                        <option value="completed">已完成</option>
-                    </select>
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <button class="btn btn-primary" onclick="window.location.href='multi-stage-tasks.html?category=finance'">
+                            <span class="material-symbols-outlined">add</span>
+                            創建財稅任務
+                        </button>
+                    </div>
+                    <div class="toolbar-right">
+                        <select class="form-control" id="financeStatusFilter" style="width: auto; min-width: 150px;">
+                            <option value="">全部狀態</option>
+                            <option value="not_started">未開始</option>
+                            <option value="in_progress">進行中</option>
+                            <option value="on_hold">暫停</option>
+                            <option value="completed">已完成</option>
+                        </select>
+                    </div>
                 </div>
                 <div id="financeTasksList">
                     <div style="text-align: center; padding: 60px 20px; color: #999;">

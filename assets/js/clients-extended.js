@@ -20,7 +20,6 @@ function showNotification(message, type = 'info') {
 function initClientsExtended() {
     // 添加搜尋和篩選功能
     document.getElementById('clientExtendedSearch')?.addEventListener('input', filterClientsExtended);
-    document.getElementById('regionFilter')?.addEventListener('change', filterClientsExtended);
     document.getElementById('statusFilter')?.addEventListener('change', filterClientsExtended);
 }
 
@@ -77,7 +76,6 @@ function renderClientsExtendedTable(data = clientsExtendedData) {
                 <tr>
                     <th>客戶名稱</th>
                     <th>統一編號</th>
-                    <th>地區</th>
                     <th>聯絡人</th>
                     <th>電話</th>
                     <th>服務項目</th>
@@ -109,7 +107,6 @@ function renderClientsExtendedTable(data = clientsExtendedData) {
                         <tr>
                             <td><strong>${escapeHtml(client.client_name || client.name || '')}</strong></td>
                             <td>${escapeHtml(client.tax_id || '-')}</td>
-                            <td>${escapeHtml(client.region || '-')}</td>
                             <td>${escapeHtml(client.contact_person_1 || '-')}</td>
                             <td>${escapeHtml(client.phone || '-')}</td>
                             <td>
@@ -139,8 +136,7 @@ function renderClientsExtendedTable(data = clientsExtendedData) {
 // =========================================
 function filterClientsExtended() {
     const searchTerm = document.getElementById('clientExtendedSearch').value.toLowerCase();
-    const regionFilter = document.getElementById('regionFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value;
+    const statusFilter = document.getElementById('statusFilter')?.value;
     
     let filtered = clientsExtendedData;
     
@@ -149,16 +145,9 @@ function filterClientsExtended() {
         filtered = filtered.filter(client => {
             const name = (client.client_name || client.name || '').toLowerCase();
             const taxId = (client.tax_id || '').toLowerCase();
-            const region = (client.region || '').toLowerCase();
             return name.includes(searchTerm) || 
-                   taxId.includes(searchTerm) || 
-                   region.includes(searchTerm);
+                   taxId.includes(searchTerm);
         });
-    }
-    
-    // 地區篩選
-    if (regionFilter) {
-        filtered = filtered.filter(client => client.region === regionFilter);
     }
     
     // 狀態篩選
