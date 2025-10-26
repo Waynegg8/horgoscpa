@@ -3,7 +3,7 @@
  * 包含工時分析、請假總覽、樞紐分析報表
  */
 
-const API_BASE = 'https://timesheet-api.hergscpa.workers.dev';
+// 使用共用模組的全局變量
 let currentUser = null;
 let employeesCache = [];
 
@@ -11,86 +11,17 @@ let employeesCache = [];
 // 初始化
 // =========================================
 document.addEventListener('DOMContentLoaded', async () => {
-    await initAuth();
-    initTabs();
-    initMobileMenu();
-    await loadEmployees();
-    populateYearOptions();
-});
-
-// =========================================
-// 認證管理
-// =========================================
-async function initAuth() {
-    const token = localStorage.getItem('session_token');
-    if (!token) {
-        window.location.href = 'login.html';
-        return;
-    }
-
-    try {
-        const response = await apiRequest('/api/auth/me');
-        currentUser = response.user;
-        updateUserInfo(currentUser);
-    } catch (error) {
-        console.error('驗證錯誤:', error);
-        localStorage.removeItem('session_token');
-        window.location.href = 'login.html';
-    }
-}
-
-async function apiRequest(url, options = {}) {
-    const token = localStorage.getItem('session_token');
-    const defaultOptions = {
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
-    };
-
-    const response = await fetch(`${API_BASE}${url}`, {
-        ...defaultOptions,
-        ...options,
-        headers: {
-            ...defaultOptions.headers,
-            ...options.headers
-        }
+    // 使用統一的初始化函數
+    await initPage(async () => {
+        currentUser = window.currentUser; // 從 auth-common.js 獲取
+        initTabs();
+        await loadEmployees();
+        populateYearOptions();
     });
-
-    if (!response.ok) {
-        if (response.status === 401) {
-            localStorage.removeItem('session_token');
-            window.location.href = 'login.html';
-            throw new Error('未授權');
-        }
-        const error = await response.json();
-        throw new Error(error.error || '請求失敗');
-    }
-
-    return await response.json();
-}
-
-function updateUserInfo(user) {
-    document.getElementById('userName').textContent = user.username;
-    document.getElementById('userRole').textContent = user.role === 'admin' ? '管理員' : '員工';
-    // 顯示管理員專屬導航項目
-    if (user.role === 'admin') {
-        document.querySelectorAll('.admin-only').forEach(el => {
-            el.style.display = '';
-        });
-    }
-}
-
-// 登出
-document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-    try {
-        await apiRequest('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-        console.error('登出錯誤:', error);
-    }
-    localStorage.removeItem('session_token');
-    window.location.href = 'login.html';
 });
+
+// 移除重複的 initAuth、apiRequest、updateUserInfo、登出處理
+// 這些功能已在 auth-common.js 中提供
 
 // =========================================
 // 標籤頁管理
@@ -116,19 +47,7 @@ function switchTab(tabName) {
     document.getElementById(`${tabName}-tab`).classList.add('active');
 }
 
-// =========================================
-// 移動端選單
-// =========================================
-function initMobileMenu() {
-    const toggle = document.getElementById('mobileToggle');
-    const navLinks = document.getElementById('navLinks');
-    
-    if (toggle && navLinks) {
-        toggle.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
-        });
-    }
-}
+// initMobileMenu 已在 auth-common.js 中提供，此處移除重複定義
 
 // =========================================
 // 初始化資料

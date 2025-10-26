@@ -391,6 +391,79 @@ function calculateYearsOfService(hireDateStr) {
 }
 
 /**
+ * 時區轉換工具（處理UTC時間）
+ */
+
+/**
+ * UTC時間轉台北時間
+ * @param {string|Date} utcTime - UTC時間
+ * @returns {Date} 台北時間
+ */
+function utcToTaipei(utcTime) {
+    const date = new Date(utcTime);
+    // 台北是 UTC+8
+    const taipeiOffset = 8 * 60; // 分鐘
+    const localOffset = date.getTimezoneOffset(); // 當前時區相對UTC的偏移（分鐘）
+    const offsetDiff = taipeiOffset + localOffset;
+    return new Date(date.getTime() + offsetDiff * 60 * 1000);
+}
+
+/**
+ * 台北時間轉UTC時間
+ * @param {string|Date} taipeiTime - 台北時間
+ * @returns {Date} UTC時間
+ */
+function taipeiToUTC(taipeiTime) {
+    const date = new Date(taipeiTime);
+    const taipeiOffset = 8 * 60;
+    const localOffset = date.getTimezoneOffset();
+    const offsetDiff = taipeiOffset + localOffset;
+    return new Date(date.getTime() - offsetDiff * 60 * 1000);
+}
+
+/**
+ * 格式化為台北時間字符串
+ * @param {string|Date} dateTime - 日期時間
+ * @returns {string} 格式化的台北時間
+ */
+function formatTaipeiTime(dateTime) {
+    const taipeiDate = utcToTaipei(dateTime);
+    return taipeiDate.toLocaleString('zh-TW', { 
+        timeZone: 'Asia/Taipei',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+/**
+ * GitHub Actions cron 時間轉換（UTC → 台北）
+ * @param {number} taipeiHour - 台北時間（0-23）
+ * @returns {number} UTC時間（0-23）
+ */
+function taipeiHourToUTC(taipeiHour) {
+    // 台北 = UTC + 8
+    const utcHour = (taipeiHour - 8 + 24) % 24;
+    return utcHour;
+}
+
+/**
+ * 生成年份選項（當前年份 ± 範圍）
+ * @param {number} range - 範圍（默認5年）
+ * @returns {Array<number>} 年份陣列
+ */
+function generateYearOptions(range = 5) {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear + 1; i >= currentYear - range; i--) {
+        years.push(i);
+    }
+    return years;
+}
+
+/**
  * 顯示載入狀態
  * @param {string} containerId - 容器ID
  * @param {string} message - 載入訊息
@@ -516,4 +589,9 @@ window.generateUniqueId = generateUniqueId;
 window.getLocalStorageJSON = getLocalStorageJSON;
 window.setLocalStorageJSON = setLocalStorageJSON;
 window.cleanupOldDrafts = cleanupOldDrafts;
+window.utcToTaipei = utcToTaipei;
+window.taipeiToUTC = taipeiToUTC;
+window.formatTaipeiTime = formatTaipeiTime;
+window.taipeiHourToUTC = taipeiHourToUTC;
+window.generateYearOptions = generateYearOptions;
 

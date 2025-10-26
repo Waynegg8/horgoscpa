@@ -19,6 +19,11 @@
   <link rel="stylesheet" href="/assets/css/internal-system.css" />
   <link rel="stylesheet" href="/assets/css/internal-components.css" />
   <link rel="stylesheet" href="/assets/css/timesheet-page.css" />
+  <!-- 共用模組 -->
+  <script src="/assets/js/config.js"></script>
+  <script src="/assets/js/common-utils.js"></script>
+  <script src="/assets/js/auth-common.js"></script>
+  <script src="/assets/js/error-handler.js"></script>
 </head>
 
 <body>
@@ -243,7 +248,8 @@
 
   <!-- 工時系統主要功能腳本 -->
   <script>
-    const WORKER_URL = 'https://timesheet-api.hergscpa.workers.dev';
+    // 使用共用模組的 API URL
+    const WORKER_URL = window.WORKER_URL || CONFIG.API_BASE;
     let holidaysCache = null;
     let currentUser = null;
     let sessionToken = null;

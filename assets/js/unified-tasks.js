@@ -3,13 +3,8 @@
  * 整合所有任务类型到一个界面
  */
 
-// API 基础 URL
-const API_BASE = 'https://timesheet-api.hergscpa.workers.dev/api';
-
-// 当前选中的标签
+// 使用共用模組的全局變量
 let currentTab = 'all';
-
-// 当前用户信息
 let currentUser = null;
 
 /**
@@ -18,8 +13,12 @@ let currentUser = null;
 async function initUnifiedTasks() {
   console.log('初始化统一任务管理系统...');
   
-  // 获取当前用户信息
-  await loadCurrentUser();
+  // 從共用模組獲取當前用戶
+  currentUser = window.currentUser;
+  if (!currentUser) {
+    console.warn('用戶未登入');
+    return;
+  }
   
   // 加载任务列表
   await loadTasks();
@@ -28,26 +27,7 @@ async function initUnifiedTasks() {
   setupEventListeners();
 }
 
-/**
- * 获取当前用户信息
- */
-async function loadCurrentUser() {
-  try {
-    const response = await fetch(`${API_BASE}/verify`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('session_token')}`
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      currentUser = data.user;
-      console.log('当前用户:', currentUser);
-    }
-  } catch (error) {
-    console.error('获取用户信息失败:', error);
-  }
-}
+// 移除重複的 loadCurrentUser 函數，使用 auth-common.js 提供的 checkAuth
 
 /**
  * 切换标签
@@ -110,18 +90,11 @@ async function loadTasks() {
 }
 
 /**
- * 获取所有任务
+ * 获取所有任务（使用共用的 apiRequest）
  */
 async function fetchAllTasks() {
-  const response = await fetch(`${API_BASE}/tasks/multi-stage`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('session_token')}`
-    }
-  });
-  
-  if (!response.ok) throw new Error('获取任务失败');
-  const data = await response.json();
-  return data.tasks || [];
+  const data = await apiRequest('/api/tasks/multi-stage');
+  return data.tasks || data.data || data || [];
 }
 
 /**
@@ -174,15 +147,8 @@ async function fetchClientServiceTasks() {
 // 打開範本市場
 async function openTemplateMarket() {
   try {
-    const response = await fetch(`${API_BASE}/multi-stage-templates`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('session_token')}`
-      }
-    });
-    
-    if (!response.ok) throw new Error('獲取範本失敗');
-    const data = await response.json();
-    const templates = data.templates || [];
+    const data = await apiRequest('/api/multi-stage-templates');
+    const templates = data.templates || data || [];
     
     // 創建模態框
     const modal = createTemplateMarketModal(templates);
@@ -286,14 +252,7 @@ window.closeTemplateMarket = function() {
 // 預覽範本
 window.previewTemplate = async function(templateId) {
   try {
-    const response = await fetch(`${API_BASE}/multi-stage-templates/${templateId}/stages`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('session_token')}`
-      }
-    });
-    
-    if (!response.ok) throw new Error('獲取範本詳情失敗');
-    const data = await response.json();
+    const data = await apiRequest(`/api/multi-stage-templates/${templateId}/stages`);
     const stages = data.stages || [];
     
     // 創建預覽對話框
@@ -367,22 +326,15 @@ window.copyTemplate = function(templateId) {
 /**
  * 拖拽式範本編輯器
  */
-function openTemplateEditor(templateId, isCopy = false) {
-  // 先獲取範本數據
-  fetch(`${API_BASE}/multi-stage-templates/${templateId}/stages`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('session_token')}`
-    }
-  })
-  .then(res => res.json())
-  .then(data => {
+async function openTemplateEditor(templateId, isCopy = false) {
+  try {
+    const data = await apiRequest(`/api/multi-stage-templates/${templateId}/stages`);
     const stages = data.stages || [];
     showTemplateEditor(templateId, stages, isCopy);
-  })
-  .catch(error => {
+  } catch (error) {
     console.error('獲取範本失敗:', error);
-    alert('無法載入範本');
-  });
+    showNotification('無法載入範本', 'error');
+  }
 }
 
 function showTemplateEditor(templateId, stages, isCopy) {
@@ -727,14 +679,7 @@ async function loadServiceConfig() {
  */
 async function previewAutomatedTasks() {
   try {
-    const response = await fetch(`${API_BASE}/automated-tasks/preview`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('session_token')}`
-      }
-    });
-    
-    if (!response.ok) throw new Error('预览失败');
-    const data = await response.json();
+    const data = await apiRequest('/api/automated-tasks/preview');
     
     alert(`将生成 ${data.tasks_to_generate} 个任务\n\n` + 
           data.tasks.map(t => `- ${t.client_name}: ${t.service_type}`).join('\n'));
@@ -751,16 +696,7 @@ async function generateAutomatedTasks() {
   if (!confirm('确定要生成任务吗？')) return;
   
   try {
-    const response = await fetch(`${API_BASE}/automated-tasks/generate`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('session_token')}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) throw new Error('生成失败');
-    const data = await response.json();
+    const data = await apiRequest('/api/automated-tasks/generate', { method: 'POST' });
     
     alert(`成功生成 ${data.results.generated.length} 个任务\n` +
           `跳过 ${data.results.skipped.length} 个\n` +
@@ -825,23 +761,7 @@ function setupEventListeners() {
   }
 }
 
-/**
- * 工具函数：转义 HTML
- */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-/**
- * 工具函数：格式化日期
- */
-function formatDate(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('zh-CN');
-}
+// escapeHtml 和 formatDate 已在 common-utils.js 中提供，此處移除重複定義
 
 // 页面加载时初始化
 if (document.readyState === 'loading') {

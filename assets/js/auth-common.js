@@ -4,11 +4,15 @@
  * 避免在每個頁面重複相同代碼
  */
 
-const WORKER_URL = 'https://timesheet-api.hergscpa.workers.dev';
 const SESSION_TOKEN_KEY = 'session_token';
 
 let sessionToken = null;
 let currentUser = null;
+
+// 從 CONFIG 獲取 API URL（需要先載入 config.js）
+function getAPIBaseURL() {
+    return window.CONFIG?.API_BASE || 'https://timesheet-api.hergscpa.workers.dev';
+}
 
 /**
  * 檢查認證狀態
@@ -21,7 +25,7 @@ async function checkAuth() {
     }
     
     try {
-        const response = await fetch(`${WORKER_URL}/api/verify`, {
+        const response = await fetch(`${getAPIBaseURL()}/api/verify`, {
             headers: {
                 'Authorization': `Bearer ${sessionToken}`
             }
@@ -84,7 +88,7 @@ function updateUIByRole() {
  */
 async function apiRequest(url, options = {}, timeout = 30000) {
     // 確保使用完整URL
-    const fullUrl = url.startsWith('http') ? url : `${WORKER_URL}${url}`;
+    const fullUrl = url.startsWith('http') ? url : `${getAPIBaseURL()}${url}`;
     
     // 添加認證標頭
     const headers = {
@@ -218,6 +222,10 @@ window.handleLogout = handleLogout;
 window.initMobileMenu = initMobileMenu;
 window.initLogoutButton = initLogoutButton;
 window.initPage = initPage;
-window.WORKER_URL = WORKER_URL;
+window.getAPIBaseURL = getAPIBaseURL;
 window.SESSION_TOKEN_KEY = SESSION_TOKEN_KEY;
+// 為了向後兼容，也導出 WORKER_URL（從 CONFIG 獲取）
+Object.defineProperty(window, 'WORKER_URL', {
+    get: function() { return getAPIBaseURL(); }
+});
 

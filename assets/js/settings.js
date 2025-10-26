@@ -3,7 +3,7 @@
  * 包含客戶、客戶指派、業務類型、假期事件、國定假日管理
  */
 
-const API_BASE = 'https://timesheet-api.hergscpa.workers.dev';
+// 使用共用模組的全局變量
 let currentUser = null;
 let currentData = {
     clients: [],
@@ -21,82 +21,21 @@ let currentData = {
 // 初始化
 // =========================================
 document.addEventListener('DOMContentLoaded', async () => {
-    await initAuth();
-    initTabs();
-    initMobileMenu();
-    initSearchFilters();
-    if (typeof initClientsExtended === 'function') {
-        initClientsExtended();
-    }
-});
-
-// =========================================
-// 認證管理
-// =========================================
-async function initAuth() {
-    const token = localStorage.getItem('session_token');
-    if (!token) {
-        window.location.href = 'login.html';
-        return;
-    }
-
-    try {
-        const response = await apiRequest('/api/auth/me');
-        currentUser = response.user;
-        updateUserInfo(currentUser);
-        
-        // 如果是管理員，顯示管理員專屬標籤
-        if (currentUser.role === 'admin') {
-            document.querySelectorAll('.admin-only').forEach(el => {
-                el.style.display = '';
-            });
+    // 使用統一的初始化函數
+    await initPage(async () => {
+        currentUser = window.currentUser; // 從 auth-common.js 獲取
+        initTabs();
+        initSearchFilters();
+        if (typeof initClientsExtended === 'function') {
+            initClientsExtended();
         }
-        
         // 載入當前標籤頁資料
         loadCurrentTabData();
-    } catch (error) {
-        console.error('驗證錯誤:', error);
-        localStorage.removeItem('session_token');
-        window.location.href = 'login.html';
-    }
-}
-
-async function apiRequest(url, options = {}) {
-    const token = localStorage.getItem('session_token');
-    const defaultOptions = {
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
-    };
-
-    // 自動序列化 JSON body
-    const finalOptions = { ...options };
-    if (finalOptions.body && typeof finalOptions.body === 'object') {
-        finalOptions.body = JSON.stringify(finalOptions.body);
-    }
-
-    const response = await fetch(`${API_BASE}${url}`, {
-        ...defaultOptions,
-        ...finalOptions,
-        headers: {
-            ...defaultOptions.headers,
-            ...finalOptions.headers
-        }
     });
+});
 
-    if (!response.ok) {
-        if (response.status === 401) {
-            localStorage.removeItem('session_token');
-            window.location.href = 'login.html';
-            throw new Error('未授權');
-        }
-        const error = await response.json();
-        throw new Error(error.error || '請求失敗');
-    }
-
-    return await response.json();
-}
+// 移除重複的 initAuth、apiRequest、initMobileMenu
+// 這些功能已在 auth-common.js 中提供
 
 function updateUserInfo(user) {
     document.getElementById('userName').textContent = user.username;

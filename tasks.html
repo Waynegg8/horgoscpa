@@ -11,7 +11,11 @@
     <link rel="stylesheet" href="assets/css/internal-system.css">
     <link rel="stylesheet" href="assets/css/internal-components.css">
     <link rel="stylesheet" href="assets/css/tasks-page.css">
-    <!-- 已移除所有内嵌样式，改用统一的CSS组件库 -->
+    <!-- 共用模組 -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/common-utils.js"></script>
+    <script src="assets/js/auth-common.js"></script>
+    <script src="assets/js/error-handler.js"></script>
 </head>
 <body>
     <!-- 簡潔的內部導航欄 -->
@@ -234,82 +238,31 @@
     </footer>
 
     <!-- 引入統一任務管理JS -->
+    <script src="assets/js/unified-tasks.js"></script>
     <script>
-        // 全局變量
-        const WORKER_URL = 'https://timesheet-api.hergscpa.workers.dev';
-        let sessionToken = null;
-        let currentUser = null;
+        // 使用共用模組的 API URL
+        const WORKER_URL = window.WORKER_URL || CONFIG.API_BASE;
+        let sessionToken = window.sessionToken;
+        let currentUser = window.currentUser;
         let currentTab = 'all';
 
         // 頁面載入時初始化
         document.addEventListener('DOMContentLoaded', async () => {
-            // 檢查登入狀態
-            if (!await checkAuth()) {
-                window.location.href = '/login.html';
-                return;
-            }
-            
-            // 初始化事件監聽
-            initEventListeners();
-            
-            // 加載第一個標籤的任務
-            await loadTasks();
+            // 使用統一的初始化函數
+            await initPage(async () => {
+                sessionToken = window.sessionToken;
+                currentUser = window.currentUser;
+                
+                // 初始化事件監聽
+                initTasksEventListeners();
+                
+                // 加載第一個標籤的任務
+                await loadTasks();
+            });
         });
 
-        // 檢查認證狀態
-        async function checkAuth() {
-            sessionToken = localStorage.getItem('session_token');
-            if (!sessionToken) {
-                return false;
-            }
-            
-            try {
-                const response = await fetch(`${WORKER_URL}/api/verify`, {
-                    headers: {
-                        'Authorization': `Bearer ${sessionToken}`
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    currentUser = data.user;
-                    updateUserInfo();
-                    // 顯示管理員專屬導航項目
-                    if (currentUser.role === 'admin') {
-                        document.querySelectorAll('.admin-only').forEach(el => {
-                            el.style.display = '';
-                        });
-                    }
-                    return true;
-                }
-            } catch (err) {
-                console.error('驗證失敗:', err);
-            }
-            
-            return false;
-        }
-
-        // 更新使用者資訊顯示
-        function updateUserInfo() {
-            const userNameEl = document.getElementById('userName');
-            const userRoleEl = document.getElementById('userRole');
-            
-            if (currentUser) {
-                const displayName = currentUser.employee_name || currentUser.username;
-                const roleText = currentUser.role === 'admin' ? '管理員' : '員工';
-                userNameEl.textContent = displayName;
-                userRoleEl.textContent = roleText;
-            }
-        }
-
-        // 初始化事件監聽器
-        function initEventListeners() {
-            // 登出按鈕
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', handleLogout);
-            }
-
+        // 初始化事件監聽器（tasks.html 特定的）
+        function initTasksEventListeners() {
             // 創建任務按鈕
             const createTaskBtn = document.getElementById('createTaskBtn');
             if (createTaskBtn) {
@@ -323,43 +276,10 @@
             if (statusFilter) {
                 statusFilter.addEventListener('change', filterTasks);
             }
-
-            // 移動端選單
-            const mobileToggle = document.getElementById('mobileToggle');
-            const navLinks = document.getElementById('navLinks');
-            
-            if (mobileToggle && navLinks) {
-                mobileToggle.addEventListener('click', () => {
-                    navLinks.classList.toggle('active');
-                });
-                
-                document.addEventListener('click', (e) => {
-                    if (!mobileToggle.contains(e.target) && !navLinks.contains(e.target)) {
-                        navLinks.classList.remove('active');
-                    }
-                });
-            }
         }
 
-        // 登出功能
-        async function handleLogout(e) {
-            e.preventDefault();
-            
-            try {
-                await fetch(`${WORKER_URL}/api/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${sessionToken}`
-                    }
-                });
-            } catch (err) {
-                console.error('登出錯誤:', err);
-            }
-            
-            localStorage.removeItem('session_token');
-            localStorage.removeItem('user_info');
-            window.location.href = '/login.html';
-        }
+        // 移除重複的 checkAuth、updateUserInfo、handleLogout、initMobileMenu
+        // 這些功能已在 auth-common.js 中提供
 
         // 切換標籤
         function switchMainTab(tabName) {

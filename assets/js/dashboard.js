@@ -3,84 +3,47 @@
  * 顯示待辦任務、本週工時及團隊進度（管理員）
  */
 
-const API_BASE = 'https://timesheet-api.hergscpa.workers.dev';
+// 使用共用模組的全局變量
 let currentUser = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await initAuth();
-    initMobileMenu();
-    updateGreeting();
-    await loadDashboardData();
-});
-
-async function initAuth() {
-    const token = localStorage.getItem('session_token');
-    if (!token) {
-        window.location.href = 'login.html';
-        return;
-    }
-
-    try {
-        const response = await apiRequest('/api/verify');
-        currentUser = response.user;
-        const displayName = currentUser.employee_name || currentUser.username;
-        document.getElementById('userName').textContent = displayName;
-        document.getElementById('userRole').textContent = currentUser.role === 'admin' ? '管理員' : '員工';
-        
-        // 更新問候語
-        const hour = new Date().getHours();
-        let greeting = '早安';
-        if (hour >= 12 && hour < 18) greeting = '午安';
-        else if (hour >= 18) greeting = '晚安';
-        document.getElementById('greetingUser').textContent = `${greeting}，${displayName}`;
-        
-        // 根據角色顯示不同視圖
-        if (currentUser.role === 'admin') {
-            document.getElementById('adminView').style.display = 'block';
-            document.getElementById('employeeView').style.display = 'none';
-        } else {
-            document.getElementById('employeeView').style.display = 'block';
-            document.getElementById('adminView').style.display = 'none';
-        }
-    } catch (error) {
-        localStorage.removeItem('session_token');
-        window.location.href = 'login.html';
-    }
-}
-
-function initMobileMenu() {
-    const toggle = document.getElementById('mobileToggle');
-    const navLinks = document.getElementById('navLinks');
-    if (toggle && navLinks) {
-        toggle.addEventListener('click', () => navLinks.classList.toggle('active'));
-    }
-}
-
-async function apiRequest(url, options = {}) {
-    const token = localStorage.getItem('session_token');
-    const response = await fetch(`${API_BASE}${url}`, {
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            ...options.headers
-        },
-        ...options
+    // 使用統一的初始化函數
+    await initPage(async () => {
+        currentUser = window.currentUser; // 從 auth-common.js 獲取
+        updateDashboardGreeting();
+        updateDashboardView();
+        await loadDashboardData();
     });
+});
 
-    if (response.status === 401) {
-        localStorage.removeItem('session_token');
-        window.location.href = 'login.html';
-        throw new Error('未授權');
+// 更新問候語
+function updateDashboardGreeting() {
+    if (!currentUser) return;
+    
+    const displayName = currentUser.employee_name || currentUser.username;
+    const hour = new Date().getHours();
+    let greeting = '早安';
+    if (hour >= 12 && hour < 18) greeting = '午安';
+    else if (hour >= 18) greeting = '晚安';
+    
+    const greetingEl = document.getElementById('greetingUser');
+    if (greetingEl) {
+        greetingEl.textContent = `${greeting}，${displayName}`;
     }
-
-    if (!response.ok) throw new Error('請求失敗');
-    return await response.json();
 }
 
-document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem('session_token');
-    window.location.href = 'login.html';
-});
+// 根據角色顯示不同視圖
+function updateDashboardView() {
+    if (!currentUser) return;
+    
+    if (currentUser.role === 'admin') {
+        document.getElementById('adminView').style.display = 'block';
+        document.getElementById('employeeView').style.display = 'none';
+    } else {
+        document.getElementById('employeeView').style.display = 'block';
+        document.getElementById('adminView').style.display = 'none';
+    }
+}
 
 function updateGreeting() {
     const today = new Date();
@@ -793,12 +756,7 @@ async function markTaskComplete(type, id) {
     }
 }
 
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+// escapeHtml 已在 common-utils.js 中定義，此處移除重複定義
 
 // ==================== 新增：提醒系統 ====================
 
@@ -807,11 +765,15 @@ async function loadReminders() {
     if (!container) return;
     
     try {
-        const response = await apiRequest('/api/reminders');
+        // 傳遞當前用戶ID和只查詢未讀提醒
+        const userId = currentUser?.id;
+        if (!userId) return;
+        
+        const response = await apiRequest(`/api/reminders?user_id=${userId}&is_read=0`);
         const reminders = response.reminders || [];
         
-        // 只顯示未讀的高優先級提醒
-        const unreadReminders = reminders.filter(r => !r.is_read);
+        // 顯示未讀提醒
+        const unreadReminders = reminders;
         
         if (unreadReminders.length === 0) {
             container.innerHTML = `

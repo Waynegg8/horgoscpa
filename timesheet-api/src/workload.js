@@ -56,15 +56,17 @@ export async function getWorkloadOverview(request, env) {
         : 0
     };
     
+    // ✅ 修复：使用正确的返回格式（dashboard.js期望workloads字段）
     return new Response(JSON.stringify({
       success: true,
       period: period,
       summary: summary,
-      employees: workloadData
+      workloads: workloadData  // ✅ 修改：employees → workloads
     }), {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
+    console.error('獲取工作量概覽失敗:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message

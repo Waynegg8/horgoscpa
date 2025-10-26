@@ -2,76 +2,25 @@
 // 內容管理系統 JavaScript
 // =====================================
 
-const API_BASE = 'https://timesheet-api.hergscpa.workers.dev';
+// 使用共用模組的全局變量
 let allPosts = [];
 let currentEditingPost = null;
 let autoSaveTimer = null;
 let selectedPosts = new Set();
 let isPreviewMode = false;
 
-// =====================================
+// =========================================
 // 初始化
-// =====================================
+// =========================================
 document.addEventListener('DOMContentLoaded', async () => {
-    await initAuth();
-    initMobileMenu();
-    loadPosts();
+    // 使用統一的初始化函數
+    await initPage(async () => {
+        loadPosts();
+    });
 });
 
-// =====================================
-// 認證相關
-// =====================================
-async function initAuth() {
-    const token = localStorage.getItem('session_token');
-    if (!token) {
-        window.location.href = 'login.html';
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE}/api/auth/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (!response.ok) throw new Error('Unauthorized');
-        
-        const data = await response.json();
-        document.getElementById('userName').textContent = data.user.username;
-        document.getElementById('userRole').textContent = data.user.role === 'admin' ? '管理員' : '員工';
-        
-        // 顯示管理員專屬導航項目
-        if (data.user.role === 'admin') {
-            document.querySelectorAll('.admin-only').forEach(el => {
-                el.style.display = '';
-            });
-        }
-        
-        // 非管理員隱藏某些功能
-        if (data.user.role !== 'admin') {
-            // CMS 頁面只允許管理員訪問
-            // 已經通過導航欄控制，這裡可以添加額外的頁面級限制
-        }
-    } catch (error) {
-        localStorage.removeItem('session_token');
-        window.location.href = 'login.html';
-    }
-}
-
-function initMobileMenu() {
-    const toggle = document.getElementById('mobileToggle');
-    const navLinks = document.getElementById('navLinks');
-    
-    if (toggle && navLinks) {
-        toggle.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
-        });
-    }
-}
-
-document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem('session_token');
-    window.location.href = 'login.html';
-});
+// 移除重複的 initAuth、initMobileMenu、登出處理
+// 這些功能已在 auth-common.js 中提供
 
 // =====================================
 // 分頁切換
