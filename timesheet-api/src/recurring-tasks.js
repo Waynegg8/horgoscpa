@@ -301,23 +301,8 @@ export async function generateRecurringTasks(env, data, username) {
   const { DB } = env;
   const { year, month, force = false } = data;
   
-  // 檢查是否已生成過
-  if (!force) {
-    const checkStmt = DB.prepare(`
-      SELECT COUNT(*) as count FROM recurring_task_generation_log
-      WHERE year = ? AND month = ?
-    `);
-    const checkResult = await checkStmt.bind(year, month).first();
-    
-    if (checkResult.count > 0) {
-      return new Response(JSON.stringify({ 
-        error: '該月份任務已生成，使用 force=true 強制重新生成' 
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-  }
+  // 備註：月層級的 recurring_task_generation_log 已棄用，
+  // 如需防重，將在每個服務層級寫入 task_generation_log（execution_period = YYYY-MM）。
   
   // 獲取所有啟用的客戶服務
   const servicesStmt = DB.prepare(`
@@ -335,6 +320,16 @@ export async function generateRecurringTasks(env, data, username) {
     // 檢查該月是否需要執行
     if (!schedule[monthStr]) {
       continue;
+    }
+    // 防重檢查（以 task_generation_log 為準）
+    const executionPeriod = `${year}-${String(month).padStart(2, '0')}`;
+    if (!force) {
+      const dup = await DB.prepare(`
+        SELECT 1 FROM task_generation_log WHERE client_service_id = ? AND execution_period = ?
+      `).bind(service.id, executionPeriod).first();
+      if (dup) {
+        continue;
+      }
     }
     
     // 查找對應的模板
@@ -403,14 +398,24 @@ export async function generateRecurringTasks(env, data, username) {
     ).run();
     
     tasksGenerated++;
+
+    // 寫入統一的生成日誌（不關聯任務ID，因為這裡是 recurring 實例）
+    try {
+      await DB.prepare(`
+        INSERT INTO task_generation_log (client_service_id, execution_period, generated_task_id, generation_method)
+        VALUES (?, ?, NULL, 'recurring')
+      `).bind(service.id, executionPeriod).run();
+    } catch (_) {}
   }
   
-  // 記錄生成日誌
-  const logStmt = DB.prepare(`
-    INSERT INTO recurring_task_generation_log (year, month, tasks_generated, generated_by)
-    VALUES (?, ?, ?, ?)
-  `);
-  await logStmt.bind(year, month, tasksGenerated, username).run();
+  // 月層級日誌保留兼容（可選）
+  try {
+    const logStmt = DB.prepare(`
+      INSERT INTO recurring_task_generation_log (year, month, tasks_generated, generated_by)
+      VALUES (?, ?, ?, ?)
+    `);
+    await logStmt.bind(year, month, tasksGenerated, username).run();
+  } catch (_) {}
   
   return new Response(JSON.stringify({ 
     success: true,

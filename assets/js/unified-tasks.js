@@ -644,11 +644,80 @@ function renderTaskCard(task) {
 /**
  * 打开任务详情
  */
-function openTaskDetail(taskId) {
-  console.log('打开任务详情:', taskId);
-  // TODO: 实现侧边面板显示任务详情
-  // 暂时使用 alert，未来应实现侧边面板
-  alert('任務詳情功能開發中...\n任務 ID: ' + taskId);
+async function openTaskDetail(taskId) {
+  const panel = document.getElementById('taskDetailPanel');
+  const content = document.getElementById('taskDetailContent');
+  if (!panel || !content) { alert('無法顯示詳情'); return; }
+  panel.classList.add('active');
+  panel.style.right = '0';
+  content.innerHTML = `
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <div class="loading-text">載入任務詳情中...</div>
+    </div>
+  `;
+  try {
+    const data = await apiRequest(`/api/tasks/multi-stage/${taskId}`);
+    const task = data.task || data;
+    const stages = data.stages || [];
+    let html = `
+      <div class="task-detail-header">
+        <h3>${escapeHtml(task.task_name || task.title || '未命名任務')}</h3>
+        <div class="task-detail-meta">
+          <span class="category-badge">${escapeHtml(task.category || '一般任務')}</span>
+          <span class="status-badge status-${task.status}">${getStatusText(task.status)}</span>
+        </div>
+      </div>
+      ${task.client_name ? `
+        <div class="detail-section">
+          <label>客戶</label>
+          <p>${escapeHtml(task.client_name)}</p>
+        </div>` : ''}
+      ${task.assigned_to ? `
+        <div class="detail-section">
+          <label>負責人</label>
+          <p>${escapeHtml(task.assigned_to)}</p>
+        </div>` : ''}
+      ${task.due_date ? `
+        <div class="detail-section">
+          <label>截止日期</label>
+          <p>${formatDate(task.due_date)}</p>
+        </div>` : ''}
+      ${stages.length > 0 ? `
+        <div class="detail-section">
+          <label>執行階段 (${task.current_stage || 1}/${task.total_stages || stages.length})</label>
+          <div class="stages-timeline">
+            ${stages.map((stage, index) => `
+              <div class="stage-detail-item ${stage.status}">
+                <div class="stage-number">${index + 1}</div>
+                <div class="stage-info">
+                  <h4>${escapeHtml(stage.stage_name)}</h4>
+                  ${stage.stage_description ? `<p>${escapeHtml(stage.stage_description)}</p>` : ''}
+                  ${stage.estimated_hours ? `<span>預估: ${stage.estimated_hours}h</span>` : ''}
+                  ${stage.status === 'completed' ? `<span class="completed-badge">✓ 已完成</span>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>` : ''}
+      ${task.notes ? `
+        <div class="detail-section">
+          <label>備註</label>
+          <p>${escapeHtml(task.notes)}</p>
+        </div>` : ''}
+      <div class="detail-actions">
+        <button class="btn btn-secondary" onclick="closeTaskDetail()">關閉</button>
+      </div>
+    `;
+    content.innerHTML = html;
+  } catch (err) {
+    content.innerHTML = `<div style="text-align:center;padding:40px;color:#999;">載入失敗</div>`;
+  }
+}
+
+function closeTaskDetail() {
+  const panel = document.getElementById('taskDetailPanel');
+  if (panel) panel.classList.remove('active');
 }
 
 /**
@@ -777,4 +846,5 @@ window.searchTasks = searchTasks;
 window.filterTasks = filterTasks;
 window.previewAutomatedTasks = previewAutomatedTasks;
 window.generateAutomatedTasks = generateAutomatedTasks;
+window.closeTaskDetail = closeTaskDetail;
 

@@ -672,37 +672,9 @@ export default {
       }
 
       // ========================================
-      // 週期性任務 API
+      // 週期性任務 API（統一使用 /api/client-services 和 /api/tasks/* 現代端點）
+      // 舊的 /api/services/* 端點已移除
       // ========================================
-      
-      // 獲取客戶服務配置
-      if (url.pathname === "/api/services/clients" && method === "GET") {
-        const auth = await requireAuth(env.DB, request);
-        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        return await addCorsHeaders(await getClientServices(env, url.searchParams));
-      }
-      
-      // 獲取單個客戶的服務配置
-      if (url.pathname.match(/^\/api\/services\/client\/[^\/]+$/) && method === "GET") {
-        const auth = await requireAuth(env.DB, request);
-        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        const clientName = decodeURIComponent(url.pathname.split("/")[4]);
-        return await addCorsHeaders(await getClientServicesByClient(env, clientName));
-      }
-      
-      // 創建或更新客戶服務配置（所有員工可用）
-      if (url.pathname === "/api/services" && method === "POST") {
-        const auth = await requireAuth(env.DB, request);
-        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        const data = await request.json();
-        return await addCorsHeaders(await upsertClientService(request, env, data));
-      }
-      
-      // 刪除客戶服務配置（僅管理員）
-      if (url.pathname.match(/^\/api\/services\/\d+$/) && method === "DELETE") {
-        const serviceId = parseInt(url.pathname.split("/")[3]);
-        return await addCorsHeaders(await deleteClientService(request, env, serviceId));
-      }
       
       // 獲取週期性任務模板
       if (url.pathname === "/api/recurring-templates" && method === "GET") {
@@ -1069,6 +1041,67 @@ export default {
         const auth = await requireAdmin(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
         return await handleCacheStats(env.DB);
+      }
+
+      // ========================================
+      // FAQ 管理 API (需認證)
+      // ========================================
+      if (url.pathname === "/api/faq/categories" && method === "GET") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const res = await env.DB.prepare(`SELECT * FROM faq_categories ORDER BY sort_order, name`).all();
+        return addCorsHeaders(jsonResponse({ categories: res.results || [] }));
+      }
+
+      if (url.pathname === "/api/faq/categories" && method === "POST") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const body = await request.json();
+        const result = await env.DB.prepare(`INSERT INTO faq_categories (name, sort_order) VALUES (?, ?)`).bind(body.name, body.sort_order || 0).run();
+        return addCorsHeaders(jsonResponse({ success: true, id: result.meta.last_row_id }));
+      }
+
+      if (url.pathname === "/api/faqs" && method === "GET") {
+        const auth = await requireAuth(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const categoryId = url.searchParams.get('category_id');
+        let q = `SELECT f.*, c.name as category_name FROM faqs f LEFT JOIN faq_categories c ON f.category_id = c.id WHERE 1=1`;
+        const params = [];
+        if (categoryId) { q += ` AND f.category_id = ?`; params.push(categoryId); }
+        q += ` ORDER BY f.updated_at DESC`;
+        const res = await (params.length ? env.DB.prepare(q).bind(...params).all() : env.DB.prepare(q).all());
+        return addCorsHeaders(jsonResponse({ faqs: res.results || [] }));
+      }
+
+      if (url.pathname === "/api/faqs" && method === "POST") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const body = await request.json();
+        const result = await env.DB.prepare(`
+          INSERT INTO faqs (category_id, question, answer, status, created_by)
+          VALUES (?, ?, ?, ?, ?)
+        `).bind(body.category_id, body.question, body.answer, body.status || 'active', auth.user.username).run();
+        return addCorsHeaders(jsonResponse({ success: true, id: result.meta.last_row_id }));
+      }
+
+      if (url.pathname.match(/^\/api\/faqs\/\d+$/) && method === "PUT") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = parseInt(url.pathname.split('/')[3]);
+        const body = await request.json();
+        await env.DB.prepare(`
+          UPDATE faqs SET category_id = ?, question = ?, answer = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).bind(body.category_id, body.question, body.answer, body.status || 'active', id).run();
+        return addCorsHeaders(jsonResponse({ success: true }));
+      }
+
+      if (url.pathname.match(/^\/api\/faqs\/\d+$/) && method === "DELETE") {
+        const auth = await requireAdmin(env.DB, request);
+        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
+        const id = parseInt(url.pathname.split('/')[3]);
+        await env.DB.prepare(`DELETE FROM faqs WHERE id = ?`).bind(id).run();
+        return addCorsHeaders(jsonResponse({ success: true }));
       }
 
       // 保證 404 也帶有 CORS 標頭
