@@ -75,37 +75,17 @@
 
     <main class="internal-main">
         <div class="internal-container">
+            <h1>📋 統一任務管理</h1>
             <!-- 標籤頁切換 - 統一任務管理中心 -->
             <div class="tabs-container">
                 <div class="tab-nav">
-                    <button class="tab-button active" onclick="switchTab('all')">
-                        <span class="material-symbols-outlined">list</span>
-                        全部任務
-                    </button>
-                    <button class="tab-button" onclick="switchTab('my-tasks')">
-                        <span class="material-symbols-outlined">person</span>
-                        我的任務
-                    </button>
-                    <button class="tab-button" onclick="switchTab('recurring')">
-                        <span class="material-symbols-outlined">repeat</span>
-                        週期任務
-                    </button>
-                    <button class="tab-button" onclick="switchTab('business')">
-                        <span class="material-symbols-outlined">business_center</span>
-                        工商登記
-                    </button>
-                    <button class="tab-button" onclick="switchTab('finance')">
-                        <span class="material-symbols-outlined">account_balance</span>
-                        財稅簽證
-                    </button>
-                    <button class="tab-button" onclick="switchTab('client-service')">
-                        <span class="material-symbols-outlined">groups</span>
-                        客戶服務
-                    </button>
-                    <button class="tab-button" onclick="switchTab('config')">
-                        <span class="material-symbols-outlined">settings</span>
-                        服務配置
-                    </button>
+                    <button class="tab-button active" data-tab="all">全部任務</button>
+                    <button class="tab-button" data-tab="my-tasks">我的任務</button>
+                    <button class="tab-button" data-tab="recurring">週期任務</button>
+                    <button class="tab-button" data-tab="business">工商登記</button>
+                    <button class="tab-button" data-tab="finance">財稅簽證</button>
+                    <button class="tab-button" data-tab="client-service">客戶服務</button>
+                    <button class="tab-button" data-tab="config">服務配置</button>
                 </div>
 
             <!-- 統一工具列 - 所有標籤共用 -->

@@ -14,6 +14,26 @@ let currentClientExtendedData = null;
 
 // 使用全局通知（common-utils.js 提供）
 
+document.addEventListener('DOMContentLoaded', async () => {
+    // 使用統一的初始化函數
+    await initPage(async () => {
+        // currentUser 由 auth-common.js 設定
+        // 來自 settings.js 的初始化
+        initTabs();
+        initSearchFilters();
+        initConfigInputValidation();
+        
+        // 來自 clients-extended.js 的初始化
+        initClientsExtended();
+
+        // 頁面載入時，自動載入第一個標籤的資料
+        const activeTab = document.querySelector('.tab-button.active');
+        if (activeTab) {
+            switchTab(activeTab.dataset.tab);
+        }
+    });
+});
+
 // 在主頁面初始化後調用
 function initClientsExtended() {
     // 添加搜尋和篩選功能

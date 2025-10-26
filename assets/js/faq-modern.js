@@ -4,6 +4,43 @@
  * 基於現有faq.js進行優化，增加了搜索功能和展開/收合控制
  */
 
+document.addEventListener('DOMContentLoaded', () => {
+    // FAQ Toggle Functionality
+    const faqQuestions = document.querySelectorAll('.faq-question');
+
+    faqQuestions.forEach(question => {
+        question.addEventListener('click', () => {
+            const faqItem = question.parentElement;
+            const answer = faqItem.querySelector('.faq-answer');
+            const icon = question.querySelector('.faq-icon');
+
+            const isActive = faqItem.classList.contains('active');
+
+            // Close all other FAQ items in the same category
+            const category = faqItem.closest('.faq-category');
+            if (category) {
+                category.querySelectorAll('.faq-item').forEach(item => {
+                    if (item !== faqItem) {
+                        item.classList.remove('active');
+                        item.querySelector('.faq-answer').style.maxHeight = null;
+                        item.querySelector('.faq-icon').textContent = 'expand_more';
+                    }
+                });
+            }
+
+            if (isActive) {
+                faqItem.classList.remove('active');
+                answer.style.maxHeight = null;
+                icon.textContent = 'expand_more';
+            } else {
+                faqItem.classList.add('active');
+                answer.style.maxHeight = answer.scrollHeight + "px";
+                icon.textContent = 'expand_less';
+            }
+        });
+    });
+});
+
 document.addEventListener('DOMContentLoaded', function() {
   // 獲取元素
   const faqItems = document.querySelectorAll('.faq-item');

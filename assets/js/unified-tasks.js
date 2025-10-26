@@ -35,7 +35,42 @@ async function initUnifiedTasks() {
 // 移除重複的 loadCurrentUser 函數，使用 auth-common.js 提供的 checkAuth
 
 /**
- * 切换标签
+ * 更新有效分頁的視覺狀態
+ * @param {string} tabName 
+ */
+function updateActiveTab(tabName) {
+    // 更新按鈕狀態
+    document.querySelectorAll('.tab-nav .tab-button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+    
+    // 更新內容顯示
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    const activeContent = document.getElementById(`${tabName}-tab`);
+    if (activeContent) {
+        activeContent.classList.add('active');
+    }
+}
+
+/**
+ * 將 data-tab 名稱轉換為容器 ID (e.g., my-tasks -> myTasksContainer)
+ * @param {string} tabName 
+ * @returns {string}
+ */
+function getContainerIdFromTab(tabName) {
+    if (tabName === 'config') {
+        return 'serviceConfigContainer';
+    }
+    const camelCaseName = tabName.replace(/-([a-z])/g, g => g[1].toUpperCase());
+    return `${camelCaseName}TasksContainer`;
+}
+
+
+/**
+ * 切換主標籤頁
  */
 function switchTab(tabName) {
   currentTab = tabName;
@@ -52,7 +87,7 @@ function switchTab(tabName) {
  * 加载任务列表
  */
 async function loadTasks(tabName) {
-  const containerId = `${tabName}TasksContainer`;
+  const containerId = getContainerIdFromTab(tabName);
   const container = document.getElementById(containerId);
 
   if (!container) {

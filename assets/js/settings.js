@@ -19,6 +19,7 @@ let currentData = {
 // =========================================
 // 初始化
 // =========================================
+/*
 document.addEventListener('DOMContentLoaded', async () => {
     // 使用統一的初始化函數
     await initPage(async () => {
@@ -30,17 +31,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             initClientsExtended();
         }
         // 載入當前標籤頁資料
-        loadCurrentTabData();
+        const activeTab = document.querySelector('.tab-button.active');
+        if (activeTab) {
+            switchTab(activeTab.dataset.tab);
+        }
     });
 });
+*/
 
-// 移除重複的 initAuth、apiRequest、initMobileMenu
-// 這些功能已在 auth-common.js 中提供
-
-function updateUserInfo(user) {
-    document.getElementById('userName').textContent = user.username;
-    document.getElementById('userRole').textContent = user.role === 'admin' ? '管理員' : '員工';
-    
+/**
+ * 更新帳號設定頁面的使用者資訊
+ * @param {object} user - 當前使用者物件
+ */
+function updateAccountInfo(user) {
+    if (!user) return;
     // 更新帳號設定頁面
     document.getElementById('accountUsername').value = user.username;
     document.getElementById('accountRole').value = user.role === 'admin' ? '管理員' : '員工';
@@ -153,6 +157,12 @@ async function loadTabData(tabName) {
         case 'employees':
             if (user.role === 'admin') {
                 loadEmployeesAdmin();
+            }
+            break;
+        case 'account':
+            // 帳號設定頁面，確保 currentUser 已載入
+            if (window.currentUser) {
+                updateAccountInfo(window.currentUser);
             }
             break;
     }
