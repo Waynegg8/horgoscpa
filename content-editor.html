@@ -8,46 +8,82 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="assets/css/internal-system.css">
     <style>
-        .content-tabs {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
+        /* 標籤頁樣式 - 與設定頁面一致 */
+        .tabs-container {
             background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
         }
 
-        .content-tab-btn {
-            padding: 12px 24px;
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid var(--light-bg);
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .tab-nav::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .tab-nav::-webkit-scrollbar-track {
+            background: var(--light-bg);
+        }
+
+        .tab-nav::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .tab-button {
+            flex: 0 0 auto;
+            min-width: 100px;
+            padding: 15px 20px;
+            background: white;
             border: none;
-            background: transparent;
-            border-radius: 8px;
+            border-bottom: 3px solid transparent;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            white-space: nowrap;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .content-tab-btn:hover {
+        .tab-button:hover {
             background: var(--light-bg);
+            color: var(--primary-color);
         }
 
-        .content-tab-btn.active {
-            background: linear-gradient(135deg, var(--primary-color), #5a9ee5);
-            color: white;
-            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background: white;
         }
 
-        .content-section {
+        .tab-content {
+            padding: 20px;
             display: none;
         }
 
-        .content-section.active {
+        .tab-content.active {
             display: block;
             animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -115,27 +151,29 @@
                 <p>管理網站文章、部落格與公開資源</p>
             </div>
 
-            <div class="content-tabs">
-                <button class="content-tab-btn active" onclick="switchContentTab('posts')">
-                    <span class="material-symbols-outlined">article</span>
-                    部落格文章
-                </button>
-                <button class="content-tab-btn" onclick="switchContentTab('faq')">
-                    <span class="material-symbols-outlined">help</span>
-                    公開FAQ
-                </button>
-                <button class="content-tab-btn" onclick="switchContentTab('resources')">
-                    <span class="material-symbols-outlined">folder</span>
-                    資源下載
-                </button>
-                <button class="content-tab-btn" onclick="switchContentTab('media')">
-                    <span class="material-symbols-outlined">photo_library</span>
-                    圖片素材
-                </button>
-            </div>
+            <!-- 標籤頁切換 -->
+            <div class="tabs-container">
+                <div class="tab-nav">
+                    <button class="tab-button active" onclick="switchContentTab('posts')">
+                        <span class="material-symbols-outlined">article</span>
+                        部落格文章
+                    </button>
+                    <button class="tab-button" onclick="switchContentTab('faq')">
+                        <span class="material-symbols-outlined">help</span>
+                        公開FAQ
+                    </button>
+                    <button class="tab-button" onclick="switchContentTab('resources')">
+                        <span class="material-symbols-outlined">folder</span>
+                        資源下載
+                    </button>
+                    <button class="tab-button" onclick="switchContentTab('media')">
+                        <span class="material-symbols-outlined">photo_library</span>
+                        圖片素材
+                    </button>
+                </div>
 
             <!-- 文章管理 -->
-            <div id="posts-section" class="content-section active">
+            <div id="posts-section" class="tab-content active">
                 <!-- 文章列表視圖 -->
                 <div id="posts-list-view">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -272,7 +310,7 @@
             </div>
 
             <!-- 常見問答 -->
-            <div id="faq-section" class="content-section">
+            <div id="faq-section" class="tab-content">
                 <div id="faq-list-container">
                     <!-- 常見問答列表將通過 JavaScript 載入 -->
                 </div>
@@ -286,17 +324,18 @@
             </div>
 
             <!-- 資源管理 -->
-            <div id="resources-section" class="content-section">
+            <div id="resources-section" class="tab-content">
                 <div id="resources-list-container">
                     <!-- 資源列表將通過 JavaScript 載入 -->
                 </div>
             </div>
 
             <!-- 媒體庫 -->
-            <div id="media-section" class="content-section">
+            <div id="media-section" class="tab-content">
                 <div id="media-list-container">
                     <!-- 媒體列表將通過 JavaScript 載入 -->
                 </div>
+            </div>
             </div>
         </div>
     </main>

@@ -69,10 +69,10 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 // 分頁切換
 // =====================================
 function switchContentTab(tab) {
-    document.querySelectorAll('.content-tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(sec => sec.classList.remove('active'));
     
-    event.target.closest('.content-tab-btn').classList.add('active');
+    event.target.closest('.tab-button').classList.add('active');
     document.getElementById(`${tab}-section`).classList.add('active');
     
     // 載入對應數據

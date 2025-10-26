@@ -10,49 +10,71 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="assets/css/internal-system.css">
     <style>
-        /* 主標籤切換 */
-        .main-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
+        /* 標籤頁樣式 - 與設定頁面一致 */
+        .tabs-container {
             background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            flex-wrap: wrap;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
         }
 
-        .main-tab-btn {
-            padding: 12px 24px;
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid var(--light-bg);
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .tab-nav::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .tab-nav::-webkit-scrollbar-track {
+            background: var(--light-bg);
+        }
+
+        .tab-nav::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .tab-button {
+            flex: 0 0 auto;
+            min-width: 100px;
+            padding: 15px 20px;
+            background: white;
             border: none;
-            background: transparent;
-            border-radius: 8px;
+            border-bottom: 3px solid transparent;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 15px;
-            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            white-space: nowrap;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .main-tab-btn:hover {
+        .tab-button:hover {
             background: var(--light-bg);
+            color: var(--primary-color);
         }
 
-        .main-tab-btn.active {
-            background: linear-gradient(135deg, var(--primary-color), #5a9ee5);
-            color: white;
-            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background: white;
         }
 
-        .main-tab-content {
+        .tab-content {
+            padding: 20px;
             display: none;
-            animation: fadeIn 0.3s ease;
         }
 
-        .main-tab-content.active {
+        .tab-content.active {
             display: block;
+            animation: fadeIn 0.3s ease;
         }
 
         @keyframes fadeIn {
@@ -331,29 +353,30 @@
                 <p>管理週期任務、工商登記和財稅簽證業務</p>
             </div>
 
-            <!-- 主標籤切換 -->
-            <div class="main-tabs">
-                <button class="main-tab-btn active" onclick="switchMainTab('recurring')">
-                    <span class="material-symbols-outlined">repeat</span>
-                    週期任務
-                </button>
-                <button class="main-tab-btn" onclick="switchMainTab('business')">
-                    <span class="material-symbols-outlined">business_center</span>
-                    工商
-                </button>
-                <button class="main-tab-btn" onclick="switchMainTab('finance')">
-                    <span class="material-symbols-outlined">account_balance</span>
-                    財稅簽證
-                </button>
-            </div>
+            <!-- 標籤頁切換 -->
+            <div class="tabs-container">
+                <div class="tab-nav">
+                    <button class="tab-button active" onclick="switchMainTab('recurring')">
+                        <span class="material-symbols-outlined">repeat</span>
+                        週期任務
+                    </button>
+                    <button class="tab-button" onclick="switchMainTab('business')">
+                        <span class="material-symbols-outlined">business_center</span>
+                        工商
+                    </button>
+                    <button class="tab-button" onclick="switchMainTab('finance')">
+                        <span class="material-symbols-outlined">account_balance</span>
+                        財稅簽證
+                    </button>
+                </div>
 
             <!-- 週期任務內容 -->
-            <div id="recurring-tab" class="main-tab-content active">
+            <div id="recurring-tab" class="tab-content active">
                 <iframe src="recurring-tasks.html" style="width: 100%; height: calc(100vh - 280px); border: none; border-radius: 8px;"></iframe>
             </div>
 
             <!-- 工商任務內容 -->
-            <div id="business-tab" class="main-tab-content">
+            <div id="business-tab" class="tab-content">
                 <div class="toolbar" style="margin-bottom: 20px;">
                     <button onclick="window.location.href='multi-stage-tasks.html?category=business'" class="btn-primary">
                         <span class="material-symbols-outlined">add</span>
@@ -376,7 +399,7 @@
             </div>
 
             <!-- 財稅簽證任務內容 -->
-            <div id="finance-tab" class="main-tab-content">
+            <div id="finance-tab" class="tab-content">
                 <div class="toolbar" style="margin-bottom: 20px;">
                     <button onclick="window.location.href='multi-stage-tasks.html?category=finance'" class="btn-primary">
                         <span class="material-symbols-outlined">add</span>
@@ -396,6 +419,7 @@
                         <p style="margin-top: 20px; font-size: 16px;">載入中...</p>
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     </main>
@@ -423,16 +447,16 @@
             
             if (tab === 'business') {
                 // 切換到工商標籤
-                document.querySelectorAll('.main-tab-btn').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.main-tab-btn')[1].classList.add('active');
-                document.querySelectorAll('.main-tab-content').forEach(content => content.classList.remove('active'));
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-button')[1].classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                 document.getElementById('business-tab').classList.add('active');
                 loadBusinessTasks();
             } else if (tab === 'finance') {
                 // 切換到財稅簽證標籤
-                document.querySelectorAll('.main-tab-btn').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.main-tab-btn')[2].classList.add('active');
-                document.querySelectorAll('.main-tab-content').forEach(content => content.classList.remove('active'));
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-button')[2].classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                 document.getElementById('finance-tab').classList.add('active');
                 loadFinanceTasks();
             } else {
@@ -510,13 +534,13 @@
         // 切換主標籤
         function switchMainTab(tabName) {
             // 更新按鈕狀態
-            document.querySelectorAll('.main-tab-btn').forEach(btn => {
+            document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.target.closest('.main-tab-btn').classList.add('active');
+            event.target.closest('.tab-button').classList.add('active');
 
             // 更新內容顯示
-            document.querySelectorAll('.main-tab-content').forEach(content => {
+            document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
             

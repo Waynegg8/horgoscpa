@@ -10,49 +10,71 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="assets/css/internal-system.css">
     <style>
-        /* 主標籤切換 */
-        .main-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
+        /* 標籤頁樣式 - 與設定頁面一致 */
+        .tabs-container {
             background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            flex-wrap: wrap;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
         }
 
-        .main-tab-btn {
-            padding: 12px 24px;
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid var(--light-bg);
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .tab-nav::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .tab-nav::-webkit-scrollbar-track {
+            background: var(--light-bg);
+        }
+
+        .tab-nav::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .tab-button {
+            flex: 0 0 auto;
+            min-width: 100px;
+            padding: 15px 20px;
+            background: white;
             border: none;
-            background: transparent;
-            border-radius: 8px;
+            border-bottom: 3px solid transparent;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 15px;
-            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            white-space: nowrap;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .main-tab-btn:hover {
+        .tab-button:hover {
             background: var(--light-bg);
+            color: var(--primary-color);
         }
 
-        .main-tab-btn.active {
-            background: linear-gradient(135deg, var(--primary-color), #5a9ee5);
-            color: white;
-            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background: white;
         }
 
-        .main-tab-content {
+        .tab-content {
+            padding: 20px;
             display: none;
-            animation: fadeIn 0.3s ease;
         }
 
-        .main-tab-content.active {
+        .tab-content.active {
             display: block;
+            animation: fadeIn 0.3s ease;
         }
 
         @keyframes fadeIn {
@@ -264,29 +286,30 @@
                 <p>SOP文件、內部文檔與常見問答</p>
             </div>
 
-            <!-- 主標籤切換 -->
-            <div class="main-tabs">
-                <button class="main-tab-btn active" onclick="switchMainTab('sop')">
-                    <span class="material-symbols-outlined">description</span>
-                    SOP文件
-                </button>
-                <button class="main-tab-btn" onclick="switchMainTab('docs')">
-                    <span class="material-symbols-outlined">folder</span>
-                    內部文檔
-                </button>
-                <button class="main-tab-btn" onclick="switchMainTab('faq')">
-                    <span class="material-symbols-outlined">help</span>
-                    常見問答
-                </button>
-            </div>
+            <!-- 標籤頁切換 -->
+            <div class="tabs-container">
+                <div class="tab-nav">
+                    <button class="tab-button active" onclick="switchMainTab('sop')">
+                        <span class="material-symbols-outlined">description</span>
+                        SOP文件
+                    </button>
+                    <button class="tab-button" onclick="switchMainTab('docs')">
+                        <span class="material-symbols-outlined">folder</span>
+                        內部文檔
+                    </button>
+                    <button class="tab-button" onclick="switchMainTab('faq')">
+                        <span class="material-symbols-outlined">help</span>
+                        常見問答
+                    </button>
+                </div>
 
             <!-- SOP文件內容 -->
-            <div id="sop-tab" class="main-tab-content active">
+            <div id="sop-tab" class="tab-content active">
                 <iframe src="sop.html" style="width: 100%; height: calc(100vh - 280px); border: none; border-radius: 8px;"></iframe>
             </div>
 
             <!-- 內部文檔內容 -->
-            <div id="docs-tab" class="main-tab-content">
+            <div id="docs-tab" class="tab-content">
                 <div class="toolbar" style="margin-bottom: 20px;">
                     <button class="btn-primary">
                         <span class="material-symbols-outlined">add</span>
@@ -343,7 +366,7 @@
             </div>
 
             <!-- 常見問答內容 -->
-            <div id="faq-tab" class="main-tab-content">
+            <div id="faq-tab" class="tab-content">
                 <div class="toolbar" style="margin-bottom: 20px;">
                     <button class="btn-primary" onclick="showAddFAQModal()">
                         <span class="material-symbols-outlined">add</span>
@@ -499,6 +522,7 @@
                     </div>
                 </div>
             </div>
+            </div>
         </div>
     </main>
 
@@ -588,13 +612,13 @@
         // 切換主標籤
         function switchMainTab(tabName) {
             // 更新按鈕狀態
-            document.querySelectorAll('.main-tab-btn').forEach(btn => {
+            document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.target.closest('.main-tab-btn').classList.add('active');
+            event.target.closest('.tab-button').classList.add('active');
 
             // 更新內容顯示
-            document.querySelectorAll('.main-tab-content').forEach(content => {
+            document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
             
