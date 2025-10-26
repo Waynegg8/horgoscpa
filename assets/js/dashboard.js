@@ -81,7 +81,7 @@ async function loadPendingTasks() {
         // 載入所有類型的未完成任務
         const [recurringRes, multiStageRes] = await Promise.all([
             apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`).catch(() => ({ tasks: [] })),
-            apiRequest(`/api/tasks/multi-stage`).catch(() => [])
+            apiRequest(`/api/tasks/multi-stage?status!=completed`).catch(() => ({ tasks: [] }))
         ]);
         
         const allTasks = [];
@@ -101,14 +101,12 @@ async function loadPendingTasks() {
                 client: task.client_name,
                 status: task.status || 'pending',
                 dueDate: task.due_date,
-                assignedTo: task.assigned_to,
-                sop: getSopForTask('recurring', task.category),
-                notes: getNotesForTask('recurring', task.category, task)
+                assignedTo: task.assigned_to
             });
         });
         
         // 處理多階段任務（工商、財稅）- 只顯示員工自己的
-        const multiStageTasks = (Array.isArray(multiStageRes) ? multiStageRes : []).filter(task =>
+        const multiStageTasks = (multiStageRes.tasks || []).filter(task =>
             task.status !== 'completed' &&
             (!task.assigned_to || task.assigned_to === currentUser.employee_name)
         );
@@ -124,9 +122,7 @@ async function loadPendingTasks() {
                 status: task.status || 'not_started',
                 dueDate: task.due_date,
                 assignedTo: task.assigned_to,
-                currentStage: task.current_stage,
-                sop: getSopForTask('multistage', category),
-                notes: getNotesForTask('multistage', category, task)
+                currentStage: task.current_stage
             });
         });
         
@@ -157,6 +153,8 @@ async function loadPendingTasks() {
             return;
         }
         
+        // 動態附加 SOP 連結（以任務分類作為關鍵字），失敗時略過
+        await attachSopLinks(allTasks).catch(() => {});
         container.innerHTML = allTasks.map(task => renderTaskItem(task)).join('');
     } catch (error) {
         console.error('載入任務失敗:', error);
@@ -251,7 +249,7 @@ function drawWeeklyHoursChart(workEntries, year, month) {
         labels.push(`${month}/${i}`);
     }
     
-    const chartData = dailyHours.slice(startDay - 1, currentDay);
+    const chartData = dailyHours.slice(startDay - 1, Math.min(currentDay, daysInMonth));
     
     // 銷毀舊圖表（如果存在）
     if (canvas.chart) {
@@ -627,58 +625,11 @@ function renderTaskItem(task) {
 }
 
 function getSopForTask(type, category) {
-    const sopMap = {
-        'recurring': {
-            '記帳': [
-                { name: '記帳作業流程', link: 'knowledge.html?tab=sop&doc=bookkeeping' },
-                { name: '憑證整理規範', link: 'knowledge.html?tab=sop&doc=voucher' }
-            ],
-            '工商': [
-                { name: '工商變更登記流程', link: 'knowledge.html?tab=sop&doc=business-change' }
-            ],
-            '財簽': [
-                { name: '財務報表編製SOP', link: 'knowledge.html?tab=sop&doc=financial-report' }
-            ],
-            '稅簽': [
-                { name: '稅務申報作業流程', link: 'knowledge.html?tab=sop&doc=tax-filing' }
-            ]
-        },
-        'multistage': {
-            '公司設立': [
-                { name: '公司設立完整流程', link: 'knowledge.html?tab=sop&doc=company-setup' }
-            ],
-            '工商變更': [
-                { name: '工商變更登記流程', link: 'knowledge.html?tab=sop&doc=business-change' }
-            ],
-            '財務簽證': [
-                { name: '財務簽證作業規範', link: 'knowledge.html?tab=sop&doc=financial-audit' }
-            ],
-            '稅務簽證': [
-                { name: '稅務簽證查核流程', link: 'knowledge.html?tab=sop&doc=tax-audit' }
-            ]
-        }
-    };
-    
-    return sopMap[type]?.[category] || null;
+    return null;
 }
 
 function getNotesForTask(type, category, task) {
-    const notesMap = {
-        'recurring': {
-            '記帳': '請確認所有憑證已齊全，並注意會計科目的正確性。月底前需完成審核。',
-            '工商': '需準備相關證明文件，注意申請期限。部分變更需股東會決議。',
-            '財簽': '注意查核基準日，確保所有財務資料完整。需與客戶確認特殊交易事項。',
-            '稅簽': '確認申報期限，準備相關扣繳憑單。注意稅法最新修正條文。'
-        },
-        'multistage': {
-            '公司設立': '需按階段完成各項文件準備，注意公司名稱預查有效期限為3個月。',
-            '工商變更': '變更登記需於決議後15日內申請，準備齊全文件可加速審查。',
-            '財務簽證': '查核過程中保持與客戶溝通，重大異常需及時報告。',
-            '稅務簽證': '注意稅務法規遵循，確保所有計算正確無誤。'
-        }
-    };
-    
-    return notesMap[type]?.[category] || null;
+    return null;
 }
 
 function getStatusBadge(status) {
@@ -735,17 +686,11 @@ async function markTaskComplete(type, id) {
     }
     
     try {
-        if (type === 'recurring') {
-            await apiRequest(`/api/tasks/recurring/${id}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ status: 'completed', completed_at: new Date().toISOString() })
-            });
-        } else if (type === 'multistage') {
-            await apiRequest(`/api/tasks/multi-stage/${id}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ status: 'completed' })
-            });
-        }
+        const endpoint = type === 'recurring' ? `/api/tasks/recurring/${id}` : `/api/tasks/multi-stage/${id}`;
+        await apiRequest(endpoint, {
+            method: 'PATCH',
+            body: { status: 'completed', completed_at: new Date().toISOString() }
+        });
         
         // 重新載入任務列表
         await loadPendingTasks();

@@ -211,6 +211,8 @@
       }
     }
   </style>
+  <script src="/assets/js/config.js"></script>
+  <script src="/assets/js/auth-common.js"></script>
 </head>
 <body>
   <div class="login-container">
@@ -267,108 +269,63 @@
   </div>
 
   <script>
-    const API_BASE_URL = 'https://timesheet-api.hergscpa.workers.dev';
-    
-    // 檢查是否已經登入
-    document.addEventListener('DOMContentLoaded', () => {
-      const sessionToken = localStorage.getItem('session_token');
-      if (sessionToken) {
-        // 驗證 token 是否有效
-        verifySession(sessionToken);
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 已登入則直接前往內部系統
+      const isAuthenticated = await checkAuth();
+      if (isAuthenticated) {
+        window.location.href = '/dashboard.html';
+        return;
       }
-    });
-    
-    // 驗證 session
-    async function verifySession(token) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/verify`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
+
+      // 登入表單處理
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const loginBtn = document.getElementById('loginBtn');
+        const loginBtnText = document.getElementById('loginBtnText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const messageBox = document.getElementById('messageBox');
+
+        messageBox.classList.remove('show');
+        loginBtn.disabled = true;
+        loginBtnText.textContent = '登入中...';
+        loadingSpinner.style.display = 'block';
+
+        try {
+          const response = await fetch(`${getAPIBaseURL()}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
           const data = await response.json();
-          // 已登入，跳轉到工時頁面
-          redirectToApp(data.user);
-        }
-      } catch (err) {
-        console.error('驗證失敗:', err);
-      }
-    }
-    
-    // 登入表單處理
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
-      const loginBtn = document.getElementById('loginBtn');
-      const loginBtnText = document.getElementById('loginBtnText');
-      const loadingSpinner = document.getElementById('loadingSpinner');
-      const messageBox = document.getElementById('messageBox');
-      
-      // 隱藏錯誤訊息
-      messageBox.classList.remove('show');
-      
-      // 顯示載入狀態
-      loginBtn.disabled = true;
-      loginBtnText.textContent = '登入中...';
-      loadingSpinner.style.display = 'block';
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/login`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ username, password })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-          // 登入成功
-          localStorage.setItem('session_token', data.session_token);
-          localStorage.setItem('user_info', JSON.stringify(data.user));
-          
-          // 顯示成功訊息
-          messageBox.className = 'message-box success-message show';
-          messageBox.innerHTML = '<span class="material-symbols-rounded">check_circle</span><span>登入成功，正在跳轉...</span>';
-          
-          // 跳轉
-          setTimeout(() => {
-            redirectToApp(data.user);
-          }, 1000);
-        } else {
-          // 登入失敗
-          showError(data.error || '登入失敗，請檢查帳號密碼');
-          
-          // 恢復按鈕狀態
+
+          if (response.ok && data.session_token) {
+            localStorage.setItem('session_token', data.session_token);
+            if (data.user) localStorage.setItem('user_info', JSON.stringify(data.user));
+            messageBox.className = 'message-box success-message show';
+            messageBox.innerHTML = '<span class="material-symbols-rounded">check_circle</span><span>登入成功，正在跳轉...</span>';
+            setTimeout(() => { window.location.href = '/dashboard.html'; }, 800);
+          } else {
+            showError(data.error || '登入失敗，請檢查帳號密碼');
+            loginBtn.disabled = false;
+            loginBtnText.textContent = '登入';
+            loadingSpinner.style.display = 'none';
+          }
+        } catch (err) {
+          showError('連線錯誤，請稍後再試');
           loginBtn.disabled = false;
           loginBtnText.textContent = '登入';
           loadingSpinner.style.display = 'none';
         }
-      } catch (err) {
-        showError('連線錯誤，請稍後再試');
-        
-        // 恢復按鈕狀態
-        loginBtn.disabled = false;
-        loginBtnText.textContent = '登入';
-        loadingSpinner.style.display = 'none';
-      }
+      });
     });
-    
-    // 顯示錯誤訊息
+
     function showError(message) {
       const messageBox = document.getElementById('messageBox');
       messageBox.className = 'message-box error-message show';
       messageBox.innerHTML = `<span class="material-symbols-rounded">error</span><span>${message}</span>`;
-    }
-    
-    // 跳轉到應用程式（統一跳轉到工作台）
-    function redirectToApp(user) {
-      window.location.href = '/dashboard.html';
     }
   </script>
 </body>

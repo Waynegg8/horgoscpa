@@ -48,15 +48,7 @@ function updateUserInfo(user) {
 }
 
 // 登出
-document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-    try {
-        await apiRequest('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-        console.error('登出錯誤:', error);
-    }
-    localStorage.removeItem('session_token');
-    window.location.href = 'login.html';
-});
+document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
 
 // =========================================
 // 標籤頁管理
@@ -154,16 +146,7 @@ function loadTabData(tabName) {
 // =========================================
 // 移動端選單
 // =========================================
-function initMobileMenu() {
-    const toggle = document.getElementById('mobileToggle');
-    const navLinks = document.getElementById('navLinks');
-    
-    if (toggle && navLinks) {
-        toggle.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
-        });
-    }
-}
+// 已由 auth-common.js 提供 initMobileMenu，移除此重複實作
 
 // =========================================
 // 搜尋過濾
