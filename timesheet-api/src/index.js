@@ -174,43 +174,43 @@ export default {
       
       // 登入
       if (url.pathname === "/api/login" && method === "POST") {
-        return await handleLogin(env.DB, request);
+        return await addCorsHeaders(await handleLogin(env.DB, request));
       }
       
       // 登出
       if (url.pathname === "/api/logout" && method === "POST") {
-        return await handleLogout(env.DB, request);
+        return await addCorsHeaders(await handleLogout(env.DB, request));
       }
       
       // 驗證當前 session
       if (url.pathname === "/api/verify" && method === "GET") {
-        return await handleVerifySession(env.DB, request);
+        return await addCorsHeaders(await handleVerifySession(env.DB, request));
       }
       
       // 驗證當前 session (提供)
       if (url.pathname === "/api/auth/me" && method === "GET") {
-        return await handleVerifySession(env.DB, request);
+        return await addCorsHeaders(await handleVerifySession(env.DB, request));
       }
       
       // 修改密碼
       if (url.pathname === "/api/change-password" && method === "POST") {
-        return await handleChangePassword(env.DB, request);
+        return await addCorsHeaders(await handleChangePassword(env.DB, request));
       }
       
       // 修改密碼 (需認證)
       if (url.pathname === "/api/auth/change-password" && method === "POST") {
-        return await handleChangePassword(env.DB, request);
+        return await addCorsHeaders(await handleChangePassword(env.DB, request));
       }
       
       // 管理員重設用戶密碼
       if (url.pathname.match(/^\/api\/admin\/users\/[^\/]+\/reset-password$/) && method === "POST") {
         const username = decodeURIComponent(url.pathname.split("/")[4]);
-        return await handleAdminResetPassword(env.DB, request, username);
+        return await addCorsHeaders(await handleAdminResetPassword(env.DB, request, username));
       }
       
       // 登出 (需認證)
       if (url.pathname === "/api/auth/logout" && method === "POST") {
-        return await handleLogout(env.DB, request);
+        return await addCorsHeaders(await handleLogout(env.DB, request));
       }
 
       // ----------------------------------------------------
