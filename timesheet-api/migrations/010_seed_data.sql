@@ -6,7 +6,16 @@
 -- ================================================================
 
 -- ----------------------------------------------------------------
--- 1. 請假類型
+-- 1. 默認管理員賬號
+-- ----------------------------------------------------------------
+
+-- 創建默認管理員（密碼：admin123）
+-- 密碼 hash: 240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9
+INSERT OR IGNORE INTO users (id, username, password_hash, role, is_active) 
+VALUES (1, 'admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin', 1);
+
+-- ----------------------------------------------------------------
+-- 2. 請假類型
 -- ----------------------------------------------------------------
 
 INSERT OR IGNORE INTO leave_types (type_name, type_code, is_paid, requires_approval, annual_quota, description) VALUES

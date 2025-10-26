@@ -139,10 +139,19 @@ async function handleLogin(db, request) {
     if (!username || !password) {
       return jsonResponse({ error: '請提供使用者名稱和密碼' }, 400);
     }
+    // 更新查詢以符合新的數據庫結構（使用 JOIN 獲取員工名稱）
     const user = await db.prepare(`
-      SELECT id, username, password_hash, role, employee_name, is_active
-      FROM users
-      WHERE username = ? AND is_active = 1
+      SELECT 
+        u.id, 
+        u.username, 
+        u.password_hash, 
+        u.role, 
+        u.is_active,
+        u.employee_id,
+        e.name as employee_name
+      FROM users u
+      LEFT JOIN employees e ON u.employee_id = e.id
+      WHERE u.username = ? AND u.is_active = 1
     `).bind(username).first();
     if (!user) {
       return jsonResponse({ error: '使用者名稱或密碼錯誤' }, 401);
@@ -159,7 +168,7 @@ async function handleLogin(db, request) {
         id: user.id,
         username: user.username,
         role: user.role,
-        employee_name: user.employee_name
+        employee_name: user.employee_name || user.username
       }
     });
   } catch (err) {
