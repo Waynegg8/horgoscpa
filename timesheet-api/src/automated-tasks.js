@@ -3,7 +3,7 @@
  * 功能：根據客戶服務配置自動生成周期性任務
  */
 
-import { getDB } from './utils.js';
+import { jsonResponse } from './utils.js';
 
 /**
  * 計算下次執行日期
@@ -505,22 +505,19 @@ export async function handleGenerateAutomatedTasks(env, request) {
       assignedTo: assigned_to
     });
     
-    return new Response(JSON.stringify({
+    // 統一使用 jsonResponse 格式
+    return jsonResponse({
       success: true,
       timestamp: new Date().toISOString(),
       results
-    }), {
-      headers: { 'Content-Type': 'application/json' }
     });
     
   } catch (error) {
-    return new Response(JSON.stringify({
+    console.error('自動任務生成失敗:', error);
+    return jsonResponse({
       success: false,
       error: error.message
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    }, 500);
   }
 }
 
@@ -530,24 +527,19 @@ export async function handleGenerateAutomatedTasks(env, request) {
  */
 export async function handleGenerateForService(env, serviceId) {
   try {
-    const db = await getDB();
-    const result = await generateTaskForService(db, serviceId);
+    const result = await generateTaskForService(env.DB, serviceId);
     
-    return new Response(JSON.stringify({
+    return jsonResponse({
       success: true,
       result
-    }), {
-      headers: { 'Content-Type': 'application/json' }
     });
     
   } catch (error) {
-    return new Response(JSON.stringify({
+    console.error(`為服務 ${serviceId} 生成任務失敗:`, error);
+    return jsonResponse({
       success: false,
       error: error.message
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    }, 500);
   }
 }
 
@@ -560,17 +552,18 @@ export async function handlePreviewAutomatedTasks(env, request) {
     const url = new URL(request.url);
     const targetDate = new Date(url.searchParams.get('date') || new Date());
     
-    const db = await getDB();
-    const services = await db.all(
+    const services = await env.DB.prepare(
       `SELECT cs.*, u.employee_name as assignee_name
        FROM client_services cs
        LEFT JOIN users u ON cs.assigned_to = u.id
        WHERE cs.is_active = 1`
-    );
+    ).all();
+    
+    const serviceList = services.results || [];
     
     const preview = [];
-    for (const service of services) {
-      const check = await shouldGenerateTask(db, service, targetDate);
+    for (const service of serviceList) {
+      const check = await shouldGenerateTask(env.DB, service, targetDate);
       if (check.should) {
         preview.push({
           service_id: service.id,
@@ -583,23 +576,19 @@ export async function handlePreviewAutomatedTasks(env, request) {
       }
     }
     
-    return new Response(JSON.stringify({
+    return jsonResponse({
       success: true,
       preview_date: targetDate.toISOString(),
       tasks_to_generate: preview.length,
       tasks: preview
-    }), {
-      headers: { 'Content-Type': 'application/json' }
     });
     
   } catch (error) {
-    return new Response(JSON.stringify({
+    console.error('預覽待生成任務失敗:', error);
+    return jsonResponse({
       success: false,
       error: error.message
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    }, 500);
   }
 }
 

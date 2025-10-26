@@ -95,10 +95,13 @@
                             <span class="material-symbols-outlined">add</span>
                             新增SOP
                         </button>
+                        <select id="sopCategoryFilter" onchange="loadSops()" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px;">
+                            <option value="">所有分類</option>
+                        </select>
                     </div>
                     <div class="toolbar-right">
                         <div class="search-box">
-                            <input type="text" id="sopSearch" placeholder="搜尋SOP文件...">
+                            <input type="text" id="sopSearch" placeholder="搜尋SOP文件..." onkeyup="searchSops()">
                             <span class="material-symbols-outlined search-icon">search</span>
                         </div>
                     </div>
@@ -360,6 +363,10 @@
                 window.location.href = '/login.html';
                 return;
             }
+            
+            // 載入SOP列表
+            await loadSopCategories();
+            await loadSops();
         });
 
         // 檢查認證狀態
@@ -462,6 +469,197 @@
             
             element.classList.toggle('active');
             answer.classList.toggle('active');
+        }
+        
+        // ==================== SOP功能實現 ====================
+        
+        let allSops = [];
+        let sopCategories = [];
+        
+        /**
+         * 載入SOP分類
+         */
+        async function loadSopCategories() {
+            try {
+                const response = await fetch(`${WORKER_URL}/api/sop/categories`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('載入分類失敗');
+                }
+                
+                const data = await response.json();
+                sopCategories = data.categories || [];
+                
+                // 填充分類篩選器
+                const categoryFilter = document.getElementById('sopCategoryFilter');
+                if (categoryFilter) {
+                    categoryFilter.innerHTML = '<option value="">所有分類</option>';
+                    sopCategories.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.id;
+                        option.textContent = cat.name;
+                        categoryFilter.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('載入SOP分類失敗:', error);
+            }
+        }
+        
+        /**
+         * 載入SOP列表
+         */
+        async function loadSops() {
+            const container = document.getElementById('sopsList');
+            container.innerHTML = `
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <div class="loading-text">載入SOP文件中...</div>
+                </div>
+            `;
+            
+            try {
+                const categoryId = document.getElementById('sopCategoryFilter')?.value || '';
+                let url = `${WORKER_URL}/api/sops?document_type=sop&status=published`;
+                if (categoryId) {
+                    url += `&category_id=${categoryId}`;
+                }
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('載入失敗');
+                }
+                
+                const data = await response.json();
+                allSops = data.sops || [];
+                
+                renderSops(allSops);
+            } catch (error) {
+                console.error('載入SOP失敗:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #999;">
+                        <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.3;">error_outline</span>
+                        <p style="margin-top: 20px;">載入失敗: ${error.message}</p>
+                        <button class="btn btn-secondary" onclick="loadSops()" style="margin-top: 16px;">
+                            <span class="material-symbols-outlined">refresh</span>
+                            重試
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        /**
+         * 渲染SOP列表
+         */
+        function renderSops(sops) {
+            const container = document.getElementById('sopsList');
+            
+            if (!sops || sops.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">description</span>
+                        <h3 style="margin-top: 20px;">尚無SOP文件</h3>
+                        <p style="font-size: 14px; color: #666;">點擊「新增SOP」開始創建標準作業程序</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 按分類分組
+            const grouped = {};
+            sops.forEach(sop => {
+                const catName = sop.category_name || '未分類';
+                if (!grouped[catName]) {
+                    grouped[catName] = [];
+                }
+                grouped[catName].push(sop);
+            });
+            
+            let html = '';
+            Object.entries(grouped).forEach(([catName, catSops]) => {
+                html += `
+                    <div style="margin-bottom: 30px;">
+                        <h3 style="color: var(--primary-color); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; padding-bottom: 10px; border-bottom: 2px solid var(--border-color);">
+                            <span class="material-symbols-outlined">folder</span>
+                            ${catName} (${catSops.length})
+                        </h3>
+                        <div style="display: grid; gap: 12px;">
+                            ${catSops.map(sop => `
+                                <div class="doc-card" onclick="viewSop(${sop.id})">
+                                    <div class="doc-title">
+                                        <span class="material-symbols-outlined" style="color: var(--primary-color); vertical-align: middle; margin-right: 8px;">description</span>
+                                        ${sop.title}
+                                    </div>
+                                    <div class="doc-meta">
+                                        <div class="doc-meta-item">
+                                            <span class="material-symbols-outlined">tag</span>
+                                            <span>版本 ${sop.version}</span>
+                                        </div>
+                                        <div class="doc-meta-item">
+                                            <span class="material-symbols-outlined">visibility</span>
+                                            <span>${sop.views || 0} 次瀏覽</span>
+                                        </div>
+                                        <div class="doc-meta-item">
+                                            <span class="material-symbols-outlined">calendar_today</span>
+                                            <span>${new Date(sop.updated_at).toLocaleDateString('zh-TW')}</span>
+                                        </div>
+                                        ${sop.business_type ? `
+                                            <span class="category-badge">${sop.business_type}</span>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        /**
+         * 搜尋SOP
+         */
+        function searchSops() {
+            const keyword = document.getElementById('sopSearch')?.value.toLowerCase() || '';
+            
+            if (!keyword) {
+                renderSops(allSops);
+                return;
+            }
+            
+            const filtered = allSops.filter(sop => 
+                sop.title.toLowerCase().includes(keyword) ||
+                (sop.content && sop.content.toLowerCase().includes(keyword))
+            );
+            
+            renderSops(filtered);
+        }
+        
+        /**
+         * 查看SOP詳情
+         */
+        function viewSop(sopId) {
+            // 可以實現側邊面板或模態框顯示SOP內容
+            // 暫時跳轉到編輯器（如果有獨立的SOP頁面）
+            alert(`查看SOP ${sopId} 功能\n\n可以實現：\n1. 側邊面板顯示內容\n2. 模態框顯示\n3. 跳轉到專門的SOP查看頁面`);
+        }
+        
+        /**
+         * 創建SOP模態框
+         */
+        function showCreateSopModal() {
+            alert('創建SOP功能\n\n建議實現：\n1. Markdown編輯器\n2. 分類選擇\n3. 版本控制\n4. 預覽功能');
         }
 
         // 移動端選單切換

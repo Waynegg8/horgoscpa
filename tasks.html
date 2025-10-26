@@ -729,13 +729,130 @@
         }
         
         function editTask(taskId) {
-            alert('編輯任務功能開發中...');
-            // TODO: 實現編輯功能
+            // 打開任務編輯側邊面板
+            openTaskDetail(taskId);
         }
         
+        /**
+         * 顯示創建任務對話框（連接範本市場）
+         */
         function showCreateTaskDialog() {
-            alert('創建任務功能開發中...\n\n建議使用範本市場功能創建標準化任務。');
-            // TODO: 實現創建任務對話框
+            // 打開範本市場讓用戶選擇
+            if (typeof openTemplateMarket === 'function') {
+                openTemplateMarket();
+            } else {
+                // 如果範本市場功能未載入，顯示簡單的創建表單
+                showSimpleCreateTaskForm();
+            }
+        }
+        
+        /**
+         * 簡單的創建任務表單（無範本）
+         */
+        function showSimpleCreateTaskForm() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'createTaskModal';
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h2>創建新任務</h2>
+                        <button class="modal-close" onclick="closeCreateTaskModal()">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>任務標題 *</label>
+                            <input type="text" id="newTaskTitle" class="form-control" placeholder="輸入任務標題">
+                        </div>
+                        <div class="form-group">
+                            <label>任務分類</label>
+                            <select id="newTaskCategory" class="form-control">
+                                <option value="general">一般任務</option>
+                                <option value="recurring">周期任務</option>
+                                <option value="business">工商登記</option>
+                                <option value="finance">財稅簽證</option>
+                                <option value="client_service">客戶服務</option>
+                                <option value="project">專案任務</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>負責人</label>
+                            <input type="text" id="newTaskAssignee" class="form-control" placeholder="負責人姓名">
+                        </div>
+                        <div class="form-group">
+                            <label>截止日期</label>
+                            <input type="date" id="newTaskDueDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>任務描述</label>
+                            <textarea id="newTaskDescription" class="form-control" rows="3" placeholder="選填"></textarea>
+                        </div>
+                        <div class="alert alert-info" style="margin-top: 16px;">
+                            <span class="material-symbols-outlined">info</span>
+                            <span>提示：建議使用「範本市場」創建標準化的多階段任務</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeCreateTaskModal()">取消</button>
+                        <button class="btn btn-primary" onclick="createSimpleTask()">
+                            <span class="material-symbols-outlined">add</span>
+                            創建任務
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        function closeCreateTaskModal() {
+            const modal = document.getElementById('createTaskModal');
+            if (modal) modal.remove();
+        }
+        
+        async function createSimpleTask() {
+            const title = document.getElementById('newTaskTitle')?.value.trim();
+            const category = document.getElementById('newTaskCategory')?.value;
+            const assignee = document.getElementById('newTaskAssignee')?.value.trim();
+            const dueDate = document.getElementById('newTaskDueDate')?.value;
+            const description = document.getElementById('newTaskDescription')?.value.trim();
+            
+            if (!title) {
+                alert('請輸入任務標題');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/tasks/multi-stage`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        category: category,
+                        assigned_user: assignee,
+                        due_date: dueDate,
+                        description: description,
+                        priority: 'medium',
+                        status: 'pending'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('創建失敗');
+                }
+                
+                alert('任務創建成功！');
+                closeCreateTaskModal();
+                loadTasks();  // 重新載入任務列表
+            } catch (error) {
+                console.error('創建任務失敗:', error);
+                alert('創建失敗: ' + error.message);
+            }
         }
 
         // 關閉任務詳情面板

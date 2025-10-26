@@ -497,19 +497,90 @@ function autoSaveDraft() {
         meta_title: document.getElementById('postMetaTitle').value,
         meta_description: document.getElementById('postMetaDescription').value,
         status: document.getElementById('postStatus').value,
-        published_at: document.getElementById('postPublishedAt').value
+        published_at: document.getElementById('postPublishedAt').value,
+        saved_at: new Date().toISOString()
     };
     
-    localStorage.setItem('post_draft_' + (postId || 'new'), JSON.stringify(draftData));
+    const draftKey = 'post_draft_' + (postId || 'new');
+    const jsonString = JSON.stringify(draftData);
     
-    // 顯示自動保存提示
-    const indicator = document.getElementById('autoSaveIndicator');
-    if (indicator) {
-        indicator.textContent = '✓ 已自動儲存';
-        indicator.style.color = '#4CAF50';
-        setTimeout(() => {
-            indicator.textContent = '';
-        }, 2000);
+    // 檢查大小限制（5MB）
+    const MAX_DRAFT_SIZE = 5 * 1024 * 1024;
+    if (jsonString.length > MAX_DRAFT_SIZE) {
+        console.warn('草稿過大，無法保存到 localStorage');
+        const indicator = document.getElementById('autoSaveIndicator');
+        if (indicator) {
+            indicator.textContent = '⚠️ 草稿過大，請縮減內容';
+            indicator.style.color = '#ff9800';
+        }
+        return;
+    }
+    
+    try {
+        localStorage.setItem(draftKey, jsonString);
+        
+        // 顯示自動保存提示
+        const indicator = document.getElementById('autoSaveIndicator');
+        if (indicator) {
+            indicator.textContent = '✓ 已自動儲存';
+            indicator.style.color = '#4CAF50';
+            setTimeout(() => {
+                indicator.textContent = '';
+            }, 2000);
+        }
+        
+        // 清理舊草稿（保留最新3個）
+        cleanupOldPostDrafts();
+    } catch (error) {
+        console.error('保存草稿失敗:', error);
+        if (error.name === 'QuotaExceededError') {
+            // localStorage 空間已滿
+            const indicator = document.getElementById('autoSaveIndicator');
+            if (indicator) {
+                indicator.textContent = '⚠️ 儲存空間已滿';
+                indicator.style.color = '#f44336';
+            }
+            // 嘗試清理舊草稿
+            cleanupOldPostDrafts();
+        }
+    }
+}
+
+/**
+ * 清理舊的文章草稿
+ */
+function cleanupOldPostDrafts() {
+    try {
+        const draftKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('post_draft_')) {
+                try {
+                    const draft = JSON.parse(localStorage.getItem(key));
+                    draftKeys.push({
+                        key: key,
+                        savedAt: draft.saved_at || new Date(0).toISOString()
+                    });
+                } catch (e) {
+                    // 無效的草稿，直接刪除
+                    localStorage.removeItem(key);
+                }
+            }
+        }
+        
+        // 按保存時間排序
+        draftKeys.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+        
+        // 只保留最新的3個
+        const MAX_DRAFTS = 3;
+        if (draftKeys.length > MAX_DRAFTS) {
+            draftKeys.slice(MAX_DRAFTS).forEach(item => {
+                localStorage.removeItem(item.key);
+                console.log(`清理舊草稿: ${item.key}`);
+            });
+        }
+    } catch (error) {
+        console.error('清理草稿失敗:', error);
     }
 }
 
