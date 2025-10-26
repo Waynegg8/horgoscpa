@@ -56,8 +56,7 @@ async function loadDashboardData() {
         // 管理員：載入團隊進度和全體工時
         await Promise.all([
             loadTeamProgress(),
-            loadAdminWeeklyStats(),
-            loadWorkloadBalance()  // 新增：工作量平衡視圖
+            loadAdminWeeklyStats()
         ]);
     } else {
         // 員工：載入個人待辦任務和工時
@@ -357,100 +356,14 @@ async function loadAdminWeeklyStats() {
             </div>
         `;
         
-        // 繪製團隊工時對比圖表
-        drawTeamHoursChart(employeeStats);
+        // 已移除團隊工時對比圖表
     } catch (error) {
         console.error('載入管理員工時統計失敗:', error);
         container.innerHTML = '<div style="color: #f44336; text-align: center;">載入失敗</div>';
     }
 }
 
-/**
- * 繪製團隊工時對比圖表
- */
-function drawTeamHoursChart(employeeStats) {
-    const canvas = document.getElementById('teamHoursChart');
-    if (!canvas) return;
-    
-    const labels = employeeStats.map(emp => emp.name);
-    const data = employeeStats.map(emp => emp.hours);
-    
-    // 銷毀舊圖表（如果存在）
-    if (canvas.chart) {
-        canvas.chart.destroy();
-    }
-    
-    // 創建新圖表
-    canvas.chart = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: '本月工時',
-                data: data,
-                backgroundColor: [
-                    'rgba(44, 95, 124, 0.8)',
-                    'rgba(74, 144, 226, 0.8)',
-                    'rgba(90, 158, 229, 0.8)',
-                    'rgba(106, 172, 233, 0.8)',
-                    'rgba(122, 186, 237, 0.8)'
-                ],
-                borderColor: [
-                    'rgba(44, 95, 124, 1)',
-                    'rgba(74, 144, 226, 1)',
-                    'rgba(90, 158, 229, 1)',
-                    'rgba(106, 172, 233, 1)',
-                    'rgba(122, 186, 237, 1)'
-                ],
-                borderWidth: 2,
-                borderRadius: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
-                    titleFont: { size: 14, weight: 'bold' },
-                    bodyFont: { size: 13 },
-                    callbacks: {
-                        label: function(context) {
-                            return `工時: ${context.parsed.y.toFixed(1)} 小時`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 20,
-                        font: { size: 12 },
-                        callback: function(value) {
-                            return value + 'h';
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
-                },
-                x: {
-                    ticks: {
-                        font: { size: 12, weight: '600' }
-                    },
-                    grid: {
-                        display: false
-                    }
-                }
-            }
-        }
-    });
-}
+// 已移除 drawTeamHoursChart
 
 async function loadTeamProgress() {
     const container = document.getElementById('teamProgress');
@@ -820,70 +733,7 @@ async function loadAnnualLeave() {
     }
 }
 
-// ==================== 新增：工作量平衡視圖（管理員） ====================
-
-async function loadWorkloadBalance() {
-    const container = document.getElementById('workloadBalanceList');
-    if (!container) return;
-    
-    try {
-        const response = await apiRequest('/api/workload/overview');
-        const workloads = response.workloads || [];
-        
-        if (workloads.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                    <p>目前沒有工作量資料</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // 找出最大工時用於比例計算
-        const maxHours = Math.max(...workloads.map(w => w.remaining_hours || 0), 1);
-        
-        container.innerHTML = `
-            <div style="display: grid; gap: 15px;">
-                ${workloads.map(workload => {
-                    const percentage = (workload.remaining_hours / maxHours * 100) || 0;
-                    const taskCount = workload.pending_tasks || 0;
-                    const hours = workload.remaining_hours || 0;
-                    
-                    // 根據工作量設定顏色
-                    let barColor = '#4caf50'; // 綠色：輕鬆
-                    if (percentage > 70) barColor = '#f44336'; // 紅色：超載
-                    else if (percentage > 50) barColor = '#ffc107'; // 黃色：適中
-                    
-                    return `
-                        <div style="background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <span class="material-symbols-outlined" style="color: ${barColor};">person</span>
-                                    <span style="font-weight: 600; font-size: 15px;">${escapeHtml(workload.employee_name)}</span>
-                                </div>
-                                <div style="text-align: right;">
-                                    <div style="font-size: 12px; color: var(--text-secondary);">${taskCount} 個任務</div>
-                                    <div style="font-weight: 700; color: ${barColor};">${hours.toFixed(1)} 小時</div>
-                                </div>
-                            </div>
-                            <div style="background: var(--light-bg); height: 8px; border-radius: 4px; overflow: hidden;">
-                                <div style="background: ${barColor}; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
-        
-    } catch (error) {
-        console.error('載入工作量平衡失敗:', error);
-        container.innerHTML = `
-            <div style="text-align: center; padding: 20px; color: #f44336;">
-                <p>載入工作量資料失敗</p>
-            </div>
-        `;
-    }
-}
+// 已移除 loadWorkloadBalance 與 /api/workload/overview 呼叫
 
 // ==================== 輔助函數 ====================
 
