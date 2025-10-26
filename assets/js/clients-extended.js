@@ -10,11 +10,9 @@ let clientsExtendedData = [];
 let serviceScheduleData = [];
 let clientInteractionsData = [];
 let currentEditingClient = null;
+let currentClientExtendedData = null;
 
-// 通知函數
-function showNotification(message, type = 'info') {
-    alert(message);
-}
+// 使用全局通知（common-utils.js 提供）
 
 // 在主頁面初始化後調用
 function initClientsExtended() {
@@ -41,7 +39,7 @@ async function loadClientsExtended() {
         
         renderClientsExtendedTable();
     } catch (error) {
-        alert('載入失敗: ' + error.message);
+        showNotification('載入失敗：' + error.message, 'error');
         document.getElementById('clientsExtendedTableContainer').innerHTML = `
             <div class="error-state">
                 <span class="material-symbols-outlined">error</span>
@@ -304,7 +302,7 @@ async function saveNewClient() {
     const taxId = document.getElementById('newTaxId').value.trim();
     
     if (!clientName || !taxId) {
-        alert('請填寫客戶名稱和統一編號');
+        showNotification('請填寫客戶名稱和統一編號', 'error');
         return;
     }
     
@@ -346,11 +344,11 @@ async function saveNewClient() {
             body: data
         });
         
-        alert('新增成功');
+        showNotification('新增成功', 'success');
         closeNewClientModal();
         loadClientsExtended();
     } catch (error) {
-        alert('新增失敗: ' + error.message);
+        showNotification('新增失敗：' + error.message, 'error');
     }
 }
 
@@ -363,6 +361,7 @@ async function showEditClientExtendedModal(clientName) {
         const response = await apiRequest(`/api/clients/${encodeURIComponent(clientName)}/extended`);
         const client = response.data || {};
         currentEditingClient = clientName;
+        currentClientExtendedData = client;
         
         // 載入服務排程
         const scheduleResponse = await apiRequest(`/api/service-schedule?client=${encodeURIComponent(clientName)}`);
@@ -1065,7 +1064,7 @@ function handleCSVFileSelect(event) {
         parsedCSVData = parseCSV(text);
         
         if (parsedCSVData.length === 0) {
-            alert('CSV 檔案為空或格式錯誤');
+            showNotification('CSV 檔案為空或格式錯誤', 'error');
             return;
         }
         
@@ -1142,7 +1141,7 @@ function parseCSV(text) {
 
 async function executeImport() {
     if (parsedCSVData.length === 0) {
-        alert('沒有資料可匯入');
+        showNotification('沒有資料可匯入', 'error');
         return;
     }
     
@@ -1156,6 +1155,7 @@ async function executeImport() {
     
     try {
         const isSchedule = document.getElementById('csvIsSchedule')?.checked;
+        let importResponse;
         if (isSchedule) {
             // 轉換活頁簿2格式（活頁簿2.csv 的 parse 在 scripts 內；此處提供簡化版以支援直接上傳 UTF-8 CSV）
             const scheduleRecords = parsedCSVData.map(r => ({
@@ -1168,27 +1168,27 @@ async function executeImport() {
                 service_details: r.service_details || '',
                 notes: r.notes || ''
             }));
-            const response = await apiRequest('/api/import/service-schedule', {
+            importResponse = await apiRequest('/api/import/service-schedule', {
                 method: 'POST',
                 body: { records: scheduleRecords }
             });
-            alert(`匯入完成！\n成功：${response.successCount} 筆\n失敗：${response.errorCount} 筆`);
+            showNotification(`匯入完成！成功：${importResponse.successCount} 筆；失敗：${importResponse.errorCount} 筆`, 'success');
         } else {
-            const response = await apiRequest('/api/import/clients', {
+            importResponse = await apiRequest('/api/import/clients', {
                 method: 'POST',
                 body: { records: parsedCSVData }
             });
-            alert(`匯入完成！\n成功：${response.successCount} 筆\n失敗：${response.errorCount} 筆`);
+            showNotification(`匯入完成！成功：${importResponse.successCount} 筆；失敗：${importResponse.errorCount} 筆`, 'success');
         }
         
-        if (response.errors && response.errors.length > 0) {
-            console.error('匯入錯誤：', response.errors);
+        if (importResponse && importResponse.errors && importResponse.errors.length > 0) {
+            console.error('匯入錯誤：', importResponse.errors);
         }
         
         closeImportModal();
         loadClientsExtended();
     } catch (error) {
-        alert('匯入失敗：' + error.message);
+        showNotification('匯入失敗：' + error.message, 'error');
         importBtn.disabled = false;
         importBtn.textContent = '開始匯入';
     }
