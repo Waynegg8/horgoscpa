@@ -90,7 +90,33 @@
 
             <!-- 週期任務內容 -->
             <div id="recurring-tab" class="tab-content active">
-                <iframe src="recurring-tasks.html" style="width: 100%; height: calc(100vh - 300px); border: none; border-radius: 8px; background: white;"></iframe>
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <button class="btn btn-primary" onclick="showCreateRecurringTaskModal()">
+                            <span class="material-symbols-outlined">add</span>
+                            新增週期任務
+                        </button>
+                    </div>
+                    <div class="toolbar-right">
+                        <select class="form-control" id="recurringStatusFilter" style="width: auto; min-width: 150px;">
+                            <option value="">全部狀態</option>
+                            <option value="pending">待處理</option>
+                            <option value="in_progress">進行中</option>
+                            <option value="completed">已完成</option>
+                        </select>
+                        <div class="search-box">
+                            <input type="text" id="recurringSearch" placeholder="搜尋任務...">
+                            <span class="material-symbols-outlined search-icon">search</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="recurringTasksList">
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <div class="loading-text">載入週期任務中...</div>
+                    </div>
+                </div>
             </div>
 
             <!-- 工商任務內容 -->

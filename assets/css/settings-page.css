@@ -1,98 +1,119 @@
 /* 
- * settings-page.css - 系统设定页面特定样式
- * 创建日期: 2025-10-26
- * 用途: 系统设定页面的特定样式（员工、客户、系统参数等）
+ * settings-page.css - 系統設定頁面美化樣式
+ * 創建日期: 2025-10-26
+ * 更新日期: 2025-10-26
+ * 用途: 系統設定頁面的美觀樣式（員工、客戶、系統參數等）
  */
 
 /* ============================================
-   工具栏 - settings页面特定
+   工具欄 - settings頁面特定
    ============================================ */
 
 .settings-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    gap: 15px;
+    margin-bottom: 24px;
+    padding: 18px 22px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    gap: 16px;
     flex-wrap: wrap;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
 }
 
 /* ============================================
-   客户列表特定样式
+   客戶列表美化樣式
    ============================================ */
 
 .client-card {
     background: white;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-    transition: all 0.2s ease;
+    border: 2px solid #f0f0f0;
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 18px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 5px solid var(--primary-color);
 }
 
 .client-card:hover {
     border-color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    transform: translateY(-4px);
 }
 
 .client-card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 10px;
+    margin-bottom: 14px;
 }
 
 .client-name {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
     color: var(--text-primary);
 }
 
 .client-meta {
     display: flex;
-    gap: 15px;
+    gap: 18px;
     font-size: 14px;
     color: var(--text-secondary);
     flex-wrap: wrap;
-    margin: 10px 0;
+    margin: 12px 0;
+}
+
+.client-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .client-services {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
-    margin-top: 10px;
+    margin-top: 14px;
 }
 
 .service-tag {
-    display: inline-block;
-    padding: 4px 10px;
-    background: #e3f2fd;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
     color: #1976d2;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 4px;
+}
+
+.service-tag .material-symbols-outlined {
+    font-size: 16px;
 }
 
 /* ============================================
-   员工管理特定样式
+   員工管理美化樣式
    ============================================ */
 
 .employee-card {
     background: white;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 15px;
+    border: 2px solid #f0f0f0;
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 18px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: all 0.2s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    gap: 20px;
 }
 
 .employee-card:hover {
     border-color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    transform: translateX(6px);
 }
 
 .employee-info {
@@ -100,394 +121,357 @@
 }
 
 .employee-name {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 5px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.employee-name .material-symbols-outlined {
+    color: var(--primary-color);
+    font-size: 28px;
 }
 
 .employee-details {
     display: flex;
-    gap: 20px;
+    gap: 22px;
     font-size: 14px;
     color: var(--text-secondary);
     flex-wrap: wrap;
 }
 
+.employee-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .employee-actions {
     display: flex;
-    gap: 8px;
-}
-
-/* ============================================
-   系统参数表单
-   ============================================ */
-
-.param-section {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
-
-.param-section-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--border-color);
-}
-
-.param-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.param-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    background: var(--light-bg);
-    border-radius: 6px;
-}
-
-.param-label {
-    font-weight: 500;
-    color: var(--text-primary);
-    font-size: 14px;
-}
-
-.param-value {
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-.param-input {
-    width: 150px;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-/* ============================================
-   模态框 - 客户/员工编辑
-   ============================================ */
-
-.edit-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.edit-modal.active {
-    display: flex;
-}
-
-.edit-modal-content {
-    background: white;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-}
-
-.edit-modal-header {
-    padding: 20px;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.edit-modal-header h3 {
-    margin: 0;
-    font-size: 20px;
-}
-
-.edit-modal-body {
-    padding: 20px;
-}
-
-.edit-modal-footer {
-    padding: 20px;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    justify-content: flex-end;
     gap: 10px;
 }
 
 /* ============================================
-   客户服务配置
+   系統參數表單美化
    ============================================ */
 
-.service-config-section {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-color);
+.param-section {
+    background: white;
+    border-radius: 14px;
+    padding: 26px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.param-section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 3px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.param-section-title .material-symbols-outlined {
+    color: var(--primary-color);
+    font-size: 26px;
+}
+
+.param-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.param-item {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 10px;
+    border: 2px solid #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.param-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.param-label {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.param-value {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.param-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.param-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(44, 95, 124, 0.1);
+}
+
+.param-description {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+    line-height: 1.5;
+}
+
+/* 開關按鈕 */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 56px;
+    height: 30px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 30px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--success-color);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
+}
+
+/* ============================================
+   業務類型管理
+   ============================================ */
+
+.business-type-card {
+    background: white;
+    border: 2px solid #f0f0f0;
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.business-type-card:hover {
+    border-color: var(--info-color);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    transform: translateY(-3px);
+}
+
+.business-type-info {
+    flex: 1;
+}
+
+.business-type-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.business-type-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   客戶服務配置
+   ============================================ */
+
+.service-config-card {
+    background: white;
+    border: 2px solid #f0f0f0;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 18px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.service-config-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    transform: translateY(-4px);
+    border-color: var(--primary-color);
 }
 
 .service-config-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f5f5f5;
 }
 
-.service-config-header h4 {
-    font-size: 16px;
-    margin: 0;
-}
-
-.service-config-list {
-    display: grid;
-    gap: 10px;
-}
-
-.service-config-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
-    background: var(--light-bg);
-    border-radius: 6px;
-}
-
-.service-config-info {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    flex: 1;
-}
-
-.service-type {
-    font-weight: 500;
+.service-config-title {
+    font-size: 19px;
+    font-weight: 700;
     color: var(--text-primary);
 }
 
-.service-frequency {
+.service-config-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.difficulty-badge {
+    padding: 5px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.difficulty-badge.level-1 {
+    background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+    color: #2e7d32;
+}
+
+.difficulty-badge.level-2 {
+    background: linear-gradient(135deg, #b3e5fc 0%, #81d4fa 100%);
+    color: #01579b;
+}
+
+.difficulty-badge.level-3 {
+    background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
+    color: #f57f17;
+}
+
+.difficulty-badge.level-4 {
+    background: linear-gradient(135deg, #ffe0b2 0%, #ffcc80 100%);
+    color: #e65100;
+}
+
+.difficulty-badge.level-5 {
+    background: linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%);
+    color: #c62828;
+}
+
+.service-config-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.config-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.config-label {
     font-size: 13px;
+    font-weight: 600;
     color: var(--text-secondary);
 }
 
-.service-fee {
-    font-weight: 600;
-    color: var(--primary-color);
-}
-
-.service-config-actions {
-    display: flex;
-    gap: 8px;
-}
-
-/* ============================================
-   统计卡片
-   ============================================ */
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 25px;
-}
-
-.stat-card {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-    color: white;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    transition: transform 0.2s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-}
-
-.stat-value {
-    font-size: 32px;
+.config-value {
+    font-size: 15px;
     font-weight: 700;
-    margin-bottom: 5px;
-}
-
-.stat-label {
-    font-size: 14px;
-    opacity: 0.9;
-}
-
-/* ============================================
-   表格 - settings页面特定
-   ============================================ */
-
-.settings-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-    background: white;
-}
-
-.settings-table th {
-    background: var(--light-bg);
-    padding: 12px;
-    text-align: left;
-    font-weight: 600;
     color: var(--text-primary);
-    border-bottom: 2px solid var(--border-color);
 }
 
-.settings-table td {
-    padding: 12px;
-    border-bottom: 1px solid var(--border-color);
-    vertical-align: middle;
-}
-
-.settings-table tbody tr:hover {
-    background: #f9f9f9;
-}
-
-.settings-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-/* ============================================
-   操作按钮组
-   ============================================ */
-
-.action-buttons {
+.service-config-footer {
     display: flex;
-    gap: 8px;
     justify-content: flex-end;
-}
-
-.action-icon-btn {
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.action-icon-btn.edit {
-    background: var(--primary-color);
-    color: white;
-}
-
-.action-icon-btn.edit:hover {
-    background: var(--primary-hover);
-}
-
-.action-icon-btn.delete {
-    background: var(--danger-color);
-    color: white;
-}
-
-.action-icon-btn.delete:hover {
-    background: #d32f2f;
-}
-
-.action-icon-btn.view {
-    background: var(--info-color);
-    color: white;
-}
-
-.action-icon-btn.view:hover {
-    background: #1976D2;
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 2px solid #f5f5f5;
 }
 
 /* ============================================
-   响应式调整
+   響應式設計
    ============================================ */
 
 @media (max-width: 768px) {
     .settings-toolbar {
-        flex-direction: column;
-        align-items: stretch;
+        padding: 16px;
     }
 
     .param-grid {
         grid-template-columns: 1fr;
     }
 
-    .param-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .param-input {
-        width: 100%;
-    }
-
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
     .employee-card {
         flex-direction: column;
         align-items: flex-start;
-        gap: 15px;
+        gap: 16px;
     }
 
     .employee-actions {
         width: 100%;
-        justify-content: flex-start;
-    }
-
-    .client-meta,
-    .service-config-info {
         flex-direction: column;
-        gap: 8px;
     }
 
-    .edit-modal-content {
-        width: 95%;
-    }
-}
-
-@media (max-width: 480px) {
-    .client-card,
-    .employee-card {
-        padding: 12px;
-    }
-
-    .settings-table {
-        font-size: 13px;
-    }
-
-    .settings-table th,
-    .settings-table td {
-        padding: 8px;
-    }
-
-    .action-buttons {
-        flex-wrap: wrap;
-    }
-
-    .service-config-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .service-config-actions {
+    .employee-actions button {
         width: 100%;
-        justify-content: flex-start;
+    }
+
+    .client-card {
+        padding: 18px;
+    }
+
+    .service-config-body {
+        grid-template-columns: 1fr;
     }
 }
-

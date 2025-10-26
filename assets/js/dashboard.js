@@ -275,27 +275,25 @@ async function loadAdminWeeklyStats() {
         });
         
         const employeeStats = await Promise.all(statsPromises);
-        const totalHours = employeeStats.reduce((sum, emp) => sum + emp.hours, 0);
         
+        // 直接顯示各員工工時，移除團隊總計
         container.innerHTML = `
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value">${totalHours.toFixed(1)}</div>
-                    <div class="stat-label">總工時（全體）</div>
+            <div style="font-size: 14px;">
+                <div style="font-weight: 700; margin-bottom: 16px; color: var(--text-primary); font-size: 16px;">
+                    <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 6px;">groups</span>
+                    各員工本月工時
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">${employees.length}</div>
-                    <div class="stat-label">團隊人數</div>
+                <div style="display: grid; gap: 12px;">
+                    ${employeeStats.sort((a, b) => b.hours - a.hours).map(emp => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: var(--light-bg); border-radius: 8px; border-left: 4px solid var(--primary-color); transition: all 0.2s;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="material-symbols-outlined" style="color: var(--primary-color);">person</span>
+                                <span style="font-weight: 600; font-size: 15px;">${escapeHtml(emp.name)}</span>
+                            </div>
+                            <div style="font-weight: 700; font-size: 18px; color: var(--primary-color);">${emp.hours.toFixed(1)} <span style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">小時</span></div>
+                        </div>
+                    `).join('')}
                 </div>
-            </div>
-            <div style="margin-top: 20px; font-size: 14px; color: var(--text-secondary);">
-                <div style="font-weight: 600; margin-bottom: 10px;">各員工工時：</div>
-                ${employeeStats.sort((a, b) => b.hours - a.hours).map(emp => `
-                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
-                        <span>${escapeHtml(emp.name)}</span>
-                        <span style="font-weight: 600; color: var(--primary-color);">${emp.hours.toFixed(1)} 小時</span>
-                    </div>
-                `).join('')}
             </div>
         `;
     } catch (error) {

@@ -1,300 +1,188 @@
 /* 
- * knowledge-page.css - 知识库页面特定样式
- * 创建日期: 2025-10-26
- * 用途: 知识库页面的特定样式（SOP、内部文档、FAQ）
+ * knowledge-page.css - 知識庫頁面美化樣式
+ * 創建日期: 2025-10-26
+ * 更新日期: 2025-10-26
+ * 用途: SOP文件、內部文檔、FAQ的美觀展示
  */
 
 /* ============================================
-   SOP列表样式
+   SOP列表佈局
    ============================================ */
 
-.sop-list {
+#sopsList {
     display: grid;
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
 }
 
-.sop-card {
+#docsList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+/* ============================================
+   文檔卡片 - 特別美化
+   ============================================ */
+
+.doc-card {
     background: white;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 15px;
-    transition: all 0.2s ease;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    border-left: 5px solid var(--info-color);
+    margin-bottom: 0; /* 使用grid gap */
     cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
 
-.sop-card:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transform: translateX(5px);
+.doc-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.6s ease;
 }
 
-.sop-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 10px;
+.doc-card:hover::before {
+    left: 100%;
 }
 
-.sop-title {
-    font-size: 18px;
-    font-weight: 600;
+.doc-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+    border-left-color: var(--primary-color);
+}
+
+.doc-title {
+    font-size: 19px;
+    font-weight: 700;
     color: var(--text-primary);
-    margin: 0 0 5px 0;
+    margin-bottom: 12px;
+    line-height: 1.4;
 }
 
-.sop-version {
-    font-size: 12px;
-    color: var(--text-light);
-}
-
-.sop-meta {
-    display: flex;
-    gap: 15px;
-    font-size: 14px;
+.doc-excerpt {
     color: var(--text-secondary);
-    margin: 10px 0;
-    flex-wrap: wrap;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 12px 0;
 }
 
-.sop-meta-item {
+.doc-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.doc-meta-item {
     display: flex;
     align-items: center;
     gap: 5px;
 }
 
-.sop-description {
-    font-size: 14px;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    margin: 10px 0;
-}
-
-.sop-footer {
+.doc-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid var(--border-color);
-}
-
-.sop-category-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px solid #f5f5f5;
     font-size: 12px;
-    font-weight: 500;
-    background: #e3f2fd;
-    color: #1976d2;
-}
-
-.sop-actions {
-    display: flex;
-    gap: 8px;
+    color: var(--text-light);
 }
 
 /* ============================================
-   SOP查看器/编辑器
-   ============================================ */
-
-.sop-viewer {
-    background: white;
-    border-radius: 8px;
-    padding: 25px;
-    margin-top: 20px;
-}
-
-.sop-viewer-header {
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 15px;
-    margin-bottom: 20px;
-}
-
-.sop-viewer-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 10px;
-}
-
-.sop-viewer-meta {
-    display: flex;
-    gap: 20px;
-    font-size: 14px;
-    color: var(--text-secondary);
-    flex-wrap: wrap;
-}
-
-.sop-viewer-content {
-    line-height: 1.8;
-    color: var(--text-primary);
-}
-
-.sop-viewer-content h1 {
-    font-size: 22px;
-    margin: 25px 0 15px;
-}
-
-.sop-viewer-content h2 {
-    font-size: 20px;
-    margin: 20px 0 12px;
-}
-
-.sop-viewer-content h3 {
-    font-size: 18px;
-    margin: 18px 0 10px;
-}
-
-.sop-viewer-content p {
-    margin: 12px 0;
-}
-
-.sop-viewer-content ul,
-.sop-viewer-content ol {
-    margin: 12px 0;
-    padding-left: 25px;
-}
-
-.sop-viewer-content li {
-    margin: 8px 0;
-}
-
-.sop-viewer-content code {
-    background: #f5f5f5;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-family: 'Courier New', monospace;
-}
-
-.sop-viewer-content pre {
-    background: #f5f5f5;
-    padding: 15px;
-    border-radius: 6px;
-    overflow-x: auto;
-    margin: 15px 0;
-}
-
-/* ============================================
-   文档分类侧边栏
-   ============================================ */
-
-.knowledge-sidebar {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    height: fit-content;
-    position: sticky;
-    top: 80px;
-}
-
-.sidebar-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 15px;
-}
-
-.category-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.category-item {
-    padding: 10px 12px;
-    border-radius: 6px;
-    margin-bottom: 5px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.category-item:hover {
-    background: var(--light-bg);
-}
-
-.category-item.active {
-    background: var(--primary-color);
-    color: white;
-}
-
-.category-name {
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.category-count {
-    font-size: 12px;
-    background: rgba(0,0,0,0.1);
-    padding: 2px 8px;
-    border-radius: 10px;
-}
-
-/* ============================================
-   FAQ样式
+   FAQ 樣式 - 全面美化
    ============================================ */
 
 .faq-container {
     background: white;
-    border-radius: 12px;
-    padding: 0;
+    border-radius: 14px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
 }
 
 .faq-category {
-    margin-bottom: 30px;
+    margin-bottom: 35px;
+}
+
+.faq-category:last-child {
+    margin-bottom: 0;
 }
 
 .faq-category-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 15px;
-    padding: 15px 20px;
-    background: var(--light-bg);
-    border-radius: 8px;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 3px solid var(--primary-color);
 }
 
-.faq-list {
-    display: grid;
-    gap: 10px;
+.faq-category-title .material-symbols-outlined {
+    font-size: 26px;
 }
 
 .faq-item {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border: 2px solid #f0f0f0;
+    border-radius: 12px;
+    margin-bottom: 14px;
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
 }
 
 .faq-item:hover {
-    border-color: var(--primary-color);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    border-color: #e0e0e0;
 }
 
 .faq-question {
-    padding: 15px 20px;
+    padding: 20px 24px;
     background: white;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-weight: 500;
-    color: var(--text-primary);
-    transition: all 0.2s ease;
+    gap: 18px;
+    transition: all 0.3s ease;
 }
 
 .faq-question:hover {
-    background: var(--light-bg);
+    background: linear-gradient(135deg, #f8f9fa 0%, #f5f5f5 100%);
 }
 
 .faq-question.active {
-    background: var(--primary-color);
-    color: white;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-bottom: 2px solid #90caf9;
+}
+
+.faq-question-text {
+    font-weight: 700;
+    color: var(--text-primary);
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.5;
 }
 
 .faq-icon {
-    transition: transform 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--primary-color);
+    font-size: 30px;
+    flex-shrink: 0;
 }
 
 .faq-question.active .faq-icon {
@@ -302,241 +190,150 @@
 }
 
 .faq-answer {
-    padding: 0 20px;
+    padding: 0 24px;
     max-height: 0;
     overflow: hidden;
-    transition: all 0.3s ease;
-    background: white;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #fafafa;
 }
 
 .faq-answer.active {
-    padding: 15px 20px;
-    max-height: 1000px;
+    padding: 20px 24px;
+    max-height: 700px;
 }
 
 .faq-answer-content {
     color: var(--text-secondary);
-    line-height: 1.6;
+    line-height: 1.9;
+    font-size: 14px;
 }
 
-.faq-answer-content p {
-    margin: 10px 0;
-}
-
-.faq-answer-content ul,
-.faq-answer-content ol {
-    margin: 10px 0;
-    padding-left: 25px;
+.faq-answer-content br {
+    margin-bottom: 8px;
 }
 
 /* ============================================
-   搜索框
+   SOP 詳情視圖
    ============================================ */
 
-.knowledge-search {
-    margin-bottom: 25px;
-}
-
-.knowledge-search-box {
-    position: relative;
-}
-
-.knowledge-search-box input {
-    width: 100%;
-    padding: 12px 45px 12px 15px;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 15px;
-    transition: border-color 0.2s ease;
-}
-
-.knowledge-search-box input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(44, 95, 124, 0.1);
-}
-
-.knowledge-search-icon {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-secondary);
-    font-size: 20px;
-}
-
-/* ============================================
-   版本历史
-   ============================================ */
-
-.version-history {
+.sop-detail-view {
     background: white;
-    border-radius: 8px;
-    padding: 20px;
-    margin-top: 25px;
+    border-radius: 14px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
 }
 
-.version-history-title {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 15px;
+.sop-detail-header {
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--primary-color);
 }
 
-.version-list {
-    display: grid;
-    gap: 10px;
-}
-
-.version-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
-    background: var(--light-bg);
-    border-radius: 6px;
-    border-left: 4px solid var(--primary-color);
-}
-
-.version-info {
-    flex: 1;
-}
-
-.version-number {
-    font-weight: 600;
+.sop-detail-title {
+    font-size: 28px;
+    font-weight: 700;
     color: var(--text-primary);
+    margin-bottom: 14px;
+    line-height: 1.3;
 }
 
-.version-meta {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-top: 5px;
-}
-
-.version-actions {
+.sop-detail-meta {
     display: flex;
-    gap: 8px;
-}
-
-/* ============================================
-   标签云
-   ============================================ */
-
-.tag-cloud {
-    display: flex;
+    gap: 20px;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 15px;
+    color: var(--text-secondary);
+    font-size: 14px;
 }
 
-.tag {
-    padding: 6px 12px;
-    background: var(--light-bg);
-    border-radius: 16px;
-    font-size: 13px;
+.sop-detail-content {
+    line-height: 1.8;
+    font-size: 15px;
     color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 1px solid transparent;
 }
 
-.tag:hover {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
+.sop-detail-content h1,
+.sop-detail-content h2,
+.sop-detail-content h3 {
+    color: var(--primary-color);
+    margin-top: 28px;
+    margin-bottom: 16px;
 }
 
-.tag.active {
-    background: var(--primary-color);
-    color: white;
+.sop-detail-content h1 {
+    font-size: 26px;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+}
+
+.sop-detail-content h2 {
+    font-size: 22px;
+}
+
+.sop-detail-content h3 {
+    font-size: 18px;
+}
+
+.sop-detail-content p {
+    margin: 16px 0;
+}
+
+.sop-detail-content ul,
+.sop-detail-content ol {
+    margin: 16px 0;
+    padding-left: 28px;
+}
+
+.sop-detail-content li {
+    margin: 8px 0;
+}
+
+.sop-detail-content code {
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+}
+
+.sop-detail-content pre {
+    background: #f5f5f5;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0;
 }
 
 /* ============================================
-   响应式调整
+   響應式設計
    ============================================ */
 
 @media (max-width: 768px) {
-    .knowledge-sidebar {
-        position: static;
-        margin-bottom: 20px;
+    #sopsList,
+    #docsList {
+        grid-template-columns: 1fr;
     }
 
-    .sop-viewer {
-        padding: 15px;
+    .doc-card {
+        padding: 20px;
     }
 
-    .sop-viewer-title {
-        font-size: 20px;
+    .faq-question {
+        padding: 16px 18px;
     }
 
-    .sop-viewer-content h1 {
-        font-size: 20px;
-    }
-
-    .sop-viewer-content h2 {
-        font-size: 18px;
-    }
-
-    .sop-viewer-content h3 {
-        font-size: 16px;
-    }
-
-    .faq-category-title {
-        font-size: 18px;
-        padding: 12px 15px;
-    }
-
-    .faq-question,
-    .faq-answer {
-        padding: 12px 15px;
-    }
-
-    .version-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .version-actions {
-        width: 100%;
-    }
-
-    .sop-meta {
-        flex-direction: column;
-        gap: 8px;
-    }
-}
-
-@media (max-width: 480px) {
-    .sop-card {
-        padding: 12px;
-    }
-
-    .sop-title {
-        font-size: 16px;
-    }
-
-    .sop-footer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .sop-actions {
-        width: 100%;
-        justify-content: flex-start;
-    }
-
-    .tag-cloud {
-        gap: 6px;
-    }
-
-    .tag {
-        padding: 4px 10px;
-        font-size: 12px;
-    }
-
-    .knowledge-search-box input {
+    .faq-question-text {
         font-size: 14px;
     }
-}
 
+    .faq-answer.active {
+        padding: 16px 18px;
+    }
+
+    .sop-detail-view {
+        padding: 24px;
+    }
+
+    .sop-detail-title {
+        font-size: 24px;
+    }
+}
