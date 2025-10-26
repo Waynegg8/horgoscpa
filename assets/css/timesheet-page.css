@@ -25,9 +25,9 @@ main {
     width: 98%;
     margin: 0 auto;
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 20px;
 }
 
 @media (max-width: 768px) {
@@ -47,10 +47,10 @@ main {
     align-items: center;
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
     color: white;
-    padding: 18px 24px;
-    border-radius: 10px;
-    margin-bottom: 25px;
-    box-shadow: 0 4px 12px rgba(27, 101, 184, 0.2);
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(27, 101, 184, 0.2);
 }
 
 .month-info h3 {
@@ -73,10 +73,10 @@ main {
     align-items: center;
     flex-wrap: wrap;
     gap: 12px;
-    margin-bottom: 25px;
-    padding: 20px;
+    margin-bottom: 15px;
+    padding: 15px 20px;
     background: #f8f9fa;
-    border-radius: 10px;
+    border-radius: 8px;
 }
 
 .control-group {

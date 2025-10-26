@@ -6,49 +6,44 @@
  */
 
 :root {
-    /* 主色系 - 更現代的藍色調 */
+    /* 主色系 */
     --primary-color: #2c5f7c;
     --primary-hover: #1e4258;
     --primary-light: #4a7fa0;
-    --primary-lighter: #6ba3c7;
     
-    /* 功能色 - 更鮮明的色彩 */
+    /* 功能色 */
     --success-color: #4caf50;
     --danger-color: #f44336;
     --warning-color: #ff9800;
     --info-color: #2196F3;
     
-    /* 文字色 - 更好的可讀性 */
-    --text-primary: #2c3e50;
-    --text-secondary: #546e7a;
-    --text-light: #90a4ae;
+    /* 文字色 */
+    --text-primary: #333;
+    --text-secondary: #666;
+    --text-light: #999;
     
-    /* 背景色 - 更柔和的漸層 */
-    --light-bg: #f8f9fa;
-    --lighter-bg: #fcfcfc;
+    /* 背景色 */
+    --light-bg: #f5f5f5;
     --bg-white: #ffffff;
     --bg-card: #ffffff;
     
-    /* 邊框和分隔 - 更細緻 */
-    --border-color: #e0e0e0;
-    --border-light: #f0f0f0;
+    /* 邊框和分隔 */
+    --border-color: #ddd;
+    --border-light: #eee;
     
-    /* 陰影 - 更有層次 */
-    --shadow-sm: 0 2px 4px rgba(0,0,0,0.06);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-    --shadow-xl: 0 12px 48px rgba(0,0,0,0.15);
+    /* 陰影 */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
     
-    /* 圓角 - 更圓潤 */
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
-    --radius-xl: 18px;
+    /* 圓角 */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
     
-    /* 過渡 - 更流暢 */
-    --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-standard: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 過渡 */
+    --transition-fast: all 0.2s ease;
+    --transition-standard: all 0.3s ease;
 }
 
 * {

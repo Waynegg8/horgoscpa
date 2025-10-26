@@ -28,36 +28,18 @@
 
 .doc-card {
     background: white;
-    border-radius: 14px;
-    padding: 24px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-    border-left: 5px solid var(--info-color);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-left: 4px solid var(--primary-color);
     margin-bottom: 0; /* 使用grid gap */
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.doc-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.6s ease;
-}
-
-.doc-card:hover::before {
-    left: 100%;
+    transition: all 0.2s ease;
 }
 
 .doc-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
-    border-left-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
 }
 
 .doc-title {
@@ -107,9 +89,9 @@
 
 .faq-container {
     background: white;
-    border-radius: 14px;
-    padding: 30px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .faq-category {
@@ -137,37 +119,35 @@
 }
 
 .faq-item {
-    border: 2px solid #f0f0f0;
-    border-radius: 12px;
-    margin-bottom: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 10px;
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background: white;
+    transition: all 0.2s ease;
 }
 
 .faq-item:hover {
-    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-    border-color: #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .faq-question {
-    padding: 20px 24px;
+    padding: 15px 20px;
     background: white;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 18px;
-    transition: all 0.3s ease;
+    gap: 15px;
+    transition: all 0.2s ease;
 }
 
 .faq-question:hover {
-    background: linear-gradient(135deg, #f8f9fa 0%, #f5f5f5 100%);
+    background: var(--light-bg);
 }
 
 .faq-question.active {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    border-bottom: 2px solid #90caf9;
+    background: var(--light-bg);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .faq-question-text {
