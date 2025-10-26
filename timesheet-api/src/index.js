@@ -29,24 +29,20 @@ import {
 } from './reports.js';
 
 import {
-  getClientsExtended,
-  getClientExtended,
-  upsertClientExtended,
-  getServiceSchedule,
-  createServiceSchedule,
-  updateServiceSchedule,
-  deleteServiceSchedule,
-  getClientInteractions,
-  createClientInteraction,
-  updateClientInteraction,
-  deleteClientInteraction,
-  importClients,
-  importServiceSchedule,
+  getClients,
+  getClientDetails,
+  createClient,
+  updateClient,
+  deleteClient,
   getClientServices,
   createClientService,
   updateClientService,
   toggleClientService,
-  deleteClientService
+  deleteClientService,
+  getClientInteractions,
+  createClientInteraction,
+  updateClientInteraction,
+  deleteClientInteraction
 } from './clients.js';
 
 import {
@@ -299,40 +295,47 @@ export default {
       // 客戶管理 CRUD (所有員工可讀)
       // ========================================
       if (url.pathname === "/api/clients" && method === "GET") {
-        const auth = await requireAuth(env.DB, request);
-        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        
-        // 如果有employee參數，查詢該員工的客戶列表（用於工時表）
-        if (url.searchParams.has('employee')) {
-          return await handleGetClients(env.DB, url.searchParams, auth.user);
-        }
-        
-        // 否則返回所有客戶（用於設定頁面）
-        return await handleGetAllClients(env.DB);
+        return await addCorsHeaders(await getClients(request, env));
+      }
+      
+      if (url.pathname.match(/^\/api\/clients\/\d+$/) && method === "GET") {
+        const clientId = parseInt(url.pathname.split("/")[3]);
+        return await addCorsHeaders(await getClientDetails(request, env, clientId));
       }
       
       if (url.pathname === "/api/clients" && method === "POST") {
-        const auth = await requireAuth(env.DB, request);
-        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        const payload = await request.json();
-        return await handleCreateClient(env.DB, payload);
+        return await addCorsHeaders(await createClient(request, env));
       }
-
-      if (url.pathname.startsWith("/api/clients/") && method === "PUT") {
-        const auth = await requireAuth(env.DB, request);
-        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        const id = decodeURIComponent(url.pathname.split("/")[3]);
-        const payload = await request.json();
-        return await handleUpdateClient(env.DB, id, payload);
+      
+      if (url.pathname.match(/^\/api\/clients\/\d+$/) && method === "PUT") {
+        const clientId = parseInt(url.pathname.split("/")[3]);
+        return await addCorsHeaders(await updateClient(request, env, clientId));
       }
-
-      if (url.pathname.startsWith("/api/clients/") && method === "DELETE") {
-        const auth = await requireAuth(env.DB, request);
-        if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        const id = decodeURIComponent(url.pathname.split("/")[3]);
-        return await handleDeleteClient(env.DB, id);
+      
+      if (url.pathname.match(/^\/api\/clients\/\d+$/) && method === "DELETE") {
+        const clientId = parseInt(url.pathname.split("/")[3]);
+        return await addCorsHeaders(await deleteClient(request, env, clientId));
       }
-
+      
+      // 客戶互動記錄
+      if (url.pathname === "/api/client-interactions" && method === "GET") {
+        return await addCorsHeaders(await getClientInteractions(request, env));
+      }
+      
+      if (url.pathname === "/api/client-interactions" && method === "POST") {
+        return await addCorsHeaders(await createClientInteraction(request, env));
+      }
+      
+      if (url.pathname.match(/^\/api\/client-interactions\/\d+$/) && method === "PUT") {
+        const interactionId = parseInt(url.pathname.split("/")[3]);
+        return await addCorsHeaders(await updateClientInteraction(request, env, interactionId));
+      }
+      
+      if (url.pathname.match(/^\/api\/client-interactions\/\d+$/) && method === "DELETE") {
+        const interactionId = parseInt(url.pathname.split("/")[3]);
+        return await addCorsHeaders(await deleteClientInteraction(request, env, interactionId));
+      }
+      
       // ========================================
       // 客戶擴充資料 API (需認證)
       // ========================================
@@ -373,35 +376,6 @@ export default {
         return await addCorsHeaders(await deleteServiceSchedule(request, env, scheduleId));
       }
       
-      // 客戶互動記錄
-      if (url.pathname === "/api/client-interactions" && method === "GET") {
-        return await addCorsHeaders(await getClientInteractions(request, env));
-      }
-      
-      if (url.pathname === "/api/client-interactions" && method === "POST") {
-        return await addCorsHeaders(await createClientInteraction(request, env));
-      }
-      
-      if (url.pathname.match(/^\/api\/client-interactions\/\d+$/) && method === "PUT") {
-        const interactionId = url.pathname.split("/")[3];
-        return await addCorsHeaders(await updateClientInteraction(request, env, interactionId));
-      }
-      
-      if (url.pathname.match(/^\/api\/client-interactions\/\d+$/) && method === "DELETE") {
-        const interactionId = url.pathname.split("/")[3];
-        return await addCorsHeaders(await deleteClientInteraction(request, env, interactionId));
-      }
-      
-      // CSV 導入
-      if (url.pathname === "/api/import/clients" && method === "POST") {
-        return await importClients(request, env);
-      }
-
-      // 批次匯入服務排程（從活頁簿2/CSV 解析結果）
-      if (url.pathname === "/api/import/service-schedule" && method === "POST") {
-        return await addCorsHeaders(await importServiceSchedule(request, env));
-      }
-
       // ========================================
       // 客戶服務配置 API (需認證)
       // ========================================
@@ -415,17 +389,17 @@ export default {
       }
       
       if (url.pathname.match(/^\/api\/client-services\/\d+$/) && method === "PUT") {
-        const serviceId = url.pathname.split("/")[3];
+        const serviceId = parseInt(url.pathname.split("/")[3]);
         return await addCorsHeaders(await updateClientService(request, env, serviceId));
       }
       
       if (url.pathname.match(/^\/api\/client-services\/\d+\/toggle$/) && method === "POST") {
-        const serviceId = url.pathname.split("/")[3];
+        const serviceId = parseInt(url.pathname.split("/")[3]);
         return await addCorsHeaders(await toggleClientService(request, env, serviceId));
       }
       
       if (url.pathname.match(/^\/api\/client-services\/\d+$/) && method === "DELETE") {
-        const serviceId = url.pathname.split("/")[3];
+        const serviceId = parseInt(url.pathname.split("/")[3]);
         return await addCorsHeaders(await deleteClientService(request, env, serviceId));
       }
 

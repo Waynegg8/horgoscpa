@@ -342,6 +342,15 @@ function downloadFile(content, filename, mimeType = 'text/plain') {
 }
 
 /**
+ * 檢查值是否不為空（null, undefined, 空字符串）
+ * @param {*} value - 要檢查的值
+ * @returns {boolean}
+ */
+function isNotEmpty(value) {
+    return value !== null && value !== undefined && value.toString().trim() !== '';
+}
+
+/**
  * 驗證Email格式
  * @param {string} email - Email地址
  * @returns {boolean} 是否有效
@@ -357,11 +366,17 @@ function isValidEmail(email) {
  * @param {string} taxId - 統一編號
  * @returns {boolean} 是否有效
  */
-function isValidTaxId(taxId) {
-    if (!taxId) return false;
-    // 台灣統一編號為8位數字
-    const taxIdRegex = /^\d{8}$/;
-    return taxIdRegex.test(taxId);
+function isValidTaiwanTaxId(taxId) {
+    if (!/^\d{8}$/.test(taxId)) {
+        return false;
+    }
+    const logic = [1, 2, 1, 2, 1, 2, 4, 1];
+    let sum = 0;
+    for (let i = 0; i < 8; i++) {
+        const n = parseInt(taxId[i]) * logic[i];
+        sum += Math.floor(n / 10) + (n % 10);
+    }
+    return sum % 10 === 0 || (taxId[6] === '7' && (sum + 1) % 10 === 0);
 }
 
 /**
@@ -369,11 +384,13 @@ function isValidTaxId(taxId) {
  * @param {string} phone - 電話號碼
  * @returns {boolean} 是否有效
  */
-function isValidPhone(phone) {
+function isValidTaiwanPhone(phone) {
     if (!phone) return false;
-    // 支持多種台灣電話格式
-    const phoneRegex = /^(\d{2,4}-?\d{6,8}|\d{10})$/;
-    return phoneRegex.test(phone.replace(/\s/g, ''));
+    const cleaned = phone.replace(/[\s-]/g, '');
+    // 支援格式: 09xx-xxxxxx, (0x)xxxx-xxxx, 0x-xxxx-xxxx, 09xxxxxxxx
+    const mobile = /^09\d{8}$/;
+    const landline = /^(0\d{1,3})\d{6,8}$/;
+    return mobile.test(cleaned) || landline.test(cleaned);
 }
 
 /**
@@ -525,8 +542,61 @@ function showEmpty(containerId, icon, title, message) {
  * @returns {Promise<boolean>} 是否確認
  */
 async function confirmDialog(message, title = '確認操作') {
-    // 暫時使用原生confirm，未來可以實現自定義對話框
-    return confirm(`${title}\n\n${message}`);
+    return new Promise(resolve => {
+        const dialogId = `confirm-dialog-${generateUniqueId()}`;
+        const dialog = document.createElement('div');
+        dialog.id = dialogId;
+        dialog.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        `;
+
+        dialog.innerHTML = `
+            <div class="confirm-dialog-content" style="background: white; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 90%; max-width: 400px; padding: 24px; text-align: left; transform: scale(0.9); transition: transform 0.2s ease;">
+                <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px; color: #333;">${escapeHtml(title)}</h3>
+                <p style="margin-bottom: 24px; font-size: 15px; color: #666; line-height: 1.6;">${escapeHtml(message)}</p>
+                <div class="confirm-dialog-buttons" style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button class="btn btn-secondary confirm-cancel" style="padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; background: #eee; color: #333;">取消</button>
+                    <button class="btn btn-danger confirm-ok" style="padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; background: #f44336; color: white;">確認</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(dialog);
+
+        // Animate in
+        setTimeout(() => {
+            dialog.style.opacity = '1';
+            dialog.querySelector('.confirm-dialog-content').style.transform = 'scale(1)';
+        }, 10);
+
+        const closeDialog = (value) => {
+            dialog.style.opacity = '0';
+            dialog.querySelector('.confirm-dialog-content').style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                dialog.remove();
+                resolve(value);
+            }, 200);
+        };
+
+        dialog.querySelector('.confirm-ok').addEventListener('click', () => closeDialog(true));
+        dialog.querySelector('.confirm-cancel').addEventListener('click', () => closeDialog(false));
+        dialog.addEventListener('click', (e) => {
+            if (e.target.id === dialogId) {
+                closeDialog(false);
+            }
+        });
+    });
 }
 
 /**
@@ -572,8 +642,11 @@ window.formatNumber = formatNumber;
 window.copyToClipboard = copyToClipboard;
 window.downloadFile = downloadFile;
 window.isValidEmail = isValidEmail;
-window.isValidTaxId = isValidTaxId;
-window.isValidPhone = isValidPhone;
+window.isValidTaxId = isValidTaiwanTaxId; // Deprecated, use isValidTaiwanTaxId
+window.isValidPhone = isValidTaiwanPhone; // Deprecated, use isValidTaiwanPhone
+window.isNotEmpty = isNotEmpty;
+window.isValidTaiwanTaxId = isValidTaiwanTaxId;
+window.isValidTaiwanPhone = isValidTaiwanPhone;
 window.calculateYearsOfService = calculateYearsOfService;
 window.showLoading = showLoading;
 window.showError = showError;

@@ -76,102 +76,54 @@ async function loadPendingTasks() {
         return;
     }
     
+    showLoading('tasksList', '載入待辦任務...');
+
     try {
-        const year = new Date().getFullYear();
-        const month = new Date().getMonth() + 1;
-        
-        // 載入所有類型的未完成任務
-        const [recurringRes, multiStageRes] = await Promise.all([
-            apiRequest(`/api/tasks/recurring?year=${year}&month=${month}`).catch(err => {
-                console.warn('載入週期任務失敗:', err);
-                return []; // 直接返回空陣列
-            }),
-            apiRequest(`/api/tasks/multi-stage?status!=completed`).catch(err => {
-                console.warn('載入多階段任務失敗:', err);
-                return { tasks: [] }; // 保持物件結構以兼容
-            })
-        ]);
-        
-        const allTasks = [];
-        
-        // recurringRes 現在直接是陣列
-        const recurringTasks = (recurringRes || []).filter(task => 
-            task.status !== 'completed' && 
-            (!task.assigned_to || task.assigned_to === currentUser.employee_name)
-        );
-        
-        recurringTasks.forEach(task => {
-            allTasks.push({
-                id: task.id,
-                title: task.task_name || '未命名任務',
-                type: 'recurring',
-                category: task.category || '其他',
-                client: task.client_name,
-                status: task.status || 'pending',
-                dueDate: task.due_date,
-                assignedTo: task.assigned_to
-            });
+        if (!currentUser || !currentUser.id) {
+            throw new Error("Current user not defined.");
+        }
+
+        const params = new URLSearchParams({
+            status_not: 'completed',
+            assigned_user_id: currentUser.id
         });
         
-        // 處理多階段任務（工商、財稅）- 只顯示員工自己的
-        const multiStageTasks = (multiStageRes.tasks || []).filter(task =>
-            task.status !== 'completed' &&
-            (!task.assigned_to || task.assigned_to === currentUser.employee_name)
-        );
-        
-        multiStageTasks.forEach(task => {
-            const category = task.template_name || '其他';
-            allTasks.push({
-                id: task.id,
-                title: task.task_name || task.client_name || '未命名任務',
-                type: 'multistage',
-                category: category,
-                client: task.client_name,
-                status: task.status || 'not_started',
-                dueDate: task.due_date,
-                assignedTo: task.assigned_to,
-                currentStage: task.current_stage
-            });
-        });
+        const response = await apiRequest(`/api/tasks/multi-stage?${params.toString()}`);
+        const allTasks = response.tasks || [];
         
         // 按優先級和到期日期排序
         allTasks.sort((a, b) => {
-            const aOverdue = a.dueDate && isPastDue(a.dueDate);
-            const bOverdue = b.dueDate && isPastDue(b.dueDate);
+            const aOverdue = a.due_date && isPastDue(a.due_date);
+            const bOverdue = b.due_date && isPastDue(b.due_date);
             
             if (aOverdue && !bOverdue) return -1;
             if (!aOverdue && bOverdue) return 1;
             
-            if (a.dueDate && !b.dueDate) return -1;
-            if (!a.dueDate && b.dueDate) return 1;
-            if (a.dueDate && b.dueDate) {
-                return new Date(a.dueDate) - new Date(b.dueDate);
+            if (a.due_date && !b.due_date) return -1;
+            if (!a.due_date && b.due_date) return 1;
+            if (a.due_date && b.due_date) {
+                return new Date(a.due_date) - new Date(b.due_date);
             }
             return 0;
         });
+
+        // Update summary card
+        const myTasksCountEl = document.getElementById('myTasksCount');
+        const pendingTasksCountEl = document.getElementById('pendingTasksCount');
+        if (myTasksCountEl) myTasksCountEl.textContent = allTasks.length;
+        if (pendingTasksCountEl) {
+            pendingTasksCountEl.textContent = allTasks.filter(t => t.status === 'pending').length;
+        }
         
         if (allTasks.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <span class="material-symbols-outlined">task_alt</span>
-                    <p style="font-weight: 600; font-size: 18px; margin: 10px 0;">沒有待辦任務</p>
-                    <p style="font-size: 14px;">所有工作都已完成！</p>
-                </div>
-            `;
+            showEmpty('tasksList', 'task_alt', '沒有待辦任務', '所有工作都已完成！');
             return;
         }
         
-        // 動態附加 SOP 連結（以任務分類作為關鍵字），失敗時略過
-        await attachSopLinks(allTasks).catch(() => {});
         container.innerHTML = allTasks.map(task => renderTaskItem(task)).join('');
     } catch (error) {
         console.error('載入任務失敗:', error);
-        container.innerHTML = `
-            <div class="empty-state">
-                <span class="material-symbols-outlined">error_outline</span>
-                <p style="font-weight: 600; font-size: 18px; margin: 10px 0; color: #f44336;">載入失敗</p>
-            </div>
-        `;
+        showError('tasksList', `無法載入任務: ${error.message}`);
     }
 }
 
@@ -467,77 +419,53 @@ async function loadTeamProgress() {
 }
 
 function renderTaskItem(task) {
-    const priorityClass = task.dueDate && isPastDue(task.dueDate) ? 'high-priority' : 
+    const priorityClass = task.due_date && isPastDue(task.due_date) ? 'high-priority' : 
                           task.status === 'in_progress' ? 'medium-priority' : '';
     
     const statusBadge = getStatusBadge(task.status);
-    const dueDateText = task.dueDate ? formatDueDate(task.dueDate) : '無截止日期';
+    const dueDateText = task.due_date ? formatDueDate(task.due_date) : '無截止日期';
     
+    // Use CONFIG for mapping
+    const categoryName = CONFIG.TASK_CATEGORY_NAMES[task.category] || task.category || '一般';
+
     return `
-        <div class="task-item ${priorityClass}">
+        <div class="task-item ${priorityClass}" onclick="goToTaskDetail('${task.id}')">
             <div class="task-header">
                 <div>
                     <div class="task-title">${escapeHtml(task.title)}</div>
                     <div class="task-meta">
-                        ${task.client ? `
+                        ${task.client_name ? `
                             <div class="task-meta-item">
                                 <span class="material-symbols-outlined">person</span>
-                                <span>${escapeHtml(task.client)}</span>
+                                <span>${escapeHtml(task.client_name)}</span>
                             </div>
                         ` : ''}
-                        ${task.category ? `
+                        ${task.project_name ? `
                             <div class="task-meta-item">
-                                <span class="material-symbols-outlined">category</span>
-                                <span>${escapeHtml(task.category)}</span>
+                                <span class="material-symbols-outlined">folder</span>
+                                <span>${escapeHtml(task.project_name)}</span>
                             </div>
                         ` : ''}
+                        <div class="task-meta-item">
+                            <span class="material-symbols-outlined">category</span>
+                            <span>${escapeHtml(categoryName)}</span>
+                        </div>
                         <div class="task-meta-item">
                             <span class="material-symbols-outlined">event</span>
                             <span>${dueDateText}</span>
                         </div>
-                        ${task.currentStage ? `
-                            <div class="task-meta-item">
-                                <span class="material-symbols-outlined">timeline</span>
-                                <span>${escapeHtml(task.currentStage)}</span>
-                            </div>
-                        ` : ''}
                     </div>
                 </div>
                 ${statusBadge}
             </div>
             
-            ${task.sop || task.notes ? `
-                <div class="task-info-section">
-                    ${task.sop ? `
-                        <div style="margin-bottom: 10px;">
-                            ${task.sop.map(sop => `
-                                <a href="${sop.link}" class="sop-link">
-                                    <span class="material-symbols-outlined">description</span>
-                                    ${escapeHtml(sop.name)}
-                                </a>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                    
-                    ${task.notes ? `
-                        <div class="task-notes">
-                            <div class="task-notes-title">
-                                <span class="material-symbols-outlined">lightbulb</span>
-                                注意事項
-                            </div>
-                            <div>${escapeHtml(task.notes)}</div>
-                        </div>
-                    ` : ''}
-                </div>
-            ` : ''}
-            
             <div class="task-actions">
-                <button class="btn-task btn-details" onclick="goToTaskDetail('${task.type}', ${task.id})">
+                <button class="btn-task btn-details" onclick="event.stopPropagation(); goToTaskDetail('${task.id}')">
                     <span class="material-symbols-outlined">visibility</span>
                     查看詳情
                 </button>
                 ${task.status !== 'completed' ? `
-                    <button class="btn-task btn-complete" onclick="markTaskComplete('${task.type}', ${task.id})">
+                    <button class="btn-task btn-complete" onclick="event.stopPropagation(); markTaskComplete('${task.id}')">
                         <span class="material-symbols-outlined">check_circle</span>
                         標記完成
                     </button>
@@ -585,6 +513,7 @@ function formatDueDate(dateStr) {
 }
 
 function isPastDue(dateStr) {
+    if (!dateStr) return false;
     const date = new Date(dateStr);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -593,34 +522,29 @@ function isPastDue(dateStr) {
     return date < today;
 }
 
-function goToTaskDetail(type, id) {
-    if (type === 'recurring') {
-        window.location.href = `tasks.html?tab=recurring#task-${id}`;
-    } else if (type === 'multistage') {
-        window.location.href = `tasks.html?tab=all&task=${id}`;
-    } else {
-        window.location.href = `tasks.html?task=${id}`;
-    }
+function goToTaskDetail(taskId) {
+    window.location.href = `tasks.html?task=${taskId}`;
 }
 
-async function markTaskComplete(type, id) {
-    if (!confirm('確定要標記此任務為已完成嗎？')) {
+async function markTaskComplete(taskId) {
+    if (!await confirmDialog('確定要標記此任務為已完成嗎？')) {
         return;
     }
     
     try {
-        const endpoint = type === 'recurring' ? `/api/tasks/recurring/${id}` : `/api/tasks/multi-stage/${id}`;
-        await apiRequest(endpoint, {
-            method: 'PATCH',
-            body: { status: 'completed', completed_at: new Date().toISOString() }
+        // Use the unified task update endpoint
+        await apiRequest(`/api/tasks/multi-stage/${taskId}`, {
+            method: 'PUT',
+            body: { status: 'completed' }
         });
+        
+        showNotification('任務已標記為完成！', 'success');
         
         // 重新載入任務列表
         await loadPendingTasks();
         
-        alert('任務已標記為完成！');
     } catch (error) {
-        alert('更新失敗：' + error.message);
+        handleApiError(error, '標記任務完成');
     }
 }
 

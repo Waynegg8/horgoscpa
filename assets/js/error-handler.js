@@ -3,6 +3,10 @@
  * 捕獲未處理的錯誤並提供友好的用戶提示
  */
 
+let lastErrorMessage = '';
+let lastErrorTime = 0;
+const ERROR_DEBOUNCE_TIME = 3000; // 3秒內不重複顯示相同錯誤
+
 /**
  * 初始化全局錯誤處理
  */
@@ -31,6 +35,14 @@ function initGlobalErrorHandler() {
             }
         }
         
+        // 防止重複顯示相同錯誤
+        const now = Date.now();
+        if (message === lastErrorMessage && now - lastErrorTime < ERROR_DEBOUNCE_TIME) {
+            return;
+        }
+        lastErrorMessage = message;
+        lastErrorTime = now;
+        
         // 顯示錯誤通知
         if (typeof showNotification === 'function') {
             showNotification(message, 'error', 5000);
@@ -56,6 +68,14 @@ function initGlobalErrorHandler() {
         if (event.error && event.error.message) {
             message = `錯誤: ${event.error.message}`;
         }
+
+        // 防止重複顯示相同錯誤
+        const now = Date.now();
+        if (message === lastErrorMessage && now - lastErrorTime < ERROR_DEBOUNCE_TIME) {
+            return;
+        }
+        lastErrorMessage = message;
+        lastErrorTime = now;
         
         // 顯示錯誤通知
         if (typeof showNotification === 'function') {
@@ -100,6 +120,14 @@ function initGlobalErrorHandler() {
                 message = error.message;
             }
         }
+
+        // 防止重複顯示
+        const now = Date.now();
+        if (message === lastErrorMessage && now - lastErrorTime < ERROR_DEBOUNCE_TIME) {
+            return;
+        }
+        lastErrorMessage = message;
+        lastErrorTime = now;
         
         if (typeof showNotification === 'function') {
             showNotification(message, 'error', 5000);

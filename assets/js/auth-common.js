@@ -71,6 +71,7 @@ async function checkAuth() {
                     window.currentUser = currentUser;
                     updateUserInfo();
                     updateUIByRole();
+                    showOfflineIndicator(); // 顯示離線提示
                     console.warn('使用快取的用戶資料，請檢查網絡連接');
                     return true;
                 } else {
@@ -97,6 +98,7 @@ async function checkAuth() {
                     window.currentUser = currentUser;
                     updateUserInfo();
                     updateUIByRole();
+                    showOfflineIndicator(); // 顯示離線提示
                     console.warn('網絡錯誤，使用快取的用戶資料');
                     return true;
                 } else {
@@ -112,6 +114,40 @@ async function checkAuth() {
     
     return false;
 }
+
+/**
+ * 顯示離線模式提示
+ */
+function showOfflineIndicator() {
+    let indicator = document.getElementById('offline-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'offline-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 60px; /* Adjust based on navbar height */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #ff9800;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        `;
+        indicator.innerHTML = `
+            <span class="material-symbols-outlined" style="font-size: 18px;">cloud_off</span>
+            <span>離線模式</span>
+        `;
+        document.body.appendChild(indicator);
+    }
+}
+
 
 /**
  * 更新使用者資訊顯示
