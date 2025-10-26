@@ -447,10 +447,14 @@ export async function getRecurringTaskInstances(request, env, year, month) {
         rti.status,
         rti.assigned_to,
         rti.notes,
-        cs.client_name,
-        cs.service_type
+        c.name AS client_name,
+        cs.service_type,
+        cs.frequency,
+        cs.invoice_count,
+        cs.due_days
       FROM recurring_task_instances rti
       JOIN client_services cs ON rti.client_service_id = cs.id
+      JOIN clients c ON cs.client_id = c.id
       WHERE strftime('%Y', rti.instance_date) = ? AND strftime('%m', rti.instance_date) = ?
       ORDER BY rti.instance_date ASC
     `).bind(year, month.padStart(2, '0')).all();

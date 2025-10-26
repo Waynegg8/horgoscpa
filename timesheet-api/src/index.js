@@ -696,7 +696,9 @@ export default {
       if (url.pathname === "/api/tasks/recurring" && method === "GET") {
         const auth = await requireAuth(env.DB, request);
         if (!auth.authorized) return jsonResponse({ error: auth.error }, 401);
-        return await addCorsHeaders(await getRecurringTaskInstances(env, url.searchParams));
+        const year = url.searchParams.get('year');
+        const month = url.searchParams.get('month');
+        return await addCorsHeaders(await getRecurringTaskInstances(request, env, year, month));
       }
       
       // 更新週期性任務實例
