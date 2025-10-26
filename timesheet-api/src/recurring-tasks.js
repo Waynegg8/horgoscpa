@@ -431,78 +431,34 @@ export async function generateRecurringTasks(env, data, username) {
 /**
  * 獲取週期性任務列表
  */
-export async function getRecurringTaskInstances(env, searchParams) {
-  const { DB } = env;
-  
+export async function getRecurringTaskInstances(request, env, year, month) {
+  const db = env.DB;
+
+  if (!year || !month) {
+    return new Response(JSON.stringify({ error: 'Missing year or month' }), { status: 400 });
+  }
+
   try {
-    const year = searchParams.get('year');
-    const month = searchParams.get('month');
-    const status = searchParams.get('status');
-    const category = searchParams.get('category');
-    const assignedTo = searchParams.get('assigned_to');
-    
-    // 首先檢查表是否存在
-    const tableCheck = await DB.prepare(`
-      SELECT name FROM sqlite_master WHERE type='table' AND name='recurring_task_instances'
-    `).first();
-    
-    if (!tableCheck) {
-      console.warn('recurring_task_instances 表不存在，返回空陣列');
-      return jsonResponse({ tasks: [] });
-    }
-    
-    let query = `
+    const instances = await db.prepare(`
       SELECT 
-        rti.*,
+        rti.id,
+        rti.recurring_template_id,
+        rti.instance_date,
+        rti.status,
+        rti.assigned_to,
+        rti.notes,
         cs.client_name,
-        cs.fee,
-        cs.estimated_hours as planned_hours
+        cs.service_type
       FROM recurring_task_instances rti
-      LEFT JOIN client_services cs ON rti.client_service_id = cs.id
-      WHERE 1=1
-    `;
-    const params = [];
-    
-    if (year) {
-      query += ` AND rti.year = ?`;
-      params.push(parseInt(year));
-    }
-    
-    if (month) {
-      query += ` AND rti.month = ?`;
-      params.push(parseInt(month));
-    }
-    
-    if (status) {
-      query += ` AND rti.status = ?`;
-      params.push(status);
-    }
-    
-    if (category) {
-      query += ` AND rti.category = ?`;
-      params.push(category);
-    }
-    
-    if (assignedTo) {
-      query += ` AND rti.assigned_to = ?`;
-      params.push(assignedTo);
-    }
-    
-    query += ` ORDER BY rti.due_date, rti.client_service_id`;
-    
-    const stmt = DB.prepare(query);
-    const result = await (params.length > 0 ? stmt.bind(...params).all() : stmt.all());
-    
-    const tasks = (result.results || []).map(task => ({
-      ...task,
-      checklist_data: task.checklist_data ? JSON.parse(task.checklist_data) : { items: [] }
-    }));
-    
-    return jsonResponse({ tasks });
+      JOIN client_services cs ON rti.client_service_id = cs.id
+      WHERE strftime('%Y', rti.instance_date) = ? AND strftime('%m', rti.instance_date) = ?
+      ORDER BY rti.instance_date ASC
+    `).bind(year, month.padStart(2, '0')).all();
+
+    return new Response(JSON.stringify(instances.results), { status: 200 });
   } catch (error) {
     console.error('getRecurringTaskInstances error:', error);
-    // 返回空陣列而不是錯誤，避免阻塞前端
-    return jsonResponse({ tasks: [], warning: error.message });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
 
