@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>內容管理 - 霍爾果斯會計師事務所</title>
+    <title>外部內容管理 - 霍爾果斯會計師事務所</title>
     <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="assets/css/internal-system.css">
@@ -79,9 +79,13 @@
                     <span class="material-symbols-outlined">task_alt</span>
                     任務
                 </a>
-                <a href="content-editor.html" class="internal-nav-link active">
-                    <span class="material-symbols-outlined">library_books</span>
+                <a href="knowledge.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">school</span>
                     知識庫
+                </a>
+                <a href="content-editor.html" class="internal-nav-link active">
+                    <span class="material-symbols-outlined">edit_note</span>
+                    內容
                 </a>
                 <a href="reports.html" class="internal-nav-link">
                     <span class="material-symbols-outlined">assessment</span>
@@ -107,26 +111,22 @@
         <div class="internal-container">
             <!-- 頁面標題 -->
             <div class="page-header" style="margin-bottom: 25px;">
-                <h1>知識庫管理</h1>
-                <p>管理文章、資源文件和媒體素材</p>
+                <h1>外部內容管理</h1>
+                <p>管理網站文章、部落格與公開資源</p>
             </div>
 
             <div class="content-tabs">
                 <button class="content-tab-btn active" onclick="switchContentTab('posts')">
                     <span class="material-symbols-outlined">article</span>
-                    知識文章
+                    部落格文章
                 </button>
                 <button class="content-tab-btn" onclick="switchContentTab('faq')">
                     <span class="material-symbols-outlined">help</span>
-                    常見問答
-                </button>
-                <button class="content-tab-btn" onclick="switchContentTab('sop')">
-                    <span class="material-symbols-outlined">description</span>
-                    SOP 文件
+                    公開FAQ
                 </button>
                 <button class="content-tab-btn" onclick="switchContentTab('resources')">
                     <span class="material-symbols-outlined">folder</span>
-                    文件資源
+                    資源下載
                 </button>
                 <button class="content-tab-btn" onclick="switchContentTab('media')">
                     <span class="material-symbols-outlined">photo_library</span>

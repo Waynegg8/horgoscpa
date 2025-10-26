@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>內部知識庫 - 霍爾果斯會計師事務所</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="assets/css/internal-system.css">
+    <style>
+        /* 主標籤切換 */
+        .main-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            flex-wrap: wrap;
+        }
+
+        .main-tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .main-tab-btn:hover {
+            background: var(--light-bg);
+        }
+
+        .main-tab-btn.active {
+            background: linear-gradient(135deg, var(--primary-color), #5a9ee5);
+            color: white;
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+
+        .main-tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .main-tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* FAQ樣式 */
+        .faq-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .faq-category {
+            margin-bottom: 30px;
+        }
+
+        .faq-category-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .faq-item {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .faq-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .faq-question {
+            padding: 15px 20px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            transition: background 0.3s;
+        }
+
+        .faq-question:hover {
+            background: var(--light-bg);
+        }
+
+        .faq-question.active {
+            background: var(--light-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .faq-question-text {
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .faq-icon {
+            transition: transform 0.3s;
+        }
+
+        .faq-question.active .faq-icon {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .faq-answer.active {
+            padding: 15px 20px;
+            max-height: 500px;
+        }
+
+        .faq-answer-content {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* 文檔卡片樣式 */
+        .doc-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid var(--primary-color);
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .doc-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+
+        .doc-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .doc-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+        }
+
+        .doc-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <!-- 簡潔的內部導航欄 -->
+    <nav class="internal-navbar">
+        <div class="internal-nav-container">
+            <a href="dashboard.html" class="internal-nav-brand">
+                <img src="assets/images/logo-white.png" alt="霍爾果斯">
+                <span>內部管理系統</span>
+            </a>
+            
+            <button class="internal-mobile-toggle" id="mobileToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div class="internal-nav-links" id="navLinks">
+                <a href="dashboard.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">home</span>
+                    工作台
+                </a>
+                <a href="timesheet.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">calendar_month</span>
+                    工時表
+                </a>
+                <a href="tasks.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">task_alt</span>
+                    任務
+                </a>
+                <a href="knowledge.html" class="internal-nav-link active">
+                    <span class="material-symbols-outlined">school</span>
+                    知識庫
+                </a>
+                <a href="content-editor.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">edit_note</span>
+                    內容
+                </a>
+                <a href="reports.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">assessment</span>
+                    報表
+                </a>
+                <a href="settings.html" class="internal-nav-link">
+                    <span class="material-symbols-outlined">settings</span>
+                    設定
+                </a>
+                
+                <div class="internal-nav-user">
+                    <div>
+                        <div class="internal-user-name" id="userName">載入中...</div>
+                        <div class="internal-user-role" id="userRole"></div>
+                    </div>
+                    <button class="internal-logout-btn" id="logoutBtn">登出</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="internal-main">
+        <div class="internal-container">
+            <!-- 頁面標題 -->
+            <div class="page-header" style="margin-bottom: 25px;">
+                <h1>內部知識庫</h1>
+                <p>SOP文件、內部文檔與常見問答</p>
+            </div>
+
+            <!-- 主標籤切換 -->
+            <div class="main-tabs">
+                <button class="main-tab-btn active" onclick="switchMainTab('sop')">
+                    <span class="material-symbols-outlined">description</span>
+                    SOP文件
+                </button>
+                <button class="main-tab-btn" onclick="switchMainTab('docs')">
+                    <span class="material-symbols-outlined">folder</span>
+                    內部文檔
+                </button>
+                <button class="main-tab-btn" onclick="switchMainTab('faq')">
+                    <span class="material-symbols-outlined">help</span>
+                    常見問答
+                </button>
+            </div>
+
+            <!-- SOP文件內容 -->
+            <div id="sop-tab" class="main-tab-content active">
+                <iframe src="sop.html" style="width: 100%; height: calc(100vh - 280px); border: none; border-radius: 8px;"></iframe>
+            </div>
+
+            <!-- 內部文檔內容 -->
+            <div id="docs-tab" class="main-tab-content">
+                <div class="toolbar" style="margin-bottom: 20px;">
+                    <button class="btn-primary">
+                        <span class="material-symbols-outlined">add</span>
+                        新增文檔
+                    </button>
+                    <input type="text" id="docSearch" placeholder="搜尋文檔..." style="margin-left: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 300px;">
+                </div>
+                <div id="docsList">
+                    <div class="doc-card">
+                        <div class="doc-title">📋 新員工入職指南</div>
+                        <div class="doc-meta">
+                            <div class="doc-meta-item">
+                                <span class="material-symbols-outlined">person</span>
+                                <span>人資部</span>
+                            </div>
+                            <div class="doc-meta-item">
+                                <span class="material-symbols-outlined">calendar_today</span>
+                                <span>2025-01-15</span>
+                            </div>
+                            <span class="category-badge">人事</span>
+                        </div>
+                    </div>
+
+                    <div class="doc-card">
+                        <div class="doc-title">💼 客戶服務標準流程</div>
+                        <div class="doc-meta">
+                            <div class="doc-meta-item">
+                                <span class="material-symbols-outlined">person</span>
+                                <span>業務部</span>
+                            </div>
+                            <div class="doc-meta-item">
+                                <span class="material-symbols-outlined">calendar_today</span>
+                                <span>2025-01-10</span>
+                            </div>
+                            <span class="category-badge">業務</span>
+                        </div>
+                    </div>
+
+                    <div class="doc-card">
+                        <div class="doc-title">🔐 資訊安全政策</div>
+                        <div class="doc-meta">
+                            <div class="doc-meta-item">
+                                <span class="material-symbols-outlined">person</span>
+                                <span>IT部門</span>
+                            </div>
+                            <div class="doc-meta-item">
+                                <span class="material-symbols-outlined">calendar_today</span>
+                                <span>2024-12-20</span>
+                            </div>
+                            <span class="category-badge">IT</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 常見問答內容 -->
+            <div id="faq-tab" class="main-tab-content">
+                <div class="toolbar" style="margin-bottom: 20px;">
+                    <button class="btn-primary" onclick="showAddFAQModal()">
+                        <span class="material-symbols-outlined">add</span>
+                        新增問答
+                    </button>
+                    <input type="text" id="faqSearch" placeholder="搜尋問題..." style="margin-left: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; width: 300px;">
+                </div>
+
+                <div class="faq-container">
+                    <!-- 工時系統 -->
+                    <div class="faq-category">
+                        <div class="faq-category-title">
+                            <span class="material-symbols-outlined">schedule</span>
+                            工時系統
+                        </div>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <div class="faq-question-text">如何記錄客戶工時？</div>
+                                <span class="material-symbols-outlined faq-icon">expand_more</span>
+                            </div>
+                            <div class="faq-answer">
+                                <div class="faq-answer-content">
+                                    1. 進入工時表頁面<br>
+                                    2. 選擇員工和月份<br>
+                                    3. 點擊「增加工時記錄」<br>
+                                    4. 填寫客戶名稱、業務類型和工時類型<br>
+                                    5. 在對應日期填入工時數<br>
+                                    6. 記得儲存變更
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <div class="faq-question-text">如何申請請假？</div>
+                                <span class="material-symbols-outlined faq-icon">expand_more</span>
+                            </div>
+                            <div class="faq-answer">
+                                <div class="faq-answer-content">
+                                    1. 進入工時表頁面<br>
+                                    2. 點擊「增加請假記錄」<br>
+                                    3. 選擇假別類型<br>
+                                    4. 在對應日期填入請假時數<br>
+                                    5. 儲存後通知主管審核
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 任務管理 -->
+                    <div class="faq-category">
+                        <div class="faq-category-title">
+                            <span class="material-symbols-outlined">task_alt</span>
+                            任務管理
+                        </div>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <div class="faq-question-text">週期任務如何設定？</div>
+                                <span class="material-symbols-outlined faq-icon">expand_more</span>
+                            </div>
+                            <div class="faq-answer">
+                                <div class="faq-answer-content">
+                                    1. 進入任務頁面，選擇「週期任務」標籤<br>
+                                    2. 點擊「新增服務配置」<br>
+                                    3. 選擇客戶、服務類型和類別<br>
+                                    4. 設定月度執行計畫<br>
+                                    5. 系統會自動在每月生成對應任務
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <div class="faq-question-text">工商登記流程怎麼追蹤？</div>
+                                <span class="material-symbols-outlined faq-icon">expand_more</span>
+                            </div>
+                            <div class="faq-answer">
+                                <div class="faq-answer-content">
+                                    1. 進入任務頁面，選擇「工商」標籤<br>
+                                    2. 創建新的工商任務<br>
+                                    3. 系統會自動建立多階段流程<br>
+                                    4. 依序完成各階段並更新狀態<br>
+                                    5. 可在時間軸上查看整體進度
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 報表分析 -->
+                    <div class="faq-category">
+                        <div class="faq-category-title">
+                            <span class="material-symbols-outlined">assessment</span>
+                            報表分析
+                        </div>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <div class="faq-question-text">如何查看員工工時統計？</div>
+                                <span class="material-symbols-outlined faq-icon">expand_more</span>
+                            </div>
+                            <div class="faq-answer">
+                                <div class="faq-answer-content">
+                                    1. 進入報表頁面<br>
+                                    2. 選擇「工時分析」標籤<br>
+                                    3. 設定查詢期間和員工<br>
+                                    4. 點擊「生成報表」<br>
+                                    5. 可匯出Excel進行進一步分析
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 系統設定 -->
+                    <div class="faq-category">
+                        <div class="faq-category-title">
+                            <span class="material-symbols-outlined">settings</span>
+                            系統設定
+                        </div>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <div class="faq-question-text">如何新增客戶資料？</div>
+                                <span class="material-symbols-outlined faq-icon">expand_more</span>
+                            </div>
+                            <div class="faq-answer">
+                                <div class="faq-answer-content">
+                                    1. 進入設定頁面<br>
+                                    2. 選擇「客戶管理」標籤<br>
+                                    3. 點擊「新增客戶」<br>
+                                    4. 填寫客戶基本資料<br>
+                                    5. 儲存後可在工時表中使用
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question" onclick="toggleFAQ(this)">
+                                <div class="faq-question-text">如何修改密碼？</div>
+                                <span class="material-symbols-outlined faq-icon">expand_more</span>
+                            </div>
+                            <div class="faq-answer">
+                                <div class="faq-answer-content">
+                                    1. 進入設定頁面<br>
+                                    2. 選擇「帳號設定」標籤<br>
+                                    3. 點擊「修改密碼」<br>
+                                    4. 輸入舊密碼和新密碼<br>
+                                    5. 確認後立即生效
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="internal-footer">
+        &copy; 2025 霍爾果斯會計師事務所 內部管理系統
+    </footer>
+
+    <script>
+        const WORKER_URL = 'https://timesheet-api.hergscpa.workers.dev';
+        let sessionToken = null;
+        let currentUser = null;
+
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 檢查登入狀態
+            if (!await checkAuth()) {
+                window.location.href = '/login.html';
+                return;
+            }
+        });
+
+        // 檢查認證狀態
+        async function checkAuth() {
+            sessionToken = localStorage.getItem('session_token');
+            if (!sessionToken) {
+                return false;
+            }
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/verify`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.user;
+                    updateUserInfo();
+                    return true;
+                }
+            } catch (err) {
+                console.error('驗證失敗:', err);
+            }
+            
+            return false;
+        }
+
+        // 更新使用者資訊顯示
+        function updateUserInfo() {
+            const userNameEl = document.getElementById('userName');
+            const userRoleEl = document.getElementById('userRole');
+            
+            if (currentUser) {
+                const displayName = currentUser.employee_name || currentUser.username;
+                const roleText = currentUser.role === 'admin' ? '管理員' : '員工';
+                userNameEl.textContent = displayName;
+                userRoleEl.textContent = roleText;
+            }
+        }
+
+        // 登出功能
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    
+                    try {
+                        await fetch(`${WORKER_URL}/api/logout`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${sessionToken}`
+                            }
+                        });
+                    } catch (err) {
+                        console.error('登出錯誤:', err);
+                    }
+                    
+                    localStorage.removeItem('session_token');
+                    localStorage.removeItem('user_info');
+                    window.location.href = '/login.html';
+                });
+            }
+        });
+
+        // 切換主標籤
+        function switchMainTab(tabName) {
+            // 更新按鈕狀態
+            document.querySelectorAll('.main-tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.main-tab-btn').classList.add('active');
+
+            // 更新內容顯示
+            document.querySelectorAll('.main-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            const tabMap = {
+                'sop': 'sop-tab',
+                'docs': 'docs-tab',
+                'faq': 'faq-tab'
+            };
+            
+            document.getElementById(tabMap[tabName]).classList.add('active');
+        }
+
+        // 切換FAQ展開/收合
+        function toggleFAQ(element) {
+            const faqItem = element.parentElement;
+            const answer = faqItem.querySelector('.faq-answer');
+            
+            element.classList.toggle('active');
+            answer.classList.toggle('active');
+        }
+
+        // 移動端選單切換
+        const mobileToggle = document.getElementById('mobileToggle');
+        const navLinks = document.getElementById('navLinks');
+        
+        if (mobileToggle && navLinks) {
+            mobileToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!mobileToggle.contains(e.target) && !navLinks.contains(e.target)) {
+                    navLinks.classList.remove('active');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
