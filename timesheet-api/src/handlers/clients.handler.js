@@ -93,6 +93,36 @@ export async function getClientInteractions(env, request) {
   return success(interactions);
 }
 
+export async function getClientsExtended(env, request) {
+  // 扩展客户信息（含服务统计）
+  const service = new ClientService(env.DB);
+  const clients = await service.getAll();
+  
+  // 添加服务统计
+  const csRepo = new ClientServiceRepository(env.DB);
+  for (const client of clients) {
+    const services = await csRepo.findByClient(client.id);
+    client.active_services = services.filter(s => s.is_active).length;
+    client.total_services = services.length;
+  }
+  
+  return list(clients);
+}
+
+export async function getServiceSchedule(env, request) {
+  // 服务排程（实际是 client_services 的别名）
+  const repo = new ClientServiceRepository(env.DB);
+  const services = await repo.findAllWithClient();
+  return list(services);
+}
+
+export async function createServiceSchedule(env, request) {
+  const data = await request.json();
+  const service = new ClientServiceConfigService(env.DB);
+  const result = await service.create(data);
+  return created(result);
+}
+
 export default {
   getClients,
   getClient,
@@ -104,5 +134,8 @@ export default {
   updateClientService,
   toggleClientService,
   deleteClientService,
-  getClientInteractions
+  getClientInteractions,
+  getClientsExtended,
+  getServiceSchedule,
+  createServiceSchedule
 };

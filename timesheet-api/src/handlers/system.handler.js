@@ -2,7 +2,9 @@
  * System Handler
  */
 import { SystemService } from '../services/SystemService.js';
-import { success, list } from '../utils/response.util.js';
+import { BaseRepository } from '../repositories/BaseRepository.js';
+import { success, list, created } from '../utils/response.util.js';
+import { TABLES } from '../config/constants.js';
 
 export async function getBusinessTypes(env, request) {
   const service = new SystemService(env.DB);
@@ -31,10 +33,23 @@ export async function getWorkTypes(env, request) {
   return list(types);
 }
 
+export async function createBusinessType(env, request) {
+  const data = await request.json();
+  const repo = new BaseRepository(env.DB, TABLES.BUSINESS_TYPES);
+  
+  if (!data.is_active) data.is_active = true;
+  
+  const id = await repo.create(data);
+  const businessType = await repo.findById(id);
+  
+  return created(businessType);
+}
+
 export default {
   getBusinessTypes,
   getLeaveTypes,
   getHolidays,
-  getWorkTypes
+  getWorkTypes,
+  createBusinessType
 };
 

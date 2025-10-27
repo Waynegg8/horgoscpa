@@ -29,9 +29,18 @@ export async function markAllRead(env, request) {
   return success({ count });
 }
 
+export async function autoGenerateReminders(env, request) {
+  // 自动生成提醒
+  return success({
+    generated: 0,
+    message: '自动生成提醒功能待完善'
+  });
+}
+
 export default {
   getReminders,
   markReminderRead,
-  markAllRead
+  markAllRead,
+  autoGenerateReminders
 };
 

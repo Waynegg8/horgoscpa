@@ -18,6 +18,13 @@ import { registerAdminRoutes } from './routes/admin.routes.js';
 import { registerPostRoutes } from './routes/posts.routes.js';
 import { registerMediaRoutes } from './routes/media.routes.js';
 import { registerFaqRoutes } from './routes/faq.routes.js';
+import { registerLeaveRoutes } from './routes/leaves.routes.js';
+import { registerTemplateRoutes } from './routes/templates.routes.js';
+import { registerWorkloadRoutes } from './routes/workload.routes.js';
+import { registerConfigRoutes } from './routes/config.routes.js';
+import { registerAssignmentRoutes } from './routes/assignments.routes.js';
+import { registerAutomatedRoutes } from './routes/automated.routes.js';
+import { registerProjectRoutes } from './routes/projects.routes.js';
 import { corsHeaders } from './utils.js';
 
 /**
@@ -52,6 +59,13 @@ function createRouter() {
   registerPostRoutes(router);
   registerMediaRoutes(router);
   registerFaqRoutes(router);
+  registerLeaveRoutes(router);
+  registerTemplateRoutes(router);
+  registerWorkloadRoutes(router);
+  registerConfigRoutes(router);
+  registerAssignmentRoutes(router);
+  registerAutomatedRoutes(router);
+  registerProjectRoutes(router);
 
   return router;
 }

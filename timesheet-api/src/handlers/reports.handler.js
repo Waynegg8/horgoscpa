@@ -39,6 +39,11 @@ export async function getWorkAnalysisReport(env, request) {
   return success({ timesheets: [], stats: {} });
 }
 
+export async function getPivotReport(env, request) {
+  // 枢纽分析报表
+  return success({ pivot_data: [], summary: {} });
+}
+
 export async function clearCache(env, request) {
   return success({ message: '快取已清除' });
 }
@@ -46,6 +51,7 @@ export async function clearCache(env, request) {
 export default {
   getAnnualLeaveReport,
   getWorkAnalysisReport,
+  getPivotReport,
   clearCache
 };
 

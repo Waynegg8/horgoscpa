@@ -6,7 +6,9 @@ import {
   getPost,
   createPost,
   updatePost,
-  deletePost
+  deletePost,
+  getPublicPosts,
+  getPublicResources
 } from '../handlers/posts.handler.js';
 import { withAuth, withAdmin } from '../middleware/auth.middleware.js';
 import { withErrorHandler } from '../middleware/error.middleware.js';
@@ -21,8 +23,9 @@ export function registerPostRoutes(router) {
   router.put('/api/posts/:id', admin(updatePost));
   router.delete('/api/posts/:id', admin(deletePost));
   
-  // 公开端点
-  router.get('/api/public/posts', withErrorHandler(async (env, request) => getPosts(env, { ...request, skipAuth: true })));
+  // 公开端点（无需认证）
+  router.get('/api/public/posts', withErrorHandler(getPublicPosts));
+  router.get('/api/public/resources', withErrorHandler(getPublicResources));
 }
 
 export default registerPostRoutes;

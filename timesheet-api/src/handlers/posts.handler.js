@@ -54,11 +54,24 @@ export async function deletePost(env, request) {
   return success({ message: '删除成功' });
 }
 
+export async function getPublicPosts(env, request) {
+  const repo = new BaseRepository(env.DB, TABLES.POSTS);
+  const posts = await repo.findAll({ status: 'published' }, { orderBy: 'published_at', order: 'DESC' });
+  return list(posts);
+}
+
+export async function getPublicResources(env, request) {
+  // 公开资源（简化版：返回空）
+  return list([]);
+}
+
 export default {
   getPosts,
   getPost,
   createPost,
   updatePost,
-  deletePost
+  deletePost,
+  getPublicPosts,
+  getPublicResources
 };
 
