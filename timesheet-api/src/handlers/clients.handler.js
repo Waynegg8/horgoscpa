@@ -1,98 +1,76 @@
 /**
- * Clients API Handler
- * 處理客戶相關的 HTTP 請求
+ * Clients Handler
  */
-
 import { ClientService } from '../services/ClientService.js';
-import { success, created, noContent, paginated } from '../utils/response.util.js';
+import { ClientServiceRepository } from '../repositories/ClientServiceRepository.js';
+import { BaseRepository } from '../repositories/BaseRepository.js';
+import { success, list, created, noContent } from '../utils/response.util.js';
+import { TABLES } from '../config/constants.js';
 
-/**
- * 獲取客戶列表
- * GET /api/clients
- */
-export async function getClientList(env, request) {
-  const url = new URL(request.url);
-  
-  const options = {
-    page: parseInt(url.searchParams.get('page')) || 1,
-    pageSize: parseInt(url.searchParams.get('pageSize')) || 20,
-    status: url.searchParams.get('status'),
-    region: url.searchParams.get('region'),
-    search: url.searchParams.get('search')
-  };
-
+export async function getClients(env, request) {
   const service = new ClientService(env.DB);
-  const result = await service.getList(options);
-
-  return paginated(
-    result.data,
-    result.meta.total,
-    result.meta.page,
-    result.meta.pageSize
-  );
+  const clients = await service.getAll();
+  return list(clients);
 }
 
-/**
- * 獲取客戶詳情
- * GET /api/clients/:id
- */
-export async function getClientDetail(env, request) {
+export async function getClient(env, request) {
   const id = parseInt(request.params.id);
-
   const service = new ClientService(env.DB);
-  const client = await service.getDetail(id);
-
+  const client = await service.getById(id);
   return success(client);
 }
 
-/**
- * 創建客戶
- * POST /api/clients
- */
 export async function createClient(env, request) {
   const data = await request.json();
-  const user = request.user;
-
   const service = new ClientService(env.DB);
-  const client = await service.create(data, { user });
-
-  return created(client, '客戶創建成功');
+  const client = await service.create(data);
+  return created(client);
 }
 
-/**
- * 更新客戶
- * PUT /api/clients/:id
- */
 export async function updateClient(env, request) {
   const id = parseInt(request.params.id);
   const data = await request.json();
-  const user = request.user;
-
   const service = new ClientService(env.DB);
-  const client = await service.update(id, data, { user });
-
+  const client = await service.update(id, data);
   return success(client);
 }
 
-/**
- * 刪除客戶
- * DELETE /api/clients/:id
- */
 export async function deleteClient(env, request) {
   const id = parseInt(request.params.id);
-  const user = request.user;
-
   const service = new ClientService(env.DB);
-  await service.delete(id, { user });
-
+  await service.delete(id);
   return noContent();
 }
 
+export async function getClientServices(env, request) {
+  const url = new URL(request.url);
+  const clientId = url.searchParams.get('client_id');
+  
+  const repo = new ClientServiceRepository(env.DB);
+  const services = clientId 
+    ? await repo.findByClient(parseInt(clientId))
+    : await repo.findAllWithClient();
+  
+  return success(services);
+}
+
+export async function getClientInteractions(env, request) {
+  const url = new URL(request.url);
+  const clientId = url.searchParams.get('client_id');
+  
+  const repo = new BaseRepository(env.DB, TABLES.CLIENT_INTERACTIONS);
+  const filters = clientId ? { client_id: parseInt(clientId) } : {};
+  const interactions = await repo.findAll(filters, { orderBy: 'interaction_date', order: 'DESC' });
+  
+  return success(interactions);
+}
+
 export default {
-  getClientList,
-  getClientDetail,
+  getClients,
+  getClient,
   createClient,
   updateClient,
-  deleteClient
+  deleteClient,
+  getClientServices,
+  getClientInteractions
 };
-
