@@ -38,3 +38,6 @@ CREATE INDEX idx_leave_apps_date ON LeaveApplications(start_date, end_date);
 ```
 
 
+
+
+

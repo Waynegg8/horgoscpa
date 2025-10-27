@@ -77,3 +77,6 @@ class clientservice { }       // 類別應使用 PascalCase
 **文檔版本：** 1.0
 
 
+
+
+
