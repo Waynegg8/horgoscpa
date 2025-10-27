@@ -33,7 +33,7 @@ async function checkAuth() {
         
         if (response.ok) {
             const data = await response.json();
-            currentUser = data.user;
+            currentUser = data.data?.user || data.user;
             // 同步到 window 供其他腳本使用
             window.sessionToken = sessionToken;
             window.currentUser = currentUser;

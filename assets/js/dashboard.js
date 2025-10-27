@@ -138,7 +138,7 @@ async function loadWeeklyStats() {
         const employeeName = currentUser.employee_name;
         if (employeeName) {
             const data = await apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(employeeName)}&year=${year}&month=${month}`);
-            const workEntries = data.workEntries || [];
+            const workEntries = data.data?.workEntries || data.workEntries || [];
             const leaveEntries = data.leaveEntries || [];
             
             let totalHours = 0;
@@ -282,7 +282,7 @@ async function loadAdminWeeklyStats() {
         const statsPromises = employees.map(async (emp) => {
             try {
                 const data = await apiRequest(`/api/timesheet-data?employee=${encodeURIComponent(emp.name)}&year=${year}&month=${month}`);
-                const workEntries = data.workEntries || [];
+                const workEntries = data.data?.workEntries || data.workEntries || [];
                 
                 let empHours = 0;
                 workEntries.forEach(entry => {
@@ -633,12 +633,12 @@ async function loadAnnualLeave() {
 
         // 1) 取得年度配額（含特休與其他）
         const quotaRes = await apiRequest(`/api/leave-quota?employee=${encodeURIComponent(employeeName)}&year=${currentYear}`);
-        const quotaList = quotaRes?.quota || [];
+        const quotaList = quotaRes.data?.quota || quotaRes?.quota || [];
         const annualQuotaHours = (quotaList.find(q => q.type === '特休')?.quota_hours) || 0;
 
         // 2) 取得年度已使用（報表）
         const reportRes = await apiRequest(`/api/reports/annual-leave?employee=${encodeURIComponent(employeeName)}&year=${currentYear}`);
-        const annualLeaveUsedHours = (reportRes?.leave_stats?.['特休']) || 0;
+        const annualLeaveUsedHours = (reportRes.data?.leave_stats?.['特休'] || reportRes?.leave_stats?.['特休']) || 0;
 
         const totalDays = annualQuotaHours / 8;
         const remainingDays = Math.max(0, (annualQuotaHours - annualLeaveUsedHours) / 8);
