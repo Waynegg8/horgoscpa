@@ -14,6 +14,10 @@ import { registerReminderRoutes } from './routes/reminders.routes.js';
 import { registerSopRoutes } from './routes/sops.routes.js';
 import { registerSystemRoutes } from './routes/system.routes.js';
 import { registerReportRoutes } from './routes/reports.routes.js';
+import { registerAdminRoutes } from './routes/admin.routes.js';
+import { registerPostRoutes } from './routes/posts.routes.js';
+import { registerMediaRoutes } from './routes/media.routes.js';
+import { registerFaqRoutes } from './routes/faq.routes.js';
 import { corsHeaders } from './utils.js';
 
 /**
@@ -44,6 +48,10 @@ function createRouter() {
   registerSopRoutes(router);
   registerSystemRoutes(router);
   registerReportRoutes(router);
+  registerAdminRoutes(router);
+  registerPostRoutes(router);
+  registerMediaRoutes(router);
+  registerFaqRoutes(router);
 
   return router;
 }

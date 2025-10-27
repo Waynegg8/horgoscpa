@@ -2,7 +2,7 @@
  * Clients Handler
  */
 import { ClientService } from '../services/ClientService.js';
-import { ClientServiceRepository } from '../repositories/ClientServiceRepository.js';
+import { ClientServiceConfigService } from '../services/ClientServiceConfigService.js';
 import { BaseRepository } from '../repositories/BaseRepository.js';
 import { success, list, created, noContent } from '../utils/response.util.js';
 import { TABLES } from '../config/constants.js';
@@ -46,12 +46,40 @@ export async function getClientServices(env, request) {
   const url = new URL(request.url);
   const clientId = url.searchParams.get('client_id');
   
-  const repo = new ClientServiceRepository(env.DB);
-  const services = clientId 
-    ? await repo.findByClient(parseInt(clientId))
-    : await repo.findAllWithClient();
+  const service = new ClientServiceConfigService(env.DB);
+  const filters = clientId ? { client_id: parseInt(clientId) } : {};
+  const services = await service.getAll(filters);
   
   return success(services);
+}
+
+export async function createClientService(env, request) {
+  const data = await request.json();
+  const service = new ClientServiceConfigService(env.DB);
+  const result = await service.create(data);
+  return created(result);
+}
+
+export async function updateClientService(env, request) {
+  const id = parseInt(request.params.id);
+  const data = await request.json();
+  const service = new ClientServiceConfigService(env.DB);
+  const result = await service.update(id, data);
+  return success(result);
+}
+
+export async function toggleClientService(env, request) {
+  const id = parseInt(request.params.id);
+  const service = new ClientServiceConfigService(env.DB);
+  const result = await service.toggleActive(id);
+  return success(result);
+}
+
+export async function deleteClientService(env, request) {
+  const id = parseInt(request.params.id);
+  const service = new ClientServiceConfigService(env.DB);
+  await service.delete(id);
+  return noContent();
 }
 
 export async function getClientInteractions(env, request) {
@@ -72,5 +100,9 @@ export default {
   updateClient,
   deleteClient,
   getClientServices,
+  createClientService,
+  updateClientService,
+  toggleClientService,
+  deleteClientService,
   getClientInteractions
 };
