@@ -276,7 +276,8 @@ async function loadAdminWeeklyStats() {
         const month = new Date().getMonth() + 1;
         
         // 管理員：顯示所有員工的工時統計
-        const employees = await apiRequest('/api/employees').catch(() => []);
+        const empRes = await apiRequest('/api/employees').catch(() => ({ data: [] }));
+        const employees = empRes.data || [];
         
         const statsPromises = employees.map(async (emp) => {
             try {
