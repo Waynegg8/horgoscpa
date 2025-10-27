@@ -11,7 +11,29 @@
     <link rel="stylesheet" href="assets/css/dashboard-page.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- 共用模組 -->
+    <!-- 新模块化架构 -->
+    <!-- Core 层 -->
+    <script type="module" src="assets/js/core/config/app.config.js"></script>
+    <script type="module" src="assets/js/core/config/constants.js"></script>
+    <script type="module" src="assets/js/core/api/client.js"></script>
+    <script type="module" src="assets/js/core/api/endpoints.js"></script>
+    <script type="module" src="assets/js/core/utils/auth.js"></script>
+    <script type="module" src="assets/js/core/utils/date.js"></script>
+    <script type="module" src="assets/js/core/utils/format.js"></script>
+    
+    <!-- Components 层 -->
+    <script type="module" src="assets/js/components/feedback/Toast.js"></script>
+    <script type="module" src="assets/js/components/feedback/Loading.js"></script>
+    <script type="module" src="assets/js/components/layout/Modal.js"></script>
+    
+    <!-- Modules 层 -->
+    <script type="module" src="assets/js/modules/tasks/TaskService.js"></script>
+    <script type="module" src="assets/js/modules/clients/ClientService.js"></script>
+    <script type="module" src="assets/js/modules/employees/EmployeeService.js"></script>
+    <script type="module" src="assets/js/modules/timesheets/TimesheetService.js"></script>
+    <script type="module" src="assets/js/modules/reminders/ReminderService.js"></script>
+    
+    <!-- 旧代码暂时保留以保证功能 -->
     <script src="assets/js/config.js"></script>
     <script src="assets/js/common-utils.js"></script>
     <script src="assets/js/auth-common.js"></script>
