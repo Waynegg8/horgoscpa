@@ -86,6 +86,7 @@ users.get('/admin/users', authMiddleware, requireAdmin, async (c) => {
 /**
  * POST /api/v1/admin/users
  * 新增員工（管理員專用）
+ * ⭐ 規格要求：自動生成初始密碼，無需前端提供
  * 
  * @openapi
  * /admin/users:
@@ -93,7 +94,7 @@ users.get('/admin/users', authMiddleware, requireAdmin, async (c) => {
  *     tags:
  *       - 員工管理
  *     summary: 新增員工
- *     description: 創建新員工帳號（僅管理員）
+ *     description: 創建新員工帳號，系統自動生成初始密碼（僅管理員）
  *     requestBody:
  *       required: true
  *       content:
@@ -102,7 +103,6 @@ users.get('/admin/users', authMiddleware, requireAdmin, async (c) => {
  *             type: object
  *             required:
  *               - username
- *               - password
  *               - name
  *               - email
  *               - gender
@@ -111,10 +111,6 @@ users.get('/admin/users', authMiddleware, requireAdmin, async (c) => {
  *               username:
  *                 type: string
  *                 example: "employee01"
- *               password:
- *                 type: string
- *                 format: password
- *                 example: "password123"
  *               name:
  *                 type: string
  *                 example: "張員工"
@@ -145,7 +141,24 @@ users.get('/admin/users', authMiddleware, requireAdmin, async (c) => {
  *                 example: "台北市信義區"
  *     responses:
  *       201:
- *         description: 創建成功
+ *         description: 創建成功（含自動生成的初始密碼）
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *                     initialPassword:
+ *                       type: string
+ *                       example: "aB3$xYz9Mn2!"
+ *                       description: 自動生成的初始密碼，請妥善保管
  *       403:
  *         description: 權限不足
  *       409:
@@ -158,9 +171,9 @@ users.post('/admin/users', authMiddleware, requireAdmin, async (c) => {
   const userData = await c.req.json();
   
   const userService = new UserService(c.env.DB);
-  const newUser = await userService.createUser(userData, admin.user_id);
+  const result = await userService.createUser(userData, admin.user_id);
   
-  return jsonResponse(c, successResponse(newUser), 201);
+  return jsonResponse(c, successResponse(result), 201);
 });
 
 /**
@@ -300,6 +313,7 @@ users.delete('/admin/users/:id', authMiddleware, requireAdmin, async (c) => {
 /**
  * POST /api/v1/admin/users/:id/reset-password
  * 重設員工密碼（管理員專用）
+ * ⭐ 規格要求：L643-L663 - 自動生成新密碼
  * 
  * @openapi
  * /admin/users/{id}/reset-password:
@@ -307,45 +321,50 @@ users.delete('/admin/users/:id', authMiddleware, requireAdmin, async (c) => {
  *     tags:
  *       - 員工管理
  *     summary: 重設員工密碼
- *     description: 管理員重設指定員工的密碼（僅管理員）
+ *     description: 管理員重設指定員工的密碼，系統自動生成新密碼（僅管理員）
  *     parameters:
  *       - name: id
  *         in: path
  *         required: true
  *         schema:
  *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - newPassword
- *             properties:
- *               newPassword:
- *                 type: string
- *                 format: password
- *                 example: "newpass123"
  *     responses:
  *       200:
- *         description: 密碼重設成功
+ *         description: 密碼重設成功（返回新密碼）
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: "密碼已重設"
+ *                     newPassword:
+ *                       type: string
+ *                       example: "xY9$mNz2Bb4!"
+ *                       description: 新密碼，請妥善保管
  *       403:
  *         description: 權限不足
  *       404:
  *         description: 員工不存在
- *       422:
- *         description: 密碼強度不足
  */
 users.post('/admin/users/:id/reset-password', authMiddleware, requireAdmin, async (c) => {
   const admin = c.get('user') as User;
   const userId = parseInt(c.req.param('id'));
-  const { newPassword } = await c.req.json();
   
   const userService = new UserService(c.env.DB);
-  await userService.resetUserPassword(userId, newPassword, admin.user_id);
+  const result = await userService.resetUserPassword(userId, admin.user_id);
   
-  return jsonResponse(c, successResponse({ message: '密碼已重設' }), 200);
+  return jsonResponse(c, successResponse({ 
+    message: '密碼已重設',
+    newPassword: result.newPassword 
+  }), 200);
 });
 
 // =====================================================

@@ -67,11 +67,11 @@ export class UserService {
 
   /**
    * 創建新員工（管理員功能）
+   * ⭐ 規格要求：L604-L641 - 自動生成初始密碼
    */
   async createUser(
     userData: {
       username: string;
-      password: string;
       name: string;
       email: string;
       is_admin?: boolean;
@@ -84,10 +84,9 @@ export class UserService {
       emergency_contact_phone?: string;
     },
     createdBy: number
-  ): Promise<Omit<User, 'password_hash'>> {
-    // 驗證必填欄位
+  ): Promise<{ user: Omit<User, 'password_hash'>; initialPassword: string }> {
+    // 驗證必填欄位 [規格:L606-L608]
     validateRequired(userData.username, '帳號');
-    validateRequired(userData.password, '密碼');
     validateRequired(userData.name, '姓名');
     validateRequired(userData.email, 'Email');
     validateRequired(userData.gender, '性別');
@@ -95,7 +94,6 @@ export class UserService {
     
     // 驗證格式
     validateEmail(userData.email, 'Email');
-    validatePassword(userData.password);
     validateGender(userData.gender);
     validateDateFormat(userData.start_date, '到職日期');
     
@@ -103,7 +101,7 @@ export class UserService {
       validateDateFormat(userData.birth_date, '出生日期');
     }
     
-    // 檢查帳號是否已存在
+    // 檢查帳號是否已存在 [規格:L616-L619]
     const existingUser = await this.userRepo.findByUsername(userData.username);
     if (existingUser) {
       throw new ConflictError('帳號已存在', 'username');
@@ -115,17 +113,21 @@ export class UserService {
       throw new ConflictError('Email 已被使用', 'email');
     }
     
-    // 雜湊密碼
-    const passwordHash = await hashPassword(userData.password);
+    // ⭐ 生成初始密碼（調用 generateRandomPassword）[規格:L622]
+    const { generateRandomPassword } = await import('../utils/crypto');
+    const initialPassword = generateRandomPassword();
     
-    // 創建用戶
+    // 雜湊密碼 [規格:L623]
+    const passwordHash = await hashPassword(initialPassword);
+    
+    // 創建用戶 [規格:L626-L630]
     const newUser = await this.userRepo.create({
       ...userData,
       password_hash: passwordHash,
       is_admin: userData.is_admin || false,
     });
     
-    // 記錄審計日誌
+    // 記錄審計日誌 [規格:L633-L638]
     await createAuditLog(this.db, {
       user_id: createdBy,
       action: 'CREATE',
@@ -139,7 +141,12 @@ export class UserService {
     });
     
     const { password_hash, ...userWithoutPassword } = newUser;
-    return userWithoutPassword;
+    
+    // ⭐ 返回用戶和初始密碼 [規格:L640]
+    return {
+      user: userWithoutPassword,
+      initialPassword,
+    };
   }
 
   /**
@@ -251,29 +258,30 @@ export class UserService {
 
   /**
    * 重設密碼（管理員功能）
+   * ⭐ 規格要求：L643-L663 - 自動生成新密碼
    */
   async resetUserPassword(
     targetUserId: number,
-    newPassword: string,
     adminUserId: number
-  ): Promise<void> {
-    // 驗證新密碼
-    validatePassword(newPassword);
-    
+  ): Promise<{ newPassword: string }> {
     // 檢查目標用戶是否存在
     const targetUser = await this.userRepo.findById(targetUserId);
     if (!targetUser) {
       throw new NotFoundError('目標員工不存在');
     }
     
-    // 雜湊新密碼
+    // ⭐ 生成新密碼（調用 generateRandomPassword）[規格:L645]
+    const { generateRandomPassword } = await import('../utils/crypto');
+    const newPassword = generateRandomPassword();
+    
+    // 雜湊密碼 [規格:L646]
     const passwordHash = await hashPassword(newPassword);
     
-    // 更新密碼並重置登入嘗試次數
+    // 更新密碼並重置登入嘗試次數 [規格:L649-L652]
     await this.userRepo.updatePassword(targetUserId, passwordHash);
     await this.userRepo.updateLoginAttempts(targetUserId, 0);
     
-    // 記錄審計日誌
+    // 記錄審計日誌 [規格:L654-L660]
     await createAuditLog(this.db, {
       user_id: adminUserId,
       action: 'UPDATE',
@@ -285,6 +293,9 @@ export class UserService {
         target_username: targetUser.username,
       }),
     });
+    
+    // ⭐ 返回新密碼 [規格:L662]
+    return { newPassword };
   }
 
   /**
