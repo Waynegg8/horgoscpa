@@ -744,37 +744,266 @@
 **資料表：** 3 個 | **API：** 12 個 | **Cron Jobs：** 0 個
 
 #### 3.1 資料表創建
-- [x] 3.1.1 創建 `Clients` 表（客戶資料，含 client_notes 和 payment_notes）
-- [x] 3.1.2 創建 `CustomerTags` 表（客戶標籤，含5個預設標籤）
-- [x] 3.1.3 創建 `ClientTagAssignments` 表（客戶與標籤關聯）
 
-#### 3.2 客戶管理 API（小型事務所彈性設計：所有人可用）
-- [x] 3.2.1 實現 `GET /api/v1/clients` 路由（含 N+1 優化、字段選擇器，含 OpenAPI 註解）
-- [x] 3.2.2 實現 `POST /api/v1/clients` 路由（含統一編號驗證，含 OpenAPI 註解）
-- [x] 3.2.3 實現 `GET /api/v1/clients/:id` 路由（含權限過濾，含 OpenAPI 註解）
-- [x] 3.2.4 實現 `PUT /api/v1/clients/:id` 路由（含標籤更新，含 OpenAPI 註解）
-- [x] 3.2.5 實現 `DELETE /api/v1/clients/:id` 路由（含服務檢查，含 OpenAPI 註解）
+**3.1.1 Clients 表（客戶資料）[規格:L21-L40]**
+- [x] 3.1.1.1 創建主鍵 `client_id` (TEXT PRIMARY KEY) [規格:L22]
+- [x] 3.1.1.2 創建 `company_name` (TEXT NOT NULL) [規格:L23]
+- [x] 3.1.1.3 創建 `tax_registration_number` (TEXT) [規格:L24]
+- [x] 3.1.1.4 創建 `business_status` (TEXT DEFAULT '營業中') [規格:L25]
+- [x] 3.1.1.5 創建 `assignee_user_id` (INTEGER NOT NULL) [規格:L26]
+- [x] 3.1.1.6 創建聯絡資訊：`phone`, `email` [規格:L27-L28]
+- [x] 3.1.1.7 創建 `client_notes` (TEXT)，註釋：客戶備註（記錄客戶特殊需求、注意事項）[規格:L29]
+- [x] 3.1.1.8 創建 `payment_notes` (TEXT)，註釋：收款備註（記錄收款相關資訊）[規格:L30]
+- [x] 3.1.1.9 創建審計欄位：`created_at`, `updated_at`, `is_deleted` [規格:L31-L33]
+- [x] 3.1.1.10 添加外鍵約束：`assignee_user_id` REFERENCES Users(user_id) [規格:L35]
+- [x] 3.1.1.11 創建索引：`idx_clients_assignee` ON Clients(assignee_user_id) [規格:L38]
+- [x] 3.1.1.12 創建索引：`idx_clients_company_name` ON Clients(company_name) [規格:L39]
 
-#### 3.3 標籤管理 API（小型事務所彈性設計：所有人可用）
-- [x] 3.3.1 實現 `GET /api/v1/clients/tags` 路由（含 OpenAPI 註解）
-- [x] 3.3.2 實現 `POST /api/v1/clients/tags` 路由（含 OpenAPI 註解）
-- [x] 3.3.3 實現 `PUT /api/v1/clients/tags/:id` 路由（含 OpenAPI 註解）
-- [x] 3.3.4 實現 `DELETE /api/v1/clients/tags/:id` 路由（含使用檢查，含 OpenAPI 註解）
+**3.1.2 CustomerTags 表（客戶標籤）[規格:L44-L50]**
+- [x] 3.1.2.1 創建主鍵 `tag_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L45]
+- [x] 3.1.2.2 創建 `tag_name` (TEXT UNIQUE NOT NULL) [規格:L46]
+- [x] 3.1.2.3 創建 `tag_color` (TEXT) [規格:L47]
+- [x] 3.1.2.4 創建 `created_at` (TEXT DEFAULT datetime('now')) [規格:L48]
+- [x] 3.1.2.5 插入5個預設標籤（VIP、長期合作、新客戶、高價值、需關注）
 
-#### 3.4 批量操作 API（僅管理員）
-- [x] 3.4.1 實現 `POST /api/v1/clients/batch-update` 路由（含 OpenAPI 註解）
-- [x] 3.4.2 實現 `POST /api/v1/clients/batch-delete` 路由（含服務檢查，含 OpenAPI 註解）
-- [x] 3.4.3 實現 `POST /api/v1/clients/batch-assign` 路由（批量分配負責人，含 OpenAPI 註解）
+**3.1.3 ClientTagAssignments 表（客戶與標籤關聯）[規格:L54-L64]**
+- [x] 3.1.3.1 創建主鍵 `assignment_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L55]
+- [x] 3.1.3.2 創建 `client_id` (TEXT NOT NULL) [規格:L56]
+- [x] 3.1.3.3 創建 `tag_id` (INTEGER NOT NULL) [規格:L57]
+- [x] 3.1.3.4 創建 `assigned_at` (TEXT DEFAULT datetime('now')) [規格:L58]
+- [x] 3.1.3.5 添加外鍵約束：`client_id` REFERENCES Clients(client_id) ON DELETE CASCADE [規格:L60]
+- [x] 3.1.3.6 添加外鍵約束：`tag_id` REFERENCES CustomerTags(tag_id) [規格:L61]
+- [x] 3.1.3.7 添加唯一約束：UNIQUE(client_id, tag_id) [規格:L62]
 
-#### 3.5 前端實現（暫緩）
-- [ ] 3.5.1 實現 `ClientsPage.vue` 組件（客戶列表）
-- [ ] 3.5.2 實現 `ClientForm.vue` 組件（新增/編輯客戶）
-- [ ] 3.5.3 實現 `ClientDetail.vue` 組件（客戶詳情）
+---
 
-#### 3.6 測試與部署
-- [x] 3.6.1 [內部] 自行測試所有客戶管理功能（邏輯驗證通過）
-- [x] 3.6.2 [內部] 準備執行一致性驗證
-- [x] 3.6.3 [內部] 準備執行自動部署
+#### 3.2 客戶管理實現（小型事務所彈性設計：所有人可用）[規格:L72, L187, L207, L213]
+
+**3.2.1 ClientRepository 創建**
+- [x] 3.2.1.1 創建 `findAll()` 方法（含 N+1 優化）[規格:L121-L162]
+  - [x] 3.2.1.1.1 使用 JOIN + GROUP_CONCAT 一次查詢客戶和標籤 [規格:L122-L134]
+  - [x] 3.2.1.1.2 小型事務所設計：員工可查看所有客戶（不過濾 assignee_user_id）[規格:L138-L142, L720-L724]
+  - [x] 3.2.1.1.3 支持 company_name 模糊搜尋 [規格:L145-L148]
+  - [x] 3.2.1.1.4 按 created_at DESC 排序 [規格:L151]
+  - [x] 3.2.1.1.5 支持分頁（limit, offset）[規格:L152-L153]
+  - [x] 3.2.1.1.6 處理標籤字串轉陣列 [規格:L158-L161]
+
+- [x] 3.2.1.2 創建 `findById()` 方法
+- [x] 3.2.1.3 創建 `findByClientId()` 方法（檢查統一編號唯一性）[規格:L734]
+- [x] 3.2.1.4 創建 `create()` 方法 [規格:L790-L807]
+- [x] 3.2.1.5 創建 `update()` 方法
+- [x] 3.2.1.6 創建 `delete()` 方法（軟刪除）
+
+**3.2.2 字段選擇器（Sparse Fieldsets）實現 [規格:L165-L183]**
+- [x] 3.2.2.1 支持 `?fields=client_id,company_name` 參數
+- [x] 3.2.2.2 動態構建 SELECT 子句 [規格:L169-L176]
+- [x] 3.2.2.3 減少網絡帶寬傳輸
+
+**3.2.3 ClientService 創建**
+- [x] 3.2.3.1 實現 `getClients()` 方法 [規格:L719-L727]
+  - [x] 3.2.3.1.1 小型事務所設計：不過濾權限（員工可看所有客戶）[規格:L720-L724]
+  - [x] 3.2.3.1.2 調用 ClientRepository.findAll()
+
+- [x] 3.2.3.2 實現 `createClient()` 方法 [規格:L729-L752]
+  - [x] 3.2.3.2.1 調用 validate() 驗證資料 [規格:L731, L754-L761]
+  - [x] 3.2.3.2.2 檢查統一編號唯一性 [規格:L734-L737, L865-L867]
+  - [x] 3.2.3.2.3 創建客戶記錄 [規格:L740-L744]
+  - [x] 3.2.3.2.4 處理標籤分配（如有 tag_ids）[規格:L747-L749]
+  - [x] 3.2.3.2.5 記錄審計日誌
+
+- [x] 3.2.3.3 實現 `validate()` 方法 [規格:L754-L761]
+  - [x] 3.2.3.3.1 驗證統一編號為8位數字（正則：/^\d{8}$/）[規格:L755-L757, L865-L867]
+  - [x] 3.2.3.3.2 驗證 company_name 必填 [規格:L758-L760, L868]
+  - [x] 3.2.3.3.3 驗證 email 格式（如有提供）[規格:L869]
+  - [x] 3.2.3.3.4 驗證台灣電話格式（如有提供）[規格:L870]
+
+- [x] 3.2.3.4 實現 `updateClient()` 方法
+  - [x] 3.2.3.4.1 查詢客戶是否存在
+  - [x] 3.2.3.4.2 更新客戶資料
+  - [x] 3.2.3.4.3 更新標籤（如有 tag_ids）
+  - [x] 3.2.3.4.4 記錄審計日誌
+
+- [x] 3.2.3.5 實現 `deleteClient()` 方法
+  - [x] 3.2.3.5.1 檢查是否有啟用中的服務
+  - [x] 3.2.3.5.2 軟刪除客戶記錄
+  - [x] 3.2.3.5.3 記錄審計日誌
+
+**3.2.4 客戶管理 API 路由創建（所有人可用）**
+- [x] 3.2.4.1 `GET /api/v1/clients` [規格:L72-L98]
+  - [x] 3.2.4.1.1 應用 authMiddleware（所有人可用）[規格:L74, L876-L880]
+  - [x] 3.2.4.1.2 解析查詢參數（company_name, limit, offset, fields）[規格:L73]
+  - [x] 3.2.4.1.3 調用 ClientService.getClients()
+  - [x] 3.2.4.1.4 返回客戶列表（含標籤、負責人名稱、client_notes、payment_notes）[規格:L80-L92]
+  - [x] 3.2.4.1.5 返回分頁資訊 [規格:L91]
+  - [x] 3.2.4.1.6 添加 OpenAPI 註解
+
+- [x] 3.2.4.2 `POST /api/v1/clients` [規格:L187-L203]
+  - [x] 3.2.4.2.1 應用 authMiddleware（小型事務所：所有人可用）[規格:L188, L882-L884]
+  - [x] 3.2.4.2.2 解析請求 Body（client_id, company_name, assignee_user_id, phone, email, client_notes, payment_notes, tag_ids）[規格:L193-L202]
+  - [x] 3.2.4.2.3 調用 ClientService.createClient()
+  - [x] 3.2.4.2.4 返回 201 Created
+  - [x] 3.2.4.2.5 添加 OpenAPI 註解
+
+- [x] 3.2.4.3 `GET /api/v1/clients/:id` [規格:L72]
+  - [x] 3.2.4.3.1 應用 authMiddleware（所有人可用）
+  - [x] 3.2.4.3.2 解析路徑參數 client_id
+  - [x] 3.2.4.3.3 調用 ClientService.getClientById()
+  - [x] 3.2.4.3.4 返回客戶詳情
+  - [x] 3.2.4.3.5 添加 OpenAPI 註解
+
+- [x] 3.2.4.4 `PUT /api/v1/clients/:id` [規格:L207-L209]
+  - [x] 3.2.4.4.1 應用 authMiddleware（所有人可用）[規格:L208]
+  - [x] 3.2.4.4.2 解析路徑參數和請求 Body
+  - [x] 3.2.4.4.3 調用 ClientService.updateClient()（含標籤更新）
+  - [x] 3.2.4.4.4 返回更新後的客戶
+  - [x] 3.2.4.4.5 添加 OpenAPI 註解
+
+- [x] 3.2.4.5 `DELETE /api/v1/clients/:id` [規格:L213-L215]
+  - [x] 3.2.4.5.1 應用 authMiddleware（所有人可用）[規格:L214]
+  - [x] 3.2.4.5.2 調用 ClientService.deleteClient()（含服務檢查）
+  - [x] 3.2.4.5.3 返回成功響應
+  - [x] 3.2.4.5.4 添加 OpenAPI 註解
+
+---
+
+#### 3.3 標籤管理實現（所有人可用）[規格:L219-L223]
+
+**3.3.1 TagRepository 創建**
+- [x] 3.3.1.1 創建 `findAll()` 方法（查詢所有標籤）
+- [x] 3.3.1.2 創建 `findById()` 方法
+- [x] 3.3.1.3 創建 `create()` 方法
+- [x] 3.3.1.4 創建 `update()` 方法
+- [x] 3.3.1.5 創建 `delete()` 方法（檢查使用情況）
+
+**3.3.2 TagService 創建**
+- [x] 3.3.2.1 實現 `getAllTags()` 方法
+- [x] 3.3.2.2 實現 `createTag()` 方法
+  - [x] 3.3.2.2.1 驗證 tag_name 必填
+  - [x] 3.3.2.2.2 檢查名稱唯一性
+  - [x] 3.3.2.2.3 創建標籤記錄
+  - [x] 3.3.2.2.4 記錄審計日誌
+
+- [x] 3.3.2.3 實現 `updateTag()` 方法
+- [x] 3.3.2.4 實現 `deleteTag()` 方法
+  - [x] 3.3.2.4.1 檢查標籤是否被使用
+  - [x] 3.3.2.4.2 如被使用則拋出錯誤
+  - [x] 3.3.2.4.3 刪除標籤
+  - [x] 3.3.2.4.4 記錄審計日誌
+
+**3.3.3 標籤管理 API 路由創建（所有人可用）**
+- [x] 3.3.3.1 `GET /api/v1/clients/tags` [規格:L219]
+  - [x] 3.3.3.1.1 應用 authMiddleware（所有人可用）
+  - [x] 3.3.3.1.2 調用 TagService.getAllTags()
+  - [x] 3.3.3.1.3 返回標籤列表
+  - [x] 3.3.3.1.4 添加 OpenAPI 註解
+
+- [x] 3.3.3.2 `POST /api/v1/clients/tags` [規格:L220]
+  - [x] 3.3.3.2.1 應用 authMiddleware（所有人可用）
+  - [x] 3.3.3.2.2 解析請求 Body（tag_name, tag_color）
+  - [x] 3.3.3.2.3 調用 TagService.createTag()
+  - [x] 3.3.3.2.4 返回 201 Created
+  - [x] 3.3.3.2.5 添加 OpenAPI 註解
+
+- [x] 3.3.3.3 `PUT /api/v1/clients/tags/:id` [規格:L221]
+  - [x] 3.3.3.3.1 應用 authMiddleware（所有人可用）
+  - [x] 3.3.3.3.2 解析路徑參數和請求 Body
+  - [x] 3.3.3.3.3 調用 TagService.updateTag()
+  - [x] 3.3.3.3.4 返回更新後的標籤
+  - [x] 3.3.3.3.5 添加 OpenAPI 註解
+
+- [x] 3.3.3.4 `DELETE /api/v1/clients/tags/:id` [規格:L222]
+  - [x] 3.3.3.4.1 應用 authMiddleware（所有人可用）
+  - [x] 3.3.3.4.2 調用 TagService.deleteTag()（含使用檢查）
+  - [x] 3.3.3.4.3 返回成功響應
+  - [x] 3.3.3.4.4 添加 OpenAPI 註解
+
+---
+
+#### 3.4 批量操作實現（僅管理員）[規格:L227-L230]
+
+**3.4.1 ClientService 批量操作方法創建**
+- [x] 3.4.1.1 實現 `batchAssign()` 方法 [規格:L280-L323]
+  - [x] 3.4.1.1.1 限制批量大小（最多100條）[規格:L282-L284]
+  - [x] 3.4.1.1.2 驗證負責人存在 [規格:L287-L290]
+  - [x] 3.4.1.1.3 使用事務批量更新 [規格:L297-L305]
+  - [x] 3.4.1.1.4 記錄每個客戶的審計日誌 [規格:L308-L316]
+  - [x] 3.4.1.1.5 返回操作結果統計 [規格:L318-L322]
+
+- [x] 3.4.1.2 實現 `batchDelete()` 方法 [規格:L325-L364]
+  - [x] 3.4.1.2.1 限制批量大小（最多100條）[規格:L327-L329]
+  - [x] 3.4.1.2.2 檢查關聯數據（未完成任務）[規格:L333-L343]
+  - [x] 3.4.1.2.3 生成警告訊息 [規格:L340-L342]
+  - [x] 3.4.1.2.4 使用事務批量軟刪除 [規格:L346-L356]
+  - [x] 3.4.1.2.5 返回操作結果和警告 [規格:L358-L363]
+
+- [x] 3.4.1.3 實現 `batchUpdate()` 方法
+  - [x] 3.4.1.3.1 限制批量大小（最多100條）
+  - [x] 3.4.1.3.2 驗證更新資料
+  - [x] 3.4.1.3.3 使用事務批量更新
+  - [x] 3.4.1.3.4 記錄審計日誌
+
+**3.4.2 批量操作 API 路由創建（僅管理員）**
+- [x] 3.4.2.1 `POST /api/v1/clients/batch-assign` [規格:L229, L233-L254]
+  - [x] 3.4.2.1.1 應用 authMiddleware + adminMiddleware
+  - [x] 3.4.2.1.2 解析請求 Body（client_ids, assignee_user_id）[規格:L235-L238]
+  - [x] 3.4.2.1.3 驗證 client_ids 不超過100條 [規格:L282-L284]
+  - [x] 3.4.2.1.4 調用 ClientService.batchAssign()
+  - [x] 3.4.2.1.5 返回操作結果（total, succeeded, failed, details）[規格:L242-L253]
+  - [x] 3.4.2.1.6 添加 OpenAPI 註解
+
+- [x] 3.4.2.2 `POST /api/v1/clients/batch-delete` [規格:L228, L257-L275]
+  - [x] 3.4.2.2.1 應用 authMiddleware + adminMiddleware
+  - [x] 3.4.2.2.2 解析請求 Body（client_ids）[規格:L259-L261]
+  - [x] 3.4.2.2.3 驗證 client_ids 不超過100條
+  - [x] 3.4.2.2.4 調用 ClientService.batchDelete()
+  - [x] 3.4.2.2.5 返回操作結果和警告訊息 [規格:L264-L274]
+  - [x] 3.4.2.2.6 添加 OpenAPI 註解
+
+- [x] 3.4.2.3 `POST /api/v1/clients/batch-update` [規格:L227]
+  - [x] 3.4.2.3.1 應用 authMiddleware + adminMiddleware
+  - [x] 3.4.2.3.2 解析請求 Body（client_ids, updates）
+  - [x] 3.4.2.3.3 驗證 client_ids 不超過100條
+  - [x] 3.4.2.3.4 調用 ClientService.batchUpdate()
+  - [x] 3.4.2.3.5 返回操作結果
+  - [x] 3.4.2.3.6 添加 OpenAPI 註解
+
+---
+
+#### 3.5 完整性驗證 [規格:L1-L924]
+
+**3.5.1 API 清單驗證**
+- [x] 3.5.1.1 驗證客戶管理 API（5 個）[規格:L72, L187, L207, L213]
+- [x] 3.5.1.2 驗證標籤管理 API（4 個）[規格:L219-L223]
+- [x] 3.5.1.3 驗證批量操作 API（3 個）[規格:L227-L230]
+- [x] 3.5.1.4 確認總計：12 個 API
+
+**3.5.2 業務邏輯驗證**
+- [x] 3.5.2.1 驗證統一編號8位數字規則 [規格:L755-L757, L865-L867]
+- [x] 3.5.2.2 驗證 N+1 查詢優化（JOIN + GROUP_CONCAT）[規格:L100-L162]
+- [x] 3.5.2.3 驗證字段選擇器功能 [規格:L165-L183]
+- [x] 3.5.2.4 驗證小型事務所彈性設計（員工可看所有客戶）[規格:L720-L724, L876-L880]
+- [x] 3.5.2.5 驗證批量操作100條上限 [規格:L282-L284]
+- [x] 3.5.2.6 驗證 client_notes 和 payment_notes 兩個備註欄位 [規格:L29-L30, L94-L97]
+
+**3.5.3 測試案例執行**
+- [x] 3.5.3.1 測試新增客戶成功 [規格:L895-L903]
+- [x] 3.5.3.2 測試統一編號重複 [規格:L906-L909]
+- [x] 3.5.3.3 測試員工可看所有客戶 [規格:L912-L919]
+
+**3.5.4 回到規格逐一驗證**
+- [x] 3.5.4.1 打開規格文檔 L21-L40，驗證 Clients 表完整性
+- [x] 3.5.4.2 打開規格文檔 L44-L50，驗證 CustomerTags 表完整性
+- [x] 3.5.4.3 打開規格文檔 L54-L64，驗證 ClientTagAssignments 表完整性
+- [x] 3.5.4.4 打開規格文檔 L100-L162，驗證 N+1 查詢優化實現
+- [x] 3.5.4.5 打開規格文檔 L280-L364，驗證批量操作實現
+- [x] 3.5.4.6 逐一驗證所有 12 個 API 的實現
+
+---
+
+#### 3.6 部署與測試
+- [x] 3.6.1 [內部] 提交所有更改到 Git
+- [x] 3.6.2 [內部] 執行自動部署（git push origin main）
+- [x] 3.6.3 [內部] 驗證 Cloudflare Pages 部署成功
 
 ---
 
