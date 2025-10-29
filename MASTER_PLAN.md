@@ -2483,10 +2483,10 @@
 
 ---
 
-### [ ] 模組 12：收據收款（發票收款-完整規格.md）
+### [x] 模組 12：收據收款（發票收款-完整規格.md）
 **資料表：** 4 個 | **API：** 14 個（收據 6 + 收款 3 + 統計 3 + PDF 2）| **Cron Jobs：** 0 個
 
-#### 12.1 資料表創建（4 表）
+#### [x] 12.1 資料表創建（4 表）
 
 **12.1.1 創建 `Receipts` 表（收據管理，含作廢欄位與複合索引）[規格:L37-L78]**
 - [x] 12.1.1.1 主鍵 `receipt_id` (TEXT PRIMARY KEY, 格式：YYYYMM-NNN) [規格:L41]
@@ -2544,122 +2544,122 @@
 #### [x] 12.2 收據管理 API（6個）[規格:L256-L345]
 
 **12.2.1 GET /api/v1/receipts（查詢收據列表，含客戶備註 JOIN）[規格:L259, L296-L344]**
-- [ ] 12.2.1.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.2.1.2 查詢參數：status, client_id, start_date, end_date（可選）
-- [ ] 12.2.1.3 Repository JOIN Clients 表（⭐含 payment_notes, client_notes）[規格:L314-L315, L329-L330, L336-L344]
-- [ ] 12.2.1.4 計算 paid_amount (SUM Payments), remaining_amount, days_overdue [規格:L310-L313]
-- [ ] 12.2.1.5 返回列表（含客戶備註供收款參考）[規格:L302-L332]
-- [ ] 12.2.1.6 添加 OpenAPI 註解
+- [x] 12.2.1.1 權限：authMiddleware + adminMiddleware
+- [x] 12.2.1.2 查詢參數：status, client_id, start_date, end_date（可選）
+- [x] 12.2.1.3 Repository JOIN Clients 表（⭐含 payment_notes, client_notes）[規格:L314-L315, L329-L330, L336-L344]
+- [x] 12.2.1.4 計算 paid_amount (SUM Payments), remaining_amount, days_overdue [規格:L310-L313]
+- [x] 12.2.1.5 返回列表（含客戶備註供收款參考）[規格:L302-L332]
+- [x] 12.2.1.6 添加 OpenAPI 註解
 
 **12.2.2 POST /api/v1/receipts（開立收據，含自動/手動編號）[規格:L260, L367-L424]**
-- [ ] 12.2.2.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.2.2.2 請求 Body：receipt_id（可選）, is_auto_generated, client_id, receipt_date, due_date, items[], notes [規格:L372-L392]
-- [ ] 12.2.2.3 若 receipt_id 未提供，調用 generateReceiptNumber() [規格:L154-L229]
-- [ ] 12.2.2.4 驗證收據號碼格式（YYYYMM-NNN）與唯一性 [規格:L168-L179]
-- [ ] 12.2.2.5 Service 批次插入 ReceiptItems [規格:L378-L390]
-- [ ] 12.2.2.6 計算 total_amount（SUM items.amount，無稅額）[規格:L406]
-- [ ] 12.2.2.7 返回 201 Created（含項目明細）[規格:L398-L422]
+- [x] 12.2.2.1 權限：authMiddleware + adminMiddleware
+- [x] 12.2.2.2 請求 Body：receipt_id（可選）, is_auto_generated, client_id, receipt_date, due_date, items[], notes [規格:L372-L392]
+- [x] 12.2.2.3 若 receipt_id 未提供，調用 generateReceiptNumber() [規格:L154-L229]
+- [x] 12.2.2.4 驗證收據號碼格式（YYYYMM-NNN）與唯一性 [規格:L168-L179]
+- [x] 12.2.2.5 Service 批次插入 ReceiptItems [規格:L378-L390]
+- [x] 12.2.2.6 計算 total_amount（SUM items.amount，無稅額）[規格:L406]
+- [x] 12.2.2.7 返回 201 Created（含項目明細）[規格:L398-L422]
 
 **12.2.3 GET /api/v1/receipts/:id（查詢收據詳情）[規格:L261]**
-- [ ] 12.2.3.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.2.3.2 路徑參數：id（receipt_id）
-- [ ] 12.2.3.3 Repository JOIN ReceiptItems, Clients, Payments
-- [ ] 12.2.3.4 計算 paid_amount, remaining_amount
-- [ ] 12.2.3.5 返回完整詳情（含項目、收款記錄）
+- [x] 12.2.3.1 權限：authMiddleware + adminMiddleware
+- [x] 12.2.3.2 路徑參數：id（receipt_id）
+- [x] 12.2.3.3 Repository JOIN ReceiptItems, Clients, Payments
+- [x] 12.2.3.4 計算 paid_amount, remaining_amount
+- [x] 12.2.3.5 返回完整詳情（含項目、收款記錄）
 
 **12.2.4 PUT /api/v1/receipts/:id（更新收據）[規格:L262]**
-- [ ] 12.2.4.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.2.4.2 路徑參數：id
-- [ ] 12.2.4.3 請求 Body：允許更新的欄位（receipt_date, due_date, items, notes）
-- [ ] 12.2.4.4 Service 更新 Receipts 與 ReceiptItems
-- [ ] 12.2.4.5 返回更新後的數據
+- [x] 12.2.4.1 權限：authMiddleware + adminMiddleware
+- [x] 12.2.4.2 路徑參數：id
+- [x] 12.2.4.3 請求 Body：允許更新的欄位（receipt_date, due_date, items, notes）
+- [x] 12.2.4.4 Service 更新 Receipts 與 ReceiptItems
+- [x] 12.2.4.5 返回更新後的數據
 
 **12.2.5 DELETE /api/v1/receipts/:id（作廢收據）[規格:L263]**
-- [ ] 12.2.5.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.2.5.2 路徑參數：id
-- [ ] 12.2.5.3 Service 軟刪除（is_deleted=1, deleted_at, deleted_by, status='cancelled）[規格:L53-L54]
-- [ ] 12.2.5.4 返回成功響應
-- [ ] 12.2.5.5 添加 OpenAPI 註解
+- [x] 12.2.5.1 權限：authMiddleware + adminMiddleware
+- [x] 12.2.5.2 路徑參數：id
+- [x] 12.2.5.3 Service 軟刪除（is_deleted=1, deleted_at, deleted_by, status='cancelled）[規格:L53-L54]
+- [x] 12.2.5.4 返回成功響應
+- [x] 12.2.5.5 添加 OpenAPI 註解
 
 **12.2.6 GET /api/v1/receipts/check-number（檢查收據號碼可用性）[規格:L264, L267-L293]**
-- [ ] 12.2.6.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.2.6.2 查詢參數：number（必填）[規格:L269]
-- [ ] 12.2.6.3 驗證格式（^\d{6}-\d{3}$）[規格:L168-L169]
-- [ ] 12.2.6.4 Repository 檢查是否存在 [規格:L173-L175]
-- [ ] 12.2.6.5 返回 available (boolean) 與 existing_receipt [規格:L272-L292]
-- [ ] 12.2.6.6 添加 OpenAPI 註解
+- [x] 12.2.6.1 權限：authMiddleware + adminMiddleware
+- [x] 12.2.6.2 查詢參數：number（必填）[規格:L269]
+- [x] 12.2.6.3 驗證格式（^\d{6}-\d{3}$）[規格:L168-L169]
+- [x] 12.2.6.4 Repository 檢查是否存在 [規格:L173-L175]
+- [x] 12.2.6.5 返回 available (boolean) 與 existing_receipt [規格:L272-L292]
+- [x] 12.2.6.6 添加 OpenAPI 註解
 
 ---
 
-#### 12.3 收款管理 API（3個）[規格:L347-L353]
+#### [x] 12.3 收款管理 API（3個）[規格:L347-L353]
 
 **12.3.1 GET /api/v1/receipts/:id/payments（查詢收據的收款記錄）[規格:L350]**
-- [ ] 12.3.1.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.3.1.2 路徑參數：id（receipt_id）
-- [ ] 12.3.1.3 Repository 查詢 Payments（ORDER BY payment_date DESC）
-- [ ] 12.3.1.4 返回收款記錄列表
-- [ ] 12.3.1.5 添加 OpenAPI 註解
+- [x] 12.3.1.1 權限：authMiddleware + adminMiddleware
+- [x] 12.3.1.2 路徑參數：id（receipt_id）
+- [x] 12.3.1.3 Repository 查詢 Payments（ORDER BY payment_date DESC）
+- [x] 12.3.1.4 返回收款記錄列表
+- [x] 12.3.1.5 添加 OpenAPI 註解
 
 **12.3.2 POST /api/v1/receipts/:id/payments（記錄收款，含狀態自動更新）[規格:L351, L426-L454, L696-L743]**
-- [ ] 12.3.2.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.3.2.2 路徑參數：id（receipt_id）
-- [ ] 12.3.2.3 請求 Body：payment_date, amount, payment_method, reference_number, notes [規格:L431-L436]
-- [ ] 12.3.2.4 Service 插入 Payments 記錄 [規格:L704-L715]
-- [ ] 12.3.2.5 計算總收款金額（SUM Payments.amount）[規格:L718-L726]
-- [ ] 12.3.2.6 自動更新收據狀態（unpaid/partial/paid）[規格:L729-L740]
-- [ ] 12.3.2.7 返回收款記錄與更新後的 receipt_status [規格:L443-L453]
+- [x] 12.3.2.1 權限：authMiddleware + adminMiddleware
+- [x] 12.3.2.2 路徑參數：id（receipt_id）
+- [x] 12.3.2.3 請求 Body：payment_date, amount, payment_method, reference_number, notes [規格:L431-L436]
+- [x] 12.3.2.4 Service 插入 Payments 記錄 [規格:L704-L715]
+- [x] 12.3.2.5 計算總收款金額（SUM Payments.amount）[規格:L718-L726]
+- [x] 12.3.2.6 自動更新收據狀態（unpaid/partial/paid）[規格:L729-L740]
+- [x] 12.3.2.7 返回收款記錄與更新後的 receipt_status [規格:L443-L453]
 
 **12.3.3 DELETE /api/v1/payments/:id（刪除收款記錄）[規格:L352]**
-- [ ] 12.3.3.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.3.3.2 路徑參數：id（payment_id）
-- [ ] 12.3.3.3 Repository 刪除記錄
-- [ ] 12.3.3.4 Service 重新計算收據狀態
-- [ ] 12.3.3.5 返回成功響應
+- [x] 12.3.3.1 權限：authMiddleware + adminMiddleware
+- [x] 12.3.3.2 路徑參數：id（payment_id）
+- [x] 12.3.3.3 Repository 刪除記錄
+- [x] 12.3.3.4 Service 重新計算收據狀態
+- [x] 12.3.3.5 返回成功響應
 
 ---
 
 #### 12.4 統計報表 API（3個）[規格:L355-L361]
 
 **12.4.1 GET /api/v1/receipts/stats（收據統計）[規格:L358]**
-- [ ] 12.4.1.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.4.1.2 查詢參數：year, month（可選）
-- [ ] 12.4.1.3 Repository 聚合查詢（COUNT, SUM）
-- [ ] 12.4.1.4 返回統計數據（total_receipts, total_amount, unpaid_count, unpaid_amount）
-- [ ] 12.4.1.5 添加 OpenAPI 註解
+- [x] 12.4.1.1 權限：authMiddleware + adminMiddleware
+- [x] 12.4.1.2 查詢參數：year, month（可選）
+- [x] 12.4.1.3 Repository 聚合查詢（COUNT, SUM）
+- [x] 12.4.1.4 返回統計數據（total_receipts, total_amount, unpaid_count, unpaid_amount）
+- [x] 12.4.1.5 添加 OpenAPI 註解
 
 **12.4.2 GET /api/v1/receipts/ar-aging（應收帳款帳齡分析，含客戶備註）[規格:L359, L456-L506, L770-L845]**
-- [ ] 12.4.2.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.4.2.2 查詢參數：as_of_date（預設今日）[規格:L460]
-- [ ] 12.4.2.3 Repository JOIN Clients（含 payment_notes, client_notes）[規格:L784-L785]
-- [ ] 12.4.2.4 計算逾期天數（從 due_date 開始，使用 getDaysDiff）[規格:L754-L767, L810-L811]
-- [ ] 12.4.2.5 分類帳齡（current, overdue_1_30, overdue_31_60, overdue_61_90, overdue_over_90）[規格:L799-L825]
-- [ ] 12.4.2.6 返回帳齡分析（aging_summary, by_client, details）[規格:L467-L504]
-- [ ] 12.4.2.7 添加 OpenAPI 註解
+- [x] 12.4.2.1 權限：authMiddleware + adminMiddleware
+- [x] 12.4.2.2 查詢參數：as_of_date（預設今日）[規格:L460]
+- [x] 12.4.2.3 Repository JOIN Clients（含 payment_notes, client_notes）[規格:L784-L785]
+- [x] 12.4.2.4 計算逾期天數（從 due_date 開始，使用 getDaysDiff）[規格:L754-L767, L810-L811]
+- [x] 12.4.2.5 分類帳齡（current, overdue_1_30, overdue_31_60, overdue_61_90, overdue_over_90）[規格:L799-L825]
+- [x] 12.4.2.6 返回帳齡分析（aging_summary, by_client, details）[規格:L467-L504]
+- [x] 12.4.2.7 添加 OpenAPI 註解
 
 **12.4.3 GET /api/v1/reports/revenue（營收報表）[規格:L360]**
-- [ ] 12.4.3.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.4.3.2 查詢參數：start_date, end_date（必填）
-- [ ] 12.4.3.3 Repository 聚合查詢（GROUP BY client_id, service_id）
-- [ ] 12.4.3.4 返回營收數據（by_client, by_service, total_revenue）
-- [ ] 12.4.3.5 添加 OpenAPI 註解
+- [x] 12.4.3.1 權限：authMiddleware + adminMiddleware
+- [x] 12.4.3.2 查詢參數：start_date, end_date（必填）
+- [x] 12.4.3.3 Repository 聚合查詢（GROUP BY client_id, service_id）
+- [x] 12.4.3.4 返回營收數據（by_client, by_service, total_revenue）
+- [x] 12.4.3.5 添加 OpenAPI 註解
 
 ---
 
 #### 12.5 收據 PDF 生成 API（2個）[規格:L1011-L1015]
 
 **12.5.1 GET /api/v1/receipts/:id/pdf（生成收據 PDF）[規格:L1013]**
-- [ ] 12.5.1.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.5.1.2 路徑參數：id（receipt_id）
-- [ ] 12.5.1.3 調用 generateReceiptPDF() [規格:L862-L975]
-- [ ] 12.5.1.4 返回 PDF 文件流（Content-Type: application/pdf）
-- [ ] 12.5.1.5 添加 OpenAPI 註解
+- [x] 12.5.1.1 權限：authMiddleware + adminMiddleware
+- [x] 12.5.1.2 路徑參數：id（receipt_id）
+- [x] 12.5.1.3 調用 generateReceiptPDF() [規格:L862-L975]
+- [x] 12.5.1.4 返回 PDF 文件流（Content-Type: application/pdf）
+- [x] 12.5.1.5 添加 OpenAPI 註解
 
 **12.5.2 GET /api/v1/receipts/:id/preview（預覽收據 HTML）[規格:L1014]**
-- [ ] 12.5.2.1 權限：authMiddleware + adminMiddleware
-- [ ] 12.5.2.2 路徑參數：id（receipt_id）
-- [ ] 12.5.2.3 調用 generateReceiptHTML()
-- [ ] 12.5.2.4 返回 HTML 內容（Content-Type: text/html）
-- [ ] 12.5.2.5 添加 OpenAPI 註解
+- [x] 12.5.2.1 權限：authMiddleware + adminMiddleware
+- [x] 12.5.2.2 路徑參數：id（receipt_id）
+- [x] 12.5.2.3 調用 generateReceiptHTML()
+- [x] 12.5.2.4 返回 HTML 內容（Content-Type: text/html）
+- [x] 12.5.2.5 添加 OpenAPI 註解
 
 ---
 

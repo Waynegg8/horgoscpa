@@ -3,17 +3,21 @@
  * 會計師事務所內部管理系統
  */
 
-import { D1Database, R2Bucket } from '@cloudflare/workers-types';
+import { D1Database, R2Bucket, KVNamespace } from '@cloudflare/workers-types';
 
 // =====================================================
 // 環境變數類型
 // =====================================================
 export interface Env {
   DB: D1Database;
-  R2_ATTACHMENTS: R2Bucket;
+  R2_EXTERNAL_CONTENT: R2Bucket;  // 模組9：外部內容（Blog/FAQ/Resources/Images）
+  R2_ATTACHMENTS: R2Bucket;        // 模組13：附件系統
   R2_BACKUPS: R2Bucket;
+  CACHE_KV: KVNamespace;           // 模組14：報表快取
   JWT_SECRET: string;
   ENVIRONMENT: 'development' | 'production';
+  CDN_BASE_URL: string;            // R2 公開 CDN URL
+  MAX_FILE_SIZE: string;           // 檔案大小限制
   COOKIE_DOMAIN: string;
   COOKIE_SECURE: string;
   CORS_ORIGIN: string;
