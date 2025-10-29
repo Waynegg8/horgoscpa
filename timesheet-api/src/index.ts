@@ -29,6 +29,7 @@ import salary from './routes/salary';
 import overheadCosts from './routes/overhead-costs';
 import receipts from './routes/receipts';
 import attachments from './routes/attachments';
+import reports from './routes/reports';
 
 // 創建 Hono 應用
 const app = new Hono<{ Bindings: Env }>();
@@ -120,6 +121,9 @@ app.route('/api/v1', receipts);
 
 // 附件系統路由
 app.route('/api/v1', attachments);
+
+// 報表分析路由
+app.route('/api/v1', reports);
 
 // 後續路由將在這裡添加
 // etc...
