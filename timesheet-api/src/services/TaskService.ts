@@ -55,6 +55,7 @@ export class TaskService {
 
   /**
    * 查詢任務詳情（含階段和SOP）
+   * ⚠️ 完整實現：包含通用SOP和客戶專屬SOP的詳細資訊
    */
   async getTaskById(taskId: number, user: User): Promise<any> {
     const task = await this.db.prepare(`
@@ -63,12 +64,20 @@ export class TaskService {
         cs.client_id,
         c.company_name,
         s.service_name,
-        u.name as assignee_name
+        u.name as assignee_name,
+        sop1.sop_id as related_sop_id,
+        sop1.title as related_sop_title,
+        sop1.version as related_sop_version,
+        sop2.sop_id as client_specific_sop_id,
+        sop2.title as client_specific_sop_title,
+        sop2.version as client_specific_sop_version
       FROM ActiveTasks t
       JOIN ClientServices cs ON t.client_service_id = cs.client_service_id
       JOIN Clients c ON cs.client_id = c.client_id
       JOIN Services s ON cs.service_id = s.service_id
       LEFT JOIN Users u ON t.assignee_user_id = u.user_id
+      LEFT JOIN SOPDocuments sop1 ON t.related_sop_id = sop1.sop_id
+      LEFT JOIN SOPDocuments sop2 ON t.client_specific_sop_id = sop2.sop_id
       WHERE t.task_id = ? AND t.is_deleted = 0
     `).bind(taskId).first<any>();
 
@@ -86,8 +95,74 @@ export class TaskService {
       ORDER BY stage_order ASC
     `).bind(taskId).all();
 
-    task.stages = stages.results || [];
-    return task;
+    // ⭐ 格式化響應（符合規格要求）
+    const response = {
+      task_id: task.task_id,
+      task_name: task.task_name,
+      client_id: task.client_id,
+      company_name: task.company_name,
+      service_name: task.service_name,
+      status: task.status,
+      assignee_user_id: task.assignee_user_id,
+      assignee_name: task.assignee_name,
+      start_date: task.start_date,
+      due_date: task.due_date,
+      completed_date: task.completed_date,
+      notes: task.notes,
+      related_sop: task.related_sop_id ? {
+        knowledge_id: task.related_sop_id,
+        title: task.related_sop_title,
+        version: task.related_sop_version,
+      } : null,
+      client_specific_sop: task.client_specific_sop_id ? {
+        knowledge_id: task.client_specific_sop_id,
+        title: task.client_specific_sop_title,
+        version: task.client_specific_sop_version,
+      } : null,
+      stages: stages.results || [],
+    };
+
+    return response;
+  }
+
+  /**
+   * ⭐ 查詢任務關聯的SOP（獨立API）
+   */
+  async getTaskSOPs(taskId: number, user: User): Promise<any> {
+    const task = await this.db.prepare(`
+      SELECT 
+        t.assignee_user_id,
+        t.related_sop_id,
+        t.client_specific_sop_id
+      FROM ActiveTasks t
+      WHERE t.task_id = ? AND t.is_deleted = 0
+    `).bind(taskId).first<any>();
+
+    if (!task) throw new NotFoundError('任務不存在');
+
+    // 權限控制
+    if (!user.is_admin && task.assignee_user_id !== user.user_id) {
+      throw new ForbiddenError('無權查看此任務');
+    }
+
+    // 查詢通用SOP
+    const relatedSOP = task.related_sop_id ? await this.db.prepare(`
+      SELECT sop_id as knowledge_id, title, content, version, created_at, updated_at
+      FROM SOPDocuments
+      WHERE sop_id = ? AND is_deleted = 0
+    `).bind(task.related_sop_id).first() : null;
+
+    // 查詢客戶專屬SOP
+    const clientSpecificSOP = task.client_specific_sop_id ? await this.db.prepare(`
+      SELECT sop_id as knowledge_id, title, content, version, created_at, updated_at
+      FROM SOPDocuments
+      WHERE sop_id = ? AND is_deleted = 0
+    `).bind(task.client_specific_sop_id).first() : null;
+
+    return {
+      related_sop: relatedSOP,
+      client_specific_sop: clientSpecificSOP,
+    };
   }
 
   /**

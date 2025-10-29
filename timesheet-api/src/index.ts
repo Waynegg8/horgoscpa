@@ -22,6 +22,7 @@ import clients from './routes/clients';
 import timelogs from './routes/timelogs';
 import leave from './routes/leave';
 import clientservices from './routes/clientservices';
+import tasks from './routes/tasks';
 
 // 創建 Hono 應用
 const app = new Hono<{ Bindings: Env }>();
@@ -95,8 +96,10 @@ app.route('/api/v1', leave);
 // 服務生命週期管理路由
 app.route('/api/v1', clientservices);
 
+// 任務管理路由
+app.route('/api/v1', tasks);
+
 // 後續路由將在這裡添加
-// app.route('/api/v1/tasks', tasks);
 // etc...
 
 // =====================================================
@@ -122,6 +125,7 @@ app.notFound((c) => {
 import { convertExpiredCompensatoryLeave } from './cron/compensatory-leave';
 import { checkMissingTimesheets } from './cron/timesheet-reminder';
 import { annualLeaveYearEndProcessing } from './cron/annual-leave';
+import { generateMonthlyTasks } from './cron/task-generation';
 
 async function handleScheduled(event: ScheduledEvent, env: Env): Promise<void> {
   const cron = event.cron;
@@ -140,12 +144,12 @@ async function handleScheduled(event: ScheduledEvent, env: Env): Promise<void> {
     // 每月1日 00:00 - 任務自動生成 + 補休到期轉換
     if (cron === "0 0 1 * *") {
       console.log('[Cron] 執行任務自動生成...');
-      // await generateMonthlyTasks(env.DB);
-      // TODO: 實現任務生成邏輯（模組 7）
+      const taskResult = await generateMonthlyTasks(env.DB);
+      console.log(`[Cron] 任務生成完成：${taskResult.generated} 個`);
       
       console.log('[Cron] 執行補休到期轉換...');
-      const result = await convertExpiredCompensatoryLeave(env.DB);
-      console.log(`[Cron] 補休轉換完成：${result.processed} 筆，${result.total_hours} 小時`);
+      const compResult = await convertExpiredCompensatoryLeave(env.DB);
+      console.log(`[Cron] 補休轉換完成：${compResult.processed} 筆，${compResult.total_hours} 小時`);
     }
     
     // 週一到週五 08:30 - 工時填寫提醒
