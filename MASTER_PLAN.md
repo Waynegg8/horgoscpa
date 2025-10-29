@@ -501,12 +501,12 @@
 #### 2.2 國定假日管理 [規格:L144-L149]
 
 **2.2.1 HolidayRepository 創建**
-- [x] 2.2.1.1 創建 `findAll()` 方法（支持年份過濾）
-- [x] 2.2.1.2 創建 `findById()` 方法
-- [x] 2.2.1.3 創建 `findByDate()` 方法（檢查日期唯一性）
-- [x] 2.2.1.4 創建 `create()` 方法
-- [x] 2.2.1.5 創建 `update()` 方法
-- [x] 2.2.1.6 創建 `delete()` 方法（軟刪除）
+- [x] 2.2.1.1 創建 `findAll()` 方法（支持年份過濾）[規格:L144-L149]
+- [x] 2.2.1.2 創建 `findById()` 方法 [規格:L11-L23]
+- [x] 2.2.1.3 創建 `findByDate()` 方法（檢查日期唯一性）[規格:L13, L27-L34, L292]
+- [x] 2.2.1.4 創建 `create()` 方法 [規格:L11-L23]
+- [x] 2.2.1.5 創建 `update()` 方法 [規格:L11-L23]
+- [x] 2.2.1.6 創建 `delete()` 方法（軟刪除）[規格:L18]
 
 **2.2.2 HolidayService 創建**
 - [x] 2.2.2.1 實現 `createHoliday()` 方法
@@ -562,13 +562,13 @@
 #### 2.3 假別類型管理 [規格:L156-L161]
 
 **2.3.1 LeaveTypeRepository 創建**
-- [x] 2.3.1.1 創建 `findAll()` 方法（支持 is_enabled 過濾）
-- [x] 2.3.1.2 創建 `findById()` 方法
-- [x] 2.3.1.3 創建 `findByName()` 方法（檢查名稱唯一性）
-- [x] 2.3.1.4 創建 `create()` 方法
-- [x] 2.3.1.5 創建 `update()` 方法
-- [x] 2.3.1.6 創建 `enable()` 方法（設置 is_enabled = 1）
-- [x] 2.3.1.7 創建 `disable()` 方法（設置 is_enabled = 0）
+- [x] 2.3.1.1 創建 `findAll()` 方法（支持 is_enabled 過濾）[規格:L156-L161]
+- [x] 2.3.1.2 創建 `findById()` 方法 [規格:L54-L66]
+- [x] 2.3.1.3 創建 `findByName()` 方法（檢查名稱唯一性）[規格:L56]
+- [x] 2.3.1.4 創建 `create()` 方法 [規格:L54-L66]
+- [x] 2.3.1.5 創建 `update()` 方法 [規格:L54-L66]
+- [x] 2.3.1.6 創建 `enable()` 方法（設置 is_enabled = 1）[規格:L61-L62, L159]
+- [x] 2.3.1.7 創建 `disable()` 方法（設置 is_enabled = 0）[規格:L61-L62, L160]
 
 **2.3.2 LeaveTypeService 創建**
 - [x] 2.3.2.1 實現 `createLeaveType()` 方法
@@ -611,8 +611,8 @@
 #### 2.4 加班費率與特休規則（唯讀）[規格:L174, L165]
 
 **2.4.1 BusinessRulesRepository 創建**
-- [x] 2.4.1.1 創建 `getOvertimeRates()` 方法（查詢所有費率）
-- [x] 2.4.1.2 創建 `getAnnualLeaveRules()` 方法（查詢所有特休規則）
+- [x] 2.4.1.1 創建 `getOvertimeRates()` 方法（查詢所有費率）[規格:L174]
+- [x] 2.4.1.2 創建 `getAnnualLeaveRules()` 方法（查詢所有特休規則）[規格:L165]
 - [x] 2.4.1.3 創建 `restoreDefaultAnnualLeaveRules()` 方法 [規格:L208-L229]
 
 **2.4.2 唯讀 API 路由創建**
@@ -633,12 +633,12 @@
 #### 2.5 週期類型管理（所有人可用）[規格:L182-L186]
 
 **2.5.1 FrequencyTypeRepository 創建**
-- [x] 2.5.1.1 創建 `findAll()` 方法（支持 is_enabled 過濾）
-- [x] 2.5.1.2 創建 `findById()` 方法
-- [x] 2.5.1.3 創建 `create()` 方法
-- [x] 2.5.1.4 創建 `update()` 方法
-- [x] 2.5.1.5 創建 `enable()` 方法
-- [x] 2.5.1.6 創建 `disable()` 方法
+- [x] 2.5.1.1 創建 `findAll()` 方法（支持 is_enabled 過濾）[規格:L182-L186]
+- [x] 2.5.1.2 創建 `findById()` 方法 [規格:L107-L116]
+- [x] 2.5.1.3 創建 `create()` 方法 [規格:L107-L116]
+- [x] 2.5.1.4 創建 `update()` 方法 [規格:L107-L116]
+- [x] 2.5.1.5 創建 `enable()` 方法 [規格:L113, L185]
+- [x] 2.5.1.6 創建 `disable()` 方法 [規格:L113, L186]
 
 **2.5.2 週期類型 API 路由創建（所有人可用）**
 - [x] 2.5.2.1 `GET /api/v1/frequency-types` [規格:L182]
@@ -656,12 +656,12 @@
 #### 2.6 服務項目管理（所有人可用）[規格:L194-L198]
 
 **2.6.1 ServiceRepository 創建**
-- [x] 2.6.1.1 創建 `findAll()` 方法（返回樹狀結構）
-- [x] 2.6.1.2 創建 `findById()` 方法
-- [x] 2.6.1.3 創建 `findChildren()` 方法（查詢子服務）
-- [x] 2.6.1.4 創建 `create()` 方法
-- [x] 2.6.1.5 創建 `update()` 方法
-- [x] 2.6.1.6 創建 `delete()` 方法（軟刪除）
+- [x] 2.6.1.1 創建 `findAll()` 方法（返回樹狀結構）[規格:L194-L198]
+- [x] 2.6.1.2 創建 `findById()` 方法 [規格:L120-L133]
+- [x] 2.6.1.3 創建 `findChildren()` 方法（查詢子服務）[規格:L129-L133]
+- [x] 2.6.1.4 創建 `create()` 方法 [規格:L120-L127]
+- [x] 2.6.1.5 創建 `update()` 方法 [規格:L120-L127]
+- [x] 2.6.1.6 創建 `delete()` 方法（軟刪除）[規格:L126-L127]
 
 **2.6.2 ServiceService 創建**
 - [x] 2.6.2.1 實現 `validateServiceHierarchy()` 方法 [規格:L232-L241]
