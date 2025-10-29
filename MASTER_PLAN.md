@@ -440,35 +440,395 @@
 ---
 
 ### [ ] 模組 9：外部內容管理（外部內容管理-完整規格.md）
-**資料表：** 4 個 | **API：** 8 個 | **Cron Jobs：** 0 個
+**資料表：** 4 個 | **API：** 27 個（管理員 19 個 + 公開 8 個）| **Cron Jobs：** 0 個
 
 #### 9.1 資料表創建
-- [ ] 9.1.1 創建 `ExternalArticles` 表（外部文章）
-- [ ] 9.1.2 創建 `ExternalFAQ` 表（外部 FAQ）
-- [ ] 9.1.3 創建 `ResourceCenter` 表（資源中心）
-- [ ] 9.1.4 創建 `ExternalImages` 表（外部圖片）
 
-#### 9.2 外部文章管理 API
-- [ ] 9.2.1 實現 `GET /api/v1/external/articles` 路由（含 OpenAPI schema）
-- [ ] 9.2.2 實現 `POST /api/v1/external/articles` 路由（僅管理員，含 OpenAPI schema）
-- [ ] 9.2.3 實現 `PUT /api/v1/external/articles/:id` 路由（僅管理員，含 OpenAPI schema）
-- [ ] 9.2.4 實現 `DELETE /api/v1/external/articles/:id` 路由（僅管理員，含 OpenAPI schema）
+**9.1.1 ExternalArticles 表（外部文章/Blog）[規格:L11-L37]**
+- [ ] 9.1.1.1 創建主鍵 `article_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L12]
+- [ ] 9.1.1.2 創建 `title` (TEXT NOT NULL) [規格:L13]
+- [ ] 9.1.1.3 創建 `slug` (TEXT UNIQUE NOT NULL) 含註釋：URL 標識符 [規格:L14]
+- [ ] 9.1.1.4 創建 `summary` (TEXT) [規格:L15]
+- [ ] 9.1.1.5 創建 `content` (TEXT NOT NULL) 含註釋：HTML 內容 [規格:L16]
+- [ ] 9.1.1.6 創建 `featured_image` (TEXT) 含註釋：封面圖 URL [規格:L17]
+- [ ] 9.1.1.7 創建 `category`, `tags` 欄位 [規格:L18-L19]
+- [ ] 9.1.1.8 創建 `is_published`, `published_at`, `view_count` 欄位 [規格:L20-L22]
+- [ ] 9.1.1.9 創建 SEO 欄位：`seo_title`, `seo_description`, `seo_keywords` [規格:L23-L25]
+- [ ] 9.1.1.10 創建審計欄位：`created_by`, `created_at`, `updated_at`, `is_deleted` [規格:L26-L29]
+- [ ] 9.1.1.11 添加外鍵約束：`created_by` REFERENCES Users(user_id) [規格:L31]
+- [ ] 9.1.1.12 創建唯一索引：`idx_external_slug` ON ExternalArticles(slug) [規格:L34]
+- [ ] 9.1.1.13 創建索引：`idx_external_category` ON ExternalArticles(category) [規格:L35]
+- [ ] 9.1.1.14 創建索引：`idx_external_published` ON ExternalArticles(is_published) [規格:L36]
 
-#### 9.3 FAQ 管理 API
-- [ ] 9.3.1 實現 `GET /api/v1/external/faq` 路由（含 OpenAPI schema）
-- [ ] 9.3.2 實現 `POST /api/v1/external/faq` 路由（僅管理員，含 OpenAPI schema）
-- [ ] 9.3.3 實現 `PUT /api/v1/external/faq/:id` 路由（僅管理員，含 OpenAPI schema）
-- [ ] 9.3.4 實現 `DELETE /api/v1/external/faq/:id` 路由（僅管理員，含 OpenAPI schema）
+**9.1.2 ExternalFAQ 表（外部常見問題）[規格:L41-L57]**
+- [ ] 9.1.2.1 創建主鍵 `faq_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L42]
+- [ ] 9.1.2.2 創建 `question` (TEXT NOT NULL) [規格:L43]
+- [ ] 9.1.2.3 創建 `answer` (TEXT NOT NULL) [規格:L44]
+- [ ] 9.1.2.4 創建 `category`, `sort_order` 欄位 [規格:L45-L46]
+- [ ] 9.1.2.5 創建 `is_published`, `view_count` 欄位 [規格:L47-L48]
+- [ ] 9.1.2.6 創建審計欄位：`created_at`, `updated_at`, `is_deleted` [規格:L49-L51]
+- [ ] 9.1.2.7 創建索引：`idx_faq_category`, `idx_faq_published`, `idx_faq_order` [規格:L54-L56]
 
-#### 9.4 前端實現
-- [ ] 9.4.1 實現外部內容管理頁面（管理員專用）
-- [ ] 9.4.2 實現文章編輯器
-- [ ] 9.4.3 實現圖片上傳功能
+**9.1.3 ResourceCenter 表（資源中心）[規格:L61-L82]**
+- [ ] 9.1.3.1 創建主鍵 `resource_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L62]
+- [ ] 9.1.3.2 創建 `title`, `description` 欄位 [規格:L63-L64]
+- [ ] 9.1.3.3 創建 `file_url` (TEXT NOT NULL) 含註釋：R2 儲存路徑 [規格:L65]
+- [ ] 9.1.3.4 創建檔案資訊欄位：`file_type`, `file_size` [規格:L66-L67]
+- [ ] 9.1.3.5 創建 `category`, `is_published`, `download_count` 欄位 [規格:L68-L70]
+- [ ] 9.1.3.6 創建審計欄位：`created_by`, `created_at`, `updated_at`, `is_deleted` [規格:L71-L74]
+- [ ] 9.1.3.7 添加外鍵約束：`created_by` REFERENCES Users(user_id) [規格:L76]
+- [ ] 9.1.3.8 創建索引：`idx_resources_category`, `idx_resources_published`, `idx_resources_type` [規格:L79-L81]
 
-#### 9.5 測試與部署
-- [ ] 9.5.1 [內部] 自行測試所有外部內容管理功能
-- [ ] 9.5.2 [內部] 準備執行一致性驗證
-- [ ] 9.5.3 [內部] 準備執行自動部署
+**9.1.4 ExternalImages 表（外部圖片資源）[規格:L86-L103]**
+- [ ] 9.1.4.1 創建主鍵 `image_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L87]
+- [ ] 9.1.4.2 創建 `title`, `image_url`, `alt_text` 欄位 [規格:L88-L90]
+- [ ] 9.1.4.3 創建圖片資訊欄位：`category`, `file_size`, `width`, `height` [規格:L91-L94]
+- [ ] 9.1.4.4 創建審計欄位：`uploaded_by`, `uploaded_at`, `is_deleted` [規格:L95-L97]
+- [ ] 9.1.4.5 添加外鍵約束：`uploaded_by` REFERENCES Users(user_id) [規格:L99]
+- [ ] 9.1.4.6 創建索引：`idx_images_category` [規格:L102]
+
+---
+
+#### 9.2 Blog 文章管理 API [規格:L111-L122]
+
+**9.2.1 ExternalArticleRepository 創建**
+- [ ] 9.2.1.1 創建 `findAll()` 方法（支持分類、發布狀態過濾）
+- [ ] 9.2.1.2 創建 `findById()` 方法
+- [ ] 9.2.1.3 創建 `findBySlug()` 方法（用於唯一性檢查和公開查詢）
+- [ ] 9.2.1.4 創建 `create()` 方法
+- [ ] 9.2.1.5 創建 `update()` 方法
+- [ ] 9.2.1.6 創建 `publish()` 方法（設置 is_published = 1, published_at）
+- [ ] 9.2.1.7 創建 `unpublish()` 方法（設置 is_published = 0）
+- [ ] 9.2.1.8 創建 `incrementViewCount()` 方法
+- [ ] 9.2.1.9 創建 `delete()` 方法（軟刪除）
+
+**9.2.2 ExternalArticleService 創建**
+- [ ] 9.2.2.1 實現 `createArticle()` 方法 [規格:L401-L420]
+  - [ ] 9.2.2.1.1 驗證 title 和 slug 必填 [規格:L403-L405]
+  - [ ] 9.2.2.1.2 檢查 slug 唯一性（調用 findBySlug）[規格:L407-L411]
+  - [ ] 9.2.2.1.3 創建文章（is_published = false, view_count = 0）[規格:L414-L419]
+  - [ ] 9.2.2.1.4 記錄審計日誌
+  
+- [ ] 9.2.2.2 實現 `publishArticle()` 方法 [規格:L422-L433]
+  - [ ] 9.2.2.2.1 查詢文章是否存在 [規格:L423]
+  - [ ] 9.2.2.2.2 設置 is_published = true, published_at = now() [規格:L429-L432]
+  - [ ] 9.2.2.2.3 記錄審計日誌
+  
+- [ ] 9.2.2.3 實現 `unpublishArticle()` 方法（取消發布）
+  - [ ] 9.2.2.3.1 查詢文章是否存在
+  - [ ] 9.2.2.3.2 設置 is_published = false
+  - [ ] 9.2.2.3.3 記錄審計日誌
+  
+- [ ] 9.2.2.4 實現 `getArticleBySlug()` 方法（公開 API 使用）
+  - [ ] 9.2.2.4.1 調用 findBySlug 查詢
+  - [ ] 9.2.2.4.2 檢查 is_published = true（公開查詢限制）
+  - [ ] 9.2.2.4.3 自動增加 view_count [規格:L541-L544]
+  
+- [ ] 9.2.2.5 實現 Slug 驗證邏輯 [規格:L635-L638]
+  - [ ] 9.2.2.5.1 檢查只包含小寫字母、數字、連字號
+  - [ ] 9.2.2.5.2 範例：company-setup-guide, tax-filing-tips
+
+**9.2.3 管理員 API 路由創建（僅管理員）**
+- [ ] 9.2.3.1 `GET /api/v1/admin/articles` [規格:L111]
+  - [ ] 9.2.3.1.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.2.3.1.2 解析查詢參數（category, is_published, limit, offset）
+  - [ ] 9.2.3.1.3 調用 ArticleService.getArticles()
+  - [ ] 9.2.3.1.4 返回成功響應（含 pagination）
+  - [ ] 9.2.3.1.5 添加 OpenAPI 註解
+  
+- [ ] 9.2.3.2 `POST /api/v1/admin/articles` [規格:L112]
+  - [ ] 9.2.3.2.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.2.3.2.2 解析請求 Body（title, slug, summary, content, featured_image, category, tags, seo_*）
+  - [ ] 9.2.3.2.3 調用 ArticleService.createArticle()
+  - [ ] 9.2.3.2.4 返回 201 Created
+  - [ ] 9.2.3.2.5 添加 OpenAPI 註解
+  
+- [ ] 9.2.3.3 `GET /api/v1/admin/articles/:id` [規格:L113]
+  - [ ] 9.2.3.3.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.2.3.3.2 解析路徑參數 article_id
+  - [ ] 9.2.3.3.3 調用 ArticleService.getArticleById()
+  - [ ] 9.2.3.3.4 返回文章詳情
+  - [ ] 9.2.3.3.5 添加 OpenAPI 註解
+  
+- [ ] 9.2.3.4 `PUT /api/v1/admin/articles/:id` [規格:L114]
+  - [ ] 9.2.3.4.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.2.3.4.2 解析路徑參數和請求 Body
+  - [ ] 9.2.3.4.3 調用 ArticleService.updateArticle()
+  - [ ] 9.2.3.4.4 返回更新後的文章
+  - [ ] 9.2.3.4.5 添加 OpenAPI 註解
+  
+- [ ] 9.2.3.5 `DELETE /api/v1/admin/articles/:id` [規格:L115]
+  - [ ] 9.2.3.5.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.2.3.5.2 調用 ArticleService.deleteArticle()（軟刪除）
+  - [ ] 9.2.3.5.3 返回成功響應
+  - [ ] 9.2.3.5.4 添加 OpenAPI 註解
+  
+- [ ] 9.2.3.6 `POST /api/v1/admin/articles/:id/publish` [規格:L116]
+  - [ ] 9.2.3.6.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.2.3.6.2 調用 ArticleService.publishArticle()
+  - [ ] 9.2.3.6.3 返回成功響應
+  - [ ] 9.2.3.6.4 添加 OpenAPI 註解
+  
+- [ ] 9.2.3.7 `POST /api/v1/admin/articles/:id/unpublish` [規格:L117]
+  - [ ] 9.2.3.7.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.2.3.7.2 調用 ArticleService.unpublishArticle()
+  - [ ] 9.2.3.7.3 返回成功響應
+  - [ ] 9.2.3.7.4 添加 OpenAPI 註解
+
+**9.2.4 公開 API 路由創建（訪客可用）[規格:L119-L122]**
+- [ ] 9.2.4.1 `GET /api/v1/public/articles` [規格:L120]
+  - [ ] 9.2.4.1.1 無需認證中間件
+  - [ ] 9.2.4.1.2 只返回 is_published = true 的文章
+  - [ ] 9.2.4.1.3 支持分類過濾
+  - [ ] 9.2.4.1.4 按 published_at DESC 排序
+  - [ ] 9.2.4.1.5 添加 OpenAPI 註解
+  
+- [ ] 9.2.4.2 `GET /api/v1/public/articles/:slug` [規格:L121]
+  - [ ] 9.2.4.2.1 無需認證中間件
+  - [ ] 9.2.4.2.2 根據 slug 查詢文章 [規格:L521]
+  - [ ] 9.2.4.2.3 檢查 is_published = true
+  - [ ] 9.2.4.2.4 自動增加 view_count [規格:L541-L544]
+  - [ ] 9.2.4.2.5 返回文章詳情（含 SEO 資訊）[規格:L524-L539]
+  - [ ] 9.2.4.2.6 添加 OpenAPI 註解
+
+---
+
+#### 9.3 FAQ 管理 API [規格:L126-L134]
+
+**9.3.1 ExternalFAQRepository 創建**
+- [ ] 9.3.1.1 創建 `findAll()` 方法（支持分類過濾、按 sort_order 排序）
+- [ ] 9.3.1.2 創建 `findById()` 方法
+- [ ] 9.3.1.3 創建 `create()` 方法
+- [ ] 9.3.1.4 創建 `update()` 方法
+- [ ] 9.3.1.5 創建 `updateSortOrder()` 方法（批量更新排序）
+- [ ] 9.3.1.6 創建 `delete()` 方法（軟刪除）
+
+**9.3.2 ExternalFAQService 創建**
+- [ ] 9.3.2.1 實現 `createFAQ()` 方法
+  - [ ] 9.3.2.1.1 驗證 question 和 answer 必填
+  - [ ] 9.3.2.1.2 創建 FAQ（is_published = false）
+  - [ ] 9.3.2.1.3 記錄審計日誌
+  
+- [ ] 9.3.2.2 實現 `updateFAQ()` 方法
+  - [ ] 9.3.2.2.1 查詢 FAQ 是否存在
+  - [ ] 9.3.2.2.2 更新欄位
+  - [ ] 9.3.2.2.3 記錄審計日誌
+  
+- [ ] 9.3.2.3 實現 `reorderFAQs()` 方法
+  - [ ] 9.3.2.3.1 接收 FAQ ID 和新 sort_order 的陣列
+  - [ ] 9.3.2.3.2 批量更新 sort_order
+  - [ ] 9.3.2.3.3 記錄審計日誌
+
+**9.3.3 管理員 API 路由創建（僅管理員）**
+- [ ] 9.3.3.1 `GET /api/v1/admin/faq` [規格:L126]
+  - [ ] 9.3.3.1.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.3.3.1.2 支持分類過濾
+  - [ ] 9.3.3.1.3 按 sort_order ASC 排序
+  - [ ] 9.3.3.1.4 添加 OpenAPI 註解
+  
+- [ ] 9.3.3.2 `POST /api/v1/admin/faq` [規格:L127]
+  - [ ] 9.3.3.2.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.3.3.2.2 解析請求 Body（question, answer, category）
+  - [ ] 9.3.3.2.3 調用 FAQService.createFAQ()
+  - [ ] 9.3.3.2.4 添加 OpenAPI 註解
+  
+- [ ] 9.3.3.3 `PUT /api/v1/admin/faq/:id` [規格:L128]
+- [ ] 9.3.3.4 `DELETE /api/v1/admin/faq/:id` [規格:L129]
+- [ ] 9.3.3.5 `PUT /api/v1/admin/faq/reorder` [規格:L130]
+  - [ ] 9.3.3.5.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.3.3.5.2 解析請求 Body（陣列：[{faq_id, sort_order}]）
+  - [ ] 9.3.3.5.3 調用 FAQService.reorderFAQs()
+  - [ ] 9.3.3.5.4 添加 OpenAPI 註解
+
+**9.3.4 公開 API 路由創建（訪客可用）**
+- [ ] 9.3.4.1 `GET /api/v1/public/faq` [規格:L133]
+  - [ ] 9.3.4.1.1 無需認證中間件
+  - [ ] 9.3.4.1.2 只返回 is_published = true 的 FAQ
+  - [ ] 9.3.4.1.3 按 sort_order ASC 排序 [規格:L576]
+  - [ ] 9.3.4.1.4 支持按分類分組 [規格:L579-L585]
+  - [ ] 9.3.4.1.5 添加 OpenAPI 註解
+
+---
+
+#### 9.4 資源中心管理 API [規格:L138-L147]
+
+**9.4.1 ResourceCenterRepository 創建**
+- [ ] 9.4.1.1 創建 `findAll()` 方法（支持分類、文件類型過濾）
+- [ ] 9.4.1.2 創建 `findById()` 方法
+- [ ] 9.4.1.3 創建 `create()` 方法
+- [ ] 9.4.1.4 創建 `update()` 方法
+- [ ] 9.4.1.5 創建 `incrementDownloadCount()` 方法
+- [ ] 9.4.1.6 創建 `delete()` 方法（軟刪除）
+
+**9.4.2 ResourceCenterService 創建**
+- [ ] 9.4.2.1 實現 `uploadResource()` 方法 [規格:L435-L456]
+  - [ ] 9.4.2.1.1 驗證文件大小（最大 10MB）[規格:L436-L439, L640-L643]
+  - [ ] 9.4.2.1.2 上傳到 R2 Bucket [規格:L442-L443, L612-L624]
+  - [ ] 9.4.2.1.3 生成文件名：`resources/${Date.now()}-${file.name}` [規格:L442]
+  - [ ] 9.4.2.1.4 創建資源記錄（is_published = true, download_count = 0）[規格:L446-L455]
+  - [ ] 9.4.2.1.5 記錄審計日誌
+  
+- [ ] 9.4.2.2 實現 `downloadResource()` 方法 [規格:L458-L477]
+  - [ ] 9.4.2.2.1 查詢資源（檢查 is_published = true）[規格:L460-L464]
+  - [ ] 9.4.2.2.2 增加 download_count [規格:L466-L467, L554-L557]
+  - [ ] 9.4.2.2.3 從 R2 Bucket 獲取文件 [規格:L469-L470, L560]
+  - [ ] 9.4.2.2.4 返回文件流（設置正確的 Content-Type 和 Content-Disposition）[規格:L562-L568]
+  
+- [ ] 9.4.2.3 實現 `updateResource()` 方法
+  - [ ] 9.4.2.3.1 查詢資源是否存在
+  - [ ] 9.4.2.3.2 更新元數據（title, description, category）
+  - [ ] 9.4.2.3.3 記錄審計日誌
+
+**9.4.3 管理員 API 路由創建（僅管理員）**
+- [ ] 9.4.3.1 `GET /api/v1/admin/resources` [規格:L138]
+  - [ ] 9.4.3.1.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.4.3.1.2 支持分類、文件類型過濾
+  - [ ] 9.4.3.1.3 返回列表（含 download_count）
+  - [ ] 9.4.3.1.4 添加 OpenAPI 註解
+  
+- [ ] 9.4.3.2 `POST /api/v1/admin/resources/upload` [規格:L139]
+  - [ ] 9.4.3.2.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.4.3.2.2 解析 multipart/form-data（文件 + 元數據）
+  - [ ] 9.4.3.2.3 驗證文件類型（PDF, Excel, Word, ZIP）
+  - [ ] 9.4.3.2.4 調用 ResourceService.uploadResource()
+  - [ ] 9.4.3.2.5 返回 201 Created（含文件 URL）
+  - [ ] 9.4.3.2.6 添加 OpenAPI 註解
+  
+- [ ] 9.4.3.3 `GET /api/v1/admin/resources/:id` [規格:L140]
+- [ ] 9.4.3.4 `PUT /api/v1/admin/resources/:id` [規格:L141]
+- [ ] 9.4.3.5 `DELETE /api/v1/admin/resources/:id` [規格:L142]
+
+**9.4.4 公開 API 路由創建（訪客可用）**
+- [ ] 9.4.4.1 `GET /api/v1/public/resources` [規格:L145]
+  - [ ] 9.4.4.1.1 無需認證中間件
+  - [ ] 9.4.4.1.2 只返回 is_published = true 的資源
+  - [ ] 9.4.4.1.3 支持分類過濾
+  - [ ] 9.4.4.1.4 添加 OpenAPI 註解
+  
+- [ ] 9.4.4.2 `GET /api/v1/public/resources/:id/download` [規格:L146]
+  - [ ] 9.4.4.2.1 無需認證中間件
+  - [ ] 9.4.4.2.2 調用 ResourceService.downloadResource()
+  - [ ] 9.4.4.2.3 返回文件流 [規格:L549-L568]
+  - [ ] 9.4.4.2.4 記錄下載次數 [規格:L554-L557]
+  - [ ] 9.4.4.2.5 添加 OpenAPI 註解
+
+---
+
+#### 9.5 圖片資源管理 API [規格:L151-L158]
+
+**9.5.1 ExternalImagesRepository 創建**
+- [ ] 9.5.1.1 創建 `findAll()` 方法（支持分類過濾）
+- [ ] 9.5.1.2 創建 `findById()` 方法
+- [ ] 9.5.1.3 創建 `create()` 方法
+- [ ] 9.5.1.4 創建 `delete()` 方法（軟刪除）
+- [ ] 9.5.1.5 創建 `getCategories()` 方法（查詢所有分類）
+
+**9.5.2 ExternalImagesService 創建**
+- [ ] 9.5.2.1 實現 `uploadImage()` 方法 [規格:L479-L508]
+  - [ ] 9.5.2.1.1 驗證圖片格式（只能上傳圖片）[規格:L481-L483]
+  - [ ] 9.5.2.1.2 驗證大小（最大 5MB）[規格:L485-L488, L641]
+  - [ ] 9.5.2.1.3 上傳到 R2 Bucket（images/ 目錄）[規格:L490-L492, L606]
+  - [ ] 9.5.2.1.4 獲取圖片尺寸（width, height）[規格:L494-L495]
+  - [ ] 9.5.2.1.5 創建圖片記錄 [規格:L497-L507]
+  - [ ] 9.5.2.1.6 返回圖片 URL [規格:L621-L622]
+  
+- [ ] 9.5.2.2 實現 `deleteImage()` 方法
+  - [ ] 9.5.2.2.1 查詢圖片是否存在
+  - [ ] 9.5.2.2.2 從 R2 Bucket 刪除文件
+  - [ ] 9.5.2.2.3 軟刪除數據庫記錄
+  - [ ] 9.5.2.2.4 記錄審計日誌
+
+**9.5.3 管理員 API 路由創建（僅管理員）**
+- [ ] 9.5.3.1 `GET /api/v1/admin/images` [規格:L151]
+  - [ ] 9.5.3.1.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.5.3.1.2 支持分類過濾
+  - [ ] 9.5.3.1.3 返回圖片列表（含 image_url, width, height）
+  - [ ] 9.5.3.1.4 添加 OpenAPI 註解
+  
+- [ ] 9.5.3.2 `POST /api/v1/admin/images/upload` [規格:L152]
+  - [ ] 9.5.3.2.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.5.3.2.2 解析 multipart/form-data（圖片 + 元數據）
+  - [ ] 9.5.3.2.3 驗證圖片格式（image/*）
+  - [ ] 9.5.3.2.4 調用 ImagesService.uploadImage()
+  - [ ] 9.5.3.2.5 返回 201 Created（含圖片 URL）
+  - [ ] 9.5.3.2.6 添加 OpenAPI 註解
+  
+- [ ] 9.5.3.3 `DELETE /api/v1/admin/images/:id` [規格:L153]
+- [ ] 9.5.3.4 `GET /api/v1/admin/images/categories` [規格:L154]
+  - [ ] 9.5.3.4.1 應用 authMiddleware + adminMiddleware
+  - [ ] 9.5.3.4.2 調用 ImagesRepository.getCategories()
+  - [ ] 9.5.3.4.3 返回分類列表（DISTINCT category）
+  - [ ] 9.5.3.4.4 添加 OpenAPI 註解
+
+**9.5.4 公開 API 路由創建（訪客可用）**
+- [ ] 9.5.4.1 `GET /api/v1/public/images/:id` [規格:L157]
+  - [ ] 9.5.4.1.1 無需認證中間件
+  - [ ] 9.5.4.1.2 查詢圖片記錄
+  - [ ] 9.5.4.1.3 返回圖片 URL（公開 CDN 連結）
+  - [ ] 9.5.4.1.4 添加 OpenAPI 註解
+
+---
+
+#### 9.6 R2 Bucket 設定與整合 [規格:L590-L624]
+
+**9.6.1 配置 Cloudflare R2**
+- [ ] 9.6.1.1 在 wrangler.toml 中配置 R2 Bucket 綁定 [規格:L594-L608]
+- [ ] 9.6.1.2 設置目錄結構：articles/, resources/, images/ [規格:L594-L608]
+- [ ] 9.6.1.3 配置公開 CDN URL（https://cdn.yourfirm.com）[規格:L621-L622]
+
+**9.6.2 文件上傳工具函數**
+- [ ] 9.6.2.1 實現 `uploadToR2()` 函數 [規格:L612-L624]
+  - [ ] 9.6.2.1.1 接收參數：file, path, env
+  - [ ] 9.6.2.1.2 生成唯一文件名：`${path}/${Date.now()}-${file.name}`
+  - [ ] 9.6.2.1.3 調用 `env.R2_BUCKET.put(fileName, file.stream())`
+  - [ ] 9.6.2.1.4 設置 httpMetadata（contentType）
+  - [ ] 9.6.2.1.5 返回公開 URL
+
+**9.6.3 文件大小和格式驗證**
+- [ ] 9.6.3.1 實現圖片大小驗證（最大 5MB）[規格:L641]
+- [ ] 9.6.3.2 實現資源文件大小驗證（最大 10MB）[規格:L642]
+- [ ] 9.6.3.3 實現文件格式驗證（image/*, PDF, Excel, Word, ZIP）
+- [ ] 9.6.3.4 實現圖片尺寸獲取（width, height）[規格:L494-L495]
+
+---
+
+#### 9.7 完整性驗證 [規格:L1-L722]
+
+**9.7.1 API 清單驗證**
+- [ ] 9.7.1.1 驗證 Blog 文章管理 API（管理員 7 個 + 公開 2 個 = 9 個）[規格:L111-L122]
+- [ ] 9.7.1.2 驗證 FAQ 管理 API（管理員 5 個 + 公開 1 個 = 6 個）[規格:L126-L134]
+- [ ] 9.7.1.3 驗證資源中心管理 API（管理員 5 個 + 公開 2 個 = 7 個）[規格:L138-L147]
+- [ ] 9.7.1.4 驗證圖片資源管理 API（管理員 4 個 + 公開 1 個 = 5 個）[規格:L151-L158]
+- [ ] 9.7.1.5 確認總計：27 個 API（管理員 19 個 + 公開 8 個）
+
+**9.7.2 業務邏輯驗證**
+- [ ] 9.7.2.1 驗證文章發布規則（草稿/發布/取消發布）[規格:L630-L633]
+- [ ] 9.7.2.2 驗證 URL Slug 規則（小寫字母、數字、連字號，必須唯一）[規格:L635-L638]
+- [ ] 9.7.2.3 驗證文件大小限制（圖片 5MB, 資源 10MB）[規格:L640-L643]
+- [ ] 9.7.2.4 驗證 SEO 優化（標題 50-60 字元，描述 150-160 字元）[規格:L645-L648]
+- [ ] 9.7.2.5 驗證瀏覽次數自動增加 [規格:L541-L544]
+- [ ] 9.7.2.6 驗證下載次數自動增加 [規格:L554-L557]
+
+**9.7.3 測試案例執行**
+- [ ] 9.7.3.1 測試文章發布流程 [規格:L656-L667]
+- [ ] 9.7.3.2 測試 Slug 唯一性檢查 [規格:L669-L675]
+- [ ] 9.7.3.3 測試文件大小限制 [規格:L677-L683]
+- [ ] 9.7.3.4 測試下載次數統計 [規格:L685-L694]
+
+**9.7.4 回到規格逐一驗證**
+- [ ] 9.7.4.1 打開規格文檔 L11-L37，驗證 ExternalArticles 表完整性
+- [ ] 9.7.4.2 打開規格文檔 L41-L57，驗證 ExternalFAQ 表完整性
+- [ ] 9.7.4.3 打開規格文檔 L61-L82，驗證 ResourceCenter 表完整性
+- [ ] 9.7.4.4 打開規格文檔 L86-L103，驗證 ExternalImages 表完整性
+- [ ] 9.7.4.5 逐一驗證所有 27 個 API 的實現
+
+---
+
+#### 9.8 部署與測試
+- [ ] 9.8.1 [內部] 提交所有更改到 Git
+- [ ] 9.8.2 [內部] 執行自動部署（git push origin main）
+- [ ] 9.8.3 [內部] 驗證 Cloudflare Pages 部署成功
+- [ ] 9.8.4 [內部] 更新 MASTER_PLAN.md 進度統計
 
 ---
 
