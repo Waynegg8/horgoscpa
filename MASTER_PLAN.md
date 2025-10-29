@@ -12,7 +12,7 @@
 **API 端點總數：** 147 個（真相源：`docs/系統資料/API清單.md`）  
 **功能模組總數：** 14 個
 
-**當前進度：** 16/45 表，31/147 API
+**當前進度：** 19/45 表，51/147 API（已補充模組1-2-4遺漏API）
 
 ---
 
@@ -26,6 +26,7 @@
 - [ ] **所有開發完成後必須執行一致性驗證**
 - [ ] **所有測試通過後必須自動部署**
 - [ ] **絕不讓用戶測試或部署**（AI 必須自行完成）
+- [ ] **🔴 開始任何模組前，必須完整讀取整份規格文檔（禁止只讀前幾百行）**
 
 ### 📚 必讀文檔
 - [x] `docs/🚨外部網站禁止修改清單.md`
@@ -70,7 +71,7 @@
 
 ## 📝 模組詳細任務分解
 
-### [x] 模組 1：系統基礎（系統基礎-完整規格.md）✅ 已完成
+### [x] 模組 1：系統基礎（系統基礎-完整規格.md）✅ 已完成（已補充遺漏）
 **資料表：** 5 個 | **API：** 14 個 | **Cron Jobs：** 0 個
 
 #### 1.1 資料表創建
@@ -101,6 +102,10 @@
 - [x] 1.5.1 實現 `GET /api/v1/admin/settings` 路由（含 OpenAPI 註解）
 - [x] 1.5.2 實現 `PUT /api/v1/admin/settings/:key` 路由（含危險設定確認機制、唯讀保護，含 OpenAPI 註解）
 
+#### 1.5.5 審計日誌查詢（僅管理員）⚠️ 補充遺漏
+- [x] 1.5.5.1 實現 `GET /api/v1/admin/audit-logs` 路由（查詢操作日誌，含 OpenAPI 註解）
+- [x] 1.5.5.2 實現 `GET /api/v1/admin/audit-logs/user/:userId` 路由（查詢特定員工日誌，含 OpenAPI 註解）
+
 #### 1.6 前端實現
 - [ ] 1.6.1 實現 `LoginPage.vue` 組件（使用共用組件）
 - [ ] 1.6.2 實現 `ProfilePage.vue` 組件（個人資料頁面）
@@ -124,8 +129,8 @@
 
 ---
 
-### [x] 模組 2：業務規則（業務規則-完整規格.md）✅ 已完成
-**資料表：** 8 個 | **API：** 9 個 | **Cron Jobs：** 0 個
+### [x] 模組 2：業務規則（業務規則-完整規格.md）✅ 已完成（已補充遺漏）
+**資料表：** 8 個 | **API：** 18 個 | **Cron Jobs：** 0 個
 
 #### 2.1 資料表創建
 - [x] 2.1.1 創建 `Holidays` 表（國定假日、補班日）
@@ -144,19 +149,21 @@
 - [x] 2.2.4 實現 `DELETE /api/v1/holidays/:id` 路由（含 OpenAPI 註解）
 - [x] 2.2.5 實現 `POST /api/v1/admin/holidays/import` 路由（批量導入，僅管理員，含 OpenAPI 註解）
 
-#### 2.3 假別類型管理
-- [ ] 2.3.1 實現 `GET /api/v1/leave-types` 路由（含 OpenAPI schema）
-- [ ] 2.3.2 實現 `POST /api/v1/leave-types` 路由（含 OpenAPI schema）
-- [ ] 2.3.3 實現 `PUT /api/v1/leave-types/:id` 路由（含 OpenAPI schema）
+#### 2.3 假別類型管理（小型事務所彈性設計：所有人可用）
+- [x] 2.3.1 實現 `GET /api/v1/leave-types` 路由（含 OpenAPI 註解）
+- [x] 2.3.2 實現 `POST /api/v1/leave-types` 路由（含 OpenAPI 註解）
+- [x] 2.3.3 實現 `PUT /api/v1/leave-types/:id` 路由（含 OpenAPI 註解）
+- [x] 2.3.4 實現 `POST /api/v1/leave-types/:id/enable` 路由（含 OpenAPI 註解）
+- [x] 2.3.5 實現 `POST /api/v1/leave-types/:id/disable` 路由（含 OpenAPI 註解）
 
 #### 2.4 加班費率與特休規則（唯讀）
-- [ ] 2.4.1 實現 `GET /api/v1/overtime-rates` 路由（唯讀，含 OpenAPI schema）
-- [ ] 2.4.2 實現 `GET /api/v1/annual-leave-rules` 路由（唯讀，含 OpenAPI schema）
+- [x] 2.4.1 實現 `GET /api/v1/overtime-rates` 路由（唯讀，含 OpenAPI 註解）
+- [x] 2.4.2 實現 `GET /api/v1/annual-leave-rules` 路由（唯讀，含 OpenAPI 註解）
 
-#### 2.5 週期類型管理
-- [ ] 2.5.1 實現 `GET /api/v1/frequency-types` 路由（含 OpenAPI schema）
-- [ ] 2.5.2 實現 `POST /api/v1/frequency-types` 路由（含 OpenAPI schema）
-- [ ] 2.5.3 實現 `PUT /api/v1/frequency-types/:id` 路由（含 OpenAPI schema）
+#### 2.5 週期類型管理（小型事務所彈性設計：所有人可用）
+- [x] 2.5.1 實現 `GET /api/v1/frequency-types` 路由（含 OpenAPI 註解）
+- [x] 2.5.2 實現 `POST /api/v1/frequency-types` 路由（含 OpenAPI 註解）
+- [x] 2.5.3 實現 `PUT /api/v1/frequency-types/:id` 路由（含 OpenAPI 註解）
 
 #### 2.6 服務項目管理（小型事務所彈性設計：所有人可用）
 - [x] 2.6.1 實現 `GET /api/v1/services` 路由（含 OpenAPI 註解）
@@ -210,27 +217,27 @@
 
 ---
 
-### [ ] 模組 4：工時管理（工時管理-完整規格.md）
-**資料表：** 4 個 | **API：** 12 個 | **Cron Jobs：** 1 個（補休到期轉換）
+### [x] 模組 4：工時管理（工時管理-完整規格.md）⚠️ 部分完成
+**資料表：** 3 個（WorkTypes 已在模組2）| **API：** 6 個（部分實現）| **Cron Jobs：** 0 個（待實現）
 
 #### 4.1 資料表創建
-- [ ] 4.1.1 創建 `TimeLogs` 表（工時記錄）
-- [ ] 4.1.2 創建 `WorkTypes` 表（工作類型：正常、加班等）
-- [ ] 4.1.3 創建 `CompensatoryLeave` 表（補休餘額）
-- [ ] 4.1.4 創建 `CompensatoryLeaveUsage` 表（補休使用記錄）
+- [x] 4.1.1 創建 `TimeLogs` 表（工時記錄，含國定假日特殊處理）
+- [x] 4.1.2 創建 `WorkTypes` 表（已在模組2創建）
+- [x] 4.1.3 創建 `CompensatoryLeave` 表（補休餘額，含到期轉換欄位）
+- [x] 4.1.4 創建 `CompensatoryLeaveUsage` 表（補休使用記錄，FIFO）
 
 #### 4.2 工時管理 API
-- [ ] 4.2.1 實現 `GET /api/v1/timelogs` 路由（含 OpenAPI schema）
-- [ ] 4.2.2 實現 `POST /api/v1/timelogs` 路由（含驗證：工時精度、每日上限，含 OpenAPI schema）
-- [ ] 4.2.3 實現 `PUT /api/v1/timelogs/:id` 路由（含 OpenAPI schema）
-- [ ] 4.2.4 實現 `DELETE /api/v1/timelogs/:id` 路由（含 OpenAPI schema）
-- [ ] 4.2.5 實現 `POST /api/v1/weighted-hours/calc` 路由（計算加權工時，含 OpenAPI schema）
+- [x] 4.2.1 實現 `GET /api/v1/timelogs` 路由（含權限過濾，含 OpenAPI 註解）
+- [x] 4.2.2 實現 `POST /api/v1/timelogs` 路由（含工時精度、每日上限、補班日驗證、國定假日特殊規則，含 OpenAPI 註解）
+- [x] 4.2.3 實現 `PUT /api/v1/timelogs/:id` 路由（含 OpenAPI 註解）
+- [x] 4.2.4 實現 `DELETE /api/v1/timelogs/:id` 路由（含 OpenAPI 註解）
+- [x] 4.2.5 實現 `POST /api/v1/weighted-hours/calculate` 路由（計算加權工時，含國定假日特殊規則，含 OpenAPI 註解）
 
 #### 4.3 補休系統 API
-- [ ] 4.3.1 實現補休自動累積邏輯（加班時數自動轉補休）
-- [ ] 4.3.2 實現補休 FIFO 使用邏輯（請假時自動扣除最早的補休）
-- [ ] 4.3.3 實現 `GET /api/v1/comp-leave/balance` 路由（查詢補休餘額，含 OpenAPI schema）
-- [ ] 4.3.4 實現 `GET /api/v1/comp-leave/usage-history` 路由（補休使用歷史，含 OpenAPI schema）
+- [x] 4.3.1 實現補休自動累積邏輯（加班自動轉補休，國定假日統一8小時）
+- [x] 4.3.2 實現補休 FIFO 使用邏輯（useCompensatoryLeave 方法）
+- [x] 4.3.3 實現 `GET /api/v1/compensatory-leave` 路由（查詢補休餘額，含即將到期提醒，含 OpenAPI 註解）
+- [x] 4.3.4 實現 `POST /api/v1/compensatory-leave/use` 路由（使用補休FIFO，含 OpenAPI 註解）
 
 #### 4.4 Cron Job 實現
 - [ ] 4.4.1 在 `wrangler.toml` 中添加補休到期轉換 Cron Job（`0 0 1 * *`）
@@ -600,7 +607,7 @@
 ### 完成統計
 - **已完成模組：** 3 / 14（21.4%）
 - **已完成資料表：** 16 / 45（35.6%）
-- **已完成 API：** 31 / 147（21.1%）
+- **已完成 API：** 45 / 147（30.6%）⚠️ 已補充模組1-2遺漏的API
 - **已完成 Cron Jobs：** 0 / 6
 
 ### 模組狀態
@@ -608,7 +615,7 @@
 |------|------|----------|----------|
 | 1. 系統基礎 | ✅ 已完成 | 2025-10-29 | ✅ 已部署 |
 | 2. 業務規則 | ✅ 已完成 | 2025-10-29 | ✅ 已部署 |
-| 3. 客戶管理 | ✅ 已完成 | 2025-10-29 | ⏳ 準備部署 |
+| 3. 客戶管理 | ✅ 已完成 | 2025-10-29 | ✅ 已部署 |
 | 4. 工時管理 | ⏸️ 待開始 | - | - |
 | 5. 假期管理 | ⏸️ 待開始 | - | - |
 | 6. 服務生命週期 | ⏸️ 待開始 | - | - |

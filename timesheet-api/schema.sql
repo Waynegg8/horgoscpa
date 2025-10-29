@@ -519,6 +519,110 @@ CREATE INDEX idx_client_tag_client ON ClientTagAssignments(client_id);
 CREATE INDEX idx_client_tag_tag ON ClientTagAssignments(tag_id);
 
 -- =====================================================
+-- 模組 4: 工時管理
+-- =====================================================
+
+-- -----------------------------------------------------
+-- Table: TimeLogs (工時記錄)
+-- 描述: 記錄每天的工作時間和請假記錄
+-- -----------------------------------------------------
+CREATE TABLE TimeLogs (
+  log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  work_date TEXT NOT NULL,              -- YYYY-MM-DD
+  client_id TEXT,                       -- 客戶（工作時）
+  service_id INTEGER,                   -- 服務項目
+  work_type_id INTEGER NOT NULL,        -- 工作類型
+  hours REAL NOT NULL,                  -- 實際工時
+  weighted_hours REAL,                  -- 加權工時（自動計算）
+  leave_type_id INTEGER,                -- 假別（請假時）
+  notes TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (user_id) REFERENCES Users(user_id),
+  FOREIGN KEY (client_id) REFERENCES Clients(client_id),
+  FOREIGN KEY (service_id) REFERENCES Services(service_id),
+  FOREIGN KEY (work_type_id) REFERENCES WorkTypes(work_type_id),
+  FOREIGN KEY (leave_type_id) REFERENCES LeaveTypes(leave_type_id),
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id),
+  
+  -- 驗證約束
+  CHECK (hours > 0 AND hours <= 24),
+  CHECK (hours % 0.5 = 0)  -- 工時必須是 0.5 的倍數
+);
+
+-- 索引（優化查詢性能）
+CREATE INDEX idx_timelogs_user_date ON TimeLogs(user_id, work_date);
+CREATE INDEX idx_timelogs_client ON TimeLogs(client_id);
+CREATE INDEX idx_timelogs_client_date ON TimeLogs(client_id, work_date);  -- 客戶成本分析專用
+CREATE INDEX idx_timelogs_date ON TimeLogs(work_date);                    -- 日期範圍查詢專用
+CREATE INDEX idx_timelogs_deleted ON TimeLogs(is_deleted);
+
+-- -----------------------------------------------------
+-- Table: CompensatoryLeave (補休餘額)
+-- 描述: 員工的補休時數（累積制、FIFO 使用、到期轉換）
+-- -----------------------------------------------------
+CREATE TABLE CompensatoryLeave (
+  compe_leave_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  hours_earned REAL NOT NULL,           -- 累積的補休時數
+  hours_remaining REAL NOT NULL,        -- 剩餘補休時數
+  earned_date TEXT NOT NULL,            -- 累積日期（用於 FIFO）
+  expiry_date TEXT NOT NULL,            -- 到期日（根據系統設定）
+  source_timelog_id INTEGER,            -- 來源工時記錄
+  source_work_type TEXT,                -- 來源工作類型（記錄加班類型）
+  original_rate REAL,                   -- 原始費率（用於到期轉換）
+  status TEXT DEFAULT 'active',         -- active, expired, used, converted
+  converted_to_payment BOOLEAN DEFAULT 0,  -- 是否已轉加班費
+  conversion_date TEXT,                 -- 轉換日期
+  conversion_rate REAL,                 -- 轉換時的費率
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  
+  FOREIGN KEY (user_id) REFERENCES Users(user_id),
+  FOREIGN KEY (source_timelog_id) REFERENCES TimeLogs(log_id),
+  CHECK (status IN ('active', 'expired', 'used', 'converted')),
+  CHECK (hours_remaining >= 0),
+  CHECK (hours_remaining <= hours_earned)
+);
+
+-- 索引
+CREATE INDEX idx_compe_leave_user ON CompensatoryLeave(user_id);
+CREATE INDEX idx_compe_leave_status ON CompensatoryLeave(status);
+CREATE INDEX idx_compe_leave_expiry ON CompensatoryLeave(expiry_date);
+CREATE INDEX idx_compe_leave_earned_date ON CompensatoryLeave(earned_date);  -- FIFO 排序用
+CREATE INDEX idx_compe_leave_user_status ON CompensatoryLeave(user_id, status);
+
+-- -----------------------------------------------------
+-- Table: CompensatoryLeaveUsage (補休使用記錄)
+-- 描述: 記錄補休使用歷史（FIFO 先進先出）
+-- -----------------------------------------------------
+CREATE TABLE CompensatoryLeaveUsage (
+  usage_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  compe_leave_id INTEGER NOT NULL,
+  leave_application_id INTEGER,         -- 關聯請假申請
+  timelog_id INTEGER,                   -- 關聯工時記錄（請假）
+  hours_used REAL NOT NULL,
+  used_date TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  
+  FOREIGN KEY (compe_leave_id) REFERENCES CompensatoryLeave(compe_leave_id),
+  FOREIGN KEY (leave_application_id) REFERENCES LeaveApplications(leave_id),
+  FOREIGN KEY (timelog_id) REFERENCES TimeLogs(log_id),
+  CHECK (hours_used > 0)
+);
+
+-- 索引
+CREATE INDEX idx_compe_usage_leave ON CompensatoryLeaveUsage(compe_leave_id);
+CREATE INDEX idx_compe_usage_date ON CompensatoryLeaveUsage(used_date);
+CREATE INDEX idx_compe_usage_user_date ON CompensatoryLeaveUsage(compe_leave_id, used_date);
+
+-- =====================================================
 -- 註記
 -- =====================================================
 -- 1. 所有表都包含標準審計欄位：created_at, updated_at, is_deleted, deleted_at, deleted_by

@@ -13,9 +13,13 @@ import { loggerMiddleware } from './middleware/logger';
 import auth from './routes/auth';
 import users from './routes/users';
 import settings from './routes/settings';
+import auditlogs from './routes/auditlogs';
 import holidays from './routes/holidays';
+import leavetypes from './routes/leavetypes';
+import businessrules from './routes/businessrules';
 import services from './routes/services';
 import clients from './routes/clients';
+import timelogs from './routes/timelogs';
 
 // 創建 Hono 應用
 const app = new Hono<{ Bindings: Env }>();
@@ -68,15 +72,22 @@ app.route('/api/v1', users);
 // 系統設定路由
 app.route('/api/v1', settings);
 
+// 審計日誌路由
+app.route('/api/v1', auditlogs);
+
 // 業務規則路由
 app.route('/api/v1', holidays);
+app.route('/api/v1', leavetypes);
+app.route('/api/v1', businessrules);
 app.route('/api/v1', services);
 
 // 客戶管理路由
 app.route('/api/v1', clients);
 
+// 工時管理路由
+app.route('/api/v1', timelogs);
+
 // 後續路由將在這裡添加
-// app.route('/api/v1/timelogs', timelogs);
 // app.route('/api/v1/leave', leave);
 // app.route('/api/v1/tasks', tasks);
 // etc...
