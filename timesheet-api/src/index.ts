@@ -23,6 +23,7 @@ import timelogs from './routes/timelogs';
 import leave from './routes/leave';
 import clientservices from './routes/clientservices';
 import tasks from './routes/tasks';
+import knowledge from './routes/knowledge';
 
 // 創建 Hono 應用
 const app = new Hono<{ Bindings: Env }>();
@@ -98,6 +99,7 @@ app.route('/api/v1', clientservices);
 
 // 任務管理路由
 app.route('/api/v1', tasks);
+app.route('/api/v1', knowledge);
 
 // 後續路由將在這裡添加
 // etc...

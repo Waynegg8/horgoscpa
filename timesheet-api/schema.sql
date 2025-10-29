@@ -737,6 +737,90 @@ CREATE INDEX idx_life_event_grants_type ON LifeEventLeaveGrants(leave_type_id);
 CREATE INDEX idx_life_event_grants_deleted ON LifeEventLeaveGrants(is_deleted);
 
 -- =====================================================
+-- 模組 8：知識管理（3個表）
+-- =====================================================
+
+-- -----------------------------------------------------
+-- Table: SOPDocuments (SOP 文件)
+-- 描述: 標準作業程序文件（含版本控制、發布狀態）
+-- -----------------------------------------------------
+CREATE TABLE SOPDocuments (
+  sop_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,               -- HTML 內容
+  category TEXT,
+  tags TEXT,                           -- JSON 陣列
+  version INTEGER DEFAULT 1,
+  is_published BOOLEAN DEFAULT 0,
+  created_by INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (created_by) REFERENCES Users(user_id),
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id)
+);
+
+-- 索引
+CREATE INDEX idx_sop_category ON SOPDocuments(category);
+CREATE INDEX idx_sop_published ON SOPDocuments(is_published);
+CREATE INDEX idx_sop_creator ON SOPDocuments(created_by);
+CREATE INDEX idx_sop_deleted ON SOPDocuments(is_deleted);
+
+-- -----------------------------------------------------
+-- Table: ClientSOPLinks (客戶專屬 SOP 關聯)
+-- 描述: 客戶與 SOP 的多對多關聯
+-- -----------------------------------------------------
+CREATE TABLE ClientSOPLinks (
+  link_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_id TEXT NOT NULL,
+  sop_id INTEGER NOT NULL,
+  assigned_by INTEGER NOT NULL,
+  assigned_at TEXT DEFAULT (datetime('now')),
+  notes TEXT,
+  
+  FOREIGN KEY (client_id) REFERENCES Clients(client_id),
+  FOREIGN KEY (sop_id) REFERENCES SOPDocuments(sop_id),
+  FOREIGN KEY (assigned_by) REFERENCES Users(user_id),
+  UNIQUE(client_id, sop_id)                -- ⭐ 防止重複關聯
+);
+
+-- 索引
+CREATE INDEX idx_client_sop_client ON ClientSOPLinks(client_id);
+CREATE INDEX idx_client_sop_sop ON ClientSOPLinks(sop_id);
+
+-- -----------------------------------------------------
+-- Table: KnowledgeArticles (知識庫文章)
+-- 描述: 內部知識庫文章（含瀏覽次數、分類、標籤）
+-- -----------------------------------------------------
+CREATE TABLE KnowledgeArticles (
+  article_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  category TEXT,
+  tags TEXT,                           -- JSON 陣列
+  is_published BOOLEAN DEFAULT 0,
+  view_count INTEGER DEFAULT 0,
+  created_by INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (created_by) REFERENCES Users(user_id),
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id)
+);
+
+-- 索引
+CREATE INDEX idx_knowledge_category ON KnowledgeArticles(category);
+CREATE INDEX idx_knowledge_published ON KnowledgeArticles(is_published);
+CREATE INDEX idx_knowledge_creator ON KnowledgeArticles(created_by);
+CREATE INDEX idx_knowledge_deleted ON KnowledgeArticles(is_deleted);
+
+-- =====================================================
 -- 模組 6: 服務生命週期管理
 -- =====================================================
 
