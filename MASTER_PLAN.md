@@ -2055,7 +2055,7 @@
 ---
 
 ### [ ] 模組 10：薪資管理（薪資管理-完整規格.md）
-**資料表：** 6 個 | **API：** 13 個（薪資項目 4 + 年終 5 + 員工薪資 3 + 薪資計算 4）| **Cron Jobs：** 0 個
+**資料表：** 6 個 | **API：** 16 個（薪資項目 4 + 年終 5 + 員工薪資 3 + 薪資計算/查詢 4）| **Cron Jobs：** 0 個
 
 #### 10.1 資料表創建（6 表）
 
@@ -2319,7 +2319,7 @@
 ---
 
 ### [ ] 模組 11：管理成本（管理成本-完整規格.md）
-**資料表：** 2 個 | **API：** 6 個（成本項目類型 4 + 月度成本記錄 2）| **Cron Jobs：** 0 個
+**資料表：** 2 個 | **API：** 10 個（成本項目類型 4 + 月度成本記錄 4 + 分析彙總 2）| **Cron Jobs：** 0 個
 
 #### 11.1 資料表創建（2 表）
 
@@ -2387,7 +2387,7 @@
 
 ---
 
-#### 11.3 月度成本記錄 API（2個）[規格:L316-L348]
+#### 11.3 月度成本記錄 API（4個）[規格:L316-L348]
 
 **11.3.1 GET /api/v1/admin/overhead-costs（查詢月度成本）[規格:L319]**
 - [ ] 11.3.1.1 權限：authMiddleware + adminMiddleware
@@ -2403,6 +2403,20 @@
 - [ ] 11.3.2.4 檢查 UNIQUE(cost_type_id, year, month) 防重複 [規格:L82]
 - [ ] 11.3.2.5 Service 創建記錄，recorded_by 自動設置
 - [ ] 11.3.2.6 返回 201 Created [規格:L337-L346]
+
+**11.3.3 PUT /api/v1/admin/overhead-costs/:id（更新月度成本）[規格:L321]**
+- [ ] 11.3.3.1 權限：authMiddleware + adminMiddleware
+- [ ] 11.3.3.2 路徑參數：id（overhead_id）
+- [ ] 11.3.3.3 請求 Body：amount, notes
+- [ ] 11.3.3.4 Service 更新記錄，updated_at 自動設置
+- [ ] 11.3.3.5 返回更新後的數據
+
+**11.3.4 DELETE /api/v1/admin/overhead-costs/:id（刪除月度成本）[規格:L322]**
+- [ ] 11.3.4.1 權限：authMiddleware + adminMiddleware
+- [ ] 11.3.4.2 路徑參數：id
+- [ ] 11.3.4.3 Service 軟刪除（is_deleted=1）
+- [ ] 11.3.4.4 返回成功響應
+- [ ] 11.3.4.5 添加 OpenAPI 註解
 
 ---
 
