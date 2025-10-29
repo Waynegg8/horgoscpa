@@ -813,6 +813,127 @@ CREATE INDEX idx_service_change_date ON ServiceChangeHistory(changed_at);
 CREATE INDEX idx_service_change_user ON ServiceChangeHistory(changed_by);
 
 -- =====================================================
+-- 模組 7: 任務管理
+-- =====================================================
+
+-- -----------------------------------------------------
+-- Table: TaskTemplates (任務模板)
+-- 描述: 定義可重複使用的任務流程（通用或客戶專屬）
+-- -----------------------------------------------------
+CREATE TABLE TaskTemplates (
+  template_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  template_name TEXT NOT NULL,
+  service_id INTEGER,
+  description TEXT,
+  estimated_days INTEGER,
+  related_sop_id INTEGER,               -- 關聯的 SOP 文件
+  is_client_specific BOOLEAN DEFAULT 0, -- 是否為客戶專屬模板
+  specific_client_id TEXT,              -- 專屬客戶ID（若為客戶專屬）
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (service_id) REFERENCES Services(service_id),
+  FOREIGN KEY (related_sop_id) REFERENCES SOPDocuments(sop_id),
+  FOREIGN KEY (specific_client_id) REFERENCES Clients(client_id),
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id)
+);
+
+-- 索引
+CREATE INDEX idx_task_templates_service ON TaskTemplates(service_id);
+CREATE INDEX idx_task_templates_client ON TaskTemplates(specific_client_id);
+CREATE INDEX idx_task_templates_deleted ON TaskTemplates(is_deleted);
+
+-- -----------------------------------------------------
+-- Table: TaskStageTemplates (任務階段模板)
+-- 描述: 定義任務模板中的各個階段
+-- -----------------------------------------------------
+CREATE TABLE TaskStageTemplates (
+  stage_template_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  template_id INTEGER NOT NULL,
+  stage_name TEXT NOT NULL,
+  stage_order INTEGER NOT NULL,
+  estimated_days INTEGER,
+  description TEXT,
+  
+  FOREIGN KEY (template_id) REFERENCES TaskTemplates(template_id) ON DELETE CASCADE
+);
+
+-- 索引
+CREATE INDEX idx_stage_templates_template ON TaskStageTemplates(template_id);
+CREATE INDEX idx_stage_templates_order ON TaskStageTemplates(template_id, stage_order);
+
+-- -----------------------------------------------------
+-- Table: ActiveTasks (執行中任務)
+-- 描述: 當前正在執行的任務（自動或手動生成）
+-- -----------------------------------------------------
+CREATE TABLE ActiveTasks (
+  task_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_service_id INTEGER NOT NULL,
+  template_id INTEGER NOT NULL,
+  task_name TEXT NOT NULL,
+  start_date TEXT,
+  due_date TEXT,
+  completed_date TEXT,
+  status TEXT DEFAULT 'pending',        -- pending, in_progress, completed, cancelled, suspended
+  assignee_user_id INTEGER,
+  related_sop_id INTEGER,               -- 關聯的通用 SOP 文件
+  client_specific_sop_id INTEGER,       -- 客戶專屬 SOP 文件
+  notes TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (client_service_id) REFERENCES ClientServices(client_service_id),
+  FOREIGN KEY (template_id) REFERENCES TaskTemplates(template_id),
+  FOREIGN KEY (assignee_user_id) REFERENCES Users(user_id),
+  FOREIGN KEY (related_sop_id) REFERENCES SOPDocuments(sop_id),
+  FOREIGN KEY (client_specific_sop_id) REFERENCES SOPDocuments(sop_id),
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id),
+  CHECK (status IN ('pending', 'in_progress', 'completed', 'cancelled', 'suspended'))
+);
+
+-- 索引（優化查詢性能）
+CREATE INDEX idx_active_tasks_service ON ActiveTasks(client_service_id);
+CREATE INDEX idx_active_tasks_assignee ON ActiveTasks(assignee_user_id);
+CREATE INDEX idx_active_tasks_status ON ActiveTasks(status);
+CREATE INDEX idx_active_tasks_due_date ON ActiveTasks(due_date);
+CREATE INDEX idx_active_tasks_assignee_status ON ActiveTasks(assignee_user_id, status, due_date);  -- ⭐ 儀表板查詢專用
+CREATE INDEX idx_active_tasks_due_status ON ActiveTasks(due_date, status);  -- ⭐ 逾期任務檢測專用
+CREATE INDEX idx_active_tasks_deleted ON ActiveTasks(is_deleted);
+
+-- -----------------------------------------------------
+-- Table: ActiveTaskStages (任務階段進度)
+-- 描述: 任務的各個階段執行狀態
+-- -----------------------------------------------------
+CREATE TABLE ActiveTaskStages (
+  active_stage_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  task_id INTEGER NOT NULL,
+  stage_template_id INTEGER NOT NULL,
+  stage_name TEXT NOT NULL,
+  stage_order INTEGER NOT NULL,
+  status TEXT DEFAULT 'pending',        -- pending, in_progress, completed
+  started_at TEXT,
+  completed_at TEXT,
+  assignee_user_id INTEGER,
+  notes TEXT,
+  
+  FOREIGN KEY (task_id) REFERENCES ActiveTasks(task_id) ON DELETE CASCADE,
+  FOREIGN KEY (stage_template_id) REFERENCES TaskStageTemplates(stage_template_id),
+  FOREIGN KEY (assignee_user_id) REFERENCES Users(user_id),
+  CHECK (status IN ('pending', 'in_progress', 'completed'))
+);
+
+-- 索引
+CREATE INDEX idx_active_stages_task ON ActiveTaskStages(task_id);
+CREATE INDEX idx_active_stages_order ON ActiveTaskStages(task_id, stage_order);
+CREATE INDEX idx_active_stages_status ON ActiveTaskStages(status);
+
+-- =====================================================
 -- 註記
 -- =====================================================
 -- 1. 所有表都包含標準審計欄位：created_at, updated_at, is_deleted, deleted_at, deleted_by
