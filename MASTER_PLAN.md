@@ -1354,7 +1354,19 @@
 
 #### 6.1 資料表創建
 - [x] 6.1.1 `ClientServices` 狀態欄位擴充（status、suspended_at、resumed_at、suspension_reason、auto_renew）[規格:L9-L20]
+  - [x] 6.1.1.1 新增欄位 `status` TEXT DEFAULT 'active'（active/suspended/expired/cancelled）[規格:L13-L15]
+  - [x] 6.1.1.2 新增欄位 `suspended_at`（暫停時間）[規格:L16]
+  - [x] 6.1.1.3 新增欄位 `resumed_at`（恢復時間）[規格:L17]
+  - [x] 6.1.1.4 新增欄位 `suspension_reason`（暫停原因）[規格:L18]
+  - [x] 6.1.1.5 新增欄位 `auto_renew` BOOLEAN DEFAULT 1（自動續約）[規格:L19-L20]
+
 - [x] 6.1.2 創建 `ServiceChangeHistory` 表（服務變更歷史）[規格:L22-L41]
+  - [x] 6.1.2.1 主鍵 `change_id` [規格:L26]
+  - [x] 6.1.2.2 關聯欄位：`client_service_id`, `changed_by` [規格:L27, L30]
+  - [x] 6.1.2.3 狀態與時間：`old_status`, `new_status`, `changed_at` [規格:L28-L31]
+  - [x] 6.1.2.4 原因與備註：`reason`, `notes` [規格:L32-L33]
+  - [x] 6.1.2.5 外鍵：FK→ClientServices(client_service_id), Users(user_id) [規格:L35-L37]
+  - [x] 6.1.2.6 索引：`idx_service_change_service`, `idx_service_change_date` [規格:L39-L41]
 
 #### 6.2 服務生命週期管理 API
 - [x] 6.2.1 `POST /api/v1/client-services/:id/suspend`（暫停服務，所有人可用）[規格:L47-L75]
