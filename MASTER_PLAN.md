@@ -2055,138 +2055,879 @@
 ---
 
 ### [ ] 模組 10：薪資管理（薪資管理-完整規格.md）
-**資料表：** 6 個 | **API：** 13 個 | **Cron Jobs：** 0 個
+**資料表：** 6 個 | **API：** 13 個（薪資項目 4 + 年終 5 + 員工薪資 3 + 薪資計算 4）| **Cron Jobs：** 0 個
 
-#### 10.1 資料表創建
-- [ ] 10.1.1 擴充 `Users` 表（添加薪資相關欄位）
-- [ ] 10.1.2 創建 `SalaryItemTypes` 表（薪資項目類型）
-- [ ] 10.1.3 創建 `EmployeeSalaryItems` 表（員工薪資項目）
-- [ ] 10.1.4 創建 `MonthlyPayroll` 表（月度薪資）
-- [ ] 10.1.5 創建 `OvertimeRecords` 表（加班記錄）
+#### 10.1 資料表創建（6 表）
 
-#### 10.2 薪資項目管理 API
-- [ ] 10.2.1 實現薪資項目類型管理 API（管理員專用）
-- [ ] 10.2.2 實現員工薪資項目管理 API
+**10.1.1 擴充 `Users` 表（薪資基本資訊）[規格:L35-L42]**
+- [ ] 10.1.1.1 添加 `base_salary` 欄位（REAL NOT NULL DEFAULT 0）[規格:L39]
+- [ ] 10.1.1.2 添加 `join_date` 欄位（TEXT）[規格:L40]
+- [ ] 10.1.1.3 添加 `comp_hours_current_month` 欄位（REAL DEFAULT 0）[規格:L41]
 
-#### 10.3 薪資計算 API
-- [ ] 10.3.1 實現月度薪資計算邏輯（含全勤獎金）
-- [ ] 10.3.2 實現薪資報表 API
+**10.1.2 創建 `SalaryItemTypes` 表（薪資項目類型，含經常性給與標記）[規格:L49-L106]**
+- [ ] 10.1.2.1 主鍵 `item_type_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L55]
+- [ ] 10.1.2.2 欄位：`item_code` (TEXT UNIQUE NOT NULL) [規格:L56]
+- [ ] 10.1.2.3 欄位：`item_name` (TEXT NOT NULL) [規格:L57]
+- [ ] 10.1.2.4 欄位：`category` (TEXT NOT NULL, CHECK IN ('allowance','bonus','deduction')) [規格:L58, L69]
+- [ ] 10.1.2.5 欄位：`is_taxable` (BOOLEAN DEFAULT 1) [規格:L59]
+- [ ] 10.1.2.6 欄位：`is_fixed` (BOOLEAN DEFAULT 1) [規格:L60]
+- [ ] 10.1.2.7 欄位：`is_regular_payment` (BOOLEAN DEFAULT 1) ⭐計入時薪 [規格:L61]
+- [ ] 10.1.2.8 欄位：`affects_labor_insurance` (BOOLEAN DEFAULT 1) [規格:L62]
+- [ ] 10.1.2.9 欄位：`affects_attendance` (BOOLEAN DEFAULT 0) [規格:L63]
+- [ ] 10.1.2.10 欄位：`calculation_formula`, `display_order`, `is_active` [規格:L64-L66]
+- [ ] 10.1.2.11 審計欄位：`created_at` [規格:L67]
+- [ ] 10.1.2.12 CHECK 約束：category IN ('allowance','bonus','deduction') [規格:L69]
+- [ ] 10.1.2.13 索引：`idx_salary_item_types_active` ON (is_active) [規格:L72]
+- [ ] 10.1.2.14 索引：`idx_salary_item_types_order` ON (display_order) [規格:L73]
+- [ ] 10.1.2.15 索引：`idx_salary_item_types_regular` ON (is_regular_payment) [規格:L74]
+- [ ] 10.1.2.16 插入預設項目（全勤/交通/伙食/職務/電話/停車/績效/年終）[規格:L77-L85]
 
-#### 10.4 前端實現
-- [ ] 10.4.1 實現薪資管理頁面（管理員專用）
-- [ ] 10.4.2 實現員工薪資查詢頁面
+**10.1.3 創建 `EmployeeSalaryItems` 表（員工薪資項目，含月度獨立調整）[規格:L126-L185]**
+- [ ] 10.1.3.1 主鍵 `employee_item_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L130]
+- [ ] 10.1.3.2 關聯欄位：`user_id`, `item_type_id` (NOT NULL) [規格:L131-L132]
+- [ ] 10.1.3.3 欄位：`amount` (REAL NOT NULL) [規格:L133]
+- [ ] 10.1.3.4 欄位：`effective_date` (TEXT NOT NULL, YYYY-MM-01) [規格:L134]
+- [ ] 10.1.3.5 欄位：`expiry_date` (TEXT, null=永久有效) [規格:L135]
+- [ ] 10.1.3.6 欄位：`notes`, `is_active` [規格:L136-L137]
+- [ ] 10.1.3.7 審計欄位：`created_at`, `updated_at` [規格:L138-L139]
+- [ ] 10.1.3.8 外鍵：`user_id` REFERENCES Users(user_id) [規格:L141]
+- [ ] 10.1.3.9 外鍵：`item_type_id` REFERENCES SalaryItemTypes(item_type_id) [規格:L142]
+- [ ] 10.1.3.10 索引：`idx_employee_salary_items_user` ON (user_id) [規格:L145]
+- [ ] 10.1.3.11 索引：`idx_employee_salary_items_active` ON (is_active) [規格:L146]
+- [ ] 10.1.3.12 索引：`idx_employee_salary_items_date` ON (effective_date, expiry_date) [規格:L147]
 
-#### 10.5 測試與部署
-- [ ] 10.5.1 [內部] 自行測試所有薪資管理功能
-- [ ] 10.5.2 [內部] 準備執行一致性驗證
-- [ ] 10.5.3 [內部] 準備執行自動部署
+**10.1.4 創建 `MonthlyPayroll` 表（月度薪資，含加班費分類）[規格:L188-L232]**
+- [ ] 10.1.4.1 主鍵 `payroll_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L191]
+- [ ] 10.1.4.2 關聯欄位：`user_id`, `year`, `month` (NOT NULL) [規格:L192-L194]
+- [ ] 10.1.4.3 薪資組成：`base_salary`, `total_allowances`, `total_bonuses` [規格:L197-L199]
+- [ ] 10.1.4.4 加班費：`overtime_weekday_2h`, `overtime_weekday_beyond` [規格:L202-L203]
+- [ ] 10.1.4.5 加班費：`overtime_restday_2h`, `overtime_restday_beyond` [規格:L204-L205]
+- [ ] 10.1.4.6 加班費：`overtime_holiday` [規格:L206]
+- [ ] 10.1.4.7 扣款：`total_deductions` [規格:L209]
+- [ ] 10.1.4.8 統計：`total_work_hours`, `total_overtime_hours`, `total_weighted_hours` [規格:L212-L214]
+- [ ] 10.1.4.9 全勤：`has_full_attendance` (BOOLEAN DEFAULT 1) [規格:L215]
+- [ ] 10.1.4.10 薪資總計：`gross_salary`, `net_salary` (NOT NULL) [規格:L218-L219]
+- [ ] 10.1.4.11 備註與審計：`notes`, `created_at`, `updated_at` [規格:L222-L224]
+- [ ] 10.1.4.12 外鍵：`user_id` REFERENCES Users(user_id) [規格:L226]
+- [ ] 10.1.4.13 UNIQUE(user_id, year, month) 防重複 [規格:L227]
+- [ ] 10.1.4.14 索引：`idx_payroll_user` ON (user_id) [規格:L230]
+- [ ] 10.1.4.15 索引：`idx_payroll_date` ON (year, month) [規格:L231]
+
+**10.1.5 創建 `OvertimeRecords` 表（加班記錄明細）[規格:L234-L256]**
+- [ ] 10.1.5.1 主鍵 `overtime_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L238]
+- [ ] 10.1.5.2 關聯欄位：`user_id`, `work_date` (NOT NULL) [規格:L239-L240]
+- [ ] 10.1.5.3 欄位：`overtime_type` (TEXT NOT NULL) [規格:L241]
+- [ ] 10.1.5.4 欄位：`hours`, `rate_multiplier`, `hourly_base` (REAL NOT NULL) [規格:L242-L244]
+- [ ] 10.1.5.5 欄位：`overtime_pay` (REAL NOT NULL) [規格:L245]
+- [ ] 10.1.5.6 欄位：`is_compensatory_leave` (BOOLEAN DEFAULT 0) [規格:L246]
+- [ ] 10.1.5.7 關聯：`payroll_id` (INTEGER) [規格:L247]
+- [ ] 10.1.5.8 審計：`created_at` [規格:L248]
+- [ ] 10.1.5.9 外鍵：`user_id` REFERENCES Users(user_id) [規格:L250]
+- [ ] 10.1.5.10 外鍵：`payroll_id` REFERENCES MonthlyPayroll(payroll_id) [規格:L251]
+- [ ] 10.1.5.11 索引：`idx_overtime_user_date` ON (user_id, work_date) [規格:L254]
+- [ ] 10.1.5.12 索引：`idx_overtime_payroll` ON (payroll_id) [規格:L255]
+
+**10.1.6 創建 `YearEndBonus` 表（年終獎金，含歸屬年度）[規格:L258-L306]**
+- [ ] 10.1.6.1 主鍵 `bonus_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L264]
+- [ ] 10.1.6.2 關聯欄位：`user_id` (NOT NULL) [規格:L265]
+- [ ] 10.1.6.3 欄位：`attribution_year` (INTEGER NOT NULL) [規格:L266]
+- [ ] 10.1.6.4 欄位：`amount` (REAL NOT NULL) [規格:L267]
+- [ ] 10.1.6.5 發放欄位：`payment_year`, `payment_month`, `payment_date` [規格:L268-L270]
+- [ ] 10.1.6.6 欄位：`decision_date`, `notes` [規格:L271-L272]
+- [ ] 10.1.6.7 記錄者：`recorded_by` (NOT NULL) [規格:L273]
+- [ ] 10.1.6.8 審計與刪除：`created_at`, `updated_at`, `is_deleted` [規格:L274-L276]
+- [ ] 10.1.6.9 外鍵：`user_id` REFERENCES Users(user_id) [規格:L278]
+- [ ] 10.1.6.10 外鍵：`recorded_by` REFERENCES Users(user_id) [規格:L279]
+- [ ] 10.1.6.11 UNIQUE(user_id, attribution_year) 防重複 [規格:L280]
+- [ ] 10.1.6.12 索引：`idx_yearend_user` ON (user_id) [規格:L283]
+- [ ] 10.1.6.13 索引：`idx_yearend_attribution` ON (attribution_year) [規格:L284]
+- [ ] 10.1.6.14 索引：`idx_yearend_payment` ON (payment_year, payment_month) [規格:L285]
+
+---
+
+#### 10.2 薪資項目類型管理 API（4個）[規格:L585-L594]
+
+**10.2.1 GET /api/v1/admin/salary-item-types（查詢薪資項目類型）[規格:L590]**
+- [ ] 10.2.1.1 權限：authMiddleware（所有人）
+- [ ] 10.2.1.2 查詢參數：無
+- [ ] 10.2.1.3 Repository 查詢所有 SalaryItemTypes（is_active=1）
+- [ ] 10.2.1.4 返回列表（含 is_regular_payment 標記）
+- [ ] 10.2.1.5 添加 OpenAPI 註解
+
+**10.2.2 POST /api/v1/admin/salary-item-types（新增薪資項目類型）[規格:L591]**
+- [ ] 10.2.2.1 權限：authMiddleware + adminMiddleware
+- [ ] 10.2.2.2 請求 Body：item_code, item_name, category, is_regular_payment
+- [ ] 10.2.2.3 驗證 item_code 唯一性
+- [ ] 10.2.2.4 Service 創建記錄
+- [ ] 10.2.2.5 返回 201 Created
+
+**10.2.3 PUT /api/v1/admin/salary-item-types/:id（更新薪資項目類型）[規格:L592]**
+- [ ] 10.2.3.1 權限：authMiddleware + adminMiddleware
+- [ ] 10.2.3.2 路徑參數：id（item_type_id）
+- [ ] 10.2.3.3 請求 Body：允許更新的欄位
+- [ ] 10.2.3.4 Service 更新記錄
+- [ ] 10.2.3.5 返回更新後的數據
+
+**10.2.4 DELETE /api/v1/admin/salary-item-types/:id（刪除薪資項目類型）[規格:L593]**
+- [ ] 10.2.4.1 權限：authMiddleware + adminMiddleware
+- [ ] 10.2.4.2 路徑參數：id
+- [ ] 10.2.4.3 Service 軟刪除（is_active=0）
+- [ ] 10.2.4.4 返回成功響應
+- [ ] 10.2.4.5 添加 OpenAPI 註解
+
+---
+
+#### 10.3 年終獎金管理 API（5個）[規格:L596-L604, L820-L918]
+
+**10.3.1 GET /api/v1/admin/year-end-bonus（查詢年終獎金列表）[規格:L599]**
+- [ ] 10.3.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 10.3.1.2 查詢參數：attribution_year（可選）
+- [ ] 10.3.1.3 Repository 查詢（含 JOIN Users 表）
+- [ ] 10.3.1.4 返回列表（含員工姓名、歸屬年度、金額）
+- [ ] 10.3.1.5 添加 OpenAPI 註解
+
+**10.3.2 POST /api/v1/admin/year-end-bonus（新增年終獎金）[規格:L600, L606-L630]**
+- [ ] 10.3.2.1 權限：authMiddleware + adminMiddleware
+- [ ] 10.3.2.2 請求 Body：user_id, attribution_year, amount, payment_date, notes [規格:L609-L614]
+- [ ] 10.3.2.3 驗證 user_id 存在
+- [ ] 10.3.2.4 檢查 UNIQUE(user_id, attribution_year) 防重複
+- [ ] 10.3.2.5 Service 創建記錄，自動解析 payment_year/month [規格:L619-L628]
+- [ ] 10.3.2.6 返回 201 Created [規格:L618-L630]
+- [ ] 10.3.2.7 添加 OpenAPI 註解
+
+**10.3.3 PUT /api/v1/admin/year-end-bonus/:id（更新年終獎金）[規格:L601]**
+- [ ] 10.3.3.1 權限：authMiddleware + adminMiddleware
+- [ ] 10.3.3.2 路徑參數：id（bonus_id）
+- [ ] 10.3.3.3 請求 Body：amount, payment_date, notes
+- [ ] 10.3.3.4 Service 更新記錄
+- [ ] 10.3.3.5 返回更新後的數據
+
+**10.3.4 DELETE /api/v1/admin/year-end-bonus/:id（刪除年終獎金）[規格:L602]**
+- [ ] 10.3.4.1 權限：authMiddleware + adminMiddleware
+- [ ] 10.3.4.2 路徑參數：id
+- [ ] 10.3.4.3 Service 軟刪除（is_deleted=1）
+- [ ] 10.3.4.4 返回成功響應
+- [ ] 10.3.4.5 添加 OpenAPI 註解
+
+**10.3.5 GET /api/v1/admin/year-end-bonus/summary（年終獎金統計）[規格:L603, L633-L659]**
+- [ ] 10.3.5.1 權限：authMiddleware + adminMiddleware
+- [ ] 10.3.5.2 查詢參數：attribution_year（必填）[規格:L635]
+- [ ] 10.3.5.3 Repository 聚合查詢（SUM, AVG, COUNT）[規格:L639-L658]
+- [ ] 10.3.5.4 返回統計數據（total_bonus, employee_count, average_bonus, by_employee）[規格:L639-L658]
+- [ ] 10.3.5.5 添加 OpenAPI 註解
+
+---
+
+#### 10.4 員工薪資設定 API（3個）[規格:L662-L773]
+
+**10.4.1 GET /api/v1/admin/users/:id/salary（查詢員工薪資設定）[規格:L665]**
+- [ ] 10.4.1.1 權限：authMiddleware（所有人）
+- [ ] 10.4.1.2 路徑參數：id（user_id）
+- [ ] 10.4.1.3 Repository 查詢（JOIN SalaryItemTypes）
+- [ ] 10.4.1.4 返回數據（base_salary, hourly_base, salary_items[]）[規格:L758-L772]
+- [ ] 10.4.1.5 添加 OpenAPI 註解
+
+**10.4.2 PUT /api/v1/admin/users/:id/salary（更新員工薪資設定，整批更新）[規格:L666, L743-L773]**
+- [ ] 10.4.2.1 權限：authMiddleware（所有人）
+- [ ] 10.4.2.2 路徑參數：id（user_id）
+- [ ] 10.4.2.3 請求 Body：base_salary, salary_items[] [規格:L746-L752]
+- [ ] 10.4.2.4 Service 批次更新（刪除舊記錄，插入新記錄）
+- [ ] 10.4.2.5 計算時薪基準（含經常性給與）
+- [ ] 10.4.2.6 返回更新後的薪資設定 [規格:L758-L772]
+- [ ] 10.4.2.7 添加 OpenAPI 註解
+
+**10.4.3 POST /api/v1/admin/salary-items/batch-update（批次更新薪資項目，績效獎金月度調整）[規格:L668, L699-L741]**
+- [ ] 10.4.3.1 權限：authMiddleware + adminMiddleware
+- [ ] 10.4.3.2 請求 Body：item_code, target_month, updates[] [規格:L702-L710]
+- [ ] 10.4.3.3 Service 批次創建月份專屬記錄（effective_date, expiry_date）[規格:L713-L717]
+- [ ] 10.4.3.4 返回成功響應（total_updated, message）[規格:L720-L726]
+- [ ] 10.4.3.5 添加 OpenAPI 註解
+
+---
+
+#### 10.5 薪資計算與查詢 API（4個）[規格:L775-L918]
+
+**10.5.1 POST /api/v1/admin/payroll/calculate（計算指定月份薪資）[規格:L778, L830-L858]**
+- [ ] 10.5.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 10.5.1.2 請求 Body：user_id（可選）, year, month [規格:L833-L836]
+- [ ] 10.5.1.3 Service 計算薪資（含全勤判定、加班費分類）[規格:L434-L580]
+- [ ] 10.5.1.4 返回薪資詳情（所有欄位）[規格:L841-L857]
+- [ ] 10.5.1.5 添加 OpenAPI 註解
+
+**10.5.2 GET /api/v1/admin/payroll（查詢薪資記錄）[規格:L780]**
+- [ ] 10.5.2.1 權限：authMiddleware（所有人）
+- [ ] 10.5.2.2 查詢參數：user_id, year, month（可選）
+- [ ] 10.5.2.3 Repository 查詢（JOIN Users 表）
+- [ ] 10.5.2.4 返回列表（含員工姓名、薪資總額）
+- [ ] 10.5.2.5 添加 OpenAPI 註解
+
+**10.5.3 GET /api/v1/admin/payroll/:id（查詢薪資詳情）[規格:L781]**
+- [ ] 10.5.3.1 權限：authMiddleware（所有人）
+- [ ] 10.5.3.2 路徑參數：id（payroll_id）
+- [ ] 10.5.3.3 Repository 查詢（含加班明細、薪資項目明細）
+- [ ] 10.5.3.4 返回完整詳情
+- [ ] 10.5.3.5 添加 OpenAPI 註解
+
+**10.5.4 GET /api/v1/reports/payroll-summary（薪資彙總報表）[規格:L784]**
+- [ ] 10.5.4.1 權限：authMiddleware + adminMiddleware
+- [ ] 10.5.4.2 查詢參數：year, month（必填）
+- [ ] 10.5.4.3 Repository 聚合查詢（SUM, AVG）
+- [ ] 10.5.4.4 返回彙總數據（total_payroll, employee_count, avg_salary）
+- [ ] 10.5.4.5 添加 OpenAPI 註解
+
+---
+
+#### 10.6 薪資計算邏輯驗證（業務規則）[規格:L310-L580]
+
+**10.6.1 時薪基準計算驗證（依勞基法）[規格:L314-L333]**
+- [ ] 10.6.1.1 驗證月薪 ÷ 240 小時公式 [規格:L322]
+- [ ] 10.6.1.2 驗證包含所有經常性給與（底薪+津貼+經常性獎金）[規格:L323-L324]
+- [ ] 10.6.1.3 驗證時薪計算範例（35000 ÷ 240 = 146元）[規格:L329-L332]
+
+**10.6.2 加班費計算驗證（依勞基法第24條）[規格:L335-L379]**
+- [ ] 10.6.2.1 驗證平日加班前2小時：1.34倍 [規格:L351-L352]
+- [ ] 10.6.2.2 驗證平日加班第3小時起：1.67倍 [規格:L353-L354]
+- [ ] 10.6.2.3 驗證休息日前2小時：1.34倍 [規格:L355-L356]
+- [ ] 10.6.2.4 驗證休息日第3小時起：1.67倍 [規格:L357-L358]
+- [ ] 10.6.2.5 驗證國定假日/例假日：2.0倍 [規格:L359-L360]
+- [ ] 10.6.2.6 驗證加班費計算範例 [規格:L372-L378]
+
+**10.6.3 全勤獎金規則驗證（公司內規）[規格:L381-L426]**
+- [ ] 10.6.3.1 驗證病假扣除全勤 [規格:L408-L409]
+- [ ] 10.6.3.2 驗證事假扣除全勤 [規格:L408-L409]
+- [ ] 10.6.3.3 驗證補休不影響全勤 [規格:L414]
+- [ ] 10.6.3.4 驗證特休不影響全勤 [規格:L413]
+- [ ] 10.6.3.5 驗證曠職扣除全勤 [規格:L419-L422]
+
+**10.6.4 月度薪資總計算驗證（完整流程）[規格:L428-L580]**
+- [ ] 10.6.4.1 驗證時薪基準計算（查詢經常性給與）[規格:L445-L447, L449-L473]
+- [ ] 10.6.4.2 驗證薪資項目去重邏輯（月份專屬優先）[規格:L449-L473]
+- [ ] 10.6.4.3 驗證加班費分類累計 [規格:L492-L535]
+- [ ] 10.6.4.4 驗證全勤判定與獎金發放 [規格:L537-L539]
+- [ ] 10.6.4.5 驗證薪資總計公式（base+allowances+bonuses+overtime）[規格:L541-L551]
+
+---
+
+#### 10.7 測試與部署
+- [ ] 10.7.1 [內部] 測試補休不影響全勤獎金 [規格:L1558-L1582]
+- [ ] 10.7.2 [內部] 測試時薪包含所有經常性給與 [規格:L1587-L1611]
+- [ ] 10.7.3 [內部] 測試年終獎金按工時比例分攤 [規格:L1653-L1679]
+- [ ] 10.7.4 [內部] 自行測試所有薪資管理功能
+- [ ] 10.7.5 [內部] 準備執行一致性驗證
+- [ ] 10.7.6 [內部] 準備執行自動部署
 
 ---
 
 ### [ ] 模組 11：管理成本（管理成本-完整規格.md）
-**資料表：** 2 個 | **API：** 6 個 | **Cron Jobs：** 0 個
+**資料表：** 2 個 | **API：** 6 個（成本項目類型 4 + 月度成本記錄 2）| **Cron Jobs：** 0 個
 
-#### 11.1 資料表創建
-- [ ] 11.1.1 創建 `OverheadCostTypes` 表（成本項目類型）
-- [ ] 11.1.2 創建 `MonthlyOverheadCosts` 表（月度成本記錄）
+#### 11.1 資料表創建（2 表）
 
-#### 11.2 成本管理 API
-- [ ] 11.2.1 實現成本項目管理 API
-- [ ] 11.2.2 實現月度成本記錄 API
-- [ ] 11.2.3 實現成本分攤計算 API
+**11.1.1 創建 `OverheadCostTypes` 表（管理成本項目類型，含分攤方式）[規格:L29-L63]**
+- [ ] 11.1.1.1 主鍵 `cost_type_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L35]
+- [ ] 11.1.1.2 欄位：`cost_code` (TEXT UNIQUE NOT NULL) [規格:L36]
+- [ ] 11.1.1.3 欄位：`cost_name` (TEXT NOT NULL) [規格:L37]
+- [ ] 11.1.1.4 欄位：`category` (TEXT NOT NULL, CHECK IN ('fixed','variable')) [規格:L38, L46]
+- [ ] 11.1.1.5 欄位：`allocation_method` (TEXT NOT NULL) [規格:L39]
+  - CHECK IN ('per_employee','per_hour','per_revenue') [規格:L47]
+- [ ] 11.1.1.6 欄位：`description`, `is_active`, `display_order` [規格:L40-L42]
+- [ ] 11.1.1.7 審計欄位：`created_at`, `updated_at` [規格:L43-L44]
+- [ ] 11.1.1.8 CHECK 約束：category IN ('fixed', 'variable') [規格:L46]
+- [ ] 11.1.1.9 CHECK 約束：allocation_method IN (...) [規格:L47]
+- [ ] 11.1.1.10 索引：`idx_overhead_cost_types_active` ON (is_active) [規格:L50]
+- [ ] 11.1.1.11 索引：`idx_overhead_cost_types_category` ON (category) [規格:L51]
+- [ ] 11.1.1.12 插入預設項目（租金/水電/網路/設備/軟體/保險/維護/行銷）[規格:L54-L62]
 
-#### 11.3 前端實現
-- [ ] 11.3.1 實現成本管理頁面（管理員專用）
+**11.1.2 創建 `MonthlyOverheadCosts` 表（月度管理成本記錄）[規格:L65-L96]**
+- [ ] 11.1.2.1 主鍵 `overhead_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L69]
+- [ ] 11.1.2.2 關聯欄位：`cost_type_id` (NOT NULL) [規格:L70]
+- [ ] 11.1.2.3 欄位：`year`, `month` (INTEGER NOT NULL) [規格:L71-L72]
+- [ ] 11.1.2.4 欄位：`amount` (REAL NOT NULL) [規格:L73]
+- [ ] 11.1.2.5 欄位：`notes`, `recorded_by`, `recorded_at` [規格:L74-L76]
+- [ ] 11.1.2.6 審計與刪除：`updated_at`, `is_deleted` [規格:L77-L78]
+- [ ] 11.1.2.7 外鍵：`cost_type_id` REFERENCES OverheadCostTypes(cost_type_id) [規格:L80]
+- [ ] 11.1.2.8 外鍵：`recorded_by` REFERENCES Users(user_id) [規格:L81]
+- [ ] 11.1.2.9 UNIQUE(cost_type_id, year, month) 防重複 [規格:L82]
+- [ ] 11.1.2.10 索引：`idx_monthly_overhead_date` ON (year, month) [規格:L85]
+- [ ] 11.1.2.11 索引：`idx_monthly_overhead_type` ON (cost_type_id) [規格:L86]
 
-#### 11.4 測試與部署
-- [ ] 11.4.1 [內部] 自行測試所有成本管理功能
-- [ ] 11.4.2 [內部] 準備執行一致性驗證
-- [ ] 11.4.3 [內部] 準備執行自動部署
+---
+
+#### 11.2 成本項目類型管理 API（4個）[規格:L283-L314]
+
+**11.2.1 GET /api/v1/admin/overhead-types（查詢所有成本項目類型）[規格:L286]**
+- [ ] 11.2.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 11.2.1.2 查詢參數：無
+- [ ] 11.2.1.3 Repository 查詢所有 OverheadCostTypes（is_active=1）
+- [ ] 11.2.1.4 返回列表（含 allocation_method）
+- [ ] 11.2.1.5 添加 OpenAPI 註解
+
+**11.2.2 POST /api/v1/admin/overhead-types（新增成本項目類型）[規格:L287, L293-L313]**
+- [ ] 11.2.2.1 權限：authMiddleware + adminMiddleware
+- [ ] 11.2.2.2 請求 Body：cost_code, cost_name, category, allocation_method, description [規格:L295-L300]
+- [ ] 11.2.2.3 驗證 cost_code 唯一性
+- [ ] 11.2.2.4 驗證 category IN ('fixed', 'variable')
+- [ ] 11.2.2.5 驗證 allocation_method IN ('per_employee', 'per_hour', 'per_revenue')
+- [ ] 11.2.2.6 Service 創建記錄
+- [ ] 11.2.2.7 返回 201 Created [規格:L304-L312]
+
+**11.2.3 PUT /api/v1/admin/overhead-types/:id（更新成本項目類型）[規格:L288]**
+- [ ] 11.2.3.1 權限：authMiddleware + adminMiddleware
+- [ ] 11.2.3.2 路徑參數：id（cost_type_id）
+- [ ] 11.2.3.3 請求 Body：允許更新的欄位
+- [ ] 11.2.3.4 Service 更新記錄
+- [ ] 11.2.3.5 返回更新後的數據
+
+**11.2.4 DELETE /api/v1/admin/overhead-types/:id（刪除成本項目類型）[規格:L289]**
+- [ ] 11.2.4.1 權限：authMiddleware + adminMiddleware
+- [ ] 11.2.4.2 路徑參數：id
+- [ ] 11.2.4.3 Service 軟刪除（is_active=0）
+- [ ] 11.2.4.4 返回成功響應
+- [ ] 11.2.4.5 添加 OpenAPI 註解
+
+---
+
+#### 11.3 月度成本記錄 API（2個）[規格:L316-L348]
+
+**11.3.1 GET /api/v1/admin/overhead-costs（查詢月度成本）[規格:L319]**
+- [ ] 11.3.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 11.3.1.2 查詢參數：year, month（必填）
+- [ ] 11.3.1.3 Repository 查詢（JOIN OverheadCostTypes）
+- [ ] 11.3.1.4 返回列表（含 cost_name）
+- [ ] 11.3.1.5 添加 OpenAPI 註解
+
+**11.3.2 POST /api/v1/admin/overhead-costs（新增月度成本）[規格:L320, L326-L347]**
+- [ ] 11.3.2.1 權限：authMiddleware + adminMiddleware
+- [ ] 11.3.2.2 請求 Body：cost_type_id, year, month, amount, notes [規格:L328-L333]
+- [ ] 11.3.2.3 驗證 cost_type_id 存在
+- [ ] 11.3.2.4 檢查 UNIQUE(cost_type_id, year, month) 防重複 [規格:L82]
+- [ ] 11.3.2.5 Service 創建記錄，recorded_by 自動設置
+- [ ] 11.3.2.6 返回 201 Created [規格:L337-L346]
+
+---
+
+#### 11.4 成本分析與彙總 API（2個）[規格:L350-L397]
+
+**11.4.1 GET /api/v1/admin/overhead-analysis（管理成本分析報表）[規格:L353, L358-L396]**
+- [ ] 11.4.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 11.4.1.2 查詢參數：year, month（必填）[規格:L359]
+- [ ] 11.4.1.3 Repository 查詢月度成本並聚合 [規格:L361-L388]
+  - total_overhead（總計）[規格:L366]
+  - breakdown_by_category（按類別）[規格:L370-L373]
+  - breakdown_by_type（按項目）[規格:L375-L388]
+- [ ] 11.4.1.4 計算員工數與人均分攤 [規格:L367-L368]
+- [ ] 11.4.1.5 計算時薪成本率影響（含/不含管理成本對比）[規格:L390-L394]
+- [ ] 11.4.1.6 返回完整分析數據
+- [ ] 11.4.1.7 添加 OpenAPI 註解
+
+**11.4.2 GET /api/v1/admin/overhead-summary（管理成本彙總）[規格:L354]**
+- [ ] 11.4.2.1 權限：authMiddleware + adminMiddleware
+- [ ] 11.4.2.2 查詢參數：start_date, end_date（可選，預設當年）
+- [ ] 11.4.2.3 Repository 聚合查詢（GROUP BY year, month）
+- [ ] 11.4.2.4 返回歷史趨勢數據
+- [ ] 11.4.2.5 添加 OpenAPI 註解
+
+---
+
+#### 11.5 成本分攤邏輯驗證（業務規則）[規格:L100-L277]
+
+**11.5.1 按人頭分攤驗證（per_employee）[規格:L102-L124]**
+- [ ] 11.5.1.1 驗證公式：totalOverhead / employeeCount [規格:L115]
+- [ ] 11.5.1.2 驗證範例：租金+水電+網路 = 30,500 ÷ 4人 = 7,625元/人 [規格:L119-L122]
+
+**11.5.2 按工時分攤驗證（per_hour）[規格:L126-L148]**
+- [ ] 11.5.2.1 驗證公式：totalOverhead / totalWorkHours [規格:L139]
+- [ ] 11.5.2.2 驗證範例：維護費 5,000 ÷ 640小時 = 7.81元/小時 [規格:L143-L146]
+
+**11.5.3 按營收分攤驗證（per_revenue）[規格:L150-L175]**
+- [ ] 11.5.3.1 驗證公式：totalOverhead / totalRevenue [規格:L163]
+- [ ] 11.5.3.2 驗證範例：行銷費 10,000 ÷ 營收 500,000 = 2% [規格:L167-L173]
+
+**11.5.4 時薪成本率計算驗證（含管理成本）[規格:L177-L277]**
+- [ ] 11.5.4.1 驗證查詢經常性給與（is_regular_payment=1）[規格:L199-L208]
+- [ ] 11.5.4.2 驗證管理成本查詢（allocation_method='per_employee'）[規格:L220-L228]
+- [ ] 11.5.4.3 驗證完全沒輸入管理成本：只計算薪資成本 [規格:L230-L234, L271-L275]
+- [ ] 11.5.4.4 驗證部分輸入管理成本：使用部分數據計算 [規格:L263-L269]
+- [ ] 11.5.4.5 驗證完整輸入管理成本：完整計算 [規格:L253-L261]
+- [ ] 11.5.4.6 驗證時薪成本率公式：(salary + overhead) ÷ 240 [規格:L236-L240]
+
+**11.5.5 成本對比分析驗證（含/不含管理成本）[規格:L428-L463]**
+- [ ] 11.5.5.1 驗證不含管理成本計算：166元/時 [規格:L434-L442]
+- [ ] 11.5.5.2 驗證含管理成本計算：206元/時 [規格:L444-L454]
+- [ ] 11.5.5.3 驗證成本影響：+24% [規格:L456-L461]
+
+---
+
+#### 11.6 測試與部署
+- [ ] 11.6.1 [內部] 測試成本項目 CRUD
+- [ ] 11.6.2 [內部] 測試月度成本記錄與 UNIQUE 約束
+- [ ] 11.6.3 [內部] 測試三種分攤方式計算
+- [ ] 11.6.4 [內部] 測試時薪成本率自動併入管理成本
+- [ ] 11.6.5 [內部] 自行測試所有成本管理功能
+- [ ] 11.6.6 [內部] 準備執行一致性驗證
+- [ ] 11.6.7 [內部] 準備執行自動部署
 
 ---
 
 ### [ ] 模組 12：收據收款（發票收款-完整規格.md）
-**資料表：** 4 個 | **API：** 10 個 | **Cron Jobs：** 0 個
+**資料表：** 4 個 | **API：** 14 個（收據 6 + 收款 3 + 統計 3 + PDF 2）| **Cron Jobs：** 0 個
 
-#### 12.1 資料表創建
-- [ ] 12.1.1 創建 `Receipts` 表（收據管理）
-- [ ] 12.1.2 創建 `ReceiptItems` 表（收據項目）
-- [ ] 12.1.3 創建 `ReceiptSequence` 表（收據流水號）
-- [ ] 12.1.4 創建 `Payments` 表（收款記錄）
+#### 12.1 資料表創建（4 表）
 
-#### 12.2 收據管理 API
-- [ ] 12.2.1 實現收據管理 API（含自動產生收據編號）
-- [ ] 12.2.2 實現收據 PDF 生成 API
-- [ ] 12.2.3 實現收據預覽 API
+**12.1.1 創建 `Receipts` 表（收據管理，含作廢欄位與複合索引）[規格:L37-L78]**
+- [ ] 12.1.1.1 主鍵 `receipt_id` (TEXT PRIMARY KEY, 格式：YYYYMM-NNN) [規格:L41]
+- [ ] 12.1.1.2 欄位：`client_id` (TEXT NOT NULL) [規格:L42]
+- [ ] 12.1.1.3 欄位：`receipt_date`, `due_date` (TEXT) [規格:L43-L44]
+- [ ] 12.1.1.4 欄位：`total_amount` (REAL NOT NULL, 無稅額) [規格:L45]
+- [ ] 12.1.1.5 欄位：`status` (TEXT DEFAULT 'unpaid') [規格:L46]
+  - CHECK IN ('unpaid','partial','paid','cancelled')
+- [ ] 12.1.1.6 欄位：`is_auto_generated` (BOOLEAN DEFAULT 1) [規格:L47]
+- [ ] 12.1.1.7 欄位：`notes`, `created_by` [規格:L48-L49]
+- [ ] 12.1.1.8 審計與作廢：`created_at`, `updated_at`, `is_deleted`, `deleted_at`, `deleted_by` [規格:L50-L54]
+- [ ] 12.1.1.9 外鍵：`client_id` REFERENCES Clients(client_id) [規格:L56]
+- [ ] 12.1.1.10 外鍵：`created_by` REFERENCES Users(user_id) [規格:L57]
+- [ ] 12.1.1.11 外鍵：`deleted_by` REFERENCES Users(user_id) [規格:L58]
+- [ ] 12.1.1.12 索引：`idx_receipts_client` ON (client_id) [規格:L61]
+- [ ] 12.1.1.13 索引：`idx_receipts_date` ON (receipt_date) [規格:L62]
+- [ ] 12.1.1.14 索引：`idx_receipts_status` ON (status) [規格:L63]
+- [ ] 12.1.1.15 索引：`idx_receipts_status_due` ON (status, due_date) ⭐應收帳款專用 [規格:L64, L70-L73]
+- [ ] 12.1.1.16 索引：`idx_receipts_client_status` ON (client_id, status) ⭐客戶收款專用 [規格:L65, L75-L77]
 
-#### 12.3 收款管理 API
-- [ ] 12.3.1 實現收款記錄 API
-- [ ] 12.3.2 實現應收帳款分析 API
+**12.1.2 創建 `ReceiptItems` 表（收據項目）[規格:L80-L97]**
+- [ ] 12.1.2.1 主鍵 `item_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L84]
+- [ ] 12.1.2.2 關聯欄位：`receipt_id` (TEXT NOT NULL) [規格:L85]
+- [ ] 12.1.2.3 關聯欄位：`service_id` (INTEGER, 可選) [規格:L86]
+- [ ] 12.1.2.4 欄位：`description` (TEXT NOT NULL) [規格:L87]
+- [ ] 12.1.2.5 欄位：`quantity` (REAL DEFAULT 1) [規格:L88]
+- [ ] 12.1.2.6 欄位：`unit_price` (REAL NOT NULL) [規格:L89]
+- [ ] 12.1.2.7 欄位：`amount` (REAL NOT NULL, = quantity × unit_price) [規格:L90]
+- [ ] 12.1.2.8 外鍵：`receipt_id` REFERENCES Receipts(receipt_id) ON DELETE CASCADE [規格:L92]
+- [ ] 12.1.2.9 外鍵：`service_id` REFERENCES Services(service_id) [規格:L93]
+- [ ] 12.1.2.10 索引：`idx_receipt_items_receipt` ON (receipt_id) [規格:L96]
 
-#### 12.4 前端實現
-- [ ] 12.4.1 實現收據管理頁面
-- [ ] 12.4.2 實現收款記錄頁面
+**12.1.3 創建 `ReceiptSequence` 表（收據流水號管理，含 UNIQUE 約束）[規格:L99-L116]**
+- [ ] 12.1.3.1 主鍵 `sequence_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L103]
+- [ ] 12.1.3.2 欄位：`year_month` (TEXT UNIQUE NOT NULL, 格式：YYYYMM) [規格:L104]
+- [ ] 12.1.3.3 欄位：`last_sequence` (INTEGER NOT NULL DEFAULT 0) [規格:L105]
+- [ ] 12.1.3.4 審計：`created_at`, `updated_at` [規格:L106-L107]
+- [ ] 12.1.3.5 索引：`idx_receipt_sequence_ym` ON (year_month) [規格:L110]
 
-#### 12.5 測試與部署
-- [ ] 12.5.1 [內部] 自行測試所有收據收款功能
-- [ ] 12.5.2 [內部] 準備執行一致性驗證
-- [ ] 12.5.3 [內部] 準備執行自動部署
+**12.1.4 創建 `Payments` 表（收款記錄）[規格:L118-L138]**
+- [ ] 12.1.4.1 主鍵 `payment_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L122]
+- [ ] 12.1.4.2 關聯欄位：`receipt_id` (TEXT NOT NULL) [規格:L123]
+- [ ] 12.1.4.3 欄位：`payment_date` (TEXT NOT NULL) [規格:L124]
+- [ ] 12.1.4.4 欄位：`amount` (REAL NOT NULL) [規格:L125]
+- [ ] 12.1.4.5 欄位：`payment_method`, `reference_number`, `notes` [規格:L126-L128]
+- [ ] 12.1.4.6 欄位：`received_by` (INTEGER NOT NULL) [規格:L129]
+- [ ] 12.1.4.7 審計：`created_at` [規格:L130]
+- [ ] 12.1.4.8 外鍵：`receipt_id` REFERENCES Receipts(receipt_id) [規格:L132]
+- [ ] 12.1.4.9 外鍵：`received_by` REFERENCES Users(user_id) [規格:L133]
+- [ ] 12.1.4.10 索引：`idx_payments_receipt` ON (receipt_id) [規格:L136]
+- [ ] 12.1.4.11 索引：`idx_payments_date` ON (payment_date) [規格:L137]
+
+---
+
+#### 12.2 收據管理 API（6個）[規格:L256-L345]
+
+**12.2.1 GET /api/v1/receipts（查詢收據列表，含客戶備註 JOIN）[規格:L259, L296-L344]**
+- [ ] 12.2.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.2.1.2 查詢參數：status, client_id, start_date, end_date（可選）
+- [ ] 12.2.1.3 Repository JOIN Clients 表（⭐含 payment_notes, client_notes）[規格:L314-L315, L329-L330, L336-L344]
+- [ ] 12.2.1.4 計算 paid_amount (SUM Payments), remaining_amount, days_overdue [規格:L310-L313]
+- [ ] 12.2.1.5 返回列表（含客戶備註供收款參考）[規格:L302-L332]
+- [ ] 12.2.1.6 添加 OpenAPI 註解
+
+**12.2.2 POST /api/v1/receipts（開立收據，含自動/手動編號）[規格:L260, L367-L424]**
+- [ ] 12.2.2.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.2.2.2 請求 Body：receipt_id（可選）, is_auto_generated, client_id, receipt_date, due_date, items[], notes [規格:L372-L392]
+- [ ] 12.2.2.3 若 receipt_id 未提供，調用 generateReceiptNumber() [規格:L154-L229]
+- [ ] 12.2.2.4 驗證收據號碼格式（YYYYMM-NNN）與唯一性 [規格:L168-L179]
+- [ ] 12.2.2.5 Service 批次插入 ReceiptItems [規格:L378-L390]
+- [ ] 12.2.2.6 計算 total_amount（SUM items.amount，無稅額）[規格:L406]
+- [ ] 12.2.2.7 返回 201 Created（含項目明細）[規格:L398-L422]
+
+**12.2.3 GET /api/v1/receipts/:id（查詢收據詳情）[規格:L261]**
+- [ ] 12.2.3.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.2.3.2 路徑參數：id（receipt_id）
+- [ ] 12.2.3.3 Repository JOIN ReceiptItems, Clients, Payments
+- [ ] 12.2.3.4 計算 paid_amount, remaining_amount
+- [ ] 12.2.3.5 返回完整詳情（含項目、收款記錄）
+
+**12.2.4 PUT /api/v1/receipts/:id（更新收據）[規格:L262]**
+- [ ] 12.2.4.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.2.4.2 路徑參數：id
+- [ ] 12.2.4.3 請求 Body：允許更新的欄位（receipt_date, due_date, items, notes）
+- [ ] 12.2.4.4 Service 更新 Receipts 與 ReceiptItems
+- [ ] 12.2.4.5 返回更新後的數據
+
+**12.2.5 DELETE /api/v1/receipts/:id（作廢收據）[規格:L263]**
+- [ ] 12.2.5.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.2.5.2 路徑參數：id
+- [ ] 12.2.5.3 Service 軟刪除（is_deleted=1, deleted_at, deleted_by, status='cancelled）[規格:L53-L54]
+- [ ] 12.2.5.4 返回成功響應
+- [ ] 12.2.5.5 添加 OpenAPI 註解
+
+**12.2.6 GET /api/v1/receipts/check-number（檢查收據號碼可用性）[規格:L264, L267-L293]**
+- [ ] 12.2.6.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.2.6.2 查詢參數：number（必填）[規格:L269]
+- [ ] 12.2.6.3 驗證格式（^\d{6}-\d{3}$）[規格:L168-L169]
+- [ ] 12.2.6.4 Repository 檢查是否存在 [規格:L173-L175]
+- [ ] 12.2.6.5 返回 available (boolean) 與 existing_receipt [規格:L272-L292]
+- [ ] 12.2.6.6 添加 OpenAPI 註解
+
+---
+
+#### 12.3 收款管理 API（3個）[規格:L347-L353]
+
+**12.3.1 GET /api/v1/receipts/:id/payments（查詢收據的收款記錄）[規格:L350]**
+- [ ] 12.3.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.3.1.2 路徑參數：id（receipt_id）
+- [ ] 12.3.1.3 Repository 查詢 Payments（ORDER BY payment_date DESC）
+- [ ] 12.3.1.4 返回收款記錄列表
+- [ ] 12.3.1.5 添加 OpenAPI 註解
+
+**12.3.2 POST /api/v1/receipts/:id/payments（記錄收款，含狀態自動更新）[規格:L351, L426-L454, L696-L743]**
+- [ ] 12.3.2.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.3.2.2 路徑參數：id（receipt_id）
+- [ ] 12.3.2.3 請求 Body：payment_date, amount, payment_method, reference_number, notes [規格:L431-L436]
+- [ ] 12.3.2.4 Service 插入 Payments 記錄 [規格:L704-L715]
+- [ ] 12.3.2.5 計算總收款金額（SUM Payments.amount）[規格:L718-L726]
+- [ ] 12.3.2.6 自動更新收據狀態（unpaid/partial/paid）[規格:L729-L740]
+- [ ] 12.3.2.7 返回收款記錄與更新後的 receipt_status [規格:L443-L453]
+
+**12.3.3 DELETE /api/v1/payments/:id（刪除收款記錄）[規格:L352]**
+- [ ] 12.3.3.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.3.3.2 路徑參數：id（payment_id）
+- [ ] 12.3.3.3 Repository 刪除記錄
+- [ ] 12.3.3.4 Service 重新計算收據狀態
+- [ ] 12.3.3.5 返回成功響應
+
+---
+
+#### 12.4 統計報表 API（3個）[規格:L355-L361]
+
+**12.4.1 GET /api/v1/receipts/stats（收據統計）[規格:L358]**
+- [ ] 12.4.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.4.1.2 查詢參數：year, month（可選）
+- [ ] 12.4.1.3 Repository 聚合查詢（COUNT, SUM）
+- [ ] 12.4.1.4 返回統計數據（total_receipts, total_amount, unpaid_count, unpaid_amount）
+- [ ] 12.4.1.5 添加 OpenAPI 註解
+
+**12.4.2 GET /api/v1/receipts/ar-aging（應收帳款帳齡分析，含客戶備註）[規格:L359, L456-L506, L770-L845]**
+- [ ] 12.4.2.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.4.2.2 查詢參數：as_of_date（預設今日）[規格:L460]
+- [ ] 12.4.2.3 Repository JOIN Clients（含 payment_notes, client_notes）[規格:L784-L785]
+- [ ] 12.4.2.4 計算逾期天數（從 due_date 開始，使用 getDaysDiff）[規格:L754-L767, L810-L811]
+- [ ] 12.4.2.5 分類帳齡（current, overdue_1_30, overdue_31_60, overdue_61_90, overdue_over_90）[規格:L799-L825]
+- [ ] 12.4.2.6 返回帳齡分析（aging_summary, by_client, details）[規格:L467-L504]
+- [ ] 12.4.2.7 添加 OpenAPI 註解
+
+**12.4.3 GET /api/v1/reports/revenue（營收報表）[規格:L360]**
+- [ ] 12.4.3.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.4.3.2 查詢參數：start_date, end_date（必填）
+- [ ] 12.4.3.3 Repository 聚合查詢（GROUP BY client_id, service_id）
+- [ ] 12.4.3.4 返回營收數據（by_client, by_service, total_revenue）
+- [ ] 12.4.3.5 添加 OpenAPI 註解
+
+---
+
+#### 12.5 收據 PDF 生成 API（2個）[規格:L1011-L1015]
+
+**12.5.1 GET /api/v1/receipts/:id/pdf（生成收據 PDF）[規格:L1013]**
+- [ ] 12.5.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.5.1.2 路徑參數：id（receipt_id）
+- [ ] 12.5.1.3 調用 generateReceiptPDF() [規格:L862-L975]
+- [ ] 12.5.1.4 返回 PDF 文件流（Content-Type: application/pdf）
+- [ ] 12.5.1.5 添加 OpenAPI 註解
+
+**12.5.2 GET /api/v1/receipts/:id/preview（預覽收據 HTML）[規格:L1014]**
+- [ ] 12.5.2.1 權限：authMiddleware + adminMiddleware
+- [ ] 12.5.2.2 路徑參數：id（receipt_id）
+- [ ] 12.5.2.3 調用 generateReceiptHTML()
+- [ ] 12.5.2.4 返回 HTML 內容（Content-Type: text/html）
+- [ ] 12.5.2.5 添加 OpenAPI 註解
+
+---
+
+#### 12.6 收據號碼生成邏輯驗證（業務規則）[規格:L142-L250]
+
+**12.6.1 收據號碼格式驗證 [規格:L144-L150]**
+- [ ] 12.6.1.1 驗證格式：YYYYMM-NNN（如：202510-001）[規格:L146]
+- [ ] 12.6.1.2 驗證 YYYYMM：年月 6 位數 [規格:L148]
+- [ ] 12.6.1.3 驗證 NNN：流水號 3 位數（001-999）[規格:L149]
+
+**12.6.2 自動生成邏輯驗證（含併發安全）[規格:L154-L212]**
+- [ ] 12.6.2.1 驗證手動編號：格式檢查與唯一性 [規格:L166-L181]
+- [ ] 12.6.2.2 驗證自動生成：UPSERT + RETURNING 原子操作 [規格:L184-L196]
+- [ ] 12.6.2.3 驗證併發安全：多人同時開收據不重複 [規格:L1022-L1023]
+- [ ] 12.6.2.4 驗證流水號上限：999 張檢查與錯誤處理 [規格:L200-L206]
+- [ ] 12.6.2.5 驗證錯誤碼：RECEIPT_SEQUENCE_EXCEEDED [規格:L204, L225]
+
+**12.6.3 日期計算工具驗證 [規格:L745-L768]**
+- [ ] 12.6.3.1 驗證 getDaysDiff() 公式 [規格:L755-L760]
+- [ ] 12.6.3.2 驗證範例：逾期 40 天（due_date=10/31, as_of=12/10）[規格:L765, L835-L837]
+- [ ] 12.6.3.3 驗證範例：未到期 -7 天（due_date=12/05, as_of=11/28）[規格:L766, L840-L843]
+
+**12.6.4 收據狀態自動更新驗證 [規格:L694-L743]**
+- [ ] 12.6.4.1 驗證狀態判定：total_paid >= total_amount → 'paid' [規格:L731-L732]
+- [ ] 12.6.4.2 驗證狀態判定：total_paid > 0 且 < total_amount → 'partial' [規格:L733-L734]
+- [ ] 12.6.4.3 驗證狀態判定：total_paid = 0 → 'unpaid' [規格:L730]
+- [ ] 12.6.4.4 驗證 remaining_amount 計算 [規格:L742]
+
+---
+
+#### 12.7 測試與部署
+- [ ] 12.7.1 [內部] 測試收據號碼併發安全（多人同時開收據）
+- [ ] 12.7.2 [內部] 測試收據號碼唯一性檢查 API
+- [ ] 12.7.3 [內部] 測試部分收款與狀態自動更新
+- [ ] 12.7.4 [內部] 測試應收帳款帳齡計算（從 due_date 起算）
+- [ ] 12.7.5 [內部] 測試收據列表顯示客戶備註（payment_notes）
+- [ ] 12.7.6 [內部] 自行測試所有收據收款功能
+- [ ] 12.7.7 [內部] 準備執行一致性驗證
+- [ ] 12.7.8 [內部] 準備執行自動部署
 
 ---
 
 ### [ ] 模組 13：附件系統（附件系統-完整規格.md）
-**資料表：** 1 個 | **API：** 4 個 | **Cron Jobs：** 0 個
+**資料表：** 1 個 | **API：** 5 個（upload/get/download/delete/list）| **Cron Jobs：** 0 個
 
-#### 13.1 資料表創建
-- [ ] 13.1.1 創建 `Attachments` 表（附件元資料）
+#### 13.1 資料表創建（1 表）
 
-#### 13.2 Cloudflare R2 整合
-- [ ] 13.2.1 配置 R2 bucket 綁定（在 `wrangler.toml`）
-- [ ] 13.2.2 實現檔案上傳邏輯（含驗證：檔案類型、大小限制）
-- [ ] 13.2.3 實現檔案下載邏輯（含權限檢查）
-- [ ] 13.2.4 實現檔案刪除邏輯
+**13.1.1 創建 `Attachments` 表（附件元資料，含實體關聯）[規格:L33-L54]**
+- [ ] 13.1.1.1 主鍵 `attachment_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L37]
+- [ ] 13.1.1.2 欄位：`entity_type` (TEXT NOT NULL, CHECK IN ('client','receipt','sop','task')) [規格:L38, L49]
+- [ ] 13.1.1.3 欄位：`entity_id` (TEXT NOT NULL) [規格:L39]
+- [ ] 13.1.1.4 欄位：`file_name` (TEXT NOT NULL, 原始檔名) [規格:L40]
+- [ ] 13.1.1.5 欄位：`file_path` (TEXT NOT NULL, R2 路徑) [規格:L41]
+- [ ] 13.1.1.6 欄位：`file_size` (INTEGER, bytes) [規格:L42]
+- [ ] 13.1.1.7 欄位：`mime_type` (TEXT) [規格:L43]
+- [ ] 13.1.1.8 上傳者：`uploaded_by` (INTEGER NOT NULL) [規格:L44]
+- [ ] 13.1.1.9 審計與刪除：`uploaded_at`, `is_deleted` [規格:L45-L46]
+- [ ] 13.1.1.10 外鍵：`uploaded_by` REFERENCES Users(user_id) [規格:L48]
+- [ ] 13.1.1.11 CHECK 約束：entity_type IN ('client','receipt','sop','task') [規格:L49]
+- [ ] 13.1.1.12 索引：`idx_attachments_entity` ON (entity_type, entity_id) [規格:L52]
+- [ ] 13.1.1.13 索引：`idx_attachments_uploaded` ON (uploaded_at) [規格:L53]
 
-#### 13.3 附件 API
-- [ ] 13.3.1 實現 `POST /api/v1/attachments` 路由（上傳，含 OpenAPI schema）
-- [ ] 13.3.2 實現 `GET /api/v1/attachments/:id` 路由（下載，含 OpenAPI schema）
-- [ ] 13.3.3 實現 `GET /api/v1/attachments` 路由（列表，含 OpenAPI schema）
-- [ ] 13.3.4 實現 `DELETE /api/v1/attachments/:id` 路由（刪除，含 OpenAPI schema）
+---
 
-#### 13.4 前端實現
-- [ ] 13.4.1 實現通用附件上傳元件
-- [ ] 13.4.2 整合到客戶、任務等模組
+#### 13.2 R2 Bucket 配置與整合 [規格:L160-L287]
+
+**13.2.1 配置 wrangler.toml [規格:L162-L169]**
+- [ ] 13.2.1.1 添加 R2 Bucket 綁定：ATTACHMENTS_BUCKET [規格:L167]
+- [ ] 13.2.1.2 設置 bucket_name：horgoscpa-attachments [規格:L168]
+
+**13.2.2 R2 目錄結構規劃 [規格:L553-L577]**
+- [ ] 13.2.2.1 設計目錄結構：entity_type/entity_id/timestamp-random.ext [規格:L194, L558-L576]
+- [ ] 13.2.2.2 client/ 目錄（客戶附件）[規格:L559-L564]
+- [ ] 13.2.2.3 invoice/ 目錄（收據附件）[規格:L565-L569]
+- [ ] 13.2.2.4 sop/ 目錄（SOP 附件）[規格:L570-L573]
+- [ ] 13.2.2.5 task/ 目錄（任務附件）[規格:L574-L576]
+
+**13.2.3 檔案上傳邏輯實現 [規格:L171-L228]**
+- [ ] 13.2.3.1 解析 multipart/form-data（file, entity_type, entity_id）[規格:L176-L179]
+- [ ] 13.2.3.2 調用 validateUploadFile() 驗證 [規格:L182-L188]
+- [ ] 13.2.3.3 生成唯一檔名（timestamp-random + 副檔名）[規格:L190-L194]
+- [ ] 13.2.3.4 上傳到 R2 Bucket（含 httpMetadata）[規格:L197-L201]
+- [ ] 13.2.3.5 插入 Attachments 記錄 [規格:L204-L217]
+- [ ] 13.2.3.6 返回附件資訊 [規格:L219-L227]
+
+**13.2.4 檔案下載邏輯實現 [規格:L231-L259]**
+- [ ] 13.2.4.1 查詢 Attachments 表（驗證存在且未刪除）[規格:L237-L243]
+- [ ] 13.2.4.2 從 R2 獲取檔案（env.ATTACHMENTS_BUCKET.get）[規格:L246-L250]
+- [ ] 13.2.4.3 設置 Response Headers（Content-Type, Content-Disposition, Content-Length）[規格:L252-L258]
+- [ ] 13.2.4.4 返回檔案流 [規格:L252]
+
+**13.2.5 檔案刪除邏輯實現 [規格:L262-L285]**
+- [ ] 13.2.5.1 查詢 Attachments 表（驗證存在）[規格:L268-L274]
+- [ ] 13.2.5.2 從 R2 刪除檔案（env.ATTACHMENTS_BUCKET.delete）[規格:L277]
+- [ ] 13.2.5.3 軟刪除資料庫記錄（is_deleted=1）[規格:L280-L282]
+- [ ] 13.2.5.4 返回成功響應 [規格:L284]
+
+---
+
+#### 13.3 附件管理 API（5個）[規格:L290-L351]
+
+**13.3.1 POST /api/v1/attachments/upload（上傳附件，所有人可用）[規格:L295, L304-L323]**
+- [ ] 13.3.1.1 權限：authMiddleware（所有人）[規格:L295]
+- [ ] 13.3.1.2 Content-Type：multipart/form-data [規格:L307]
+- [ ] 13.3.1.3 請求 Body：file (File), entity_type, entity_id [規格:L309-L312]
+- [ ] 13.3.1.4 調用 validateUploadFile() 驗證 [規格:L182]
+- [ ] 13.3.1.5 Service 上傳到 R2 並插入記錄 [規格:L173-L228]
+- [ ] 13.3.1.6 返回 201 Created（含 attachment_id, file_path）[規格:L315-L322]
+- [ ] 13.3.1.7 添加 OpenAPI 註解
+
+**13.3.2 GET /api/v1/attachments/:id（查詢附件資訊，所有人可用）[規格:L296]**
+- [ ] 13.3.2.1 權限：authMiddleware（所有人）[規格:L296]
+- [ ] 13.3.2.2 路徑參數：id（attachment_id）
+- [ ] 13.3.2.3 Repository 查詢附件記錄（JOIN Users 獲取上傳者姓名）
+- [ ] 13.3.2.4 返回附件詳情（含 file_name, file_size, mime_type, uploaded_by_name）
+- [ ] 13.3.2.5 添加 OpenAPI 註解
+
+**13.3.3 GET /api/v1/attachments/:id/download（下載附件，所有人可用）[規格:L297, L234-L259]**
+- [ ] 13.3.3.1 權限：authMiddleware（所有人）[規格:L297]
+- [ ] 13.3.3.2 路徑參數：id（attachment_id）
+- [ ] 13.3.3.3 調用 downloadAttachment() [規格:L234-L259]
+- [ ] 13.3.3.4 返回檔案流（含正確的 Content-Type 與 filename）[規格:L252-L258]
+- [ ] 13.3.3.5 添加 OpenAPI 註解
+
+**13.3.4 DELETE /api/v1/attachments/:id（刪除附件，所有人可用）[規格:L298]**
+- [ ] 13.3.4.1 權限：authMiddleware（⭐小型事務所彈性設計：所有人可刪除）[規格:L292, L298]
+- [ ] 13.3.4.2 路徑參數：id
+- [ ] 13.3.4.3 調用 deleteAttachment() [規格:L265-L285]
+- [ ] 13.3.4.4 返回成功響應
+- [ ] 13.3.4.5 添加 OpenAPI 註解
+
+**13.3.5 GET /api/v1/attachments（查詢附件列表，所有人可用）[規格:L299, L326-L350]**
+- [ ] 13.3.5.1 權限：authMiddleware（所有人）[規格:L299]
+- [ ] 13.3.5.2 查詢參數：entity_type, entity_id（必填）[規格:L328]
+- [ ] 13.3.5.3 Repository 查詢（WHERE entity_type=? AND entity_id=? AND is_deleted=0）
+- [ ] 13.3.5.4 返回列表（ORDER BY uploaded_at DESC）[規格:L331-L349]
+- [ ] 13.3.5.5 添加 OpenAPI 註解
+
+---
+
+#### 13.4 檔案驗證與安全邏輯 [規格:L58-L156, L506-L536]
+
+**13.4.1 檔案大小限制驗證 [規格:L60-L68, L514-L518]**
+- [ ] 13.4.1.1 定義 MAX_FILE_SIZE：10MB（10,485,760 bytes）[規格:L68]
+- [ ] 13.4.1.2 驗證邏輯：file.size > MAX_FILE_SIZE → FILE_TOO_LARGE [規格:L108-L113]
+- [ ] 13.4.1.3 前端驗證（提早阻止）[規格:L516]
+- [ ] 13.4.1.4 後端驗證（防止繞過）[規格:L517]
+
+**13.4.2 檔案類型驗證 [規格:L70-L82, L508-L512]**
+- [ ] 13.4.2.1 定義 ALLOWED_MIME_TYPES（PDF, JPEG, PNG, XLSX, DOCX 等）[規格:L71-L79]
+- [ ] 13.4.2.2 定義 ALLOWED_EXTENSIONS（.pdf, .jpg, .png, .xlsx, .docx 等）[規格:L82]
+- [ ] 13.4.2.3 驗證 MIME Type [規格:L116-L121]
+- [ ] 13.4.2.4 驗證副檔名 [規格:L124-L130]
+- [ ] 13.4.2.5 雙重驗證防止偽造 [規格:L510-L512]
+
+**13.4.3 檔名安全檢查 [規格:L132-L138, L520-L524]**
+- [ ] 13.4.3.1 過濾路徑遍歷字元（.., /, \）[規格:L133-L138, L522]
+- [ ] 13.4.3.2 使用時間戳 + 隨機字串重新命名 [規格:L192-L194, L523]
+- [ ] 13.4.3.3 下載時使用原始檔名（encodeURIComponent）[規格:L255, L524]
+
+**13.4.4 附件數量限制驗證 [規格:L84-L91, L140-L152]**
+- [ ] 13.4.4.1 定義 MAX_FILES_PER_ENTITY（client:20, receipt:5, sop:10, task:10）[規格:L85-L90]
+- [ ] 13.4.4.2 查詢現有附件數量（COUNT）[規格:L141-L144]
+- [ ] 13.4.4.3 驗證：count >= maxFiles → TOO_MANY_FILES [規格:L147-L152]
+
+**13.4.5 存取權限與儲存安全 [規格:L526-L536]**
+- [ ] 13.4.5.1 上傳需登入（authMiddleware）[規格:L528]
+- [ ] 13.4.5.2 下載檢查權限（同公司/同團隊）[規格:L529]
+- [ ] 13.4.5.3 刪除檢查權限（上傳者或管理員，此專案為所有人）[規格:L530, L292]
+- [ ] 13.4.5.4 使用 Cloudflare R2（自動備份）[規格:L534]
+- [ ] 13.4.5.5 軟刪除（可恢復）[規格:L535]
+
+---
 
 #### 13.5 測試與部署
-- [ ] 13.5.1 [內部] 自行測試所有附件功能
-- [ ] 13.5.2 [內部] 測試檔案上傳/下載/刪除
-- [ ] 13.5.3 [內部] 準備執行一致性驗證
-- [ ] 13.5.4 [內部] 準備執行自動部署
+- [ ] 13.5.1 [內部] 測試檔案上傳與大小限制（10MB）
+- [ ] 13.5.2 [內部] 測試檔案類型驗證（只允許 PDF/JPG/PNG/XLSX/DOCX）
+- [ ] 13.5.3 [內部] 測試檔名安全（過濾 ../）
+- [ ] 13.5.4 [內部] 測試附件數量限制（client:20, receipt:5）
+- [ ] 13.5.5 [內部] 測試檔案下載與刪除
+- [ ] 13.5.6 [內部] 自行測試所有附件管理功能
+- [ ] 13.5.7 [內部] 準備執行一致性驗證
+- [ ] 13.5.8 [內部] 準備執行自動部署
 
 ---
 
 ### [ ] 模組 14：報表分析（報表分析-完整規格.md）
-**資料表：** 0 個（使用現有表） | **API：** 6 個 | **Cron Jobs：** 0 個
+**資料表：** 0 個（使用現有表） | **API：** 4 個（客戶成本/員工工時/薪資彙總/營收報表）| **Cron Jobs：** 0 個
 
-#### 14.1 儀表板 API
-- [ ] 14.1.1 實現 `GET /api/v1/reports/dashboard` 路由（儀表板數據，含 OpenAPI schema）
-- [ ] 14.1.2 實現工時統計 API
-- [ ] 14.1.3 實現假期統計 API
+#### 14.1 客戶成本分析 API [規格:L35-L401]
 
-#### 14.2 分析報表 API
-- [ ] 14.2.1 實現客戶成本分析 API
-- [ ] 14.2.2 實現員工工時分析 API
-- [ ] 14.2.3 實現薪資報表 API
-- [ ] 14.2.4 實現收款報表 API
+**14.1.1 GET /api/v1/reports/client-cost-analysis（含年終獎金分攤選項）[規格:L39, L68-L136]**
+- [ ] 14.1.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 14.1.1.2 查詢參數：start_date, end_date, client_id（可選）, include_year_end_bonus（預設false）[規格:L42-L48]
+- [ ] 14.1.1.3 調用 calculateClientCost()（使用加權工時 + 完整時薪成本率）[規格:L157-L345]
+- [ ] 14.1.1.4 查詢所有工時記錄（JOIN Users, WorkTypes）[規格:L170-L185]
+- [ ] 14.1.1.5 計算完整時薪成本率（含管理成本，不含年終）[規格:L196-L203]
+- [ ] 14.1.1.6 計算加權工時與成本（weighted_hours × hourlyCostRate）[規格:L209-L221]
+- [ ] 14.1.1.7 年終獎金分攤邏輯（優化版：批次查詢）[規格:L247-L312]
+  - 一次性查詢所有員工工時統計 [規格:L255-L266]
+  - 一次性查詢所有年終獎金 [規格:L269-L275]
+  - 使用 Map 快速查找避免 N² 查詢 [規格:L277-L311]
+  - 效能優化：從 500 次查詢降至 2 次 [規格:L314-L330]
+- [ ] 14.1.1.8 返回數據結構（含 cost_breakdown, user_breakdown, warnings）[規格:L68-L136]
+- [ ] 14.1.1.9 管理成本警告（完全未輸入/部分輸入）[規格:L125-L152]
+- [ ] 14.1.1.10 添加 OpenAPI 註解
 
-#### 14.3 前端實現
-- [ ] 14.3.1 實現 `DashboardPage.vue` 組件（儀表板）
-- [ ] 14.3.2 實現 `ReportsPage.vue` 組件（報表中心）
-- [ ] 14.3.3 整合圖表庫（Chart.js 或 ECharts）
+---
 
-#### 14.4 測試與部署
-- [ ] 14.4.1 [內部] 自行測試所有報表功能
-- [ ] 14.4.2 [內部] 準備執行一致性驗證
-- [ ] 14.4.3 [內部] 準備執行自動部署
+#### 14.2 員工工時分析 API [規格:L406-L568]
+
+**14.2.1 GET /api/v1/reports/employee-hours（含使用率計算）[規格:L410, L421-L456]**
+- [ ] 14.2.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 14.2.1.2 查詢參數：year, month, user_id（可選）[規格:L413-L418]
+- [ ] 14.2.1.3 調用 calculateEmployeeHours() [規格:L462-L567]
+- [ ] 14.2.1.4 查詢工時記錄（JOIN Users, Clients, Services）[規格:L467-L484]
+- [ ] 14.2.1.5 分組統計（total_hours, normal_hours, overtime_hours, billable_hours）[規格:L486-L539]
+- [ ] 14.2.1.6 計算使用率（billable_hours / standardHours × 100）[規格:L541-L545]
+- [ ] 14.2.1.7 客戶分布統計（含百分比）[規格:L547-L552]
+- [ ] 14.2.1.8 每日工時趨勢 [規格:L554-L556]
+- [ ] 14.2.1.9 返回完整數據 [規格:L424-L456]
+- [ ] 14.2.1.10 添加 OpenAPI 註解
+
+---
+
+#### 14.3 薪資彙總報表 API [規格:L572-L660]
+
+**14.3.1 GET /api/v1/reports/payroll-summary（已在 Module 10 定義）[規格:L576, L588-L625]**
+- [ ] 14.3.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 14.3.1.2 查詢參數：year, month, user_id（可選）[規格:L579-L584]
+- [ ] 14.3.1.3 查詢 MonthlyPayroll 表（JOIN Users）
+- [ ] 14.3.1.4 聚合統計（SUM total_base_salary, total_allowances, total_bonuses, total_overtime_pay）[規格:L593-L598]
+- [ ] 14.3.1.5 返回 summary 與 details [規格:L591-L625]
+- [ ] 14.3.1.6 添加 OpenAPI 註解
+
+---
+
+#### 14.4 營收報表 API [規格:L662-L730]
+
+**14.4.1 GET /api/v1/reports/revenue（已在 Module 12 定義）[規格:L666, L678-L720]**
+- [ ] 14.4.1.1 權限：authMiddleware + adminMiddleware
+- [ ] 14.4.1.2 查詢參數：start_date, end_date（必填）[規格:L669-L672]
+- [ ] 14.4.1.3 查詢 Receipts 表（GROUP BY client_id, service_id）
+- [ ] 14.4.1.4 JOIN Payments 計算收款金額
+- [ ] 14.4.1.5 計算收款率（total_paid / total_receipts × 100）[規格:L697]
+- [ ] 14.4.1.6 月度趨勢統計（GROUP BY year, month）[規格:L704-L713]
+- [ ] 14.4.1.7 返回 summary, by_client, by_service, monthly_trend [規格:L680-L718]
+- [ ] 14.4.1.8 添加 OpenAPI 註解
+
+---
+
+#### 14.5 效能優化與快取 [規格:L901-L938]
+
+**14.5.1 Workers KV 快取實現 [規格:L903-L919]**
+- [ ] 14.5.1.1 配置 KV namespace 綁定（CACHE）
+- [ ] 14.5.1.2 實現快取鍵生成（report:type:params）[規格:L907]
+- [ ] 14.5.1.3 檢查快取存在（env.CACHE.get）[規格:L908-L912]
+- [ ] 14.5.1.4 生成報表後寫入快取（TTL=3600 秒）[規格:L916-L918]
+- [ ] 14.5.1.5 快取失效策略（新增/更新工時時清除）
+
+**14.5.2 分頁加載實現 [規格:L921-L930]**
+- [ ] 14.5.2.1 添加查詢參數：page, page_size（預設 20）[規格:L926-L928]
+- [ ] 14.5.2.2 返回 total 總數 [規格:L929]
+- [ ] 14.5.2.3 使用 LIMIT 和 OFFSET
+
+**14.5.3 索引優化驗證 [規格:L932-L938]**
+- [ ] 14.5.3.1 驗證 idx_timelogs_date_client 索引存在 [規格:L936]
+- [ ] 14.5.3.2 驗證 idx_receipts_date_status 索引存在 [規格:L937]
+- [ ] 14.5.3.3 驗證查詢計畫使用索引（EXPLAIN QUERY PLAN）
+
+---
+
+#### 14.6 測試與部署
+- [ ] 14.6.1 [內部] 測試客戶成本分析（含/不含年終獎金）
+- [ ] 14.6.2 [內部] 測試年終獎金分攤計算（按工時比例）
+- [ ] 14.6.3 [內部] 測試管理成本警告（完全未輸入/部分輸入）
+- [ ] 14.6.4 [內部] 測試員工工時使用率計算
+- [ ] 14.6.5 [內部] 測試報表快取機制（KV TTL=3600）
+- [ ] 14.6.6 [內部] 測試分頁加載（page_size=20）
+- [ ] 14.6.7 [內部] 自行測試所有報表功能
+- [ ] 14.6.8 [內部] 準備執行一致性驗證
+- [ ] 14.6.9 [內部] 準備執行自動部署
 
 ---
 
