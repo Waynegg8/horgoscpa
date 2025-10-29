@@ -1449,18 +1449,73 @@
 
 #### 7.2 任務模板管理 API（所有人可用）[規格:L175-L185]
 - [x] 7.2.1 `GET /api/v1/task-templates` [規格:L180]
+  - [x] 7.2.1.1 權限：所有人（authMiddleware）[規格:L175-L185]
+  - [x] 7.2.1.2 查詢參數：`service_id`, `is_client_specific`（可選）
+  - [x] 7.2.1.3 調用 TaskTemplateService.getTemplates()
+  - [x] 7.2.1.4 返回列表（含模板基本欄位）
+  - [x] 7.2.1.5 添加 OpenAPI 註解
 - [x] 7.2.2 `POST /api/v1/task-templates`（含階段模板建立）[規格:L181]
+  - [x] 7.2.2.1 權限：所有人（小型事務所彈性設計）[規格:L175-L185]
+  - [x] 7.2.2.2 請求 Body：`template_name`, `service_id`, `estimated_days`, `related_sop_id`, `is_client_specific`, `specific_client_id`, `stages[]`
+  - [x] 7.2.2.3 調用 TaskTemplateService.createTemplate()（含階段模板寫入）
+  - [x] 7.2.2.4 返回 201 Created（含新建模板與階段）
+  - [x] 7.2.2.5 添加 OpenAPI 註解
 - [x] 7.2.3 `PUT /api/v1/task-templates/:id` [規格:L182]
+  - [x] 7.2.3.1 權限：所有人 [規格:L175-L185]
+  - [x] 7.2.3.2 路徑參數：`id`；Body：允許更新的欄位
+  - [x] 7.2.3.3 調用 TaskTemplateService.updateTemplate()
+  - [x] 7.2.3.4 返回更新後的模板
+  - [x] 7.2.3.5 添加 OpenAPI 註解
 - [x] 7.2.4 `DELETE /api/v1/task-templates/:id` [規格:L183]
+  - [x] 7.2.4.1 權限：所有人 [規格:L175-L185]
+  - [x] 7.2.4.2 路徑參數：`id`
+  - [x] 7.2.4.3 調用 TaskTemplateService.deleteTemplate()（軟刪除）
+  - [x] 7.2.4.4 返回成功響應
+  - [x] 7.2.4.5 添加 OpenAPI 註解
 - [x] 7.2.5 `POST /api/v1/task-templates/:id/copy` [規格:L184-L185]
+  - [x] 7.2.5.1 權限：所有人 [規格:L175-L185]
+  - [x] 7.2.5.2 路徑參數：`id`
+  - [x] 7.2.5.3 調用 TaskTemplateService.copyTemplate()
+  - [x] 7.2.5.4 返回複製出的模板與階段
+  - [x] 7.2.5.5 添加 OpenAPI 註解
 
 #### 7.3 客戶服務管理 API（所有人可用）[規格:L187-L199, L200-L250]
 - [x] 7.3.1 `GET /api/v1/client-services` [規格:L192]
+  - [x] 7.3.1.1 權限：所有人（authMiddleware）[規格:L187-L199]
+  - [x] 7.3.1.2 查詢參數：`client_id`, `service_id`, `status`（可選）
+  - [x] 7.3.1.3 調用 ClientServiceManagementService.getClientServices()
+  - [x] 7.3.1.4 返回列表
+  - [x] 7.3.1.5 添加 OpenAPI 註解
 - [x] 7.3.2 `POST /api/v1/client-services`（自動觸發月份）[規格:L193, L200-L224]
+  - [x] 7.3.2.1 權限：所有人（小型事務所彈性設計）[規格:L187-L199]
+  - [x] 7.3.2.2 請求 Body：`client_id`, `service_id`, `frequency_id`, `template_id`, `custom_template_id`, `start_date` [規格:L200-L210]
+  - [x] 7.3.2.3 回應包含 trigger_months 與 template_name [規格:L212-L224]
+  - [x] 7.3.2.4 調用 ClientServiceManagementService.createClientService()
+  - [x] 7.3.2.5 添加 OpenAPI 註解
 - [x] 7.3.3 `PUT /api/v1/client-services/:id` [規格:L194]
+  - [x] 7.3.3.1 權限：所有人 [規格:L187-L199]
+  - [x] 7.3.3.2 路徑參數：`id`；Body：允許更新欄位
+  - [x] 7.3.3.3 調用 ClientServiceManagementService.updateClientService()
+  - [x] 7.3.3.4 返回更新後的服務
+  - [x] 7.3.3.5 添加 OpenAPI 註解
 - [x] 7.3.4 `DELETE /api/v1/client-services/:id` [規格:L195]
+  - [x] 7.3.4.1 權限：所有人 [規格:L187-L199]
+  - [x] 7.3.4.2 路徑參數：`id`
+  - [x] 7.3.4.3 調用 ClientServiceManagementService.deleteClientService()（軟刪除）
+  - [x] 7.3.4.4 返回成功響應
+  - [x] 7.3.4.5 添加 OpenAPI 註解
 - [x] 7.3.5 `GET /api/v1/clients/:clientId/services` [規格:L196]
+  - [x] 7.3.5.1 權限：所有人 [規格:L187-L199]
+  - [x] 7.3.5.2 路徑參數：`clientId`
+  - [x] 7.3.5.3 調用 ClientServiceManagementService.getServicesByClient()
+  - [x] 7.3.5.4 返回客戶服務列表
+  - [x] 7.3.5.5 添加 OpenAPI 註解
 - [x] 7.3.6 `GET /api/v1/clients/:clientId/available-templates`（通用+專屬模板）[規格:L197, L252-L267]
+  - [x] 7.3.6.1 權限：所有人 [規格:L187-L199]
+  - [x] 7.3.6.2 路徑參數：`clientId`，查詢 `service_id` [規格:L254]
+  - [x] 7.3.6.3 回應：`general_templates` 與 `client_specific_templates` [規格:L256-L265]
+  - [x] 7.3.6.4 調用 ClientServiceManagementService.getAvailableTemplates()
+  - [x] 7.3.6.5 添加 OpenAPI 註解
 
 #### 7.4 任務進度追蹤 API [規格:L269-L277, L279-L324]
 - [x] 7.4.1 `GET /api/v1/tasks`（員工自動過濾）[規格:L271, L543-L550]
