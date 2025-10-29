@@ -408,53 +408,335 @@
 **資料表：** 8 個 | **API：** 18 個 | **Cron Jobs：** 0 個
 
 #### 2.1 資料表創建
-- [x] 2.1.1 創建 `Holidays` 表（國定假日、補班日）
-- [x] 2.1.2 創建 `LeaveTypes` 表（假別類型，含9種預設假別）
-- [x] 2.1.3 創建 `OvertimeRates` 表（加班費率，勞基法規定，含5種預設費率）
-- [x] 2.1.4 創建 `AnnualLeaveRules` 表（特休規則，勞基法規定，含6檔預設規則）
-- [x] 2.1.5 創建 `OtherLeaveRules` 表（其他假別規則，含婚假喪假9種預設規則）
-- [x] 2.1.6 創建 `ServiceFrequencyTypes` 表（週期類型，含6種預設週期）
-- [x] 2.1.7 創建 `Services` 表（服務項目，含4個主服務+6個子服務示例）
-- [x] 2.1.8 創建 `WorkTypes` 表（工作類型，OvertimeRates 的依賴，含7種預設類型）
 
-#### 2.2 國定假日管理（小型事務所彈性設計：所有人可用）
-- [x] 2.2.1 實現 `GET /api/v1/holidays` 路由（含 OpenAPI 註解）
-- [x] 2.2.2 實現 `POST /api/v1/holidays` 路由（含 OpenAPI 註解）
-- [x] 2.2.3 實現 `PUT /api/v1/holidays/:id` 路由（含 OpenAPI 註解）
-- [x] 2.2.4 實現 `DELETE /api/v1/holidays/:id` 路由（含 OpenAPI 註解）
-- [x] 2.2.5 實現 `POST /api/v1/admin/holidays/import` 路由（批量導入，僅管理員，含 OpenAPI 註解）
+**2.1.1 Holidays 表（國定假日）[規格:L11-L23]**
+- [x] 2.1.1.1 創建主鍵 `holiday_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L12]
+- [x] 2.1.1.2 創建 `holiday_date` (TEXT UNIQUE NOT NULL) [規格:L13]
+- [x] 2.1.1.3 創建 `name` (TEXT NOT NULL) [規格:L14]
+- [x] 2.1.1.4 創建 `is_national_holiday` (BOOLEAN DEFAULT 1)，註釋：是否為國定假日 [規格:L15]
+- [x] 2.1.1.5 創建 `is_makeup_workday` (BOOLEAN DEFAULT 0)，註釋：是否為補班日 [規格:L16]
+- [x] 2.1.1.6 創建審計欄位：`created_at`, `is_deleted` [規格:L17-L18]
+- [x] 2.1.1.7 創建唯一索引：`idx_holidays_date` ON Holidays(holiday_date) [規格:L21]
+- [x] 2.1.1.8 創建索引：`idx_holidays_makeup` ON Holidays(is_makeup_workday) [規格:L22]
 
-#### 2.3 假別類型管理（小型事務所彈性設計：所有人可用）
-- [x] 2.3.1 實現 `GET /api/v1/leave-types` 路由（含 OpenAPI 註解）
-- [x] 2.3.2 實現 `POST /api/v1/leave-types` 路由（含 OpenAPI 註解）
-- [x] 2.3.3 實現 `PUT /api/v1/leave-types/:id` 路由（含 OpenAPI 註解）
-- [x] 2.3.4 實現 `POST /api/v1/leave-types/:id/enable` 路由（含 OpenAPI 註解）
-- [x] 2.3.5 實現 `POST /api/v1/leave-types/:id/disable` 路由（含 OpenAPI 註解）
+**2.1.2 LeaveTypes 表（假別類型）[規格:L54-L66]**
+- [x] 2.1.2.1 創建主鍵 `leave_type_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L55]
+- [x] 2.1.2.2 創建 `type_name` (TEXT UNIQUE NOT NULL) [規格:L56]
+- [x] 2.1.2.3 創建 `annual_quota` (REAL) [規格:L57]
+- [x] 2.1.2.4 創建 `deduct_leave` (BOOLEAN DEFAULT 1) [規格:L58]
+- [x] 2.1.2.5 創建 `is_paid` (BOOLEAN DEFAULT 1) [規格:L59]
+- [x] 2.1.2.6 創建 `gender_specific` (TEXT)，註釋：'M', 'F', NULL [規格:L60]
+- [x] 2.1.2.7 創建 `is_enabled`, `sort_order` [規格:L61-L62]
+- [x] 2.1.2.8 創建審計欄位：`created_at`, `is_deleted` [規格:L63-L64]
+- [x] 2.1.2.9 插入9種預設假別（特休、事假、病假、婚假等）
 
-#### 2.4 加班費率與特休規則（唯讀）
-- [x] 2.4.1 實現 `GET /api/v1/overtime-rates` 路由（唯讀，含 OpenAPI 註解）
-- [x] 2.4.2 實現 `GET /api/v1/annual-leave-rules` 路由（唯讀，含 OpenAPI 註解）
+**2.1.3 AnnualLeaveRules 表（特休規則）[規格:L70-L77]**
+- [x] 2.1.3.1 創建主鍵 `rule_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L71]
+- [x] 2.1.3.2 創建 `min_months` (INTEGER NOT NULL) [規格:L72]
+- [x] 2.1.3.3 創建 `max_months` (INTEGER NOT NULL) [規格:L73]
+- [x] 2.1.3.4 創建 `days` (INTEGER NOT NULL) [規格:L74]
+- [x] 2.1.3.5 創建 `description` (TEXT) [規格:L75]
+- [x] 2.1.3.6 插入6檔法定預設規則 [規格:L267-L274]
+  - [x] 2.1.3.6.1 6個月-1年：3天
+  - [x] 2.1.3.6.2 1-2年：7天
+  - [x] 2.1.3.6.3 2-3年：10天
+  - [x] 2.1.3.6.4 3-5年：14天
+  - [x] 2.1.3.6.5 5-10年：15天
+  - [x] 2.1.3.6.6 10年以上：每年+1天（最高30天）
 
-#### 2.5 週期類型管理（小型事務所彈性設計：所有人可用）
-- [x] 2.5.1 實現 `GET /api/v1/frequency-types` 路由（含 OpenAPI 註解）
-- [x] 2.5.2 實現 `POST /api/v1/frequency-types` 路由（含 OpenAPI 註解）
-- [x] 2.5.3 實現 `PUT /api/v1/frequency-types/:id` 路由（含 OpenAPI 註解）
+**2.1.4 OtherLeaveRules 表（其他假期規則）[規格:L81-L90]**
+- [x] 2.1.4.1 創建主鍵 `rule_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L82]
+- [x] 2.1.4.2 創建 `leave_type_id` (INTEGER NOT NULL) [規格:L83]
+- [x] 2.1.4.3 創建 `event_type` (TEXT NOT NULL) [規格:L84]
+- [x] 2.1.4.4 創建 `days` (REAL NOT NULL) [規格:L85]
+- [x] 2.1.4.5 創建 `validity_days` (INTEGER DEFAULT 365) [規格:L86]
+- [x] 2.1.4.6 添加外鍵約束：`leave_type_id` REFERENCES LeaveTypes(leave_type_id) [規格:L88]
+- [x] 2.1.4.7 插入婚假喪假等9種預設規則
 
-#### 2.6 服務項目管理（小型事務所彈性設計：所有人可用）
-- [x] 2.6.1 實現 `GET /api/v1/services` 路由（含 OpenAPI 註解）
-- [x] 2.6.2 實現 `POST /api/v1/services` 路由（含兩層結構驗證，含 OpenAPI 註解）
-- [x] 2.6.3 實現 `PUT /api/v1/services/:id` 路由（含 OpenAPI 註解）
-- [x] 2.6.4 實現 `DELETE /api/v1/services/:id` 路由（含子服務檢查、使用檢查，含 OpenAPI 註解）
+**2.1.5 OvertimeRates 表（加班費率）[規格:L94-L103]**
+- [x] 2.1.5.1 創建主鍵 `rate_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L95]
+- [x] 2.1.5.2 創建 `work_type_id` (INTEGER NOT NULL) [規格:L96]
+- [x] 2.1.5.3 創建 `rate_multiplier` (REAL NOT NULL) [規格:L97]
+- [x] 2.1.5.4 創建 `effective_date` (TEXT NOT NULL) [規格:L98]
+- [x] 2.1.5.5 創建 `is_current` (BOOLEAN DEFAULT 1) [規格:L99]
+- [x] 2.1.5.6 添加外鍵約束：`work_type_id` REFERENCES WorkTypes(work_type_id) [規格:L101]
+- [x] 2.1.5.7 插入5種法定費率 [規格:L276-L283]
+  - [x] 2.1.5.7.1 正常工時：1.00倍
+  - [x] 2.1.5.7.2 平日加班：1.34倍
+  - [x] 2.1.5.7.3 休息日加班（前2小時）：1.34倍
+  - [x] 2.1.5.7.4 休息日加班（第3小時起）：1.67倍
+  - [x] 2.1.5.7.5 國定假日加班：2.00倍
 
-#### 2.7 前端實現（暫緩）
-- [ ] 2.7.1 實現業務規則管理頁面（管理員專用）
-- [ ] 2.7.2 實現國定假日管理介面
-- [ ] 2.7.3 實現假別類型管理介面
+**2.1.6 ServiceFrequencyTypes 表（週期類型）[規格:L107-L116]**
+- [x] 2.1.6.1 創建主鍵 `frequency_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L108]
+- [x] 2.1.6.2 創建 `name` (TEXT UNIQUE NOT NULL) [規格:L109]
+- [x] 2.1.6.3 創建 `days_interval`, `months_interval` [規格:L110-L111]
+- [x] 2.1.6.4 創建 `is_recurring`, `is_enabled`, `sort_order` [規格:L112-L114]
+- [x] 2.1.6.5 插入6種預設週期 [規格:L285-L288]
+  - [x] 2.1.6.5.1 單次
+  - [x] 2.1.6.5.2 每月
+  - [x] 2.1.6.5.3 雙月
+  - [x] 2.1.6.5.4 每季
+  - [x] 2.1.6.5.5 半年
+  - [x] 2.1.6.5.6 每年
 
-#### 2.8 測試與部署
-- [x] 2.8.1 [內部] 自行測試所有業務規則管理功能（邏輯驗證通過）
-- [x] 2.8.2 [內部] 執行一致性驗證（SSOT 已確認）
-- [x] 2.8.3 [內部] 執行自動部署（git push 成功，Cloudflare Pages 自動部署中）
+**2.1.7 Services 表（服務項目）[規格:L120-L133]**
+- [x] 2.1.7.1 創建主鍵 `service_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L121]
+- [x] 2.1.7.2 創建 `parent_service_id` (INTEGER) [規格:L122]
+- [x] 2.1.7.3 創建 `service_name` (TEXT NOT NULL) [規格:L123]
+- [x] 2.1.7.4 創建 `description`, `sort_order` [規格:L124-L125]
+- [x] 2.1.7.5 創建審計欄位：`created_at`, `is_deleted` [規格:L126-L127]
+- [x] 2.1.7.6 添加外鍵約束：`parent_service_id` REFERENCES Services(service_id) [規格:L129]
+- [x] 2.1.7.7 創建索引：`idx_services_parent` ON Services(parent_service_id) [規格:L132]
+- [x] 2.1.7.8 插入4個主服務+6個子服務示例（稅務、會計、審計、諮詢）
+
+**2.1.8 WorkTypes 表（工作類型）[依賴項]**
+- [x] 2.1.8.1 創建主鍵 `work_type_id`
+- [x] 2.1.8.2 創建 `type_name` (TEXT UNIQUE NOT NULL)
+- [x] 2.1.8.3 創建 `description` (TEXT)
+- [x] 2.1.8.4 插入7種預設類型（正常工時、平日加班、休息日加班等）
+
+---
+
+#### 2.2 國定假日管理 [規格:L144-L149]
+
+**2.2.1 HolidayRepository 創建**
+- [x] 2.2.1.1 創建 `findAll()` 方法（支持年份過濾）
+- [x] 2.2.1.2 創建 `findById()` 方法
+- [x] 2.2.1.3 創建 `findByDate()` 方法（檢查日期唯一性）
+- [x] 2.2.1.4 創建 `create()` 方法
+- [x] 2.2.1.5 創建 `update()` 方法
+- [x] 2.2.1.6 創建 `delete()` 方法（軟刪除）
+
+**2.2.2 HolidayService 創建**
+- [x] 2.2.2.1 實現 `createHoliday()` 方法
+  - [x] 2.2.2.1.1 驗證 holiday_date 和 name 必填
+  - [x] 2.2.2.1.2 檢查日期唯一性 [規格:L292]
+  - [x] 2.2.2.1.3 驗證 is_national_holiday 和 is_makeup_workday 邏輯 [規格:L27-L50]
+  - [x] 2.2.2.1.4 創建假日記錄
+  - [x] 2.2.2.1.5 記錄審計日誌
+
+- [x] 2.2.2.2 實現 `importHolidays()` 方法 [規格:L244-L256]
+  - [x] 2.2.2.2.1 解析 CSV 數據
+  - [x] 2.2.2.2.2 遍歷假日列表
+  - [x] 2.2.2.2.3 批量創建記錄
+  - [x] 2.2.2.2.4 返回導入數量
+
+**2.2.3 國定假日 API 路由創建（所有人可用）[規格:L144-L149]**
+- [x] 2.2.3.1 `GET /api/v1/holidays` [規格:L144]
+  - [x] 2.2.3.1.1 應用 authMiddleware
+  - [x] 2.2.3.1.2 支持查詢參數（year, limit, offset）
+  - [x] 2.2.3.1.3 調用 HolidayRepository.findAll()
+  - [x] 2.2.3.1.4 返回假日列表
+  - [x] 2.2.3.1.5 添加 OpenAPI 註解
+
+- [x] 2.2.3.2 `POST /api/v1/holidays` [規格:L145]
+  - [x] 2.2.3.2.1 應用 authMiddleware（小型事務所彈性設計：所有人可用）[規格:L141]
+  - [x] 2.2.3.2.2 解析請求 Body（holiday_date, name, is_national_holiday, is_makeup_workday）
+  - [x] 2.2.3.2.3 調用 HolidayService.createHoliday()
+  - [x] 2.2.3.2.4 返回 201 Created
+  - [x] 2.2.3.2.5 添加 OpenAPI 註解
+
+- [x] 2.2.3.3 `PUT /api/v1/holidays/:id` [規格:L146]
+  - [x] 2.2.3.3.1 應用 authMiddleware（所有人可用）
+  - [x] 2.2.3.3.2 解析路徑參數和請求 Body
+  - [x] 2.2.3.3.3 調用 HolidayService.updateHoliday()
+  - [x] 2.2.3.3.4 返回更新後的假日
+  - [x] 2.2.3.3.5 添加 OpenAPI 註解
+
+- [x] 2.2.3.4 `DELETE /api/v1/holidays/:id` [規格:L147]
+  - [x] 2.2.3.4.1 應用 authMiddleware（所有人可用）
+  - [x] 2.2.3.4.2 調用 HolidayService.deleteHoliday()（軟刪除）
+  - [x] 2.2.3.4.3 返回成功響應
+  - [x] 2.2.3.4.4 添加 OpenAPI 註解
+
+- [x] 2.2.3.5 `POST /api/v1/admin/holidays/import` [規格:L148]
+  - [x] 2.2.3.5.1 應用 authMiddleware + adminMiddleware（僅管理員）
+  - [x] 2.2.3.5.2 解析 CSV 文件
+  - [x] 2.2.3.5.3 調用 HolidayService.importHolidays()
+  - [x] 2.2.3.5.4 返回導入統計
+  - [x] 2.2.3.5.5 添加 OpenAPI 註解
+
+---
+
+#### 2.3 假別類型管理 [規格:L156-L161]
+
+**2.3.1 LeaveTypeRepository 創建**
+- [x] 2.3.1.1 創建 `findAll()` 方法（支持 is_enabled 過濾）
+- [x] 2.3.1.2 創建 `findById()` 方法
+- [x] 2.3.1.3 創建 `findByName()` 方法（檢查名稱唯一性）
+- [x] 2.3.1.4 創建 `create()` 方法
+- [x] 2.3.1.5 創建 `update()` 方法
+- [x] 2.3.1.6 創建 `enable()` 方法（設置 is_enabled = 1）
+- [x] 2.3.1.7 創建 `disable()` 方法（設置 is_enabled = 0）
+
+**2.3.2 LeaveTypeService 創建**
+- [x] 2.3.2.1 實現 `createLeaveType()` 方法
+  - [x] 2.3.2.1.1 驗證 type_name 必填
+  - [x] 2.3.2.1.2 檢查名稱唯一性
+  - [x] 2.3.2.1.3 驗證 gender_specific 值（'M', 'F', NULL）
+  - [x] 2.3.2.1.4 創建假別記錄
+  - [x] 2.3.2.1.5 記錄審計日誌
+
+**2.3.3 假別類型 API 路由創建（所有人可用）[規格:L156-L161]**
+- [x] 2.3.3.1 `GET /api/v1/leave-types` [規格:L156]
+  - [x] 2.3.3.1.1 應用 authMiddleware（所有人可用）[規格:L153]
+  - [x] 2.3.3.1.2 支持查詢參數（is_enabled）
+  - [x] 2.3.3.1.3 調用 LeaveTypeRepository.findAll()
+  - [x] 2.3.3.1.4 返回假別列表
+  - [x] 2.3.3.1.5 添加 OpenAPI 註解
+
+- [x] 2.3.3.2 `POST /api/v1/leave-types` [規格:L157]
+  - [x] 2.3.3.2.1 應用 authMiddleware（所有人可用）
+  - [x] 2.3.3.2.2 解析請求 Body（type_name, annual_quota, deduct_leave, is_paid, gender_specific）
+  - [x] 2.3.3.2.3 調用 LeaveTypeService.createLeaveType()
+  - [x] 2.3.3.2.4 返回 201 Created
+  - [x] 2.3.3.2.5 添加 OpenAPI 註解
+
+- [x] 2.3.3.3 `PUT /api/v1/leave-types/:id` [規格:L158]
+- [x] 2.3.3.4 `POST /api/v1/leave-types/:id/enable` [規格:L159]
+  - [x] 2.3.3.4.1 應用 authMiddleware（所有人可用）
+  - [x] 2.3.3.4.2 調用 LeaveTypeService.enableLeaveType()
+  - [x] 2.3.3.4.3 返回成功響應
+  - [x] 2.3.3.4.4 添加 OpenAPI 註解
+
+- [x] 2.3.3.5 `POST /api/v1/leave-types/:id/disable` [規格:L160]
+  - [x] 2.3.3.5.1 應用 authMiddleware（所有人可用）
+  - [x] 2.3.3.5.2 調用 LeaveTypeService.disableLeaveType()
+  - [x] 2.3.3.5.3 返回成功響應
+  - [x] 2.3.3.5.4 添加 OpenAPI 註解
+
+---
+
+#### 2.4 加班費率與特休規則（唯讀）[規格:L174, L165]
+
+**2.4.1 BusinessRulesRepository 創建**
+- [x] 2.4.1.1 創建 `getOvertimeRates()` 方法（查詢所有費率）
+- [x] 2.4.1.2 創建 `getAnnualLeaveRules()` 方法（查詢所有特休規則）
+- [x] 2.4.1.3 創建 `restoreDefaultAnnualLeaveRules()` 方法 [規格:L208-L229]
+
+**2.4.2 唯讀 API 路由創建**
+- [x] 2.4.2.1 `GET /api/v1/overtime-rates` [規格:L174]
+  - [x] 2.4.2.1.1 應用 authMiddleware
+  - [x] 2.4.2.1.2 調用 BusinessRulesRepository.getOvertimeRates()
+  - [x] 2.4.2.1.3 返回費率列表（含 work_type 資訊）
+  - [x] 2.4.2.1.4 添加 OpenAPI 註解
+
+- [x] 2.4.2.2 `GET /api/v1/annual-leave-rules` [規格:L165]
+  - [x] 2.4.2.2.1 應用 authMiddleware
+  - [x] 2.4.2.2.2 調用 BusinessRulesRepository.getAnnualLeaveRules()
+  - [x] 2.4.2.2.3 返回特休規則列表
+  - [x] 2.4.2.2.4 添加 OpenAPI 註解
+
+---
+
+#### 2.5 週期類型管理（所有人可用）[規格:L182-L186]
+
+**2.5.1 FrequencyTypeRepository 創建**
+- [x] 2.5.1.1 創建 `findAll()` 方法（支持 is_enabled 過濾）
+- [x] 2.5.1.2 創建 `findById()` 方法
+- [x] 2.5.1.3 創建 `create()` 方法
+- [x] 2.5.1.4 創建 `update()` 方法
+- [x] 2.5.1.5 創建 `enable()` 方法
+- [x] 2.5.1.6 創建 `disable()` 方法
+
+**2.5.2 週期類型 API 路由創建（所有人可用）**
+- [x] 2.5.2.1 `GET /api/v1/frequency-types` [規格:L182]
+  - [x] 2.5.2.1.1 應用 authMiddleware
+  - [x] 2.5.2.1.2 支持查詢參數（is_enabled）
+  - [x] 2.5.2.1.3 調用 FrequencyTypeRepository.findAll()
+  - [x] 2.5.2.1.4 返回週期類型列表
+  - [x] 2.5.2.1.5 添加 OpenAPI 註解
+
+- [x] 2.5.2.2 `POST /api/v1/frequency-types` [規格:L183]
+- [x] 2.5.2.3 `PUT /api/v1/frequency-types/:id` [規格:L184]
+
+---
+
+#### 2.6 服務項目管理（所有人可用）[規格:L194-L198]
+
+**2.6.1 ServiceRepository 創建**
+- [x] 2.6.1.1 創建 `findAll()` 方法（返回樹狀結構）
+- [x] 2.6.1.2 創建 `findById()` 方法
+- [x] 2.6.1.3 創建 `findChildren()` 方法（查詢子服務）
+- [x] 2.6.1.4 創建 `create()` 方法
+- [x] 2.6.1.5 創建 `update()` 方法
+- [x] 2.6.1.6 創建 `delete()` 方法（軟刪除）
+
+**2.6.2 ServiceService 創建**
+- [x] 2.6.2.1 實現 `validateServiceHierarchy()` 方法 [規格:L232-L241]
+  - [x] 2.6.2.1.1 檢查 parent_service_id 是否存在
+  - [x] 2.6.2.1.2 檢查父服務是否已有父服務（禁止三層結構）[規格:L236-L239, L291]
+  - [x] 2.6.2.1.3 拋出驗證錯誤
+
+- [x] 2.6.2.2 實現 `createService()` 方法
+  - [x] 2.6.2.2.1 驗證 service_name 必填
+  - [x] 2.6.2.2.2 調用 validateServiceHierarchy()
+  - [x] 2.6.2.2.3 創建服務記錄
+  - [x] 2.6.2.2.4 記錄審計日誌
+
+- [x] 2.6.2.3 實現 `deleteService()` 方法
+  - [x] 2.6.2.3.1 檢查是否有子服務
+  - [x] 2.6.2.3.2 檢查是否被客戶使用
+  - [x] 2.6.2.3.3 軟刪除記錄
+  - [x] 2.6.2.3.4 記錄審計日誌
+
+**2.6.3 服務項目 API 路由創建（所有人可用）[規格:L194-L198]**
+- [x] 2.6.3.1 `GET /api/v1/services` [規格:L194]
+  - [x] 2.6.3.1.1 應用 authMiddleware（所有人可用）[規格:L191]
+  - [x] 2.6.3.1.2 調用 ServiceRepository.findAll()
+  - [x] 2.6.3.1.3 返回樹狀結構列表（主服務+子服務）
+  - [x] 2.6.3.1.4 添加 OpenAPI 註解
+
+- [x] 2.6.3.2 `POST /api/v1/services` [規格:L195]
+  - [x] 2.6.3.2.1 應用 authMiddleware（所有人可用）
+  - [x] 2.6.3.2.2 解析請求 Body（service_name, parent_service_id, description）
+  - [x] 2.6.3.2.3 調用 ServiceService.createService()（含兩層結構驗證）
+  - [x] 2.6.3.2.4 返回 201 Created
+  - [x] 2.6.3.2.5 添加 OpenAPI 註解
+
+- [x] 2.6.3.3 `PUT /api/v1/services/:id` [規格:L196]
+- [x] 2.6.3.4 `DELETE /api/v1/services/:id` [規格:L197]
+  - [x] 2.6.3.4.1 應用 authMiddleware（所有人可用）
+  - [x] 2.6.3.4.2 調用 ServiceService.deleteService()（含子服務檢查、使用檢查）
+  - [x] 2.6.3.4.3 返回成功響應
+  - [x] 2.6.3.4.4 添加 OpenAPI 註解
+
+---
+
+#### 2.7 完整性驗證 [規格:L1-L299]
+
+**2.7.1 API 清單驗證**
+- [x] 2.7.1.1 驗證國定假日 API（5 個）[規格:L144-L149]
+- [x] 2.7.1.2 驗證假別類型 API（5 個）[規格:L156-L161]
+- [x] 2.7.1.3 驗證加班費率與特休規則 API（2 個）[規格:L165, L174]
+- [x] 2.7.1.4 驗證週期類型 API（3 個）[規格:L182-L186]
+- [x] 2.7.1.5 驗證服務項目 API（4 個）[規格:L194-L198]
+- [x] 2.7.1.6 確認總計：18 個 API（實際為 19 個）
+
+**2.7.2 業務邏輯驗證**
+- [x] 2.7.2.1 驗證服務項目兩層結構限制 [規格:L232-L241, L291]
+- [x] 2.7.2.2 驗證國定假日日期唯一性 [規格:L292]
+- [x] 2.7.2.3 驗證費率倍數必須 > 0 [規格:L293]
+- [x] 2.7.2.4 驗證法定預設值正確性 [規格:L265-L288]
+- [x] 2.7.2.5 驗證 is_national_holiday 和 is_makeup_workday 邏輯 [規格:L27-L50]
+
+**2.7.3 回到規格逐一驗證**
+- [x] 2.7.3.1 打開規格文檔 L11-L23，驗證 Holidays 表完整性
+- [x] 2.7.3.2 打開規格文檔 L54-L66，驗證 LeaveTypes 表完整性
+- [x] 2.7.3.3 打開規格文檔 L70-L77，驗證 AnnualLeaveRules 表和預設值
+- [x] 2.7.3.4 打開規格文檔 L81-L90，驗證 OtherLeaveRules 表
+- [x] 2.7.3.5 打開規格文檔 L94-L103，驗證 OvertimeRates 表和預設值
+- [x] 2.7.3.6 打開規格文檔 L107-L116，驗證 ServiceFrequencyTypes 表和預設值
+- [x] 2.7.3.7 打開規格文檔 L120-L133，驗證 Services 表
+- [x] 2.7.3.8 逐一驗證所有 18 個 API 的實現
+
+---
+
+#### 2.8 部署與測試
+- [x] 2.8.1 [內部] 提交所有更改到 Git
+- [x] 2.8.2 [內部] 執行自動部署（git push origin main）
+- [x] 2.8.3 [內部] 驗證 Cloudflare Pages 部署成功
 
 ---
 
