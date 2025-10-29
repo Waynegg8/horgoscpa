@@ -430,6 +430,95 @@ CREATE INDEX idx_work_types_enabled ON WorkTypes(is_enabled);
 CREATE INDEX idx_work_types_deleted ON WorkTypes(is_deleted);
 
 -- =====================================================
+-- 模組 3: 客戶管理
+-- =====================================================
+
+-- -----------------------------------------------------
+-- Table: Clients (客戶)
+-- 描述: 存儲客戶公司資料
+-- -----------------------------------------------------
+CREATE TABLE Clients (
+  client_id TEXT PRIMARY KEY,           -- 統一編號（8位數字）
+  company_name TEXT NOT NULL,
+  tax_registration_number TEXT,         -- 稅籍編號
+  business_status TEXT DEFAULT '營業中',
+  assignee_user_id INTEGER NOT NULL,    -- 負責員工
+  phone TEXT,
+  email TEXT,
+  address TEXT,
+  contact_person TEXT,                  -- 聯絡人姓名
+  contact_title TEXT,                   -- 聯絡人職稱
+  client_notes TEXT,                    -- 客戶備註（業務相關）
+  payment_notes TEXT,                   -- 收款備註（財務相關）
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (assignee_user_id) REFERENCES Users(user_id),
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id),
+  CHECK (business_status IN ('營業中', '暫停營業', '已結束營業'))
+);
+
+-- 索引
+CREATE INDEX idx_clients_assignee ON Clients(assignee_user_id);
+CREATE INDEX idx_clients_company_name ON Clients(company_name);
+CREATE INDEX idx_clients_status ON Clients(business_status);
+CREATE INDEX idx_clients_deleted ON Clients(is_deleted);
+
+-- -----------------------------------------------------
+-- Table: CustomerTags (客戶標籤)
+-- 描述: 定義客戶標籤（VIP、長期合作等）
+-- -----------------------------------------------------
+CREATE TABLE CustomerTags (
+  tag_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tag_name TEXT UNIQUE NOT NULL,
+  tag_color TEXT DEFAULT '#3B82F6',     -- 標籤顏色（HEX 格式）
+  description TEXT,
+  sort_order INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id)
+);
+
+-- 索引
+CREATE UNIQUE INDEX idx_customer_tags_name ON CustomerTags(tag_name) WHERE is_deleted = 0;
+CREATE INDEX idx_customer_tags_deleted ON CustomerTags(is_deleted);
+
+-- 預設標籤
+INSERT INTO CustomerTags (tag_name, tag_color, description, sort_order) VALUES
+('VIP', '#EF4444', '重要客戶', 1),
+('長期合作', '#10B981', '長期合作客戶', 2),
+('新客戶', '#3B82F6', '新開發客戶', 3),
+('高價值', '#F59E0B', '高收費客戶', 4),
+('需關注', '#8B5CF6', '需要特別關注', 5);
+
+-- -----------------------------------------------------
+-- Table: ClientTagAssignments (客戶標籤關聯)
+-- 描述: 客戶與標籤的多對多關聯
+-- -----------------------------------------------------
+CREATE TABLE ClientTagAssignments (
+  assignment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_id TEXT NOT NULL,
+  tag_id INTEGER NOT NULL,
+  assigned_at TEXT DEFAULT (datetime('now')),
+  assigned_by INTEGER,                  -- 誰指派的標籤
+  
+  FOREIGN KEY (client_id) REFERENCES Clients(client_id) ON DELETE CASCADE,
+  FOREIGN KEY (tag_id) REFERENCES CustomerTags(tag_id),
+  FOREIGN KEY (assigned_by) REFERENCES Users(user_id),
+  UNIQUE(client_id, tag_id)
+);
+
+-- 索引
+CREATE INDEX idx_client_tag_client ON ClientTagAssignments(client_id);
+CREATE INDEX idx_client_tag_tag ON ClientTagAssignments(tag_id);
+
+-- =====================================================
 -- 註記
 -- =====================================================
 -- 1. 所有表都包含標準審計欄位：created_at, updated_at, is_deleted, deleted_at, deleted_by
