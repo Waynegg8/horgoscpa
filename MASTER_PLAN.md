@@ -1394,41 +1394,48 @@
 ---
 
 ### [x] 模組 7：任務管理（任務管理-完整規格.md）✅ 已完成（已修正不完整實現）
-**資料表：** 4 個 | **API：** 17 個 | **Cron Jobs：** 1 個
+**資料表：** 4 個 | **API：** 16 個 | **Cron Jobs：** 1 個
 
 #### 7.1 資料表創建
-- [x] 7.1.1 創建 `TaskTemplates` 表（任務模板，含客戶專屬標記）
-- [x] 7.1.2 創建 `TaskStageTemplates` 表（任務階段模板）
-- [x] 7.1.3 創建 `ActiveTasks` 表（執行中任務，含儀表板優化索引）
-- [x] 7.1.4 創建 `ActiveTaskStages` 表（任務階段進度）
+- [x] 7.1.1 `TaskTemplates` 表（任務模板，含客戶專屬）[規格:L9-L29]
+- [x] 7.1.2 `TaskStageTemplates` 表（階段模板）[規格:L31-L46]
+- [x] 7.1.3 `ActiveTasks` 表（執行中任務，含儀表板索引、刪除欄位）[規格:L48-L82, L65-L67, L80-L81]
+- [x] 7.1.4 `ActiveTaskStages` 表（任務階段進度）[規格:L96-L116]
+- [x] 7.1.5 `ClientServices` 表（模板優先邏輯欄位）[規格:L118-L146, L148-L169]
 
-#### 7.2 任務模板管理 API（小型事務所彈性設計：所有人可用）
-- [x] 7.2.1 實現 `GET /api/v1/task-templates` 路由（含 OpenAPI 註解）
-- [x] 7.2.2 實現 `POST /api/v1/task-templates` 路由（含階段創建，含 OpenAPI 註解）
-- [x] 7.2.3 實現 `PUT /api/v1/task-templates/:id` 路由（含 OpenAPI 註解）
-- [x] 7.2.4 實現 `DELETE /api/v1/task-templates/:id` 路由（含 OpenAPI 註解）
-- [x] 7.2.5 實現 `POST /api/v1/task-templates/:id/copy` 路由（複製模板，含 OpenAPI 註解）
+#### 7.2 任務模板管理 API（所有人可用）[規格:L175-L185]
+- [x] 7.2.1 `GET /api/v1/task-templates` [規格:L180]
+- [x] 7.2.2 `POST /api/v1/task-templates`（含階段模板建立）[規格:L181]
+- [x] 7.2.3 `PUT /api/v1/task-templates/:id` [規格:L182]
+- [x] 7.2.4 `DELETE /api/v1/task-templates/:id` [規格:L183]
+- [x] 7.2.5 `POST /api/v1/task-templates/:id/copy` [規格:L184-L185]
 
-#### 7.3 客戶服務管理 API（小型事務所彈性設計：所有人可用）
-- [x] 7.3.1 實現 `GET /api/v1/client-services` 路由（含 OpenAPI 註解）
-- [x] 7.3.2 實現 `POST /api/v1/client-services` 路由（自動計算觸發月份，含 OpenAPI 註解）
-- [x] 7.3.3 實現 `PUT /api/v1/client-services/:id` 路由（含 OpenAPI 註解）
-- [x] 7.3.4 實現 `DELETE /api/v1/client-services/:id` 路由（含 OpenAPI 註解）
-- [x] 7.3.5 實現 `GET /api/v1/clients/:clientId/services` 路由（含 OpenAPI 註解）
-- [x] 7.3.6 實現 `GET /api/v1/clients/:clientId/available-templates` 路由（查詢通用+專屬模板，含 OpenAPI 註解）
+#### 7.3 客戶服務管理 API（所有人可用）[規格:L187-L199, L200-L250]
+- [x] 7.3.1 `GET /api/v1/client-services` [規格:L192]
+- [x] 7.3.2 `POST /api/v1/client-services`（自動觸發月份）[規格:L193, L200-L224]
+- [x] 7.3.3 `PUT /api/v1/client-services/:id` [規格:L194]
+- [x] 7.3.4 `DELETE /api/v1/client-services/:id` [規格:L195]
+- [x] 7.3.5 `GET /api/v1/clients/:clientId/services` [規格:L196]
+- [x] 7.3.6 `GET /api/v1/clients/:clientId/available-templates`（通用+專屬模板）[規格:L197, L252-L267]
 
-#### 7.4 任務進度追蹤 API
-- [x] 7.4.1 實現 `GET /api/v1/tasks` 路由（查詢任務列表，員工自動過濾，含 OpenAPI 註解）
-- [x] 7.4.2 實現 `GET /api/v1/tasks/:id` 路由（⚠️已修正：含完整SOP資訊，符合規格響應格式）
-- [x] 7.4.3 實現 `POST /api/v1/tasks/:id/stages/:stageId/start` 路由（⭐含階段順序驗證，含 OpenAPI 註解）
-- [x] 7.4.4 實現 `POST /api/v1/tasks/:id/stages/:stageId/complete` 路由（⭐含狀態檢查，含 OpenAPI 註解）
-- [x] 7.4.5 實現 `PUT /api/v1/tasks/:id` 路由（更新任務，含 OpenAPI 註解）
-- [x] 7.4.6 實現 `GET /api/v1/tasks/:id/sop` 路由（⚠️補充遺漏：查詢任務關聯SOP）
+#### 7.4 任務進度追蹤 API [規格:L269-L277, L279-L324]
+- [x] 7.4.1 `GET /api/v1/tasks`（員工自動過濾）[規格:L271, L543-L550]
+- [x] 7.4.2 `GET /api/v1/tasks/:id`（含完整 SOP 與階段）[規格:L272, L279-L324]
+- [x] 7.4.3 `POST /api/v1/tasks/:id/stages/:stageId/start`（順序驗證）[規格:L273, L570-L582]
+- [x] 7.4.4 `POST /api/v1/tasks/:id/stages/:stageId/complete`（狀態檢查）[規格:L274, L612-L636]
+- [x] 7.4.5 `PUT /api/v1/tasks/:id`（更新任務）[規格:L275]
+- [x] 7.4.6 `GET /api/v1/tasks/:id/sop`（查詢任務關聯 SOP）[規格:L276]
 
-#### 7.5 Cron Job 實現
-- [x] 7.5.1 在 `wrangler.jsonc` 中已配置任務自動生成 Cron Job（`0 0 1 * *`）
-- [x] 7.5.2 實現月度任務自動生成邏輯（⭐優先使用客戶專屬模板）
-- [x] 7.5.3 實現冪等性保護（使用 CronJobExecutions）
+#### 7.5 Cron Job：任務自動生成 [規格:L642-L753]
+- [x] 7.5.1 配置排程（每月1日 00:00）[規格:L646-L648]
+- [x] 7.5.2 優先使用客戶專屬模板（無則用通用模板）[規格:L665-L689]
+- [x] 7.5.3 自動關聯 SOP（通用+客製）與負責人 [規格:L698-L707, L709-L726]
+- [x] 7.5.4 自動生成階段（依模板順序）[規格:L730-L747]
+
+#### 7.6 完整性驗證
+- [x] 7.6.1 驗證階段順序強制規則 [規格:L774-L808, L856-L870]
+- [x] 7.6.2 驗證權限規則（員工/管理員）[規格:L872-L880]
+- [x] 7.6.3 測試案例覆蓋：自動生成、階段順序、員工可視範圍 [規格:L883-L907]
 
 #### 7.6 前端實現（暫緩）
 - [ ] 7.6.1 實現 `TasksPage.vue` 組件
