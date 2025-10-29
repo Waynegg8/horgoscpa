@@ -737,6 +737,82 @@ CREATE INDEX idx_life_event_grants_type ON LifeEventLeaveGrants(leave_type_id);
 CREATE INDEX idx_life_event_grants_deleted ON LifeEventLeaveGrants(is_deleted);
 
 -- =====================================================
+-- 模組 6: 服務生命週期管理
+-- =====================================================
+
+-- -----------------------------------------------------
+-- Table: ClientServices (客戶服務配置)
+-- 描述: 記錄客戶訂閱的服務（自動生成任務的依據）
+-- -----------------------------------------------------
+CREATE TABLE ClientServices (
+  client_service_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_id TEXT NOT NULL,
+  service_id INTEGER NOT NULL,
+  frequency_id INTEGER NOT NULL,        -- 週期類型
+  template_id INTEGER,                  -- 預設任務模板（通用）
+  custom_template_id INTEGER,           -- 客戶專屬模板（優先使用）
+  trigger_months TEXT,                  -- 觸發月份（如：'1,4,7,10'表示每季）
+  start_date TEXT NOT NULL,
+  end_date TEXT,
+  price REAL,                           -- 服務價格
+  billing_cycle TEXT DEFAULT 'monthly', -- 計費週期
+  notes TEXT,
+  
+  -- ⭐ 服務狀態管理（模組6新增）
+  status TEXT DEFAULT 'active',         -- 'active', 'suspended', 'expired', 'cancelled'
+  suspended_at TEXT,
+  resumed_at TEXT,
+  suspension_reason TEXT,
+  cancelled_at TEXT,
+  cancelled_by INTEGER,
+  auto_renew BOOLEAN DEFAULT 1,         -- 是否自動續約
+  
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (client_id) REFERENCES Clients(client_id),
+  FOREIGN KEY (service_id) REFERENCES Services(service_id),
+  FOREIGN KEY (frequency_id) REFERENCES ServiceFrequencyTypes(frequency_id),
+  FOREIGN KEY (template_id) REFERENCES TaskTemplates(template_id),
+  FOREIGN KEY (custom_template_id) REFERENCES TaskTemplates(template_id),
+  FOREIGN KEY (cancelled_by) REFERENCES Users(user_id),
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id),
+  CHECK (status IN ('active', 'suspended', 'expired', 'cancelled'))
+);
+
+-- 索引
+CREATE INDEX idx_client_services_client ON ClientServices(client_id);
+CREATE INDEX idx_client_services_service ON ClientServices(service_id);
+CREATE INDEX idx_client_services_status ON ClientServices(status);
+CREATE INDEX idx_client_services_deleted ON ClientServices(is_deleted);
+
+-- -----------------------------------------------------
+-- Table: ServiceChangeHistory (服務變更歷史)
+-- 描述: 記錄服務狀態變更的歷史（暫停、恢復、取消等）
+-- -----------------------------------------------------
+CREATE TABLE ServiceChangeHistory (
+  change_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_service_id INTEGER NOT NULL,
+  old_status TEXT,
+  new_status TEXT,
+  changed_by INTEGER NOT NULL,
+  changed_at TEXT DEFAULT (datetime('now')),
+  reason TEXT,
+  notes TEXT,
+  
+  FOREIGN KEY (client_service_id) REFERENCES ClientServices(client_service_id),
+  FOREIGN KEY (changed_by) REFERENCES Users(user_id)
+);
+
+-- 索引
+CREATE INDEX idx_service_change_service ON ServiceChangeHistory(client_service_id);
+CREATE INDEX idx_service_change_date ON ServiceChangeHistory(changed_at);
+CREATE INDEX idx_service_change_user ON ServiceChangeHistory(changed_by);
+
+-- =====================================================
 -- 註記
 -- =====================================================
 -- 1. 所有表都包含標準審計欄位：created_at, updated_at, is_deleted, deleted_at, deleted_by

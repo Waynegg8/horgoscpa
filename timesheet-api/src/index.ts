@@ -21,6 +21,7 @@ import services from './routes/services';
 import clients from './routes/clients';
 import timelogs from './routes/timelogs';
 import leave from './routes/leave';
+import clientservices from './routes/clientservices';
 
 // 創建 Hono 應用
 const app = new Hono<{ Bindings: Env }>();
@@ -90,6 +91,9 @@ app.route('/api/v1', timelogs);
 
 // 假期管理路由
 app.route('/api/v1', leave);
+
+// 服務生命週期管理路由
+app.route('/api/v1', clientservices);
 
 // 後續路由將在這裡添加
 // app.route('/api/v1/tasks', tasks);
