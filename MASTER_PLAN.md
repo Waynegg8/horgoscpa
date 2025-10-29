@@ -1,4 +1,4 @@
-# 專案總執行計畫 (Master Plan)
+﻿# 專案總執行計畫 (Master Plan)
 
 **版本：** 1.0  
 **建立日期：** 2025-10-29  
@@ -2054,194 +2054,194 @@
 
 ---
 
-### [ ] 模組 10：薪資管理（薪資管理-完整規格.md）
+### [x] 模組 10：薪資管理（薪資管理-完整規格.md）
 **資料表：** 6 個 | **API：** 16 個（薪資項目 4 + 年終 5 + 員工薪資 3 + 薪資計算/查詢 4）| **Cron Jobs：** 0 個
 
 #### 10.1 資料表創建（6 表）
 
 **10.1.1 擴充 `Users` 表（薪資基本資訊）[規格:L35-L42]**
-- [ ] 10.1.1.1 添加 `base_salary` 欄位（REAL NOT NULL DEFAULT 0）[規格:L39]
-- [ ] 10.1.1.2 添加 `join_date` 欄位（TEXT）[規格:L40]
-- [ ] 10.1.1.3 添加 `comp_hours_current_month` 欄位（REAL DEFAULT 0）[規格:L41]
+-  [x] 10.1.1.1 添加 `base_salary` 欄位（REAL NOT NULL DEFAULT 0）[規格:L39]
+-  [x] 10.1.1.2 添加 `join_date` 欄位（TEXT）[規格:L40]
+-  [x] 10.1.1.3 添加 `comp_hours_current_month` 欄位（REAL DEFAULT 0）[規格:L41]
 
 **10.1.2 創建 `SalaryItemTypes` 表（薪資項目類型，含經常性給與標記）[規格:L49-L106]**
-- [ ] 10.1.2.1 主鍵 `item_type_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L55]
-- [ ] 10.1.2.2 欄位：`item_code` (TEXT UNIQUE NOT NULL) [規格:L56]
-- [ ] 10.1.2.3 欄位：`item_name` (TEXT NOT NULL) [規格:L57]
-- [ ] 10.1.2.4 欄位：`category` (TEXT NOT NULL, CHECK IN ('allowance','bonus','deduction')) [規格:L58, L69]
-- [ ] 10.1.2.5 欄位：`is_taxable` (BOOLEAN DEFAULT 1) [規格:L59]
-- [ ] 10.1.2.6 欄位：`is_fixed` (BOOLEAN DEFAULT 1) [規格:L60]
-- [ ] 10.1.2.7 欄位：`is_regular_payment` (BOOLEAN DEFAULT 1) ⭐計入時薪 [規格:L61]
-- [ ] 10.1.2.8 欄位：`affects_labor_insurance` (BOOLEAN DEFAULT 1) [規格:L62]
-- [ ] 10.1.2.9 欄位：`affects_attendance` (BOOLEAN DEFAULT 0) [規格:L63]
-- [ ] 10.1.2.10 欄位：`calculation_formula`, `display_order`, `is_active` [規格:L64-L66]
-- [ ] 10.1.2.11 審計欄位：`created_at` [規格:L67]
-- [ ] 10.1.2.12 CHECK 約束：category IN ('allowance','bonus','deduction') [規格:L69]
-- [ ] 10.1.2.13 索引：`idx_salary_item_types_active` ON (is_active) [規格:L72]
-- [ ] 10.1.2.14 索引：`idx_salary_item_types_order` ON (display_order) [規格:L73]
-- [ ] 10.1.2.15 索引：`idx_salary_item_types_regular` ON (is_regular_payment) [規格:L74]
-- [ ] 10.1.2.16 插入預設項目（全勤/交通/伙食/職務/電話/停車/績效/年終）[規格:L77-L85]
+-  [x] 10.1.2.1 主鍵 `item_type_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L55]
+-  [x] 10.1.2.2 欄位：`item_code` (TEXT UNIQUE NOT NULL) [規格:L56]
+-  [x] 10.1.2.3 欄位：`item_name` (TEXT NOT NULL) [規格:L57]
+-  [x] 10.1.2.4 欄位：`category` (TEXT NOT NULL, CHECK IN ('allowance','bonus','deduction')) [規格:L58, L69]
+-  [x] 10.1.2.5 欄位：`is_taxable` (BOOLEAN DEFAULT 1) [規格:L59]
+-  [x] 10.1.2.6 欄位：`is_fixed` (BOOLEAN DEFAULT 1) [規格:L60]
+-  [x] 10.1.2.7 欄位：`is_regular_payment` (BOOLEAN DEFAULT 1) ⭐計入時薪 [規格:L61]
+-  [x] 10.1.2.8 欄位：`affects_labor_insurance` (BOOLEAN DEFAULT 1) [規格:L62]
+-  [x] 10.1.2.9 欄位：`affects_attendance` (BOOLEAN DEFAULT 0) [規格:L63]
+-  [x] 10.1.2.10 欄位：`calculation_formula`, `display_order`, `is_active` [規格:L64-L66]
+-  [x] 10.1.2.11 審計欄位：`created_at` [規格:L67]
+-  [x] 10.1.2.12 CHECK 約束：category IN ('allowance','bonus','deduction') [規格:L69]
+-  [x] 10.1.2.13 索引：`idx_salary_item_types_active` ON (is_active) [規格:L72]
+-  [x] 10.1.2.14 索引：`idx_salary_item_types_order` ON (display_order) [規格:L73]
+-  [x] 10.1.2.15 索引：`idx_salary_item_types_regular` ON (is_regular_payment) [規格:L74]
+-  [x] 10.1.2.16 插入預設項目（全勤/交通/伙食/職務/電話/停車/績效/年終）[規格:L77-L85]
 
 **10.1.3 創建 `EmployeeSalaryItems` 表（員工薪資項目，含月度獨立調整）[規格:L126-L185]**
-- [ ] 10.1.3.1 主鍵 `employee_item_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L130]
-- [ ] 10.1.3.2 關聯欄位：`user_id`, `item_type_id` (NOT NULL) [規格:L131-L132]
-- [ ] 10.1.3.3 欄位：`amount` (REAL NOT NULL) [規格:L133]
-- [ ] 10.1.3.4 欄位：`effective_date` (TEXT NOT NULL, YYYY-MM-01) [規格:L134]
-- [ ] 10.1.3.5 欄位：`expiry_date` (TEXT, null=永久有效) [規格:L135]
-- [ ] 10.1.3.6 欄位：`notes`, `is_active` [規格:L136-L137]
-- [ ] 10.1.3.7 審計欄位：`created_at`, `updated_at` [規格:L138-L139]
-- [ ] 10.1.3.8 外鍵：`user_id` REFERENCES Users(user_id) [規格:L141]
-- [ ] 10.1.3.9 外鍵：`item_type_id` REFERENCES SalaryItemTypes(item_type_id) [規格:L142]
-- [ ] 10.1.3.10 索引：`idx_employee_salary_items_user` ON (user_id) [規格:L145]
-- [ ] 10.1.3.11 索引：`idx_employee_salary_items_active` ON (is_active) [規格:L146]
-- [ ] 10.1.3.12 索引：`idx_employee_salary_items_date` ON (effective_date, expiry_date) [規格:L147]
+-  [x] 10.1.3.1 主鍵 `employee_item_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L130]
+-  [x] 10.1.3.2 關聯欄位：`user_id`, `item_type_id` (NOT NULL) [規格:L131-L132]
+-  [x] 10.1.3.3 欄位：`amount` (REAL NOT NULL) [規格:L133]
+-  [x] 10.1.3.4 欄位：`effective_date` (TEXT NOT NULL, YYYY-MM-01) [規格:L134]
+-  [x] 10.1.3.5 欄位：`expiry_date` (TEXT, null=永久有效) [規格:L135]
+-  [x] 10.1.3.6 欄位：`notes`, `is_active` [規格:L136-L137]
+-  [x] 10.1.3.7 審計欄位：`created_at`, `updated_at` [規格:L138-L139]
+-  [x] 10.1.3.8 外鍵：`user_id` REFERENCES Users(user_id) [規格:L141]
+-  [x] 10.1.3.9 外鍵：`item_type_id` REFERENCES SalaryItemTypes(item_type_id) [規格:L142]
+-  [x] 10.1.3.10 索引：`idx_employee_salary_items_user` ON (user_id) [規格:L145]
+-  [x] 10.1.3.11 索引：`idx_employee_salary_items_active` ON (is_active) [規格:L146]
+-  [x] 10.1.3.12 索引：`idx_employee_salary_items_date` ON (effective_date, expiry_date) [規格:L147]
 
 **10.1.4 創建 `MonthlyPayroll` 表（月度薪資，含加班費分類）[規格:L188-L232]**
-- [ ] 10.1.4.1 主鍵 `payroll_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L191]
-- [ ] 10.1.4.2 關聯欄位：`user_id`, `year`, `month` (NOT NULL) [規格:L192-L194]
-- [ ] 10.1.4.3 薪資組成：`base_salary`, `total_allowances`, `total_bonuses` [規格:L197-L199]
-- [ ] 10.1.4.4 加班費：`overtime_weekday_2h`, `overtime_weekday_beyond` [規格:L202-L203]
-- [ ] 10.1.4.5 加班費：`overtime_restday_2h`, `overtime_restday_beyond` [規格:L204-L205]
-- [ ] 10.1.4.6 加班費：`overtime_holiday` [規格:L206]
-- [ ] 10.1.4.7 扣款：`total_deductions` [規格:L209]
-- [ ] 10.1.4.8 統計：`total_work_hours`, `total_overtime_hours`, `total_weighted_hours` [規格:L212-L214]
-- [ ] 10.1.4.9 全勤：`has_full_attendance` (BOOLEAN DEFAULT 1) [規格:L215]
-- [ ] 10.1.4.10 薪資總計：`gross_salary`, `net_salary` (NOT NULL) [規格:L218-L219]
-- [ ] 10.1.4.11 備註與審計：`notes`, `created_at`, `updated_at` [規格:L222-L224]
-- [ ] 10.1.4.12 外鍵：`user_id` REFERENCES Users(user_id) [規格:L226]
-- [ ] 10.1.4.13 UNIQUE(user_id, year, month) 防重複 [規格:L227]
-- [ ] 10.1.4.14 索引：`idx_payroll_user` ON (user_id) [規格:L230]
-- [ ] 10.1.4.15 索引：`idx_payroll_date` ON (year, month) [規格:L231]
+-  [x] 10.1.4.1 主鍵 `payroll_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L191]
+-  [x] 10.1.4.2 關聯欄位：`user_id`, `year`, `month` (NOT NULL) [規格:L192-L194]
+-  [x] 10.1.4.3 薪資組成：`base_salary`, `total_allowances`, `total_bonuses` [規格:L197-L199]
+-  [x] 10.1.4.4 加班費：`overtime_weekday_2h`, `overtime_weekday_beyond` [規格:L202-L203]
+-  [x] 10.1.4.5 加班費：`overtime_restday_2h`, `overtime_restday_beyond` [規格:L204-L205]
+-  [x] 10.1.4.6 加班費：`overtime_holiday` [規格:L206]
+-  [x] 10.1.4.7 扣款：`total_deductions` [規格:L209]
+-  [x] 10.1.4.8 統計：`total_work_hours`, `total_overtime_hours`, `total_weighted_hours` [規格:L212-L214]
+-  [x] 10.1.4.9 全勤：`has_full_attendance` (BOOLEAN DEFAULT 1) [規格:L215]
+-  [x] 10.1.4.10 薪資總計：`gross_salary`, `net_salary` (NOT NULL) [規格:L218-L219]
+-  [x] 10.1.4.11 備註與審計：`notes`, `created_at`, `updated_at` [規格:L222-L224]
+-  [x] 10.1.4.12 外鍵：`user_id` REFERENCES Users(user_id) [規格:L226]
+-  [x] 10.1.4.13 UNIQUE(user_id, year, month) 防重複 [規格:L227]
+-  [x] 10.1.4.14 索引：`idx_payroll_user` ON (user_id) [規格:L230]
+-  [x] 10.1.4.15 索引：`idx_payroll_date` ON (year, month) [規格:L231]
 
 **10.1.5 創建 `OvertimeRecords` 表（加班記錄明細）[規格:L234-L256]**
-- [ ] 10.1.5.1 主鍵 `overtime_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L238]
-- [ ] 10.1.5.2 關聯欄位：`user_id`, `work_date` (NOT NULL) [規格:L239-L240]
-- [ ] 10.1.5.3 欄位：`overtime_type` (TEXT NOT NULL) [規格:L241]
-- [ ] 10.1.5.4 欄位：`hours`, `rate_multiplier`, `hourly_base` (REAL NOT NULL) [規格:L242-L244]
-- [ ] 10.1.5.5 欄位：`overtime_pay` (REAL NOT NULL) [規格:L245]
-- [ ] 10.1.5.6 欄位：`is_compensatory_leave` (BOOLEAN DEFAULT 0) [規格:L246]
-- [ ] 10.1.5.7 關聯：`payroll_id` (INTEGER) [規格:L247]
-- [ ] 10.1.5.8 審計：`created_at` [規格:L248]
-- [ ] 10.1.5.9 外鍵：`user_id` REFERENCES Users(user_id) [規格:L250]
-- [ ] 10.1.5.10 外鍵：`payroll_id` REFERENCES MonthlyPayroll(payroll_id) [規格:L251]
-- [ ] 10.1.5.11 索引：`idx_overtime_user_date` ON (user_id, work_date) [規格:L254]
-- [ ] 10.1.5.12 索引：`idx_overtime_payroll` ON (payroll_id) [規格:L255]
+-  [x] 10.1.5.1 主鍵 `overtime_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L238]
+-  [x] 10.1.5.2 關聯欄位：`user_id`, `work_date` (NOT NULL) [規格:L239-L240]
+-  [x] 10.1.5.3 欄位：`overtime_type` (TEXT NOT NULL) [規格:L241]
+-  [x] 10.1.5.4 欄位：`hours`, `rate_multiplier`, `hourly_base` (REAL NOT NULL) [規格:L242-L244]
+-  [x] 10.1.5.5 欄位：`overtime_pay` (REAL NOT NULL) [規格:L245]
+-  [x] 10.1.5.6 欄位：`is_compensatory_leave` (BOOLEAN DEFAULT 0) [規格:L246]
+-  [x] 10.1.5.7 關聯：`payroll_id` (INTEGER) [規格:L247]
+-  [x] 10.1.5.8 審計：`created_at` [規格:L248]
+-  [x] 10.1.5.9 外鍵：`user_id` REFERENCES Users(user_id) [規格:L250]
+-  [x] 10.1.5.10 外鍵：`payroll_id` REFERENCES MonthlyPayroll(payroll_id) [規格:L251]
+-  [x] 10.1.5.11 索引：`idx_overtime_user_date` ON (user_id, work_date) [規格:L254]
+-  [x] 10.1.5.12 索引：`idx_overtime_payroll` ON (payroll_id) [規格:L255]
 
 **10.1.6 創建 `YearEndBonus` 表（年終獎金，含歸屬年度）[規格:L258-L306]**
-- [ ] 10.1.6.1 主鍵 `bonus_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L264]
-- [ ] 10.1.6.2 關聯欄位：`user_id` (NOT NULL) [規格:L265]
-- [ ] 10.1.6.3 欄位：`attribution_year` (INTEGER NOT NULL) [規格:L266]
-- [ ] 10.1.6.4 欄位：`amount` (REAL NOT NULL) [規格:L267]
-- [ ] 10.1.6.5 發放欄位：`payment_year`, `payment_month`, `payment_date` [規格:L268-L270]
-- [ ] 10.1.6.6 欄位：`decision_date`, `notes` [規格:L271-L272]
-- [ ] 10.1.6.7 記錄者：`recorded_by` (NOT NULL) [規格:L273]
-- [ ] 10.1.6.8 審計與刪除：`created_at`, `updated_at`, `is_deleted` [規格:L274-L276]
-- [ ] 10.1.6.9 外鍵：`user_id` REFERENCES Users(user_id) [規格:L278]
-- [ ] 10.1.6.10 外鍵：`recorded_by` REFERENCES Users(user_id) [規格:L279]
-- [ ] 10.1.6.11 UNIQUE(user_id, attribution_year) 防重複 [規格:L280]
-- [ ] 10.1.6.12 索引：`idx_yearend_user` ON (user_id) [規格:L283]
-- [ ] 10.1.6.13 索引：`idx_yearend_attribution` ON (attribution_year) [規格:L284]
-- [ ] 10.1.6.14 索引：`idx_yearend_payment` ON (payment_year, payment_month) [規格:L285]
+-  [x] 10.1.6.1 主鍵 `bonus_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L264]
+-  [x] 10.1.6.2 關聯欄位：`user_id` (NOT NULL) [規格:L265]
+-  [x] 10.1.6.3 欄位：`attribution_year` (INTEGER NOT NULL) [規格:L266]
+-  [x] 10.1.6.4 欄位：`amount` (REAL NOT NULL) [規格:L267]
+-  [x] 10.1.6.5 發放欄位：`payment_year`, `payment_month`, `payment_date` [規格:L268-L270]
+-  [x] 10.1.6.6 欄位：`decision_date`, `notes` [規格:L271-L272]
+-  [x] 10.1.6.7 記錄者：`recorded_by` (NOT NULL) [規格:L273]
+-  [x] 10.1.6.8 審計與刪除：`created_at`, `updated_at`, `is_deleted` [規格:L274-L276]
+-  [x] 10.1.6.9 外鍵：`user_id` REFERENCES Users(user_id) [規格:L278]
+-  [x] 10.1.6.10 外鍵：`recorded_by` REFERENCES Users(user_id) [規格:L279]
+-  [x] 10.1.6.11 UNIQUE(user_id, attribution_year) 防重複 [規格:L280]
+-  [x] 10.1.6.12 索引：`idx_yearend_user` ON (user_id) [規格:L283]
+-  [x] 10.1.6.13 索引：`idx_yearend_attribution` ON (attribution_year) [規格:L284]
+-  [x] 10.1.6.14 索引：`idx_yearend_payment` ON (payment_year, payment_month) [規格:L285]
 
 ---
 
 #### 10.2 薪資項目類型管理 API（4個）[規格:L585-L594]
 
 **10.2.1 GET /api/v1/admin/salary-item-types（查詢薪資項目類型）[規格:L590]**
-- [ ] 10.2.1.1 權限：authMiddleware（所有人）
-- [ ] 10.2.1.2 查詢參數：無
-- [ ] 10.2.1.3 Repository 查詢所有 SalaryItemTypes（is_active=1）
-- [ ] 10.2.1.4 返回列表（含 is_regular_payment 標記）
-- [ ] 10.2.1.5 添加 OpenAPI 註解
+- [x] 10.2.1.1 權限：authMiddleware（所有人）
+- [x] 10.2.1.2 查詢參數：無
+- [x] 10.2.1.3 Repository 查詢所有 SalaryItemTypes（is_active=1）
+- [x] 10.2.1.4 返回列表（含 is_regular_payment 標記）
+- [x] 10.2.1.5 添加 OpenAPI 註解
 
 **10.2.2 POST /api/v1/admin/salary-item-types（新增薪資項目類型）[規格:L591]**
-- [ ] 10.2.2.1 權限：authMiddleware + adminMiddleware
-- [ ] 10.2.2.2 請求 Body：item_code, item_name, category, is_regular_payment
-- [ ] 10.2.2.3 驗證 item_code 唯一性
-- [ ] 10.2.2.4 Service 創建記錄
-- [ ] 10.2.2.5 返回 201 Created
+- [x] 10.2.2.1 權限：authMiddleware + adminMiddleware
+- [x] 10.2.2.2 請求 Body：item_code, item_name, category, is_regular_payment
+- [x] 10.2.2.3 驗證 item_code 唯一性
+- [x] 10.2.2.4 Service 創建記錄
+- [x] 10.2.2.5 返回 201 Created
 
 **10.2.3 PUT /api/v1/admin/salary-item-types/:id（更新薪資項目類型）[規格:L592]**
-- [ ] 10.2.3.1 權限：authMiddleware + adminMiddleware
-- [ ] 10.2.3.2 路徑參數：id（item_type_id）
-- [ ] 10.2.3.3 請求 Body：允許更新的欄位
-- [ ] 10.2.3.4 Service 更新記錄
-- [ ] 10.2.3.5 返回更新後的數據
+- [x] 10.2.3.1 權限：authMiddleware + adminMiddleware
+- [x] 10.2.3.2 路徑參數：id（item_type_id）
+- [x] 10.2.3.3 請求 Body：允許更新的欄位
+- [x] 10.2.3.4 Service 更新記錄
+- [x] 10.2.3.5 返回更新後的數據
 
 **10.2.4 DELETE /api/v1/admin/salary-item-types/:id（刪除薪資項目類型）[規格:L593]**
-- [ ] 10.2.4.1 權限：authMiddleware + adminMiddleware
-- [ ] 10.2.4.2 路徑參數：id
-- [ ] 10.2.4.3 Service 軟刪除（is_active=0）
-- [ ] 10.2.4.4 返回成功響應
-- [ ] 10.2.4.5 添加 OpenAPI 註解
+- [x] 10.2.4.1 權限：authMiddleware + adminMiddleware
+- [x] 10.2.4.2 路徑參數：id
+- [x] 10.2.4.3 Service 軟刪除（is_active=0）
+- [x] 10.2.4.4 返回成功響應
+- [x] 10.2.4.5 添加 OpenAPI 註解
 
 ---
 
 #### 10.3 年終獎金管理 API（5個）[規格:L596-L604, L820-L918]
 
 **10.3.1 GET /api/v1/admin/year-end-bonus（查詢年終獎金列表）[規格:L599]**
-- [ ] 10.3.1.1 權限：authMiddleware + adminMiddleware
-- [ ] 10.3.1.2 查詢參數：attribution_year（可選）
-- [ ] 10.3.1.3 Repository 查詢（含 JOIN Users 表）
-- [ ] 10.3.1.4 返回列表（含員工姓名、歸屬年度、金額）
-- [ ] 10.3.1.5 添加 OpenAPI 註解
+- [x] 10.3.1.1 權限：authMiddleware + adminMiddleware
+- [x] 10.3.1.2 查詢參數：attribution_year（可選）
+- [x] 10.3.1.3 Repository 查詢（含 JOIN Users 表）
+- [x] 10.3.1.4 返回列表（含員工姓名、歸屬年度、金額）
+- [x] 10.3.1.5 添加 OpenAPI 註解
 
 **10.3.2 POST /api/v1/admin/year-end-bonus（新增年終獎金）[規格:L600, L606-L630]**
-- [ ] 10.3.2.1 權限：authMiddleware + adminMiddleware
-- [ ] 10.3.2.2 請求 Body：user_id, attribution_year, amount, payment_date, notes [規格:L609-L614]
-- [ ] 10.3.2.3 驗證 user_id 存在
-- [ ] 10.3.2.4 檢查 UNIQUE(user_id, attribution_year) 防重複
-- [ ] 10.3.2.5 Service 創建記錄，自動解析 payment_year/month [規格:L619-L628]
-- [ ] 10.3.2.6 返回 201 Created [規格:L618-L630]
-- [ ] 10.3.2.7 添加 OpenAPI 註解
+- [x] 10.3.2.1 權限：authMiddleware + adminMiddleware
+- [x] 10.3.2.2 請求 Body：user_id, attribution_year, amount, payment_date, notes [規格:L609-L614]
+- [x] 10.3.2.3 驗證 user_id 存在
+- [x] 10.3.2.4 檢查 UNIQUE(user_id, attribution_year) 防重複
+- [x] 10.3.2.5 Service 創建記錄，自動解析 payment_year/month [規格:L619-L628]
+- [x] 10.3.2.6 返回 201 Created [規格:L618-L630]
+- [x] 10.3.2.7 添加 OpenAPI 註解
 
 **10.3.3 PUT /api/v1/admin/year-end-bonus/:id（更新年終獎金）[規格:L601]**
-- [ ] 10.3.3.1 權限：authMiddleware + adminMiddleware
-- [ ] 10.3.3.2 路徑參數：id（bonus_id）
-- [ ] 10.3.3.3 請求 Body：amount, payment_date, notes
-- [ ] 10.3.3.4 Service 更新記錄
-- [ ] 10.3.3.5 返回更新後的數據
+- [x] 10.3.3.1 權限：authMiddleware + adminMiddleware
+- [x] 10.3.3.2 路徑參數：id（bonus_id）
+- [x] 10.3.3.3 請求 Body：amount, payment_date, notes
+- [x] 10.3.3.4 Service 更新記錄
+- [x] 10.3.3.5 返回更新後的數據
 
 **10.3.4 DELETE /api/v1/admin/year-end-bonus/:id（刪除年終獎金）[規格:L602]**
-- [ ] 10.3.4.1 權限：authMiddleware + adminMiddleware
-- [ ] 10.3.4.2 路徑參數：id
-- [ ] 10.3.4.3 Service 軟刪除（is_deleted=1）
-- [ ] 10.3.4.4 返回成功響應
-- [ ] 10.3.4.5 添加 OpenAPI 註解
+- [x] 10.3.4.1 權限：authMiddleware + adminMiddleware
+- [x] 10.3.4.2 路徑參數：id
+- [x] 10.3.4.3 Service 軟刪除（is_deleted=1）
+- [x] 10.3.4.4 返回成功響應
+- [x] 10.3.4.5 添加 OpenAPI 註解
 
 **10.3.5 GET /api/v1/admin/year-end-bonus/summary（年終獎金統計）[規格:L603, L633-L659]**
-- [ ] 10.3.5.1 權限：authMiddleware + adminMiddleware
-- [ ] 10.3.5.2 查詢參數：attribution_year（必填）[規格:L635]
-- [ ] 10.3.5.3 Repository 聚合查詢（SUM, AVG, COUNT）[規格:L639-L658]
-- [ ] 10.3.5.4 返回統計數據（total_bonus, employee_count, average_bonus, by_employee）[規格:L639-L658]
-- [ ] 10.3.5.5 添加 OpenAPI 註解
+- [x] 10.3.5.1 權限：authMiddleware + adminMiddleware
+- [x] 10.3.5.2 查詢參數：attribution_year（必填）[規格:L635]
+- [x] 10.3.5.3 Repository 聚合查詢（SUM, AVG, COUNT）[規格:L639-L658]
+- [x] 10.3.5.4 返回統計數據（total_bonus, employee_count, average_bonus, by_employee）[規格:L639-L658]
+- [x] 10.3.5.5 添加 OpenAPI 註解
 
 ---
 
 #### 10.4 員工薪資設定 API（3個）[規格:L662-L773]
 
 **10.4.1 GET /api/v1/admin/users/:id/salary（查詢員工薪資設定）[規格:L665]**
-- [ ] 10.4.1.1 權限：authMiddleware（所有人）
-- [ ] 10.4.1.2 路徑參數：id（user_id）
-- [ ] 10.4.1.3 Repository 查詢（JOIN SalaryItemTypes）
-- [ ] 10.4.1.4 返回數據（base_salary, hourly_base, salary_items[]）[規格:L758-L772]
-- [ ] 10.4.1.5 添加 OpenAPI 註解
+- [x] 10.4.1.1 權限：authMiddleware（所有人）
+- [x] 10.4.1.2 路徑參數：id（user_id）
+- [x] 10.4.1.3 Repository 查詢（JOIN SalaryItemTypes）
+- [x] 10.4.1.4 返回數據（base_salary, hourly_base, salary_items[]）[規格:L758-L772]
+- [x] 10.4.1.5 添加 OpenAPI 註解
 
 **10.4.2 PUT /api/v1/admin/users/:id/salary（更新員工薪資設定，整批更新）[規格:L666, L743-L773]**
-- [ ] 10.4.2.1 權限：authMiddleware（所有人）
-- [ ] 10.4.2.2 路徑參數：id（user_id）
-- [ ] 10.4.2.3 請求 Body：base_salary, salary_items[] [規格:L746-L752]
-- [ ] 10.4.2.4 Service 批次更新（刪除舊記錄，插入新記錄）
-- [ ] 10.4.2.5 計算時薪基準（含經常性給與）
-- [ ] 10.4.2.6 返回更新後的薪資設定 [規格:L758-L772]
-- [ ] 10.4.2.7 添加 OpenAPI 註解
+- [x] 10.4.2.1 權限：authMiddleware（所有人）
+- [x] 10.4.2.2 路徑參數：id（user_id）
+- [x] 10.4.2.3 請求 Body：base_salary, salary_items[] [規格:L746-L752]
+- [x] 10.4.2.4 Service 批次更新（刪除舊記錄，插入新記錄）
+- [x] 10.4.2.5 計算時薪基準（含經常性給與）
+- [x] 10.4.2.6 返回更新後的薪資設定 [規格:L758-L772]
+- [x] 10.4.2.7 添加 OpenAPI 註解
 
 **10.4.3 POST /api/v1/admin/salary-items/batch-update（批次更新薪資項目，績效獎金月度調整）[規格:L668, L699-L741]**
-- [ ] 10.4.3.1 權限：authMiddleware + adminMiddleware
-- [ ] 10.4.3.2 請求 Body：item_code, target_month, updates[] [規格:L702-L710]
-- [ ] 10.4.3.3 Service 批次創建月份專屬記錄（effective_date, expiry_date）[規格:L713-L717]
-- [ ] 10.4.3.4 返回成功響應（total_updated, message）[規格:L720-L726]
-- [ ] 10.4.3.5 添加 OpenAPI 註解
+- [x] 10.4.3.1 權限：authMiddleware + adminMiddleware
+- [x] 10.4.3.2 請求 Body：item_code, target_month, updates[] [規格:L702-L710]
+- [x] 10.4.3.3 Service 批次創建月份專屬記錄（effective_date, expiry_date）[規格:L713-L717]
+- [x] 10.4.3.4 返回成功響應（total_updated, message）[規格:L720-L726]
+- [x] 10.4.3.5 添加 OpenAPI 註解
 
 ---
 
@@ -2318,105 +2318,105 @@
 
 ---
 
-### [ ] 模組 11：管理成本（管理成本-完整規格.md）
+### [x] 模組 11：管理成本（管理成本-完整規格.md）
 **資料表：** 2 個 | **API：** 10 個（成本項目類型 4 + 月度成本記錄 4 + 分析彙總 2）| **Cron Jobs：** 0 個
 
 #### 11.1 資料表創建（2 表）
 
 **11.1.1 創建 `OverheadCostTypes` 表（管理成本項目類型，含分攤方式）[規格:L29-L63]**
-- [ ] 11.1.1.1 主鍵 `cost_type_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L35]
-- [ ] 11.1.1.2 欄位：`cost_code` (TEXT UNIQUE NOT NULL) [規格:L36]
-- [ ] 11.1.1.3 欄位：`cost_name` (TEXT NOT NULL) [規格:L37]
-- [ ] 11.1.1.4 欄位：`category` (TEXT NOT NULL, CHECK IN ('fixed','variable')) [規格:L38, L46]
-- [ ] 11.1.1.5 欄位：`allocation_method` (TEXT NOT NULL) [規格:L39]
+- [x] 11.1.1.1 主鍵 `cost_type_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L35]
+- [x] 11.1.1.2 欄位：`cost_code` (TEXT UNIQUE NOT NULL) [規格:L36]
+- [x] 11.1.1.3 欄位：`cost_name` (TEXT NOT NULL) [規格:L37]
+- [x] 11.1.1.4 欄位：`category` (TEXT NOT NULL, CHECK IN ('fixed','variable')) [規格:L38, L46]
+- [x] 11.1.1.5 欄位：`allocation_method` (TEXT NOT NULL) [規格:L39]
   - CHECK IN ('per_employee','per_hour','per_revenue') [規格:L47]
-- [ ] 11.1.1.6 欄位：`description`, `is_active`, `display_order` [規格:L40-L42]
-- [ ] 11.1.1.7 審計欄位：`created_at`, `updated_at` [規格:L43-L44]
-- [ ] 11.1.1.8 CHECK 約束：category IN ('fixed', 'variable') [規格:L46]
-- [ ] 11.1.1.9 CHECK 約束：allocation_method IN (...) [規格:L47]
-- [ ] 11.1.1.10 索引：`idx_overhead_cost_types_active` ON (is_active) [規格:L50]
-- [ ] 11.1.1.11 索引：`idx_overhead_cost_types_category` ON (category) [規格:L51]
-- [ ] 11.1.1.12 插入預設項目（租金/水電/網路/設備/軟體/保險/維護/行銷）[規格:L54-L62]
+- [x] 11.1.1.6 欄位：`description`, `is_active`, `display_order` [規格:L40-L42]
+- [x] 11.1.1.7 審計欄位：`created_at`, `updated_at` [規格:L43-L44]
+- [x] 11.1.1.8 CHECK 約束：category IN ('fixed', 'variable') [規格:L46]
+- [x] 11.1.1.9 CHECK 約束：allocation_method IN (...) [規格:L47]
+- [x] 11.1.1.10 索引：`idx_overhead_cost_types_active` ON (is_active) [規格:L50]
+- [x] 11.1.1.11 索引：`idx_overhead_cost_types_category` ON (category) [規格:L51]
+- [x] 11.1.1.12 插入預設項目（租金/水電/網路/設備/軟體/保險/維護/行銷）[規格:L54-L62]
 
 **11.1.2 創建 `MonthlyOverheadCosts` 表（月度管理成本記錄）[規格:L65-L96]**
-- [ ] 11.1.2.1 主鍵 `overhead_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L69]
-- [ ] 11.1.2.2 關聯欄位：`cost_type_id` (NOT NULL) [規格:L70]
-- [ ] 11.1.2.3 欄位：`year`, `month` (INTEGER NOT NULL) [規格:L71-L72]
-- [ ] 11.1.2.4 欄位：`amount` (REAL NOT NULL) [規格:L73]
-- [ ] 11.1.2.5 欄位：`notes`, `recorded_by`, `recorded_at` [規格:L74-L76]
-- [ ] 11.1.2.6 審計與刪除：`updated_at`, `is_deleted` [規格:L77-L78]
-- [ ] 11.1.2.7 外鍵：`cost_type_id` REFERENCES OverheadCostTypes(cost_type_id) [規格:L80]
-- [ ] 11.1.2.8 外鍵：`recorded_by` REFERENCES Users(user_id) [規格:L81]
-- [ ] 11.1.2.9 UNIQUE(cost_type_id, year, month) 防重複 [規格:L82]
-- [ ] 11.1.2.10 索引：`idx_monthly_overhead_date` ON (year, month) [規格:L85]
-- [ ] 11.1.2.11 索引：`idx_monthly_overhead_type` ON (cost_type_id) [規格:L86]
+- [x] 11.1.2.1 主鍵 `overhead_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L69]
+- [x] 11.1.2.2 關聯欄位：`cost_type_id` (NOT NULL) [規格:L70]
+- [x] 11.1.2.3 欄位：`year`, `month` (INTEGER NOT NULL) [規格:L71-L72]
+- [x] 11.1.2.4 欄位：`amount` (REAL NOT NULL) [規格:L73]
+- [x] 11.1.2.5 欄位：`notes`, `recorded_by`, `recorded_at` [規格:L74-L76]
+- [x] 11.1.2.6 審計與刪除：`updated_at`, `is_deleted` [規格:L77-L78]
+- [x] 11.1.2.7 外鍵：`cost_type_id` REFERENCES OverheadCostTypes(cost_type_id) [規格:L80]
+- [x] 11.1.2.8 外鍵：`recorded_by` REFERENCES Users(user_id) [規格:L81]
+- [x] 11.1.2.9 UNIQUE(cost_type_id, year, month) 防重複 [規格:L82]
+- [x] 11.1.2.10 索引：`idx_monthly_overhead_date` ON (year, month) [規格:L85]
+- [x] 11.1.2.11 索引：`idx_monthly_overhead_type` ON (cost_type_id) [規格:L86]
 
 ---
 
 #### 11.2 成本項目類型管理 API（4個）[規格:L283-L314]
 
 **11.2.1 GET /api/v1/admin/overhead-types（查詢所有成本項目類型）[規格:L286]**
-- [ ] 11.2.1.1 權限：authMiddleware + adminMiddleware
-- [ ] 11.2.1.2 查詢參數：無
-- [ ] 11.2.1.3 Repository 查詢所有 OverheadCostTypes（is_active=1）
-- [ ] 11.2.1.4 返回列表（含 allocation_method）
-- [ ] 11.2.1.5 添加 OpenAPI 註解
+- [x] 11.2.1.1 權限：authMiddleware + adminMiddleware
+- [x] 11.2.1.2 查詢參數：無
+- [x] 11.2.1.3 Repository 查詢所有 OverheadCostTypes（is_active=1）
+- [x] 11.2.1.4 返回列表（含 allocation_method）
+- [x] 11.2.1.5 添加 OpenAPI 註解
 
 **11.2.2 POST /api/v1/admin/overhead-types（新增成本項目類型）[規格:L287, L293-L313]**
-- [ ] 11.2.2.1 權限：authMiddleware + adminMiddleware
-- [ ] 11.2.2.2 請求 Body：cost_code, cost_name, category, allocation_method, description [規格:L295-L300]
-- [ ] 11.2.2.3 驗證 cost_code 唯一性
-- [ ] 11.2.2.4 驗證 category IN ('fixed', 'variable')
-- [ ] 11.2.2.5 驗證 allocation_method IN ('per_employee', 'per_hour', 'per_revenue')
-- [ ] 11.2.2.6 Service 創建記錄
-- [ ] 11.2.2.7 返回 201 Created [規格:L304-L312]
+- [x] 11.2.2.1 權限：authMiddleware + adminMiddleware
+- [x] 11.2.2.2 請求 Body：cost_code, cost_name, category, allocation_method, description [規格:L295-L300]
+- [x] 11.2.2.3 驗證 cost_code 唯一性
+- [x] 11.2.2.4 驗證 category IN ('fixed', 'variable')
+- [x] 11.2.2.5 驗證 allocation_method IN ('per_employee', 'per_hour', 'per_revenue')
+- [x] 11.2.2.6 Service 創建記錄
+- [x] 11.2.2.7 返回 201 Created [規格:L304-L312]
 
 **11.2.3 PUT /api/v1/admin/overhead-types/:id（更新成本項目類型）[規格:L288]**
-- [ ] 11.2.3.1 權限：authMiddleware + adminMiddleware
-- [ ] 11.2.3.2 路徑參數：id（cost_type_id）
-- [ ] 11.2.3.3 請求 Body：允許更新的欄位
-- [ ] 11.2.3.4 Service 更新記錄
-- [ ] 11.2.3.5 返回更新後的數據
+- [x] 11.2.3.1 權限：authMiddleware + adminMiddleware
+- [x] 11.2.3.2 路徑參數：id（cost_type_id）
+- [x] 11.2.3.3 請求 Body：允許更新的欄位
+- [x] 11.2.3.4 Service 更新記錄
+- [x] 11.2.3.5 返回更新後的數據
 
 **11.2.4 DELETE /api/v1/admin/overhead-types/:id（刪除成本項目類型）[規格:L289]**
-- [ ] 11.2.4.1 權限：authMiddleware + adminMiddleware
-- [ ] 11.2.4.2 路徑參數：id
-- [ ] 11.2.4.3 Service 軟刪除（is_active=0）
-- [ ] 11.2.4.4 返回成功響應
-- [ ] 11.2.4.5 添加 OpenAPI 註解
+- [x] 11.2.4.1 權限：authMiddleware + adminMiddleware
+- [x] 11.2.4.2 路徑參數：id
+- [x] 11.2.4.3 Service 軟刪除（is_active=0）
+- [x] 11.2.4.4 返回成功響應
+- [x] 11.2.4.5 添加 OpenAPI 註解
 
 ---
 
 #### 11.3 月度成本記錄 API（4個）[規格:L316-L348]
 
 **11.3.1 GET /api/v1/admin/overhead-costs（查詢月度成本）[規格:L319]**
-- [ ] 11.3.1.1 權限：authMiddleware + adminMiddleware
-- [ ] 11.3.1.2 查詢參數：year, month（必填）
-- [ ] 11.3.1.3 Repository 查詢（JOIN OverheadCostTypes）
-- [ ] 11.3.1.4 返回列表（含 cost_name）
-- [ ] 11.3.1.5 添加 OpenAPI 註解
+- [x] 11.3.1.1 權限：authMiddleware + adminMiddleware
+- [x] 11.3.1.2 查詢參數：year, month（必填）
+- [x] 11.3.1.3 Repository 查詢（JOIN OverheadCostTypes）
+- [x] 11.3.1.4 返回列表（含 cost_name）
+- [x] 11.3.1.5 添加 OpenAPI 註解
 
 **11.3.2 POST /api/v1/admin/overhead-costs（新增月度成本）[規格:L320, L326-L347]**
-- [ ] 11.3.2.1 權限：authMiddleware + adminMiddleware
-- [ ] 11.3.2.2 請求 Body：cost_type_id, year, month, amount, notes [規格:L328-L333]
-- [ ] 11.3.2.3 驗證 cost_type_id 存在
-- [ ] 11.3.2.4 檢查 UNIQUE(cost_type_id, year, month) 防重複 [規格:L82]
-- [ ] 11.3.2.5 Service 創建記錄，recorded_by 自動設置
-- [ ] 11.3.2.6 返回 201 Created [規格:L337-L346]
+- [x] 11.3.2.1 權限：authMiddleware + adminMiddleware
+- [x] 11.3.2.2 請求 Body：cost_type_id, year, month, amount, notes [規格:L328-L333]
+- [x] 11.3.2.3 驗證 cost_type_id 存在
+- [x] 11.3.2.4 檢查 UNIQUE(cost_type_id, year, month) 防重複 [規格:L82]
+- [x] 11.3.2.5 Service 創建記錄，recorded_by 自動設置
+- [x] 11.3.2.6 返回 201 Created [規格:L337-L346]
 
 **11.3.3 PUT /api/v1/admin/overhead-costs/:id（更新月度成本）[規格:L321]**
-- [ ] 11.3.3.1 權限：authMiddleware + adminMiddleware
-- [ ] 11.3.3.2 路徑參數：id（overhead_id）
-- [ ] 11.3.3.3 請求 Body：amount, notes
-- [ ] 11.3.3.4 Service 更新記錄，updated_at 自動設置
-- [ ] 11.3.3.5 返回更新後的數據
+- [x] 11.3.3.1 權限：authMiddleware + adminMiddleware
+- [x] 11.3.3.2 路徑參數：id（overhead_id）
+- [x] 11.3.3.3 請求 Body：amount, notes
+- [x] 11.3.3.4 Service 更新記錄，updated_at 自動設置
+- [x] 11.3.3.5 返回更新後的數據
 
 **11.3.4 DELETE /api/v1/admin/overhead-costs/:id（刪除月度成本）[規格:L322]**
-- [ ] 11.3.4.1 權限：authMiddleware + adminMiddleware
-- [ ] 11.3.4.2 路徑參數：id
-- [ ] 11.3.4.3 Service 軟刪除（is_deleted=1）
-- [ ] 11.3.4.4 返回成功響應
-- [ ] 11.3.4.5 添加 OpenAPI 註解
+- [x] 11.3.4.1 權限：authMiddleware + adminMiddleware
+- [x] 11.3.4.2 路徑參數：id
+- [x] 11.3.4.3 Service 軟刪除（is_deleted=1）
+- [x] 11.3.4.4 返回成功響應
+- [x] 11.3.4.5 添加 OpenAPI 註解
 
 ---
 
@@ -3042,4 +3042,6 @@
 
 **最後更新：** 2025-10-29  
 **狀態：** ✅ 計畫已生成，等待批准開始執行
+
+
 
