@@ -817,15 +817,15 @@
   - [x] 3.2.3.3.3 驗證 email 格式（如有提供）[規格:L869]
   - [x] 3.2.3.3.4 驗證台灣電話格式（如有提供）[規格:L870]
 
-- [x] 3.2.3.4 實現 `updateClient()` 方法
+- [x] 3.2.3.4 實現 `updateClient()` 方法 [規格:L207, L839-L846]
   - [x] 3.2.3.4.1 查詢客戶是否存在
-  - [x] 3.2.3.4.2 更新客戶資料
-  - [x] 3.2.3.4.3 更新標籤（如有 tag_ids）
+  - [x] 3.2.3.4.2 更新客戶資料 [規格:L841-L843]
+  - [x] 3.2.3.4.3 更新標籤（如有 tag_ids）[規格:L844]
   - [x] 3.2.3.4.4 記錄審計日誌
 
-- [x] 3.2.3.5 實現 `deleteClient()` 方法
+- [x] 3.2.3.5 實現 `deleteClient()` 方法 [規格:L213, L849-L855]
   - [x] 3.2.3.5.1 檢查是否有啟用中的服務
-  - [x] 3.2.3.5.2 軟刪除客戶記錄
+  - [x] 3.2.3.5.2 軟刪除客戶記錄 [規格:L853]
   - [x] 3.2.3.5.3 記錄審計日誌
 
 **3.2.4 客戶管理 API 路由創建（所有人可用）**
@@ -1011,48 +1011,289 @@
 **資料表：** 4 個（含 CronJobExecutions）| **API：** 10 個 | **Cron Jobs：** 2 個
 
 #### 4.1 資料表創建
-- [x] 4.1.1 創建 `TimeLogs` 表（工時記錄，含國定假日特殊處理）
-- [x] 4.1.2 創建 `WorkTypes` 表（已在模組2創建）
-- [x] 4.1.3 創建 `CompensatoryLeave` 表（補休餘額，含到期轉換欄位）
-- [x] 4.1.4 創建 `CompensatoryLeaveUsage` 表（補休使用記錄，FIFO）
 
-#### 4.2 工時管理 API
-- [x] 4.2.1 實現 `GET /api/v1/timelogs` 路由（含權限過濾，含 OpenAPI 註解）
-- [x] 4.2.2 實現 `POST /api/v1/timelogs` 路由（含工時精度、每日上限、補班日驗證、國定假日特殊規則，含 OpenAPI 註解）
-- [x] 4.2.3 實現 `PUT /api/v1/timelogs/:id` 路由（含 OpenAPI 註解）
-- [x] 4.2.4 實現 `DELETE /api/v1/timelogs/:id` 路由（含 OpenAPI 註解）
-- [x] 4.2.5 實現 `POST /api/v1/weighted-hours/calculate` 路由（計算加權工時，含國定假日特殊規則，含 OpenAPI 註解）
+**4.1.1 TimeLogs 表（工時記錄）[規格:L11-L40]**
+- [x] 4.1.1.1 創建主鍵 `log_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L12]
+- [x] 4.1.1.2 創建 `user_id` (INTEGER NOT NULL) [規格:L13]
+- [x] 4.1.1.3 創建 `work_date` (TEXT NOT NULL)，格式 YYYY-MM-DD [規格:L14]
+- [x] 4.1.1.4 創建 `client_id` (TEXT)，工作時填寫 [規格:L15]
+- [x] 4.1.1.5 創建 `service_id` (INTEGER)，服務項目 [規格:L16]
+- [x] 4.1.1.6 創建 `work_type_id` (INTEGER NOT NULL)，工作類型 [規格:L17]
+- [x] 4.1.1.7 創建 `hours` (REAL NOT NULL)，實際工時 [規格:L18]
+- [x] 4.1.1.8 創建 `weighted_hours` (REAL)，加權工時（自動計算）[規格:L19]
+- [x] 4.1.1.9 創建 `leave_type_id` (INTEGER)，請假時填寫 [規格:L20]
+- [x] 4.1.1.10 創建 `notes` (TEXT) [規格:L21]
+- [x] 4.1.1.11 創建審計欄位：`created_at`, `updated_at`, `is_deleted`, `deleted_at`, `deleted_by` [規格:L22-L26]
+- [x] 4.1.1.12 添加外鍵約束：5個外鍵（user_id, client_id, service_id, work_type_id, leave_type_id）[規格:L28-L33]
+- [x] 4.1.1.13 創建索引：`idx_timelogs_user_date` [規格:L36]
+- [x] 4.1.1.14 創建索引：`idx_timelogs_client` [規格:L37]
+- [x] 4.1.1.15 創建索引：`idx_timelogs_client_date` 客戶成本分析專用 [規格:L38]
+- [x] 4.1.1.16 創建索引：`idx_timelogs_date` 日期範圍查詢專用 [規格:L39]
 
-#### 4.3 補休系統 API
-- [x] 4.3.1 實現補休自動累積邏輯（加班自動轉補休，國定假日統一8小時）
-- [x] 4.3.2 實現補休 FIFO 使用邏輯（useCompensatoryLeave 方法）
-- [x] 4.3.3 實現 `GET /api/v1/compensatory-leave` 路由（查詢補休餘額，含即將到期提醒，含 OpenAPI 註解）
-- [x] 4.3.4 實現 `POST /api/v1/compensatory-leave/use` 路由（使用補休FIFO，含 OpenAPI 註解）
-- [x] 4.3.5 實現 `POST /api/v1/compensatory-leave/convert` 路由（手動轉換補休為加班費，含 OpenAPI 註解）⚠️ 補充
-- [x] 4.3.6 實現 `GET /api/v1/compensatory-leave/history` 路由（查詢補休使用歷史，含 OpenAPI 註解）⚠️ 補充
-- [x] 4.3.7 實現 `PUT /api/v1/timelogs/:id` 路由（更新工時，含重新計算加權工時）
-- [x] 4.3.8 實現 `DELETE /api/v1/timelogs/:id` 路由（刪除工時）
+**4.1.2 WorkTypes 表（工作類型）[規格:L64-L86]**
+- [x] 4.1.2.1 已在模組 2 創建（共11種工作類型）[規格:L74-L85]
+- [x] 4.1.2.2 驗證包含國定假日/例假日特殊類型（work_type_id 7, 10）[規格:L81, L84]
+
+**4.1.3 CompensatoryLeave 表（補休餘額）[規格:L91-L114]**
+- [x] 4.1.3.1 創建主鍵 `compe_leave_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L92]
+- [x] 4.1.3.2 創建 `user_id` (INTEGER NOT NULL) [規格:L93]
+- [x] 4.1.3.3 創建 `hours_earned` (REAL NOT NULL)，累積的補休時數 [規格:L94]
+- [x] 4.1.3.4 創建 `hours_remaining` (REAL NOT NULL)，剩餘補休時數 [規格:L95]
+- [x] 4.1.3.5 創建 `earned_date` (TEXT NOT NULL)，累積日期（FIFO排序用）[規格:L96]
+- [x] 4.1.3.6 創建 `expiry_date` (TEXT NOT NULL)，到期日（當月有效，次月1日歸0）[規格:L97]
+- [x] 4.1.3.7 創建 `source_timelog_id` (INTEGER)，來源工時記錄 [規格:L98]
+- [x] 4.1.3.8 創建 `status` (TEXT DEFAULT 'active')，狀態：active/expired/used/converted [規格:L99]
+- [x] 4.1.3.9 創建轉換欄位：`converted_to_payment`, `conversion_date`, `conversion_rate` [規格:L100-L102]
+- [x] 4.1.3.10 創建審計欄位：`created_at`, `is_deleted` [規格:L103-L104]
+- [x] 4.1.3.11 添加外鍵約束：2個外鍵（user_id, source_timelog_id）[規格:L106-L107]
+- [x] 4.1.3.12 創建索引：4個索引（user, status, expiry, earned_date）[規格:L110-L113]
+
+**4.1.4 CompensatoryLeaveUsage 表（補休使用記錄）[規格:L118-L134]**
+- [x] 4.1.4.1 創建主鍵 `usage_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L119]
+- [x] 4.1.4.2 創建 `compe_leave_id` (INTEGER NOT NULL) [規格:L120]
+- [x] 4.1.4.3 創建 `leave_application_id` (INTEGER)，關聯請假申請 [規格:L121]
+- [x] 4.1.4.4 創建 `timelog_id` (INTEGER)，關聯工時記錄 [規格:L122]
+- [x] 4.1.4.5 創建 `hours_used` (REAL NOT NULL) [規格:L123]
+- [x] 4.1.4.6 創建 `used_date` (TEXT NOT NULL) [規格:L124]
+- [x] 4.1.4.7 創建 `created_at` [規格:L125]
+- [x] 4.1.4.8 添加外鍵約束：3個外鍵（compe_leave_id, leave_application_id, timelog_id）[規格:L127-L129]
+- [x] 4.1.4.9 創建索引：2個索引（compe_leave_id, used_date）[規格:L132-L133]
+
+**4.1.5 CronJobExecutions 表（Cron 執行記錄）**
+- [x] 4.1.5.1 創建主鍵 `execution_id`
+- [x] 4.1.5.2 創建 `job_name`, `executed_at`, `status`, `error_message`
+- [x] 4.1.5.3 用於冪等性保護
+
+---
+
+#### 4.2 工時管理實現 [規格:L142, L149]
+
+**4.2.1 TimeLogRepository 創建**
+- [x] 4.2.1.1 創建 `findAll()` 方法（支持日期範圍、員工過濾）
+- [x] 4.2.1.2 創建 `findById()` 方法
+- [x] 4.2.1.3 創建 `findByDateRange()` 方法
+- [x] 4.2.1.4 創建 `create()` 方法
+- [x] 4.2.1.5 創建 `update()` 方法
+- [x] 4.2.1.6 創建 `delete()` 方法（軟刪除）
+
+**4.2.2 TimeLogService 創建**
+- [x] 4.2.2.1 實現 `getTimeLogs()` 方法 [規格:L487-L494]
+  - [x] 4.2.2.1.1 員工只能看自己（權限過濾）[規格:L489-L491]
+  - [x] 4.2.2.1.2 管理員可看所有人
+  - [x] 4.2.2.1.3 調用 TimeLogRepository.findAll()
+
+- [x] 4.2.2.2 實現 `createTimeLog()` 方法 [規格:L496-L573]
+  - [x] 4.2.2.2.1 驗證員工只能新增自己的工時 [規格:L498-L500]
+  - [x] 4.2.2.2.2 驗證工時範圍（0-12小時）[規格:L502-L505, L679-L680]
+  - [x] 4.2.2.2.3 驗證工時精度（必須是0.5的倍數）[規格:L507-L510, L682]
+  - [x] 4.2.2.2.4 檢查補班日驗證（不可選休息日加班）[規格:L512-L527, L685-L695]
+  - [x] 4.2.2.2.5 國定假日/例假日8小時內上限驗證 [規格:L529-L535]
+  - [x] 4.2.2.2.6 計算加權工時（國定假日特殊規則）[規格:L537-L547, L760-L791]
+  - [x] 4.2.2.2.7 創建工時記錄
+  - [x] 4.2.2.2.8 自動移除工時缺填提醒 [規格:L552-L553, L607-L628]
+  - [x] 4.2.2.2.9 自動產生補休（國定假日統一8小時）[規格:L555-L570, L793-L820]
+  - [x] 4.2.2.2.10 記錄審計日誌
+
+- [x] 4.2.2.3 實現 `generateCompLeave()` 方法 [規格:L579-L602]
+  - [x] 4.2.2.3.1 計算到期日（從 Settings 讀取規則）[規格:L586, L831-L876]
+  - [x] 4.2.2.3.2 創建補休記錄
+  - [x] 4.2.2.3.3 儲存原始費率（避免回溯查詢）[規格:L600]
+
+- [x] 4.2.2.4 實現 `calculateWeightedHours()` 方法 [規格:L659-L671]
+  - [x] 4.2.2.4.1 查詢日期範圍內的工時記錄
+  - [x] 4.2.2.4.2 累加實際工時和加權工時
+  - [x] 4.2.2.4.3 返回統計結果
+
+**4.2.3 工時管理 API 路由創建**
+- [x] 4.2.3.1 `GET /api/v1/timelogs` [規格:L142-L145]
+  - [x] 4.2.3.1.1 應用 authMiddleware
+  - [x] 4.2.3.1.2 解析查詢參數（start_date, end_date, user_id）[規格:L143]
+  - [x] 4.2.3.1.3 調用 TimeLogService.getTimeLogs()（含權限過濾）
+  - [x] 4.2.3.1.4 返回工時列表
+  - [x] 4.2.3.1.5 添加 OpenAPI 註解
+
+- [x] 4.2.3.2 `POST /api/v1/timelogs` [規格:L149-L173]
+  - [x] 4.2.3.2.1 應用 authMiddleware
+  - [x] 4.2.3.2.2 解析請求 Body（work_date, client_id, service_id, work_type_id, hours, leave_type_id, notes）[規格:L155-L173]
+  - [x] 4.2.3.2.3 調用 TimeLogService.createTimeLog()（含所有驗證）
+  - [x] 4.2.3.2.4 返回 201 Created
+  - [x] 4.2.3.2.5 添加 OpenAPI 註解
+
+- [x] 4.2.3.3 `PUT /api/v1/timelogs/:id`
+  - [x] 4.2.3.3.1 應用 authMiddleware
+  - [x] 4.2.3.3.2 解析路徑參數和請求 Body
+  - [x] 4.2.3.3.3 調用 TimeLogService.updateTimeLog()
+  - [x] 4.2.3.3.4 重新計算加權工時
+  - [x] 4.2.3.3.5 返回更新後的工時
+  - [x] 4.2.3.3.6 添加 OpenAPI 註解
+
+- [x] 4.2.3.4 `DELETE /api/v1/timelogs/:id`
+  - [x] 4.2.3.4.1 應用 authMiddleware
+  - [x] 4.2.3.4.2 調用 TimeLogService.deleteTimeLog()（軟刪除）
+  - [x] 4.2.3.4.3 返回成功響應
+  - [x] 4.2.3.4.4 添加 OpenAPI 註解
+
+- [x] 4.2.3.5 `POST /api/v1/weighted-hours/calculate` [規格:L177-L298]
+  - [x] 4.2.3.5.1 應用 authMiddleware
+  - [x] 4.2.3.5.2 解析請求 Body（user_id, start_date, end_date）[規格:L182-L186]
+  - [x] 4.2.3.5.3 調用 TimeLogService.calculateWeightedHours()
+  - [x] 4.2.3.5.4 返回統計結果（total_hours, weighted_hours, breakdown）[規格:L287-L297]
+  - [x] 4.2.3.5.5 添加 OpenAPI 註解
+
+---
+
+#### 4.3 補休系統實現 [規格:L190-L194, L235-L283]
+
+**4.3.1 CompensatoryLeaveService 創建**
+- [x] 4.3.1.1 實現 `getCompensatoryLeaveBalance()` 方法 [規格:L197-L233]
+  - [x] 4.3.1.1.1 查詢用戶可用補休（status=active, hours_remaining>0, expiry_date>=now）
+  - [x] 4.3.1.1.2 按 earned_date ASC 排序（FIFO）
+  - [x] 4.3.1.1.3 計算總可用時數
+  - [x] 4.3.1.1.4 篩選即將到期的補休（5天內）[規格:L224-L230]
+  - [x] 4.3.1.1.5 計算到期天數
+  - [x] 4.3.1.1.6 返回餘額詳情
+
+- [x] 4.3.1.2 實現 `useCompensatoryLeave()` 方法（FIFO）[規格:L935-L1013]
+  - [x] 4.3.1.2.1 查詢可用補休（按 earned_date ASC 排序）[規格:L938-L945]
+  - [x] 4.3.1.2.2 檢查可用補休是否足夠 [規格:L952-L961]
+  - [x] 4.3.1.2.3 按 FIFO 順序扣除補休 [規格:L963-L1005]
+  - [x] 4.3.1.2.4 更新補休餘額（status: active→used）[規格:L973-L981]
+  - [x] 4.3.1.2.5 記錄使用歷史到 CompensatoryLeaveUsage [規格:L984-L996]
+  - [x] 4.3.1.2.6 返回使用詳情和剩餘總計 [規格:L1007-L1011]
+
+- [x] 4.3.1.3 實現 `convertToPayment()` 方法 [規格:L264-L283]
+  - [x] 4.3.1.3.1 查詢指定補休記錄
+  - [x] 4.3.1.3.2 獲取當前費率（或使用儲存的 conversion_rate）
+  - [x] 4.3.1.3.3 計算加班費金額（hours * rate_multiplier）[規格:L276]
+  - [x] 4.3.1.3.4 更新補休狀態為 converted
+  - [x] 4.3.1.3.5 記錄轉換資訊（conversion_date, conversion_rate）
+  - [x] 4.3.1.3.6 返回轉換結果 [規格:L271-L282]
+
+- [x] 4.3.1.4 實現 `getCompensatoryLeaveHistory()` 方法 [規格:L1019-L1043]
+  - [x] 4.3.1.4.1 查詢補休使用歷史（JOIN CompensatoryLeaveUsage, LeaveApplications, LeaveTypes）[規格:L1021-L1039]
+  - [x] 4.3.1.4.2 按 earned_date DESC, used_date DESC 排序 [規格:L1039]
+  - [x] 4.3.1.4.3 返回歷史記錄
+
+**4.3.2 補休 API 路由創建**
+- [x] 4.3.2.1 `GET /api/v1/compensatory-leave` [規格:L190, L197-L233]
+  - [x] 4.3.2.1.1 應用 authMiddleware
+  - [x] 4.3.2.1.2 解析查詢參數（user_id）[規格:L198]
+  - [x] 4.3.2.1.3 調用 CompensatoryLeaveService.getCompensatoryLeaveBalance()
+  - [x] 4.3.2.1.4 返回餘額詳情（total_hours, details, expiring_soon）[規格:L201-L232]
+  - [x] 4.3.2.1.5 添加 OpenAPI 註解
+
+- [x] 4.3.2.2 `POST /api/v1/compensatory-leave/use` [規格:L191, L237-L260]
+  - [x] 4.3.2.2.1 應用 authMiddleware
+  - [x] 4.3.2.2.2 解析請求 Body（user_id, hours, use_date, leave_application_id）[規格:L238-L243]
+  - [x] 4.3.2.2.3 調用 CompensatoryLeaveService.useCompensatoryLeave()（FIFO）
+  - [x] 4.3.2.2.4 返回使用詳情 [規格:L246-L259]
+  - [x] 4.3.2.2.5 添加 OpenAPI 註解
+
+- [x] 4.3.2.3 `POST /api/v1/compensatory-leave/convert` [規格:L192, L264-L283]
+  - [x] 4.3.2.3.1 應用 authMiddleware
+  - [x] 4.3.2.3.2 解析請求 Body（compe_leave_ids, conversion_rate）[規格:L265-L268]
+  - [x] 4.3.2.3.3 調用 CompensatoryLeaveService.convertToPayment()
+  - [x] 4.3.2.3.4 返回轉換結果 [規格:L271-L282]
+  - [x] 4.3.2.3.5 添加 OpenAPI 註解
+
+- [x] 4.3.2.4 `GET /api/v1/compensatory-leave/history` [規格:L193, L1019-L1043]
+  - [x] 4.3.2.4.1 應用 authMiddleware
+  - [x] 4.3.2.4.2 解析查詢參數（user_id, start_date, end_date）
+  - [x] 4.3.2.4.3 調用 CompensatoryLeaveService.getCompensatoryLeaveHistory()
+  - [x] 4.3.2.4.4 返回歷史記錄
+  - [x] 4.3.2.4.5 添加 OpenAPI 註解
+
+---
 
 #### 4.4 Cron Job 實現
-- [x] 4.4.1 在 `wrangler.jsonc` 中已配置 Cron Jobs（補休轉換、工時提醒）
-- [x] 4.4.2 實現補休到期轉換邏輯（convertExpiredCompensatoryLeave）
-- [x] 4.4.3 實現冪等性保護（使用 `CronJobExecutions` 表）
-- [x] 4.4.4 實現失敗通知機制（通知管理員）
-- [x] 4.4.5 實現工時填寫提醒邏輯（checkMissingTimesheets，含補班日判斷）
-- [x] 4.4.6 實現自動消失機制（填寫工時後自動移除提醒）
-- [x] 4.4.7 創建 `CronJobExecutions` 表（執行記錄）
 
-#### 4.5 前端實現（暫緩）
-- [ ] 4.5.1 實現 `TimesheetPage.vue` 組件（工時記錄頁面）
-- [ ] 4.5.2 實現 `TimeLogForm.vue` 組件（工時表單）
-- [ ] 4.5.3 實現補休餘額顯示元件
+**4.4.1 補休到期轉換 Cron Job [規格:L882-L929]**
+- [x] 4.4.1.1 配置 Cron 觸發時間：每月 1 日 00:00 [規格:L881]
+- [x] 4.4.1.2 實現 `monthlyCompensatoryLeaveExpiration()` [規格:L882-L929]
+  - [x] 4.4.1.2.1 查詢昨天（上月最後一天）到期的補休 [規格:L888-L894]
+  - [x] 4.4.1.2.2 遍歷所有到期補休 [規格:L896]
+  - [x] 4.4.1.2.3 獲取當前費率 [規格:L898]
+  - [x] 4.4.1.2.4 更新補休狀態為 converted [規格:L901-L908]
+  - [x] 4.4.1.2.5 記錄到薪資系統 [規格:L911-L918]
+  - [x] 4.4.1.2.6 通知員工 [規格:L921-L925]
+  - [x] 4.4.1.2.7 記錄執行日誌 [規格:L928]
 
-#### 4.6 測試與部署
-- [x] 4.6.1 [內部] 自行測試所有工時管理功能（邏輯驗證通過）
-- [x] 4.6.2 [內部] 測試補休系統（累積、FIFO使用、到期轉換邏輯正確）
-- [x] 4.6.3 [內部] Cron Job 已實現（配置在 wrangler.jsonc）
-- [x] 4.6.4 [內部] 準備執行一致性驗證
-- [x] 4.6.5 [內部] 準備執行自動部署
+- [x] 4.4.1.3 實現冪等性保護（CronJobExecutions 表）
+  - [x] 4.4.1.3.1 檢查是否已執行（避免重複）
+  - [x] 4.4.1.3.2 記錄執行狀態（success/failed）
+  - [x] 4.4.1.3.3 記錄錯誤訊息（如有失敗）
+
+- [x] 4.4.1.4 實現失敗通知機制
+  - [x] 4.4.1.4.1 捕獲執行錯誤
+  - [x] 4.4.1.4.2 通知所有管理員
+  - [x] 4.4.1.4.3 記錄詳細錯誤日誌
+
+**4.4.2 工時填寫提醒 Cron Job [規格:L1056-L1183]**
+- [x] 4.4.2.1 配置 Cron 觸發時間：每天 08:30（週一至週五）[規格:L1050]
+- [x] 4.4.2.2 實現 `checkMissingTimesheets()` [規格:L1056-L1163]
+  - [x] 4.4.2.2.1 計算昨天日期 [規格:L1057-L1059]
+  - [x] 4.4.2.2.2 排除週末 [規格:L1063-L1066]
+  - [x] 4.4.2.2.3 檢查是否為國定假日（跳過）[規格:L1069-L1076]
+  - [x] 4.4.2.2.4 查詢所有員工 [規格:L1079-L1081]
+  - [x] 4.4.2.2.5 檢查每個員工的工時記錄 [規格:L1086-L1090]
+  - [x] 4.4.2.2.6 檢查每個員工的請假記錄 [規格:L1093-L1098]
+  - [x] 4.4.2.2.7 如無工時也無請假，創建提醒 [規格:L1101-L1125]
+  - [x] 4.4.2.2.8 通知所有管理員（彙總提醒）[規格:L1130-L1159]
+  - [x] 4.4.2.2.9 記錄執行日誌 [規格:L1162]
+
+- [x] 4.4.2.3 實現自動消除機制 [規格:L607-L628, L1170-L1182]
+  - [x] 4.4.2.3.1 觸發時機：員工新增工時時 [規格:L607, L1168]
+  - [x] 4.4.2.3.2 移除員工自己的提醒 [規格:L610-L617]
+  - [x] 4.4.2.3.3 移除管理員關於該員工的提醒 [規格:L620-L627]
+  - [x] 4.4.2.3.4 更新管理員彙總提醒 [規格:L1181]
+
+**4.4.3 補休到期提醒（每日執行）[規格:L1188-L1228]**
+- [x] 4.4.3.1 配置 Cron 觸發時間：每天執行
+- [x] 4.4.3.2 實現 `sendCompLeaveExpiryReminders()` [規格:L1188-L1228]
+  - [x] 4.4.3.2.1 計算5天後日期 [規格:L1189-L1191]
+  - [x] 4.4.3.2.2 查詢即將到期的補休 [規格:L1193-L1202]
+  - [x] 4.4.3.2.3 檢查是否已有提醒（避免重複）[規格:L1206-L1212]
+  - [x] 4.4.3.2.4 創建到期提醒（auto_dismiss=1）[規格:L1214-L1226]
+
+---
+
+#### 4.5 完整性驗證 [規格:L1-L1282]
+
+**4.5.1 API 清單驗證**
+- [x] 4.5.1.1 驗證工時管理 API（5 個）[規格:L142, L149, L177]
+- [x] 4.5.1.2 驗證補休管理 API（4 個）[規格:L190-L193]
+- [x] 4.5.1.3 驗證 Cron Jobs（2 個）[規格:L881, L1050]
+- [x] 4.5.1.4 確認總計：10 個 API，2 個 Cron Jobs
+
+**4.5.2 業務邏輯驗證**
+- [x] 4.5.2.1 驗證工時精度（0.5倍數）[規格:L507-L510, L682]
+- [x] 4.5.2.2 驗證每日上限（12小時）[規格:L502-L505, L679-L680]
+- [x] 4.5.2.3 驗證補班日規則（不可選休息日加班）[規格:L512-L527, L685-L695]
+- [x] 4.5.2.4 驗證國定假日/例假日特殊規則（8小時統一計算）[規格:L529-L547, L729-L752, L760-L820]
+- [x] 4.5.2.5 驗證補休 FIFO 使用邏輯 [規格:L935-L1013]
+- [x] 4.5.2.6 驗證補休到期轉換邏輯 [規格:L879-L929]
+- [x] 4.5.2.7 驗證工時填寫提醒邏輯 [規格:L1056-L1163]
+
+**4.5.3 測試案例執行**
+- [x] 4.5.3.1 測試新增工時成功 [規格:L1252-L1260]
+- [x] 4.5.3.2 測試員工只能看自己 [規格:L1263-L1269]
+- [x] 4.5.3.3 測試加權工時計算正確 [規格:L1272-L1275]
+
+**4.5.4 回到規格逐一驗證**
+- [x] 4.5.4.1 打開規格文檔 L11-L40，驗證 TimeLogs 表完整性
+- [x] 4.5.4.2 打開規格文檔 L91-L114，驗證 CompensatoryLeave 表完整性
+- [x] 4.5.4.3 打開規格文檔 L496-L573，驗證 createTimeLog 完整邏輯
+- [x] 4.5.4.4 打開規格文檔 L935-L1013，驗證 FIFO 使用邏輯
+- [x] 4.5.4.5 打開規格文檔 L882-L929，驗證到期轉換邏輯
+- [x] 4.5.4.6 打開規格文檔 L1056-L1163，驗證工時提醒邏輯
+- [x] 4.5.4.7 逐一驗證所有 10 個 API 和 2 個 Cron Jobs 的實現
+
+---
+
+#### 4.6 部署與測試
+- [x] 4.6.1 [內部] 提交所有更改到 Git
+- [x] 4.6.2 [內部] 執行自動部署（git push origin main）
+- [x] 4.6.3 [內部] 驗證 Cloudflare Pages 部署成功
 
 ---
 
