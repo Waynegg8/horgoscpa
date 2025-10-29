@@ -788,28 +788,28 @@
   - [x] 3.2.1.1.5 支持分頁（limit, offset）[規格:L152-L153]
   - [x] 3.2.1.1.6 處理標籤字串轉陣列 [規格:L158-L161]
 
-- [x] 3.2.1.2 創建 `findById()` 方法
+- [x] 3.2.1.2 創建 `findById()` 方法 [規格:L806]
 - [x] 3.2.1.3 創建 `findByClientId()` 方法（檢查統一編號唯一性）[規格:L734]
 - [x] 3.2.1.4 創建 `create()` 方法 [規格:L790-L807]
-- [x] 3.2.1.5 創建 `update()` 方法
-- [x] 3.2.1.6 創建 `delete()` 方法（軟刪除）
+- [x] 3.2.1.5 創建 `update()` 方法 [規格:L839-L846]
+- [x] 3.2.1.6 創建 `delete()` 方法（軟刪除）[規格:L849-L855]
 
 **3.2.2 字段選擇器（Sparse Fieldsets）實現 [規格:L165-L183]**
-- [x] 3.2.2.1 支持 `?fields=client_id,company_name` 參數
+- [x] 3.2.2.1 支持 `?fields=client_id,company_name` 參數 [規格:L181]
 - [x] 3.2.2.2 動態構建 SELECT 子句 [規格:L169-L176]
-- [x] 3.2.2.3 減少網絡帶寬傳輸
+- [x] 3.2.2.3 減少網絡帶寬傳輸 [規格:L182]
 
 **3.2.3 ClientService 創建**
 - [x] 3.2.3.1 實現 `getClients()` 方法 [規格:L719-L727]
   - [x] 3.2.3.1.1 小型事務所設計：不過濾權限（員工可看所有客戶）[規格:L720-L724]
-  - [x] 3.2.3.1.2 調用 ClientRepository.findAll()
+  - [x] 3.2.3.1.2 調用 ClientRepository.findAll() [規格:L726]
 
 - [x] 3.2.3.2 實現 `createClient()` 方法 [規格:L729-L752]
   - [x] 3.2.3.2.1 調用 validate() 驗證資料 [規格:L731, L754-L761]
   - [x] 3.2.3.2.2 檢查統一編號唯一性 [規格:L734-L737, L865-L867]
   - [x] 3.2.3.2.3 創建客戶記錄 [規格:L740-L744]
   - [x] 3.2.3.2.4 處理標籤分配（如有 tag_ids）[規格:L747-L749]
-  - [x] 3.2.3.2.5 記錄審計日誌
+  - [x] 3.2.3.2.5 記錄審計日誌 [規格:L751]
 
 - [x] 3.2.3.3 實現 `validate()` 方法 [規格:L754-L761]
   - [x] 3.2.3.3.1 驗證統一編號為8位數字（正則：/^\d{8}$/）[規格:L755-L757, L865-L867]
@@ -818,50 +818,50 @@
   - [x] 3.2.3.3.4 驗證台灣電話格式（如有提供）[規格:L870]
 
 - [x] 3.2.3.4 實現 `updateClient()` 方法 [規格:L207, L839-L846]
-  - [x] 3.2.3.4.1 查詢客戶是否存在
-  - [x] 3.2.3.4.2 更新客戶資料 [規格:L841-L843]
-  - [x] 3.2.3.4.3 更新標籤（如有 tag_ids）[規格:L844]
-  - [x] 3.2.3.4.4 記錄審計日誌
+  - [x] 3.2.3.4.1 查詢客戶是否存在 [規格:L843-L844]
+  - [x] 3.2.3.4.2 更新客戶資料 [規格:L841-L843, L845]
+  - [x] 3.2.3.4.3 更新標籤（如有 tag_ids）[規格:L844, L846]
+  - [x] 3.2.3.4.4 記錄審計日誌 [規格:L845]
 
 - [x] 3.2.3.5 實現 `deleteClient()` 方法 [規格:L213, L849-L855]
-  - [x] 3.2.3.5.1 檢查是否有啟用中的服務
-  - [x] 3.2.3.5.2 軟刪除客戶記錄 [規格:L853]
-  - [x] 3.2.3.5.3 記錄審計日誌
+  - [x] 3.2.3.5.1 檢查是否有啟用中的服務 [規格:L852]
+  - [x] 3.2.3.5.2 軟刪除客戶記錄 [規格:L853-L854]
+  - [x] 3.2.3.5.3 記錄審計日誌 [規格:L854]
 
 **3.2.4 客戶管理 API 路由創建（所有人可用）**
-- [x] 3.2.4.1 `GET /api/v1/clients` [規格:L72-L98]
+- [x] 3.2.4.1 `GET /api/v1/clients` [規格:L72-L98, L820-L827]
   - [x] 3.2.4.1.1 應用 authMiddleware（所有人可用）[規格:L74, L876-L880]
-  - [x] 3.2.4.1.2 解析查詢參數（company_name, limit, offset, fields）[規格:L73]
-  - [x] 3.2.4.1.3 調用 ClientService.getClients()
-  - [x] 3.2.4.1.4 返回客戶列表（含標籤、負責人名稱、client_notes、payment_notes）[規格:L80-L92]
+  - [x] 3.2.4.1.2 解析查詢參數（company_name, limit, offset, fields）[規格:L73, L823]
+  - [x] 3.2.4.1.3 調用 ClientService.getClients() [規格:L825]
+  - [x] 3.2.4.1.4 返回客戶列表（含標籤、負責人名稱、client_notes、payment_notes）[規格:L80-L92, L826]
   - [x] 3.2.4.1.5 返回分頁資訊 [規格:L91]
   - [x] 3.2.4.1.6 添加 OpenAPI 註解
 
-- [x] 3.2.4.2 `POST /api/v1/clients` [規格:L187-L203]
-  - [x] 3.2.4.2.1 應用 authMiddleware（小型事務所：所有人可用）[規格:L188, L882-L884]
-  - [x] 3.2.4.2.2 解析請求 Body（client_id, company_name, assignee_user_id, phone, email, client_notes, payment_notes, tag_ids）[規格:L193-L202]
-  - [x] 3.2.4.2.3 調用 ClientService.createClient()
-  - [x] 3.2.4.2.4 返回 201 Created
+- [x] 3.2.4.2 `POST /api/v1/clients` [規格:L187-L203, L830-L837]
+  - [x] 3.2.4.2.1 應用 authMiddleware（小型事務所：所有人可用）[規格:L188, L882-L884, L830]
+  - [x] 3.2.4.2.2 解析請求 Body（client_id, company_name, assignee_user_id, phone, email, client_notes, payment_notes, tag_ids）[規格:L193-L202, L833]
+  - [x] 3.2.4.2.3 調用 ClientService.createClient() [規格:L835]
+  - [x] 3.2.4.2.4 返回 201 Created [規格:L836]
   - [x] 3.2.4.2.5 添加 OpenAPI 註解
 
 - [x] 3.2.4.3 `GET /api/v1/clients/:id` [規格:L72]
-  - [x] 3.2.4.3.1 應用 authMiddleware（所有人可用）
+  - [x] 3.2.4.3.1 應用 authMiddleware（所有人可用）[規格:L74]
   - [x] 3.2.4.3.2 解析路徑參數 client_id
   - [x] 3.2.4.3.3 調用 ClientService.getClientById()
   - [x] 3.2.4.3.4 返回客戶詳情
   - [x] 3.2.4.3.5 添加 OpenAPI 註解
 
-- [x] 3.2.4.4 `PUT /api/v1/clients/:id` [規格:L207-L209]
+- [x] 3.2.4.4 `PUT /api/v1/clients/:id` [規格:L207-L209, L839-L846]
   - [x] 3.2.4.4.1 應用 authMiddleware（所有人可用）[規格:L208]
-  - [x] 3.2.4.4.2 解析路徑參數和請求 Body
-  - [x] 3.2.4.4.3 調用 ClientService.updateClient()（含標籤更新）
-  - [x] 3.2.4.4.4 返回更新後的客戶
+  - [x] 3.2.4.4.2 解析路徑參數和請求 Body [規格:L843]
+  - [x] 3.2.4.4.3 調用 ClientService.updateClient()（含標籤更新）[規格:L845]
+  - [x] 3.2.4.4.4 返回更新後的客戶 [規格:L846]
   - [x] 3.2.4.4.5 添加 OpenAPI 註解
 
-- [x] 3.2.4.5 `DELETE /api/v1/clients/:id` [規格:L213-L215]
+- [x] 3.2.4.5 `DELETE /api/v1/clients/:id` [規格:L213-L215, L849-L856]
   - [x] 3.2.4.5.1 應用 authMiddleware（所有人可用）[規格:L214]
-  - [x] 3.2.4.5.2 調用 ClientService.deleteClient()（含服務檢查）
-  - [x] 3.2.4.5.3 返回成功響應
+  - [x] 3.2.4.5.2 調用 ClientService.deleteClient()（含服務檢查）[規格:L854]
+  - [x] 3.2.4.5.3 返回成功響應 [規格:L855]
   - [x] 3.2.4.5.4 添加 OpenAPI 註解
 
 ---
@@ -876,15 +876,15 @@
 - [x] 3.3.1.5 創建 `delete()` 方法（檢查使用情況）
 
 **3.3.2 TagService 創建**
-- [x] 3.3.2.1 實現 `getAllTags()` 方法
-- [x] 3.3.2.2 實現 `createTag()` 方法
+- [x] 3.3.2.1 實現 `getAllTags()` 方法 [規格:L219]
+- [x] 3.3.2.2 實現 `createTag()` 方法 [規格:L220]
   - [x] 3.3.2.2.1 驗證 tag_name 必填
   - [x] 3.3.2.2.2 檢查名稱唯一性
   - [x] 3.3.2.2.3 創建標籤記錄
   - [x] 3.3.2.2.4 記錄審計日誌
 
-- [x] 3.3.2.3 實現 `updateTag()` 方法
-- [x] 3.3.2.4 實現 `deleteTag()` 方法
+- [x] 3.3.2.3 實現 `updateTag()` 方法 [規格:L221]
+- [x] 3.3.2.4 實現 `deleteTag()` 方法 [規格:L222]
   - [x] 3.3.2.4.1 檢查標籤是否被使用
   - [x] 3.3.2.4.2 如被使用則拋出錯誤
   - [x] 3.3.2.4.3 刪除標籤
