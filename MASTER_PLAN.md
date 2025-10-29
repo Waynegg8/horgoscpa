@@ -1667,88 +1667,88 @@
 #### 9.1 資料表創建
 
 **9.1.1 ExternalArticles 表（外部文章/Blog）[規格:L11-L37]**
-- [ ] 9.1.1.1 創建主鍵 `article_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L12]
-- [ ] 9.1.1.2 創建 `title` (TEXT NOT NULL) [規格:L13]
-- [ ] 9.1.1.3 創建 `slug` (TEXT UNIQUE NOT NULL) 含註釋：URL 標識符 [規格:L14]
-- [ ] 9.1.1.4 創建 `summary` (TEXT) [規格:L15]
-- [ ] 9.1.1.5 創建 `content` (TEXT NOT NULL) 含註釋：HTML 內容 [規格:L16]
-- [ ] 9.1.1.6 創建 `featured_image` (TEXT) 含註釋：封面圖 URL [規格:L17]
-- [ ] 9.1.1.7 創建 `category`, `tags` 欄位 [規格:L18-L19]
-- [ ] 9.1.1.8 創建 `is_published`, `published_at`, `view_count` 欄位 [規格:L20-L22]
-- [ ] 9.1.1.9 創建 SEO 欄位：`seo_title`, `seo_description`, `seo_keywords` [規格:L23-L25]
-- [ ] 9.1.1.10 創建審計欄位：`created_by`, `created_at`, `updated_at`, `is_deleted` [規格:L26-L29]
-- [ ] 9.1.1.11 添加外鍵約束：`created_by` REFERENCES Users(user_id) [規格:L31]
-- [ ] 9.1.1.12 創建唯一索引：`idx_external_slug` ON ExternalArticles(slug) [規格:L34]
-- [ ] 9.1.1.13 創建索引：`idx_external_category` ON ExternalArticles(category) [規格:L35]
-- [ ] 9.1.1.14 創建索引：`idx_external_published` ON ExternalArticles(is_published) [規格:L36]
+- [x] 9.1.1.1 創建主鍵 `article_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L12]
+- [x] 9.1.1.2 創建 `title` (TEXT NOT NULL) [規格:L13]
+- [x] 9.1.1.3 創建 `slug` (TEXT UNIQUE NOT NULL) 含註釋：URL 標識符 [規格:L14]
+- [x] 9.1.1.4 創建 `summary` (TEXT) [規格:L15]
+- [x] 9.1.1.5 創建 `content` (TEXT NOT NULL) 含註釋：HTML 內容 [規格:L16]
+- [x] 9.1.1.6 創建 `featured_image` (TEXT) 含註釋：封面圖 URL [規格:L17]
+- [x] 9.1.1.7 創建 `category`, `tags` 欄位 [規格:L18-L19]
+- [x] 9.1.1.8 創建 `is_published`, `published_at`, `view_count` 欄位 [規格:L20-L22]
+- [x] 9.1.1.9 創建 SEO 欄位：`seo_title`, `seo_description`, `seo_keywords` [規格:L23-L25]
+- [x] 9.1.1.10 創建審計欄位：`created_by`, `created_at`, `updated_at`, `is_deleted` [規格:L26-L29]
+- [x] 9.1.1.11 添加外鍵約束：`created_by` REFERENCES Users(user_id) [規格:L31]
+- [x] 9.1.1.12 創建唯一索引：`idx_external_slug` ON ExternalArticles(slug) [規格:L34]
+- [x] 9.1.1.13 創建索引：`idx_external_category` ON ExternalArticles(category) [規格:L35]
+- [x] 9.1.1.14 創建索引：`idx_external_published` ON ExternalArticles(is_published) [規格:L36]
 
 **9.1.2 ExternalFAQ 表（外部常見問題）[規格:L41-L57]**
-- [ ] 9.1.2.1 創建主鍵 `faq_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L42]
-- [ ] 9.1.2.2 創建 `question` (TEXT NOT NULL) [規格:L43]
-- [ ] 9.1.2.3 創建 `answer` (TEXT NOT NULL) [規格:L44]
-- [ ] 9.1.2.4 創建 `category`, `sort_order` 欄位 [規格:L45-L46]
-- [ ] 9.1.2.5 創建 `is_published`, `view_count` 欄位 [規格:L47-L48]
-- [ ] 9.1.2.6 創建審計欄位：`created_at`, `updated_at`, `is_deleted` [規格:L49-L51]
-- [ ] 9.1.2.7 創建索引：`idx_faq_category`, `idx_faq_published`, `idx_faq_order` [規格:L54-L56]
+- [x] 9.1.2.1 創建主鍵 `faq_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L42]
+- [x] 9.1.2.2 創建 `question` (TEXT NOT NULL) [規格:L43]
+- [x] 9.1.2.3 創建 `answer` (TEXT NOT NULL) [規格:L44]
+- [x] 9.1.2.4 創建 `category`, `sort_order` 欄位 [規格:L45-L46]
+- [x] 9.1.2.5 創建 `is_published`, `view_count` 欄位 [規格:L47-L48]
+- [x] 9.1.2.6 創建審計欄位：`created_at`, `updated_at`, `is_deleted` [規格:L49-L51]
+- [x] 9.1.2.7 創建索引：`idx_faq_category`, `idx_faq_published`, `idx_faq_order` [規格:L54-L56]
 
 **9.1.3 ResourceCenter 表（資源中心）[規格:L61-L82]**
-- [ ] 9.1.3.1 創建主鍵 `resource_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L62]
-- [ ] 9.1.3.2 創建 `title`, `description` 欄位 [規格:L63-L64]
-- [ ] 9.1.3.3 創建 `file_url` (TEXT NOT NULL) 含註釋：R2 儲存路徑 [規格:L65]
-- [ ] 9.1.3.4 創建檔案資訊欄位：`file_type`, `file_size` [規格:L66-L67]
-- [ ] 9.1.3.5 創建 `category`, `is_published`, `download_count` 欄位 [規格:L68-L70]
-- [ ] 9.1.3.6 創建審計欄位：`created_by`, `created_at`, `updated_at`, `is_deleted` [規格:L71-L74]
-- [ ] 9.1.3.7 添加外鍵約束：`created_by` REFERENCES Users(user_id) [規格:L76]
-- [ ] 9.1.3.8 創建索引：`idx_resources_category`, `idx_resources_published`, `idx_resources_type` [規格:L79-L81]
+- [x] 9.1.3.1 創建主鍵 `resource_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L62]
+- [x] 9.1.3.2 創建 `title`, `description` 欄位 [規格:L63-L64]
+- [x] 9.1.3.3 創建 `file_url` (TEXT NOT NULL) 含註釋：R2 儲存路徑 [規格:L65]
+- [x] 9.1.3.4 創建檔案資訊欄位：`file_type`, `file_size` [規格:L66-L67]
+- [x] 9.1.3.5 創建 `category`, `is_published`, `download_count` 欄位 [規格:L68-L70]
+- [x] 9.1.3.6 創建審計欄位：`created_by`, `created_at`, `updated_at`, `is_deleted` [規格:L71-L74]
+- [x] 9.1.3.7 添加外鍵約束：`created_by` REFERENCES Users(user_id) [規格:L76]
+- [x] 9.1.3.8 創建索引：`idx_resources_category`, `idx_resources_published`, `idx_resources_type` [規格:L79-L81]
 
 **9.1.4 ExternalImages 表（外部圖片資源）[規格:L86-L103]**
-- [ ] 9.1.4.1 創建主鍵 `image_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L87]
-- [ ] 9.1.4.2 創建 `title`, `image_url`, `alt_text` 欄位 [規格:L88-L90]
-- [ ] 9.1.4.3 創建圖片資訊欄位：`category`, `file_size`, `width`, `height` [規格:L91-L94]
-- [ ] 9.1.4.4 創建審計欄位：`uploaded_by`, `uploaded_at`, `is_deleted` [規格:L95-L97]
-- [ ] 9.1.4.5 添加外鍵約束：`uploaded_by` REFERENCES Users(user_id) [規格:L99]
-- [ ] 9.1.4.6 創建索引：`idx_images_category` [規格:L102]
+- [x] 9.1.4.1 創建主鍵 `image_id` (INTEGER PRIMARY KEY AUTOINCREMENT) [規格:L87]
+- [x] 9.1.4.2 創建 `title`, `image_url`, `alt_text` 欄位 [規格:L88-L90]
+- [x] 9.1.4.3 創建圖片資訊欄位：`category`, `file_size`, `width`, `height` [規格:L91-L94]
+- [x] 9.1.4.4 創建審計欄位：`uploaded_by`, `uploaded_at`, `is_deleted` [規格:L95-L97]
+- [x] 9.1.4.5 添加外鍵約束：`uploaded_by` REFERENCES Users(user_id) [規格:L99]
+- [x] 9.1.4.6 創建索引：`idx_images_category` [規格:L102]
 
 ---
 
 #### 9.2 Blog 文章管理 API [規格:L111-L122]
 
 **9.2.1 ExternalArticleRepository 創建**
-- [ ] 9.2.1.1 創建 `findAll()` 方法（支持分類、發布狀態過濾）
-- [ ] 9.2.1.2 創建 `findById()` 方法
-- [ ] 9.2.1.3 創建 `findBySlug()` 方法（用於唯一性檢查和公開查詢）
-- [ ] 9.2.1.4 創建 `create()` 方法
-- [ ] 9.2.1.5 創建 `update()` 方法
-- [ ] 9.2.1.6 創建 `publish()` 方法（設置 is_published = 1, published_at）
-- [ ] 9.2.1.7 創建 `unpublish()` 方法（設置 is_published = 0）
-- [ ] 9.2.1.8 創建 `incrementViewCount()` 方法
-- [ ] 9.2.1.9 創建 `delete()` 方法（軟刪除）
+- [x] 9.2.1.1 創建 `findAll()` 方法（支持分類、發布狀態過濾）
+- [x] 9.2.1.2 創建 `findById()` 方法
+- [x] 9.2.1.3 創建 `findBySlug()` 方法（用於唯一性檢查和公開查詢）
+- [x] 9.2.1.4 創建 `create()` 方法
+- [x] 9.2.1.5 創建 `update()` 方法
+- [x] 9.2.1.6 創建 `publish()` 方法（設置 is_published = 1, published_at）
+- [x] 9.2.1.7 創建 `unpublish()` 方法（設置 is_published = 0）
+- [x] 9.2.1.8 創建 `incrementViewCount()` 方法
+- [x] 9.2.1.9 創建 `delete()` 方法（軟刪除）
 
 **9.2.2 ExternalArticleService 創建**
-- [ ] 9.2.2.1 實現 `createArticle()` 方法 [規格:L401-L420]
-  - [ ] 9.2.2.1.1 驗證 title 和 slug 必填 [規格:L403-L405]
-  - [ ] 9.2.2.1.2 檢查 slug 唯一性（調用 findBySlug）[規格:L407-L411]
-  - [ ] 9.2.2.1.3 創建文章（is_published = false, view_count = 0）[規格:L414-L419]
-  - [ ] 9.2.2.1.4 記錄審計日誌
+- [x] 9.2.2.1 實現 `createArticle()` 方法 [規格:L401-L420]
+  - [x] 9.2.2.1.1 驗證 title 和 slug 必填 [規格:L403-L405]
+  - [x] 9.2.2.1.2 檢查 slug 唯一性（調用 findBySlug）[規格:L407-L411]
+  - [x] 9.2.2.1.3 創建文章（is_published = false, view_count = 0）[規格:L414-L419]
+  - [x] 9.2.2.1.4 記錄審計日誌
   
-- [ ] 9.2.2.2 實現 `publishArticle()` 方法 [規格:L422-L433]
-  - [ ] 9.2.2.2.1 查詢文章是否存在 [規格:L423]
-  - [ ] 9.2.2.2.2 設置 is_published = true, published_at = now() [規格:L429-L432]
-  - [ ] 9.2.2.2.3 記錄審計日誌
+- [x] 9.2.2.2 實現 `publishArticle()` 方法 [規格:L422-L433]
+  - [x] 9.2.2.2.1 查詢文章是否存在 [規格:L423]
+  - [x] 9.2.2.2.2 設置 is_published = true, published_at = now() [規格:L429-L432]
+  - [x] 9.2.2.2.3 記錄審計日誌
   
-- [ ] 9.2.2.3 實現 `unpublishArticle()` 方法（取消發布）
-  - [ ] 9.2.2.3.1 查詢文章是否存在
-  - [ ] 9.2.2.3.2 設置 is_published = false
-  - [ ] 9.2.2.3.3 記錄審計日誌
+- [x] 9.2.2.3 實現 `unpublishArticle()` 方法（取消發布）
+  - [x] 9.2.2.3.1 查詢文章是否存在
+  - [x] 9.2.2.3.2 設置 is_published = false
+  - [x] 9.2.2.3.3 記錄審計日誌
   
-- [ ] 9.2.2.4 實現 `getArticleBySlug()` 方法（公開 API 使用）
-  - [ ] 9.2.2.4.1 調用 findBySlug 查詢
-  - [ ] 9.2.2.4.2 檢查 is_published = true（公開查詢限制）
-  - [ ] 9.2.2.4.3 自動增加 view_count [規格:L541-L544]
+- [x] 9.2.2.4 實現 `getArticleBySlug()` 方法（公開 API 使用）
+  - [x] 9.2.2.4.1 調用 findBySlug 查詢
+  - [x] 9.2.2.4.2 檢查 is_published = true（公開查詢限制）
+  - [x] 9.2.2.4.3 自動增加 view_count [規格:L541-L544]
   
-- [ ] 9.2.2.5 實現 Slug 驗證邏輯 [規格:L635-L638]
-  - [ ] 9.2.2.5.1 檢查只包含小寫字母、數字、連字號
-  - [ ] 9.2.2.5.2 範例：company-setup-guide, tax-filing-tips
+- [x] 9.2.2.5 實現 Slug 驗證邏輯 [規格:L635-L638]
+  - [x] 9.2.2.5.1 檢查只包含小寫字母、數字、連字號
+  - [x] 9.2.2.5.2 範例：company-setup-guide, tax-filing-tips
 
 **9.2.3 管理員 API 路由創建（僅管理員）**
 - [ ] 9.2.3.1 `GET /api/v1/admin/articles` [規格:L111]
