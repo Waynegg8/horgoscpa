@@ -1028,3 +1028,379 @@ CREATE INDEX idx_active_stages_status ON ActiveTaskStages(status);
 -- 6. 參數化查詢防止 SQL 注入（在應用層實現）
 -- =====================================================
 
+-- =====================================================
+-- ??撣思????折蝞∠?蝟餌絞 - 鞈?摨?Schema (璅∠? 10-14)
+-- Database: Cloudflare D1 (SQLite)
+-- Version: 1.0
+-- Created: 2025-10-29
+-- =====================================================
+
+-- =====================================================
+-- 璅∠? 10: ?芾?蝞∠?
+-- =====================================================
+
+-- -----------------------------------------------------
+-- ?游? Users 銵剁??芾??箸鞈?嚗?
+-- 閬靘?嚗ocs/???/?芾?蝞∠?-摰閬.md L35-L42
+-- -----------------------------------------------------
+ALTER TABLE Users ADD COLUMN base_salary REAL NOT NULL DEFAULT 0;  -- 摨嚗??迎?
+ALTER TABLE Users ADD COLUMN join_date TEXT;  -- ?啗?交?嚗?潸?蝞僑鞈隡?
+ALTER TABLE Users ADD COLUMN comp_hours_current_month REAL DEFAULT 0;  -- ?祆?鋆??
+
+-- -----------------------------------------------------
+-- Table: SalaryItemTypes嚗鞈??桅???
+-- ?膩: ?暑?鞈??桅?蝵桃頂蝯梧??舀?瘣亥票???甈?
+-- 閬靘?嚗ocs/???/?芾?蝞∠?-摰閬.md L49-L106
+-- -----------------------------------------------------
+CREATE TABLE SalaryItemTypes (
+  item_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  item_code TEXT UNIQUE NOT NULL,  -- ?隞?Ⅳ嚗?嚗TTENDANCE_BONUS嚗?
+  item_name TEXT NOT NULL,  -- ??迂嚗?嚗?斤???
+  category TEXT NOT NULL,  -- 憿嚗?allowance'嚗揖鞎潘?, 'bonus'嚗???, 'deduction'嚗甈橘?
+  is_taxable BOOLEAN DEFAULT 1,  -- ?臬閮隤脩?
+  is_fixed BOOLEAN DEFAULT 1,  -- ???臬?箏?嚗?=瘥???憿?0=??????
+  is_regular_payment BOOLEAN DEFAULT 1,  -- 潃??臬?箇?撣豢抒策??1=瘥??潭閮?嚗?=?嗥?潭憒僑蝯?
+  affects_labor_insurance BOOLEAN DEFAULT 1,  -- ?臬敶梢?靽?
+  affects_attendance BOOLEAN DEFAULT 0,  -- ?臬敶梢?典?文?
+  calculation_formula TEXT,  -- 閮??砍?嚗????桃嚗?
+  display_order INTEGER DEFAULT 0,  -- 憿舐內??
+  is_active BOOLEAN DEFAULT 1,  -- ?臬?
+  created_at TEXT DEFAULT (datetime('now')),
+  
+  CHECK (category IN ('allowance', 'bonus', 'deduction'))
+);
+
+CREATE INDEX idx_salary_item_types_active ON SalaryItemTypes(is_active);
+CREATE INDEX idx_salary_item_types_order ON SalaryItemTypes(display_order);
+CREATE INDEX idx_salary_item_types_regular ON SalaryItemTypes(is_regular_payment);
+
+-- ?身?芾??
+INSERT INTO SalaryItemTypes (item_code, item_name, category, is_taxable, is_fixed, is_regular_payment) VALUES
+('ATTENDANCE_BONUS', '?典??', 'bonus', 1, 1, 1),        -- ?箏???嚗??交???
+('TRANSPORT', '鈭日揖鞎?, 'allowance', 0, 1, 1),           -- ?箏???嚗??交???
+('MEAL', '隡?瘣亥票', 'allowance', 0, 1, 1),                -- ?箏???嚗??交???
+('POSITION', '?瑕??策', 'allowance', 1, 1, 1),            -- ?箏???嚗??交???
+('PHONE', '?餉店瘣亥票', 'allowance', 0, 1, 1),               -- ?箏???嚗??交???
+('PARKING', '??瘣亥票', 'allowance', 0, 1, 1),             -- ?箏???嚗??交???
+('PERFORMANCE', '蝮暹???', 'bonus', 1, 0, 1),             -- 潃???瘚桀?嚗?閮?嚗蔣?踵??砍???
+('YEAR_END', '撟渡???', 'bonus', 1, 0, 0);                -- ??瘚桀?嚗?閮?嚗僑摨?甈∴?
+
+-- -----------------------------------------------------
+-- Table: EmployeeSalaryItems嚗撌亥鞈??殷?
+-- ?膩: ?∪極?犖?鞈??桅?蝵殷??舀??漲?函?隤踵
+-- 閬靘?嚗ocs/???/?芾?蝞∠?-摰閬.md L126-L185
+-- -----------------------------------------------------
+CREATE TABLE EmployeeSalaryItems (
+  employee_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  item_type_id INTEGER NOT NULL,
+  amount REAL NOT NULL,  -- ??
+  effective_date TEXT NOT NULL,  -- ???交?嚗YYY-MM-01嚗?
+  expiry_date TEXT,  -- 憭望??交?嚗YYY-MM-?急嚗ull=瘞訾???嚗?
+  notes TEXT,
+  is_active BOOLEAN DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  
+  FOREIGN KEY (user_id) REFERENCES Users(user_id),
+  FOREIGN KEY (item_type_id) REFERENCES SalaryItemTypes(item_type_id)
+);
+
+CREATE INDEX idx_employee_salary_items_user ON EmployeeSalaryItems(user_id);
+CREATE INDEX idx_employee_salary_items_active ON EmployeeSalaryItems(is_active);
+CREATE INDEX idx_employee_salary_items_date ON EmployeeSalaryItems(effective_date, expiry_date);  -- 潃??遢?亥岷撠
+
+-- -----------------------------------------------------
+-- Table: MonthlyPayroll嚗?摨西鞈”嚗?
+-- ?膩: 瘥??芾?閮?蝯?嚗?鞎餃?憿??典?文?
+-- 閬靘?嚗ocs/???/?芾?蝞∠?-摰閬.md L188-L232
+-- -----------------------------------------------------
+CREATE TABLE MonthlyPayroll (
+  payroll_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  year INTEGER NOT NULL,
+  month INTEGER NOT NULL,
+  
+  -- ?芾?蝯?嚗??? EmployeeSalaryItems 閮?嚗?
+  base_salary REAL NOT NULL,  -- 摨
+  total_allowances REAL DEFAULT 0,  -- 瘣亥票??
+  total_bonuses REAL DEFAULT 0,  -- ????
+  
+  -- ?鞎鳴?靘??箸?閮?嚗?
+  overtime_weekday_2h REAL DEFAULT 0,  -- 撟單???撠?鞎餌嚗?.34??
+  overtime_weekday_beyond REAL DEFAULT 0,  -- 撟單?蝚?撠?韏瘀?1.67??
+  overtime_restday_2h REAL DEFAULT 0,  -- 隡?亙?2撠?嚗?.34??
+  overtime_restday_beyond REAL DEFAULT 0,  -- 隡?亦洵3撠?韏瘀?1.67??
+  overtime_holiday REAL DEFAULT 0,  -- ???/靘??伐?2.0??
+  
+  -- ??狡?
+  total_deductions REAL DEFAULT 0,  -- 蝮賣甈?
+  
+  -- 蝯梯?鞈?
+  total_work_hours REAL DEFAULT 0,  -- 蝮賢極??
+  total_overtime_hours REAL DEFAULT 0,  -- ??
+  total_weighted_hours REAL DEFAULT 0,  -- ??撌交?蝮質?
+  has_full_attendance BOOLEAN DEFAULT 1,  -- ?臬?典
+  
+  -- 蝮質鞈?
+  gross_salary REAL NOT NULL,  -- ??芾?嚗?????
+  net_salary REAL NOT NULL,  -- 撖衣?芾?
+  
+  -- ?酉
+  notes TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  
+  FOREIGN KEY (user_id) REFERENCES Users(user_id),
+  UNIQUE(user_id, year, month)  -- 瘥犖瘥??芣?銝蝑鞈???
+);
+
+CREATE INDEX idx_payroll_user ON MonthlyPayroll(user_id);
+CREATE INDEX idx_payroll_date ON MonthlyPayroll(year, month);
+
+-- -----------------------------------------------------
+-- Table: OvertimeRecords嚗??剛???蝝堆?
+-- ?膩: ?鞎餉?蝞?蝝堆?閮???箸???
+-- 閬靘?嚗ocs/???/?芾?蝞∠?-摰閬.md L234-L256
+-- -----------------------------------------------------
+CREATE TABLE OvertimeRecords (
+  overtime_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  work_date TEXT NOT NULL,
+  overtime_type TEXT NOT NULL,  -- 'weekday_2h', 'weekday_beyond', 'restday_2h', 'restday_beyond', 'holiday'
+  hours REAL NOT NULL,
+  rate_multiplier REAL NOT NULL,  -- 鞎餌??嚗?.34, 1.67, 2.0嚗?
+  hourly_base REAL NOT NULL,  -- ??箸?嚗ase_salary / 240嚗?
+  overtime_pay REAL NOT NULL,  -- ?鞎駁?憿?
+  is_compensatory_leave BOOLEAN DEFAULT 0,  -- ?臬?豢?鋆?嚗?=鋆?, 0=?鞎鳴?
+  payroll_id INTEGER,  -- ??啗鞈???
+  created_at TEXT DEFAULT (datetime('now')),
+  
+  FOREIGN KEY (user_id) REFERENCES Users(user_id),
+  FOREIGN KEY (payroll_id) REFERENCES MonthlyPayroll(payroll_id)
+);
+
+CREATE INDEX idx_overtime_user_date ON OvertimeRecords(user_id, work_date);
+CREATE INDEX idx_overtime_payroll ON OvertimeRecords(payroll_id);
+
+-- -----------------------------------------------------
+-- Table: YearEndBonus嚗僑蝯???
+-- ?膩: 撟渡????函?蝞∠?嚗?飛撅砍僑摨西??潭撟游漲?
+-- 閬靘?嚗ocs/???/?芾?蝞∠?-摰閬.md L258-L306
+-- -----------------------------------------------------
+CREATE TABLE YearEndBonus (
+  bonus_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  attribution_year INTEGER NOT NULL,     -- 甇詨惇撟游漲嚗?嚗?025嚗?
+  amount REAL NOT NULL,                  -- 撟渡?????
+  payment_year INTEGER,                  -- 撖阡??潭撟游漲嚗?嚗?026嚗?
+  payment_month INTEGER,                 -- 撖阡??潭?遢嚗?嚗?嚗?
+  payment_date TEXT,                     -- 撖阡??潭?交?嚗?嚗?026-01-15嚗?
+  decision_date TEXT,                    -- 瘙箏??交?嚗?嚗?025-12-31嚗?
+  notes TEXT,
+  recorded_by INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  
+  FOREIGN KEY (user_id) REFERENCES Users(user_id),
+  FOREIGN KEY (recorded_by) REFERENCES Users(user_id),
+  UNIQUE(user_id, attribution_year)  -- 瘥犖瘥僑摨血??蝑僑蝯?
+);
+
+CREATE INDEX idx_yearend_user ON YearEndBonus(user_id);
+CREATE INDEX idx_yearend_attribution ON YearEndBonus(attribution_year);
+CREATE INDEX idx_yearend_payment ON YearEndBonus(payment_year, payment_month);
+
+-- =====================================================
+-- 璅∠? 11: 蝞∠??
+-- =====================================================
+
+-- -----------------------------------------------------
+-- Table: OverheadCostTypes嚗恣???祇??桅???
+-- ?膩: ?暑?恣???祇??桅?蝵殷??舀?銝車??孵?
+-- 閬靘?嚗ocs/???/蝞∠??-摰閬.md L29-L63
+-- -----------------------------------------------------
+CREATE TABLE OverheadCostTypes (
+  cost_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  cost_code TEXT UNIQUE NOT NULL,  -- ?隞?Ⅳ嚗?嚗ENT嚗?
+  cost_name TEXT NOT NULL,  -- ??迂嚗?嚗齒?砍恕蝘?嚗?
+  category TEXT NOT NULL,  -- 憿嚗?fixed'嚗摰??穿?, 'variable'嚗????穿?
+  allocation_method TEXT NOT NULL,  -- ??孵?嚗?per_employee'嚗?鈭粹嚗? 'per_hour'嚗?撌交?嚗? 'per_revenue'嚗??嚗?
+  description TEXT,
+  is_active BOOLEAN DEFAULT 1,
+  display_order INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  
+  CHECK (category IN ('fixed', 'variable')),
+  CHECK (allocation_method IN ('per_employee', 'per_hour', 'per_revenue'))
+);
+
+CREATE INDEX idx_overhead_cost_types_active ON OverheadCostTypes(is_active);
+CREATE INDEX idx_overhead_cost_types_category ON OverheadCostTypes(category);
+
+-- ?身蝞∠???
+INSERT INTO OverheadCostTypes (cost_code, cost_name, category, allocation_method, description) VALUES
+('RENT', '颲血摰斤???, 'fixed', 'per_employee', '瘥?颲血摰斤???),
+('UTILITIES', '瘞湧?行', 'fixed', 'per_employee', '瘞渲祥?鞎颯?航祥'),
+('INTERNET', '蝬脰楝??', 'fixed', 'per_employee', '蝬脰楝?閰梯祥??),
+('EQUIPMENT', '閮剖???', 'fixed', 'per_employee', '?餉?齒?祈身????),
+('SOFTWARE', '頠???', 'fixed', 'per_employee', '?車頠?閮鞎餌'),
+('INSURANCE', '靽鞎餌', 'fixed', 'per_employee', '?砍靽鞎?),
+('MAINTENANCE', '蝬剛風鞎餌', 'variable', 'per_hour', '颲血摰斤雁霅瑯?瞏?),
+('MARKETING', '銵鞎餌', 'variable', 'per_revenue', '撱?????瑟暑??);
+
+-- -----------------------------------------------------
+-- Table: MonthlyOverheadCosts嚗?摨衣恣???穿?
+-- ?膩: 瘥?蝞∠??閮?
+-- 閬靘?嚗ocs/???/蝞∠??-摰閬.md L65-L96
+-- -----------------------------------------------------
+CREATE TABLE MonthlyOverheadCosts (
+  overhead_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  cost_type_id INTEGER NOT NULL,
+  year INTEGER NOT NULL,
+  month INTEGER NOT NULL,
+  amount REAL NOT NULL,  -- ??
+  notes TEXT,
+  recorded_by INTEGER NOT NULL,
+  recorded_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  
+  FOREIGN KEY (cost_type_id) REFERENCES OverheadCostTypes(cost_type_id),
+  FOREIGN KEY (recorded_by) REFERENCES Users(user_id),
+  UNIQUE(cost_type_id, year, month)  -- 瘥車?瘥??芣?銝蝑?
+);
+
+CREATE INDEX idx_monthly_overhead_date ON MonthlyOverheadCosts(year, month);
+CREATE INDEX idx_monthly_overhead_type ON MonthlyOverheadCosts(cost_type_id);
+
+-- =====================================================
+-- 璅∠? 12: ?嗆??嗆狡
+-- =====================================================
+
+-- -----------------------------------------------------
+-- Table: Receipts嚗?”嚗?
+-- ?膩: ?嗆?蝞∠?嚗??????Ⅳ??嚗雿誥甈?
+-- 閬靘?嚗ocs/???/?潛巨?嗆狡-摰閬.md L37-L78
+-- -----------------------------------------------------
+CREATE TABLE Receipts (
+  receipt_id TEXT PRIMARY KEY,  -- ?嗆??Ⅳ嚗撘?YYYYMM-NNN嚗?嚗?02510-001嚗?
+  client_id TEXT NOT NULL,
+  receipt_date TEXT NOT NULL,  -- ???交?
+  due_date TEXT,  -- ?唳???
+  total_amount REAL NOT NULL,  -- 蝮賡?憿??∠?憿?
+  status TEXT DEFAULT 'unpaid',  -- unpaid, partial, paid, cancelled
+  is_auto_generated BOOLEAN DEFAULT 1,  -- ?臬?芸???蝺刻?嚗?=??頛詨嚗?
+  notes TEXT,
+  created_by INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,                      -- 潃?雿誥??
+  deleted_by INTEGER,                   -- 潃?雿誥鈭箏
+  
+  FOREIGN KEY (client_id) REFERENCES Clients(client_id),
+  FOREIGN KEY (created_by) REFERENCES Users(user_id),
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id),
+  CHECK (status IN ('unpaid', 'partial', 'paid', 'cancelled'))
+);
+
+CREATE INDEX idx_receipts_client ON Receipts(client_id);
+CREATE INDEX idx_receipts_date ON Receipts(receipt_date);
+CREATE INDEX idx_receipts_status ON Receipts(status);
+CREATE INDEX idx_receipts_status_due ON Receipts(status, due_date);  -- 潃??撣單狡?亥岷撠
+CREATE INDEX idx_receipts_client_status ON Receipts(client_id, status);  -- 潃?摰Ｘ?嗆狡?亥岷撠
+
+-- -----------------------------------------------------
+-- Table: ReceiptItems嚗???殷?
+-- ?膩: ?嗆??敦?
+-- 閬靘?嚗ocs/???/?潛巨?嗆狡-摰閬.md L80-L97
+-- -----------------------------------------------------
+CREATE TABLE ReceiptItems (
+  item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  receipt_id TEXT NOT NULL,
+  service_id INTEGER,  -- ???Services
+  description TEXT NOT NULL,  -- ?隤芣?
+  quantity REAL DEFAULT 1,  -- ?賊?
+  unit_price REAL NOT NULL,  -- ?桀
+  amount REAL NOT NULL,  -- ??嚗uantity ? unit_price嚗?
+  
+  FOREIGN KEY (receipt_id) REFERENCES Receipts(receipt_id) ON DELETE CASCADE,
+  FOREIGN KEY (service_id) REFERENCES Services(service_id)
+);
+
+CREATE INDEX idx_receipt_items_receipt ON ReceiptItems(receipt_id);
+
+-- -----------------------------------------------------
+-- Table: ReceiptSequence嚗??瘞渲?蝞∠?嚗?
+-- ?膩: 蝞∠?瘥??嗆?瘚偌???舀?雿萇摰??
+-- 閬靘?嚗ocs/???/?潛巨?嗆狡-摰閬.md L99-L116
+-- -----------------------------------------------------
+CREATE TABLE ReceiptSequence (
+  sequence_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  year_month TEXT UNIQUE NOT NULL,  -- 撟湔?嚗YYYMM嚗?
+  last_sequence INTEGER NOT NULL DEFAULT 0,  -- ?敺蝙?函?瘚偌??
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX idx_receipt_sequence_ym ON ReceiptSequence(year_month);
+
+-- -----------------------------------------------------
+-- Table: Payments嚗甈曇???
+-- ?膩: ?嗆狡閮?嚗??甈?
+-- 閬靘?嚗ocs/???/?潛巨?嗆狡-摰閬.md L118-L138
+-- -----------------------------------------------------
+CREATE TABLE Payments (
+  payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  receipt_id TEXT NOT NULL,
+  payment_date TEXT NOT NULL,  -- ?嗆狡?交?
+  amount REAL NOT NULL,  -- ?嗆狡??
+  payment_method TEXT,  -- ?暸???撣喋蟡?
+  reference_number TEXT,  -- ??蝣潘?憒??舐巨?Ⅳ?董??5蝣潘?
+  notes TEXT,
+  received_by INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  
+  FOREIGN KEY (receipt_id) REFERENCES Receipts(receipt_id),
+  FOREIGN KEY (received_by) REFERENCES Users(user_id)
+);
+
+CREATE INDEX idx_payments_receipt ON Payments(receipt_id);
+CREATE INDEX idx_payments_date ON Payments(payment_date);
+
+-- =====================================================
+-- 璅∠? 13: ?辣蝟餌絞
+-- =====================================================
+
+-- -----------------------------------------------------
+-- Table: Attachments嚗?隞塚?
+-- ?膩: 蝯曹???隞嗥恣?頂蝯梧??游? Cloudflare R2
+-- 閬靘?嚗ocs/???/?辣蝟餌絞-摰閬.md L35-L54
+-- -----------------------------------------------------
+CREATE TABLE Attachments (
+  attachment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entity_type TEXT NOT NULL,  -- 'client', 'receipt', 'sop', 'task'
+  entity_id TEXT NOT NULL,  -- ??祕擃D
+  file_name TEXT NOT NULL,  -- ??瑼?
+  file_path TEXT NOT NULL,  -- Cloudflare R2 頝臬?
+  file_size INTEGER,  -- 瑼?憭批?嚗ytes嚗?
+  mime_type TEXT,  -- 瑼?憿?
+  uploaded_by INTEGER NOT NULL,
+  uploaded_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  
+  FOREIGN KEY (uploaded_by) REFERENCES Users(user_id),
+  CHECK (entity_type IN ('client', 'receipt', 'sop', 'task'))
+);
+
+CREATE INDEX idx_attachments_entity ON Attachments(entity_type, entity_id);
+CREATE INDEX idx_attachments_uploaded ON Attachments(uploaded_at);
+
+-- =====================================================
+-- 璅∠? 14: ?梯”??
+-- ?膩: 甇斗芋蝯憿?鞈?銵剁?雿輻?暹?銵函??亥岷????
+-- =====================================================
+
