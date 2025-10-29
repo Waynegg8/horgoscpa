@@ -91,6 +91,33 @@ export class TimeLogService {
       );
     }
 
+    // ⭐ 補班日驗證（防止誤選休息日加班）[規格:L512-L527]
+    // ⚠️ 必須在創建記錄之前驗證！
+    const holiday = await this.db.prepare(`
+      SELECT is_makeup_workday, is_national_holiday FROM Holidays 
+      WHERE holiday_date = ?
+    `).bind(data.work_date).first<any>();
+    
+    if (holiday?.is_makeup_workday) {
+      // 補班日不可選「休息日加班」類型（4, 5, 6）
+      const isRestDayOvertimeType = [4, 5, 6].includes(data.work_type_id);
+      if (isRestDayOvertimeType) {
+        throw new ValidationError(
+          '今天是補班日（正常上班日），請選擇「正常工時」或「平日加班」類型',
+          'work_type_id'
+        );
+      }
+    }
+    
+    // ⭐ 國定假日/例假日「8小時內」類型的工時限制 [規格:L529-L535]
+    if ((data.work_type_id === 7 || data.work_type_id === 10) && data.hours > 8) {
+      throw new ValidationError(
+        '工作類型「國定假日8小時內」或「例假日8小時內」的工時不可超過8小時，' +
+        '超過部分請分別選擇「第9-10小時」或「第11-12小時」類型',
+        'hours'
+      );
+    }
+
     // 查詢工作類型資訊
     const workType = await this.db.prepare(`
       SELECT * FROM WorkTypes WHERE work_type_id = ?
@@ -100,7 +127,7 @@ export class TimeLogService {
       throw new NotFoundError('工作類型不存在');
     }
 
-    // ⭐ 計算加權工時（國定假日/例假日特殊處理）
+    // ⭐ 計算加權工時（國定假日/例假日特殊處理）[規格:L537-L547]
     let weightedHours: number;
     if (data.work_type_id === 7 || data.work_type_id === 10) {
       // ⚠️ 國定假日/例假日 8小時內：統一為 8 小時加權工時（不是實際工時 × 2.0）
@@ -122,32 +149,6 @@ export class TimeLogService {
       leave_type_id: data.leave_type_id,
       notes: data.notes,
     });
-
-    // ⭐ 補班日驗證（防止誤選休息日加班）
-    const holiday = await this.db.prepare(`
-      SELECT is_makeup_workday, is_national_holiday FROM Holidays 
-      WHERE holiday_date = ?
-    `).bind(data.work_date).first<any>();
-    
-    if (holiday?.is_makeup_workday) {
-      // 補班日不可選「休息日加班」類型（4, 5, 6）
-      const isRestDayOvertimeType = [4, 5, 6].includes(data.work_type_id);
-      if (isRestDayOvertimeType) {
-        throw new ValidationError(
-          '今天是補班日（正常上班日），請選擇「正常工時」或「平日加班」類型',
-          'work_type_id'
-        );
-      }
-    }
-    
-    // ⭐ 國定假日/例假日「8小時內」類型的工時限制
-    if ((data.work_type_id === 7 || data.work_type_id === 10) && data.hours > 8) {
-      throw new ValidationError(
-        '工作類型「國定假日8小時內」或「例假日8小時內」的工時不可超過8小時，' +
-        '超過部分請分別選擇「第9-10小時」或「第11-12小時」類型',
-        'hours'
-      );
-    }
 
     // ⭐ 如果是加班，自動累積補休（含國定假日特殊規則）
     if (workType.generates_comp_leave && workType.is_overtime) {

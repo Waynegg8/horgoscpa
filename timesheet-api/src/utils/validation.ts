@@ -34,10 +34,11 @@ export function validatePassword(password: string): void {
 
 /**
  * 驗證性別
+ * ⭐ 規格要求：L610-L613 允許 'M', 'F', '男', '女'
  */
 export function validateGender(gender: string): void {
-  if (!['M', 'F'].includes(gender)) {
-    throw new ValidationError('性別必須為 M 或 F', 'gender');
+  if (!['M', 'F', '男', '女'].includes(gender)) {
+    throw new ValidationError('性別必須為：M（男）或 F（女）', 'gender');
   }
 }
 

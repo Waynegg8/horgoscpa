@@ -92,9 +92,13 @@ export class UserService {
     validateRequired(userData.gender, '性別');
     validateRequired(userData.start_date, '到職日期');
     
+    // 驗證性別值 [規格:L610-L613]
+    if (!['M', 'F', '男', '女'].includes(userData.gender)) {
+      throw new ValidationError('性別必須為：M（男）或 F（女）');
+    }
+    
     // 驗證格式
     validateEmail(userData.email, 'Email');
-    validateGender(userData.gender);
     validateDateFormat(userData.start_date, '到職日期');
     
     if (userData.birth_date) {

@@ -73,10 +73,10 @@ export class AuthService {
     const isPasswordValid = await verifyPassword(password, user.password_hash);
 
     if (!isPasswordValid) {
-      // 密碼錯誤，增加失敗次數
+      // 密碼錯誤，增加失敗次數 [規格:L554-L556]
+      await this.userRepo.incrementLoginAttempts(user.user_id);
+      
       const newAttempts = user.login_attempts + 1;
-      await this.userRepo.updateLoginAttempts(user.user_id, newAttempts);
-
       if (newAttempts >= 5) {
         throw new AppError(
           403,

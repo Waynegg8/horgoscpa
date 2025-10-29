@@ -47,7 +47,6 @@ CREATE TABLE Users (
 CREATE UNIQUE INDEX idx_users_username ON Users(username);
 CREATE INDEX idx_users_email ON Users(email);
 CREATE INDEX idx_users_is_admin ON Users(is_admin);
-CREATE INDEX idx_users_deleted ON Users(is_deleted);
 
 -- -----------------------------------------------------
 -- Table: Settings (系統設定)

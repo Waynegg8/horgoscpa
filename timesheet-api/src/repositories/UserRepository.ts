@@ -194,18 +194,29 @@ export class UserRepository {
   }
 
   /**
-   * 更新登入嘗試次數
+   * 增加登入嘗試次數（登入失敗時調用）
+   * ⭐ 規格要求：L555 incrementLoginAttempts
+   */
+  async incrementLoginAttempts(userId: number): Promise<void> {
+    await this.db.prepare(`
+      UPDATE Users
+      SET login_attempts = login_attempts + 1,
+          last_failed_login = datetime('now'),
+          updated_at = datetime('now')
+      WHERE user_id = ?
+    `).bind(userId).run();
+  }
+
+  /**
+   * 更新登入嘗試次數（用於重置為0）
    */
   async updateLoginAttempts(userId: number, attempts: number): Promise<void> {
     await this.db.prepare(`
       UPDATE Users
       SET login_attempts = ?,
-          last_failed_login = CASE 
-            WHEN ? > 0 THEN datetime('now')
-            ELSE last_failed_login
-          END
+          updated_at = datetime('now')
       WHERE user_id = ?
-    `).bind(attempts, attempts, userId).run();
+    `).bind(attempts, userId).run();
   }
 
   /**
