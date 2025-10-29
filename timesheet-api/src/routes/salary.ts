@@ -9,381 +9,253 @@
  * - 薪資計算/查詢：4個（計算月薪/查詢薪資/時薪成本率/批次更新）
  */
 
-import { Router } from 'itty-router';
+import { Hono } from 'hono';
+import { Env, User } from '../types';
 import { SalaryService } from '../services/SalaryService';
+import { successResponse, jsonResponse, createPagination } from '../utils/response';
 import { authMiddleware, adminMiddleware } from '../middleware/auth';
 
-export function createSalaryRoutes(router: Router, env: any) {
-  const getService = () => new SalaryService(env.DB);
+const salary = new Hono<{ Bindings: Env }>();
 
-  // ==================== 薪資項目類型管理 API ====================
-  // 規格來源：L650-L667
+// ==================== 薪資項目類型管理 API ====================
+// 規格來源：L650-L667
 
-  /**
-   * GET /api/v1/admin/salary-item-types - 查詢薪資項目類型列表[規格:L652]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.get('/api/v1/admin/salary-item-types', authMiddleware, adminMiddleware, async (request: any) => {
-    const url = new URL(request.url);
-    const is_active = url.searchParams.get('is_active');
+/**
+ * GET /api/v1/admin/salary-item-types - 查詢薪資項目類型列表[規格:L652]
+ * @tags Salary - Admin
+ * @security BearerAuth
+ */
+salary.get('/admin/salary-item-types', authMiddleware, adminMiddleware, async (c) => {
+  const is_active = c.req.query('is_active');
 
-    const service = getService();
-    const items = await service.getSalaryItemTypes({
-      is_active: is_active !== null ? is_active === 'true' : undefined
-    });
-
-    return new Response(JSON.stringify({
-      success: true,
-      data: items
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+  const service = new SalaryService(c.env.DB);
+  const items = await service.getSalaryItemTypes({
+    is_active: is_active !== undefined ? is_active === 'true' : undefined
   });
 
-  /**
-   * POST /api/v1/admin/salary-item-types - 創建薪資項目類型[規格:L653]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.post('/api/v1/admin/salary-item-types', authMiddleware, adminMiddleware, async (request: any) => {
-    const body = await request.json();
-    const service = getService();
-    
-    const item = await service.createSalaryItemType(body);
+  return jsonResponse(c, successResponse(items), 200);
+});
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: item
-    }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * POST /api/v1/admin/salary-item-types - 創建薪資項目類型[規格:L653]
+ */
+salary.post('/admin/salary-item-types', authMiddleware, adminMiddleware, async (c) => {
+  const data = await c.req.json();
+  
+  const service = new SalaryService(c.env.DB);
+  const item = await service.createSalaryItemType(data);
 
-  /**
-   * PUT /api/v1/admin/salary-item-types/:id - 更新薪資項目類型[規格:L654]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.put('/api/v1/admin/salary-item-types/:id', authMiddleware, adminMiddleware, async (request: any) => {
-    const itemTypeId = parseInt(request.params.id);
-    const body = await request.json();
-    const service = getService();
-    
-    const item = await service.updateSalaryItemType(itemTypeId, body);
+  return jsonResponse(c, successResponse(item), 201);
+});
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: item
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * PUT /api/v1/admin/salary-item-types/:id - 更新薪資項目類型[規格:L654]
+ */
+salary.put('/admin/salary-item-types/:id', authMiddleware, adminMiddleware, async (c) => {
+  const itemTypeId = parseInt(c.req.param('id'));
+  const data = await c.req.json();
+  
+  const service = new SalaryService(c.env.DB);
+  const item = await service.updateSalaryItemType(itemTypeId, data);
 
-  /**
-   * DELETE /api/v1/admin/salary-item-types/:id - 刪除薪資項目類型（軟刪除）[規格:L655]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.delete('/api/v1/admin/salary-item-types/:id', authMiddleware, adminMiddleware, async (request: any) => {
-    const itemTypeId = parseInt(request.params.id);
-    const service = getService();
-    
-    await service.deleteSalaryItemType(itemTypeId);
+  return jsonResponse(c, successResponse(item), 200);
+});
 
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'Salary item type deleted successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * DELETE /api/v1/admin/salary-item-types/:id - 刪除薪資項目類型（軟刪除）[規格:L655]
+ */
+salary.delete('/admin/salary-item-types/:id', authMiddleware, adminMiddleware, async (c) => {
+  const itemTypeId = parseInt(c.req.param('id'));
+  
+  const service = new SalaryService(c.env.DB);
+  await service.deleteSalaryItemType(itemTypeId);
 
-  // ==================== 年終獎金管理 API ====================
-  // 規格來源：L669-L689
+  return jsonResponse(c, successResponse({ message: 'Salary item type deleted successfully' }), 200);
+});
 
-  /**
-   * GET /api/v1/admin/year-end-bonus - 查詢年終獎金列表[規格:L671]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.get('/api/v1/admin/year-end-bonus', authMiddleware, adminMiddleware, async (request: any) => {
-    const url = new URL(request.url);
-    const attribution_year = parseInt(url.searchParams.get('attribution_year') || new Date().getFullYear().toString());
+// ==================== 年終獎金管理 API ====================
+// 規格來源：L669-L689
 
-    const service = getService();
-    const bonuses = await service.getYearEndBonuses(attribution_year);
+/**
+ * GET /api/v1/admin/year-end-bonus - 查詢年終獎金列表[規格:L671]
+ */
+salary.get('/admin/year-end-bonus', authMiddleware, adminMiddleware, async (c) => {
+  const attribution_year = parseInt(c.req.query('attribution_year') || new Date().getFullYear().toString());
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: bonuses
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+  const service = new SalaryService(c.env.DB);
+  const bonuses = await service.getYearEndBonuses(attribution_year);
 
-  /**
-   * GET /api/v1/admin/year-end-bonus/summary - 查詢年終獎金彙總[規格:L672]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.get('/api/v1/admin/year-end-bonus/summary', authMiddleware, adminMiddleware, async (request: any) => {
-    const url = new URL(request.url);
-    const attribution_year = parseInt(url.searchParams.get('attribution_year') || new Date().getFullYear().toString());
+  return jsonResponse(c, successResponse(bonuses), 200);
+});
 
-    const service = getService();
-    const summary = await service.getYearEndBonusSummary(attribution_year);
+/**
+ * GET /api/v1/admin/year-end-bonus/summary - 查詢年終獎金彙總[規格:L672]
+ */
+salary.get('/admin/year-end-bonus/summary', authMiddleware, adminMiddleware, async (c) => {
+  const attribution_year = parseInt(c.req.query('attribution_year') || new Date().getFullYear().toString());
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: summary
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+  const service = new SalaryService(c.env.DB);
+  const summary = await service.getYearEndBonusSummary(attribution_year);
 
-  /**
-   * POST /api/v1/admin/year-end-bonus - 創建年終獎金[規格:L673]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.post('/api/v1/admin/year-end-bonus', authMiddleware, adminMiddleware, async (request: any) => {
-    const body = await request.json();
-    const service = getService();
-    
-    const bonus = await service.createYearEndBonus(body, request.user.user_id);
+  return jsonResponse(c, successResponse(summary), 200);
+});
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: bonus
-    }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * POST /api/v1/admin/year-end-bonus - 創建年終獎金[規格:L673]
+ */
+salary.post('/admin/year-end-bonus', authMiddleware, adminMiddleware, async (c) => {
+  const user = c.get('user') as User;
+  const data = await c.req.json();
+  
+  const service = new SalaryService(c.env.DB);
+  const bonus = await service.createYearEndBonus(data, user.user_id);
 
-  /**
-   * PUT /api/v1/admin/year-end-bonus/:id - 更新年終獎金[規格:L674]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.put('/api/v1/admin/year-end-bonus/:id', authMiddleware, adminMiddleware, async (request: any) => {
-    const bonusId = parseInt(request.params.id);
-    const body = await request.json();
-    const service = getService();
-    
-    const bonus = await service.updateYearEndBonus(bonusId, body);
+  return jsonResponse(c, successResponse(bonus), 201);
+});
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: bonus
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * PUT /api/v1/admin/year-end-bonus/:id - 更新年終獎金[規格:L674]
+ */
+salary.put('/admin/year-end-bonus/:id', authMiddleware, adminMiddleware, async (c) => {
+  const bonusId = parseInt(c.req.param('id'));
+  const data = await c.req.json();
+  
+  const service = new SalaryService(c.env.DB);
+  const bonus = await service.updateYearEndBonus(bonusId, data);
 
-  /**
-   * DELETE /api/v1/admin/year-end-bonus/:id - 刪除年終獎金[規格:L675]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.delete('/api/v1/admin/year-end-bonus/:id', authMiddleware, adminMiddleware, async (request: any) => {
-    const bonusId = parseInt(request.params.id);
-    const service = getService();
-    
-    await service.deleteYearEndBonus(bonusId);
+  return jsonResponse(c, successResponse(bonus), 200);
+});
 
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'Year-end bonus deleted successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * DELETE /api/v1/admin/year-end-bonus/:id - 刪除年終獎金[規格:L675]
+ */
+salary.delete('/admin/year-end-bonus/:id', authMiddleware, adminMiddleware, async (c) => {
+  const bonusId = parseInt(c.req.param('id'));
+  
+  const service = new SalaryService(c.env.DB);
+  await service.deleteYearEndBonus(bonusId);
 
-  // ==================== 員工薪資設定 API ====================
-  // 規格來源：L743-L780
+  return jsonResponse(c, successResponse({ message: 'Year-end bonus deleted successfully' }), 200);
+});
 
-  /**
-   * GET /api/v1/admin/employees/:userId/salary - 查詢員工薪資設定[規格:L747]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.get('/api/v1/admin/employees/:userId/salary', authMiddleware, adminMiddleware, async (request: any) => {
-    const userId = parseInt(request.params.userId);
-    const service = getService();
-    
-    const salary = await service.getEmployeeSalary(userId);
+// ==================== 員工薪資設定 API ====================
+// 規格來源：L743-L780
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: salary
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * GET /api/v1/admin/employees/:userId/salary - 查詢員工薪資設定[規格:L747]
+ */
+salary.get('/admin/employees/:userId/salary', authMiddleware, adminMiddleware, async (c) => {
+  const userId = parseInt(c.req.param('userId'));
+  
+  const service = new SalaryService(c.env.DB);
+  const salaryData = await service.getEmployeeSalary(userId);
 
-  /**
-   * POST /api/v1/admin/employees/:userId/salary - 設定員工薪資[規格:L748]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.post('/api/v1/admin/employees/:userId/salary', authMiddleware, adminMiddleware, async (request: any) => {
-    const userId = parseInt(request.params.userId);
-    const body = await request.json();
-    const service = getService();
-    
-    const salary = await service.updateEmployeeSalary(userId, body);
+  return jsonResponse(c, successResponse(salaryData), 200);
+});
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: salary
-    }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * POST /api/v1/admin/employees/:userId/salary - 設定員工薪資[規格:L748]
+ */
+salary.post('/admin/employees/:userId/salary', authMiddleware, adminMiddleware, async (c) => {
+  const userId = parseInt(c.req.param('userId'));
+  const data = await c.req.json();
+  
+  const service = new SalaryService(c.env.DB);
+  const salaryData = await service.updateEmployeeSalary(userId, data);
 
-  /**
-   * PUT /api/v1/admin/employees/:userId/salary - 更新員工薪資[規格:L749]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.put('/api/v1/admin/employees/:userId/salary', authMiddleware, adminMiddleware, async (request: any) => {
-    const userId = parseInt(request.params.userId);
-    const body = await request.json();
-    const service = getService();
-    
-    const salary = await service.updateEmployeeSalary(userId, body);
+  return jsonResponse(c, successResponse(salaryData), 201);
+});
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: salary
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * PUT /api/v1/admin/employees/:userId/salary - 更新員工薪資[規格:L749]
+ */
+salary.put('/admin/employees/:userId/salary', authMiddleware, adminMiddleware, async (c) => {
+  const userId = parseInt(c.req.param('userId'));
+  const data = await c.req.json();
+  
+  const service = new SalaryService(c.env.DB);
+  const salaryData = await service.updateEmployeeSalary(userId, data);
 
-  // ==================== 薪資計算/查詢 API ====================
-  // 規格來源：L582-L647
+  return jsonResponse(c, successResponse(salaryData), 200);
+});
 
-  /**
-   * POST /api/v1/admin/payroll/calculate - 計算月度薪資[規格:L586]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.post('/api/v1/admin/payroll/calculate', authMiddleware, adminMiddleware, async (request: any) => {
-    const body = await request.json();
-    const { user_id, year, month } = body;
-    
-    const service = getService();
-    const payroll = await service.calculateMonthlyPayroll(user_id, year, month);
+// ==================== 薪資計算/查詢 API ====================
+// 規格來源：L582-L647
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: payroll
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * POST /api/v1/admin/payroll/calculate - 計算月度薪資[規格:L586]
+ */
+salary.post('/admin/payroll/calculate', authMiddleware, adminMiddleware, async (c) => {
+  const { user_id, year, month } = await c.req.json();
+  
+  const service = new SalaryService(c.env.DB);
+  const payroll = await service.calculateMonthlyPayroll(user_id, year, month);
 
-  /**
-   * GET /api/v1/admin/payroll - 查詢薪資記錄[規格:L587]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.get('/api/v1/admin/payroll', authMiddleware, adminMiddleware, async (request: any) => {
-    const url = new URL(request.url);
-    const user_id = parseInt(url.searchParams.get('user_id') || '0');
-    const year = url.searchParams.get('year') ? parseInt(url.searchParams.get('year')!) : undefined;
-    const limit = parseInt(url.searchParams.get('limit') || '12');
-    const offset = parseInt(url.searchParams.get('offset') || '0');
+  return jsonResponse(c, successResponse(payroll), 200);
+});
 
-    const service = getService();
-    const payrolls = await service.getPayrolls({ user_id, year, limit, offset });
+/**
+ * GET /api/v1/admin/payroll - 查詢薪資記錄[規格:L587]
+ */
+salary.get('/admin/payroll', authMiddleware, adminMiddleware, async (c) => {
+  const filters = {
+    user_id: parseInt(c.req.query('user_id') || '0'),
+    year: c.req.query('year') ? parseInt(c.req.query('year')!) : undefined,
+    limit: parseInt(c.req.query('limit') || '12'),
+    offset: parseInt(c.req.query('offset') || '0'),
+  };
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: payrolls
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+  const service = new SalaryService(c.env.DB);
+  const payrolls = await service.getPayrolls(filters);
 
-  /**
-   * GET /api/v1/admin/payroll/:id - 查詢單筆薪資記錄[規格:L588]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.get('/api/v1/admin/payroll/:id', authMiddleware, adminMiddleware, async (request: any) => {
-    const payrollId = parseInt(request.params.id);
-    const service = getService();
-    
-    const payroll = await service.getPayrollById(payrollId);
-    if (!payroll) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Payroll not found'
-      }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+  return jsonResponse(c, successResponse(payrolls), 200);
+});
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: payroll
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * GET /api/v1/admin/payroll/:id - 查詢單筆薪資記錄[規格:L588]
+ */
+salary.get('/admin/payroll/:id', authMiddleware, adminMiddleware, async (c) => {
+  const payrollId = parseInt(c.req.param('id'));
+  
+  const service = new SalaryService(c.env.DB);
+  const payroll = await service.getPayrollById(payrollId);
 
-  /**
-   * GET /api/v1/admin/employees/:userId/hourly-cost-rate - 查詢員工時薪成本率[規格:L589]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.get('/api/v1/admin/employees/:userId/hourly-cost-rate', authMiddleware, adminMiddleware, async (request: any) => {
-    const userId = parseInt(request.params.userId);
-    const url = new URL(request.url);
-    const year = parseInt(url.searchParams.get('year') || new Date().getFullYear().toString());
-    const month = parseInt(url.searchParams.get('month') || (new Date().getMonth() + 1).toString());
+  if (!payroll) {
+    return jsonResponse(c, { success: false, error: 'Payroll not found' }, 404);
+  }
 
-    const service = getService();
-    const hourlyRate = await service.calculateFullHourlyCostRate(userId, year, month);
+  return jsonResponse(c, successResponse(payroll), 200);
+});
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: {
-        user_id: userId,
-        year,
-        month,
-        hourly_cost_rate: hourlyRate
-      }
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
+/**
+ * GET /api/v1/admin/employees/:userId/hourly-cost-rate - 查詢員工時薪成本率[規格:L589]
+ */
+salary.get('/admin/employees/:userId/hourly-cost-rate', authMiddleware, adminMiddleware, async (c) => {
+  const userId = parseInt(c.req.param('userId'));
+  const year = parseInt(c.req.query('year') || new Date().getFullYear().toString());
+  const month = parseInt(c.req.query('month') || (new Date().getMonth() + 1).toString());
 
-  /**
-   * PUT /api/v1/admin/salary/batch-update - 批次更新薪資項目（績效獎金等）[規格:L699-L741]
-   * @tags Salary - Admin
-   * @security BearerAuth
-   */
-  router.put('/api/v1/admin/salary/batch-update', authMiddleware, adminMiddleware, async (request: any) => {
-    const body = await request.json();
-    const { item_code, target_month, updates } = body; // updates: [{user_id, amount}]
-    
-    const service = getService();
-    await service.batchUpdateSalaryItems(item_code, target_month, updates);
+  const service = new SalaryService(c.env.DB);
+  const hourlyRate = await service.calculateFullHourlyCostRate(userId, year, month);
 
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'Salary items updated successfully'
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  });
-}
+  return jsonResponse(c, successResponse({
+    user_id: userId,
+    year,
+    month,
+    hourly_cost_rate: hourlyRate
+  }), 200);
+});
 
+/**
+ * PUT /api/v1/admin/salary/batch-update - 批次更新薪資項目（績效獎金等）[規格:L699-L741]
+ */
+salary.put('/admin/salary/batch-update', authMiddleware, adminMiddleware, async (c) => {
+  const { item_code, target_month, updates } = await c.req.json();
+  
+  const service = new SalaryService(c.env.DB);
+  await service.batchUpdateSalaryItems(item_code, target_month, updates);
+
+  return jsonResponse(c, successResponse({ message: 'Salary items updated successfully' }), 200);
+});
+
+export default salary;

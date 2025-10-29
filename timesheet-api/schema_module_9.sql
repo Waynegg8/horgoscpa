@@ -121,3 +121,4 @@ CREATE TABLE ExternalImages (
 -- 索引
 CREATE INDEX idx_images_category ON ExternalImages(category);              -- L102
 
+

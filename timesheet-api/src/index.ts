@@ -24,6 +24,8 @@ import leave from './routes/leave';
 import clientservices from './routes/clientservices';
 import tasks from './routes/tasks';
 import knowledge from './routes/knowledge';
+import externalContent from './routes/external-content';
+import salary from './routes/salary';
 
 // 創建 Hono 應用
 const app = new Hono<{ Bindings: Env }>();
@@ -100,6 +102,12 @@ app.route('/api/v1', clientservices);
 // 任務管理路由
 app.route('/api/v1', tasks);
 app.route('/api/v1', knowledge);
+
+// 外部內容管理路由（Blog/FAQ/Resources/Images）
+app.route('/api/v1', externalContent);
+
+// 薪資管理路由
+app.route('/api/v1', salary);
 
 // 後續路由將在這裡添加
 // etc...
