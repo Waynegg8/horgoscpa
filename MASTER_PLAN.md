@@ -1353,25 +1353,43 @@
 **資料表：** 2 個 | **API：** 4 個 | **Cron Jobs：** 0 個
 
 #### 6.1 資料表創建
-- [x] 6.1.1 創建 `ClientServices` 表（客戶服務訂閱，含狀態管理欄位）
-- [x] 6.1.2 創建 `ServiceChangeHistory` 表（服務變更歷史）
+- [x] 6.1.1 `ClientServices` 狀態欄位擴充（status、suspended_at、resumed_at、suspension_reason、auto_renew）[規格:L9-L20]
+- [x] 6.1.2 創建 `ServiceChangeHistory` 表（服務變更歷史）[規格:L22-L41]
 
 #### 6.2 服務生命週期管理 API
-- [x] 6.2.1 實現 `POST /api/v1/client-services/:id/suspend` 路由（暫停服務，所有人可用，含 OpenAPI 註解）
-- [x] 6.2.2 實現 `POST /api/v1/client-services/:id/resume` 路由（恢復服務，所有人可用，含 OpenAPI 註解）
-- [x] 6.2.3 實現 `POST /api/v1/client-services/:id/cancel` 路由（取消服務，僅管理員，含 OpenAPI 註解）
-- [x] 6.2.4 實現 `GET /api/v1/client-services/:id/history` 路由（查詢變更歷史，含 OpenAPI 註解）
+- [x] 6.2.1 `POST /api/v1/client-services/:id/suspend`（暫停服務，所有人可用）[規格:L47-L75]
+  - [x] 6.2.1.1 接收 reason、notes [規格:L56-L62]
+  - [x] 6.2.1.2 更新 ClientServices.status='suspended' 並記錄 suspended_at [規格:L166-L173]
+  - [x] 6.2.1.3 記錄 ServiceChangeHistory 變更歷史 [規格:L175-L192]
+  - [x] 6.2.1.4 暫停相關未完成任務（ActiveTasks）[規格:L194-L201]
+  - [x] 6.2.1.5 發送通知（service_suspended）[規格:L203-L209]
+
+- [x] 6.2.2 `POST /api/v1/client-services/:id/resume`（恢復服務，所有人可用）[規格:L77-L104]
+  - [x] 6.2.2.1 接收 notes [規格:L86-L91]
+  - [x] 6.2.2.2 更新 ClientServices.status='active' 並記錄 resumed_at [規格:L229-L237]
+  - [x] 6.2.2.3 記錄 ServiceChangeHistory 變更歷史 [規格:L239-L254]
+  - [x] 6.2.2.4 恢復相關任務（pending）[規格:L256-L262]
+  - [x] 6.2.2.5 發送通知（service_resumed）[規格:L264-L270]
+
+- [x] 6.2.3 `POST /api/v1/client-services/:id/cancel`（取消服務，管理員）[規格:L106-L121]
+  - [x] 6.2.3.1 接收 reason、cancel_pending_tasks [規格:L115-L121]
+  - [x] 6.2.3.2 更新 ClientServices.status='cancelled' 並記錄 cancelled_at/by [規格:L286-L293]
+  - [x] 6.2.3.3 記錄 ServiceChangeHistory 變更歷史 [規格:L295-L310]
+  - [x] 6.2.3.4 取消未完成任務（可選）[規格:L312-L321]
+
+- [x] 6.2.4 `GET /api/v1/client-services/:id/history`（查詢變更歷史）[規格:L123-L145]
 
 #### 6.3 前端實現（暫緩）
-- [ ] 6.3.1 在客戶詳情頁面添加服務管理區塊
-- [ ] 6.3.2 實現服務訂閱表單
-- [ ] 6.3.3 實現服務狀態徽章組件
-- [ ] 6.3.4 實現服務操作按鈕組件
+- [ ] 6.3.1 客戶詳情頁面服務管理區塊
+- [ ] 6.3.2 服務訂閱表單
+- [ ] 6.3.3 服務狀態徽章元件 [規格:L426-L452]
+- [ ] 6.3.4 服務操作按鈕元件 [規格:L484-L571]
 
-#### 6.4 測試與部署
-- [x] 6.4.1 [內部] 自行測試所有服務生命週期功能（邏輯驗證通過）
-- [x] 6.4.2 [內部] 完整性驗證（已對照規格，4/4 API 全部實現）
-- [x] 6.4.3 [內部] 準備執行自動部署
+#### 6.4 完整性驗證與部署
+- [x] 6.4.1 驗證狀態轉換規則（active/suspended/expired/cancelled）[規格:L346-L360]
+- [x] 6.4.2 驗證月度任務自動生成邏輯（active 才生成）[規格:L362-L388]
+- [x] 6.4.3 驗證到期提醒通知（非 auto_renew）[規格:L390-L422]
+- [x] 6.4.4 提交與部署
 
 ---
 
