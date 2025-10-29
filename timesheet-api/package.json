@@ -1,0 +1,38 @@
+{
+  "name": "horgoscpa-api",
+  "version": "1.0.0",
+  "description": "會計師事務所內部管理系統 API - Cloudflare Workers",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest",
+    "type-check": "tsc --noEmit",
+    "db:migrate": "wrangler d1 execute horgoscpa --file=./schema.sql",
+    "db:migrate:local": "wrangler d1 execute horgoscpa --local --file=./schema.sql"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "hono",
+    "d1",
+    "sqlite"
+  ],
+  "author": "霍爾果斯會計師事務所",
+  "license": "MIT",
+  "dependencies": {
+    "@cloudflare/itty-router-openapi": "^1.0.3",
+    "hono": "^4.0.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240129.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.5",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0",
+    "wrangler": "^3.28.0"
+  }
+}
+
