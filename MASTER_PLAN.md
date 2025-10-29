@@ -1488,29 +1488,97 @@
 
 #### 8.1 資料表創建
 - [x] 8.1.1 創建 `SOPDocuments` 表（SOP 文件，含版本控制、發布狀態、索引）[規格:L10-L30]
+  - [x] 8.1.1.1 主鍵 `sop_id` [規格:L12]
+  - [x] 8.1.1.2 主要欄位：`title`, `content`(HTML), `category`, `tags`(JSON) [規格:L13-L17]
+  - [x] 8.1.1.3 版本與發布：`version`, `is_published` [規格:L17-L18]
+  - [x] 8.1.1.4 審計與作者：`created_by`, `created_at`, `updated_at`, `is_deleted` [規格:L19-L23]
+  - [x] 8.1.1.5 外鍵：`created_by`→Users(user_id) [規格:L24]
+  - [x] 8.1.1.6 索引：`idx_sop_category`, `idx_sop_published`, `idx_sop_creator` [規格:L27-L29]
 - [x] 8.1.2 創建 `ClientSOPLinks` 表（客戶專屬 SOP，含 UNIQUE 約束防止重複關聯）[規格:L32-L50]
+  - [x] 8.1.2.1 主鍵 `link_id` [規格:L35]
+  - [x] 8.1.2.2 關聯欄位：`client_id`, `sop_id`, `assigned_by` [規格:L36-L39]
+  - [x] 8.1.2.3 欄位：`assigned_at`, `notes` [規格:L39-L41]
+  - [x] 8.1.2.4 外鍵：Clients/SOPDocuments/Users [規格:L42-L45]
+  - [x] 8.1.2.5 UNIQUE(client_id, sop_id) 防重複 [規格:L45]
+  - [x] 8.1.2.6 索引：`idx_client_sop_client`, `idx_client_sop_sop` [規格:L48-L49]
 - [x] 8.1.3 創建 `KnowledgeArticles` 表（知識庫，含瀏覽次數、索引）[規格:L52-L72]
+  - [x] 8.1.3.1 主鍵 `article_id` [規格:L55]
+  - [x] 8.1.3.2 主要欄位：`title`, `content`, `category`, `tags`(JSON) [規格:L56-L59]
+  - [x] 8.1.3.3 發布與統計：`is_published`, `view_count` [規格:L60-L61]
+  - [x] 8.1.3.4 審計與作者：`created_by`, `created_at`, `updated_at`, `is_deleted` [規格:L62-L66]
+  - [x] 8.1.3.5 外鍵：`created_by`→Users(user_id) [規格:L67]
+  - [x] 8.1.3.6 索引：`idx_knowledge_category`, `idx_knowledge_published` [規格:L70-L71]
 
 #### 8.2 SOP 管理 API（6個）
 - [x] 8.2.1 實現 `GET /api/v1/sop` 路由（查詢 SOP 列表，含創建者資訊）[規格:L83]
+  - [x] 8.2.1.1 權限：所有人（authMiddleware）[規格:L83]
+  - [x] 8.2.1.2 查詢參數：`category`, `q`（可選）
+  - [x] 8.2.1.3 Repository 查詢與返回格式
+  - [x] 8.2.1.4 添加 OpenAPI 註解
 - [x] 8.2.2 實現 `POST /api/v1/sop` 路由（⭐小型事務所彈性設計：所有人可用）[規格:L84]
+  - [x] 8.2.2.1 權限：所有人 [規格:L84]
+  - [x] 8.2.2.2 驗證 `title`, `content` 必填 [規格:L221-L226]
+  - [x] 8.2.2.3 設定 `version=1`, `is_published=false`, `created_by` [規格:L229-L236]
+  - [x] 8.2.2.4 添加 OpenAPI 註解
 - [x] 8.2.3 實現 `GET /api/v1/sop/:id` 路由（查詢 SOP 詳情）[規格:L85]
+  - [x] 8.2.3.1 權限：所有人 [規格:L85]
+  - [x] 8.2.3.2 解析 `sop_id` 並查詢
+  - [x] 8.2.3.3 添加 OpenAPI 註解
 - [x] 8.2.4 實現 `PUT /api/v1/sop/:id` 路由（⭐版本號自動+1，所有人可用）[規格:L86]
+  - [x] 8.2.4.1 權限：所有人 [規格:L86]
+  - [x] 8.2.4.2 版本自動 +1 規則 [規格:L278-L282]
+  - [x] 8.2.4.3 添加 OpenAPI 註解
 - [x] 8.2.5 實現 `DELETE /api/v1/sop/:id` 路由（僅管理員）[規格:L87]
+  - [x] 8.2.5.1 權限：管理員 [規格:L87]
+  - [x] 8.2.5.2 軟刪除與審計
+  - [x] 8.2.5.3 添加 OpenAPI 註解
 - [x] 8.2.6 實現 `POST /api/v1/sop/:id/publish` 路由（發布 SOP，所有人可用）[規格:L88]
+  - [x] 8.2.6.1 權限：所有人 [規格:L88]
+  - [x] 8.2.6.2 發布流程（草稿→發布）[規格:L273-L276]
+  - [x] 8.2.6.3 添加 OpenAPI 註解
 
 #### 8.3 客戶專屬 SOP API（3個）
 - [x] 8.3.1 實現 `GET /api/v1/clients/:clientId/sop` 路由（查詢客戶關聯的 SOP，含 JOIN）[規格:L96]
+  - [x] 8.3.1.1 權限：所有人 [規格:L96]
+  - [x] 8.3.1.2 解析 `clientId`，JOIN 查詢
+  - [x] 8.3.1.3 添加 OpenAPI 註解
 - [x] 8.3.2 實現 `POST /api/v1/clients/:clientId/sop` 路由（關聯 SOP，含重複檢查）[規格:L97]
+  - [x] 8.3.2.1 權限：所有人 [規格:L97]
+  - [x] 8.3.2.2 驗證客戶與 SOP 存在 [規格:L239-L246]
+  - [x] 8.3.2.3 檢查是否已關聯（UNIQUE 保護）[規格:L248-L252]
+  - [x] 8.3.2.4 建立關聯並回傳 [規格:L254-L260]
 - [x] 8.3.3 實現 `DELETE /api/v1/clients/:clientId/sop/:sopId` 路由（移除關聯）[規格:L98]
+  - [x] 8.3.3.1 權限：所有人 [規格:L98]
+  - [x] 8.3.3.2 解析 `clientId`, `sopId` 並刪除連結
+  - [x] 8.3.3.3 添加 OpenAPI 註解
 
 #### 8.4 知識庫 API（6個）
 - [x] 8.4.1 實現 `GET /api/v1/knowledge` 路由（查詢知識庫列表，含創建者資訊）[規格:L106]
+  - [x] 8.4.1.1 權限：所有人 [規格:L106]
+  - [x] 8.4.1.2 查詢參數：`category`, `q`（可選）
+  - [x] 8.4.1.3 Repository 查詢與返回格式
+  - [x] 8.4.1.4 添加 OpenAPI 註解
 - [x] 8.4.2 實現 `POST /api/v1/knowledge` 路由（⭐所有人可用）[規格:L107]
+  - [x] 8.4.2.1 權限：所有人 [規格:L107]
+  - [x] 8.4.2.2 驗證 `title`, `content` 必填
+  - [x] 8.4.2.3 初始化 `view_count=0`, `is_published=false`
+  - [x] 8.4.2.4 添加 OpenAPI 註解
 - [x] 8.4.3 實現 `GET /api/v1/knowledge/:id` 路由（⭐瀏覽次數自動+1）[規格:L108]
+  - [x] 8.4.3.1 權限：所有人 [規格:L108]
+  - [x] 8.4.3.2 自動 `view_count++` [規格:L221-L237]
+  - [x] 8.4.3.3 添加 OpenAPI 註解
 - [x] 8.4.4 實現 `PUT /api/v1/knowledge/:id` 路由（所有人可用）[規格:L109]
+  - [x] 8.4.4.1 權限：所有人 [規格:L109]
+  - [x] 8.4.4.2 更新內容與發布狀態
+  - [x] 8.4.4.3 添加 OpenAPI 註解
 - [x] 8.4.5 實現 `DELETE /api/v1/knowledge/:id` 路由（僅管理員）[規格:L110]
+  - [x] 8.4.5.1 權限：管理員 [規格:L110]
+  - [x] 8.4.5.2 軟刪除與審計
+  - [x] 8.4.5.3 添加 OpenAPI 註解
 - [x] 8.4.6 實現 `GET /api/v1/knowledge/search` 路由（⭐全文搜尋）[規格:L111]
+  - [x] 8.4.6.1 權限：所有人 [規格:L111]
+  - [x] 8.4.6.2 調用 Repository.search(query) [規格:L262-L265]
+  - [x] 8.4.6.3 添加 OpenAPI 註解
 
 #### 8.5 完整性驗證
 - [x] 8.5.1 [內部] 完整讀取規格文檔（共 323 行，已完整讀取）[規格:L1-L323]
