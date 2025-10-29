@@ -1301,31 +1301,38 @@
 **資料表：** 3 個（新增，其他已在模組1-2）| **API：** 7 個 | **Cron Jobs：** 1 個
 
 #### 5.1 資料表創建
-- [x] 5.1.1 創建 `LeaveApplications` 表（假期申請，含生理假併入病假欄位）
-- [x] 5.1.2 創建 `AnnualLeaveBalance` 表（特休餘額，累積制：去年剩餘+今年新增）
-- [x] 5.1.3 創建 `LifeEventLeaveGrants` 表（生活事件假期額度，含有效期追蹤）
-- [x] 5.1.4 `CronJobExecutions` 表（已在模組4創建）
-- [x] 5.1.5 `Notifications` 表（已在模組1創建）
+- [x] 5.1.1 創建 `LeaveApplications` 表（假期申請，含生理假併入病假欄位）[規格:L9-L36, L38-L44]
+- [x] 5.1.2 創建 `AnnualLeaveBalance` 表（特休餘額，累積制：去年剩餘+今年新增）[規格:L101-L120]
+- [x] 5.1.3 創建 `LifeEventLeaveGrants` 表（生活事件假期額度，含有效期追蹤）[規格:L144-L183]
+- [x] 5.1.4 `CronJobExecutions` 表（已在模組4創建）[規格:L185-L205]
+- [x] 5.1.5 `Notifications` 表（已在模組1創建）[規格:L207-L220]
 
-#### 5.2 假期申請 API
-- [x] 5.2.1 實現 `POST /api/v1/leave/applications` 路由（含性別驗證、重疊檢查、生理假併入邏輯，含 OpenAPI 註解）
-- [x] 5.2.2 實現 `GET /api/v1/leave/applications` 路由（含權限過濾，含 OpenAPI 註解）
-- [x] 5.2.3 實現 `GET /api/v1/leave/balance` 路由（完整實現：特休累積、病假含生理假、生活事件餘額，含 OpenAPI 註解）
-- [x] 5.2.4 實現 `GET /api/v1/leave/available-types` 路由（依性別自動過濾，含 OpenAPI 註解）
+#### 5.2 假期管理 API
+- [x] 5.2.1 `POST /api/v1/leave/applications` [規格:L235-L239, L397-L449]
+  - [x] 5.2.1.1 驗證性別限制（女性限定/男性限定）[規格:L401-L403]
+  - [x] 5.2.1.2 驗證日期與重疊 [規格:L404-L419]
+  - [x] 5.2.1.3 生理假第4日起併入病假，並檢查病假餘額 [規格:L421-L449]
+  - [x] 5.2.1.4 記錄申請與審計日誌
+
+- [x] 5.2.2 `GET /api/v1/leave/balance`（查詢特休/病假/生活事件餘額）[規格:L251-L276]
+  - [x] 5.2.2.1 計算特休累積（去年遞延 + 今年應得）[規格:L634-L708]
+  - [x] 5.2.2.2 病假餘額（含生理假第4日起併入病假）[規格:L834-L879]
+  - [x] 5.2.2.3 生活事件餘額與有效期 [規格:L901-L943]
+
+- [x] 5.2.3 `GET /api/v1/leave/available-types`（依性別過濾）[規格:L279-L318, L1038]
 
 #### 5.3 生活事件管理 API
-- [x] 5.3.1 實現 `POST /api/v1/leave/life-events` 路由（登記婚假、喪假等，自動計算有效期，含 OpenAPI 註解）
-- [x] 5.3.2 實現 `GET /api/v1/leave/life-events` 路由（含有效期狀態，含 OpenAPI 註解）
+- [x] 5.3.1 `POST /api/v1/leave/life-events`（登記婚假、喪假等，自動計算有效期）[規格:L320-L332, L144-L183]
 
 #### 5.4 Cron Job 管理 API（管理員專用）
-- [x] 5.4.1 實現 `POST /api/v1/admin/cron/execute` 路由（手動觸發補救，含 OpenAPI 註解）
-- [x] 5.4.2 實現 `GET /api/v1/admin/cron/history` 路由（查詢執行歷史，含 OpenAPI 註解）
+- [x] 5.4.1 `POST /api/v1/admin/cron/execute`（手動觸發年初更新）[規格:L334-L346]
+- [x] 5.4.2 `GET /api/v1/admin/cron/history`（查詢執行歷史）[規格:L362-L391]
 
 #### 5.5 Cron Job 實現
-- [x] 5.5.1 在 `wrangler.jsonc` 中已配置特休年初更新 Cron Job（`0 0 1 1 *`）
-- [x] 5.5.2 實現特休累積邏輯（annualLeaveYearEndProcessing：去年剩餘 + 今年應得）
-- [x] 5.5.3 實現冪等性保護（使用 CronJobExecutions UNIQUE 索引）
-- [x] 5.5.4 實現失敗記錄和通知機制
+- [x] 5.5.1 配置特休年初更新排程（每年1月1日 00:00）[規格:L708]
+- [x] 5.5.2 實現特休累積邏輯（去年剩餘 + 今年應得，累積制）[規格:L634-L708]
+- [x] 5.5.3 冪等性保護：使用 `CronJobExecutions`（唯一索引）[規格:L185-L205]
+- [x] 5.5.4 失敗記錄與通知機制（錯誤訊息與告警）[規格:L810]
 
 #### 5.6 前端實現（暫緩）
 - [ ] 5.6.1 實現 `LeavePage.vue` 組件
