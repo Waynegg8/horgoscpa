@@ -622,6 +622,29 @@ CREATE INDEX idx_compe_usage_leave ON CompensatoryLeaveUsage(compe_leave_id);
 CREATE INDEX idx_compe_usage_date ON CompensatoryLeaveUsage(used_date);
 CREATE INDEX idx_compe_usage_user_date ON CompensatoryLeaveUsage(compe_leave_id, used_date);
 
+-- -----------------------------------------------------
+-- Table: CronJobExecutions (Cron Job 執行記錄)
+-- 描述: 記錄定時任務執行狀態（冪等性保護、失敗追蹤）
+-- -----------------------------------------------------
+CREATE TABLE CronJobExecutions (
+  execution_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  job_name TEXT NOT NULL,
+  execution_date TEXT NOT NULL,          -- 執行日期（用於冪等性檢查）
+  status TEXT NOT NULL,                  -- success, failed
+  affected_records INTEGER DEFAULT 0,    -- 影響的記錄數
+  error_message TEXT,
+  details TEXT,                          -- JSON 格式（詳細資訊）
+  created_at TEXT DEFAULT (datetime('now')),
+  
+  CHECK (status IN ('success', 'failed')),
+  UNIQUE(job_name, execution_date, status)  -- 同一任務同一天只能有一個成功記錄
+);
+
+-- 索引
+CREATE INDEX idx_cron_job_name ON CronJobExecutions(job_name);
+CREATE INDEX idx_cron_status ON CronJobExecutions(status);
+CREATE INDEX idx_cron_date ON CronJobExecutions(execution_date);
+
 -- =====================================================
 -- 註記
 -- =====================================================

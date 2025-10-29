@@ -111,6 +111,10 @@ app.notFound((c) => {
 // Cron Job 處理器
 // =====================================================
 
+// 導入 Cron Job 邏輯
+import { convertExpiredCompensatoryLeave } from './cron/compensatory-leave';
+import { checkMissingTimesheets } from './cron/timesheet-reminder';
+
 async function handleScheduled(event: ScheduledEvent, env: Env): Promise<void> {
   const cron = event.cron;
   const now = new Date();
@@ -132,22 +136,22 @@ async function handleScheduled(event: ScheduledEvent, env: Env): Promise<void> {
       // TODO: 實現任務生成邏輯（模組 7）
       
       console.log('[Cron] 執行補休到期轉換...');
-      // await convertExpiredCompLeave(env.DB);
-      // TODO: 實現補休轉換邏輯（模組 4）
+      const result = await convertExpiredCompensatoryLeave(env.DB);
+      console.log(`[Cron] 補休轉換完成：${result.processed} 筆，${result.total_hours} 小時`);
     }
     
     // 週一到週五 08:30 - 工時填寫提醒
     if (cron === "30 8 * * 1-5") {
       console.log('[Cron] 執行工時填寫提醒...');
-      // await checkMissingTimesheets(env.DB);
-      // TODO: 實現工時提醒邏輯（模組 4）
+      const result = await checkMissingTimesheets(env.DB);
+      console.log(`[Cron] 工時檢查完成：${result.missing_count} 位員工缺填`);
     }
     
     // 每天 02:00 - 資料庫備份
     if (cron === "0 2 * * *") {
       console.log('[Cron] 執行資料庫備份...');
       // await backupDatabase(env.DB, env.R2_BACKUPS);
-      // TODO: 實現資料庫備份邏輯
+      // TODO: 實現資料庫備份邏輯（進階功能）
     }
     
     // 每小時 - 失敗 Cron Job 自動重試
@@ -161,9 +165,24 @@ async function handleScheduled(event: ScheduledEvent, env: Env): Promise<void> {
   } catch (error) {
     console.error(`[Cron] Failed: ${cron}`, error);
     
-    // 記錄失敗到資料庫
-    // await recordCronFailure(env.DB, cron, error);
-    // TODO: 實現失敗記錄邏輯
+    // 通知管理員
+    try {
+      await env.DB.prepare(`
+        INSERT INTO Notifications (
+          user_id, type, message, priority, auto_dismiss
+        ) SELECT 
+          user_id, 
+          'cron_failed',
+          ?,
+          'high',
+          0
+        FROM Users WHERE is_admin = 1 AND is_deleted = 0
+      `).bind(
+        `定時任務執行失敗：${cron} - ${(error as Error).message}`
+      ).run();
+    } catch (notifError) {
+      console.error('[Cron] 無法發送失敗通知:', notifError);
+    }
   }
 }
 
