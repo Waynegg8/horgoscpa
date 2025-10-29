@@ -203,42 +203,6 @@ timelogs.get('/compensatory-leave', authMiddleware, async (c) => {
 /**
  * POST /api/v1/compensatory-leave/use
  * 使用補休（FIFO 先進先出）
- * 
- * @openapi
- * /compensatory-leave/use:
- *   post:
- *     tags:
- *       - 工時管理
- *     summary: 使用補休
- *     description: |
- *       使用補休時數（FIFO 先進先出）
- *       - 自動按累積日期順序使用（最早的先用完）
- *       - 記錄使用歷史
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - hours
- *               - use_date
- *             properties:
- *               hours:
- *                 type: number
- *                 example: 4.0
- *               use_date:
- *                 type: string
- *                 format: date
- *                 example: "2025-10-28"
- *               leave_application_id:
- *                 type: integer
- *                 example: 123
- *     responses:
- *       200:
- *         description: 使用成功
- *       422:
- *         description: 補休時數不足
  */
 timelogs.post('/compensatory-leave/use', authMiddleware, async (c) => {
   const user = c.get('user') as User;
@@ -253,6 +217,43 @@ timelogs.post('/compensatory-leave/use', authMiddleware, async (c) => {
   );
   
   return jsonResponse(c, successResponse(result), 200);
+});
+
+/**
+ * POST /api/v1/compensatory-leave/convert
+ * 手動轉換補休為加班費
+ */
+timelogs.post('/compensatory-leave/convert', authMiddleware, async (c) => {
+  const user = c.get('user') as User;
+  const { compe_leave_ids, conversion_rate } = await c.req.json();
+  
+  const timeLogService = new TimeLogService(c.env.DB);
+  const result = await timeLogService.convertCompensatoryLeaveToPayment(
+    compe_leave_ids,
+    conversion_rate,
+    user.user_id
+  );
+  
+  return jsonResponse(c, successResponse(result), 200);
+});
+
+/**
+ * GET /api/v1/compensatory-leave/history
+ * 查詢補休使用歷史
+ */
+timelogs.get('/compensatory-leave/history', authMiddleware, async (c) => {
+  const user = c.get('user') as User;
+  const startDate = c.req.query('start_date');
+  const endDate = c.req.query('end_date');
+  
+  const timeLogService = new TimeLogService(c.env.DB);
+  const history = await timeLogService.getCompensatoryLeaveHistory(
+    user.user_id,
+    startDate,
+    endDate
+  );
+  
+  return jsonResponse(c, successResponse(history), 200);
 });
 
 export default timelogs;

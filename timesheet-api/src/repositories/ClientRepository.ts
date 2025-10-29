@@ -415,6 +415,43 @@ export class CustomerTagRepository {
   }
 
   /**
+   * 更新標籤
+   */
+  async updateTag(tagId: number, updates: Partial<CustomerTag>): Promise<CustomerTag> {
+    const fields: string[] = [];
+    const values: any[] = [];
+    
+    if (updates.tag_name !== undefined) {
+      fields.push('tag_name = ?');
+      values.push(updates.tag_name);
+    }
+    if (updates.tag_color !== undefined) {
+      fields.push('tag_color = ?');
+      values.push(updates.tag_color);
+    }
+    if (updates.description !== undefined) {
+      fields.push('description = ?');
+      values.push(updates.description);
+    }
+    if (updates.sort_order !== undefined) {
+      fields.push('sort_order = ?');
+      values.push(updates.sort_order);
+    }
+    
+    if (fields.length === 0) throw new Error('沒有可更新的欄位');
+    
+    values.push(tagId);
+    
+    await this.db.prepare(`
+      UPDATE CustomerTags SET ${fields.join(', ')} WHERE tag_id = ?
+    `).bind(...values).run();
+    
+    const result = await this.findById(tagId);
+    if (!result) throw new Error('標籤不存在');
+    return result;
+  }
+
+  /**
    * 軟刪除標籤
    */
   async delete(tagId: number, deletedBy: number): Promise<void> {

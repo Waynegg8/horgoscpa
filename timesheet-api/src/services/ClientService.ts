@@ -278,6 +278,62 @@ export class ClientService {
   }
 
   /**
+   * 更新標籤
+   */
+  async updateTag(
+    tagId: number,
+    updates: Partial<CustomerTag>,
+    updatedBy: number
+  ): Promise<CustomerTag> {
+    const existing = await this.tagRepo.findById(tagId);
+    if (!existing) throw new NotFoundError('標籤不存在');
+    
+    if (updates.tag_name) {
+      const exists = await this.tagRepo.existsByName(updates.tag_name, tagId);
+      if (exists) throw new ConflictError('標籤名稱已存在', 'tag_name');
+    }
+    
+    const tag = await this.tagRepo.updateTag(tagId, updates);
+    
+    await createAuditLog(this.db, {
+      user_id: updatedBy,
+      action: 'UPDATE',
+      table_name: 'CustomerTags',
+      record_id: tagId.toString(),
+      changes: JSON.stringify({ old: existing, new: updates }),
+    });
+    
+    return tag;
+  }
+
+  /**
+   * 刪除標籤
+   */
+  async deleteTag(tagId: number, deletedBy: number): Promise<void> {
+    const existing = await this.tagRepo.findById(tagId);
+    if (!existing) throw new NotFoundError('標籤不存在');
+    
+    // 檢查是否有客戶使用此標籤
+    const usageCount = await this.db.prepare(`
+      SELECT COUNT(*) as count FROM ClientTagAssignments WHERE tag_id = ?
+    `).bind(tagId).first<{ count: number }>();
+    
+    if ((usageCount?.count || 0) > 0) {
+      throw new ForbiddenError('此標籤正在被使用，無法刪除');
+    }
+    
+    await this.tagRepo.delete(tagId, deletedBy);
+    
+    await createAuditLog(this.db, {
+      user_id: deletedBy,
+      action: 'DELETE',
+      table_name: 'CustomerTags',
+      record_id: tagId.toString(),
+      changes: JSON.stringify(existing),
+    });
+  }
+
+  /**
    * 批量更新客戶（僅管理員）
    */
   async batchUpdateClients(
@@ -290,7 +346,6 @@ export class ClientService {
   ): Promise<{ updated: number }> {
     const count = await this.clientRepo.batchUpdate(clientIds, updates, updatedBy);
     
-    // 記錄審計日誌
     await createAuditLog(this.db, {
       user_id: updatedBy,
       action: 'UPDATE',
@@ -300,6 +355,65 @@ export class ClientService {
     });
     
     return { updated: count };
+  }
+
+  /**
+   * 批量刪除客戶（僅管理員）
+   */
+  async batchDeleteClients(clientIds: string[], deletedBy: number): Promise<{ deleted: number }> {
+    let deleted = 0;
+    
+    for (const clientId of clientIds) {
+      try {
+        // 檢查是否有啟用中的服務
+        const activeServices = await this.db.prepare(`
+          SELECT COUNT(*) as count FROM ClientServices
+          WHERE client_id = ? AND is_deleted = 0
+        `).bind(clientId).first<{ count: number }>();
+        
+        if ((activeServices?.count || 0) === 0) {
+          await this.clientRepo.delete(clientId, deletedBy);
+          deleted++;
+        }
+      } catch (error) {
+        console.error(`批量刪除客戶 ${clientId} 失敗:`, error);
+      }
+    }
+    
+    await createAuditLog(this.db, {
+      user_id: deletedBy,
+      action: 'DELETE',
+      table_name: 'Clients',
+      record_id: `batch:${clientIds.length}`,
+      changes: JSON.stringify({ client_ids: clientIds, deleted }),
+    });
+    
+    return { deleted };
+  }
+
+  /**
+   * 批量分配負責人（僅管理員）
+   */
+  async batchAssignClients(
+    clientIds: string[],
+    assigneeUserId: number,
+    updatedBy: number
+  ): Promise<{ assigned: number }> {
+    const count = await this.clientRepo.batchUpdate(
+      clientIds,
+      { assignee_user_id: assigneeUserId },
+      updatedBy
+    );
+    
+    await createAuditLog(this.db, {
+      user_id: updatedBy,
+      action: 'UPDATE',
+      table_name: 'Clients',
+      record_id: `batch_assign:${clientIds.length}`,
+      changes: JSON.stringify({ client_ids: clientIds, new_assignee: assigneeUserId }),
+    });
+    
+    return { assigned: count };
   }
 }
 

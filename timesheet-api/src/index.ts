@@ -20,6 +20,7 @@ import businessrules from './routes/businessrules';
 import services from './routes/services';
 import clients from './routes/clients';
 import timelogs from './routes/timelogs';
+import leave from './routes/leave';
 
 // 創建 Hono 應用
 const app = new Hono<{ Bindings: Env }>();
@@ -87,8 +88,10 @@ app.route('/api/v1', clients);
 // 工時管理路由
 app.route('/api/v1', timelogs);
 
+// 假期管理路由
+app.route('/api/v1', leave);
+
 // 後續路由將在這裡添加
-// app.route('/api/v1/leave', leave);
 // app.route('/api/v1/tasks', tasks);
 // etc...
 
@@ -114,6 +117,7 @@ app.notFound((c) => {
 // 導入 Cron Job 邏輯
 import { convertExpiredCompensatoryLeave } from './cron/compensatory-leave';
 import { checkMissingTimesheets } from './cron/timesheet-reminder';
+import { annualLeaveYearEndProcessing } from './cron/annual-leave';
 
 async function handleScheduled(event: ScheduledEvent, env: Env): Promise<void> {
   const cron = event.cron;
@@ -125,8 +129,8 @@ async function handleScheduled(event: ScheduledEvent, env: Env): Promise<void> {
     // 每年1月1日 00:00 - 特休年初更新
     if (cron === "0 0 1 1 *") {
       console.log('[Cron] 執行特休年初更新...');
-      // await annualLeaveYearEndProcessing(env.DB);
-      // TODO: 實現特休更新邏輯（模組 5）
+      const result = await annualLeaveYearEndProcessing(env.DB);
+      console.log(`[Cron] 特休更新完成：${result.affected_users} 位員工`);
     }
     
     // 每月1日 00:00 - 任務自動生成 + 補休到期轉換

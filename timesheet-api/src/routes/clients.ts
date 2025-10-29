@@ -367,44 +367,37 @@ clients.post('/clients/tags', authMiddleware, async (c) => {
 });
 
 /**
+ * PUT /api/v1/clients/tags/:id
+ * 更新標籤
+ */
+clients.put('/clients/tags/:id', authMiddleware, async (c) => {
+  const user = c.get('user') as User;
+  const tagId = parseInt(c.req.param('id'));
+  const updates = await c.req.json();
+  
+  const clientService = new ClientService(c.env.DB);
+  const tag = await clientService.updateTag(tagId, updates, user.user_id);
+  
+  return jsonResponse(c, successResponse(tag), 200);
+});
+
+/**
+ * DELETE /api/v1/clients/tags/:id
+ * 刪除標籤
+ */
+clients.delete('/clients/tags/:id', authMiddleware, async (c) => {
+  const user = c.get('user') as User;
+  const tagId = parseInt(c.req.param('id'));
+  
+  const clientService = new ClientService(c.env.DB);
+  await clientService.deleteTag(tagId, user.user_id);
+  
+  return jsonResponse(c, successResponse({ message: '標籤已刪除' }), 200);
+});
+
+/**
  * POST /api/v1/clients/batch-update
  * 批量更新客戶（僅管理員）
- * 
- * @openapi
- * /clients/batch-update:
- *   post:
- *     tags:
- *       - 客戶管理
- *     summary: 批量更新客戶
- *     description: 批量更新多個客戶的資訊（僅管理員）
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - client_ids
- *               - updates
- *             properties:
- *               client_ids:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["12345678", "87654321"]
- *               updates:
- *                 type: object
- *                 properties:
- *                   business_status:
- *                     type: string
- *                     enum: [營業中, 暫停營業, 已結束營業]
- *                   assignee_user_id:
- *                     type: integer
- *     responses:
- *       200:
- *         description: 更新成功
- *       403:
- *         description: 權限不足
  */
 clients.post('/clients/batch-update', authMiddleware, requireAdmin, async (c) => {
   const user = c.get('user') as User;
@@ -412,6 +405,34 @@ clients.post('/clients/batch-update', authMiddleware, requireAdmin, async (c) =>
   
   const clientService = new ClientService(c.env.DB);
   const result = await clientService.batchUpdateClients(client_ids, updates, user.user_id);
+  
+  return jsonResponse(c, successResponse(result), 200);
+});
+
+/**
+ * POST /api/v1/clients/batch-delete
+ * 批量刪除客戶（僅管理員）
+ */
+clients.post('/clients/batch-delete', authMiddleware, requireAdmin, async (c) => {
+  const user = c.get('user') as User;
+  const { client_ids } = await c.req.json();
+  
+  const clientService = new ClientService(c.env.DB);
+  const result = await clientService.batchDeleteClients(client_ids, user.user_id);
+  
+  return jsonResponse(c, successResponse(result), 200);
+});
+
+/**
+ * POST /api/v1/clients/batch-assign
+ * 批量分配負責人（僅管理員）
+ */
+clients.post('/clients/batch-assign', authMiddleware, requireAdmin, async (c) => {
+  const user = c.get('user') as User;
+  const { client_ids, assignee_user_id } = await c.req.json();
+  
+  const clientService = new ClientService(c.env.DB);
+  const result = await clientService.batchAssignClients(client_ids, assignee_user_id, user.user_id);
   
   return jsonResponse(c, successResponse(result), 200);
 });

@@ -646,6 +646,97 @@ CREATE INDEX idx_cron_status ON CronJobExecutions(status);
 CREATE INDEX idx_cron_date ON CronJobExecutions(execution_date);
 
 -- =====================================================
+-- 模組 5: 假期管理
+-- =====================================================
+
+-- -----------------------------------------------------
+-- Table: LeaveApplications (假期申請)
+-- 描述: 記錄員工的請假申請
+-- -----------------------------------------------------
+CREATE TABLE LeaveApplications (
+  application_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  leave_type_id INTEGER NOT NULL,
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL,
+  days REAL NOT NULL,
+  hours REAL,
+  reason TEXT,
+  event_type TEXT,                      -- 如果是生活事件產生的
+  counts_as_sick_leave BOOLEAN DEFAULT 0,  -- ⭐ 生理假專用：是否併入病假（第4日起）
+  applied_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (user_id) REFERENCES Users(user_id),
+  FOREIGN KEY (leave_type_id) REFERENCES LeaveTypes(leave_type_id),
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id)
+);
+
+-- 索引
+CREATE INDEX idx_leave_apps_user ON LeaveApplications(user_id);
+CREATE INDEX idx_leave_apps_date ON LeaveApplications(start_date, end_date);
+CREATE INDEX idx_leave_apps_user_date ON LeaveApplications(user_id, start_date, end_date);
+CREATE INDEX idx_leave_apps_type_year ON LeaveApplications(leave_type_id, start_date);
+CREATE INDEX idx_leave_apps_deleted ON LeaveApplications(is_deleted);
+
+-- -----------------------------------------------------
+-- Table: AnnualLeaveBalance (特休餘額)
+-- 描述: 員工特休餘額（累積制：去年剩餘+今年新增）
+-- -----------------------------------------------------
+CREATE TABLE AnnualLeaveBalance (
+  balance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  year INTEGER NOT NULL,                -- 年度
+  entitled_days REAL NOT NULL,          -- 當年度新增特休
+  carried_over_days REAL DEFAULT 0,     -- 去年遞延特休（累積）
+  used_days REAL DEFAULT 0,             -- 已使用天數
+  remaining_days REAL NOT NULL,         -- 剩餘天數
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  
+  FOREIGN KEY (user_id) REFERENCES Users(user_id),
+  UNIQUE(user_id, year)
+);
+
+-- 索引
+CREATE INDEX idx_annual_leave_balance_user ON AnnualLeaveBalance(user_id);
+CREATE INDEX idx_annual_leave_balance_year ON AnnualLeaveBalance(year);
+
+-- -----------------------------------------------------
+-- Table: LifeEventLeaveGrants (生活事件假期額度)
+-- 描述: 追蹤生活事件產生的假期餘額和有效期（如：婚假8天，1年內分次使用）
+-- -----------------------------------------------------
+CREATE TABLE LifeEventLeaveGrants (
+  grant_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  leave_type_id INTEGER NOT NULL,       -- 假別（婚假、喪假等）
+  event_type TEXT NOT NULL,             -- 事件類型（'結婚'、'父母過世'等）
+  event_date TEXT NOT NULL,             -- 事件發生日期
+  total_days REAL NOT NULL,             -- 總額度（如：8天）
+  used_days REAL DEFAULT 0,             -- 已使用天數
+  remaining_days REAL NOT NULL,         -- 剩餘天數
+  valid_from TEXT NOT NULL,             -- 有效期起始日
+  valid_until TEXT NOT NULL,            -- 有效期結束日
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (user_id) REFERENCES Users(user_id),
+  FOREIGN KEY (leave_type_id) REFERENCES LeaveTypes(leave_type_id),
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id)
+);
+
+-- 索引
+CREATE INDEX idx_life_event_grants_user ON LifeEventLeaveGrants(user_id);
+CREATE INDEX idx_life_event_grants_valid ON LifeEventLeaveGrants(valid_until);
+CREATE INDEX idx_life_event_grants_type ON LifeEventLeaveGrants(leave_type_id);
+CREATE INDEX idx_life_event_grants_deleted ON LifeEventLeaveGrants(is_deleted);
+
+-- =====================================================
 -- 註記
 -- =====================================================
 -- 1. 所有表都包含標準審計欄位：created_at, updated_at, is_deleted, deleted_at, deleted_by

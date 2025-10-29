@@ -455,5 +455,87 @@ export class TimeLogService {
       remaining_total: totalAvailable - hoursToUse,
     };
   }
+
+  /**
+   * ⭐ 手動轉換補休為加班費
+   */
+  async convertCompensatoryLeaveToPayment(
+    compeLeaveIds: number[],
+    conversionRate: number,
+    userId: number
+  ): Promise<{
+    total_hours_converted: number;
+    conversion_rate: number;
+    payment_amount: number;
+    converted_leaves: any[];
+  }> {
+    let totalHours = 0;
+    const convertedLeaves = [];
+    
+    for (const compeLeaveId of compeLeaveIds) {
+      // 查詢補休記錄
+      const leave = await this.db.prepare(`
+        SELECT * FROM CompensatoryLeave WHERE compe_leave_id = ? AND user_id = ?
+      `).bind(compeLeaveId, userId).first<any>();
+      
+      if (!leave || leave.hours_remaining <= 0) {
+        continue;
+      }
+      
+      // 標記為已轉換
+      await this.compeLeaveRepo.markAsConverted(compeLeaveId, conversionRate);
+      
+      totalHours += leave.hours_remaining;
+      convertedLeaves.push({
+        compe_leave_id: compeLeaveId,
+        hours: leave.hours_remaining,
+      });
+    }
+    
+    const paymentAmount = totalHours * conversionRate;
+    
+    return {
+      total_hours_converted: totalHours,
+      conversion_rate: conversionRate,
+      payment_amount: paymentAmount,
+      converted_leaves: convertedLeaves,
+    };
+  }
+
+  /**
+   * ⭐ 查詢補休使用歷史
+   */
+  async getCompensatoryLeaveHistory(
+    userId: number,
+    startDate?: string,
+    endDate?: string
+  ): Promise<any[]> {
+    let whereClause = 'WHERE cl.user_id = ?';
+    const params: any[] = [userId];
+    
+    if (startDate) {
+      whereClause += ' AND cl.earned_date >= ?';
+      params.push(startDate);
+    }
+    
+    if (endDate) {
+      whereClause += ' AND cl.earned_date <= ?';
+      params.push(endDate);
+    }
+    
+    const result = await this.db.prepare(`
+      SELECT 
+        cl.*,
+        clu.usage_id,
+        clu.hours_used,
+        clu.used_date
+      FROM CompensatoryLeave cl
+      LEFT JOIN CompensatoryLeaveUsage clu ON cl.compe_leave_id = clu.compe_leave_id
+      ${whereClause}
+      ORDER BY cl.earned_date DESC, clu.used_date DESC
+    `).bind(...params).all();
+    
+    return result.results || [];
+  }
 }
 
