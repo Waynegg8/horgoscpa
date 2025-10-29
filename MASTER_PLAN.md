@@ -143,10 +143,10 @@
 #### 1.2 認證系統實現 [規格:L244-L250]
 
 **1.2.1 UserRepository 創建**
-- [x] 1.2.1.1 創建 `findByUsername()` 方法（用於登入驗證）
-- [x] 1.2.1.2 創建 `findById()` 方法
+- [x] 1.2.1.1 創建 `findByUsername()` 方法（用於登入驗證） [規格:L536-L539]
+- [x] 1.2.1.2 創建 `findById()` 方法 [規格:L577]
 - [x] 1.2.1.3 創建 `incrementLoginAttempts()` 方法（登入失敗計數）[規格:L555]
-- [x] 1.2.1.4 創建 `update()` 方法（更新用戶資訊）
+- [x] 1.2.1.4 創建 `update()` 方法（更新用戶資訊） [規格:L560-L563]
 
 **1.2.2 AuthService 創建**
 - [x] 1.2.2.1 實現 `login()` 方法 [規格:L534-L573]
@@ -172,8 +172,8 @@
 - [x] 1.2.3.4 實現 `generateRandomPassword()` 函數（12字元，含大小寫數字特殊符號）[規格:L727-L747]
 
 **1.2.4 JWT 中間件**
-- [x] 1.2.4.1 創建 `authMiddleware`（驗證 JWT Token）
-- [x] 1.2.4.2 創建 `adminMiddleware`（檢查 is_admin = true）
+- [x] 1.2.4.1 創建 `authMiddleware`（驗證 JWT Token） [規格:L244-L250, L786-L788]
+- [x] 1.2.4.2 創建 `adminMiddleware`（檢查 is_admin = true） [規格:L258-L266]
 - [x] 1.2.4.3 Token 儲存在 HttpOnly Cookie（24小時有效期）[規格:L786-L788]
 
 **1.2.5 認證 API 路由創建**
@@ -207,8 +207,8 @@
 #### 1.3 個人資料管理實現 [規格:L253-L256]
 
 **1.3.1 ProfileService 創建**
-- [x] 1.3.1.1 實現 `getProfile()` 方法（獲取當前用戶資訊）
-- [x] 1.3.1.2 實現 `updateProfile()` 方法（更新個人資料，不含敏感欄位）
+- [x] 1.3.1.1 實現 `getProfile()` 方法（獲取當前用戶資訊） [規格:L254]
+- [x] 1.3.1.2 實現 `updateProfile()` 方法（更新個人資料，不含敏感欄位） [規格:L255]
   - [x] 1.3.1.2.1 驗證可更新欄位（email, phone, address, emergency_contact_*）
   - [x] 1.3.1.2.2 禁止更新敏感欄位（username, password_hash, is_admin）
   - [x] 1.3.1.2.3 記錄審計日誌
@@ -305,11 +305,11 @@
 #### 1.5 系統設定實現（僅管理員）[規格:L269-L272]
 
 **1.5.1 SettingsService 創建**
-- [x] 1.5.1.1 實現 `getAllSettings()` 方法
+- [x] 1.5.1.1 實現 `getAllSettings()` 方法 [規格:L270-L302]
   - [x] 1.5.1.1.1 查詢所有設定
   - [x] 1.5.1.1.2 按 is_dangerous 分組（危險設定優先顯示）
 
-- [x] 1.5.1.2 實現 `updateSetting()` 方法
+- [x] 1.5.1.2 實現 `updateSetting()` 方法 [規格:L305-L322]
   - [x] 1.5.1.2.1 查詢設定是否存在
   - [x] 1.5.1.2.2 檢查 is_dangerous 標記 [規格:L50]
   - [x] 1.5.1.2.3 危險設定需確認（confirmed = true）[規格:L309]
