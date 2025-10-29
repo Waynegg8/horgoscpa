@@ -2541,7 +2541,7 @@
 
 ---
 
-#### 12.2 收據管理 API（6個）[規格:L256-L345]
+#### [x] 12.2 收據管理 API（6個）[規格:L256-L345]
 
 **12.2.1 GET /api/v1/receipts（查詢收據列表，含客戶備註 JOIN）[規格:L259, L296-L344]**
 - [ ] 12.2.1.1 權限：authMiddleware + adminMiddleware
