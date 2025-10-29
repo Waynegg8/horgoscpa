@@ -26,6 +26,7 @@ import tasks from './routes/tasks';
 import knowledge from './routes/knowledge';
 import externalContent from './routes/external-content';
 import salary from './routes/salary';
+import overheadCosts from './routes/overhead-costs';
 
 // 創建 Hono 應用
 const app = new Hono<{ Bindings: Env }>();
@@ -108,6 +109,9 @@ app.route('/api/v1', externalContent);
 
 // 薪資管理路由
 app.route('/api/v1', salary);
+
+// 管理成本路由
+app.route('/api/v1', overheadCosts);
 
 // 後續路由將在這裡添加
 // etc...
