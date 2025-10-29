@@ -936,7 +936,7 @@
   - [x] 3.4.1.2.4 使用事務批量軟刪除 [規格:L346-L356]
   - [x] 3.4.1.2.5 返回操作結果和警告 [規格:L358-L363]
 
-- [x] 3.4.1.3 實現 `batchUpdate()` 方法
+- [x] 3.4.1.3 實現 `batchUpdate()` 方法 [規格:L227]
   - [x] 3.4.1.3.1 限制批量大小（最多100條）
   - [x] 3.4.1.3.2 驗證更新資料
   - [x] 3.4.1.3.3 使用事務批量更新
@@ -944,27 +944,27 @@
 
 **3.4.2 批量操作 API 路由創建（僅管理員）**
 - [x] 3.4.2.1 `POST /api/v1/clients/batch-assign` [規格:L229, L233-L254]
-  - [x] 3.4.2.1.1 應用 authMiddleware + adminMiddleware
+  - [x] 3.4.2.1.1 應用 authMiddleware + adminMiddleware [規格:L234]
   - [x] 3.4.2.1.2 解析請求 Body（client_ids, assignee_user_id）[規格:L235-L238]
   - [x] 3.4.2.1.3 驗證 client_ids 不超過100條 [規格:L282-L284]
-  - [x] 3.4.2.1.4 調用 ClientService.batchAssign()
+  - [x] 3.4.2.1.4 調用 ClientService.batchAssign() [規格:L240]
   - [x] 3.4.2.1.5 返回操作結果（total, succeeded, failed, details）[規格:L242-L253]
   - [x] 3.4.2.1.6 添加 OpenAPI 註解
 
 - [x] 3.4.2.2 `POST /api/v1/clients/batch-delete` [規格:L228, L257-L275]
-  - [x] 3.4.2.2.1 應用 authMiddleware + adminMiddleware
+  - [x] 3.4.2.2.1 應用 authMiddleware + adminMiddleware [規格:L258]
   - [x] 3.4.2.2.2 解析請求 Body（client_ids）[規格:L259-L261]
-  - [x] 3.4.2.2.3 驗證 client_ids 不超過100條
-  - [x] 3.4.2.2.4 調用 ClientService.batchDelete()
+  - [x] 3.4.2.2.3 驗證 client_ids 不超過100條 [規格:L327-L329]
+  - [x] 3.4.2.2.4 調用 ClientService.batchDelete() [規格:L262]
   - [x] 3.4.2.2.5 返回操作結果和警告訊息 [規格:L264-L274]
   - [x] 3.4.2.2.6 添加 OpenAPI 註解
 
 - [x] 3.4.2.3 `POST /api/v1/clients/batch-update` [規格:L227]
-  - [x] 3.4.2.3.1 應用 authMiddleware + adminMiddleware
-  - [x] 3.4.2.3.2 解析請求 Body（client_ids, updates）
-  - [x] 3.4.2.3.3 驗證 client_ids 不超過100條
-  - [x] 3.4.2.3.4 調用 ClientService.batchUpdate()
-  - [x] 3.4.2.3.5 返回操作結果
+  - [x] 3.4.2.3.1 應用 authMiddleware + adminMiddleware [規格:L227]
+  - [x] 3.4.2.3.2 解析請求 Body（client_ids, updates）[規格:L227]
+  - [x] 3.4.2.3.3 驗證 client_ids 不超過100條 [規格:L282-L284]
+  - [x] 3.4.2.3.4 調用 ClientService.batchUpdate() [規格:L227]
+  - [x] 3.4.2.3.5 返回操作結果 [規格:L227]
   - [x] 3.4.2.3.6 添加 OpenAPI 註解
 
 ---
