@@ -13,6 +13,8 @@ import { loggerMiddleware } from './middleware/logger';
 import auth from './routes/auth';
 import users from './routes/users';
 import settings from './routes/settings';
+import holidays from './routes/holidays';
+import services from './routes/services';
 
 // 創建 Hono 應用
 const app = new Hono<{ Bindings: Env }>();
@@ -64,6 +66,10 @@ app.route('/api/v1', users);
 
 // 系統設定路由
 app.route('/api/v1', settings);
+
+// 業務規則路由
+app.route('/api/v1', holidays);
+app.route('/api/v1', services);
 
 // 後續路由將在這裡添加
 // app.route('/api/v1/clients', clients);

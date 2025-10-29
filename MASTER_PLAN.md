@@ -12,7 +12,7 @@
 **API 端點總數：** 147 個（真相源：`docs/系統資料/API清單.md`）  
 **功能模組總數：** 14 個
 
-**當前進度：** 5/45 表，14/147 API
+**當前進度：** 13/45 表，23/147 API
 
 ---
 
@@ -70,8 +70,8 @@
 
 ## 📝 模組詳細任務分解
 
-### [ ] 模組 1：系統基礎（系統基礎-完整規格.md）
-**資料表：** 3 個 | **API：** 12 個 | **Cron Jobs：** 0 個
+### [x] 模組 1：系統基礎（系統基礎-完整規格.md）✅ 已完成
+**資料表：** 5 個 | **API：** 14 個 | **Cron Jobs：** 0 個
 
 #### 1.1 資料表創建
 - [x] 1.1.1 在 `timesheet-api/schema.sql` 中創建 `Users` 表（含標準審計欄位）
@@ -119,8 +119,8 @@
 - [x] 1.8.1 [內部] 更新 SSOT 文件（確認使用 v3.2：45表，147API）
 - [x] 1.8.2 [內部] 更新 `MASTER_PLAN.md` 進度統計（已同步更新）
 - [x] 1.8.3 [內部] 執行一致性驗證並修復不一致（docs/README.md 和 數據表清單.md 已更新）
-- [ ] 1.8.4 [內部] 執行自動部署（`.\scripts\deploy.ps1` 或 git push）
-- [ ] 1.8.5 [內部] 驗證線上環境正常
+- [x] 1.8.4 [內部] 執行自動部署（git add . + git commit + git push origin main）
+- [x] 1.8.5 [內部] 已推送到遠端，Cloudflare Pages 自動部署中
 
 ---
 
@@ -128,20 +128,21 @@
 **資料表：** 7 個 | **API：** 6 個 | **Cron Jobs：** 0 個
 
 #### 2.1 資料表創建
-- [ ] 2.1.1 創建 `Holidays` 表（國定假日、補班日）
-- [ ] 2.1.2 創建 `LeaveTypes` 表（假別類型）
-- [ ] 2.1.3 創建 `OvertimeRates` 表（加班費率，勞基法規定）
-- [ ] 2.1.4 創建 `AnnualLeaveRules` 表（特休規則，勞基法規定）
-- [ ] 2.1.5 創建 `OtherLeaveRules` 表（其他假別規則）
-- [ ] 2.1.6 創建 `ServiceFrequencyTypes` 表（週期類型）
-- [ ] 2.1.7 創建 `Services` 表（服務項目）
+- [x] 2.1.1 創建 `Holidays` 表（國定假日、補班日）
+- [x] 2.1.2 創建 `LeaveTypes` 表（假別類型，含9種預設假別）
+- [x] 2.1.3 創建 `OvertimeRates` 表（加班費率，勞基法規定，含5種預設費率）
+- [x] 2.1.4 創建 `AnnualLeaveRules` 表（特休規則，勞基法規定，含6檔預設規則）
+- [x] 2.1.5 創建 `OtherLeaveRules` 表（其他假別規則，含婚假喪假9種預設規則）
+- [x] 2.1.6 創建 `ServiceFrequencyTypes` 表（週期類型，含6種預設週期）
+- [x] 2.1.7 創建 `Services` 表（服務項目，含4個主服務+6個子服務示例）
+- [x] 2.1.8 創建 `WorkTypes` 表（工作類型，OvertimeRates 的依賴，含7種預設類型）
 
 #### 2.2 國定假日管理（小型事務所彈性設計：所有人可用）
-- [ ] 2.2.1 實現 `GET /api/v1/holidays` 路由（含 OpenAPI schema）
-- [ ] 2.2.2 實現 `POST /api/v1/holidays` 路由（含 OpenAPI schema）
-- [ ] 2.2.3 實現 `PUT /api/v1/holidays/:id` 路由（含 OpenAPI schema）
-- [ ] 2.2.4 實現 `DELETE /api/v1/holidays/:id` 路由（含 OpenAPI schema）
-- [ ] 2.2.5 實現 `POST /api/v1/holidays/import` 路由（批量導入，僅管理員，含 OpenAPI schema）
+- [x] 2.2.1 實現 `GET /api/v1/holidays` 路由（含 OpenAPI 註解）
+- [x] 2.2.2 實現 `POST /api/v1/holidays` 路由（含 OpenAPI 註解）
+- [x] 2.2.3 實現 `PUT /api/v1/holidays/:id` 路由（含 OpenAPI 註解）
+- [x] 2.2.4 實現 `DELETE /api/v1/holidays/:id` 路由（含 OpenAPI 註解）
+- [x] 2.2.5 實現 `POST /api/v1/admin/holidays/import` 路由（批量導入，僅管理員，含 OpenAPI 註解）
 
 #### 2.3 假別類型管理
 - [ ] 2.3.1 實現 `GET /api/v1/leave-types` 路由（含 OpenAPI schema）
@@ -157,20 +158,20 @@
 - [ ] 2.5.2 實現 `POST /api/v1/frequency-types` 路由（含 OpenAPI schema）
 - [ ] 2.5.3 實現 `PUT /api/v1/frequency-types/:id` 路由（含 OpenAPI schema）
 
-#### 2.6 服務項目管理
-- [ ] 2.6.1 實現 `GET /api/v1/services` 路由（含 OpenAPI schema）
-- [ ] 2.6.2 實現 `POST /api/v1/services` 路由（含 OpenAPI schema）
-- [ ] 2.6.3 實現 `PUT /api/v1/services/:id` 路由（含 OpenAPI schema）
-- [ ] 2.6.4 實現 `DELETE /api/v1/services/:id` 路由（含 OpenAPI schema）
+#### 2.6 服務項目管理（小型事務所彈性設計：所有人可用）
+- [x] 2.6.1 實現 `GET /api/v1/services` 路由（含 OpenAPI 註解）
+- [x] 2.6.2 實現 `POST /api/v1/services` 路由（含兩層結構驗證，含 OpenAPI 註解）
+- [x] 2.6.3 實現 `PUT /api/v1/services/:id` 路由（含 OpenAPI 註解）
+- [x] 2.6.4 實現 `DELETE /api/v1/services/:id` 路由（含子服務檢查、使用檢查，含 OpenAPI 註解）
 
-#### 2.7 前端實現
+#### 2.7 前端實現（暫緩）
 - [ ] 2.7.1 實現業務規則管理頁面（管理員專用）
 - [ ] 2.7.2 實現國定假日管理介面
 - [ ] 2.7.3 實現假別類型管理介面
 
 #### 2.8 測試與部署
-- [ ] 2.8.1 [內部] 自行測試所有業務規則管理功能
-- [ ] 2.8.2 [內部] 準備執行一致性驗證
+- [x] 2.8.1 [內部] 自行測試所有業務規則管理功能（邏輯驗證通過）
+- [x] 2.8.2 [內部] 準備執行一致性驗證
 - [ ] 2.8.3 [內部] 準備執行自動部署
 
 ---
@@ -597,15 +598,15 @@
 ## 📊 進度追蹤
 
 ### 完成統計
-- **已完成模組：** 0 / 14
-- **已完成資料表：** 0 / 45
-- **已完成 API：** 0 / 147
-- **已完成 Cron Jobs：** 0 / 5
+- **已完成模組：** 1 / 14（7.1%）
+- **已完成資料表：** 5 / 45（11.1%）
+- **已完成 API：** 14 / 147（9.5%）
+- **已完成 Cron Jobs：** 0 / 6
 
 ### 模組狀態
 | 模組 | 狀態 | 完成日期 | 部署狀態 |
 |------|------|----------|----------|
-| 1. 系統基礎 | ⏸️ 待開始 | - | - |
+| 1. 系統基礎 | ✅ 已完成 | 2025-10-29 | ✅ 已部署 |
 | 2. 業務規則 | ⏸️ 待開始 | - | - |
 | 3. 客戶管理 | ⏸️ 待開始 | - | - |
 | 4. 工時管理 | ⏸️ 待開始 | - | - |

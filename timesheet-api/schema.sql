@@ -168,6 +168,268 @@ CREATE UNIQUE INDEX idx_notifications_unique ON Notifications(user_id, type, rel
   WHERE is_deleted = 0;
 
 -- =====================================================
+-- 模組 2: 業務規則管理
+-- =====================================================
+
+-- -----------------------------------------------------
+-- Table: Holidays (國定假日)
+-- 描述: 存儲國定假日和補班日資訊
+-- -----------------------------------------------------
+CREATE TABLE Holidays (
+  holiday_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  holiday_date TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  is_national_holiday BOOLEAN DEFAULT 1,     -- ⭐ 是否為國定假日（1=是，0=補班日）
+  is_makeup_workday BOOLEAN DEFAULT 0,       -- ⭐ 是否為補班日（原本假日調整為上班）
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id)
+);
+
+-- 索引
+CREATE UNIQUE INDEX idx_holidays_date ON Holidays(holiday_date) WHERE is_deleted = 0;
+CREATE INDEX idx_holidays_makeup ON Holidays(is_makeup_workday);
+CREATE INDEX idx_holidays_deleted ON Holidays(is_deleted);
+
+-- -----------------------------------------------------
+-- Table: LeaveTypes (假別類型)
+-- 描述: 定義各種假別（特休、病假、事假等）
+-- -----------------------------------------------------
+CREATE TABLE LeaveTypes (
+  leave_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type_name TEXT UNIQUE NOT NULL,
+  annual_quota REAL,                    -- 年度額度（NULL表示無限制或依規則計算）
+  deduct_leave BOOLEAN DEFAULT 1,       -- 是否扣假（0=不扣假，如：公假）
+  is_paid BOOLEAN DEFAULT 1,            -- 是否支薪（0=不支薪，如：事假）
+  gender_specific TEXT,                 -- 性別限制：'M', 'F', NULL（無限制）
+  is_enabled BOOLEAN DEFAULT 1,         -- 是否啟用
+  sort_order INTEGER DEFAULT 0,         -- 排序順序
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id),
+  CHECK (gender_specific IN ('M', 'F', NULL))
+);
+
+-- 索引
+CREATE UNIQUE INDEX idx_leave_types_name ON LeaveTypes(type_name) WHERE is_deleted = 0;
+CREATE INDEX idx_leave_types_enabled ON LeaveTypes(is_enabled);
+CREATE INDEX idx_leave_types_deleted ON LeaveTypes(is_deleted);
+
+-- 預設假別類型
+INSERT INTO LeaveTypes (type_name, annual_quota, deduct_leave, is_paid, gender_specific, sort_order) VALUES
+('特休', NULL, 1, 1, NULL, 1),              -- 依年資計算
+('病假', 30, 1, 1, NULL, 2),                -- 年度30天
+('事假', 14, 1, 0, NULL, 3),                -- 年度14天（不支薪）
+('婚假', 8, 1, 1, NULL, 4),                 -- 8天（登記後1年內有效）
+('喪假', NULL, 1, 1, NULL, 5),              -- 依親等關係
+('產假', 56, 1, 1, 'F', 6),                 -- 8週（女性）
+('陪產假', 7, 1, 1, 'M', 7),                -- 7天（男性）
+('家庭照顧假', 7, 1, 0, NULL, 8),           -- 年度7天（不支薪）
+('公假', NULL, 0, 1, NULL, 9);              -- 不扣假
+
+-- -----------------------------------------------------
+-- Table: AnnualLeaveRules (特休規則)
+-- 描述: 依年資計算特休天數的規則（勞基法規定）
+-- -----------------------------------------------------
+CREATE TABLE AnnualLeaveRules (
+  rule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  min_months INTEGER NOT NULL,          -- 最少月數
+  max_months INTEGER,                   -- 最多月數（NULL表示無上限）
+  days INTEGER NOT NULL,                -- 特休天數
+  description TEXT
+);
+
+-- 法定預設值（勞基法規定）
+INSERT INTO AnnualLeaveRules (min_months, max_months, days, description) VALUES
+(6, 11, 3, '6個月以上未滿1年'),
+(12, 23, 7, '1年以上未滿2年'),
+(24, 35, 10, '2年以上未滿3年'),
+(36, 59, 14, '3年以上未滿5年'),
+(60, 119, 15, '5年以上未滿10年'),
+(120, NULL, 15, '10年以上（每滿1年+1天，最高30天）');
+
+-- 索引
+CREATE INDEX idx_annual_leave_months ON AnnualLeaveRules(min_months, max_months);
+
+-- -----------------------------------------------------
+-- Table: OtherLeaveRules (其他假期規則)
+-- 描述: 婚假、喪假等生活事件假期的規則
+-- -----------------------------------------------------
+CREATE TABLE OtherLeaveRules (
+  rule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  leave_type_id INTEGER NOT NULL,
+  event_type TEXT NOT NULL,             -- 事件類型（結婚、父母喪、祖父母喪等）
+  days REAL NOT NULL,                   -- 天數
+  validity_days INTEGER DEFAULT 365,    -- 有效期（天）
+  description TEXT,
+  
+  FOREIGN KEY (leave_type_id) REFERENCES LeaveTypes(leave_type_id)
+);
+
+-- 預設規則（勞基法規定）
+INSERT INTO OtherLeaveRules (leave_type_id, event_type, days, validity_days, description) VALUES
+-- 婚假（假別 ID=4）
+(4, '本人結婚', 8, 365, '登記日起1年內'),
+
+-- 喪假（假別 ID=5）
+(5, '父母喪', 8, 365, '事由發生日起1年內'),
+(5, '配偶喪', 8, 365, '事由發生日起1年內'),
+(5, '養父母喪', 8, 365, '事由發生日起1年內'),
+(5, '繼父母喪', 8, 365, '事由發生日起1年內'),
+(5, '子女喪', 8, 365, '事由發生日起1年內'),
+(5, '祖父母喪', 6, 365, '事由發生日起1年內'),
+(5, '配偶之父母喪', 6, 365, '事由發生日起1年內'),
+(5, '配偶之祖父母喪', 3, 365, '事由發生日起1年內'),
+(5, '兄弟姊妹喪', 3, 365, '事由發生日起1年內');
+
+-- 索引
+CREATE INDEX idx_other_leave_rules_type ON OtherLeaveRules(leave_type_id);
+
+-- -----------------------------------------------------
+-- Table: OvertimeRates (加班費率)
+-- 描述: 不同工作類型的費率倍數（勞基法規定）
+-- -----------------------------------------------------
+CREATE TABLE OvertimeRates (
+  rate_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  work_type_id INTEGER NOT NULL,
+  work_type_name TEXT NOT NULL,         -- 工作類型名稱（方便查詢）
+  rate_multiplier REAL NOT NULL,        -- 費率倍數
+  effective_date TEXT NOT NULL,         -- 生效日期
+  is_current BOOLEAN DEFAULT 1,         -- 是否為當前費率
+  description TEXT,
+  
+  FOREIGN KEY (work_type_id) REFERENCES WorkTypes(work_type_id)
+);
+
+-- 法定預設值（勞基法規定）
+INSERT INTO OvertimeRates (work_type_id, work_type_name, rate_multiplier, effective_date, is_current, description) VALUES
+(1, '正常工時', 1.00, '2024-01-01', 1, '正常上班時間'),
+(2, '平日加班', 1.34, '2024-01-01', 1, '平日延長工時'),
+(3, '休息日加班（前2小時）', 1.34, '2024-01-01', 1, '休息日前2小時'),
+(4, '休息日加班（第3小時起）', 1.67, '2024-01-01', 1, '休息日第3小時起'),
+(5, '國定假日加班', 2.00, '2024-01-01', 1, '國定假日或例假日');
+
+-- 索引
+CREATE INDEX idx_overtime_rates_type ON OvertimeRates(work_type_id);
+CREATE INDEX idx_overtime_rates_current ON OvertimeRates(is_current);
+
+-- -----------------------------------------------------
+-- Table: ServiceFrequencyTypes (週期類型)
+-- 描述: 服務執行週期類型（每月、每季等）
+-- -----------------------------------------------------
+CREATE TABLE ServiceFrequencyTypes (
+  frequency_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL,
+  days_interval INTEGER,                -- 天數間隔（如：30天）
+  months_interval INTEGER,              -- 月份間隔（如：1個月）
+  is_recurring BOOLEAN DEFAULT 1,       -- 是否重複執行（0=單次）
+  is_enabled BOOLEAN DEFAULT 1,         -- 是否啟用
+  sort_order INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id)
+);
+
+-- 索引
+CREATE UNIQUE INDEX idx_frequency_name ON ServiceFrequencyTypes(name) WHERE is_deleted = 0;
+CREATE INDEX idx_frequency_enabled ON ServiceFrequencyTypes(is_enabled);
+
+-- 預設週期類型
+INSERT INTO ServiceFrequencyTypes (name, days_interval, months_interval, is_recurring, sort_order) VALUES
+('單次', NULL, NULL, 0, 1),
+('每月', NULL, 1, 1, 2),
+('雙月', NULL, 2, 1, 3),
+('每季', NULL, 3, 1, 4),
+('半年', NULL, 6, 1, 5),
+('每年', NULL, 12, 1, 6);
+
+-- -----------------------------------------------------
+-- Table: Services (服務項目)
+-- 描述: 定義事務所提供的服務類型（最多兩層結構）
+-- -----------------------------------------------------
+CREATE TABLE Services (
+  service_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  parent_service_id INTEGER,            -- 父服務（NULL表示頂層）
+  service_name TEXT NOT NULL,
+  description TEXT,
+  default_price REAL,                   -- 預設價格（可選）
+  sort_order INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0,
+  deleted_at TEXT,
+  deleted_by INTEGER,
+  
+  FOREIGN KEY (parent_service_id) REFERENCES Services(service_id),
+  FOREIGN KEY (deleted_by) REFERENCES Users(user_id)
+);
+
+-- 索引
+CREATE INDEX idx_services_parent ON Services(parent_service_id);
+CREATE INDEX idx_services_deleted ON Services(is_deleted);
+
+-- 預設服務項目（兩層結構示例）
+INSERT INTO Services (parent_service_id, service_name, description, sort_order) VALUES
+-- 第一層：主服務類別
+(NULL, '記帳及稅務申報', '基礎記帳和稅務申報服務', 1),
+(NULL, '工商登記', '公司設立、變更、註銷等', 2),
+(NULL, '稅務規劃', '稅務諮詢和規劃服務', 3),
+(NULL, '審計服務', '財務報表審計', 4);
+
+-- 第二層：子服務（parent_service_id 指向第一層）
+INSERT INTO Services (parent_service_id, service_name, description, sort_order) VALUES
+-- 記帳及稅務申報的子服務
+(1, '每月記帳', '每月會計帳務處理', 1),
+(1, '營業稅申報', '雙月營業稅申報', 2),
+(1, '營利事業所得稅申報', '年度營所稅申報', 3),
+
+-- 工商登記的子服務
+(2, '公司設立登記', '新公司設立申請', 1),
+(2, '公司變更登記', '登記事項變更', 2),
+(2, '公司解散登記', '公司結束營業', 3);
+
+-- -----------------------------------------------------
+-- Table: WorkTypes (工作類型)
+-- 描述: 定義工作類型（正常工時、加班等）- 與 OvertimeRates 關聯
+-- -----------------------------------------------------
+CREATE TABLE WorkTypes (
+  work_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type_name TEXT UNIQUE NOT NULL,
+  description TEXT,
+  requires_client BOOLEAN DEFAULT 1,    -- 是否需要指定客戶
+  sort_order INTEGER DEFAULT 0,
+  is_enabled BOOLEAN DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now')),
+  is_deleted BOOLEAN DEFAULT 0
+);
+
+-- 預設工作類型
+INSERT INTO WorkTypes (work_type_id, type_name, description, requires_client, sort_order) VALUES
+(1, '正常工時', '正常上班時間', 1, 1),
+(2, '平日加班', '平日延長工時', 1, 2),
+(3, '休息日加班（前2小時）', '休息日前2小時', 1, 3),
+(4, '休息日加班（第3小時起）', '休息日第3小時起', 1, 4),
+(5, '國定假日加班', '國定假日或例假日', 1, 5),
+(6, '內部訓練', '內部教育訓練', 0, 6),
+(7, '行政事務', '內部行政工作', 0, 7);
+
+-- 索引
+CREATE INDEX idx_work_types_enabled ON WorkTypes(is_enabled);
+CREATE INDEX idx_work_types_deleted ON WorkTypes(is_deleted);
+
+-- =====================================================
 -- 註記
 -- =====================================================
 -- 1. 所有表都包含標準審計欄位：created_at, updated_at, is_deleted, deleted_at, deleted_by
