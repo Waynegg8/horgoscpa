@@ -25,3 +25,9 @@ binding = "DATABASE"
 database_name = "horgoscpa-db"
 database_id = "98c44e77-3cf0-440e-b2a3-dd952d183e6f"
 migrations_dir = "migrations"
+
+# Cron Triggers（定時任務）
+[triggers]
+crons = [
+	"5 0 1 * *"  # 每月 1 日 00:05 UTC（補休到期轉加班費）
+]

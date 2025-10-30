@@ -173,6 +173,112 @@ export default {
 		// 未匹配路徑（理論上不會因為 routes 只綁定特定路徑）
 		return fetch(request);
 	},
+
+	// Scheduled Handler（Cron Triggers）
+	async scheduled(event, env, ctx) {
+		const requestId = crypto.randomUUID();
+		console.log(JSON.stringify({ 
+			level: "info", 
+			requestId, 
+			event: "cron_triggered", 
+			scheduledTime: new Date(event.scheduledTime).toISOString(),
+			cron: event.cron 
+		}));
+
+		try {
+			// 執行補休到期轉加班費
+			const now = new Date(event.scheduledTime);
+			const lastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+			const lastDayOfLastMonth = new Date(Date.UTC(lastMonth.getUTCFullYear(), lastMonth.getUTCMonth() + 1, 0));
+			const expiryDate = `${lastDayOfLastMonth.getUTCFullYear()}-${String(lastDayOfLastMonth.getUTCMonth() + 1).padStart(2, '0')}-${String(lastDayOfLastMonth.getUTCDate()).padStart(2, '0')}`;
+			const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+
+			// 掃描到期的補休記錄
+			const expiredGrants = await env.DATABASE.prepare(
+				`SELECT g.grant_id, g.user_id, g.hours_remaining, g.original_rate, u.base_salary
+				 FROM CompensatoryLeaveGrants g
+				 LEFT JOIN Users u ON g.user_id = u.user_id
+				 WHERE g.expiry_date = ? AND g.status = 'active' AND g.hours_remaining > 0`
+			).bind(expiryDate).all();
+
+			let processedCount = 0;
+			const grantIds = [];
+
+			for (const grant of (expiredGrants?.results || [])) {
+				const baseSalary = Number(grant.base_salary || 0);
+				const hourlyRate = baseSalary / 240;
+				const hours = Number(grant.hours_remaining || 0);
+				const rate = Number(grant.original_rate || 1);
+				const amountCents = Math.round(hours * hourlyRate * rate * 100);
+
+				// 寫入加班費記錄
+				await env.DATABASE.prepare(
+					`INSERT INTO CompensatoryOvertimePay 
+					 (user_id, year_month, hours_expired, amount_cents, source_grant_ids)
+					 VALUES (?, ?, ?, ?, ?)`
+				).bind(
+					String(grant.user_id),
+					currentMonth,
+					hours,
+					amountCents,
+					JSON.stringify([grant.grant_id])
+				).run();
+
+				// 更新補休記錄狀態為 expired
+				await env.DATABASE.prepare(
+					`UPDATE CompensatoryLeaveGrants SET status = 'expired' WHERE grant_id = ?`
+				).bind(grant.grant_id).run();
+
+				grantIds.push(grant.grant_id);
+				processedCount++;
+			}
+
+			// 記錄執行成功
+			await env.DATABASE.prepare(
+				`INSERT INTO CronJobExecutions 
+				 (job_name, status, executed_at, details)
+				 VALUES (?, 'success', datetime('now'), ?)`
+			).bind('comp_leave_expiry', JSON.stringify({
+				expiryDate,
+				processedCount,
+				grantIds,
+				currentMonth,
+				triggeredBy: 'cron'
+			})).run();
+
+			console.log(JSON.stringify({ 
+				level: "info", 
+				requestId, 
+				event: "cron_completed", 
+				processedCount,
+				expiryDate,
+				currentMonth
+			}));
+
+		} catch (err) {
+			console.error(JSON.stringify({ 
+				level: "error", 
+				requestId, 
+				event: "cron_failed", 
+				error: String(err) 
+			}));
+
+			// 記錄執行失敗
+			try {
+				await env.DATABASE.prepare(
+					`INSERT INTO CronJobExecutions 
+					 (job_name, status, executed_at, error_message)
+					 VALUES (?, 'failed', datetime('now'), ?)`
+				).bind('comp_leave_expiry', String(err)).run();
+			} catch (_) {
+				console.error(JSON.stringify({ 
+					level: "error", 
+					requestId, 
+					event: "failed_to_log_cron_error" 
+				}));
+			}
+		}
+	},
 };
 
 
