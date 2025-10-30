@@ -14,6 +14,18 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				"SELECT leave_type, year, total, used, remain FROM LeaveBalances WHERE user_id = ? AND year = ?"
 			).bind(String(me.user_id), year).all();
 			const data = (rows?.results || []).map(r => ({ type: r.leave_type, year: Number(r.year), total: Number(r.total), used: Number(r.used), remain: Number(r.remain) }));
+			
+			// 補休餘額從 CompensatoryLeaveGrants 計算（當月有效）
+			const compRow = await env.DATABASE.prepare(
+				`SELECT SUM(hours_remaining) as total FROM CompensatoryLeaveGrants 
+				 WHERE user_id = ? AND status = 'active' AND hours_remaining > 0`
+			).bind(String(me.user_id)).first();
+			const compRemain = Number(compRow?.total || 0);
+			
+			if (compRemain > 0) {
+				data.push({ type: 'comp', year, total: compRemain, used: 0, remain: compRemain });
+			}
+			
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, year } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
@@ -93,14 +105,59 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			if (reason.length > 200) errors.push({ field:"reason", message:"請勿超過 200 字" });
 			if (["maternity","menstrual"].includes(leave_type) && me.gender === 'M') errors.push({ field:"leave_type", message:"此假別僅限女性" });
 			if (leave_type === 'paternity' && me.gender === 'F') errors.push({ field:"leave_type", message:"此假別僅限男性" });
+			
+			// 補休特殊處理：檢查餘額（FIFO）
+			if (leave_type === 'comp') {
+				const hoursNeeded = unit === 'hour' ? amount : (unit === 'half' ? 4 : 8) * amount;
+				const compGrants = await env.DATABASE.prepare(
+					`SELECT grant_id, hours_remaining FROM CompensatoryLeaveGrants 
+					 WHERE user_id = ? AND status = 'active' AND hours_remaining > 0 
+					 ORDER BY generated_date ASC`
+				).bind(String(me.user_id)).all();
+				const totalAvailable = (compGrants?.results || []).reduce((sum, g) => sum + Number(g.hours_remaining || 0), 0);
+				if (totalAvailable < hoursNeeded) {
+					errors.push({ field:"amount", message:`補休不足（剩餘 ${totalAvailable} 小時，需要 ${hoursNeeded} 小時）` });
+				}
+			}
+			
 			if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
 
 			try {
+				// 建立請假申請
 				await env.DATABASE.prepare(
 					"INSERT INTO LeaveRequests (user_id, leave_type, start_date, end_date, unit, amount, reason, status, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))"
 				).bind(String(me.user_id), leave_type, start_date, end_date, unit, amount, reason).run();
 				const idRow = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
-				return jsonResponse(201, { ok:true, code:"CREATED", message:"已送出審核", data:{ leaveId:String(idRow?.id) }, meta:{ requestId } }, corsHeaders);
+				const leaveId = String(idRow?.id);
+				
+				// 如果是補休，立即扣減（FIFO）
+				if (leave_type === 'comp') {
+					const hoursNeeded = unit === 'hour' ? amount : (unit === 'half' ? 4 : 8) * amount;
+					const compGrants = await env.DATABASE.prepare(
+						`SELECT grant_id, hours_remaining FROM CompensatoryLeaveGrants 
+						 WHERE user_id = ? AND status = 'active' AND hours_remaining > 0 
+						 ORDER BY generated_date ASC`
+					).bind(String(me.user_id)).all();
+					
+					let remaining = hoursNeeded;
+					for (const grant of (compGrants?.results || [])) {
+						if (remaining <= 0) break;
+						const deduct = Math.min(remaining, Number(grant.hours_remaining || 0));
+						const newRemaining = Number(grant.hours_remaining || 0) - deduct;
+						const newUsed = (await env.DATABASE.prepare(`SELECT hours_used FROM CompensatoryLeaveGrants WHERE grant_id = ?`).bind(grant.grant_id).first())?.hours_used || 0;
+						const newStatus = newRemaining <= 0 ? 'fully_used' : 'active';
+						
+						await env.DATABASE.prepare(
+							`UPDATE CompensatoryLeaveGrants 
+							 SET hours_used = ?, hours_remaining = ?, status = ? 
+							 WHERE grant_id = ?`
+						).bind(Number(newUsed) + deduct, newRemaining, newStatus, grant.grant_id).run();
+						
+						remaining -= deduct;
+					}
+				}
+				
+				return jsonResponse(201, { ok:true, code:"CREATED", message:"已送出審核", data:{ leaveId }, meta:{ requestId } }, corsHeaders);
 			} catch (err) {
 				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);

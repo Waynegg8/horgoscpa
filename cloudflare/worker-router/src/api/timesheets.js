@@ -247,6 +247,32 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		// 計算補休工時（如果是加班）
 		const comp_hours_generated = workType.isOvertime ? (workType.special === 'fixed_8h' ? 8 : hours) : 0;
 		
+		// 如果是加班，寫入補休追蹤表
+		if (comp_hours_generated > 0) {
+			const generatedDate = work_date;
+			// 計算到期日（當月底）
+			const dateObj = new Date(work_date + 'T00:00:00Z');
+			const year = dateObj.getUTCFullYear();
+			const month = dateObj.getUTCMonth();
+			const lastDay = new Date(Date.UTC(year, month + 1, 0));
+			const expiryDate = `${lastDay.getUTCFullYear()}-${String(lastDay.getUTCMonth() + 1).padStart(2, '0')}-${String(lastDay.getUTCDate()).padStart(2, '0')}`;
+			
+			// 寫入 CompensatoryLeaveGrants
+			await env.DATABASE.prepare(
+				`INSERT INTO CompensatoryLeaveGrants 
+				 (user_id, source_timelog_id, hours_generated, hours_remaining, generated_date, expiry_date, original_rate, status)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, 'active')`
+			).bind(
+				String(me.user_id),
+				log_id,
+				comp_hours_generated,
+				comp_hours_generated,  // 初始時 remaining = generated
+				generatedDate,
+				expiryDate,
+				workType.multiplier
+			).run();
+		}
+		
 		return jsonResponse(200, { 
 			ok: true, 
 			code: "SUCCESS", 
