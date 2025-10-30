@@ -223,6 +223,30 @@
         transform: translateY(-2px);
       }
 
+      .btn-save-all {
+        margin: 16px 0 16px 16px;
+        padding: 12px 32px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      .btn-save-all:hover:not(:disabled) {
+        background: #218838;
+        transform: translateY(-2px);
+      }
+
+      .btn-save-all:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
       /* 週彙總區 */
       .week-summary {
         margin-top: 24px;
@@ -330,6 +354,7 @@
         </div>
 
       <button class="btn-add-row" id="btnAddRow">+ 新增列</button>
+      <button class="btn-save-all" id="btnSaveAll" disabled>儲存所有變更</button>
 
       <div class="timesheet-container">
         <table class="timesheet-table" id="timesheetTable">
@@ -384,6 +409,7 @@
         let services = [];
         let workTypes = [];
         let holidays = new Map(); // 假日資料 Map<date, holidayInfo>
+        let pendingChanges = new Map(); // 未儲存的變更 Map<key, {rowIndex, dayIndex, value}>
         
         // 取得週一日期
         function getMonday(date) {
@@ -424,15 +450,38 @@
           for (let i = 0; i < 7; i++) {
             const date = new Date(currentWeekStart);
             date.setDate(date.getDate() + i);
+            const dateStr = formatDate(date);
             const label = document.getElementById(`dateLabel${i}`);
-            label.textContent = `${date.getMonth()+1}/${date.getDate()}`;
+            const dayOfWeek = date.getDay();
             
-            // 判斷是否為週末 (簡化版，實際應從API取得假日資訊)
-            if (i === 5 || i === 6) {
-              label.className = 'date-badge badge-weekend';
+            // 基本日期顯示
+            let displayText = `${date.getMonth()+1}/${date.getDate()}`;
+            
+            // 修復：判斷日期類型並添加標籤（連動國定假日資料）
+            const holiday = holidays.get(dateStr);
+            let badgeClass = 'date-badge';
+            
+            if (holiday) {
+              if (holiday.is_national_holiday) {
+                badgeClass = 'date-badge badge-holiday';
+                displayText += ` 國定`;
+              } else if (holiday.is_makeup_workday) {
+                badgeClass = 'date-badge badge-makeup';
+                displayText += ` 補班`;
+              }
             } else {
-              label.className = 'date-badge';
+              // 沒有假日資料時，根據星期判斷
+              if (dayOfWeek === 0) {
+                badgeClass = 'date-badge badge-weekend';
+                displayText += ` 例假`;
+              } else if (dayOfWeek === 6) {
+                badgeClass = 'date-badge badge-weekend';
+                displayText += ` 休息`;
+              }
             }
+            
+            label.textContent = displayText;
+            label.className = badgeClass;
           }
         }
         
@@ -620,9 +669,10 @@
             selectClient.innerHTML = '<option value="">請選擇客戶...</option>';
             clients.forEach(c => {
               const opt = document.createElement('option');
-              opt.value = c.client_id;
-              opt.textContent = c.name;
-              if (c.client_id == row.client_id) opt.selected = true;
+              // 修復：支援 API 返回的多種格式
+              opt.value = c.clientId || c.client_id;
+              opt.textContent = c.companyName || c.company_name || c.name || '';
+              if ((c.clientId || c.client_id) == row.client_id) opt.selected = true;
               selectClient.appendChild(opt);
             });
             selectClient.addEventListener('change', (e) => {
@@ -692,8 +742,16 @@
                 this.classList.add('editing');
               });
               
+              input.addEventListener('input', function() {
+                // 記錄變更但不立即儲存
+                const key = `${rowIndex}_${dayIndex}`;
+                pendingChanges.set(key, { rowIndex, dayIndex, value: this.value });
+                updateSaveButton();
+              });
+              
               input.addEventListener('blur', async function() {
                 this.classList.remove('editing');
+                // 即時儲存模式：blur時仍然儲存
                 await saveCell(rowIndex, dayIndex, this.value);
               });
               
@@ -869,19 +927,71 @@
           renderTable();
         }
         
-        // 更新彙總
+        // 修復：更新彙總（正確計算加班工時與加權工時）
         function updateSummary() {
           let totalHours = 0;
+          let overtimeHours = 0;
+          let weightedHours = 0;
+          
           rows.forEach(row => {
+            const workType = workTypes.find(wt => wt.id == row.work_type_id);
+            if (!workType) return;
+            
             row.hours.forEach(h => {
-              if (h) totalHours += h;
+              if (h && h > 0) {
+                totalHours += h;
+                if (workType.isOvertime) {
+                  overtimeHours += h;
+                }
+                weightedHours += h * workType.multiplier;
+              }
             });
           });
+          
           document.getElementById('sumTotal').textContent = totalHours.toFixed(1);
-          // 加班與加權工時需要根據實際類型計算，此處簡化
-          document.getElementById('sumOvertime').textContent = '0';
-          document.getElementById('sumWeighted').textContent = '0';
+          document.getElementById('sumOvertime').textContent = overtimeHours.toFixed(1);
+          document.getElementById('sumWeighted').textContent = weightedHours.toFixed(1);
         }
+        
+        // 修復：更新儲存按鈕狀態
+        function updateSaveButton() {
+          const btn = document.getElementById('btnSaveAll');
+          if (pendingChanges.size > 0) {
+            btn.disabled = false;
+            btn.textContent = `儲存所有變更 (${pendingChanges.size})`;
+          } else {
+            btn.disabled = true;
+            btn.textContent = '儲存所有變更';
+          }
+        }
+        
+        // 新增：統一儲存所有變更
+        document.getElementById('btnSaveAll').addEventListener('click', async () => {
+          const btn = document.getElementById('btnSaveAll');
+          btn.disabled = true;
+          btn.textContent = '儲存中...';
+          
+          let successCount = 0;
+          let failCount = 0;
+          
+          for (const [key, change] of pendingChanges) {
+            try {
+              await saveCell(change.rowIndex, change.dayIndex, change.value);
+              successCount++;
+            } catch (e) {
+              failCount++;
+            }
+          }
+          
+          pendingChanges.clear();
+          updateSaveButton();
+          
+          if (failCount === 0) {
+            showToast(`已儲存 ${successCount} 筆記錄`, true);
+          } else {
+            showToast(`已儲存 ${successCount} 筆，${failCount} 筆失敗`, false);
+          }
+        });
         
         // 週導航
         document.getElementById('btnPrevWeek').addEventListener('click', () => {
