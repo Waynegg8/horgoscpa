@@ -17,6 +17,7 @@
           <input id="q" type="search" placeholder="搜尋公司名稱…" aria-label="搜尋客戶" />
           <button id="btn-search" class="clients-btn" type="button">搜尋</button>
         </div>
+        <button id="btn-tags" class="clients-btn btn-secondary" type="button">標籤管理</button>
         <button id="btn-new" class="clients-btn" type="button">新增客戶</button>
       </div>
     </header>
@@ -53,6 +54,56 @@
         </div>
       </section>
     </main>
+
+    <!-- 標籤管理彈窗 -->
+    <div class="modal-overlay" id="tagsModal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal" role="document" style="max-width:800px;">
+        <div class="modal__header">
+          <h2 class="modal__title">標籤管理</h2>
+          <button class="modal__close" type="button" id="btn-tags-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <div style="margin-bottom:16px;">
+            <button class="clients-btn" type="button" id="btn-tag-new">新增標籤</button>
+          </div>
+          <div id="tags-list" style="display:flex;flex-direction:column;gap:8px;">
+            <!-- 標籤列表將動態載入 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新增/編輯標籤彈窗 -->
+    <div class="modal-overlay" id="tagFormModal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal" role="document">
+        <div class="modal__header">
+          <h2 class="modal__title" id="tag-form-title">新增標籤</h2>
+          <button class="modal__close" type="button" id="btn-tag-form-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <form id="tagForm" class="form-grid">
+            <input type="hidden" id="tag_form_id" />
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="tag_form_name">標籤名稱（必填）</label>
+              <input id="tag_form_name" name="tag_name" type="text" maxlength="50" required />
+              <div class="field__error" id="tag_e_name"></div>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="tag_form_color">顏色碼（選填，格式：#RRGGBB）</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input id="tag_form_color" name="tag_color" type="text" maxlength="7" placeholder="#3498db" style="flex:1;" />
+                <input type="color" id="tag_color_picker" style="width:60px;height:40px;border:1px solid #ddd;border-radius:4px;" />
+              </div>
+              <div class="field__error" id="tag_e_color"></div>
+            </div>
+            <div class="modal__actions" style="grid-column:1 / -1;">
+              <button class="clients-btn btn-secondary" type="button" id="btn-tag-form-cancel">取消</button>
+              <button class="clients-btn" type="submit" id="btn-tag-form-submit">儲存</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 
     <!-- 客戶詳情彈窗 -->
     <div class="modal-overlay" id="viewModal" aria-hidden="true" role="dialog" aria-modal="true">
@@ -239,6 +290,12 @@
         const editForm = document.getElementById('editForm');
         const editCloseBtn = document.getElementById('btn-edit-close');
         const editCancelBtn = document.getElementById('btn-edit-cancel');
+        const tagsModal = document.getElementById('tagsModal');
+        const tagsCloseBtn = document.getElementById('btn-tags-close');
+        const tagFormModal = document.getElementById('tagFormModal');
+        const tagForm = document.getElementById('tagForm');
+        const tagFormCloseBtn = document.getElementById('btn-tag-form-close');
+        const tagFormCancelBtn = document.getElementById('btn-tag-form-cancel');
 
         function setError(msg){ if (errEl) errEl.textContent = msg || ''; }
 
@@ -553,6 +610,203 @@
             submitBtn.disabled = false; submitBtn.textContent = '儲存';
           }
         });
+
+        // ========== 標籤管理 ==========
+
+        let allTags = [];
+
+        // 打開標籤管理 Modal
+        document.getElementById('btn-tags').addEventListener('click', function() {
+          openTagsModal();
+          loadTags();
+        });
+
+        function openTagsModal() { tagsModal.classList.add('active'); tagsModal.setAttribute('aria-hidden','false'); }
+        function closeTagsModal() { tagsModal.classList.remove('active'); tagsModal.setAttribute('aria-hidden','true'); }
+        tagsCloseBtn.addEventListener('click', closeTagsModal);
+
+        // 載入標籤列表
+        async function loadTags() {
+          try {
+            const res = await fetch(`${apiBase}/tags`, { credentials: 'include' });
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/clients');
+              return;
+            }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) {
+              throw new Error((json && json.message) || '載入失敗');
+            }
+            allTags = json.data || [];
+            renderTags();
+          } catch (err) {
+            console.error('載入標籤失敗', err);
+          }
+        }
+
+        // 渲染標籤列表
+        function renderTags() {
+          const container = document.getElementById('tags-list');
+          if (allTags.length === 0) {
+            container.innerHTML = '<p style="color:#999;text-align:center;padding:24px 0;">尚無標籤</p>';
+            return;
+          }
+          container.innerHTML = allTags.map(tag => {
+            const color = tag.tag_color || '#999';
+            return `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;border:1px solid #e0e0e0;border-radius:8px;background:#fff;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <span class="chip" style="background:${color};padding:6px 12px;border-radius:4px;color:#fff;font-weight:500;">${tag.tag_name}</span>
+                  <span style="color:#999;font-size:0.875rem;">${color}</span>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button class="clients-btn btn-secondary" type="button" onclick="editTag(${tag.tag_id})" style="padding:6px 12px;font-size:0.875rem;">編輯</button>
+                  <button class="clients-btn" type="button" onclick="deleteTag(${tag.tag_id})" style="padding:6px 12px;font-size:0.875rem;background:#e74c3c;border-color:#e74c3c;">刪除</button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // 打開新增標籤 Modal
+        document.getElementById('btn-tag-new').addEventListener('click', function() {
+          document.getElementById('tag-form-title').textContent = '新增標籤';
+          document.getElementById('tag_form_id').value = '';
+          tagForm.reset();
+          clearTagFormErrors();
+          openTagFormModal();
+        });
+
+        function openTagFormModal() { tagFormModal.classList.add('active'); tagFormModal.setAttribute('aria-hidden','false'); }
+        function closeTagFormModal() { tagFormModal.classList.remove('active'); tagFormModal.setAttribute('aria-hidden','true'); tagForm.reset(); clearTagFormErrors(); }
+        tagFormCloseBtn.addEventListener('click', closeTagFormModal);
+        tagFormCancelBtn.addEventListener('click', closeTagFormModal);
+
+        function clearTagFormErrors() {
+          ['name','color'].forEach(k => { 
+            const el = document.getElementById('tag_e_'+k); 
+            if (el) el.textContent=''; 
+          });
+        }
+
+        // 顏色選擇器同步
+        const colorInput = document.getElementById('tag_form_color');
+        const colorPicker = document.getElementById('tag_color_picker');
+        colorPicker.addEventListener('input', function() {
+          colorInput.value = colorPicker.value;
+        });
+        colorInput.addEventListener('input', function() {
+          if (/^#[0-9A-Fa-f]{6}$/.test(colorInput.value)) {
+            colorPicker.value = colorInput.value;
+          }
+        });
+
+        // 編輯標籤（全域函數）
+        window.editTag = async function(tagId) {
+          const tag = allTags.find(t => t.tag_id === tagId);
+          if (!tag) {
+            alert('標籤不存在');
+            return;
+          }
+          document.getElementById('tag-form-title').textContent = '編輯標籤';
+          document.getElementById('tag_form_id').value = tag.tag_id;
+          document.getElementById('tag_form_name').value = tag.tag_name;
+          document.getElementById('tag_form_color').value = tag.tag_color || '';
+          if (tag.tag_color && /^#[0-9A-Fa-f]{6}$/.test(tag.tag_color)) {
+            document.getElementById('tag_color_picker').value = tag.tag_color;
+          }
+          clearTagFormErrors();
+          openTagFormModal();
+        };
+
+        // 刪除標籤（全域函數）
+        window.deleteTag = async function(tagId) {
+          if (!confirm('確定要刪除此標籤嗎？\n若有客戶使用此標籤，將無法刪除。')) {
+            return;
+          }
+          try {
+            const res = await fetch(`${apiBase}/tags/${tagId}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/clients');
+              return;
+            }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) {
+              throw new Error((json && json.message) || '刪除失敗');
+            }
+            alert('已刪除');
+            loadTags();
+          } catch (err) {
+            alert(err.message || '刪除失敗，請稍後再試');
+          }
+        };
+
+        // 標籤表單提交
+        tagForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          clearTagFormErrors();
+          const tagId = document.getElementById('tag_form_id').value;
+          const tag_name = document.getElementById('tag_form_name').value.trim();
+          const tag_color = document.getElementById('tag_form_color').value.trim();
+
+          let hasErr = false;
+          if (!tag_name || tag_name.length < 1 || tag_name.length > 50) {
+            document.getElementById('tag_e_name').textContent = '標籤名稱為必填（1-50字）';
+            hasErr = true;
+          }
+          if (tag_color && !/^#[0-9A-Fa-f]{6}$/.test(tag_color)) {
+            document.getElementById('tag_e_color').textContent = '顏色碼格式錯誤（需為 #RRGGBB）';
+            hasErr = true;
+          }
+          if (hasErr) return;
+
+          const payload = { tag_name, tag_color: tag_color || null };
+          const submitBtn = document.getElementById('btn-tag-form-submit');
+          submitBtn.disabled = true;
+          submitBtn.textContent = '儲存中…';
+
+          try {
+            const isEdit = tagId !== '';
+            const url = isEdit ? `${apiBase}/tags/${tagId}` : `${apiBase}/tags`;
+            const method = isEdit ? 'PUT' : 'POST';
+            const res = await fetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(payload)
+            });
+            const json = await res.json().catch(() => null);
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/clients');
+              return;
+            }
+            if (!res.ok || !json || json.ok !== true) {
+              const msg = (json && json.message) || '儲存失敗';
+              if (json && Array.isArray(json.errors) && json.errors.length > 0) {
+                const e = json.errors[0];
+                const field = e.field === 'tag_name' ? 'name' : e.field === 'tag_color' ? 'color' : '';
+                const el = document.getElementById('tag_e_' + field);
+                if (el) el.textContent = e.message || msg;
+                else alert(msg);
+              } else {
+                alert(msg);
+              }
+              return;
+            }
+            alert(isEdit ? '已更新' : '已新增');
+            closeTagFormModal();
+            loadTags();
+          } catch (err) {
+            alert('儲存失敗，請稍後再試');
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '儲存';
+          }
+        });
+
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>

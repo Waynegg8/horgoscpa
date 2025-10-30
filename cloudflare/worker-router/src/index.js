@@ -17,6 +17,7 @@ import { handleSettings } from "./api/settings.js";
 import { handleDashboard } from "./api/dashboard.js";
 import { handleAutomation } from "./api/automation.js";
 import { handleHolidays } from "./api/holidays.js";
+import { handleTags } from "./api/tags.js";
 
 export default {
 	async fetch(request, env) {
@@ -56,6 +57,11 @@ export default {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handleClients(request, env, me, requestId, url);
+		}
+		if (path === "/internal/api/v1/tags" || path.startsWith("/internal/api/v1/tags/")) {
+			const me = await getSessionUser(request, env);
+			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+			return handleTags(request, env, me, requestId, url);
 		}
 		if (path === "/internal/api/v1/tasks") {
 			const me = await getSessionUser(request, env);
