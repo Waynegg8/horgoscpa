@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="服務生命週期管理" />
+    <title>服務生命週期｜總覽與詳情</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/lifecycle-page.css" />
+  </head>
+  <body class="lifecycle-page">
+    <header class="lc-header">
+      <h1 class="lc-title">服務生命週期</h1>
+      <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限執行此操作</div>
+      <div class="lc-toolbar">
+        <input id="q" type="search" placeholder="搜尋客戶/服務…" aria-label="搜尋" />
+      </div>
+      <nav class="lc-tabs" role="tablist" aria-label="狀態篩選">
+        <button class="tab active" role="tab" aria-selected="true" data-status="all">全部</button>
+        <button class="tab" role="tab" aria-selected="false" data-status="active">啟用中</button>
+        <button class="tab" role="tab" aria-selected="false" data-status="suspended">已暫停</button>
+        <button class="tab" role="tab" aria-selected="false" data-status="expired">已到期</button>
+        <button class="tab" role="tab" aria-selected="false" data-status="cancelled">已取消</button>
+      </nav>
+    </header>
+
+    <main class="lc-content">
+      <section class="lc-list">
+        <div class="list-header">
+          <div class="list-title">服務列表</div>
+          <div id="listInfo" class="muted">—</div>
+        </div>
+        <div id="cards" class="lc-cards"></div>
+        <div class="pagination">
+          <button id="prev" type="button" class="btn">上一頁</button>
+          <button id="next" type="button" class="btn">下一頁</button>
+        </div>
+      </section>
+
+      <!-- 詳情抽屜（骨架） -->
+      <aside id="detailDrawer" class="drawer" aria-hidden="true" aria-label="服務詳情">
+        <div class="drawer-content">
+          <div class="drawer-header">
+            <div class="drawer-title">服務名稱（客戶名稱） <span class="badge status" data-status="active">啟用中</span></div>
+            <button id="btnCloseDrawer" class="btn" type="button">關閉</button>
+          </div>
+          <div id="scheduleBar" class="info-bar" style="display:none;">已排程於 YYYY-MM-DD 暫停</div>
+          <div class="drawer-body">
+            <div class="info-grid">
+              <div><div class="label">開始日期</div><div class="value">—</div></div>
+              <div><div class="label">結束日期</div><div class="value">—</div></div>
+              <div><div class="label">週期資訊</div><div class="value">—</div></div>
+              <div><div class="label">負責人</div><div class="value">—</div></div>
+            </div>
+            <div class="actions">
+              <button id="btnSuspend" class="btn" type="button">暫停服務</button>
+              <button id="btnResume" class="btn" type="button" style="display:none;">恢復服務</button>
+              <button id="btnCancel" class="btn danger" type="button" style="display:none;">取消服務</button>
+              <button id="btnHistory" class="btn" type="button">查看歷史</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 暫停/恢復/取消 對話框骨架（僅占位，無提交） -->
+      <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+          <div class="modal-header" id="modalTitle">操作</div>
+          <div class="modal-body">
+            <div id="modalForm">—</div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn" id="btnCancelModal">取消</button>
+            <button type="button" class="btn primary" id="btnConfirmModal" disabled>確認</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      (function(){
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+
+        const permBar = document.getElementById('permBar');
+        const tabs = Array.from(document.querySelectorAll('.lc-tabs .tab'));
+        const q = document.getElementById('q');
+        const cards = document.getElementById('cards');
+        const listInfo = document.getElementById('listInfo');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+
+        const drawer = document.getElementById('detailDrawer');
+        const btnCloseDrawer = document.getElementById('btnCloseDrawer');
+        const btnSuspend = document.getElementById('btnSuspend');
+        const btnResume = document.getElementById('btnResume');
+        const btnCancel = document.getElementById('btnCancel');
+        const btnHistory = document.getElementById('btnHistory');
+
+        // Modal elements
+        const modal = document.getElementById('modalOverlay');
+        const modalForm = document.getElementById('modalForm');
+        const btnCancelModal = document.getElementById('btnCancelModal');
+        const btnConfirmModal = document.getElementById('btnConfirmModal');
+
+        let me = null;
+        let state = { page:1, perPage:12, total:0, status:'all', q:'', selected:null, action:null };
+
+        async function ensureSession(){
+          try {
+            const res = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/lifecycle'); return false; }
+            const json = await res.json();
+            me = (json && json.ok && json.data) ? json.data : null;
+            permBar.style.display = 'none';
+            updateRoleButtons();
+            return true;
+          } catch (_) {
+            permBar.textContent = '載入使用者資訊失敗';
+            permBar.style.display = 'block';
+            return false;
+          }
+        }
+
+        function badge(label, status){
+          return `<span class="badge status" data-status="${status}">${label}</span>`;
+        }
+
+        function renderEmpty(){
+          cards.innerHTML = '<div class="muted" style="padding:12px;">尚無符合條件的服務</div>';
+          listInfo.textContent = '0 筆';
+          prevBtn.disabled = true; nextBtn.disabled = true;
+        }
+
+        function formatDateISO(d){
+          const dt = new Date(d);
+          if (Number.isNaN(dt.getTime())) return d || '';
+          const y = dt.getUTCFullYear();
+          const m = String(dt.getUTCMonth()+1).padStart(2,'0');
+          const day = String(dt.getUTCDate()).padStart(2,'0');
+          const hh = String(dt.getUTCHours()).padStart(2,'0');
+          const mm = String(dt.getUTCMinutes()).padStart(2,'0');
+          return `${y}-${m}-${day} ${hh}:${mm} UTC`;
+        }
+
+        function todayYmd(){
+          const d = new Date();
+          const y = d.getFullYear();
+          const m = String(d.getMonth()+1).padStart(2,'0');
+          const day = String(d.getDate()).padStart(2,'0');
+          return `${y}-${m}-${day}`;
+        }
+
+        function renderServices(items){
+          cards.innerHTML = '';
+          if (!items.length) { renderEmpty(); return; }
+          items.forEach(svc => {
+            const el = document.createElement('div');
+            el.className = 'lc-card';
+            const st = svc.status || 'active';
+            const label = st==='active'?'啟用中':st==='suspended'?'已暫停':st==='expired'?'已到期':'已取消';
+            const scheduled = svc.suspensionEffectiveDate && svc.suspensionEffectiveDate > todayYmd();
+            el.innerHTML = `
+              <div class="lc-card-title">${svc.clientName||svc.clientId} — 服務 ${badge(label, st)}</div>
+              <div class="lc-card-sub">下次週期：— <span class="chip scheduled" style="display:${scheduled?'inline-flex':'none'}">已排程</span></div>
+              <div class="lc-card-actions"><button type="button" class="btn btn-detail">詳情</button></div>
+            `;
+            el.querySelector('.btn-detail').addEventListener('click', ()=>openDrawer(svc));
+            cards.appendChild(el);
+          });
+        }
+
+        async function loadServices(){
+          try {
+            cards.innerHTML = '<div class="muted" style="padding:12px;">載入中…</div>';
+            const params = new URLSearchParams();
+            params.set('page', String(state.page));
+            params.set('perPage', String(state.perPage));
+            if (state.q) params.set('q', state.q);
+            if (state.status && state.status !== 'all') params.set('status', state.status);
+            const res = await fetch(`${apiBase}/client-services?${params.toString()}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/lifecycle'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const items = Array.isArray(json.data) ? json.data : [];
+            state.total = (json.meta && json.meta.total) || items.length;
+            renderServices(items);
+            updatePager();
+          } catch (_) {
+            cards.innerHTML = '<div class="muted" style="padding:12px;color:#c0392b;">載入失敗</div>';
+            listInfo.textContent = '—';
+          }
+        }
+
+        function updatePager(){
+          prevBtn.disabled = state.page <= 1;
+          const lastPage = Math.max(1, Math.ceil(state.total / state.perPage));
+          nextBtn.disabled = state.page >= lastPage;
+          listInfo.textContent = `${state.total} 筆｜第 ${state.page}/${lastPage} 頁`;
+        }
+
+        let searchTimer = null;
+        q.addEventListener('input', ()=>{ clearTimeout(searchTimer); searchTimer = setTimeout(()=>{ state.q = q.value.trim(); state.page = 1; loadServices(); }, 300); });
+
+        tabs.forEach(btn => {
+          btn.addEventListener('click', ()=>{
+            tabs.forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+            btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+            state.status = btn.getAttribute('data-status'); state.page = 1; loadServices();
+          });
+        });
+
+        prevBtn.addEventListener('click', ()=>{ if (state.page>1){ state.page--; loadServices(); } });
+        nextBtn.addEventListener('click', ()=>{ state.page++; loadServices(); });
+
+        function openDrawer(svc){
+          state.selected = { ...svc };
+          // Update header title and status badge
+          const titleEl = drawer.querySelector('.drawer-title');
+          const st = svc.status || 'active';
+          const label = st==='active'?'啟用中':st==='suspended'?'已暫停':st==='expired'?'已到期':'已取消';
+          titleEl.innerHTML = `${svc.clientName||svc.clientId} — 服務 ${badge(label, st)}`;
+          // Schedule bar
+          const scheduleBar = document.getElementById('scheduleBar');
+          const scheduled = svc.suspensionEffectiveDate && svc.suspensionEffectiveDate > todayYmd();
+          if (scheduled) {
+            scheduleBar.textContent = `已排程於 ${svc.suspensionEffectiveDate} 暫停`;
+            scheduleBar.style.display = 'block';
+          } else {
+            scheduleBar.style.display = 'none';
+          }
+          // Buttons visibility by status and role
+          btnSuspend.style.display = st==='active' ? 'inline-flex' : 'none';
+          btnResume.style.display = st==='suspended' ? 'inline-flex' : 'none';
+          btnCancel.style.display = me && me.isAdmin ? 'inline-flex' : 'none';
+          drawer.classList.add('show');
+          drawer.setAttribute('aria-hidden', 'false');
+        }
+        btnCloseDrawer.addEventListener('click', ()=>{ drawer.classList.remove('show'); drawer.setAttribute('aria-hidden', 'true'); });
+
+        function updateRoleButtons(){
+          // 列表頁：取消按鈕權限在詳情視圖內處理；總覽不需要特別隱藏
+        }
+
+        // Modal helpers
+        function openModal(action){
+          state.action = action; btnConfirmModal.disabled = true; modalForm.innerHTML = '';
+          const today = todayYmd();
+          if (action === 'suspend') {
+            modal.querySelector('#modalTitle').textContent = '暫停服務';
+            modalForm.innerHTML = `
+              <div class="modal-row"><label>暫停生效日期（≥ 今日）</label><input id="f_effective" type="date" value="${today}" min="${today}" /></div>
+              <div class="modal-row"><label>暫停原因（必填，≤200）</label><input id="f_reason" type="text" /></div>
+              <div class="modal-row"><label>備註（選填，≤500）</label><textarea id="f_notes" rows="3"></textarea></div>
+              <div id="formError" class="form-error" style="display:none;color:#b91c1c;margin-top:8px;"></div>
+            `;
+            const f_effective = document.getElementById('f_effective');
+            const f_reason = document.getElementById('f_reason');
+            const f_notes = document.getElementById('f_notes');
+            const formError = document.getElementById('formError');
+            const validate = ()=>{
+              formError.style.display='none'; formError.textContent='';
+              const e = f_effective.value; const r = f_reason.value.trim();
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(e)) { formError.textContent='請選擇有效日期'; formError.style.display='block'; return false; }
+              if (e < today) { formError.textContent='暫停生效日期不可早於今日'; formError.style.display='block'; return false; }
+              if (!r) { formError.textContent='原因必填'; formError.style.display='block'; return false; }
+              return true;
+            };
+            [f_effective,f_reason,f_notes].forEach(el=>el.addEventListener('input', ()=>{ btnConfirmModal.disabled = !validate(); }));
+            btnConfirmModal.onclick = async ()=>{
+              if (!validate()) return;
+              await doSuspend(f_effective.value, f_reason.value.trim(), f_notes.value.trim());
+            };
+          } else if (action === 'resume') {
+            modal.querySelector('#modalTitle').textContent = '恢復服務';
+            modalForm.innerHTML = `
+              <div class="modal-row"><label>備註（選填，≤500）</label><textarea id="f_notes" rows="3"></textarea></div>
+            `;
+            const f_notes = document.getElementById('f_notes');
+            btnConfirmModal.disabled = false;
+            btnConfirmModal.onclick = async ()=>{ await doResume(f_notes.value.trim()); };
+          } else if (action === 'cancel') {
+            modal.querySelector('#modalTitle').textContent = '取消服務（不可回復）';
+            modalForm.innerHTML = `
+              <div class="modal-row"><label>取消原因（必填，≤200）</label><input id="f_reason" type="text" /></div>
+              <div class="modal-row"><label><input id="f_cancel_tasks" type="checkbox" /> 同時取消未完成任務</label></div>
+              <div class="muted" style="margin-top:8px;color:#b91c1c;">此操作不可恢復。請再次確認。</div>
+              <div id="formError" class="form-error" style="display:none;color:#b91c1c;margin-top:8px;"></div>
+            `;
+            const f_reason = document.getElementById('f_reason');
+            const f_cancel_tasks = document.getElementById('f_cancel_tasks');
+            const formError = document.getElementById('formError');
+            const validate = ()=>{ formError.style.display='none'; formError.textContent=''; const r=f_reason.value.trim(); if(!r){ formError.textContent='取消原因必填'; formError.style.display='block'; return false;} return true; };
+            f_reason.addEventListener('input', ()=>{ btnConfirmModal.disabled = !validate(); });
+            btnConfirmModal.onclick = async ()=>{ if (!validate()) return; await doCancel(f_reason.value.trim(), !!f_cancel_tasks.checked); };
+          } else if (action === 'history') {
+            modal.querySelector('#modalTitle').textContent = '服務變更歷史';
+            modalForm.innerHTML = '<div class="muted">載入中…</div>';
+            btnConfirmModal.disabled = false; btnConfirmModal.textContent = '關閉';
+            btnConfirmModal.onclick = ()=> closeModal();
+            loadHistory();
+          }
+          btnCancelModal.onclick = ()=> closeModal();
+          modal.classList.add('show'); modal.setAttribute('aria-hidden','false');
+        }
+
+        function closeModal(){ modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); btnConfirmModal.textContent = '確認'; }
+
+        async function doSuspend(effective, reason, notes){
+          try {
+            const id = state.selected?.id; if (!id) return;
+            const res = await fetch(`${apiBase}/client-services/${id}/suspend`, { method:'POST', credentials:'include', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ effective_date: effective, reason, notes }) });
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '暫停失敗');
+            alert(json.message || (effective <= todayYmd() ? '服務已暫停' : `已排程於 ${effective} 暫停`));
+            // Update selected and reload list
+            if (effective <= todayYmd()) state.selected.status = 'suspended';
+            else state.selected.suspensionEffectiveDate = effective;
+            openDrawer(state.selected);
+            await loadServices();
+            closeModal();
+          } catch (err) {
+            const fe = document.getElementById('formError'); if (fe) { fe.textContent = String(err?.message || '暫停失敗'); fe.style.display='block'; } else { alert('暫停失敗'); }
+          }
+        }
+
+        async function doResume(notes){
+          try {
+            const id = state.selected?.id; if (!id) return;
+            const res = await fetch(`${apiBase}/client-services/${id}/resume`, { method:'POST', credentials:'include', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ notes }) });
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '恢復失敗');
+            alert(json.message || '服務已恢復');
+            state.selected.status = 'active';
+            state.selected.suspensionEffectiveDate = null;
+            openDrawer(state.selected);
+            await loadServices();
+            closeModal();
+          } catch (err) {
+            alert(String(err?.message || '恢復失敗'));
+          }
+        }
+
+        async function doCancel(reason, cancelTasks){
+          try {
+            const id = state.selected?.id; if (!id) return;
+            const res = await fetch(`${apiBase}/client-services/${id}/cancel`, { method:'POST', credentials:'include', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ reason, cancel_pending_tasks: !!cancelTasks }) });
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '取消失敗');
+            alert('服務已取消');
+            state.selected.status = 'cancelled';
+            openDrawer(state.selected);
+            await loadServices();
+            closeModal();
+          } catch (err) {
+            const fe = document.getElementById('formError'); if (fe) { fe.textContent = String(err?.message || '取消失敗'); fe.style.display='block'; } else { alert('取消失敗'); }
+          }
+        }
+
+        async function loadHistory(){
+          try {
+            const id = state.selected?.id; if (!id) return;
+            const res = await fetch(`${apiBase}/client-services/${id}/history`, { credentials:'include' });
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const list = Array.isArray(json.data) ? json.data : [];
+            if (!list.length) { modalForm.innerHTML = '<div class="muted">尚無歷史紀錄</div>'; return; }
+            const ul = document.createElement('div');
+            ul.style.display = 'flex'; ul.style.flexDirection = 'column'; ul.style.gap = '8px';
+            list.forEach(h => {
+              const row = document.createElement('div');
+              row.style.border = '1px solid #f0f0f0'; row.style.borderRadius='8px'; row.style.padding='10px';
+              row.innerHTML = `<div style="font-weight:700;">${h.old_status||''} → ${h.new_status||''}</div>
+                               <div class="muted">${h.changed_at?formatDateISO(h.changed_at):''}｜${h.changed_by||''}</div>
+                               <div>${h.reason||''}${h.notes?`｜${h.notes}`:''}</div>`;
+              ul.appendChild(row);
+            });
+            modalForm.innerHTML = ''; modalForm.appendChild(ul);
+          } catch (_) {
+            modalForm.innerHTML = '<div style="color:#c0392b;">載入失敗</div>';
+          }
+        }
+
+        btnSuspend.addEventListener('click', ()=> openModal('suspend'));
+        btnResume.addEventListener('click', ()=> openModal('resume'));
+        btnCancel.addEventListener('click', ()=> openModal('cancel'));
+        btnHistory.addEventListener('click', ()=> openModal('history'));
+
+        ensureSession().then(ok => { if (ok) { loadServices(); } else { renderEmpty(); } });
+      })();
+    </script>
+  </body>
+  </html>
+
+

@@ -1,5 +1,7 @@
 ### 任務 02：Cloudflare API Token 與 wrangler 登入（免技術版步驟）
 
+對應索引：`docs/開發指南/開發須知/開發清單-任務索引.md`
+
 【目標】
 - 讓部署指令可無痛執行：設定 API Token、完成 wrangler 登入/授權。
 

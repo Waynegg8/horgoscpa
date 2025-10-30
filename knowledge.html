@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="知識庫（SOP）" />
+    <title>知識庫｜SOP 列表</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/knowledge-page.css" />
+  </head>
+  <body class="knowledge-page">
+    <header class="page-header" style="padding:16px 20px;display:flex;align-items:center;gap:12px;">
+      <h1 class="page-title" style="margin:0;font-size:24px;font-weight:800;color:var(--text-primary);">知識庫（SOP）</h1>
+      <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限執行此操作</div>
+    </header>
+
+    <section class="filters" style="padding:0 20px 16px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+      <div style="flex:1;min-width:220px;">
+        <label for="q" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">搜尋</label>
+        <input id="q" type="search" placeholder="搜尋標題/標籤…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;" />
+      </div>
+      <div>
+        <label for="category" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">分類</label>
+        <select id="category" aria-label="分類" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:160px;">
+          <option value="all">全部</option>
+          <option value="accounting">記帳流程</option>
+          <option value="tax">稅務流程</option>
+          <option value="business">工商登記</option>
+          <option value="internal">內部</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:220px;">
+        <label for="tags" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">標籤（以逗號分隔）</label>
+        <input id="tags" type="text" placeholder="例如：報稅, 月結, 提醒" aria-label="標籤" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;" />
+      </div>
+      <div>
+        <label for="status" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">發布狀態</label>
+        <select id="status" aria-label="發布狀態" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:140px;">
+          <option value="all">全部</option>
+          <option value="published">已發布</option>
+          <option value="draft">草稿</option>
+        </select>
+      </div>
+      <div class="toolbar-spacer" style="flex:1;"></div>
+      <div>
+        <button id="btn-new" class="btn primary" type="button">新增 SOP</button>
+      </div>
+    </section>
+
+    <main class="content" style="padding:0 20px 24px 20px;">
+      <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
+          <div style="font-weight:800;color:var(--text-primary);">SOP 列表</div>
+          <div id="listInfo" class="muted">—</div>
+        </div>
+        <div id="sopsList"></div>
+        <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+          <button id="prev" type="button" class="btn">上一頁</button>
+          <button id="next" type="button" class="btn">下一頁</button>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function(){
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+
+        const permBar = document.getElementById('permBar');
+        const btnNew = document.getElementById('btn-new');
+        const q = document.getElementById('q');
+        const category = document.getElementById('category');
+        const tags = document.getElementById('tags');
+        const status = document.getElementById('status');
+        const sopsList = document.getElementById('sopsList');
+        const listInfo = document.getElementById('listInfo');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+
+        let me = null;
+        let state = { page:1, perPage:12, total:0 };
+
+        async function ensureSession(){
+          try {
+            const res = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/knowledge'); return false; }
+            const json = await res.json();
+            me = (json && json.ok && json.data) ? json.data : null;
+            permBar.style.display = 'none';
+            // 刪除按鈕僅管理員可見（之後在詳情/編輯頁處理）；列表頁「新增 SOP」員工與管理員皆可見
+            btnNew.style.display = 'inline-flex';
+            return true;
+          } catch (_) {
+            permBar.textContent = '載入使用者資訊失敗';
+            permBar.style.display = 'block';
+            btnNew.style.display = 'none';
+            return false;
+          }
+        }
+
+        function renderEmpty(){
+          sopsList.innerHTML = '';
+          const card = document.createElement('div');
+          card.className = 'doc-card';
+          card.innerHTML = '<div class="doc-title">尚無 SOP</div><div class="doc-excerpt">請使用右上角「新增 SOP」建立第一筆</div>';
+          sopsList.appendChild(card);
+          listInfo.textContent = '0 筆';
+          prevBtn.disabled = true; nextBtn.disabled = true;
+        }
+
+        function createSopCard(item){
+          const el = document.createElement('div');
+          el.className = 'doc-card';
+          const badge = item.isPublished ? '<span class="badge" style="margin-left:8px;background:#e8f5e9;color:#2e7d32;padding:2px 6px;border-radius:6px;">已發布</span>' : '<span class="badge" style="margin-left:8px;background:#eef2f7;color:#64748b;padding:2px 6px;border-radius:6px;">草稿</span>';
+          const v = `<span class="badge" style="margin-left:8px;background:#e7f0ff;color:#1d4ed8;padding:2px 6px;border-radius:6px;">v${item.version||1}</span>`;
+          const tagsTxt = Array.isArray(item.tags) ? item.tags.join(', ') : '';
+          el.innerHTML = `
+            <div class="doc-title">${item.title||''} ${v} ${badge}</div>
+            <div class="doc-excerpt">分類：${item.category||'—'}${tagsTxt ? `｜標籤：${tagsTxt}` : ''}</div>
+            <div class="doc-meta">
+              <div class="doc-meta-item">更新：${item.updatedAt||''}</div>
+            </div>
+            <div class="doc-footer">
+              <div>作者：${item.createdBy||''}</div>
+              <div><button type="button" class="btn">查看</button> <button type="button" class="btn">編輯</button></div>
+            </div>
+          `;
+          return el;
+        }
+
+        function updatePager(){
+          prevBtn.disabled = state.page <= 1;
+          const lastPage = Math.max(1, Math.ceil(state.total / state.perPage));
+          nextBtn.disabled = state.page >= lastPage;
+          listInfo.textContent = `${state.total} 筆｜第 ${state.page}/${lastPage} 頁`;
+        }
+
+        function buildParams(){
+          const params = new URLSearchParams();
+          params.set('page', String(state.page));
+          params.set('perPage', String(state.perPage));
+          if (q.value.trim()) params.set('q', q.value.trim());
+          const cat = category.value;
+          if (cat && cat !== 'all') params.set('category', cat);
+          const t = tags.value.split(',').map(s=>s.trim()).filter(Boolean).join(',');
+          if (t) params.set('tags', t);
+          const st = status.value;
+          if (st && st !== 'all') params.set('published', st === 'published' ? '1' : '0');
+          return params;
+        }
+
+        async function loadSOPs(){
+          try {
+            sopsList.innerHTML = '';
+            const loading = document.createElement('div');
+            loading.className = 'doc-card';
+            loading.innerHTML = '<div class="doc-title">載入中…</div>';
+            sopsList.appendChild(loading);
+            const res = await fetch(`${apiBase}/sop?${buildParams().toString()}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/knowledge'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const items = Array.isArray(json.data) ? json.data : [];
+            state.total = (json.meta && json.meta.total) || items.length;
+            sopsList.innerHTML = '';
+            if (!items.length) { renderEmpty(); return; }
+            items.forEach(it => sopsList.appendChild(createSopCard(it)));
+            updatePager();
+          } catch (_) {
+            sopsList.innerHTML = '';
+            const card = document.createElement('div');
+            card.className = 'doc-card';
+            card.innerHTML = '<div class="doc-title" style="color:#c0392b;">載入失敗</div><div class="doc-excerpt">請稍後再試</div>';
+            sopsList.appendChild(card);
+            listInfo.textContent = '—';
+          }
+        }
+
+        // 事件綁定
+        let timer=null;
+        q.addEventListener('input', ()=>{ clearTimeout(timer); timer=setTimeout(()=>{ state.page=1; loadSOPs(); }, 300); });
+        category.addEventListener('change', ()=>{ state.page=1; loadSOPs(); });
+        tags.addEventListener('change', ()=>{ state.page=1; loadSOPs(); });
+        status.addEventListener('change', ()=>{ state.page=1; loadSOPs(); });
+        prevBtn.addEventListener('click', ()=>{ if (state.page>1){ state.page--; loadSOPs(); } });
+        nextBtn.addEventListener('click', ()=>{ state.page++; loadSOPs(); });
+        btnNew.addEventListener('click', ()=>{ alert('骨架：新增 SOP 對話框（後續任務實作）'); });
+
+        ensureSession().then(ok => { if (ok) { loadSOPs(); } else { renderEmpty(); } });
+      })();
+    </script>
+  </body>
+  </html>
+
+

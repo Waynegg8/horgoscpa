@@ -22,7 +22,7 @@
           <option value="paid">已收款</option>
           <option value="overdue">逾期</option>
         </select>
-        <button id="btn-new" class="clients-btn" type="button">新增收據（骨架）</button>
+        <button id="btn-new" class="clients-btn" type="button">新增收據</button>
       </div>
     </header>
 
@@ -49,6 +49,49 @@
       </section>
     </main>
 
+    <!-- 新增收據 Modal -->
+    <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-header" id="modalTitle">新增收據</div>
+        <div class="modal-body">
+          <div id="formError" class="form-error" style="display:none;"></div>
+          <div class="modal-row">
+            <label for="clientId">客戶ID</label>
+            <input id="clientId" type="text" placeholder="例如 c_001" />
+          </div>
+          <div class="modal-row">
+            <label for="receiptDate">開立日期</label>
+            <input id="receiptDate" type="date" />
+          </div>
+          <div class="modal-row">
+            <label for="dueDate">到期日（預設 +30 天）</label>
+            <input id="dueDate" type="date" />
+          </div>
+          <div class="modal-row">
+            <label for="amount">金額</label>
+            <input id="amount" type="number" min="1" step="1" placeholder="例如 10000" />
+          </div>
+          <div class="modal-row">
+            <label for="statusNew">狀態</label>
+            <select id="statusNew">
+              <option value="unpaid">未收款</option>
+              <option value="partial">部分收款</option>
+              <option value="paid">已收款</option>
+              <option value="cancelled">作廢</option>
+            </select>
+          </div>
+          <div class="modal-row">
+            <label for="notes">備註</label>
+            <textarea id="notes" rows="3" placeholder="可留空"></textarea>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="btn-cancel">取消</button>
+          <button type="button" class="btn primary" id="btn-create">建立</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       (function(){
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
@@ -61,6 +104,17 @@
         const statusEl = document.getElementById('status');
         const prevBtn = document.getElementById('prev');
         const nextBtn = document.getElementById('next');
+        const btnNew = document.getElementById('btn-new');
+        const modal = document.getElementById('modalOverlay');
+        const btnCancel = document.getElementById('btn-cancel');
+        const btnCreate = document.getElementById('btn-create');
+        const inputClientId = document.getElementById('clientId');
+        const inputReceiptDate = document.getElementById('receiptDate');
+        const inputDueDate = document.getElementById('dueDate');
+        const inputAmount = document.getElementById('amount');
+        const inputStatusNew = document.getElementById('statusNew');
+        const inputNotes = document.getElementById('notes');
+        const formError = document.getElementById('formError');
 
         let state = { page:1, perPage:20, total:0 };
 
@@ -124,6 +178,77 @@
         dateTo.addEventListener('change', ()=>{ state.page=1; load(); });
         prevBtn.addEventListener('click', ()=>{ if (state.page>1) { state.page--; load(); } });
         nextBtn.addEventListener('click', ()=>{ state.page++; load(); });
+
+        function openModal(){
+          formError.style.display = 'none';
+          formError.textContent = '';
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth()+1).padStart(2,'0');
+          const dd = String(today.getDate()).padStart(2,'0');
+          inputReceiptDate.value = `${yyyy}-${mm}-${dd}`;
+          const d2 = new Date(Date.UTC(yyyy, Number(mm)-1, Number(dd)));
+          d2.setUTCDate(d2.getUTCDate()+30);
+          const yyyy2 = d2.getUTCFullYear();
+          const mm2 = String(d2.getUTCMonth()+1).padStart(2,'0');
+          const dd2 = String(d2.getUTCDate()).padStart(2,'0');
+          inputDueDate.value = `${yyyy2}-${mm2}-${dd2}`;
+          inputClientId.value = '';
+          inputAmount.value = '';
+          inputStatusNew.value = 'unpaid';
+          inputNotes.value = '';
+          modal.classList.add('show');
+          modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeModal(){
+          modal.classList.remove('show');
+          modal.setAttribute('aria-hidden', 'true');
+        }
+
+        btnNew.addEventListener('click', openModal);
+        btnCancel.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e)=>{ if (e.target === modal) closeModal(); });
+
+        async function createReceipt(){
+          formError.style.display = 'none';
+          formError.textContent = '';
+          const client_id = inputClientId.value.trim();
+          const receipt_date = inputReceiptDate.value;
+          const due_date = inputDueDate.value;
+          const total_amount = Number(inputAmount.value);
+          const status = inputStatusNew.value;
+          const notes = inputNotes.value.trim();
+          const errors = [];
+          if (!client_id) errors.push('客戶ID必填');
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(receipt_date)) errors.push('開立日期格式錯誤');
+          if (!Number.isFinite(total_amount) || total_amount <= 0) errors.push('金額需大於 0');
+          if (errors.length){
+            formError.textContent = errors.join('；');
+            formError.style.display = 'block';
+            return;
+          }
+          btnCreate.disabled = true;
+          try {
+            const res = await fetch(`${apiBase}/receipts`, {
+              method:'POST', credentials:'include', headers:{ 'Content-Type':'application/json' },
+              body: JSON.stringify({ client_id, receipt_date, due_date, total_amount, status, notes })
+            });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/receipts'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '建立失敗');
+            closeModal();
+            state.page = 1;
+            await load();
+          } catch (err) {
+            formError.textContent = String(err?.message || '建立失敗');
+            formError.style.display = 'block';
+          } finally {
+            btnCreate.disabled = false;
+          }
+        }
+
+        btnCreate.addEventListener('click', createReceipt);
 
         load();
       })();

@@ -1,5 +1,7 @@
 ### 任務 00：初始化 Cloudflare Pages/Workers 預覽部署
 
+對應索引：`docs/開發指南/開發須知/開發清單-任務索引.md`
+
 【目標】
 - 建立可用的預覽部署（Preview），合併到 main 自動發佈 Production，完成健康檢查。
 

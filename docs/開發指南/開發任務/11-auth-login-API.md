@@ -1,5 +1,7 @@
 ### 任務 11：POST /auth/login 登入 API（會話建立）
 
+對應索引：`docs/開發指南/開發須知/開發清單-任務索引.md`
+
 【目標】
 - 實作登入 API，正確驗證帳密、建立 D1 會話、回應 Envelope，設定 `HttpOnly; Secure; SameSite=Lax` Cookie。
 

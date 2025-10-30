@@ -1,0 +1,50 @@
+/* 管理成本頁（UI 骨架） */
+
+.costs-page { min-height:100vh; background:#fafafa; color:#0f172a; display:grid; grid-template-rows:auto 1fr; }
+.costs-header { padding:24px; background:#fff; border-bottom:1px solid rgba(15,23,42,0.08); }
+.costs-title { margin:0; font-size:22px; font-weight:700; }
+
+.info-bar { margin-top:10px; padding:10px 12px; border-radius:8px; background:#fff1f0; color:#a8071a; border:1px solid #ffd7d7; }
+
+.costs-toolbar { margin-top:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.toolbar-spacer { flex:1; }
+.btn { padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer; }
+.btn.primary { background:#0ea5e9; border-color:#0ea5e9; color:#fff; }
+.btn:disabled { opacity:0.6; cursor:not-allowed; }
+
+.costs-tabs { margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; }
+.tab { padding:8px 12px; border:1px solid #e5e7eb; background:#fff; border-radius:999px; cursor:pointer; }
+.tab.active { background:#0ea5e9; border-color:#0ea5e9; color:#fff; }
+
+.costs-content { padding:24px; }
+.card { background:#fff; border:1px solid rgba(15,23,42,0.08); border-radius:10px; padding:16px; box-shadow:0 2px 16px rgba(0,0,0,0.04); }
+
+.section-toolbar { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+.table { width:100%; border-collapse:collapse; }
+.table th, .table td { padding:10px 12px; border-bottom:1px solid #eee; text-align:left; font-size:14px; }
+.muted { color:#64748b; }
+
+.pagination { margin-top:12px; display:flex; justify-content:flex-end; gap:8px; }
+.pagination button { padding:8px 12px; border:1px solid #e0e0e0; border-radius:8px; background:#fff; cursor:pointer; }
+
+.stats-cards { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:12px; margin-bottom:12px; }
+.stat { border:1px solid #e5e7eb; border-radius:10px; padding:12px; background:#fafcff; }
+.stat-label { font-size:12px; color:#334155; }
+.stat-value { font-size:20px; font-weight:700; margin-top:4px; }
+.stat-meta { font-size:12px; margin-top:6px; }
+
+.analysis-grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+.analysis-card { border:1px solid #e5e7eb; border-radius:10px; padding:12px; background:#fff; min-height:180px; }
+.analysis-title { font-weight:600; margin-bottom:8px; }
+.placeholder { border:1px dashed #cbd5e1; border-radius:8px; padding:24px; text-align:center; }
+
+.panel { display:none; }
+.panel.show { display:block; }
+
+@media (max-width: 960px) {
+  .stats-cards { grid-template-columns: 1fr; }
+  .analysis-grid { grid-template-columns: 1fr; }
+}
+
+
+

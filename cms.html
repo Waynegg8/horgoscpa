@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="外部內容管理（官網 CMS）" />
+    <title>外部內容管理｜CMS</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/content-editor-page.css" />
+  </head>
+  <body class="cms-page">
+    <header class="cms-header" style="padding:16px 20px;">
+      <h1 class="cms-title" style="margin:0 0 8px 0;font-size:24px;font-weight:800;color:var(--text-primary);">外部內容管理（CMS）</h1>
+      <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限存取此模組</div>
+      <nav class="cms-tabs" role="tablist" aria-label="內容類型">
+        <button class="tab active" role="tab" aria-selected="true" data-tab="blog">Blog 文章</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="faq">FAQ</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="services">服務介紹</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="resources">資源下載</button>
+      </nav>
+    </header>
+
+    <main class="cms-content" style="padding:0 20px 24px 20px;">
+      <!-- Blog 文章 -->
+      <section id="panel-blog" class="panel show" role="tabpanel" aria-labelledby="tab-blog">
+        <div class="card" style="padding:16px;">
+          <div class="section-toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <button id="btnNewPost" class="btn primary" type="button">+ 新增文章</button>
+            <select id="blogStatus">
+              <option value="all">全部狀態</option>
+              <option value="published">已發布</option>
+              <option value="draft">草稿</option>
+            </select>
+            <select id="blogCategory">
+              <option value="all">全部分類</option>
+            </select>
+            <input id="blogTags" type="text" placeholder="標籤（逗號分隔）" />
+            <div class="toolbar-spacer"></div>
+            <input id="blogSearch" type="search" placeholder="搜尋標題…" />
+          </div>
+          <table class="table" aria-label="文章列表" style="margin-top:12px;">
+            <thead>
+              <tr>
+                <th>標題</th>
+                <th>分類</th>
+                <th>標籤</th>
+                <th>狀態</th>
+                <th>更新時間</th>
+                <th>瀏覽數</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="blogTbody"><tr><td colspan="7" class="muted">尚無資料</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="panel-faq" class="panel" role="tabpanel" aria-labelledby="tab-faq">
+        <div class="card" style="padding:16px;">
+          <div class="section-toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <button id="btnNewFAQ" class="btn primary" type="button">+ 新增 FAQ</button>
+            <select id="faqCategory">
+              <option value="all">全部分類</option>
+            </select>
+            <select id="faqStatus">
+              <option value="all">全部狀態</option>
+              <option value="published">已發布</option>
+              <option value="draft">草稿</option>
+            </select>
+            <div class="toolbar-spacer"></div>
+            <input id="faqSearch" type="search" placeholder="搜尋問題…" />
+          </div>
+          <table class="table" aria-label="FAQ 列表" style="margin-top:12px;">
+            <thead>
+              <tr>
+                <th>分類</th>
+                <th>問題</th>
+                <th>排序</th>
+                <th>狀態</th>
+                <th>更新時間</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="faqTbody"><tr><td colspan="6" class="muted">尚無資料</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 服務介紹 -->
+      <section id="panel-services" class="panel" role="tabpanel" aria-labelledby="tab-services">
+        <div class="card" style="padding:16px;">
+          <div class="section-toolbar" style="display:flex;gap:10px;align-items:center;">
+            <div class="muted">共 4 個服務介紹</div>
+            <div class="toolbar-spacer"></div>
+          </div>
+          <div id="serviceCards" class="grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:12px;"></div>
+        </div>
+      </section>
+
+      <!-- 資源下載 -->
+      <section id="panel-resources" class="panel" role="tabpanel" aria-labelledby="tab-resources">
+        <div class="card" style="padding:16px;">
+          <div class="section-toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <button id="btnUploadResource" class="btn primary" type="button">上傳資源</button>
+            <select id="resCategory">
+              <option value="all">全部分類</option>
+            </select>
+            <select id="resType">
+              <option value="all">全部類型</option>
+              <option value="pdf">PDF</option>
+              <option value="excel">Excel</option>
+              <option value="word">Word</option>
+              <option value="zip">ZIP</option>
+              <option value="image">圖片</option>
+            </select>
+            <div class="toolbar-spacer"></div>
+            <input id="resSearch" type="search" placeholder="搜尋標題…" />
+          </div>
+          <table class="table" aria-label="資源列表" style="margin-top:12px;">
+            <thead>
+              <tr>
+                <th>標題</th>
+                <th>分類</th>
+                <th>檔案類型</th>
+                <th>檔案大小</th>
+                <th>下載次數</th>
+                <th>更新時間</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="resTbody"><tr><td colspan="7" class="muted">尚無資料</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function(){
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+
+        const permBar = document.getElementById('permBar');
+        const tabs = Array.from(document.querySelectorAll('.cms-tabs .tab'));
+        const panels = {
+          blog: document.getElementById('panel-blog'),
+          faq: document.getElementById('panel-faq'),
+          services: document.getElementById('panel-services'),
+          resources: document.getElementById('panel-resources'),
+        };
+
+        async function ensureAdmin(){
+          try {
+            const res = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/cms'); return false; }
+            const json = await res.json();
+            const isAdmin = !!(json && json.ok && json.data && json.data.isAdmin);
+            if (!isAdmin) {
+              permBar.style.display = 'block';
+              setUIEnabled(false);
+              return false;
+            }
+            setUIEnabled(true);
+            return true;
+          } catch (_) {
+            permBar.textContent = '載入失敗，請稍後再試';
+            permBar.style.display = 'block';
+            setUIEnabled(false);
+            return false;
+          }
+        }
+
+        function setUIEnabled(enabled){
+          tabs.forEach(b=>{ b.disabled = !enabled; });
+          document.querySelectorAll('.section-toolbar input, .section-toolbar select, .section-toolbar button').forEach(el=>{ el.disabled = !enabled; });
+        }
+
+        tabs.forEach(btn => {
+          btn.addEventListener('click', ()=>{
+            tabs.forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+            btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+            const key = btn.getAttribute('data-tab');
+            Object.entries(panels).forEach(([k,el])=>{ if (k === key) el.classList.add('show'); else el.classList.remove('show'); });
+          });
+        });
+
+        // Helpers
+        function fmtBytes(n){ const b=Number(n||0); if (b<1024) return `${b} B`; if(b<1024*1024) return `${(b/1024).toFixed(1)} KB`; if(b<1024*1024*1024) return `${(b/1024/1024).toFixed(1)} MB`; return `${(b/1024/1024/1024).toFixed(2)} GB`; }
+        function joinTags(tags){ return (Array.isArray(tags)?tags:[]).map(t=>`<span class="badge">${t}</span>`).join(' '); }
+
+        // Blog list
+        async function renderBlog(){
+          const tbody = document.getElementById('blogTbody');
+          tbody.innerHTML = '<tr><td colspan="7" class="muted">載入中…</td></tr>';
+          const status = document.getElementById('blogStatus').value;
+          const category = document.getElementById('blogCategory').value;
+          const tagsVal = document.getElementById('blogTags').value.trim();
+          const keyword = document.getElementById('blogSearch').value.trim();
+          const params = new URLSearchParams();
+          if (status !== 'all') params.set('status', status);
+          if (category && category !== 'all') params.set('category', category);
+          if (tagsVal) params.set('tag', tagsVal.split(',').map(s=>s.trim()).filter(Boolean)[0] || '');
+          if (keyword) params.set('keyword', keyword);
+          try {
+            const res = await fetch(`${apiBase}/admin/articles?${params.toString()}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/cms'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const rows = Array.isArray(json.data) ? json.data : [];
+            tbody.innerHTML = '';
+            if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" class="muted">尚無資料</td></tr>'; return; }
+            rows.forEach(r => {
+              const tr = document.createElement('tr');
+              const statusBadge = r.isPublished ? '<span class="badge">已發布</span>' : '<span class="badge">草稿</span>';
+              tr.innerHTML = `
+                <td>${r.title||''}</td>
+                <td>${r.category||''}</td>
+                <td>${joinTags(r.tags)}</td>
+                <td>${statusBadge}</td>
+                <td>${r.updatedAt||''}</td>
+                <td>${Number(r.viewCount||0)}</td>
+                <td><button class="btn" type="button">編輯</button> <button class="btn" type="button">發布</button> <button class="btn" type="button">刪除</button> <button class="btn" type="button">預覽</button></td>
+              `;
+              tbody.appendChild(tr);
+            });
+          } catch (_) {
+            tbody.innerHTML = '<tr><td colspan="7" style="color:#c0392b;">載入失敗</td></tr>';
+          }
+        }
+
+        // FAQ list
+        async function renderFAQ(){
+          const tbody = document.getElementById('faqTbody');
+          tbody.innerHTML = '<tr><td colspan="6" class="muted">載入中…</td></tr>';
+          const status = document.getElementById('faqStatus').value;
+          const category = document.getElementById('faqCategory').value;
+          const keyword = document.getElementById('faqSearch').value.trim();
+          const params = new URLSearchParams();
+          if (status !== 'all') params.set('status', status);
+          if (category && category !== 'all') params.set('category', category);
+          if (keyword) params.set('keyword', keyword);
+          try {
+            const res = await fetch(`${apiBase}/admin/faq?${params.toString()}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/cms'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const rows = Array.isArray(json.data) ? json.data : [];
+            tbody.innerHTML = '';
+            if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" class="muted">尚無資料</td></tr>'; return; }
+            rows.forEach(r => {
+              const tr = document.createElement('tr');
+              const statusTxt = r.isPublished ? '已發布' : '草稿';
+              tr.innerHTML = `
+                <td>${r.category||''}</td>
+                <td>${r.question||''}</td>
+                <td>${Number(r.sortOrder||0)}</td>
+                <td>${statusTxt}</td>
+                <td>${r.updatedAt||''}</td>
+                <td><button class="btn" type="button">編輯</button> <button class="btn" type="button">刪除</button></td>
+              `;
+              tbody.appendChild(tr);
+            });
+          } catch (_) {
+            tbody.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
+          }
+        }
+
+        // Services (cards)
+        async function renderServiceCards(){
+          const wrap = document.getElementById('serviceCards');
+          wrap.innerHTML = '<div class="muted">載入中…</div>';
+          try {
+            const res = await fetch(`${apiBase}/admin/services`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/cms'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const rows = Array.isArray(json.data) ? json.data : [];
+            wrap.innerHTML = '';
+            if (!rows.length) { wrap.innerHTML = '<div class="muted">尚無資料</div>'; return; }
+            rows.forEach(r => {
+              const div = document.createElement('div');
+              div.className = 'doc-card';
+              const badge = r.isPublished ? '<span class="badge">已發布</span>' : '<span class="badge">草稿</span>';
+              div.innerHTML = `
+                <div class="doc-title">${r.title||r.key} ${badge}</div>
+                <div class="doc-meta"><div class="doc-meta-item">最後更新：${r.updatedAt||''}</div></div>
+                <div class="doc-footer" style="justify-content:flex-end;"><button class="btn" type="button">編輯</button></div>
+              `;
+              wrap.appendChild(div);
+            });
+          } catch (_) {
+            wrap.innerHTML = '<div style="color:#c0392b;">載入失敗</div>';
+          }
+        }
+
+        // Resources list
+        async function renderResources(){
+          const tbody = document.getElementById('resTbody');
+          tbody.innerHTML = '<tr><td colspan="7" class="muted">載入中…</td></tr>';
+          const category = document.getElementById('resCategory').value;
+          const type = document.getElementById('resType').value;
+          const keyword = document.getElementById('resSearch').value.trim();
+          const params = new URLSearchParams();
+          if (category && category !== 'all') params.set('category', category);
+          if (type && type !== 'all') params.set('file_type', type);
+          if (keyword) params.set('keyword', keyword);
+          try {
+            const res = await fetch(`${apiBase}/admin/resources?${params.toString()}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/cms'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const rows = Array.isArray(json.data) ? json.data : [];
+            tbody.innerHTML = '';
+            if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" class="muted">尚無資料</td></tr>'; return; }
+            rows.forEach(r => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${r.title||''}</td>
+                <td>${r.category||''}</td>
+                <td>${r.fileType||''}</td>
+                <td>${fmtBytes(r.fileSize)}</td>
+                <td>${Number(r.downloadCount||0)}</td>
+                <td>${r.updatedAt||''}</td>
+                <td><button class="btn" type="button">下載</button> <button class="btn" type="button">編輯</button> <button class="btn" type="button">刪除</button></td>
+              `;
+              tbody.appendChild(tr);
+            });
+          } catch (_) {
+            tbody.innerHTML = '<tr><td colspan="7" style="color:#c0392b;">載入失敗</td></tr>';
+          }
+        }
+
+        // Events (skeleton only)
+        let t1=null,t2=null,t3=null;
+        document.getElementById('blogSearch').addEventListener('input', ()=>{ clearTimeout(t1); t1=setTimeout(renderBlog, 300); });
+        document.getElementById('faqSearch').addEventListener('input', ()=>{ clearTimeout(t2); t2=setTimeout(renderFAQ, 300); });
+        document.getElementById('resSearch').addEventListener('input', ()=>{ clearTimeout(t3); t3=setTimeout(renderResources, 300); });
+        document.getElementById('blogStatus').addEventListener('change', renderBlog);
+        document.getElementById('blogCategory').addEventListener('change', renderBlog);
+        document.getElementById('blogTags').addEventListener('change', renderBlog);
+        document.getElementById('faqCategory').addEventListener('change', renderFAQ);
+        document.getElementById('faqStatus').addEventListener('change', renderFAQ);
+        document.getElementById('resCategory').addEventListener('change', renderResources);
+        document.getElementById('resType').addEventListener('change', renderResources);
+
+        ensureAdmin().then(ok => { if (ok) { renderBlog(); renderFAQ(); renderServiceCards(); renderResources(); } });
+      })();
+    </script>
+  </body>
+  </html>
+
+

@@ -1,5 +1,7 @@
 ### 任務 04：Connect to Git 直連同一個 repo（Cloudflare Pages）
 
+對應索引：`docs/開發指南/開發須知/開發清單-任務索引.md`
+
 【目標】
 - 直接讓 Cloudflare Pages 連結你同一個 Git repo：push 到 main → production；其他分支/PR → preview。無需自建 CI。
 

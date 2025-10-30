@@ -1,0 +1,115 @@
+import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+
+export async function handleLeaves(request, env, me, requestId, url, path) {
+	const corsHeaders = getCorsHeadersForRequest(request, env);
+	const method = request.method.toUpperCase();
+
+	if (path === "/internal/api/v1/leaves/balances") {
+		if (method !== "GET") {
+			return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
+		}
+		try {
+			const params = url.searchParams; const year = parseInt(params.get("year") || String(new Date().getFullYear()), 10);
+			const rows = await env.DATABASE.prepare(
+				"SELECT leave_type, year, total, used, remain FROM LeaveBalances WHERE user_id = ? AND year = ?"
+			).bind(String(me.user_id), year).all();
+			const data = (rows?.results || []).map(r => ({ type: r.leave_type, year: Number(r.year), total: Number(r.total), used: Number(r.used), remain: Number(r.remain) }));
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, year } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
+	if (path === "/internal/api/v1/leaves") {
+		if (method === "GET") {
+			try {
+				const params = url.searchParams;
+				const page = Math.max(1, parseInt(params.get("page") || "1", 10));
+				const perPage = Math.min(100, Math.max(1, parseInt(params.get("perPage") || "20", 10)));
+				const offset = (page - 1) * perPage;
+				const q = (params.get("q") || "").trim();
+				const status = (params.get("status") || "").trim();
+				const type = (params.get("type") || "").trim();
+				const dateFrom = (params.get("dateFrom") || "").trim();
+				const dateTo = (params.get("dateTo") || "").trim();
+				const where = ["l.is_deleted = 0"];
+				const binds = [];
+				if (!me.is_admin) { where.push("l.user_id = ?"); binds.push(String(me.user_id)); }
+				if (q) { where.push("(l.reason LIKE ? OR l.leave_type LIKE ?)"); binds.push(`%${q}%`, `%${q}%`); }
+				if (status && ["pending","approved","rejected"].includes(status)) { where.push("l.status = ?"); binds.push(status); }
+				if (type) { where.push("l.leave_type = ?"); binds.push(type); }
+				if (dateFrom) { where.push("l.start_date >= ?"); binds.push(dateFrom); }
+				if (dateTo) { where.push("l.end_date <= ?"); binds.push(dateTo); }
+				const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+				const countRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS total FROM LeaveRequests l ${whereSql}`).bind(...binds).first();
+				const total = Number(countRow?.total || 0);
+				const rows = await env.DATABASE.prepare(
+					`SELECT l.leave_id, l.leave_type, l.start_date, l.end_date, l.unit, l.amount, l.reason, l.status, l.submitted_at
+					 FROM LeaveRequests l
+					 ${whereSql}
+					 ORDER BY l.submitted_at DESC, l.leave_id DESC
+					 LIMIT ? OFFSET ?`
+				).bind(...binds, perPage, offset).all();
+				const data = (rows?.results || []).map(r => ({
+					leaveId: String(r.leave_id),
+					type: r.leave_type,
+					start: r.start_date,
+					end: r.end_date,
+					unit: r.unit,
+					amount: Number(r.amount || 0),
+					reason: r.reason || "",
+					status: r.status,
+					submittedAt: r.submitted_at,
+				}));
+				const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
+				return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta }, corsHeaders);
+			} catch (err) {
+				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+				const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
+				if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+				return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
+			}
+		}
+
+		if (method === "POST") {
+			let body;
+			try { body = await request.json(); } catch (_) {
+				return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
+			}
+			const leave_type = String(body?.leave_type || "").trim();
+			const start_date = String(body?.start_date || "").trim();
+			const end_date = String(body?.end_date || "").trim();
+			const unit = String(body?.unit || "day").trim();
+			const amount = Number(body?.amount);
+			const reason = (body?.reason || "").trim();
+			const errors = [];
+			if (!leave_type) errors.push({ field:"leave_type", message:"必選假別" });
+			if (!/^\d{4}-\d{2}-\d{2}$/.test(start_date)) errors.push({ field:"start_date", message:"日期格式 YYYY-MM-DD" });
+			if (!/^\d{4}-\d{2}-\d{2}$/.test(end_date)) errors.push({ field:"end_date", message:"日期格式 YYYY-MM-DD" });
+			if (start_date && end_date && end_date < start_date) errors.push({ field:"end_date", message:"結束日期不可早於開始日期" });
+			if (!["day","half","hour"].includes(unit)) errors.push({ field:"unit", message:"單位錯誤" });
+			if (!Number.isFinite(amount) || amount <= 0) errors.push({ field:"amount", message:"需大於 0" });
+			if (reason.length > 200) errors.push({ field:"reason", message:"請勿超過 200 字" });
+			if (["maternity","menstrual"].includes(leave_type) && me.gender === 'M') errors.push({ field:"leave_type", message:"此假別僅限女性" });
+			if (leave_type === 'paternity' && me.gender === 'F') errors.push({ field:"leave_type", message:"此假別僅限男性" });
+			if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
+
+			try {
+				await env.DATABASE.prepare(
+					"INSERT INTO LeaveRequests (user_id, leave_type, start_date, end_date, unit, amount, reason, status, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))"
+				).bind(String(me.user_id), leave_type, start_date, end_date, unit, amount, reason).run();
+				const idRow = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
+				return jsonResponse(201, { ok:true, code:"CREATED", message:"已送出審核", data:{ leaveId:String(idRow?.id) }, meta:{ requestId } }, corsHeaders);
+			} catch (err) {
+				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+			}
+		}
+	}
+
+	return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
+}
+
+
+

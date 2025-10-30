@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="薪資管理" />
+    <title>薪資管理｜總覽</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/payroll-page.css" />
+  </head>
+  <body class="payroll-page">
+    <header class="payroll-header">
+      <h1 class="payroll-title">薪資管理</h1>
+      <div id="infoBar" class="info-bar" style="display:none;" role="alert">您沒有權限存取此模組</div>
+      <div class="payroll-toolbar">
+        <label for="month">月份</label>
+        <input id="month" type="month" aria-label="月份" />
+        <div class="toolbar-spacer"></div>
+        <button id="btn-finalize" type="button" class="btn primary" disabled>產製月結</button>
+        <button id="btn-export-csv" type="button" class="btn" disabled>匯出 CSV</button>
+        <button id="btn-export-pdf" type="button" class="btn" disabled>匯出 PDF</button>
+      </div>
+      <div id="finalizeMsg" class="info-bar" style="display:none;"></div>
+      <nav class="payroll-tabs" role="tablist" aria-label="薪資管理分頁">
+        <button class="tab active" role="tab" aria-selected="true" data-tab="calc">薪資計算</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="items">薪資項目設定</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="emp">員工薪資設定</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="bonus">績效獎金調整</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="yearend">年終獎金</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="reports">薪資報表</button>
+      </nav>
+    </header>
+
+    <main class="payroll-content">
+      <!-- 薪資計算 -->
+      <section id="panel-calc" class="panel show" role="tabpanel" aria-labelledby="tab-calc">
+        <div class="card">
+          <div class="section-toolbar">
+            <input id="empSearchCalc" type="search" placeholder="搜尋員工…" />
+            <select id="statusCalc">
+              <option value="all">全部</option>
+              <option value="complete">已完成</option>
+              <option value="pending">未完成</option>
+            </select>
+          </div>
+          <table class="table" aria-label="薪資計算列表">
+            <thead>
+              <tr>
+                <th>姓名</th>
+                <th>底薪</th>
+                <th>津貼合計</th>
+                <th>獎金合計</th>
+                <th>加班費</th>
+                <th>總薪資</th>
+                <th>全勤</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyCalc">
+              <tr><td colspan="7" class="muted">尚無資料</td></tr>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <button type="button" id="prevCalc">上一頁</button>
+            <button type="button" id="nextCalc">下一頁</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 薪資項目設定 -->
+      <section id="panel-items" class="panel" role="tabpanel" aria-labelledby="tab-items">
+        <div class="card">
+          <div class="section-toolbar">
+            <input id="itemSearch" type="search" placeholder="搜尋項目代碼/名稱…" />
+            <button type="button" class="btn primary" disabled>新增項目</button>
+          </div>
+          <table class="table" aria-label="薪資項目列表">
+            <thead>
+              <tr>
+                <th>項目代碼</th>
+                <th>項目名稱</th>
+                <th>類別</th>
+                <th>經常性給與</th>
+                <th>金額固定</th>
+                <th>狀態</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="6" class="muted">尚無資料</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 員工薪資設定 -->
+      <section id="panel-emp" class="panel" role="tabpanel" aria-labelledby="tab-emp">
+        <div class="card grid">
+          <div class="col">
+            <div class="section-toolbar">
+              <input id="empSearch" type="search" placeholder="搜尋員工…" />
+            </div>
+            <ul class="list" aria-label="員工清單">
+              <li class="muted">尚無資料</li>
+            </ul>
+          </div>
+          <div class="col">
+            <div class="form">
+              <div class="row"><label>底薪</label><input type="number" min="0" step="1" placeholder="例如 40000" disabled /></div>
+              <div class="row"><label>生效日期</label><input type="date" disabled /></div>
+              <div class="row"><label>薪資項目</label><button class="btn" disabled>新增</button></div>
+              <div class="row">
+                <small class="muted">提示：勾選「經常性給與」將計入時薪，影響加班費與成本分析。</small>
+              </div>
+              <div class="actions">
+                <button class="btn" disabled>取消</button>
+                <button class="btn primary" disabled>儲存</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 績效獎金調整 -->
+      <section id="panel-bonus" class="panel" role="tabpanel" aria-labelledby="tab-bonus">
+        <div class="card">
+          <div class="section-toolbar">
+            <label for="monthBonus">月份</label>
+            <input id="monthBonus" type="month" />
+            <div class="toolbar-spacer"></div>
+            <button class="btn" disabled>全部恢復預設</button>
+            <button class="btn primary" disabled>儲存所有調整</button>
+          </div>
+          <table class="table" aria-label="績效獎金調整">
+            <thead>
+              <tr>
+                <th>姓名</th>
+                <th>預設績效</th>
+                <th>調整後</th>
+                <th>時薪影響</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="4" class="muted">尚無資料</td></tr>
+            </tbody>
+          </table>
+          <div class="summary muted">已調整人數 0、人均影響 0 元/時</div>
+        </div>
+      </section>
+
+      <!-- 年終獎金管理 -->
+      <section id="panel-yearend" class="panel" role="tabpanel" aria-labelledby="tab-yearend">
+        <div class="card">
+          <div class="section-toolbar">
+            <label for="year">年度</label>
+            <input id="year" type="number" min="2000" max="2100" step="1" />
+            <div class="toolbar-spacer"></div>
+            <div class="stats">
+              <span>總額：—</span><span>人數：—</span><span>平均：—</span>
+            </div>
+          </div>
+          <table class="table" aria-label="年終獎金">
+            <thead>
+              <tr>
+                <th>姓名</th>
+                <th>年終金額</th>
+                <th>發放日期</th>
+                <th>狀態</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="4" class="muted">尚無資料</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 薪資報表 -->
+      <section id="panel-reports" class="panel" role="tabpanel" aria-labelledby="tab-reports">
+        <div class="card">
+          <div class="section-toolbar">
+            <label for="monthReport">月份</label>
+            <input id="monthReport" type="month" />
+            <div class="toolbar-spacer"></div>
+            <button class="btn" disabled>下載 CSV</button>
+            <button class="btn" disabled>下載 PDF</button>
+          </div>
+          <div class="placeholder muted">尚無報表，請選擇月份後匯出。</div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function(){
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+
+        const infoBar = document.getElementById('infoBar');
+        const finalizeMsg = document.getElementById('finalizeMsg');
+        const tabs = Array.from(document.querySelectorAll('.payroll-tabs .tab'));
+        const panels = {
+          calc: document.getElementById('panel-calc'),
+          items: document.getElementById('panel-items'),
+          emp: document.getElementById('panel-emp'),
+          bonus: document.getElementById('panel-bonus'),
+          yearend: document.getElementById('panel-yearend'),
+          reports: document.getElementById('panel-reports'),
+        };
+
+        // 計算分頁 DOM
+        const tbodyCalc = document.getElementById('tbodyCalc');
+        const empSearchCalc = document.getElementById('empSearchCalc');
+        const statusCalc = document.getElementById('statusCalc');
+        const prevCalc = document.getElementById('prevCalc');
+        const nextCalc = document.getElementById('nextCalc');
+        const monthInput = document.getElementById('month');
+        const btnFinalize = document.getElementById('btn-finalize');
+
+        // 計算分頁狀態
+        const calcState = { all: [], filtered: [], page: 1, perPage: 20 };
+
+        function setTabsEnabled(enabled){
+          tabs.forEach(b=>{ b.disabled = !enabled; });
+          document.querySelectorAll('.payroll-toolbar .btn, .section-toolbar input, .section-toolbar select, .section-toolbar button').forEach(el=>{ el.disabled = !enabled; });
+        }
+
+        tabs.forEach(btn => {
+          btn.addEventListener('click', ()=>{
+            tabs.forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            const key = btn.getAttribute('data-tab');
+            Object.entries(panels).forEach(([k,el])=>{
+              if (k === key) el.classList.add('show'); else el.classList.remove('show');
+            });
+          });
+        });
+
+        async function ensureAdmin(){
+          try {
+            const res = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/payroll'); return false; }
+            const json = await res.json();
+            const isAdmin = !!(json && json.ok && json.data && json.data.isAdmin);
+            if (!isAdmin) {
+              infoBar.style.display = 'block';
+              setTabsEnabled(false);
+              return false;
+            }
+            setTabsEnabled(true);
+            return true;
+          } catch (_) {
+            infoBar.textContent = '載入失敗，請稍後再試';
+            infoBar.style.display = 'block';
+            setTabsEnabled(false);
+            return false;
+          }
+        }
+        function setFinalizeUIDisabled(disabled){
+          btnFinalize.disabled = disabled;
+        }
+
+        function setFinalizeMsg(type, text){
+          if (!text) { finalizeMsg.style.display='none'; return; }
+          finalizeMsg.textContent = text;
+          finalizeMsg.style.display = 'block';
+        }
+
+        async function checkFinalized(){
+          setFinalizeMsg('', '');
+          try {
+            const m = monthInput.value;
+            const res = await fetch(`${apiBase}/admin/payroll?month=${encodeURIComponent(m)}`, { credentials:'include' });
+            if (res.status === 200){
+              const json = await res.json();
+              const runId = json?.data?.runId;
+              setFinalizeMsg('info', `本月已產製（Run: ${runId}）`);
+              setFinalizeUIDisabled(true);
+              return true;
+            }
+            if (res.status === 404){
+              setFinalizeMsg('', '');
+              setFinalizeUIDisabled(false);
+              return false;
+            }
+            // 其他錯誤
+            setFinalizeMsg('error', '查詢月結狀態失敗');
+            setFinalizeUIDisabled(false);
+            return false;
+          } catch(_){
+            setFinalizeMsg('error', '查詢月結狀態失敗');
+            setFinalizeUIDisabled(false);
+            return false;
+          }
+        }
+
+        function genIdk(){
+          return 'idk_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
+        }
+
+        async function finalizeMonth(){
+          setFinalizeMsg('', '');
+          const m = monthInput.value;
+          btnFinalize.disabled = true;
+          try {
+            const res = await fetch(`${apiBase}/admin/payroll/finalize`, {
+              method:'POST', credentials:'include', headers:{ 'Content-Type':'application/json' },
+              body: JSON.stringify({ month: m, idempotency_key: genIdk() })
+            });
+            const json = await res.json().catch(()=>({}));
+            if (res.status === 201 && json?.ok){
+              setFinalizeMsg('success', `已產製完成（Run: ${json.data?.runId}）`);
+              btnFinalize.disabled = true;
+              return;
+            }
+            if (res.status === 409){
+              setFinalizeMsg('info', `該月份已產製（Run: ${json?.data?.runId || ''}）`);
+              btnFinalize.disabled = true;
+              return;
+            }
+            if (res.status === 401){ location.assign('/login?redirect=/internal/payroll'); return; }
+            if (res.status === 403){ setTabsEnabled(false); setFinalizeMsg('error', '沒有權限'); return; }
+            setFinalizeMsg('error', json?.message || '產製失敗');
+            btnFinalize.disabled = false;
+          } catch (_){
+            setFinalizeMsg('error', '產製失敗');
+            btnFinalize.disabled = false;
+          }
+        }
+
+
+        function centsToTwd(n){
+          const v = Number(n || 0) / 100;
+          return 'NT$ ' + v.toLocaleString();
+        }
+
+        function renderCalcPager(){
+          const total = calcState.filtered.length;
+          prevCalc.disabled = calcState.page <= 1;
+          nextCalc.disabled = calcState.page * calcState.perPage >= total;
+        }
+
+        function renderCalc(){
+          const start = (calcState.page - 1) * calcState.perPage;
+          const end = start + calcState.perPage;
+          const pageRows = calcState.filtered.slice(start, end);
+          tbodyCalc.innerHTML = '';
+          if (pageRows.length === 0){
+            const tr = document.createElement('tr');
+            tr.innerHTML = '<td colspan="7" class="muted">沒有符合條件的資料</td>';
+            tbodyCalc.appendChild(tr);
+          } else {
+            pageRows.forEach(r => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${r.name || ''}</td>
+                <td>${centsToTwd(r.baseSalaryCents)}</td>
+                <td>${centsToTwd(r.regularAllowanceCents)}</td>
+                <td>${centsToTwd(r.bonusCents)}</td>
+                <td>${centsToTwd(r.overtimeCents)}</td>
+                <td>${centsToTwd(r.totalCents)}</td>
+                <td>${r.isFullAttendance ? '是' : '否'}</td>
+              `;
+              tbodyCalc.appendChild(tr);
+            });
+          }
+          renderCalcPager();
+        }
+
+        function applyCalcFilters(){
+          const kw = (empSearchCalc.value || '').trim().toLowerCase();
+          const st = statusCalc.value;
+          let rows = calcState.all.slice();
+          if (kw) rows = rows.filter(r => (r.name || '').toLowerCase().includes(kw));
+          if (st === 'complete') rows = rows.filter(r => r.isFullAttendance === true);
+          if (st === 'pending') rows = rows.filter(r => r.isFullAttendance === false);
+          calcState.filtered = rows;
+          calcState.page = 1;
+          renderCalc();
+        }
+
+        async function loadPreview(){
+          const m = monthInput.value;
+          tbodyCalc.innerHTML = '<tr><td colspan="7" class="muted">載入中…</td></tr>';
+          try {
+            const res = await fetch(`${apiBase}/admin/payroll/preview?month=${encodeURIComponent(m)}`, { credentials: 'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/payroll'); return; }
+            if (res.status === 403) { infoBar.style.display = 'block'; setTabsEnabled(false); return; }
+            const json = await res.json();
+            if (!json || json.ok !== true) throw new Error('載入失敗');
+            const users = (json.data && json.data.users) || [];
+            calcState.all = users;
+            applyCalcFilters();
+          } catch (_) {
+            tbodyCalc.innerHTML = '<tr><td colspan="7" class="muted" style="color:#c0392b;">載入失敗</td></tr>';
+          }
+        }
+
+        // 預設月份為本月
+        const now = new Date();
+        monthInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        const monthBonus = document.getElementById('monthBonus');
+        if (monthBonus) monthBonus.value = monthInput.value;
+        const monthReport = document.getElementById('monthReport');
+        if (monthReport) monthReport.value = monthInput.value;
+
+        // 綁定事件
+        let timer = null;
+        empSearchCalc.addEventListener('input', ()=>{ clearTimeout(timer); timer = setTimeout(applyCalcFilters, 300); });
+        statusCalc.addEventListener('change', applyCalcFilters);
+        monthInput.addEventListener('change', ()=>{ calcState.page = 1; loadPreview(); checkFinalized(); });
+        prevCalc.addEventListener('click', ()=>{ if (calcState.page>1){ calcState.page--; renderCalc(); } });
+        nextCalc.addEventListener('click', ()=>{ calcState.page++; renderCalc(); });
+        btnFinalize.addEventListener('click', finalizeMonth);
+
+        ensureAdmin().then(isAdmin => { if (isAdmin) { loadPreview(); checkFinalized(); } });
+      })();
+    </script>
+  </body>
+  </html>
+
+

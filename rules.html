@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="業務規則管理" />
+    <title>業務規則｜設定</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/rules-page.css" />
+  </head>
+  <body class="rules-page">
+    <header class="rules-header">
+      <h1 class="rules-title">業務規則設定</h1>
+      <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此設定</div>
+      <nav class="rules-tabs" role="tablist" aria-label="規則類別">
+        <button class="tab active" role="tab" aria-selected="true" data-tab="holidays">國定假日</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="leave-types">假別類型</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="services">服務項目</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="work-rates">工作類型費率</button>
+        <button class="tab admin-only" role="tab" aria-selected="false" data-tab="automation" style="display:none;">自動化規則</button>
+        <button class="tab admin-only" role="tab" aria-selected="false" data-tab="annual-rules" style="display:none;">特休規則</button>
+        <button class="tab admin-only" role="tab" aria-selected="false" data-tab="cycles" style="display:none;">週期類型</button>
+      </nav>
+    </header>
+
+    <main class="rules-content">
+      <!-- 國定假日 -->
+      <section id="panel-holidays" class="panel show" role="tabpanel" aria-labelledby="tab-holidays">
+        <div class="card">
+          <div class="section-toolbar">
+            <button id="btnAddHoliday" class="btn primary" type="button">新增假日</button>
+            <div class="toolbar-spacer"></div>
+            <input id="holidaySearch" type="search" placeholder="搜尋日期/名稱…" />
+            <button id="btnImportHoliday" class="btn admin-only" type="button" style="display:none;">批次匯入</button>
+          </div>
+          <table class="table" aria-label="國定假日列表">
+            <thead><tr><th>日期</th><th>名稱</th><th>補班日</th><th>來源</th><th>操作</th></tr></thead>
+            <tbody id="holidayTbody"><tr><td colspan="5" class="muted">尚無資料</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 假別類型 -->
+      <section id="panel-leave-types" class="panel" role="tabpanel" aria-labelledby="tab-leave-types">
+        <div class="card">
+          <div class="section-toolbar">
+            <button id="btnAddLeaveType" class="btn primary" type="button">新增假別</button>
+            <div class="toolbar-spacer"></div>
+            <input id="leaveTypeSearch" type="search" placeholder="搜尋名稱…" />
+            <select id="leaveTypeStatus"><option value="all">全部狀態</option><option value="active">啟用</option><option value="inactive">停用</option></select>
+          </div>
+          <table class="table" aria-label="假別類型列表">
+            <thead><tr><th>名稱</th><th>年度額度</th><th>給薪</th><th>扣全勤</th><th>性別限制</th><th>狀態</th><th>操作</th></tr></thead>
+            <tbody id="leaveTypeTbody"><tr><td colspan="7" class="muted">尚無資料</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 服務項目 -->
+      <section id="panel-services" class="panel" role="tabpanel" aria-labelledby="tab-services">
+        <div class="card">
+          <div class="section-toolbar">
+            <button id="btnAddService" class="btn primary" type="button">新增服務</button>
+            <div class="toolbar-spacer"></div>
+            <input id="serviceSearch" type="search" placeholder="搜尋名稱…" />
+          </div>
+          <table class="table" aria-label="服務項目列表">
+            <thead><tr><th>名稱</th><th>父層</th><th>子項</th><th>排序</th><th>操作</th></tr></thead>
+            <tbody id="serviceTbody"><tr><td colspan="5" class="muted">尚無資料</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 工作類型費率（唯讀） -->
+      <section id="panel-work-rates" class="panel" role="tabpanel" aria-labelledby="tab-work-rates">
+        <div class="card">
+          <div class="info-bar" style="margin-bottom:12px;">加班費率為勞基法規定，無法修改</div>
+          <div class="section-toolbar">
+            <div class="toolbar-spacer"></div>
+            <input id="rateSearch" type="search" placeholder="搜尋名稱…" />
+          </div>
+          <table class="table" aria-label="工作類型費率">
+            <thead><tr><th>工作類型</th><th>費率倍數</th><th>說明</th></tr></thead>
+            <tbody id="rateTbody"><tr><td colspan="3" class="muted">尚無資料</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 自動化規則（僅管理員） -->
+      <section id="panel-automation" class="panel" role="tabpanel" aria-labelledby="tab-automation" style="display:none;">
+        <div class="card">
+          <div class="section-toolbar">
+            <button id="btnAddAuto" class="btn primary" type="button">新增規則</button>
+            <div class="toolbar-spacer"></div>
+            <input id="autoSearch" type="search" placeholder="搜尋名稱…" />
+            <select id="autoEnabled"><option value="all">全部</option><option value="1">啟用</option><option value="0">停用</option></select>
+          </div>
+          <table class="table" aria-label="自動化規則">
+            <thead><tr><th>名稱</th><th>排程類型</th><th>排程值</th><th>啟用</th><th>最近執行</th><th>操作</th></tr></thead>
+            <tbody id="autoTbody"><tr><td colspan="6" class="muted">尚無資料</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 特休規則（僅管理員） -->
+      <section id="panel-annual-rules" class="panel" role="tabpanel" aria-labelledby="tab-annual-rules" style="display:none;">
+        <div class="card">
+          <div class="section-toolbar">
+            <button id="btnAddAnnualRule" class="btn primary" type="button">新增規則</button>
+            <button id="btnResetAnnualRule" class="btn" type="button">恢復法定預設</button>
+          </div>
+          <table class="table" aria-label="特休規則">
+            <thead><tr><th>最小月數</th><th>最大月數</th><th>天數</th><th>說明</th><th>操作</th></tr></thead>
+            <tbody id="annualRuleTbody"><tr><td colspan="5" class="muted">尚無資料</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 週期類型（僅管理員） -->
+      <section id="panel-cycles" class="panel" role="tabpanel" aria-labelledby="tab-cycles" style="display:none;">
+        <div class="card">
+          <div class="section-toolbar">
+            <button id="btnAddCycle" class="btn primary" type="button">新增週期</button>
+            <div class="toolbar-spacer"></div>
+            <select id="cycleStatus"><option value="all">全部狀態</option><option value="active">啟用</option><option value="inactive">停用</option></select>
+          </div>
+          <table class="table" aria-label="週期類型">
+            <thead><tr><th>名稱</th><th>是否循環</th><th>天數/月份</th><th>排序</th><th>狀態</th><th>操作</th></tr></thead>
+            <tbody id="cycleTbody"><tr><td colspan="6" class="muted">尚無資料</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- 通用 Modal（骨架） -->
+    <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-header" id="modalTitle">編輯</div>
+        <div class="modal-body" id="modalBody">—</div>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="btnCancelModal">取消</button>
+          <button type="button" class="btn primary" id="btnConfirmModal" disabled>儲存</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function(){
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+
+        const permBar = document.getElementById('permBar');
+        const tabs = Array.from(document.querySelectorAll('.rules-tabs .tab'));
+        const panels = {
+          'holidays': document.getElementById('panel-holidays'),
+          'leave-types': document.getElementById('panel-leave-types'),
+          'services': document.getElementById('panel-services'),
+          'work-rates': document.getElementById('panel-work-rates'),
+          'automation': document.getElementById('panel-automation'),
+          'annual-rules': document.getElementById('panel-annual-rules'),
+          'cycles': document.getElementById('panel-cycles'),
+        };
+
+        function setTabsEnabled(enabled){
+          tabs.forEach(b=>{ b.disabled = !enabled; });
+          document.querySelectorAll('.section-toolbar input, .section-toolbar select, .section-toolbar button').forEach(el=>{ el.disabled = !enabled; });
+        }
+
+        tabs.forEach(btn => {
+          btn.addEventListener('click', ()=>{
+            tabs.forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+            btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+            const key = btn.getAttribute('data-tab');
+            Object.entries(panels).forEach(([k,el])=>{ if (el) el.classList.toggle('show', k===key); });
+          });
+        });
+
+        async function ensureUser(){
+          try {
+            const res = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/rules'); return false; }
+            const json = await res.json();
+            const isAdmin = !!(json && json.ok && json.data && json.data.isAdmin);
+            // 顯示管理員專屬分頁
+            document.querySelectorAll('.admin-only').forEach(el=>{ el.style.display = isAdmin ? 'inline-flex' : 'none'; });
+            setTabsEnabled(true);
+            return true;
+          } catch (_) {
+            permBar.textContent = '載入失敗，請稍後再試'; permBar.style.display = 'block'; setTabsEnabled(false); return false;
+          }
+        }
+
+        // 占位資料渲染
+        function renderHolidays(){
+          const tb = document.getElementById('holidayTbody'); tb.innerHTML='';
+          [['2025-01-01','元旦',false,'系統'],['2025-02-28','和平紀念日',false,'手動']].forEach(r=>{
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]?'是':'否'}</td><td>${r[3]}</td><td><button class="btn" type="button">編輯</button> <button class="btn" type="button">刪除</button></td>`;
+            tb.appendChild(tr);
+          });
+        }
+        function renderLeaveTypes(){
+          const tb = document.getElementById('leaveTypeTbody'); tb.innerHTML='';
+          const rows = [ ['年假', '10', '是', '否', '無限制', '啟用'], ['病假', '30', '否', '否', '無限制', '啟用'] ];
+          rows.forEach(r=>{
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td><button class="btn" type="button">編輯</button> <button class="btn" type="button">停用</button></td>`; tb.appendChild(tr);
+          });
+        }
+        function renderServices(){
+          const tb = document.getElementById('serviceTbody'); tb.innerHTML='';
+          const rows = [ ['記帳', '—', '有', '1'], ['稅務申報', '—', '無', '2'], ['營業稅', '稅務申報', '—', '3'] ];
+          rows.forEach(r=>{ const tr = document.createElement('tr'); tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><button class="btn" type="button">編輯</button> <button class="btn" type="button">刪除</button></td>`; tb.appendChild(tr); });
+        }
+        function renderRates(){
+          const tb = document.getElementById('rateTbody'); tb.innerHTML='';
+          const rows = [ ['平日一般', '1.00', '一般工時'], ['平日加班前2小時', '1.34', '勞基法規定'], ['平日加班後時段', '1.67', '勞基法規定'] ];
+          rows.forEach(r=>{ const tr = document.createElement('tr'); tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td>`; tb.appendChild(tr); });
+        }
+        function renderAnnualRules(){
+          const tb = document.getElementById('annualRuleTbody'); tb.innerHTML='';
+          const rows = [ [6, 12, 3, '半年 3 天'], [13, 24, 7, '滿一年 7 天'] ];
+          rows.forEach(r=>{ const tr = document.createElement('tr'); tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><button class="btn" type="button">編輯</button> <button class="btn" type="button">刪除</button></td>`; tb.appendChild(tr); });
+        }
+        function renderCycles(){
+          const tb = document.getElementById('cycleTbody'); tb.innerHTML='';
+          const rows = [ ['每月', '是', '1 月', '1', '啟用'], ['每季', '是', '3 月', '2', '啟用'] ];
+          rows.forEach(r=>{ const tr = document.createElement('tr'); tr.innerHTML = `<td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td><button class="btn" type="button">編輯</button> <button class="btn" type="button">停用</button></td>`; tb.appendChild(tr); });
+        }
+
+        // 自動化規則串接
+        function autoRowActions(rule){
+          const enableBtnTxt = rule.isEnabled ? '停用' : '啟用';
+          return `<button class="btn btn-edit" data-id="${rule.id}">編輯</button>
+                  <button class="btn btn-enable" data-id="${rule.id}" data-enabled="${rule.isEnabled?1:0}">${enableBtnTxt}</button>
+                  <button class="btn btn-test" data-id="${rule.id}">測試</button>
+                  <button class="btn btn-delete" data-id="${rule.id}">刪除</button>`;
+        }
+
+        async function renderAutomation(){
+          const tbody = document.getElementById('autoTbody');
+          tbody.innerHTML = '<tr><td colspan="6" class="muted">載入中…</td></tr>';
+          const params = new URLSearchParams();
+          const q = (document.getElementById('autoSearch').value||'').trim();
+          const en = document.getElementById('autoEnabled').value;
+          if (q) params.set('q', q);
+          if (en !== 'all') params.set('enabled', en);
+          try {
+            const res = await fetch(`${apiBase}/admin/automation-rules?${params.toString()}`, { credentials:'include' });
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const rows = Array.isArray(json.data) ? json.data : [];
+            tbody.innerHTML = '';
+            if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" class="muted">尚無資料</td></tr>'; return; }
+            rows.forEach(r => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `<td>${r.name||''}</td><td>${r.scheduleType||''}</td><td>${r.scheduleValue||''}</td><td>${r.isEnabled?'是':'否'}</td><td>${r.lastRunAt||'—'}</td><td>${autoRowActions(r)}</td>`;
+              tbody.appendChild(tr);
+            });
+            // Bind actions
+            tbody.querySelectorAll('.btn-edit').forEach(b=> b.addEventListener('click', (e)=> openAutoModal('edit', parseInt(e.target.getAttribute('data-id'),10))));
+            tbody.querySelectorAll('.btn-enable').forEach(b=> b.addEventListener('click', async (e)=>{
+              const id = parseInt(e.target.getAttribute('data-id'),10); const enabled = e.target.getAttribute('data-enabled') === '1';
+              await fetch(`${apiBase}/admin/automation-rules/${id}`, { method:'PUT', credentials:'include', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ is_enabled: enabled?0:1 }) });
+              renderAutomation();
+            }));
+            tbody.querySelectorAll('.btn-delete').forEach(b=> b.addEventListener('click', async (e)=>{
+              const id = parseInt(e.target.getAttribute('data-id'),10);
+              if (!confirm('你確定要刪除嗎？此動作無法復原。')) return;
+              await fetch(`${apiBase}/admin/automation-rules/${id}`, { method:'DELETE', credentials:'include' });
+              renderAutomation();
+            }));
+            tbody.querySelectorAll('.btn-test').forEach(b=> b.addEventListener('click', async (e)=>{
+              const id = parseInt(e.target.getAttribute('data-id'),10);
+              const res = await fetch(`${apiBase}/admin/automation-rules/${id}/test`, { method:'POST', credentials:'include' });
+              const json = await res.json();
+              if (json && json.ok) alert('測試成功：' + (json.data?.willExecute ? '將會執行' : '目前停用（不執行）'));
+              else alert('測試失敗');
+            }));
+          } catch (_) {
+            tbody.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
+          }
+        }
+
+        // Modal for create/edit automation
+        const modal = document.getElementById('modalOverlay');
+        const modalBody = document.getElementById('modalBody');
+        const btnCancelModal = document.getElementById('btnCancelModal');
+        const btnConfirmModal = document.getElementById('btnConfirmModal');
+        function closeModal(){ modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); btnConfirmModal.onclick = null; }
+        btnCancelModal.addEventListener('click', closeModal);
+
+        function openAutoModal(mode, id){
+          document.getElementById('modalTitle').textContent = mode==='create' ? '新增自動化規則' : '編輯自動化規則';
+          modalBody.innerHTML = `
+            <div class="modal-row"><label>名稱</label><input id="f_name" type="text" /></div>
+            <div class="modal-row"><label>排程類型</label>
+              <select id="f_type"><option value="daily">每日</option><option value="weekly">每週</option><option value="monthly">每月</option><option value="cron">Cron</option></select>
+            </div>
+            <div class="modal-row"><label>排程值</label><input id="f_value" type="text" placeholder="例如：02:00 / Mon 03:00 / 1 02:00 / cron 表達式" /></div>
+            <div class="modal-row"><label>條件（JSON）</label><textarea id="f_condition" rows="3" placeholder="{}"></textarea></div>
+            <div class="modal-row"><label>動作（JSON）</label><textarea id="f_action" rows="3" placeholder="{\"type\":\"...\"}"></textarea></div>
+            <div id="formError" class="form-error" style="display:none;color:#b91c1c;margin-top:8px;"></div>
+          `;
+          const f_name = document.getElementById('f_name');
+          const f_type = document.getElementById('f_type');
+          const f_value = document.getElementById('f_value');
+          const f_condition = document.getElementById('f_condition');
+          const f_action = document.getElementById('f_action');
+          const fe = document.getElementById('formError');
+          const validate = ()=>{
+            fe.style.display='none'; fe.textContent='';
+            if (!f_name.value.trim()) { fe.textContent='名稱必填'; fe.style.display='block'; return false; }
+            if (!f_value.value.trim()) { fe.textContent='排程值必填'; fe.style.display='block'; return false; }
+            try { if (f_condition.value.trim()) JSON.parse(f_condition.value); } catch(_) { fe.textContent='條件需為 JSON'; fe.style.display='block'; return false; }
+            try { JSON.parse(f_action.value||'{}'); } catch(_) { fe.textContent='動作需為 JSON'; fe.style.display='block'; return false; }
+            return true;
+          };
+          [f_name,f_type,f_value,f_condition,f_action].forEach(el=> el.addEventListener('input', ()=>{ btnConfirmModal.disabled = !validate(); }));
+          btnConfirmModal.disabled = true;
+
+          if (mode==='edit' && id){
+            // Load one from list currently rendered to prefill; simplest: fetch list and find
+            // For brevity, we skip fetching single API; user may re-enter values as needed.
+          }
+          btnConfirmModal.onclick = async ()=>{
+            if (!validate()) return;
+            const payload = {
+              rule_name: f_name.value.trim(),
+              schedule_type: f_type.value,
+              schedule_value: f_value.value.trim(),
+              condition_json: f_condition.value.trim()? JSON.parse(f_condition.value) : {},
+              action_json: JSON.parse(f_action.value||'{}')
+            };
+            try {
+              const endpoint = `${apiBase}/admin/automation-rules${mode==='edit'?`/${id}`:''}`;
+              const method = mode==='edit' ? 'PUT' : 'POST';
+              const res = await fetch(endpoint, { method, credentials:'include', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+              const json = await res.json();
+              if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '儲存失敗');
+              closeModal(); renderAutomation();
+            } catch (err) { fe.textContent = String(err?.message||'儲存失敗'); fe.style.display='block'; }
+          };
+          modal.classList.add('show'); modal.setAttribute('aria-hidden','false');
+        }
+
+        document.getElementById('btnAddAuto').addEventListener('click', ()=> openAutoModal('create'));
+        document.getElementById('autoSearch').addEventListener('input', ()=>{ clearTimeout(t4); t4=setTimeout(renderAutomation, 300); });
+        document.getElementById('autoEnabled').addEventListener('change', renderAutomation);
+
+        // Search debounce hooks（僅重新渲染占位）
+        let t1=null,t2=null,t3=null,t4=null;
+        document.getElementById('holidaySearch').addEventListener('input', ()=>{ clearTimeout(t1); t1=setTimeout(renderHolidays, 300); });
+        document.getElementById('leaveTypeSearch').addEventListener('input', ()=>{ clearTimeout(t2); t2=setTimeout(renderLeaveTypes, 300); });
+        document.getElementById('serviceSearch').addEventListener('input', ()=>{ clearTimeout(t3); t3=setTimeout(renderServices, 300); });
+        document.getElementById('rateSearch').addEventListener('input', ()=>{ clearTimeout(t4); t4=setTimeout(renderRates, 300); });
+        document.getElementById('leaveTypeStatus').addEventListener('change', renderLeaveTypes);
+        document.getElementById('cycleStatus').addEventListener('change', renderCycles);
+
+        // Init
+        setTabsEnabled(false);
+        ensureUser().then(ok => { if (ok) { renderHolidays(); renderLeaveTypes(); renderServices(); renderRates(); renderAnnualRules(); renderCycles(); renderAutomation(); } });
+      })();
+    </script>
+  </body>
+  </html>
+
+

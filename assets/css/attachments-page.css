@@ -1,0 +1,44 @@
+/* attachments-page.css - 附件系統頁面樣式 */
+
+.attachments-page { --upload-border: rgba(15,23,42,0.08); }
+
+.attachments-header { display:flex; align-items: center; gap: 12px; padding: 16px 20px; }
+.attachments-title { margin: 0; font-size: 24px; font-weight: 800; color: var(--text-primary); }
+
+.attachments-toolbar { display:flex; align-items: center; gap: 12px; padding: 0 20px 16px 20px; }
+.entity-picker { display:flex; align-items: flex-end; gap: 8px; }
+.entity-picker label { font-size: 12px; color: var(--text-secondary); margin-right: 4px; }
+
+.attachments-toolbar input[type="text"],
+.attachments-toolbar input[type="search"],
+.attachments-toolbar input[type="date"],
+.attachments-toolbar select {
+	padding: 10px 12px; border: 1px solid var(--upload-border); border-radius: 8px; font-size: 14px;
+}
+
+.toolbar-spacer { flex: 1; }
+
+.attachments-content { padding: 0 20px 24px 20px; display: grid; gap: 16px; }
+
+.uploader-card { background: #fff; border: 1px solid var(--upload-border); border-radius: 12px; padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+.uploader-header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.uploader-title { font-weight: 800; color: var(--text-primary); }
+.uploader-body { display:flex; align-items: center; gap: 10px; }
+
+.attachments-card { background: #fff; border: 1px solid var(--upload-border); border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); overflow: hidden; }
+.list-header { display:flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #f0f0f0; }
+.list-title { font-weight: 800; color: var(--text-primary); }
+
+.attachments-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.attachments-table thead { background: #fafafa; }
+.attachments-table th { text-align:left; padding: 12px 14px; color: var(--text-secondary); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+.attachments-table td { padding: 12px 14px; border-top: 1px solid #f3f3f3; color: var(--text-primary); }
+.attachments-table tbody tr:hover { background: #fcfcfd; }
+
+@media (max-width: 768px) {
+	.attachments-toolbar { flex-direction: column; align-items: stretch; }
+	.entity-picker { width: 100%; }
+	.filters { display:flex; flex-wrap: wrap; gap: 8px; }
+}
+
+
