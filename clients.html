@@ -103,6 +103,62 @@
       </div>
     </div>
 
+    <!-- 編輯客戶彈窗 -->
+    <div class="modal-overlay" id="editModal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal" role="document">
+        <div class="modal__header">
+          <h2 class="modal__title">編輯客戶</h2>
+          <button class="modal__close" type="button" id="btn-edit-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <form id="editForm" class="form-grid">
+            <input type="hidden" id="edit_client_id" />
+            <div class="field">
+              <label for="edit_company_name">公司名稱（必填）</label>
+              <input id="edit_company_name" name="company_name" type="text" maxlength="100" required />
+              <div class="field__error" id="edit_e_company_name"></div>
+            </div>
+            <div class="field">
+              <label for="edit_assignee">負責人員</label>
+              <select id="edit_assignee" name="assignee_user_id" required>
+                <option value="1">1 管理員</option>
+              </select>
+              <div class="field__error" id="edit_e_assignee"></div>
+            </div>
+            <div class="field">
+              <label for="edit_phone">電話</label>
+              <input id="edit_phone" name="phone" type="text" />
+              <div class="field__error" id="edit_e_phone"></div>
+            </div>
+            <div class="field">
+              <label for="edit_email">Email</label>
+              <input id="edit_email" name="email" type="email" />
+              <div class="field__error" id="edit_e_email"></div>
+            </div>
+            <div class="field">
+              <label for="edit_tags">標籤 ID（逗號分隔，可留空）</label>
+              <input id="edit_tags" name="tag_ids" type="text" placeholder="例如：1,2" />
+              <div class="field__error" id="edit_e_tags"></div>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="edit_client_notes">客戶備註</label>
+              <textarea id="edit_client_notes" name="client_notes"></textarea>
+              <div class="field__error" id="edit_e_client_notes"></div>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="edit_payment_notes">收款備註</label>
+              <textarea id="edit_payment_notes" name="payment_notes"></textarea>
+              <div class="field__error" id="edit_e_payment_notes"></div>
+            </div>
+            <div class="modal__actions" style="grid-column:1 / -1;">
+              <button class="clients-btn btn-secondary" type="button" id="btn-edit-cancel">取消</button>
+              <button class="clients-btn" type="submit" id="btn-edit-submit">儲存</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <!-- 新增客戶彈窗 -->
     <div class="modal-overlay" id="createModal" aria-hidden="true" role="dialog" aria-modal="true">
       <div class="modal" role="document">
@@ -179,6 +235,10 @@
         const viewModal = document.getElementById('viewModal');
         const viewCloseBtn = document.getElementById('btn-view-close');
         const viewOkBtn = document.getElementById('btn-view-ok');
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editForm');
+        const editCloseBtn = document.getElementById('btn-edit-close');
+        const editCancelBtn = document.getElementById('btn-edit-cancel');
 
         function setError(msg){ if (errEl) errEl.textContent = msg || ''; }
 
@@ -312,8 +372,98 @@
         viewCloseBtn.addEventListener('click', closeViewModal);
         viewOkBtn.addEventListener('click', closeViewModal);
         
-        // 編輯和刪除的占位函數（後續任務實作）
-        function editClient(clientId) { alert(`編輯功能尚未實作 (客戶 ID: ${clientId})`); }
+        // —— 編輯客戶 ——
+        async function editClient(clientId) {
+          try {
+            const res = await fetch(`${apiBase}/clients/${clientId}`, { credentials: 'include' });
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/clients');
+              return;
+            }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) {
+              throw new Error((json && json.message) || '載入失敗');
+            }
+            const data = json.data;
+            
+            // 預填表單
+            document.getElementById('edit_client_id').value = data.clientId;
+            document.getElementById('edit_company_name').value = data.companyName || '';
+            document.getElementById('edit_assignee').value = data.assigneeUserId || '';
+            document.getElementById('edit_phone').value = data.phone || '';
+            document.getElementById('edit_email').value = data.email || '';
+            document.getElementById('edit_client_notes').value = data.clientNotes || '';
+            document.getElementById('edit_payment_notes').value = data.paymentNotes || '';
+            
+            // 預填標籤（將標籤陣列轉為 ID 字串）
+            const tagIdsStr = (data.tags || []).map(t => t.tag_id).join(',');
+            document.getElementById('edit_tags').value = tagIdsStr;
+            
+            openEditModal();
+          } catch (err) {
+            alert('載入客戶資料失敗，請稍後再試');
+          }
+        }
+        
+        function openEditModal() { editModal.classList.add('active'); editModal.setAttribute('aria-hidden','false'); }
+        function closeEditModal() { editModal.classList.remove('active'); editModal.setAttribute('aria-hidden','true'); editForm.reset(); clearEditFieldErrors(); }
+        editCloseBtn.addEventListener('click', closeEditModal);
+        editCancelBtn.addEventListener('click', closeEditModal);
+        
+        function clearEditFieldErrors(){
+          ['company_name','assignee','phone','email','tags','client_notes','payment_notes'].forEach(k => { 
+            const el = document.getElementById('edit_e_'+k); 
+            if (el) el.textContent=''; 
+          });
+        }
+        
+        // 編輯表單提交
+        editForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          clearEditFieldErrors();
+          const clientId = document.getElementById('edit_client_id').value;
+          const company_name = document.getElementById('edit_company_name').value.trim();
+          const assignee_user_id = parseInt(document.getElementById('edit_assignee').value, 10);
+          const phone = document.getElementById('edit_phone').value.trim();
+          const email = document.getElementById('edit_email').value.trim();
+          const client_notes = document.getElementById('edit_client_notes').value.trim();
+          const payment_notes = document.getElementById('edit_payment_notes').value.trim();
+          const tag_ids = parseTagIds(document.getElementById('edit_tags').value.trim());
+
+          let hasErr = false;
+          if (company_name.length<1 || company_name.length>100) { document.getElementById('edit_e_company_name').textContent='公司名稱為必填（1–100字）'; hasErr=true; }
+          if (!Number.isInteger(assignee_user_id) || assignee_user_id<=0) { document.getElementById('edit_e_assignee').textContent='請選擇負責人'; hasErr=true; }
+          if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById('edit_e_email').textContent='Email 格式錯誤'; hasErr=true; }
+          if (phone && !/^[-+()\s0-9]{6,}$/.test(phone)) { document.getElementById('edit_e_phone').textContent='電話格式錯誤'; hasErr=true; }
+          if (hasErr) return;
+
+          const payload = { company_name, assignee_user_id, phone, email, client_notes, payment_notes, tag_ids };
+          const submitBtn = document.getElementById('btn-edit-submit');
+          submitBtn.disabled = true; submitBtn.textContent = '儲存中…';
+          try {
+            const res = await fetch(`${apiBase}/clients/${clientId}`, {
+              method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload)
+            });
+            const json = await res.json().catch(()=>null);
+            if (res.status === 401) { location.assign('/login?redirect=/internal/clients'); return; }
+            if (!res.ok || !json || json.ok !== true) {
+              const msg = (json && json.message) || '更新失敗';
+              if (json && Array.isArray(json.errors) && json.errors.length>0) {
+                const e = json.errors[0]; const el = document.getElementById('edit_e_'+(e.field||'')); if (el) el.textContent = e.message || msg; else setError(msg);
+              } else { setError(msg); }
+              return;
+            }
+            alert('已更新');
+            closeEditModal();
+            load(); // 重新載入列表
+          } catch (_) {
+            setError('更新失敗，請稍後再試');
+          } finally {
+            submitBtn.disabled = false; submitBtn.textContent = '儲存';
+          }
+        });
+        
+        // 刪除的占位函數（任務 27 實作）
         function deleteClient(clientId) { alert(`刪除功能尚未實作 (客戶 ID: ${clientId})`); }
         
         // —— 新增客戶：打開/關閉 ——

@@ -188,6 +188,82 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 	}
 
+	// PUT /api/v1/clients/:id - 編輯客戶
+	if (method === "PUT" && url.pathname.match(/\/clients\/[^\/]+$/)) {
+		const clientId = url.pathname.split("/").pop();
+		let body;
+		try {
+			body = await request.json();
+		} catch (_) {
+			return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, corsHeaders);
+		}
+		
+		const errors = [];
+		const companyName = String(body?.company_name || "").trim();
+		const assigneeUserId = Number(body?.assignee_user_id || 0);
+		const phone = (body?.phone || "").trim();
+		const email = (body?.email || "").trim();
+		const clientNotes = (body?.client_notes || "").trim();
+		const paymentNotes = (body?.payment_notes || "").trim();
+		const tagIds = Array.isArray(body?.tag_ids) ? body.tag_ids.map((x) => Number(x)).filter((n) => Number.isFinite(n)) : [];
+
+		// 驗證
+		if (companyName.length < 1 || companyName.length > 100) errors.push({ field: "company_name", message: "長度需 1–100" });
+		if (!Number.isInteger(assigneeUserId) || assigneeUserId <= 0) errors.push({ field: "assignee_user_id", message: "必填" });
+		if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push({ field: "email", message: "Email 格式錯誤" });
+		if (phone && !/^[-+()\s0-9]{6,}$/.test(phone)) errors.push({ field: "phone", message: "電話格式錯誤" });
+		if (errors.length) {
+			return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } }, corsHeaders);
+		}
+
+		try {
+			// 檢查客戶是否存在
+			const existing = await env.DATABASE.prepare("SELECT 1 FROM Clients WHERE client_id = ? AND is_deleted = 0 LIMIT 1").bind(clientId).first();
+			if (!existing) {
+				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "客戶不存在", meta: { requestId } }, corsHeaders);
+			}
+			
+			// 檢查負責人員是否存在
+			const assExist = await env.DATABASE.prepare("SELECT 1 FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1").bind(assigneeUserId).first();
+			if (!assExist) {
+				return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "負責人不存在", errors: [{ field: "assignee_user_id", message: "不存在" }], meta: { requestId } }, corsHeaders);
+			}
+			
+			// 檢查標籤是否存在
+			if (tagIds.length > 0) {
+				const placeholders = tagIds.map(() => "?").join(",");
+				const row = await env.DATABASE.prepare(`SELECT COUNT(1) as cnt FROM CustomerTags WHERE tag_id IN (${placeholders})`).bind(...tagIds).first();
+				if (Number(row?.cnt || 0) !== tagIds.length) {
+					return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "標籤不存在", meta: { requestId } }, corsHeaders);
+				}
+			}
+			
+			const now = new Date().toISOString();
+			
+			// 更新客戶資料
+			await env.DATABASE.prepare(
+				"UPDATE Clients SET company_name = ?, assignee_user_id = ?, phone = ?, email = ?, client_notes = ?, payment_notes = ?, updated_at = ? WHERE client_id = ?"
+			).bind(companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, now, clientId).run();
+			
+			// 刪除舊的標籤關聯
+			await env.DATABASE.prepare("DELETE FROM ClientTagAssignments WHERE client_id = ?").bind(clientId).run();
+			
+			// 新增新的標籤關聯
+			for (const tagId of tagIds) {
+				await env.DATABASE.prepare("INSERT INTO ClientTagAssignments (client_id, tag_id, assigned_at) VALUES (?, ?, ?)").bind(clientId, tagId, now).run();
+			}
+			
+			const data = { clientId, companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, tags: tagIds, updatedAt: now };
+			return jsonResponse(200, { ok: true, code: "SUCCESS", message: "已更新", data, meta: { requestId } }, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
 	return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 }
 
