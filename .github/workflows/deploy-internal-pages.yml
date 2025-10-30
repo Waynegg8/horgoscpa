@@ -1,0 +1,50 @@
+name: Deploy Internal (Cloudflare Pages)
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 4ad0a8042beb2d218bd6edf39aee0fea
+      PROJECT_NAME: horgoscpa-internal
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Wrangler
+        run: npm i -g wrangler@latest --no-audit --no-fund
+
+      - name: Deploy (production on main)
+        if: github.ref == 'refs/heads/main'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          wrangler pages deploy . \
+            --project-name "$PROJECT_NAME" \
+            --branch main \
+            --commit-message "${{ github.event.head_commit.message || 'CI deploy' }}"
+
+      - name: Deploy (preview for non-main branches/PRs)
+        if: github.ref != 'refs/heads/main'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          # sanitize branch name for CF Pages
+          BRANCH_SAFE=$(echo "$BRANCH_NAME" | tr '/' '-' )
+          wrangler pages deploy . \
+            --project-name "$PROJECT_NAME" \
+            --branch "$BRANCH_SAFE" \
+            --commit-message "${{ github.event.head_commit.message || github.event.pull_request.title || 'CI preview' }}"
+
+

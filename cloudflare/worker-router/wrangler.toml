@@ -1,0 +1,14 @@
+# name 與 main 設定
+name = "horgoscpa-router"
+main = "src/index.js"
+compatibility_date = "2025-10-30"
+
+routes = [
+	{ pattern = "www.horgoscpa.com/login", zone_name = "horgoscpa.com" },
+	{ pattern = "www.horgoscpa.com/internal/*", zone_name = "horgoscpa.com" },
+	{ pattern = "www.horgoscpa.com/internal/api/*", zone_name = "horgoscpa.com" }
+]
+
+[vars]
+INTERNAL_BASE_HOST = "horgoscpa-internal.pages.dev"
+INTERNAL_API_HOST = "horgoscpa-internal.pages.dev"

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="內部管理系統登入" />
+    <title>登入｜內部管理系統</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/login.css" />
+  </head>
+  <body>
+    <main class="login">
+      <section class="login__card">
+        <h1 class="login__title">登入</h1>
+        <form class="login__form" method="post" action="#" autocomplete="on">
+          <div class="login__field">
+            <label for="email">電子郵件</label>
+            <input id="email" name="email" type="email" inputmode="email" required autocomplete="email" />
+          </div>
+          <div class="login__field">
+            <label for="password">密碼</label>
+            <input id="password" name="password" type="password" required autocomplete="current-password" />
+          </div>
+          <button class="login__submit" type="submit">登入</button>
+          <p class="login__hint">此頁面僅供內部使用。</p>
+        </form>
+      </section>
+    </main>
+  </body>
+  </html>
+
+
