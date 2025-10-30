@@ -95,7 +95,7 @@
               return;
             }
             const redirect = getRedirectTarget();
-            const fallback = onProdHost ? '/internal/' : 'https://www.horgoscpa.com/internal/';
+            const fallback = onProdHost ? '/internal/dashboard' : 'https://www.horgoscpa.com/internal/dashboard';
             location.assign(redirect || fallback);
           } catch (err) {
             setError('網路或伺服器異常，請稍後再試');
