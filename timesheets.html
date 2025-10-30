@@ -1277,6 +1277,8 @@
           const completenessRow = document.getElementById('completeness-row');
           if (!completenessRow) return;
           
+          console.log('[DEBUG] updateDailyCompleteness 被調用，holidays Map 大小:', holidays.size);
+          
           // 清空現有內容（保留前3個空格）
           while (completenessRow.children.length > 3) {
             completenessRow.removeChild(completenessRow.lastChild);
@@ -1288,6 +1290,15 @@
             date.setDate(date.getDate() + dayIndex);
             const dateStr = formatDate(date);
             const dateType = getDateType(date);
+            
+            // 調試：光復節週的日期
+            if (dateStr >= '2025-10-24' && dateStr <= '2025-10-26') {
+              console.log(`[DEBUG] updateDailyCompleteness 處理 ${dateStr}:`, {
+                dateType,
+                willSkip: dateType !== 'workday' && dateType !== 'makeup',
+                holidaysMapSize: holidays.size
+              });
+            }
             
             // 跳過週末和假日
             if (dateType !== 'workday' && dateType !== 'makeup') {
