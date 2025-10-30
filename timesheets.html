@@ -1242,32 +1242,40 @@
           }
         });
         
-        // 週導航
+        // 週導航（修復：先載入假日資料再更新顯示）
         document.getElementById('btnPrevWeek').addEventListener('click', () => {
           currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-          updateWeekDisplay();
-          Promise.all([loadHolidays(), loadLeaves()]).then(() => loadTimesheets());
+          Promise.all([loadHolidays(), loadLeaves()]).then(() => {
+            updateWeekDisplay();
+            loadTimesheets();
+          });
         });
         
         document.getElementById('btnNextWeek').addEventListener('click', () => {
           currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-          updateWeekDisplay();
-          Promise.all([loadHolidays(), loadLeaves()]).then(() => loadTimesheets());
+          Promise.all([loadHolidays(), loadLeaves()]).then(() => {
+            updateWeekDisplay();
+            loadTimesheets();
+          });
         });
         
         document.getElementById('btnThisWeek').addEventListener('click', () => {
           currentWeekStart = getMonday(new Date());
-          updateWeekDisplay();
-          Promise.all([loadHolidays(), loadLeaves()]).then(() => loadTimesheets());
+          Promise.all([loadHolidays(), loadLeaves()]).then(() => {
+            updateWeekDisplay();
+            loadTimesheets();
+          });
         });
         
         document.getElementById('btnAddRow').addEventListener('click', addRow);
         
-        // 初始化
-        updateWeekDisplay();
+        // 初始化（修復：先載入假日資料再更新顯示）
         loadMasterData()
           .then(() => Promise.all([loadHolidays(), loadLeaves()]))
-          .then(() => loadTimesheets());
+          .then(() => {
+            updateWeekDisplay();
+            loadTimesheets();
+          });
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
