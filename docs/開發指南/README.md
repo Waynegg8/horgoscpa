@@ -31,57 +31,57 @@
 ### 核心功能（5個）
 1. **[客戶管理-完整規格.md](./客戶管理-完整規格.md)** ✅
    - 資料表：Clients, CustomerTags, ClientTagAssignments (3個)
-   - API：7個端點
+   - API：9個端點
    
 2. **[工時管理-完整規格.md](./工時管理-完整規格.md)** ✅
-   - 資料表：TimeLogs, WorkTypes, OvertimeRates, CompensatoryLeave (4個)
-   - API：5個端點
+   - 資料表：TimeLogs, WorkTypes, OvertimeRates, CompensatoryLeave, CompensatoryLeaveUsage (5個)
+   - API：9個端點（含補休管理⭐）
    
 3. **[假期管理-完整規格.md](./假期管理-完整規格.md)** ✅
-   - 資料表：LeaveApplications, LeaveTypes, AnnualLeaveRules, OtherLeaveRules (4個)
-   - API：5個端點
+   - 資料表：LeaveApplications, LeaveTypes, AnnualLeaveRules, AnnualLeaveBalance, OtherLeaveRules, LifeEventLeaveGrants, Holidays (7個)
+   - API：8個端點（含生活事件⭐）
    
 4. **[任務管理-完整規格.md](./任務管理-完整規格.md)** ✅
-   - 資料表：TaskTemplates, TaskStageTemplates, ActiveTasks, ActiveTaskStages, ClientServices (5個)
-   - API：12個端點
+   - 資料表：TaskTemplates, TaskStageTemplates, ActiveTasks, ActiveTaskStages, ClientServices, ServiceChangeHistory⭐ (6個)
+   - API：13個端點（含服務生命週期⭐）
 
 5. **[知識管理-完整規格.md](./知識管理-完整規格.md)** ✅
    - 資料表：SOPDocuments, ClientSOPLinks, KnowledgeArticles (3個)
-   - API：12個端點
+   - API：11個端點
 
 ### 系統功能（3個）
 6. **[業務規則-完整規格.md](./業務規則-完整規格.md)** ✅
    - 資料表：Holidays, LeaveTypes, OvertimeRates, AnnualLeaveRules, OtherLeaveRules, ServiceFrequencyTypes, Services (7個)
-   - API：30+個端點
+   - API：12個端點
 
 7. **[外部內容管理-完整規格.md](./外部內容管理-完整規格.md)** ✅
    - 資料表：ExternalArticles, ExternalFAQ, ResourceCenter, ExternalImages (4個)
-   - API：15個端點
+   - API：27個端點（公開+管理⭐）
    
 8. **[系統基礎-完整規格.md](./系統基礎-完整規格.md)** ✅
-   - 資料表：Users, Settings, AuditLogs (3個)
-   - API：12個端點
+   - 資料表：Users, Settings, AuditLogs, FieldAuditTrail, Notifications, CronJobExecutions, 歸檔表×3 (9個)
+   - API：13個端點
    - 包含：認證、員工管理、個人資料、系統設定、審計日誌
 
-### 新增功能（v3.2）（6個）
+### 新增功能（v3.3）（6個）
 9. **[儀表板-完整規格.md](./儀表板-完整規格.md)** ✅
-   - 資料表：Notifications (1個)
-   - API：2個端點
-   - 包含：即時數據展示、通知提醒、工時缺填警示
+   - 資料表：DashboardWidgets⭐, UserDashboardSettings⭐ (2個)
+   - API：4個端點（新增設定管理⭐）
+   - 包含：即時數據展示、通知提醒、工時缺填警示、自定義佈局
 
 10. **[薪資管理-完整規格.md](./薪資管理-完整規格.md)** ✅
-   - 資料表：SalaryItemTypes, EmployeeSalaryItems, MonthlyPayroll, OvertimeRecords (5個，含 Users 擴充)
-   - API：8個端點
-   - 包含：靈活薪資結構、月薪制計算、全勤機制、薪資報表
+    - 資料表：SalaryItemTypes, EmployeeSalaryItems, MonthlyPayroll, OvertimeRecords, YearEndBonus (5個)
+    - API：11個端點
+    - 包含：靈活薪資結構、月薪制計算、全勤機制、年終獎金、薪資報表
 
 11. **[管理成本-完整規格.md](./管理成本-完整規格.md)** ✅
     - 資料表：OverheadCostTypes, MonthlyOverheadCosts (2個)
     - API：6個端點
     - 包含：成本項目管理、月度成本記錄、成本分攤計算
 
-12. **[發票收款-完整規格.md](./發票收款-完整規格.md)** ✅
+12. **[收據收款-完整規格.md](./收據收款-完整規格.md)** ✅
     - 資料表：Receipts, ReceiptItems, ReceiptSequence, Payments (4個)
-    - API：10個端點
+    - API：13個端點（新增號碼檢查、統計⭐）
     - 包含：收據管理、收款管理、應收帳款分析
     - ⚠️ 會計師事務所開立收據（無稅額），非發票
 
@@ -99,6 +99,7 @@
 - **[如何開發.md](./如何開發.md)** ⭐ - 開發流程說明
 - **[AI開發須知.md](./AI開發須知.md)** ⭐ - 核心原則
 - **[共用規範.md](./共用規範.md)** ⭐ - 統一標準
+- **[開發計劃表.md](./開發計劃表.md)** ⭐ - 逐步實作計畫（嚴禁批量/腳本改動）
 
 ---
 
@@ -170,29 +171,17 @@
 
 ---
 
-## 🎯 完整規格統計（v3.2）
+## 🎯 完整規格統計（SSOT）
 
-**所有 14 個完整規格已完成：** ✅
+統計數字請以 `docs/系統資料/數據表清單.md`（資料表）與 `docs/系統資料/API清單.md`（API）為單一真相源（SSOT）。本頁不再重複列出數字以避免不一致。
 
-| 規格文檔 | 資料表數 | API數 | 狀態 |
-|---------|---------|------|------|
-| 系統基礎 | 3 | 12 | ✅ |
-| 客戶管理 | 3 | 7 | ✅ |
-| 工時管理 | 4 | 12 | ✅ |
-| 假期管理 | 4 | 14 | ✅ |
-| 任務管理 | 5 | 16 | ✅ |
-| 知識管理 | 3 | 10 | ✅ |
-| 業務規則 | 7 | 6 | ✅ |
-| 外部內容 | 4 | 8 | ✅ |
-|| **儀表板** | **1** | **2** | ✅ |
-| **薪資管理** | **6** | **13** | ✅ |
-| **管理成本** | **2** | **6** | ✅ |
-| **收據收款** | **4** | **10** | ✅ |
-| **附件系統** | **1** | **4** | ✅ |
-| **報表分析** | **0** | **6** | ✅ |
-| **總計** | **49個表** | **147個API** | ✅ |
-
-**涵蓋所有 49 個資料表和 147 個 API 端點**
+⭐ **v3.3 更新摘要（2025-10-30）：**
+- 新增 DashboardWidgets, UserDashboardSettings, ServiceChangeHistory 表
+- 新增服務生命週期管理 API（暫停/恢復/取消服務）
+- 新增補休管理完整 API
+- 擴充外部內容管理 API（Blog、FAQ、資源、圖片）
+- 新增收據號碼檢查 API
+- 新增儀表板自定義設定 API
 
 ---
 
@@ -220,7 +209,7 @@ Get-ChildItem -Filter "*.md" -Recurse | Select-String "個.*[表API]" | ForEach-
 - ✅ 格式規範統一
 - ✅ 文檔完整無缺
 
-**詳細驗證步驟：** [系統資料/一致性验证脚本.md](../系統資料/一致性验证脚本.md)
+**詳細驗證步驟：** [系統資料/一致性驗證腳本.md](../系統資料/一致性驗證腳本.md)
 
 ---
 
