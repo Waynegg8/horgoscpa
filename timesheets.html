@@ -567,7 +567,16 @@
                 holidays.clear();
                 json.data.forEach(h => {
                   holidays.set(h.date, h);
+                  // 調試：輸出光復節資料
+                  if (h.date >= '2025-10-24' && h.date <= '2025-10-26') {
+                    console.log(`[DEBUG] 載入假日: ${h.date} ${h.name}`, {
+                      is_national_holiday: h.is_national_holiday,
+                      is_weekly_restday: h.is_weekly_restday,
+                      is_makeup_workday: h.is_makeup_workday
+                    });
+                  }
                 });
+                console.log('[DEBUG] holidays Map 總數:', holidays.size);
               }
             }
           } catch (e) {
@@ -649,6 +658,20 @@
           const dateStr = formatDate(date);
           const holiday = holidays.get(dateStr);
           const dayOfWeek = date.getDay(); // 0=週日, 6=週六
+          
+          // 調試：輸出判斷過程
+          if (dateStr >= '2025-10-24' && dateStr <= '2025-10-26') {
+            console.log(`[DEBUG] getDateType(${dateStr}):`, {
+              holiday: holiday ? {
+                name: holiday.name,
+                is_national_holiday: holiday.is_national_holiday,
+                is_weekly_restday: holiday.is_weekly_restday,
+                is_makeup_workday: holiday.is_makeup_workday
+              } : null,
+              dayOfWeek,
+              result: '...'
+            });
+          }
           
           if (holiday) {
             if (holiday.is_national_holiday) return 'national_holiday';
