@@ -1,0 +1,62 @@
+import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+
+const DANGEROUS_KEYS = new Set(["rule_comp_hours_expiry"]);
+const ALLOWED_KEYS = new Set(["company_name", "contact_email", "rule_comp_hours_expiry"]);
+
+function normalizeKey(key){
+  return String(key||"").trim();
+}
+
+export async function handleSettings(request, env, me, requestId, url, path){
+  const corsHeaders = getCorsHeadersForRequest(request, env);
+  if (!me?.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
+  const method = request.method.toUpperCase();
+
+  // GET all settings
+  if (path === "/internal/api/v1/admin/settings" && method === "GET"){
+    try {
+      const rows = await env.DATABASE.prepare(
+        "SELECT setting_key AS key, setting_value AS value, is_dangerous AS isDangerous, description, updated_at AS updatedAt, updated_by AS updatedBy FROM Settings ORDER BY setting_key"
+      ).all();
+      const map = {};
+      for (const r of (rows?.results||[])) map[r.key] = r.value;
+      return jsonResponse(200, { ok:true, code:"OK", message:"成功", data:{ items: rows?.results||[], map }, meta:{ requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+      return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+    }
+  }
+
+  // PUT update single setting: /internal/api/v1/admin/settings/:key
+  if (path.startsWith("/internal/api/v1/admin/settings/") && method === "PUT"){
+    const key = normalizeKey(path.replace("/internal/api/v1/admin/settings/", ""));
+    if (!ALLOWED_KEYS.has(key)) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"不支援的設定鍵", meta:{ requestId } }, corsHeaders);
+    let payload;
+    try { payload = await request.json(); } catch(_) { return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders); }
+    const value = String(payload?.value ?? "");
+    if (key === "contact_email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)){
+      return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"Email 格式錯誤", meta:{ requestId } }, corsHeaders);
+    }
+    if (key === "rule_comp_hours_expiry"){
+      const okVals = new Set(["current_month","next_month","3_months","6_months"]);
+      if (!okVals.has(value)) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"無效的規則值", meta:{ requestId } }, corsHeaders);
+      if (DANGEROUS_KEYS.has(key) && payload?.confirmed !== true){
+        return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"危險設定需確認", meta:{ requestId, field:key } }, corsHeaders);
+      }
+    }
+    try {
+      const nowIso = new Date().toISOString();
+      await env.DATABASE.prepare(
+        "INSERT INTO Settings(setting_key, setting_value, updated_at, updated_by) VALUES(?, ?, ?, ?) ON CONFLICT(setting_key) DO UPDATE SET setting_value=excluded.setting_value, updated_at=excluded.updated_at, updated_by=excluded.updated_by"
+      ).bind(key, value, nowIso, String(me.user_id||me.userId||"1")).run();
+      return jsonResponse(200, { ok:true, code:"OK", message:"已更新", data:{ key, value }, meta:{ requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+      return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+    }
+  }
+
+  return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"無此端點", meta:{ requestId } }, corsHeaders);
+}
+
+

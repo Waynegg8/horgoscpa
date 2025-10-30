@@ -13,6 +13,7 @@ import { handleAttachments } from "./api/attachments.js";
 import { handleSOP } from "./api/sop.js";
 import { handleClientServices } from "./api/client_services.js";
 import { handleCMS } from "./api/cms.js";
+import { handleSettings } from "./api/settings.js";
 import { handleDashboard } from "./api/dashboard.js";
 import { handleAutomation } from "./api/automation.js";
 
@@ -121,6 +122,14 @@ export default {
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handleAutomation(request, env, me, requestId, url, path);
+		}
+
+		// 系統設定（管理員）
+		if (path === "/internal/api/v1/admin/settings" || path.startsWith("/internal/api/v1/admin/settings/")) {
+			const me = await getSessionUser(request, env);
+			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+			if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+			return handleSettings(request, env, me, requestId, url, path);
 		}
 
 		if (path === "/internal/api/v1/client-services" || /\/internal\/api\/v1\/client-services\//.test(path)) {

@@ -13,6 +13,7 @@
     <header class="settings-header">
       <h1 class="settings-title">系統設定</h1>
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此頁面</div>
+      <div id="msgBar" class="info-bar" style="display:none;" role="status"></div>
     </header>
 
     <main class="settings-content">
@@ -86,6 +87,45 @@
           arr.forEach(el => { if (el) { el.disabled = !enabled; } });
         }
 
+        function setMsg(text, isOk){
+          const bar = document.getElementById('msgBar');
+          if (!bar) return;
+          if (!text){ bar.style.display='none'; bar.textContent=''; return; }
+          bar.textContent = text;
+          bar.style.display = 'block';
+          bar.style.color = isOk ? '#1b5e20' : '#c0392b';
+        }
+
+        async function loadSettings(){
+          try {
+            const res = await fetch(`${apiBase}/admin/settings`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/settings'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const map = json.data?.map || {};
+            const company = document.getElementById('company_name');
+            const email = document.getElementById('contact_email');
+            const rule = document.getElementById('rule_comp_hours_expiry');
+            if (company) company.value = map.company_name || '';
+            if (email) email.value = map.contact_email || '';
+            if (rule && map.rule_comp_hours_expiry) rule.value = map.rule_comp_hours_expiry;
+          } catch (_) {
+            setMsg('載入設定失敗，請稍後再試', false);
+          }
+        }
+
+        async function putSetting(key, payload){
+          const res = await fetch(`${apiBase}/admin/settings/${encodeURIComponent(key)}`, {
+            method:'PUT', headers:{ 'Content-Type':'application/json' }, credentials:'include', body: JSON.stringify(payload||{})
+          });
+          const json = await res.json().catch(()=>null);
+          if (!res.ok || !json || json.ok !== true) {
+            const msg = (json && json.message) || '更新失敗';
+            throw new Error(msg);
+          }
+          return json;
+        }
+
         async function ensureAdmin(){
           try {
             const res = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
@@ -101,6 +141,7 @@
             }
             setControlsEnabled(dangerControls, true);
             setControlsEnabled(generalControls, true);
+            await loadSettings();
             return true;
           } catch (_) {
             permBar.textContent = '載入失敗，請稍後再試';
@@ -109,7 +150,38 @@
           }
         }
 
-        // 僅建立 UI 骨架；實際載入/儲存 API 將在對應任務中實作
+        // 綁定儲存事件
+        document.getElementById('btnSaveDanger').addEventListener('click', async function(){
+          setMsg('', true);
+          const rule = document.getElementById('rule_comp_hours_expiry').value;
+          this.disabled = true; this.textContent = '儲存中…';
+          try {
+            await putSetting('rule_comp_hours_expiry', { value: rule, confirmed: true });
+            setMsg('已更新危險設定。', true);
+          } catch (e) {
+            setMsg(String(e && e.message || '更新失敗'), false);
+          } finally {
+            this.disabled = false; this.textContent = '儲存危險設定';
+          }
+        });
+
+        document.getElementById('btnSaveGeneral').addEventListener('click', async function(){
+          setMsg('', true);
+          const company = document.getElementById('company_name').value.trim();
+          const email = document.getElementById('contact_email').value.trim();
+          if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setMsg('Email 格式錯誤', false); return; }
+          this.disabled = true; this.textContent = '儲存中…';
+          try {
+            await putSetting('company_name', { value: company });
+            await putSetting('contact_email', { value: email });
+            setMsg('已更新一般設定。', true);
+          } catch (e) {
+            setMsg(String(e && e.message || '更新失敗'), false);
+          } finally {
+            this.disabled = false; this.textContent = '儲存一般設定';
+          }
+        });
+
         ensureAdmin();
       })();
     </script>
