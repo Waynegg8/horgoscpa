@@ -180,4 +180,43 @@
 	}
 }
 
+/* 確保模態框表單和按鈕正確顯示 */
+.modal__body {
+	max-height: 70vh;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+}
+
+.form-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16px;
+	flex: 1;
+}
+
+.modal__actions {
+	display: flex !important;
+	gap: 12px;
+	justify-content: flex-end;
+	padding-top: 24px;
+	margin-top: auto;
+	border-top: 1px solid #e0e0e0;
+}
+
+.modal__actions .clients-btn {
+	min-width: 100px;
+}
+
+/* 確保chip樣式正確 */
+.chip {
+	display: inline-block;
+	background: #3498db;
+	color: #fff;
+	padding: 4px 12px;
+	border-radius: 12px;
+	font-size: 0.875rem;
+	margin: 2px;
+	font-weight: 500;
+}
 

@@ -343,12 +343,27 @@
           pager.hidden = false;
           rows.forEach((r) => {
             const tr = document.createElement('tr');
+            // 修復：負責人顯示（使用 assigneeName，若無則顯示「未分配」）
+            const assigneeName = r.assigneeName || r.assignee_name || '未分配';
+            // 修復：標籤顯示（檢查是否為字串或陣列）
+            let tagsHtml = '';
+            if (r.tags && Array.isArray(r.tags) && r.tags.length > 0) {
+              tagsHtml = r.tags.slice(0,3).map(t => {
+                const tagName = typeof t === 'string' ? t : (t.tag_name || t.tagName || '');
+                const tagColor = typeof t === 'object' ? (t.tag_color || t.tagColor || '#999') : '#999';
+                return `<span class="chip" style="background:${tagColor}">${tagName}</span>`;
+              }).join('');
+              if (r.tags.length > 3) {
+                tagsHtml += `<span class="chip" style="background:#ccc">+${r.tags.length - 3}</span>`;
+              }
+            }
+            
             tr.innerHTML = `
               <td><input type="checkbox" class="client-checkbox" data-client-id="${r.clientId}" /></td>
               <td>${r.companyName}</td>
               <td>${r.taxId||''}</td>
-              <td>${r.assigneeName||''}</td>
-              <td>${(r.tags||[]).slice(0,3).map(t => `<span class="chip">${t}</span>`).join('')}${(r.tags||[]).length>3?`<span class="chip">+${(r.tags||[]).length-3}</span>`:''}</td>
+              <td>${assigneeName}</td>
+              <td>${tagsHtml}</td>
               <td>${r.phone||''}</td>
               <td>${r.email||''}</td>
               <td>${r.createdAt||''}</td>
@@ -380,7 +395,15 @@
           const params = new URLSearchParams();
           params.set('page', String(state.page));
           params.set('perPage', String(state.perPage));
-          if (state.q) params.set('company_name', state.q);
+          // 修復：搜索支持公司名稱和統一編號
+          if (state.q) {
+            // 如果搜索詞是8位數字，則搜索統編；否則搜索公司名稱
+            if (/^\d{8}$/.test(state.q)) {
+              params.set('client_id', state.q);
+            } else {
+              params.set('company_name', state.q);
+            }
+          }
           try {
             const res = await fetch(`${apiBase}/clients?${params.toString()}`, { credentials: 'include' });
             const json = await res.json();
