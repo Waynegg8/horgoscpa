@@ -1,7 +1,18 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 
 const DANGEROUS_KEYS = new Set(["rule_comp_hours_expiry"]);
-const ALLOWED_KEYS = new Set(["company_name", "contact_email", "rule_comp_hours_expiry"]);
+const ALLOWED_KEYS = new Set([
+  "company_name",
+  "contact_email",
+  "timezone",
+  "currency",
+  "timesheet_min_unit",
+  "soft_delete_enabled",
+  "workday_start",
+  "workday_end",
+  "report_locale",
+  "rule_comp_hours_expiry",
+]);
 
 function normalizeKey(key){
   return String(key||"").trim();
@@ -36,6 +47,18 @@ export async function handleSettings(request, env, me, requestId, url, path){
     const value = String(payload?.value ?? "");
     if (key === "contact_email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)){
       return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"Email 格式錯誤", meta:{ requestId } }, corsHeaders);
+    }
+    if (key === "timesheet_min_unit"){
+      const n = parseFloat(value);
+      if (!Number.isFinite(n) || (n!==0.25 && n!==0.5 && n!==1)){
+        return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"工時最小單位僅允許 0.25/0.5/1", meta:{ requestId } }, corsHeaders);
+      }
+    }
+    if (key === "soft_delete_enabled"){
+      if (!(value === "0" || value === "1")) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"軟刪除值僅能為 0 或 1", meta:{ requestId } }, corsHeaders);
+    }
+    if (key === "workday_start" || key === "workday_end"){
+      if (!/^\d{2}:\d{2}$/.test(value)) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"時間格式需為 HH:MM", meta:{ requestId } }, corsHeaders);
     }
     if (key === "rule_comp_hours_expiry"){
       const okVals = new Set(["current_month","next_month","3_months","6_months"]);

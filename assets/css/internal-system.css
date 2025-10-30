@@ -61,6 +61,17 @@ body {
     flex-direction: column;
 }
 
+/* 內部系統：統一表單/按鈕字體與尺寸（不影響外站） */
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    color: inherit;
+}
+
 /* 簡潔的內部導航欄（新版命名） */
 .internal-navbar {
     background: linear-gradient(135deg, #1e4258 0%, #0d2a3a 100%);
@@ -381,6 +392,39 @@ body {
 
 .btn-success:hover {
     background: #43a047;
+}
+
+/* 與舊頁面類別對齊，統一按鈕尺寸與樣式 */
+.clients-btn,
+.login__submit { /* 部分頁面沿用的按鈕類別（login 在外站不載入此檔，不會受影響） */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.clients-btn:hover,
+.login__submit:hover {
+    background: var(--primary-hover);
+}
+
+/* 中性灰按鈕（舊類別對齊） */
+.btn-gray {
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 4px;
+    background: #eeeeee;
+    color: #333;
+    border: 1px solid var(--border-color);
 }
 
 .btn-small {

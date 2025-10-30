@@ -60,6 +60,41 @@
             <label for="contact_email">聯絡信箱</label>
             <input id="contact_email" type="email" placeholder="contact@horgoscpa.com" disabled />
           </div>
+          <div class="form-group">
+            <label for="timezone">系統時區</label>
+            <input id="timezone" type="text" placeholder="Asia/Taipei" disabled />
+          </div>
+          <div class="form-group">
+            <label for="currency">幣別</label>
+            <input id="currency" type="text" placeholder="TWD" disabled />
+          </div>
+          <div class="form-group">
+            <label for="timesheet_min_unit">工時最小單位（小時）</label>
+            <select id="timesheet_min_unit" disabled>
+              <option value="0.25">0.25</option>
+              <option value="0.5">0.5</option>
+              <option value="1">1</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="soft_delete_enabled">啟用軟刪除</label>
+            <select id="soft_delete_enabled" disabled>
+              <option value="1">啟用</option>
+              <option value="0">停用</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="workday_start">工作日開始時間</label>
+            <input id="workday_start" type="time" disabled />
+          </div>
+          <div class="form-group">
+            <label for="workday_end">工作日結束時間</label>
+            <input id="workday_end" type="time" disabled />
+          </div>
+          <div class="form-group">
+            <label for="report_locale">報表語系</label>
+            <input id="report_locale" type="text" placeholder="zh-TW" disabled />
+          </div>
           <div>
             <button id="btnSaveGeneral" class="btn btn-primary" type="button" disabled>儲存一般設定</button>
           </div>
@@ -106,9 +141,23 @@
             const company = document.getElementById('company_name');
             const email = document.getElementById('contact_email');
             const rule = document.getElementById('rule_comp_hours_expiry');
+            const tz = document.getElementById('timezone');
+            const cur = document.getElementById('currency');
+            const unit = document.getElementById('timesheet_min_unit');
+            const soft = document.getElementById('soft_delete_enabled');
+            const wdStart = document.getElementById('workday_start');
+            const wdEnd = document.getElementById('workday_end');
+            const repLoc = document.getElementById('report_locale');
             if (company) company.value = map.company_name || '';
             if (email) email.value = map.contact_email || '';
             if (rule && map.rule_comp_hours_expiry) rule.value = map.rule_comp_hours_expiry;
+            if (tz) tz.value = map.timezone || 'Asia/Taipei';
+            if (cur) cur.value = map.currency || 'TWD';
+            if (unit && map.timesheet_min_unit) unit.value = String(map.timesheet_min_unit);
+            if (soft && map.soft_delete_enabled) soft.value = String(map.soft_delete_enabled);
+            if (wdStart) wdStart.value = (map.workday_start||'08:30');
+            if (wdEnd) wdEnd.value = (map.workday_end||'17:30');
+            if (repLoc) repLoc.value = map.report_locale || 'zh-TW';
           } catch (_) {
             setMsg('載入設定失敗，請稍後再試', false);
           }
@@ -169,11 +218,25 @@
           setMsg('', true);
           const company = document.getElementById('company_name').value.trim();
           const email = document.getElementById('contact_email').value.trim();
+          const tz = document.getElementById('timezone').value.trim();
+          const cur = document.getElementById('currency').value.trim();
+          const unit = document.getElementById('timesheet_min_unit').value;
+          const soft = document.getElementById('soft_delete_enabled').value;
+          const wdStart = document.getElementById('workday_start').value;
+          const wdEnd = document.getElementById('workday_end').value;
+          const repLoc = document.getElementById('report_locale').value.trim();
           if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setMsg('Email 格式錯誤', false); return; }
           this.disabled = true; this.textContent = '儲存中…';
           try {
             await putSetting('company_name', { value: company });
             await putSetting('contact_email', { value: email });
+            await putSetting('timezone', { value: tz||'Asia/Taipei' });
+            await putSetting('currency', { value: cur||'TWD' });
+            await putSetting('timesheet_min_unit', { value: unit });
+            await putSetting('soft_delete_enabled', { value: soft });
+            await putSetting('workday_start', { value: wdStart||'08:30' });
+            await putSetting('workday_end', { value: wdEnd||'17:30' });
+            await putSetting('report_locale', { value: repLoc||'zh-TW' });
             setMsg('已更新一般設定。', true);
           } catch (e) {
             setMsg(String(e && e.message || '更新失敗'), false);
