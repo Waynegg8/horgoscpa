@@ -1,38 +1,36 @@
-### 任務 04：連結 Git 並自動部署（Cloudflare Pages + GitHub Actions）
+### 任務 04：Connect to Git 直連同一個 repo（Cloudflare Pages）
 
 【目標】
-- 以 Git 觸發自動部署：push 到 main → production；其他分支/PR → preview。無需手動操作。
+- 直接讓 Cloudflare Pages 連結你同一個 Git repo：push 到 main → production；其他分支/PR → preview。無需自建 CI。
 
 【需閱讀】
 - `docs/開發指南/開發須知/部署-與-環境.md`
 
-【已內建】
-- CI 腳本：`.github/workflows/deploy-internal-pages.yml`
-- 使用 `wrangler pages deploy` 部署至 `horgoscpa-internal`
+【前置】
+- 目前專案已在 `horgoscpa-internal` Pages 上線（upload 型式亦可）。此任務將把它改成「連結 Git」。
 
-【步驟（一次性）】
-1) 建立 Git 倉庫（GitHub 推薦）
-   - 在 GitHub 建立空白 repo（例如 `horgoscpa-internal`）
-   - 本機（此專案根目錄）執行：
-     - `git init`
-     - `git add . && git commit -m "chore: init"`
-     - `git branch -M main`
-     - `git remote add origin <你的 GitHub repo URL>`
-     - `git push -u origin main`
-2) 設定 GitHub Secrets（Repo → Settings → Secrets → Actions）
-   - `CF_API_TOKEN`：Cloudflare API Token（需權限：Pages:Edit）
-3)（可選）Repository Variables（Repo → Settings → Variables → Actions）
-   - 若未修改，`CLOUDFLARE_ACCOUNT_ID` 已於 workflow 內設定為 `4ad0a8042beb2d218bd6edf39aee0fea`
+【步驟（Dashboard 點選）】
+1) 登入 Cloudflare → Pages → Create project（或在既有 `horgoscpa-internal` 專案中點「Set up builds / Connect to Git」）
+2) 選擇 Git provider 與 repo（同外部網站的同一個 repo）
+3) Build 設定：
+   - Framework preset：None
+   - Build command：留空
+   - Build output directory：.`
+   - Production branch：main（其餘分支預設成 preview）
+4) 確認並建立。首次建置完成後會產生 production 與 preview 網址（延續原專案網址）。
 
 【驗收標準（AC）】
-- push 到 `main` 自動部署 production，成功訊息含 `*.pages.dev` 連結
-- 對其他分支或 PR，自動部署 preview（分支名將用於 `--branch`）
+- push 到 `main` 自動觸發 production 部署成功
+- 非 `main` 分支或 PR 自動產生 preview 連結
+- 既有 Worker 路徑路由（/login、/internal/*）仍正常工作
 
 【回滾】
-- 使用 Cloudflare Pages 的 deployments 選擇上一成功版本回滾
+- Pages → Deployments → 選取上一成功版本 → Rollback
 
 【備註】
-- 若之後更名專案，更新 workflow 中的 `PROJECT_NAME`
-- 不使用 Cloudflare 的「Connect to Git」也沒關係，CI 會自動部署，效果相同
+- 若 Cloudflare 不允許直接把既有 upload 型專案切換為 Git：
+  - 作法 A：在 Pages 新建一個名為 `horgoscpa-internal` 的 Git 專案（若名稱被佔用，先將舊專案 rename 再復名）
+  - 作法 B：保留舊專案，另建 `horgoscpa-internal-git`，更新 Worker 變數 `INTERNAL_BASE_HOST` 指向新專案
+- 若你之前有 `.github/workflows/deploy-internal-pages.yml`，建議移除或停用，避免重複部署。
 
 
