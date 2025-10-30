@@ -1320,67 +1320,58 @@
           leaveRecordsRow.appendChild(tdActions);
         }
         
-        // 更新每日工時完整性指示器（重寫：簡化邏輯）
+        // 更新每日工時完整性指示器（全重寫：單一來源的日期型別判斷）
         function updateDailyCompleteness() {
           const completenessRow = document.getElementById('completeness-row');
           if (!completenessRow) return;
-          
-          // 清空現有內容（保留前3個空格）
+
+          // 清空現有內容（保留前3格標題列）
           while (completenessRow.children.length > 3) {
             completenessRow.removeChild(completenessRow.lastChild);
           }
-          
-          // 為本週的每一天檢查完整性
+
+          // 逐日檢查
           for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
             const date = new Date(currentWeekStart);
             date.setDate(date.getDate() + dayIndex);
             const dateStr = formatDate(date);
-            const day = date.getDay(); // 0=週日,6=週六
-            const h = holidays.get(dateStr);
-            const isHolidayLike = (day === 0 || day === 6 || (h && h.is_national_holiday === true));
-            
+            const dateType = weekDateTypes.get(dateStr) || getDateType(date);
+
             const td = document.createElement('td');
             td.style.textAlign = 'center';
             td.style.fontSize = '12px';
             td.style.padding = '8px';
-            
-            // 假日（週六/週日/國定假日）：不顯示完整性（留白）
-            if (isHolidayLike) {
+
+            // 非需上班日：國定、例假日(週日)、休息日(週六) → 不做完整性檢查
+            if (dateType === 'national_holiday' || dateType === 'weekly_restday' || dateType === 'restday') {
               td.textContent = '';
-              td.style.backgroundColor = '';
-              td.style.color = '';
-              td.style.fontWeight = '';
               completenessRow.appendChild(td);
               continue;
             }
-            
-            // 計算該日的正常工時（不含加班）
+
+            // 計算正常工時（不含加班）
             let normalHours = 0;
-            rows.forEach(row => {
-              const hours = row.hours[dayIndex];
-              if (hours && row.work_type_id) {
-                const workType = workTypes.find(wt => wt.id == row.work_type_id);
-                // 只計算非加班的工時類型
-                if (workType && !workType.isOvertime) {
-                  normalHours += parseFloat(hours);
-                }
-              }
+            rows.forEach(r => {
+              const hours = r.hours[dayIndex];
+              if (!hours || !r.work_type_id) return;
+              const wt = workTypes.find(x => x.id == r.work_type_id);
+              if (wt && !wt.isOvertime) normalHours += parseFloat(hours);
             });
-            
-            // 加上請假時數
+
+            // 加總請假時數
             const leaveInfo = leaves.get(dateStr);
             const leaveHours = leaveInfo ? leaveInfo.hours : 0;
             const total = normalHours + leaveHours;
             const missing = Math.max(0, 8 - total);
-            
-            // 判斷完整性（工作日需要 8 小時）
+
+            // 視覺狀態
             td.style.fontWeight = '600';
             if (total >= 8) {
               td.style.backgroundColor = '#d4edda';
               td.style.color = '#155724';
               td.textContent = '✓ 完整';
-              td.title = leaveHours > 0 
-                ? `工時 ${normalHours}h + 請假 ${leaveHours}h = ${total}h` 
+              td.title = leaveHours > 0
+                ? `工時 ${normalHours}h + 請假 ${leaveHours}h = ${total}h`
                 : `工時 ${normalHours}h`;
             } else if (total >= 6) {
               td.style.backgroundColor = '#fff3cd';
@@ -1393,11 +1384,11 @@
               td.textContent = `✗ 缺${missing}h`;
               td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${total}h，還缺 ${missing}h`;
             }
-            
+
             completenessRow.appendChild(td);
           }
-          
-          // 最後一列（操作欄）
+
+          // 最後一欄（操作）
           const tdActions = document.createElement('td');
           completenessRow.appendChild(tdActions);
         }
