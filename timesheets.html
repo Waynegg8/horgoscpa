@@ -432,8 +432,9 @@
         let services = [];
         let workTypes = [];
         let holidays = new Map(); // 假日資料 Map<date, holidayInfo>
-        let leaves = new Map(); // 請假資料 Map<date, {hours, types: [{type, hours}]}>
+        let leaves = new Map(); // 請假資料 Map<date, {hours, types: [{type, hours}]}> 
         let pendingChanges = new Map(); // 未儲存的變更 Map<key, {rowIndex, dayIndex, value}>
+        let weekDateTypes = new Map(); // 本週每日的日期類型 Map<date, string>
         
         // 取得週一日期
         function getMonday(date) {
@@ -647,6 +648,14 @@
           // 1. 載入假日和請假資料（必須先完成）
           await Promise.all([loadHolidays(), loadLeaves()]);
           
+          // 1.1 預先計算本週每日的日期類型（避免多處重複計算與時序差異）
+          weekDateTypes.clear();
+          for (let i = 0; i < 7; i++) {
+            const d = new Date(currentWeekStart);
+            d.setDate(d.getDate() + i);
+            weekDateTypes.set(formatDate(d), getDateType(d));
+          }
+
           // 2. 更新週標題和日期標籤
           updateWeekDisplay();
           
@@ -684,20 +693,9 @@
         // - 補班日：檢查
         // - 週一至週五一般工作日：檢查
         function isWorkRequired(date) {
-          const dateStr = formatDate(date);
-          const holiday = holidays.get(dateStr);
-          const dayOfWeek = date.getDay(); // 0=週日, 6=週六
-
-          if (holiday) {
-            if (holiday.is_national_holiday) return false;
-            if (holiday.is_weekly_restday) return false;
-            if (holiday.is_makeup_workday) return true;
-          }
-
-          // 沒有假日標記時的預設規則
-          if (dayOfWeek === 0) return false; // 例假日
-          if (dayOfWeek === 6) return false; // 休息日
-          return true; // 週一至週五
+          const dStr = formatDate(date);
+          const type = weekDateTypes.get(dStr) || getDateType(date);
+          return type === 'workday' || type === 'makeup';
         }
         
         // 根據日期類型篩選可用的工時類型
