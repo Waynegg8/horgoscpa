@@ -16,6 +16,7 @@
         margin: 20px 0;
       }
 
+      /* 修復：週導航區 - 水平三欄佈局 */
       .week-navigation {
         display: flex;
         justify-content: space-between;
@@ -30,11 +31,14 @@
       .week-title {
         font-size: 18px;
         font-weight: 700;
+        flex: 1;
+        text-align: center;
       }
 
       .week-nav-btns {
         display: flex;
         gap: 10px;
+        flex-shrink: 0;
       }
 
       .week-nav-btns button {
@@ -50,6 +54,12 @@
 
       .week-nav-btns button:hover {
         background: rgba(255,255,255,0.3);
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-shrink: 0;
       }
 
       /* 試算表表格 */
@@ -205,46 +215,44 @@
         transform: scale(1.05);
       }
 
+      /* 修復：按鈕樣式 - 移除margin，適配week-navigation佈局 */
       .btn-add-row {
-        margin: 16px 0;
-        padding: 12px 24px;
-        background: #1b65b8;
+        padding: 8px 16px;
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
         color: white;
-        border: none;
         border-radius: 8px;
         cursor: pointer;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
         transition: all 0.2s;
       }
 
       .btn-add-row:hover {
-        background: #155a9d;
-        transform: translateY(-2px);
+        background: rgba(255,255,255,0.3);
       }
 
       .btn-save-all {
-        margin: 16px 0 16px 16px;
-        padding: 12px 32px;
+        padding: 8px 16px;
         background: #28a745;
+        border: 1px solid rgba(255,255,255,0.3);
         color: white;
-        border: none;
         border-radius: 8px;
         cursor: pointer;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
         transition: all 0.2s;
       }
 
       .btn-save-all:hover:not(:disabled) {
         background: #218838;
-        transform: translateY(-2px);
       }
 
       .btn-save-all:disabled {
-        background: #6c757d;
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.2);
         cursor: not-allowed;
-        opacity: 0.5;
+        opacity: 0.6;
       }
 
       /* 週彙總區 */
@@ -351,10 +359,11 @@
           <button id="btnNextWeek">下一週 →</button>
         </div>
         <div class="week-title" id="weekTitle">2025年11月4日 - 11月10日</div>
+        <div class="action-buttons">
+          <button class="btn-add-row" id="btnAddRow">+ 新增列</button>
+          <button class="btn-save-all" id="btnSaveAll" disabled>儲存所有變更</button>
         </div>
-
-      <button class="btn-add-row" id="btnAddRow">+ 新增列</button>
-      <button class="btn-save-all" id="btnSaveAll" disabled>儲存所有變更</button>
+      </div>
 
       <div class="timesheet-container">
         <table class="timesheet-table" id="timesheetTable">
