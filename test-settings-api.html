@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>測試 Settings API</title>
+</head>
+<body>
+  <h1>Settings API 測試</h1>
+  <button id="testBtn">測試 API</button>
+  <pre id="result"></pre>
+  
+  <script>
+    document.getElementById('testBtn').addEventListener('click', async () => {
+      const resultEl = document.getElementById('result');
+      try {
+        resultEl.textContent = '測試中...';
+        
+        // 測試 /auth/me
+        const meRes = await fetch('/internal/api/v1/auth/me', { credentials: 'include' });
+        const meJson = await meRes.json();
+        resultEl.textContent = `/auth/me 響應:\n狀態碼: ${meRes.status}\n${JSON.stringify(meJson, null, 2)}\n\n`;
+        
+        if (!meJson.data?.isAdmin) {
+          resultEl.textContent += '❌ 不是管理員，無法繼續測試 settings API';
+          return;
+        }
+        
+        // 測試 /admin/settings
+        const settingsRes = await fetch('/internal/api/v1/admin/settings', { credentials: 'include' });
+        const settingsJson = await settingsRes.json();
+        resultEl.textContent += `/admin/settings 響應:\n狀態碼: ${settingsRes.status}\n${JSON.stringify(settingsJson, null, 2)}`;
+        
+      } catch (err) {
+        resultEl.textContent += '\n\n❌ 錯誤: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
+
