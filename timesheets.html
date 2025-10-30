@@ -499,18 +499,19 @@
                 organizeDataToRows([]);
               }
             } else {
-              // API 失敗，顯示空白表格供用戶開始填寫
-              console.warn('API 載入失敗，顯示空白表格');
+              // API 錯誤
+              const json = await res.json().catch(() => ({}));
+              showToast(json.message || '載入失敗', false);
               organizeDataToRows([]);
             }
             
             renderTable();
           } catch (e) {
-            // 網路錯誤，顯示空白表格供用戶開始填寫
+            // 網路錯誤
             console.error('載入工時失敗', e);
+            showToast('無法連接伺服器，請檢查網路連線', false);
             organizeDataToRows([]);
             renderTable();
-            showToast('API尚未就緒，顯示空白表格供填寫', false);
           }
         }
         
@@ -759,7 +760,7 @@
             }
             
             if (res.ok) {
-            const json = await res.json();
+              const json = await res.json();
               if (json.ok) {
                 row.hours[dayIndex] = rounded;
                 showToast('已儲存', true);
@@ -768,18 +769,12 @@
                 showToast(json.message || '儲存失敗', false);
               }
             } else {
-              // API 尚未實作，暫時儲存在前端
-              console.warn('API 尚未實作，暫存於前端');
-              row.hours[dayIndex] = rounded;
-              showToast('⚠️ API尚未就緒，資料暫存於本地（重新整理將遺失）', false);
-              updateSummary();
+              const json = await res.json().catch(() => ({}));
+              showToast(json.message || '儲存失敗', false);
             }
           } catch (e) {
-            // 網路錯誤，暫時儲存在前端
             console.error('儲存失敗', e);
-            row.hours[dayIndex] = rounded;
-            showToast('⚠️ 無法連接伺服器，資料暫存於本地（重新整理將遺失）', false);
-            updateSummary();
+            showToast('無法連接伺服器，請檢查網路連線', false);
           }
         }
         
