@@ -233,7 +233,9 @@
 ```powershell
 # 1. 提取SSOT真相
 Get-Content "docs\系統資料\數據表清單.md" | Select-String "資料表總覽"
+# 输出：## 📊 資料表總覽（49個）
 Get-Content "docs\系統資料\API清單.md" | Select-String "總計"
+# 输出：**總計：約 147 個 API 端點**
 
 # 2. 快速检查所有数字
 cd docs
@@ -283,8 +285,8 @@ Get-ChildItem -Filter "*.md" -Recurse | Select-String "個.*[表API]" | ForEach-
 
 ❌ **錯誤：** 數字統計不一致
 ```
-完整功能清單.md 說 29個表
-數據表清單.md 說 28個表
+某個文檔說 45個表
+數據表清單.md 說 49個表
 → 導致統計混亂
 ```
 
