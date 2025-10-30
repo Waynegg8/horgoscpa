@@ -165,6 +165,164 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 		}
 	}
 
+	// Cron Job: 手動觸發補休到期轉加班費
+	if (path === "/internal/api/v1/admin/cron/execute" && method === "POST") {
+		if (!me?.is_admin) {
+			return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
+		}
+		
+		let body;
+		try { body = await request.json(); } catch (_) {
+			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
+		}
+		
+		const jobName = String(body?.job_name || '').trim();
+		if (jobName !== 'comp_leave_expiry') {
+			return jsonResponse(400, { ok:false, code:"INVALID_JOB", message:"不支援的 Job 名稱", meta:{ requestId } }, corsHeaders);
+		}
+		
+		try {
+			// 計算上月底日期
+			const now = new Date();
+			const lastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+			const lastDayOfLastMonth = new Date(Date.UTC(lastMonth.getUTCFullYear(), lastMonth.getUTCMonth() + 1, 0));
+			const expiryDate = `${lastDayOfLastMonth.getUTCFullYear()}-${String(lastDayOfLastMonth.getUTCMonth() + 1).padStart(2, '0')}-${String(lastDayOfLastMonth.getUTCDate()).padStart(2, '0')}`;
+			const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+			
+			// 掃描到期的補休記錄
+			const expiredGrants = await env.DATABASE.prepare(
+				`SELECT g.grant_id, g.user_id, g.hours_remaining, g.original_rate, u.base_salary
+				 FROM CompensatoryLeaveGrants g
+				 LEFT JOIN Users u ON g.user_id = u.user_id
+				 WHERE g.expiry_date = ? AND g.status = 'active' AND g.hours_remaining > 0`
+			).bind(expiryDate).all();
+			
+			let processedCount = 0;
+			const grantIds = [];
+			
+			for (const grant of (expiredGrants?.results || [])) {
+				const baseSalary = Number(grant.base_salary || 0);
+				const hourlyRate = baseSalary / 240;  // 月薪 ÷ 240 = 時薪
+				const hours = Number(grant.hours_remaining || 0);
+				const rate = Number(grant.original_rate || 1);
+				const amountCents = Math.round(hours * hourlyRate * rate * 100);  // 轉為分
+				
+				// 寫入加班費記錄
+				await env.DATABASE.prepare(
+					`INSERT INTO CompensatoryOvertimePay 
+					 (user_id, year_month, hours_expired, amount_cents, source_grant_ids)
+					 VALUES (?, ?, ?, ?, ?)`
+				).bind(
+					String(grant.user_id),
+					currentMonth,
+					hours,
+					amountCents,
+					JSON.stringify([grant.grant_id])
+				).run();
+				
+				// 更新補休記錄狀態為 expired
+				await env.DATABASE.prepare(
+					`UPDATE CompensatoryLeaveGrants SET status = 'expired' WHERE grant_id = ?`
+				).bind(grant.grant_id).run();
+				
+				grantIds.push(grant.grant_id);
+				processedCount++;
+			}
+			
+			// 記錄 Cron 執行
+			await env.DATABASE.prepare(
+				`INSERT INTO CronJobExecutions 
+				 (job_name, status, executed_at, details)
+				 VALUES (?, 'success', datetime('now'), ?)`
+			).bind(jobName, JSON.stringify({ 
+				expiryDate, 
+				processedCount, 
+				grantIds,
+				currentMonth 
+			})).run();
+			
+			return jsonResponse(200, { 
+				ok:true, 
+				code:"SUCCESS", 
+				message:`已處理 ${processedCount} 筆到期補休`, 
+				data:{ 
+					processedCount, 
+					expiryDate, 
+					currentMonth 
+				}, 
+				meta:{ requestId } 
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			
+			// 記錄失敗
+			try {
+				await env.DATABASE.prepare(
+					`INSERT INTO CronJobExecutions 
+					 (job_name, status, executed_at, error_message)
+					 VALUES (?, 'failed', datetime('now'), ?)`
+				).bind(jobName, String(err)).run();
+			} catch (_) {}
+			
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+	
+	// Cron Job: 查詢執行歷史
+	if (path === "/internal/api/v1/admin/cron/history" && method === "GET") {
+		if (!me?.is_admin) {
+			return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
+		}
+		
+		try {
+			const params = url.searchParams;
+			const jobName = params.get('job_name') || '';
+			const page = Math.max(1, parseInt(params.get('page') || '1', 10));
+			const perPage = Math.min(100, Math.max(1, parseInt(params.get('perPage') || '20', 10)));
+			const offset = (page - 1) * perPage;
+			
+			const whereSql = jobName ? 'WHERE job_name = ?' : '';
+			const binds = jobName ? [jobName] : [];
+			
+			const totalRow = await env.DATABASE.prepare(
+				`SELECT COUNT(1) AS total FROM CronJobExecutions ${whereSql}`
+			).bind(...binds).first();
+			
+			const rows = await env.DATABASE.prepare(
+				`SELECT execution_id, job_name, status, executed_at, details, error_message
+				 FROM CronJobExecutions ${whereSql}
+				 ORDER BY executed_at DESC LIMIT ? OFFSET ?`
+			).bind(...binds, perPage, offset).all();
+			
+			const data = (rows?.results || []).map(r => ({
+				id: r.execution_id,
+				jobName: r.job_name,
+				status: r.status,
+				executedAt: r.executed_at,
+				details: r.details ? JSON.parse(r.details) : null,
+				errorMessage: r.error_message
+			}));
+			
+			return jsonResponse(200, { 
+				ok:true, 
+				code:"OK", 
+				message:"成功", 
+				data, 
+				meta:{ 
+					requestId, 
+					page, 
+					perPage, 
+					total: Number(totalRow?.total || 0) 
+				} 
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
 	return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 }
 
