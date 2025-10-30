@@ -361,7 +361,7 @@
           <button class="btn-add-row" id="btnAddRow">+ 新增列</button>
           <button class="btn-save-all" id="btnSaveAll" disabled>儲存所有變更</button>
         </div>
-      </div>
+        </div>
 
       <div class="timesheet-container">
         <table class="timesheet-table" id="timesheetTable">
@@ -384,7 +384,15 @@
             <!-- 動態生成列 -->
           </tbody>
           <tfoot>
-            <tr id="completeness-row" style="border-top: 2px solid #1b65b8;">
+            <!-- 新增：請假記錄行 -->
+            <tr id="leave-records-row" style="border-top: 2px solid #1b65b8;">
+              <td colspan="3" style="font-weight: 700; text-align: left; padding: 12px; background: #e7f3ff;">
+                請假記錄
+              </td>
+              <!-- 7個日期欄位，由 JS 動態生成 -->
+            </tr>
+            <!-- 原有：工時完整性行 -->
+            <tr id="completeness-row">
               <td colspan="3" style="font-weight: 700; text-align: left; padding: 12px; background: #f8f9fa;">
                 工時完整性
               </td>
@@ -402,12 +410,12 @@
         <div class="summary-item">
           <div class="summary-label">本週加班工時</div>
           <div class="summary-value" id="sumOvertime">0</div>
-        </div>
+          </div>
         <div class="summary-item">
           <div class="summary-label">本週加權工時</div>
           <div class="summary-value" id="sumWeighted">0</div>
-        </div>
       </div>
+    </div>
 
       <div class="message-toast" id="toast"></div>
     </main>
@@ -424,7 +432,7 @@
         let services = [];
         let workTypes = [];
         let holidays = new Map(); // 假日資料 Map<date, holidayInfo>
-        let leaves = new Map(); // 請假資料 Map<date, hours>
+        let leaves = new Map(); // 請假資料 Map<date, {hours, types: [{type, hours}]}>
         let pendingChanges = new Map(); // 未儲存的變更 Map<key, {rowIndex, dayIndex, value}>
         
         // 取得週一日期
@@ -567,7 +575,7 @@
           }
         }
         
-        // 載入請假資料（用於工時完整性檢查）
+        // 載入請假資料（用於工時完整性檢查與請假記錄顯示）
         async function loadLeaves() {
           try {
             const weekEnd = new Date(currentWeekStart);
@@ -585,12 +593,13 @@
               if (json.ok && json.data) {
                 leaves.clear();
                 
-                // 解析請假記錄，計算每天的請假時數
+                // 解析請假記錄，計算每天的請假時數和假別
                 json.data.forEach(leave => {
                   const start = new Date(leave.start);
                   const end = new Date(leave.end);
                   const amount = leave.amount || 0;
                   const unit = leave.unit || 'day';
+                  const leaveType = leave.leave_type || 'other';
                   
                   // 計算請假時數
                   let hoursPerDay = 0;
@@ -607,11 +616,13 @@
                     hoursPerDay = 8; // 每天8小時
                   }
                   
-                  // 記錄每天的請假時數
+                  // 記錄每天的請假時數和假別
                   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                     const dateStr = formatDate(d);
-                    const existing = leaves.get(dateStr) || 0;
-                    leaves.set(dateStr, existing + hoursPerDay);
+                    const leaveInfo = leaves.get(dateStr) || { hours: 0, types: [] };
+                    leaveInfo.hours += hoursPerDay;
+                    leaveInfo.types.push({ type: leaveType, hours: hoursPerDay });
+                    leaves.set(dateStr, leaveInfo);
                   }
                 });
               }
@@ -910,8 +921,9 @@
             tbody.appendChild(tr);
           });
           
-          // 修復：渲染後自動更新總計和完整性指示器
+          // 修復：渲染後自動更新總計、請假記錄和完整性指示器
           updateSummary();
+          updateLeaveRecords();
           updateDailyCompleteness();
         }
         
@@ -1019,7 +1031,7 @@
             }
             
             if (res.ok) {
-              const json = await res.json();
+            const json = await res.json();
               if (json.ok) {
                 row.hours[dayIndex] = rounded;
                 showToast('已儲存', true);
@@ -1146,6 +1158,76 @@
           document.getElementById('sumWeighted').textContent = weightedHours.toFixed(1);
         }
         
+        // 新增：更新請假記錄顯示
+        function updateLeaveRecords() {
+          const leaveRecordsRow = document.getElementById('leave-records-row');
+          if (!leaveRecordsRow) return;
+          
+          // 清空現有內容（保留前3個空格）
+          while (leaveRecordsRow.children.length > 3) {
+            leaveRecordsRow.removeChild(leaveRecordsRow.lastChild);
+          }
+          
+          // 假別名稱對應
+          const leaveTypeNames = {
+            'annual': '特休',
+            'sick': '病假',
+            'personal': '事假',
+            'compensatory': '補休',
+            'maternity': '產假',
+            'paternity': '陪產假',
+            'menstrual': '生理假',
+            'marriage': '婚假',
+            'bereavement': '喪假',
+            'official': '公假',
+            'other': '其他'
+          };
+          
+          // 顯示每天的請假記錄
+          for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+            const date = new Date(currentWeekStart);
+            date.setDate(date.getDate() + dayIndex);
+            const dateStr = formatDate(date);
+            const leaveInfo = leaves.get(dateStr);
+            
+            const td = document.createElement('td');
+            td.style.backgroundColor = '#e7f3ff';
+            td.style.color = '#0066cc';
+            td.style.fontSize = '12px';
+            td.style.fontWeight = '600';
+            td.style.padding = '8px';
+            td.style.textAlign = 'center';
+            
+            if (leaveInfo && leaveInfo.hours > 0) {
+              // 如果有多個假別，顯示第一個（通常一天只有一種假別）
+              const firstType = leaveInfo.types[0];
+              const typeName = leaveTypeNames[firstType.type] || '請假';
+              td.textContent = `${typeName} ${leaveInfo.hours}h`;
+              
+              // tooltip 顯示詳細資訊
+              if (leaveInfo.types.length > 1) {
+                const details = leaveInfo.types.map(t => 
+                  `${leaveTypeNames[t.type] || '請假'} ${t.hours}h`
+                ).join(' + ');
+                td.title = details;
+              } else {
+                td.title = `${typeName}：${leaveInfo.hours}小時`;
+              }
+            } else {
+              // 無請假記錄
+              td.style.color = '#999';
+              td.textContent = '-';
+            }
+            
+            leaveRecordsRow.appendChild(td);
+          }
+          
+          // 最後一列（操作欄）
+          const tdActions = document.createElement('td');
+          tdActions.style.backgroundColor = '#e7f3ff';
+          leaveRecordsRow.appendChild(tdActions);
+        }
+        
         // 新增：更新每日工時完整性指示器
         function updateDailyCompleteness() {
           const completenessRow = document.getElementById('completeness-row');
@@ -1184,8 +1266,9 @@
               }
             });
             
-            // 取得請假時數
-            const leaveHours = leaves.get(dateStr) || 0;
+            // 取得請假時數（修復：從新的資料結構取得）
+            const leaveInfo = leaves.get(dateStr);
+            const leaveHours = leaveInfo ? leaveInfo.hours : 0;
             
             // 計算完整度（修復：顯示「還缺幾小時」更直觀）
             const totalRequired = normalHours + leaveHours;
