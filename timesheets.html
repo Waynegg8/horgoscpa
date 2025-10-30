@@ -383,6 +383,14 @@
           <tbody id="tbody">
             <!-- 動態生成列 -->
           </tbody>
+          <tfoot>
+            <tr id="completeness-row" style="border-top: 2px solid #1b65b8;">
+              <td colspan="3" style="font-weight: 700; text-align: left; padding: 12px; background: #f8f9fa;">
+                工時完整性
+              </td>
+              <!-- 7個日期欄位，由 JS 動態生成 -->
+            </tr>
+          </tfoot>
         </table>
       </div>
 
@@ -416,6 +424,7 @@
         let services = [];
         let workTypes = [];
         let holidays = new Map(); // 假日資料 Map<date, holidayInfo>
+        let leaves = new Map(); // 請假資料 Map<date, hours>
         let pendingChanges = new Map(); // 未儲存的變更 Map<key, {rowIndex, dayIndex, value}>
         
         // 取得週一日期
@@ -552,6 +561,60 @@
             }
           } catch (e) {
             console.error('載入假日資料失敗', e);
+          }
+        }
+        
+        // 載入請假資料（用於工時完整性檢查）
+        async function loadLeaves() {
+          try {
+            const weekEnd = new Date(currentWeekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            
+            const params = new URLSearchParams({
+              dateFrom: formatDate(currentWeekStart),
+              dateTo: formatDate(weekEnd),
+              status: 'approved'  // 只計算已批准的請假
+            });
+            
+            const res = await fetch(`${apiBase}/leaves?${params}`, { credentials: 'include' });
+            if (res.ok) {
+              const json = await res.json();
+              if (json.ok && json.data) {
+                leaves.clear();
+                
+                // 解析請假記錄，計算每天的請假時數
+                json.data.forEach(leave => {
+                  const start = new Date(leave.start);
+                  const end = new Date(leave.end);
+                  const amount = leave.amount || 0;
+                  const unit = leave.unit || 'day';
+                  
+                  // 計算請假時數
+                  let hoursPerDay = 0;
+                  if (unit === 'hour') {
+                    hoursPerDay = amount;
+                  } else {
+                    // day 單位：一天 = 8小時
+                    hoursPerDay = amount * 8;
+                  }
+                  
+                  // 如果是跨日請假，分攤到每一天
+                  const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                  if (daysDiff > 1 && unit === 'day') {
+                    hoursPerDay = 8; // 每天8小時
+                  }
+                  
+                  // 記錄每天的請假時數
+                  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    const dateStr = formatDate(d);
+                    const existing = leaves.get(dateStr) || 0;
+                    leaves.set(dateStr, existing + hoursPerDay);
+                  }
+                });
+              }
+            }
+          } catch (e) {
+            console.error('載入請假資料失敗', e);
           }
         }
         
@@ -820,8 +883,9 @@
             tbody.appendChild(tr);
           });
           
-          // 修復：渲染後自動更新總計
+          // 修復：渲染後自動更新總計和完整性指示器
           updateSummary();
+          updateDailyCompleteness();
         }
         
         // 儲存儲存格
@@ -972,6 +1036,88 @@
           document.getElementById('sumWeighted').textContent = weightedHours.toFixed(1);
         }
         
+        // 新增：更新每日工時完整性指示器
+        function updateDailyCompleteness() {
+          const completenessRow = document.getElementById('completeness-row');
+          if (!completenessRow) return;
+          
+          // 清空現有內容（保留前3個空格）
+          while (completenessRow.children.length > 3) {
+            completenessRow.removeChild(completenessRow.lastChild);
+          }
+          
+          // 計算每天的完整性
+          for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+            const date = new Date(currentWeekStart);
+            date.setDate(date.getDate() + dayIndex);
+            const dateStr = formatDate(date);
+            const dateType = getDateType(date);
+            
+            // 跳過週末和假日
+            if (dateType !== 'workday' && dateType !== 'makeup') {
+              const td = document.createElement('td');
+              td.style.backgroundColor = '#f5f5f5';
+              td.style.textAlign = 'center';
+              td.style.fontSize = '12px';
+              td.style.color = '#999';
+              td.textContent = '-';
+              completenessRow.appendChild(td);
+              continue;
+            }
+            
+            // 計算當日正常工時總計（不含加班）
+            let normalHours = 0;
+            rows.forEach(row => {
+              const workType = workTypes.find(wt => wt.id == row.work_type_id);
+              if (workType && !workType.isOvertime && row.hours[dayIndex]) {
+                normalHours += row.hours[dayIndex];
+              }
+            });
+            
+            // 取得請假時數
+            const leaveHours = leaves.get(dateStr) || 0;
+            
+            // 計算完整度
+            const totalRequired = normalHours + leaveHours;
+            
+            const td = document.createElement('td');
+            td.style.textAlign = 'center';
+            td.style.fontSize = '12px';
+            td.style.fontWeight = '600';
+            td.style.padding = '8px';
+            
+            if (totalRequired >= 8) {
+              // 完整
+              td.style.backgroundColor = '#d4edda';
+              td.style.color = '#155724';
+              td.textContent = '✓ 完整';
+              if (leaveHours > 0) {
+                td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${totalRequired}h`;
+              } else {
+                td.title = `工時 ${normalHours}h`;
+              }
+            } else if (totalRequired >= 6) {
+              // 可能漏填
+              td.style.backgroundColor = '#fff3cd';
+              td.style.color = '#856404';
+              td.textContent = `⚠ ${totalRequired}h`;
+              td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${totalRequired}h（可能漏填）`;
+            } else {
+              // 嚴重不足
+              td.style.backgroundColor = '#f8d7da';
+              td.style.color = '#721c24';
+              td.textContent = `✗ ${totalRequired}h`;
+              td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${totalRequired}h（嚴重不足）`;
+            }
+            
+            completenessRow.appendChild(td);
+          }
+          
+          // 最後一列（操作欄）
+          const tdActions = document.createElement('td');
+          completenessRow.appendChild(tdActions);
+        }
+        
         // 修復：更新儲存按鈕狀態
         function updateSaveButton() {
           const btn = document.getElementById('btnSaveAll');
@@ -1016,19 +1162,19 @@
         document.getElementById('btnPrevWeek').addEventListener('click', () => {
           currentWeekStart.setDate(currentWeekStart.getDate() - 7);
           updateWeekDisplay();
-          loadHolidays().then(() => loadTimesheets());
+          Promise.all([loadHolidays(), loadLeaves()]).then(() => loadTimesheets());
         });
         
         document.getElementById('btnNextWeek').addEventListener('click', () => {
           currentWeekStart.setDate(currentWeekStart.getDate() + 7);
           updateWeekDisplay();
-          loadHolidays().then(() => loadTimesheets());
+          Promise.all([loadHolidays(), loadLeaves()]).then(() => loadTimesheets());
         });
         
         document.getElementById('btnThisWeek').addEventListener('click', () => {
           currentWeekStart = getMonday(new Date());
           updateWeekDisplay();
-          loadHolidays().then(() => loadTimesheets());
+          Promise.all([loadHolidays(), loadLeaves()]).then(() => loadTimesheets());
         });
         
         document.getElementById('btnAddRow').addEventListener('click', addRow);
@@ -1036,7 +1182,7 @@
         // 初始化
         updateWeekDisplay();
         loadMasterData()
-          .then(() => loadHolidays())
+          .then(() => Promise.all([loadHolidays(), loadLeaves()]))
           .then(() => loadTimesheets());
       })();
     </script>
