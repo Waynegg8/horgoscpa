@@ -684,6 +684,13 @@
           if (dayOfWeek === 6) return 'restday';        // 週六 = 休息日
           return 'workday';                             // 其他 = 工作日
         }
+        
+        // 判斷是否為假日（國定假日、例假日、休息日）— 用於完整性是否顯示
+        function isHoliday(date) {
+          const dStr = formatDate(date);
+          const type = weekDateTypes.get(dStr) || getDateType(date);
+          return type === 'national_holiday' || type === 'weekly_restday' || type === 'restday';
+        }
 
         // 判斷該日期是否需要檢查「完整性」(是否屬於必須上班的日子)
         // 規則：
@@ -1333,12 +1340,12 @@
             td.style.fontSize = '12px';
             td.style.padding = '8px';
             
-            // 只檢查需要上班的日子；其他日期顯示灰色 "-"
-            if (!isWorkRequired(date)) {
-              td.style.backgroundColor = '#f5f5f5';
-              td.style.color = '#999';
-              td.style.fontWeight = 'normal';
-              td.textContent = '-';
+            // 假日：不顯示完整性（留白）
+            if (isHoliday(date)) {
+              td.textContent = '';
+              td.style.backgroundColor = '';
+              td.style.color = '';
+              td.style.fontWeight = '';
               completenessRow.appendChild(td);
               continue;
             }
