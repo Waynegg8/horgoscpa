@@ -1279,6 +1279,19 @@
           
           console.log('[DEBUG] updateDailyCompleteness 被調用，holidays Map 大小:', holidays.size);
           
+          // 修復：如果當前週需要假日資料但 holidays Map 為空，先不渲染
+          // 避免在假日載入前就顯示錯誤的紅色警告
+          const weekEnd = new Date(currentWeekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          const weekStartStr = formatDate(currentWeekStart);
+          const weekEndStr = formatDate(weekEnd);
+          
+          // 如果週範圍內可能有假日，但 holidays Map 為空，延後渲染
+          if (holidays.size === 0 && (weekStartStr <= '2025-12-31' && weekEndStr >= '2025-01-01')) {
+            console.log('[DEBUG] holidays Map 為空，延後渲染完整性檢查');
+            return;
+          }
+          
           // 清空現有內容（保留前3個空格）
           while (completenessRow.children.length > 3) {
             completenessRow.removeChild(completenessRow.lastChild);
