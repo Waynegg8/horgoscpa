@@ -676,6 +676,11 @@
           // 5. 標記資料就緒並渲染
           isWeekDataReady = true;
           renderTable();
+          // 再次於下一幀強制重算（避免任何延遲造成的殘留）
+          requestAnimationFrame(() => {
+            updateLeaveRecords();
+            updateDailyCompleteness();
+          });
         }
         
         // 判斷日期類型（按您的要求：先週期預設→再用假日覆蓋）
