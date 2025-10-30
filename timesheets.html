@@ -661,6 +661,15 @@
           
           // 調試：輸出判斷過程
           if (dateStr >= '2025-10-24' && dateStr <= '2025-10-26') {
+            const result = holiday ? 
+              (holiday.is_national_holiday ? 'national_holiday' :
+               holiday.is_weekly_restday ? 'weekly_restday' :
+               holiday.is_makeup_workday ? 'makeup' : 
+               '??? (holiday存在但標誌都是false)') :
+              (dayOfWeek === 0 ? 'weekly_restday (無holiday，週日預設)' :
+               dayOfWeek === 6 ? 'restday (無holiday，週六預設)' :
+               'workday (無holiday，預設)');
+            
             console.log(`[DEBUG] getDateType(${dateStr}):`, {
               holiday: holiday ? {
                 name: holiday.name,
@@ -669,7 +678,7 @@
                 is_makeup_workday: holiday.is_makeup_workday
               } : null,
               dayOfWeek,
-              result: '...'
+              返回值: result
             });
           }
           
