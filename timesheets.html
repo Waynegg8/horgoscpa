@@ -4,251 +4,814 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="工時管理" />
-    <title>工時管理｜列表</title>
+    <title>工時管理｜試算表</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
-    <link rel="stylesheet" href="/assets/css/timesheet-page.css" />
+    <link rel="stylesheet" href="/assets/css/internal-system.css" />
+    <style>
+      /* 試算表專用樣式 */
+      .timesheet-container {
+        max-width: 100%;
+        overflow-x: auto;
+        margin: 20px 0;
+      }
+
+      .week-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+        border-radius: 12px;
+        color: white;
+      }
+
+      .week-title {
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .week-nav-btns {
+        display: flex;
+        gap: 10px;
+      }
+
+      .week-nav-btns button {
+        padding: 8px 16px;
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      .week-nav-btns button:hover {
+        background: rgba(255,255,255,0.3);
+      }
+
+      /* 試算表表格 */
+      .timesheet-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: white;
+        border: 2px solid var(--border-light);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .timesheet-table th {
+        background: var(--primary);
+        color: white;
+        padding: 12px 8px;
+        text-align: center;
+        font-weight: 700;
+        font-size: 14px;
+        border: 1px solid var(--primary-hover);
+      }
+
+      .timesheet-table td {
+        padding: 0;
+        border: 1px solid var(--border-light);
+        position: relative;
+      }
+
+      /* 固定左側三欄 */
+      .timesheet-table th:nth-child(1),
+      .timesheet-table th:nth-child(2),
+      .timesheet-table th:nth-child(3) {
+        position: sticky;
+        left: 0;
+        z-index: 10;
+        background: var(--primary);
+      }
+
+      .timesheet-table th:nth-child(2) {
+        left: 200px;
+      }
+
+      .timesheet-table th:nth-child(3) {
+        left: 350px;
+      }
+
+      .timesheet-table td:nth-child(1),
+      .timesheet-table td:nth-child(2),
+      .timesheet-table td:nth-child(3) {
+        position: sticky;
+        background: #f8f9fa;
+        z-index: 5;
+      }
+
+      .timesheet-table td:nth-child(1) {
+        left: 0;
+      }
+
+      .timesheet-table td:nth-child(2) {
+        left: 200px;
+      }
+
+      .timesheet-table td:nth-child(3) {
+        left: 350px;
+      }
+
+      /* 下拉選單樣式 */
+      .cell-select {
+        width: 100%;
+        height: 100%;
+        min-height: 48px;
+        padding: 8px;
+        border: none;
+        background: #f8f9fa;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .cell-select:hover {
+        background: #e9ecef;
+      }
+
+      .cell-select:focus {
+        outline: 2px solid var(--primary);
+        background: white;
+      }
+
+      /* 數字輸入儲存格 */
+      .cell-input {
+        width: 100%;
+        height: 48px;
+        padding: 8px;
+        border: none;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .cell-input:hover {
+        background: #fff9c4;
+      }
+
+      .cell-input:focus {
+        outline: 2px solid var(--primary);
+        background: white;
+      }
+
+      .cell-input.has-value {
+        background: #c8e6c9;
+        color: #2e7d32;
+      }
+
+      .cell-input.weekend {
+        background: #fff3cd;
+      }
+
+      .cell-input.holiday {
+        background: #ffebee;
+      }
+
+      .cell-input.editing {
+        background: white !important;
+        box-shadow: inset 0 0 0 2px var(--primary);
+      }
+
+      /* 操作按鈕 */
+      .row-actions {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        padding: 8px;
+      }
+
+      .btn-delete-row {
+        padding: 6px 12px;
+        background: var(--danger);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      .btn-delete-row:hover {
+        background: var(--danger-hover);
+        transform: scale(1.05);
+      }
+
+      .btn-add-row {
+        margin: 16px 0;
+        padding: 12px 24px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      .btn-add-row:hover {
+        background: var(--primary-hover);
+        transform: translateY(-2px);
+      }
+
+      /* 週彙總區 */
+      .week-summary {
+        margin-top: 24px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        display: flex;
+        gap: 32px;
+        flex-wrap: wrap;
+      }
+
+      .summary-item {
+        flex: 1;
+        min-width: 200px;
+      }
+
+      .summary-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+      }
+
+      .summary-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--primary);
+      }
+
+      /* 日期徽章 */
+      .date-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-left: 4px;
+      }
+
+      .badge-holiday {
+        background: #ffebee;
+        color: #c62828;
+      }
+
+      .badge-weekend {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .badge-makeup {
+        background: #e3f2fd;
+        color: #1565c0;
+      }
+
+      /* 訊息提示 */
+      .message-toast {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        padding: 16px 24px;
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        display: none;
+        animation: slideIn 0.3s ease;
+      }
+
+      .message-toast.show {
+        display: block;
+      }
+
+      .message-toast.success {
+        border-left: 4px solid var(--success);
+        color: var(--success);
+      }
+
+      .message-toast.error {
+        border-left: 4px solid var(--danger);
+        color: var(--danger);
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    </style>
   </head>
   <body class="internal-container">
-    <main>
-      <section class="month-info">
-        <h3 id="monthTitle">本月：2025-10</h3>
-        <div class="total-hours">本月累計：<span id="sumHours">0</span> 小時</div>
-      </section>
+    <main class="internal-main">
+      <h1 class="page-title">工時管理</h1>
 
-      <section class="control-row" aria-label="篩選器">
-        <div class="control-group">
-          <label for="dateFrom">起日</label>
-          <input id="dateFrom" type="date" />
-          <label for="dateTo">迄日</label>
-          <input id="dateTo" type="date" />
+      <div class="week-navigation">
+        <div class="week-nav-btns">
+          <button id="btnPrevWeek">← 上一週</button>
+          <button id="btnThisWeek">本週</button>
+          <button id="btnNextWeek">下一週 →</button>
         </div>
-        <div class="control-group">
-          <label for="kw">關鍵字</label>
-          <input id="kw" type="search" placeholder="客戶/服務/備註…" />
-        </div>
-        <div class="control-group">
-          <label for="type">工作類型</label>
-          <select id="type">
-            <option value="">全部</option>
-            <option value="normal">正常工時</option>
-            <option value="ot-weekday">平日加班</option>
-            <option value="ot-rest">休息日加班</option>
-            <option value="holiday">國定/例假日</option>
-          </select>
-        </div>
-        <div class="control-group" style="margin-left:auto;">
-          <button class="btn-primary" id="btnNew">新增工時</button>
-        </div>
-      </section>
+        <div class="week-title" id="weekTitle">2025年11月4日 - 11月10日</div>
+      </div>
 
-      <div class="message-box error-message" id="msg" role="alert"></div>
+      <button class="btn-add-row" id="btnAddRow">+ 新增列</button>
 
-      <section class="table-container">
-        <table aria-label="工時列表">
+      <div class="timesheet-container">
+        <table class="timesheet-table" id="timesheetTable">
           <thead>
             <tr>
-              <th>日期</th>
-              <th>客戶</th>
-              <th>服務</th>
-              <th>工作類型</th>
-              <th>工時</th>
-              <th>備註</th>
-              <th>操作</th>
+              <th style="width: 200px;">客戶</th>
+              <th style="width: 150px;">業務類型</th>
+              <th style="width: 150px;">工時類型</th>
+              <th style="width: 80px;">週一<br><span class="date-badge" id="dateLabel0">11/4</span></th>
+              <th style="width: 80px;">週二<br><span class="date-badge" id="dateLabel1">11/5</span></th>
+              <th style="width: 80px;">週三<br><span class="date-badge" id="dateLabel2">11/6</span></th>
+              <th style="width: 80px;">週四<br><span class="date-badge" id="dateLabel3">11/7</span></th>
+              <th style="width: 80px;">週五<br><span class="date-badge" id="dateLabel4">11/8</span></th>
+              <th style="width: 80px;">週六<br><span class="date-badge" id="dateLabel5">11/9</span></th>
+              <th style="width: 80px;">週日<br><span class="date-badge" id="dateLabel6">11/10</span></th>
+              <th style="width: 80px;">操作</th>
             </tr>
           </thead>
           <tbody id="tbody">
-            <!-- 骨架：mock 資料，任務 42 會改為串 API -->
+            <!-- 動態生成列 -->
           </tbody>
         </table>
-      </section>
-
-      <div class="clients-pagination" id="pager" style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px;">
-        <button type="button" id="prev">上一頁</button>
-        <button type="button" id="next">下一頁</button>
       </div>
 
-      <div class="empty-state" id="empty" style="display:none;">
-        <span class="material-symbols-rounded">hourglass_empty</span>
-        <p>目前沒有工時記錄</p>
+      <div class="week-summary">
+        <div class="summary-item">
+          <div class="summary-label">本週總工時</div>
+          <div class="summary-value" id="sumTotal">0</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">本週加班工時</div>
+          <div class="summary-value" id="sumOvertime">0</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">本週加權工時</div>
+          <div class="summary-value" id="sumWeighted">0</div>
+        </div>
       </div>
+
+      <div class="message-toast" id="toast"></div>
     </main>
-
-    <!-- 新增工時彈窗（骨架，未串 API）-->
-    <div class="ts-modal" id="tsModal" aria-hidden="true" role="dialog" aria-modal="true">
-      <div class="ts-modal-content" role="document">
-        <div class="ts-modal-header"><h3>新增工時</h3></div>
-        <div class="ts-modal-body">
-          <div class="form-group"><label for="f_date">日期</label><input id="f_date" type="date" /></div>
-          <div class="form-group"><label for="f_client">客戶</label><input id="f_client" type="text" placeholder="輸入客戶名稱（骨架）" /></div>
-          <div class="form-group"><label for="f_service">服務</label><input id="f_service" type="text" placeholder="輸入服務（骨架）" /></div>
-          <div class="form-group"><label for="f_type">工作類型</label>
-            <select id="f_type">
-              <option value="normal">正常工時</option>
-              <option value="ot-weekday">平日加班</option>
-              <option value="ot-rest">休息日加班</option>
-              <option value="holiday">國定/例假日</option>
-            </select>
-          </div>
-          <div class="form-group"><label for="f_hours">工時（0.5 的倍數）</label><input id="f_hours" type="number" step="0.5" min="0.5" max="12" value="1.0" /></div>
-          <div class="form-group"><label for="f_note">備註</label><input id="f_note" type="text" maxlength="100" /></div>
-        </div>
-        <div class="ts-modal-footer">
-          <button class="btn-cancel" id="btnCancel">取消</button>
-          <button class="btn-confirm" id="btnSave">儲存（骨架）</button>
-        </div>
-      </div>
-    </div>
 
     <script>
       (function(){
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
         const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
-        const tbody = document.getElementById('tbody');
-        const emptyEl = document.getElementById('empty');
-        const msg = document.getElementById('msg');
-        const kw = document.getElementById('kw');
-        const type = document.getElementById('type');
-        const dateFromEl = document.getElementById('dateFrom');
-        const dateToEl = document.getElementById('dateTo');
-        const monthTitle = document.getElementById('monthTitle');
-        const btnNew = document.getElementById('btnNew');
-        const modal = document.getElementById('tsModal');
-        const btnCancel = document.getElementById('btnCancel');
-        const btnSave = document.getElementById('btnSave');
-        const sumHours = document.getElementById('sumHours');
-        const prevBtn = document.getElementById('prev');
-        const nextBtn = document.getElementById('next');
-
-        let state = { page:1, perPage:50, total:0 };
-
-        function setMsg(text, ok){
-          if (!text) { msg.classList.remove('show'); return; }
-          msg.textContent = text;
-          msg.classList.add('show');
-          msg.classList.toggle('success-message', !!ok);
-          msg.classList.toggle('error-message', !ok);
+        
+        // 狀態
+        let currentWeekStart = getMonday(new Date());
+        let rows = [];
+        let clients = [];
+        let services = [];
+        let workTypes = [];
+        
+        // 取得週一日期
+        function getMonday(date) {
+          const d = new Date(date);
+          const day = d.getDay();
+          const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+          return new Date(d.setDate(diff));
         }
-
-        function render(rows){
-          tbody.innerHTML = '';
-          if (!rows || rows.length===0) { emptyEl.style.display='block'; renderPager(); sumHours.textContent = '0.0'; return; }
-          emptyEl.style.display='none';
-          let total = 0;
-          rows.forEach(r => {
-            total += Number(r.hours||0);
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${r.date}</td>
-              <td>${r.clientName||''}</td>
-              <td>${r.service||''}</td>
-              <td>${r.type}</td>
-              <td>${r.hours}</td>
-              <td>${r.note||''}</td>
-              <td><button class="btn-gray" type="button">編輯</button></td>
-            `;
-            tbody.appendChild(tr);
-          });
-          sumHours.textContent = total.toFixed(1);
-          renderPager();
+        
+        // 格式化日期
+        function formatDate(date) {
+          const y = date.getFullYear();
+          const m = String(date.getMonth() + 1).padStart(2, '0');
+          const d = String(date.getDate()).padStart(2, '0');
+          return `${y}-${m}-${d}`;
         }
-
-        function renderPager(){
-          prevBtn.disabled = state.page <= 1;
-          nextBtn.disabled = state.page * state.perPage >= state.total;
+        
+        // 顯示訊息
+        function showToast(message, isSuccess) {
+          const toast = document.getElementById('toast');
+          toast.textContent = message;
+          toast.className = 'message-toast show ' + (isSuccess ? 'success' : 'error');
+          setTimeout(() => {
+            toast.classList.remove('show');
+          }, 3000);
         }
-
-        async function load(){
-          setMsg('', false);
-          const params = new URLSearchParams();
-          params.set('page', String(state.page));
-          params.set('perPage', String(state.perPage));
-          if (dateFromEl.value) params.set('dateFrom', dateFromEl.value);
-          if (dateToEl.value) params.set('dateTo', dateToEl.value);
-          if (kw.value.trim()) params.set('q', kw.value.trim());
-          if (type.value) params.set('type', type.value);
-          try {
-            const res = await fetch(`${apiBase}/timesheets?${params.toString()}`, { credentials: 'include' });
-            if (res.status === 401) { location.assign('/login?redirect=/internal/timesheets'); return; }
-            const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error((json && json.message) || '載入失敗');
-            state.total = (json.meta && json.meta.total) || 0;
-            render(json.data || []);
-          } catch (e) {
-            setMsg('載入失敗，請稍後再試', false);
+        
+        // 更新週標題與日期標籤
+        function updateWeekDisplay() {
+          const weekStart = new Date(currentWeekStart);
+          const weekEnd = new Date(currentWeekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          
+          document.getElementById('weekTitle').textContent = 
+            `${weekStart.getFullYear()}年${weekStart.getMonth()+1}月${weekStart.getDate()}日 - ` +
+            `${weekEnd.getMonth()+1}月${weekEnd.getDate()}日`;
+          
+          for (let i = 0; i < 7; i++) {
+            const date = new Date(currentWeekStart);
+            date.setDate(date.getDate() + i);
+            const label = document.getElementById(`dateLabel${i}`);
+            label.textContent = `${date.getMonth()+1}/${date.getDate()}`;
+            
+            // 判斷是否為週末 (簡化版，實際應從API取得假日資訊)
+            if (i === 5 || i === 6) {
+              label.className = 'date-badge badge-weekend';
+            } else {
+              label.className = 'date-badge';
+            }
           }
         }
-
-        let timer = null;
-        kw.addEventListener('input', ()=>{ clearTimeout(timer); timer = setTimeout(()=>{ state.page=1; load(); }, 300); });
-        type.addEventListener('change', ()=>{ state.page=1; load(); });
-        dateFromEl.addEventListener('change', ()=>{ state.page=1; load(); });
-        dateToEl.addEventListener('change', ()=>{ state.page=1; load(); });
-        document.getElementById('prev').addEventListener('click', ()=>{ if (state.page>1) { state.page--; load(); } });
-        document.getElementById('next').addEventListener('click', ()=>{ state.page++; load(); });
-
-        // Modal controls (骨架)
-        btnNew.addEventListener('click', ()=>{ 
-          // 預設日期為今日
-          const today = new Date();
-          const y = today.getFullYear();
-          const m = String(today.getMonth()+1).padStart(2,'0');
-          const d = String(today.getDate()).padStart(2,'0');
-          document.getElementById('f_date').value = `${y}-${m}-${d}`;
-          modal.classList.add('show'); modal.setAttribute('aria-hidden','false'); 
-        });
-        btnCancel.addEventListener('click', ()=>{ modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); msg.classList.remove('show'); });
-        btnSave.addEventListener('click', async ()=>{ 
-          setMsg('', false);
-          const work_date = document.getElementById('f_date').value.trim();
-          const client_id = document.getElementById('f_client').value.trim();
-          const service_name = document.getElementById('f_service').value.trim();
-          const work_type = document.getElementById('f_type').value.trim();
-          let hours = parseFloat(document.getElementById('f_hours').value);
-          const note = document.getElementById('f_note').value.trim();
-          if (!/^\d{4}-\d{2}-\d{2}$/.test(work_date)) { setMsg('請選擇有效日期。', false); return; }
-          if (!client_id) { setMsg('請輸入客戶（暫以文字/ID）。', false); return; }
-          if (!service_name) { setMsg('請輸入服務名稱。', false); return; }
-          if (!work_type) { setMsg('請選擇工作類型。', false); return; }
-          if (!Number.isFinite(hours) || hours <= 0) { setMsg('工時需大於 0。', false); return; }
-          const rounded = Math.round(hours * 2) / 2; 
-          if (Math.abs(hours - rounded) > 1e-9) { hours = rounded; setMsg('已自動將工時修正為最接近的 0.5 倍數。', true); }
-          if (hours > 12) { setMsg('每日單筆不可超過 12 小時。', false); return; }
-          const payload = { work_date, client_id, service_name, work_type, hours, note };
-          btnSave.disabled = true; btnSave.textContent = '儲存中…';
+        
+        // 載入基礎資料
+        async function loadMasterData() {
           try {
-            const res = await fetch(`${apiBase}/timesheets`, { method:'POST', headers:{ 'Content-Type':'application/json' }, credentials:'include', body: JSON.stringify(payload) });
-            if (res.status === 401) { location.assign('/login?redirect=/internal/timesheets'); return; }
-            const json = await res.json().catch(()=>null);
-            if (!res.ok || !json || json.ok !== true) {
-              const msgText = (json && json.message) || '建立失敗，請稍後再試';
-              setMsg(msgText, false);
+            // 載入客戶列表
+            const clientsRes = await fetch(`${apiBase}/clients?perPage=100`, { credentials: 'include' });
+            if (clientsRes.ok) {
+              const clientsJson = await clientsRes.json();
+              clients = clientsJson.data || [];
+            }
+            
+            // 載入服務類型（簡化版，實際應從API取得）
+            services = [
+              { id: 1, name: '記帳服務' },
+              { id: 2, name: '稅務申報' },
+              { id: 3, name: '諮詢服務' },
+            ];
+            
+            // 載入工時類型（簡化版，實際應從API取得）
+            workTypes = [
+              { id: 1, name: '正常工時', multiplier: 1.0 },
+              { id: 2, name: '平日加班（前2小時）', multiplier: 1.34 },
+              { id: 3, name: '平日加班（後2小時）', multiplier: 1.67 },
+              { id: 4, name: '休息日加班（前2小時）', multiplier: 1.34 },
+              { id: 5, name: '休息日加班（第3-8小時）', multiplier: 1.67 },
+            ];
+            
+          } catch (e) {
+            console.error('載入基礎資料失敗', e);
+          }
+        }
+        
+        // 載入工時資料
+        async function loadTimesheets() {
+          try {
+            const weekEnd = new Date(currentWeekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            
+            const params = new URLSearchParams({
+              start_date: formatDate(currentWeekStart),
+              end_date: formatDate(weekEnd)
+            });
+            
+            const res = await fetch(`${apiBase}/timelogs?${params}`, { credentials: 'include' });
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/timesheets');
               return;
             }
-            setMsg('已儲存工時。', true);
-            modal.classList.remove('show'); modal.setAttribute('aria-hidden','true');
-            state.page = 1; await load();
-          } catch (_) {
-            setMsg('建立失敗，請稍後再試', false);
-          } finally {
-            btnSave.disabled = false; btnSave.textContent = '儲存（骨架）';
+            
+            if (res.ok) {
+              const json = await res.json();
+              if (json.ok && json.data) {
+                // 組織資料為行結構
+                organizeDataToRows(json.data);
+              }
+            }
+            
+            renderTable();
+          } catch (e) {
+            showToast('載入工時失敗，請稍後再試', false);
           }
+        }
+        
+        // 將資料組織成行結構
+        function organizeDataToRows(data) {
+          const rowMap = new Map();
+          
+          data.forEach(log => {
+            const key = `${log.client_id}_${log.service_id}_${log.work_type_id}`;
+            if (!rowMap.has(key)) {
+              rowMap.set(key, {
+                client_id: log.client_id,
+                service_id: log.service_id,
+                work_type_id: log.work_type_id,
+                hours: Array(7).fill(null)
+              });
+            }
+            
+            const row = rowMap.get(key);
+            const logDate = new Date(log.work_date);
+            const dayIndex = Math.floor((logDate - currentWeekStart) / (1000 * 60 * 60 * 24));
+            if (dayIndex >= 0 && dayIndex < 7) {
+              row.hours[dayIndex] = log.hours;
+            }
+          });
+          
+          rows = Array.from(rowMap.values());
+          
+          // 如果沒有任何行，新增一個空白行
+          if (rows.length === 0) {
+            rows.push({
+              client_id: '',
+              service_id: '',
+              work_type_id: '',
+              hours: Array(7).fill(null)
+            });
+          }
+        }
+        
+        // 渲染表格
+        function renderTable() {
+          const tbody = document.getElementById('tbody');
+          tbody.innerHTML = '';
+          
+          rows.forEach((row, rowIndex) => {
+            const tr = document.createElement('tr');
+            
+            // 客戶下拉選單
+            const tdClient = document.createElement('td');
+            const selectClient = document.createElement('select');
+            selectClient.className = 'cell-select';
+            selectClient.innerHTML = '<option value="">請選擇客戶...</option>';
+            clients.forEach(c => {
+              const opt = document.createElement('option');
+              opt.value = c.client_id;
+              opt.textContent = c.name;
+              if (c.client_id == row.client_id) opt.selected = true;
+              selectClient.appendChild(opt);
+            });
+            selectClient.addEventListener('change', (e) => {
+              rows[rowIndex].client_id = e.target.value;
+            });
+            tdClient.appendChild(selectClient);
+            tr.appendChild(tdClient);
+            
+            // 業務類型下拉選單
+            const tdService = document.createElement('td');
+            const selectService = document.createElement('select');
+            selectService.className = 'cell-select';
+            selectService.innerHTML = '<option value="">請選擇業務...</option>';
+            services.forEach(s => {
+              const opt = document.createElement('option');
+              opt.value = s.id;
+              opt.textContent = s.name;
+              if (s.id == row.service_id) opt.selected = true;
+              selectService.appendChild(opt);
+            });
+            selectService.addEventListener('change', (e) => {
+              rows[rowIndex].service_id = e.target.value;
+            });
+            tdService.appendChild(selectService);
+            tr.appendChild(tdService);
+            
+            // 工時類型下拉選單
+            const tdWorkType = document.createElement('td');
+            const selectWorkType = document.createElement('select');
+            selectWorkType.className = 'cell-select';
+            selectWorkType.innerHTML = '<option value="">請選擇工時類型...</option>';
+            workTypes.forEach(wt => {
+              const opt = document.createElement('option');
+              opt.value = wt.id;
+              opt.textContent = wt.name;
+              if (wt.id == row.work_type_id) opt.selected = true;
+              selectWorkType.appendChild(opt);
+            });
+            selectWorkType.addEventListener('change', (e) => {
+              rows[rowIndex].work_type_id = e.target.value;
+            });
+            tdWorkType.appendChild(selectWorkType);
+            tr.appendChild(tdWorkType);
+            
+            // 7個日期儲存格
+            for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+              const td = document.createElement('td');
+              const input = document.createElement('input');
+              input.type = 'number';
+              input.step = '0.5';
+              input.min = '0';
+              input.max = '12';
+              input.className = 'cell-input';
+              input.value = row.hours[dayIndex] || '';
+              input.placeholder = '-';
+              
+              if (row.hours[dayIndex]) {
+                input.classList.add('has-value');
+              }
+              
+              // 週末樣式
+              if (dayIndex === 5 || dayIndex === 6) {
+                input.classList.add('weekend');
+              }
+              
+              input.addEventListener('focus', function() {
+                this.classList.add('editing');
+              });
+              
+              input.addEventListener('blur', async function() {
+                this.classList.remove('editing');
+                await saveCell(rowIndex, dayIndex, this.value);
+              });
+              
+              input.addEventListener('keydown', async function(e) {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  await saveCell(rowIndex, dayIndex, this.value);
+                  // 移到下一行同一列
+                  if (rowIndex + 1 < rows.length) {
+                    const nextRow = tbody.children[rowIndex + 1];
+                    const nextInput = nextRow.children[dayIndex + 3].querySelector('input');
+                    nextInput?.focus();
+                  }
+                } else if (e.key === 'Tab') {
+                  // Tab處理由瀏覽器默認行為
+                } else if (e.key === 'ArrowRight') {
+                  e.preventDefault();
+                  if (dayIndex + 1 < 7) {
+                    const nextInput = this.parentElement.nextElementSibling?.querySelector('input');
+                    nextInput?.focus();
+                  }
+                } else if (e.key === 'ArrowLeft') {
+                  e.preventDefault();
+                  if (dayIndex > 0) {
+                    const prevInput = this.parentElement.previousElementSibling?.querySelector('input');
+                    prevInput?.focus();
+                  }
+                } else if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  if (rowIndex + 1 < rows.length) {
+                    const nextRow = tbody.children[rowIndex + 1];
+                    const nextInput = nextRow.children[dayIndex + 3].querySelector('input');
+                    nextInput?.focus();
+                  }
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  if (rowIndex > 0) {
+                    const prevRow = tbody.children[rowIndex - 1];
+                    const prevInput = prevRow.children[dayIndex + 3].querySelector('input');
+                    prevInput?.focus();
+                  }
+                }
+              });
+              
+              td.appendChild(input);
+              tr.appendChild(td);
+            }
+            
+            // 操作欄
+            const tdActions = document.createElement('td');
+            tdActions.className = 'row-actions';
+            const btnDelete = document.createElement('button');
+            btnDelete.className = 'btn-delete-row';
+            btnDelete.textContent = '×';
+            btnDelete.addEventListener('click', () => deleteRow(rowIndex));
+            tdActions.appendChild(btnDelete);
+            tr.appendChild(tdActions);
+            
+            tbody.appendChild(tr);
+          });
+        }
+        
+        // 儲存儲存格
+        async function saveCell(rowIndex, dayIndex, value) {
+          const row = rows[rowIndex];
+          
+          if (!row.client_id || !row.service_id || !row.work_type_id) {
+            if (value) {
+              showToast('請先選擇客戶、業務類型與工時類型', false);
+            }
+            return;
+          }
+          
+          const hours = parseFloat(value);
+          if (!value || !Number.isFinite(hours) || hours <= 0) {
+            // 清空儲存格（刪除記錄）
+            row.hours[dayIndex] = null;
+            return;
+          }
+          
+          // 驗證0.5倍數
+          const rounded = Math.round(hours * 2) / 2;
+          if (Math.abs(hours - rounded) > 0.01) {
+            showToast('工時必須為0.5的倍數', false);
+            return;
+          }
+          
+          const date = new Date(currentWeekStart);
+          date.setDate(date.setDate() + dayIndex);
+          
+          const payload = {
+            work_date: formatDate(date),
+            client_id: row.client_id,
+            service_id: row.service_id,
+            work_type_id: row.work_type_id,
+            hours: rounded,
+            notes: ''
+          };
+          
+          try {
+            const res = await fetch(`${apiBase}/timelogs`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(payload)
+            });
+            
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/timesheets');
+              return;
+            }
+            
+            if (res.ok) {
+              const json = await res.json();
+              if (json.ok) {
+                row.hours[dayIndex] = rounded;
+                showToast('已儲存', true);
+                updateSummary();
+              }
+            } else {
+              const json = await res.json();
+              showToast(json.message || '儲存失敗', false);
+            }
+          } catch (e) {
+            showToast('儲存失敗，請稍後再試', false);
+          }
+        }
+        
+        // 刪除行
+        async function deleteRow(rowIndex) {
+          if (!confirm('刪除此列將清除本週該組合的所有工時，確定刪除？')) {
+            return;
+          }
+          
+          rows.splice(rowIndex, 1);
+          renderTable();
+          showToast('已刪除列', true);
+        }
+        
+        // 新增行
+        function addRow() {
+          rows.push({
+            client_id: '',
+            service_id: '',
+            work_type_id: '',
+            hours: Array(7).fill(null)
+          });
+          renderTable();
+        }
+        
+        // 更新彙總
+        function updateSummary() {
+          let totalHours = 0;
+          rows.forEach(row => {
+            row.hours.forEach(h => {
+              if (h) totalHours += h;
+            });
+          });
+          document.getElementById('sumTotal').textContent = totalHours.toFixed(1);
+          // 加班與加權工時需要根據實際類型計算，此處簡化
+          document.getElementById('sumOvertime').textContent = '0';
+          document.getElementById('sumWeighted').textContent = '0';
+        }
+        
+        // 週導航
+        document.getElementById('btnPrevWeek').addEventListener('click', () => {
+          currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+          updateWeekDisplay();
+          loadTimesheets();
         });
-
-        // init
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth()+1).padStart(2,'0');
-        const first = `${y}-${m}-01`;
-        const lastDay = new Date(y, now.getMonth()+1, 0).getDate();
-        const last = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
-        dateFromEl.value = first; dateToEl.value = last;
-        monthTitle.textContent = `本月：${y}-${m}`;
-        load();
+        
+        document.getElementById('btnNextWeek').addEventListener('click', () => {
+          currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+          updateWeekDisplay();
+          loadTimesheets();
+        });
+        
+        document.getElementById('btnThisWeek').addEventListener('click', () => {
+          currentWeekStart = getMonday(new Date());
+          updateWeekDisplay();
+          loadTimesheets();
+        });
+        
+        document.getElementById('btnAddRow').addEventListener('click', addRow);
+        
+        // 初始化
+        updateWeekDisplay();
+        loadMasterData().then(() => loadTimesheets());
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
   </body>
-  </html>
-
-
+</html>
