@@ -13,20 +13,70 @@
     <main class="login">
       <section class="login__card">
         <h1 class="login__title">登入</h1>
-        <form class="login__form" method="post" action="#" autocomplete="on">
+        <form class="login__form" method="post" action="#" autocomplete="on" novalidate>
           <div class="login__field">
-            <label for="email">電子郵件</label>
-            <input id="email" name="email" type="email" inputmode="email" required autocomplete="email" />
+            <label for="username">帳號</label>
+            <input id="username" name="username" type="text" inputmode="text" required autocomplete="username" />
           </div>
           <div class="login__field">
             <label for="password">密碼</label>
             <input id="password" name="password" type="password" required autocomplete="current-password" />
           </div>
           <button class="login__submit" type="submit">登入</button>
+          <p id="login-error" class="login__error" style="color:#c0392b;min-height:1.25rem;margin:8px 0 0 0;"></p>
           <p class="login__hint">此頁面僅供內部使用。</p>
         </form>
       </section>
     </main>
+    <script>
+      (function () {
+        const form = document.querySelector('.login__form');
+        const usernameEl = document.getElementById('username');
+        const passwordEl = document.getElementById('password');
+        const errorEl = document.getElementById('login-error');
+
+        function setError(msg) {
+          if (errorEl) errorEl.textContent = msg || '';
+        }
+
+        form.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          setError('');
+          const username = (usernameEl.value || '').trim();
+          const password = passwordEl.value || '';
+          if (!username) {
+            setError('請輸入帳號');
+            usernameEl.focus();
+            return;
+          }
+          if (!password) {
+            setError('請輸入密碼');
+            passwordEl.focus();
+            return;
+          }
+          const onProdHost = location.hostname.endsWith('horgoscpa.com');
+          const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+          try {
+            const res = await fetch(apiBase + '/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ username, password })
+            });
+            const json = await res.json().catch(() => null);
+            if (!res.ok || !json || json.ok !== true) {
+              const msg = (json && json.message) || '登入失敗，請稍後再試';
+              setError(msg);
+              return;
+            }
+            const targetBase = onProdHost ? '/internal/' : 'https://www.horgoscpa.com/internal/';
+            location.assign(targetBase);
+          } catch (err) {
+            setError('網路或伺服器異常，請稍後再試');
+          }
+        });
+      })();
+    </script>
   </body>
   </html>
 
