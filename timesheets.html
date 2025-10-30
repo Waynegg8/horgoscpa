@@ -435,6 +435,8 @@
         let leaves = new Map(); // 請假資料 Map<date, {hours, types: [{type, hours}]}> 
         let pendingChanges = new Map(); // 未儲存的變更 Map<key, {rowIndex, dayIndex, value}>
         let weekDateTypes = new Map(); // 本週每日的日期類型 Map<date, string>
+        let currentLoadToken = 0;      // 異步載入防抖：只渲染最後一次請求
+        let isWeekDataReady = false;   // 週資料是否完整（holidays+leaves+rows）
         
         // 取得週一日期
         function getMonday(date) {
@@ -643,12 +645,16 @@
           }
         }
         
-        // 載入當前週的所有相關資料（假日、請假、工時）
+        // 載入當前週的所有相關資料（假日、請假、工時）— 全新流程（帶載入令牌）
         async function loadCurrentWeek() {
-          // 1. 載入假日和請假資料（必須先完成）
+          const loadToken = ++currentLoadToken;
+          isWeekDataReady = false;
+
+          // 1. 先載入假日與請假
           await Promise.all([loadHolidays(), loadLeaves()]);
-          
-          // 1.1 預先計算本週每日的日期類型（避免多處重複計算與時序差異）
+          if (loadToken !== currentLoadToken) return; // 期間若又導航，放棄舊結果
+
+          // 2. 計算本週每日日期型別（單一來源）
           weekDateTypes.clear();
           for (let i = 0; i < 7; i++) {
             const d = new Date(currentWeekStart);
@@ -656,13 +662,16 @@
             weekDateTypes.set(formatDate(d), getDateType(d));
           }
 
-          // 2. 更新週標題和日期標籤
+          // 3. 週標題與日期標籤
           updateWeekDisplay();
-          
-          // 3. 載入工時資料
+          if (loadToken !== currentLoadToken) return;
+
+          // 4. 載入工時
           await loadTimesheets();
-          
-          // 4. 渲染表格（包含請假記錄和完整性檢查）
+          if (loadToken !== currentLoadToken) return;
+
+          // 5. 標記資料就緒並渲染
+          isWeekDataReady = true;
           renderTable();
         }
         
@@ -716,6 +725,11 @@
           });
         }
         
+        // 需上班的日期類型
+        function shouldCheckCompleteness(dateType) {
+          return dateType === 'workday' || dateType === 'makeup';
+        }
+
         // 載入工時資料
         async function loadTimesheets() {
           try {
@@ -748,14 +762,13 @@
               showToast(json.message || '載入失敗', false);
               organizeDataToRows([]);
             }
-            
-            renderTable();
+            // 不在這裡渲染，統一由 loadCurrentWeek 控制渲染時機
           } catch (e) {
             // 網路錯誤
             console.error('載入工時失敗', e);
             showToast('無法連接伺服器，請檢查網路連線', false);
             organizeDataToRows([]);
-            renderTable();
+            // 不在這裡渲染，交由呼叫端決定
           }
         }
         
@@ -1193,12 +1206,16 @@
               return;
             }
             
-            if (res.ok) {
+          if (res.ok) {
               const json = await res.json();
               if (json.ok) {
                 // 刪除成功，重新載入工時資料
                 showToast('已刪除列', true);
                 await loadTimesheets();
+                // 確保畫面即時同步
+                renderTable();
+                updateLeaveRecords();
+                updateDailyCompleteness();
               } else {
                 showToast(json.message || '刪除失敗', false);
               }
@@ -1320,10 +1337,11 @@
           leaveRecordsRow.appendChild(tdActions);
         }
         
-        // 更新每日工時完整性指示器（全重寫：單一來源的日期型別判斷）
+        // 更新每日工時完整性指示器（全重寫：單一來源＋載入就緒判斷）
         function updateDailyCompleteness() {
           const completenessRow = document.getElementById('completeness-row');
           if (!completenessRow) return;
+          if (!isWeekDataReady) return; // 假日/請假/工時尚未齊備時不渲染，避免閃爍與錯誤
 
           // 清空現有內容（保留前3格標題列）
           while (completenessRow.children.length > 3) {
@@ -1343,7 +1361,7 @@
             td.style.padding = '8px';
 
             // 非需上班日：國定、例假日(週日)、休息日(週六) → 不做完整性檢查
-            if (dateType === 'national_holiday' || dateType === 'weekly_restday' || dateType === 'restday') {
+            if (!shouldCheckCompleteness(dateType)) {
               td.textContent = '';
               completenessRow.appendChild(td);
               continue;
