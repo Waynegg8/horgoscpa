@@ -595,11 +595,14 @@
                 
                 // 解析請假記錄，計算每天的請假時數和假別
                 json.data.forEach(leave => {
-                  const start = new Date(leave.start);
-                  const end = new Date(leave.end);
+                  // 修復：使用字串格式避免時區問題
+                  const startStr = leave.start || '';  // 'YYYY-MM-DD'
+                  const endStr = leave.end || '';      // 'YYYY-MM-DD'
                   const amount = leave.amount || 0;
                   const unit = leave.unit || 'day';
-                  const leaveType = leave.leave_type || 'other';
+                  const leaveType = leave.type || leave.leave_type || 'other';  // 修復：支援多種欄位名
+                  
+                  if (!startStr || !endStr) return;
                   
                   // 計算請假時數
                   let hoursPerDay = 0;
@@ -610,19 +613,28 @@
                     hoursPerDay = amount * 8;
                   }
                   
-                  // 如果是跨日請假，分攤到每一天
-                  const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                  // 修復：使用字串日期計算天數，避免時區問題
+                  const startDate = new Date(startStr + 'T00:00:00');
+                  const endDate = new Date(endStr + 'T00:00:00');
+                  const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+                  
                   if (daysDiff > 1 && unit === 'day') {
                     hoursPerDay = 8; // 每天8小時
                   }
                   
-                  // 記錄每天的請假時數和假別
-                  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                    const dateStr = formatDate(d);
+                  // 修復：使用更安全的日期循環邏輯
+                  const current = new Date(startStr + 'T00:00:00');
+                  const end = new Date(endStr + 'T00:00:00');
+                  
+                  while (current <= end) {
+                    const dateStr = formatDate(current);
                     const leaveInfo = leaves.get(dateStr) || { hours: 0, types: [] };
                     leaveInfo.hours += hoursPerDay;
                     leaveInfo.types.push({ type: leaveType, hours: hoursPerDay });
                     leaves.set(dateStr, leaveInfo);
+                    
+                    // 移到下一天
+                    current.setDate(current.getDate() + 1);
                   }
                 });
               }
