@@ -435,6 +435,7 @@
         let leaves = new Map(); // 請假資料 Map<date, {hours, types: [{type, hours}]}> 
         let pendingChanges = new Map(); // 未儲存的變更 Map<key, {rowIndex, dayIndex, value}>
         let weekDateTypes = new Map(); // 本週每日的日期類型 Map<date, string>
+        let weekDays = []; // 本週7天快照 [{ index, iso, dow, type, mustWork }]
         let currentLoadToken = 0;      // 異步載入防抖：只渲染最後一次請求
         let isWeekDataReady = false;   // 週資料是否完整（holidays+leaves+rows）
         
@@ -467,7 +468,7 @@
           }, 3000);
         }
         
-        // 更新週標題與日期標籤（修復：國定假日最高優先級）
+        // 更新週標題與日期標籤（單一來源：weekDays）
         function updateWeekDisplay() {
           const weekStart = new Date(currentWeekStart);
           const weekEnd = new Date(currentWeekStart);
@@ -477,45 +478,19 @@
             `${weekStart.getFullYear()}年${weekStart.getMonth()+1}月${weekStart.getDate()}日 - ` +
             `${weekEnd.getMonth()+1}月${weekEnd.getDate()}日`;
           
-          for (let i = 0; i < 7; i++) {
+          weekDays.forEach(day => {
             const date = new Date(currentWeekStart);
-            date.setDate(date.getDate() + i);
-            const dateStr = formatDate(date);
-            const label = document.getElementById(`dateLabel${i}`);
-            const dayOfWeek = date.getDay();
-            
-            // 基本日期顯示
+            date.setDate(date.getDate() + day.index);
+            const label = document.getElementById(`dateLabel${day.index}`);
             let displayText = `${date.getMonth()+1}/${date.getDate()}`;
             let badgeClass = 'date-badge';
-            
-            // 修復：國定假日最高優先級，優先於週末判斷
-            const holiday = holidays.get(dateStr);
-            
-            // 第一優先：國定假日（即使是週末也顯示國定）
-            if (holiday && holiday.is_national_holiday) {
-              badgeClass = 'date-badge badge-holiday';
-              displayText += ` 國定`;
-            }
-            // 第二優先：補班日
-            else if (holiday && holiday.is_makeup_workday) {
-              badgeClass = 'date-badge badge-makeup';
-              displayText += ` 補班`;
-            }
-            // 第三優先：週日例假日
-            else if (dayOfWeek === 0) {
-              badgeClass = 'date-badge badge-weekend';
-              displayText += ` 例假`;
-            }
-            // 第四優先：週六休息日
-            else if (dayOfWeek === 6) {
-              badgeClass = 'date-badge badge-weekend';
-              displayText += ` 休息`;
-            }
-            // 其他：一般工作日（不加標籤）
-            
+            if (day.type === 'national_holiday') { badgeClass = 'date-badge badge-holiday'; displayText += ' 國定'; }
+            else if (day.type === 'makeup') { badgeClass = 'date-badge badge-makeup'; displayText += ' 補班'; }
+            else if (day.dow === 0) { badgeClass = 'date-badge badge-weekend'; displayText += ' 例假'; }
+            else if (day.dow === 6) { badgeClass = 'date-badge badge-weekend'; displayText += ' 休息'; }
             label.textContent = displayText;
             label.className = badgeClass;
-          }
+          });
         }
         
         // 載入基礎資料
@@ -658,12 +633,7 @@
           if (loadToken !== currentLoadToken) return; // 期間若又導航，放棄舊結果
 
           // 2. 計算本週每日日期型別（單一來源）
-          weekDateTypes.clear();
-          for (let i = 0; i < 7; i++) {
-            const d = new Date(currentWeekStart);
-            d.setDate(d.getDate() + i);
-            weekDateTypes.set(formatDate(d), getDateType(d));
-          }
+          buildWeekDays();
 
           // 3. 週標題與日期標籤
           updateWeekDisplay();
@@ -702,6 +672,27 @@
           }
           
           return baseType;
+        }
+        
+        // 建立本週7天快照（單一來源）
+        function buildWeekDays() {
+          weekDateTypes.clear();
+          weekDays = [];
+          for (let i = 0; i < 7; i++) {
+            const d = new Date(currentWeekStart);
+            d.setDate(d.getDate() + i);
+            const iso = formatDate(d);
+            const h = holidays.get(iso);
+            const dow = d.getDay();
+            const type = h && h.is_national_holiday ? 'national_holiday'
+                       : h && h.is_makeup_workday ? 'makeup'
+                       : dow === 0 ? 'weekly_restday'
+                       : dow === 6 ? 'restday'
+                       : 'workday';
+            const mustWork = (type === 'workday' || type === 'makeup');
+            weekDateTypes.set(iso, type);
+            weekDays.push({ index: i, iso, dow, type, mustWork });
+          }
         }
         
         // 判斷是否為假日（國定假日、例假日、休息日）— 用於完整性是否顯示
@@ -1383,7 +1374,8 @@
             const date = new Date(currentWeekStart);
             date.setDate(date.getDate() + dayIndex);
             const dateStr = formatDate(date);
-            const dateType = weekDateTypes.get(dateStr) || getDateType(date);
+            const dayMeta = weekDays[dayIndex];
+            const dateType = dayMeta ? dayMeta.type : (weekDateTypes.get(dateStr) || getDateType(date));
 
             const td = document.createElement('td');
             td.style.textAlign = 'center';
@@ -1392,12 +1384,7 @@
 
             // 非需上班日：國定、例假日(週日)、休息日(週六) → 不做完整性檢查
             // 以 holidays Map 直接覆核，避免任何時序或映射誤差
-            const h = holidays.get(dateStr);
-            const dow = date.getDay();
-            const shouldCheck = (h && h.is_national_holiday) ? false
-                              : (h && h.is_makeup_workday) ? true
-                              : (dow === 0 || dow === 6) ? false
-                              : shouldCheckCompleteness(dateType);
+            const shouldCheck = dayMeta ? dayMeta.mustWork : shouldCheckCompleteness(dateType);
             if (!shouldCheck) {
               td.textContent = '';
               completenessRow.appendChild(td);
