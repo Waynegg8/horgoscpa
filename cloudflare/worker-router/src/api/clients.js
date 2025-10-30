@@ -264,6 +264,38 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 	}
 
+	// DELETE /api/v1/clients/:id - 刪除客戶（軟刪除）
+	if (method === "DELETE" && url.pathname.match(/\/clients\/[^\/]+$/)) {
+		const clientId = url.pathname.split("/").pop();
+		try {
+			// 檢查客戶是否存在
+			const existing = await env.DATABASE.prepare("SELECT 1 FROM Clients WHERE client_id = ? AND is_deleted = 0 LIMIT 1").bind(clientId).first();
+			if (!existing) {
+				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "客戶不存在", meta: { requestId } }, corsHeaders);
+			}
+			
+			const now = new Date().toISOString();
+			
+			// 軟刪除：設置 is_deleted = 1，記錄 deleted_at 和 deleted_by
+			await env.DATABASE.prepare(
+				"UPDATE Clients SET is_deleted = 1, deleted_at = ?, deleted_by = ? WHERE client_id = ?"
+			).bind(now, me.user_id, clientId).run();
+			
+			return jsonResponse(200, { 
+				ok: true, 
+				code: "SUCCESS", 
+				message: "已刪除", 
+				meta: { requestId } 
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
 	return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 }
 

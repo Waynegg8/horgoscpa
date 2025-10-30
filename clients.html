@@ -463,8 +463,31 @@
           }
         });
         
-        // 刪除的占位函數（任務 27 實作）
-        function deleteClient(clientId) { alert(`刪除功能尚未實作 (客戶 ID: ${clientId})`); }
+        // —— 刪除客戶 ——
+        async function deleteClient(clientId) {
+          if (!confirm('確定要刪除此客戶嗎？刪除後將無法復原。')) {
+            return;
+          }
+          
+          try {
+            const res = await fetch(`${apiBase}/clients/${clientId}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/clients');
+              return;
+            }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) {
+              throw new Error((json && json.message) || '刪除失敗');
+            }
+            alert('已刪除');
+            load(); // 重新載入列表
+          } catch (err) {
+            alert('刪除失敗，請稍後再試');
+          }
+        }
         
         // —— 新增客戶：打開/關閉 ——
         function openModal() { modal.classList.add('active'); modal.setAttribute('aria-hidden','false'); }
