@@ -733,6 +733,25 @@
           return dateType === 'workday' || dateType === 'makeup';
         }
 
+        // 切週前重置週狀態，避免殘留資料造成錯誤渲染
+        function resetWeekState() {
+          rows = [];
+          holidays.clear();
+          leaves.clear();
+          weekDateTypes.clear();
+          pendingChanges.clear();
+          isWeekDataReady = false;
+          currentLoadToken++;
+          // 清空畫面（避免短暫顯示上一週資料）
+          const tbody = document.getElementById('tbody');
+          if (tbody) tbody.innerHTML = '';
+          const leaveRow = document.getElementById('leave-records-row');
+          if (leaveRow) { while (leaveRow.children.length > 3) leaveRow.removeChild(leaveRow.lastChild); }
+          const completenessRow = document.getElementById('completeness-row');
+          if (completenessRow) { while (completenessRow.children.length > 3) completenessRow.removeChild(completenessRow.lastChild); }
+          updateSaveButton();
+        }
+
         // 載入工時資料
         async function loadTimesheets() {
           try {
@@ -1459,16 +1478,19 @@
         
         // 週導航（重寫：統一使用 loadCurrentWeek）
         document.getElementById('btnPrevWeek').addEventListener('click', async () => {
+          resetWeekState();
           currentWeekStart.setDate(currentWeekStart.getDate() - 7);
           await loadCurrentWeek();
         });
         
         document.getElementById('btnNextWeek').addEventListener('click', async () => {
+          resetWeekState();
           currentWeekStart.setDate(currentWeekStart.getDate() + 7);
           await loadCurrentWeek();
         });
         
         document.getElementById('btnThisWeek').addEventListener('click', async () => {
+          resetWeekState();
           currentWeekStart = getMonday(new Date());
           await loadCurrentWeek();
         });
