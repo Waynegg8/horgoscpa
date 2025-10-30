@@ -3,6 +3,81 @@ import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 export async function handleClients(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
+	
+	// GET /api/v1/clients/:id - 客戶詳情
+	if (method === "GET" && url.pathname.match(/\/clients\/[^\/]+$/)) {
+		const clientId = url.pathname.split("/").pop();
+		try {
+			const row = await env.DATABASE.prepare(
+				`SELECT c.client_id, c.company_name, c.tax_registration_number, c.phone, c.email, 
+				        c.client_notes, c.payment_notes, c.created_at, c.updated_at,
+				        u.user_id as assignee_id, u.name as assignee_name,
+				        GROUP_CONCAT(t.tag_id || ':' || t.tag_name || ':' || COALESCE(t.tag_color, ''), '|') as tags
+				 FROM Clients c
+				 LEFT JOIN Users u ON u.user_id = c.assignee_user_id
+				 LEFT JOIN ClientTagAssignments a ON a.client_id = c.client_id
+				 LEFT JOIN CustomerTags t ON t.tag_id = a.tag_id
+				 WHERE c.client_id = ? AND c.is_deleted = 0
+				 GROUP BY c.client_id`
+			).bind(clientId).first();
+			
+			if (!row) {
+				return jsonResponse(404, { 
+					ok: false, 
+					code: "NOT_FOUND", 
+					message: "客戶不存在", 
+					meta: { requestId } 
+				}, corsHeaders);
+			}
+			
+			// 解析標籤
+			const tags = [];
+			if (row.tags) {
+				const tagParts = String(row.tags).split('|');
+				tagParts.forEach(part => {
+					const [id, name, color] = part.split(':');
+					if (id && name) {
+						tags.push({
+							tag_id: parseInt(id),
+							tag_name: name,
+							tag_color: color || null
+						});
+					}
+				});
+			}
+			
+			const data = {
+				clientId: row.client_id,
+				companyName: row.company_name,
+				taxId: row.tax_registration_number,
+				assigneeUserId: row.assignee_id,
+				assigneeName: row.assignee_name || "",
+				phone: row.phone || "",
+				email: row.email || "",
+				clientNotes: row.client_notes || "",
+				paymentNotes: row.payment_notes || "",
+				tags: tags,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at
+			};
+			
+			return jsonResponse(200, { 
+				ok: true, 
+				code: "SUCCESS", 
+				message: "查詢成功", 
+				data, 
+				meta: { requestId } 
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+	
+	// GET /api/v1/clients - 客戶列表
 	if (method === "GET") {
 		const params = url.searchParams;
 		const page = Math.max(1, parseInt(params.get("page") || "1", 10));

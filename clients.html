@@ -54,6 +54,55 @@
       </section>
     </main>
 
+    <!-- 客戶詳情彈窗 -->
+    <div class="modal-overlay" id="viewModal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal" role="document">
+        <div class="modal__header">
+          <h2 class="modal__title">客戶詳情</h2>
+          <button class="modal__close" type="button" id="btn-view-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <div class="view-grid">
+            <div class="view-field">
+              <label>統一編號</label>
+              <div id="view_client_id"></div>
+            </div>
+            <div class="view-field">
+              <label>公司名稱</label>
+              <div id="view_company_name"></div>
+            </div>
+            <div class="view-field">
+              <label>負責人員</label>
+              <div id="view_assignee"></div>
+            </div>
+            <div class="view-field">
+              <label>電話</label>
+              <div id="view_phone"></div>
+            </div>
+            <div class="view-field">
+              <label>Email</label>
+              <div id="view_email"></div>
+            </div>
+            <div class="view-field">
+              <label>標籤</label>
+              <div id="view_tags"></div>
+            </div>
+            <div class="view-field" style="grid-column:1 / -1;">
+              <label>客戶備註</label>
+              <div id="view_client_notes" style="white-space:pre-wrap;"></div>
+            </div>
+            <div class="view-field" style="grid-column:1 / -1;">
+              <label>收款備註</label>
+              <div id="view_payment_notes" style="white-space:pre-wrap;"></div>
+            </div>
+            <div class="modal__actions" style="grid-column:1 / -1;">
+              <button class="clients-btn" type="button" id="btn-view-ok">關閉</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 新增客戶彈窗 -->
     <div class="modal-overlay" id="createModal" aria-hidden="true" role="dialog" aria-modal="true">
       <div class="modal" role="document">
@@ -127,6 +176,9 @@
         const form = document.getElementById('createForm');
         const closeBtn = document.getElementById('btn-close');
         const cancelBtn = document.getElementById('btn-cancel');
+        const viewModal = document.getElementById('viewModal');
+        const viewCloseBtn = document.getElementById('btn-view-close');
+        const viewOkBtn = document.getElementById('btn-view-ok');
 
         function setError(msg){ if (errEl) errEl.textContent = msg || ''; }
 
@@ -149,9 +201,24 @@
               <td>${r.phone||''}</td>
               <td>${r.email||''}</td>
               <td>${r.createdAt||''}</td>
-              <td><button type="button" data-act="view">查看</button> <button type="button" data-act="edit">編輯</button> <button type="button" data-act="del">刪除</button></td>
+              <td>
+                <button type="button" data-act="view" data-id="${r.clientId}">查看</button> 
+                <button type="button" data-act="edit" data-id="${r.clientId}">編輯</button> 
+                <button type="button" data-act="del" data-id="${r.clientId}">刪除</button>
+              </td>
             `;
             tbody.appendChild(tr);
+          });
+          
+          // 綁定操作按鈕事件
+          tbody.addEventListener('click', function(e) {
+            const btn = e.target.closest('button[data-act]');
+            if (!btn) return;
+            const action = btn.getAttribute('data-act');
+            const clientId = btn.getAttribute('data-id');
+            if (action === 'view') viewClient(clientId);
+            if (action === 'edit') editClient(clientId);
+            if (action === 'del') deleteClient(clientId);
           });
         }
 
@@ -205,6 +272,50 @@
         // 初始化載入
         load();
 
+        // —— 查看客戶詳情 ——
+        async function viewClient(clientId) {
+          try {
+            const res = await fetch(`${apiBase}/clients/${clientId}`, { credentials: 'include' });
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/clients');
+              return;
+            }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) {
+              throw new Error((json && json.message) || '載入失敗');
+            }
+            const data = json.data;
+            document.getElementById('view_client_id').textContent = data.taxId || '';
+            document.getElementById('view_company_name').textContent = data.companyName || '';
+            document.getElementById('view_assignee').textContent = data.assigneeName || '';
+            document.getElementById('view_phone').textContent = data.phone || '';
+            document.getElementById('view_email').textContent = data.email || '';
+            document.getElementById('view_client_notes').textContent = data.clientNotes || '';
+            document.getElementById('view_payment_notes').textContent = data.paymentNotes || '';
+            
+            // 顯示標籤
+            const tagsContainer = document.getElementById('view_tags');
+            if (data.tags && data.tags.length > 0) {
+              tagsContainer.innerHTML = data.tags.map(t => `<span class="chip" style="background:${t.tag_color||'#ccc'}">${t.tag_name}</span>`).join('');
+            } else {
+              tagsContainer.innerHTML = '<span style="color:#999">無</span>';
+            }
+            
+            openViewModal();
+          } catch (err) {
+            alert('載入客戶詳情失敗，請稍後再試');
+          }
+        }
+        
+        function openViewModal() { viewModal.classList.add('active'); viewModal.setAttribute('aria-hidden','false'); }
+        function closeViewModal() { viewModal.classList.remove('active'); viewModal.setAttribute('aria-hidden','true'); }
+        viewCloseBtn.addEventListener('click', closeViewModal);
+        viewOkBtn.addEventListener('click', closeViewModal);
+        
+        // 編輯和刪除的占位函數（後續任務實作）
+        function editClient(clientId) { alert(`編輯功能尚未實作 (客戶 ID: ${clientId})`); }
+        function deleteClient(clientId) { alert(`刪除功能尚未實作 (客戶 ID: ${clientId})`); }
+        
         // —— 新增客戶：打開/關閉 ——
         function openModal() { modal.classList.add('active'); modal.setAttribute('aria-hidden','false'); }
         function closeModal() { modal.classList.remove('active'); modal.setAttribute('aria-hidden','true'); form.reset(); clearFieldErrors(); }

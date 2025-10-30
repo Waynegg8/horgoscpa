@@ -52,7 +52,7 @@ export default {
 		}
 
 		// Protected API routes we implement here
-		if (path === "/internal/api/v1/clients") {
+		if (path === "/internal/api/v1/clients" || path.startsWith("/internal/api/v1/clients/")) {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handleClients(request, env, me, requestId, url);
