@@ -443,7 +443,10 @@
           const d = new Date(date);
           const day = d.getDay();
           const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-          return new Date(d.setDate(diff));
+          const monday = new Date(d.setDate(diff));
+          // 正規化至本地 00:00，避免跨週計算時區偏移
+          monday.setHours(0, 0, 0, 0);
+          return monday;
         }
         
         // 格式化日期
@@ -788,8 +791,11 @@
             }
             
             const row = rowMap.get(key);
-            const logDate = new Date(log.work_date);
-            const dayIndex = Math.floor((logDate - currentWeekStart) / (1000 * 60 * 60 * 24));
+            // 以本地 00:00 解析日期，消除 UTC 解析造成的位移
+            const logDate = new Date(String(log.work_date) + 'T00:00:00');
+            const weekStart = new Date(currentWeekStart);
+            weekStart.setHours(0, 0, 0, 0);
+            const dayIndex = Math.floor((logDate - weekStart) / (1000 * 60 * 60 * 24));
             if (dayIndex >= 0 && dayIndex < 7) {
               row.hours[dayIndex] = log.hours;
             }
