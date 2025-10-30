@@ -434,7 +434,6 @@
         let holidays = new Map(); // 假日資料 Map<date, holidayInfo>
         let leaves = new Map(); // 請假資料 Map<date, {hours, types: [{type, hours}]}>
         let pendingChanges = new Map(); // 未儲存的變更 Map<key, {rowIndex, dayIndex, value}>
-        let isDataLoaded = false; // 標記資料是否已載入（修復導航時序問題）
         
         // 取得週一日期
         function getMonday(date) {
@@ -566,18 +565,7 @@
               const json = await res.json();
               if (json.ok && json.data) {
                 holidays.clear();
-                json.data.forEach(h => {
-                  holidays.set(h.date, h);
-                  // 調試：輸出光復節資料
-                  if (h.date >= '2025-10-24' && h.date <= '2025-10-26') {
-                    console.log(`[DEBUG] 載入假日: ${h.date} ${h.name}`, {
-                      is_national_holiday: h.is_national_holiday,
-                      is_weekly_restday: h.is_weekly_restday,
-                      is_makeup_workday: h.is_makeup_workday
-                    });
-                  }
-                });
-                console.log('[DEBUG] holidays Map 總數:', holidays.size);
+                json.data.forEach(h => holidays.set(h.date, h));
               }
             }
           } catch (e) {
@@ -654,56 +642,38 @@
           }
         }
         
-        // 新增：統一的週資料載入函數（修復導航時序問題）
-        async function loadWeekData() {
-          isDataLoaded = false;  // 重置標記
-          console.log('[DEBUG] loadWeekData 開始載入...');
+        // 載入當前週的所有相關資料（假日、請假、工時）
+        async function loadCurrentWeek() {
+          // 1. 載入假日和請假資料（必須先完成）
           await Promise.all([loadHolidays(), loadLeaves()]);
-          isDataLoaded = true;  // 標記資料已載入
-          console.log('[DEBUG] loadWeekData 載入完成，isDataLoaded =', isDataLoaded);
-          updateLeaveRecords();  // 更新請假記錄顯示
-          updateDailyCompleteness();  // 明確在這裡調用完整性檢查
+          
+          // 2. 更新週標題和日期標籤
+          updateWeekDisplay();
+          
+          // 3. 載入工時資料
+          await loadTimesheets();
+          
+          // 4. 渲染表格（包含請假記錄和完整性檢查）
+          renderTable();
         }
         
-        // 判斷日期類型
+        // 判斷日期類型（核心邏輯）
         function getDateType(date) {
           const dateStr = formatDate(date);
           const holiday = holidays.get(dateStr);
           const dayOfWeek = date.getDay(); // 0=週日, 6=週六
           
-          // 調試：輸出判斷過程
-          if (dateStr >= '2025-10-24' && dateStr <= '2025-10-26') {
-            const result = holiday ? 
-              (holiday.is_national_holiday ? 'national_holiday' :
-               holiday.is_weekly_restday ? 'weekly_restday' :
-               holiday.is_makeup_workday ? 'makeup' : 
-               '??? (holiday存在但標誌都是false)') :
-              (dayOfWeek === 0 ? 'weekly_restday (無holiday，週日預設)' :
-               dayOfWeek === 6 ? 'restday (無holiday，週六預設)' :
-               'workday (無holiday，預設)');
-            
-            console.log(`[DEBUG] getDateType(${dateStr}):`, {
-              holiday: holiday ? {
-                name: holiday.name,
-                is_national_holiday: holiday.is_national_holiday,
-                is_weekly_restday: holiday.is_weekly_restday,
-                is_makeup_workday: holiday.is_makeup_workday
-              } : null,
-              dayOfWeek,
-              返回值: result
-            });
-          }
-          
+          // 優先級：假日資料 > 星期預設
           if (holiday) {
             if (holiday.is_national_holiday) return 'national_holiday';
             if (holiday.is_weekly_restday) return 'weekly_restday';
             if (holiday.is_makeup_workday) return 'makeup';
           }
           
-          // 如果沒有假日資料，根據星期判斷
-          if (dayOfWeek === 0) return 'weekly_restday'; // 週日預設為例假日
-          if (dayOfWeek === 6) return 'restday';        // 週六預設為休息日
-          return 'workday';                             // 其他為一般工作日
+          // 沒有假日資料，根據星期判斷
+          if (dayOfWeek === 0) return 'weekly_restday'; // 週日 = 例假日
+          if (dayOfWeek === 6) return 'restday';        // 週六 = 休息日
+          return 'workday';                             // 其他 = 工作日
         }
         
         // 根據日期類型篩選可用的工時類型
@@ -1319,97 +1289,76 @@
           leaveRecordsRow.appendChild(tdActions);
         }
         
-        // 新增：更新每日工時完整性指示器
+        // 更新每日工時完整性指示器（重寫：簡化邏輯）
         function updateDailyCompleteness() {
           const completenessRow = document.getElementById('completeness-row');
           if (!completenessRow) return;
-          
-          console.log('[DEBUG] updateDailyCompleteness 被調用，isDataLoaded =', isDataLoaded, ', holidays Map 大小:', holidays.size, ', leaves Map 大小:', leaves.size);
-          
-          // 修復：等待資料載入完成再渲染（修復導航時序問題）
-          if (!isDataLoaded) {
-            console.log('[DEBUG] 資料尚未載入完成，延後渲染完整性檢查');
-            return;
-          }
           
           // 清空現有內容（保留前3個空格）
           while (completenessRow.children.length > 3) {
             completenessRow.removeChild(completenessRow.lastChild);
           }
           
-          // 計算每天的完整性
+          // 為本週的每一天檢查完整性
           for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
             const date = new Date(currentWeekStart);
             date.setDate(date.getDate() + dayIndex);
             const dateStr = formatDate(date);
             const dateType = getDateType(date);
             
-            // 調試：光復節週的日期
-            if (dateStr >= '2025-10-24' && dateStr <= '2025-10-26') {
-              console.log(`[DEBUG] updateDailyCompleteness 處理 ${dateStr}:`, {
-                dateType,
-                willSkip: dateType !== 'workday' && dateType !== 'makeup',
-                holidaysMapSize: holidays.size
-              });
-            }
+            const td = document.createElement('td');
+            td.style.textAlign = 'center';
+            td.style.fontSize = '12px';
+            td.style.padding = '8px';
             
-            // 跳過週末和假日
+            // 只檢查工作日和補班日，其他日期顯示灰色 "-"
             if (dateType !== 'workday' && dateType !== 'makeup') {
-              const td = document.createElement('td');
               td.style.backgroundColor = '#f5f5f5';
-              td.style.textAlign = 'center';
-              td.style.fontSize = '12px';
               td.style.color = '#999';
+              td.style.fontWeight = 'normal';
               td.textContent = '-';
               completenessRow.appendChild(td);
               continue;
             }
             
-            // 計算當日正常工時總計（不含加班）
+            // 計算該日的正常工時（不含加班）
             let normalHours = 0;
             rows.forEach(row => {
-              const workType = workTypes.find(wt => wt.id == row.work_type_id);
-              if (workType && !workType.isOvertime && row.hours[dayIndex]) {
-                normalHours += row.hours[dayIndex];
+              const hours = row.hours[dayIndex];
+              if (hours && row.work_type_id) {
+                const workType = workTypes.find(wt => wt.id == row.work_type_id);
+                // 只計算非加班的工時類型
+                if (workType && !workType.isOvertime) {
+                  normalHours += parseFloat(hours);
+                }
               }
             });
             
-            // 取得請假時數（修復：從新的資料結構取得）
+            // 加上請假時數
             const leaveInfo = leaves.get(dateStr);
             const leaveHours = leaveInfo ? leaveInfo.hours : 0;
+            const total = normalHours + leaveHours;
+            const missing = Math.max(0, 8 - total);
             
-            // 計算完整度（修復：顯示「還缺幾小時」更直觀）
-            const totalRequired = normalHours + leaveHours;
-            const shortage = Math.max(0, 8 - totalRequired);
-            
-            const td = document.createElement('td');
-            td.style.textAlign = 'center';
-            td.style.fontSize = '12px';
+            // 判斷完整性（工作日需要 8 小時）
             td.style.fontWeight = '600';
-            td.style.padding = '8px';
-            
-            if (totalRequired >= 8) {
-              // 完整
+            if (total >= 8) {
               td.style.backgroundColor = '#d4edda';
               td.style.color = '#155724';
               td.textContent = '✓ 完整';
-              if (leaveHours > 0) {
-                td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${totalRequired}h`;
-              } else {
-                td.title = `工時 ${normalHours}h`;
-              }
-            } else if (totalRequired >= 6) {
-              // 可能漏填
+              td.title = leaveHours > 0 
+                ? `工時 ${normalHours}h + 請假 ${leaveHours}h = ${total}h` 
+                : `工時 ${normalHours}h`;
+            } else if (total >= 6) {
               td.style.backgroundColor = '#fff3cd';
               td.style.color = '#856404';
-              td.textContent = `⚠ 缺${shortage}h`;
-              td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${totalRequired}h，還缺 ${shortage}h`;
+              td.textContent = `⚠ 缺${missing}h`;
+              td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${total}h，還缺 ${missing}h`;
             } else {
-              // 嚴重不足
               td.style.backgroundColor = '#f8d7da';
               td.style.color = '#721c24';
-              td.textContent = `✗ 缺${shortage}h`;
-              td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${totalRequired}h，還缺 ${shortage}h`;
+              td.textContent = `✗ 缺${missing}h`;
+              td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${total}h，還缺 ${missing}h`;
             }
             
             completenessRow.appendChild(td);
@@ -1460,43 +1409,31 @@
           }
         });
         
-        // 週導航（修復：使用 loadWeekData 確保資料載入時序）
+        // 週導航（重寫：統一使用 loadCurrentWeek）
         document.getElementById('btnPrevWeek').addEventListener('click', async () => {
           currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-          await loadWeekData();  // 等待資料載入並更新完整性
-          updateWeekDisplay();
-          await loadTimesheets();
-          renderTable();
+          await loadCurrentWeek();
         });
         
         document.getElementById('btnNextWeek').addEventListener('click', async () => {
           currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-          await loadWeekData();  // 等待資料載入並更新完整性
-          updateWeekDisplay();
-          await loadTimesheets();
-          renderTable();
+          await loadCurrentWeek();
         });
         
         document.getElementById('btnThisWeek').addEventListener('click', async () => {
           currentWeekStart = getMonday(new Date());
-          await loadWeekData();  // 等待資料載入並更新完整性
-          updateWeekDisplay();
-          await loadTimesheets();
-          renderTable();
+          await loadCurrentWeek();
         });
         
         document.getElementById('btnAddRow').addEventListener('click', addRow);
         
-        // 初始化（修復：使用 loadWeekData 確保資料載入時序）
-        loadMasterData()
-          .then(() => loadWeekData())
-          .then(() => {
-            updateWeekDisplay();
-            return loadTimesheets();
-          })
-          .then(() => {
-            renderTable();
-          });
+        // 初始化（重寫：清晰的順序）
+        async function init() {
+          await loadMasterData();  // 1. 載入基礎資料
+          await loadCurrentWeek();  // 2. 載入本週資料並渲染
+        }
+        
+        init();
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
