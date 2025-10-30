@@ -453,7 +453,7 @@
           }, 3000);
         }
         
-        // 更新週標題與日期標籤
+        // 更新週標題與日期標籤（修復：國定假日最高優先級）
         function updateWeekDisplay() {
           const weekStart = new Date(currentWeekStart);
           const weekEnd = new Date(currentWeekStart);
@@ -472,29 +472,32 @@
             
             // 基本日期顯示
             let displayText = `${date.getMonth()+1}/${date.getDate()}`;
-            
-            // 修復：判斷日期類型並添加標籤（連動國定假日資料）
-            const holiday = holidays.get(dateStr);
             let badgeClass = 'date-badge';
             
-            if (holiday) {
-              if (holiday.is_national_holiday) {
-                badgeClass = 'date-badge badge-holiday';
-                displayText += ` 國定`;
-              } else if (holiday.is_makeup_workday) {
-                badgeClass = 'date-badge badge-makeup';
-                displayText += ` 補班`;
-              }
-            } else {
-              // 沒有假日資料時，根據星期判斷
-              if (dayOfWeek === 0) {
-                badgeClass = 'date-badge badge-weekend';
-                displayText += ` 例假`;
-              } else if (dayOfWeek === 6) {
-                badgeClass = 'date-badge badge-weekend';
-                displayText += ` 休息`;
-              }
+            // 修復：國定假日最高優先級，優先於週末判斷
+            const holiday = holidays.get(dateStr);
+            
+            // 第一優先：國定假日（即使是週末也顯示國定）
+            if (holiday && holiday.is_national_holiday) {
+              badgeClass = 'date-badge badge-holiday';
+              displayText += ` 國定`;
             }
+            // 第二優先：補班日
+            else if (holiday && holiday.is_makeup_workday) {
+              badgeClass = 'date-badge badge-makeup';
+              displayText += ` 補班`;
+            }
+            // 第三優先：週日例假日
+            else if (dayOfWeek === 0) {
+              badgeClass = 'date-badge badge-weekend';
+              displayText += ` 例假`;
+            }
+            // 第四優先：週六休息日
+            else if (dayOfWeek === 6) {
+              badgeClass = 'date-badge badge-weekend';
+              displayText += ` 休息`;
+            }
+            // 其他：一般工作日（不加標籤）
             
             label.textContent = displayText;
             label.className = badgeClass;
@@ -813,6 +816,30 @@
               });
               
               input.addEventListener('input', function() {
+                // 即時驗證：檢查該日期是否允許當前工時類型
+                const row = rows[rowIndex];
+                if (row.work_type_id && this.value) {
+                  const date = new Date(currentWeekStart);
+                  date.setDate(date.getDate() + dayIndex);
+                  const availableTypes = getAvailableWorkTypes(date);
+                  
+                  if (!availableTypes.find(wt => wt.id == row.work_type_id)) {
+                    // 不允許的組合，立即清空並提示
+                    this.value = '';
+                    const workType = workTypes.find(wt => wt.id == row.work_type_id);
+                    const dateType = getDateType(date);
+                    const dateTypeNames = {
+                      'workday': '一般工作日',
+                      'makeup': '補班日',
+                      'restday': '休息日',
+                      'national_holiday': '國定假日',
+                      'weekly_restday': '例假日'
+                    };
+                    showToast(`${dateTypeNames[dateType] || '該日期'}不可使用「${workType?.name || '此工時類型'}」`, false);
+                    return;
+                  }
+                }
+                
                 // 記錄變更但不立即儲存
                 const key = `${rowIndex}_${dayIndex}`;
                 pendingChanges.set(key, { rowIndex, dayIndex, value: this.value });
