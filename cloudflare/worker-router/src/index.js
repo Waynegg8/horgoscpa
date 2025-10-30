@@ -61,7 +61,7 @@ export default {
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handleTasks(request, env, me, requestId, url);
 		}
-		if (path === "/internal/api/v1/timesheets") {
+		if (path === "/internal/api/v1/timesheets" || path === "/internal/api/v1/timelogs" || path === "/internal/api/v1/timelogs/batch") {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handleTimesheets(request, env, me, requestId, url);
