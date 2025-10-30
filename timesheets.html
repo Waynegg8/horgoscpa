@@ -675,6 +675,30 @@
           if (dayOfWeek === 6) return 'restday';        // 週六 = 休息日
           return 'workday';                             // 其他 = 工作日
         }
+
+        // 判斷該日期是否需要檢查「完整性」(是否屬於必須上班的日子)
+        // 規則：
+        // - 國定假日：不檢查
+        // - 例假日(週日)：不檢查
+        // - 休息日(週六)：不檢查
+        // - 補班日：檢查
+        // - 週一至週五一般工作日：檢查
+        function isWorkRequired(date) {
+          const dateStr = formatDate(date);
+          const holiday = holidays.get(dateStr);
+          const dayOfWeek = date.getDay(); // 0=週日, 6=週六
+
+          if (holiday) {
+            if (holiday.is_national_holiday) return false;
+            if (holiday.is_weekly_restday) return false;
+            if (holiday.is_makeup_workday) return true;
+          }
+
+          // 沒有假日標記時的預設規則
+          if (dayOfWeek === 0) return false; // 例假日
+          if (dayOfWeek === 6) return false; // 休息日
+          return true; // 週一至週五
+        }
         
         // 根據日期類型篩選可用的工時類型
         function getAvailableWorkTypes(date) {
@@ -1311,8 +1335,8 @@
             td.style.fontSize = '12px';
             td.style.padding = '8px';
             
-            // 只檢查工作日和補班日，其他日期顯示灰色 "-"
-            if (dateType !== 'workday' && dateType !== 'makeup') {
+            // 只檢查需要上班的日子；其他日期顯示灰色 "-"
+            if (!isWorkRequired(date)) {
               td.style.backgroundColor = '#f5f5f5';
               td.style.color = '#999';
               td.style.fontWeight = 'normal';
