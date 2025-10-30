@@ -22,6 +22,9 @@ VALUES
   ('workday_start', '08:30', '工作日開始時間', 0),
   ('workday_end', '17:30', '工作日結束時間', 0),
   ('report_locale', 'zh-TW', '報表語系', 0),
-  ('rule_comp_hours_expiry', 'current_month', '補休有效期規則', 1);
+  ('rule_comp_hours_expiry', 'current_month', '補休有效期規則', 1),
+  ('attendance_bonus_amount', '1000', '全勤獎金金額（元）', 0),
+  ('overhead_cost_per_hour', '100', '每小時管理成本（元/小時）', 0),
+  ('target_profit_margin', '50', '目標毛利率（%）', 0);
 
 

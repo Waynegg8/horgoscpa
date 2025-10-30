@@ -19,10 +19,16 @@
 - `docs/開發指南/開發須知/API-設計規範.md`
 
 【驗收標準（AC）】
-1) GET 回 `items` 與 `map`；PUT 可更新 `company_name`、`contact_email`、`rule_comp_hours_expiry`（最後者需 `confirmed:true`）。
-2) 非管理員回 403；未登入回 401。
-3) Email 格式檢核；`rule_comp_hours_expiry` 僅允許 `current_month|next_month|3_months|6_months`。
-4) 回應遵循 JSON Envelope。
+1) GET 回 `items` 與 `map`；PUT 可更新所有系統參數。
+2) 危險設定（`rule_comp_hours_expiry`）需 `confirmed:true`。
+3) 非管理員回 403；未登入回 401。
+4) 驗證規則：
+   - Email 格式檢核
+   - `rule_comp_hours_expiry` 僅允許 `current_month|next_month|3_months|6_months`
+   - `attendance_bonus_amount`（全勤獎金）：非負整數
+   - `overhead_cost_per_hour`（每小時管理成本）：非負數字
+   - `target_profit_margin`（目標毛利率）：0-100
+5) 回應遵循 JSON Envelope。
 
 【部署與測試】
 - 套用 D1 遷移後，在預覽環境以管理員帳號測試讀寫成功，非管理員/未登入分別 403/401。

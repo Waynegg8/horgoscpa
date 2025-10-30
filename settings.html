@@ -46,6 +46,42 @@
         </div>
       </section>
 
+      <section class="card" aria-labelledby="payroll-title" style="margin-top:20px;">
+        <div class="card-header">
+          <h2 id="payroll-title">薪資相關參數</h2>
+          <div class="subtitle">全勤獎金與薪資計算相關設定</div>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="attendance_bonus_amount">全勤獎金金額（元）</label>
+            <input id="attendance_bonus_amount" type="number" min="0" step="1" placeholder="1000" disabled />
+          </div>
+          <div>
+            <button id="btnSavePayroll" class="btn btn-primary" type="button" disabled>儲存薪資參數</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="cost-title" style="margin-top:20px;">
+        <div class="card-header">
+          <h2 id="cost-title">成本分析參數</h2>
+          <div class="subtitle">管理成本與盈利目標設定</div>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="overhead_cost_per_hour">每小時管理成本（元/小時）</label>
+            <input id="overhead_cost_per_hour" type="number" min="0" step="0.01" placeholder="100" disabled />
+          </div>
+          <div class="form-group">
+            <label for="target_profit_margin">目標毛利率（%）</label>
+            <input id="target_profit_margin" type="number" min="0" max="100" step="0.1" placeholder="50" disabled />
+          </div>
+          <div>
+            <button id="btnSaveCost" class="btn btn-primary" type="button" disabled>儲存成本參數</button>
+          </div>
+        </div>
+      </section>
+
       <section class="card" aria-labelledby="general-title" style="margin-top:20px;">
         <div class="card-header">
           <h2 id="general-title">一般設定</h2>
@@ -112,6 +148,15 @@
           document.getElementById('rule_comp_hours_expiry'),
           document.getElementById('btnSaveDanger'),
         ];
+        const payrollControls = [
+          document.getElementById('attendance_bonus_amount'),
+          document.getElementById('btnSavePayroll'),
+        ];
+        const costControls = [
+          document.getElementById('overhead_cost_per_hour'),
+          document.getElementById('target_profit_margin'),
+          document.getElementById('btnSaveCost'),
+        ];
         const generalControls = [
           document.getElementById('company_name'),
           document.getElementById('contact_email'),
@@ -148,6 +193,9 @@
             const wdStart = document.getElementById('workday_start');
             const wdEnd = document.getElementById('workday_end');
             const repLoc = document.getElementById('report_locale');
+            const attendBonus = document.getElementById('attendance_bonus_amount');
+            const overheadCost = document.getElementById('overhead_cost_per_hour');
+            const targetMargin = document.getElementById('target_profit_margin');
             if (company) company.value = map.company_name || '';
             if (email) email.value = map.contact_email || '';
             if (rule && map.rule_comp_hours_expiry) rule.value = map.rule_comp_hours_expiry;
@@ -158,6 +206,9 @@
             if (wdStart) wdStart.value = (map.workday_start||'08:30');
             if (wdEnd) wdEnd.value = (map.workday_end||'17:30');
             if (repLoc) repLoc.value = map.report_locale || 'zh-TW';
+            if (attendBonus) attendBonus.value = map.attendance_bonus_amount || '1000';
+            if (overheadCost) overheadCost.value = map.overhead_cost_per_hour || '100';
+            if (targetMargin) targetMargin.value = map.target_profit_margin || '50';
           } catch (_) {
             setMsg('載入設定失敗，請稍後再試', false);
           }
@@ -185,10 +236,14 @@
             if (!isAdmin) {
               permBar.style.display = 'block';
               setControlsEnabled(dangerControls, false);
+              setControlsEnabled(payrollControls, false);
+              setControlsEnabled(costControls, false);
               setControlsEnabled(generalControls, false);
               return false;
             }
             setControlsEnabled(dangerControls, true);
+            setControlsEnabled(payrollControls, true);
+            setControlsEnabled(costControls, true);
             setControlsEnabled(generalControls, true);
             await loadSettings();
             return true;
@@ -199,7 +254,45 @@
           }
         }
 
-        // 綁定儲存事件
+        // 綁定儲存事件 - 薪資參數
+        document.getElementById('btnSavePayroll').addEventListener('click', async function(){
+          setMsg('', true);
+          const attendBonus = document.getElementById('attendance_bonus_amount').value.trim();
+          const n = parseInt(attendBonus, 10);
+          if (!Number.isInteger(n) || n < 0) { setMsg('全勤獎金必須為非負整數', false); return; }
+          this.disabled = true; this.textContent = '儲存中…';
+          try {
+            await putSetting('attendance_bonus_amount', { value: attendBonus });
+            setMsg('已更新薪資參數。', true);
+          } catch (e) {
+            setMsg(String(e && e.message || '更新失敗'), false);
+          } finally {
+            this.disabled = false; this.textContent = '儲存薪資參數';
+          }
+        });
+
+        // 綁定儲存事件 - 成本參數
+        document.getElementById('btnSaveCost').addEventListener('click', async function(){
+          setMsg('', true);
+          const overheadCost = document.getElementById('overhead_cost_per_hour').value.trim();
+          const targetMargin = document.getElementById('target_profit_margin').value.trim();
+          const oc = parseFloat(overheadCost);
+          const tm = parseFloat(targetMargin);
+          if (!Number.isFinite(oc) || oc < 0) { setMsg('管理成本必須為非負數字', false); return; }
+          if (!Number.isFinite(tm) || tm < 0 || tm > 100) { setMsg('目標毛利率必須在 0-100 之間', false); return; }
+          this.disabled = true; this.textContent = '儲存中…';
+          try {
+            await putSetting('overhead_cost_per_hour', { value: overheadCost });
+            await putSetting('target_profit_margin', { value: targetMargin });
+            setMsg('已更新成本參數。', true);
+          } catch (e) {
+            setMsg(String(e && e.message || '更新失敗'), false);
+          } finally {
+            this.disabled = false; this.textContent = '儲存成本參數';
+          }
+        });
+
+        // 綁定儲存事件 - 危險設定
         document.getElementById('btnSaveDanger').addEventListener('click', async function(){
           setMsg('', true);
           const rule = document.getElementById('rule_comp_hours_expiry').value;

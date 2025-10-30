@@ -12,6 +12,9 @@ const ALLOWED_KEYS = new Set([
   "workday_end",
   "report_locale",
   "rule_comp_hours_expiry",
+  "attendance_bonus_amount",
+  "overhead_cost_per_hour",
+  "target_profit_margin",
 ]);
 
 function normalizeKey(key){
@@ -66,6 +69,18 @@ export async function handleSettings(request, env, me, requestId, url, path){
       if (DANGEROUS_KEYS.has(key) && payload?.confirmed !== true){
         return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"危險設定需確認", meta:{ requestId, field:key } }, corsHeaders);
       }
+    }
+    if (key === "attendance_bonus_amount"){
+      const n = parseInt(value, 10);
+      if (!Number.isInteger(n) || n < 0) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"全勤獎金必須為非負整數", meta:{ requestId } }, corsHeaders);
+    }
+    if (key === "overhead_cost_per_hour"){
+      const n = parseFloat(value);
+      if (!Number.isFinite(n) || n < 0) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"管理成本必須為非負數字", meta:{ requestId } }, corsHeaders);
+    }
+    if (key === "target_profit_margin"){
+      const n = parseFloat(value);
+      if (!Number.isFinite(n) || n < 0 || n > 100) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"目標毛利率必須在 0-100 之間", meta:{ requestId } }, corsHeaders);
     }
     try {
       const nowIso = new Date().toISOString();
