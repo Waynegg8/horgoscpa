@@ -733,10 +733,15 @@ textarea.form-control {
     bottom: 0;
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+}
+
+.modal-overlay.show,
+.modal-overlay.active {
+    display: flex;
     animation: modalFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
