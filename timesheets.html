@@ -666,23 +666,25 @@
           renderTable();
         }
         
-        // 判斷日期類型（核心邏輯）
+        // 判斷日期類型（按您的要求：先週期預設→再用假日覆蓋）
         function getDateType(date) {
           const dateStr = formatDate(date);
           const holiday = holidays.get(dateStr);
           const dayOfWeek = date.getDay(); // 0=週日, 6=週六
           
-          // 優先級：假日資料 > 星期預設
+          // 1) 先以星期給預設類型
+          let baseType = 'workday';
+          if (dayOfWeek === 0) baseType = 'weekly_restday';
+          else if (dayOfWeek === 6) baseType = 'restday';
+          
+          // 2) 再用假日資料覆蓋（國定假日最高優先）
           if (holiday) {
             if (holiday.is_national_holiday) return 'national_holiday';
-            if (holiday.is_weekly_restday) return 'weekly_restday';
             if (holiday.is_makeup_workday) return 'makeup';
+            if (holiday.is_weekly_restday) return 'weekly_restday';
           }
           
-          // 沒有假日資料，根據星期判斷
-          if (dayOfWeek === 0) return 'weekly_restday'; // 週日 = 例假日
-          if (dayOfWeek === 6) return 'restday';        // 週六 = 休息日
-          return 'workday';                             // 其他 = 工作日
+          return baseType;
         }
         
         // 判斷是否為假日（國定假日、例假日、休息日）— 用於完整性是否顯示
