@@ -1333,15 +1333,17 @@
             const date = new Date(currentWeekStart);
             date.setDate(date.getDate() + dayIndex);
             const dateStr = formatDate(date);
-            const dateType = getDateType(date);
+            const day = date.getDay(); // 0=週日,6=週六
+            const h = holidays.get(dateStr);
+            const isHolidayLike = (day === 0 || day === 6 || (h && h.is_national_holiday === true));
             
             const td = document.createElement('td');
             td.style.textAlign = 'center';
             td.style.fontSize = '12px';
             td.style.padding = '8px';
             
-            // 假日：不顯示完整性（留白）
-            if (isHoliday(date)) {
+            // 假日（週六/週日/國定假日）：不顯示完整性（留白）
+            if (isHolidayLike) {
               td.textContent = '';
               td.style.backgroundColor = '';
               td.style.color = '';
