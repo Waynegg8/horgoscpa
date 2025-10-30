@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="客戶管理列表" />
+    <title>客戶管理｜列表</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/clients-page.css" />
+  </head>
+  <body class="clients-page">
+    <header class="clients-header">
+      <h1 class="clients-title">客戶</h1>
+      <div class="clients-toolbar">
+        <div class="clients-search">
+          <input id="q" type="search" placeholder="搜尋公司名稱…" aria-label="搜尋客戶" />
+          <button id="btn-search" class="clients-btn" type="button">搜尋</button>
+        </div>
+        <button id="btn-new" class="clients-btn" type="button">新增客戶</button>
+      </div>
+    </header>
+    <main class="clients-content">
+      <section class="clients-card" aria-labelledby="list-title">
+        <h2 id="list-title" class="sr-only">客戶列表</h2>
+        <p id="clients-error" style="color:#c0392b;min-height:1.25rem;margin:0 0 8px 0;"></p>
+        <div id="empty" class="clients-empty" hidden>
+          <p>尚無客戶</p>
+          <p><button class="clients-btn" id="btn-empty-new" type="button">新增客戶</button></p>
+        </div>
+        <div class="clients-table-wrap">
+          <table class="clients-table" aria-describedby="list-title">
+            <thead>
+              <tr>
+                <th>公司名稱</th>
+                <th>統一編號</th>
+                <th>負責人</th>
+                <th>標籤</th>
+                <th>電話</th>
+                <th>Email</th>
+                <th>建立時間</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody">
+              <!-- 骨架：預設 3 筆範例，後續任務 22 會串 API -->
+            </tbody>
+          </table>
+        </div>
+        <div class="clients-pagination" id="pager" hidden>
+          <button type="button" id="prev">上一頁</button>
+          <button type="button" id="next">下一頁</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- 新增客戶彈窗 -->
+    <div class="modal-overlay" id="createModal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal" role="document">
+        <div class="modal__header">
+          <h2 class="modal__title">新增客戶</h2>
+          <button class="modal__close" type="button" id="btn-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <form id="createForm" class="form-grid">
+            <div class="field">
+              <label for="f_client_id">統一編號（8位數字）</label>
+              <input id="f_client_id" name="client_id" type="text" inputmode="numeric" maxlength="8" required />
+              <div class="field__error" id="e_client_id"></div>
+            </div>
+            <div class="field">
+              <label for="f_company_name">公司名稱（必填）</label>
+              <input id="f_company_name" name="company_name" type="text" maxlength="100" required />
+              <div class="field__error" id="e_company_name"></div>
+            </div>
+            <div class="field">
+              <label for="f_assignee">負責人員</label>
+              <select id="f_assignee" name="assignee_user_id" required>
+                <option value="1">1 管理員</option>
+              </select>
+              <div class="field__error" id="e_assignee"></div>
+            </div>
+            <div class="field">
+              <label for="f_phone">電話</label>
+              <input id="f_phone" name="phone" type="text" />
+              <div class="field__error" id="e_phone"></div>
+            </div>
+            <div class="field">
+              <label for="f_email">Email</label>
+              <input id="f_email" name="email" type="email" />
+              <div class="field__error" id="e_email"></div>
+            </div>
+            <div class="field">
+              <label for="f_tags">標籤 ID（逗號分隔，可留空）</label>
+              <input id="f_tags" name="tag_ids" type="text" placeholder="例如：1,2" />
+              <div class="field__error" id="e_tags"></div>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="f_client_notes">客戶備註</label>
+              <textarea id="f_client_notes" name="client_notes"></textarea>
+              <div class="field__error" id="e_client_notes"></div>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="f_payment_notes">收款備註</label>
+              <textarea id="f_payment_notes" name="payment_notes"></textarea>
+              <div class="field__error" id="e_payment_notes"></div>
+            </div>
+            <div class="modal__actions" style="grid-column:1 / -1;">
+              <button class="clients-btn btn-secondary" type="button" id="btn-cancel">取消</button>
+              <button class="clients-btn" type="submit" id="btn-submit">儲存</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+        const qEl = document.getElementById('q');
+        const tbody = document.getElementById('tbody');
+        const emptyEl = document.getElementById('empty');
+        const pager = document.getElementById('pager');
+        const errEl = document.getElementById('clients-error');
+        const modal = document.getElementById('createModal');
+        const form = document.getElementById('createForm');
+        const closeBtn = document.getElementById('btn-close');
+        const cancelBtn = document.getElementById('btn-cancel');
+
+        function setError(msg){ if (errEl) errEl.textContent = msg || ''; }
+
+        function renderRows(rows) {
+          tbody.innerHTML = '';
+          if (!rows || rows.length === 0) {
+            emptyEl.hidden = false;
+            pager.hidden = true;
+            return;
+          }
+          emptyEl.hidden = true;
+          pager.hidden = false;
+          rows.forEach((r) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${r.companyName}</td>
+              <td>${r.taxId||''}</td>
+              <td>${r.assigneeName||''}</td>
+              <td>${(r.tags||[]).slice(0,3).map(t => `<span class="chip">${t}</span>`).join('')}${(r.tags||[]).length>3?`<span class="chip">+${(r.tags||[]).length-3}</span>`:''}</td>
+              <td>${r.phone||''}</td>
+              <td>${r.email||''}</td>
+              <td>${r.createdAt||''}</td>
+              <td><button type="button" data-act="view">查看</button> <button type="button" data-act="edit">編輯</button> <button type="button" data-act="del">刪除</button></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+
+        let state = { page: 1, perPage: 50, total: 0, q: '' };
+
+        async function load() {
+          setError('');
+          const params = new URLSearchParams();
+          params.set('page', String(state.page));
+          params.set('perPage', String(state.perPage));
+          if (state.q) params.set('company_name', state.q);
+          try {
+            const res = await fetch(`${apiBase}/clients?${params.toString()}`, { credentials: 'include' });
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) {
+              throw new Error((json && json.message) || '載入失敗');
+            }
+            const rows = json.data || [];
+            renderRows(rows);
+            const meta = json.meta || {};
+            state.total = meta.total || 0;
+            renderPager();
+          } catch (err) {
+            setError('載入失敗，請稍後再試');
+          }
+        }
+
+        function renderPager() {
+          const hasNext = state.page * state.perPage < state.total;
+          const prevBtn = document.getElementById('prev');
+          const nextBtn = document.getElementById('next');
+          prevBtn.disabled = state.page <= 1;
+          nextBtn.disabled = !hasNext;
+        }
+
+        function applySearch() {
+          state.q = (qEl.value||'').trim();
+          state.page = 1;
+          load();
+        }
+
+        let timer = null;
+        qEl.addEventListener('input', function () {
+          clearTimeout(timer);
+          timer = setTimeout(applySearch, 300);
+        });
+        document.getElementById('btn-search').addEventListener('click', applySearch);
+        document.getElementById('prev').addEventListener('click', function(){ if (state.page>1) { state.page--; load(); } });
+        document.getElementById('next').addEventListener('click', function(){ state.page++; load(); });
+
+        // 初始化載入
+        load();
+
+        // —— 新增客戶：打開/關閉 ——
+        function openModal() { modal.classList.add('active'); modal.setAttribute('aria-hidden','false'); }
+        function closeModal() { modal.classList.remove('active'); modal.setAttribute('aria-hidden','true'); form.reset(); clearFieldErrors(); }
+        document.getElementById('btn-new').addEventListener('click', openModal);
+        const btnEmpty = document.getElementById('btn-empty-new'); if (btnEmpty) btnEmpty.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+
+        // —— 表單驗證與送出 ——
+        function clearFieldErrors(){
+          ['client_id','company_name','assignee','phone','email','tags'].forEach(k => { const el = document.getElementById('e_'+k); if (el) el.textContent=''; });
+        }
+
+        function parseTagIds(str){
+          if (!str) return [];
+          return str.split(',').map(s=>parseInt(s.trim(),10)).filter(n=>Number.isFinite(n));
+        }
+
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          clearFieldErrors();
+          const client_id = document.getElementById('f_client_id').value.trim();
+          const company_name = document.getElementById('f_company_name').value.trim();
+          const assignee_user_id = parseInt(document.getElementById('f_assignee').value, 10);
+          const phone = document.getElementById('f_phone').value.trim();
+          const email = document.getElementById('f_email').value.trim();
+          const client_notes = document.getElementById('f_client_notes').value.trim();
+          const payment_notes = document.getElementById('f_payment_notes').value.trim();
+          const tag_ids = parseTagIds(document.getElementById('f_tags').value.trim());
+
+          let hasErr = false;
+          if (!/^\d{8}$/.test(client_id)) { document.getElementById('e_client_id').textContent='統一編號需為8位數字'; hasErr=true; }
+          if (company_name.length<1 || company_name.length>100) { document.getElementById('e_company_name').textContent='公司名稱為必填（1–100字）'; hasErr=true; }
+          if (!Number.isInteger(assignee_user_id) || assignee_user_id<=0) { document.getElementById('e_assignee').textContent='請選擇負責人'; hasErr=true; }
+          if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById('e_email').textContent='Email 格式錯誤'; hasErr=true; }
+          if (phone && !/^[-+()\s0-9]{6,}$/.test(phone)) { document.getElementById('e_phone').textContent='電話格式錯誤'; hasErr=true; }
+          if (hasErr) return;
+
+          const payload = { client_id, company_name, assignee_user_id, phone, email, client_notes, payment_notes, tag_ids };
+          const submitBtn = document.getElementById('btn-submit');
+          submitBtn.disabled = true; submitBtn.textContent = '儲存中…';
+          try {
+            const res = await fetch(apiBase + '/clients', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload)
+            });
+            const json = await res.json().catch(()=>null);
+            if (res.status === 401) { location.assign('/login?redirect=/internal/clients'); return; }
+            if (!res.ok || !json || json.ok !== true) {
+              const msg = (json && json.message) || '建立失敗';
+              // 欄位錯誤回填第一個
+              if (json && Array.isArray(json.errors) && json.errors.length>0) {
+                const e = json.errors[0]; const el = document.getElementById('e_'+(e.field||'')); if (el) el.textContent = e.message || msg; else setError(msg);
+              } else { setError(msg); }
+              return;
+            }
+            alert('已儲存');
+            closeModal();
+            state.page = 1; load();
+          } catch (_) {
+            setError('建立失敗，請稍後再試');
+          } finally {
+            submitBtn.disabled = false; submitBtn.textContent = '儲存';
+          }
+        });
+      })();
+    </script>
+  </body>
+  </html>
+
+

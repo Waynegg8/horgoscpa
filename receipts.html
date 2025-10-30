@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="收據收款管理" />
+    <title>收據收款｜列表</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/receipts-page.css" />
+  </head>
+  <body class="receipts-page">
+    <header class="receipts-header">
+      <h1 class="receipts-title">收據與收款</h1>
+      <div class="receipts-toolbar">
+        <input id="q" type="search" placeholder="搜尋客戶/收據號…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
+        <label>起</label><input id="dateFrom" type="date" />
+        <label>迄</label><input id="dateTo" type="date" />
+        <select id="status">
+          <option value="all">全部狀態</option>
+          <option value="unpaid">未收款</option>
+          <option value="paid">已收款</option>
+          <option value="overdue">逾期</option>
+        </select>
+        <button id="btn-new" class="clients-btn" type="button">新增收據（骨架）</button>
+      </div>
+    </header>
+
+    <main class="receipts-content">
+      <section class="receipts-card">
+        <table class="receipts-table" aria-label="收據列表">
+          <thead>
+            <tr>
+              <th>收據號</th>
+              <th>客戶</th>
+              <th>金額</th>
+              <th>貨幣</th>
+              <th>開立日期</th>
+              <th>狀態</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="clients-pagination" id="pager">
+          <button type="button" id="prev">上一頁</button>
+          <button type="button" id="next">下一頁</button>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function(){
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+
+        const tbody = document.getElementById('tbody');
+        const q = document.getElementById('q');
+        const dateFrom = document.getElementById('dateFrom');
+        const dateTo = document.getElementById('dateTo');
+        const statusEl = document.getElementById('status');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+
+        let state = { page:1, perPage:20, total:0 };
+
+        function render(rows){
+          tbody.innerHTML = '';
+          rows.forEach(r => {
+            const tr = document.createElement('tr');
+            const isOverdue = r.dueDate && (new Date(r.dueDate) < new Date()) && (r.status==='unpaid' || r.status==='partial');
+            const badgeCls = r.status==='paid' ? 'badge paid' : (isOverdue ? 'badge overdue' : 'badge unpaid');
+            const txt = r.status==='paid' ? '已收款' : (isOverdue ? '逾期' : (r.status==='partial' ? '部分收款' : '未收款'));
+            tr.innerHTML = `
+              <td>${r.receiptId}</td>
+              <td>${r.clientName||''}</td>
+              <td>${(r.totalAmount||0).toLocaleString()}</td>
+              <td>TWD</td>
+              <td>${r.receiptDate||''}</td>
+              <td><span class="${badgeCls}">${txt}</span></td>
+              <td><button type="button">查看</button></td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+
+        function renderPager(){
+          prevBtn.disabled = state.page <= 1;
+          nextBtn.disabled = state.page * state.perPage >= state.total;
+        }
+
+        async function load(){
+          const params = new URLSearchParams();
+          params.set('page', String(state.page));
+          params.set('perPage', String(state.perPage));
+          if (q.value.trim()) params.set('q', q.value.trim());
+          const st = statusEl.value;
+          if (st !== 'all' && st !== 'overdue') params.set('status', st);
+          if (dateFrom.value) params.set('dateFrom', dateFrom.value);
+          if (dateTo.value) params.set('dateTo', dateTo.value);
+          try {
+            const res = await fetch(`${apiBase}/receipts?${params.toString()}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/receipts'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            let rows = json.data || [];
+            if (st === 'overdue') {
+              const today = new Date();
+              rows = rows.filter(r => r.dueDate && new Date(r.dueDate) < today && (r.status==='unpaid' || r.status==='partial'));
+            }
+            state.total = (json.meta && json.meta.total) || rows.length;
+            render(rows);
+            renderPager();
+          } catch (_) {
+            tbody.innerHTML = '<tr><td colspan="7" style="color:#c0392b;">載入失敗</td></tr>';
+            renderPager();
+          }
+        }
+
+        let timer = null;
+        q.addEventListener('input', ()=>{ clearTimeout(timer); timer = setTimeout(()=>{ state.page=1; load(); }, 300); });
+        statusEl.addEventListener('change', ()=>{ state.page=1; load(); });
+        dateFrom.addEventListener('change', ()=>{ state.page=1; load(); });
+        dateTo.addEventListener('change', ()=>{ state.page=1; load(); });
+        prevBtn.addEventListener('click', ()=>{ if (state.page>1) { state.page--; load(); } });
+        nextBtn.addEventListener('click', ()=>{ state.page++; load(); });
+
+        load();
+      })();
+    </script>
+  </body>
+  </html>
+
+

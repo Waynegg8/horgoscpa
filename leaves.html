@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="假期管理" />
+    <title>假期管理｜我的假期與申請</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/leaves-page.css" />
+  </head>
+  <body class="leaves-page">
+    <header class="leaves-header">
+      <h1 class="leaves-title">我的假期</h1>
+      <div class="leaves-toolbar">
+        <button id="btn-apply" class="clients-btn" type="button">申請假期</button>
+        <button id="btn-event" class="clients-btn btn-secondary" type="button">登記生活事件</button>
+        <input id="q" type="search" placeholder="搜尋假別/原因…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
+        <select id="status" aria-label="狀態">
+          <option value="all">全部</option>
+          <option value="pending">待審</option>
+          <option value="approved">已核准</option>
+          <option value="rejected">已駁回</option>
+        </select>
+      </div>
+    </header>
+
+    <main style="padding:24px; display:grid; gap:16px;">
+      <section class="leaves-card">
+        <h2 style="margin:0 0 8px 0; font-size:16px;">餘額總覽</h2>
+        <div class="balance-grid" id="balances">
+          <!-- 骨架：餘額卡 -->
+        </div>
+      </section>
+
+      <section class="leaves-card">
+        <h2 style="margin:0 0 8px 0; font-size:16px;">我的申請</h2>
+        <table class="leaves-table" aria-label="申請列表">
+          <thead>
+            <tr>
+              <th>假別</th>
+              <th>起日</th>
+              <th>迄日</th>
+              <th>天數/小時</th>
+              <th>狀態</th>
+              <th>提交日期</th>
+              <th>原因</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="clients-pagination" id="pager" style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" id="prev">上一頁</button>
+          <button type="button" id="next">下一頁</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- 申請假期對話框（骨架） -->
+    <div class="modal-overlay" id="applyModal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal" role="document">
+        <div class="modal__header">
+          <h2 class="modal__title">申請假期</h2>
+          <button class="modal__close" type="button" id="btn-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <form id="applyForm" class="form-grid">
+            <div class="field">
+              <label for="leave_type">假別</label>
+              <select id="leave_type" name="leave_type" required>
+                <option value="">請選擇</option>
+                <option value="annual">特休</option>
+                <option value="sick">病假</option>
+                <option value="personal">事假</option>
+                <option value="comp">補休</option>
+                <option value="maternity">產假（女性）</option>
+                <option value="menstrual">生理假（女性）</option>
+                <option value="paternity">陪產假（男性）</option>
+              </select>
+              <div class="field__hint">假別將依性別自動過濾（示意）。</div>
+              <div class="field__error" id="e_type"></div>
+            </div>
+            <div class="field">
+              <label for="start_date">開始日期</label>
+              <input id="start_date" name="start_date" type="date" required />
+              <div class="field__error" id="e_start"></div>
+            </div>
+            <div class="field">
+              <label for="end_date">結束日期</label>
+              <input id="end_date" name="end_date" type="date" required />
+              <div class="field__error" id="e_end"></div>
+            </div>
+            <div class="field">
+              <label for="unit">請假單位</label>
+              <select id="unit" name="unit">
+                <option value="day">整天</option>
+                <option value="half">半天</option>
+                <option value="hour">小時</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="amount">天數/小時</label>
+              <input id="amount" name="amount" type="number" step="0.5" min="0.5" value="1" />
+              <div class="field__error" id="e_amount"></div>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="reason">原因（最多 200 字）</label>
+              <textarea id="reason" name="reason" maxlength="200"></textarea>
+              <div class="field__error" id="e_reason"></div>
+            </div>
+            <div class="modal__actions" style="grid-column:1 / -1;">
+              <button class="btn-secondary" type="button" id="btn-cancel">取消</button>
+              <button class="clients-btn" type="submit" id="btn-submit">送出申請（骨架）</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+
+        const balanceEl = document.getElementById('balances');
+        const tbody = document.getElementById('tbody');
+        const qEl = document.getElementById('q');
+        const statusEl = document.getElementById('status');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+
+        const zhType = { annual:'特休', sick:'病假', personal:'事假', comp:'補休', maternity:'產假', menstrual:'生理假', paternity:'陪產假' };
+        const zhStatus = { pending:'待審', approved:'已核准', rejected:'已駁回' };
+
+        let state = { page:1, perPage:20, total:0 };
+
+        async function loadBalances(){
+          balanceEl.innerHTML = '';
+          const year = new Date().getFullYear();
+          try {
+            const res = await fetch(`${apiBase}/leaves/balances?year=${year}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const data = json.data || [];
+            if (data.length === 0) {
+              balanceEl.innerHTML = '<p style="color:rgba(15,23,42,0.7);">無餘額資料</p>';
+              return;
+            }
+            data.forEach(b => {
+              const el = document.createElement('div');
+              el.className = 'balance-card';
+              const label = zhType[b.type] || b.type;
+              el.innerHTML = `<h4>${label}</h4><p>剩餘 ${b.remain} / 年度額度 ${b.total}</p>`;
+              balanceEl.appendChild(el);
+            });
+          } catch (_) {
+            balanceEl.innerHTML = '<p style="color:#c0392b;">餘額載入失敗</p>';
+          }
+        }
+
+        function renderPager(){
+          prevBtn.disabled = state.page <= 1;
+          nextBtn.disabled = state.page * state.perPage >= state.total;
+        }
+
+        function renderRows(rows){
+          tbody.innerHTML = '';
+          rows.forEach(r => {
+            const tr = document.createElement('tr');
+            const badge = r.status==='approved'? 'badge approved' : (r.status==='rejected'? 'badge rejected':'badge pending');
+            const txt = zhStatus[r.status] || r.status;
+            const amountText = r.unit==='hour' ? `${r.amount} 小時` : `${r.amount} 天`;
+            const typeText = zhType[r.type] || r.type;
+            tr.innerHTML = `<td>${typeText}</td><td>${r.start}</td><td>${r.end}</td><td>${amountText}</td><td><span class="${badge}">${txt}</span></td><td>${r.submittedAt?.slice(0,10) || ''}</td><td>${r.reason||''}</td>`;
+            tbody.appendChild(tr);
+          });
+        }
+
+        async function loadLeaves(){
+          const params = new URLSearchParams();
+          params.set('page', String(state.page));
+          params.set('perPage', String(state.perPage));
+          if (qEl.value.trim()) params.set('q', qEl.value.trim());
+          if (statusEl.value !== 'all') params.set('status', statusEl.value);
+          try {
+            const res = await fetch(`${apiBase}/leaves?${params.toString()}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            state.total = (json.meta && json.meta.total) || 0;
+            renderRows(json.data || []);
+            renderPager();
+          } catch (_) {
+            tbody.innerHTML = '<tr><td colspan="7" style="color:#c0392b;">載入失敗</td></tr>';
+            renderPager();
+          }
+        }
+
+        // 申請假期對話框（骨架）
+        const modal = document.getElementById('applyModal');
+        const openBtn = document.getElementById('btn-apply');
+        const closeBtn = document.getElementById('btn-close');
+        const cancelBtn = document.getElementById('btn-cancel');
+        const form = document.getElementById('applyForm');
+        function openModal(){ modal.classList.add('active'); modal.setAttribute('aria-hidden','false'); document.getElementById('leave_type').focus(); }
+        function closeModal(){ modal.classList.remove('active'); modal.setAttribute('aria-hidden','true'); form.reset(); clearErrors(); }
+        function clearErrors(){ ['type','start','end','amount','reason'].forEach(k=>{ const el=document.getElementById('e_'+k); if(el) el.textContent=''; }); }
+        openBtn.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+
+        form.addEventListener('submit', async function(e){
+          e.preventDefault();
+          clearErrors();
+          const t = document.getElementById('leave_type').value;
+          const s = document.getElementById('start_date').value;
+          const ed = document.getElementById('end_date').value;
+          const unit = document.getElementById('unit').value;
+          const amt = parseFloat(document.getElementById('amount').value);
+          const rsn = document.getElementById('reason').value.trim();
+          let hasErr = false;
+          if (!t) { document.getElementById('e_type').textContent='請選擇假別'; hasErr = true; }
+          if (!s) { document.getElementById('e_start').textContent='請選擇開始日期'; hasErr = true; }
+          if (!ed) { document.getElementById('e_end').textContent='請選擇結束日期'; hasErr = true; }
+          if (s && ed && ed < s) { document.getElementById('e_end').textContent='結束日期不可早於開始日期'; hasErr = true; }
+          if (!Number.isFinite(amt) || amt <= 0) { document.getElementById('e_amount').textContent='請輸入正確的天數/小時'; hasErr = true; }
+          if (rsn.length > 200) { document.getElementById('e_reason').textContent='請勿超過 200 字'; hasErr = true; }
+          if (hasErr) return;
+          const payload = { leave_type: t, start_date: s, end_date: ed, unit, amount: amt, reason: rsn };
+          const submitBtn = document.getElementById('btn-submit');
+          submitBtn.disabled = true; submitBtn.textContent = '送出中…';
+          try {
+            const res = await fetch(`${apiBase}/leaves`, { method:'POST', headers:{ 'Content-Type':'application/json' }, credentials:'include', body: JSON.stringify(payload) });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
+            const json = await res.json().catch(()=>null);
+            if (!res.ok || !json || json.ok !== true) {
+              const msg = (json && json.message) || '送出失敗';
+              if (json && Array.isArray(json.errors) && json.errors.length>0) {
+                const e0 = json.errors[0]; const el = document.getElementById('e_'+(e0.field||'')); if (el) el.textContent = e0.message || msg; else alert(msg);
+              } else { alert(msg); }
+              return;
+            }
+            alert('已送出審核');
+            closeModal();
+            state.page = 1; await loadBalances(); await loadLeaves();
+          } catch (_) {
+            alert('送出失敗，請稍後再試');
+          } finally {
+            submitBtn.disabled = false; submitBtn.textContent = '送出申請（骨架）';
+          }
+        });
+
+        // 簡易搜尋/狀態過濾（骨架）
+        const q = document.getElementById('q');
+        const status = document.getElementById('status');
+        let timer = null;
+        function applyFilter(){
+          const keyword = (q.value||'').trim();
+          const st = status.value;
+          let rows = mockList.slice();
+          if (st !== 'all') rows = rows.filter(r => r.status === st);
+          if (keyword) rows = rows.filter(r => r.type.includes(keyword) || (r.reason||'').includes(keyword));
+          renderRows(rows);
+        }
+        q.addEventListener('input', ()=>{ clearTimeout(timer); timer = setTimeout(()=>{ state.page=1; loadLeaves(); }, 300); });
+        status.addEventListener('change', ()=>{ state.page=1; loadLeaves(); });
+        prevBtn.addEventListener('click', ()=>{ if (state.page>1) { state.page--; loadLeaves(); } });
+        nextBtn.addEventListener('click', ()=>{ state.page++; loadLeaves(); });
+
+        // init
+        loadBalances();
+        loadLeaves();
+      })();
+    </script>
+  </body>
+  </html>
+
+

@@ -23,7 +23,7 @@
             <input id="password" name="password" type="password" required autocomplete="current-password" />
           </div>
           <button class="login__submit" type="submit">登入</button>
-          <p id="login-error" class="login__error" style="color:#c0392b;min-height:1.25rem;margin:8px 0 0 0;"></p>
+          <p id="login-error" class="login__error" aria-live="polite"></p>
           <p class="login__hint">此頁面僅供內部使用。</p>
         </form>
       </section>
@@ -34,24 +34,45 @@
         const usernameEl = document.getElementById('username');
         const passwordEl = document.getElementById('password');
         const errorEl = document.getElementById('login-error');
+        const submitBtn = document.querySelector('.login__submit');
 
         function setError(msg) {
           if (errorEl) errorEl.textContent = msg || '';
         }
 
+        function setLoading(isLoading) {
+          if (!submitBtn) return;
+          submitBtn.disabled = !!isLoading;
+          submitBtn.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+          submitBtn.textContent = isLoading ? '登入中…' : '登入';
+        }
+
+        function getRedirectTarget() {
+          const url = new URL(location.href);
+          const target = url.searchParams.get('redirect') || '';
+          if (!target) return null;
+          // 僅允許站內路徑，避免 open redirect
+          if (target.startsWith('/internal/')) return target;
+          if (target === '/' || target === '/internal') return '/internal/';
+          return null;
+        }
+
         form.addEventListener('submit', async function (e) {
           e.preventDefault();
           setError('');
+          setLoading(true);
           const username = (usernameEl.value || '').trim();
           const password = passwordEl.value || '';
           if (!username) {
             setError('請輸入帳號');
             usernameEl.focus();
+            setLoading(false);
             return;
           }
           if (!password) {
             setError('請輸入密碼');
             passwordEl.focus();
+            setLoading(false);
             return;
           }
           const onProdHost = location.hostname.endsWith('horgoscpa.com');
@@ -65,16 +86,26 @@
             });
             const json = await res.json().catch(() => null);
             if (!res.ok || !json || json.ok !== true) {
-              const msg = (json && json.message) || '登入失敗，請稍後再試';
+              let msg = (json && json.message) || '登入失敗，請稍後再試';
+              if (json && json.code === 'UNAUTHORIZED') msg = '帳號或密碼錯誤';
+              if (json && json.code === 'ACCOUNT_LOCKED') msg = '帳號已鎖定，請15分鐘後再試';
+              if (res.status === 429) msg = '嘗試過多，請稍後再試';
               setError(msg);
+              setLoading(false);
               return;
             }
-            const targetBase = onProdHost ? '/internal/' : 'https://www.horgoscpa.com/internal/';
-            location.assign(targetBase);
+            const redirect = getRedirectTarget();
+            const fallback = onProdHost ? '/internal/' : 'https://www.horgoscpa.com/internal/';
+            location.assign(redirect || fallback);
           } catch (err) {
             setError('網路或伺服器異常，請稍後再試');
+          } finally {
+            setLoading(false);
           }
         });
+
+        usernameEl.addEventListener('input', () => setError(''));
+        passwordEl.addEventListener('input', () => setError(''));
       })();
     </script>
   </body>
