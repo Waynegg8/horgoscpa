@@ -7,7 +7,10 @@ account_id = "4ad0a8042beb2d218bd6edf39aee0fea"
 routes = [
 	{ pattern = "www.horgoscpa.com/login", zone_name = "horgoscpa.com" },
 	{ pattern = "www.horgoscpa.com/internal/*", zone_name = "horgoscpa.com" },
-	{ pattern = "www.horgoscpa.com/internal/api/*", zone_name = "horgoscpa.com" }
+	{ pattern = "www.horgoscpa.com/internal/api/*", zone_name = "horgoscpa.com" },
+	{ pattern = "horgoscpa.com/login", zone_name = "horgoscpa.com" },
+	{ pattern = "horgoscpa.com/internal/*", zone_name = "horgoscpa.com" },
+	{ pattern = "horgoscpa.com/internal/api/*", zone_name = "horgoscpa.com" }
 ]
 
 [vars]
