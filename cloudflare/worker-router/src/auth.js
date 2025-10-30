@@ -77,6 +77,7 @@ export async function handleLogin(request, env, requestId) {
 		const cookieName = String(env.SESSION_COOKIE_NAME || "session");
 		const cookie = [
 			`${cookieName}=${sessionId}`,
+			"Domain=horgoscpa.com",
 			"Path=/",
 			"HttpOnly",
 			"Secure",
