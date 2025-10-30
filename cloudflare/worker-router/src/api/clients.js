@@ -296,6 +296,82 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 	}
 
+	// POST /api/v1/clients/batch-assign - 批量分配負責人（僅管理員）
+	if (method === "POST" && url.pathname === "/internal/api/v1/clients/batch-assign") {
+		// 檢查管理員權限
+		if (!me.is_admin) {
+			return jsonResponse(403, { 
+				ok: false, 
+				code: "FORBIDDEN", 
+				message: "權限不足，僅管理員可執行", 
+				meta: { requestId } 
+			}, corsHeaders);
+		}
+		
+		let body;
+		try {
+			body = await request.json();
+		} catch (_) {
+			return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, corsHeaders);
+		}
+		
+		const errors = [];
+		const clientIds = Array.isArray(body?.client_ids) ? body.client_ids : [];
+		const assigneeUserId = Number(body?.assignee_user_id || 0);
+		
+		// 驗證
+		if (clientIds.length === 0) {
+			errors.push({ field: "client_ids", message: "請選擇至少一個客戶" });
+		}
+		if (clientIds.length > 100) {
+			errors.push({ field: "client_ids", message: "一次最多分配 100 個客戶" });
+		}
+		if (!Number.isInteger(assigneeUserId) || assigneeUserId <= 0) {
+			errors.push({ field: "assignee_user_id", message: "請選擇負責人員" });
+		}
+		if (errors.length) {
+			return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } }, corsHeaders);
+		}
+		
+		try {
+			// 檢查負責人員是否存在
+			const assExist = await env.DATABASE.prepare("SELECT 1 FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1").bind(assigneeUserId).first();
+			if (!assExist) {
+				return jsonResponse(422, { 
+					ok: false, 
+					code: "VALIDATION_ERROR", 
+					message: "負責人不存在", 
+					errors: [{ field: "assignee_user_id", message: "不存在" }], 
+					meta: { requestId } 
+				}, corsHeaders);
+			}
+			
+			const now = new Date().toISOString();
+			const placeholders = clientIds.map(() => "?").join(",");
+			
+			// 批量更新
+			const result = await env.DATABASE.prepare(
+				`UPDATE Clients SET assignee_user_id = ?, updated_at = ? WHERE client_id IN (${placeholders}) AND is_deleted = 0`
+			).bind(assigneeUserId, now, ...clientIds).run();
+			
+			const updatedCount = result?.meta?.changes || 0;
+			
+			return jsonResponse(200, { 
+				ok: true, 
+				code: "SUCCESS", 
+				message: `已更新 ${updatedCount} 個客戶`, 
+				data: { updated_count: updatedCount },
+				meta: { requestId } 
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
 	return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 }
 

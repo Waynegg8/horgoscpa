@@ -17,6 +17,10 @@
           <input id="q" type="search" placeholder="搜尋公司名稱…" aria-label="搜尋客戶" />
           <button id="btn-search" class="clients-btn" type="button">搜尋</button>
         </div>
+        <div id="batch-actions" style="display:none;gap:8px;">
+          <button id="btn-batch-assign" class="clients-btn btn-secondary" type="button">批量分配負責人</button>
+          <button id="btn-cancel-select" class="clients-btn btn-secondary" type="button">取消選擇</button>
+        </div>
         <button id="btn-tags" class="clients-btn btn-secondary" type="button">標籤管理</button>
         <button id="btn-new" class="clients-btn" type="button">新增客戶</button>
       </div>
@@ -33,6 +37,7 @@
           <table class="clients-table" aria-describedby="list-title">
             <thead>
               <tr>
+                <th><input type="checkbox" id="select-all" aria-label="全選" /></th>
                 <th>公司名稱</th>
                 <th>統一編號</th>
                 <th>負責人</th>
@@ -54,6 +59,34 @@
         </div>
       </section>
     </main>
+
+    <!-- 批量分配負責人彈窗 -->
+    <div class="modal-overlay" id="batchAssignModal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal" role="document">
+        <div class="modal__header">
+          <h2 class="modal__title">批量分配負責人</h2>
+          <button class="modal__close" type="button" id="btn-batch-assign-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <form id="batchAssignForm" class="form-grid">
+            <div class="field" style="grid-column:1 / -1;">
+              <label>已選擇 <strong id="batch-count">0</strong> 個客戶</label>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="batch_assignee">新的負責人員（必填）</label>
+              <select id="batch_assignee" name="assignee_user_id" required>
+                <option value="1">1 管理員</option>
+              </select>
+              <div class="field__error" id="batch_e_assignee"></div>
+            </div>
+            <div class="modal__actions" style="grid-column:1 / -1;">
+              <button class="clients-btn btn-secondary" type="button" id="btn-batch-assign-cancel">取消</button>
+              <button class="clients-btn" type="submit" id="btn-batch-assign-submit">批量分配</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 
     <!-- 標籤管理彈窗 -->
     <div class="modal-overlay" id="tagsModal" aria-hidden="true" role="dialog" aria-modal="true">
@@ -311,6 +344,7 @@
           rows.forEach((r) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
+              <td><input type="checkbox" class="client-checkbox" data-client-id="${r.clientId}" /></td>
               <td>${r.companyName}</td>
               <td>${r.taxId||''}</td>
               <td>${r.assigneeName||''}</td>
@@ -804,6 +838,135 @@
           } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = '儲存';
+          }
+        });
+
+        // ========== 批量分配負責人 ==========
+
+        const batchAssignModal = document.getElementById('batchAssignModal');
+        const batchAssignForm = document.getElementById('batchAssignForm');
+        const batchAssignCloseBtn = document.getElementById('btn-batch-assign-close');
+        const batchAssignCancelBtn = document.getElementById('btn-batch-assign-cancel');
+        const batchActionsDiv = document.getElementById('batch-actions');
+        const selectAllCheckbox = document.getElementById('select-all');
+        let selectedClientIds = [];
+
+        // 全選/取消全選
+        selectAllCheckbox.addEventListener('change', function() {
+          const checkboxes = document.querySelectorAll('.client-checkbox');
+          checkboxes.forEach(cb => {
+            cb.checked = selectAllCheckbox.checked;
+          });
+          updateSelectedClients();
+        });
+
+        // 監聽多選框變化
+        tbody.addEventListener('change', function(e) {
+          if (e.target.classList.contains('client-checkbox')) {
+            updateSelectedClients();
+          }
+        });
+
+        // 更新已選擇的客戶
+        function updateSelectedClients() {
+          const checkboxes = document.querySelectorAll('.client-checkbox:checked');
+          selectedClientIds = Array.from(checkboxes).map(cb => cb.getAttribute('data-client-id'));
+          
+          if (selectedClientIds.length > 0) {
+            batchActionsDiv.style.display = 'flex';
+            document.getElementById('batch-count').textContent = selectedClientIds.length;
+          } else {
+            batchActionsDiv.style.display = 'none';
+          }
+          
+          // 更新全選框狀態
+          const allCheckboxes = document.querySelectorAll('.client-checkbox');
+          selectAllCheckbox.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+        }
+
+        // 取消選擇
+        document.getElementById('btn-cancel-select').addEventListener('click', function() {
+          const checkboxes = document.querySelectorAll('.client-checkbox');
+          checkboxes.forEach(cb => cb.checked = false);
+          selectAllCheckbox.checked = false;
+          updateSelectedClients();
+        });
+
+        // 打開批量分配 Modal
+        document.getElementById('btn-batch-assign').addEventListener('click', function() {
+          if (selectedClientIds.length === 0) {
+            alert('請先選擇客戶');
+            return;
+          }
+          if (selectedClientIds.length > 100) {
+            alert('一次最多分配 100 個客戶');
+            return;
+          }
+          document.getElementById('batch-count').textContent = selectedClientIds.length;
+          openBatchAssignModal();
+        });
+
+        function openBatchAssignModal() { batchAssignModal.classList.add('active'); batchAssignModal.setAttribute('aria-hidden','false'); }
+        function closeBatchAssignModal() { batchAssignModal.classList.remove('active'); batchAssignModal.setAttribute('aria-hidden','true'); batchAssignForm.reset(); clearBatchAssignErrors(); }
+        batchAssignCloseBtn.addEventListener('click', closeBatchAssignModal);
+        batchAssignCancelBtn.addEventListener('click', closeBatchAssignModal);
+
+        function clearBatchAssignErrors() {
+          const el = document.getElementById('batch_e_assignee');
+          if (el) el.textContent = '';
+        }
+
+        // 批量分配表單提交
+        batchAssignForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          clearBatchAssignErrors();
+          const assignee_user_id = parseInt(document.getElementById('batch_assignee').value, 10);
+
+          if (!Number.isInteger(assignee_user_id) || assignee_user_id <= 0) {
+            document.getElementById('batch_e_assignee').textContent = '請選擇負責人員';
+            return;
+          }
+
+          const payload = { client_ids: selectedClientIds, assignee_user_id };
+          const submitBtn = document.getElementById('btn-batch-assign-submit');
+          submitBtn.disabled = true;
+          submitBtn.textContent = '分配中…';
+
+          try {
+            const res = await fetch(`${apiBase}/clients/batch-assign`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(payload)
+            });
+            const json = await res.json().catch(() => null);
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/clients');
+              return;
+            }
+            if (res.status === 403) {
+              alert('權限不足，僅管理員可執行批量分配');
+              return;
+            }
+            if (!res.ok || !json || json.ok !== true) {
+              const msg = (json && json.message) || '分配失敗';
+              alert(msg);
+              return;
+            }
+            alert(json.message || '已完成批量分配');
+            closeBatchAssignModal();
+            // 清除選擇
+            const checkboxes = document.querySelectorAll('.client-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            selectAllCheckbox.checked = false;
+            updateSelectedClients();
+            // 重新載入列表
+            load();
+          } catch (err) {
+            alert('分配失敗，請稍後再試');
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '批量分配';
           }
         });
 
