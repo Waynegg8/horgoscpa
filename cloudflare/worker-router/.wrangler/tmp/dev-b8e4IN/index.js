@@ -55,6 +55,34 @@ function generateSessionId() {
   return btoa(String.fromCharCode(...bytes)).replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
 }
 __name(generateSessionId, "generateSessionId");
+function getCorsHeadersForRequest(request, env) {
+  const origin = request.headers.get("Origin") || "";
+  if (!origin) return {};
+  try {
+    const o = new URL(origin);
+    const host = o.hostname || "";
+    if (host.endsWith(".pages.dev") || host.endsWith("horgoscpa.com")) {
+      return {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Vary": "Origin"
+      };
+    }
+  } catch (_) {
+  }
+  return {};
+}
+__name(getCorsHeadersForRequest, "getCorsHeadersForRequest");
+function corsPreflightResponse(request, env) {
+  const headers = {
+    ...getCorsHeadersForRequest(request, env),
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, X-Request-Id",
+    "Access-Control-Max-Age": "600"
+  };
+  return new Response(null, { status: 204, headers });
+}
+__name(corsPreflightResponse, "corsPreflightResponse");
 async function hashPasswordPBKDF2(password, iterations = 1e5, keyLen = 32) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const enc = new TextEncoder();
@@ -88,15 +116,18 @@ var src_default = {
       target.pathname = newPath;
       return fetch(new Request(target.toString(), request));
     }, "proxy");
+    if (path.startsWith("/internal/api/") && method === "OPTIONS") {
+      return corsPreflightResponse(request, env);
+    }
     if (path === "/internal/api/v1/auth/login") {
       if (method !== "POST") {
-        return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "\u65B9\u6CD5\u4E0D\u5141\u8A31", meta: { requestId } });
+        return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "\u65B9\u6CD5\u4E0D\u5141\u8A31", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       }
       let payload;
       try {
         payload = await request.json();
       } catch (_) {
-        return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "\u8ACB\u6C42\u683C\u5F0F\u932F\u8AA4", meta: { requestId } });
+        return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "\u8ACB\u6C42\u683C\u5F0F\u932F\u8AA4", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       }
       const username = (payload?.username || "").trim().toLowerCase();
       const password = payload?.password || "";
@@ -104,16 +135,17 @@ var src_default = {
       if (!username) errors.push({ field: "username", message: "\u5FC5\u586B" });
       if (!password) errors.push({ field: "password", message: "\u5FC5\u586B" });
       if (errors.length > 0) {
-        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u8F38\u5165\u6709\u8AA4", errors, meta: { requestId } });
+        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u8F38\u5165\u6709\u8AA4", errors, meta: { requestId } }, getCorsHeadersForRequest(request, env));
       }
       if (!env.DATABASE) {
-        return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u8CC7\u6599\u5EAB\u672A\u7D81\u5B9A", meta: { requestId } });
+        return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u8CC7\u6599\u5EAB\u672A\u7D81\u5B9A", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       }
       try {
         const userRow = await env.DATABASE.prepare(
           "SELECT user_id, username, password_hash, name, email, is_admin, login_attempts, last_failed_login, is_deleted FROM Users WHERE LOWER(username) = ? LIMIT 1"
         ).bind(username).first();
-        const unauthorized = /* @__PURE__ */ __name(() => jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u5E33\u865F\u6216\u5BC6\u78BC\u932F\u8AA4", meta: { requestId } }), "unauthorized");
+        const corsHeaders = getCorsHeadersForRequest(request, env);
+        const unauthorized = /* @__PURE__ */ __name(() => jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u5E33\u865F\u6216\u5BC6\u78BC\u932F\u8AA4", meta: { requestId } }, corsHeaders), "unauthorized");
         if (!userRow || userRow.is_deleted === 1) {
           return unauthorized();
         }
@@ -123,7 +155,7 @@ var src_default = {
           if (!Number.isNaN(lastFailedAt)) {
             const fifteenMinAgo = Date.now() - 15 * 60 * 1e3;
             if (lastFailedAt > fifteenMinAgo) {
-              return jsonResponse(401, { ok: false, code: "ACCOUNT_LOCKED", message: "\u5617\u8A66\u904E\u591A\uFF0C\u7A0D\u5F8C\u518D\u8A66", meta: { requestId } });
+              return jsonResponse(401, { ok: false, code: "ACCOUNT_LOCKED", message: "\u5617\u8A66\u904E\u591A\uFF0C\u7A0D\u5F8C\u518D\u8A66", meta: { requestId } }, corsHeaders);
             }
           }
         }
@@ -161,12 +193,12 @@ var src_default = {
           email: userRow.email,
           isAdmin: userRow.is_admin === 1
         };
-        return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, { "Set-Cookie": cookie });
+        return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, { "Set-Cookie": cookie, ...corsHeaders });
       } catch (err) {
         console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
         const body = { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } };
         if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
-        return jsonResponse(500, body);
+        return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
       }
     }
     if (path === "/internal/api/v1/admin/dev-seed-user") {
@@ -180,17 +212,17 @@ var src_default = {
       try {
         body = await request.json();
       } catch (_) {
-        return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "\u8ACB\u6C42\u683C\u5F0F\u932F\u8AA4", meta: { requestId } });
+        return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "\u8ACB\u6C42\u683C\u5F0F\u932F\u8AA4", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       }
       const username = (body?.username || "").trim().toLowerCase();
       const name = (body?.name || "\u6E2C\u8A66\u7528\u6236").trim();
       const password = body?.password || "changeme";
       let email = (body?.email || "").trim();
       if (!username || !password) {
-        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "username/password \u5FC5\u586B", meta: { requestId } });
+        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "username/password \u5FC5\u586B", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       }
       if (!env.DATABASE) {
-        return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u8CC7\u6599\u5EAB\u672A\u7D81\u5B9A", meta: { requestId } });
+        return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u8CC7\u6599\u5EAB\u672A\u7D81\u5B9A", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       }
       try {
         const exists = await env.DATABASE.prepare(
@@ -207,12 +239,12 @@ var src_default = {
             "INSERT INTO Users (username, password_hash, name, email, gender, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, 'M', date('now'), datetime('now'), datetime('now'))"
           ).bind(username, passwordHash, name, email).run();
         }
-        return jsonResponse(200, { ok: true, code: "OK", message: "\u5DF2\u5EFA\u7ACB/\u66F4\u65B0\u6E2C\u8A66\u7528\u6236", data: { username, email }, meta: { requestId } });
+        return jsonResponse(200, { ok: true, code: "OK", message: "\u5DF2\u5EFA\u7ACB/\u66F4\u65B0\u6E2C\u8A66\u7528\u6236", data: { username, email }, meta: { requestId } }, getCorsHeadersForRequest(request, env));
       } catch (err) {
         console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
         const body2 = { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } };
         if (env.APP_ENV && env.APP_ENV !== "prod") body2.error = String(err);
-        return jsonResponse(500, body2);
+        return jsonResponse(500, body2, getCorsHeadersForRequest(request, env));
       }
     }
     if (path.startsWith("/internal/api/")) {

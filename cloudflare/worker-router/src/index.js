@@ -59,6 +59,34 @@ function generateSessionId() {
 	return btoa(String.fromCharCode(...bytes)).replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
 }
 
+// CORS：允許特定來源（pages.dev 與主站），回傳標頭
+function getCorsHeadersForRequest(request, env) {
+	const origin = request.headers.get("Origin") || "";
+	if (!origin) return {};
+	try {
+		const o = new URL(origin);
+		const host = o.hostname || "";
+		if (host.endsWith(".pages.dev") || host.endsWith("horgoscpa.com")) {
+			return {
+				"Access-Control-Allow-Origin": origin,
+				"Access-Control-Allow-Credentials": "true",
+				"Vary": "Origin",
+			};
+		}
+	} catch (_) {}
+	return {};
+}
+
+function corsPreflightResponse(request, env) {
+	const headers = {
+		...getCorsHeadersForRequest(request, env),
+		"Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+		"Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, X-Request-Id",
+		"Access-Control-Max-Age": "600",
+	};
+	return new Response(null, { status: 204, headers });
+}
+
 // 工具：PBKDF2-SHA256 產生雜湊（儲存格式：pbkdf2$<iterations>$<saltBase64>$<hashBase64>）
 async function hashPasswordPBKDF2(password, iterations = 100000, keyLen = 32) {
 	const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -95,16 +123,21 @@ export default {
 			return fetch(new Request(target.toString(), request));
 		};
 
+		// CORS Preflight：處理 /internal/api/* 的 OPTIONS
+		if (path.startsWith("/internal/api/") && method === "OPTIONS") {
+			return corsPreflightResponse(request, env);
+		}
+
 		// 登入 API（本 Worker 直處理）：/internal/api/v1/auth/login
 		if (path === "/internal/api/v1/auth/login") {
 			if (method !== "POST") {
-				return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "方法不允許", meta: { requestId } });
+				return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "方法不允許", meta: { requestId } }, getCorsHeadersForRequest(request, env));
 			}
 			let payload;
 			try {
 				payload = await request.json();
 			} catch (_) {
-				return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } });
+				return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, getCorsHeadersForRequest(request, env));
 			}
 			const username = (payload?.username || "").trim().toLowerCase();
 			const password = payload?.password || "";
@@ -112,11 +145,11 @@ export default {
 			if (!username) errors.push({ field: "username", message: "必填" });
 			if (!password) errors.push({ field: "password", message: "必填" });
 			if (errors.length > 0) {
-				return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } });
+				return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } }, getCorsHeadersForRequest(request, env));
 			}
 
 			if (!env.DATABASE) {
-				return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "資料庫未綁定", meta: { requestId } });
+				return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "資料庫未綁定", meta: { requestId } }, getCorsHeadersForRequest(request, env));
 			}
 
 			try {
@@ -126,7 +159,8 @@ export default {
 				).bind(username).first();
 
 				// 避免洩漏帳號存在與否
-				const unauthorized = () => jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "帳號或密碼錯誤", meta: { requestId } });
+				const corsHeaders = getCorsHeadersForRequest(request, env);
+				const unauthorized = () => jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "帳號或密碼錯誤", meta: { requestId } }, corsHeaders);
 
 				if (!userRow || userRow.is_deleted === 1) {
 					return unauthorized();
@@ -139,7 +173,7 @@ export default {
 					if (!Number.isNaN(lastFailedAt)) {
 						const fifteenMinAgo = Date.now() - 15 * 60 * 1000;
 						if (lastFailedAt > fifteenMinAgo) {
-							return jsonResponse(401, { ok: false, code: "ACCOUNT_LOCKED", message: "嘗試過多，稍後再試", meta: { requestId } });
+							return jsonResponse(401, { ok: false, code: "ACCOUNT_LOCKED", message: "嘗試過多，稍後再試", meta: { requestId } }, corsHeaders);
 						}
 					}
 				}
@@ -186,12 +220,12 @@ export default {
 					email: userRow.email,
 					isAdmin: userRow.is_admin === 1,
 				};
-				return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta: { requestId } }, { "Set-Cookie": cookie });
+				return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta: { requestId } }, { "Set-Cookie": cookie, ...corsHeaders });
 			} catch (err) {
 				console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
 				const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
 				if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
-				return jsonResponse(500, body);
+				return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
 			}
 		}
 
@@ -207,17 +241,17 @@ export default {
 				try {
 					body = await request.json();
 				} catch (_) {
-					return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } });
+					return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, getCorsHeadersForRequest(request, env));
 				}
 				const username = (body?.username || "").trim().toLowerCase();
 				const name = (body?.name || "測試用戶").trim();
 				const password = body?.password || "changeme";
 				let email = (body?.email || "").trim();
 				if (!username || !password) {
-					return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "username/password 必填", meta: { requestId } });
+					return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "username/password 必填", meta: { requestId } }, getCorsHeadersForRequest(request, env));
 				}
 				if (!env.DATABASE) {
-					return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "資料庫未綁定", meta: { requestId } });
+					return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "資料庫未綁定", meta: { requestId } }, getCorsHeadersForRequest(request, env));
 				}
 				try {
 					const exists = await env.DATABASE.prepare(
@@ -234,12 +268,12 @@ export default {
 							"INSERT INTO Users (username, password_hash, name, email, gender, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, 'M', date('now'), datetime('now'), datetime('now'))"
 						).bind(username, passwordHash, name, email).run();
 					}
-					return jsonResponse(200, { ok: true, code: "OK", message: "已建立/更新測試用戶", data: { username, email }, meta: { requestId } });
+					return jsonResponse(200, { ok: true, code: "OK", message: "已建立/更新測試用戶", data: { username, email }, meta: { requestId } }, getCorsHeadersForRequest(request, env));
 				} catch (err) {
 					console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
 					const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
 					if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
-					return jsonResponse(500, body);
+					return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
 				}
 			}
 
