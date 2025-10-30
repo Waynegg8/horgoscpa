@@ -1020,16 +1020,65 @@
           }
         }
         
-        // 刪除行
+        // 刪除行（修復：調用後端API批次刪除）
         async function deleteRow(rowIndex) {
           if (!confirm('刪除此列將清除本週該組合的所有工時，確定刪除？')) {
             return;
           }
           
-          rows.splice(rowIndex, 1);
-          renderTable();
-          updateSummary();
-          showToast('已刪除列', true);
+          const row = rows[rowIndex];
+          
+          // 如果該列沒有選擇客戶/服務/工時類型，直接前端刪除
+          if (!row.client_id || !row.service_id || !row.work_type_id) {
+            rows.splice(rowIndex, 1);
+            renderTable();
+            updateSummary();
+            showToast('已刪除列', true);
+            return;
+          }
+          
+          // 調用後端API批次刪除該組合的所有工時
+          const weekEnd = new Date(currentWeekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          
+          const payload = {
+            start_date: formatDate(currentWeekStart),
+            end_date: formatDate(weekEnd),
+            client_id: row.client_id,
+            service_id: String(row.service_id),
+            work_type_id: String(row.work_type_id)
+          };
+          
+          try {
+            const res = await fetch(`${apiBase}/timelogs/batch`, {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(payload)
+            });
+            
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/timesheets');
+              return;
+            }
+            
+            if (res.ok) {
+              const json = await res.json();
+              if (json.ok) {
+                // 刪除成功，重新載入工時資料
+                showToast('已刪除列', true);
+                await loadTimesheets();
+              } else {
+                showToast(json.message || '刪除失敗', false);
+              }
+            } else {
+              const json = await res.json().catch(() => ({}));
+              showToast(json.message || '刪除失敗', false);
+            }
+          } catch (e) {
+            console.error('刪除失敗', e);
+            showToast('無法連接伺服器，請檢查網路連線', false);
+          }
         }
         
         // 新增行
@@ -1111,8 +1160,9 @@
             // 取得請假時數
             const leaveHours = leaves.get(dateStr) || 0;
             
-            // 計算完整度
+            // 計算完整度（修復：顯示「還缺幾小時」更直觀）
             const totalRequired = normalHours + leaveHours;
+            const shortage = Math.max(0, 8 - totalRequired);
             
             const td = document.createElement('td');
             td.style.textAlign = 'center';
@@ -1134,14 +1184,14 @@
               // 可能漏填
               td.style.backgroundColor = '#fff3cd';
               td.style.color = '#856404';
-              td.textContent = `⚠ ${totalRequired}h`;
-              td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${totalRequired}h（可能漏填）`;
+              td.textContent = `⚠ 缺${shortage}h`;
+              td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${totalRequired}h，還缺 ${shortage}h`;
             } else {
               // 嚴重不足
               td.style.backgroundColor = '#f8d7da';
               td.style.color = '#721c24';
-              td.textContent = `✗ ${totalRequired}h`;
-              td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${totalRequired}h（嚴重不足）`;
+              td.textContent = `✗ 缺${shortage}h`;
+              td.title = `工時 ${normalHours}h + 請假 ${leaveHours}h = ${totalRequired}h，還缺 ${shortage}h`;
             }
             
             completenessRow.appendChild(td);
