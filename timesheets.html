@@ -812,6 +812,9 @@
             
             tbody.appendChild(tr);
           });
+          
+          // 修復：渲染後自動更新總計
+          updateSummary();
         }
         
         // 儲存儲存格
@@ -913,6 +916,7 @@
           
           rows.splice(rowIndex, 1);
           renderTable();
+          updateSummary();
           showToast('已刪除列', true);
         }
         
@@ -925,6 +929,7 @@
             hours: Array(7).fill(null)
           });
           renderTable();
+          updateSummary();
         }
         
         // 修復：更新彙總（正確計算加班工時與加權工時）
