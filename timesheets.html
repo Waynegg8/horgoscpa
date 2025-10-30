@@ -849,17 +849,18 @@
             return;
           }
           
-          // 檢查特定類型的最大值限制（國定假日8小時內、例假日8小時內）
+          // 取得工時類型資訊
           const workType = workTypes.find(wt => wt.id == row.work_type_id);
-          if (workType && workType.maxHours && rounded > workType.maxHours) {
-            showToast(`${workType.name}最多只能填${workType.maxHours}小時`, false);
+          if (!workType) {
+            showToast('請選擇有效的工時類型', false);
             return;
           }
           
+          // 計算日期
           const date = new Date(currentWeekStart);
           date.setDate(date.getDate() + dayIndex);
           
-          // 驗證工時類型是否適用於該日期
+          // 修復：先驗證工時類型是否適用於該日期（阻止週六選平日加班）
           const availableTypes = getAvailableWorkTypes(date);
           if (!availableTypes.find(wt => wt.id == row.work_type_id)) {
             const dateType = getDateType(date);
@@ -871,6 +872,12 @@
               'weekly_restday': '例假日'
             };
             showToast(`${dateTypeNames[dateType] || '該日期'}不可使用「${workType.name}」`, false);
+            return;
+          }
+          
+          // 檢查特定類型的最大值限制（國定假日8小時內、例假日8小時內）
+          if (workType.maxHours && rounded > workType.maxHours) {
+            showToast(`${workType.name}最多只能填${workType.maxHours}小時`, false);
             return;
           }
           
