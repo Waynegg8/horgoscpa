@@ -434,6 +434,7 @@
         let holidays = new Map(); // 假日資料 Map<date, holidayInfo>
         let leaves = new Map(); // 請假資料 Map<date, {hours, types: [{type, hours}]}>
         let pendingChanges = new Map(); // 未儲存的變更 Map<key, {rowIndex, dayIndex, value}>
+        let isDataLoaded = false; // 標記資料是否已載入（修復導航時序問題）
         
         // 取得週一日期
         function getMonday(date) {
@@ -653,6 +654,17 @@
           }
         }
         
+        // 新增：統一的週資料載入函數（修復導航時序問題）
+        async function loadWeekData() {
+          isDataLoaded = false;  // 重置標記
+          console.log('[DEBUG] loadWeekData 開始載入...');
+          await Promise.all([loadHolidays(), loadLeaves()]);
+          isDataLoaded = true;  // 標記資料已載入
+          console.log('[DEBUG] loadWeekData 載入完成，isDataLoaded =', isDataLoaded);
+          updateLeaveRecords();  // 更新請假記錄顯示
+          updateDailyCompleteness();  // 明確在這裡調用完整性檢查
+        }
+        
         // 判斷日期類型
         function getDateType(date) {
           const dateStr = formatDate(date);
@@ -840,7 +852,42 @@
               selectWorkType.appendChild(opt);
             });
             selectWorkType.addEventListener('change', (e) => {
-              rows[rowIndex].work_type_id = e.target.value;
+              const newWorkTypeId = e.target.value;
+              rows[rowIndex].work_type_id = newWorkTypeId;
+              
+              // 即時驗證：檢查所有已填寫的日期是否允許新的工時類型
+              if (newWorkTypeId) {
+                for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                  const hours = rows[rowIndex].hours[dayIndex];
+                  if (hours && hours > 0) {
+                    const date = new Date(currentWeekStart);
+                    date.setDate(date.getDate() + dayIndex);
+                    const availableTypes = getAvailableWorkTypes(date);
+                    
+                    if (!availableTypes.find(wt => wt.id == newWorkTypeId)) {
+                      // 不允許的組合，清空該日期的時數
+                      rows[rowIndex].hours[dayIndex] = null;
+                      const input = tr.children[dayIndex + 3].querySelector('input');
+                      if (input) {
+                        input.value = '';
+                        input.classList.remove('has-value');
+                      }
+                      
+                      const workType = workTypes.find(wt => wt.id == newWorkTypeId);
+                      const dateType = getDateType(date);
+                      const dateTypeNames = {
+                        'workday': '一般工作日',
+                        'makeup': '補班日',
+                        'restday': '休息日',
+                        'national_holiday': '國定假日',
+                        'weekly_restday': '例假日'
+                      };
+                      const dateStr = formatDate(date);
+                      showToast(`${dateStr}（${dateTypeNames[dateType] || dateType}）不可使用「${workType?.name || '此工時類型'}」，已清空該日期時數`, false);
+                    }
+                  }
+                }
+              }
             });
             tdWorkType.appendChild(selectWorkType);
             tr.appendChild(tdWorkType);
@@ -1277,18 +1324,11 @@
           const completenessRow = document.getElementById('completeness-row');
           if (!completenessRow) return;
           
-          console.log('[DEBUG] updateDailyCompleteness 被調用，holidays Map 大小:', holidays.size);
+          console.log('[DEBUG] updateDailyCompleteness 被調用，isDataLoaded =', isDataLoaded, ', holidays Map 大小:', holidays.size, ', leaves Map 大小:', leaves.size);
           
-          // 修復：如果當前週需要假日資料但 holidays Map 為空，先不渲染
-          // 避免在假日載入前就顯示錯誤的紅色警告
-          const weekEnd = new Date(currentWeekStart);
-          weekEnd.setDate(weekEnd.getDate() + 6);
-          const weekStartStr = formatDate(currentWeekStart);
-          const weekEndStr = formatDate(weekEnd);
-          
-          // 如果週範圍內可能有假日，但 holidays Map 為空，延後渲染
-          if (holidays.size === 0 && (weekStartStr <= '2025-12-31' && weekEndStr >= '2025-01-01')) {
-            console.log('[DEBUG] holidays Map 為空，延後渲染完整性檢查');
+          // 修復：等待資料載入完成再渲染（修復導航時序問題）
+          if (!isDataLoaded) {
+            console.log('[DEBUG] 資料尚未載入完成，延後渲染完整性檢查');
             return;
           }
           
@@ -1420,39 +1460,42 @@
           }
         });
         
-        // 週導航（修復：先載入假日資料再更新顯示）
-        document.getElementById('btnPrevWeek').addEventListener('click', () => {
+        // 週導航（修復：使用 loadWeekData 確保資料載入時序）
+        document.getElementById('btnPrevWeek').addEventListener('click', async () => {
           currentWeekStart.setDate(currentWeekStart.getDate() - 7);
-          Promise.all([loadHolidays(), loadLeaves()]).then(() => {
-            updateWeekDisplay();
-            loadTimesheets();
-          });
+          await loadWeekData();  // 等待資料載入並更新完整性
+          updateWeekDisplay();
+          await loadTimesheets();
+          renderTable();
         });
         
-        document.getElementById('btnNextWeek').addEventListener('click', () => {
+        document.getElementById('btnNextWeek').addEventListener('click', async () => {
           currentWeekStart.setDate(currentWeekStart.getDate() + 7);
-          Promise.all([loadHolidays(), loadLeaves()]).then(() => {
-            updateWeekDisplay();
-            loadTimesheets();
-          });
+          await loadWeekData();  // 等待資料載入並更新完整性
+          updateWeekDisplay();
+          await loadTimesheets();
+          renderTable();
         });
         
-        document.getElementById('btnThisWeek').addEventListener('click', () => {
+        document.getElementById('btnThisWeek').addEventListener('click', async () => {
           currentWeekStart = getMonday(new Date());
-          Promise.all([loadHolidays(), loadLeaves()]).then(() => {
-            updateWeekDisplay();
-            loadTimesheets();
-          });
+          await loadWeekData();  // 等待資料載入並更新完整性
+          updateWeekDisplay();
+          await loadTimesheets();
+          renderTable();
         });
         
         document.getElementById('btnAddRow').addEventListener('click', addRow);
         
-        // 初始化（修復：先載入假日資料再更新顯示）
+        // 初始化（修復：使用 loadWeekData 確保資料載入時序）
         loadMasterData()
-          .then(() => Promise.all([loadHolidays(), loadLeaves()]))
+          .then(() => loadWeekData())
           .then(() => {
             updateWeekDisplay();
-            loadTimesheets();
+            return loadTimesheets();
+          })
+          .then(() => {
+            renderTable();
           });
       })();
     </script>
