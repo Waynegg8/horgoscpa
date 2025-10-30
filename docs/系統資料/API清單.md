@@ -15,14 +15,17 @@ POST /api/v1/auth/change-password 修改密碼
 ---
 
 ## 🏢 客戶管理
+
+**⚠️ 小型事務所彈性設計：** 員工有較多權限以提升工作效率
+
 ```
 GET    /api/v1/clients             查詢客戶列表（所有人）
-POST   /api/v1/clients             新增客戶（所有人，小型事務所彈性設計）⭐
+POST   /api/v1/clients             新增客戶（所有人）⭐
 GET    /api/v1/clients/:id         查詢客戶詳情（所有人）
-PUT    /api/v1/clients/:id         更新客戶（所有人，小型事務所彈性設計）⭐
-DELETE /api/v1/clients/:id         刪除客戶（所有人，小型事務所彈性設計）⭐
+PUT    /api/v1/clients/:id         更新客戶（所有人）⭐
+DELETE /api/v1/clients/:id         刪除客戶（所有人）⭐
 GET    /api/v1/clients/tags        獲取所有標籤（所有人）
-POST   /api/v1/clients/tags        新增標籤（所有人，小型事務所彈性設計）⭐
+POST   /api/v1/clients/tags        新增標籤（所有人）⭐
 POST   /api/v1/clients/batch-update  批量更新（僅管理員）
 ```
 
@@ -54,16 +57,19 @@ GET  /api/v1/admin/cron/history        查詢Cron執行歷史（管理員）⭐
 ---
 
 ## 📋 任務管理
+
+**⚠️ 小型事務所彈性設計：** 員工可協助建立任務模板和設定客戶服務
+
 ```
 GET    /api/v1/task-templates                      查詢任務模板（所有人）
-POST   /api/v1/task-templates                      新增任務模板（所有人）
+POST   /api/v1/task-templates                      新增任務模板（所有人）⭐
 GET    /api/v1/tasks                               查詢任務列表
 GET    /api/v1/tasks/:id                           查詢任務詳情
 POST   /api/v1/tasks/:id/stages/:stageId/start     開始階段
 POST   /api/v1/tasks/:id/stages/:stageId/complete  完成階段
 GET    /api/v1/clients/:id/available-templates     查詢可用模板（通用+專屬）⭐
-POST   /api/v1/client-services                     設定客戶服務
-PUT    /api/v1/client-services/:id                 更新客戶服務
+POST   /api/v1/client-services                     設定客戶服務（所有人）⭐
+PUT    /api/v1/client-services/:id                 更新客戶服務（所有人）⭐
 ```
 
 ---
@@ -71,18 +77,21 @@ PUT    /api/v1/client-services/:id                 更新客戶服務
 ## 🔧 系統設定（管理員專屬）
 
 ### 業務規則
+
+**⚠️ 小型事務所彈性設計：** 員工可協助維護業務規則數據
+
 ```
 # 國定假日
-GET    /api/v1/holidays                      所有人（小型事務所彈性設計）⭐
-POST   /api/v1/holidays                      所有人（小型事務所彈性設計）⭐
-PUT    /api/v1/holidays/:id                  所有人（小型事務所彈性設計）⭐
-DELETE /api/v1/holidays/:id                  所有人（小型事務所彈性設計）⭐
+GET    /api/v1/holidays                      所有人
+POST   /api/v1/holidays                      所有人⭐
+PUT    /api/v1/holidays/:id                  所有人⭐
+DELETE /api/v1/holidays/:id                  所有人⭐
 POST   /api/v1/holidays/import               僅管理員（批量導入）
 
 # 假別類型
-GET    /api/v1/leave-types                   所有人（小型事務所彈性設計）⭐
-POST   /api/v1/leave-types                   所有人（小型事務所彈性設計）⭐
-PUT    /api/v1/leave-types/:id               所有人（小型事務所彈性設計）⭐
+GET    /api/v1/leave-types                   所有人
+POST   /api/v1/leave-types                   所有人⭐
+PUT    /api/v1/leave-types/:id               所有人⭐
 
 # 加班費率（唯讀，勞基法規定）
 GET    /api/v1/overtime-rates                所有人（僅查看）
@@ -92,16 +101,19 @@ GET    /api/v1/annual-leave-rules            所有人（僅查看）
 
 # 週期類型
 GET    /api/v1/frequency-types               所有人
-POST   /api/v1/frequency-types               所有人（小型事務所彈性設計）⭐
-PUT    /api/v1/frequency-types/:id           所有人（小型事務所彈性設計）⭐
+POST   /api/v1/frequency-types               所有人⭐
+PUT    /api/v1/frequency-types/:id           所有人⭐
 ```
 
 ### 服務項目
+
+**⚠️ 小型事務所彈性設計：** 員工可協助維護服務項目
+
 ```
 GET    /api/v1/services                      所有人
-POST   /api/v1/services                      所有人（小型事務所彈性設計）⭐
-PUT    /api/v1/services/:id                  所有人（小型事務所彈性設計）⭐
-DELETE /api/v1/services/:id                  所有人（小型事務所彈性設計）⭐
+POST   /api/v1/services                      所有人⭐
+PUT    /api/v1/services/:id                  所有人⭐
+DELETE /api/v1/services/:id                  所有人⭐
 ```
 
 ### 員工管理
@@ -127,12 +139,18 @@ GET /api/v1/receipts/:id/preview       預覽收據（HTML）⭐
 ---
 
 ## 📖 知識管理
+
+**⚠️ 小型事務所彈性設計：** 員工可協助建立和編輯SOP與知識庫
+
 ```
-GET  /api/v1/sop                  查詢SOP列表
-POST /api/v1/sop                  新增SOP（管理員）
-PUT  /api/v1/sop/:id              更新SOP（管理員）
-GET  /api/v1/knowledge            查詢知識庫
-POST /api/v1/knowledge            新增文章（管理員）
+GET  /api/v1/sop                  查詢SOP列表（所有人）
+POST /api/v1/sop                  新增SOP（所有人）⭐
+PUT  /api/v1/sop/:id              更新SOP（所有人）⭐
+DELETE /api/v1/sop/:id            刪除SOP（僅管理員）
+GET  /api/v1/knowledge            查詢知識庫（所有人）
+POST /api/v1/knowledge            新增文章（所有人）⭐
+PUT  /api/v1/knowledge/:id        更新文章（所有人）⭐
+DELETE /api/v1/knowledge/:id      刪除文章（僅管理員）
 ```
 
 ---
