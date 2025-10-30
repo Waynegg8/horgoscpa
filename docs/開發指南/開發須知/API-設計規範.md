@@ -93,11 +93,11 @@
 - 登入：`POST /api/v1/auth/login`
 ```json
 {
-  "email": "user@example.com",
+  "username": "admin",
   "password": "••••••••"
 }
 ```
-回應：設定 `Set-Cookie: session=...` 並回傳使用者摘要。
+回應：設定 `Set-Cookie: session=...` 並回傳使用者摘要（至少含 `userId`, `username`, `name`, `isAdmin`）。
 
 - 取得 R2 上傳簽名：`POST /api/v1/files/presign-upload`
 ```json

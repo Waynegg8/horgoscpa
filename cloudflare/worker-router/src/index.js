@@ -23,7 +23,8 @@ async function verifyPasswordPBKDF2(password, stored) {
 	const parts = stored.split("$");
 	if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
 	const iterations = parseInt(parts[1], 10);
-	if (!Number.isFinite(iterations) || iterations < 310000) return false;
+	// Cloudflare Workers 限制：迭代上限較低；放寬下限至 100k
+	if (!Number.isFinite(iterations) || iterations < 100000) return false;
 	const salt = Uint8Array.from(atob(parts[2]), (c) => c.charCodeAt(0));
 	const expected = Uint8Array.from(atob(parts[3]), (c) => c.charCodeAt(0));
 
@@ -59,7 +60,7 @@ function generateSessionId() {
 }
 
 // 工具：PBKDF2-SHA256 產生雜湊（儲存格式：pbkdf2$<iterations>$<saltBase64>$<hashBase64>）
-async function hashPasswordPBKDF2(password, iterations = 350000, keyLen = 32) {
+async function hashPasswordPBKDF2(password, iterations = 100000, keyLen = 32) {
 	const salt = crypto.getRandomValues(new Uint8Array(16));
 	const enc = new TextEncoder();
 	const keyMaterial = await crypto.subtle.importKey(
@@ -105,10 +106,10 @@ export default {
 			} catch (_) {
 				return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } });
 			}
-			const email = (payload?.email || "").trim().toLowerCase();
+			const username = (payload?.username || "").trim().toLowerCase();
 			const password = payload?.password || "";
 			const errors = [];
-			if (!email) errors.push({ field: "email", message: "必填" });
+			if (!username) errors.push({ field: "username", message: "必填" });
 			if (!password) errors.push({ field: "password", message: "必填" });
 			if (errors.length > 0) {
 				return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } });
@@ -121,8 +122,8 @@ export default {
 			try {
 				// 讀取使用者
 				const userRow = await env.DATABASE.prepare(
-					"SELECT user_id, username, password_hash, name, email, is_admin, login_attempts, last_failed_login, is_deleted FROM Users WHERE LOWER(email) = ? LIMIT 1"
-				).bind(email).first();
+					"SELECT user_id, username, password_hash, name, email, is_admin, login_attempts, last_failed_login, is_deleted FROM Users WHERE LOWER(username) = ? LIMIT 1"
+				).bind(username).first();
 
 				// 避免洩漏帳號存在與否
 				const unauthorized = () => jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "帳號或密碼錯誤", meta: { requestId } });
@@ -180,6 +181,7 @@ export default {
 
 				const data = {
 					userId: String(userRow.user_id),
+					username: userRow.username,
 					name: userRow.name,
 					email: userRow.email,
 					isAdmin: userRow.is_admin === 1,
@@ -187,7 +189,9 @@ export default {
 				return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta: { requestId } }, { "Set-Cookie": cookie });
 			} catch (err) {
 				console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
-				return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } });
+				const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+				if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+				return jsonResponse(500, body);
 			}
 		}
 
@@ -205,33 +209,37 @@ export default {
 				} catch (_) {
 					return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } });
 				}
-				const email = (body?.email || "").trim().toLowerCase();
+				const username = (body?.username || "").trim().toLowerCase();
 				const name = (body?.name || "測試用戶").trim();
 				const password = body?.password || "changeme";
-				if (!email || !password) {
-					return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "email/password 必填", meta: { requestId } });
+				let email = (body?.email || "").trim();
+				if (!username || !password) {
+					return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "username/password 必填", meta: { requestId } });
 				}
 				if (!env.DATABASE) {
 					return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "資料庫未綁定", meta: { requestId } });
 				}
 				try {
 					const exists = await env.DATABASE.prepare(
-						"SELECT user_id FROM Users WHERE LOWER(email) = ? LIMIT 1"
-					).bind(email).first();
+						"SELECT user_id FROM Users WHERE LOWER(username) = ? LIMIT 1"
+					).bind(username).first();
+					if (!email) email = `${username}@example.com`;
 					const passwordHash = await hashPasswordPBKDF2(password);
 					if (exists) {
 						await env.DATABASE.prepare(
-							"UPDATE Users SET name = ?, password_hash = ?, updated_at = ? WHERE user_id = ?"
-						).bind(name, passwordHash, new Date().toISOString(), exists.user_id).run();
+							"UPDATE Users SET username = ?, name = ?, email = ?, password_hash = ?, updated_at = ? WHERE user_id = ?"
+						).bind(username, name, email, passwordHash, new Date().toISOString(), exists.user_id).run();
 					} else {
 						await env.DATABASE.prepare(
 							"INSERT INTO Users (username, password_hash, name, email, gender, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, 'M', date('now'), datetime('now'), datetime('now'))"
-						).bind(email.split('@')[0], passwordHash, name, email).run();
+						).bind(username, passwordHash, name, email).run();
 					}
-					return jsonResponse(200, { ok: true, code: "OK", message: "已建立/更新測試用戶", data: { email }, meta: { requestId } });
+					return jsonResponse(200, { ok: true, code: "OK", message: "已建立/更新測試用戶", data: { username, email }, meta: { requestId } });
 				} catch (err) {
 					console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
-					return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } });
+					const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+					if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+					return jsonResponse(500, body);
 				}
 			}
 

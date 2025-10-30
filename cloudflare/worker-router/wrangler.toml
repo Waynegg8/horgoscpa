@@ -2,6 +2,7 @@
 name = "horgoscpa-router"
 main = "src/index.js"
 compatibility_date = "2025-10-30"
+account_id = "4ad0a8042beb2d218bd6edf39aee0fea"
 
 routes = [
 	{ pattern = "www.horgoscpa.com/login", zone_name = "horgoscpa.com" },
@@ -19,5 +20,5 @@ APP_ENV = "dev"
 [[d1_databases]]
 binding = "DATABASE"
 database_name = "horgoscpa-db"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "98c44e77-3cf0-440e-b2a3-dd952d183e6f"
 migrations_dir = "migrations"

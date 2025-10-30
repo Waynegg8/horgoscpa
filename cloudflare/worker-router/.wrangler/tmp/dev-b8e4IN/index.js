@@ -22,7 +22,7 @@ async function verifyPasswordPBKDF2(password, stored) {
   const parts = stored.split("$");
   if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
   const iterations = parseInt(parts[1], 10);
-  if (!Number.isFinite(iterations) || iterations < 31e4) return false;
+  if (!Number.isFinite(iterations) || iterations < 1e5) return false;
   const salt = Uint8Array.from(atob(parts[2]), (c) => c.charCodeAt(0));
   const expected = Uint8Array.from(atob(parts[3]), (c) => c.charCodeAt(0));
   const enc = new TextEncoder();
@@ -55,7 +55,7 @@ function generateSessionId() {
   return btoa(String.fromCharCode(...bytes)).replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
 }
 __name(generateSessionId, "generateSessionId");
-async function hashPasswordPBKDF2(password, iterations = 35e4, keyLen = 32) {
+async function hashPasswordPBKDF2(password, iterations = 1e5, keyLen = 32) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
@@ -98,10 +98,10 @@ var src_default = {
       } catch (_) {
         return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "\u8ACB\u6C42\u683C\u5F0F\u932F\u8AA4", meta: { requestId } });
       }
-      const email = (payload?.email || "").trim().toLowerCase();
+      const username = (payload?.username || "").trim().toLowerCase();
       const password = payload?.password || "";
       const errors = [];
-      if (!email) errors.push({ field: "email", message: "\u5FC5\u586B" });
+      if (!username) errors.push({ field: "username", message: "\u5FC5\u586B" });
       if (!password) errors.push({ field: "password", message: "\u5FC5\u586B" });
       if (errors.length > 0) {
         return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u8F38\u5165\u6709\u8AA4", errors, meta: { requestId } });
@@ -111,8 +111,8 @@ var src_default = {
       }
       try {
         const userRow = await env.DATABASE.prepare(
-          "SELECT user_id, username, password_hash, name, email, is_admin, login_attempts, last_failed_login, is_deleted FROM Users WHERE LOWER(email) = ? LIMIT 1"
-        ).bind(email).first();
+          "SELECT user_id, username, password_hash, name, email, is_admin, login_attempts, last_failed_login, is_deleted FROM Users WHERE LOWER(username) = ? LIMIT 1"
+        ).bind(username).first();
         const unauthorized = /* @__PURE__ */ __name(() => jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u5E33\u865F\u6216\u5BC6\u78BC\u932F\u8AA4", meta: { requestId } }), "unauthorized");
         if (!userRow || userRow.is_deleted === 1) {
           return unauthorized();
@@ -156,6 +156,7 @@ var src_default = {
         ].join("; ");
         const data = {
           userId: String(userRow.user_id),
+          username: userRow.username,
           name: userRow.name,
           email: userRow.email,
           isAdmin: userRow.is_admin === 1
@@ -163,7 +164,9 @@ var src_default = {
         return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, { "Set-Cookie": cookie });
       } catch (err) {
         console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
-        return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } });
+        const body = { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } };
+        if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+        return jsonResponse(500, body);
       }
     }
     if (path === "/internal/api/v1/admin/dev-seed-user") {
@@ -179,33 +182,37 @@ var src_default = {
       } catch (_) {
         return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "\u8ACB\u6C42\u683C\u5F0F\u932F\u8AA4", meta: { requestId } });
       }
-      const email = (body?.email || "").trim().toLowerCase();
+      const username = (body?.username || "").trim().toLowerCase();
       const name = (body?.name || "\u6E2C\u8A66\u7528\u6236").trim();
       const password = body?.password || "changeme";
-      if (!email || !password) {
-        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "email/password \u5FC5\u586B", meta: { requestId } });
+      let email = (body?.email || "").trim();
+      if (!username || !password) {
+        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "username/password \u5FC5\u586B", meta: { requestId } });
       }
       if (!env.DATABASE) {
         return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u8CC7\u6599\u5EAB\u672A\u7D81\u5B9A", meta: { requestId } });
       }
       try {
         const exists = await env.DATABASE.prepare(
-          "SELECT user_id FROM Users WHERE LOWER(email) = ? LIMIT 1"
-        ).bind(email).first();
+          "SELECT user_id FROM Users WHERE LOWER(username) = ? LIMIT 1"
+        ).bind(username).first();
+        if (!email) email = `${username}@example.com`;
         const passwordHash = await hashPasswordPBKDF2(password);
         if (exists) {
           await env.DATABASE.prepare(
-            "UPDATE Users SET name = ?, password_hash = ?, updated_at = ? WHERE user_id = ?"
-          ).bind(name, passwordHash, (/* @__PURE__ */ new Date()).toISOString(), exists.user_id).run();
+            "UPDATE Users SET username = ?, name = ?, email = ?, password_hash = ?, updated_at = ? WHERE user_id = ?"
+          ).bind(username, name, email, passwordHash, (/* @__PURE__ */ new Date()).toISOString(), exists.user_id).run();
         } else {
           await env.DATABASE.prepare(
             "INSERT INTO Users (username, password_hash, name, email, gender, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, 'M', date('now'), datetime('now'), datetime('now'))"
-          ).bind(email.split("@")[0], passwordHash, name, email).run();
+          ).bind(username, passwordHash, name, email).run();
         }
-        return jsonResponse(200, { ok: true, code: "OK", message: "\u5DF2\u5EFA\u7ACB/\u66F4\u65B0\u6E2C\u8A66\u7528\u6236", data: { email }, meta: { requestId } });
+        return jsonResponse(200, { ok: true, code: "OK", message: "\u5DF2\u5EFA\u7ACB/\u66F4\u65B0\u6E2C\u8A66\u7528\u6236", data: { username, email }, meta: { requestId } });
       } catch (err) {
         console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
-        return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } });
+        const body2 = { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } };
+        if (env.APP_ENV && env.APP_ENV !== "prod") body2.error = String(err);
+        return jsonResponse(500, body2);
       }
     }
     if (path.startsWith("/internal/api/")) {
@@ -262,7 +269,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-O7geJZ/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-tyxhaK/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -294,7 +301,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-O7geJZ/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-tyxhaK/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
