@@ -316,7 +316,8 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 	}
 
-	if (method === "POST") {
+	// POST /api/v1/clients - 新增客户（必须在/clients/:id/services之前检查，并确保不匹配子路径）
+	if (method === "POST" && url.pathname === "/internal/api/v1/clients") {
 		let body;
 		try {
 			body = await request.json();
