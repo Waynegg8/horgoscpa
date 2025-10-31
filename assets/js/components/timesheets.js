@@ -1040,6 +1040,59 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     return;
   }
   
+  // 驗證正常工時與請假衝突：如果當天已請滿假（>= 8小時），不可再填正常工時
+  if (workType && !workType.isOvertime) {
+    const leaveHours = state.leaves.get(day.iso)?.hours || 0;
+    const standardHours = 8; // 正常工作日標準工時
+    
+    if (leaveHours >= standardHours) {
+      showToast(
+        `❌ ${dateDisplay}：當日已請假 ${leaveHours} 小時（已滿工時）\n\n` +
+        `不可再填寫「${workType.name}」（正常工時類型）\n\n` +
+        `💡 如有加班，請使用加班類型（如：平日OT前2h、休息日前2h等）`,
+        'error'
+      );
+      row.hours[dayIndex] = null;
+      const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
+      if (input) {
+        input.value = '';
+        input.closest('td').classList.remove('has-value');
+      }
+      return;
+    }
+    
+    // 如果請假 + 正常工時累計 > 8小時，也不可填寫
+    let existingNormalHours = 0;
+    state.rows.forEach((r, idx) => {
+      const rWorkType = state.workTypes.find(wt => wt.id == r.work_type_id);
+      if (rWorkType && !rWorkType.isOvertime && r.hours[dayIndex]) {
+        existingNormalHours += r.hours[dayIndex];
+      }
+    });
+    
+    const totalNormal = leaveHours + existingNormalHours + rounded;
+    if (totalNormal > standardHours) {
+      const remaining = standardHours - leaveHours - existingNormalHours;
+      showToast(
+        `❌ ${dateDisplay}：正常工時已滿（上限 ${standardHours} 小時）\n\n` +
+        `請假：${leaveHours} 小時\n` +
+        `已填正常工時：${existingNormalHours} 小時\n` +
+        `嘗試新增：${rounded} 小時\n` +
+        `累計：${totalNormal} 小時（超過 ${totalNormal - standardHours} 小時）\n\n` +
+        `💡 您最多還可以填 ${Math.max(0, remaining)} 小時正常工時\n` +
+        `或使用加班類型記錄額外工時`,
+        'error'
+      );
+      row.hours[dayIndex] = null;
+      const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
+      if (input) {
+        input.value = '';
+        input.closest('td').classList.remove('has-value');
+      }
+      return;
+    }
+  }
+  
   // 驗證時數限制：檢查同一天同一工時類型的累計工時
   if (workType && workType.maxHours) {
     // 先檢查單次輸入是否超過限制
