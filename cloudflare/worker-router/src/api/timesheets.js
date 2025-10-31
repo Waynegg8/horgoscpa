@@ -256,8 +256,8 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		
 		let log_id;
 		
-		// 策略：如果提供了 timesheet_id，先刪除舊記錄，再插入新記錄
-		// 這樣可以支持修改 service_id/service_item_id 而不創建重複記錄
+		// 策略：如果提供了 timesheet_id，直接更新該記錄的所有欄位
+		// 這樣可以支持修改 service_id/service_item_id 而不創建重複記錄，也不會觸發外鍵約束問題
 		if (timesheet_id) {
 			// 驗證該記錄屬於當前用戶
 			const existingRow = await env.DATABASE.prepare(
@@ -266,44 +266,74 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 			).bind(timesheet_id, String(me.user_id)).first();
 			
 			if (existingRow) {
-				// 軟刪除舊記錄
+				// 直接更新所有欄位（包括 service_id, service_item_id, work_type, hours）
+				log_id = timesheet_id;
+				
 				await env.DATABASE.prepare(
-					`UPDATE Timesheets SET is_deleted = 1 WHERE timesheet_id = ?`
-				).bind(timesheet_id).run();
+					`UPDATE Timesheets 
+					 SET client_id = ?, 
+					     service_id = ?, 
+					     service_item_id = ?, 
+					     service_name = ?, 
+					     work_type = ?, 
+					     hours = ?, 
+					     note = ?, 
+					     updated_at = ?
+					 WHERE timesheet_id = ?`
+				).bind(
+					client_id,
+					service_id,
+					service_item_id,
+					String(service_id), // 保留舊欄位以向後相容
+					String(work_type_id),
+					hours,
+					notes,
+					new Date().toISOString(),
+					log_id
+				).run();
+				
+				// 已更新，跳過後續的插入邏輯
+			} else {
+				// 如果記錄不存在或不屬於當前用戶，將 timesheet_id 設為 null，允許新增
+				log_id = null;
 			}
 		}
 		
-		// 檢查是否已存在相同組合的記錄（避免重複）
-		const duplicateRow = await env.DATABASE.prepare(
-			`SELECT timesheet_id 
-			 FROM Timesheets 
-			 WHERE user_id = ? 
-			   AND work_date = ? 
-			   AND client_id = ? 
-			   AND service_id = ? 
-			   AND service_item_id = ? 
-			   AND work_type = ? 
-			   AND is_deleted = 0`
-		).bind(
-			String(me.user_id), 
-			work_date, 
-			client_id, 
-			service_id,
-			service_item_id,
-			String(work_type_id)
-		).first();
+		// 如果沒有提供 timesheet_id，或者提供的 timesheet_id 無效，檢查是否已存在相同組合
+		if (!log_id) {
+			const duplicateRow = await env.DATABASE.prepare(
+				`SELECT timesheet_id 
+				 FROM Timesheets 
+				 WHERE user_id = ? 
+				   AND work_date = ? 
+				   AND client_id = ? 
+				   AND service_id = ? 
+				   AND service_item_id = ? 
+				   AND work_type = ? 
+				   AND is_deleted = 0`
+			).bind(
+				String(me.user_id), 
+				work_date, 
+				client_id, 
+				service_id,
+				service_item_id,
+				String(work_type_id)
+			).first();
+			
+			if (duplicateRow) {
+				// 如果已存在相同組合，直接更新該記錄
+				log_id = duplicateRow.timesheet_id;
+				
+				await env.DATABASE.prepare(
+					`UPDATE Timesheets 
+					 SET hours = ?, updated_at = ?
+					 WHERE timesheet_id = ?`
+				).bind(hours, new Date().toISOString(), log_id).run();
+			}
+		}
 		
-		if (duplicateRow) {
-			// 如果已存在相同組合，直接更新該記錄
-			log_id = duplicateRow.timesheet_id;
-			
-			await env.DATABASE.prepare(
-				`UPDATE Timesheets 
-				 SET hours = ?, updated_at = ?
-				 WHERE timesheet_id = ?`
-			).bind(hours, new Date().toISOString(), log_id).run();
-			
-		} else {
+		// 如果還是沒有 log_id，表示需要新增記錄
+		if (!log_id) {
 			// INSERT：新增記錄
 			// 先檢查單日總工時是否超過 12
 			const sumRow = await env.DATABASE.prepare(
