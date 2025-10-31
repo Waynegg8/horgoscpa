@@ -4,7 +4,135 @@ export async function handleClients(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
 	
-	// GET /api/v1/clients/:id - 客戶詳情
+	// ⭐ 路由优先级 1: GET /api/v1/clients/:clientId/services/:serviceId/items
+	if (method === "GET" && url.pathname.match(/\/clients\/[^\/]+\/services\/\d+\/items$/)) {
+		const pathParts = url.pathname.split("/");
+		const clientId = pathParts[pathParts.length - 4];
+		const serviceId = parseInt(pathParts[pathParts.length - 2]);
+		
+		try {
+			const client = await env.DATABASE.prepare(
+				`SELECT client_id FROM Clients WHERE client_id = ? AND is_deleted = 0`
+			).bind(clientId).first();
+			
+			if (!client) {
+				return jsonResponse(404, {
+					ok: false,
+					code: "NOT_FOUND",
+					message: "客戶不存在",
+					meta: { requestId }
+				}, corsHeaders);
+			}
+			
+			const items = await env.DATABASE.prepare(
+				`SELECT item_id, item_name, item_code, description, sort_order
+				 FROM ServiceItems
+				 WHERE service_id = ? AND is_active = 1
+				 ORDER BY sort_order ASC, item_id ASC`
+			).bind(serviceId).all();
+			
+			const data = items.results.map(item => ({
+				item_id: item.item_id,
+				item_name: item.item_name,
+				item_code: item.item_code,
+				description: item.description || ""
+			}));
+			
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "查詢成功",
+				data,
+				meta: { requestId }
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+	
+	// ⭐ 路由优先级 2: GET /api/v1/clients/:clientId/services
+	if (method === "GET" && url.pathname.match(/\/clients\/[^\/]+\/services$/)) {
+		const pathParts = url.pathname.split("/");
+		const clientId = pathParts[pathParts.length - 2];
+		
+		console.log('[API DEBUG] 服務項目路由匹配！clientId:', clientId);
+		
+		try {
+			const client = await env.DATABASE.prepare(
+				`SELECT client_id FROM Clients WHERE client_id = ? AND is_deleted = 0`
+			).bind(clientId).first();
+			
+			if (!client) {
+				return jsonResponse(404, {
+					ok: false,
+					code: "NOT_FOUND",
+					message: "客戶不存在",
+					meta: { requestId }
+				}, corsHeaders);
+			}
+			
+			const clientServices = await env.DATABASE.prepare(
+				`SELECT DISTINCT cs.service_id
+				 FROM ClientServices cs
+				 WHERE cs.client_id = ? AND cs.is_deleted = 0 AND cs.service_id IS NOT NULL`
+			).bind(clientId).all();
+			
+			console.log('[API DEBUG] ClientServices 查詢結果:', clientServices.results);
+			
+			let services;
+			
+			if (clientServices.results && clientServices.results.length > 0) {
+				const serviceIds = clientServices.results.map(r => r.service_id);
+				const placeholders = serviceIds.map(() => '?').join(',');
+				
+				console.log('[API DEBUG] 客戶有指定服務，serviceIds:', serviceIds);
+				
+				services = await env.DATABASE.prepare(
+					`SELECT service_id, service_name, service_code, description
+					 FROM Services
+					 WHERE service_id IN (${placeholders}) AND is_active = 1
+					 ORDER BY sort_order ASC, service_id ASC`
+				).bind(...serviceIds).all();
+			} else {
+				console.log('[API DEBUG] 客戶沒有指定服務，返回所有可用服務');
+				services = await env.DATABASE.prepare(
+					`SELECT service_id, service_name, service_code, description
+					 FROM Services
+					 WHERE is_active = 1
+					 ORDER BY sort_order ASC, service_id ASC`
+				).all();
+			}
+			
+			const data = services.results.map(service => ({
+				service_id: service.service_id,
+				service_name: service.service_name,
+				service_code: service.service_code,
+				description: service.description || ""
+			}));
+			
+			console.log('[API DEBUG] 最終返回服務列表:', data);
+			
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "查詢成功",
+				data,
+				meta: { requestId }
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+	
+	// ⭐ 路由优先级 3: GET /api/v1/clients/:id - 客戶詳情
 	if (method === "GET" && url.pathname.match(/\/clients\/[^\/]+$/)) {
 		const clientId = url.pathname.split("/").pop();
 		try {
@@ -77,8 +205,8 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 	}
 	
-	// GET /api/v1/clients - 客戶列表
-	if (method === "GET") {
+	// ⭐ 路由优先级 4: GET /api/v1/clients - 客戶列表（必须明确检查路径）
+	if (method === "GET" && url.pathname === "/internal/api/v1/clients") {
 		const params = url.searchParams;
 		const page = Math.max(1, parseInt(params.get("page") || "1", 10));
 		const perPage = Math.min(100, Math.max(1, parseInt(params.get("perPage") || "50", 10)));
