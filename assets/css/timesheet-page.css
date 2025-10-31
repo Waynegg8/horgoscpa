@@ -105,7 +105,8 @@
 /* ==================== 工時表格 ==================== */
 
 .timesheet-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 14px;
@@ -133,43 +134,51 @@
 
 .col-client.sticky-col {
   left: 0;
-  min-width: 200px;
+  min-width: 140px;
+  max-width: 140px;
 }
 
 .col-service.sticky-col {
-  left: 200px;
-  min-width: 150px;
+  left: 140px;
+  min-width: 120px;
+  max-width: 120px;
 }
 
 .col-service-item.sticky-col {
-  left: 350px;
-  min-width: 150px;
+  left: 260px;
+  min-width: 120px;
+  max-width: 120px;
 }
 
 .col-worktype.sticky-col {
-  left: 500px;
-  min-width: 150px;
+  left: 380px;
+  min-width: 120px;
+  max-width: 120px;
 }
 
 /* 表頭固定列也需要設置left */
 .timesheet-table thead th.col-client {
   left: 0;
   z-index: 15;
+  background: #f8f9fa;
 }
 
 .timesheet-table thead th.col-service {
-  left: 200px;
+  left: 140px;
   z-index: 15;
+  background: #f8f9fa;
 }
 
 .timesheet-table thead th.col-service-item {
-  left: 350px;
+  left: 260px;
   z-index: 15;
+  background: #f8f9fa;
 }
 
 .timesheet-table thead th.col-worktype {
-  left: 500px;
+  left: 380px;
   z-index: 15;
+  background: #f8f9fa;
 }
 
 /* 日期欄位 */
@@ -219,6 +228,11 @@
   padding: 8px;
   border-bottom: 1px solid #e9ecef;
   vertical-align: middle;
+}
+
+.timesheet-table tbody td.sticky-col {
+  background: white;
+  border-right: 1px solid #e9ecef;
 }
 
 .cell-select {
@@ -298,6 +312,11 @@
   text-align: center;
   font-size: 13px;
   border-top: 2px solid #dee2e6;
+}
+
+.timesheet-table tfoot td.sticky-col {
+  position: sticky;
+  z-index: 5;
 }
 
 .leave-records-row td {
