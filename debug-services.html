@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>服務項目調試</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    button { padding: 10px 20px; margin: 5px; background: #1b65b8; color: white; border: none; cursor: pointer; }
+    .result { margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 4px; white-space: pre-wrap; }
+    .success { background: #d4edda; }
+    .error { background: #f8d7da; }
+  </style>
+</head>
+<body>
+  <h1>🔍 服務項目調試</h1>
+  
+  <h2>1. 測試客戶列表</h2>
+  <button onclick="testClients()">GET /api/v1/clients</button>
+  
+  <h2>2. 測試客戶服務（松柏有限公司 c_002）</h2>
+  <button onclick="testServices('c_002')">GET /api/v1/clients/c_002/services</button>
+  
+  <h2>3. 測試客戶服務（安和顧問 c_003）</h2>
+  <button onclick="testServices('c_003')">GET /api/v1/clients/c_003/services</button>
+  
+  <h2>4. 測試服務子項目（c_002, 服務1）</h2>
+  <button onclick="testServiceItems('c_002', 1)">GET /api/v1/clients/c_002/services/1/items</button>
+  
+  <div id="output"></div>
+  
+  <script>
+    async function apiCall(url) {
+      try {
+        console.log('Calling:', url);
+        const response = await fetch(url, { credentials: 'include' });
+        const data = await response.json();
+        console.log('Response:', data);
+        return { success: response.ok, status: response.status, data };
+      } catch (error) {
+        console.error('Error:', error);
+        return { success: false, error: error.message };
+      }
+    }
+    
+    function show(result) {
+      const output = document.getElementById('output');
+      output.className = 'result ' + (result.success ? 'success' : 'error');
+      output.textContent = JSON.stringify(result, null, 2);
+    }
+    
+    async function testClients() {
+      show({ loading: true });
+      const result = await apiCall('/internal/api/v1/clients?perPage=10');
+      show(result);
+    }
+    
+    async function testServices(clientId) {
+      show({ loading: true });
+      const result = await apiCall(`/internal/api/v1/clients/${clientId}/services`);
+      show(result);
+    }
+    
+    async function testServiceItems(clientId, serviceId) {
+      show({ loading: true });
+      const result = await apiCall(`/internal/api/v1/clients/${clientId}/services/${serviceId}/items`);
+      show(result);
+    }
+    
+    // 自動測試
+    window.onload = async function() {
+      console.log('=== 自動測試開始 ===');
+      await testClients();
+    }
+  </script>
+</body>
+</html>
+

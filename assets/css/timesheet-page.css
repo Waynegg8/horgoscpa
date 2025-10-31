@@ -63,17 +63,9 @@
   color: white;
 }
 
-.btn-primary:hover {
-  background: #154a8a;
-}
-
 .btn-secondary {
   background: #f5f5f5;
   color: #333;
-}
-
-.btn-secondary:hover {
-  background: #e0e0e0;
 }
 
 .btn-success {
@@ -83,10 +75,6 @@
   visibility: visible !important;
   display: inline-flex !important;
   pointer-events: auto !important;
-}
-
-.btn-success:hover {
-  background: #218838 !important;
 }
 
 .pending-count {
@@ -323,9 +311,6 @@
   justify-content: center;
 }
 
-.btn-delete:hover {
-  background: #c82333;
-}
 
 .empty-state {
   padding: 40px 20px;
