@@ -105,9 +105,15 @@
 }
 .dash-grid { 
   display: grid; 
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+  grid-template-columns: repeat(2, 1fr); 
   gap: 24px; 
   align-items: start;
+}
+/* 响应式：小屏幕单列 */
+@media (max-width: 1024px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
 }
 /* Financial card spans full width - 使用更直接的选择器 */
 .finance-card {
