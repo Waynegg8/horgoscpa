@@ -91,7 +91,8 @@
   align-items: start;
 }
 /* Financial card spans full width */
-.dash-grid > .card:has(.fin-grid) {
+.dash-grid > .card:has(.fin-row),
+.dash-grid > .card.finance-card {
   grid-column: 1 / -1;
 }
 

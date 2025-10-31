@@ -209,42 +209,14 @@
               </div>
             </div>`;
           
-          // 渲染各员工工时（带月份选择器）
-          const hoursFrag = document.createElement('div');
-          hoursFrag.innerHTML = listCardWithMonthPicker('各員工工時', hoursHtml, formatYm(currentYm));
-          grid.appendChild(hoursFrag.firstElementChild);
-          
-          // 添加月份选择器事件监听
-          const hoursCard = grid.querySelector('.card.list');
-          if (hoursCard) {
-            const prevBtn = hoursCard.querySelector('.month-nav-btn.prev');
-            const nextBtn = hoursCard.querySelector('.month-nav-btn.next');
-            if (prevBtn) {
-              prevBtn.addEventListener('click', () => {
-                currentYm = addMonth(currentYm, -1);
-                refresh();
-              });
-            }
-            if (nextBtn) {
-              nextBtn.addEventListener('click', () => {
-                currentYm = addMonth(currentYm, 1);
-                refresh();
-              });
-            }
-          }
-          
-          // 渲染各员工任务状态（列表形式）
-          const tasksFrag = document.createElement('div');
-          tasksFrag.innerHTML = listCard('各員工任務狀態', tasksHtml);
-          grid.appendChild(tasksFrag.firstElementChild);
-          
-          // 渲染财务状况（带月份选择器和"本年累计"按钮）
+          // 1. 先渲染财务状况（独占一行）
           const finFrag = document.createElement('div');
           finFrag.innerHTML = listCardWithFinancePicker('財務狀況', finHtml, financeYm, financeMode);
-          grid.appendChild(finFrag.firstElementChild);
+          const finCard = finFrag.firstElementChild;
+          finCard.classList.add('finance-card'); // 添加类以确保全宽
+          grid.appendChild(finCard);
           
           // 添加财务月份选择器事件监听
-          const finCard = Array.from(grid.querySelectorAll('.card.list')).pop(); // 获取最后一张卡片
           if (finCard) {
             const prevBtn = finCard.querySelector('.month-nav-btn.prev');
             const nextBtn = finCard.querySelector('.month-nav-btn.next');
@@ -291,6 +263,35 @@
               });
             }
           }
+          
+          // 2. 渲染各员工工时（带月份选择器）
+          const hoursFrag = document.createElement('div');
+          hoursFrag.innerHTML = listCardWithMonthPicker('各員工工時', hoursHtml, formatYm(currentYm));
+          grid.appendChild(hoursFrag.firstElementChild);
+          
+          // 添加月份选择器事件监听
+          const hoursCard = Array.from(grid.querySelectorAll('.card.list')).find(c => c.textContent.includes('各員工工時'));
+          if (hoursCard) {
+            const prevBtn = hoursCard.querySelector('.month-nav-btn.prev');
+            const nextBtn = hoursCard.querySelector('.month-nav-btn.next');
+            if (prevBtn) {
+              prevBtn.addEventListener('click', () => {
+                currentYm = addMonth(currentYm, -1);
+                refresh();
+              });
+            }
+            if (nextBtn) {
+              nextBtn.addEventListener('click', () => {
+                currentYm = addMonth(currentYm, 1);
+                refresh();
+              });
+            }
+          }
+          
+          // 3. 渲染各员工任务状态（列表形式）
+          const tasksFrag = document.createElement('div');
+          tasksFrag.innerHTML = listCard('各員工任務狀態', tasksHtml);
+          grid.appendChild(tasksFrag.firstElementChild);
         }
 
         async function ensureUser(){
