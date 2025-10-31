@@ -131,7 +131,6 @@
 
         function renderAdminDashboard(data){
           grid.innerHTML = '';
-          const frag = document.createElement('div');
           
           // 各员工工时
           const empHours = Array.isArray(data?.employeeHours) ? data.employeeHours : [];
@@ -139,7 +138,7 @@
             const totalStr = fmtNum(e.total);
             const meta = e.total > 0 ? `正常 ${fmtNum(e.normal)} ｜ 加班 ${fmtNum(e.overtime)}` : '';
             return `<div class="emp-row">
-              <span class="name">${e.name}</span>
+              <span class="name">${e.name || '未命名'}</span>
               <div class="hours">
                 <b>${totalStr}</b>
                 <span class="hours-label">小時</span>
@@ -148,44 +147,73 @@
             </div>`;
           }).join('') : '<div class="muted">尚無工時記錄</div>';
           
-          // 各员工任务状态 - 改为每个员工一张卡片
+          // 各员工任务状态 - 改为列表形式，可点击跳转
           const empTasks = Array.isArray(data?.employeeTasks) ? data.employeeTasks : [];
-          let tasksCards = '';
-          if (empTasks.length > 0) {
-            empTasks.forEach(e => {
-              const total = e.completed + e.inProgress + e.overdue + e.pending;
-              const badges = [];
-              if (e.overdue > 0) badges.push(`<span class="badge danger">逾期 ${e.overdue}</span>`);
-              if (e.inProgress > 0) badges.push(`<span class="badge info">進行中 ${e.inProgress}</span>`);
-              if (e.completed > 0) badges.push(`<span class="badge success">已完成 ${e.completed}</span>`);
-              if (e.pending > 0) badges.push(`<span class="badge">待辦 ${e.pending}</span>`);
-              
-              tasksCards += `<div class="card emp-task-card">
-                <div class="name">${e.name || '未命名'}</div>
-                ${total === 0 ? '<div class="muted">無任務</div>' : `<div style="display:flex;flex-wrap:wrap;gap:10px;">${badges.join('')}</div>`}
-              </div>`;
-            });
-          } else {
-            tasksCards = '<div class="card"><div class="muted">尚無任務</div></div>';
-          }
+          const tasksHtml = empTasks.length ? empTasks.map(e => {
+            const total = e.completed + e.inProgress + e.overdue + e.pending;
+            const activeCount = e.inProgress + e.overdue + e.pending;
+            
+            // 构建状态摘要
+            const parts = [];
+            if (e.overdue > 0) parts.push(`<span style="color:#e74c3c;font-weight:600;">逾期${e.overdue}</span>`);
+            if (e.inProgress > 0) parts.push(`進行中${e.inProgress}`);
+            if (e.pending > 0) parts.push(`待辦${e.pending}`);
+            if (e.completed > 0) parts.push(`已完成${e.completed}`);
+            
+            const summary = parts.length > 0 ? parts.join(' · ') : '<span class="muted">無任務</span>';
+            
+            return `<a href="/internal/tasks?assignee=${e.userId}" class="emp-task-row" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;text-decoration:none;color:inherit;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='transparent'">
+              <span style="font-weight:500;">${e.name || '未命名'}</span>
+              <span style="font-size:14px;">${summary}</span>
+            </a>`;
+          }).join('') : '<div class="muted">尚無任務</div>';
           
-          // 财务状况 - 改为横向网格布局，每个指标带颜色标识
-          const fs = data?.financialStatus || { ar:0, paid:0, overdue:0, revenue:0, cost:0, profit:0, margin:0, collectionRate:0 };
+          // 财务状况 - 分为两个时期（本月 + 本年累计），每个时期两行（帐面 + 现金流）
+          const fs = data?.financialStatus || {};
+          const month = fs.month || { period:'', revenue:0, cost:0, profit:0, margin:0, ar:0, paid:0, overdue:0, collectionRate:0 };
+          const ytd = fs.ytd || { period:'', revenue:0, cost:0, profit:0, margin:0, ar:0, paid:0, overdue:0, collectionRate:0 };
+          
           const finHtml = `
-            <div class="fin-grid">
-              <div class="fin-metric" data-type="ar"><div class="fin-metric-label">應收</div><div class="fin-metric-value">${fmtTwd(fs.ar)}</div></div>
-              <div class="fin-metric" data-type="paid"><div class="fin-metric-label">收款</div><div class="fin-metric-value">${fmtTwd(fs.paid)}</div></div>
-              <div class="fin-metric" data-type="overdue"><div class="fin-metric-label">逾期</div><div class="fin-metric-value">${fmtTwd(fs.overdue)}</div></div>
-              <div class="fin-metric" data-type="rate"><div class="fin-metric-label">收款率</div><div class="fin-metric-value">${fmtPct(fs.collectionRate)}</div></div>
-              <div class="fin-metric" data-type="revenue"><div class="fin-metric-label">營收</div><div class="fin-metric-value">${fmtTwd(fs.revenue)}</div></div>
-              <div class="fin-metric" data-type="cost"><div class="fin-metric-label">成本</div><div class="fin-metric-value">${fmtTwd(fs.cost)}</div></div>
-              <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利</div><div class="fin-metric-value">${fmtTwd(fs.profit)}</div></div>
-              <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利率</div><div class="fin-metric-value">${fmtPct(fs.margin)}</div></div>
+            <div style="display:flex;flex-direction:column;gap:24px;">
+              <!-- 本月 -->
+              <div>
+                <div style="font-size:13px;color:#7f8c8d;margin-bottom:12px;font-weight:500;">${formatYm(month.period)}</div>
+                <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:12px;">
+                  <div class="fin-metric" data-type="revenue"><div class="fin-metric-label">營收</div><div class="fin-metric-value">${fmtTwd(month.revenue)}</div></div>
+                  <div class="fin-metric" data-type="cost"><div class="fin-metric-label">成本</div><div class="fin-metric-value">${fmtTwd(month.cost)}</div></div>
+                  <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利</div><div class="fin-metric-value">${fmtTwd(month.profit)}</div></div>
+                  <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利率</div><div class="fin-metric-value">${fmtPct(month.margin)}</div></div>
+                </div>
+                <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                  <div class="fin-metric" data-type="ar"><div class="fin-metric-label">應收</div><div class="fin-metric-value">${fmtTwd(month.ar)}</div></div>
+                  <div class="fin-metric" data-type="paid"><div class="fin-metric-label">收款</div><div class="fin-metric-value">${fmtTwd(month.paid)}</div></div>
+                  <div class="fin-metric" data-type="overdue"><div class="fin-metric-label">逾期</div><div class="fin-metric-value">${fmtTwd(month.overdue)}</div></div>
+                  <div class="fin-metric" data-type="rate"><div class="fin-metric-label">收款率</div><div class="fin-metric-value">${fmtPct(month.collectionRate)}</div></div>
+                </div>
+              </div>
+              
+              <!-- 本年累计 -->
+              <div>
+                <div style="font-size:13px;color:#7f8c8d;margin-bottom:12px;font-weight:500;">${ytd.period || '本年累計'}</div>
+                <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:12px;">
+                  <div class="fin-metric" data-type="revenue"><div class="fin-metric-label">營收</div><div class="fin-metric-value">${fmtTwd(ytd.revenue)}</div></div>
+                  <div class="fin-metric" data-type="cost"><div class="fin-metric-label">成本</div><div class="fin-metric-value">${fmtTwd(ytd.cost)}</div></div>
+                  <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利</div><div class="fin-metric-value">${fmtTwd(ytd.profit)}</div></div>
+                  <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利率</div><div class="fin-metric-value">${fmtPct(ytd.margin)}</div></div>
+                </div>
+                <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                  <div class="fin-metric" data-type="ar"><div class="fin-metric-label">應收</div><div class="fin-metric-value">${fmtTwd(ytd.ar)}</div></div>
+                  <div class="fin-metric" data-type="paid"><div class="fin-metric-label">收款</div><div class="fin-metric-value">${fmtTwd(ytd.paid)}</div></div>
+                  <div class="fin-metric" data-type="overdue"><div class="fin-metric-label">逾期</div><div class="fin-metric-value">${fmtTwd(ytd.overdue)}</div></div>
+                  <div class="fin-metric" data-type="rate"><div class="fin-metric-label">收款率</div><div class="fin-metric-value">${fmtPct(ytd.collectionRate)}</div></div>
+                </div>
+              </div>
             </div>`;
           
           // 渲染各员工工时（带月份选择器）
-          frag.innerHTML = listCardWithMonthPicker('各員工工時', hoursHtml, formatYm(currentYm));
-          grid.appendChild(frag.firstElementChild);
+          const hoursFrag = document.createElement('div');
+          hoursFrag.innerHTML = listCardWithMonthPicker('各員工工時', hoursHtml, formatYm(currentYm));
+          grid.appendChild(hoursFrag.firstElementChild);
           
           // 添加月份选择器事件监听
           const hoursCard = grid.querySelector('.card.list');
@@ -206,14 +234,14 @@
             }
           }
           
-          // 渲染各员工任务状态（每个员工一张卡片）
+          // 渲染各员工任务状态（列表形式）
           const tasksFrag = document.createElement('div');
-          tasksFrag.innerHTML = tasksCards;
-          Array.from(tasksFrag.children).forEach(child => grid.appendChild(child));
+          tasksFrag.innerHTML = listCard('各員工任務狀態', tasksHtml);
+          grid.appendChild(tasksFrag.firstElementChild);
           
           // 渲染财务状况
           const finFrag = document.createElement('div');
-          finFrag.innerHTML = listCard('財務狀況（本月）', finHtml);
+          finFrag.innerHTML = listCard('財務狀況', finHtml);
           grid.appendChild(finFrag.firstElementChild);
         }
 

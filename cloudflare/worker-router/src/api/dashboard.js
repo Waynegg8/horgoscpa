@@ -126,33 +126,85 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         }));
       } catch (_) {}
 
-      // Financial status
+      // Financial status - 本月 + 本年累计
       try {
-        const paidRow = await env.DATABASE.prepare(
+        const currentYear = ym.split('-')[0]; // 从ym获取年份
+        
+        // 本月数据
+        const monthPaidRow = await env.DATABASE.prepare(
           `SELECT SUM(total_amount) AS paid FROM Receipts WHERE is_deleted = 0 AND status = 'paid' AND substr(receipt_date,1,7) = ?`
         ).bind(ym).first();
-        const revRow = await env.DATABASE.prepare(
+        const monthRevRow = await env.DATABASE.prepare(
           `SELECT SUM(total_amount) AS revenue FROM Receipts WHERE is_deleted = 0 AND status != 'cancelled' AND substr(receipt_date,1,7) = ?`
         ).bind(ym).first();
+        let monthCost = 0;
+        try {
+          const pr = await env.DATABASE.prepare(`SELECT SUM(total_cents) AS c FROM MonthlyPayroll mp JOIN PayrollRuns pr ON pr.run_id = mp.run_id WHERE pr.month = ?`).bind(ym).first();
+          monthCost = Math.round(Number(pr?.c || 0) / 100);
+        } catch (_) {}
+        
+        // 本年累计数据（截至今日）
+        const ytdPaidRow = await env.DATABASE.prepare(
+          `SELECT SUM(total_amount) AS paid FROM Receipts WHERE is_deleted = 0 AND status = 'paid' AND substr(receipt_date,1,4) = ? AND receipt_date <= ?`
+        ).bind(currentYear, today).first();
+        const ytdRevRow = await env.DATABASE.prepare(
+          `SELECT SUM(total_amount) AS revenue FROM Receipts WHERE is_deleted = 0 AND status != 'cancelled' AND substr(receipt_date,1,4) = ? AND receipt_date <= ?`
+        ).bind(currentYear, today).first();
+        let ytdCost = 0;
+        try {
+          const pr = await env.DATABASE.prepare(`SELECT SUM(total_cents) AS c FROM MonthlyPayroll mp JOIN PayrollRuns pr ON pr.run_id = mp.run_id WHERE substr(pr.month,1,4) = ?`).bind(currentYear).first();
+          ytdCost = Math.round(Number(pr?.c || 0) / 100);
+        } catch (_) {}
+        
+        // 现金流数据（实时，不分月份）
         const arRow = await env.DATABASE.prepare(
           `SELECT SUM(total_amount) AS ar FROM Receipts WHERE is_deleted = 0 AND status IN ('unpaid','partial')`
         ).first();
         const overdueRow = await env.DATABASE.prepare(
           `SELECT SUM(total_amount) AS od FROM Receipts WHERE is_deleted = 0 AND status IN ('unpaid','partial') AND due_date < ?`
         ).bind(today).first();
-        let cost = 0;
-        try {
-          const pr = await env.DATABASE.prepare(`SELECT SUM(total_cents) AS c FROM MonthlyPayroll mp JOIN PayrollRuns pr ON pr.run_id = mp.run_id WHERE pr.month = ?`).bind(ym).first();
-          cost = Math.round(Number(pr?.c || 0) / 100);
-        } catch (_) {}
-        const revenue = Math.round(Number(revRow?.revenue || 0));
-        const paid = Math.round(Number(paidRow?.paid || 0));
+        
+        // 计算本月数据
+        const monthRevenue = Math.round(Number(monthRevRow?.revenue || 0));
+        const monthPaid = Math.round(Number(monthPaidRow?.paid || 0));
+        const monthProfit = monthRevenue - monthCost;
+        const monthMargin = monthRevenue > 0 ? Math.round((monthProfit / monthRevenue) * 1000) / 10 : 0;
+        const monthCollectionRate = monthRevenue > 0 ? Math.round((monthPaid / monthRevenue) * 1000) / 10 : 0;
+        
+        // 计算本年累计数据
+        const ytdRevenue = Math.round(Number(ytdRevRow?.revenue || 0));
+        const ytdPaid = Math.round(Number(ytdPaidRow?.paid || 0));
+        const ytdProfit = ytdRevenue - ytdCost;
+        const ytdMargin = ytdRevenue > 0 ? Math.round((ytdProfit / ytdRevenue) * 1000) / 10 : 0;
+        const ytdCollectionRate = ytdRevenue > 0 ? Math.round((ytdPaid / ytdRevenue) * 1000) / 10 : 0;
+        
         const ar = Math.round(Number(arRow?.ar || 0));
         const overdue = Math.round(Number(overdueRow?.od || 0));
-        const profit = revenue - cost;
-        const margin = revenue > 0 ? Math.round((profit / revenue) * 1000) / 10 : 0;
-        const collectionRate = revenue > 0 ? Math.round((paid / revenue) * 1000) / 10 : 0;
-        res.financialStatus = { month: ym, ar, paid, overdue, revenue, cost, profit, margin, collectionRate };
+        
+        res.financialStatus = { 
+          month: {
+            period: ym,
+            revenue: monthRevenue,
+            cost: monthCost,
+            profit: monthProfit,
+            margin: monthMargin,
+            ar, // 应收（实时）
+            paid: monthPaid,
+            overdue, // 逾期（实时）
+            collectionRate: monthCollectionRate
+          },
+          ytd: {
+            period: `${currentYear}年累計`,
+            revenue: ytdRevenue,
+            cost: ytdCost,
+            profit: ytdProfit,
+            margin: ytdMargin,
+            ar, // 应收（实时）
+            paid: ytdPaid,
+            overdue, // 逾期（实时）
+            collectionRate: ytdCollectionRate
+          }
+        };
       } catch (_) {}
 
       // Employee tasks (各员工任务状态：已完成/进行中/逾期)
