@@ -321,7 +321,7 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		return jsonResponse(200, { 
 			ok: true, 
 			code: "SUCCESS", 
-			message: existingRow ? "已更新" : "已建立", 
+			message: duplicateRow ? "已更新" : "已建立", 
 			data: { 
 				log_id, 
 				weighted_hours, 
