@@ -74,6 +74,7 @@ function buildWeekDays() {
     d.setDate(d.getDate() + i);
     const iso = formatDate(d);
     const h = state.holidays.get(iso);
+    console.log(`[DEBUG] Date ${iso}: Holiday data - ${JSON.stringify(h)}`);
     const dow = d.getDay();
     const type = h && h.is_national_holiday ? 'national_holiday'
                : h && h.is_makeup_workday ? 'makeup'
@@ -102,7 +103,10 @@ async function loadHolidays() {
   if (res.ok) {
     const json = await safeJson(res);
     state.holidays.clear();
-    (json.data || []).forEach(h => state.holidays.set(h.date, h));
+    (json.data || []).forEach(h => {
+      state.holidays.set(h.date, h);
+      console.log(`[DEBUG] Loaded holiday for ${h.date}: ${JSON.stringify(h)}`);
+    });
   }
 }
 
@@ -169,9 +173,15 @@ function organizeRows(data) {
 // ---- Rendering ----
 function renderWeekHeader() {
   const weekStart = new Date(state.currentWeekStart);
-  const weekEnd = new Date(state.currentWeekStart); weekEnd.setDate(weekEnd.getDate() + 6);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  console.log(`[DEBUG] Week start: ${formatDate(weekStart)}, End: ${formatDate(weekEnd)}`);
+  const startMonth = weekStart.getMonth() + 1;
+  const endMonth = weekEnd.getMonth() + 1;
   const title = document.getElementById('weekTitle');
-  if (title) title.textContent = `${weekStart.getFullYear()}年${weekStart.getMonth()+1}月${weekStart.getDate()}日 - ${weekEnd.getMonth()+1}月${weekEnd.getDate()}日`;
+  if (title) {
+    title.textContent = `${weekStart.getFullYear()}年${startMonth}月${weekStart.getDate()}日 - ${endMonth}月${weekEnd.getDate()}日`;
+  }
   state.weekDays.forEach(day => {
     const d = new Date(state.currentWeekStart); d.setDate(d.getDate() + day.index);
     const label = document.getElementById(`dateLabel${day.index}`);
