@@ -103,20 +103,15 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       const res = { employeeHours: [], employeeTasks: [], financialStatus: null, revenueTrend: [] };
       
       // Employee hours (各员工分别工时 - 按指定月份查询)
+      // work_type: 1=正常工时，2-11=各种加班类型
       try {
         const result = await env.DATABASE.prepare(
           `SELECT u.user_id, u.name, u.username,
                   COALESCE(SUM(t.hours), 0) AS total,
-                  COALESCE(SUM(CASE WHEN wt.isOvertime = 0 THEN t.hours ELSE 0 END), 0) AS normal,
-                  COALESCE(SUM(CASE WHEN wt.isOvertime = 1 THEN t.hours ELSE 0 END), 0) AS overtime
+                  COALESCE(SUM(CASE WHEN CAST(t.work_type AS INTEGER) = 1 THEN t.hours ELSE 0 END), 0) AS normal,
+                  COALESCE(SUM(CASE WHEN CAST(t.work_type AS INTEGER) >= 2 THEN t.hours ELSE 0 END), 0) AS overtime
            FROM Users u
            LEFT JOIN Timesheets t ON t.user_id = u.user_id AND t.is_deleted = 0 AND substr(t.work_date, 1, 7) = ?
-           LEFT JOIN (
-             SELECT 1 as work_type_id, 0 as isOvertime
-             UNION SELECT 2, 1 UNION SELECT 3, 1 UNION SELECT 4, 1 UNION SELECT 5, 1 
-             UNION SELECT 6, 1 UNION SELECT 7, 1 UNION SELECT 8, 1 UNION SELECT 9, 1 
-             UNION SELECT 10, 1 UNION SELECT 11, 1
-           ) wt ON CAST(t.work_type AS INTEGER) = wt.work_type_id
            WHERE u.is_deleted = 0
            GROUP BY u.user_id, u.name, u.username
            ORDER BY total DESC, u.name ASC`
@@ -132,7 +127,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           overtime: Number(r.overtime || 0)
         }));
       } catch (e) {
-        console.error('Employee hours query error:', e);
+        console.error('[Dashboard] Employee hours query error:', e);
       }
 
       // Financial status - 根据finMode返回对应数据
