@@ -331,28 +331,31 @@
   font-size: 15px;
   letter-spacing: -0.3px;
 }
-.emp-row .hours { 
-  text-align: right;
-  display: flex;
-  align-items: flex-end;
+/* Hours display redesign */
+.emp-row .hours-display {
+  display: inline-flex;
+  align-items: baseline;
   gap: 6px;
+  background: #f9fafb;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
 }
-.emp-row .hours b { 
-  font-size: 28px; 
+.emp-row .hours-value {
+  font-size: 24px;
   font-weight: 800;
   color: #111827;
-  letter-spacing: -0.8px;
+  letter-spacing: -0.5px;
   line-height: 1;
 }
-.emp-row .hours-label {
-  font-size: 11px;
-  color: #9ca3af;
+.emp-row .hours-unit {
+  font-size: 12px;
+  color: #6b7280;
   font-weight: 600;
   letter-spacing: 0.3px;
-  padding-bottom: 3px;
 }
 .emp-row .muted { 
-  font-size: 13px; 
+  font-size: 12px; 
   color: #6b7280; 
   display: flex;
   gap: 12px;
@@ -422,12 +425,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 16px;
+  padding: 16px 18px;
   text-decoration: none;
   color: inherit;
-  border-radius: 8px;
-  border: 1px solid #f0f0f0;
-  margin-bottom: 8px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 10px;
   cursor: pointer;
   transition: all 0.2s;
   background: #ffffff;
@@ -436,52 +439,73 @@
   margin-bottom: 0;
 }
 .emp-task-row:hover {
-  background: #f9fafb;
-  border-color: #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
 }
 .emp-task-name {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   color: #111827;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
+  min-width: 80px;
 }
 .emp-task-badges {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* Task badge styles */
 .task-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   line-height: 1.2;
   white-space: nowrap;
+  transition: all 0.2s;
 }
 .task-badge-overdue {
-  background: #fee2e2;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   color: #dc2626;
-  border: 1px solid #fecaca;
+  border: 1px solid #fca5a5;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.1);
+}
+.task-badge-overdue:hover {
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.15);
 }
 .task-badge-progress {
-  background: #dbeafe;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   color: #1e40af;
-  border: 1px solid #bfdbfe;
+  border: 1px solid #93c5fd;
+  box-shadow: 0 1px 3px rgba(30, 64, 175, 0.1);
+}
+.task-badge-progress:hover {
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.15);
 }
 .task-badge-pending {
-  background: #fef3c7;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   color: #d97706;
-  border: 1px solid #fde68a;
+  border: 1px solid #fbbf24;
+  box-shadow: 0 1px 3px rgba(217, 119, 6, 0.1);
+}
+.task-badge-pending:hover {
+  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.15);
 }
 .task-badge-completed {
-  background: #d1fae5;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
   color: #047857;
-  border: 1px solid #a7f3d0;
+  border: 1px solid #6ee7b7;
+  box-shadow: 0 1px 3px rgba(4, 120, 87, 0.1);
+}
+.task-badge-completed:hover {
+  box-shadow: 0 2px 4px rgba(4, 120, 87, 0.15);
 }

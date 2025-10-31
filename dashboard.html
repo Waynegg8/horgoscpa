@@ -194,12 +194,12 @@
               const meta = (e.total && e.total > 0) ? `正常 ${fmtNum(e.normal)} ｜ 加班 ${fmtNum(e.overtime)}` : '';
               return `<div class="emp-row">
                 <span class="name">${e.name || '未命名'}</span>
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div class="hours">
-                    <b>${totalStr}</b>
-                    <span class="hours-label">小時</span>
+                <div style="display:flex;align-items:center;gap:16px;">
+                  ${meta ? `<div class="muted" style="font-size:12px;">${meta}</div>` : ''}
+                  <div class="hours-display">
+                    <span class="hours-value">${totalStr}</span>
+                    <span class="hours-unit">小時</span>
                   </div>
-                  ${meta ? `<div class="muted">${meta}</div>` : ''}
                 </div>
               </div>`;
             }).join('');
