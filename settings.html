@@ -395,6 +395,18 @@
                   <label>說明</label>
                   <textarea id="newStageDesc" class="form-control" rows="2" placeholder="任務詳細說明"></textarea>
                 </div>
+                <div>
+                  <label>關聯SOP（可選）</label>
+                  <select id="newStageSOP" class="form-control">
+                    <option value="">無</option>
+                  </select>
+                </div>
+                <div>
+                  <label>關聯附件（可選）</label>
+                  <select id="newStageAttachment" class="form-control">
+                    <option value="">無</option>
+                  </select>
+                </div>
                 <div style="grid-column: 1 / -1;">
                   <label>依賴任務（可選）</label>
                   <input type="text" id="newStageDeps" class="form-control" placeholder="例如：1,2 表示依賴任務1和2完成">
@@ -412,14 +424,15 @@
                   <tr>
                     <th style="width: 60px;">順序</th>
                     <th>任務名稱</th>
-                    <th>預估工時</th>
-                    <th>依賴任務</th>
+                    <th style="width: 100px;">預估工時</th>
+                    <th style="width: 100px;">SOP</th>
+                    <th style="width: 100px;">附件</th>
                     <th>說明</th>
-                    <th style="width: 150px;">操作</th>
+                    <th style="width: 100px;">操作</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td colspan="6" class="loading">請先選擇任務模板</td></tr>
+                  <tr><td colspan="7" class="loading">請先選擇任務模板</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1504,26 +1517,35 @@
             const stages = json.data;
             
             if (stages.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無任務，點擊上方「+ 新增任務」開始</td></tr>';
+              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無任務，點擊上方「+ 新增任務」開始</td></tr>';
               return;
             }
             
-            tbody.innerHTML = stages.map(stage => `
+            tbody.innerHTML = stages.map(stage => {
+              const sopLink = stage.sop_id ? 
+                `<a href="/internal/knowledge?id=${stage.sop_id}" target="_blank" class="link-badge">📖 ${stage.sop_title || 'SOP'}</a>` : 
+                '-';
+              const attachmentLink = stage.attachment_id ? 
+                `<a href="${stage.attachment_url || '#'}" target="_blank" class="link-badge">📎 ${stage.attachment_name || '附件'}</a>` : 
+                '-';
+              
+              return `
               <tr>
                 <td><strong>${stage.stage_order}</strong></td>
                 <td>${stage.stage_name}</td>
                 <td>${stage.estimated_hours ? stage.estimated_hours + ' 小時' : '-'}</td>
-                <td>${stage.dependencies || '-'}</td>
+                <td>${sopLink}</td>
+                <td>${attachmentLink}</td>
                 <td>${stage.description || '-'}</td>
                 <td class="action-btns">
                   <button class="btn btn-sm btn-danger" onclick="deleteStage(${templateId}, ${stage.stage_id})">刪除</button>
                 </td>
               </tr>
-            `).join('');
+            `}).join('');
             
           } catch (err) {
             console.error('載入任務列表失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗，請稍後再試</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
           }
         };
         
@@ -2496,7 +2518,7 @@
         // ========================================
         
         // 顯示新增任務表單
-        document.getElementById('btnAddTemplateStage')?.addEventListener('click', () => {
+        document.getElementById('btnAddTemplateStage')?.addEventListener('click', async () => {
           if (!currentTemplateId) {
             setMsg('請先選擇一個任務模板', false);
             return;
@@ -2504,9 +2526,44 @@
           const form = document.getElementById('addStageForm');
           form.style.display = form.style.display === 'none' ? 'block' : 'none';
           if (form.style.display === 'block') {
+            // 載入SOP和附件列表
+            await loadSOPForStages();
+            await loadAttachmentsForStages();
             document.getElementById('newStageName').focus();
           }
         });
+        
+        // 載入SOP列表到任務表單
+        async function loadSOPForStages() {
+          try {
+            const res = await fetch(`${apiBase}/sop`, { credentials: 'include' });
+            if (!res.ok) return;
+            const json = await res.json();
+            if (!json.ok || !json.data) return;
+            
+            const select = document.getElementById('newStageSOP');
+            select.innerHTML = '<option value="">無</option>' + 
+              json.data.map(sop => `<option value="${sop.sop_id}">${sop.title}</option>`).join('');
+          } catch (err) {
+            console.error('載入SOP列表失敗:', err);
+          }
+        }
+        
+        // 載入附件列表到任務表單
+        async function loadAttachmentsForStages() {
+          try {
+            const res = await fetch(`${apiBase}/attachments?limit=100`, { credentials: 'include' });
+            if (!res.ok) return;
+            const json = await res.json();
+            if (!json.ok || !json.data) return;
+            
+            const select = document.getElementById('newStageAttachment');
+            select.innerHTML = '<option value="">無</option>' + 
+              json.data.map(att => `<option value="${att.attachment_id}">${att.original_filename}</option>`).join('');
+          } catch (err) {
+            console.error('載入附件列表失敗:', err);
+          }
+        }
         
         // 取消新增任務
         window.cancelAddStage = function() {
@@ -2516,6 +2573,8 @@
           document.getElementById('newStageHours').value = '';
           document.getElementById('newStageDesc').value = '';
           document.getElementById('newStageDeps').value = '';
+          document.getElementById('newStageSOP').value = '';
+          document.getElementById('newStageAttachment').value = '';
         };
         
         // 儲存新任務
@@ -2530,6 +2589,8 @@
           const hours = parseFloat(document.getElementById('newStageHours').value) || null;
           const desc = document.getElementById('newStageDesc').value.trim();
           const deps = document.getElementById('newStageDeps').value.trim();
+          const sopId = document.getElementById('newStageSOP').value;
+          const attachmentId = document.getElementById('newStageAttachment').value;
           
           if (!name) {
             setMsg('請填寫任務名稱', false);
@@ -2551,7 +2612,9 @@
                 stage_order: order,
                 estimated_hours: hours,
                 description: desc || null,
-                dependencies: deps || null
+                dependencies: deps || null,
+                sop_id: sopId ? parseInt(sopId, 10) : null,
+                attachment_id: attachmentId ? parseInt(attachmentId, 10) : null
               })
             });
             

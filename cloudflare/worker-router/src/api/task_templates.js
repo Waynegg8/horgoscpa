@@ -376,10 +376,15 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
 
     try {
       const stagesRows = await env.DATABASE.prepare(
-        `SELECT stage_id, stage_name, stage_order, description, estimated_hours, dependencies
-         FROM TaskTemplateStages
-         WHERE template_id = ?
-         ORDER BY stage_order ASC`
+        `SELECT tts.stage_id, tts.stage_name, tts.stage_order, tts.description, 
+                tts.estimated_hours, tts.dependencies, tts.sop_id, tts.attachment_id,
+                sop.title as sop_title,
+                att.original_filename as attachment_name, att.file_url as attachment_url
+         FROM TaskTemplateStages tts
+         LEFT JOIN SOPDocuments sop ON sop.sop_id = tts.sop_id
+         LEFT JOIN Attachments att ON att.attachment_id = tts.attachment_id
+         WHERE tts.template_id = ?
+         ORDER BY tts.stage_order ASC`
       ).bind(templateId).all();
 
       const stages = (stagesRows?.results || []).map(s => ({
@@ -388,7 +393,12 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
         stage_order: s.stage_order,
         description: s.description || "",
         estimated_hours: Number(s.estimated_hours || 0),
-        dependencies: s.dependencies || ""
+        dependencies: s.dependencies || "",
+        sop_id: s.sop_id || null,
+        sop_title: s.sop_title || "",
+        attachment_id: s.attachment_id || null,
+        attachment_name: s.attachment_name || "",
+        attachment_url: s.attachment_url || ""
       }));
 
       return jsonResponse(200, {
@@ -430,6 +440,8 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
     const description = String(body?.description || "").trim();
     const estimatedHours = body?.estimated_hours ? parseFloat(body.estimated_hours) : null;
     const dependencies = String(body?.dependencies || "").trim();
+    const sopId = body?.sop_id ? parseInt(body.sop_id, 10) : null;
+    const attachmentId = body?.attachment_id ? parseInt(body.attachment_id, 10) : null;
 
     // 验证
     if (!stageName) {
@@ -455,9 +467,9 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
 
       // 插入阶段
       const result = await env.DATABASE.prepare(
-        `INSERT INTO TaskTemplateStages (template_id, stage_name, stage_order, description, estimated_hours, dependencies)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      ).bind(templateId, stageName, stageOrder, description, estimatedHours, dependencies).run();
+        `INSERT INTO TaskTemplateStages (template_id, stage_name, stage_order, description, estimated_hours, dependencies, sop_id, attachment_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(templateId, stageName, stageOrder, description, estimatedHours, dependencies, sopId, attachmentId).run();
 
       return jsonResponse(201, {
         ok: true,

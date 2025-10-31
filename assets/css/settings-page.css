@@ -830,6 +830,24 @@ label {
     color: var(--gray-700);
 }
 
+/* 連結徽章樣式 */
+.link-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    background: var(--primary-50);
+    color: var(--primary-600);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.link-badge:hover {
+    background: var(--primary-100);
+    color: var(--primary-700);
+    text-decoration: none;
+}
+
 /* ============================================
    響應式設計
    ============================================ */
