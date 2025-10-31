@@ -543,3 +543,8 @@ section {
 section:last-child {
     margin-bottom: 0;
 }
+
+/* Hidden utility */
+.hidden {
+    display: none !important;
+}

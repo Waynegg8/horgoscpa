@@ -7,14 +7,12 @@
     <title>系統設定｜管理員</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
-    <link rel="stylesheet" href="/assets/css/settings-page.css?v=20251031-011" />
+    <link rel="stylesheet" href="/assets/css/settings-page.css?v=20251031-100" />
   </head>
   <body class="internal-container">
-    <!-- 通知栏 -->
     <div id="permBar" class="alert alert-danger" style="display:none;" role="alert">您沒有權限檢視此頁面</div>
     <div id="msgBar" class="alert alert-info" style="display:none;" role="status"></div>
 
-    <!-- Tab 导航 -->
     <nav class="settings-nav">
       <button class="nav-tab active" data-tab="system">系統參數</button>
       <button class="nav-tab" data-tab="services">服務項目</button>
@@ -37,14 +35,10 @@
 
     <main class="settings-content">
       
-      <!-- ========================================== -->
-      <!-- 系統參數 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel active" id="tab-system">
         <div class="card">
           <div class="card-header">
             <h2>危險設定</h2>
-            <div class="subtitle">變更前請確認風險，非管理員不可操作</div>
           </div>
           <div class="card-body">
             <div class="form-group">
@@ -64,32 +58,26 @@
               <label>月薪制換算時數（唯讀）</label>
               <input type="text" value="240" readonly />
             </div>
-            <div>
-              <button id="btnSaveDanger" class="btn btn-danger" type="button" disabled>儲存危險設定</button>
-            </div>
+            <button id="btnSaveDanger" class="btn btn-danger" type="button" disabled>儲存危險設定</button>
           </div>
         </div>
 
         <div class="card">
           <div class="card-header">
             <h2>薪資相關參數</h2>
-            <div class="subtitle">全勤獎金與薪資計算相關設定</div>
           </div>
           <div class="card-body">
             <div class="form-group">
               <label for="attendance_bonus_amount">全勤獎金金額（元）</label>
               <input id="attendance_bonus_amount" type="number" min="0" step="1" placeholder="1000" disabled />
             </div>
-            <div>
-              <button id="btnSavePayroll" class="btn btn-primary" type="button" disabled>儲存薪資參數</button>
-            </div>
+            <button id="btnSavePayroll" class="btn btn-primary" type="button" disabled>儲存薪資參數</button>
           </div>
         </div>
 
         <div class="card">
           <div class="card-header">
             <h2>成本分析參數</h2>
-            <div class="subtitle">管理成本與盈利目標設定</div>
           </div>
           <div class="card-body">
             <div class="form-group">
@@ -100,16 +88,13 @@
               <label for="target_profit_margin">目標毛利率（%）</label>
               <input id="target_profit_margin" type="number" min="0" max="100" step="0.1" placeholder="50" disabled />
             </div>
-            <div>
-              <button id="btnSaveCost" class="btn btn-primary" type="button" disabled>儲存成本參數</button>
-            </div>
+            <button id="btnSaveCost" class="btn btn-primary" type="button" disabled>儲存成本參數</button>
           </div>
         </div>
 
         <div class="card">
           <div class="card-header">
             <h2>一般設定</h2>
-            <div class="subtitle">公司資訊等一般參數</div>
           </div>
           <div class="card-body">
             <div class="form-group">
@@ -155,23 +140,17 @@
               <label for="report_locale">報表語系</label>
               <input id="report_locale" type="text" placeholder="zh-TW" disabled />
             </div>
-            <div>
-              <button id="btnSaveGeneral" class="btn btn-primary" type="button" disabled>儲存一般設定</button>
-            </div>
+            <button id="btnSaveGeneral" class="btn btn-primary" type="button" disabled>儲存一般設定</button>
           </div>
         </div>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 服務項目管理 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-services">
-        
         <div class="search-bar">
           <button class="btn btn-primary" id="btnAddService">+ 新增</button>
         </div>
 
-        <div class="card" id="addServiceForm" style="display:none;">
+        <div class="card hidden" id="addServiceForm">
           <div class="card-header">
             <h3>新增服務項目</h3>
           </div>
@@ -200,9 +179,6 @@
         </div>
 
         <div class="card">
-          <div class="card-header">
-            <div class="subtitle">點擊服務項目查看子項目</div>
-          </div>
           <div class="card-body">
             <div class="data-table-container">
               <table class="data-table" id="servicesTable">
@@ -225,13 +201,13 @@
           </div>
         </div>
 
-        <div class="card" id="serviceItemsCard" style="display:none;">
+        <div class="card hidden" id="serviceItemsCard">
           <div class="card-header">
             <h3 id="serviceItemsTitle">服務子項目</h3>
             <button class="btn btn-primary" id="btnAddServiceItem">+ 新增子項目</button>
           </div>
           <div class="card-body">
-            <div id="addServiceItemForm" style="display:none;">
+            <div class="hidden" id="addServiceItemForm">
               <h4>新增子項目</h4>
               <div class="form-group">
                 <label>子項目名稱 *</label>
@@ -276,2334 +252,260 @@
         </div>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 任務模板管理 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-task-templates">
-        
-        <!-- 新增任務模板表單（默認隱藏） -->
-        <div class="card" id="addTemplateForm" style="display:none; margin-bottom: 20px; background: #f8f9fa;">
-          <div class="card-header">
-            <h3>新增任務模板</h3>
-          </div>
-          <div class="card-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-              <div>
-                <label>模板名稱 *</label>
-                <input type="text" id="newTemplateName" class="form-control" placeholder="例如：月度記帳服務流程" required>
-              </div>
-              <div>
-                <label>關聯服務項目 *</label>
-                <select id="newTemplateService" class="form-control" required>
-                  <option value="">請選擇服務項目...</option>
-                </select>
-              </div>
-              <div>
-                <label>綁定客戶（可選）</label>
-                <select id="newTemplateClient" class="form-control">
-                  <option value="">統一模板（不綁定客戶）</option>
-                </select>
-              </div>
-              <div style="grid-column: 1 / -1;">
-                <label>說明</label>
-                <textarea id="newTemplateDesc" class="form-control" rows="2" placeholder="模板用途說明"></textarea>
-              </div>
-            </div>
-            <div class="action-btns">
-              <button class="btn btn-primary" onclick="saveNewTemplate()">儲存並繼續新增任務</button>
-              <button class="btn btn-secondary" onclick="cancelAddTemplate()">取消</button>
-            </div>
-          </div>
-        </div>
-        
-        <div class="search-bar">
-          <select id="filterTemplateService">
-            <option value="">所有服務</option>
-          </select>
-          <select id="filterTemplateClient">
-            <option value="">所有客戶</option>
-            <option value="null">統一模板</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchTemplates">篩選</button>
-          <button class="btn btn-primary" id="btnAddTemplate">+ 新增</button>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <div class="subtitle">點擊模板查看包含的任務</div>
-          </div>
-          <div class="card-body">
-            <div class="data-table-container">
-              <table class="data-table" id="templatesTable">
-                <thead>
-                  <tr>
-                    <th style="width: 60px;">ID</th>
-                    <th>模板名稱</th>
-                    <th>關聯服務</th>
-                    <th>綁定客戶</th>
-                    <th>任務數</th>
-                    <th style="width: 80px;">狀態</th>
-                    <th style="width: 150px;">操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td colspan="7" class="loading">載入中...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- 模板任務列表（兩層結構的第二層） -->
-        <div class="card" id="templateStagesCard" style="display:none; margin-top: 20px;">
-          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 id="templateStagesTitle" style="margin: 0;">模板任務</h3>
-            <button class="btn btn-primary btn-sm" id="btnAddTemplateStage">+ 新增任務</button>
-          </div>
-          <div class="card-body">
-            <!-- 新增任務表單 -->
-            <div id="addStageForm" style="display:none; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px;">
-              <h4 style="margin-bottom: 15px;">新增任務</h4>
-              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <div>
-                  <label>任務名稱 *</label>
-                  <input type="text" id="newStageName" class="form-control" placeholder="例如：收集憑證" required>
-                </div>
-                <div>
-                  <label>順序 *</label>
-                  <input type="number" id="newStageOrder" class="form-control" value="1" min="1" required>
-                </div>
-                <div>
-                  <label>預估工時（小時）</label>
-                  <input type="number" id="newStageHours" class="form-control" step="0.5" min="0" placeholder="例如：2">
-                </div>
-                <div style="grid-column: 1 / -1;">
-                  <label>說明</label>
-                  <textarea id="newStageDesc" class="form-control" rows="2" placeholder="任務詳細說明"></textarea>
-                </div>
-                <div>
-                  <label>關聯SOP（可選）</label>
-                  <select id="newStageSOP" class="form-control">
-                    <option value="">無</option>
-                  </select>
-                </div>
-                <div>
-                  <label>關聯附件（可選）</label>
-                  <select id="newStageAttachment" class="form-control">
-                    <option value="">無</option>
-                  </select>
-                </div>
-                <div style="grid-column: 1 / -1;">
-                  <label>依賴任務（可選）</label>
-                  <input type="text" id="newStageDeps" class="form-control" placeholder="例如：1,2 表示依賴任務1和2完成">
-                </div>
-              </div>
-              <div class="action-btns">
-                <button class="btn btn-primary" onclick="saveNewStage()">儲存</button>
-                <button class="btn btn-secondary" onclick="cancelAddStage()">取消</button>
-              </div>
-            </div>
-            
-            <div class="data-table-container">
-              <table class="data-table" id="templateStagesTable">
-                <thead>
-                  <tr>
-                    <th style="width: 60px;">順序</th>
-                    <th>任務名稱</th>
-                    <th style="width: 100px;">預估工時</th>
-                    <th style="width: 100px;">SOP</th>
-                    <th style="width: 100px;">附件</th>
-                    <th>說明</th>
-                    <th style="width: 100px;">操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td colspan="7" class="loading">請先選擇任務模板</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 用戶管理 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-users">
-        
-        <div class="search-bar">
-          <input type="text" id="searchUsers" placeholder="搜尋用戶名稱、Email..." />
-          <button class="btn btn-primary" id="btnSearchUsers">搜尋</button>
-          <button class="btn btn-primary" id="btnAddUser">+ 新增用戶</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="usersTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>帳號</th>
-                <th>姓名</th>
-                <th>Email</th>
-                <th>性別</th>
-                <th>到職日</th>
-                <th>管理員</th>
-                <th>狀態</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="9" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 客戶管理 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-clients">
-        
-        <div class="search-bar">
-          <input type="text" id="searchClients" placeholder="搜尋客戶名稱、統編..." />
-          <button class="btn btn-primary" id="btnSearchClients">搜尋</button>
-          <button class="btn btn-primary" id="btnAddClient">+ 新增客戶</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="clientsTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>客戶名稱</th>
-                <th>統編</th>
-                <th>聯絡人</th>
-                <th>Email</th>
-                <th>電話</th>
-                <th>狀態</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="8" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 任務管理 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-tasks">
-        
-        <div class="search-bar">
-          <input type="text" id="searchTasks" placeholder="搜尋任務標題..." />
-          <select id="filterTaskStatus">
-            <option value="">所有狀態</option>
-            <option value="pending">待處理</option>
-            <option value="in_progress">進行中</option>
-            <option value="completed">已完成</option>
-            <option value="cancelled">已取消</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchTasks">搜尋</button>
-          <button class="btn btn-primary" id="btnAddTask">+ 新增任務</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="tasksTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>標題</th>
-                <th>客戶</th>
-                <th>負責人</th>
-                <th>優先級</th>
-                <th>狀態</th>
-                <th>到期日</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="8" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 工時管理 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-timesheets">
-        
-        <div class="search-bar">
-          <input type="date" id="searchTimesheetDate" />
-          <select id="filterTimesheetUser">
-            <option value="">所有員工</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchTimesheets">搜尋</button>
-          <button class="btn btn-primary" id="btnAddTimesheet">+ 新增工時</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="timesheetsTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>員工</th>
-                <th>日期</th>
-                <th>工作類型</th>
-                <th>時數</th>
-                <th>加班時數</th>
-                <th>說明</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="8" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 假期管理 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-leaves">
-        
-        <div class="search-bar">
-          <select id="filterLeaveUser">
-            <option value="">所有員工</option>
-          </select>
-          <select id="filterLeaveType">
-            <option value="">所有類型</option>
-            <option value="annual">特休</option>
-            <option value="sick">病假</option>
-            <option value="personal">事假</option>
-            <option value="comp_time">補休</option>
-          </select>
-          <select id="filterLeaveStatus">
-            <option value="">所有狀態</option>
-            <option value="pending">待審核</option>
-            <option value="approved">已核准</option>
-            <option value="rejected">已拒絕</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchLeaves">搜尋</button>
-          <button class="btn btn-primary" id="btnAddLeave">+ 新增假期</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="leavesTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>員工</th>
-                <th>假期類型</th>
-                <th>開始日期</th>
-                <th>結束日期</th>
-                <th>天數</th>
-                <th>狀態</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="8" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 收據收款 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-receipts">
-        
-        <div class="search-bar">
-          <input type="text" id="searchReceipts" placeholder="搜尋客戶、收據號..." />
-          <select id="filterReceiptStatus">
-            <option value="">所有狀態</option>
-            <option value="unpaid">未收款</option>
-            <option value="partial">部分收款</option>
-            <option value="paid">已收款</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchReceipts">搜尋</button>
-          <button class="btn btn-primary" id="btnAddReceipt">+ 新增收據</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="receiptsTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>收據號</th>
-                <th>客戶</th>
-                <th>金額</th>
-                <th>開立日期</th>
-                <th>收款狀態</th>
-                <th>已收金額</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="8" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 薪資管理 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-payroll">
-        
-        <div class="search-bar">
-          <input type="month" id="searchPayrollMonth" />
-          <select id="filterPayrollUser">
-            <option value="">所有員工</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchPayroll">搜尋</button>
-          <button class="btn btn-primary" id="btnAddPayroll">+ 新增薪資記錄</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="payrollTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>員工</th>
-                <th>月份</th>
-                <th>底薪</th>
-                <th>加班費</th>
-                <th>獎金</th>
-                <th>扣款</th>
-                <th>實發</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="9" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 成本管理 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-overhead">
-        
-        <div class="search-bar">
-          <input type="month" id="searchOverheadMonth" />
-          <select id="filterOverheadCategory">
-            <option value="">所有類別</option>
-            <option value="rent">租金</option>
-            <option value="utilities">水電</option>
-            <option value="software">軟體</option>
-            <option value="marketing">行銷</option>
-            <option value="other">其他</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchOverhead">搜尋</button>
-          <button class="btn btn-primary" id="btnAddOverhead">+ 新增成本項目</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="overheadTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>類別</th>
-                <th>項目名稱</th>
-                <th>金額</th>
-                <th>日期</th>
-                <th>說明</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="7" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 附件系統 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-attachments">
-        
-        <div class="search-bar">
-          <input type="text" id="searchAttachments" placeholder="搜尋檔案名稱..." />
-          <select id="filterAttachmentType">
-            <option value="">所有類型</option>
-            <option value="client">客戶</option>
-            <option value="task">任務</option>
-            <option value="receipt">收據</option>
-            <option value="payroll">薪資</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchAttachments">搜尋</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="attachmentsTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>檔案名稱</th>
-                <th>關聯類型</th>
-                <th>關聯ID</th>
-                <th>檔案大小</th>
-                <th>上傳時間</th>
-                <th>上傳者</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="8" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 知識庫 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-sop">
-        
-        <div class="search-bar">
-          <input type="text" id="searchSOP" placeholder="搜尋標題、關鍵字..." />
-          <select id="filterSOPCategory">
-            <option value="">所有分類</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchSOP">搜尋</button>
-          <button class="btn btn-primary" id="btnAddSOP">+ 新增SOP</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="sopTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>標題</th>
-                <th>分類</th>
-                <th>版本</th>
-                <th>更新時間</th>
-                <th>更新者</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="7" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 服務生命週期 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-lifecycle">
-        
-        <div class="search-bar">
-          <input type="text" id="searchLifecycle" placeholder="搜尋客戶..." />
-          <select id="filterLifecycleStatus">
-            <option value="">所有狀態</option>
-            <option value="active">進行中</option>
-            <option value="suspended">暫停</option>
-            <option value="terminated">終止</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchLifecycle">搜尋</button>
-          <button class="btn btn-primary" id="btnAddLifecycle">+ 新增服務</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="lifecycleTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>客戶</th>
-                <th>服務類型</th>
-                <th>階段</th>
-                <th>狀態</th>
-                <th>開始日期</th>
-                <th>負責人</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="8" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- CMS內容 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-cms">
-        
-        <div class="search-bar">
-          <input type="text" id="searchCMS" placeholder="搜尋標題..." />
-          <select id="filterCMSStatus">
-            <option value="">所有狀態</option>
-            <option value="draft">草稿</option>
-            <option value="published">已發布</option>
-            <option value="archived">已封存</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchCMS">搜尋</button>
-          <button class="btn btn-primary" id="btnAddCMS">+ 新增內容</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="cmsTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>標題</th>
-                <th>Slug</th>
-                <th>狀態</th>
-                <th>發布時間</th>
-                <th>作者</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="7" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 自動化規則 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-automation">
-        
-        <div class="search-bar">
-          <input type="text" id="searchAutomation" placeholder="搜尋規則名稱..." />
-          <select id="filterAutomationStatus">
-            <option value="">所有狀態</option>
-            <option value="1">啟用</option>
-            <option value="0">停用</option>
-          </select>
-          <button class="btn btn-primary" id="btnSearchAutomation">搜尋</button>
-          <button class="btn btn-primary" id="btnAddAutomation">+ 新增規則</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="automationTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>規則名稱</th>
-                <th>觸發類型</th>
-                <th>動作類型</th>
-                <th>狀態</th>
-                <th>上次執行</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="7" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
-      <!-- ========================================== -->
-      <!-- 國定假日 Tab -->
-      <!-- ========================================== -->
       <div class="tab-panel" id="tab-holidays">
-        <div class="tab-header">
-          <h2>國定假日管理</h2>
-          <button class="btn btn-primary" id="btnAddHoliday">+ 新增假日</button>
-        </div>
-        
-        <div class="search-bar">
-          <input type="number" id="searchHolidayYear" placeholder="年份" min="2020" max="2030" />
-          <button class="btn btn-primary" id="btnSearchHolidays">搜尋</button>
-        </div>
-
-        <div class="data-table-container">
-          <table class="data-table" id="holidaysTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>假日名稱</th>
-                <th>日期</th>
-                <th>類型</th>
-                <th>備註</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="6" class="loading">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <p>此模組尚未完成，後續開發中...</p>
       </div>
 
     </main>
 
+    <script src="/assets/js/components/bootstrap.js"></script>
     <script>
-      (function(){
-        const onProdHost = location.hostname.endsWith('horgoscpa.com');
-        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
-
-        // ========================================
-        // Tab 切換功能
-        // ========================================
-        const tabBtns = document.querySelectorAll('.nav-tab');
-        const tabPanels = document.querySelectorAll('.tab-panel');
-
-        console.log('找到', tabBtns.length, '個tab按鈕');
-        console.log('找到', tabPanels.length, '個tab面板');
-
-        // 初始化：隱藏所有非active的面板
-        tabPanels.forEach(p => {
-          if (!p.classList.contains('active')) {
-            p.style.display = 'none';
-          }
+      const apiBase = '/internal/api/v1';
+      
+      // Tab切換
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tab = btn.dataset.tab;
+          document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById('tab-' + tab).classList.add('active');
         });
+      });
 
-        tabBtns.forEach(btn => {
-          btn.addEventListener('click', () => {
-            const targetTab = btn.getAttribute('data-tab');
-            console.log('點擊tab:', targetTab);
-            
-            // 移除所有active狀態並強制隱藏所有面板
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabPanels.forEach(p => {
-              p.classList.remove('active');
-              p.style.display = 'none'; // 強制隱藏
+      // 載入系統設定
+      async function loadSettings() {
+        try {
+          const res = await fetch(`${apiBase}/settings`, { credentials: 'include' });
+          if (!res.ok) throw new Error('載入失敗');
+          const json = await res.json();
+          
+          if (json.data) {
+            Object.keys(json.data).forEach(key => {
+              const el = document.getElementById(key);
+              if (el) el.value = json.data[key] || '';
             });
-            
-            // 添加當前tab的active狀態並強制顯示
-            btn.classList.add('active');
-            const targetPanel = document.getElementById('tab-' + targetTab);
-            if (targetPanel) {
-              console.log('切換到面板:', targetPanel.id);
-              targetPanel.classList.add('active');
-              targetPanel.style.display = 'block'; // 強制顯示
-            } else {
-              console.error('找不到面板: tab-' + targetTab);
-            }
+          }
+        } catch (err) {
+          console.error('載入系統設定失敗:', err);
+        }
+      }
 
-            // 載入對應tab的資料
-            loadTabData(targetTab);
+      // 載入服務項目
+      async function loadServices() {
+        const tbody = document.querySelector('#servicesTable tbody');
+        tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
+        
+        try {
+          const res = await fetch(`${apiBase}/services`, { credentials: 'include' });
+          if (!res.ok) throw new Error('載入失敗');
+          const json = await res.json();
+          
+          if (!json.data || json.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無資料</td></tr>';
+            return;
+          }
+          
+          tbody.innerHTML = json.data.map(service => `
+            <tr onclick="selectService(${service.service_id}, '${service.service_name}')" style="cursor: pointer;">
+              <td>${service.service_id}</td>
+              <td><strong>${service.service_name}</strong></td>
+              <td>${service.service_code || '-'}</td>
+              <td>${service.description || '-'}</td>
+              <td>${service.display_order}</td>
+              <td><span class="status-badge ${service.is_active ? 'status-active' : 'status-inactive'}">
+                ${service.is_active ? '啟用' : '停用'}
+              </span></td>
+              <td>
+                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); editService(${service.service_id})">編輯</button>
+                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteService(${service.service_id})">刪除</button>
+              </td>
+            </tr>
+          `).join('');
+        } catch (err) {
+          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗</td></tr>';
+          console.error('載入服務項目失敗:', err);
+        }
+      }
+
+      // 新增服務
+      document.getElementById('btnAddService').addEventListener('click', () => {
+        document.getElementById('addServiceForm').classList.remove('hidden');
+      });
+
+      function cancelAddService() {
+        document.getElementById('addServiceForm').classList.add('hidden');
+        document.getElementById('newServiceName').value = '';
+        document.getElementById('newServiceCode').value = '';
+        document.getElementById('newServiceDesc').value = '';
+        document.getElementById('newServiceOrder').value = '0';
+      }
+
+      async function saveNewService() {
+        const name = document.getElementById('newServiceName').value.trim();
+        if (!name) {
+          alert('請輸入服務名稱');
+          return;
+        }
+        
+        const data = {
+          service_name: name,
+          service_code: document.getElementById('newServiceCode').value.trim() || null,
+          description: document.getElementById('newServiceDesc').value.trim() || null,
+          display_order: parseInt(document.getElementById('newServiceOrder').value) || 0
+        };
+        
+        try {
+          const res = await fetch(`${apiBase}/services`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data)
           });
-        });
-
-        // ========================================
-        // 權限檢查與初始化
-        // ========================================
-        const permBar = document.getElementById('permBar');
-        const dangerControls = [
-          document.getElementById('rule_comp_hours_expiry'),
-          document.getElementById('btnSaveDanger'),
-        ];
-        const payrollControls = [
-          document.getElementById('attendance_bonus_amount'),
-          document.getElementById('btnSavePayroll'),
-        ];
-        const costControls = [
-          document.getElementById('overhead_cost_per_hour'),
-          document.getElementById('target_profit_margin'),
-          document.getElementById('btnSaveCost'),
-        ];
-        const generalControls = [
-          document.getElementById('company_name'),
-          document.getElementById('contact_email'),
-          document.getElementById('btnSaveGeneral'),
-        ];
-
-        function setControlsEnabled(arr, enabled){
-          arr.forEach(el => { if (el) { el.disabled = !enabled; } });
+          
+          if (!res.ok) throw new Error('新增失敗');
+          
+          alert('新增成功');
+          cancelAddService();
+          loadServices();
+        } catch (err) {
+          alert('新增失敗: ' + err.message);
         }
+      }
 
-        function setMsg(text, isOk){
-          const bar = document.getElementById('msgBar');
-          if (!bar) return;
-          if (!text){ bar.style.display='none'; bar.textContent=''; return; }
-          bar.textContent = text;
-          bar.style.display = 'block';
-          bar.style.color = isOk ? '#1b5e20' : '#c0392b';
-        }
+      function editService(id) {
+        alert('編輯功能開發中...');
+      }
 
-        async function loadSettings(){
-          try {
-            const res = await fetch(`${apiBase}/admin/settings`, { credentials:'include' });
-            if (res.status === 401) { location.assign('/login?redirect=/internal/settings'); return; }
-            const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error();
-            const map = json.data?.map || {};
-            const company = document.getElementById('company_name');
-            const email = document.getElementById('contact_email');
-            const rule = document.getElementById('rule_comp_hours_expiry');
-            const tz = document.getElementById('timezone');
-            const cur = document.getElementById('currency');
-            const unit = document.getElementById('timesheet_min_unit');
-            const soft = document.getElementById('soft_delete_enabled');
-            const wdStart = document.getElementById('workday_start');
-            const wdEnd = document.getElementById('workday_end');
-            const repLoc = document.getElementById('report_locale');
-            const attendBonus = document.getElementById('attendance_bonus_amount');
-            const overheadCost = document.getElementById('overhead_cost_per_hour');
-            const targetMargin = document.getElementById('target_profit_margin');
-            if (company) company.value = map.company_name || '';
-            if (email) email.value = map.contact_email || '';
-            if (rule && map.rule_comp_hours_expiry) rule.value = map.rule_comp_hours_expiry;
-            if (tz) tz.value = map.timezone || 'Asia/Taipei';
-            if (cur) cur.value = map.currency || 'TWD';
-            if (unit && map.timesheet_min_unit) unit.value = String(map.timesheet_min_unit);
-            if (soft && map.soft_delete_enabled) soft.value = String(map.soft_delete_enabled);
-            if (wdStart) wdStart.value = (map.workday_start||'08:30');
-            if (wdEnd) wdEnd.value = (map.workday_end||'17:30');
-            if (repLoc) repLoc.value = map.report_locale || 'zh-TW';
-            if (attendBonus) attendBonus.value = map.attendance_bonus_amount || '1000';
-            if (overheadCost) overheadCost.value = map.overhead_cost_per_hour || '100';
-            if (targetMargin) targetMargin.value = map.target_profit_margin || '50';
-          } catch (_) {
-            setMsg('載入設定失敗，請稍後再試', false);
-          }
-        }
-
-        async function putSetting(key, payload){
-          const res = await fetch(`${apiBase}/admin/settings/${encodeURIComponent(key)}`, {
-            method:'PUT', headers:{ 'Content-Type':'application/json' }, credentials:'include', body: JSON.stringify(payload||{})
+      async function deleteService(id) {
+        if (!confirm('確定要刪除此服務項目嗎？')) return;
+        
+        try {
+          const res = await fetch(`${apiBase}/services/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
           });
-          const json = await res.json().catch(()=>null);
-          if (!res.ok || !json || json.ok !== true) {
-            const msg = (json && json.message) || '更新失敗';
-            throw new Error(msg);
-          }
-          return json;
+          
+          if (!res.ok) throw new Error('刪除失敗');
+          
+          alert('刪除成功');
+          loadServices();
+        } catch (err) {
+          alert('刪除失敗: ' + err.message);
         }
+      }
 
-        async function ensureAdmin(){
-          try {
-            const res = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
-            if (res.status === 401) { location.assign('/login?redirect=/internal/settings'); return false; }
-            const json = await res.json();
-            if (!json || json.ok !== true) throw new Error();
-            const isAdmin = !!json.data?.isAdmin;
-            if (!isAdmin) {
-              permBar.style.display = 'block';
-              setControlsEnabled(dangerControls, false);
-              setControlsEnabled(payrollControls, false);
-              setControlsEnabled(costControls, false);
-              setControlsEnabled(generalControls, false);
-              return false;
-            }
-            setControlsEnabled(dangerControls, true);
-            setControlsEnabled(payrollControls, true);
-            setControlsEnabled(costControls, true);
-            setControlsEnabled(generalControls, true);
-            await loadSettings();
-            return true;
-          } catch (_) {
-            permBar.textContent = '載入失敗，請稍後再試';
-            permBar.style.display = 'block';
-            return false;
-          }
-        }
+      function selectService(id, name) {
+        document.getElementById('serviceItemsCard').classList.remove('hidden');
+        document.getElementById('serviceItemsTitle').textContent = `${name} - 子項目`;
+        loadServiceItems(id);
+      }
 
-        // ========================================
-        // 系統參數儲存事件
-        // ========================================
+      async function loadServiceItems(serviceId) {
+        const tbody = document.querySelector('#serviceItemsTable tbody');
+        tbody.innerHTML = '<tr><td colspan="6" class="loading">載入中...</td></tr>';
         
-        // 薪資參數
-        if(document.getElementById('btnSavePayroll')) {
-        document.getElementById('btnSavePayroll').addEventListener('click', async function(){
-          setMsg('', true);
-          const attendBonus = document.getElementById('attendance_bonus_amount').value.trim();
-          const n = parseInt(attendBonus, 10);
-          if (!Number.isInteger(n) || n < 0) { setMsg('全勤獎金必須為非負整數', false); return; }
-          this.disabled = true; this.textContent = '儲存中…';
-          try {
-            await putSetting('attendance_bonus_amount', { value: attendBonus });
-            setMsg('已更新薪資參數。', true);
-          } catch (e) {
-            setMsg(String(e && e.message || '更新失敗'), false);
-          } finally {
-            this.disabled = false; this.textContent = '儲存薪資參數';
-          }
-        });
-        }
-
-        // 成本參數
-        if(document.getElementById('btnSaveCost')) {
-        document.getElementById('btnSaveCost').addEventListener('click', async function(){
-          setMsg('', true);
-          const overheadCost = document.getElementById('overhead_cost_per_hour').value.trim();
-          const targetMargin = document.getElementById('target_profit_margin').value.trim();
-          const oc = parseFloat(overheadCost);
-          const tm = parseFloat(targetMargin);
-          if (!Number.isFinite(oc) || oc < 0) { setMsg('管理成本必須為非負數字', false); return; }
-          if (!Number.isFinite(tm) || tm < 0 || tm > 100) { setMsg('目標毛利率必須在 0-100 之間', false); return; }
-          this.disabled = true; this.textContent = '儲存中…';
-          try {
-            await putSetting('overhead_cost_per_hour', { value: overheadCost });
-            await putSetting('target_profit_margin', { value: targetMargin });
-            setMsg('已更新成本參數。', true);
-          } catch (e) {
-            setMsg(String(e && e.message || '更新失敗'), false);
-          } finally {
-            this.disabled = false; this.textContent = '儲存成本參數';
-          }
-        });
-        }
-
-        // 危險設定
-        if(document.getElementById('btnSaveDanger')) {
-        document.getElementById('btnSaveDanger').addEventListener('click', async function(){
-          setMsg('', true);
-          const rule = document.getElementById('rule_comp_hours_expiry').value;
-          this.disabled = true; this.textContent = '儲存中…';
-          try {
-            await putSetting('rule_comp_hours_expiry', { value: rule, confirmed: true });
-            setMsg('已更新危險設定。', true);
-          } catch (e) {
-            setMsg(String(e && e.message || '更新失敗'), false);
-          } finally {
-            this.disabled = false; this.textContent = '儲存危險設定';
-          }
-        });
-        }
-
-        // 一般設定
-        if(document.getElementById('btnSaveGeneral')) {
-        document.getElementById('btnSaveGeneral').addEventListener('click', async function(){
-          setMsg('', true);
-          const company = document.getElementById('company_name').value.trim();
-          const email = document.getElementById('contact_email').value.trim();
-          const tz = document.getElementById('timezone').value.trim();
-          const cur = document.getElementById('currency').value.trim();
-          const unit = document.getElementById('timesheet_min_unit').value;
-          const soft = document.getElementById('soft_delete_enabled').value;
-          const wdStart = document.getElementById('workday_start').value;
-          const wdEnd = document.getElementById('workday_end').value;
-          const repLoc = document.getElementById('report_locale').value.trim();
-          if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setMsg('Email 格式錯誤', false); return; }
-          this.disabled = true; this.textContent = '儲存中…';
-          try {
-            await putSetting('company_name', { value: company });
-            await putSetting('contact_email', { value: email });
-            await putSetting('timezone', { value: tz||'Asia/Taipei' });
-            await putSetting('currency', { value: cur||'TWD' });
-            await putSetting('timesheet_min_unit', { value: unit });
-            await putSetting('soft_delete_enabled', { value: soft });
-            await putSetting('workday_start', { value: wdStart||'08:30' });
-            await putSetting('workday_end', { value: wdEnd||'17:30' });
-            await putSetting('report_locale', { value: repLoc||'zh-TW' });
-            setMsg('已更新一般設定。', true);
-          } catch (e) {
-            setMsg(String(e && e.message || '更新失敗'), false);
-          } finally {
-            this.disabled = false; this.textContent = '儲存一般設定';
-          }
-        });
-        }
-
-        // ========================================
-        // 載入各Tab資料的函數
-        // ========================================
-        function loadTabData(tabName) {
-          switch(tabName) {
-            case 'system':
-              // 系統參數已在ensureAdmin中載入
-              break;
-            case 'services':
-              loadServices();
-              break;
-            case 'task-templates':
-              loadTaskTemplates();
-              break;
-            case 'users':
-              loadUsers();
-              break;
-            case 'clients':
-              loadClients();
-              break;
-            case 'tasks':
-              loadTasks();
-              break;
-            case 'timesheets':
-              loadTimesheets();
-              break;
-            case 'leaves':
-              loadLeaves();
-              break;
-            case 'receipts':
-              loadReceipts();
-              break;
-            case 'payroll':
-              loadPayroll();
-              break;
-            case 'overhead':
-              loadOverhead();
-              break;
-            case 'attachments':
-              loadAttachments();
-              break;
-            case 'sop':
-              loadSOP();
-              break;
-            case 'lifecycle':
-              loadLifecycle();
-              break;
-            case 'cms':
-              loadCMS();
-              break;
-            case 'automation':
-              loadAutomation();
-              break;
-            case 'holidays':
-              loadHolidays();
-              break;
-          }
-        }
-
-        // ========================================
-        // 各資料表載入函數
-        // ========================================
-        
-        // 全局變量：當前選中的服務ID
-        let currentServiceId = null;
-        
-        // 服務項目管理
-        async function loadServices() {
-          const tbody = document.querySelector('#servicesTable tbody');
-          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
+        try {
+          const res = await fetch(`${apiBase}/services/${serviceId}/items`, { credentials: 'include' });
+          if (!res.ok) throw new Error('載入失敗');
+          const json = await res.json();
           
-          try {
-            const res = await fetch(`${apiBase}/services`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const services = json.data;
-            
-            if (services.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無服務項目，點擊上方「+ 新增服務項目」開始</td></tr>';
-              return;
-            }
-            
-            tbody.innerHTML = services.map(service => `
-              <tr onclick="selectService(${service.service_id}, '${service.service_name}')" style="cursor: pointer;">
-                <td>${service.service_id}</td>
-                <td><strong>${service.service_name}</strong></td>
-                <td>${service.service_code || '-'}</td>
-                <td>${service.description || '-'}</td>
-                <td>${service.sort_order}</td>
-                <td>
-                  <span class="status-badge ${service.is_active ? 'active' : 'rejected'}">
-                    ${service.is_active ? '啟用' : '停用'}
-                  </span>
-                </td>
-                <td class="action-btns" onclick="event.stopPropagation();">
-                  <button class="btn btn-sm btn-primary" onclick="editService(${service.service_id})">編輯</button>
-                  <button class="btn btn-sm btn-danger" onclick="deleteService(${service.service_id})">刪除</button>
-                </td>
-              </tr>
-            `).join('');
-            
-          } catch (err) {
-            console.error('載入服務項目失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-        
-        // 選擇服務項目，顯示子項目
-        window.selectService = async function(serviceId, serviceName) {
-          currentServiceId = serviceId;
-          const card = document.getElementById('serviceItemsCard');
-          const title = document.getElementById('serviceItemsTitle');
-          const tbody = document.querySelector('#serviceItemsTable tbody');
-          
-          title.textContent = `${serviceName} - 子項目列表`;
-          card.style.display = 'block';
-          tbody.innerHTML = '<tr><td colspan="6" class="loading">載入中...</td></tr>';
-          
-          try {
-            const res = await fetch(`${apiBase}/services/${serviceId}/items`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const items = json.data;
-            
-            if (items.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無子項目，點擊上方「+ 新增子項目」開始</td></tr>';
-              return;
-            }
-            
-            tbody.innerHTML = items.map(item => `
-              <tr>
-                <td>${item.item_id}</td>
-                <td>${item.item_name}</td>
-                <td>${item.item_code || '-'}</td>
-                <td>${item.description || '-'}</td>
-                <td>${item.sort_order}</td>
-                <td class="action-btns">
-                  <button class="btn btn-sm btn-primary" onclick="editServiceItem(${serviceId}, ${item.item_id})">編輯</button>
-                  <button class="btn btn-sm btn-danger" onclick="deleteServiceItem(${serviceId}, ${item.item_id})">刪除</button>
-                </td>
-              </tr>
-            `).join('');
-            
-          } catch (err) {
-            console.error('載入子項目失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        };
-        
-        // 任務模板管理
-        async function loadTaskTemplates() {
-          const tbody = document.querySelector('#templatesTable tbody');
-          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
-          
-          // 同時載入服務列表和客戶列表到篩選器
-          loadServicesForFilter();
-          loadClientsForFilter();
-          
-          try {
-            const res = await fetch(`${apiBase}/task-templates`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const templates = json.data;
-            
-            if (templates.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無任務模板，點擊上方「+ 新增任務模板」開始</td></tr>';
-              return;
-            }
-            
-            tbody.innerHTML = templates.map(template => {
-              const templateName = (template.template_name || '').replace(/'/g, "\\'");
-              return `
-              <tr onclick="selectTemplate(${template.template_id}, '${templateName}')" style="cursor: pointer;">
-                <td>${template.template_id}</td>
-                <td><strong>${template.template_name}</strong></td>
-                <td>${template.service_name || '-'}</td>
-                <td>${template.client_name || '統一模板'}</td>
-                <td>${template.stages_count || 0} 個任務</td>
-                <td>
-                  <span class="status-badge ${template.is_active ? 'active' : 'rejected'}">
-                    ${template.is_active ? '啟用' : '停用'}
-                  </span>
-                </td>
-                <td class="action-btns" onclick="event.stopPropagation();">
-                  <button class="btn btn-sm btn-danger" onclick="deleteTemplate(${template.template_id})">刪除</button>
-                </td>
-              </tr>
-            `}).join('');
-            
-          } catch (err) {
-            console.error('載入任務模板失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-        
-        // 載入客戶列表到篩選器和新增表單
-        async function loadClientsForFilter() {
-          try {
-            const res = await fetch(`${apiBase}/clients`, { credentials: 'include' });
-            if (!res.ok) return;
-            const json = await res.json();
-            if (!json.ok || !json.data) return;
-            
-            // 更新篩選器
-            const filterSelect = document.getElementById('filterTemplateClient');
-            if (filterSelect) {
-              const existingOptions = `
-                <option value="">所有客戶</option>
-                <option value="null">統一模板</option>
-              `;
-              filterSelect.innerHTML = existingOptions + 
-                json.data.map(c => `<option value="${c.client_id}">${c.company_name}</option>`).join('');
-            }
-            
-            // 更新新增表單
-            const formSelect = document.getElementById('newTemplateClient');
-            if (formSelect) {
-              const existingFormOptions = `<option value="">統一模板（不綁定客戶）</option>`;
-              formSelect.innerHTML = existingFormOptions + 
-                json.data.map(c => `<option value="${c.client_id}">${c.company_name}</option>`).join('');
-            }
-          } catch (err) {
-            console.error('載入客戶列表失敗:', err);
-          }
-        }
-        
-        // 選擇任務模板並顯示其任務列表
-        let currentTemplateId = null;
-        
-        window.selectTemplate = async function(templateId, templateName) {
-          currentTemplateId = templateId;
-          const card = document.getElementById('templateStagesCard');
-          const title = document.getElementById('templateStagesTitle');
-          const tbody = document.querySelector('#templateStagesTable tbody');
-          
-          title.textContent = `${templateName} - 任務列表`;
-          card.style.display = 'block';
-          tbody.innerHTML = '<tr><td colspan="6" class="loading">載入中...</td></tr>';
-          
-          // 隱藏新增表單
-          document.getElementById('addStageForm').style.display = 'none';
-          
-          try {
-            const res = await fetch(`${apiBase}/task-templates/${templateId}/stages`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const stages = json.data;
-            
-            if (stages.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無任務，點擊上方「+ 新增任務」開始</td></tr>';
-              return;
-            }
-            
-            tbody.innerHTML = stages.map(stage => {
-              const sopLink = stage.sop_id ? 
-                `<a href="/internal/knowledge?id=${stage.sop_id}" target="_blank" class="link-badge">📖 ${stage.sop_title || 'SOP'}</a>` : 
-                '-';
-              const attachmentLink = stage.attachment_id ? 
-                `<a href="${stage.attachment_url || '#'}" target="_blank" class="link-badge">📎 ${stage.attachment_name || '附件'}</a>` : 
-                '-';
-              
-              return `
-              <tr>
-                <td><strong>${stage.stage_order}</strong></td>
-                <td>${stage.stage_name}</td>
-                <td>${stage.estimated_hours ? stage.estimated_hours + ' 小時' : '-'}</td>
-                <td>${sopLink}</td>
-                <td>${attachmentLink}</td>
-                <td>${stage.description || '-'}</td>
-                <td class="action-btns">
-                  <button class="btn btn-sm btn-danger" onclick="deleteStage(${templateId}, ${stage.stage_id})">刪除</button>
-                </td>
-              </tr>
-            `}).join('');
-            
-          } catch (err) {
-            console.error('載入任務列表失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        };
-        
-        // 載入服務列表到篩選器
-        async function loadServicesForFilter() {
-          try {
-            const res = await fetch(`${apiBase}/services`, { credentials: 'include' });
-            if (!res.ok) return;
-            const json = await res.json();
-            if (!json.ok || !json.data) return;
-            
-            const select = document.getElementById('filterTemplateService');
-            if (!select) return;
-            
-            select.innerHTML = '<option value="">所有服務</option>' + 
-              json.data.map(s => `<option value="${s.service_id}">${s.service_name}</option>`).join('');
-          } catch (err) {
-            console.error('載入服務列表失敗:', err);
-          }
-        }
-        
-        // 用戶管理
-        async function loadUsers() {
-          const tbody = document.querySelector('#usersTable tbody');
-          tbody.innerHTML = '<tr><td colspan="9" class="loading">載入中...</td></tr>';
-          
-          try {
-            const res = await fetch(`${apiBase}/users`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const users = json.data;
-            
-            if (users.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="9" class="loading">暫無資料</td></tr>';
-              return;
-            }
-            
-            tbody.innerHTML = users.map(user => `
-              <tr>
-                <td>${user.user_id}</td>
-                <td>${user.username}</td>
-                <td>${user.name || user.username}</td>
-                <td>-</td>
-                <td>-</td>
-                <td>-</td>
-                <td>
-                  <span class="status-badge ${user.is_admin ? 'active' : 'draft'}">
-                    ${user.is_admin ? '是' : '否'}
-                  </span>
-                </td>
-                <td>
-                  <span class="status-badge active">正常</span>
-                </td>
-                <td class="action-btns">
-                  <button class="btn btn-sm btn-primary" disabled>編輯</button>
-                </td>
-              </tr>
-            `).join('');
-            
-          } catch (err) {
-            console.error('載入用戶失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="9" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 客戶管理
-        async function loadClients() {
-          const tbody = document.querySelector('#clientsTable tbody');
-          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
-          
-          try {
-            const res = await fetch(`${apiBase}/clients`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const clients = json.data;
-            
-            if (clients.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無資料</td></tr>';
-              return;
-            }
-            
-            tbody.innerHTML = clients.map(client => `
-              <tr>
-                <td>${client.client_id}</td>
-                <td>${client.name || '-'}</td>
-                <td>${client.tax_id || '-'}</td>
-                <td>${client.contact_person || '-'}</td>
-                <td>${client.email || '-'}</td>
-                <td>${client.phone || '-'}</td>
-                <td>
-                  <span class="status-badge ${client.is_deleted ? 'rejected' : 'active'}">
-                    ${client.is_deleted ? '已刪除' : '正常'}
-                  </span>
-                </td>
-                <td class="action-btns">
-                  <button class="btn btn-sm btn-primary" onclick="location.href='/internal/client-detail?id=${client.client_id}'">查看</button>
-                </td>
-              </tr>
-            `).join('');
-            
-          } catch (err) {
-            console.error('載入客戶失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 任務管理
-        async function loadTasks() {
-          const tbody = document.querySelector('#tasksTable tbody');
-          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
-          
-          try {
-            const res = await fetch(`${apiBase}/tasks`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const tasks = json.data;
-            
-            if (tasks.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無資料</td></tr>';
-              return;
-            }
-            
-            const statusMap = {
-              pending: { label: '待處理', class: 'pending' },
-              in_progress: { label: '進行中', class: 'in_progress' },
-              completed: { label: '已完成', class: 'active' },
-              cancelled: { label: '已取消', class: 'rejected' }
-            };
-            
-            const priorityMap = {
-              low: '低',
-              normal: '中',
-              high: '高',
-              urgent: '緊急'
-            };
-            
-            tbody.innerHTML = tasks.map(task => {
-              const status = statusMap[task.status] || { label: task.status, class: 'draft' };
-              return `
-                <tr>
-                  <td>${task.task_id}</td>
-                  <td>${task.title || '-'}</td>
-                  <td>${task.client_name || '-'}</td>
-                  <td>${task.assigned_to_name || '-'}</td>
-                  <td>${priorityMap[task.priority] || task.priority || '-'}</td>
-                  <td>
-                    <span class="status-badge ${status.class}">${status.label}</span>
-                  </td>
-                  <td>${task.due_date || '-'}</td>
-                  <td class="action-btns">
-                    <button class="btn btn-sm btn-primary" disabled>編輯</button>
-                  </td>
-                </tr>
-              `;
-            }).join('');
-            
-          } catch (err) {
-            console.error('載入任務失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 工時管理
-        async function loadTimesheets() {
-          const tbody = document.querySelector('#timesheetsTable tbody');
-          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
-          
-          try {
-            const today = new Date().toISOString().split('T')[0];
-            const res = await fetch(`${apiBase}/timesheets?date=${today}`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const timesheets = json.data;
-            
-            if (timesheets.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無今日工時記錄</td></tr>';
-              return;
-            }
-            
-            tbody.innerHTML = timesheets.map(ts => `
-              <tr>
-                <td>${ts.timesheet_id || '-'}</td>
-                <td>${ts.user_name || '-'}</td>
-                <td>${ts.date || '-'}</td>
-                <td>${ts.work_type || '-'}</td>
-                <td>${ts.hours || 0}</td>
-                <td>${ts.overtime_hours || 0}</td>
-                <td>${ts.description || '-'}</td>
-                <td class="action-btns">
-                  <button class="btn btn-sm btn-primary" disabled>編輯</button>
-                </td>
-              </tr>
-            `).join('');
-            
-          } catch (err) {
-            console.error('載入工時失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 假期管理
-        async function loadLeaves() {
-          const tbody = document.querySelector('#leavesTable tbody');
-          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
-          
-          try {
-            const res = await fetch(`${apiBase}/leaves`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const leaves = json.data;
-            
-            if (leaves.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無假期記錄</td></tr>';
-              return;
-            }
-            
-            const typeMap = {
-              annual: '特休',
-              sick: '病假',
-              personal: '事假',
-              comp_time: '補休'
-            };
-            
-            const statusMap = {
-              pending: { label: '待審核', class: 'pending' },
-              approved: { label: '已核准', class: 'active' },
-              rejected: { label: '已拒絕', class: 'rejected' }
-            };
-            
-            tbody.innerHTML = leaves.map(leave => {
-              const status = statusMap[leave.status] || { label: leave.status, class: 'draft' };
-              return `
-                <tr>
-                  <td>${leave.leave_id}</td>
-                  <td>${leave.user_name || '-'}</td>
-                  <td>${typeMap[leave.leave_type] || leave.leave_type || '-'}</td>
-                  <td>${leave.start_date || '-'}</td>
-                  <td>${leave.end_date || '-'}</td>
-                  <td>${leave.days || 0}</td>
-                  <td>
-                    <span class="status-badge ${status.class}">${status.label}</span>
-                  </td>
-                  <td class="action-btns">
-                    <button class="btn btn-sm btn-primary" disabled>查看</button>
-                  </td>
-                </tr>
-              `;
-            }).join('');
-            
-          } catch (err) {
-            console.error('載入假期失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 收據收款
-        async function loadReceipts() {
-          const tbody = document.querySelector('#receiptsTable tbody');
-          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
-          
-          try {
-            const res = await fetch(`${apiBase}/receipts`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const receipts = json.data;
-            
-            if (receipts.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無收據記錄</td></tr>';
-              return;
-            }
-            
-            const statusMap = {
-              unpaid: { label: '未收款', class: 'rejected' },
-              partial: { label: '部分收款', class: 'pending' },
-              paid: { label: '已收款', class: 'active' }
-            };
-            
-            tbody.innerHTML = receipts.map(receipt => {
-              const status = statusMap[receipt.payment_status] || { label: receipt.payment_status, class: 'draft' };
-              return `
-                <tr>
-                  <td>${receipt.receipt_id}</td>
-                  <td>${receipt.receipt_number || '-'}</td>
-                  <td>${receipt.client_name || '-'}</td>
-                  <td>$${(receipt.amount || 0).toLocaleString()}</td>
-                  <td>${receipt.receipt_date || '-'}</td>
-                  <td>
-                    <span class="status-badge ${status.class}">${status.label}</span>
-                  </td>
-                  <td>$${(receipt.paid_amount || 0).toLocaleString()}</td>
-                  <td class="action-btns">
-                    <button class="btn btn-sm btn-primary" disabled>編輯</button>
-                  </td>
-                </tr>
-              `;
-            }).join('');
-            
-          } catch (err) {
-            console.error('載入收據失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 薪資管理
-        async function loadPayroll() {
-          const tbody = document.querySelector('#payrollTable tbody');
-          tbody.innerHTML = '<tr><td colspan="9" class="loading">載入中...</td></tr>';
-          
-          try {
-            const currentMonth = new Date().toISOString().slice(0, 7);
-            const res = await fetch(`${apiBase}/admin/payroll?month=${currentMonth}`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const payrolls = json.data;
-            
-            if (payrolls.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="9" class="loading">暫無本月薪資記錄</td></tr>';
-              return;
-            }
-            
-            tbody.innerHTML = payrolls.map(payroll => `
-              <tr>
-                <td>${payroll.payroll_id}</td>
-                <td>${payroll.user_name || '-'}</td>
-                <td>${payroll.period_month || '-'}</td>
-                <td>$${(payroll.base_salary || 0).toLocaleString()}</td>
-                <td>$${(payroll.overtime_pay || 0).toLocaleString()}</td>
-                <td>$${(payroll.bonus || 0).toLocaleString()}</td>
-                <td>$${(payroll.deductions || 0).toLocaleString()}</td>
-                <td>$${(payroll.total_pay || 0).toLocaleString()}</td>
-                <td class="action-btns">
-                  <button class="btn btn-sm btn-primary" disabled>查看</button>
-                </td>
-              </tr>
-            `).join('');
-            
-          } catch (err) {
-            console.error('載入薪資失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="9" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 成本管理
-        async function loadOverhead() {
-          const tbody = document.querySelector('#overheadTable tbody');
-          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
-          
-          try {
-            const currentMonth = new Date().toISOString().slice(0, 7);
-            const res = await fetch(`${apiBase}/admin/overhead?month=${currentMonth}`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const overheads = json.data;
-            
-            if (overheads.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無本月成本記錄</td></tr>';
-              return;
-            }
-            
-            const categoryMap = {
-              rent: '租金',
-              utilities: '水電',
-              software: '軟體',
-              marketing: '行銷',
-              other: '其他'
-            };
-            
-            tbody.innerHTML = overheads.map(overhead => `
-              <tr>
-                <td>${overhead.overhead_id}</td>
-                <td>${categoryMap[overhead.category] || overhead.category || '-'}</td>
-                <td>${overhead.item_name || '-'}</td>
-                <td>$${(overhead.amount || 0).toLocaleString()}</td>
-                <td>${overhead.date || '-'}</td>
-                <td>${overhead.description || '-'}</td>
-                <td class="action-btns">
-                  <button class="btn btn-sm btn-primary" disabled>編輯</button>
-                </td>
-              </tr>
-            `).join('');
-            
-          } catch (err) {
-            console.error('載入成本失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 附件系統
-        async function loadAttachments() {
-          const tbody = document.querySelector('#attachmentsTable tbody');
-          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
-          
-          try {
-            const res = await fetch(`${apiBase}/attachments`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const attachments = json.data;
-            
-            if (attachments.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無附件記錄</td></tr>';
-              return;
-            }
-            
-            const typeMap = {
-              client: '客戶',
-              task: '任務',
-              receipt: '收據',
-              payroll: '薪資',
-              other: '其他'
-            };
-            
-            tbody.innerHTML = attachments.map(att => `
-              <tr>
-                <td>${att.attachment_id}</td>
-                <td>${att.file_name || '-'}</td>
-                <td>${typeMap[att.entity_type] || att.entity_type || '-'}</td>
-                <td>${att.entity_id || '-'}</td>
-                <td>${att.file_size ? (att.file_size / 1024).toFixed(2) + ' KB' : '-'}</td>
-                <td>${att.created_at || '-'}</td>
-                <td>${att.uploaded_by_name || '-'}</td>
-                <td class="action-btns">
-                  <button class="btn btn-sm btn-primary" disabled>下載</button>
-                </td>
-              </tr>
-            `).join('');
-            
-          } catch (err) {
-            console.error('載入附件失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 知識庫
-        async function loadSOP() {
-          const tbody = document.querySelector('#sopTable tbody');
-          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
-          
-          try {
-            const res = await fetch(`${apiBase}/sop`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const sops = json.data;
-            
-            if (sops.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無SOP文件</td></tr>';
-              return;
-            }
-            
-            tbody.innerHTML = sops.map(sop => `
-              <tr>
-                <td>${sop.sop_id}</td>
-                <td>${sop.title || '-'}</td>
-                <td>${sop.category || '-'}</td>
-                <td>${sop.version || '1.0'}</td>
-                <td>${sop.updated_at || '-'}</td>
-                <td>${sop.updated_by_name || '-'}</td>
-                <td class="action-btns">
-                  <button class="btn btn-sm btn-primary" disabled>查看</button>
-                </td>
-              </tr>
-            `).join('');
-            
-          } catch (err) {
-            console.error('載入SOP失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 服務生命週期
-        async function loadLifecycle() {
-          const tbody = document.querySelector('#lifecycleTable tbody');
-          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
-          
-          try {
-            const res = await fetch(`${apiBase}/client-services`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const services = json.data;
-            
-            if (services.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無服務記錄</td></tr>';
-              return;
-            }
-            
-            const statusMap = {
-              active: { label: '進行中', class: 'active' },
-              suspended: { label: '暫停', class: 'pending' },
-              terminated: { label: '終止', class: 'rejected' }
-            };
-            
-            tbody.innerHTML = services.map(service => {
-              const status = statusMap[service.status] || { label: service.status, class: 'draft' };
-              return `
-                <tr>
-                  <td>${service.service_id || service.cs_id}</td>
-                  <td>${service.client_name || '-'}</td>
-                  <td>${service.service_name || service.service_type || '-'}</td>
-                  <td>${service.stage || '-'}</td>
-                  <td>
-                    <span class="status-badge ${status.class}">${status.label}</span>
-                  </td>
-                  <td>${service.start_date || '-'}</td>
-                  <td>${service.assignee_name || '-'}</td>
-                  <td class="action-btns">
-                    <button class="btn btn-sm btn-primary" disabled>查看</button>
-                  </td>
-                </tr>
-              `;
-            }).join('');
-            
-          } catch (err) {
-            console.error('載入服務生命週期失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // CMS內容
-        async function loadCMS() {
-          const tbody = document.querySelector('#cmsTable tbody');
-          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
-          
-          try {
-            const res = await fetch(`${apiBase}/admin/articles`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const articles = json.data;
-            
-            if (articles.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無CMS內容</td></tr>';
-              return;
-            }
-            
-            const statusMap = {
-              draft: { label: '草稿', class: 'draft' },
-              published: { label: '已發布', class: 'active' },
-              archived: { label: '已封存', class: 'rejected' }
-            };
-            
-            tbody.innerHTML = articles.map(article => {
-              const status = statusMap[article.status] || { label: article.status, class: 'draft' };
-              return `
-                <tr>
-                  <td>${article.cms_id || article.article_id}</td>
-                  <td>${article.title || '-'}</td>
-                  <td>${article.slug || '-'}</td>
-                  <td>
-                    <span class="status-badge ${status.class}">${status.label}</span>
-                  </td>
-                  <td>${article.published_at || '-'}</td>
-                  <td>${article.author_name || '-'}</td>
-                  <td class="action-btns">
-                    <button class="btn btn-sm btn-primary" disabled>編輯</button>
-                  </td>
-                </tr>
-              `;
-            }).join('');
-            
-          } catch (err) {
-            console.error('載入CMS失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 自動化規則
-        async function loadAutomation() {
-          const tbody = document.querySelector('#automationTable tbody');
-          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
-          
-          try {
-            const res = await fetch(`${apiBase}/admin/automation-rules`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const rules = json.data;
-            
-            if (rules.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無自動化規則</td></tr>';
-              return;
-            }
-            
-            tbody.innerHTML = rules.map(rule => `
-              <tr>
-                <td>${rule.rule_id}</td>
-                <td>${rule.rule_name || '-'}</td>
-                <td>${rule.trigger_type || '-'}</td>
-                <td>${rule.action_type || '-'}</td>
-                <td>
-                  <span class="status-badge ${rule.is_active ? 'active' : 'rejected'}">
-                    ${rule.is_active ? '啟用' : '停用'}
-                  </span>
-                </td>
-                <td>${rule.last_executed_at || '從未執行'}</td>
-                <td class="action-btns">
-                  <button class="btn btn-sm btn-primary" disabled>編輯</button>
-                </td>
-              </tr>
-            `).join('');
-            
-          } catch (err) {
-            console.error('載入自動化規則失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // 國定假日
-        async function loadHolidays() {
-          const tbody = document.querySelector('#holidaysTable tbody');
-          tbody.innerHTML = '<tr><td colspan="6" class="loading">載入中...</td></tr>';
-          
-          try {
-            const currentYear = new Date().getFullYear();
-            const res = await fetch(`${apiBase}/holidays?year=${currentYear}`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
-            const json = await res.json();
-            
-            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
-            
-            const holidays = json.data;
-            
-            if (holidays.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無假日記錄</td></tr>';
-              return;
-            }
-            
-            tbody.innerHTML = holidays.map(holiday => `
-              <tr>
-                <td>${holiday.holiday_id}</td>
-                <td>${holiday.name || '-'}</td>
-                <td>${holiday.date || '-'}</td>
-                <td>${holiday.holiday_type || '國定假日'}</td>
-                <td>${holiday.notes || '-'}</td>
-                <td class="action-btns">
-                  <button class="btn btn-sm btn-primary" disabled>編輯</button>
-                </td>
-              </tr>
-            `).join('');
-            
-          } catch (err) {
-            console.error('載入假日失敗:', err);
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗，請稍後再試</td></tr>';
-          }
-        }
-
-        // ========================================
-        // 服務項目的CRUD操作
-        // ========================================
-        
-        // 顯示新增服務表單
-        document.getElementById('btnAddService')?.addEventListener('click', () => {
-          const form = document.getElementById('addServiceForm');
-          form.style.display = form.style.display === 'none' ? 'block' : 'none';
-          if (form.style.display === 'block') {
-            document.getElementById('newServiceName').focus();
-          }
-        });
-        
-        // 取消新增服務
-        window.cancelAddService = function() {
-          document.getElementById('addServiceForm').style.display = 'none';
-          document.getElementById('newServiceName').value = '';
-          document.getElementById('newServiceCode').value = '';
-          document.getElementById('newServiceDesc').value = '';
-          document.getElementById('newServiceOrder').value = '0';
-        };
-        
-        // 儲存新服務項目
-        window.saveNewService = async function() {
-          const name = document.getElementById('newServiceName').value.trim();
-          const code = document.getElementById('newServiceCode').value.trim();
-          const desc = document.getElementById('newServiceDesc').value.trim();
-          const order = parseInt(document.getElementById('newServiceOrder').value || '0', 10);
-          
-          if (!name) {
-            setMsg('請填寫服務名稱', false);
+          if (!json.data || json.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無子項目</td></tr>';
             return;
           }
           
-          try {
-            const res = await fetch(`${apiBase}/services`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                service_name: name,
-                service_code: code || null,
-                description: desc || null,
-                sort_order: order
-              })
-            });
-            
-            if (!res.ok) throw new Error('創建失敗');
-            
-            setMsg('服務項目創建成功！', true);
-            cancelAddService();
-            loadServices();
-          } catch (err) {
-            console.error('創建服務失敗:', err);
-            setMsg('創建失敗：' + err.message, false);
-          }
-        };
-        
-        // 編輯服務（inline方式）
-        window.editService = function(serviceId) {
-          // TODO: 實現inline編輯或跳轉到編輯頁面
-          alert(`編輯功能即將推出\n服務ID: ${serviceId}\n\n提示：目前可使用刪除後重新創建的方式`);
-        };
-        
-        // 刪除服務項目
-        window.deleteService = async function(serviceId) {
-          if (!confirm('確定要刪除此服務項目嗎？\n\n注意：刪除服務不會刪除其子項目，但會隱藏。')) return;
-          try {
-            const res = await fetch(`${apiBase}/services/${serviceId}`, {
-              method: 'DELETE',
-              credentials: 'include'
-            });
-            if (!res.ok) throw new Error('刪除失敗');
-            setMsg('刪除成功！', true);
-            loadServices();
-            // 隱藏子項目區域
-            document.getElementById('serviceItemsCard').style.display = 'none';
-          } catch (err) {
-            setMsg('刪除失敗：' + err.message, false);
-          }
-        };
-        
-        // ========================================
-        // 服務子項目的CRUD操作
-        // ========================================
-        
-        // 顯示新增子項目表單
-        document.getElementById('btnAddServiceItem')?.addEventListener('click', () => {
-          if (!currentServiceId) {
-            setMsg('請先選擇一個服務項目', false);
-            return;
-          }
-          const form = document.getElementById('addServiceItemForm');
-          form.style.display = form.style.display === 'none' ? 'block' : 'none';
-          if (form.style.display === 'block') {
-            document.getElementById('newItemName').focus();
-          }
-        });
-        
-        // 取消新增子項目
-        window.cancelAddServiceItem = function() {
-          document.getElementById('addServiceItemForm').style.display = 'none';
-          document.getElementById('newItemName').value = '';
-          document.getElementById('newItemCode').value = '';
-          document.getElementById('newItemDesc').value = '';
-          document.getElementById('newItemOrder').value = '0';
-        };
-        
-        // 儲存新子項目
-        window.saveNewServiceItem = async function() {
-          if (!currentServiceId) {
-            setMsg('請先選擇一個服務項目', false);
-            return;
-          }
-          
-          const name = document.getElementById('newItemName').value.trim();
-          const code = document.getElementById('newItemCode').value.trim();
-          const desc = document.getElementById('newItemDesc').value.trim();
-          const order = parseInt(document.getElementById('newItemOrder').value || '0', 10);
-          
-          if (!name) {
-            setMsg('請填寫子項目名稱', false);
-            return;
-          }
-          
-          try {
-            const res = await fetch(`${apiBase}/services/${currentServiceId}/items`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                item_name: name,
-                item_code: code || null,
-                description: desc || null,
-                sort_order: order
-              })
-            });
-            
-            if (!res.ok) throw new Error('創建失敗');
-            
-            setMsg('子項目創建成功！', true);
-            cancelAddServiceItem();
-            
-            // 重新載入子項目列表
-            const serviceName = document.getElementById('serviceItemsTitle').textContent.split(' - ')[0];
-            selectService(currentServiceId, serviceName);
-          } catch (err) {
-            console.error('創建子項目失敗:', err);
-            setMsg('創建失敗：' + err.message, false);
-          }
-        };
-        
-        // 編輯服務子項目
-        window.editServiceItem = function(serviceId, itemId) {
-          alert(`編輯功能即將推出\n服務ID: ${serviceId}\n子項目ID: ${itemId}`);
-        };
-        
-        // 刪除服務子項目
-        window.deleteServiceItem = async function(serviceId, itemId) {
-          if (!confirm('確定要刪除此子項目嗎？')) return;
-          try {
-            const res = await fetch(`${apiBase}/services/${serviceId}/items/${itemId}`, {
-              method: 'DELETE',
-              credentials: 'include'
-            });
-            if (!res.ok) throw new Error('刪除失敗');
-            setMsg('刪除成功！', true);
-            
-            // 重新載入子項目列表
-            const serviceName = document.getElementById('serviceItemsTitle').textContent.split(' - ')[0];
-            selectService(serviceId, serviceName);
-          } catch (err) {
-            setMsg('刪除失敗：' + err.message, false);
-          }
-        };
-        
-        // ========================================
-        // 任務模板的CRUD操作
-        // ========================================
-        
-        // 顯示新增模板表單
-        document.getElementById('btnAddTemplate')?.addEventListener('click', async () => {
-          const form = document.getElementById('addTemplateForm');
-          form.style.display = form.style.display === 'none' ? 'block' : 'none';
-          
-          if (form.style.display === 'block') {
-            // 載入服務列表和客戶列表
-            await loadServicesForTemplateForm();
-            await loadClientsForFilter();
-            document.getElementById('newTemplateName').focus();
-          }
-        });
-        
-        // 載入服務列表到新增模板表單
-        async function loadServicesForTemplateForm() {
-          try {
-            const res = await fetch(`${apiBase}/services`, { credentials: 'include' });
-            if (!res.ok) return;
-            const json = await res.json();
-            if (!json.ok || !json.data) return;
-            
-            const select = document.getElementById('newTemplateService');
-            select.innerHTML = '<option value="">請選擇服務項目...</option>' + 
-              json.data.map(s => `<option value="${s.service_id}">${s.service_name}</option>`).join('');
-          } catch (err) {
-            console.error('載入服務列表失敗:', err);
-          }
+          tbody.innerHTML = json.data.map(item => `
+            <tr>
+              <td>${item.item_id}</td>
+              <td>${item.item_name}</td>
+              <td>${item.item_code || '-'}</td>
+              <td>${item.description || '-'}</td>
+              <td>${item.display_order}</td>
+              <td>
+                <button class="btn btn-sm btn-primary" onclick="editServiceItem(${item.item_id})">編輯</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteServiceItem(${item.item_id})">刪除</button>
+              </td>
+            </tr>
+          `).join('');
+        } catch (err) {
+          tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
+          console.error('載入子項目失敗:', err);
         }
-        
-        // 取消新增模板
-        window.cancelAddTemplate = function() {
-          document.getElementById('addTemplateForm').style.display = 'none';
-          document.getElementById('newTemplateName').value = '';
-          document.getElementById('newTemplateService').value = '';
-          document.getElementById('newTemplateClient').value = '';
-          document.getElementById('newTemplateDesc').value = '';
-        };
-        
-        // 儲存新任務模板
-        window.saveNewTemplate = async function() {
-          const name = document.getElementById('newTemplateName').value.trim();
-          const serviceId = document.getElementById('newTemplateService').value;
-          const clientId = document.getElementById('newTemplateClient').value;
-          const desc = document.getElementById('newTemplateDesc').value.trim();
-          
-          if (!name) {
-            setMsg('請填寫模板名稱', false);
-            return;
-          }
-          
-          if (!serviceId) {
-            setMsg('請選擇服務項目', false);
-            return;
-          }
-          
-          try {
-            const res = await fetch(`${apiBase}/task-templates`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                template_name: name,
-                service_id: parseInt(serviceId, 10),
-                client_id: clientId ? parseInt(clientId, 10) : null,
-                description: desc || null,
-                is_active: true
-              })
-            });
-            
-            if (!res.ok) throw new Error('創建失敗');
-            
-            const json = await res.json();
-            const newTemplateId = json.data?.template_id;
-            
-            setMsg('任務模板創建成功！現在可以新增任務', true);
-            cancelAddTemplate();
-            await loadTaskTemplates();
-            
-            // 自動選中剛創建的模板
-            if (newTemplateId) {
-              setTimeout(() => selectTemplate(newTemplateId, name), 300);
-            }
-          } catch (err) {
-            console.error('創建模板失敗:', err);
-            setMsg('創建失敗：' + err.message, false);
-          }
-        };
-        
-        // 刪除任務模板
-        window.deleteTemplate = async function(templateId) {
-          if (!confirm('確定要刪除此任務模板嗎？\n\n注意：會同時刪除模板的所有任務。')) return;
-          try {
-            const res = await fetch(`${apiBase}/task-templates/${templateId}`, {
-              method: 'DELETE',
-              credentials: 'include'
-            });
-            if (!res.ok) throw new Error('刪除失敗');
-            setMsg('刪除成功！', true);
-            loadTaskTemplates();
-            // 隱藏任務區域
-            document.getElementById('templateStagesCard').style.display = 'none';
-          } catch (err) {
-            setMsg('刪除失敗：' + err.message, false);
-          }
-        };
-        
-        // ========================================
-        // 任務階段的CRUD操作
-        // ========================================
-        
-        // 顯示新增任務表單
-        document.getElementById('btnAddTemplateStage')?.addEventListener('click', async () => {
-          if (!currentTemplateId) {
-            setMsg('請先選擇一個任務模板', false);
-            return;
-          }
-          const form = document.getElementById('addStageForm');
-          form.style.display = form.style.display === 'none' ? 'block' : 'none';
-          if (form.style.display === 'block') {
-            // 載入SOP和附件列表
-            await loadSOPForStages();
-            await loadAttachmentsForStages();
-            document.getElementById('newStageName').focus();
-          }
-        });
-        
-        // 載入SOP列表到任務表單
-        async function loadSOPForStages() {
-          try {
-            const res = await fetch(`${apiBase}/sop`, { credentials: 'include' });
-            if (!res.ok) return;
-            const json = await res.json();
-            if (!json.ok || !json.data) return;
-            
-            const select = document.getElementById('newStageSOP');
-            select.innerHTML = '<option value="">無</option>' + 
-              json.data.map(sop => `<option value="${sop.sop_id}">${sop.title}</option>`).join('');
-          } catch (err) {
-            console.error('載入SOP列表失敗:', err);
-          }
-        }
-        
-        // 載入附件列表到任務表單
-        async function loadAttachmentsForStages() {
-          try {
-            const res = await fetch(`${apiBase}/attachments?limit=100`, { credentials: 'include' });
-            if (!res.ok) return;
-            const json = await res.json();
-            if (!json.ok || !json.data) return;
-            
-            const select = document.getElementById('newStageAttachment');
-            select.innerHTML = '<option value="">無</option>' + 
-              json.data.map(att => `<option value="${att.attachment_id}">${att.original_filename}</option>`).join('');
-          } catch (err) {
-            console.error('載入附件列表失敗:', err);
-          }
-        }
-        
-        // 取消新增任務
-        window.cancelAddStage = function() {
-          document.getElementById('addStageForm').style.display = 'none';
-          document.getElementById('newStageName').value = '';
-          document.getElementById('newStageOrder').value = '1';
-          document.getElementById('newStageHours').value = '';
-          document.getElementById('newStageDesc').value = '';
-          document.getElementById('newStageDeps').value = '';
-          document.getElementById('newStageSOP').value = '';
-          document.getElementById('newStageAttachment').value = '';
-        };
-        
-        // 儲存新任務
-        window.saveNewStage = async function() {
-          if (!currentTemplateId) {
-            setMsg('請先選擇一個任務模板', false);
-            return;
-          }
-          
-          const name = document.getElementById('newStageName').value.trim();
-          const order = parseInt(document.getElementById('newStageOrder').value, 10);
-          const hours = parseFloat(document.getElementById('newStageHours').value) || null;
-          const desc = document.getElementById('newStageDesc').value.trim();
-          const deps = document.getElementById('newStageDeps').value.trim();
-          const sopId = document.getElementById('newStageSOP').value;
-          const attachmentId = document.getElementById('newStageAttachment').value;
-          
-          if (!name) {
-            setMsg('請填寫任務名稱', false);
-            return;
-          }
-          
-          if (!order || order < 1) {
-            setMsg('請填寫有效的順序（必須≥1）', false);
-            return;
-          }
-          
-          try {
-            const res = await fetch(`${apiBase}/task-templates/${currentTemplateId}/stages`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                stage_name: name,
-                stage_order: order,
-                estimated_hours: hours,
-                description: desc || null,
-                dependencies: deps || null,
-                sop_id: sopId ? parseInt(sopId, 10) : null,
-                attachment_id: attachmentId ? parseInt(attachmentId, 10) : null
-              })
-            });
-            
-            if (!res.ok) throw new Error('創建失敗');
-            
-            setMsg('任務創建成功！', true);
-            cancelAddStage();
-            
-            // 重新載入任務列表
-            const templateName = document.getElementById('templateStagesTitle').textContent.split(' - ')[0];
-            selectTemplate(currentTemplateId, templateName);
-          } catch (err) {
-            console.error('創建任務失敗:', err);
-            setMsg('創建失敗：' + err.message, false);
-          }
-        };
-        
-        // 刪除任務
-        window.deleteStage = async function(templateId, stageId) {
-          if (!confirm('確定要刪除此任務嗎？')) return;
-          try {
-            const res = await fetch(`${apiBase}/task-templates/${templateId}/stages/${stageId}`, {
-              method: 'DELETE',
-              credentials: 'include'
-            });
-            if (!res.ok) throw new Error('刪除失敗');
-            setMsg('刪除成功！', true);
-            
-            // 重新載入任務列表
-            const templateName = document.getElementById('templateStagesTitle').textContent.split(' - ')[0];
-            selectTemplate(templateId, templateName);
-          } catch (err) {
-            setMsg('刪除失敗：' + err.message, false);
-          }
-        };
+      }
 
-        // ========================================
-        // 初始化
-        // ========================================
-        ensureAdmin();
+      // 初始化
+      (async function init() {
+        const res = await fetch(`${apiBase}/auth/me`, { credentials: 'include' });
+        if (!res.ok) {
+          document.getElementById('permBar').style.display = 'block';
+          return;
+        }
+        const userData = await res.json();
+        if (!userData.user || userData.user.role !== 'admin') {
+          document.getElementById('permBar').style.display = 'block';
+          return;
+        }
+        
+        loadSettings();
+        loadServices();
       })();
     </script>
-    <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
   </body>
-  </html>
+</html>
