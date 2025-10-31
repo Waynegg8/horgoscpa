@@ -411,5 +411,3 @@ async function init() {
 
 // 模組載入後自動初始化（defer）
 init();
-
-

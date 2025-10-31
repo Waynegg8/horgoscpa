@@ -8,7 +8,7 @@
 - **平台**: Cloudflare Pages（前端），Pages Functions/Workers（API）
 - **資料庫**: Cloudflare D1（SQLite，相容 SQL）
 - **物件存儲**: Cloudflare R2（附件、媒體）
-- **前端**: 純 HTML + 共用 CSS + 少量原生 JS；允許使用原生 Web Components（非必要不強制）
+- **前端**: 純 HTML + 共用 CSS + 少量原生 JS；允許使用原生 Web Components（非必要不強制）。優先使用外部模組腳本（/assets/js/components/*.js）以提升可維護性。
 - **CMS**: 內部自建（以 `content/` 與 `assets/data/*.json` 為主），不使用第三方服務
 - **語言與編碼**: 繁體中文、UTF-8
 - **一致性**: 命名、資料格式、API 結構、錯誤處理、RWD、色彩與字體統一
