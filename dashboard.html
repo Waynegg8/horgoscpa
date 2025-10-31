@@ -115,36 +115,54 @@
             </div>`;
           }).join('') : '<div class="muted">尚無工時記錄</div>';
           
-          // 各员工任务状态
+          // 各员工任务状态 - 改为每个员工一张卡片
           const empTasks = Array.isArray(data?.employeeTasks) ? data.employeeTasks : [];
-          const tasksHtml = empTasks.length ? empTasks.map(e => {
-            const total = e.completed + e.inProgress + e.overdue + e.pending;
-            if (total === 0) return `<div class="emp-task-row"><span class="name">${e.name}</span><span class="muted">無任務</span></div>`;
-            const badges = [];
-            if (e.overdue > 0) badges.push(`<span class="badge danger">逾期 ${e.overdue}</span>`);
-            if (e.inProgress > 0) badges.push(`<span class="badge info">進行中 ${e.inProgress}</span>`);
-            if (e.completed > 0) badges.push(`<span class="badge success">已完成 ${e.completed}</span>`);
-            if (e.pending > 0) badges.push(`<span class="badge">待辦 ${e.pending}</span>`);
-            return `<div class="emp-task-row"><span class="name">${e.name}</span><div class="badges">${badges.join(' ')}</div></div>`;
-          }).join('') : '<div class="muted">尚無任務</div>';
+          let tasksCards = '';
+          if (empTasks.length > 0) {
+            empTasks.forEach(e => {
+              const total = e.completed + e.inProgress + e.overdue + e.pending;
+              const badges = [];
+              if (e.overdue > 0) badges.push(`<span class="badge danger">逾期 ${e.overdue}</span>`);
+              if (e.inProgress > 0) badges.push(`<span class="badge info">進行中 ${e.inProgress}</span>`);
+              if (e.completed > 0) badges.push(`<span class="badge success">已完成 ${e.completed}</span>`);
+              if (e.pending > 0) badges.push(`<span class="badge">待辦 ${e.pending}</span>`);
+              
+              tasksCards += `<div class="card emp-task-card">
+                <div class="name">${e.name || '未命名'}</div>
+                ${total === 0 ? '<div class="muted">無任務</div>' : `<div style="display:flex;flex-wrap:wrap;gap:10px;">${badges.join('')}</div>`}
+              </div>`;
+            });
+          } else {
+            tasksCards = '<div class="card"><div class="muted">尚無任務</div></div>';
+          }
           
-          // 财务状况
+          // 财务状况 - 改为横向网格布局，每个指标带颜色标识
           const fs = data?.financialStatus || { ar:0, paid:0, overdue:0, revenue:0, cost:0, profit:0, margin:0, collectionRate:0 };
           const finHtml = `
-              <div class="kv"><span>應收</span><b class="num">${fmtTwd(fs.ar)}</b></div>
-              <div class="kv"><span>收款</span><b class="num">${fmtTwd(fs.paid)}</b></div>
-              <div class="kv"><span>逾期</span><b class="num">${fmtTwd(fs.overdue)}</b></div>
-              <div class="kv"><span>收款率</span><b class="num">${fmtPct(fs.collectionRate)}</b></div>
-              <div class="kv"><span>營收</span><b class="num">${fmtTwd(fs.revenue)}</b></div>
-              <div class="kv"><span>成本</span><b class="num">${fmtTwd(fs.cost)}</b></div>
-              <div class="kv"><span>毛利/率</span><b class="num">${fmtTwd(fs.profit)} / ${fmtPct(fs.margin)}</b></div>`;
+            <div class="fin-grid">
+              <div class="fin-metric" data-type="ar"><div class="fin-metric-label">應收</div><div class="fin-metric-value">${fmtTwd(fs.ar)}</div></div>
+              <div class="fin-metric" data-type="paid"><div class="fin-metric-label">收款</div><div class="fin-metric-value">${fmtTwd(fs.paid)}</div></div>
+              <div class="fin-metric" data-type="overdue"><div class="fin-metric-label">逾期</div><div class="fin-metric-value">${fmtTwd(fs.overdue)}</div></div>
+              <div class="fin-metric" data-type="rate"><div class="fin-metric-label">收款率</div><div class="fin-metric-value">${fmtPct(fs.collectionRate)}</div></div>
+              <div class="fin-metric" data-type="revenue"><div class="fin-metric-label">營收</div><div class="fin-metric-value">${fmtTwd(fs.revenue)}</div></div>
+              <div class="fin-metric" data-type="cost"><div class="fin-metric-label">成本</div><div class="fin-metric-value">${fmtTwd(fs.cost)}</div></div>
+              <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利</div><div class="fin-metric-value">${fmtTwd(fs.profit)}</div></div>
+              <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利率</div><div class="fin-metric-value">${fmtPct(fs.margin)}</div></div>
+            </div>`;
           
-          frag.innerHTML = [
-            listCard('各員工本月工時', hoursHtml),
-            listCard('各員工任務狀態', tasksHtml),
-            listCard('財務狀況（本月）', finHtml),
-          ].join('');
+          // 渲染各员工本月工时
+          frag.innerHTML = listCard('各員工本月工時', hoursHtml);
           grid.appendChild(frag);
+          
+          // 渲染各员工任务状态（每个员工一张卡片）
+          const tasksFrag = document.createElement('div');
+          tasksFrag.innerHTML = tasksCards;
+          Array.from(tasksFrag.children).forEach(child => grid.appendChild(child));
+          
+          // 渲染财务状况
+          const finFrag = document.createElement('div');
+          finFrag.innerHTML = listCard('財務狀況（本月）', finHtml);
+          grid.appendChild(finFrag.firstElementChild);
         }
 
         async function ensureUser(){
