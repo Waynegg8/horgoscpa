@@ -918,17 +918,10 @@ function handleWorkTypeChange(rowIndex, workTypeId) {
   const row = state.rows[rowIndex];
   row.work_type_id = parseInt(workTypeId);
   
-  // 如果這行已經有工時數據，標記為需要儲存
-  row.hours.forEach((hours, dayIndex) => {
-    if (hours && hours > 0) {
-      const key = `${rowIndex}_${dayIndex}`;
-      state.pending.set(key, { rowIndex, dayIndex, value: hours });
-    }
-  });
-  
-  updatePendingCount();
-  
   // 驗證現有工時是否與新工時類型相容
+  let clearedCount = 0;
+  const clearedDates = [];
+  
   row.hours.forEach((hours, dayIndex) => {
     if (hours && hours > 0) {
       const day = state.weekDays[dayIndex];
@@ -942,12 +935,40 @@ function handleWorkTypeChange(rowIndex, workTypeId) {
           input.value = '';
           input.closest('td').classList.remove('has-value');
         }
-        showToast(`${day.iso} 不可使用「${workType.name}」`, 'warning');
+        
+        // 從待儲存隊列中移除
+        const key = `${rowIndex}_${dayIndex}`;
+        state.pending.delete(key);
+        
+        clearedCount++;
+        const dateDisplay = formatDateDisplay(new Date(day.iso + 'T00:00:00'));
+        const dayTypeText = getDayTypeText(day.type);
+        clearedDates.push(`${dateDisplay}（${dayTypeText}）`);
+      } else {
+        // 兼容的工時，標記為需要儲存
+        const key = `${rowIndex}_${dayIndex}`;
+        state.pending.set(key, { rowIndex, dayIndex, value: hours });
       }
     }
   });
   
+  updatePendingCount();
   updateWeeklySummary();
+  
+  // 如果有清空的工時，顯示詳細提示
+  if (clearedCount > 0) {
+    const workType = state.workTypes.find(wt => wt.id == workTypeId);
+    const workTypeName = workType ? workType.name : '';
+    const allowedTypes = getAllowedWorkTypesForDate(state.weekDays.find(d => clearedDates.length > 0)?.type || 'workday');
+    const typesText = allowedTypes.map(wt => wt.name).join('、');
+    
+    showToast(
+      `⚠️ 「${workTypeName}」不適用於以下日期，已清空這些工時：\n\n` +
+      `${clearedDates.join('、')}\n\n` +
+      `💡 請選擇適合的工時類型，或在其他日期填寫工時`,
+      'warning'
+    );
+  }
 }
 
 function handleHoursInput(rowIndex, dayIndex, value) {
