@@ -41,7 +41,7 @@ function initWorkTypes() {
     },
     {
       id: 2,
-      name: '平日加班（前2小時）',
+      name: '平日加班（前2hrs）',
       multiplier: 1.34,
       isOvertime: true,
       maxHours: 2,
@@ -49,7 +49,7 @@ function initWorkTypes() {
     },
     {
       id: 3,
-      name: '平日加班（後2小時）',
+      name: '平日加班（後2hrs）',
       multiplier: 1.67,
       isOvertime: true,
       maxHours: 2,
@@ -58,7 +58,7 @@ function initWorkTypes() {
     },
     {
       id: 4,
-      name: '休息日加班（前2小時）',
+      name: '休息日加班（前2hrs）',
       multiplier: 1.34,
       isOvertime: true,
       maxHours: 2,
@@ -66,7 +66,7 @@ function initWorkTypes() {
     },
     {
       id: 5,
-      name: '休息日加班（第3-8小時）',
+      name: '休息日加班（第3-8hrs）',
       multiplier: 1.67,
       isOvertime: true,
       maxHours: 6,
@@ -75,7 +75,7 @@ function initWorkTypes() {
     },
     {
       id: 6,
-      name: '休息日加班（第9-12小時）',
+      name: '休息日加班（第9-12hrs）',
       multiplier: 2.67,
       isOvertime: true,
       maxHours: 4,
@@ -84,7 +84,7 @@ function initWorkTypes() {
     },
     {
       id: 7,
-      name: '國定假日加班（8小時內）',
+      name: '國定假日加班（8hrs內）',
       multiplier: 2.0,
       isOvertime: true,
       maxHours: 8,
@@ -92,7 +92,7 @@ function initWorkTypes() {
     },
     {
       id: 8,
-      name: '國定假日加班（第9-10小時）',
+      name: '國定假日加班（第9-10hrs）',
       multiplier: 1.34,
       isOvertime: true,
       maxHours: 2,
@@ -101,7 +101,7 @@ function initWorkTypes() {
     },
     {
       id: 9,
-      name: '國定假日加班（第11-12小時）',
+      name: '國定假日加班（第11-12hrs）',
       multiplier: 1.67,
       isOvertime: true,
       maxHours: 2,
@@ -110,7 +110,7 @@ function initWorkTypes() {
     },
     {
       id: 10,
-      name: '例假日加班（8小時內）',
+      name: '例假日加班（8hrs內）',
       multiplier: 2.0,
       isOvertime: true,
       maxHours: 8,
@@ -118,7 +118,7 @@ function initWorkTypes() {
     },
     {
       id: 11,
-      name: '例假日加班（第9-12小時）',
+      name: '例假日加班（第9-12hrs）',
       multiplier: 2.0,
       isOvertime: true,
       maxHours: 4,

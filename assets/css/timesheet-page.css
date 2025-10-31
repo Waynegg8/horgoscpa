@@ -11,8 +11,12 @@
   justify-content: space-between;
   padding: 20px 0;
   margin-bottom: 20px;
-  gap: 20px;
+  gap: 15px;
   flex-wrap: wrap;
+}
+
+.week-nav-right {
+  flex-shrink: 0; /* 防止按鈕被壓縮 */
 }
 
 .week-nav-left,
@@ -142,26 +146,26 @@
 
 .col-client.sticky-col {
   left: 0;
-  min-width: 110px;
-  max-width: 110px;
+  min-width: 100px;
+  max-width: 100px;
 }
 
 .col-service.sticky-col {
-  left: 110px;
-  min-width: 90px;
-  max-width: 90px;
+  left: 100px;
+  min-width: 80px;
+  max-width: 80px;
 }
 
 .col-service-item.sticky-col {
-  left: 200px;
-  min-width: 90px;
-  max-width: 90px;
+  left: 180px;
+  min-width: 80px;
+  max-width: 80px;
 }
 
 .col-worktype.sticky-col {
-  left: 290px;
-  min-width: 130px;
-  max-width: 130px;
+  left: 260px;
+  min-width: 115px;
+  max-width: 115px;
 }
 
 /* 表頭固定列也需要設置left */
@@ -172,19 +176,19 @@
 }
 
 .timesheet-table thead th.col-service {
-  left: 110px;
+  left: 100px;
   z-index: 15;
   background: #f8f9fa !important;
 }
 
 .timesheet-table thead th.col-service-item {
-  left: 200px;
+  left: 180px;
   z-index: 15;
   background: #f8f9fa !important;
 }
 
 .timesheet-table thead th.col-worktype {
-  left: 290px;
+  left: 260px;
   z-index: 15;
   background: #f8f9fa !important;
 }
