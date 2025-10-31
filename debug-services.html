@@ -66,10 +66,11 @@
       show(result);
     }
     
-    // 自動測試
-    window.onload = async function() {
-      console.log('=== 自動測試開始 ===');
-      await testClients();
+    // 頁面載入時顯示提示
+    window.onload = function() {
+      const output = document.getElementById('output');
+      output.className = 'result';
+      output.textContent = '👆 請點擊上方紅色按鈕測試服務項目 API\n\n如果顯示空陣列 []，表示服務項目沒有正確綁定。\n如果有數據，表示 API 正常，問題在前端 JavaScript。';
     }
   </script>
 </body>

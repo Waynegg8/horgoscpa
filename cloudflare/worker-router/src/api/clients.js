@@ -426,7 +426,8 @@ export async function handleClients(request, env, me, requestId, url) {
 	
 	// GET /api/v1/clients/:clientId/services - 取得客戶服務項目
 	if (method === "GET" && url.pathname.match(/\/clients\/[^\/]+\/services$/)) {
-		const clientId = url.pathname.split("/")[4];
+		const pathParts = url.pathname.split("/");
+		const clientId = pathParts[pathParts.length - 2];  // services 前一個就是 clientId
 		
 		try {
 			// 檢查客戶是否存在
