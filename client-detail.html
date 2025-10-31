@@ -436,7 +436,9 @@
       const cycle = document.getElementById('new-service-cycle').value;
       const startDate = document.getElementById('new-service-start-date').value;
 
+      console.log('=== 新增服務 DEBUG START ===');
       console.log('表單值:', { serviceId, status, cycle, startDate });
+      console.log('currentClientId:', currentClientId);
 
       if (!serviceId) {
         alert('請選擇服務');
@@ -450,19 +452,27 @@
         start_date: startDate || null
       };
 
+      const apiUrl = `/internal/api/v1/clients/${currentClientId}/services`;
+      
+      console.log('準備發送請求:');
+      console.log('  - URL:', apiUrl);
+      console.log('  - Method: POST');
+      console.log('  - Data:', JSON.stringify(data, null, 2));
+
       try {
-        console.log('新增服務請求數據:', data);
-        console.log('currentClientId:', currentClientId);
-        console.log('API URL:', `/internal/api/v1/clients/${currentClientId}/services`);
-        
-        const res = await fetch(`/internal/api/v1/clients/${currentClientId}/services`, {
+        const res = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
         
+        console.log('收到響應:');
+        console.log('  - Status:', res.status);
+        console.log('  - URL:', res.url);
+        
         const json = await res.json();
-        console.log('新增服務響應:', json);
+        console.log('  - JSON:', json);
+        console.log('=== 新增服務 DEBUG END ===');
         
         if (!json.ok) {
           if (json.errors && json.errors.length > 0) {

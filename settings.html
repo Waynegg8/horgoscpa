@@ -672,15 +672,27 @@
             }
         }
 
-        // 任务模板 - 加载服务和客户下拉选项
+        // 全局存储SOP和附件列表
+        let allSOPs = [];
+        let allAttachments = [];
+
+        // 任务模板 - 加载服务、客户、SOP、附件下拉选项
         async function loadTemplateOptions() {
             try {
-                const [servicesRes, clientsRes] = await Promise.all([
+                const [servicesRes, clientsRes, sopRes, attachmentRes] = await Promise.all([
                     fetch('/internal/api/v1/services', { credentials: 'include' }),
-                    fetch('/internal/api/v1/clients?perPage=200', { credentials: 'include' })
+                    fetch('/internal/api/v1/clients?perPage=200', { credentials: 'include' }),
+                    fetch('/internal/api/v1/sop', { credentials: 'include' }).catch(() => ({json: () => ({data:[]})})),
+                    fetch('/internal/api/v1/attachments', { credentials: 'include' }).catch(() => ({json: () => ({data:[]})}))
                 ]);
                 const services = await servicesRes.json();
                 const clients = await clientsRes.json();
+                const sops = await sopRes.json();
+                const attachments = await attachmentRes.json();
+                
+                // 保存到全局
+                allSOPs = sops.data || [];
+                allAttachments = attachments.data || [];
                 
                 const serviceSelect = document.getElementById('newTemplateService');
                 if (services.data) {
@@ -694,6 +706,22 @@
                         clients.data.map(c => `<option value="${c.clientId}">${c.companyName}</option>`).join('');
                 }
             } catch (e) {}
+        }
+        
+        // 填充SOP和附件下拉选单
+        function populateSOPAndAttachments(templateId) {
+            const sopSelect = document.getElementById(`task-sop-${templateId}`);
+            const attachmentSelect = document.getElementById(`task-attachment-${templateId}`);
+            
+            if (sopSelect && allSOPs.length > 0) {
+                sopSelect.innerHTML = '<option value="">無</option>' + 
+                    allSOPs.map(s => `<option value="${s.sop_id}">${s.title}</option>`).join('');
+            }
+            
+            if (attachmentSelect && allAttachments.length > 0) {
+                attachmentSelect.innerHTML = '<option value="">無</option>' + 
+                    allAttachments.map(a => `<option value="${a.attachment_id}">${a.file_name || a.attachment_id}</option>`).join('');
+            }
         }
 
         // 任务模板 - 加载列表
@@ -741,7 +769,9 @@
                                 </div>
                                 <div class="form-group">
                                     <label>連結附件（可選）</label>
-                                    <input type="text" id="task-attachment-${t.template_id}" class="form-control" placeholder="附件ID">
+                                    <select id="task-attachment-${t.template_id}" class="form-control">
+                                        <option value="">無</option>
+                                    </select>
                                 </div>
                                 <div class="action-btns">
                                     <button class="btn btn-sm btn-primary" onclick="saveTask(${t.template_id})">儲存</button>
@@ -798,6 +828,7 @@
         // 显示新增任务表单
         function showAddTask(templateId) {
             document.getElementById(`task-form-${templateId}`).classList.remove('hidden');
+            populateSOPAndAttachments(templateId);
         }
         function cancelTask(templateId) {
             document.getElementById(`task-form-${templateId}`).classList.add('hidden');
