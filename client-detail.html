@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/assets/css/common.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-system.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-components.css?v=3">
-  <link rel="stylesheet" href="/assets/css/client-detail-page.css?v=20">
+  <link rel="stylesheet" href="/assets/css/client-detail-page.css?v=30">
 </head>
 <body>
   <div id="navbar-placeholder"></div>
@@ -87,12 +87,12 @@
         <table class="services-table" id="servicesTable">
           <thead>
             <tr>
+              <th style="width: 30px;"></th>
               <th>服務名稱</th>
               <th>狀態</th>
               <th>服務週期</th>
               <th>年度總額</th>
               <th>開始日期</th>
-              <th>自動生成任務</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -177,54 +177,6 @@
           <button type="submit" class="btn btn-primary">儲存</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- 收費明細 Modal -->
-  <div id="billingModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 900px;">
-      <div class="modal-header">
-        <h3 id="billingModalTitle">收費明細</h3>
-        <button class="modal-close" onclick="closeBillingModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="billingClientServiceId">
-        
-        <div class="billing-summary">
-          <div class="summary-item">
-            <span class="summary-label">服務名稱：</span>
-            <span id="billingServiceName" class="summary-value">-</span>
-          </div>
-          <div class="summary-item">
-            <span class="summary-label">年度總額：</span>
-            <span id="billingYearTotal" class="summary-value">$0</span>
-          </div>
-        </div>
-
-        <div class="billing-actions">
-          <button class="btn btn-primary btn-sm" onclick="openAddBillingModal()">+ 新增月份收費</button>
-        </div>
-
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>月份</th>
-              <th>金額</th>
-              <th>收款期限（天）</th>
-              <th>備註</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="billingScheduleList">
-            <tr>
-              <td colspan="5" class="no-data">暫無收費明細</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeBillingModal()">關閉</button>
-      </div>
     </div>
   </div>
 
@@ -384,7 +336,7 @@
         return;
       }
 
-      tbody.innerHTML = services.map(svc => {
+      tbody.innerHTML = services.map((svc, index) => {
         const statusClass = {
           'active': 'status-active',
           'suspended': 'status-suspended',
@@ -407,22 +359,118 @@
         }[svc.service_cycle] || svc.service_cycle;
 
         return `
-          <tr>
+          <tr class="service-main-row">
+            <td class="expand-cell">
+              <button class="expand-btn" onclick="toggleBilling(${index}, ${svc.client_service_id})">
+                <span class="expand-icon" id="expand-icon-${index}">▶</span>
+              </button>
+            </td>
             <td><strong>${svc.service_name || '-'}</strong></td>
             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
             <td>${cycleText}</td>
             <td class="amount">$${(svc.year_total || 0).toLocaleString('zh-TW')}</td>
             <td>${svc.start_date || '-'}</td>
-            <td>${svc.auto_generate_tasks ? '是' : '否'}</td>
             <td class="actions-cell">
-              <button type="button" class="table-btn table-btn-primary" onclick="viewBilling(${svc.client_service_id}, '${svc.service_name}')">收費明細</button>
               <button type="button" class="table-btn table-btn-secondary" onclick="editService(${svc.client_service_id})">編輯</button>
               <button type="button" class="table-btn table-btn-danger" onclick="deleteService(${svc.client_service_id}, '${svc.service_name}')">刪除</button>
             </td>
           </tr>
+          <tr class="billing-detail-row" id="billing-row-${index}" style="display: none;">
+            <td colspan="7" class="billing-detail-cell">
+              <div class="billing-container">
+                <div class="billing-header">
+                  <h4>收費明細 - ${svc.service_name}</h4>
+                  <button type="button" class="table-btn table-btn-primary" onclick="openAddBillingForm(${svc.client_service_id})">+ 新增月份收費</button>
+                </div>
+                <div class="billing-content" id="billing-content-${index}">
+                  <p class="loading-text">載入中...</p>
+                </div>
+              </div>
+            </td>
+          </tr>
         `;
       }).join('');
+      
+      // 初始載入所有收費明細
+      services.forEach((svc, index) => {
+        loadBillingInline(index, svc.client_service_id);
+      });
     }
+
+    // 切換收費明細顯示
+    function toggleBilling(index, clientServiceId) {
+      const detailRow = document.getElementById(`billing-row-${index}`);
+      const icon = document.getElementById(`expand-icon-${index}`);
+      
+      if (detailRow.style.display === 'none') {
+        detailRow.style.display = 'table-row';
+        icon.textContent = '▼';
+      } else {
+        detailRow.style.display = 'none';
+        icon.textContent = '▶';
+      }
+    }
+
+    // 載入內嵌收費明細
+    async function loadBillingInline(index, clientServiceId) {
+      const container = document.getElementById(`billing-content-${index}`);
+      
+      try {
+        const res = await fetch(`/internal/api/v1/billing/service/${clientServiceId}`);
+        const json = await res.json();
+        
+        if (!json.ok) {
+          container.innerHTML = '<p class="error-text">載入失敗</p>';
+          return;
+        }
+
+        const schedules = json.data.schedules || [];
+        
+        if (schedules.length === 0) {
+          container.innerHTML = '<p class="no-data-inline">尚未設定收費明細</p>';
+          return;
+        }
+
+        // 排序by月份
+        schedules.sort((a, b) => a.billing_month - b.billing_month);
+
+        container.innerHTML = `
+          <table class="billing-table">
+            <thead>
+              <tr>
+                <th>月份</th>
+                <th>金額</th>
+                <th>收款期限（天）</th>
+                <th>備註</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${schedules.map(s => `
+                <tr>
+                  <td>${s.billing_month}月</td>
+                  <td class="amount">$${s.billing_amount.toLocaleString('zh-TW')}</td>
+                  <td>${s.payment_due_days}天</td>
+                  <td>${s.notes || '-'}</td>
+                  <td>
+                    <button class="table-btn-link" onclick="editBillingInline(${clientServiceId}, ${s.schedule_id}, ${s.billing_month}, ${s.billing_amount}, ${s.payment_due_days}, '${(s.notes || '').replace(/'/g, "\\'")}')">編輯</button>
+                    <button class="table-btn-link danger" onclick="deleteBillingInline(${clientServiceId}, ${s.schedule_id}, ${s.billing_month})">刪除</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        
+      } catch (err) {
+        console.error('載入收費明細失敗:', err);
+        container.innerHTML = '<p class="error-text">載入失敗</p>';
+      }
+    }
+
+    // 暴露函數到全局
+    window.toggleBilling = toggleBilling;
+    window.loadBillingInline = loadBillingInline;
 
     // 載入服務類型選項
     async function loadServices() {
@@ -595,6 +643,67 @@
       }
     }
 
+    // 打開新增收費表單
+    function openAddBillingForm(clientServiceId) {
+      currentBillingServiceId = clientServiceId;
+      document.getElementById('addBillingModalTitle').textContent = '新增月份收費';
+      document.getElementById('addBillingForm').reset();
+      document.getElementById('editScheduleId').value = '';
+      document.getElementById('paymentDueDays').value = '30';
+      document.getElementById('addBillingModal').style.display = 'flex';
+    }
+
+    // 編輯收費明細（內嵌）
+    function editBillingInline(clientServiceId, scheduleId, month, amount, dueDays, notes) {
+      currentBillingServiceId = clientServiceId;
+      document.getElementById('addBillingModalTitle').textContent = '編輯月份收費';
+      document.getElementById('editScheduleId').value = scheduleId;
+      document.getElementById('billingMonth').value = month;
+      document.getElementById('billingAmount').value = amount;
+      document.getElementById('paymentDueDays').value = dueDays;
+      document.getElementById('billingNotes').value = notes;
+      document.getElementById('addBillingModal').style.display = 'flex';
+    }
+
+    // 刪除收費明細（內嵌）
+    async function deleteBillingInline(clientServiceId, scheduleId, month) {
+      if (!confirm(`確定要刪除${month}月的收費明細嗎？`)) return;
+      
+      try {
+        const res = await fetch(`/internal/api/v1/billing/${scheduleId}`, {
+          method: 'DELETE'
+        });
+        
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert(json.message || '刪除失敗');
+          return;
+        }
+
+        alert('收費明細已刪除');
+        
+        // 重新載入該服務的收費明細
+        const services = (await (await fetch(`/internal/api/v1/clients/${currentClientId}`)).json()).data.services;
+        const index = services.findIndex(s => s.client_service_id === clientServiceId);
+        if (index !== -1) {
+          await loadBillingInline(index, clientServiceId);
+        }
+        
+        // 重新載入客戶以更新年度總額
+        await loadClientDetail();
+        
+      } catch (err) {
+        console.error('刪除收費明細失敗:', err);
+        alert('刪除失敗');
+      }
+    }
+
+    // 暴露函數到全局
+    window.openAddBillingForm = openAddBillingForm;
+    window.editBillingInline = editBillingInline;
+    window.deleteBillingInline = deleteBillingInline;
+
     // 查看收費明細
     async function viewBilling(clientServiceId, serviceName) {
       currentBillingServiceId = clientServiceId;
@@ -722,10 +831,18 @@
 
         alert(isEdit ? '收費明細已更新' : '收費明細已新增');
         closeAddBillingModal();
-        await Promise.all([
-          loadBillingSchedule(),
-          loadClientDetail() // 更新年度總額顯示
-        ]);
+        
+        // 重新載入該服務的收費明細
+        const clientData = await (await fetch(`/internal/api/v1/clients/${currentClientId}`)).json();
+        if (clientData.ok && clientData.data.services) {
+          const index = clientData.data.services.findIndex(s => s.client_service_id === currentBillingServiceId);
+          if (index !== -1) {
+            await loadBillingInline(index, currentBillingServiceId);
+          }
+        }
+        
+        // 重新載入客戶以更新年度總額
+        await loadClientDetail();
         
       } catch (err) {
         console.error('提交收費明細失敗:', err);

@@ -157,7 +157,9 @@ body.internal-container {
     border: 1px solid var(--gray-200);
     margin-bottom: 32px;
     overflow: hidden;
-    max-width: 1000px;
+    max-width: 900px;
+    width: fit-content;
+    min-width: 600px;
 }
 
 .card-header {
