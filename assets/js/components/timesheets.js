@@ -1140,7 +1140,18 @@ function getAllowedWorkTypesForDate(dateType) {
 
 async function saveAllChanges() {
   if (state.pending.size === 0) {
-    showToast('沒有待儲存的變更', 'info');
+    // 检查是否有空行（选了下拉框但没填工时）
+    const hasEmptyRows = state.rows.some(row => {
+      const hasSelections = row.client_id || row.service_id || row.service_item_id || row.work_type_id;
+      const hasHours = row.hours.some(h => h && h > 0);
+      return hasSelections && !hasHours;
+    });
+    
+    if (hasEmptyRows) {
+      showToast('⚠️ 您已選擇客戶和服務項目，但尚未填寫任何工時數據\n\n請在日期格子中填入工時（例如：8、2.5），然後再點擊儲存', 'warning');
+    } else {
+      showToast('✅ 目前沒有待儲存的變更', 'info');
+    }
     return;
   }
   
