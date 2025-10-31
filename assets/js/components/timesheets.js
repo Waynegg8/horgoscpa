@@ -954,9 +954,21 @@ function handleHoursInput(rowIndex, dayIndex, value) {
   const row = state.rows[rowIndex];
   const day = state.weekDays[dayIndex];
   
+  // 取得日期顯示文字
+  const dateDisplay = formatDateDisplay(new Date(day.iso + 'T00:00:00'));
+  const dayTypeText = getDayTypeText(day.type);
+  
   // 檢查必填欄位
-  if (!row.client_id || !row.service_id || !row.service_item_id || !row.work_type_id) {
-    showToast('請先選擇客戶、服務項目、服務子項目與工時類型', 'warning');
+  if (!row.client_id || !row.service_id || !row.service_item_id) {
+    showToast(`請先選擇客戶、服務項目與服務子項目`, 'warning');
+    return;
+  }
+  
+  // 如果沒選工時類型，給出更友好的提示
+  if (!row.work_type_id) {
+    const allowedTypes = getAllowedWorkTypesForDate(day.type);
+    const typesText = allowedTypes.map(wt => wt.name).join('、');
+    showToast(`您正在填 ${dateDisplay}（${dayTypeText}），請先選擇工時類型：${typesText}`, 'warning');
     return;
   }
   
@@ -968,8 +980,8 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     state.pending.delete(key);
     updatePendingCount();
     updateWeeklySummary();
-    updateDailyNormalHours(); // 更新每日工時統計
-    renderCompleteness(); // 重新渲染完整性檢查
+    updateDailyNormalHours();
+    renderCompleteness();
     return;
   }
   
@@ -980,7 +992,9 @@ function handleHoursInput(rowIndex, dayIndex, value) {
   const workType = state.workTypes.find(wt => wt.id == row.work_type_id);
   
   if (workType && !isWorkTypeAllowed(workType, day.type)) {
-    showToast(`該日期不可使用「${workType.name}」`, 'error');
+    const allowedTypes = getAllowedWorkTypesForDate(day.type);
+    const typesText = allowedTypes.map(wt => wt.name).join('、');
+    showToast(`❌ ${dateDisplay}（${dayTypeText}）不可使用「${workType.name}」\n\n✅ 可用類型：${typesText}`, 'error');
     row.hours[dayIndex] = null;
     const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
     if (input) {
@@ -992,7 +1006,7 @@ function handleHoursInput(rowIndex, dayIndex, value) {
   
   // 驗證時數限制
   if (workType && workType.maxHours && rounded > workType.maxHours) {
-    showToast(`${workType.name}最多只能填 ${workType.maxHours} 小時`, 'error');
+    showToast(`❌ ${dateDisplay}：${workType.name}最多只能填 ${workType.maxHours} 小時\n\n您填了 ${rounded} 小時，請改為 ${workType.maxHours} 或更少`, 'error');
     return;
   }
   
@@ -1009,7 +1023,11 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     });
     
     if (!hasRequired) {
-      showToast('請先填寫前置加班類型', 'error');
+      const requiredTypes = workType.requiresTypes.map(reqId => {
+        const reqType = state.workTypes.find(wt => wt.id === reqId);
+        return reqType ? reqType.name : `類型${reqId}`;
+      }).join('、');
+      showToast(`❌ ${dateDisplay}：使用「${workType.name}」前，請先填寫：${requiredTypes}`, 'error');
       row.hours[dayIndex] = null;
       const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
       if (input) {
@@ -1035,8 +1053,8 @@ function handleHoursInput(rowIndex, dayIndex, value) {
   
   updatePendingCount();
   updateWeeklySummary();
-  updateDailyNormalHours(); // 更新每日工時統計
-  renderCompleteness(); // 重新渲染完整性檢查
+  updateDailyNormalHours();
+  renderCompleteness();
 }
 
 function handleHoursBlur(rowIndex, dayIndex) {
@@ -1101,6 +1119,23 @@ function isWorkTypeAllowed(workType, dateType) {
   return workType.allowedOn.includes(dateType);
 }
 
+// 取得日期類型的中文描述
+function getDayTypeText(dateType) {
+  const typeMap = {
+    'workday': '工作日',
+    'makeup': '補班日',
+    'restday': '休息日',
+    'weekly_restday': '例假日',
+    'national_holiday': '國定假日'
+  };
+  return typeMap[dateType] || dateType;
+}
+
+// 取得該日期類型可用的工時類型
+function getAllowedWorkTypesForDate(dateType) {
+  return state.workTypes.filter(wt => isWorkTypeAllowed(wt, dateType));
+}
+
 // ==================== 儲存函數 ====================
 
 async function saveAllChanges() {
@@ -1110,7 +1145,7 @@ async function saveAllChanges() {
   }
   
   const changes = Array.from(state.pending.values());
-  const savePromises = changes.map(change => {
+  const savePromises = changes.map(async (change) => {
     const row = state.rows[change.rowIndex];
     const day = state.weekDays[change.dayIndex];
     const timesheetId = row.timesheetIds && row.timesheetIds[change.dayIndex];
@@ -1129,35 +1164,78 @@ async function saveAllChanges() {
       payload.timesheet_id = timesheetId;
     }
     
-    return apiCall('/internal/api/v1/timelogs', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
+    try {
+      const result = await apiCall('/internal/api/v1/timelogs', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      return { success: true, change, day, row, result };
+    } catch (error) {
+      return { success: false, change, day, row, error };
+    }
   });
   
-  try {
-    const results = await Promise.all(savePromises);
-    console.log('[SAVE] 所有保存结果:', results);
+  const results = await Promise.allSettled(savePromises);
+  
+  // 分析結果
+  const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+  const failedResults = results.filter(r => r.status === 'fulfilled' && !r.value.success);
+  
+  console.log('[SAVE] 成功:', successCount, '失敗:', failedResults.length);
+  
+  if (failedResults.length === 0) {
+    // 全部成功
     state.pending.clear();
     updatePendingCount();
-    showToast('已儲存所有變更', 'success');
-    
-    // 重新載入資料
+    showToast(`✅ 已儲存所有變更（${successCount} 筆）`, 'success');
     await loadWeek();
-  } catch (error) {
-    console.error('[SAVE ERROR] 详细错误:', error);
-    // 如果是 API 错误，显示更详细的信息
-    let errorMsg = error.message;
-    if (error.response) {
-      try {
-        const errorData = await error.response.json();
-        errorMsg = errorData.message || errorMsg;
-        console.error('[SAVE ERROR] API 返回:', errorData);
-      } catch (e) {
-        // ignore
+  } else {
+    // 有失敗的
+    const errorMessages = [];
+    
+    failedResults.forEach(result => {
+      const { change, day, row, error } = result.value;
+      const dateDisplay = formatDateDisplay(new Date(day.iso + 'T00:00:00'));
+      const dayTypeText = getDayTypeText(day.type);
+      const workType = state.workTypes.find(wt => wt.id == row.work_type_id);
+      const workTypeName = workType ? workType.name : '未知類型';
+      
+      let errorMsg = '未知錯誤';
+      
+      // 解析後端錯誤
+      if (error.message) {
+        errorMsg = error.message;
+        
+        // 針對常見錯誤給出具體建議
+        if (errorMsg.includes('12 小時')) {
+          errorMsg = `該日總工時超過 12 小時，請減少工時或刪除部分記錄`;
+        } else if (errorMsg.includes('0.5')) {
+          errorMsg = `工時必須是 0.5 的倍數（例如：1, 1.5, 2, 2.5）`;
+        } else if (errorMsg.includes('最多只能填')) {
+          const match = errorMsg.match(/最多只能填 (\d+\.?\d*) 小時/);
+          if (match) {
+            errorMsg = `${workTypeName}最多只能填 ${match[1]} 小時`;
+          }
+        }
       }
+      
+      errorMessages.push(`❌ ${dateDisplay}（${dayTypeText}）- ${workTypeName}：${errorMsg}`);
+      
+      // 移除失敗的變更，讓使用者可以重新填寫
+      const key = `${change.rowIndex}_${change.dayIndex}`;
+      state.pending.delete(key);
+    });
+    
+    updatePendingCount();
+    
+    // 顯示詳細錯誤
+    const errorText = `儲存失敗（成功 ${successCount} 筆，失敗 ${failedResults.length} 筆）：\n\n${errorMessages.join('\n\n')}`;
+    showToast(errorText, 'error');
+    
+    // 如果有成功的，重新載入資料
+    if (successCount > 0) {
+      await loadWeek();
     }
-    showToast('儲存失敗：' + errorMsg, 'error');
   }
 }
 
