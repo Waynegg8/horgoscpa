@@ -7,7 +7,7 @@
     <title>系統設定｜管理員</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
-    <link rel="stylesheet" href="/assets/css/settings-page.css?v=20251031-006" />
+    <link rel="stylesheet" href="/assets/css/settings-page.css?v=20251031-007" />
   </head>
   <body class="internal-container">
     <!-- 通知栏 -->
@@ -437,14 +437,11 @@
       <!-- 用戶管理 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-users">
-        <div class="tab-header">
-          <h2>用戶管理</h2>
-          <button class="btn btn-primary" id="btnAddUser">+ 新增用戶</button>
-        </div>
         
         <div class="search-bar">
           <input type="text" id="searchUsers" placeholder="搜尋用戶名稱、Email..." />
           <button class="btn btn-primary" id="btnSearchUsers">搜尋</button>
+          <button class="btn btn-primary" id="btnAddUser">+ 新增用戶</button>
         </div>
 
         <div class="data-table-container">
@@ -473,14 +470,11 @@
       <!-- 客戶管理 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-clients">
-        <div class="tab-header">
-          <h2>客戶管理</h2>
-          <button class="btn btn-primary" id="btnAddClient">+ 新增客戶</button>
-        </div>
         
         <div class="search-bar">
           <input type="text" id="searchClients" placeholder="搜尋客戶名稱、統編..." />
           <button class="btn btn-primary" id="btnSearchClients">搜尋</button>
+          <button class="btn btn-primary" id="btnAddClient">+ 新增客戶</button>
         </div>
 
         <div class="data-table-container">
@@ -508,10 +502,6 @@
       <!-- 任務管理 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-tasks">
-        <div class="tab-header">
-          <h2>任務管理</h2>
-          <button class="btn btn-primary" id="btnAddTask">+ 新增任務</button>
-        </div>
         
         <div class="search-bar">
           <input type="text" id="searchTasks" placeholder="搜尋任務標題..." />
@@ -523,6 +513,7 @@
             <option value="cancelled">已取消</option>
           </select>
           <button class="btn btn-primary" id="btnSearchTasks">搜尋</button>
+          <button class="btn btn-primary" id="btnAddTask">+ 新增任務</button>
         </div>
 
         <div class="data-table-container">
@@ -550,10 +541,6 @@
       <!-- 工時管理 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-timesheets">
-        <div class="tab-header">
-          <h2>工時管理</h2>
-          <button class="btn btn-primary" id="btnAddTimesheet">+ 新增工時</button>
-        </div>
         
         <div class="search-bar">
           <input type="date" id="searchTimesheetDate" />
@@ -561,6 +548,7 @@
             <option value="">所有員工</option>
           </select>
           <button class="btn btn-primary" id="btnSearchTimesheets">搜尋</button>
+          <button class="btn btn-primary" id="btnAddTimesheet">+ 新增工時</button>
         </div>
 
         <div class="data-table-container">
@@ -588,10 +576,6 @@
       <!-- 假期管理 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-leaves">
-        <div class="tab-header">
-          <h2>假期管理</h2>
-          <button class="btn btn-primary" id="btnAddLeave">+ 新增假期</button>
-        </div>
         
         <div class="search-bar">
           <select id="filterLeaveUser">
@@ -611,6 +595,7 @@
             <option value="rejected">已拒絕</option>
           </select>
           <button class="btn btn-primary" id="btnSearchLeaves">搜尋</button>
+          <button class="btn btn-primary" id="btnAddLeave">+ 新增假期</button>
         </div>
 
         <div class="data-table-container">
@@ -638,10 +623,6 @@
       <!-- 收據收款 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-receipts">
-        <div class="tab-header">
-          <h2>收據收款管理</h2>
-          <button class="btn btn-primary" id="btnAddReceipt">+ 新增收據</button>
-        </div>
         
         <div class="search-bar">
           <input type="text" id="searchReceipts" placeholder="搜尋客戶、收據號..." />
@@ -652,6 +633,7 @@
             <option value="paid">已收款</option>
           </select>
           <button class="btn btn-primary" id="btnSearchReceipts">搜尋</button>
+          <button class="btn btn-primary" id="btnAddReceipt">+ 新增收據</button>
         </div>
 
         <div class="data-table-container">
@@ -679,10 +661,6 @@
       <!-- 薪資管理 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-payroll">
-        <div class="tab-header">
-          <h2>薪資管理</h2>
-          <button class="btn btn-primary" id="btnAddPayroll">+ 新增薪資記錄</button>
-        </div>
         
         <div class="search-bar">
           <input type="month" id="searchPayrollMonth" />
@@ -690,6 +668,7 @@
             <option value="">所有員工</option>
           </select>
           <button class="btn btn-primary" id="btnSearchPayroll">搜尋</button>
+          <button class="btn btn-primary" id="btnAddPayroll">+ 新增薪資記錄</button>
         </div>
 
         <div class="data-table-container">
@@ -718,10 +697,6 @@
       <!-- 成本管理 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-overhead">
-        <div class="tab-header">
-          <h2>成本管理</h2>
-          <button class="btn btn-primary" id="btnAddOverhead">+ 新增成本項目</button>
-        </div>
         
         <div class="search-bar">
           <input type="month" id="searchOverheadMonth" />
@@ -734,6 +709,7 @@
             <option value="other">其他</option>
           </select>
           <button class="btn btn-primary" id="btnSearchOverhead">搜尋</button>
+          <button class="btn btn-primary" id="btnAddOverhead">+ 新增成本項目</button>
         </div>
 
         <div class="data-table-container">
@@ -760,9 +736,6 @@
       <!-- 附件系統 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-attachments">
-        <div class="tab-header">
-          <h2>附件系統</h2>
-        </div>
         
         <div class="search-bar">
           <input type="text" id="searchAttachments" placeholder="搜尋檔案名稱..." />
@@ -801,10 +774,6 @@
       <!-- 知識庫 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-sop">
-        <div class="tab-header">
-          <h2>知識庫（SOP）</h2>
-          <button class="btn btn-primary" id="btnAddSOP">+ 新增SOP</button>
-        </div>
         
         <div class="search-bar">
           <input type="text" id="searchSOP" placeholder="搜尋標題、關鍵字..." />
@@ -812,6 +781,7 @@
             <option value="">所有分類</option>
           </select>
           <button class="btn btn-primary" id="btnSearchSOP">搜尋</button>
+          <button class="btn btn-primary" id="btnAddSOP">+ 新增SOP</button>
         </div>
 
         <div class="data-table-container">
@@ -838,10 +808,6 @@
       <!-- 服務生命週期 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-lifecycle">
-        <div class="tab-header">
-          <h2>服務生命週期管理</h2>
-          <button class="btn btn-primary" id="btnAddLifecycle">+ 新增服務</button>
-        </div>
         
         <div class="search-bar">
           <input type="text" id="searchLifecycle" placeholder="搜尋客戶..." />
@@ -852,6 +818,7 @@
             <option value="terminated">終止</option>
           </select>
           <button class="btn btn-primary" id="btnSearchLifecycle">搜尋</button>
+          <button class="btn btn-primary" id="btnAddLifecycle">+ 新增服務</button>
         </div>
 
         <div class="data-table-container">
@@ -879,10 +846,6 @@
       <!-- CMS內容 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-cms">
-        <div class="tab-header">
-          <h2>CMS內容管理</h2>
-          <button class="btn btn-primary" id="btnAddCMS">+ 新增內容</button>
-        </div>
         
         <div class="search-bar">
           <input type="text" id="searchCMS" placeholder="搜尋標題..." />
@@ -893,6 +856,7 @@
             <option value="archived">已封存</option>
           </select>
           <button class="btn btn-primary" id="btnSearchCMS">搜尋</button>
+          <button class="btn btn-primary" id="btnAddCMS">+ 新增內容</button>
         </div>
 
         <div class="data-table-container">
@@ -919,10 +883,6 @@
       <!-- 自動化規則 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-automation">
-        <div class="tab-header">
-          <h2>自動化規則管理</h2>
-          <button class="btn btn-primary" id="btnAddAutomation">+ 新增規則</button>
-        </div>
         
         <div class="search-bar">
           <input type="text" id="searchAutomation" placeholder="搜尋規則名稱..." />
@@ -932,6 +892,7 @@
             <option value="0">停用</option>
           </select>
           <button class="btn btn-primary" id="btnSearchAutomation">搜尋</button>
+          <button class="btn btn-primary" id="btnAddAutomation">+ 新增規則</button>
         </div>
 
         <div class="data-table-container">
