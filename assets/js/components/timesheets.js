@@ -1071,6 +1071,13 @@ async function saveAllChanges() {
       payload.timesheet_id = timesheetId;
     }
     
+    console.log('[SAVE DEBUG]', {
+      rowIndex: change.rowIndex,
+      dayIndex: change.dayIndex,
+      timesheetId: timesheetId,
+      payload: payload
+    });
+    
     return apiCall('/internal/api/v1/timelogs', {
       method: 'POST',
       body: JSON.stringify(payload)
