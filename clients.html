@@ -42,6 +42,7 @@
                 <th>統一編號</th>
                 <th>負責人</th>
                 <th>標籤</th>
+                <th>服務數量</th>
                 <th>電話</th>
                 <th>Email</th>
                 <th>建立時間</th>
@@ -478,12 +479,18 @@
               }
             }
             
+            const serviceCount = (r.services && Array.isArray(r.services)) ? r.services.length : 0;
+            const serviceCountHtml = serviceCount > 0 
+              ? `<span class="service-count" style="background:#2563eb;color:#fff;padding:4px 10px;border-radius:12px;font-size:13px;font-weight:600;">${serviceCount} 個服務</span>`
+              : '<span style="color:#9ca3af;">無</span>';
+            
             tr.innerHTML = `
               <td><input type="checkbox" class="client-checkbox" data-client-id="${r.clientId}" /></td>
-              <td>${r.companyName}</td>
+              <td><a href="/internal/client-detail?id=${r.clientId}" class="client-name-link" style="color:#2563eb;text-decoration:none;font-weight:600;">${r.companyName}</a></td>
               <td>${r.taxId||''}</td>
               <td>${assigneeName}</td>
               <td>${tagsHtml}</td>
+              <td>${serviceCountHtml}</td>
               <td>${r.phone||''}</td>
               <td>${r.email||''}</td>
               <td>${r.createdAt||''}</td>
@@ -569,40 +576,8 @@
 
         // —— 查看客戶詳情 ——
         async function viewClient(clientId) {
-          try {
-            const res = await fetch(`${apiBase}/clients/${clientId}`, { credentials: 'include' });
-            if (res.status === 401) {
-              location.assign('/login?redirect=/internal/clients');
-              return;
-            }
-            const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) {
-              throw new Error((json && json.message) || '載入失敗');
-            }
-            const data = json.data;
-            document.getElementById('view_client_id').textContent = data.taxId || '';
-            document.getElementById('view_company_name').textContent = data.companyName || '';
-            document.getElementById('view_assignee').textContent = data.assigneeName || '';
-            document.getElementById('view_phone').textContent = data.phone || '';
-            document.getElementById('view_email').textContent = data.email || '';
-            document.getElementById('view_client_notes').textContent = data.clientNotes || '';
-            document.getElementById('view_payment_notes').textContent = data.paymentNotes || '';
-            
-            // 顯示標籤
-            const tagsContainer = document.getElementById('view_tags');
-            if (data.tags && data.tags.length > 0) {
-              tagsContainer.innerHTML = data.tags.map(t => `<span class="chip" style="background:${t.tag_color||'#ccc'}">${t.tag_name}</span>`).join('');
-            } else {
-              tagsContainer.innerHTML = '<span style="color:#999">無</span>';
-            }
-            
-            // 渲染服务列表
-            renderClientServices(data.clientId, data.services || []);
-            
-            openViewModal();
-          } catch (err) {
-            alert('載入客戶詳情失敗，請稍後再試');
-          }
+          // 跳轉到客戶詳情頁
+          window.location.href = `/internal/client-detail?id=${clientId}`;
         }
         
         // 渲染客户服务列表
