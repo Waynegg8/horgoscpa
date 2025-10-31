@@ -19,6 +19,8 @@
     <!-- Tab 導覽列 -->
     <nav class="settings-tabs">
       <button class="tab-btn active" data-tab="system">系統參數</button>
+      <button class="tab-btn" data-tab="services">服務項目</button>
+      <button class="tab-btn" data-tab="task-templates">任務模板</button>
       <button class="tab-btn" data-tab="users">用戶管理</button>
       <button class="tab-btn" data-tab="clients">客戶管理</button>
       <button class="tab-btn" data-tab="tasks">任務管理</button>
@@ -41,125 +43,312 @@
       <!-- 系統參數 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel active" id="tab-system">
-        <section class="card" aria-labelledby="danger-title">
-          <div class="card-header">
-            <h2 id="danger-title">危險設定</h2>
-            <div class="subtitle">變更前請確認風險，非管理員不可操作</div>
+      <section class="card" aria-labelledby="danger-title">
+        <div class="card-header">
+          <h2 id="danger-title">危險設定</h2>
+          <div class="subtitle">變更前請確認風險，非管理員不可操作</div>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="rule_comp_hours_expiry">補休有效期規則</label>
+            <select id="rule_comp_hours_expiry" disabled>
+              <option value="current_month">當月到期</option>
+              <option value="next_month">次月到期</option>
+              <option value="3_months">3 個月</option>
+              <option value="6_months">6 個月</option>
+            </select>
           </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label for="rule_comp_hours_expiry">補休有效期規則</label>
-              <select id="rule_comp_hours_expiry" disabled>
-                <option value="current_month">當月到期</option>
-                <option value="next_month">次月到期</option>
-                <option value="3_months">3 個月</option>
-                <option value="6_months">6 個月</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>每日工時上限（唯讀）</label>
-              <input type="text" value="12" readonly />
-            </div>
-            <div class="form-group">
-              <label>月薪制換算時數（唯讀）</label>
-              <input type="text" value="240" readonly />
-            </div>
-            <div>
-              <button id="btnSaveDanger" class="btn btn-danger" type="button" disabled>儲存危險設定</button>
-            </div>
+          <div class="form-group">
+            <label>每日工時上限（唯讀）</label>
+            <input type="text" value="12" readonly />
           </div>
-        </section>
+          <div class="form-group">
+            <label>月薪制換算時數（唯讀）</label>
+            <input type="text" value="240" readonly />
+          </div>
+          <div>
+            <button id="btnSaveDanger" class="btn btn-danger" type="button" disabled>儲存危險設定</button>
+          </div>
+        </div>
+      </section>
 
-        <section class="card" aria-labelledby="payroll-title" style="margin-top:20px;">
-          <div class="card-header">
-            <h2 id="payroll-title">薪資相關參數</h2>
-            <div class="subtitle">全勤獎金與薪資計算相關設定</div>
+      <section class="card" aria-labelledby="payroll-title" style="margin-top:20px;">
+        <div class="card-header">
+          <h2 id="payroll-title">薪資相關參數</h2>
+          <div class="subtitle">全勤獎金與薪資計算相關設定</div>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="attendance_bonus_amount">全勤獎金金額（元）</label>
+            <input id="attendance_bonus_amount" type="number" min="0" step="1" placeholder="1000" disabled />
           </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label for="attendance_bonus_amount">全勤獎金金額（元）</label>
-              <input id="attendance_bonus_amount" type="number" min="0" step="1" placeholder="1000" disabled />
-            </div>
-            <div>
-              <button id="btnSavePayroll" class="btn btn-primary" type="button" disabled>儲存薪資參數</button>
-            </div>
+          <div>
+            <button id="btnSavePayroll" class="btn btn-primary" type="button" disabled>儲存薪資參數</button>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section class="card" aria-labelledby="cost-title" style="margin-top:20px;">
-          <div class="card-header">
-            <h2 id="cost-title">成本分析參數</h2>
-            <div class="subtitle">管理成本與盈利目標設定</div>
+      <section class="card" aria-labelledby="cost-title" style="margin-top:20px;">
+        <div class="card-header">
+          <h2 id="cost-title">成本分析參數</h2>
+          <div class="subtitle">管理成本與盈利目標設定</div>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="overhead_cost_per_hour">每小時管理成本（元/小時）</label>
+            <input id="overhead_cost_per_hour" type="number" min="0" step="0.01" placeholder="100" disabled />
           </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label for="overhead_cost_per_hour">每小時管理成本（元/小時）</label>
-              <input id="overhead_cost_per_hour" type="number" min="0" step="0.01" placeholder="100" disabled />
-            </div>
-            <div class="form-group">
-              <label for="target_profit_margin">目標毛利率（%）</label>
-              <input id="target_profit_margin" type="number" min="0" max="100" step="0.1" placeholder="50" disabled />
-            </div>
-            <div>
-              <button id="btnSaveCost" class="btn btn-primary" type="button" disabled>儲存成本參數</button>
-            </div>
+          <div class="form-group">
+            <label for="target_profit_margin">目標毛利率（%）</label>
+            <input id="target_profit_margin" type="number" min="0" max="100" step="0.1" placeholder="50" disabled />
           </div>
-        </section>
+          <div>
+            <button id="btnSaveCost" class="btn btn-primary" type="button" disabled>儲存成本參數</button>
+          </div>
+        </div>
+      </section>
 
-        <section class="card" aria-labelledby="general-title" style="margin-top:20px;">
+      <section class="card" aria-labelledby="general-title" style="margin-top:20px;">
+        <div class="card-header">
+          <h2 id="general-title">一般設定</h2>
+          <div class="subtitle">公司資訊等一般參數</div>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="company_name">公司名稱</label>
+            <input id="company_name" type="text" placeholder="範例：霍爾果斯會計師事務所" disabled />
+          </div>
+          <div class="form-group">
+            <label for="contact_email">聯絡信箱</label>
+            <input id="contact_email" type="email" placeholder="contact@horgoscpa.com" disabled />
+          </div>
+          <div class="form-group">
+            <label for="timezone">系統時區</label>
+            <input id="timezone" type="text" placeholder="Asia/Taipei" disabled />
+          </div>
+          <div class="form-group">
+            <label for="currency">幣別</label>
+            <input id="currency" type="text" placeholder="TWD" disabled />
+          </div>
+          <div class="form-group">
+            <label for="timesheet_min_unit">工時最小單位（小時）</label>
+            <select id="timesheet_min_unit" disabled>
+              <option value="0.25">0.25</option>
+              <option value="0.5">0.5</option>
+              <option value="1">1</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="soft_delete_enabled">啟用軟刪除</label>
+            <select id="soft_delete_enabled" disabled>
+              <option value="1">啟用</option>
+              <option value="0">停用</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="workday_start">工作日開始時間</label>
+            <input id="workday_start" type="time" disabled />
+          </div>
+          <div class="form-group">
+            <label for="workday_end">工作日結束時間</label>
+            <input id="workday_end" type="time" disabled />
+          </div>
+          <div class="form-group">
+            <label for="report_locale">報表語系</label>
+            <input id="report_locale" type="text" placeholder="zh-TW" disabled />
+          </div>
+          <div>
+            <button id="btnSaveGeneral" class="btn btn-primary" type="button" disabled>儲存一般設定</button>
+          </div>
+        </div>
+      </section>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- 服務項目管理 Tab -->
+      <!-- ========================================== -->
+      <div class="tab-panel" id="tab-services">
+        <div class="tab-header">
+          <h2>服務項目管理</h2>
+          <button class="btn btn-primary" id="btnAddService">+ 新增服務項目</button>
+        </div>
+        
+        <!-- 新增服務項目表單（默認隱藏） -->
+        <div class="card" id="addServiceForm" style="display:none; margin-bottom: 20px; background: #f8f9fa;">
           <div class="card-header">
-            <h2 id="general-title">一般設定</h2>
-            <div class="subtitle">公司資訊等一般參數</div>
+            <h3>新增服務項目</h3>
           </div>
           <div class="card-body">
-            <div class="form-group">
-              <label for="company_name">公司名稱</label>
-              <input id="company_name" type="text" placeholder="範例：霍爾果斯會計師事務所" disabled />
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+              <div>
+                <label>服務名稱 *</label>
+                <input type="text" id="newServiceName" class="form-control" placeholder="例如：記帳服務" required>
+              </div>
+              <div>
+                <label>服務代碼</label>
+                <input type="text" id="newServiceCode" class="form-control" placeholder="例如：ACCOUNTING">
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <label>說明</label>
+                <textarea id="newServiceDesc" class="form-control" rows="2" placeholder="服務內容說明"></textarea>
+              </div>
+              <div>
+                <label>排序</label>
+                <input type="number" id="newServiceOrder" class="form-control" value="0" min="0">
+              </div>
             </div>
-            <div class="form-group">
-              <label for="contact_email">聯絡信箱</label>
-              <input id="contact_email" type="email" placeholder="contact@horgoscpa.com" disabled />
-            </div>
-            <div class="form-group">
-              <label for="timezone">系統時區</label>
-              <input id="timezone" type="text" placeholder="Asia/Taipei" disabled />
-            </div>
-            <div class="form-group">
-              <label for="currency">幣別</label>
-              <input id="currency" type="text" placeholder="TWD" disabled />
-            </div>
-            <div class="form-group">
-              <label for="timesheet_min_unit">工時最小單位（小時）</label>
-              <select id="timesheet_min_unit" disabled>
-                <option value="0.25">0.25</option>
-                <option value="0.5">0.5</option>
-                <option value="1">1</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="soft_delete_enabled">啟用軟刪除</label>
-              <select id="soft_delete_enabled" disabled>
-                <option value="1">啟用</option>
-                <option value="0">停用</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="workday_start">工作日開始時間</label>
-              <input id="workday_start" type="time" disabled />
-            </div>
-            <div class="form-group">
-              <label for="workday_end">工作日結束時間</label>
-              <input id="workday_end" type="time" disabled />
-            </div>
-            <div class="form-group">
-              <label for="report_locale">報表語系</label>
-              <input id="report_locale" type="text" placeholder="zh-TW" disabled />
-            </div>
-            <div>
-              <button id="btnSaveGeneral" class="btn btn-primary" type="button" disabled>儲存一般設定</button>
+            <div class="action-btns">
+              <button class="btn btn-primary" onclick="saveNewService()">儲存</button>
+              <button class="btn btn-secondary" onclick="cancelAddService()">取消</button>
             </div>
           </div>
-        </section>
+        </div>
+        
+        <div class="card" style="margin-bottom: 30px;">
+          <div class="card-header">
+            <h3>服務項目列表</h3>
+            <div class="subtitle">點擊任一服務可查看並管理其子項目</div>
+          </div>
+          <div class="card-body">
+            <div class="data-table-container">
+              <table class="data-table" id="servicesTable">
+                <thead>
+                  <tr>
+                    <th style="width: 60px;">ID</th>
+                    <th>服務名稱</th>
+                    <th>服務代碼</th>
+                    <th>說明</th>
+                    <th style="width: 80px;">排序</th>
+                    <th style="width: 80px;">狀態</th>
+                    <th style="width: 150px;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="7" class="loading">載入中...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 服務子項目區域 -->
+        <div class="card" id="serviceItemsCard" style="display:none;">
+          <div class="card-header">
+            <h3 id="serviceItemsTitle">服務子項目</h3>
+            <button class="btn btn-primary" id="btnAddServiceItem">+ 新增子項目</button>
+          </div>
+          <div class="card-body">
+            <!-- 新增子項目表單（默認隱藏） -->
+            <div id="addServiceItemForm" style="display:none; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px;">
+              <h4 style="margin-bottom: 15px;">新增子項目</h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div>
+                  <label>子項目名稱 *</label>
+                  <input type="text" id="newItemName" class="form-control" placeholder="例如：收集憑證" required>
+                </div>
+                <div>
+                  <label>項目代碼</label>
+                  <input type="text" id="newItemCode" class="form-control" placeholder="例如：ACC_COLLECT">
+                </div>
+                <div style="grid-column: 1 / -1;">
+                  <label>說明</label>
+                  <textarea id="newItemDesc" class="form-control" rows="2" placeholder="子項目內容說明"></textarea>
+                </div>
+                <div>
+                  <label>排序</label>
+                  <input type="number" id="newItemOrder" class="form-control" value="0" min="0">
+                </div>
+              </div>
+              <div class="action-btns">
+                <button class="btn btn-primary" onclick="saveNewServiceItem()">儲存</button>
+                <button class="btn btn-secondary" onclick="cancelAddServiceItem()">取消</button>
+              </div>
+            </div>
+            
+            <div class="data-table-container">
+              <table class="data-table" id="serviceItemsTable">
+                <thead>
+                  <tr>
+                    <th style="width: 60px;">ID</th>
+                    <th>子項目名稱</th>
+                    <th>項目代碼</th>
+                    <th>說明</th>
+                    <th style="width: 80px;">排序</th>
+                    <th style="width: 150px;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="6" class="loading">請先選擇服務項目</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- 任務模板管理 Tab -->
+      <!-- ========================================== -->
+      <div class="tab-panel" id="tab-task-templates">
+        <div class="tab-header">
+          <h2>任務模板管理</h2>
+          <button class="btn btn-primary" id="btnAddTemplate">+ 新增任務模板</button>
+        </div>
+        
+        <!-- 新增任務模板表單（默認隱藏） -->
+        <div class="card" id="addTemplateForm" style="display:none; margin-bottom: 20px; background: #f8f9fa;">
+          <div class="card-header">
+            <h3>新增任務模板</h3>
+          </div>
+          <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+              <div>
+                <label>模板名稱 *</label>
+                <input type="text" id="newTemplateName" class="form-control" placeholder="例如：記帳服務標準流程" required>
+              </div>
+              <div>
+                <label>關聯服務</label>
+                <select id="newTemplateService" class="form-control">
+                  <option value="">統一模板（適用所有客戶）</option>
+                </select>
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <label>說明</label>
+                <textarea id="newTemplateDesc" class="form-control" rows="2" placeholder="模板用途說明"></textarea>
+              </div>
+            </div>
+            <div class="action-btns">
+              <button class="btn btn-primary" onclick="saveNewTemplate()">儲存</button>
+              <button class="btn btn-secondary" onclick="cancelAddTemplate()">取消</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="search-bar">
+          <select id="filterTemplateService">
+            <option value="">所有服務</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchTemplates">篩選</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="templatesTable">
+            <thead>
+              <tr>
+                <th style="width: 60px;">ID</th>
+                <th>模板名稱</th>
+                <th>關聯服務</th>
+                <th>說明</th>
+                <th style="width: 80px;">狀態</th>
+                <th>創建時間</th>
+                <th style="width: 150px;">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- ========================================== -->
@@ -887,95 +1076,95 @@
         
         // 薪資參數
         if(document.getElementById('btnSavePayroll')) {
-          document.getElementById('btnSavePayroll').addEventListener('click', async function(){
-            setMsg('', true);
-            const attendBonus = document.getElementById('attendance_bonus_amount').value.trim();
-            const n = parseInt(attendBonus, 10);
-            if (!Number.isInteger(n) || n < 0) { setMsg('全勤獎金必須為非負整數', false); return; }
-            this.disabled = true; this.textContent = '儲存中…';
-            try {
-              await putSetting('attendance_bonus_amount', { value: attendBonus });
-              setMsg('已更新薪資參數。', true);
-            } catch (e) {
-              setMsg(String(e && e.message || '更新失敗'), false);
-            } finally {
-              this.disabled = false; this.textContent = '儲存薪資參數';
-            }
-          });
+        document.getElementById('btnSavePayroll').addEventListener('click', async function(){
+          setMsg('', true);
+          const attendBonus = document.getElementById('attendance_bonus_amount').value.trim();
+          const n = parseInt(attendBonus, 10);
+          if (!Number.isInteger(n) || n < 0) { setMsg('全勤獎金必須為非負整數', false); return; }
+          this.disabled = true; this.textContent = '儲存中…';
+          try {
+            await putSetting('attendance_bonus_amount', { value: attendBonus });
+            setMsg('已更新薪資參數。', true);
+          } catch (e) {
+            setMsg(String(e && e.message || '更新失敗'), false);
+          } finally {
+            this.disabled = false; this.textContent = '儲存薪資參數';
+          }
+        });
         }
 
         // 成本參數
         if(document.getElementById('btnSaveCost')) {
-          document.getElementById('btnSaveCost').addEventListener('click', async function(){
-            setMsg('', true);
-            const overheadCost = document.getElementById('overhead_cost_per_hour').value.trim();
-            const targetMargin = document.getElementById('target_profit_margin').value.trim();
-            const oc = parseFloat(overheadCost);
-            const tm = parseFloat(targetMargin);
-            if (!Number.isFinite(oc) || oc < 0) { setMsg('管理成本必須為非負數字', false); return; }
-            if (!Number.isFinite(tm) || tm < 0 || tm > 100) { setMsg('目標毛利率必須在 0-100 之間', false); return; }
-            this.disabled = true; this.textContent = '儲存中…';
-            try {
-              await putSetting('overhead_cost_per_hour', { value: overheadCost });
-              await putSetting('target_profit_margin', { value: targetMargin });
-              setMsg('已更新成本參數。', true);
-            } catch (e) {
-              setMsg(String(e && e.message || '更新失敗'), false);
-            } finally {
-              this.disabled = false; this.textContent = '儲存成本參數';
-            }
-          });
+        document.getElementById('btnSaveCost').addEventListener('click', async function(){
+          setMsg('', true);
+          const overheadCost = document.getElementById('overhead_cost_per_hour').value.trim();
+          const targetMargin = document.getElementById('target_profit_margin').value.trim();
+          const oc = parseFloat(overheadCost);
+          const tm = parseFloat(targetMargin);
+          if (!Number.isFinite(oc) || oc < 0) { setMsg('管理成本必須為非負數字', false); return; }
+          if (!Number.isFinite(tm) || tm < 0 || tm > 100) { setMsg('目標毛利率必須在 0-100 之間', false); return; }
+          this.disabled = true; this.textContent = '儲存中…';
+          try {
+            await putSetting('overhead_cost_per_hour', { value: overheadCost });
+            await putSetting('target_profit_margin', { value: targetMargin });
+            setMsg('已更新成本參數。', true);
+          } catch (e) {
+            setMsg(String(e && e.message || '更新失敗'), false);
+          } finally {
+            this.disabled = false; this.textContent = '儲存成本參數';
+          }
+        });
         }
 
         // 危險設定
         if(document.getElementById('btnSaveDanger')) {
-          document.getElementById('btnSaveDanger').addEventListener('click', async function(){
-            setMsg('', true);
-            const rule = document.getElementById('rule_comp_hours_expiry').value;
-            this.disabled = true; this.textContent = '儲存中…';
-            try {
-              await putSetting('rule_comp_hours_expiry', { value: rule, confirmed: true });
-              setMsg('已更新危險設定。', true);
-            } catch (e) {
-              setMsg(String(e && e.message || '更新失敗'), false);
-            } finally {
-              this.disabled = false; this.textContent = '儲存危險設定';
-            }
-          });
+        document.getElementById('btnSaveDanger').addEventListener('click', async function(){
+          setMsg('', true);
+          const rule = document.getElementById('rule_comp_hours_expiry').value;
+          this.disabled = true; this.textContent = '儲存中…';
+          try {
+            await putSetting('rule_comp_hours_expiry', { value: rule, confirmed: true });
+            setMsg('已更新危險設定。', true);
+          } catch (e) {
+            setMsg(String(e && e.message || '更新失敗'), false);
+          } finally {
+            this.disabled = false; this.textContent = '儲存危險設定';
+          }
+        });
         }
 
         // 一般設定
         if(document.getElementById('btnSaveGeneral')) {
-          document.getElementById('btnSaveGeneral').addEventListener('click', async function(){
-            setMsg('', true);
-            const company = document.getElementById('company_name').value.trim();
-            const email = document.getElementById('contact_email').value.trim();
-            const tz = document.getElementById('timezone').value.trim();
-            const cur = document.getElementById('currency').value.trim();
-            const unit = document.getElementById('timesheet_min_unit').value;
-            const soft = document.getElementById('soft_delete_enabled').value;
-            const wdStart = document.getElementById('workday_start').value;
-            const wdEnd = document.getElementById('workday_end').value;
-            const repLoc = document.getElementById('report_locale').value.trim();
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setMsg('Email 格式錯誤', false); return; }
-            this.disabled = true; this.textContent = '儲存中…';
-            try {
-              await putSetting('company_name', { value: company });
-              await putSetting('contact_email', { value: email });
-              await putSetting('timezone', { value: tz||'Asia/Taipei' });
-              await putSetting('currency', { value: cur||'TWD' });
-              await putSetting('timesheet_min_unit', { value: unit });
-              await putSetting('soft_delete_enabled', { value: soft });
-              await putSetting('workday_start', { value: wdStart||'08:30' });
-              await putSetting('workday_end', { value: wdEnd||'17:30' });
-              await putSetting('report_locale', { value: repLoc||'zh-TW' });
-              setMsg('已更新一般設定。', true);
-            } catch (e) {
-              setMsg(String(e && e.message || '更新失敗'), false);
-            } finally {
-              this.disabled = false; this.textContent = '儲存一般設定';
-            }
-          });
+        document.getElementById('btnSaveGeneral').addEventListener('click', async function(){
+          setMsg('', true);
+          const company = document.getElementById('company_name').value.trim();
+          const email = document.getElementById('contact_email').value.trim();
+          const tz = document.getElementById('timezone').value.trim();
+          const cur = document.getElementById('currency').value.trim();
+          const unit = document.getElementById('timesheet_min_unit').value;
+          const soft = document.getElementById('soft_delete_enabled').value;
+          const wdStart = document.getElementById('workday_start').value;
+          const wdEnd = document.getElementById('workday_end').value;
+          const repLoc = document.getElementById('report_locale').value.trim();
+          if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setMsg('Email 格式錯誤', false); return; }
+          this.disabled = true; this.textContent = '儲存中…';
+          try {
+            await putSetting('company_name', { value: company });
+            await putSetting('contact_email', { value: email });
+            await putSetting('timezone', { value: tz||'Asia/Taipei' });
+            await putSetting('currency', { value: cur||'TWD' });
+            await putSetting('timesheet_min_unit', { value: unit });
+            await putSetting('soft_delete_enabled', { value: soft });
+            await putSetting('workday_start', { value: wdStart||'08:30' });
+            await putSetting('workday_end', { value: wdEnd||'17:30' });
+            await putSetting('report_locale', { value: repLoc||'zh-TW' });
+            setMsg('已更新一般設定。', true);
+          } catch (e) {
+            setMsg(String(e && e.message || '更新失敗'), false);
+          } finally {
+            this.disabled = false; this.textContent = '儲存一般設定';
+          }
+        });
         }
 
         // ========================================
@@ -985,6 +1174,12 @@
           switch(tabName) {
             case 'system':
               // 系統參數已在ensureAdmin中載入
+              break;
+            case 'services':
+              loadServices();
+              break;
+            case 'task-templates':
+              loadTaskTemplates();
               break;
             case 'users':
               loadUsers();
@@ -1034,6 +1229,163 @@
         // ========================================
         // 各資料表載入函數
         // ========================================
+        
+        // 全局變量：當前選中的服務ID
+        let currentServiceId = null;
+        
+        // 服務項目管理
+        async function loadServices() {
+          const tbody = document.querySelector('#servicesTable tbody');
+          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/services`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const services = json.data;
+            
+            if (services.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無服務項目，點擊上方「+ 新增服務項目」開始</td></tr>';
+              return;
+            }
+            
+            tbody.innerHTML = services.map(service => `
+              <tr onclick="selectService(${service.service_id}, '${service.service_name}')" style="cursor: pointer;">
+                <td>${service.service_id}</td>
+                <td><strong>${service.service_name}</strong></td>
+                <td>${service.service_code || '-'}</td>
+                <td>${service.description || '-'}</td>
+                <td>${service.sort_order}</td>
+                <td>
+                  <span class="status-badge ${service.is_active ? 'active' : 'rejected'}">
+                    ${service.is_active ? '啟用' : '停用'}
+                  </span>
+                </td>
+                <td class="action-btns" onclick="event.stopPropagation();">
+                  <button class="btn btn-sm btn-primary" onclick="editService(${service.service_id})">編輯</button>
+                  <button class="btn btn-sm btn-danger" onclick="deleteService(${service.service_id})">刪除</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入服務項目失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+        
+        // 選擇服務項目，顯示子項目
+        window.selectService = async function(serviceId, serviceName) {
+          currentServiceId = serviceId;
+          const card = document.getElementById('serviceItemsCard');
+          const title = document.getElementById('serviceItemsTitle');
+          const tbody = document.querySelector('#serviceItemsTable tbody');
+          
+          title.textContent = `${serviceName} - 子項目列表`;
+          card.style.display = 'block';
+          tbody.innerHTML = '<tr><td colspan="6" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/services/${serviceId}/items`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const items = json.data;
+            
+            if (items.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無子項目，點擊上方「+ 新增子項目」開始</td></tr>';
+              return;
+            }
+            
+            tbody.innerHTML = items.map(item => `
+              <tr>
+                <td>${item.item_id}</td>
+                <td>${item.item_name}</td>
+                <td>${item.item_code || '-'}</td>
+                <td>${item.description || '-'}</td>
+                <td>${item.sort_order}</td>
+                <td class="action-btns">
+                  <button class="btn btn-sm btn-primary" onclick="editServiceItem(${serviceId}, ${item.item_id})">編輯</button>
+                  <button class="btn btn-sm btn-danger" onclick="deleteServiceItem(${serviceId}, ${item.item_id})">刪除</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入子項目失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        };
+        
+        // 任務模板管理
+        async function loadTaskTemplates() {
+          const tbody = document.querySelector('#templatesTable tbody');
+          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
+          
+          // 同時載入服務列表到篩選器
+          loadServicesForFilter();
+          
+          try {
+            const res = await fetch(`${apiBase}/task-templates`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const templates = json.data;
+            
+            if (templates.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無任務模板，點擊上方「+ 新增任務模板」開始</td></tr>';
+              return;
+            }
+            
+            tbody.innerHTML = templates.map(template => `
+              <tr>
+                <td>${template.template_id}</td>
+                <td><strong>${template.template_name}</strong></td>
+                <td>${template.service_name || '統一模板'}</td>
+                <td>${template.description || '-'}</td>
+                <td>
+                  <span class="status-badge ${template.is_active ? 'active' : 'rejected'}">
+                    ${template.is_active ? '啟用' : '停用'}
+                  </span>
+                </td>
+                <td>${template.created_at || '-'}</td>
+                <td class="action-btns">
+                  <button class="btn btn-sm btn-primary" onclick="editTemplate(${template.template_id})">編輯</button>
+                  <button class="btn btn-sm btn-danger" onclick="deleteTemplate(${template.template_id})">刪除</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入任務模板失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+        
+        // 載入服務列表到篩選器
+        async function loadServicesForFilter() {
+          try {
+            const res = await fetch(`${apiBase}/services`, { credentials: 'include' });
+            if (!res.ok) return;
+            const json = await res.json();
+            if (!json.ok || !json.data) return;
+            
+            const select = document.getElementById('filterTemplateService');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">所有服務</option>' + 
+              json.data.map(s => `<option value="${s.service_id}">${s.service_name}</option>`).join('');
+          } catch (err) {
+            console.error('載入服務列表失敗:', err);
+          }
+        }
         
         // 用戶管理
         async function loadUsers() {
@@ -1696,6 +2048,278 @@
         }
 
         // ========================================
+        // 服務項目的CRUD操作
+        // ========================================
+        
+        // 顯示新增服務表單
+        document.getElementById('btnAddService')?.addEventListener('click', () => {
+          const form = document.getElementById('addServiceForm');
+          form.style.display = form.style.display === 'none' ? 'block' : 'none';
+          if (form.style.display === 'block') {
+            document.getElementById('newServiceName').focus();
+          }
+        });
+        
+        // 取消新增服務
+        window.cancelAddService = function() {
+          document.getElementById('addServiceForm').style.display = 'none';
+          document.getElementById('newServiceName').value = '';
+          document.getElementById('newServiceCode').value = '';
+          document.getElementById('newServiceDesc').value = '';
+          document.getElementById('newServiceOrder').value = '0';
+        };
+        
+        // 儲存新服務項目
+        window.saveNewService = async function() {
+          const name = document.getElementById('newServiceName').value.trim();
+          const code = document.getElementById('newServiceCode').value.trim();
+          const desc = document.getElementById('newServiceDesc').value.trim();
+          const order = parseInt(document.getElementById('newServiceOrder').value || '0', 10);
+          
+          if (!name) {
+            setMsg('請填寫服務名稱', false);
+            return;
+          }
+          
+          try {
+            const res = await fetch(`${apiBase}/services`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                service_name: name,
+                service_code: code || null,
+                description: desc || null,
+                sort_order: order
+              })
+            });
+            
+            if (!res.ok) throw new Error('創建失敗');
+            
+            setMsg('服務項目創建成功！', true);
+            cancelAddService();
+            loadServices();
+          } catch (err) {
+            console.error('創建服務失敗:', err);
+            setMsg('創建失敗：' + err.message, false);
+          }
+        };
+        
+        // 編輯服務（inline方式）
+        window.editService = function(serviceId) {
+          // TODO: 實現inline編輯或跳轉到編輯頁面
+          alert(`編輯功能即將推出\n服務ID: ${serviceId}\n\n提示：目前可使用刪除後重新創建的方式`);
+        };
+        
+        // 刪除服務項目
+        window.deleteService = async function(serviceId) {
+          if (!confirm('確定要刪除此服務項目嗎？\n\n注意：刪除服務不會刪除其子項目，但會隱藏。')) return;
+          try {
+            const res = await fetch(`${apiBase}/services/${serviceId}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            if (!res.ok) throw new Error('刪除失敗');
+            setMsg('刪除成功！', true);
+            loadServices();
+            // 隱藏子項目區域
+            document.getElementById('serviceItemsCard').style.display = 'none';
+          } catch (err) {
+            setMsg('刪除失敗：' + err.message, false);
+          }
+        };
+        
+        // ========================================
+        // 服務子項目的CRUD操作
+        // ========================================
+        
+        // 顯示新增子項目表單
+        document.getElementById('btnAddServiceItem')?.addEventListener('click', () => {
+          if (!currentServiceId) {
+            setMsg('請先選擇一個服務項目', false);
+            return;
+          }
+          const form = document.getElementById('addServiceItemForm');
+          form.style.display = form.style.display === 'none' ? 'block' : 'none';
+          if (form.style.display === 'block') {
+            document.getElementById('newItemName').focus();
+          }
+        });
+        
+        // 取消新增子項目
+        window.cancelAddServiceItem = function() {
+          document.getElementById('addServiceItemForm').style.display = 'none';
+          document.getElementById('newItemName').value = '';
+          document.getElementById('newItemCode').value = '';
+          document.getElementById('newItemDesc').value = '';
+          document.getElementById('newItemOrder').value = '0';
+        };
+        
+        // 儲存新子項目
+        window.saveNewServiceItem = async function() {
+          if (!currentServiceId) {
+            setMsg('請先選擇一個服務項目', false);
+            return;
+          }
+          
+          const name = document.getElementById('newItemName').value.trim();
+          const code = document.getElementById('newItemCode').value.trim();
+          const desc = document.getElementById('newItemDesc').value.trim();
+          const order = parseInt(document.getElementById('newItemOrder').value || '0', 10);
+          
+          if (!name) {
+            setMsg('請填寫子項目名稱', false);
+            return;
+          }
+          
+          try {
+            const res = await fetch(`${apiBase}/services/${currentServiceId}/items`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                item_name: name,
+                item_code: code || null,
+                description: desc || null,
+                sort_order: order
+              })
+            });
+            
+            if (!res.ok) throw new Error('創建失敗');
+            
+            setMsg('子項目創建成功！', true);
+            cancelAddServiceItem();
+            
+            // 重新載入子項目列表
+            const serviceName = document.getElementById('serviceItemsTitle').textContent.split(' - ')[0];
+            selectService(currentServiceId, serviceName);
+          } catch (err) {
+            console.error('創建子項目失敗:', err);
+            setMsg('創建失敗：' + err.message, false);
+          }
+        };
+        
+        // 編輯服務子項目
+        window.editServiceItem = function(serviceId, itemId) {
+          alert(`編輯功能即將推出\n服務ID: ${serviceId}\n子項目ID: ${itemId}`);
+        };
+        
+        // 刪除服務子項目
+        window.deleteServiceItem = async function(serviceId, itemId) {
+          if (!confirm('確定要刪除此子項目嗎？')) return;
+          try {
+            const res = await fetch(`${apiBase}/services/${serviceId}/items/${itemId}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            if (!res.ok) throw new Error('刪除失敗');
+            setMsg('刪除成功！', true);
+            
+            // 重新載入子項目列表
+            const serviceName = document.getElementById('serviceItemsTitle').textContent.split(' - ')[0];
+            selectService(serviceId, serviceName);
+          } catch (err) {
+            setMsg('刪除失敗：' + err.message, false);
+          }
+        };
+        
+        // ========================================
+        // 任務模板的CRUD操作
+        // ========================================
+        
+        // 顯示新增模板表單
+        document.getElementById('btnAddTemplate')?.addEventListener('click', async () => {
+          const form = document.getElementById('addTemplateForm');
+          form.style.display = form.style.display === 'none' ? 'block' : 'none';
+          
+          if (form.style.display === 'block') {
+            // 載入服務列表到下拉選單
+            await loadServicesForTemplateForm();
+            document.getElementById('newTemplateName').focus();
+          }
+        });
+        
+        // 載入服務列表到新增模板表單
+        async function loadServicesForTemplateForm() {
+          try {
+            const res = await fetch(`${apiBase}/services`, { credentials: 'include' });
+            if (!res.ok) return;
+            const json = await res.json();
+            if (!json.ok || !json.data) return;
+            
+            const select = document.getElementById('newTemplateService');
+            select.innerHTML = '<option value="">統一模板（適用所有客戶）</option>' + 
+              json.data.map(s => `<option value="${s.service_id}">${s.service_name}</option>`).join('');
+          } catch (err) {
+            console.error('載入服務列表失敗:', err);
+          }
+        }
+        
+        // 取消新增模板
+        window.cancelAddTemplate = function() {
+          document.getElementById('addTemplateForm').style.display = 'none';
+          document.getElementById('newTemplateName').value = '';
+          document.getElementById('newTemplateService').value = '';
+          document.getElementById('newTemplateDesc').value = '';
+        };
+        
+        // 儲存新任務模板
+        window.saveNewTemplate = async function() {
+          const name = document.getElementById('newTemplateName').value.trim();
+          const serviceId = document.getElementById('newTemplateService').value;
+          const desc = document.getElementById('newTemplateDesc').value.trim();
+          
+          if (!name) {
+            setMsg('請填寫模板名稱', false);
+            return;
+          }
+          
+          try {
+            const res = await fetch(`${apiBase}/task-templates`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                template_name: name,
+                service_id: serviceId ? parseInt(serviceId, 10) : null,
+                description: desc || null,
+                is_active: true
+              })
+            });
+            
+            if (!res.ok) throw new Error('創建失敗');
+            
+            setMsg('任務模板創建成功！', true);
+            cancelAddTemplate();
+            loadTaskTemplates();
+          } catch (err) {
+            console.error('創建模板失敗:', err);
+            setMsg('創建失敗：' + err.message, false);
+          }
+        };
+        
+        // 編輯任務模板
+        window.editTemplate = function(templateId) {
+          alert(`編輯功能即將推出\n模板ID: ${templateId}\n\n提示：包含階段管理的完整編輯界面正在開發中`);
+        };
+        
+        // 刪除任務模板
+        window.deleteTemplate = async function(templateId) {
+          if (!confirm('確定要刪除此任務模板嗎？\n\n注意：會同時刪除模板的所有階段設定。')) return;
+          try {
+            const res = await fetch(`${apiBase}/task-templates/${templateId}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            if (!res.ok) throw new Error('刪除失敗');
+            setMsg('刪除成功！', true);
+            loadTaskTemplates();
+          } catch (err) {
+            setMsg('刪除失敗：' + err.message, false);
+          }
+        };
+
+        // ========================================
         // 初始化
         // ========================================
         ensureAdmin();
@@ -1703,4 +2327,4 @@
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
   </body>
-</html>
+  </html>
