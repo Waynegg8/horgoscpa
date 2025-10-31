@@ -422,6 +422,14 @@
 
     <script>
       (function(){
+        // === 全面重寫：改用外部模組，停用舊版內嵌腳本 ===
+        try {
+          const s = document.createElement('script');
+          s.type = 'module';
+          s.src = '/assets/js/components/timesheets.js';
+          document.head.appendChild(s);
+        } catch (_) {}
+        return; // 舊版程式碼不再執行
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
         const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
         
@@ -438,6 +446,7 @@
         let weekDays = []; // 本週7天快照 [{ index, iso, dow, type, mustWork }]
         let currentLoadToken = 0;      // 異步載入防抖：只渲染最後一次請求
         let isWeekDataReady = false;   // 週資料是否完整（holidays+leaves+rows）
+        let dailyNormalHours = new Map(); // 當週每天正常工時彙總 Map<iso, hours>
         
         // 取得週一日期
         function getMonday(date) {
@@ -793,6 +802,8 @@
         // 將資料組織成行結構
         function organizeDataToRows(data) {
           const rowMap = new Map();
+          // 重算每日正常工時彙總
+          dailyNormalHours = new Map();
           
           data.forEach(log => {
             const key = `${log.client_id}_${log.service_id}_${log.work_type_id}`;
@@ -813,6 +824,13 @@
             const dayIndex = Math.floor((logDate - weekStart) / (1000 * 60 * 60 * 24));
             if (dayIndex >= 0 && dayIndex < 7) {
               row.hours[dayIndex] = log.hours;
+            }
+
+            // 聚合每日正常工時（只計 work_type_id=1）
+            const iso = `${logDate.getFullYear()}-${String(logDate.getMonth()+1).padStart(2,'0')}-${String(logDate.getDate()).padStart(2,'0')}`;
+            if (String(log.work_type_id) === '1' || log.work_type_id === 1) {
+              const prev = dailyNormalHours.get(iso) || 0;
+              dailyNormalHours.set(iso, prev + Number(log.hours || 0));
             }
           });
           
@@ -1384,21 +1402,20 @@
 
             // 非需上班日：國定、例假日(週日)、休息日(週六) → 不做完整性檢查
             // 以 holidays Map 直接覆核，避免任何時序或映射誤差
-            const shouldCheck = dayMeta ? dayMeta.mustWork : shouldCheckCompleteness(dateType);
+            // 最終保險：若日期徽章已標示為國定/例假/休息，一律跳過檢查
+            const labelEl = document.getElementById(`dateLabel${dayIndex}`);
+            const labelText = labelEl ? String(labelEl.textContent || '') : '';
+            const labelClass = labelEl ? String(labelEl.className || '') : '';
+            const skipByBadge = labelClass.includes('badge-holiday') || labelText.includes('例假') || labelText.includes('休息');
+            const shouldCheck = (dayMeta ? dayMeta.mustWork : shouldCheckCompleteness(dateType)) && !skipByBadge;
             if (!shouldCheck) {
               td.textContent = '';
               completenessRow.appendChild(td);
               continue;
             }
 
-            // 計算正常工時（不含加班）
-            let normalHours = 0;
-            rows.forEach(r => {
-              const hours = r.hours[dayIndex];
-              if (!hours || !r.work_type_id) return;
-              const wt = workTypes.find(x => x.id == r.work_type_id);
-              if (wt && !wt.isOvertime) normalHours += parseFloat(hours);
-            });
+            // 計算正常工時（不含加班）— 直接使用後端資料的日彙總，避免 UI 狀態影響
+            const normalHours = Number(dailyNormalHours.get(dateStr) || 0);
 
             // 加總請假時數
             const leaveInfo = leaves.get(dateStr);
