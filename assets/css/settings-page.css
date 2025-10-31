@@ -10,7 +10,7 @@
    ============================================ */
 
 .settings-header {
-    margin-bottom: var(--space-8);
+    margin-bottom: var(--space-6);
 }
 
 .settings-title {
@@ -26,6 +26,113 @@
 .settings-title .material-symbols-outlined {
     font-size: 32px;
     color: var(--primary-500);
+}
+
+/* ============================================
+   Tab 導覽列
+   ============================================ */
+
+.settings-tabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    overflow-x: auto;
+    border-bottom: 2px solid var(--gray-200);
+    padding-bottom: var(--space-2);
+}
+
+.settings-tabs::-webkit-scrollbar {
+    height: 6px;
+}
+
+.settings-tabs::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: var(--radius-base);
+}
+
+.settings-tabs::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: var(--radius-base);
+}
+
+.settings-tabs::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
+}
+
+.tab-btn {
+    padding: var(--space-3) var(--space-5);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    cursor: pointer;
+    border-radius: var(--radius-base) var(--radius-base) 0 0;
+    transition: var(--transition-base);
+    white-space: nowrap;
+    position: relative;
+}
+
+.tab-btn:hover {
+    background: var(--gray-100);
+    color: var(--primary-600);
+}
+
+.tab-btn.active {
+    color: var(--primary-600);
+    background: var(--primary-50);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary-500);
+    border-radius: var(--radius-full) var(--radius-full) 0 0;
+}
+
+/* ============================================
+   Tab 面板
+   ============================================ */
+
+.tab-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.db-info {
+    background: var(--gray-50);
+    padding: var(--space-4);
+    border-radius: var(--radius-base);
+    border-left: 4px solid var(--info);
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    line-height: var(--leading-relaxed);
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+    font-size: var(--text-base);
+    margin-bottom: var(--space-4);
 }
 
 /* ============================================
@@ -516,6 +623,20 @@
    ============================================ */
 
 @media (max-width: 768px) {
+    .settings-header {
+        margin-bottom: var(--space-4);
+    }
+
+    .settings-tabs {
+        gap: var(--space-1);
+        margin-bottom: var(--space-4);
+    }
+
+    .tab-btn {
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--text-xs);
+    }
+
     .settings-content {
         gap: var(--space-4);
     }

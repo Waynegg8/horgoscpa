@@ -16,7 +16,27 @@
       <div id="msgBar" class="info-bar" style="display:none;" role="status"></div>
     </header>
 
+    <!-- Tab 導覽列 -->
+    <nav class="settings-tabs">
+      <button class="tab-btn active" data-tab="system">系統基礎</button>
+      <button class="tab-btn" data-tab="users">用戶管理</button>
+      <button class="tab-btn" data-tab="clients">客戶管理</button>
+      <button class="tab-btn" data-tab="tasks">任務管理</button>
+      <button class="tab-btn" data-tab="timesheets">工時管理</button>
+      <button class="tab-btn" data-tab="leaves">假期管理</button>
+      <button class="tab-btn" data-tab="receipts">收據收款</button>
+      <button class="tab-btn" data-tab="payroll">薪資管理</button>
+      <button class="tab-btn" data-tab="overhead">成本管理</button>
+      <button class="tab-btn" data-tab="attachments">附件系統</button>
+      <button class="tab-btn" data-tab="sop">知識庫</button>
+      <button class="tab-btn" data-tab="lifecycle">服務生命週期</button>
+      <button class="tab-btn" data-tab="cms">CMS內容</button>
+      <button class="tab-btn" data-tab="automation">自動化規則</button>
+    </nav>
+
     <main class="settings-content">
+      <!-- 系統基礎 Tab -->
+      <div class="tab-panel active" id="tab-system">
       <section class="card" aria-labelledby="danger-title">
         <div class="card-header">
           <h2 id="danger-title">危險設定</h2>
@@ -136,10 +156,255 @@
           </div>
         </div>
       </section>
+      </div>
+      <!-- 系統基礎 Tab 結束 -->
+
+      <!-- 用戶管理 Tab -->
+      <div class="tab-panel" id="tab-users">
+        <section class="card">
+          <div class="card-header">
+            <h2>用戶管理（Users）</h2>
+            <div class="subtitle">管理系統用戶與權限設定</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>Users<br>
+              <strong>主要欄位：</strong>user_id, username, name, email, is_admin, gender, birth_date, start_date
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 客戶管理 Tab -->
+      <div class="tab-panel" id="tab-clients">
+        <section class="card">
+          <div class="card-header">
+            <h2>客戶管理（Clients）</h2>
+            <div class="subtitle">管理客戶資料與服務關係</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>Clients<br>
+              <strong>主要欄位：</strong>client_id, name, tax_id, contact_person, email, phone, address
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 任務管理 Tab -->
+      <div class="tab-panel" id="tab-tasks">
+        <section class="card">
+          <div class="card-header">
+            <h2>任務管理（Tasks & TaskTemplates）</h2>
+            <div class="subtitle">管理任務與任務模板</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>Tasks, TaskTemplates<br>
+              <strong>主要欄位：</strong>task_id, title, description, status, priority, due_date, assigned_to
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 工時管理 Tab -->
+      <div class="tab-panel" id="tab-timesheets">
+        <section class="card">
+          <div class="card-header">
+            <h2>工時管理（Timesheets）</h2>
+            <div class="subtitle">管理員工工時記錄</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>Timesheets<br>
+              <strong>主要欄位：</strong>timesheet_id, user_id, date, hours, overtime_hours, work_type
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 假期管理 Tab -->
+      <div class="tab-panel" id="tab-leaves">
+        <section class="card">
+          <div class="card-header">
+            <h2>假期管理（Leaves & Holidays）</h2>
+            <div class="subtitle">管理員工假期、補休與國定假日</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>Leaves, CompensatoryLeaveGrants, Holidays<br>
+              <strong>主要欄位：</strong>leave_id, user_id, leave_type, start_date, end_date, status
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 收據收款 Tab -->
+      <div class="tab-panel" id="tab-receipts">
+        <section class="card">
+          <div class="card-header">
+            <h2>收據收款（Receipts & BillingSchedule）</h2>
+            <div class="subtitle">管理收據開立與收款記錄</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>Receipts, BillingSchedule<br>
+              <strong>主要欄位：</strong>receipt_id, client_id, amount, receipt_date, payment_status
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 薪資管理 Tab -->
+      <div class="tab-panel" id="tab-payroll">
+        <section class="card">
+          <div class="card-header">
+            <h2>薪資管理（Payroll）</h2>
+            <div class="subtitle">管理員工薪資計算與發放</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>Payroll<br>
+              <strong>主要欄位：</strong>payroll_id, user_id, period_month, base_salary, overtime_pay, total_pay
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 成本管理 Tab -->
+      <div class="tab-panel" id="tab-overhead">
+        <section class="card">
+          <div class="card-header">
+            <h2>成本管理（Overhead）</h2>
+            <div class="subtitle">管理公司成本與費用分配</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>Overhead<br>
+              <strong>主要欄位：</strong>overhead_id, category, amount, date, description
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 附件系統 Tab -->
+      <div class="tab-panel" id="tab-attachments">
+        <section class="card">
+          <div class="card-header">
+            <h2>附件系統（Attachments）</h2>
+            <div class="subtitle">管理系統中所有附件與檔案</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>Attachments<br>
+              <strong>主要欄位：</strong>attachment_id, entity_type, entity_id, file_name, file_url
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 知識庫 Tab -->
+      <div class="tab-panel" id="tab-sop">
+        <section class="card">
+          <div class="card-header">
+            <h2>知識庫（SOP）</h2>
+            <div class="subtitle">管理內部知識文件與SOP</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>SOP<br>
+              <strong>主要欄位：</strong>sop_id, title, content, category, version
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 服務生命週期 Tab -->
+      <div class="tab-panel" id="tab-lifecycle">
+        <section class="card">
+          <div class="card-header">
+            <h2>服務生命週期（ClientServicesLifecycle）</h2>
+            <div class="subtitle">管理客戶服務流程與狀態</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>ClientServicesLifecycle, ServiceStructure<br>
+              <strong>主要欄位：</strong>lifecycle_id, client_id, service_type, status, stage
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- CMS內容 Tab -->
+      <div class="tab-panel" id="tab-cms">
+        <section class="card">
+          <div class="card-header">
+            <h2>CMS內容管理（CMS）</h2>
+            <div class="subtitle">管理官網內容與文章發布</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>CMS<br>
+              <strong>主要欄位：</strong>cms_id, title, content, slug, status, published_at
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 自動化規則 Tab -->
+      <div class="tab-panel" id="tab-automation">
+        <section class="card">
+          <div class="card-header">
+            <h2>自動化規則（AutomationRules）</h2>
+            <div class="subtitle">管理系統自動化規則與定時任務</div>
+          </div>
+          <div class="card-body">
+            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
+            <div class="db-info">
+              <strong>資料表：</strong>AutomationRules, CronExecutions<br>
+              <strong>主要欄位：</strong>rule_id, rule_name, trigger_type, action_type, is_active
+            </div>
+          </div>
+        </section>
+      </div>
+
     </main>
 
     <script>
       (function(){
+        // Tab 切換功能
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        tabBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const targetTab = btn.getAttribute('data-tab');
+            
+            // 移除所有active狀態
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabPanels.forEach(p => p.classList.remove('active'));
+            
+            // 添加當前tab的active狀態
+            btn.classList.add('active');
+            const targetPanel = document.getElementById('tab-' + targetTab);
+            if (targetPanel) {
+              targetPanel.classList.add('active');
+            }
+          });
+        });
+
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
         const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
 
