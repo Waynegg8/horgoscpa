@@ -97,38 +97,6 @@
             </tr>
           </thead>
           <tbody id="servicesList">
-            <tr id="add-service-row" style="display: none;">
-              <td></td>
-              <td>
-                <select id="new-service-id" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
-                  <option value="">請選擇服務</option>
-                </select>
-              </td>
-              <td>
-                <select id="new-service-status" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
-                  <option value="active">使用中</option>
-                  <option value="suspended">暫停</option>
-                  <option value="expired">已到期</option>
-                  <option value="cancelled">已取消</option>
-                </select>
-              </td>
-              <td>
-                <select id="new-service-cycle" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
-                  <option value="monthly">每月</option>
-                  <option value="quarterly">每季</option>
-                  <option value="yearly">每年</option>
-                  <option value="one-time">一次性</option>
-                </select>
-              </td>
-              <td>-</td>
-              <td>
-                <input type="date" id="new-service-start-date" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;" />
-              </td>
-              <td>
-                <button class="table-btn-link" onclick="saveNewService()">儲存</button>
-                <button class="table-btn-link danger" onclick="cancelAddService()">取消</button>
-              </td>
-            </tr>
             <tr>
               <td colspan="7" class="no-data">尚未新增服務</td>
             </tr>
@@ -374,11 +342,6 @@
         
         if (json.ok && json.data) {
           allServices = json.data;
-          const select = document.getElementById('new-service-id');
-          select.innerHTML = '<option value="">請選擇服務</option>' +
-            allServices.filter(s => s.is_active).map(s => 
-              `<option value="${s.service_id}">${s.service_name}</option>`
-            ).join('');
         }
       } catch (err) {
         console.error('載入服務選項失敗:', err);
