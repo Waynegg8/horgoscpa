@@ -447,16 +447,16 @@ async function handleGetMonthlySummary(request, env, me, requestId, url) {
 			}
 		});
 		
-		// 查詢當月請假時數
-		const leaveResult = await env.DATABASE.prepare(
-			`SELECT COALESCE(SUM(hours), 0) as leave_hours
-			 FROM Leaves
-			 WHERE user_id = ?
-			   AND start_date >= ?
-			   AND start_date < ?
-			   AND status = 'approved'
-			   AND is_deleted = 0`
-		).bind(userId, startDate, endDate).first();
+	// 查詢當月請假時數
+	const leaveResult = await env.DATABASE.prepare(
+		`SELECT COALESCE(SUM(hours), 0) as leave_hours
+		 FROM LeaveRequests
+		 WHERE user_id = ?
+		   AND start_date >= ?
+		   AND start_date < ?
+		   AND status = 'approved'
+		   AND is_deleted = 0`
+	).bind(userId, startDate, endDate).first();
 		
 		const leaveHours = parseFloat(leaveResult?.leave_hours) || 0;
 		
