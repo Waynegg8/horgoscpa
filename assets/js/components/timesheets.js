@@ -323,11 +323,11 @@ async function loadLeaves() {
   
   try {
     const data = await apiCall(`/internal/api/v1/leaves?dateFrom=${start}&dateTo=${end}&status=approved&perPage=100`);
-    state.leaves.clear();
+  state.leaves.clear();
     
     if (data.data) {
       data.data.forEach(leave => {
-        const leaveType = leave.type || leave.leave_type || 'other';
+    const leaveType = leave.type || leave.leave_type || 'other';
         const unit = leave.unit || 'day';
         const amount = parseFloat(leave.amount) || 0;
         
@@ -374,12 +374,12 @@ async function loadTimesheets() {
     const logs = data.data || [];
     
     // 建立 rows 結構
-    const rowMap = new Map();
+  const rowMap = new Map();
     
     logs.forEach(log => {
       const key = `${log.client_id}_${log.service_id}_${log.service_item_id}_${log.work_type_id}`;
       
-      if (!rowMap.has(key)) {
+    if (!rowMap.has(key)) {
         rowMap.set(key, {
           client_id: log.client_id,
           service_id: log.service_id,
@@ -390,7 +390,7 @@ async function loadTimesheets() {
         });
       }
       
-      const row = rowMap.get(key);
+    const row = rowMap.get(key);
       const dayIndex = state.weekDays.findIndex(d => d.iso === log.work_date);
       
       if (dayIndex >= 0) {
@@ -399,7 +399,7 @@ async function loadTimesheets() {
       }
     });
     
-    state.rows = Array.from(rowMap.values());
+  state.rows = Array.from(rowMap.values());
     state.dailyNormalHours.clear();
     
     // 計算每日正常工時（用於完整性檢查）
@@ -542,7 +542,7 @@ function renderTable() {
     renderCompleteness();
     return;
   }
-  
+
   state.rows.forEach((row, rowIndex) => {
     const tr = document.createElement('tr');
     tr.dataset.rowIndex = rowIndex;
@@ -699,7 +699,7 @@ function createWorkTypeCell(row, rowIndex) {
   defaultOption.textContent = '請選擇工時類型...';
   select.appendChild(defaultOption);
   
-  state.workTypes.forEach(wt => {
+    state.workTypes.forEach(wt => {
     const option = document.createElement('option');
     option.value = wt.id;
     option.textContent = wt.name;
@@ -716,7 +716,7 @@ function createWorkTypeCell(row, rowIndex) {
 }
 
 function createHoursCell(row, rowIndex, dayIndex) {
-  const td = document.createElement('td');
+      const td = document.createElement('td');
   td.className = 'cell-hours';
   const day = state.weekDays[dayIndex];
   
@@ -727,7 +727,7 @@ function createHoursCell(row, rowIndex, dayIndex) {
     td.classList.add('cell-weekend');
   }
   
-  const input = document.createElement('input');
+      const input = document.createElement('input');
   input.type = 'text';
   input.className = 'hours-input';
   input.inputMode = 'decimal';  // 移动设备显示数字键盘
@@ -1071,13 +1071,6 @@ async function saveAllChanges() {
       payload.timesheet_id = timesheetId;
     }
     
-    console.log('[SAVE DEBUG]', {
-      rowIndex: change.rowIndex,
-      dayIndex: change.dayIndex,
-      timesheetId: timesheetId,
-      payload: payload
-    });
-    
     return apiCall('/internal/api/v1/timelogs', {
       method: 'POST',
       body: JSON.stringify(payload)
@@ -1091,7 +1084,7 @@ async function saveAllChanges() {
     showToast('已儲存所有變更', 'success');
     
     // 重新載入資料
-    await loadWeek();
+  await loadWeek();
   } catch (error) {
     showToast('儲存失敗：' + error.message, 'error');
   }
@@ -1300,31 +1293,31 @@ function showToast(message, type = 'info') {
 // ==================== 週導航事件 ====================
 
 document.getElementById('btnPrevWeek').addEventListener('click', async () => {
-  if (isLoading) return;
-  isLoading = true;
-  resetWeekView();
-  state.currentWeekStart.setDate(state.currentWeekStart.getDate() - 7);
-  await loadWeek();
-  isLoading = false;
-});
+    if (isLoading) return;
+    isLoading = true;
+    resetWeekView();
+    state.currentWeekStart.setDate(state.currentWeekStart.getDate() - 7);
+    await loadWeek();
+    isLoading = false;
+  });
 
 document.getElementById('btnThisWeek').addEventListener('click', async () => {
-  if (isLoading) return;
-  isLoading = true;
-  resetWeekView();
+    if (isLoading) return;
+    isLoading = true;
+    resetWeekView();
   state.currentWeekStart = getMonday(new Date());
-  await loadWeek();
-  isLoading = false;
-});
+    await loadWeek();
+    isLoading = false;
+  });
 
 document.getElementById('btnNextWeek').addEventListener('click', async () => {
-  if (isLoading) return;
-  isLoading = true;
-  resetWeekView();
+    if (isLoading) return;
+    isLoading = true;
+    resetWeekView();
   state.currentWeekStart.setDate(state.currentWeekStart.getDate() + 7);
-  await loadWeek();
-  isLoading = false;
-});
+    await loadWeek();
+    isLoading = false;
+  });
 
 document.getElementById('btnAddRow').addEventListener('click', addNewRow);
 document.getElementById('btnSaveAll').addEventListener('click', saveAllChanges);
@@ -1343,5 +1336,5 @@ async function init() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
-  init();
+init();
 }
