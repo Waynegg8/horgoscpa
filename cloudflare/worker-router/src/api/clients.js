@@ -578,6 +578,7 @@ export async function handleClients(request, env, me, requestId, url) {
 		const errors = [];
 		const serviceId = Number(body?.service_id || 0);
 		const serviceCycle = String(body?.service_cycle || "monthly").trim();
+		const status = String(body?.status || "active").trim();
 		const taskTemplateId = body?.task_template_id ? Number(body.task_template_id) : null;
 		const autoGenerateTasks = body?.auto_generate_tasks !== false; // 默认true
 		const startDate = String(body?.start_date || "").trim();
@@ -590,6 +591,15 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 		if (!["monthly", "quarterly", "yearly", "one-time"].includes(serviceCycle)) {
 			errors.push({ field: "service_cycle", message: "服務週期格式錯誤" });
+		}
+		if (!["active", "suspended", "expired", "cancelled"].includes(status)) {
+			errors.push({ field: "status", message: "狀態格式錯誤" });
+		}
+		if (startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+			errors.push({ field: "start_date", message: "日期格式 YYYY-MM-DD" });
+		}
+		if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+			errors.push({ field: "end_date", message: "日期格式 YYYY-MM-DD" });
 		}
 		if (errors.length) {
 			return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } }, corsHeaders);
@@ -616,8 +626,8 @@ export async function handleClients(request, env, me, requestId, url) {
 			const result = await env.DATABASE.prepare(
 				`INSERT INTO ClientServices (client_id, service_id, status, service_cycle, 
 				 task_template_id, auto_generate_tasks, start_date, end_date, service_notes)
-				 VALUES (?, ?, 'active', ?, ?, ?, ?, ?, ?)`
-			).bind(clientId, serviceId, serviceCycle, taskTemplateId, autoGenerateTasks ? 1 : 0,
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			).bind(clientId, serviceId, status, serviceCycle, taskTemplateId, autoGenerateTasks ? 1 : 0,
 				startDate || null, endDate || null, serviceNotes).run();
 			
 			const clientServiceId = result?.meta?.last_row_id;

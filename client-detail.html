@@ -207,7 +207,7 @@
       console.log('渲染服務列表，allServices數量:', allServices.length);
       
       const serviceOptions = allServices && allServices.length > 0
-        ? allServices.filter(s => s.is_active).map(s => 
+        ? allServices.map(s => 
             `<option value="${s.service_id}">${s.service_name}</option>`
           ).join('')
         : '';
@@ -519,7 +519,7 @@
           <td></td>
           <td>
             <select id="edit-service-id-${clientServiceId}" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
-              ${allServices.filter(s => s.is_active).map(s => 
+              ${allServices.map(s => 
                 `<option value="${s.service_id}" ${s.service_id == service.service_id ? 'selected' : ''}>${s.service_name}</option>`
               ).join('')}
             </select>
