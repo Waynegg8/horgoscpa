@@ -15,7 +15,7 @@
   <div class="page-container">
     <div class="page-header-simple">
       <a href="/internal/clients" class="back-link">← 返回客戶列表</a>
-      <h1 class="page-title">新增客戶</h1>
+      <h1 class="page-title" id="clientTitle">新增客戶</h1>
     </div>
 
     <!-- 客戶基本信息 - 可編輯表單 -->
@@ -55,7 +55,7 @@
           </div>
           <div class="form-field">
             <label>標籤</label>
-            <div style="color: #9ca3af; font-size: 14px; padding: 12px 0;">儲存後可在客戶詳情頁設置</div>
+            <div id="tagsDisplay" style="color: #9ca3af; font-size: 14px; padding: 12px 0;">儲存後可設置</div>
           </div>
         </div>
         <div class="form-row-1col">
@@ -72,7 +72,7 @@
         </div>
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" onclick="cancelEdit()">取消</button>
-          <button type="button" class="btn btn-primary" onclick="createClient()">新增客戶</button>
+          <button type="button" class="btn btn-primary" onclick="saveClient()">新增客戶</button>
         </div>
       </form>
     </div>
@@ -184,9 +184,12 @@
 
   <script src="/assets/js/components/bootstrap.js?v=3"></script>
   <script>
-    let tempServices = []; // 暫存服務列表
+    let currentClientId = null;
+    let currentEditingServiceId = null;
+    let currentBillingServiceId = null;
     let allServices = [];
     let allTemplates = [];
+    let tempServices = [];
 
     // 頁面初始化
     async function init() {
@@ -195,8 +198,10 @@
         loadServices(),
         loadTemplates()
       ]);
+      
+      renderServices(tempServices);
     }
-    
+
     // 載入員工列表
     async function loadEmployees() {
       try {
@@ -216,15 +221,15 @@
     }
 
     // 渲染服務列表
-    function renderServices() {
+    function renderServices(services) {
       const tbody = document.getElementById('servicesList');
       
-      if (!tempServices || tempServices.length === 0) {
+      if (!services || services.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="no-data">尚未新增服務</td></tr>';
         return;
       }
 
-      tbody.innerHTML = tempServices.map((svc, index) => {
+      tbody.innerHTML = services.map((svc, index) => {
         const statusClass = {
           'active': 'status-active',
           'suspended': 'status-suspended',
@@ -266,6 +271,13 @@
       }).join('');
     }
 
+    // 暴露函數到全局
+    window.toggleBilling = toggleBilling;
+    window.loadBillingInline = loadBillingInline;
+
+    function toggleBilling() {}
+    function loadBillingInline() {}
+
     // 載入服務類型選項
     async function loadServices() {
       try {
@@ -306,6 +318,7 @@
 
     // 打開新增服務Modal
     function openAddServiceModal() {
+      currentEditingServiceId = null;
       document.getElementById('serviceModalTitle').textContent = '新增服務';
       document.getElementById('serviceForm').reset();
       document.getElementById('serviceClientServiceId').value = '';
@@ -317,7 +330,7 @@
     }
 
     // 編輯服務
-    function editService(index) {
+    async function editService(index) {
       const service = tempServices[index];
       if (!service) {
         alert('找不到服務');
@@ -325,7 +338,7 @@
       }
 
       document.getElementById('serviceModalTitle').textContent = '編輯服務';
-      document.getElementById('serviceClientServiceId').value = index; // 用index標記
+      document.getElementById('serviceClientServiceId').value = index;
       document.getElementById('serviceServiceId').value = service.service_id;
       document.getElementById('serviceStatus').value = service.status;
       document.getElementById('serviceServiceCycle').value = service.service_cycle || 'monthly';
@@ -367,24 +380,59 @@
         tempServices.push(data);
       }
 
-      renderServices();
+      renderServices(tempServices);
       closeServiceModal();
     });
 
     // 刪除服務
-    function deleteService(index, serviceName) {
+    async function deleteService(index, serviceName) {
       if (!confirm(`確定要刪除服務「${serviceName}」嗎？`)) return;
+      
       tempServices.splice(index, 1);
-      renderServices();
+      renderServices(tempServices);
     }
+
+    // 顯示新增收費行
+    async function showAddBillingRow(clientServiceId) {
+      // 新增頁面不支持
+    }
+
+    // 開始編輯收費明細
+    function startEditBilling(clientServiceId, scheduleId, month, amount, dueDays, notes) {
+      // 新增頁面不支持
+    }
+
+    // 儲存收費明細（新增或編輯）
+    async function saveBilling(clientServiceId, scheduleId) {
+      // 新增頁面不支持
+    }
+
+    // 取消編輯收費明細
+    async function cancelBillingEdit(clientServiceId, scheduleId) {
+      // 新增頁面不支持
+    }
+
+    // 刪除收費明細（內嵌）
+    async function deleteBillingInline(clientServiceId, scheduleId, month) {
+      // 新增頁面不支持
+    }
+
+    // 暴露函數到全局
+    window.showAddBillingRow = showAddBillingRow;
+    window.startEditBilling = startEditBilling;
+    window.saveBilling = saveBilling;
+    window.cancelBillingEdit = cancelBillingEdit;
+    window.deleteBillingInline = deleteBillingInline;
+
+
 
     // 取消編輯
     function cancelEdit() {
       window.location.href = '/internal/clients';
     }
     
-    // 新增客戶
-    async function createClient() {
+    // 儲存客戶資料
+    async function saveClient() {
       clearFormErrors();
       
       const payload = {
@@ -407,7 +455,6 @@
       if (hasError) return;
       
       try {
-        // 1. 創建客戶
         const res = await fetch('/internal/api/v1/clients', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -430,7 +477,7 @@
         
         const newClientId = json.data.client_id;
 
-        // 2. 如果有服務，逐一新增
+        // 如果有服務，逐一新增
         if (tempServices.length > 0) {
           for (const svc of tempServices) {
             await fetch(`/internal/api/v1/clients/${newClientId}/services`, {
