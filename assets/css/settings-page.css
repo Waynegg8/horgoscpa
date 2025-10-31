@@ -104,15 +104,15 @@ body.internal-container {
    ============================================ */
 
 .settings-content {
-    max-width: 1200px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 32px 24px;
+    padding: 32px 48px;
 }
 
 .tab-panel {
     display: none;
     width: 100%;
-    max-width: 1050px;
+    max-width: 100%;
     margin: 0 auto;
     box-sizing: border-box;
 }
@@ -161,9 +161,7 @@ body.internal-container {
     border: 1px solid var(--gray-200);
     margin-bottom: 32px;
     overflow: hidden;
-    max-width: 1050px;
-    margin-left: auto;
-    margin-right: auto;
+    width: 100%;
 }
 
 .card-header {
