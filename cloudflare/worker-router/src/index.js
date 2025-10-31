@@ -19,6 +19,7 @@ import { handleAutomation } from "./api/automation.js";
 import { handleHolidays } from "./api/holidays.js";
 import { handleTags } from "./api/tags.js";
 import { handleBilling } from "./api/billing.js";
+import { handleTaskTemplates } from "./api/task_templates.js";
 
 export default {
 	async fetch(request, env) {
@@ -70,6 +71,13 @@ export default {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handleBilling(request, env, me, requestId, url, path);
+		}
+		
+		// 任务模板API
+		if (path.startsWith("/internal/api/v1/task-templates")) {
+			const me = await getSessionUser(request, env);
+			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+			return handleTaskTemplates(request, env, me, requestId, url, path);
 		}
 		if (path === "/internal/api/v1/tasks") {
 			const me = await getSessionUser(request, env);

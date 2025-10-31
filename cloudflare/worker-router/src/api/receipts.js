@@ -3,7 +3,64 @@ import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 export async function handleReceipts(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
-	if (method === "GET") {
+	const path = url.pathname;
+
+	// GET /internal/api/v1/receipts/suggest-amount - 根据服务和月份建议金额
+	if (method === "GET" && path === "/internal/api/v1/receipts/suggest-amount") {
+		const clientServiceId = parseInt(url.searchParams.get("client_service_id") || "0", 10);
+		const billingMonth = parseInt(url.searchParams.get("billing_month") || "0", 10);
+
+		if (!clientServiceId || billingMonth < 1 || billingMonth > 12) {
+			return jsonResponse(400, { 
+				ok: false, 
+				code: "BAD_REQUEST", 
+				message: "请提供有效的client_service_id和billing_month（1-12）", 
+				meta: { requestId } 
+			}, corsHeaders);
+		}
+
+		try {
+			// 查询收费明细
+			const schedule = await env.DATABASE.prepare(
+				`SELECT billing_amount, payment_due_days 
+				 FROM ServiceBillingSchedule 
+				 WHERE client_service_id = ? AND billing_month = ?`
+			).bind(clientServiceId, billingMonth).first();
+
+			if (!schedule) {
+				return jsonResponse(200, {
+					ok: true,
+					code: "OK",
+					message: "该月份未设定收费",
+					data: {
+						suggested_amount: 0,
+						payment_due_days: 30,
+						has_schedule: false
+					},
+					meta: { requestId }
+				}, corsHeaders);
+			}
+
+			return jsonResponse(200, {
+				ok: true,
+				code: "OK",
+				message: "成功获取建议金额",
+				data: {
+					suggested_amount: Number(schedule.billing_amount || 0),
+					payment_due_days: Number(schedule.payment_due_days || 30),
+					has_schedule: true
+				},
+				meta: { requestId }
+			}, corsHeaders);
+
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "服务器错误", meta: { requestId } }, corsHeaders);
+		}
+	}
+
+	// GET /internal/api/v1/receipts - 收据列表
+	if (method === "GET" && path === "/internal/api/v1/receipts") {
 		try {
 			const params = url.searchParams;
 			const page = Math.max(1, parseInt(params.get("page") || "1", 10));
@@ -11,12 +68,14 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			const offset = (page - 1) * perPage;
 			const q = (params.get("q") || "").trim();
 			const status = (params.get("status") || "").trim();
+			const receiptType = (params.get("receipt_type") || "").trim();
 			const dateFrom = (params.get("dateFrom") || "").trim();
 			const dateTo = (params.get("dateTo") || "").trim();
 			const where = ["r.is_deleted = 0"];
 			const binds = [];
 			if (q) { where.push("(r.receipt_id LIKE ? OR c.company_name LIKE ?)"); binds.push(`%${q}%`, `%${q}%`); }
 			if (status && ["unpaid","partial","paid","cancelled"].includes(status)) { where.push("r.status = ?"); binds.push(status); }
+			if (receiptType && ["normal","prepayment","deposit"].includes(receiptType)) { where.push("r.receipt_type = ?"); binds.push(receiptType); }
 			if (dateFrom) { where.push("r.receipt_date >= ?"); binds.push(dateFrom); }
 			if (dateTo) { where.push("r.receipt_date <= ?"); binds.push(dateTo); }
 			const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
@@ -25,7 +84,8 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
 			const rows = await env.DATABASE.prepare(
-				`SELECT r.receipt_id, r.client_id, c.company_name AS client_name, r.total_amount, r.receipt_date, r.due_date, r.status
+				`SELECT r.receipt_id, r.client_id, c.company_name AS client_name, r.total_amount, 
+				        r.receipt_date, r.due_date, r.status, r.receipt_type
 				 FROM Receipts r LEFT JOIN Clients c ON c.client_id = r.client_id
 				 ${whereSql}
 				 ORDER BY r.receipt_date DESC, r.receipt_id DESC
@@ -39,6 +99,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				receiptDate: r.receipt_date,
 				dueDate: r.due_date || null,
 				status: r.status,
+				receiptType: r.receipt_type || "normal",
 			}));
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta }, corsHeaders);
@@ -48,7 +109,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 		}
 	}
 
-	if (method === "POST") {
+	if (method === "POST" && path === "/internal/api/v1/receipts") {
 		let body;
 		try { body = await request.json(); } catch (_) {
 			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
@@ -59,12 +120,25 @@ export async function handleReceipts(request, env, me, requestId, url) {
 		const total_amount = Number(body?.total_amount);
 		let statusVal = String(body?.status || "unpaid").trim();
 		const notes = (body?.notes || "").trim();
+		
+		// 新字段
+		let receiptType = String(body?.receipt_type || "normal").trim();
+		const relatedTaskId = body?.related_task_id ? parseInt(body.related_task_id, 10) : null;
+		const clientServiceId = body?.client_service_id ? parseInt(body.client_service_id, 10) : null;
+		const billingMonth = body?.billing_month ? parseInt(body.billing_month, 10) : null;
+		
 		const errors = [];
 		if (!client_id) errors.push({ field:"client_id", message:"必填" });
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(receipt_date)) errors.push({ field:"receipt_date", message:"日期格式 YYYY-MM-DD" });
 		if (!Number.isFinite(total_amount) || total_amount <= 0) errors.push({ field:"total_amount", message:"必須大於 0" });
 		if (!statusVal) statusVal = "unpaid";
 		if (!["unpaid","partial","paid","cancelled"].includes(statusVal)) errors.push({ field:"status", message:"狀態不合法" });
+		if (!["normal","prepayment","deposit"].includes(receiptType)) {
+			receiptType = "normal"; // 默认为normal
+		}
+		if (billingMonth && (billingMonth < 1 || billingMonth > 12)) {
+			errors.push({ field:"billing_month", message:"月份必须在1-12之间" });
+		}
 		if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
 
 		try {
@@ -83,11 +157,23 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			}
 			const receipt_id = `${prefix}-${String(seq).padStart(3, "0")}`;
 
-			// 到期日：未提供則 +30 天
+			// 到期日：未提供則根据收费明细或默认+30天
 			let due_date = due_date_raw;
 			if (!due_date) {
+				let dueDays = 30; // 默认30天
+				
+				// 如果提供了client_service_id和billing_month，尝试从收费明细获取payment_due_days
+				if (clientServiceId && billingMonth) {
+					const schedule = await env.DATABASE.prepare(
+						"SELECT payment_due_days FROM ServiceBillingSchedule WHERE client_service_id = ? AND billing_month = ?"
+					).bind(clientServiceId, billingMonth).first();
+					if (schedule && schedule.payment_due_days) {
+						dueDays = Number(schedule.payment_due_days);
+					}
+				}
+				
 				const d = new Date(receipt_date + "T00:00:00Z");
-				d.setUTCDate(d.getUTCDate() + 30);
+				d.setUTCDate(d.getUTCDate() + dueDays);
 				const y = d.getUTCFullYear();
 				const m2 = String(d.getUTCMonth() + 1).padStart(2, "0");
 				const day = String(d.getUTCDate()).padStart(2, "0");
@@ -95,11 +181,28 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			}
 
 			await env.DATABASE.prepare(
-				"INSERT INTO Receipts (receipt_id, client_id, receipt_date, due_date, total_amount, status, is_auto_generated, notes, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)"
+				`INSERT INTO Receipts (receipt_id, client_id, receipt_date, due_date, total_amount, status, 
+				 receipt_type, related_task_id, client_service_id, billing_month, 
+				 is_auto_generated, notes, created_by, created_at, updated_at) 
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
 			).bind(
-				receipt_id, client_id, receipt_date, due_date, total_amount, statusVal, notes, String(me.user_id), new Date().toISOString(), new Date().toISOString()
+				receipt_id, client_id, receipt_date, due_date, total_amount, statusVal, 
+				receiptType, relatedTaskId, clientServiceId, billingMonth,
+				notes, String(me.user_id), new Date().toISOString(), new Date().toISOString()
 			).run();
-			const data = { receiptId: receipt_id, clientId: client_id, totalAmount: total_amount, receiptDate: receipt_date, dueDate: due_date, status: statusVal };
+			
+			const data = { 
+				receiptId: receipt_id, 
+				clientId: client_id, 
+				totalAmount: total_amount, 
+				receiptDate: receipt_date, 
+				dueDate: due_date, 
+				status: statusVal,
+				receiptType: receiptType,
+				relatedTaskId: relatedTaskId,
+				clientServiceId: clientServiceId,
+				billingMonth: billingMonth
+			};
 			return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
