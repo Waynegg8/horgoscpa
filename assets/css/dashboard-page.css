@@ -6,7 +6,14 @@
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
 }
-.dash-top { margin-bottom: 0; }
+.dash-top { 
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
 .dash-welcome { 
   display: flex; 
   align-items: baseline; 
@@ -37,6 +44,11 @@
 
 /* Notice List */
 .notice-list { margin-top: 20px; }
+.notice-list-inline { 
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .notice { 
   padding: 16px 20px; 
   border-radius: 10px; 
@@ -48,6 +60,13 @@
   line-height: 1.6;
 }
 .notice:last-child { margin-bottom: 0; }
+.notice-list-inline .notice {
+  padding: 8px 16px;
+  margin-bottom: 0;
+  border-radius: 8px;
+  font-size: 13px;
+  align-items: center;
+}
 .notice.warning { 
   background: #fffbeb; 
   border: 1px solid #fcd34d;

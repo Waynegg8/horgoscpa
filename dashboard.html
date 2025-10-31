@@ -17,9 +17,9 @@
           <span class="separator">•</span>
           <span id="today" class="dash-date">—</span>
         </div>
+        <div id="noticeList" class="notice-list-inline" aria-label="通知" style="display:none;"></div>
       </div>
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此內容</div>
-      <div id="noticeList" class="notice-list" aria-label="通知" style="display:none;"></div>
     </header>
 
     <main class="dash-content">
@@ -333,6 +333,10 @@
             const res = await fetch(url, { credentials:'include' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/dashboard'); return; }
             const json = await res.json();
+            console.log('=== DASHBOARD API RESPONSE ===');
+            console.log('Full Response:', JSON.stringify(json, null, 2));
+            console.log('employeeHours:', json.data?.admin?.employeeHours);
+            console.log('==============================');
             if (!res.ok || !json || json.ok !== true) throw new Error();
             const role = json.data?.role || (me?.isAdmin ? 'admin' : 'employee');
             if (role === 'admin') {
