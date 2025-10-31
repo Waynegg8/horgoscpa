@@ -13,10 +13,13 @@
   margin-bottom: 20px;
   gap: 15px;
   flex-wrap: wrap;
+  min-height: 60px; /* 確保容器有足夠高度 */
 }
 
 .week-nav-right {
   flex-shrink: 0; /* 防止按鈕被壓縮 */
+  display: flex !important; /* 確保顯示 */
+  visibility: visible !important; /* 確保可見 */
 }
 
 .week-nav-left,
@@ -109,6 +112,7 @@
 /* ==================== 工時表格 ==================== */
 
 .timesheet-table {
+  table-layout: fixed; /* 固定表格佈局，列寬不隨內容變化 */
   width: max-content;
   min-width: 100%;
   border-collapse: separate;
@@ -146,26 +150,30 @@
 
 .col-client.sticky-col {
   left: 0;
-  min-width: 100px;
-  max-width: 100px;
+  width: 95px; /* 固定寬度 */
+  min-width: 95px;
+  max-width: 95px;
 }
 
 .col-service.sticky-col {
-  left: 100px;
-  min-width: 80px;
-  max-width: 80px;
+  left: 95px;
+  width: 75px; /* 固定寬度 */
+  min-width: 75px;
+  max-width: 75px;
 }
 
 .col-service-item.sticky-col {
-  left: 180px;
-  min-width: 80px;
-  max-width: 80px;
+  left: 170px;
+  width: 75px; /* 固定寬度 */
+  min-width: 75px;
+  max-width: 75px;
 }
 
 .col-worktype.sticky-col {
-  left: 260px;
-  min-width: 115px;
-  max-width: 115px;
+  left: 245px;
+  width: 100px; /* 固定寬度 */
+  min-width: 100px;
+  max-width: 100px;
 }
 
 /* 表頭固定列也需要設置left */
@@ -195,13 +203,15 @@
 
 /* 日期欄位 */
 .col-date {
-  min-width: 80px;
-  width: 80px;
+  width: 60px; /* 固定寬度 */
+  min-width: 60px;
+  max-width: 60px;
 }
 
 .col-action {
-  min-width: 80px;
-  width: 80px;
+  width: 60px; /* 固定寬度 */
+  min-width: 60px;
+  max-width: 60px;
 }
 
 .date-label {
@@ -249,10 +259,10 @@
 
 .cell-select {
   width: 100%;
-  padding: 4px 6px; /* 從 6px 8px 縮小到 4px 6px */
+  padding: 3px 4px; /* 進一步縮小 */
   border: 1px solid #ced4da;
   border-radius: 4px;
-  font-size: 12px; /* 從 13px 縮小到 12px */
+  font-size: 11px; /* 從 12px 縮小到 11px */
   background: white;
   overflow: hidden;
   text-overflow: ellipsis;
