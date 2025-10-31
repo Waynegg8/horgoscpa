@@ -104,8 +104,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       
       // Employee hours (各员工分别工时 - 按指定月份查询)
       try {
-        console.log('[Dashboard] Querying employee hours for:', targetYm);
-        const rows = await env.DATABASE.prepare(
+        const result = await env.DATABASE.prepare(
           `SELECT u.user_id, u.name, u.username,
                   COALESCE(SUM(t.hours), 0) AS total,
                   COALESCE(SUM(CASE WHEN wt.isOvertime = 0 THEN t.hours ELSE 0 END), 0) AS normal,
@@ -123,21 +122,17 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
            ORDER BY total DESC, u.name ASC`
         ).bind(targetYm).all();
         
-        console.log('[Dashboard] Query results:', rows?.results?.length || 0, 'rows');
-        console.log('[Dashboard] First row:', rows?.results?.[0]);
-        
-        res.employeeHours = (rows?.results || []).map(r => ({
+        // D1 returns { results: [...], success: true }
+        const rows = result?.results || [];
+        res.employeeHours = rows.map(r => ({
           userId: r.user_id,
           name: r.name || r.username || '未命名',
           total: Number(r.total || 0),
           normal: Number(r.normal || 0),
           overtime: Number(r.overtime || 0)
         }));
-        
-        console.log('[Dashboard] Mapped employeeHours:', res.employeeHours.length, 'employees');
       } catch (e) {
-        console.error('[Dashboard] Employee hours query error:', e);
-        console.error('[Dashboard] Error details:', e.message, e.stack);
+        console.error('Employee hours query error:', e);
       }
 
       // Financial status - 根据finMode返回对应数据

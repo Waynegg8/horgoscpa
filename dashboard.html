@@ -162,11 +162,6 @@
           
           // 各员工工时
           const empHours = Array.isArray(data?.employeeHours) ? data.employeeHours : [];
-          console.log('=== Employee Hours Debug ===');
-          console.log('data:', data);
-          console.log('employeeHours:', empHours);
-          console.log('empHours.length:', empHours.length);
-          
           let hoursHtml = '';
           if (empHours.length > 0) {
             hoursHtml = empHours.map(e => {
