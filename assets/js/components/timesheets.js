@@ -3,6 +3,9 @@
 const onProdHost = location.hostname.endsWith('horgoscpa.com');
 const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
 
+// Add global isLoading flag
+let isLoading = false;
+
 // ---- Utility ----
 function getMonday(date) {
   const d = new Date(date);
@@ -74,7 +77,6 @@ function buildWeekDays() {
     d.setDate(d.getDate() + i);
     const iso = formatDate(d);
     const h = state.holidays.get(iso);
-    console.log(`[DEBUG] Date ${iso}: Holiday data - ${JSON.stringify(h)}`);
     const dow = d.getDay();
     const type = h && h.is_national_holiday ? 'national_holiday'
                : h && h.is_makeup_workday ? 'makeup'
@@ -105,7 +107,6 @@ async function loadHolidays() {
     state.holidays.clear();
     (json.data || []).forEach(h => {
       state.holidays.set(h.date, h);
-      console.log(`[DEBUG] Loaded holiday for ${h.date}: ${JSON.stringify(h)}`);
     });
   }
 }
@@ -173,9 +174,8 @@ function organizeRows(data) {
 // ---- Rendering ----
 function renderWeekHeader() {
   const weekStart = new Date(state.currentWeekStart);
-  const weekEnd = new Date(weekStart);
+  const weekEnd = new Date(weekStart.getTime()); // Use getTime() to deep copy
   weekEnd.setDate(weekEnd.getDate() + 6);
-  console.log(`[DEBUG] Week start: ${formatDate(weekStart)}, End: ${formatDate(weekEnd)}`);
   const startMonth = weekStart.getMonth() + 1;
   const endMonth = weekEnd.getMonth() + 1;
   const title = document.getElementById('weekTitle');
@@ -408,9 +408,30 @@ async function init() {
   try { await loadClients(); } catch (_) {}
   await loadWeek();
   // events
-  document.getElementById('btnPrevWeek')?.addEventListener('click', async () => { resetWeekView(); state.currentWeekStart.setDate(state.currentWeekStart.getDate() - 7); await loadWeek(); });
-  document.getElementById('btnNextWeek')?.addEventListener('click', async () => { resetWeekView(); state.currentWeekStart.setDate(state.currentWeekStart.getDate() + 7); await loadWeek(); });
-  document.getElementById('btnThisWeek')?.addEventListener('click', async () => { resetWeekView(); state.currentWeekStart = getMonday(new Date()); await loadWeek(); });
+  document.getElementById('btnPrevWeek')?.addEventListener('click', async () => {
+    if (isLoading) return;
+    isLoading = true;
+    resetWeekView();
+    state.currentWeekStart.setDate(state.currentWeekStart.getDate() - 7);
+    await loadWeek();
+    isLoading = false;
+  });
+  document.getElementById('btnNextWeek')?.addEventListener('click', async () => {
+    if (isLoading) return;
+    isLoading = true;
+    resetWeekView();
+    state.currentWeekStart.setDate(state.currentWeekStart.getDate() + 7);
+    await loadWeek();
+    isLoading = false;
+  });
+  document.getElementById('btnThisWeek')?.addEventListener('click', async () => {
+    if (isLoading) return;
+    isLoading = true;
+    resetWeekView();
+    state.currentWeekStart = getMonday(new Date());
+    await loadWeek();
+    isLoading = false;
+  });
   document.getElementById('btnAddRow')?.addEventListener('click', addRow);
   document.getElementById('btnSaveAll')?.addEventListener('click', async () => {
     const btn = document.getElementById('btnSaveAll'); if (!btn) return; btn.disabled = true; btn.textContent = '儲存中...';
