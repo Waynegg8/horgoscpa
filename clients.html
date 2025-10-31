@@ -138,6 +138,82 @@
       </div>
     </div>
 
+    <!-- 客戶服務表單彈窗 -->
+    <div class="modal-overlay" id="serviceFormModal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal" role="document">
+        <div class="modal__header">
+          <h2 class="modal__title" id="service-form-title">新增服務</h2>
+          <button class="modal__close" type="button" id="btn-service-form-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <form id="serviceForm" class="form-grid">
+            <input type="hidden" id="service_form_client_service_id" />
+            <div class="field">
+              <label for="service_form_service_id">服務項目（必填）</label>
+              <select id="service_form_service_id" name="service_id" required>
+                <option value="">請選擇</option>
+              </select>
+              <div class="field__error" id="service_e_service_id"></div>
+            </div>
+            <div class="field">
+              <label for="service_form_status">狀態</label>
+              <select id="service_form_status" name="status">
+                <option value="active">使用中</option>
+                <option value="suspended">暫停</option>
+                <option value="expired">已過期</option>
+                <option value="cancelled">已取消</option>
+              </select>
+              <div class="field__error" id="service_e_status"></div>
+            </div>
+            <div class="field">
+              <label for="service_form_monthly_fee">月費金額（必填）</label>
+              <input id="service_form_monthly_fee" name="monthly_fee" type="number" min="0" step="1" required />
+              <div class="field__error" id="service_e_monthly_fee"></div>
+            </div>
+            <div class="field">
+              <label for="service_form_billing_frequency">計費頻率</label>
+              <select id="service_form_billing_frequency" name="billing_frequency">
+                <option value="monthly">每月</option>
+                <option value="quarterly">每季</option>
+                <option value="yearly">每年</option>
+                <option value="one-time">單次</option>
+              </select>
+              <div class="field__error" id="service_e_billing_frequency"></div>
+            </div>
+            <div class="field">
+              <label for="service_form_billing_months_per_year">每年收費月數（如14個月年薪）</label>
+              <input id="service_form_billing_months_per_year" name="billing_months_per_year" type="number" min="1" max="24" value="12" />
+              <div class="field__error" id="service_e_billing_months_per_year"></div>
+            </div>
+            <div class="field">
+              <label for="service_form_billing_day">每月扣款日（1-31）</label>
+              <input id="service_form_billing_day" name="billing_day" type="number" min="1" max="31" value="1" />
+              <div class="field__error" id="service_e_billing_day"></div>
+            </div>
+            <div class="field">
+              <label for="service_form_start_date">服務開始日期</label>
+              <input id="service_form_start_date" name="start_date" type="date" />
+              <div class="field__error" id="service_e_start_date"></div>
+            </div>
+            <div class="field">
+              <label for="service_form_end_date">服務結束日期（選填）</label>
+              <input id="service_form_end_date" name="end_date" type="date" />
+              <div class="field__error" id="service_e_end_date"></div>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="service_form_notes">服務備註</label>
+              <textarea id="service_form_notes" name="service_notes" rows="3"></textarea>
+              <div class="field__error" id="service_e_notes"></div>
+            </div>
+            <div class="modal__actions" style="grid-column:1 / -1;">
+              <button class="clients-btn btn-secondary" type="button" id="btn-service-form-cancel">取消</button>
+              <button class="clients-btn" type="submit" id="btn-service-form-submit">儲存</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <!-- 客戶詳情彈窗 -->
     <div class="modal-overlay" id="viewModal" aria-hidden="true" role="dialog" aria-modal="true">
       <div class="modal" role="document">
@@ -528,6 +604,279 @@
             alert('載入客戶詳情失敗，請稍後再試');
           }
         }
+        
+        // 渲染客户服务列表
+        let currentClientId = null;
+        function renderClientServices(clientId, services) {
+          currentClientId = clientId;
+          const container = document.getElementById('view_services');
+          if (!services || services.length === 0) {
+            container.innerHTML = '<div style="color:#999;font-size:14px;">尚未設定服務</div>';
+            return;
+          }
+          
+          const frequencyMap = {
+            'monthly': '每月',
+            'quarterly': '每季',
+            'yearly': '每年',
+            'one-time': '單次'
+          };
+          
+          const statusMap = {
+            'active': '<span style="color:#10b981">●</span> 使用中',
+            'suspended': '<span style="color:#f59e0b">●</span> 暫停',
+            'expired': '<span style="color:#6b7280">●</span> 已過期',
+            'cancelled': '<span style="color:#ef4444">●</span> 已取消'
+          };
+          
+          container.innerHTML = services.map(svc => `
+            <div class="service-item" style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px;background:#fff;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                <div>
+                  <div style="font-weight:600;font-size:15px;color:#111827;margin-bottom:4px;">${svc.service_name}</div>
+                  <div style="font-size:13px;color:#6b7280;">${statusMap[svc.status] || svc.status}</div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button type="button" class="clients-btn btn-secondary" onclick="editService(${svc.client_service_id})" style="padding:4px 10px;font-size:13px;">編輯</button>
+                  <button type="button" class="clients-btn" onclick="deleteService(${svc.client_service_id})" style="padding:4px 10px;font-size:13px;background:#ef4444;">刪除</button>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;font-size:13px;">
+                <div>
+                  <span style="color:#6b7280;">月費：</span>
+                  <span style="font-weight:600;">NT$ ${svc.monthly_fee.toLocaleString('zh-TW')}</span>
+                </div>
+                <div>
+                  <span style="color:#6b7280;">計費頻率：</span>
+                  <span style="font-weight:600;">${frequencyMap[svc.billing_frequency] || svc.billing_frequency}</span>
+                </div>
+                <div>
+                  <span style="color:#6b7280;">每年收費月數：</span>
+                  <span style="font-weight:600;">${svc.billing_months_per_year} 個月</span>
+                </div>
+                <div>
+                  <span style="color:#6b7280;">扣款日：</span>
+                  <span style="font-weight:600;">每月 ${svc.billing_day} 日</span>
+                </div>
+                ${svc.start_date ? `<div><span style="color:#6b7280;">開始日期：</span><span>${svc.start_date}</span></div>` : ''}
+                ${svc.end_date ? `<div><span style="color:#6b7280;">結束日期：</span><span>${svc.end_date}</span></div>` : ''}
+              </div>
+              ${svc.service_notes ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f3f4f6;font-size:13px;color:#6b7280;">備註：${svc.service_notes}</div>` : ''}
+            </div>
+          `).join('');
+        }
+        
+        // 删除服务
+        async function deleteService(serviceId) {
+          if (!confirm('確定要刪除此服務嗎？')) return;
+          try {
+            const res = await fetch(`${apiBase}/clients/${currentClientId}/services/${serviceId}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            const json = await res.json();
+            if (!res.ok || !json.ok) {
+              alert(json.message || '刪除失敗');
+              return;
+            }
+            alert('已刪除');
+            viewClient(currentClientId); // 重新加载
+          } catch (err) {
+            alert('刪除失敗，請稍後再試');
+          }
+        }
+        
+        // 将deleteService暴露到全局以便按钮可以调用
+        window.deleteService = deleteService;
+        
+        // ========== 服务表单模态框管理 ==========
+        const serviceFormModal = document.getElementById('serviceFormModal');
+        const serviceForm = document.getElementById('serviceForm');
+        const serviceFormTitle = document.getElementById('service-form-title');
+        const serviceFormCloseBtn = document.getElementById('btn-service-form-close');
+        const serviceFormCancelBtn = document.getElementById('btn-service-form-cancel');
+        const btnAddService = document.getElementById('btn-add-service');
+        
+        let servicesList = [];
+        let isEditingService = false;
+        let editingServiceId = null;
+        
+        // 加载可用服务列表
+        async function loadServices() {
+          try {
+            const res = await fetch(`${apiBase}/clients/${currentClientId}/services`, {
+              method: 'GET',
+              credentials: 'include'
+            });
+            const json = await res.json();
+            if (json.ok && Array.isArray(json.data)) {
+              servicesList = json.data;
+              populateServicesSelect();
+            }
+          } catch (err) {
+            console.error('加载服务列表失败', err);
+          }
+        }
+        
+        function populateServicesSelect() {
+          const select = document.getElementById('service_form_service_id');
+          select.innerHTML = '<option value="">請選擇</option>';
+          servicesList.forEach(svc => {
+            const option = document.createElement('option');
+            option.value = svc.service_id;
+            option.textContent = svc.service_name;
+            select.appendChild(option);
+          });
+        }
+        
+        // 打开新增服务表单
+        btnAddService.addEventListener('click', function() {
+          isEditingService = false;
+          editingServiceId = null;
+          serviceFormTitle.textContent = '新增服務';
+          serviceForm.reset();
+          document.getElementById('service_form_client_service_id').value = '';
+          loadServices();
+          clearServiceFieldErrors();
+          serviceFormModal.classList.add('active');
+          serviceFormModal.setAttribute('aria-hidden', 'false');
+        });
+        
+        // 编辑服务
+        async function editService(serviceId) {
+          isEditingService = true;
+          editingServiceId = serviceId;
+          serviceFormTitle.textContent = '編輯服務';
+          
+          try {
+            // 从当前显示的服务列表中查找
+            const res = await fetch(`${apiBase}/clients/${currentClientId}`, { credentials: 'include' });
+            const json = await res.json();
+            if (!res.ok || !json.ok) throw new Error('加载失败');
+            
+            const service = (json.data.services || []).find(s => s.client_service_id === serviceId);
+            if (!service) throw new Error('服务不存在');
+            
+            // 预填表单
+            document.getElementById('service_form_client_service_id').value = service.client_service_id;
+            document.getElementById('service_form_service_id').value = service.service_id;
+            document.getElementById('service_form_status').value = service.status;
+            document.getElementById('service_form_monthly_fee').value = service.monthly_fee;
+            document.getElementById('service_form_billing_frequency').value = service.billing_frequency;
+            document.getElementById('service_form_billing_months_per_year').value = service.billing_months_per_year;
+            document.getElementById('service_form_billing_day').value = service.billing_day;
+            document.getElementById('service_form_start_date').value = service.start_date || '';
+            document.getElementById('service_form_end_date').value = service.end_date || '';
+            document.getElementById('service_form_notes').value = service.service_notes || '';
+            
+            await loadServices();
+            clearServiceFieldErrors();
+            serviceFormModal.classList.add('active');
+            serviceFormModal.setAttribute('aria-hidden', 'false');
+          } catch (err) {
+            alert('加载服务资料失败，请稍后再试');
+          }
+        }
+        
+        // 暴露editService到全局
+        window.editService = editService;
+        
+        // 关闭服务表单
+        function closeServiceFormModal() {
+          serviceFormModal.classList.remove('active');
+          serviceFormModal.setAttribute('aria-hidden', 'true');
+          serviceForm.reset();
+          clearServiceFieldErrors();
+        }
+        
+        serviceFormCloseBtn.addEventListener('click', closeServiceFormModal);
+        serviceFormCancelBtn.addEventListener('click', closeServiceFormModal);
+        
+        // 清除服务表单错误
+        function clearServiceFieldErrors() {
+          ['service_id', 'status', 'monthly_fee', 'billing_frequency', 'billing_months_per_year', 
+           'billing_day', 'start_date', 'end_date', 'notes'].forEach(f => {
+            const el = document.getElementById(`service_e_${f}`);
+            if (el) el.textContent = '';
+          });
+        }
+        
+        // 提交服务表单
+        serviceForm.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          clearServiceFieldErrors();
+          
+          const serviceId = parseInt(document.getElementById('service_form_service_id').value, 10);
+          const status = document.getElementById('service_form_status').value.trim();
+          const monthlyFee = parseFloat(document.getElementById('service_form_monthly_fee').value);
+          const billingFrequency = document.getElementById('service_form_billing_frequency').value.trim();
+          const billingMonthsPerYear = parseInt(document.getElementById('service_form_billing_months_per_year').value, 10);
+          const billingDay = parseInt(document.getElementById('service_form_billing_day').value, 10);
+          const startDate = document.getElementById('service_form_start_date').value.trim();
+          const endDate = document.getElementById('service_form_end_date').value.trim();
+          const serviceNotes = document.getElementById('service_form_notes').value.trim();
+          
+          let hasErr = false;
+          if (!serviceId || serviceId <= 0) { document.getElementById('service_e_service_id').textContent='請選擇服務項目'; hasErr=true; }
+          if (isNaN(monthlyFee) || monthlyFee < 0) { document.getElementById('service_e_monthly_fee').textContent='請輸入有效金額'; hasErr=true; }
+          if (hasErr) return;
+          
+          const payload = {
+            monthly_fee: monthlyFee,
+            billing_frequency: billingFrequency,
+            billing_months_per_year: billingMonthsPerYear,
+            billing_day: billingDay,
+            start_date: startDate || null,
+            end_date: endDate || null,
+            service_notes: serviceNotes,
+            status: status
+          };
+          
+          if (!isEditingService) {
+            payload.service_id = serviceId;
+          }
+          
+          const submitBtn = document.getElementById('btn-service-form-submit');
+          submitBtn.disabled = true;
+          submitBtn.textContent = '儲存中…';
+          
+          try {
+            const url = isEditingService 
+              ? `${apiBase}/clients/${currentClientId}/services/${editingServiceId}`
+              : `${apiBase}/clients/${currentClientId}/services`;
+            const method = isEditingService ? 'PUT' : 'POST';
+            
+            const res = await fetch(url, {
+              method: method,
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(payload)
+            });
+            const json = await res.json();
+            
+            if (!res.ok || !json.ok) {
+              const msg = json.message || '儲存失敗';
+              if (json.errors && Array.isArray(json.errors)) {
+                json.errors.forEach(err => {
+                  const el = document.getElementById(`service_e_${err.field}`);
+                  if (el) el.textContent = err.message;
+                });
+              } else {
+                alert(msg);
+              }
+              return;
+            }
+            
+            alert(isEditingService ? '已更新' : '已新增');
+            closeServiceFormModal();
+            viewClient(currentClientId); // 重新加载
+          } catch (err) {
+            alert('儲存失敗，請稍後再試');
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '儲存';
+          }
+        });
         
         function openViewModal() { viewModal.classList.add('active'); viewModal.setAttribute('aria-hidden','false'); }
         function closeViewModal() { viewModal.classList.remove('active'); viewModal.setAttribute('aria-hidden','true'); }
