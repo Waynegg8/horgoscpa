@@ -81,7 +81,7 @@
     <div class="content-card">
       <div class="card-header-with-action">
         <h2 class="card-title">客戶服務</h2>
-        <button class="btn btn-primary" onclick="openAddServiceModal()">+ 新增服務</button>
+        <button class="btn btn-primary" onclick="showAddServiceRow()">+ 新增服務</button>
       </div>
       <div class="table-wrapper">
         <table class="services-table" id="servicesTable">
@@ -97,86 +97,44 @@
             </tr>
           </thead>
           <tbody id="servicesList">
+            <tr id="add-service-row" style="display: none;">
+              <td></td>
+              <td>
+                <select id="new-service-id" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+                  <option value="">請選擇服務</option>
+                </select>
+              </td>
+              <td>
+                <select id="new-service-status" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+                  <option value="active">使用中</option>
+                  <option value="suspended">暫停</option>
+                  <option value="expired">已到期</option>
+                  <option value="cancelled">已取消</option>
+                </select>
+              </td>
+              <td>
+                <select id="new-service-cycle" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+                  <option value="monthly">每月</option>
+                  <option value="quarterly">每季</option>
+                  <option value="yearly">每年</option>
+                  <option value="one-time">一次性</option>
+                </select>
+              </td>
+              <td>-</td>
+              <td>
+                <input type="date" id="new-service-start-date" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;" />
+              </td>
+              <td>
+                <button class="table-btn-link" onclick="saveNewService()">儲存</button>
+                <button class="table-btn-link danger" onclick="cancelAddService()">取消</button>
+              </td>
+            </tr>
             <tr>
               <td colspan="7" class="no-data">尚未新增服務</td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
-  </div>
-
-  <!-- 新增/編輯服務 Modal -->
-  <div id="serviceModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 700px;">
-      <div class="modal-header">
-        <h3 id="serviceModalTitle">新增服務</h3>
-        <button class="modal-close" onclick="closeServiceModal()">&times;</button>
-      </div>
-      <form id="serviceForm">
-        <input type="hidden" id="serviceClientServiceId">
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>服務項目 <span class="required">*</span></label>
-            <select id="serviceServiceId" required>
-              <option value="">請選擇服務</option>
-            </select>
-            <div class="error-message" id="error_service_id"></div>
-          </div>
-          <div class="form-group">
-            <label>服務狀態</label>
-            <select id="serviceStatus">
-              <option value="active">使用中</option>
-              <option value="suspended">暫停</option>
-              <option value="expired">已到期</option>
-              <option value="cancelled">已取消</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>服務週期</label>
-            <select id="serviceServiceCycle">
-              <option value="monthly">每月</option>
-              <option value="quarterly">每季</option>
-              <option value="yearly">每年</option>
-              <option value="one-time">一次性</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>任務模板</label>
-            <select id="serviceTaskTemplateId">
-              <option value="">無（手動建立任務）</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>開始日期</label>
-            <input type="date" id="serviceStartDate">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>
-            <input type="checkbox" id="serviceAutoGenerateTasks" checked>
-            自動生成任務
-          </label>
-        </div>
-
-        <div class="form-group">
-          <label>服務備註</label>
-          <textarea id="serviceServiceNotes" rows="3"></textarea>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeServiceModal()">取消</button>
-          <button type="submit" class="btn btn-primary">儲存</button>
-        </div>
-      </form>
     </div>
   </div>
 
@@ -254,29 +212,119 @@
         const service = allServices.find(s => s.service_id == svc.service_id);
         const serviceName = service ? service.service_name : '-';
 
+        const billings = svc.billings || [];
+        const yearTotal = billings.reduce((sum, b) => sum + (parseFloat(b.billing_amount) || 0), 0);
+
         return `
           <tr class="service-main-row">
-            <td class="expand-cell"></td>
+            <td class="expand-cell">
+              <button class="expand-btn" onclick="toggleBilling(${index})">
+                <span class="expand-icon" id="expand-icon-${index}">▶</span>
+              </button>
+            </td>
             <td><strong>${serviceName}</strong></td>
             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
             <td>${cycleText}</td>
-            <td class="amount">-</td>
+            <td class="amount">$${yearTotal.toLocaleString('zh-TW')}</td>
             <td>${svc.start_date || '-'}</td>
             <td class="actions-cell">
+              <button type="button" class="table-btn table-btn-primary" onclick="showAddBillingRow(${index})">新增收費</button>
               <button type="button" class="table-btn table-btn-secondary" onclick="editService(${index})">編輯</button>
               <button type="button" class="table-btn table-btn-danger" onclick="deleteService(${index}, '${serviceName}')">刪除</button>
+            </td>
+          </tr>
+          <tr class="billing-detail-row" id="billing-row-${index}" style="display: none;">
+            <td colspan="7" class="billing-detail-cell">
+              <div class="billing-content" id="billing-content-${index}">
+                ${renderBillingTable(index)}
+              </div>
             </td>
           </tr>
         `;
       }).join('');
     }
 
+    // 渲染收費明細表格
+    function renderBillingTable(serviceIndex) {
+      const svc = tempServices[serviceIndex];
+      const billings = svc.billings || [];
+      
+      if (billings.length === 0) {
+        return `
+          <div class="billing-header">
+            <h4>月份收費明細</h4>
+          </div>
+          <table class="billing-table">
+            <thead>
+              <tr>
+                <th>月份</th>
+                <th>金額</th>
+                <th>帳款天數</th>
+                <th>備註</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="add-row-${serviceIndex}" style="display: none;"></tr>
+              <tr>
+                <td colspan="5" class="no-data">尚未設定收費明細</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+      }
+
+      const rows = billings.map((billing, billingIndex) => `
+        <tr data-billing-index="${billingIndex}">
+          <td>${billing.billing_month}月</td>
+          <td class="amount">$${parseFloat(billing.billing_amount).toLocaleString('zh-TW')}</td>
+          <td>${billing.payment_due_days}天</td>
+          <td>${billing.notes || '-'}</td>
+          <td>
+            <button class="table-btn-link" onclick="startEditBilling(${serviceIndex}, ${billingIndex})">編輯</button>
+            <button class="table-btn-link danger" onclick="deleteBillingInline(${serviceIndex}, ${billingIndex}, ${billing.billing_month})">刪除</button>
+          </td>
+        </tr>
+      `).join('');
+
+      return `
+        <div class="billing-header">
+          <h4>月份收費明細</h4>
+        </div>
+        <table class="billing-table">
+          <thead>
+            <tr>
+              <th>月份</th>
+              <th>金額</th>
+              <th>帳款天數</th>
+              <th>備註</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="add-row-${serviceIndex}" style="display: none;"></tr>
+            ${rows}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // 切換收費明細展開/收起
+    function toggleBilling(serviceIndex) {
+      const detailRow = document.getElementById(`billing-row-${serviceIndex}`);
+      const icon = document.getElementById(`expand-icon-${serviceIndex}`);
+      
+      if (detailRow.style.display === 'none') {
+        detailRow.style.display = 'table-row';
+        icon.textContent = '▼';
+      } else {
+        detailRow.style.display = 'none';
+        icon.textContent = '▶';
+      }
+    }
+
     // 暴露函數到全局
     window.toggleBilling = toggleBilling;
-    window.loadBillingInline = loadBillingInline;
-
-    function toggleBilling() {}
-    function loadBillingInline() {}
 
     // 載入服務類型選項
     async function loadServices() {
@@ -286,7 +334,7 @@
         
         if (json.ok && json.data) {
           allServices = json.data;
-          const select = document.getElementById('serviceServiceId');
+          const select = document.getElementById('new-service-id');
           select.innerHTML = '<option value="">請選擇服務</option>' +
             allServices.filter(s => s.is_active).map(s => 
               `<option value="${s.service_id}">${s.service_name}</option>`
@@ -305,31 +353,54 @@
         
         if (json.ok && json.data) {
           allTemplates = json.data;
-          const select = document.getElementById('serviceTaskTemplateId');
-          select.innerHTML = '<option value="">無（手動建立任務）</option>' +
-            allTemplates.filter(t => t.is_active).map(t => 
-              `<option value="${t.template_id}">${t.template_name}</option>`
-            ).join('');
         }
       } catch (err) {
         console.error('載入模板選項失敗:', err);
       }
     }
 
-    // 打開新增服務Modal
-    function openAddServiceModal() {
-      currentEditingServiceId = null;
-      document.getElementById('serviceModalTitle').textContent = '新增服務';
-      document.getElementById('serviceForm').reset();
-      document.getElementById('serviceClientServiceId').value = '';
-      document.getElementById('serviceStatus').value = 'active';
-      document.getElementById('serviceServiceCycle').value = 'monthly';
-      document.getElementById('serviceAutoGenerateTasks').checked = true;
-      clearFormErrors('service');
-      document.getElementById('serviceModal').style.display = 'flex';
+    // 顯示新增服務行
+    function showAddServiceRow() {
+      const addRow = document.getElementById('add-service-row');
+      addRow.style.display = 'table-row';
     }
 
-    // 編輯服務
+    // 取消新增服務
+    function cancelAddService() {
+      const addRow = document.getElementById('add-service-row');
+      addRow.style.display = 'none';
+      document.getElementById('new-service-id').value = '';
+      document.getElementById('new-service-status').value = 'active';
+      document.getElementById('new-service-cycle').value = 'monthly';
+      document.getElementById('new-service-start-date').value = '';
+    }
+
+    // 儲存新服務
+    function saveNewService() {
+      const serviceId = document.getElementById('new-service-id').value;
+      const status = document.getElementById('new-service-status').value;
+      const cycle = document.getElementById('new-service-cycle').value;
+      const startDate = document.getElementById('new-service-start-date').value;
+
+      if (!serviceId) {
+        alert('請選擇服務');
+        return;
+      }
+
+      const data = {
+        service_id: parseInt(serviceId),
+        status: status,
+        service_cycle: cycle,
+        start_date: startDate || null,
+        billings: []
+      };
+
+      tempServices.push(data);
+      renderServices(tempServices);
+      cancelAddService();
+    }
+
+    // 編輯服務（內嵌）
     async function editService(index) {
       const service = tempServices[index];
       if (!service) {
@@ -337,52 +408,67 @@
         return;
       }
 
-      document.getElementById('serviceModalTitle').textContent = '編輯服務';
-      document.getElementById('serviceClientServiceId').value = index;
-      document.getElementById('serviceServiceId').value = service.service_id;
-      document.getElementById('serviceStatus').value = service.status;
-      document.getElementById('serviceServiceCycle').value = service.service_cycle || 'monthly';
-      document.getElementById('serviceTaskTemplateId').value = service.task_template_id || '';
-      document.getElementById('serviceAutoGenerateTasks').checked = service.auto_generate_tasks !== false;
-      document.getElementById('serviceStartDate').value = service.start_date || '';
-      document.getElementById('serviceServiceNotes').value = service.service_notes || '';
+      const serviceRow = document.querySelectorAll('.service-main-row')[index];
+      const serviceName = allServices.find(s => s.service_id == service.service_id)?.service_name || '';
       
-      clearFormErrors('service');
-      document.getElementById('serviceModal').style.display = 'flex';
+      serviceRow.innerHTML = `
+        <td></td>
+        <td>
+          <select id="edit-service-id-${index}" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+            ${allServices.filter(s => s.is_active).map(s => 
+              `<option value="${s.service_id}" ${s.service_id == service.service_id ? 'selected' : ''}>${s.service_name}</option>`
+            ).join('')}
+          </select>
+        </td>
+        <td>
+          <select id="edit-service-status-${index}" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+            <option value="active" ${service.status == 'active' ? 'selected' : ''}>使用中</option>
+            <option value="suspended" ${service.status == 'suspended' ? 'selected' : ''}>暫停</option>
+            <option value="expired" ${service.status == 'expired' ? 'selected' : ''}>已到期</option>
+            <option value="cancelled" ${service.status == 'cancelled' ? 'selected' : ''}>已取消</option>
+          </select>
+        </td>
+        <td>
+          <select id="edit-service-cycle-${index}" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+            <option value="monthly" ${service.service_cycle == 'monthly' ? 'selected' : ''}>每月</option>
+            <option value="quarterly" ${service.service_cycle == 'quarterly' ? 'selected' : ''}>每季</option>
+            <option value="yearly" ${service.service_cycle == 'yearly' ? 'selected' : ''}>每年</option>
+            <option value="one-time" ${service.service_cycle == 'one-time' ? 'selected' : ''}>一次性</option>
+          </select>
+        </td>
+        <td>-</td>
+        <td>
+          <input type="date" id="edit-service-start-date-${index}" value="${service.start_date || ''}" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;" />
+        </td>
+        <td>
+          <button class="table-btn-link" onclick="saveEditService(${index})">儲存</button>
+          <button class="table-btn-link danger" onclick="cancelEditService(${index})">取消</button>
+        </td>
+      `;
     }
 
-    // 關閉服務Modal
-    function closeServiceModal() {
-      document.getElementById('serviceModal').style.display = 'none';
-    }
+    // 儲存編輯的服務
+    function saveEditService(index) {
+      const serviceId = document.getElementById(`edit-service-id-${index}`).value;
+      const status = document.getElementById(`edit-service-status-${index}`).value;
+      const cycle = document.getElementById(`edit-service-cycle-${index}`).value;
+      const startDate = document.getElementById(`edit-service-start-date-${index}`).value;
 
-    // 提交服務表單
-    document.getElementById('serviceForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      clearFormErrors('service');
-      
-      const editIndex = document.getElementById('serviceClientServiceId').value;
-      const isEdit = editIndex !== '';
-      
-      const data = {
-        service_id: parseInt(document.getElementById('serviceServiceId').value),
-        status: document.getElementById('serviceStatus').value,
-        service_cycle: document.getElementById('serviceServiceCycle').value,
-        task_template_id: document.getElementById('serviceTaskTemplateId').value || null,
-        auto_generate_tasks: document.getElementById('serviceAutoGenerateTasks').checked,
-        start_date: document.getElementById('serviceStartDate').value || null,
-        service_notes: document.getElementById('serviceServiceNotes').value
+      tempServices[index] = {
+        ...tempServices[index],
+        service_id: parseInt(serviceId),
+        status: status,
+        service_cycle: cycle,
+        start_date: startDate || null
       };
 
-      if (isEdit) {
-        tempServices[parseInt(editIndex)] = data;
-      } else {
-        tempServices.push(data);
-      }
-
       renderServices(tempServices);
-      closeServiceModal();
-    });
+    }
+
+    // 取消編輯服務
+    function cancelEditService(index) {
+      renderServices(tempServices);
+    }
 
     // 刪除服務
     async function deleteService(index, serviceName) {
