@@ -952,6 +952,8 @@ function handleWorkTypeChange(rowIndex, workTypeId) {
     }
   });
   
+  // 重新渲染表格，確保 UI 與 state 同步
+  renderTable();
   updatePendingCount();
   updateWeeklySummary();
   
@@ -966,7 +968,8 @@ function handleWorkTypeChange(rowIndex, workTypeId) {
       `⚠️ 「${workTypeName}」不適用於以下日期，已清空這些工時：\n\n` +
       `${clearedDates.join('、')}\n\n` +
       `💡 請選擇適合的工時類型，或在其他日期填寫工時`,
-      'warning'
+      'warning',
+      8000
     );
   }
 }
