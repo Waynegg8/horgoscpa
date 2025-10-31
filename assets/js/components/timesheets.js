@@ -1240,10 +1240,10 @@ function handleHoursInput(rowIndex, dayIndex, value) {
   const key = `${rowIndex}_${dayIndex}`;
   state.pending.set(key, { rowIndex, dayIndex, value: rounded });
   
-  // 更新輸入框
+  // 不在 input 事件中更新輸入框，避免干擾用戶輸入小數點
+  // 只在 blur 事件中才更新為四捨五入後的值
   const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
   if (input) {
-    input.value = rounded;
     input.closest('td').classList.add('has-value');
   }
   
@@ -1254,8 +1254,31 @@ function handleHoursInput(rowIndex, dayIndex, value) {
 }
 
 function handleHoursBlur(rowIndex, dayIndex) {
-  // 可選：失焦時自動儲存
-  // saveSingleCell(rowIndex, dayIndex);
+  const row = state.rows[rowIndex];
+  const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
+  
+  if (!input) return;
+  
+  const value = input.value.trim();
+  
+  // 如果輸入框為空或無效，清空
+  if (!value || value === '0') {
+    input.value = '';
+    input.closest('td').classList.remove('has-value');
+    return;
+  }
+  
+  // 四舍五入並更新顯示（失焦時才更新輸入框）
+  const hours = parseFloat(value);
+  if (!isNaN(hours) && hours > 0) {
+    const rounded = Math.round(hours * 2) / 2;
+    input.value = rounded;
+    
+    // 如果四舍五入後的值與 state 中的值不同，重新觸發驗證
+    if (row.hours[dayIndex] !== rounded) {
+      handleHoursInput(rowIndex, dayIndex, String(rounded));
+    }
+  }
 }
 
 async function handleDeleteRow(rowIndex) {
