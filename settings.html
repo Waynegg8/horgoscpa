@@ -10,31 +10,34 @@
     <link rel="stylesheet" href="/assets/css/settings-page.css" />
   </head>
   <body class="internal-container">
-    <header class="settings-header">
-      <h1 class="settings-title">系統設定與資料管理</h1>
-      <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此頁面</div>
-      <div id="msgBar" class="info-bar" style="display:none;" role="status"></div>
-    </header>
+    <!-- 顶部通知栏 -->
+    <div id="permBar" class="alert alert-danger" style="display:none;" role="alert">您沒有權限檢視此頁面</div>
+    <div id="msgBar" class="alert alert-info" style="display:none;" role="status"></div>
 
-    <!-- Tab 導覽列 -->
-    <nav class="settings-tabs">
-      <button class="tab-btn active" data-tab="system">系統參數</button>
-      <button class="tab-btn" data-tab="services">服務項目</button>
-      <button class="tab-btn" data-tab="task-templates">任務模板</button>
-      <button class="tab-btn" data-tab="users">用戶管理</button>
-      <button class="tab-btn" data-tab="clients">客戶管理</button>
-      <button class="tab-btn" data-tab="tasks">任務管理</button>
-      <button class="tab-btn" data-tab="timesheets">工時管理</button>
-      <button class="tab-btn" data-tab="leaves">假期管理</button>
-      <button class="tab-btn" data-tab="receipts">收據收款</button>
-      <button class="tab-btn" data-tab="payroll">薪資管理</button>
-      <button class="tab-btn" data-tab="overhead">成本管理</button>
-      <button class="tab-btn" data-tab="attachments">附件系統</button>
-      <button class="tab-btn" data-tab="sop">知識庫</button>
-      <button class="tab-btn" data-tab="lifecycle">服務生命週期</button>
-      <button class="tab-btn" data-tab="cms">CMS內容</button>
-      <button class="tab-btn" data-tab="automation">自動化規則</button>
-      <button class="tab-btn" data-tab="holidays">國定假日</button>
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <h1>系統設定</h1>
+    </div>
+
+    <!-- Tab 导航 -->
+    <nav class="settings-nav">
+      <button class="nav-tab active" data-tab="system">系統參數</button>
+      <button class="nav-tab" data-tab="services">服務項目</button>
+      <button class="nav-tab" data-tab="task-templates">任務模板</button>
+      <button class="nav-tab" data-tab="users">用戶</button>
+      <button class="nav-tab" data-tab="clients">客戶</button>
+      <button class="nav-tab" data-tab="tasks">任務</button>
+      <button class="nav-tab" data-tab="timesheets">工時</button>
+      <button class="nav-tab" data-tab="leaves">假期</button>
+      <button class="nav-tab" data-tab="receipts">收據</button>
+      <button class="nav-tab" data-tab="payroll">薪資</button>
+      <button class="nav-tab" data-tab="overhead">成本</button>
+      <button class="nav-tab" data-tab="attachments">附件</button>
+      <button class="nav-tab" data-tab="sop">知識庫</button>
+      <button class="nav-tab" data-tab="lifecycle">生命週期</button>
+      <button class="nav-tab" data-tab="cms">CMS</button>
+      <button class="nav-tab" data-tab="automation">自動化</button>
+      <button class="nav-tab" data-tab="holidays">假日</button>
     </nav>
 
     <main class="settings-content">
@@ -169,8 +172,8 @@
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-services">
         <div class="tab-header">
-          <h2>服務項目管理</h2>
-          <button class="btn btn-primary" id="btnAddService">+ 新增服務項目</button>
+          <h2>服務項目</h2>
+          <button class="btn btn-primary" id="btnAddService">+ 新增</button>
         </div>
         
         <!-- 新增服務項目表單（默認隱藏） -->
@@ -204,10 +207,9 @@
           </div>
         </div>
         
-        <div class="card" style="margin-bottom: 30px;">
+        <div class="card">
           <div class="card-header">
-            <h3>服務項目列表</h3>
-            <div class="subtitle">點擊任一服務可查看並管理其子項目</div>
+            <div class="subtitle">點擊服務項目查看子項目</div>
           </div>
           <div class="card-body">
             <div class="data-table-container">
@@ -291,8 +293,8 @@
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-task-templates">
         <div class="tab-header">
-          <h2>任務模板管理</h2>
-          <button class="btn btn-primary" id="btnAddTemplate">+ 新增任務模板</button>
+          <h2>任務模板</h2>
+          <button class="btn btn-primary" id="btnAddTemplate">+ 新增</button>
         </div>
         
         <!-- 新增任務模板表單（默認隱藏） -->
@@ -341,10 +343,9 @@
           <button class="btn btn-primary" id="btnSearchTemplates">篩選</button>
         </div>
 
-        <div class="card" style="margin-bottom: 30px;">
+        <div class="card">
           <div class="card-header">
-            <h3>任務模板列表</h3>
-            <div class="subtitle">點擊任一模板可查看並管理其包含的任務</div>
+            <div class="subtitle">點擊模板查看包含的任務</div>
           </div>
           <div class="card-body">
             <div class="data-table-container">
@@ -369,10 +370,10 @@
         </div>
 
         <!-- 模板任務列表（兩層結構的第二層） -->
-        <div class="card" id="templateStagesCard" style="display:none;">
-          <div class="card-header">
-            <h3 id="templateStagesTitle">模板任務列表</h3>
-            <button class="btn btn-primary" id="btnAddTemplateStage">+ 新增任務</button>
+        <div class="card" id="templateStagesCard" style="display:none; margin-top: 20px;">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 id="templateStagesTitle" style="margin: 0;">模板任務</h3>
+            <button class="btn btn-primary btn-sm" id="btnAddTemplateStage">+ 新增任務</button>
           </div>
           <div class="card-body">
             <!-- 新增任務表單 -->
@@ -1004,7 +1005,7 @@
         // ========================================
         // Tab 切換功能
         // ========================================
-        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabBtns = document.querySelectorAll('.nav-tab');
         const tabPanels = document.querySelectorAll('.tab-panel');
 
         console.log('找到', tabBtns.length, '個tab按鈕');
