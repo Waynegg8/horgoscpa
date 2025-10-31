@@ -183,11 +183,11 @@ export async function handleClients(request, env, me, requestId, url) {
 				});
 			}
 			
-			// 查询客户服务列表
+			// 查询客户服务列表（新结构）
 			const servicesRows = await env.DATABASE.prepare(
-				`SELECT cs.client_service_id, cs.service_id, cs.status, 
-				        cs.monthly_fee, cs.billing_frequency, cs.billing_months_per_year,
-				        cs.start_date, cs.end_date, cs.billing_day, cs.service_notes,
+				`SELECT cs.client_service_id, cs.service_id, cs.status, cs.service_cycle,
+				        cs.task_template_id, cs.auto_generate_tasks,
+				        cs.start_date, cs.end_date, cs.service_notes,
 				        s.service_name, s.service_code
 				 FROM ClientServices cs
 				 LEFT JOIN Services s ON s.service_id = cs.service_id
@@ -195,19 +195,39 @@ export async function handleClients(request, env, me, requestId, url) {
 				 ORDER BY cs.client_service_id ASC`
 			).bind(clientId).all();
 			
-			const services = (servicesRows?.results || []).map(svc => ({
-				client_service_id: svc.client_service_id,
-				service_id: svc.service_id,
-				service_name: svc.service_name || "",
-				service_code: svc.service_code || "",
-				status: svc.status || "active",
-				monthly_fee: Number(svc.monthly_fee || 0),
-				billing_frequency: svc.billing_frequency || "monthly",
-				billing_months_per_year: Number(svc.billing_months_per_year || 12),
-				start_date: svc.start_date || null,
-				end_date: svc.end_date || null,
-				billing_day: Number(svc.billing_day || 1),
-				service_notes: svc.service_notes || ""
+			// 为每个服务查询收费明细和年度总额
+			const services = await Promise.all((servicesRows?.results || []).map(async (svc) => {
+				const billingRows = await env.DATABASE.prepare(
+					`SELECT billing_month, billing_amount, payment_due_days, notes
+					 FROM ServiceBillingSchedule
+					 WHERE client_service_id = ?
+					 ORDER BY billing_month ASC`
+				).bind(svc.client_service_id).all();
+				
+				const billing_schedule = (billingRows?.results || []).map(b => ({
+					billing_month: b.billing_month,
+					billing_amount: Number(b.billing_amount || 0),
+					payment_due_days: Number(b.payment_due_days || 30),
+					notes: b.notes || ""
+				}));
+				
+				const year_total = billing_schedule.reduce((sum, b) => sum + b.billing_amount, 0);
+				
+				return {
+					client_service_id: svc.client_service_id,
+					service_id: svc.service_id,
+					service_name: svc.service_name || "",
+					service_code: svc.service_code || "",
+					status: svc.status || "active",
+					service_cycle: svc.service_cycle || "monthly",
+					task_template_id: svc.task_template_id || null,
+					auto_generate_tasks: Boolean(svc.auto_generate_tasks),
+					start_date: svc.start_date || null,
+					end_date: svc.end_date || null,
+					service_notes: svc.service_notes || "",
+					billing_schedule: billing_schedule,
+					year_total: year_total
+				};
 			}));
 			
 			const data = {
@@ -541,7 +561,7 @@ export async function handleClients(request, env, me, requestId, url) {
 
 	// ==================== 客户服务管理 API ====================
 	
-	// POST /api/v1/clients/:clientId/services - 新增客户服务
+	// POST /api/v1/clients/:clientId/services - 新增客户服务（新结构）
 	const matchAddService = url.pathname.match(/\/clients\/([^\/]+)\/services$/);
 	if (method === "POST" && matchAddService) {
 		const clientId = matchAddService[1];
@@ -554,29 +574,19 @@ export async function handleClients(request, env, me, requestId, url) {
 		
 		const errors = [];
 		const serviceId = Number(body?.service_id || 0);
-		const monthlyFee = Number(body?.monthly_fee || 0);
-		const billingFrequency = String(body?.billing_frequency || "monthly").trim();
-		const billingMonthsPerYear = Number(body?.billing_months_per_year || 12);
+		const serviceCycle = String(body?.service_cycle || "monthly").trim();
+		const taskTemplateId = body?.task_template_id ? Number(body.task_template_id) : null;
+		const autoGenerateTasks = body?.auto_generate_tasks !== false; // 默认true
 		const startDate = String(body?.start_date || "").trim();
 		const endDate = String(body?.end_date || "").trim();
-		const billingDay = Number(body?.billing_day || 1);
 		const serviceNotes = String(body?.service_notes || "").trim();
 		
 		// 验证
 		if (!serviceId || serviceId <= 0) {
 			errors.push({ field: "service_id", message: "請選擇服務項目" });
 		}
-		if (monthlyFee < 0) {
-			errors.push({ field: "monthly_fee", message: "收費金額不能為負數" });
-		}
-		if (!["monthly", "quarterly", "yearly", "one-time"].includes(billingFrequency)) {
-			errors.push({ field: "billing_frequency", message: "計費頻率格式錯誤" });
-		}
-		if (billingMonthsPerYear < 1 || billingMonthsPerYear > 24) {
-			errors.push({ field: "billing_months_per_year", message: "每年收費月數範圍：1-24" });
-		}
-		if (billingDay < 1 || billingDay > 31) {
-			errors.push({ field: "billing_day", message: "扣款日期範圍：1-31" });
+		if (!["monthly", "quarterly", "yearly", "one-time"].includes(serviceCycle)) {
+			errors.push({ field: "service_cycle", message: "服務週期格式錯誤" });
 		}
 		if (errors.length) {
 			return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } }, corsHeaders);
@@ -599,13 +609,13 @@ export async function handleClients(request, env, me, requestId, url) {
 				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "服務不存在", meta: { requestId } }, corsHeaders);
 			}
 			
-			// 插入客户服务
+			// 插入客户服务（新结构）
 			const result = await env.DATABASE.prepare(
-				`INSERT INTO ClientServices (client_id, service_id, status, monthly_fee, billing_frequency, 
-				 billing_months_per_year, start_date, end_date, billing_day, service_notes)
-				 VALUES (?, ?, 'active', ?, ?, ?, ?, ?, ?, ?)`
-			).bind(clientId, serviceId, monthlyFee, billingFrequency, billingMonthsPerYear, 
-				startDate || null, endDate || null, billingDay, serviceNotes).run();
+				`INSERT INTO ClientServices (client_id, service_id, status, service_cycle, 
+				 task_template_id, auto_generate_tasks, start_date, end_date, service_notes)
+				 VALUES (?, ?, 'active', ?, ?, ?, ?, ?, ?)`
+			).bind(clientId, serviceId, serviceCycle, taskTemplateId, autoGenerateTasks ? 1 : 0,
+				startDate || null, endDate || null, serviceNotes).run();
 			
 			const clientServiceId = result?.meta?.last_row_id;
 			
@@ -625,7 +635,7 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 	}
 	
-	// PUT /api/v1/clients/:clientId/services/:serviceId - 更新客户服务
+	// PUT /api/v1/clients/:clientId/services/:serviceId - 更新客户服务（新结构）
 	const matchUpdateService = url.pathname.match(/\/clients\/([^\/]+)\/services\/(\d+)$/);
 	if (method === "PUT" && matchUpdateService) {
 		const clientId = matchUpdateService[1];
@@ -638,21 +648,17 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 		
 		const errors = [];
-		const monthlyFee = Number(body?.monthly_fee || 0);
-		const billingFrequency = String(body?.billing_frequency || "monthly").trim();
-		const billingMonthsPerYear = Number(body?.billing_months_per_year || 12);
+		const serviceCycle = String(body?.service_cycle || "monthly").trim();
+		const taskTemplateId = body?.task_template_id ? Number(body.task_template_id) : null;
+		const autoGenerateTasks = body?.auto_generate_tasks !== false; // 默认true
 		const startDate = String(body?.start_date || "").trim();
 		const endDate = String(body?.end_date || "").trim();
-		const billingDay = Number(body?.billing_day || 1);
 		const serviceNotes = String(body?.service_notes || "").trim();
 		const status = String(body?.status || "active").trim();
 		
 		// 验证
-		if (monthlyFee < 0) {
-			errors.push({ field: "monthly_fee", message: "收費金額不能為負數" });
-		}
-		if (!["monthly", "quarterly", "yearly", "one-time"].includes(billingFrequency)) {
-			errors.push({ field: "billing_frequency", message: "計費頻率格式錯誤" });
+		if (!["monthly", "quarterly", "yearly", "one-time"].includes(serviceCycle)) {
+			errors.push({ field: "service_cycle", message: "服務週期格式錯誤" });
 		}
 		if (!["active", "suspended", "expired", "cancelled"].includes(status)) {
 			errors.push({ field: "status", message: "狀態格式錯誤" });
@@ -670,13 +676,13 @@ export async function handleClients(request, env, me, requestId, url) {
 				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "客戶服務不存在", meta: { requestId } }, corsHeaders);
 			}
 			
-			// 更新客户服务
+			// 更新客户服务（新结构）
 			await env.DATABASE.prepare(
-				`UPDATE ClientServices SET monthly_fee = ?, billing_frequency = ?, billing_months_per_year = ?,
-				 start_date = ?, end_date = ?, billing_day = ?, service_notes = ?, status = ?
+				`UPDATE ClientServices SET service_cycle = ?, task_template_id = ?, auto_generate_tasks = ?,
+				 start_date = ?, end_date = ?, service_notes = ?, status = ?
 				 WHERE client_service_id = ?`
-			).bind(monthlyFee, billingFrequency, billingMonthsPerYear, startDate || null, endDate || null, 
-				billingDay, serviceNotes, status, clientServiceId).run();
+			).bind(serviceCycle, taskTemplateId, autoGenerateTasks ? 1 : 0,
+				startDate || null, endDate || null, serviceNotes, status, clientServiceId).run();
 			
 			return jsonResponse(200, {
 				ok: true,

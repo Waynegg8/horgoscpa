@@ -18,6 +18,7 @@ import { handleDashboard } from "./api/dashboard.js";
 import { handleAutomation } from "./api/automation.js";
 import { handleHolidays } from "./api/holidays.js";
 import { handleTags } from "./api/tags.js";
+import { handleBilling } from "./api/billing.js";
 
 export default {
 	async fetch(request, env) {
@@ -62,6 +63,13 @@ export default {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handleTags(request, env, me, requestId, url);
+		}
+		
+		// 收费明细API
+		if (path.startsWith("/internal/api/v1/billing/")) {
+			const me = await getSessionUser(request, env);
+			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+			return handleBilling(request, env, me, requestId, url, path);
 		}
 		if (path === "/internal/api/v1/tasks") {
 			const me = await getSessionUser(request, env);
