@@ -4,8 +4,13 @@ export async function handleClients(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
 	
+	// 🔍 调试日志：显示收到的路径
+	console.log(`[CLIENTS.JS] 收到請求: ${method} ${url.pathname}`);
+	
 	// ⭐ 路由优先级 1: GET /api/v1/clients/:clientId/services/:serviceId/items
-	if (method === "GET" && url.pathname.match(/\/clients\/[^\/]+\/services\/\d+\/items$/)) {
+	const matchItems = url.pathname.match(/\/clients\/[^\/]+\/services\/\d+\/items$/);
+	console.log(`[CLIENTS.JS] 路由1匹配結果 (items):`, matchItems);
+	if (method === "GET" && matchItems) {
 		const pathParts = url.pathname.split("/");
 		const clientId = pathParts[pathParts.length - 4];
 		const serviceId = parseInt(pathParts[pathParts.length - 2]);
@@ -55,7 +60,9 @@ export async function handleClients(request, env, me, requestId, url) {
 	}
 	
 	// ⭐ 路由优先级 2: GET /api/v1/clients/:clientId/services
-	if (method === "GET" && url.pathname.match(/\/clients\/[^\/]+\/services$/)) {
+	const matchServices = url.pathname.match(/\/clients\/[^\/]+\/services$/);
+	console.log(`[CLIENTS.JS] 路由2匹配結果 (services):`, matchServices);
+	if (method === "GET" && matchServices) {
 		const pathParts = url.pathname.split("/");
 		const clientId = pathParts[pathParts.length - 2];
 		
@@ -133,7 +140,9 @@ export async function handleClients(request, env, me, requestId, url) {
 	}
 	
 	// ⭐ 路由优先级 3: GET /api/v1/clients/:id - 客戶詳情
-	if (method === "GET" && url.pathname.match(/\/clients\/[^\/]+$/)) {
+	const matchSingle = url.pathname.match(/\/clients\/[^\/]+$/);
+	console.log(`[CLIENTS.JS] 路由3匹配結果 (single):`, matchSingle);
+	if (method === "GET" && matchSingle) {
 		const clientId = url.pathname.split("/").pop();
 		try {
 			const row = await env.DATABASE.prepare(
@@ -206,7 +215,9 @@ export async function handleClients(request, env, me, requestId, url) {
 	}
 	
 	// ⭐ 路由优先级 4: GET /api/v1/clients - 客戶列表（必须明确检查路径）
-	if (method === "GET" && url.pathname === "/internal/api/v1/clients") {
+	const matchList = (url.pathname === "/internal/api/v1/clients");
+	console.log(`[CLIENTS.JS] 路由4匹配結果 (list):`, matchList, 'pathname:', url.pathname);
+	if (method === "GET" && matchList) {
 		const params = url.searchParams;
 		const page = Math.max(1, parseInt(params.get("page") || "1", 10));
 		const perPage = Math.min(100, Math.max(1, parseInt(params.get("perPage") || "50", 10)));
