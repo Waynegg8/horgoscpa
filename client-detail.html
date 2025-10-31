@@ -612,8 +612,8 @@
       addRow.style.display = 'table-row';
       addRow.innerHTML = `
         <td>
-          <select id="new-month-${clientServiceId}">
-            <option value="">月份</option>
+          <select id="new-month-${clientServiceId}" required>
+            <option value="" disabled selected>選擇月份</option>
             ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m => `<option value="${m}">${m}月</option>`).join('')}
           </select>
         </td>
@@ -638,7 +638,7 @@
       const row = document.querySelector(`[data-schedule-id="${scheduleId}"]`);
       row.innerHTML = `
         <td>
-          <select id="edit-month-${scheduleId}">
+          <select id="edit-month-${scheduleId}" required>
             ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m => `<option value="${m}" ${m === month ? 'selected' : ''}>${m}月</option>`).join('')}
           </select>
         </td>
