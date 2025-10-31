@@ -17,15 +17,16 @@
 }
 
 .week-nav-right {
-  flex-shrink: 0; /* 防止按鈕被壓縮 */
-  display: flex !important; /* 確保顯示 */
-  visibility: visible !important; /* 確保可見 */
+  flex-shrink: 0;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .week-nav-left,
 .week-nav-center,
 .week-nav-right {
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 10px;
 }
@@ -55,7 +56,6 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
 .btn-primary {
@@ -77,14 +77,16 @@
 }
 
 .btn-success {
-  background: #28a745;
-  color: white;
-  opacity: 1 !important; /* 確保始終可見 */
-  visibility: visible !important; /* 確保始終可見 */
+  background: #28a745 !important;
+  color: white !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+  pointer-events: auto !important;
 }
 
 .btn-success:hover {
-  background: #218838;
+  background: #218838 !important;
 }
 
 .pending-count {
@@ -473,7 +475,6 @@
   font-size: 14px;
   opacity: 0;
   transform: translateX(400px);
-  transition: all 0.3s ease;
 }
 
 .toast.show {
