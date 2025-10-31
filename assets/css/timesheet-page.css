@@ -56,16 +56,17 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .btn-primary {
-  background: #1b65b8;
-  color: white;
+  background: #1b65b8 !important;
+  color: white !important;
 }
 
 .btn-secondary {
-  background: #f5f5f5;
-  color: #333;
+  background: #f5f5f5 !important;
+  color: #333 !important;
 }
 
 .btn-success {
