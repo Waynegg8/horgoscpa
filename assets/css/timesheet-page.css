@@ -125,6 +125,14 @@
   z-index: 10;
 }
 
+.timesheet-table thead th.header-weekend {
+  background: #fff9e6;
+}
+
+.timesheet-table thead th.header-holiday {
+  background: #ffe6e6;
+}
+
 /* 固定左側欄位 */
 .sticky-col {
   position: sticky;
@@ -160,25 +168,25 @@
 .timesheet-table thead th.col-client {
   left: 0;
   z-index: 15;
-  background: #f8f9fa;
+  background: #f8f9fa !important;
 }
 
 .timesheet-table thead th.col-service {
   left: 140px;
   z-index: 15;
-  background: #f8f9fa;
+  background: #f8f9fa !important;
 }
 
 .timesheet-table thead th.col-service-item {
   left: 260px;
   z-index: 15;
-  background: #f8f9fa;
+  background: #f8f9fa !important;
 }
 
 .timesheet-table thead th.col-worktype {
   left: 380px;
   z-index: 15;
-  background: #f8f9fa;
+  background: #f8f9fa !important;
 }
 
 /* 日期欄位 */

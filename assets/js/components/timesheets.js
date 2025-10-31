@@ -472,9 +472,11 @@ function renderWeekHeader() {
   const title = formatWeekRange(state.currentWeekStart);
   document.getElementById('weekTitle').textContent = title;
   
-  // 更新日期標籤
+  // 更新日期標籤和表頭背景色
   state.weekDays.forEach(day => {
     const label = document.getElementById(`dateLabel${day.index}`);
+    const header = document.getElementById(`dateHeader${day.index}`);
+    
     if (label) {
       const displayDate = formatDateDisplay(new Date(day.iso + 'T00:00:00'));
       
@@ -491,6 +493,19 @@ function renderWeekHeader() {
       }
       
       label.innerHTML = displayDate + (badge ? '<br>' + badge : '');
+    }
+    
+    // 為表頭添加背景色
+    if (header) {
+      // 移除舊的樣式類別
+      header.classList.remove('header-holiday', 'header-weekend');
+      
+      // 添加新的樣式類別
+      if (day.type === 'national_holiday') {
+        header.classList.add('header-holiday');
+      } else if (day.type === 'restday' || day.type === 'weekly_restday') {
+        header.classList.add('header-weekend');
+      }
     }
   });
 }
