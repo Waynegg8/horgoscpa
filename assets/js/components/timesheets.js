@@ -769,6 +769,16 @@ async function handleClientChange(rowIndex, clientId) {
   row.service_id = null;
   row.service_item_id = null;
   
+  // 如果這行已經有工時數據，標記為需要儲存
+  row.hours.forEach((hours, dayIndex) => {
+    if (hours && hours > 0) {
+      const key = `${rowIndex}_${dayIndex}`;
+      state.pending.set(key, { rowIndex, dayIndex, value: hours });
+    }
+  });
+  
+  updatePendingCount();
+  
   // 重新渲染服務項目和服務子項目下拉選單
   const serviceSelect = document.getElementById(`service-select-${rowIndex}`);
   const serviceItemSelect = document.getElementById(`service-item-select-${rowIndex}`);
@@ -800,6 +810,16 @@ async function handleServiceChange(rowIndex, serviceId) {
   row.service_id = serviceId;
   row.service_item_id = null;
   
+  // 如果這行已經有工時數據，標記為需要儲存
+  row.hours.forEach((hours, dayIndex) => {
+    if (hours && hours > 0) {
+      const key = `${rowIndex}_${dayIndex}`;
+      state.pending.set(key, { rowIndex, dayIndex, value: hours });
+    }
+  });
+  
+  updatePendingCount();
+  
   // 重新渲染服務子項目下拉選單
   const serviceItemSelect = document.getElementById(`service-item-select-${rowIndex}`);
   
@@ -824,11 +844,31 @@ async function handleServiceChange(rowIndex, serviceId) {
 function handleServiceItemChange(rowIndex, serviceItemId) {
   const row = state.rows[rowIndex];
   row.service_item_id = serviceItemId;
+  
+  // 如果這行已經有工時數據，標記為需要儲存
+  row.hours.forEach((hours, dayIndex) => {
+    if (hours && hours > 0) {
+      const key = `${rowIndex}_${dayIndex}`;
+      state.pending.set(key, { rowIndex, dayIndex, value: hours });
+    }
+  });
+  
+  updatePendingCount();
 }
 
 function handleWorkTypeChange(rowIndex, workTypeId) {
   const row = state.rows[rowIndex];
   row.work_type_id = parseInt(workTypeId);
+  
+  // 如果這行已經有工時數據，標記為需要儲存
+  row.hours.forEach((hours, dayIndex) => {
+    if (hours && hours > 0) {
+      const key = `${rowIndex}_${dayIndex}`;
+      state.pending.set(key, { rowIndex, dayIndex, value: hours });
+    }
+  });
+  
+  updatePendingCount();
   
   // 驗證現有工時是否與新工時類型相容
   row.hours.forEach((hours, dayIndex) => {
