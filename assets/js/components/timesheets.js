@@ -314,17 +314,28 @@ async function loadLeaves() {
   const end = formatDate(endDate);
   
   try {
-    const data = await apiCall(`/internal/api/v1/leaves?dateFrom=${start}&dateTo=${end}&status=approved`);
+    const data = await apiCall(`/internal/api/v1/leaves?dateFrom=${start}&dateTo=${end}&status=approved&perPage=100`);
     state.leaves.clear();
     
     if (data.data) {
       data.data.forEach(leave => {
         const leaveType = leave.type || leave.leave_type || 'other';
-        const hours = parseFloat(leave.hours) || 0;
+        const unit = leave.unit || 'day';
+        const amount = parseFloat(leave.amount) || 0;
+        
+        // 根據單位計算小時數
+        let hours = 0;
+        if (unit === 'hour') {
+          hours = amount;
+        } else if (unit === 'half') {
+          hours = amount * 4; // 半天 = 4 小時
+        } else { // day
+          hours = amount * 8; // 1 天 = 8 小時
+        }
         
         // 處理日期範圍
-        const startDate = new Date(leave.start_date + 'T00:00:00');
-        const endDate = new Date(leave.end_date + 'T00:00:00');
+        const startDate = new Date((leave.start || leave.start_date) + 'T00:00:00');
+        const endDate = new Date((leave.end || leave.end_date) + 'T00:00:00');
         
         for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
           const dateStr = formatDate(d);
