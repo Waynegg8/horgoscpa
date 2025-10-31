@@ -317,7 +317,9 @@ export async function handleClients(request, env, me, requestId, url) {
 	}
 
 	// POST /api/v1/clients - 新增客户（必须在/clients/:id/services之前检查，并确保不匹配子路径）
+	console.log(`[CLIENTS.JS] 檢查創建客戶路由: ${method} === "POST" && ${url.pathname} === "/internal/api/v1/clients" => ${method === "POST" && url.pathname === "/internal/api/v1/clients"}`);
 	if (method === "POST" && url.pathname === "/internal/api/v1/clients") {
+		console.log('[CLIENTS.JS] ✅ 匹配創建客戶路由');
 		let body;
 		try {
 			body = await request.json();
@@ -564,7 +566,9 @@ export async function handleClients(request, env, me, requestId, url) {
 	
 	// POST /api/v1/clients/:clientId/services - 新增客户服务（新结构）
 	const matchAddService = url.pathname.match(/\/clients\/([^\/]+)\/services$/);
+	console.log(`[CLIENTS.JS] 檢查新增服務路由: matchAddService =`, matchAddService, `method = ${method}`);
 	if (method === "POST" && matchAddService) {
+		console.log('[CLIENTS.JS] ✅ 匹配新增服務路由');
 		const clientId = matchAddService[1];
 		let body;
 		try {
