@@ -732,21 +732,32 @@
         console.log('找到', tabBtns.length, '個tab按鈕');
         console.log('找到', tabPanels.length, '個tab面板');
 
+        // 初始化：隱藏所有非active的面板
+        tabPanels.forEach(p => {
+          if (!p.classList.contains('active')) {
+            p.style.display = 'none';
+          }
+        });
+
         tabBtns.forEach(btn => {
           btn.addEventListener('click', () => {
             const targetTab = btn.getAttribute('data-tab');
             console.log('點擊tab:', targetTab);
             
-            // 移除所有active狀態
+            // 移除所有active狀態並強制隱藏所有面板
             tabBtns.forEach(b => b.classList.remove('active'));
-            tabPanels.forEach(p => p.classList.remove('active'));
+            tabPanels.forEach(p => {
+              p.classList.remove('active');
+              p.style.display = 'none'; // 強制隱藏
+            });
             
-            // 添加當前tab的active狀態
+            // 添加當前tab的active狀態並強制顯示
             btn.classList.add('active');
             const targetPanel = document.getElementById('tab-' + targetTab);
             if (targetPanel) {
               console.log('切換到面板:', targetPanel.id);
               targetPanel.classList.add('active');
+              targetPanel.style.display = 'block'; // 強制顯示
             } else {
               console.error('找不到面板: tab-' + targetTab);
             }

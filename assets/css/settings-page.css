@@ -98,13 +98,21 @@
    Tab 面板
    ============================================ */
 
-.tab-panel {
+.settings-content .tab-panel {
     display: none !important;
     animation: fadeIn 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+    height: 0;
+    overflow: hidden;
 }
 
-.tab-panel.active {
+.settings-content .tab-panel.active {
     display: block !important;
+    opacity: 1;
+    visibility: visible;
+    height: auto;
+    overflow: visible;
 }
 
 @keyframes fadeIn {
