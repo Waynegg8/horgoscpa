@@ -63,27 +63,30 @@ async function handleGetTimelogs(request, env, me, requestId, url) {
 			binds.push(endDate);
 		}
 		
-		const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
-		
-		const rows = await env.DATABASE.prepare(
-			`SELECT timesheet_id, user_id, work_date, client_id, service_id, service_item_id, service_name, work_type, hours, note
-			 FROM Timesheets
-			 ${whereSql}
-			 ORDER BY work_date ASC, timesheet_id ASC`
-		).bind(...binds).all();
-		
-		const data = (rows?.results || []).map(r => ({
-			log_id: r.timesheet_id,
-			timesheet_id: r.timesheet_id, // 新增：同時返回 timesheet_id 欄位
-			user_id: r.user_id,
-			work_date: r.work_date,
-			client_id: r.client_id || "",
-			service_id: parseInt(r.service_id) || parseInt(r.service_name) || 1, // 優先使用新欄位，向後相容
-			service_item_id: parseInt(r.service_item_id) || 1,
-			work_type_id: parseInt(r.work_type) || 1,
-			hours: Number(r.hours || 0),
-			notes: r.note || "",
-		}));
+	const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+	
+	const rows = await env.DATABASE.prepare(
+		`SELECT t.timesheet_id, t.user_id, t.work_date, t.client_id, t.service_id, t.service_item_id, t.service_name, t.work_type, t.hours, t.note,
+		        u.name as user_name, u.username
+		 FROM Timesheets t
+		 LEFT JOIN Users u ON t.user_id = u.user_id
+		 ${whereSql}
+		 ORDER BY t.work_date ASC, t.timesheet_id ASC`
+	).bind(...binds).all();
+	
+	const data = (rows?.results || []).map(r => ({
+		log_id: r.timesheet_id,
+		timesheet_id: r.timesheet_id, // 新增：同時返回 timesheet_id 欄位
+		user_id: r.user_id,
+		user_name: r.user_name || r.username || '未知',
+		work_date: r.work_date,
+		client_id: r.client_id || "",
+		service_id: parseInt(r.service_id) || parseInt(r.service_name) || 1, // 優先使用新欄位，向後相容
+		service_item_id: parseInt(r.service_item_id) || 1,
+		work_type_id: parseInt(r.work_type) || 1,
+		hours: Number(r.hours || 0),
+		notes: r.note || "",
+	}));
 		
 		return jsonResponse(200, { 
 			ok: true, 

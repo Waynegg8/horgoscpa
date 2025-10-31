@@ -141,39 +141,82 @@
   z-index: 5;
 }
 
+/* 員工欄（僅管理員可見） */
+.col-employee.sticky-col {
+  left: 0;
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+.cell-employee {
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 12px;
+  color: #495057;
+  background: white;
+}
+
 .col-client.sticky-col {
   left: 0;
-  width: 120px; /* 增加寬度 */
+  width: 120px;
   min-width: 120px;
   max-width: 120px;
+}
+
+/* 當管理員登入時，客戶列需要向右移動 */
+.timesheet-table:has(.col-employee) .col-client.sticky-col {
+  left: 80px;
 }
 
 .col-service.sticky-col {
   left: 120px;
-  width: 90px; /* 增加寬度 */
+  width: 90px;
   min-width: 90px;
   max-width: 90px;
+}
+
+.timesheet-table:has(.col-employee) .col-service.sticky-col {
+  left: 200px;
 }
 
 .col-service-item.sticky-col {
   left: 210px;
-  width: 90px; /* 增加寬度 */
+  width: 90px;
   min-width: 90px;
   max-width: 90px;
 }
 
+.timesheet-table:has(.col-employee) .col-service-item.sticky-col {
+  left: 290px;
+}
+
 .col-worktype.sticky-col {
   left: 300px;
-  width: 120px; /* 增加寬度 */
+  width: 120px;
   min-width: 120px;
   max-width: 120px;
 }
 
+.timesheet-table:has(.col-employee) .col-worktype.sticky-col {
+  left: 380px;
+}
+
 /* 表頭固定列也需要設置left */
+.timesheet-table thead th.col-employee {
+  left: 0;
+  z-index: 15;
+  background: #f8f9fa !important;
+}
+
 .timesheet-table thead th.col-client {
   left: 0;
   z-index: 15;
   background: #f8f9fa !important;
+}
+
+.timesheet-table:has(.col-employee) .timesheet-table thead th.col-client {
+  left: 80px;
 }
 
 .timesheet-table thead th.col-service {
@@ -182,16 +225,28 @@
   background: #f8f9fa !important;
 }
 
+.timesheet-table:has(.col-employee) .timesheet-table thead th.col-service {
+  left: 200px;
+}
+
 .timesheet-table thead th.col-service-item {
   left: 210px;
   z-index: 15;
   background: #f8f9fa !important;
 }
 
+.timesheet-table:has(.col-employee) .timesheet-table thead th.col-service-item {
+  left: 290px;
+}
+
 .timesheet-table thead th.col-worktype {
   left: 300px;
   z-index: 15;
   background: #f8f9fa !important;
+}
+
+.timesheet-table:has(.col-employee) .timesheet-table thead th.col-worktype {
+  left: 380px;
 }
 
 /* 日期欄位 */

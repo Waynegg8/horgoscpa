@@ -10,13 +10,15 @@
 
 const state = {
   currentWeekStart: null,          // 當前週的週一日期
+  currentUser: null,               // 當前登入用戶
+  isAdmin: false,                  // 是否為管理員
   clients: [],                     // 客戶列表
   clientServices: new Map(),       // Map<client_id, Array<service>>
   serviceItems: new Map(),         // Map<`${client_id}_${service_id}`, Array<item>>
   workTypes: [],                   // 工時類型列表（硬編碼）
   holidays: new Map(),             // Map<iso, {is_national_holiday, is_makeup_workday, is_weekly_restday}>
   leaves: new Map(),               // Map<iso, {hours, types:[{type, hours}]}>
-  rows: [],                        // [{client_id, service_id, service_item_id, work_type_id, hours:[h0..h6], timesheetIds:[id0..id6]}]
+  rows: [],                        // [{client_id, service_id, service_item_id, work_type_id, hours:[h0..h6], timesheetIds:[id0..id6], user_name}]
   pending: new Map(),              // Map<`${rowIdx}_${dayIdx}`, {rowIndex, dayIndex, value}>
   weekDateTypes: new Map(),        // Map<iso, type>
   weekDays: [],                    // [{index, iso, dow, type, mustWork}]
@@ -233,6 +235,19 @@ async function apiCall(url, options = {}) {
   return response.json();
 }
 
+async function loadCurrentUser() {
+  try {
+    const data = await apiCall('/internal/api/v1/auth/me');
+    state.currentUser = data.data || null;
+    state.isAdmin = data.data?.isAdmin || false;
+    console.log('[INFO] 當前用戶:', state.currentUser, '是否管理員:', state.isAdmin);
+  } catch (error) {
+    console.error('[ERROR] 載入用戶信息失敗:', error);
+    state.currentUser = null;
+    state.isAdmin = false;
+  }
+}
+
 async function loadClients() {
   try {
     const data = await apiCall('/internal/api/v1/clients?perPage=100');
@@ -377,10 +392,15 @@ async function loadTimesheets() {
   const rowMap = new Map();
     
     logs.forEach(log => {
-      const key = `${log.client_id}_${log.service_id}_${log.service_item_id}_${log.work_type_id}`;
+      // 如果是管理員，需要在 key 中包含 user_id 以區分不同員工
+      const key = state.isAdmin 
+        ? `${log.user_id}_${log.client_id}_${log.service_id}_${log.service_item_id}_${log.work_type_id}`
+        : `${log.client_id}_${log.service_id}_${log.service_item_id}_${log.work_type_id}`;
       
     if (!rowMap.has(key)) {
         rowMap.set(key, {
+          user_id: log.user_id,
+          user_name: log.user_name || '未知',
           client_id: log.client_id,
           service_id: log.service_id,
           service_item_id: log.service_item_id,
@@ -493,6 +513,31 @@ function renderWeekHeader() {
   const title = formatWeekRange(state.currentWeekStart);
   document.getElementById('weekTitle').textContent = title;
   
+  // 動態添加/移除員工列表頭（僅管理員可見）
+  const thead = document.querySelector('.timesheet-table thead tr');
+  const existingEmployeeHeader = thead.querySelector('.col-employee');
+  
+  if (state.isAdmin && !existingEmployeeHeader) {
+    // 管理員：添加員工列表頭
+    const th = document.createElement('th');
+    th.className = 'col-employee sticky-col';
+    th.textContent = '員工';
+    thead.insertBefore(th, thead.firstChild);
+  } else if (!state.isAdmin && existingEmployeeHeader) {
+    // 非管理員：移除員工列表頭
+    existingEmployeeHeader.remove();
+  }
+  
+  // 更新 tfoot 的 colspan（根據是否顯示員工列）
+  const footerColspan = state.isAdmin ? 5 : 4;
+  const footerLabels = document.querySelectorAll('tfoot .footer-label');
+  footerLabels.forEach(label => {
+    label.setAttribute('colspan', footerColspan);
+    // 更新 min-width
+    const newMinWidth = state.isAdmin ? 500 : 420;
+    label.style.minWidth = `${newMinWidth}px`;
+  });
+  
   // 更新日期標籤和表頭背景色
   state.weekDays.forEach(day => {
     const label = document.getElementById(`dateLabel${day.index}`);
@@ -536,7 +581,8 @@ function renderTable() {
   tbody.innerHTML = '';
   
   if (state.rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" class="empty-state">尚無工時記錄，點擊右上角「新增列」開始填寫</td></tr>';
+    const colspan = state.isAdmin ? 13 : 12;
+    tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state">尚無工時記錄，點擊右上角「新增列」開始填寫</td></tr>`;
     updateWeeklySummary();
     updateDailyNormalHours();
     renderCompleteness();
@@ -546,6 +592,11 @@ function renderTable() {
   state.rows.forEach((row, rowIndex) => {
     const tr = document.createElement('tr');
     tr.dataset.rowIndex = rowIndex;
+    
+    // 員工欄（僅管理員可見）
+    if (state.isAdmin) {
+      tr.appendChild(createEmployeeCell(row, rowIndex));
+    }
     
     // 客戶欄
     tr.appendChild(createClientCell(row, rowIndex));
@@ -573,6 +624,13 @@ function renderTable() {
   updateWeeklySummary();
   updateDailyNormalHours();
   renderCompleteness();
+}
+
+function createEmployeeCell(row, rowIndex) {
+  const td = document.createElement('td');
+  td.className = 'cell-employee sticky-col';
+  td.textContent = row.user_name || '未知';
+  return td;
 }
 
 function createClientCell(row, rowIndex) {
@@ -1341,6 +1399,7 @@ async function init() {
   initWorkTypes();
   state.currentWeekStart = getMonday(new Date());
   
+  await loadCurrentUser();
   await loadClients();
   await loadWeek();
 }
