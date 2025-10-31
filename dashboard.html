@@ -150,8 +150,8 @@
               <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利率</div><div class="fin-metric-value">${fmtPct(fs.margin)}</div></div>
             </div>`;
           
-          // 渲染各员工本月工时
-          frag.innerHTML = listCard('各員工本月工時', hoursHtml);
+          // 渲染各员工最近30天工时
+          frag.innerHTML = listCard('各員工工時（最近30天）', hoursHtml);
           grid.appendChild(frag);
           
           // 渲染各员工任务状态（每个员工一张卡片）
