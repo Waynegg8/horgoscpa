@@ -255,6 +255,7 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		const weighted_hours = calculateWeightedHours(work_type_id, hours);
 		
 		let log_id;
+		let isUpdate = false; // 追蹤是新建還是更新
 		
 		// 策略：如果提供了 timesheet_id，直接更新該記錄的所有欄位
 		// 這樣可以支持修改 service_id/service_item_id 而不創建重複記錄，也不會觸發外鍵約束問題
@@ -268,6 +269,7 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 			if (existingRow) {
 				// 直接更新所有欄位（包括 service_id, service_item_id, work_type, hours）
 				log_id = timesheet_id;
+				isUpdate = true;
 				
 				await env.DATABASE.prepare(
 					`UPDATE Timesheets 
@@ -323,6 +325,7 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 			if (duplicateRow) {
 				// 如果已存在相同組合，直接更新該記錄
 				log_id = duplicateRow.timesheet_id;
+				isUpdate = true;
 				
 				await env.DATABASE.prepare(
 					`UPDATE Timesheets 
@@ -408,7 +411,7 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		return jsonResponse(200, { 
 			ok: true, 
 			code: "SUCCESS", 
-			message: duplicateRow ? "已更新" : "已建立", 
+			message: isUpdate ? "已更新" : "已建立", 
 			data: { 
 				log_id, 
 				weighted_hours, 
