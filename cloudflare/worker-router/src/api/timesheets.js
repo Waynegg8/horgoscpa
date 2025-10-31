@@ -262,36 +262,89 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 				 WHERE timesheet_id = ? AND user_id = ? AND is_deleted = 0`
 			).bind(timesheet_id, String(me.user_id)).first();
 			
-			if (existingRow) {
-				// 直接更新所有欄位（包括 service_id, service_item_id, work_type, hours）
-				log_id = timesheet_id;
-				isUpdate = true;
+		if (existingRow) {
+			// 直接更新所有欄位（包括 service_id, service_item_id, work_type, hours）
+			log_id = timesheet_id;
+			isUpdate = true;
+			
+			// 獲取舊的工時數據，用於驗證
+			const oldData = await env.DATABASE.prepare(
+				`SELECT hours, work_type FROM Timesheets WHERE timesheet_id = ?`
+			).bind(log_id).first();
+			
+			const oldHours = Number(oldData?.hours || 0);
+			const hoursDiff = hours - oldHours;  // 正數表示增加，負數表示減少
+			
+			// 驗證修改後當日總工時是否超過 12 小時
+			if (hoursDiff > 0) {  // 只在增加工時時檢查
+				const sumRow = await env.DATABASE.prepare(
+					`SELECT COALESCE(SUM(hours), 0) AS s 
+					 FROM Timesheets 
+					 WHERE user_id = ? AND work_date = ? AND is_deleted = 0`
+				).bind(String(me.user_id), work_date).first();
 				
-				await env.DATABASE.prepare(
-					`UPDATE Timesheets 
-					 SET client_id = ?, 
-					     service_id = ?, 
-					     service_item_id = ?, 
-					     service_name = ?, 
-					     work_type = ?, 
-					     hours = ?, 
-					     note = ?, 
-					     updated_at = ?
-					 WHERE timesheet_id = ?`
-				).bind(
-					client_id,
-					service_id,
-					service_item_id,
-					String(service_id), // 保留舊欄位以向後相容
-					String(work_type_id),
-					hours,
-					notes,
-					new Date().toISOString(),
-					log_id
-				).run();
+				const currentTotal = Number(sumRow?.s || 0);
+				if (currentTotal + hoursDiff > 12 + 1e-9) {
+					return jsonResponse(422, {
+						ok: false,
+						code: "VALIDATION_ERROR",
+						message: "修改後每日工時合計不可超過 12 小時",
+						errors: [{ field: "hours", message: "超過每日上限" }],
+						meta: { requestId }
+					}, corsHeaders);
+				}
+			}
+			
+			// 驗證修改後同一工時類型的累計是否超過上限
+			if (workType.maxHours) {
+				const workTypeSum = await env.DATABASE.prepare(
+					`SELECT COALESCE(SUM(hours), 0) AS s 
+					 FROM Timesheets 
+					 WHERE user_id = ? AND work_date = ? AND work_type = ? AND is_deleted = 0`
+				).bind(String(me.user_id), work_date, String(work_type_id)).first();
 				
-				// 已更新，跳過後續的插入邏輯
-			} else {
+				const currentWorkTypeTotal = Number(workTypeSum?.s || 0);
+				const newWorkTypeTotal = currentWorkTypeTotal - oldHours + hours;
+				
+				if (newWorkTypeTotal > workType.maxHours + 1e-9) {
+					return jsonResponse(422, {
+						ok: false,
+						code: "VALIDATION_ERROR",
+						message: `修改後「${workType.name}」當日累計不可超過 ${workType.maxHours} 小時`,
+						errors: [{ 
+							field: "hours", 
+							message: `當日已有 ${currentWorkTypeTotal} 小時，修改後將變成 ${newWorkTypeTotal.toFixed(1)} 小時（超過上限）` 
+						}],
+						meta: { requestId }
+					}, corsHeaders);
+				}
+			}
+			
+			await env.DATABASE.prepare(
+				`UPDATE Timesheets 
+				 SET client_id = ?, 
+				     service_id = ?, 
+				     service_item_id = ?, 
+				     service_name = ?, 
+				     work_type = ?, 
+				     hours = ?, 
+				     note = ?, 
+				     updated_at = ?
+				 WHERE timesheet_id = ?`
+			).bind(
+				client_id,
+				service_id,
+				service_item_id,
+				String(service_id), // 保留舊欄位以向後相容
+				String(work_type_id),
+				hours,
+				notes,
+				new Date().toISOString(),
+				log_id
+			).run();
+			
+			// 已更新，跳過後續的插入邏輯
+		} else {
 				// 如果記錄不存在或不屬於當前用戶，將 timesheet_id 設為 null，允許新增
 				log_id = null;
 			}
@@ -385,18 +438,43 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 				 WHERE user_id = ? AND work_date = ? AND is_deleted = 0`
 			).bind(String(me.user_id), work_date).first();
 			
-			const currentTotal = Number(sumRow?.s || 0);
-			if (currentTotal + hours > 12 + 1e-9) {
-				return jsonResponse(422, { 
-					ok: false, 
-					code: "VALIDATION_ERROR", 
-					message: "每日工時合計不可超過 12 小時", 
-					errors: [{ field: "hours", message: "超過每日上限" }], 
-					meta: { requestId } 
+		const currentTotal = Number(sumRow?.s || 0);
+		if (currentTotal + hours > 12 + 1e-9) {
+			return jsonResponse(422, { 
+				ok: false, 
+				code: "VALIDATION_ERROR", 
+				message: "每日工時合計不可超過 12 小時", 
+				errors: [{ field: "hours", message: "超過每日上限" }], 
+				meta: { requestId } 
+			}, corsHeaders);
+		}
+		
+		// 檢查同一天同一工時類型的累計工時是否超過該類型的上限
+		if (workType.maxHours) {
+			const workTypeSum = await env.DATABASE.prepare(
+				`SELECT COALESCE(SUM(hours), 0) AS s 
+				 FROM Timesheets 
+				 WHERE user_id = ? AND work_date = ? AND work_type = ? AND is_deleted = 0`
+			).bind(String(me.user_id), work_date, String(work_type_id)).first();
+			
+			const existingWorkTypeTotal = Number(workTypeSum?.s || 0);
+			const newWorkTypeTotal = existingWorkTypeTotal + hours;
+			
+			if (newWorkTypeTotal > workType.maxHours + 1e-9) {
+				return jsonResponse(422, {
+					ok: false,
+					code: "VALIDATION_ERROR",
+					message: `「${workType.name}」當日累計不可超過 ${workType.maxHours} 小時`,
+					errors: [{ 
+						field: "hours", 
+						message: `該日已有 ${existingWorkTypeTotal} 小時「${workType.name}」，最多還可填 ${Math.max(0, workType.maxHours - existingWorkTypeTotal)} 小時` 
+					}],
+					meta: { requestId }
 				}, corsHeaders);
 			}
-			
-			await env.DATABASE.prepare(
+		}
+		
+		await env.DATABASE.prepare(
 				`INSERT INTO Timesheets (user_id, work_date, client_id, service_id, service_item_id, service_name, work_type, hours, note, created_at, updated_at)
 				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 			).bind(

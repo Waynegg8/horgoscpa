@@ -1168,13 +1168,11 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     }
   }
   
-  // 驗證前置要求
+  // 驗證前置要求（基於當天總工時，符合勞基法）
+  // 例如：當天已有"休息日前2h"（任何客戶），就可以填"休息日3-8h"
   if (workType && workType.requiresTypes) {
     const hasRequired = workType.requiresTypes.every(reqId => {
       return state.rows.some(r => 
-        r.client_id == row.client_id &&
-        r.service_id == row.service_id &&
-        r.service_item_id == row.service_item_id &&
         r.work_type_id == reqId &&
         r.hours[dayIndex] > 0
       );
