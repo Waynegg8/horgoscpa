@@ -179,6 +179,13 @@
               <label>收款備註</label>
               <div id="view_payment_notes" style="white-space:pre-wrap;"></div>
             </div>
+            <div class="view-field" style="grid-column:1 / -1;">
+              <label style="display:flex;justify-content:space-between;align-items:center;">
+                <span>客戶服務設定</span>
+                <button type="button" class="clients-btn btn-secondary" id="btn-add-service" style="padding:6px 12px;font-size:14px;">新增服務</button>
+              </label>
+              <div id="view_services" style="margin-top:12px;"></div>
+            </div>
             <div class="modal__actions" style="grid-column:1 / -1;">
               <button class="clients-btn" type="button" id="btn-view-ok">關閉</button>
             </div>
@@ -512,6 +519,9 @@
             } else {
               tagsContainer.innerHTML = '<span style="color:#999">無</span>';
             }
+            
+            // 渲染服务列表
+            renderClientServices(data.clientId, data.services || []);
             
             openViewModal();
           } catch (err) {

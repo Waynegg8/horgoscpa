@@ -1,8 +1,8 @@
 :root {
-  --login-primary: #1e40af;
-  --login-primary-dark: #1e3a8a;
-  --login-secondary: #3b82f6;
-  --login-accent: #60a5fa;
+  --login-primary: #3b82f6;
+  --login-primary-light: #60a5fa;
+  --login-secondary: #93c5fd;
+  --login-accent: #dbeafe;
 }
 
 .login {
@@ -17,7 +17,7 @@
 .login__background {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #172554 100%);
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%);
   z-index: 0;
 }
 
@@ -25,9 +25,9 @@
   position: absolute;
   inset: 0;
   background-image: 
-    radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(96, 165, 250, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(147, 197, 253, 0.1) 0%, transparent 50%);
+    radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(147, 197, 253, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(191, 219, 254, 0.08) 0%, transparent 50%);
   background-size: 100% 100%;
 }
 
@@ -35,10 +35,9 @@
   width: min(92vw, 440px);
   border: none;
   border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(59, 130, 246, 0.15), 0 0 0 1px rgba(203, 213, 225, 0.3);
   padding: 0;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(10px);
+  background: #ffffff;
   position: relative;
   z-index: 1;
   animation: fadeInUp 0.6s ease-out;
@@ -56,12 +55,13 @@
 }
 
 .login__header {
-  background: linear-gradient(135deg, var(--login-primary) 0%, var(--login-primary-dark) 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   padding: 40px 32px 32px;
   border-radius: 16px 16px 0 0;
   text-align: center;
   position: relative;
   overflow: hidden;
+  border-bottom: 2px solid #e0f2fe;
 }
 
 .login__header::before {
@@ -71,7 +71,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -80,22 +80,21 @@
   height: auto;
   margin: 0 auto 16px;
   display: block;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.2));
 }
 
 .login__company {
   margin: 0 0 8px 0;
   font-size: 1.75rem;
   font-weight: 700;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #1e40af;
   letter-spacing: 0.5px;
 }
 
 .login__subtitle {
   margin: 0;
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: #64748b;
   font-weight: 400;
 }
 
@@ -137,7 +136,7 @@
 .login__submit {
   width: 100%;
   padding: 14px 16px;
-  background: linear-gradient(135deg, var(--login-primary) 0%, var(--login-secondary) 100%);
+  background: var(--login-primary);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -145,13 +144,14 @@
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
   margin-top: 8px;
 }
 
 .login__submit:hover {
+  background: var(--login-primary-light);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(30, 64, 175, 0.4);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .login__submit:active {
