@@ -202,7 +202,7 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		
 		// 獲取該日期的假日信息，判斷日期類型
 		const holidayRow = await env.DATABASE.prepare(
-			`SELECT is_national_holiday, is_makeup_workday FROM Holidays WHERE holiday_date = ?`
+			`SELECT is_national_holiday FROM Holidays WHERE holiday_date = ?`
 		).bind(work_date).first();
 		
 		const date = new Date(work_date + 'T00:00:00');
@@ -212,8 +212,6 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		let dateType = 'workday';
 		if (holidayRow?.is_national_holiday === 1) {
 			dateType = 'national_holiday';
-		} else if (holidayRow?.is_makeup_workday === 1) {
-			dateType = 'makeup';
 		} else if (dow === 0) {
 			dateType = 'weekly_restday'; // 週日（例假）
 		} else if (dow === 6) {
@@ -223,7 +221,6 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		// 驗證工時類型是否適用於該日期類型
 		const allowedTypes = {
 			'workday': [1, 2, 3], // 一般、平日OT前2h、平日OT後2h
-			'makeup': [1, 2, 3],
 			'restday': [4, 5, 6], // 休息日前2h、休息日3-8h、休息日9-12h
 			'weekly_restday': [10, 11], // 例假日加班
 			'national_holiday': [7, 8, 9] // 國定假日加班
@@ -231,7 +228,6 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		
 		const dateTypeNames = {
 			'workday': '工作日',
-			'makeup': '補班日',
 			'restday': '休息日',
 			'weekly_restday': '例假日',
 			'national_holiday': '國定假日'

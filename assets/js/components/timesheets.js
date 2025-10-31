@@ -1032,8 +1032,9 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     return;
   }
   
-  // 驗證加班前置條件：必須先填滿正常工時（正常工時 + 請假 >= 8 小時）
-  if (workType && workType.isOvertime) {
+  // 驗證加班前置條件：只有工作日的加班需要先填滿正常工時（正常工時 + 請假 >= 8 小時）
+  // 休息日、例假日、國定假日的加班不需要這個前提條件
+  if (workType && workType.isOvertime && day.type === 'workday') {
     const leaveHours = state.leaves.get(day.iso)?.hours || 0;
     const standardHours = 8; // 正常工作日標準工時
     
@@ -1051,7 +1052,7 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     if (totalNormalWork < standardHours) {
       const shortage = standardHours - totalNormalWork;
       showToast(
-        `❌ ${dateDisplay}：尚未填滿正常工時，不可填寫加班類型\n\n` +
+        `❌ ${dateDisplay}（工作日）：尚未填滿正常工時，不可填寫加班類型\n\n` +
         `請假：${leaveHours} 小時\n` +
         `已填正常工時：${existingNormalHours} 小時\n` +
         `累計：${totalNormalWork} 小時（標準：${standardHours} 小時）\n\n` +
@@ -1277,6 +1278,11 @@ async function handleDeleteRow(rowIndex) {
           const day = state.weekDays[dayIndex];
           const dateDisplay = formatDateDisplay(new Date(day.iso + 'T00:00:00'));
           
+          // 只檢查工作日（休息日、例假日、國定假日的加班不需要正常工時前提條件）
+          if (day.type !== 'workday') {
+            return;
+          }
+          
           // 計算刪除後該天的正常工時
           let remainingNormalHours = 0;
           state.rows.forEach((r, idx) => {
@@ -1301,7 +1307,7 @@ async function handleDeleteRow(rowIndex) {
           if (hasOvertimeRecords && totalNormalWork < standardHours) {
             const shortage = standardHours - totalNormalWork;
             warnings.push(
-              `${dateDisplay}：\n` +
+              `${dateDisplay}（工作日）：\n` +
               `  刪除後正常工時：${remainingNormalHours} 小時\n` +
               `  請假：${leaveHours} 小時\n` +
               `  累計：${totalNormalWork} 小時（不足 ${shortage} 小時）\n` +
@@ -1446,9 +1452,10 @@ async function saveAllChanges() {
     });
   });
   
-  // 檢查每一天的加班前提條件
+  // 檢查每一天的加班前提條件（只檢查工作日）
+  // 休息日、例假日、國定假日的加班不需要正常工時前提條件
   dayChecks.forEach((check, dayIndex) => {
-    if (check.hasOvertime) {
+    if (check.hasOvertime && check.day.type === 'workday') {
       const totalNormalWork = check.normalHours + check.leaveHours;
       
       if (totalNormalWork < standardHours) {
@@ -1457,7 +1464,7 @@ async function saveAllChanges() {
         const overtimeNames = check.overtimeRows.map(ot => ot.workType.name).join('、');
         
         validationErrors.push(
-          `❌ ${dateDisplay}：有加班記錄（${overtimeNames}），但不滿足加班前提條件\n\n` +
+          `❌ ${dateDisplay}（工作日）：有加班記錄（${overtimeNames}），但不滿足加班前提條件\n\n` +
           `正常工時：${check.normalHours} 小時\n` +
           `請假：${check.leaveHours} 小時\n` +
           `累計：${totalNormalWork} 小時（不足 ${shortage} 小時）\n\n` +
