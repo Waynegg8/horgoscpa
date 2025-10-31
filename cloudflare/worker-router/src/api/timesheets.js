@@ -322,17 +322,61 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 				String(work_type_id)
 			).first();
 			
-			if (duplicateRow) {
-				// 如果已存在相同組合，直接更新該記錄
-				log_id = duplicateRow.timesheet_id;
-				isUpdate = true;
-				
-				await env.DATABASE.prepare(
-					`UPDATE Timesheets 
-					 SET hours = ?, updated_at = ?
-					 WHERE timesheet_id = ?`
-				).bind(hours, new Date().toISOString(), log_id).run();
+		if (duplicateRow) {
+			// 如果已存在相同組合，累加工時（自動合併）
+			log_id = duplicateRow.timesheet_id;
+			isUpdate = true;
+			
+			// 獲取現有工時
+			const existingRow = await env.DATABASE.prepare(
+				`SELECT hours FROM Timesheets WHERE timesheet_id = ?`
+			).bind(log_id).first();
+			
+			const existingHours = Number(existingRow?.hours || 0);
+			const newTotalHours = existingHours + hours;
+			
+			// 驗證累加後是否超過工時類型的上限
+			if (workType.maxHours && newTotalHours > workType.maxHours) {
+				return jsonResponse(422, {
+					ok: false,
+					code: "VALIDATION_ERROR",
+					message: `累加後「${workType.name}」工時為 ${newTotalHours} 小時，超過上限 ${workType.maxHours} 小時`,
+					errors: [{ 
+						field: "hours", 
+						message: `該日已有 ${existingHours} 小時，最多還可填 ${workType.maxHours - existingHours} 小時` 
+					}]
+				}, corsHeaders);
 			}
+			
+			// 驗證累加後當日總工時是否超過 12 小時
+			const sumRow = await env.DATABASE.prepare(
+				`SELECT COALESCE(SUM(hours), 0) AS s 
+				 FROM Timesheets 
+				 WHERE user_id = ? AND work_date = ? AND is_deleted = 0 AND timesheet_id != ?`
+			).bind(String(me.user_id), work_date, log_id).first();
+			
+			const otherHoursTotal = Number(sumRow?.s || 0);
+			const dailyTotal = otherHoursTotal + newTotalHours;
+			
+			if (dailyTotal > 12 + 1e-9) {
+				return jsonResponse(422, {
+					ok: false,
+					code: "VALIDATION_ERROR",
+					message: `累加後當日總工時為 ${dailyTotal.toFixed(1)} 小時，超過上限 12 小時`,
+					errors: [{ 
+						field: "hours", 
+						message: `當日已有 ${otherHoursTotal.toFixed(1)} 小時，本記錄已有 ${existingHours} 小時，最多還可累加 ${Math.max(0, 12 - otherHoursTotal - existingHours).toFixed(1)} 小時` 
+					}]
+				}, corsHeaders);
+			}
+			
+			// 累加工時
+			await env.DATABASE.prepare(
+				`UPDATE Timesheets 
+				 SET hours = hours + ?, updated_at = ?
+				 WHERE timesheet_id = ?`
+			).bind(hours, new Date().toISOString(), log_id).run();
+		}
 		}
 		
 		// 如果還是沒有 log_id，表示需要新增記錄
