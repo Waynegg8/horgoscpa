@@ -104,8 +104,15 @@
           const empHours = Array.isArray(data?.employeeHours) ? data.employeeHours : [];
           const hoursHtml = empHours.length ? empHours.map(e => {
             const totalStr = fmtNum(e.total);
-            const meta = e.total > 0 ? `正常：${fmtNum(e.normal)} ｜ 加班：${fmtNum(e.overtime)}` : '';
-            return `<div class="emp-row"><span class="name">${e.name}</span><span class="hours"><b>${totalStr}</b> 小時</span>${meta ? `<div class="muted" style="font-size:12px;margin-top:4px;">${meta}</div>` : ''}</div>`;
+            const meta = e.total > 0 ? `正常 ${fmtNum(e.normal)} ｜ 加班 ${fmtNum(e.overtime)}` : '';
+            return `<div class="emp-row">
+              <span class="name">${e.name}</span>
+              <div class="hours">
+                <b>${totalStr}</b>
+                <span class="hours-label">小時</span>
+                ${meta ? `<div class="muted">${meta}</div>` : ''}
+              </div>
+            </div>`;
           }).join('') : '<div class="muted">尚無工時記錄</div>';
           
           // 各员工任务状态

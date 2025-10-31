@@ -2,74 +2,120 @@
 
 /* Header - Welcome and Date */
 .dash-header { 
-  padding: 24px 32px; 
+  padding: 32px 40px; 
   background: #ffffff;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
 }
 .dash-top { margin-bottom: 0; }
-.dash-welcome { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.welcome-text { font-size: 20px; font-weight: 600; color: #1f2937; }
-.user-name { color: #2563eb; font-weight: 700; }
-.separator { color: #9ca3af; font-weight: 300; font-size: 18px; }
-.dash-date { font-size: 15px; color: #6b7280; font-weight: 400; }
+.dash-welcome { 
+  display: flex; 
+  align-items: baseline; 
+  gap: 16px; 
+  flex-wrap: wrap; 
+}
+.welcome-text { 
+  font-size: 24px; 
+  font-weight: 700; 
+  color: #111827; 
+  letter-spacing: -0.5px;
+}
+.user-name { 
+  color: #2563eb; 
+  font-weight: 700; 
+}
+.separator { 
+  color: #d1d5db; 
+  font-weight: 300; 
+  font-size: 20px; 
+  margin: 0 4px;
+}
+.dash-date { 
+  font-size: 16px; 
+  color: #6b7280; 
+  font-weight: 500; 
+}
 
 /* Notice List */
-.notice-list { margin-top: 16px; }
+.notice-list { margin-top: 20px; }
 .notice { 
-  padding: 14px 18px; 
-  border-radius: 8px; 
-  margin-bottom: 8px; 
+  padding: 16px 20px; 
+  border-radius: 10px; 
+  margin-bottom: 12px; 
   display: flex; 
-  align-items: center; 
-  gap: 10px; 
+  align-items: flex-start; 
+  gap: 12px; 
   font-size: 14px;
+  line-height: 1.6;
 }
 .notice:last-child { margin-bottom: 0; }
 .notice.warning { 
-  background: #fef3c7; 
+  background: #fffbeb; 
+  border: 1px solid #fcd34d;
   border-left: 4px solid #f59e0b; 
-  color: #78350f;
+  color: #92400e;
 }
 .notice.info { 
-  background: #dbeafe; 
+  background: #eff6ff; 
+  border: 1px solid #93c5fd;
   border-left: 4px solid #3b82f6; 
-  color: #1e3a8a;
+  color: #1e40af;
 }
-.notice-label { font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.3px; }
-.notice-text { flex: 1; }
-.notice .link { color: inherit; text-decoration: none; font-weight: 600; border-bottom: 2px solid currentColor; }
+.notice-label { 
+  font-weight: 700; 
+  text-transform: uppercase; 
+  font-size: 11px; 
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.notice-text { flex: 1; font-weight: 500; }
+.notice .link { 
+  color: inherit; 
+  text-decoration: none; 
+  font-weight: 700; 
+  border-bottom: 2px solid currentColor;
+  transition: opacity 0.2s;
+}
+.notice .link:hover { opacity: 0.7; }
 
 /* Content Area */
 .dash-content { 
-  padding: 28px 32px; 
+  padding: 32px 40px 40px; 
   background: #f9fafb;
   min-height: calc(100vh - 160px); 
 }
 .dash-grid { 
   display: grid; 
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); 
-  gap: 24px; 
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+  gap: 28px; 
 }
 
 /* Cards */
 .card { 
   background: #ffffff; 
-  border-radius: 12px; 
-  padding: 24px; 
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border-radius: 16px; 
+  padding: 28px; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   border: 1px solid #e5e7eb;
+  transition: box-shadow 0.2s;
+}
+.card:hover {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.07);
 }
 .card-title { 
-  font-size: 17px; 
+  font-size: 18px; 
   font-weight: 700; 
-  color: #1f2937; 
-  margin-bottom: 18px; 
-  padding-bottom: 14px; 
-  border-bottom: 2px solid #e5e7eb;
-  letter-spacing: 0.2px;
+  color: #111827; 
+  margin-bottom: 24px; 
+  padding-bottom: 16px; 
+  border-bottom: 2px solid #f3f4f6;
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.list-body { font-size: 14px; line-height: 1.6; }
-.muted { color: #94a3b8; font-size: 13px; font-style: italic; }
+.list-body { font-size: 14px; line-height: 1.7; }
+.muted { color: #9ca3af; font-size: 13px; }
 .kv { 
   display: flex; 
   justify-content: space-between; 
@@ -84,13 +130,43 @@
 .stat { 
   text-align: center; 
   background: #ffffff;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 28px 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 32px 24px;
+  position: relative;
 }
-.stat-label { font-size: 14px; color: #6b7280; margin-bottom: 12px; font-weight: 600; letter-spacing: 0.3px; }
-.stat-value { font-size: 38px; font-weight: 700; color: #2563eb; margin-bottom: 10px; }
-.stat-meta { font-size: 12px; color: #9ca3af; line-height: 1.5; }
+.stat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #2563eb;
+  border-radius: 16px 16px 0 0;
+}
+.stat-label { 
+  font-size: 13px; 
+  color: #6b7280; 
+  margin-bottom: 16px; 
+  font-weight: 600; 
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.stat-value { 
+  font-size: 48px; 
+  font-weight: 800; 
+  color: #111827; 
+  margin-bottom: 12px;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.stat-meta { 
+  font-size: 13px; 
+  color: #6b7280; 
+  line-height: 1.6;
+  font-weight: 500;
+}
 
 /* Task Rows */
 .task-row { 
@@ -137,80 +213,111 @@
 
 /* Employee work hours row */
 .emp-row { 
-  padding: 14px 16px; 
-  margin-bottom: 10px;
-  background: #ffffff;
-  border-radius: 8px;
-  border-left: 4px solid #2563eb;
+  padding: 20px; 
+  margin-bottom: 12px;
+  background: #fafafa;
+  border-radius: 12px;
+  border-left: 5px solid #2563eb;
   display: flex; 
   justify-content: space-between; 
-  align-items: flex-start;
-  border: 1px solid #e5e7eb;
-  border-left-width: 4px;
+  align-items: center;
+  transition: all 0.2s;
+  position: relative;
+}
+.emp-row:hover {
+  background: #f5f5f5;
+  transform: translateX(2px);
 }
 .emp-row:last-child { margin-bottom: 0; }
 .emp-row .name { 
-  font-weight: 600; 
-  color: #1f2937; 
+  font-weight: 700; 
+  color: #111827; 
   flex: 1; 
-  font-size: 15px;
+  font-size: 16px;
+  letter-spacing: -0.2px;
 }
 .emp-row .hours { 
-  font-size: 18px; 
-  color: #2563eb; 
-  text-align: right; 
-  font-weight: 700;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
 }
-.emp-row .hours b { font-size: 20px; }
+.emp-row .hours b { 
+  font-size: 28px; 
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.emp-row .hours-label {
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 .emp-row .muted { 
   font-size: 12px; 
   color: #6b7280; 
-  margin-top: 4px;
-  font-style: normal;
+  margin-top: 6px;
+  line-height: 1.4;
 }
 
 /* Employee task status row */
 .emp-task-row { 
-  padding: 14px 16px; 
-  margin-bottom: 10px;
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  padding: 20px; 
+  margin-bottom: 12px;
+  background: #fafafa;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+.emp-task-row:hover {
+  background: #f5f5f5;
 }
 .emp-task-row:last-child { margin-bottom: 0; }
 .emp-task-row .name { 
-  font-weight: 600; 
-  color: #1f2937; 
+  font-weight: 700; 
+  color: #111827; 
   display: block; 
-  margin-bottom: 10px; 
-  font-size: 15px;
+  margin-bottom: 14px; 
+  font-size: 16px;
+  letter-spacing: -0.2px;
 }
-.emp-task-row .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.emp-task-row .badges { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 10px;
+  align-items: center;
+}
 .emp-task-row .badge { 
-  display: inline-block; 
-  padding: 5px 12px; 
-  border-radius: 12px; 
-  font-size: 12px; 
-  font-weight: 600; 
-  letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px; 
+  border-radius: 8px; 
+  font-size: 13px; 
+  font-weight: 700; 
+  letter-spacing: 0;
+  line-height: 1;
 }
 .emp-task-row .badge.success { 
-  background: #dcfce7; 
-  color: #166534;
-  border: 1px solid #86efac;
+  background: #d1fae5; 
+  color: #065f46;
+  border: 1.5px solid #6ee7b7;
 }
 .emp-task-row .badge.info { 
   background: #dbeafe; 
   color: #1e40af;
-  border: 1px solid #93c5fd;
+  border: 1.5px solid #93c5fd;
 }
 .emp-task-row .badge.danger { 
   background: #fee2e2; 
   color: #991b1b;
-  border: 1px solid #fca5a5;
+  border: 1.5px solid #fca5a5;
 }
 .emp-task-row .badge:not(.success):not(.info):not(.danger) { 
   background: #f3f4f6; 
-  color: #4b5563;
-  border: 1px solid #d1d5db;
+  color: #374151;
+  border: 1.5px solid #d1d5db;
 }
