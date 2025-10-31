@@ -26,7 +26,7 @@ export async function handleLogin(request, env, requestId) {
 	try {
 		// 讀取使用者
 		const userRow = await env.DATABASE.prepare(
-			"SELECT user_id, username, password_hash, name, email, is_admin, login_attempts, last_failed_login, is_deleted FROM Users WHERE LOWER(username) = ? LIMIT 1"
+			"SELECT user_id, username, password_hash, name, email, is_admin, is_deleted FROM Users WHERE LOWER(username) = ? LIMIT 1"
 		).bind(username).first();
 
 		// 避免洩漏帳號存在與否
@@ -37,31 +37,16 @@ export async function handleLogin(request, env, requestId) {
 			return unauthorized();
 		}
 
-		// 鎖定檢查（連續失敗 >=5 且 15 分鐘內）
-		const attempts = Number(userRow.login_attempts || 0);
-		if (attempts >= 5 && userRow.last_failed_login) {
-			const lastFailedAt = Date.parse(userRow.last_failed_login);
-			if (!Number.isNaN(lastFailedAt)) {
-				const fifteenMinAgo = Date.now() - 15 * 60 * 1000;
-				if (lastFailedAt > fifteenMinAgo) {
-					return jsonResponse(401, { ok: false, code: "ACCOUNT_LOCKED", message: "嘗試過多，稍後再試", meta: { requestId } }, corsHeaders);
-				}
-			}
-		}
-
 		// 密碼驗證
 		const hash = userRow.password_hash || "";
 		const passOk = await verifyPasswordPBKDF2(password, hash);
 		if (!passOk) {
-			await env.DATABASE.prepare(
-				"UPDATE Users SET login_attempts = COALESCE(login_attempts,0) + 1, last_failed_login = ? WHERE user_id = ?"
-			).bind(new Date().toISOString(), userRow.user_id).run();
 			return unauthorized();
 		}
 
-		// 成功：重置嘗試次數、更新 last_login
+		// 成功：更新 last_login
 		await env.DATABASE.prepare(
-			"UPDATE Users SET login_attempts = 0, last_login = ? WHERE user_id = ?"
+			"UPDATE Users SET last_login = ? WHERE user_id = ?"
 		).bind(new Date().toISOString(), userRow.user_id).run();
 
 		// 建立會話
