@@ -538,3 +538,9 @@ section {
 section:last-child {
     margin-bottom: 0;
 }
+
+/* 确保section也遵守最大宽度 */
+section.card {
+    width: 100% !important;
+    max-width: 800px !important;
+}
