@@ -387,7 +387,7 @@
     // 載入服務類型選項
     async function loadServices() {
       try {
-        const res = await fetch('/internal/api/v1/client-services/services');
+        const res = await fetch('/internal/api/v1/services');
         const json = await res.json();
         
         if (json.ok && json.data) {
