@@ -387,14 +387,14 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 			const lastDay = new Date(Date.UTC(year, month + 1, 0));
 			const expiryDate = `${lastDay.getUTCFullYear()}-${String(lastDay.getUTCMonth() + 1).padStart(2, '0')}-${String(lastDay.getUTCDate()).padStart(2, '0')}`;
 			
-			// 寫入 CompensatoryLeaveGrants
+			// 寫入 CompensatoryLeaveGrants (使用 timesheet_id 作為 source_timelog_id)
 			await env.DATABASE.prepare(
 				`INSERT INTO CompensatoryLeaveGrants 
 				 (user_id, source_timelog_id, hours_generated, hours_remaining, generated_date, expiry_date, original_rate, status)
 				 VALUES (?, ?, ?, ?, ?, ?, ?, 'active')`
 			).bind(
 				String(me.user_id),
-				log_id,
+				log_id,  // log_id 就是 timesheet_id
 				comp_hours_generated,
 				comp_hours_generated,  // 初始時 remaining = generated
 				generatedDate,
