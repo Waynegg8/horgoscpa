@@ -22,6 +22,11 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
     const searchParams = new URL(url).searchParams;
     const requestedYm = searchParams.get('ym');
     const ym = requestedYm && /^\d{4}-\d{2}$/.test(requestedYm) ? requestedYm : ymToday();
+    
+    // 财务状况的月份和模式
+    const financeYm = searchParams.get('financeYm') && /^\d{4}-\d{2}$/.test(searchParams.get('financeYm')) ? searchParams.get('financeYm') : ym;
+    const financeMode = searchParams.get('financeMode') || 'month'; // 'month' 或 'ytd'
+    
     const today = todayYmd();
 
     // Employee metrics
@@ -94,7 +99,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
     }
 
     // Admin metrics
-    async function getAdminMetrics(targetYm) {
+    async function getAdminMetrics(targetYm, finYm, finMode) {
       const res = { employeeHours: [], employeeTasks: [], financialStatus: null, revenueTrend: [] };
       
       // Employee hours (各员工分别工时 - 按指定月份查询)
@@ -126,35 +131,9 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         }));
       } catch (_) {}
 
-      // Financial status - 本月 + 本年累计
+      // Financial status - 根据finMode返回对应数据
       try {
-        const currentYear = ym.split('-')[0]; // 从ym获取年份
-        
-        // 本月数据
-        const monthPaidRow = await env.DATABASE.prepare(
-          `SELECT SUM(total_amount) AS paid FROM Receipts WHERE is_deleted = 0 AND status = 'paid' AND substr(receipt_date,1,7) = ?`
-        ).bind(ym).first();
-        const monthRevRow = await env.DATABASE.prepare(
-          `SELECT SUM(total_amount) AS revenue FROM Receipts WHERE is_deleted = 0 AND status != 'cancelled' AND substr(receipt_date,1,7) = ?`
-        ).bind(ym).first();
-        let monthCost = 0;
-        try {
-          const pr = await env.DATABASE.prepare(`SELECT SUM(total_cents) AS c FROM MonthlyPayroll mp JOIN PayrollRuns pr ON pr.run_id = mp.run_id WHERE pr.month = ?`).bind(ym).first();
-          monthCost = Math.round(Number(pr?.c || 0) / 100);
-        } catch (_) {}
-        
-        // 本年累计数据（截至今日）
-        const ytdPaidRow = await env.DATABASE.prepare(
-          `SELECT SUM(total_amount) AS paid FROM Receipts WHERE is_deleted = 0 AND status = 'paid' AND substr(receipt_date,1,4) = ? AND receipt_date <= ?`
-        ).bind(currentYear, today).first();
-        const ytdRevRow = await env.DATABASE.prepare(
-          `SELECT SUM(total_amount) AS revenue FROM Receipts WHERE is_deleted = 0 AND status != 'cancelled' AND substr(receipt_date,1,4) = ? AND receipt_date <= ?`
-        ).bind(currentYear, today).first();
-        let ytdCost = 0;
-        try {
-          const pr = await env.DATABASE.prepare(`SELECT SUM(total_cents) AS c FROM MonthlyPayroll mp JOIN PayrollRuns pr ON pr.run_id = mp.run_id WHERE substr(pr.month,1,4) = ?`).bind(currentYear).first();
-          ytdCost = Math.round(Number(pr?.c || 0) / 100);
-        } catch (_) {}
+        const currentYear = finYm.split('-')[0]; // 从finYm获取年份
         
         // 现金流数据（实时，不分月份）
         const arRow = await env.DATABASE.prepare(
@@ -163,47 +142,79 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         const overdueRow = await env.DATABASE.prepare(
           `SELECT SUM(total_amount) AS od FROM Receipts WHERE is_deleted = 0 AND status IN ('unpaid','partial') AND due_date < ?`
         ).bind(today).first();
-        
-        // 计算本月数据
-        const monthRevenue = Math.round(Number(monthRevRow?.revenue || 0));
-        const monthPaid = Math.round(Number(monthPaidRow?.paid || 0));
-        const monthProfit = monthRevenue - monthCost;
-        const monthMargin = monthRevenue > 0 ? Math.round((monthProfit / monthRevenue) * 1000) / 10 : 0;
-        const monthCollectionRate = monthRevenue > 0 ? Math.round((monthPaid / monthRevenue) * 1000) / 10 : 0;
-        
-        // 计算本年累计数据
-        const ytdRevenue = Math.round(Number(ytdRevRow?.revenue || 0));
-        const ytdPaid = Math.round(Number(ytdPaidRow?.paid || 0));
-        const ytdProfit = ytdRevenue - ytdCost;
-        const ytdMargin = ytdRevenue > 0 ? Math.round((ytdProfit / ytdRevenue) * 1000) / 10 : 0;
-        const ytdCollectionRate = ytdRevenue > 0 ? Math.round((ytdPaid / ytdRevenue) * 1000) / 10 : 0;
-        
         const ar = Math.round(Number(arRow?.ar || 0));
         const overdue = Math.round(Number(overdueRow?.od || 0));
         
-        res.financialStatus = { 
-          month: {
-            period: ym,
+        let monthData = null;
+        let ytdData = null;
+        
+        if (finMode === 'month') {
+          // 月度数据
+          const monthPaidRow = await env.DATABASE.prepare(
+            `SELECT SUM(total_amount) AS paid FROM Receipts WHERE is_deleted = 0 AND status = 'paid' AND substr(receipt_date,1,7) = ?`
+          ).bind(finYm).first();
+          const monthRevRow = await env.DATABASE.prepare(
+            `SELECT SUM(total_amount) AS revenue FROM Receipts WHERE is_deleted = 0 AND status != 'cancelled' AND substr(receipt_date,1,7) = ?`
+          ).bind(finYm).first();
+          let monthCost = 0;
+          try {
+            const pr = await env.DATABASE.prepare(`SELECT SUM(total_cents) AS c FROM MonthlyPayroll mp JOIN PayrollRuns pr ON pr.run_id = mp.run_id WHERE pr.month = ?`).bind(finYm).first();
+            monthCost = Math.round(Number(pr?.c || 0) / 100);
+          } catch (_) {}
+          
+          const monthRevenue = Math.round(Number(monthRevRow?.revenue || 0));
+          const monthPaid = Math.round(Number(monthPaidRow?.paid || 0));
+          const monthProfit = monthRevenue - monthCost;
+          const monthMargin = monthRevenue > 0 ? Math.round((monthProfit / monthRevenue) * 1000) / 10 : 0;
+          const monthCollectionRate = monthRevenue > 0 ? Math.round((monthPaid / monthRevenue) * 1000) / 10 : 0;
+          
+          monthData = {
+            period: finYm,
             revenue: monthRevenue,
             cost: monthCost,
             profit: monthProfit,
             margin: monthMargin,
-            ar, // 应收（实时）
+            ar,
             paid: monthPaid,
-            overdue, // 逾期（实时）
+            overdue,
             collectionRate: monthCollectionRate
-          },
-          ytd: {
+          };
+        } else {
+          // 年度累计数据（截至今日）
+          const ytdPaidRow = await env.DATABASE.prepare(
+            `SELECT SUM(total_amount) AS paid FROM Receipts WHERE is_deleted = 0 AND status = 'paid' AND substr(receipt_date,1,4) = ? AND receipt_date <= ?`
+          ).bind(currentYear, today).first();
+          const ytdRevRow = await env.DATABASE.prepare(
+            `SELECT SUM(total_amount) AS revenue FROM Receipts WHERE is_deleted = 0 AND status != 'cancelled' AND substr(receipt_date,1,4) = ? AND receipt_date <= ?`
+          ).bind(currentYear, today).first();
+          let ytdCost = 0;
+          try {
+            const pr = await env.DATABASE.prepare(`SELECT SUM(total_cents) AS c FROM MonthlyPayroll mp JOIN PayrollRuns pr ON pr.run_id = mp.run_id WHERE substr(pr.month,1,4) = ?`).bind(currentYear).first();
+            ytdCost = Math.round(Number(pr?.c || 0) / 100);
+          } catch (_) {}
+          
+          const ytdRevenue = Math.round(Number(ytdRevRow?.revenue || 0));
+          const ytdPaid = Math.round(Number(ytdPaidRow?.paid || 0));
+          const ytdProfit = ytdRevenue - ytdCost;
+          const ytdMargin = ytdRevenue > 0 ? Math.round((ytdProfit / ytdRevenue) * 1000) / 10 : 0;
+          const ytdCollectionRate = ytdRevenue > 0 ? Math.round((ytdPaid / ytdRevenue) * 1000) / 10 : 0;
+          
+          ytdData = {
             period: `${currentYear}年累計`,
             revenue: ytdRevenue,
             cost: ytdCost,
             profit: ytdProfit,
             margin: ytdMargin,
-            ar, // 应收（实时）
+            ar,
             paid: ytdPaid,
-            overdue, // 逾期（实时）
+            overdue,
             collectionRate: ytdCollectionRate
-          }
+          };
+        }
+        
+        res.financialStatus = { 
+          month: monthData,
+          ytd: ytdData
         };
       } catch (_) {}
 
@@ -249,12 +260,12 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
 
     const data = { role: me.is_admin ? 'admin' : 'employee' };
     if (me.is_admin) {
-      data.admin = await getAdminMetrics(ym);
+      data.admin = await getAdminMetrics(ym, financeYm, financeMode);
     } else {
       data.employee = await getEmployeeMetrics();
     }
 
-    return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, month: ym, today } }, corsHeaders);
+    return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, month: ym, financeYm, financeMode, today } }, corsHeaders);
   } catch (err) {
     console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
     return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);

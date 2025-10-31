@@ -41,6 +41,8 @@
         let me = null;
         let refreshTimer = null;
         let currentYm = null; // 当前查看的年月，格式：YYYY-MM
+        let financeMode = 'month'; // 'month' 或 'ytd'（本年累计）
+        let financeYm = null; // 财务查看的年月
 
         function formatLocalDate(d){
           try { return new Intl.DateTimeFormat('zh-TW', { dateStyle:'full', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }).format(d); } catch(_) { return d.toISOString().slice(0,10); }
@@ -95,6 +97,19 @@
               <button type="button" class="month-nav-btn prev" data-action="prev" style="padding:4px 8px;cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:4px;">◀</button>
               <span class="current-month" style="min-width:80px;text-align:center;font-weight:500;">${currentYm}</span>
               <button type="button" class="month-nav-btn next" data-action="next" style="padding:4px 8px;cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:4px;">▶</button>
+            </div>
+          </div><div class="list-body">${rowsHtml||'<div class=\"muted\">尚無資料</div>'}</div></div>`;
+        }
+
+        function listCardWithFinancePicker(title, rowsHtml, currentYm, mode){
+          const displayText = mode === 'ytd' ? `${currentYm.split('-')[0]}年累計` : formatYm(currentYm);
+          return `<div class="card list"><div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>${title}</span>
+            <div class="finance-picker" style="display:flex;align-items:center;gap:8px;font-size:14px;">
+              <button type="button" class="month-nav-btn prev" data-action="prev" style="padding:4px 8px;cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:4px;">◀</button>
+              <span class="current-period" style="min-width:100px;text-align:center;font-weight:500;">${displayText}</span>
+              <button type="button" class="month-nav-btn next" data-action="next" style="padding:4px 8px;cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:4px;">▶</button>
+              <button type="button" class="ytd-btn" data-action="ytd" style="padding:4px 12px;cursor:pointer;border:1px solid ${mode === 'ytd' ? '#3498db' : '#ddd'};background:${mode === 'ytd' ? '#3498db' : '#fff'};color:${mode === 'ytd' ? '#fff' : '#333'};border-radius:4px;font-weight:500;">本年累計</button>
             </div>
           </div><div class="list-body">${rowsHtml||'<div class=\"muted\">尚無資料</div>'}</div></div>`;
         }
@@ -168,45 +183,29 @@
             </a>`;
           }).join('') : '<div class="muted">尚無任務</div>';
           
-          // 财务状况 - 分为两个时期（本月 + 本年累计），每个时期两行（帐面 + 现金流）
+          // 财务状况 - 根据模式显示月度或年度累计
           const fs = data?.financialStatus || {};
-          const month = fs.month || { period:'', revenue:0, cost:0, profit:0, margin:0, ar:0, paid:0, overdue:0, collectionRate:0 };
-          const ytd = fs.ytd || { period:'', revenue:0, cost:0, profit:0, margin:0, ar:0, paid:0, overdue:0, collectionRate:0 };
+          const emptyData = { period:'', revenue:0, cost:0, profit:0, margin:0, ar:0, paid:0, overdue:0, collectionRate:0 };
+          
+          // 后端只返回当前模式对应的数据
+          const currentFinData = (financeMode === 'ytd' ? fs.ytd : fs.month) || emptyData;
           
           const finHtml = `
-            <div style="display:flex;flex-direction:column;gap:24px;">
-              <!-- 本月 -->
-              <div>
-                <div style="font-size:13px;color:#7f8c8d;margin-bottom:12px;font-weight:500;">${formatYm(month.period)}</div>
-                <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:12px;">
-                  <div class="fin-metric" data-type="revenue"><div class="fin-metric-label">營收</div><div class="fin-metric-value">${fmtTwd(month.revenue)}</div></div>
-                  <div class="fin-metric" data-type="cost"><div class="fin-metric-label">成本</div><div class="fin-metric-value">${fmtTwd(month.cost)}</div></div>
-                  <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利</div><div class="fin-metric-value">${fmtTwd(month.profit)}</div></div>
-                  <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利率</div><div class="fin-metric-value">${fmtPct(month.margin)}</div></div>
-                </div>
-                <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
-                  <div class="fin-metric" data-type="ar"><div class="fin-metric-label">應收</div><div class="fin-metric-value">${fmtTwd(month.ar)}</div></div>
-                  <div class="fin-metric" data-type="paid"><div class="fin-metric-label">收款</div><div class="fin-metric-value">${fmtTwd(month.paid)}</div></div>
-                  <div class="fin-metric" data-type="overdue"><div class="fin-metric-label">逾期</div><div class="fin-metric-value">${fmtTwd(month.overdue)}</div></div>
-                  <div class="fin-metric" data-type="rate"><div class="fin-metric-label">收款率</div><div class="fin-metric-value">${fmtPct(month.collectionRate)}</div></div>
-                </div>
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <!-- 帐面数据：营收、成本、毛利、毛利率 -->
+              <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                <div class="fin-metric" data-type="revenue"><div class="fin-metric-label">營收</div><div class="fin-metric-value">${fmtTwd(currentFinData.revenue)}</div></div>
+                <div class="fin-metric" data-type="cost"><div class="fin-metric-label">成本</div><div class="fin-metric-value">${fmtTwd(currentFinData.cost)}</div></div>
+                <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利</div><div class="fin-metric-value">${fmtTwd(currentFinData.profit)}</div></div>
+                <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利率</div><div class="fin-metric-value">${fmtPct(currentFinData.margin)}</div></div>
               </div>
               
-              <!-- 本年累计 -->
-              <div>
-                <div style="font-size:13px;color:#7f8c8d;margin-bottom:12px;font-weight:500;">${ytd.period || '本年累計'}</div>
-                <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:12px;">
-                  <div class="fin-metric" data-type="revenue"><div class="fin-metric-label">營收</div><div class="fin-metric-value">${fmtTwd(ytd.revenue)}</div></div>
-                  <div class="fin-metric" data-type="cost"><div class="fin-metric-label">成本</div><div class="fin-metric-value">${fmtTwd(ytd.cost)}</div></div>
-                  <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利</div><div class="fin-metric-value">${fmtTwd(ytd.profit)}</div></div>
-                  <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利率</div><div class="fin-metric-value">${fmtPct(ytd.margin)}</div></div>
-                </div>
-                <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
-                  <div class="fin-metric" data-type="ar"><div class="fin-metric-label">應收</div><div class="fin-metric-value">${fmtTwd(ytd.ar)}</div></div>
-                  <div class="fin-metric" data-type="paid"><div class="fin-metric-label">收款</div><div class="fin-metric-value">${fmtTwd(ytd.paid)}</div></div>
-                  <div class="fin-metric" data-type="overdue"><div class="fin-metric-label">逾期</div><div class="fin-metric-value">${fmtTwd(ytd.overdue)}</div></div>
-                  <div class="fin-metric" data-type="rate"><div class="fin-metric-label">收款率</div><div class="fin-metric-value">${fmtPct(ytd.collectionRate)}</div></div>
-                </div>
+              <!-- 现金流数据：应收、收款、逾期、收款率 -->
+              <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                <div class="fin-metric" data-type="ar"><div class="fin-metric-label">應收</div><div class="fin-metric-value">${fmtTwd(currentFinData.ar)}</div></div>
+                <div class="fin-metric" data-type="paid"><div class="fin-metric-label">收款</div><div class="fin-metric-value">${fmtTwd(currentFinData.paid)}</div></div>
+                <div class="fin-metric" data-type="overdue"><div class="fin-metric-label">逾期</div><div class="fin-metric-value">${fmtTwd(currentFinData.overdue)}</div></div>
+                <div class="fin-metric" data-type="rate"><div class="fin-metric-label">收款率</div><div class="fin-metric-value">${fmtPct(currentFinData.collectionRate)}</div></div>
               </div>
             </div>`;
           
@@ -239,10 +238,59 @@
           tasksFrag.innerHTML = listCard('各員工任務狀態', tasksHtml);
           grid.appendChild(tasksFrag.firstElementChild);
           
-          // 渲染财务状况
+          // 渲染财务状况（带月份选择器和"本年累计"按钮）
           const finFrag = document.createElement('div');
-          finFrag.innerHTML = listCard('財務狀況', finHtml);
+          finFrag.innerHTML = listCardWithFinancePicker('財務狀況', finHtml, financeYm, financeMode);
           grid.appendChild(finFrag.firstElementChild);
+          
+          // 添加财务月份选择器事件监听
+          const finCard = Array.from(grid.querySelectorAll('.card.list')).pop(); // 获取最后一张卡片
+          if (finCard) {
+            const prevBtn = finCard.querySelector('.month-nav-btn.prev');
+            const nextBtn = finCard.querySelector('.month-nav-btn.next');
+            const ytdBtn = finCard.querySelector('.ytd-btn');
+            
+            if (prevBtn) {
+              prevBtn.addEventListener('click', () => {
+                if (financeMode === 'ytd') {
+                  // 年度模式下，切换到上一年
+                  const currentYear = parseInt(financeYm.split('-')[0]);
+                  financeYm = `${currentYear - 1}-12`;
+                } else {
+                  // 月度模式下，切换到上个月
+                  financeYm = addMonth(financeYm, -1);
+                }
+                refresh();
+              });
+            }
+            
+            if (nextBtn) {
+              nextBtn.addEventListener('click', () => {
+                if (financeMode === 'ytd') {
+                  // 年度模式下，切换到下一年
+                  const currentYear = parseInt(financeYm.split('-')[0]);
+                  financeYm = `${currentYear + 1}-12`;
+                } else {
+                  // 月度模式下，切换到下个月
+                  financeYm = addMonth(financeYm, 1);
+                }
+                refresh();
+              });
+            }
+            
+            if (ytdBtn) {
+              ytdBtn.addEventListener('click', () => {
+                // 切换到本年累计模式
+                financeMode = financeMode === 'ytd' ? 'month' : 'ytd';
+                if (financeMode === 'ytd') {
+                  // 如果切换到年度模式，确保financeYm是当年的12月
+                  const currentYear = financeYm.split('-')[0];
+                  financeYm = `${currentYear}-12`;
+                }
+                refresh();
+              });
+            }
+          }
         }
 
         async function ensureUser(){
@@ -271,11 +319,23 @@
             if (!currentYm) {
               currentYm = getCurrentYm();
             }
+            if (!financeYm) {
+              financeYm = getCurrentYm();
+            }
             
             // 构建查询参数
             const params = new URLSearchParams();
-            if (me?.isAdmin && currentYm) {
-              params.set('ym', currentYm);
+            if (me?.isAdmin) {
+              if (currentYm) {
+                params.set('ym', currentYm);
+              }
+              // 为财务状况传递查询参数
+              if (financeYm) {
+                params.set('financeYm', financeYm);
+              }
+              if (financeMode) {
+                params.set('financeMode', financeMode);
+              }
             }
             
             const url = `${apiBase}/dashboard${params.toString() ? '?' + params.toString() : ''}`;
