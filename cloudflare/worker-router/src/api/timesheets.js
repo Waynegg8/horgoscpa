@@ -127,6 +127,7 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 	const work_type_id = parseInt(body?.work_type_id) || 0;
 	const hours = Number(body?.hours);
 	const notes = String(body?.notes || "").trim();
+	const timesheet_id = body?.timesheet_id ? parseInt(body.timesheet_id) : null;
 	
 	// 驗證
 	const errors = [];
@@ -318,6 +319,8 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 			).run();
 		}
 		
+		console.log('[TIMELOG] 保存成功:', { log_id, weighted_hours, comp_hours_generated });
+		
 		return jsonResponse(200, { 
 			ok: true, 
 			code: "SUCCESS", 
@@ -331,7 +334,13 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		}, corsHeaders);
 		
 	} catch (err) {
-		console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+		console.error(JSON.stringify({ 
+			level: "error", 
+			requestId, 
+			path: url.pathname, 
+			err: String(err),
+			stack: err.stack 
+		}));
 		const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
 		if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
 		return jsonResponse(500, body, corsHeaders);
