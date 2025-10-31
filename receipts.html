@@ -55,22 +55,69 @@
         <div class="modal-header" id="modalTitle">新增收據</div>
         <div class="modal-body">
           <div id="formError" class="form-error" style="display:none;"></div>
+          
+          <div class="modal-row">
+            <label for="receiptType">收據類型</label>
+            <select id="receiptType">
+              <option value="normal">正常收據</option>
+              <option value="prepayment">預收款</option>
+              <option value="deposit">訂金</option>
+            </select>
+          </div>
+          
           <div class="modal-row">
             <label for="clientId">客戶ID</label>
             <input id="clientId" type="text" placeholder="例如 c_001" />
           </div>
+          
+          <div class="modal-row" id="serviceRow" style="display:none;">
+            <label for="clientService">客戶服務（選填）</label>
+            <select id="clientService">
+              <option value="">請選擇服務</option>
+            </select>
+            <small style="color:#666;margin-top:4px;display:block;">選擇服務後可自動帶入金額</small>
+          </div>
+          
+          <div class="modal-row" id="billingMonthRow" style="display:none;">
+            <label for="billingMonth">計費月份（選填）</label>
+            <select id="billingMonth">
+              <option value="">請選擇月份</option>
+              <option value="1">1月</option>
+              <option value="2">2月</option>
+              <option value="3">3月</option>
+              <option value="4">4月</option>
+              <option value="5">5月</option>
+              <option value="6">6月</option>
+              <option value="7">7月</option>
+              <option value="8">8月</option>
+              <option value="9">9月</option>
+              <option value="10">10月</option>
+              <option value="11">11月</option>
+              <option value="12">12月</option>
+            </select>
+            <small style="color:#666;margin-top:4px;display:block;">選擇月份後可自動建議金額</small>
+          </div>
+          
           <div class="modal-row">
             <label for="receiptDate">開立日期</label>
             <input id="receiptDate" type="date" />
           </div>
+          
           <div class="modal-row">
-            <label for="dueDate">到期日（預設 +30 天）</label>
+            <label for="dueDate">到期日（自動計算）</label>
             <input id="dueDate" type="date" />
+            <small style="color:#666;margin-top:4px;display:block;">根據服務收費明細或預設30天</small>
           </div>
+          
           <div class="modal-row">
             <label for="amount">金額</label>
-            <input id="amount" type="number" min="1" step="1" placeholder="例如 10000" />
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input id="amount" type="number" min="1" step="1" placeholder="例如 10000" style="flex:1;" />
+              <button type="button" id="btn-suggest-amount" class="btn" style="display:none;">建議金額</button>
+            </div>
+            <div id="suggestedAmountInfo" style="color:#10b981;margin-top:4px;display:none;"></div>
           </div>
+          
           <div class="modal-row">
             <label for="statusNew">狀態</label>
             <select id="statusNew">
@@ -80,6 +127,7 @@
               <option value="cancelled">作廢</option>
             </select>
           </div>
+          
           <div class="modal-row">
             <label for="notes">備註</label>
             <textarea id="notes" rows="3" placeholder="可留空"></textarea>
@@ -108,15 +156,23 @@
         const modal = document.getElementById('modalOverlay');
         const btnCancel = document.getElementById('btn-cancel');
         const btnCreate = document.getElementById('btn-create');
+        const inputReceiptType = document.getElementById('receiptType');
         const inputClientId = document.getElementById('clientId');
+        const inputClientService = document.getElementById('clientService');
+        const inputBillingMonth = document.getElementById('billingMonth');
         const inputReceiptDate = document.getElementById('receiptDate');
         const inputDueDate = document.getElementById('dueDate');
         const inputAmount = document.getElementById('amount');
         const inputStatusNew = document.getElementById('statusNew');
         const inputNotes = document.getElementById('notes');
         const formError = document.getElementById('formError');
+        const serviceRow = document.getElementById('serviceRow');
+        const billingMonthRow = document.getElementById('billingMonthRow');
+        const btnSuggestAmount = document.getElementById('btn-suggest-amount');
+        const suggestedAmountInfo = document.getElementById('suggestedAmountInfo');
 
         let state = { page:1, perPage:20, total:0 };
+        let currentClientServices = [];
 
         function render(rows){
           tbody.innerHTML = '';
@@ -193,10 +249,23 @@
           const mm2 = String(d2.getUTCMonth()+1).padStart(2,'0');
           const dd2 = String(d2.getUTCDate()).padStart(2,'0');
           inputDueDate.value = `${yyyy2}-${mm2}-${dd2}`;
+          
+          // 重置新字段
+          inputReceiptType.value = 'normal';
           inputClientId.value = '';
+          inputClientService.innerHTML = '<option value="">請選擇服務</option>';
+          inputBillingMonth.value = '';
           inputAmount.value = '';
           inputStatusNew.value = 'unpaid';
           inputNotes.value = '';
+          currentClientServices = [];
+          
+          // 隱藏服務和月份選擇
+          serviceRow.style.display = 'none';
+          billingMonthRow.style.display = 'none';
+          btnSuggestAmount.style.display = 'none';
+          suggestedAmountInfo.style.display = 'none';
+          
           modal.classList.add('show');
           modal.setAttribute('aria-hidden', 'false');
         }
@@ -210,6 +279,106 @@
         btnCancel.addEventListener('click', closeModal);
         modal.addEventListener('click', (e)=>{ if (e.target === modal) closeModal(); });
 
+        // 監聽收據類型變化
+        inputReceiptType.addEventListener('change', () => {
+          const isNormal = inputReceiptType.value === 'normal';
+          serviceRow.style.display = isNormal ? 'block' : 'none';
+          billingMonthRow.style.display = isNormal ? 'block' : 'none';
+          if (!isNormal) {
+            inputClientService.value = '';
+            inputBillingMonth.value = '';
+            btnSuggestAmount.style.display = 'none';
+            suggestedAmountInfo.style.display = 'none';
+          }
+        });
+
+        // 監聽客戶ID變化，載入客戶服務
+        let loadServicesTimer = null;
+        inputClientId.addEventListener('input', () => {
+          clearTimeout(loadServicesTimer);
+          loadServicesTimer = setTimeout(async () => {
+            const clientId = inputClientId.value.trim();
+            if (!clientId || inputReceiptType.value !== 'normal') return;
+            
+            try {
+              const res = await fetch(`${apiBase}/clients/${clientId}`, { credentials: 'include' });
+              if (!res.ok) {
+                inputClientService.innerHTML = '<option value="">請選擇服務</option>';
+                currentClientServices = [];
+                return;
+              }
+              
+              const json = await res.json();
+              if (json.ok && json.data && json.data.services) {
+                currentClientServices = json.data.services.filter(s => s.status === 'active');
+                inputClientService.innerHTML = '<option value="">請選擇服務</option>' +
+                  currentClientServices.map(s => 
+                    `<option value="${s.client_service_id}">${s.service_name}</option>`
+                  ).join('');
+              }
+            } catch (err) {
+              console.error('載入客戶服務失敗:', err);
+            }
+          }, 500);
+        });
+
+        // 監聽服務和月份變化，顯示建議金額按鈕
+        function updateSuggestButton() {
+          const hasService = inputClientService.value;
+          const hasMonth = inputBillingMonth.value;
+          btnSuggestAmount.style.display = (hasService && hasMonth) ? 'inline-block' : 'none';
+          suggestedAmountInfo.style.display = 'none';
+        }
+
+        inputClientService.addEventListener('change', updateSuggestButton);
+        inputBillingMonth.addEventListener('change', updateSuggestButton);
+
+        // 建議金額按鈕
+        btnSuggestAmount.addEventListener('click', async () => {
+          const clientServiceId = inputClientService.value;
+          const billingMonth = inputBillingMonth.value;
+          
+          if (!clientServiceId || !billingMonth) return;
+          
+          try {
+            const res = await fetch(
+              `${apiBase}/receipts/suggest-amount?client_service_id=${clientServiceId}&billing_month=${billingMonth}`,
+              { credentials: 'include' }
+            );
+            
+            if (!res.ok) {
+              alert('獲取建議金額失敗');
+              return;
+            }
+            
+            const json = await res.json();
+            if (json.ok && json.data) {
+              const { suggested_amount, payment_due_days, has_schedule } = json.data;
+              
+              if (has_schedule && suggested_amount > 0) {
+                inputAmount.value = suggested_amount;
+                suggestedAmountInfo.textContent = `已自動帶入金額：$${suggested_amount.toLocaleString()}`;
+                suggestedAmountInfo.style.display = 'block';
+                
+                // 根據收費明細更新到期日
+                if (payment_due_days && inputReceiptDate.value) {
+                  const receiptDate = new Date(inputReceiptDate.value);
+                  receiptDate.setDate(receiptDate.getDate() + payment_due_days);
+                  const yyyy = receiptDate.getFullYear();
+                  const mm = String(receiptDate.getMonth() + 1).padStart(2, '0');
+                  const dd = String(receiptDate.getDate()).padStart(2, '0');
+                  inputDueDate.value = `${yyyy}-${mm}-${dd}`;
+                }
+              } else {
+                alert('該月份未設定收費明細');
+              }
+            }
+          } catch (err) {
+            console.error('獲取建議金額失敗:', err);
+            alert('獲取建議金額失敗');
+          }
+        });
+
         async function createReceipt(){
           formError.style.display = 'none';
           formError.textContent = '';
@@ -219,6 +388,12 @@
           const total_amount = Number(inputAmount.value);
           const status = inputStatusNew.value;
           const notes = inputNotes.value.trim();
+          
+          // 新字段
+          const receipt_type = inputReceiptType.value;
+          const client_service_id = inputClientService.value ? parseInt(inputClientService.value, 10) : null;
+          const billing_month = inputBillingMonth.value ? parseInt(inputBillingMonth.value, 10) : null;
+          
           const errors = [];
           if (!client_id) errors.push('客戶ID必填');
           if (!/^\d{4}-\d{2}-\d{2}$/.test(receipt_date)) errors.push('開立日期格式錯誤');
@@ -230,9 +405,23 @@
           }
           btnCreate.disabled = true;
           try {
+            const payload = {
+              client_id,
+              receipt_date,
+              due_date,
+              total_amount,
+              status,
+              notes,
+              receipt_type
+            };
+            
+            // 只在有值時添加可選字段
+            if (client_service_id) payload.client_service_id = client_service_id;
+            if (billing_month) payload.billing_month = billing_month;
+            
             const res = await fetch(`${apiBase}/receipts`, {
               method:'POST', credentials:'include', headers:{ 'Content-Type':'application/json' },
-              body: JSON.stringify({ client_id, receipt_date, due_date, total_amount, status, notes })
+              body: JSON.stringify(payload)
             });
             if (res.status === 401) { location.assign('/login?redirect=/internal/receipts'); return; }
             const json = await res.json();
