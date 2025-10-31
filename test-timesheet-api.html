@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>测试 Timesheet API</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+    pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow: auto; }
+    .error { color: red; }
+    .success { color: green; }
+  </style>
+</head>
+<body>
+  <h1>测试 Timesheet API</h1>
+  
+  <button onclick="testGetTimelogs()">1. 获取工时记录</button>
+  <button onclick="testPostTimelog()">2. 创建/更新工时</button>
+  
+  <div id="result"></div>
+  
+  <script>
+    async function testGetTimelogs() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p>正在获取工时记录...</p>';
+      
+      try {
+        const response = await fetch('/internal/api/v1/timelogs?start_date=2025-10-27&end_date=2025-11-02', {
+          credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        resultDiv.innerHTML = `
+          <h3 class="success">✅ API 响应成功</h3>
+          <p><strong>状态码：</strong>${response.status}</p>
+          <p><strong>记录数：</strong>${data.data ? data.data.length : 0}</p>
+          <h4>完整响应：</h4>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+          <h4>检查 timesheet_id 字段：</h4>
+          ${data.data && data.data.length > 0 ? 
+            data.data.map((log, index) => `
+              <div>
+                <strong>记录 ${index + 1}:</strong> 
+                timesheet_id = <span style="color: ${log.timesheet_id ? 'green' : 'red'}">
+                  ${log.timesheet_id || '❌ 缺失'}
+                </span>
+              </div>
+            `).join('') : 
+            '<p class="error">没有记录</p>'
+          }
+        `;
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="error">❌ 错误: ${error.message}</p>`;
+      }
+    }
+    
+    async function testPostTimelog() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '<p>正在创建/更新工时记录...</p>';
+      
+      const testData = {
+        work_date: '2025-10-29',
+        client_id: 'c_002',
+        service_id: 2,
+        service_item_id: 6,
+        work_type_id: 1,
+        hours: 2,
+        timesheet_id: 27  // 使用已知的 ID 测试更新
+      };
+      
+      try {
+        const response = await fetch('/internal/api/v1/timelogs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify(testData)
+        });
+        
+        const data = await response.json();
+        
+        resultDiv.innerHTML = `
+          <h3 class="${response.ok ? 'success' : 'error'}">
+            ${response.ok ? '✅' : '❌'} API 响应
+          </h3>
+          <p><strong>状态码：</strong>${response.status}</p>
+          <h4>发送的数据：</h4>
+          <pre>${JSON.stringify(testData, null, 2)}</pre>
+          <h4>响应数据：</h4>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="error">❌ 错误: ${error.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
+
