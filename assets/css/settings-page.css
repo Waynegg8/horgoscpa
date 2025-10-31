@@ -1,10 +1,11 @@
 /* ============================================
-   系统设定页面样式 - 简洁现代版
+   系统设定页面 - 极简风格
    ============================================ */
 
 :root {
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --primary-light: #eff6ff;
     --gray-50: #f9fafb;
     --gray-100: #f3f4f6;
     --gray-200: #e5e7eb;
@@ -15,99 +16,76 @@
     --gray-700: #374151;
     --gray-800: #1f2937;
     --gray-900: #111827;
-    --red-500: #ef4444;
-    --green-500: #10b981;
-    --yellow-500: #f59e0b;
-    --blue-50: #eff6ff;
-    --blue-500: #3b82f6;
-    --radius: 8px;
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --red: #ef4444;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --blue: #3b82f6;
 }
 
 /* ============================================
-   页面布局
+   基础布局
    ============================================ */
 
-.internal-container {
+body.internal-container {
     min-height: 100vh;
-    background: var(--gray-50);
-    padding-bottom: 60px;
-}
-
-/* 通知栏 */
-.alert {
-    padding: 12px 20px;
-    border-radius: var(--radius);
-    margin: 20px 20px 0;
-    font-size: 14px;
-}
-
-.alert-danger {
-    background: #fee2e2;
-    color: #991b1b;
-    border-left: 4px solid var(--red-500);
-}
-
-.alert-info {
-    background: #dbeafe;
-    color: #1e40af;
-    border-left: 4px solid var(--blue-500);
-}
-
-/* 页面标题 */
-.page-header {
-    padding: 30px 20px 20px;
-    background: white;
-    border-bottom: 1px solid var(--gray-200);
-}
-
-.page-header h1 {
-    font-size: 28px;
-    font-weight: 600;
-    color: var(--gray-900);
+    background: #fafafa;
+    padding: 0;
     margin: 0;
 }
 
 /* ============================================
-   Tab导航 - 现代简洁设计
+   通知栏
+   ============================================ */
+
+.alert {
+    padding: 12px 24px;
+    margin: 0;
+    font-size: 14px;
+    border-bottom: 1px solid;
+}
+
+.alert-danger {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.alert-info {
+    background: #eff6ff;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
+/* ============================================
+   Tab 导航 - 简洁设计
    ============================================ */
 
 .settings-nav {
     background: white;
     border-bottom: 1px solid var(--gray-200);
-    padding: 0 20px;
+    padding: 0;
     display: flex;
-    gap: 8px;
+    gap: 0;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 
 .settings-nav::-webkit-scrollbar {
-    height: 3px;
-}
-
-.settings-nav::-webkit-scrollbar-track {
-    background: var(--gray-100);
-}
-
-.settings-nav::-webkit-scrollbar-thumb {
-    background: var(--gray-300);
-    border-radius: 10px;
+    height: 0;
 }
 
 .nav-tab {
-    padding: 14px 20px;
+    padding: 16px 24px;
     background: transparent;
     border: none;
-    border-bottom: 3px solid transparent;
+    border-bottom: 2px solid transparent;
     color: var(--gray-600);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     white-space: nowrap;
-    position: relative;
+    flex-shrink: 0;
 }
 
 .nav-tab:hover {
@@ -118,6 +96,7 @@
 .nav-tab.active {
     color: var(--primary);
     border-bottom-color: var(--primary);
+    background: var(--primary-light);
 }
 
 /* ============================================
@@ -127,23 +106,22 @@
 .settings-content {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 30px 20px;
+    padding: 32px 24px;
 }
 
-/* Tab面板 */
 .tab-panel {
     display: none;
-    animation: fadeIn 0.3s ease;
 }
 
 .tab-panel.active {
     display: block;
+    animation: fadeIn 0.2s ease;
 }
 
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(8px);
     }
     to {
         opacity: 1;
@@ -152,74 +130,70 @@
 }
 
 /* ============================================
-   卡片组件
-   ============================================ */
-
-.card {
-    background: white;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    margin-bottom: 20px;
-    overflow: hidden;
-}
-
-.card-header {
-    padding: 20px;
-    border-bottom: 1px solid var(--gray-200);
-}
-
-.card-header h2,
-.card-header h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--gray-900);
-    margin: 0 0 5px 0;
-}
-
-.card-header .subtitle {
-    font-size: 14px;
-    color: var(--gray-500);
-    margin: 0;
-}
-
-.card-body {
-    padding: 20px;
-}
-
-/* ============================================
-   Tab头部（带按钮）
+   Tab 头部
    ============================================ */
 
 .tab-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .tab-header h2 {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
     color: var(--gray-900);
     margin: 0;
 }
 
-.tab-header .btn {
-    margin-left: auto;
+/* ============================================
+   卡片
+   ============================================ */
+
+.card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--gray-200);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.card-header h2,
+.card-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0 0 4px 0;
+}
+
+.card-header .subtitle {
+    font-size: 13px;
+    color: var(--gray-500);
+    margin: 0;
+}
+
+.card-body {
+    padding: 24px;
 }
 
 /* ============================================
-   表单组件
+   表单
    ============================================ */
 
 .form-group {
-    margin-bottom: 16px;
+    margin-bottom: 20px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 6px;
-    font-size: 14px;
+    margin-bottom: 8px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--gray-700);
 }
@@ -232,11 +206,11 @@ input[type="password"],
 select,
 textarea {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--gray-300);
-    border-radius: var(--radius);
+    padding: 10px 14px;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 8px;
     font-size: 14px;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: all 0.2s ease;
     background: white;
     color: var(--gray-900);
 }
@@ -247,7 +221,7 @@ select:focus,
 textarea:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .form-control::placeholder,
@@ -259,9 +233,10 @@ textarea::placeholder {
 .form-control:disabled,
 input:disabled,
 select:disabled {
-    background: var(--gray-100);
+    background: var(--gray-50);
     color: var(--gray-500);
     cursor: not-allowed;
+    border-color: var(--gray-200);
 }
 
 textarea {
@@ -270,64 +245,78 @@ textarea {
 }
 
 /* ============================================
-   按钮组件
+   按钮 - 重新设计
    ============================================ */
 
 .btn {
     padding: 10px 20px;
     border: none;
-    border-radius: var(--radius);
+    border-radius: 8px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
+    line-height: 1;
 }
 
 .btn-primary {
     background: var(--primary);
     color: white;
+    box-shadow: 0 1px 2px rgba(59, 130, 246, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
     background: var(--primary-hover);
-    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .btn-secondary {
     background: white;
     color: var(--gray-700);
-    border: 1px solid var(--gray-300);
+    border: 1.5px solid var(--gray-300);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .btn-secondary:hover:not(:disabled) {
     background: var(--gray-50);
+    border-color: var(--gray-400);
 }
 
 .btn-danger {
-    background: var(--red-500);
+    background: var(--red);
     color: white;
+    box-shadow: 0 1px 2px rgba(239, 68, 68, 0.3);
 }
 
 .btn-danger:hover:not(:disabled) {
     background: #dc2626;
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4);
+    transform: translateY(-1px);
 }
 
 .btn-sm {
-    padding: 6px 12px;
+    padding: 7px 16px;
     font-size: 13px;
 }
 
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none !important;
 }
 
 .action-btns {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     align-items: center;
 }
 
@@ -337,13 +326,14 @@ textarea {
 
 .search-bar {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     margin-bottom: 20px;
 }
 
 .search-bar input,
 .search-bar select {
     flex: 1;
+    min-width: 0;
 }
 
 .search-bar .btn {
@@ -351,19 +341,19 @@ textarea {
 }
 
 /* ============================================
-   表格组件
+   表格
    ============================================ */
 
 .data-table-container {
     overflow-x: auto;
-    border-radius: var(--radius);
+    border-radius: 8px;
     border: 1px solid var(--gray-200);
 }
 
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .data-table thead {
@@ -375,18 +365,21 @@ textarea {
     text-align: left;
     font-weight: 600;
     color: var(--gray-700);
-    border-bottom: 2px solid var(--gray-200);
+    border-bottom: 1px solid var(--gray-200);
     white-space: nowrap;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .data-table td {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--gray-200);
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--gray-100);
     color: var(--gray-900);
 }
 
 .data-table tbody tr {
-    transition: background-color 0.2s;
+    transition: background-color 0.15s ease;
 }
 
 .data-table tbody tr:hover {
@@ -400,16 +393,16 @@ textarea {
 .data-table td.loading {
     text-align: center;
     color: var(--gray-500);
-    padding: 30px;
+    padding: 40px;
 }
 
 /* ============================================
-   状态徽章
+   徽章
    ============================================ */
 
 .status-badge {
-    padding: 4px 10px;
-    border-radius: 12px;
+    padding: 4px 12px;
+    border-radius: 16px;
     font-size: 12px;
     font-weight: 500;
     white-space: nowrap;
@@ -436,58 +429,44 @@ textarea {
     color: var(--gray-700);
 }
 
-/* 连结徽章 */
 .link-badge {
     padding: 4px 10px;
-    background: var(--blue-50);
-    color: var(--blue-500);
+    background: var(--primary-light);
+    color: var(--primary);
     border-radius: 6px;
     font-size: 12px;
     text-decoration: none;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     display: inline-block;
 }
 
 .link-badge:hover {
     background: #dbeafe;
-    color: #2563eb;
+    color: var(--primary-hover);
 }
 
 /* ============================================
-   响应式设计
+   响应式
    ============================================ */
 
 @media (max-width: 768px) {
-    .page-header {
-        padding: 20px 15px 15px;
-    }
-
-    .page-header h1 {
-        font-size: 22px;
-    }
-
-    .settings-nav {
-        padding: 0 15px;
-    }
-
     .nav-tab {
-        padding: 12px 16px;
+        padding: 14px 20px;
         font-size: 13px;
     }
 
     .settings-content {
-        padding: 20px 15px;
+        padding: 20px 16px;
     }
 
     .tab-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 15px;
+        gap: 16px;
     }
 
     .tab-header .btn {
         width: 100%;
-        justify-content: center;
     }
 
     .search-bar {
@@ -498,8 +477,12 @@ textarea {
         width: 100%;
     }
 
+    .card-body {
+        padding: 20px 16px;
+    }
+
     .data-table {
-        font-size: 13px;
+        font-size: 12px;
     }
 
     .data-table th,
@@ -514,7 +497,6 @@ textarea {
 
     .action-btns .btn {
         width: 100%;
-        justify-content: center;
     }
 }
 
@@ -527,17 +509,9 @@ textarea {
 }
 
 .text-danger {
-    color: var(--red-500);
+    color: var(--red);
 }
 
 .text-success {
-    color: var(--green-500);
-}
-
-.mb-0 {
-    margin-bottom: 0;
-}
-
-.mt-20 {
-    margin-top: 20px;
+    color: var(--green);
 }
