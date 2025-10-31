@@ -162,6 +162,11 @@
           
           // 各员工工时
           const empHours = Array.isArray(data?.employeeHours) ? data.employeeHours : [];
+          console.log('=== Employee Hours Debug ===');
+          console.log('data:', data);
+          console.log('employeeHours:', empHours);
+          console.log('empHours.length:', empHours.length);
+          
           let hoursHtml = '';
           if (empHours.length > 0) {
             hoursHtml = empHours.map(e => {
@@ -227,7 +232,29 @@
               </div>
             </div>`;
           
-          // 1. 先渲染财务状况（独占一行）
+          // 1. 渲染各员工工时（带月份下拉选单）
+          const hoursFrag = document.createElement('div');
+          hoursFrag.innerHTML = listCardWithMonthDropdown('各員工工時', hoursHtml, currentYm);
+          grid.appendChild(hoursFrag.firstElementChild);
+          
+          // 添加月份下拉选单事件监听
+          const hoursCard = Array.from(grid.querySelectorAll('.card.list')).find(c => c.textContent.includes('各員工工時'));
+          if (hoursCard) {
+            const dropdown = hoursCard.querySelector('.month-dropdown');
+            if (dropdown) {
+              dropdown.addEventListener('change', (e) => {
+                currentYm = e.target.value;
+                refresh();
+              });
+            }
+          }
+          
+          // 2. 渲染各员工任务状态（列表形式）
+          const tasksFrag = document.createElement('div');
+          tasksFrag.innerHTML = listCard('各員工任務狀態', tasksHtml);
+          grid.appendChild(tasksFrag.firstElementChild);
+          
+          // 3. 最后渲染财务状况（独占一行，在最下面）
           const finFrag = document.createElement('div');
           finFrag.innerHTML = listCardWithFinanceDropdown('財務狀況', finHtml, financeYm, financeMode);
           const finCard = finFrag.firstElementChild;
@@ -260,28 +287,6 @@
               });
             }
           }
-          
-          // 2. 渲染各员工工时（带月份下拉选单）
-          const hoursFrag = document.createElement('div');
-          hoursFrag.innerHTML = listCardWithMonthDropdown('各員工工時', hoursHtml, currentYm);
-          grid.appendChild(hoursFrag.firstElementChild);
-          
-          // 添加月份下拉选单事件监听
-          const hoursCard = Array.from(grid.querySelectorAll('.card.list')).find(c => c.textContent.includes('各員工工時'));
-          if (hoursCard) {
-            const dropdown = hoursCard.querySelector('.month-dropdown');
-            if (dropdown) {
-              dropdown.addEventListener('change', (e) => {
-                currentYm = e.target.value;
-                refresh();
-              });
-            }
-          }
-          
-          // 3. 渲染各员工任务状态（列表形式）
-          const tasksFrag = document.createElement('div');
-          tasksFrag.innerHTML = listCard('各員工任務狀態', tasksHtml);
-          grid.appendChild(tasksFrag.firstElementChild);
         }
 
         async function ensureUser(){
