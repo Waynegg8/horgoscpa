@@ -117,21 +117,22 @@
 /* Cards */
 .card { 
   background: #ffffff; 
-  border-radius: 16px; 
-  padding: 28px; 
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  border-radius: 12px; 
+  padding: 24px; 
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   border: 1px solid #e5e7eb;
-  transition: box-shadow 0.2s;
+  transition: all 0.2s;
 }
 .card:hover {
-  box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border-color: #d1d5db;
 }
 .card-title { 
-  font-size: 18px; 
+  font-size: 16px; 
   font-weight: 700; 
   color: #111827; 
-  margin-bottom: 24px; 
-  padding-bottom: 16px; 
+  margin-bottom: 20px; 
+  padding-bottom: 12px; 
   border-bottom: 2px solid #f3f4f6;
   letter-spacing: -0.3px;
   display: flex;
@@ -144,23 +145,24 @@
 /* Financial metrics grid - 横向展示财务指标 */
 .fin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
   margin-top: 4px;
 }
 .fin-metric {
-  background: #ffffff;
-  padding: 24px 18px;
-  border-radius: 12px;
+  background: #fafafa;
+  padding: 18px 16px;
+  border-radius: 10px;
   text-align: center;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
   transition: all 0.2s;
   position: relative;
 }
 .fin-metric:hover {
-  border-color: #d1d5db;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  background: #ffffff;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 .fin-metric::before {
   content: '';
@@ -170,7 +172,7 @@
   right: 0;
   height: 3px;
   background: currentColor;
-  border-radius: 12px 12px 0 0;
+  border-radius: 10px 10px 0 0;
 }
 .fin-metric[data-type="ar"]::before { background: #f59e0b; }
 .fin-metric[data-type="paid"]::before { background: #10b981; }
@@ -183,13 +185,13 @@
 .fin-metric-label {
   font-size: 11px;
   color: #6b7280;
-  font-weight: 700;
-  margin-bottom: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 .fin-metric-value {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
   color: #111827;
   letter-spacing: -0.5px;
@@ -294,11 +296,12 @@
 
 /* Employee work hours row */
 .emp-row { 
-  padding: 20px; 
-  margin-bottom: 12px;
-  background: #fafafa;
-  border-radius: 12px;
-  border-left: 5px solid #2563eb;
+  padding: 18px 20px; 
+  margin-bottom: 10px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid #3b82f6;
   display: flex; 
   justify-content: space-between; 
   align-items: center;
@@ -306,65 +309,78 @@
   position: relative;
 }
 .emp-row:hover {
-  background: #f5f5f5;
-  transform: translateX(2px);
+  border-color: #d1d5db;
+  border-left-color: #2563eb;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
 }
 .emp-row:last-child { margin-bottom: 0; }
 .emp-row .name { 
-  font-weight: 700; 
+  font-weight: 600; 
   color: #111827; 
   flex: 1; 
-  font-size: 16px;
-  letter-spacing: -0.2px;
+  font-size: 15px;
+  letter-spacing: -0.3px;
 }
 .emp-row .hours { 
   text-align: right;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  align-items: center;
+  gap: 16px;
 }
 .emp-row .hours b { 
-  font-size: 28px; 
+  font-size: 26px; 
   font-weight: 800;
   color: #111827;
   letter-spacing: -0.5px;
   line-height: 1;
+  min-width: 60px;
+  text-align: right;
 }
 .emp-row .hours-label {
-  font-size: 11px;
+  font-size: 10px;
   color: #9ca3af;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  position: absolute;
+  top: -2px;
+  right: 0;
 }
 .emp-row .muted { 
-  font-size: 12px; 
+  font-size: 13px; 
   color: #6b7280; 
-  margin-top: 6px;
-  line-height: 1.4;
+  display: flex;
+  gap: 12px;
+  font-weight: 500;
+}
+.emp-row .muted span {
+  white-space: nowrap;
 }
 
-/* Employee task status - individual cards */
+/* Employee task status - list items */
 .emp-task-card {
   background: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 18px;
+  border: 1px solid #e5e7eb;
   transition: all 0.2s;
+  margin-bottom: 10px;
+}
+.emp-task-card:last-child {
+  margin-bottom: 0;
 }
 .emp-task-card:hover {
   border-color: #d1d5db;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
 }
 .emp-task-card .name {
-  font-weight: 700;
+  font-weight: 600;
   color: #111827;
-  font-size: 16px;
+  font-size: 14px;
   letter-spacing: -0.2px;
-  margin-bottom: 14px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #f3f4f6;
+  margin-bottom: 10px;
 }
 
 /* Badge styles for tasks */
@@ -372,31 +388,27 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px; 
+  padding: 5px 10px; 
   border-radius: 6px; 
-  font-size: 12px; 
-  font-weight: 700; 
+  font-size: 11px; 
+  font-weight: 600; 
   letter-spacing: 0.3px;
   line-height: 1;
   text-transform: uppercase;
 }
 .badge.success { 
   background: #d1fae5; 
-  color: #065f46;
-  border: 1.5px solid #6ee7b7;
+  color: #047857;
 }
 .badge.info { 
   background: #dbeafe; 
   color: #1e40af;
-  border: 1.5px solid #93c5fd;
 }
 .badge.danger { 
   background: #fee2e2; 
-  color: #991b1b;
-  border: 1.5px solid #fca5a5;
+  color: #dc2626;
 }
 .badge:not(.success):not(.info):not(.danger) { 
   background: #f3f4f6; 
-  color: #374151;
-  border: 1.5px solid #d1d5db;
+  color: #4b5563;
 }
