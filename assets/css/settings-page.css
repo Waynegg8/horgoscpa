@@ -136,13 +136,181 @@
 }
 
 /* ============================================
+   Tab 標題與操作列
+   ============================================ */
+
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-4);
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.tab-header h2 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--primary-700);
+    margin: 0;
+}
+
+/* ============================================
+   搜尋列
+   ============================================ */
+
+.search-bar {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+}
+
+.search-bar input[type="text"],
+.search-bar input[type="date"],
+.search-bar input[type="month"],
+.search-bar input[type="number"],
+.search-bar select {
+    padding: var(--space-3) var(--space-4);
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius-base);
+    font-size: var(--text-sm);
+    font-family: inherit;
+    transition: var(--transition-base);
+    background: var(--bg-primary);
+    height: 44px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.search-bar input[type="text"]:focus,
+.search-bar input[type="date"]:focus,
+.search-bar input[type="month"]:focus,
+.search-bar input[type="number"]:focus,
+.search-bar select:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+/* ============================================
+   資料表格
+   ============================================ */
+
+.data-table-container {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+    background: var(--bg-primary);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+}
+
+.data-table thead {
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.data-table th {
+    padding: var(--space-4) var(--space-5);
+    text-align: left;
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--gray-100);
+    transition: var(--transition-base);
+}
+
+.data-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.data-table td {
+    padding: var(--space-4) var(--space-5);
+    color: var(--text-primary);
+}
+
+.data-table td.loading {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.data-table .action-btns {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: nowrap;
+}
+
+.data-table .btn-sm {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+    min-width: auto;
+    height: auto;
+}
+
+/* ============================================
+   狀態標籤
+   ============================================ */
+
+.status-badge {
+    display: inline-block;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    white-space: nowrap;
+}
+
+.status-badge.active,
+.status-badge.approved,
+.status-badge.paid,
+.status-badge.published {
+    background: var(--success-light);
+    color: var(--success-dark);
+}
+
+.status-badge.pending {
+    background: var(--warning-light);
+    color: var(--warning-dark);
+}
+
+.status-badge.rejected,
+.status-badge.cancelled,
+.status-badge.unpaid {
+    background: var(--danger-light);
+    color: var(--danger-dark);
+}
+
+.status-badge.draft,
+.status-badge.partial {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.status-badge.in_progress {
+    background: var(--info-light);
+    color: var(--info-dark);
+}
+
+/* ============================================
    設定內容區
    ============================================ */
 
 .settings-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-6);
+    /* 移除flex布局，讓tab-panel的display控制顯示 */
 }
 
 /* ============================================
@@ -635,6 +803,39 @@
     .tab-btn {
         padding: var(--space-2) var(--space-3);
         font-size: var(--text-xs);
+    }
+
+    .tab-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+
+    .tab-header .btn {
+        width: 100%;
+    }
+
+    .search-bar {
+        flex-direction: column;
+    }
+
+    .search-bar input,
+    .search-bar select {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .search-bar .btn {
+        width: 100%;
+    }
+
+    .data-table {
+        font-size: var(--text-xs);
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: var(--space-2) var(--space-3);
     }
 
     .settings-content {

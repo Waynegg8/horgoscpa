@@ -11,14 +11,14 @@
   </head>
   <body class="internal-container">
     <header class="settings-header">
-      <h1 class="settings-title">系統設定</h1>
+      <h1 class="settings-title">系統設定與資料管理</h1>
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此頁面</div>
       <div id="msgBar" class="info-bar" style="display:none;" role="status"></div>
     </header>
 
     <!-- Tab 導覽列 -->
     <nav class="settings-tabs">
-      <button class="tab-btn active" data-tab="system">系統基礎</button>
+      <button class="tab-btn active" data-tab="system">系統參數</button>
       <button class="tab-btn" data-tab="users">用戶管理</button>
       <button class="tab-btn" data-tab="clients">客戶管理</button>
       <button class="tab-btn" data-tab="tasks">任務管理</button>
@@ -32,359 +32,700 @@
       <button class="tab-btn" data-tab="lifecycle">服務生命週期</button>
       <button class="tab-btn" data-tab="cms">CMS內容</button>
       <button class="tab-btn" data-tab="automation">自動化規則</button>
+      <button class="tab-btn" data-tab="holidays">國定假日</button>
     </nav>
 
     <main class="settings-content">
-      <!-- 系統基礎 Tab -->
+      
+      <!-- ========================================== -->
+      <!-- 系統參數 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel active" id="tab-system">
-      <section class="card" aria-labelledby="danger-title">
-        <div class="card-header">
-          <h2 id="danger-title">危險設定</h2>
-          <div class="subtitle">變更前請確認風險，非管理員不可操作</div>
-        </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label for="rule_comp_hours_expiry">補休有效期規則</label>
-            <select id="rule_comp_hours_expiry" disabled>
-              <option value="current_month">當月到期</option>
-              <option value="next_month">次月到期</option>
-              <option value="3_months">3 個月</option>
-              <option value="6_months">6 個月</option>
-            </select>
+        <section class="card" aria-labelledby="danger-title">
+          <div class="card-header">
+            <h2 id="danger-title">危險設定</h2>
+            <div class="subtitle">變更前請確認風險，非管理員不可操作</div>
           </div>
-          <div class="form-group">
-            <label>每日工時上限（唯讀）</label>
-            <input type="text" value="12" readonly />
+          <div class="card-body">
+            <div class="form-group">
+              <label for="rule_comp_hours_expiry">補休有效期規則</label>
+              <select id="rule_comp_hours_expiry" disabled>
+                <option value="current_month">當月到期</option>
+                <option value="next_month">次月到期</option>
+                <option value="3_months">3 個月</option>
+                <option value="6_months">6 個月</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>每日工時上限（唯讀）</label>
+              <input type="text" value="12" readonly />
+            </div>
+            <div class="form-group">
+              <label>月薪制換算時數（唯讀）</label>
+              <input type="text" value="240" readonly />
+            </div>
+            <div>
+              <button id="btnSaveDanger" class="btn btn-danger" type="button" disabled>儲存危險設定</button>
+            </div>
           </div>
-          <div class="form-group">
-            <label>月薪制換算時數（唯讀）</label>
-            <input type="text" value="240" readonly />
-          </div>
-          <div>
-            <button id="btnSaveDanger" class="btn btn-danger" type="button" disabled>儲存危險設定</button>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="card" aria-labelledby="payroll-title" style="margin-top:20px;">
-        <div class="card-header">
-          <h2 id="payroll-title">薪資相關參數</h2>
-          <div class="subtitle">全勤獎金與薪資計算相關設定</div>
-        </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label for="attendance_bonus_amount">全勤獎金金額（元）</label>
-            <input id="attendance_bonus_amount" type="number" min="0" step="1" placeholder="1000" disabled />
+        <section class="card" aria-labelledby="payroll-title" style="margin-top:20px;">
+          <div class="card-header">
+            <h2 id="payroll-title">薪資相關參數</h2>
+            <div class="subtitle">全勤獎金與薪資計算相關設定</div>
           </div>
-          <div>
-            <button id="btnSavePayroll" class="btn btn-primary" type="button" disabled>儲存薪資參數</button>
+          <div class="card-body">
+            <div class="form-group">
+              <label for="attendance_bonus_amount">全勤獎金金額（元）</label>
+              <input id="attendance_bonus_amount" type="number" min="0" step="1" placeholder="1000" disabled />
+            </div>
+            <div>
+              <button id="btnSavePayroll" class="btn btn-primary" type="button" disabled>儲存薪資參數</button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="card" aria-labelledby="cost-title" style="margin-top:20px;">
-        <div class="card-header">
-          <h2 id="cost-title">成本分析參數</h2>
-          <div class="subtitle">管理成本與盈利目標設定</div>
-        </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label for="overhead_cost_per_hour">每小時管理成本（元/小時）</label>
-            <input id="overhead_cost_per_hour" type="number" min="0" step="0.01" placeholder="100" disabled />
+        <section class="card" aria-labelledby="cost-title" style="margin-top:20px;">
+          <div class="card-header">
+            <h2 id="cost-title">成本分析參數</h2>
+            <div class="subtitle">管理成本與盈利目標設定</div>
           </div>
-          <div class="form-group">
-            <label for="target_profit_margin">目標毛利率（%）</label>
-            <input id="target_profit_margin" type="number" min="0" max="100" step="0.1" placeholder="50" disabled />
+          <div class="card-body">
+            <div class="form-group">
+              <label for="overhead_cost_per_hour">每小時管理成本（元/小時）</label>
+              <input id="overhead_cost_per_hour" type="number" min="0" step="0.01" placeholder="100" disabled />
+            </div>
+            <div class="form-group">
+              <label for="target_profit_margin">目標毛利率（%）</label>
+              <input id="target_profit_margin" type="number" min="0" max="100" step="0.1" placeholder="50" disabled />
+            </div>
+            <div>
+              <button id="btnSaveCost" class="btn btn-primary" type="button" disabled>儲存成本參數</button>
+            </div>
           </div>
-          <div>
-            <button id="btnSaveCost" class="btn btn-primary" type="button" disabled>儲存成本參數</button>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="card" aria-labelledby="general-title" style="margin-top:20px;">
-        <div class="card-header">
-          <h2 id="general-title">一般設定</h2>
-          <div class="subtitle">公司資訊等一般參數</div>
-        </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label for="company_name">公司名稱</label>
-            <input id="company_name" type="text" placeholder="範例：霍爾果斯會計師事務所" disabled />
+        <section class="card" aria-labelledby="general-title" style="margin-top:20px;">
+          <div class="card-header">
+            <h2 id="general-title">一般設定</h2>
+            <div class="subtitle">公司資訊等一般參數</div>
           </div>
-          <div class="form-group">
-            <label for="contact_email">聯絡信箱</label>
-            <input id="contact_email" type="email" placeholder="contact@horgoscpa.com" disabled />
+          <div class="card-body">
+            <div class="form-group">
+              <label for="company_name">公司名稱</label>
+              <input id="company_name" type="text" placeholder="範例：霍爾果斯會計師事務所" disabled />
+            </div>
+            <div class="form-group">
+              <label for="contact_email">聯絡信箱</label>
+              <input id="contact_email" type="email" placeholder="contact@horgoscpa.com" disabled />
+            </div>
+            <div class="form-group">
+              <label for="timezone">系統時區</label>
+              <input id="timezone" type="text" placeholder="Asia/Taipei" disabled />
+            </div>
+            <div class="form-group">
+              <label for="currency">幣別</label>
+              <input id="currency" type="text" placeholder="TWD" disabled />
+            </div>
+            <div class="form-group">
+              <label for="timesheet_min_unit">工時最小單位（小時）</label>
+              <select id="timesheet_min_unit" disabled>
+                <option value="0.25">0.25</option>
+                <option value="0.5">0.5</option>
+                <option value="1">1</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="soft_delete_enabled">啟用軟刪除</label>
+              <select id="soft_delete_enabled" disabled>
+                <option value="1">啟用</option>
+                <option value="0">停用</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="workday_start">工作日開始時間</label>
+              <input id="workday_start" type="time" disabled />
+            </div>
+            <div class="form-group">
+              <label for="workday_end">工作日結束時間</label>
+              <input id="workday_end" type="time" disabled />
+            </div>
+            <div class="form-group">
+              <label for="report_locale">報表語系</label>
+              <input id="report_locale" type="text" placeholder="zh-TW" disabled />
+            </div>
+            <div>
+              <button id="btnSaveGeneral" class="btn btn-primary" type="button" disabled>儲存一般設定</button>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="timezone">系統時區</label>
-            <input id="timezone" type="text" placeholder="Asia/Taipei" disabled />
-          </div>
-          <div class="form-group">
-            <label for="currency">幣別</label>
-            <input id="currency" type="text" placeholder="TWD" disabled />
-          </div>
-          <div class="form-group">
-            <label for="timesheet_min_unit">工時最小單位（小時）</label>
-            <select id="timesheet_min_unit" disabled>
-              <option value="0.25">0.25</option>
-              <option value="0.5">0.5</option>
-              <option value="1">1</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="soft_delete_enabled">啟用軟刪除</label>
-            <select id="soft_delete_enabled" disabled>
-              <option value="1">啟用</option>
-              <option value="0">停用</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="workday_start">工作日開始時間</label>
-            <input id="workday_start" type="time" disabled />
-          </div>
-          <div class="form-group">
-            <label for="workday_end">工作日結束時間</label>
-            <input id="workday_end" type="time" disabled />
-          </div>
-          <div class="form-group">
-            <label for="report_locale">報表語系</label>
-            <input id="report_locale" type="text" placeholder="zh-TW" disabled />
-          </div>
-          <div>
-            <button id="btnSaveGeneral" class="btn btn-primary" type="button" disabled>儲存一般設定</button>
-          </div>
-        </div>
-      </section>
+        </section>
       </div>
-      <!-- 系統基礎 Tab 結束 -->
 
+      <!-- ========================================== -->
       <!-- 用戶管理 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-users">
-        <section class="card">
-          <div class="card-header">
-            <h2>用戶管理（Users）</h2>
-            <div class="subtitle">管理系統用戶與權限設定</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>Users<br>
-              <strong>主要欄位：</strong>user_id, username, name, email, is_admin, gender, birth_date, start_date
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>用戶管理</h2>
+          <button class="btn btn-primary" id="btnAddUser">+ 新增用戶</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="text" id="searchUsers" placeholder="搜尋用戶名稱、Email..." />
+          <button class="btn btn-primary" id="btnSearchUsers">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="usersTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>帳號</th>
+                <th>姓名</th>
+                <th>Email</th>
+                <th>性別</th>
+                <th>到職日</th>
+                <th>管理員</th>
+                <th>狀態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="9" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- 客戶管理 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-clients">
-        <section class="card">
-          <div class="card-header">
-            <h2>客戶管理（Clients）</h2>
-            <div class="subtitle">管理客戶資料與服務關係</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>Clients<br>
-              <strong>主要欄位：</strong>client_id, name, tax_id, contact_person, email, phone, address
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>客戶管理</h2>
+          <button class="btn btn-primary" id="btnAddClient">+ 新增客戶</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="text" id="searchClients" placeholder="搜尋客戶名稱、統編..." />
+          <button class="btn btn-primary" id="btnSearchClients">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="clientsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>客戶名稱</th>
+                <th>統編</th>
+                <th>聯絡人</th>
+                <th>Email</th>
+                <th>電話</th>
+                <th>狀態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="8" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- 任務管理 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-tasks">
-        <section class="card">
-          <div class="card-header">
-            <h2>任務管理（Tasks & TaskTemplates）</h2>
-            <div class="subtitle">管理任務與任務模板</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>Tasks, TaskTemplates<br>
-              <strong>主要欄位：</strong>task_id, title, description, status, priority, due_date, assigned_to
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>任務管理</h2>
+          <button class="btn btn-primary" id="btnAddTask">+ 新增任務</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="text" id="searchTasks" placeholder="搜尋任務標題..." />
+          <select id="filterTaskStatus">
+            <option value="">所有狀態</option>
+            <option value="pending">待處理</option>
+            <option value="in_progress">進行中</option>
+            <option value="completed">已完成</option>
+            <option value="cancelled">已取消</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchTasks">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="tasksTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>標題</th>
+                <th>客戶</th>
+                <th>負責人</th>
+                <th>優先級</th>
+                <th>狀態</th>
+                <th>到期日</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="8" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- 工時管理 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-timesheets">
-        <section class="card">
-          <div class="card-header">
-            <h2>工時管理（Timesheets）</h2>
-            <div class="subtitle">管理員工工時記錄</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>Timesheets<br>
-              <strong>主要欄位：</strong>timesheet_id, user_id, date, hours, overtime_hours, work_type
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>工時管理</h2>
+          <button class="btn btn-primary" id="btnAddTimesheet">+ 新增工時</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="date" id="searchTimesheetDate" />
+          <select id="filterTimesheetUser">
+            <option value="">所有員工</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchTimesheets">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="timesheetsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>員工</th>
+                <th>日期</th>
+                <th>工作類型</th>
+                <th>時數</th>
+                <th>加班時數</th>
+                <th>說明</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="8" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- 假期管理 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-leaves">
-        <section class="card">
-          <div class="card-header">
-            <h2>假期管理（Leaves & Holidays）</h2>
-            <div class="subtitle">管理員工假期、補休與國定假日</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>Leaves, CompensatoryLeaveGrants, Holidays<br>
-              <strong>主要欄位：</strong>leave_id, user_id, leave_type, start_date, end_date, status
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>假期管理</h2>
+          <button class="btn btn-primary" id="btnAddLeave">+ 新增假期</button>
+        </div>
+        
+        <div class="search-bar">
+          <select id="filterLeaveUser">
+            <option value="">所有員工</option>
+          </select>
+          <select id="filterLeaveType">
+            <option value="">所有類型</option>
+            <option value="annual">特休</option>
+            <option value="sick">病假</option>
+            <option value="personal">事假</option>
+            <option value="comp_time">補休</option>
+          </select>
+          <select id="filterLeaveStatus">
+            <option value="">所有狀態</option>
+            <option value="pending">待審核</option>
+            <option value="approved">已核准</option>
+            <option value="rejected">已拒絕</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchLeaves">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="leavesTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>員工</th>
+                <th>假期類型</th>
+                <th>開始日期</th>
+                <th>結束日期</th>
+                <th>天數</th>
+                <th>狀態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="8" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- 收據收款 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-receipts">
-        <section class="card">
-          <div class="card-header">
-            <h2>收據收款（Receipts & BillingSchedule）</h2>
-            <div class="subtitle">管理收據開立與收款記錄</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>Receipts, BillingSchedule<br>
-              <strong>主要欄位：</strong>receipt_id, client_id, amount, receipt_date, payment_status
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>收據收款管理</h2>
+          <button class="btn btn-primary" id="btnAddReceipt">+ 新增收據</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="text" id="searchReceipts" placeholder="搜尋客戶、收據號..." />
+          <select id="filterReceiptStatus">
+            <option value="">所有狀態</option>
+            <option value="unpaid">未收款</option>
+            <option value="partial">部分收款</option>
+            <option value="paid">已收款</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchReceipts">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="receiptsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>收據號</th>
+                <th>客戶</th>
+                <th>金額</th>
+                <th>開立日期</th>
+                <th>收款狀態</th>
+                <th>已收金額</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="8" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- 薪資管理 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-payroll">
-        <section class="card">
-          <div class="card-header">
-            <h2>薪資管理（Payroll）</h2>
-            <div class="subtitle">管理員工薪資計算與發放</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>Payroll<br>
-              <strong>主要欄位：</strong>payroll_id, user_id, period_month, base_salary, overtime_pay, total_pay
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>薪資管理</h2>
+          <button class="btn btn-primary" id="btnAddPayroll">+ 新增薪資記錄</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="month" id="searchPayrollMonth" />
+          <select id="filterPayrollUser">
+            <option value="">所有員工</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchPayroll">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="payrollTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>員工</th>
+                <th>月份</th>
+                <th>底薪</th>
+                <th>加班費</th>
+                <th>獎金</th>
+                <th>扣款</th>
+                <th>實發</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="9" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- 成本管理 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-overhead">
-        <section class="card">
-          <div class="card-header">
-            <h2>成本管理（Overhead）</h2>
-            <div class="subtitle">管理公司成本與費用分配</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>Overhead<br>
-              <strong>主要欄位：</strong>overhead_id, category, amount, date, description
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>成本管理</h2>
+          <button class="btn btn-primary" id="btnAddOverhead">+ 新增成本項目</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="month" id="searchOverheadMonth" />
+          <select id="filterOverheadCategory">
+            <option value="">所有類別</option>
+            <option value="rent">租金</option>
+            <option value="utilities">水電</option>
+            <option value="software">軟體</option>
+            <option value="marketing">行銷</option>
+            <option value="other">其他</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchOverhead">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="overheadTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>類別</th>
+                <th>項目名稱</th>
+                <th>金額</th>
+                <th>日期</th>
+                <th>說明</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- 附件系統 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-attachments">
-        <section class="card">
-          <div class="card-header">
-            <h2>附件系統（Attachments）</h2>
-            <div class="subtitle">管理系統中所有附件與檔案</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>Attachments<br>
-              <strong>主要欄位：</strong>attachment_id, entity_type, entity_id, file_name, file_url
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>附件系統</h2>
+        </div>
+        
+        <div class="search-bar">
+          <input type="text" id="searchAttachments" placeholder="搜尋檔案名稱..." />
+          <select id="filterAttachmentType">
+            <option value="">所有類型</option>
+            <option value="client">客戶</option>
+            <option value="task">任務</option>
+            <option value="receipt">收據</option>
+            <option value="payroll">薪資</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchAttachments">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="attachmentsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>檔案名稱</th>
+                <th>關聯類型</th>
+                <th>關聯ID</th>
+                <th>檔案大小</th>
+                <th>上傳時間</th>
+                <th>上傳者</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="8" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- 知識庫 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-sop">
-        <section class="card">
-          <div class="card-header">
-            <h2>知識庫（SOP）</h2>
-            <div class="subtitle">管理內部知識文件與SOP</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>SOP<br>
-              <strong>主要欄位：</strong>sop_id, title, content, category, version
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>知識庫（SOP）</h2>
+          <button class="btn btn-primary" id="btnAddSOP">+ 新增SOP</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="text" id="searchSOP" placeholder="搜尋標題、關鍵字..." />
+          <select id="filterSOPCategory">
+            <option value="">所有分類</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchSOP">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="sopTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>標題</th>
+                <th>分類</th>
+                <th>版本</th>
+                <th>更新時間</th>
+                <th>更新者</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- 服務生命週期 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-lifecycle">
-        <section class="card">
-          <div class="card-header">
-            <h2>服務生命週期（ClientServicesLifecycle）</h2>
-            <div class="subtitle">管理客戶服務流程與狀態</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>ClientServicesLifecycle, ServiceStructure<br>
-              <strong>主要欄位：</strong>lifecycle_id, client_id, service_type, status, stage
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>服務生命週期管理</h2>
+          <button class="btn btn-primary" id="btnAddLifecycle">+ 新增服務</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="text" id="searchLifecycle" placeholder="搜尋客戶..." />
+          <select id="filterLifecycleStatus">
+            <option value="">所有狀態</option>
+            <option value="active">進行中</option>
+            <option value="suspended">暫停</option>
+            <option value="terminated">終止</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchLifecycle">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="lifecycleTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>客戶</th>
+                <th>服務類型</th>
+                <th>階段</th>
+                <th>狀態</th>
+                <th>開始日期</th>
+                <th>負責人</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="8" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- CMS內容 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-cms">
-        <section class="card">
-          <div class="card-header">
-            <h2>CMS內容管理（CMS）</h2>
-            <div class="subtitle">管理官網內容與文章發布</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>CMS<br>
-              <strong>主要欄位：</strong>cms_id, title, content, slug, status, published_at
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>CMS內容管理</h2>
+          <button class="btn btn-primary" id="btnAddCMS">+ 新增內容</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="text" id="searchCMS" placeholder="搜尋標題..." />
+          <select id="filterCMSStatus">
+            <option value="">所有狀態</option>
+            <option value="draft">草稿</option>
+            <option value="published">已發布</option>
+            <option value="archived">已封存</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchCMS">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="cmsTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>標題</th>
+                <th>Slug</th>
+                <th>狀態</th>
+                <th>發布時間</th>
+                <th>作者</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      <!-- ========================================== -->
       <!-- 自動化規則 Tab -->
+      <!-- ========================================== -->
       <div class="tab-panel" id="tab-automation">
-        <section class="card">
-          <div class="card-header">
-            <h2>自動化規則（AutomationRules）</h2>
-            <div class="subtitle">管理系統自動化規則與定時任務</div>
-          </div>
-          <div class="card-body">
-            <p class="text-secondary">此模組尚未完成，後續開發中...</p>
-            <div class="db-info">
-              <strong>資料表：</strong>AutomationRules, CronExecutions<br>
-              <strong>主要欄位：</strong>rule_id, rule_name, trigger_type, action_type, is_active
-            </div>
-          </div>
-        </section>
+        <div class="tab-header">
+          <h2>自動化規則管理</h2>
+          <button class="btn btn-primary" id="btnAddAutomation">+ 新增規則</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="text" id="searchAutomation" placeholder="搜尋規則名稱..." />
+          <select id="filterAutomationStatus">
+            <option value="">所有狀態</option>
+            <option value="1">啟用</option>
+            <option value="0">停用</option>
+          </select>
+          <button class="btn btn-primary" id="btnSearchAutomation">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="automationTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>規則名稱</th>
+                <th>觸發類型</th>
+                <th>動作類型</th>
+                <th>狀態</th>
+                <th>上次執行</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- 國定假日 Tab -->
+      <!-- ========================================== -->
+      <div class="tab-panel" id="tab-holidays">
+        <div class="tab-header">
+          <h2>國定假日管理</h2>
+          <button class="btn btn-primary" id="btnAddHoliday">+ 新增假日</button>
+        </div>
+        
+        <div class="search-bar">
+          <input type="number" id="searchHolidayYear" placeholder="年份" min="2020" max="2030" />
+          <button class="btn btn-primary" id="btnSearchHolidays">搜尋</button>
+        </div>
+
+        <div class="data-table-container">
+          <table class="data-table" id="holidaysTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>假日名稱</th>
+                <th>日期</th>
+                <th>類型</th>
+                <th>備註</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="6" class="loading">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </main>
 
     <script>
       (function(){
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+
+        // ========================================
         // Tab 切換功能
+        // ========================================
         const tabBtns = document.querySelectorAll('.tab-btn');
         const tabPanels = document.querySelectorAll('.tab-panel');
 
@@ -402,12 +743,15 @@
             if (targetPanel) {
               targetPanel.classList.add('active');
             }
+
+            // 載入對應tab的資料
+            loadTabData(targetTab);
           });
         });
 
-        const onProdHost = location.hostname.endsWith('horgoscpa.com');
-        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
-
+        // ========================================
+        // 權限檢查與初始化
+        // ========================================
         const permBar = document.getElementById('permBar');
         const dangerControls = [
           document.getElementById('rule_comp_hours_expiry'),
@@ -519,95 +863,826 @@
           }
         }
 
-        // 綁定儲存事件 - 薪資參數
-        document.getElementById('btnSavePayroll').addEventListener('click', async function(){
-          setMsg('', true);
-          const attendBonus = document.getElementById('attendance_bonus_amount').value.trim();
-          const n = parseInt(attendBonus, 10);
-          if (!Number.isInteger(n) || n < 0) { setMsg('全勤獎金必須為非負整數', false); return; }
-          this.disabled = true; this.textContent = '儲存中…';
-          try {
-            await putSetting('attendance_bonus_amount', { value: attendBonus });
-            setMsg('已更新薪資參數。', true);
-          } catch (e) {
-            setMsg(String(e && e.message || '更新失敗'), false);
-          } finally {
-            this.disabled = false; this.textContent = '儲存薪資參數';
-          }
-        });
+        // ========================================
+        // 系統參數儲存事件
+        // ========================================
+        
+        // 薪資參數
+        if(document.getElementById('btnSavePayroll')) {
+          document.getElementById('btnSavePayroll').addEventListener('click', async function(){
+            setMsg('', true);
+            const attendBonus = document.getElementById('attendance_bonus_amount').value.trim();
+            const n = parseInt(attendBonus, 10);
+            if (!Number.isInteger(n) || n < 0) { setMsg('全勤獎金必須為非負整數', false); return; }
+            this.disabled = true; this.textContent = '儲存中…';
+            try {
+              await putSetting('attendance_bonus_amount', { value: attendBonus });
+              setMsg('已更新薪資參數。', true);
+            } catch (e) {
+              setMsg(String(e && e.message || '更新失敗'), false);
+            } finally {
+              this.disabled = false; this.textContent = '儲存薪資參數';
+            }
+          });
+        }
 
-        // 綁定儲存事件 - 成本參數
-        document.getElementById('btnSaveCost').addEventListener('click', async function(){
-          setMsg('', true);
-          const overheadCost = document.getElementById('overhead_cost_per_hour').value.trim();
-          const targetMargin = document.getElementById('target_profit_margin').value.trim();
-          const oc = parseFloat(overheadCost);
-          const tm = parseFloat(targetMargin);
-          if (!Number.isFinite(oc) || oc < 0) { setMsg('管理成本必須為非負數字', false); return; }
-          if (!Number.isFinite(tm) || tm < 0 || tm > 100) { setMsg('目標毛利率必須在 0-100 之間', false); return; }
-          this.disabled = true; this.textContent = '儲存中…';
-          try {
-            await putSetting('overhead_cost_per_hour', { value: overheadCost });
-            await putSetting('target_profit_margin', { value: targetMargin });
-            setMsg('已更新成本參數。', true);
-          } catch (e) {
-            setMsg(String(e && e.message || '更新失敗'), false);
-          } finally {
-            this.disabled = false; this.textContent = '儲存成本參數';
-          }
-        });
+        // 成本參數
+        if(document.getElementById('btnSaveCost')) {
+          document.getElementById('btnSaveCost').addEventListener('click', async function(){
+            setMsg('', true);
+            const overheadCost = document.getElementById('overhead_cost_per_hour').value.trim();
+            const targetMargin = document.getElementById('target_profit_margin').value.trim();
+            const oc = parseFloat(overheadCost);
+            const tm = parseFloat(targetMargin);
+            if (!Number.isFinite(oc) || oc < 0) { setMsg('管理成本必須為非負數字', false); return; }
+            if (!Number.isFinite(tm) || tm < 0 || tm > 100) { setMsg('目標毛利率必須在 0-100 之間', false); return; }
+            this.disabled = true; this.textContent = '儲存中…';
+            try {
+              await putSetting('overhead_cost_per_hour', { value: overheadCost });
+              await putSetting('target_profit_margin', { value: targetMargin });
+              setMsg('已更新成本參數。', true);
+            } catch (e) {
+              setMsg(String(e && e.message || '更新失敗'), false);
+            } finally {
+              this.disabled = false; this.textContent = '儲存成本參數';
+            }
+          });
+        }
 
-        // 綁定儲存事件 - 危險設定
-        document.getElementById('btnSaveDanger').addEventListener('click', async function(){
-          setMsg('', true);
-          const rule = document.getElementById('rule_comp_hours_expiry').value;
-          this.disabled = true; this.textContent = '儲存中…';
-          try {
-            await putSetting('rule_comp_hours_expiry', { value: rule, confirmed: true });
-            setMsg('已更新危險設定。', true);
-          } catch (e) {
-            setMsg(String(e && e.message || '更新失敗'), false);
-          } finally {
-            this.disabled = false; this.textContent = '儲存危險設定';
-          }
-        });
+        // 危險設定
+        if(document.getElementById('btnSaveDanger')) {
+          document.getElementById('btnSaveDanger').addEventListener('click', async function(){
+            setMsg('', true);
+            const rule = document.getElementById('rule_comp_hours_expiry').value;
+            this.disabled = true; this.textContent = '儲存中…';
+            try {
+              await putSetting('rule_comp_hours_expiry', { value: rule, confirmed: true });
+              setMsg('已更新危險設定。', true);
+            } catch (e) {
+              setMsg(String(e && e.message || '更新失敗'), false);
+            } finally {
+              this.disabled = false; this.textContent = '儲存危險設定';
+            }
+          });
+        }
 
-        document.getElementById('btnSaveGeneral').addEventListener('click', async function(){
-          setMsg('', true);
-          const company = document.getElementById('company_name').value.trim();
-          const email = document.getElementById('contact_email').value.trim();
-          const tz = document.getElementById('timezone').value.trim();
-          const cur = document.getElementById('currency').value.trim();
-          const unit = document.getElementById('timesheet_min_unit').value;
-          const soft = document.getElementById('soft_delete_enabled').value;
-          const wdStart = document.getElementById('workday_start').value;
-          const wdEnd = document.getElementById('workday_end').value;
-          const repLoc = document.getElementById('report_locale').value.trim();
-          if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setMsg('Email 格式錯誤', false); return; }
-          this.disabled = true; this.textContent = '儲存中…';
-          try {
-            await putSetting('company_name', { value: company });
-            await putSetting('contact_email', { value: email });
-            await putSetting('timezone', { value: tz||'Asia/Taipei' });
-            await putSetting('currency', { value: cur||'TWD' });
-            await putSetting('timesheet_min_unit', { value: unit });
-            await putSetting('soft_delete_enabled', { value: soft });
-            await putSetting('workday_start', { value: wdStart||'08:30' });
-            await putSetting('workday_end', { value: wdEnd||'17:30' });
-            await putSetting('report_locale', { value: repLoc||'zh-TW' });
-            setMsg('已更新一般設定。', true);
-          } catch (e) {
-            setMsg(String(e && e.message || '更新失敗'), false);
-          } finally {
-            this.disabled = false; this.textContent = '儲存一般設定';
-          }
-        });
+        // 一般設定
+        if(document.getElementById('btnSaveGeneral')) {
+          document.getElementById('btnSaveGeneral').addEventListener('click', async function(){
+            setMsg('', true);
+            const company = document.getElementById('company_name').value.trim();
+            const email = document.getElementById('contact_email').value.trim();
+            const tz = document.getElementById('timezone').value.trim();
+            const cur = document.getElementById('currency').value.trim();
+            const unit = document.getElementById('timesheet_min_unit').value;
+            const soft = document.getElementById('soft_delete_enabled').value;
+            const wdStart = document.getElementById('workday_start').value;
+            const wdEnd = document.getElementById('workday_end').value;
+            const repLoc = document.getElementById('report_locale').value.trim();
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setMsg('Email 格式錯誤', false); return; }
+            this.disabled = true; this.textContent = '儲存中…';
+            try {
+              await putSetting('company_name', { value: company });
+              await putSetting('contact_email', { value: email });
+              await putSetting('timezone', { value: tz||'Asia/Taipei' });
+              await putSetting('currency', { value: cur||'TWD' });
+              await putSetting('timesheet_min_unit', { value: unit });
+              await putSetting('soft_delete_enabled', { value: soft });
+              await putSetting('workday_start', { value: wdStart||'08:30' });
+              await putSetting('workday_end', { value: wdEnd||'17:30' });
+              await putSetting('report_locale', { value: repLoc||'zh-TW' });
+              setMsg('已更新一般設定。', true);
+            } catch (e) {
+              setMsg(String(e && e.message || '更新失敗'), false);
+            } finally {
+              this.disabled = false; this.textContent = '儲存一般設定';
+            }
+          });
+        }
 
+        // ========================================
+        // 載入各Tab資料的函數
+        // ========================================
+        function loadTabData(tabName) {
+          switch(tabName) {
+            case 'system':
+              // 系統參數已在ensureAdmin中載入
+              break;
+            case 'users':
+              loadUsers();
+              break;
+            case 'clients':
+              loadClients();
+              break;
+            case 'tasks':
+              loadTasks();
+              break;
+            case 'timesheets':
+              loadTimesheets();
+              break;
+            case 'leaves':
+              loadLeaves();
+              break;
+            case 'receipts':
+              loadReceipts();
+              break;
+            case 'payroll':
+              loadPayroll();
+              break;
+            case 'overhead':
+              loadOverhead();
+              break;
+            case 'attachments':
+              loadAttachments();
+              break;
+            case 'sop':
+              loadSOP();
+              break;
+            case 'lifecycle':
+              loadLifecycle();
+              break;
+            case 'cms':
+              loadCMS();
+              break;
+            case 'automation':
+              loadAutomation();
+              break;
+            case 'holidays':
+              loadHolidays();
+              break;
+          }
+        }
+
+        // ========================================
+        // 各資料表載入函數
+        // ========================================
+        
+        // 用戶管理
+        async function loadUsers() {
+          const tbody = document.querySelector('#usersTable tbody');
+          tbody.innerHTML = '<tr><td colspan="9" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/users`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const users = json.data;
+            
+            if (users.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="9" class="loading">暫無資料</td></tr>';
+              return;
+            }
+            
+            tbody.innerHTML = users.map(user => `
+              <tr>
+                <td>${user.user_id}</td>
+                <td>${user.username}</td>
+                <td>${user.name || user.username}</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>
+                  <span class="status-badge ${user.is_admin ? 'active' : 'draft'}">
+                    ${user.is_admin ? '是' : '否'}
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge active">正常</span>
+                </td>
+                <td class="action-btns">
+                  <button class="btn btn-sm btn-primary" disabled>編輯</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入用戶失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="9" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 客戶管理
+        async function loadClients() {
+          const tbody = document.querySelector('#clientsTable tbody');
+          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/clients`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const clients = json.data;
+            
+            if (clients.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無資料</td></tr>';
+              return;
+            }
+            
+            tbody.innerHTML = clients.map(client => `
+              <tr>
+                <td>${client.client_id}</td>
+                <td>${client.name || '-'}</td>
+                <td>${client.tax_id || '-'}</td>
+                <td>${client.contact_person || '-'}</td>
+                <td>${client.email || '-'}</td>
+                <td>${client.phone || '-'}</td>
+                <td>
+                  <span class="status-badge ${client.is_deleted ? 'rejected' : 'active'}">
+                    ${client.is_deleted ? '已刪除' : '正常'}
+                  </span>
+                </td>
+                <td class="action-btns">
+                  <button class="btn btn-sm btn-primary" onclick="location.href='/internal/client-detail?id=${client.client_id}'">查看</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入客戶失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 任務管理
+        async function loadTasks() {
+          const tbody = document.querySelector('#tasksTable tbody');
+          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/tasks`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const tasks = json.data;
+            
+            if (tasks.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無資料</td></tr>';
+              return;
+            }
+            
+            const statusMap = {
+              pending: { label: '待處理', class: 'pending' },
+              in_progress: { label: '進行中', class: 'in_progress' },
+              completed: { label: '已完成', class: 'active' },
+              cancelled: { label: '已取消', class: 'rejected' }
+            };
+            
+            const priorityMap = {
+              low: '低',
+              normal: '中',
+              high: '高',
+              urgent: '緊急'
+            };
+            
+            tbody.innerHTML = tasks.map(task => {
+              const status = statusMap[task.status] || { label: task.status, class: 'draft' };
+              return `
+                <tr>
+                  <td>${task.task_id}</td>
+                  <td>${task.title || '-'}</td>
+                  <td>${task.client_name || '-'}</td>
+                  <td>${task.assigned_to_name || '-'}</td>
+                  <td>${priorityMap[task.priority] || task.priority || '-'}</td>
+                  <td>
+                    <span class="status-badge ${status.class}">${status.label}</span>
+                  </td>
+                  <td>${task.due_date || '-'}</td>
+                  <td class="action-btns">
+                    <button class="btn btn-sm btn-primary" disabled>編輯</button>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+            
+          } catch (err) {
+            console.error('載入任務失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 工時管理
+        async function loadTimesheets() {
+          const tbody = document.querySelector('#timesheetsTable tbody');
+          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
+          
+          try {
+            const today = new Date().toISOString().split('T')[0];
+            const res = await fetch(`${apiBase}/timesheets?date=${today}`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const timesheets = json.data;
+            
+            if (timesheets.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無今日工時記錄</td></tr>';
+              return;
+            }
+            
+            tbody.innerHTML = timesheets.map(ts => `
+              <tr>
+                <td>${ts.timesheet_id || '-'}</td>
+                <td>${ts.user_name || '-'}</td>
+                <td>${ts.date || '-'}</td>
+                <td>${ts.work_type || '-'}</td>
+                <td>${ts.hours || 0}</td>
+                <td>${ts.overtime_hours || 0}</td>
+                <td>${ts.description || '-'}</td>
+                <td class="action-btns">
+                  <button class="btn btn-sm btn-primary" disabled>編輯</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入工時失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 假期管理
+        async function loadLeaves() {
+          const tbody = document.querySelector('#leavesTable tbody');
+          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/leaves`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const leaves = json.data;
+            
+            if (leaves.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無假期記錄</td></tr>';
+              return;
+            }
+            
+            const typeMap = {
+              annual: '特休',
+              sick: '病假',
+              personal: '事假',
+              comp_time: '補休'
+            };
+            
+            const statusMap = {
+              pending: { label: '待審核', class: 'pending' },
+              approved: { label: '已核准', class: 'active' },
+              rejected: { label: '已拒絕', class: 'rejected' }
+            };
+            
+            tbody.innerHTML = leaves.map(leave => {
+              const status = statusMap[leave.status] || { label: leave.status, class: 'draft' };
+              return `
+                <tr>
+                  <td>${leave.leave_id}</td>
+                  <td>${leave.user_name || '-'}</td>
+                  <td>${typeMap[leave.leave_type] || leave.leave_type || '-'}</td>
+                  <td>${leave.start_date || '-'}</td>
+                  <td>${leave.end_date || '-'}</td>
+                  <td>${leave.days || 0}</td>
+                  <td>
+                    <span class="status-badge ${status.class}">${status.label}</span>
+                  </td>
+                  <td class="action-btns">
+                    <button class="btn btn-sm btn-primary" disabled>查看</button>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+            
+          } catch (err) {
+            console.error('載入假期失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 收據收款
+        async function loadReceipts() {
+          const tbody = document.querySelector('#receiptsTable tbody');
+          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/receipts`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const receipts = json.data;
+            
+            if (receipts.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無收據記錄</td></tr>';
+              return;
+            }
+            
+            const statusMap = {
+              unpaid: { label: '未收款', class: 'rejected' },
+              partial: { label: '部分收款', class: 'pending' },
+              paid: { label: '已收款', class: 'active' }
+            };
+            
+            tbody.innerHTML = receipts.map(receipt => {
+              const status = statusMap[receipt.payment_status] || { label: receipt.payment_status, class: 'draft' };
+              return `
+                <tr>
+                  <td>${receipt.receipt_id}</td>
+                  <td>${receipt.receipt_number || '-'}</td>
+                  <td>${receipt.client_name || '-'}</td>
+                  <td>$${(receipt.amount || 0).toLocaleString()}</td>
+                  <td>${receipt.receipt_date || '-'}</td>
+                  <td>
+                    <span class="status-badge ${status.class}">${status.label}</span>
+                  </td>
+                  <td>$${(receipt.paid_amount || 0).toLocaleString()}</td>
+                  <td class="action-btns">
+                    <button class="btn btn-sm btn-primary" disabled>編輯</button>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+            
+          } catch (err) {
+            console.error('載入收據失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 薪資管理
+        async function loadPayroll() {
+          const tbody = document.querySelector('#payrollTable tbody');
+          tbody.innerHTML = '<tr><td colspan="9" class="loading">載入中...</td></tr>';
+          
+          try {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const res = await fetch(`${apiBase}/admin/payroll?month=${currentMonth}`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const payrolls = json.data;
+            
+            if (payrolls.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="9" class="loading">暫無本月薪資記錄</td></tr>';
+              return;
+            }
+            
+            tbody.innerHTML = payrolls.map(payroll => `
+              <tr>
+                <td>${payroll.payroll_id}</td>
+                <td>${payroll.user_name || '-'}</td>
+                <td>${payroll.period_month || '-'}</td>
+                <td>$${(payroll.base_salary || 0).toLocaleString()}</td>
+                <td>$${(payroll.overtime_pay || 0).toLocaleString()}</td>
+                <td>$${(payroll.bonus || 0).toLocaleString()}</td>
+                <td>$${(payroll.deductions || 0).toLocaleString()}</td>
+                <td>$${(payroll.total_pay || 0).toLocaleString()}</td>
+                <td class="action-btns">
+                  <button class="btn btn-sm btn-primary" disabled>查看</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入薪資失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="9" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 成本管理
+        async function loadOverhead() {
+          const tbody = document.querySelector('#overheadTable tbody');
+          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
+          
+          try {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            const res = await fetch(`${apiBase}/admin/overhead?month=${currentMonth}`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const overheads = json.data;
+            
+            if (overheads.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無本月成本記錄</td></tr>';
+              return;
+            }
+            
+            const categoryMap = {
+              rent: '租金',
+              utilities: '水電',
+              software: '軟體',
+              marketing: '行銷',
+              other: '其他'
+            };
+            
+            tbody.innerHTML = overheads.map(overhead => `
+              <tr>
+                <td>${overhead.overhead_id}</td>
+                <td>${categoryMap[overhead.category] || overhead.category || '-'}</td>
+                <td>${overhead.item_name || '-'}</td>
+                <td>$${(overhead.amount || 0).toLocaleString()}</td>
+                <td>${overhead.date || '-'}</td>
+                <td>${overhead.description || '-'}</td>
+                <td class="action-btns">
+                  <button class="btn btn-sm btn-primary" disabled>編輯</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入成本失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 附件系統
+        async function loadAttachments() {
+          const tbody = document.querySelector('#attachmentsTable tbody');
+          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/attachments`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const attachments = json.data;
+            
+            if (attachments.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無附件記錄</td></tr>';
+              return;
+            }
+            
+            const typeMap = {
+              client: '客戶',
+              task: '任務',
+              receipt: '收據',
+              payroll: '薪資',
+              other: '其他'
+            };
+            
+            tbody.innerHTML = attachments.map(att => `
+              <tr>
+                <td>${att.attachment_id}</td>
+                <td>${att.file_name || '-'}</td>
+                <td>${typeMap[att.entity_type] || att.entity_type || '-'}</td>
+                <td>${att.entity_id || '-'}</td>
+                <td>${att.file_size ? (att.file_size / 1024).toFixed(2) + ' KB' : '-'}</td>
+                <td>${att.created_at || '-'}</td>
+                <td>${att.uploaded_by_name || '-'}</td>
+                <td class="action-btns">
+                  <button class="btn btn-sm btn-primary" disabled>下載</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入附件失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 知識庫
+        async function loadSOP() {
+          const tbody = document.querySelector('#sopTable tbody');
+          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/sop`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const sops = json.data;
+            
+            if (sops.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無SOP文件</td></tr>';
+              return;
+            }
+            
+            tbody.innerHTML = sops.map(sop => `
+              <tr>
+                <td>${sop.sop_id}</td>
+                <td>${sop.title || '-'}</td>
+                <td>${sop.category || '-'}</td>
+                <td>${sop.version || '1.0'}</td>
+                <td>${sop.updated_at || '-'}</td>
+                <td>${sop.updated_by_name || '-'}</td>
+                <td class="action-btns">
+                  <button class="btn btn-sm btn-primary" disabled>查看</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入SOP失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 服務生命週期
+        async function loadLifecycle() {
+          const tbody = document.querySelector('#lifecycleTable tbody');
+          tbody.innerHTML = '<tr><td colspan="8" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/client-services`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const services = json.data;
+            
+            if (services.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="8" class="loading">暫無服務記錄</td></tr>';
+              return;
+            }
+            
+            const statusMap = {
+              active: { label: '進行中', class: 'active' },
+              suspended: { label: '暫停', class: 'pending' },
+              terminated: { label: '終止', class: 'rejected' }
+            };
+            
+            tbody.innerHTML = services.map(service => {
+              const status = statusMap[service.status] || { label: service.status, class: 'draft' };
+              return `
+                <tr>
+                  <td>${service.service_id || service.cs_id}</td>
+                  <td>${service.client_name || '-'}</td>
+                  <td>${service.service_name || service.service_type || '-'}</td>
+                  <td>${service.stage || '-'}</td>
+                  <td>
+                    <span class="status-badge ${status.class}">${status.label}</span>
+                  </td>
+                  <td>${service.start_date || '-'}</td>
+                  <td>${service.assignee_name || '-'}</td>
+                  <td class="action-btns">
+                    <button class="btn btn-sm btn-primary" disabled>查看</button>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+            
+          } catch (err) {
+            console.error('載入服務生命週期失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="8" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // CMS內容
+        async function loadCMS() {
+          const tbody = document.querySelector('#cmsTable tbody');
+          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/admin/articles`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const articles = json.data;
+            
+            if (articles.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無CMS內容</td></tr>';
+              return;
+            }
+            
+            const statusMap = {
+              draft: { label: '草稿', class: 'draft' },
+              published: { label: '已發布', class: 'active' },
+              archived: { label: '已封存', class: 'rejected' }
+            };
+            
+            tbody.innerHTML = articles.map(article => {
+              const status = statusMap[article.status] || { label: article.status, class: 'draft' };
+              return `
+                <tr>
+                  <td>${article.cms_id || article.article_id}</td>
+                  <td>${article.title || '-'}</td>
+                  <td>${article.slug || '-'}</td>
+                  <td>
+                    <span class="status-badge ${status.class}">${status.label}</span>
+                  </td>
+                  <td>${article.published_at || '-'}</td>
+                  <td>${article.author_name || '-'}</td>
+                  <td class="action-btns">
+                    <button class="btn btn-sm btn-primary" disabled>編輯</button>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+            
+          } catch (err) {
+            console.error('載入CMS失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 自動化規則
+        async function loadAutomation() {
+          const tbody = document.querySelector('#automationTable tbody');
+          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
+          
+          try {
+            const res = await fetch(`${apiBase}/admin/automation-rules`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const rules = json.data;
+            
+            if (rules.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無自動化規則</td></tr>';
+              return;
+            }
+            
+            tbody.innerHTML = rules.map(rule => `
+              <tr>
+                <td>${rule.rule_id}</td>
+                <td>${rule.rule_name || '-'}</td>
+                <td>${rule.trigger_type || '-'}</td>
+                <td>${rule.action_type || '-'}</td>
+                <td>
+                  <span class="status-badge ${rule.is_active ? 'active' : 'rejected'}">
+                    ${rule.is_active ? '啟用' : '停用'}
+                  </span>
+                </td>
+                <td>${rule.last_executed_at || '從未執行'}</td>
+                <td class="action-btns">
+                  <button class="btn btn-sm btn-primary" disabled>編輯</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入自動化規則失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // 國定假日
+        async function loadHolidays() {
+          const tbody = document.querySelector('#holidaysTable tbody');
+          tbody.innerHTML = '<tr><td colspan="6" class="loading">載入中...</td></tr>';
+          
+          try {
+            const currentYear = new Date().getFullYear();
+            const res = await fetch(`${apiBase}/holidays?year=${currentYear}`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            
+            if (!json.ok || !json.data) throw new Error('資料格式錯誤');
+            
+            const holidays = json.data;
+            
+            if (holidays.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無假日記錄</td></tr>';
+              return;
+            }
+            
+            tbody.innerHTML = holidays.map(holiday => `
+              <tr>
+                <td>${holiday.holiday_id}</td>
+                <td>${holiday.name || '-'}</td>
+                <td>${holiday.date || '-'}</td>
+                <td>${holiday.holiday_type || '國定假日'}</td>
+                <td>${holiday.notes || '-'}</td>
+                <td class="action-btns">
+                  <button class="btn btn-sm btn-primary" disabled>編輯</button>
+                </td>
+              </tr>
+            `).join('');
+            
+          } catch (err) {
+            console.error('載入假日失敗:', err);
+            tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗，請稍後再試</td></tr>';
+          }
+        }
+
+        // ========================================
+        // 初始化
+        // ========================================
         ensureAdmin();
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
   </body>
-  </html>
-
-
+</html>
