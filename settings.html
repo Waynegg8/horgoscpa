@@ -2391,8 +2391,9 @@
           form.style.display = form.style.display === 'none' ? 'block' : 'none';
           
           if (form.style.display === 'block') {
-            // 載入服務列表到下拉選單
+            // 載入服務列表和客戶列表
             await loadServicesForTemplateForm();
+            await loadClientsForFilter();
             document.getElementById('newTemplateName').focus();
           }
         });
@@ -2406,7 +2407,7 @@
             if (!json.ok || !json.data) return;
             
             const select = document.getElementById('newTemplateService');
-            select.innerHTML = '<option value="">統一模板（適用所有客戶）</option>' + 
+            select.innerHTML = '<option value="">請選擇服務項目...</option>' + 
               json.data.map(s => `<option value="${s.service_id}">${s.service_name}</option>`).join('');
           } catch (err) {
             console.error('載入服務列表失敗:', err);
@@ -2418,6 +2419,7 @@
           document.getElementById('addTemplateForm').style.display = 'none';
           document.getElementById('newTemplateName').value = '';
           document.getElementById('newTemplateService').value = '';
+          document.getElementById('newTemplateClient').value = '';
           document.getElementById('newTemplateDesc').value = '';
         };
         
@@ -2425,10 +2427,16 @@
         window.saveNewTemplate = async function() {
           const name = document.getElementById('newTemplateName').value.trim();
           const serviceId = document.getElementById('newTemplateService').value;
+          const clientId = document.getElementById('newTemplateClient').value;
           const desc = document.getElementById('newTemplateDesc').value.trim();
           
           if (!name) {
             setMsg('請填寫模板名稱', false);
+            return;
+          }
+          
+          if (!serviceId) {
+            setMsg('請選擇服務項目', false);
             return;
           }
           
@@ -2439,7 +2447,8 @@
               credentials: 'include',
               body: JSON.stringify({
                 template_name: name,
-                service_id: serviceId ? parseInt(serviceId, 10) : null,
+                service_id: parseInt(serviceId, 10),
+                client_id: clientId ? parseInt(clientId, 10) : null,
                 description: desc || null,
                 is_active: true
               })
@@ -2447,23 +2456,26 @@
             
             if (!res.ok) throw new Error('創建失敗');
             
-            setMsg('任務模板創建成功！', true);
+            const json = await res.json();
+            const newTemplateId = json.data?.template_id;
+            
+            setMsg('任務模板創建成功！現在可以新增任務', true);
             cancelAddTemplate();
-            loadTaskTemplates();
+            await loadTaskTemplates();
+            
+            // 自動選中剛創建的模板
+            if (newTemplateId) {
+              setTimeout(() => selectTemplate(newTemplateId, name), 300);
+            }
           } catch (err) {
             console.error('創建模板失敗:', err);
             setMsg('創建失敗：' + err.message, false);
           }
         };
         
-        // 編輯任務模板
-        window.editTemplate = function(templateId) {
-          alert(`編輯功能即將推出\n模板ID: ${templateId}\n\n提示：包含階段管理的完整編輯界面正在開發中`);
-        };
-        
         // 刪除任務模板
         window.deleteTemplate = async function(templateId) {
-          if (!confirm('確定要刪除此任務模板嗎？\n\n注意：會同時刪除模板的所有階段設定。')) return;
+          if (!confirm('確定要刪除此任務模板嗎？\n\n注意：會同時刪除模板的所有任務。')) return;
           try {
             const res = await fetch(`${apiBase}/task-templates/${templateId}`, {
               method: 'DELETE',
@@ -2472,6 +2484,105 @@
             if (!res.ok) throw new Error('刪除失敗');
             setMsg('刪除成功！', true);
             loadTaskTemplates();
+            // 隱藏任務區域
+            document.getElementById('templateStagesCard').style.display = 'none';
+          } catch (err) {
+            setMsg('刪除失敗：' + err.message, false);
+          }
+        };
+        
+        // ========================================
+        // 任務階段的CRUD操作
+        // ========================================
+        
+        // 顯示新增任務表單
+        document.getElementById('btnAddTemplateStage')?.addEventListener('click', () => {
+          if (!currentTemplateId) {
+            setMsg('請先選擇一個任務模板', false);
+            return;
+          }
+          const form = document.getElementById('addStageForm');
+          form.style.display = form.style.display === 'none' ? 'block' : 'none';
+          if (form.style.display === 'block') {
+            document.getElementById('newStageName').focus();
+          }
+        });
+        
+        // 取消新增任務
+        window.cancelAddStage = function() {
+          document.getElementById('addStageForm').style.display = 'none';
+          document.getElementById('newStageName').value = '';
+          document.getElementById('newStageOrder').value = '1';
+          document.getElementById('newStageHours').value = '';
+          document.getElementById('newStageDesc').value = '';
+          document.getElementById('newStageDeps').value = '';
+        };
+        
+        // 儲存新任務
+        window.saveNewStage = async function() {
+          if (!currentTemplateId) {
+            setMsg('請先選擇一個任務模板', false);
+            return;
+          }
+          
+          const name = document.getElementById('newStageName').value.trim();
+          const order = parseInt(document.getElementById('newStageOrder').value, 10);
+          const hours = parseFloat(document.getElementById('newStageHours').value) || null;
+          const desc = document.getElementById('newStageDesc').value.trim();
+          const deps = document.getElementById('newStageDeps').value.trim();
+          
+          if (!name) {
+            setMsg('請填寫任務名稱', false);
+            return;
+          }
+          
+          if (!order || order < 1) {
+            setMsg('請填寫有效的順序（必須≥1）', false);
+            return;
+          }
+          
+          try {
+            const res = await fetch(`${apiBase}/task-templates/${currentTemplateId}/stages`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                stage_name: name,
+                stage_order: order,
+                estimated_hours: hours,
+                description: desc || null,
+                dependencies: deps || null
+              })
+            });
+            
+            if (!res.ok) throw new Error('創建失敗');
+            
+            setMsg('任務創建成功！', true);
+            cancelAddStage();
+            
+            // 重新載入任務列表
+            const templateName = document.getElementById('templateStagesTitle').textContent.split(' - ')[0];
+            selectTemplate(currentTemplateId, templateName);
+          } catch (err) {
+            console.error('創建任務失敗:', err);
+            setMsg('創建失敗：' + err.message, false);
+          }
+        };
+        
+        // 刪除任務
+        window.deleteStage = async function(templateId, stageId) {
+          if (!confirm('確定要刪除此任務嗎？')) return;
+          try {
+            const res = await fetch(`${apiBase}/task-templates/${templateId}/stages/${stageId}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            if (!res.ok) throw new Error('刪除失敗');
+            setMsg('刪除成功！', true);
+            
+            // 重新載入任務列表
+            const templateName = document.getElementById('templateStagesTitle').textContent.split(' - ')[0];
+            selectTemplate(templateId, templateName);
           } catch (err) {
             setMsg('刪除失敗：' + err.message, false);
           }

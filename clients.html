@@ -7,6 +7,8 @@
     <title>客戶管理｜列表</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/internal-system.css?v=3" />
+    <link rel="stylesheet" href="/assets/css/internal-components.css?v=3" />
     <link rel="stylesheet" href="/assets/css/clients-page.css" />
   </head>
   <body class="clients-page">
@@ -236,8 +238,8 @@
               <td>${r.email||''}</td>
               <td>${r.createdAt||''}</td>
               <td>
-                <button type="button" data-act="view" data-id="${r.clientId}">查看</button> 
-                <button type="button" data-act="del" data-id="${r.clientId}">刪除</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-act="view" data-id="${r.clientId}">查看</button> 
+                <button type="button" class="btn btn-sm btn-danger" data-act="del" data-id="${r.clientId}">刪除</button>
               </td>
             `;
             tbody.appendChild(tr);

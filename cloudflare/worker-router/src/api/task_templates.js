@@ -12,14 +12,18 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
   // GET /internal/api/v1/task-templates - 获取任务模板列表
   if (method === "GET" && path === "/internal/api/v1/task-templates") {
     const serviceId = url.searchParams.get("service_id");
+    const clientId = url.searchParams.get("client_id");
 
     try {
       let query = `
-        SELECT tt.template_id, tt.template_name, tt.service_id, tt.description, 
+        SELECT tt.template_id, tt.template_name, tt.service_id, tt.client_id, tt.description, 
                tt.sop_id, tt.is_active, tt.created_at,
-               s.service_name, s.service_code
+               s.service_name, s.service_code,
+               c.company_name as client_name,
+               (SELECT COUNT(*) FROM TaskTemplateStages WHERE template_id = tt.template_id) as stages_count
         FROM TaskTemplates tt
         LEFT JOIN Services s ON s.service_id = tt.service_id
+        LEFT JOIN Clients c ON c.client_id = tt.client_id
         WHERE 1=1
       `;
       const params = [];
@@ -27,6 +31,15 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
       if (serviceId) {
         query += ` AND tt.service_id = ?`;
         params.push(parseInt(serviceId, 10));
+      }
+
+      if (clientId) {
+        if (clientId === 'null') {
+          query += ` AND tt.client_id IS NULL`;
+        } else {
+          query += ` AND tt.client_id = ?`;
+          params.push(parseInt(clientId, 10));
+        }
       }
 
       query += ` ORDER BY tt.template_name ASC`;
@@ -43,10 +56,13 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
         service_id: r.service_id || null,
         service_name: r.service_name || "",
         service_code: r.service_code || "",
+        client_id: r.client_id || null,
+        client_name: r.client_name || "",
         description: r.description || "",
         sop_id: r.sop_id || null,
         is_active: Boolean(r.is_active),
-        created_at: r.created_at
+        created_at: r.created_at,
+        stages_count: r.stages_count || 0
       }));
 
       return jsonResponse(200, {
@@ -146,6 +162,7 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
     const errors = [];
     const templateName = String(body?.template_name || "").trim();
     const serviceId = body?.service_id ? parseInt(body.service_id, 10) : null;
+    const clientId = body?.client_id ? parseInt(body.client_id, 10) : null;
     const description = String(body?.description || "").trim();
     const sopId = body?.sop_id ? parseInt(body.sop_id, 10) : null;
     const stages = Array.isArray(body?.stages) ? body.stages : [];
@@ -162,9 +179,9 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
     try {
       // 插入模板
       const result = await env.DATABASE.prepare(
-        `INSERT INTO TaskTemplates (template_name, service_id, description, sop_id, is_active)
-         VALUES (?, ?, ?, ?, 1)`
-      ).bind(templateName, serviceId, description, sopId).run();
+        `INSERT INTO TaskTemplates (template_name, service_id, client_id, description, sop_id, is_active)
+         VALUES (?, ?, ?, ?, ?, 1)`
+      ).bind(templateName, serviceId, clientId, description, sopId).run();
 
       const templateId = result?.meta?.last_row_id;
 
@@ -340,6 +357,156 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
         ok: true,
         code: "OK",
         message: "模板已删除",
+        meta: { requestId }
+      }, corsHeaders);
+
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "服务器错误", meta: { requestId } }, corsHeaders);
+    }
+  }
+
+  // GET /internal/api/v1/task-templates/:id/stages - 获取模板的阶段列表
+  const matchStages = path.match(/^\/internal\/api\/v1\/task-templates\/(\d+)\/stages$/);
+  if (method === "GET" && matchStages) {
+    const templateId = parseId(matchStages[1]);
+    if (!templateId) {
+      return jsonResponse(400, { ok: false, code: "INVALID_ID", message: "模板ID无效", meta: { requestId } }, corsHeaders);
+    }
+
+    try {
+      const stagesRows = await env.DATABASE.prepare(
+        `SELECT stage_id, stage_name, stage_order, description, estimated_hours, dependencies
+         FROM TaskTemplateStages
+         WHERE template_id = ?
+         ORDER BY stage_order ASC`
+      ).bind(templateId).all();
+
+      const stages = (stagesRows?.results || []).map(s => ({
+        stage_id: s.stage_id,
+        stage_name: s.stage_name || "",
+        stage_order: s.stage_order,
+        description: s.description || "",
+        estimated_hours: Number(s.estimated_hours || 0),
+        dependencies: s.dependencies || ""
+      }));
+
+      return jsonResponse(200, {
+        ok: true,
+        code: "OK",
+        message: "查询成功",
+        data: stages,
+        meta: { requestId }
+      }, corsHeaders);
+
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "服务器错误", meta: { requestId } }, corsHeaders);
+    }
+  }
+
+  // POST /internal/api/v1/task-templates/:id/stages - 为模板添加阶段
+  if (method === "POST" && matchStages) {
+    const templateId = parseId(matchStages[1]);
+    if (!templateId) {
+      return jsonResponse(400, { ok: false, code: "INVALID_ID", message: "模板ID无效", meta: { requestId } }, corsHeaders);
+    }
+
+    // 仅管理员可添加阶段
+    if (!me.is_admin) {
+      return jsonResponse(403, { ok: false, code: "FORBIDDEN", message: "仅管理员可添加阶段", meta: { requestId } }, corsHeaders);
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch (_) {
+      return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "请求格式错误", meta: { requestId } }, corsHeaders);
+    }
+
+    const errors = [];
+    const stageName = String(body?.stage_name || "").trim();
+    const stageOrder = body?.stage_order ? parseInt(body.stage_order, 10) : null;
+    const description = String(body?.description || "").trim();
+    const estimatedHours = body?.estimated_hours ? parseFloat(body.estimated_hours) : null;
+    const dependencies = String(body?.dependencies || "").trim();
+
+    // 验证
+    if (!stageName) {
+      errors.push({ field: "stage_name", message: "请输入任务名称" });
+    }
+    if (!stageOrder || stageOrder < 1) {
+      errors.push({ field: "stage_order", message: "请输入有效的顺序" });
+    }
+
+    if (errors.length) {
+      return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "输入有误", errors, meta: { requestId } }, corsHeaders);
+    }
+
+    try {
+      // 检查模板是否存在
+      const template = await env.DATABASE.prepare(
+        "SELECT template_id FROM TaskTemplates WHERE template_id = ?"
+      ).bind(templateId).first();
+
+      if (!template) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "模板不存在", meta: { requestId } }, corsHeaders);
+      }
+
+      // 插入阶段
+      const result = await env.DATABASE.prepare(
+        `INSERT INTO TaskTemplateStages (template_id, stage_name, stage_order, description, estimated_hours, dependencies)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      ).bind(templateId, stageName, stageOrder, description, estimatedHours, dependencies).run();
+
+      return jsonResponse(201, {
+        ok: true,
+        code: "CREATED",
+        message: "任务已添加",
+        data: { stage_id: result?.meta?.last_row_id },
+        meta: { requestId }
+      }, corsHeaders);
+
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "服务器错误", meta: { requestId } }, corsHeaders);
+    }
+  }
+
+  // DELETE /internal/api/v1/task-templates/:templateId/stages/:stageId - 删除阶段
+  const matchDeleteStage = path.match(/^\/internal\/api\/v1\/task-templates\/(\d+)\/stages\/(\d+)$/);
+  if (method === "DELETE" && matchDeleteStage) {
+    const templateId = parseId(matchDeleteStage[1]);
+    const stageId = parseId(matchDeleteStage[2]);
+    
+    if (!templateId || !stageId) {
+      return jsonResponse(400, { ok: false, code: "INVALID_ID", message: "ID无效", meta: { requestId } }, corsHeaders);
+    }
+
+    // 仅管理员可删除阶段
+    if (!me.is_admin) {
+      return jsonResponse(403, { ok: false, code: "FORBIDDEN", message: "仅管理员可删除阶段", meta: { requestId } }, corsHeaders);
+    }
+
+    try {
+      // 检查阶段是否存在
+      const stage = await env.DATABASE.prepare(
+        "SELECT stage_id FROM TaskTemplateStages WHERE template_id = ? AND stage_id = ?"
+      ).bind(templateId, stageId).first();
+
+      if (!stage) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "任务不存在", meta: { requestId } }, corsHeaders);
+      }
+
+      // 删除阶段
+      await env.DATABASE.prepare(
+        "DELETE FROM TaskTemplateStages WHERE template_id = ? AND stage_id = ?"
+      ).bind(templateId, stageId).run();
+
+      return jsonResponse(200, {
+        ok: true,
+        code: "OK",
+        message: "任务已删除",
         meta: { requestId }
       }, corsHeaders);
 

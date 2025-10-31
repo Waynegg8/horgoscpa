@@ -16,8 +16,8 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 36px;
-  gap: 24px;
+  margin-bottom: 24px;
+  gap: 20px;
 }
 
 .header-left {
@@ -29,8 +29,8 @@
   align-items: center;
   color: #6b7280;
   text-decoration: none;
-  font-size: 14px;
-  margin-bottom: 12px;
+  font-size: 13px;
+  margin-bottom: 8px;
   transition: color 0.2s;
   font-weight: 500;
 }
@@ -40,16 +40,16 @@
 }
 
 .page-title {
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 700;
   color: #111827;
   margin: 0;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
 }
 
 .header-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -349,10 +349,15 @@
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
   z-index: 9999;
+  overflow-y: auto;
+}
+
+.modal.show,
+.modal[style*="display: flex"] {
+  display: flex !important;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  overflow-y: auto;
 }
 
 .modal-content {
@@ -363,7 +368,7 @@
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  margin: auto;
+  position: relative;
 }
 
 .modal-header {
