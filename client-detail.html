@@ -7,21 +7,15 @@
   <link rel="stylesheet" href="/assets/css/common.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-system.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-components.css?v=3">
-  <link rel="stylesheet" href="/assets/css/client-detail-page.css?v=11">
+  <link rel="stylesheet" href="/assets/css/client-detail-page.css?v=12">
 </head>
 <body>
   <div id="navbar-placeholder"></div>
   
   <div class="page-container">
-    <div class="page-header">
-      <div class="header-left">
-        <a href="/internal/clients" class="back-link">← 返回客戶列表</a>
-        <h1 class="page-title" id="clientTitle">客戶資料</h1>
-      </div>
-      <div class="header-actions">
-        <button class="btn btn-secondary" onclick="cancelEdit()">取消</button>
-        <button class="btn btn-primary" onclick="saveClient()">儲存</button>
-      </div>
+    <div class="page-header-simple">
+      <a href="/internal/clients" class="back-link">← 返回客戶列表</a>
+      <h1 class="page-title" id="clientTitle">客戶資料</h1>
     </div>
 
     <!-- 客戶基本信息 - 可編輯表單 -->
@@ -36,7 +30,7 @@
           </div>
           <div class="form-field">
             <label for="inputTaxId">統一編號</label>
-            <input type="text" id="inputTaxId" disabled />
+            <input type="text" id="inputTaxId" readonly />
           </div>
         </div>
         <div class="form-row-2col">
@@ -75,6 +69,10 @@
             <label for="inputPaymentNotes">收款備註</label>
             <textarea id="inputPaymentNotes" rows="3"></textarea>
           </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="cancelEdit()">取消</button>
+          <button type="button" class="btn btn-primary" onclick="saveClient()">儲存變更</button>
         </div>
       </form>
     </div>
@@ -399,9 +397,9 @@
                 <span class="service-status ${statusClass}">${statusText}</span>
               </div>
               <div class="service-actions">
-                <button class="btn btn-sm btn-secondary" onclick="viewBilling(${svc.client_service_id}, '${svc.service_name}')">收費明細</button>
-                <button class="btn btn-sm btn-secondary" onclick="editService(${svc.client_service_id})">編輯</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteService(${svc.client_service_id}, '${svc.service_name}')">刪除</button>
+                <button type="button" class="action-btn action-btn-primary" onclick="viewBilling(${svc.client_service_id}, '${svc.service_name}')">收費明細</button>
+                <button type="button" class="action-btn action-btn-secondary" onclick="editService(${svc.client_service_id})">編輯</button>
+                <button type="button" class="action-btn action-btn-danger" onclick="deleteService(${svc.client_service_id}, '${svc.service_name}')">刪除</button>
               </div>
             </div>
             <div class="service-body">
@@ -513,7 +511,6 @@
         document.getElementById('serviceTaskTemplateId').value = service.task_template_id || '';
         document.getElementById('serviceAutoGenerateTasks').checked = service.auto_generate_tasks !== false;
         document.getElementById('serviceStartDate').value = service.start_date || '';
-        document.getElementById('serviceEndDate').value = service.end_date || '';
         document.getElementById('serviceServiceNotes').value = service.service_notes || '';
         
         clearFormErrors('service');
@@ -545,7 +542,6 @@
         task_template_id: document.getElementById('serviceTaskTemplateId').value || null,
         auto_generate_tasks: document.getElementById('serviceAutoGenerateTasks').checked,
         start_date: document.getElementById('serviceStartDate').value || null,
-        end_date: document.getElementById('serviceEndDate').value || null,
         service_notes: document.getElementById('serviceServiceNotes').value
       };
 
