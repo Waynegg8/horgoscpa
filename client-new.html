@@ -62,7 +62,7 @@
           </div>
           <div class="form-field">
             <label>標籤</label>
-            <div style="color: #9ca3af; font-size: 14px; padding: 12px 0;">新增後可在客戶詳情頁設置</div>
+            <div style="color: #9ca3af; font-size: 14px; padding: 12px 0;">儲存後可在客戶詳情頁設置</div>
           </div>
         </div>
         <div class="form-row-1col">
@@ -79,6 +79,93 @@
         </div>
       </form>
     </div>
+
+    <!-- 客戶服務 -->
+    <div class="content-card">
+      <div class="card-header-with-action">
+        <h2 class="card-title">客戶服務</h2>
+        <button class="btn btn-primary" onclick="openAddServiceModal()">+ 新增服務</button>
+      </div>
+      <div id="servicesList">
+        <div class="no-data">尚未新增服務，可在新增客戶後添加服務</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增/編輯服務 Modal -->
+  <div id="serviceModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 id="serviceModalTitle">新增服務</h3>
+        <button class="modal-close" onclick="closeServiceModal()">&times;</button>
+      </div>
+      <form id="serviceForm" class="modal-form">
+        <input type="hidden" id="serviceClientServiceId" />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="serviceServiceId">服務項目（必填）</label>
+            <select id="serviceServiceId" required>
+              <option value="">載入中...</option>
+            </select>
+            <div class="error-text" id="error_service_id"></div>
+          </div>
+          <div class="form-group">
+            <label for="serviceStatus">服務狀態</label>
+            <select id="serviceStatus">
+              <option value="active">使用中</option>
+              <option value="suspended">暫停</option>
+              <option value="expired">已過期</option>
+              <option value="cancelled">已取消</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="serviceServiceCycle">服務週期</label>
+            <select id="serviceServiceCycle">
+              <option value="monthly">每月</option>
+              <option value="quarterly">每季</option>
+              <option value="yearly">每年</option>
+              <option value="one-time">單次</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="serviceTaskTemplateId">任務模板</label>
+            <select id="serviceTaskTemplateId">
+              <option value="">載入中...</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="serviceStartDate">服務開始日期</label>
+            <input type="date" id="serviceStartDate" />
+          </div>
+          <div class="form-group">
+            <label for="serviceEndDate">服務結束日期</label>
+            <input type="date" id="serviceEndDate" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="serviceAutoGenerateTasks">
+              <input type="checkbox" id="serviceAutoGenerateTasks" checked />
+              自動生成任務
+            </label>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label for="serviceServiceNotes">服務備註</label>
+            <textarea id="serviceServiceNotes" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeServiceModal()">取消</button>
+          <button type="submit" class="btn btn-primary">儲存</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div id="footer-placeholder"></div>
@@ -91,6 +178,10 @@
 
   <script>
     const apiBase = '/internal/api/v1';
+    let tempServices = []; // 暫存服務列表
+    let allServices = [];
+    let allTemplates = [];
+    let editingServiceIndex = null;
 
     // 載入員工列表
     async function loadEmployees() {
@@ -110,6 +201,182 @@
         document.getElementById('inputAssignee').innerHTML = '<option value="">載入失敗</option>';
       }
     }
+
+    // 載入服務類型選項
+    async function loadServiceTypes() {
+      try {
+        const res = await fetch('/internal/api/v1/client-services/services');
+        const json = await res.json();
+        
+        if (json.ok && json.data) {
+          allServices = json.data;
+          const select = document.getElementById('serviceServiceId');
+          select.innerHTML = '<option value="">請選擇服務</option>' +
+            allServices.filter(s => s.is_active).map(s => 
+              `<option value="${s.service_id}">${s.service_name}</option>`
+            ).join('');
+        }
+      } catch (err) {
+        console.error('載入服務選項失敗:', err);
+      }
+    }
+
+    // 載入任務模板選項
+    async function loadTemplates() {
+      try {
+        const res = await fetch('/internal/api/v1/task-templates');
+        const json = await res.json();
+        
+        if (json.ok && json.data) {
+          allTemplates = json.data;
+          const select = document.getElementById('serviceTaskTemplateId');
+          select.innerHTML = '<option value="">無（手動建立任務）</option>' +
+            allTemplates.filter(t => t.is_active).map(t => 
+              `<option value="${t.template_id}">${t.template_name}</option>`
+            ).join('');
+        }
+      } catch (err) {
+        console.error('載入模板選項失敗:', err);
+      }
+    }
+
+    // 打開新增服務Modal
+    function openAddServiceModal() {
+      editingServiceIndex = null;
+      document.getElementById('serviceModalTitle').textContent = '新增服務';
+      document.getElementById('serviceForm').reset();
+      document.getElementById('serviceStatus').value = 'active';
+      document.getElementById('serviceServiceCycle').value = 'monthly';
+      document.getElementById('serviceAutoGenerateTasks').checked = true;
+      clearServiceFormErrors();
+      document.getElementById('serviceModal').style.display = 'flex';
+    }
+
+    // 關閉服務Modal
+    function closeServiceModal() {
+      document.getElementById('serviceModal').style.display = 'none';
+    }
+
+    // 提交服務表單
+    document.getElementById('serviceForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const serviceId = parseInt(document.getElementById('serviceServiceId').value);
+      const service = allServices.find(s => s.service_id === serviceId);
+      
+      if (!service) {
+        alert('請選擇服務項目');
+        return;
+      }
+
+      const serviceData = {
+        service_id: serviceId,
+        service_name: service.service_name,
+        status: document.getElementById('serviceStatus').value,
+        service_cycle: document.getElementById('serviceServiceCycle').value,
+        task_template_id: parseInt(document.getElementById('serviceTaskTemplateId').value) || null,
+        auto_generate_tasks: document.getElementById('serviceAutoGenerateTasks').checked,
+        start_date: document.getElementById('serviceStartDate').value || null,
+        end_date: document.getElementById('serviceEndDate').value || null,
+        service_notes: document.getElementById('serviceServiceNotes').value.trim() || null
+      };
+
+      if (editingServiceIndex !== null) {
+        tempServices[editingServiceIndex] = serviceData;
+      } else {
+        tempServices.push(serviceData);
+      }
+
+      renderTempServices();
+      closeServiceModal();
+    });
+
+    // 渲染臨時服務列表
+    function renderTempServices() {
+      const container = document.getElementById('servicesList');
+      
+      if (tempServices.length === 0) {
+        container.innerHTML = '<div class="no-data">尚未新增服務，點擊「新增服務」按鈕開始添加</div>';
+        return;
+      }
+
+      const statusMap = {
+        'active': '使用中',
+        'suspended': '暫停',
+        'expired': '已過期',
+        'cancelled': '已取消'
+      };
+
+      const cycleMap = {
+        'monthly': '每月',
+        'quarterly': '每季',
+        'yearly': '每年',
+        'one-time': '單次'
+      };
+
+      container.innerHTML = tempServices.map((svc, index) => `
+        <div class="service-card">
+          <div class="service-header">
+            <div class="service-title">
+              <h3>${svc.service_name}</h3>
+              <span class="service-status status-${svc.status}">${statusMap[svc.status]}</span>
+            </div>
+            <div class="service-actions">
+              <button type="button" class="btn btn-sm btn-secondary" onclick="editTempService(${index})">編輯</button>
+              <button type="button" class="btn btn-sm" style="background:#ef4444;color:white;" onclick="deleteTempService(${index})">刪除</button>
+            </div>
+          </div>
+          <div class="service-body">
+            <div class="service-info">
+              <div class="info-row"><span class="info-label">服務週期：</span>${cycleMap[svc.service_cycle]}</div>
+              ${svc.start_date ? `<div class="info-row"><span class="info-label">開始日期：</span>${svc.start_date}</div>` : ''}
+              ${svc.end_date ? `<div class="info-row"><span class="info-label">結束日期：</span>${svc.end_date}</div>` : ''}
+              <div class="info-row"><span class="info-label">自動生成任務：</span>${svc.auto_generate_tasks ? '是' : '否'}</div>
+              ${svc.service_notes ? `<div class="info-row full-width"><span class="info-label">備註：</span>${svc.service_notes}</div>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 編輯臨時服務
+    function editTempService(index) {
+      editingServiceIndex = index;
+      const svc = tempServices[index];
+      
+      document.getElementById('serviceModalTitle').textContent = '編輯服務';
+      document.getElementById('serviceServiceId').value = svc.service_id;
+      document.getElementById('serviceStatus').value = svc.status;
+      document.getElementById('serviceServiceCycle').value = svc.service_cycle;
+      document.getElementById('serviceTaskTemplateId').value = svc.task_template_id || '';
+      document.getElementById('serviceAutoGenerateTasks').checked = svc.auto_generate_tasks;
+      document.getElementById('serviceStartDate').value = svc.start_date || '';
+      document.getElementById('serviceEndDate').value = svc.end_date || '';
+      document.getElementById('serviceServiceNotes').value = svc.service_notes || '';
+      
+      document.getElementById('serviceModal').style.display = 'flex';
+    }
+
+    // 刪除臨時服務
+    function deleteTempService(index) {
+      if (confirm('確定要刪除此服務嗎？')) {
+        tempServices.splice(index, 1);
+        renderTempServices();
+      }
+    }
+
+    function clearServiceFormErrors() {
+      document.querySelectorAll('#serviceForm .error-text').forEach(el => {
+        el.textContent = '';
+        el.style.display = 'none';
+      });
+    }
+
+    // 暴露函數到全局
+    window.openAddServiceModal = openAddServiceModal;
+    window.closeServiceModal = closeServiceModal;
+    window.editTempService = editTempService;
+    window.deleteTempService = deleteTempService;
 
     // 取消新增
     function cancelCreate() {
@@ -166,6 +433,7 @@
       };
       
       try {
+        // 步驟1：創建客戶
         const res = await fetch(`${apiBase}/clients`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -186,7 +454,40 @@
           return;
         }
         
-        alert('客戶新增成功！');
+        // 步驟2：如果有服務，創建服務
+        if (tempServices.length > 0) {
+          let successCount = 0;
+          for (const svc of tempServices) {
+            try {
+              const svcRes = await fetch(`${apiBase}/clients/${clientId}/services`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                  service_id: svc.service_id,
+                  status: svc.status,
+                  service_cycle: svc.service_cycle,
+                  task_template_id: svc.task_template_id,
+                  auto_generate_tasks: svc.auto_generate_tasks,
+                  start_date: svc.start_date,
+                  end_date: svc.end_date,
+                  service_notes: svc.service_notes
+                })
+              });
+              
+              if (svcRes.ok) {
+                successCount++;
+              }
+            } catch (err) {
+              console.error('創建服務失敗:', svc.service_name, err);
+            }
+          }
+          
+          alert(`客戶新增成功！已新增 ${successCount}/${tempServices.length} 個服務`);
+        } else {
+          alert('客戶新增成功！');
+        }
+        
         window.location.href = `/internal/client-detail?id=${clientId}`;
         
       } catch (err) {
@@ -217,7 +518,11 @@
     window.createClient = createClient;
 
     // 初始化
-    loadEmployees();
+    Promise.all([
+      loadEmployees(),
+      loadServiceTypes(),
+      loadTemplates()
+    ]);
   </script>
 </body>
 </html>

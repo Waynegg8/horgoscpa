@@ -1,9 +1,9 @@
 /* 客戶詳情頁樣式 */
 
 .page-container {
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 32px 24px;
+  padding: 32px 48px;
 }
 
 .page-header {
@@ -50,8 +50,8 @@
 .content-card {
   background: #ffffff;
   border-radius: 12px;
-  padding: 28px 32px;
-  margin-bottom: 24px;
+  padding: 32px 40px;
+  margin-bottom: 32px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -580,7 +580,7 @@
 .service-card {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 28px 32px;
+  padding: 32px 40px;
   margin-bottom: 0;
   background: #ffffff;
   transition: all 0.2s;
@@ -596,9 +596,9 @@
 
 .service-info {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px 32px;
-  padding: 16px 0;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px 48px;
+  padding: 20px 0;
 }
 
 /* 響應式設計 */
