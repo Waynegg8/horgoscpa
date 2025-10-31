@@ -248,15 +248,20 @@ async function loadClientServices(clientId) {
   
   // 檢查快取
   if (state.clientServices.has(clientId)) {
+    console.log('[DEBUG] 使用快取的服務項目:', clientId);
     return state.clientServices.get(clientId);
   }
   
   try {
+    console.log('[DEBUG] 載入服務項目 API:', `/internal/api/v1/clients/${clientId}/services`);
     const data = await apiCall(`/internal/api/v1/clients/${clientId}/services`);
+    console.log('[DEBUG] API 回應:', data);
     const services = data.data || [];
+    console.log('[DEBUG] 解析服務項目:', services);
     state.clientServices.set(clientId, services);
     return services;
   } catch (error) {
+    console.error('[DEBUG] 載入服務項目失敗:', error);
     showToast('載入服務項目失敗：' + error.message, 'error');
     return [];
   }
