@@ -104,6 +104,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       
       // Employee hours (各员工分别工时 - 按指定月份查询)
       try {
+        console.log('[Dashboard] Querying employee hours for:', targetYm);
         const rows = await env.DATABASE.prepare(
           `SELECT u.user_id, u.name, u.username,
                   COALESCE(SUM(t.hours), 0) AS total,
@@ -122,6 +123,9 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
            ORDER BY total DESC, u.name ASC`
         ).bind(targetYm).all();
         
+        console.log('[Dashboard] Query results:', rows?.results?.length || 0, 'rows');
+        console.log('[Dashboard] First row:', rows?.results?.[0]);
+        
         res.employeeHours = (rows?.results || []).map(r => ({
           userId: r.user_id,
           name: r.name || r.username || '未命名',
@@ -129,8 +133,11 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           normal: Number(r.normal || 0),
           overtime: Number(r.overtime || 0)
         }));
+        
+        console.log('[Dashboard] Mapped employeeHours:', res.employeeHours.length, 'employees');
       } catch (e) {
-        console.error('Employee hours query error:', e);
+        console.error('[Dashboard] Employee hours query error:', e);
+        console.error('[Dashboard] Error details:', e.message, e.stack);
       }
 
       // Financial status - 根据finMode返回对应数据

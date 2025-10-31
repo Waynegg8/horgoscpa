@@ -90,10 +90,9 @@
   gap: 24px; 
   align-items: start;
 }
-/* Financial card spans full width */
-.dash-grid > .card:has(.fin-row),
-.dash-grid > .card.finance-card {
-  grid-column: 1 / -1;
+/* Financial card spans full width - 使用更直接的选择器 */
+.finance-card {
+  grid-column: 1 / -1 !important;
 }
 
 /* Cards */
