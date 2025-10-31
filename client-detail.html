@@ -436,6 +436,8 @@
       const cycle = document.getElementById('new-service-cycle').value;
       const startDate = document.getElementById('new-service-start-date').value;
 
+      console.log('表單值:', { serviceId, status, cycle, startDate });
+
       if (!serviceId) {
         alert('請選擇服務');
         return;
@@ -450,6 +452,8 @@
 
       try {
         console.log('新增服務請求數據:', data);
+        console.log('currentClientId:', currentClientId);
+        console.log('API URL:', `/internal/api/v1/clients/${currentClientId}/services`);
         
         const res = await fetch(`/internal/api/v1/clients/${currentClientId}/services`, {
           method: 'POST',
