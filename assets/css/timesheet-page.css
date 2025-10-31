@@ -109,14 +109,14 @@
   min-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 14px;
+  font-size: 12px; /* 從 14px 縮小到 12px */
 }
 
 .timesheet-table thead th {
   background: #f8f9fa;
   color: #495057;
   font-weight: 600;
-  padding: 12px 8px;
+  padding: 10px 6px; /* 從 12px 8px 縮小到 10px 6px */
   text-align: center;
   border-bottom: 2px solid #dee2e6;
   white-space: nowrap;
@@ -233,7 +233,7 @@
 /* ==================== 表格主體儲存格 ==================== */
 
 .timesheet-table tbody td {
-  padding: 8px;
+  padding: 6px 4px; /* 從 8px 縮小到 6px 4px */
   border-bottom: 1px solid #e9ecef;
   vertical-align: middle;
 }
@@ -245,10 +245,10 @@
 
 .cell-select {
   width: 100%;
-  padding: 6px 8px;
+  padding: 4px 6px; /* 從 6px 8px 縮小到 4px 6px */
   border: 1px solid #ced4da;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 12px; /* 從 13px 縮小到 12px */
   background: white;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -263,10 +263,10 @@
 
 .hours-input {
   width: 100%;
-  padding: 6px 8px;
+  padding: 4px 6px; /* 從 6px 8px 縮小到 4px 6px */
   border: 1px solid #ced4da;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 12px; /* 從 14px 縮小到 12px */
   text-align: center;
   background: white;
 }
@@ -319,9 +319,9 @@
 /* ==================== 表尾 ==================== */
 
 .timesheet-table tfoot td {
-  padding: 12px 8px;
+  padding: 10px 6px; /* 從 12px 8px 縮小到 10px 6px */
   text-align: center;
-  font-size: 13px;
+  font-size: 12px; /* 從 13px 縮小到 12px */
   border-top: 2px solid #dee2e6;
 }
 

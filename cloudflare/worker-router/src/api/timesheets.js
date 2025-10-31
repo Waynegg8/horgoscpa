@@ -447,18 +447,29 @@ async function handleGetMonthlySummary(request, env, me, requestId, url) {
 			}
 		});
 		
-	// 查詢當月請假時數
-	const leaveResult = await env.DATABASE.prepare(
-		`SELECT COALESCE(SUM(hours), 0) as leave_hours
+	// 查詢當月請假時數（需要根據 unit 轉換）
+	const leaveRows = await env.DATABASE.prepare(
+		`SELECT unit, amount
 		 FROM LeaveRequests
 		 WHERE user_id = ?
 		   AND start_date >= ?
 		   AND start_date < ?
 		   AND status = 'approved'
 		   AND is_deleted = 0`
-	).bind(userId, startDate, endDate).first();
-		
-		const leaveHours = parseFloat(leaveResult?.leave_hours) || 0;
+	).bind(userId, startDate, endDate).all();
+	
+	// 計算總請假時數（day 換算為 8 小時）
+	let leaveHours = 0;
+	if (leaveRows.results) {
+		leaveRows.results.forEach(row => {
+			const amount = parseFloat(row.amount) || 0;
+			if (row.unit === 'hour') {
+				leaveHours += amount;
+			} else if (row.unit === 'day') {
+				leaveHours += amount * 8; // 1天 = 8小時
+			}
+		});
+	}
 		
 		// 回傳統計結果
 		return jsonResponse(200, {
