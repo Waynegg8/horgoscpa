@@ -1,426 +1,193 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="工時管理" />
-    <title>工時管理｜試算表</title>
-    <link rel="icon" href="/favicon.ico" />
-    <link rel="stylesheet" href="/assets/css/common.css" />
-    <link rel="stylesheet" href="/assets/css/internal-system.css" />
-    <style>
-      /* 試算表專用樣式 */
-      .timesheet-container {
-        max-width: 100%;
-        overflow-x: auto;
-        margin: 20px 0;
-      }
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工時管理 - 合勤聯合會計師事務所</title>
+  
+  <!-- 基礎樣式 -->
+  <link rel="stylesheet" href="/assets/css/common.css">
+  <link rel="stylesheet" href="/assets/css/internal-system.css">
+  <link rel="stylesheet" href="/assets/css/internal-components.css">
+  <link rel="stylesheet" href="/assets/css/navbar.css">
+  <link rel="stylesheet" href="/assets/css/footer.css">
+  <link rel="stylesheet" href="/assets/css/mobile-navbar.css">
+  <link rel="stylesheet" href="/assets/css/timesheet-page.css">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+</head>
+<body>
+  <!-- 載入內部系統導航欄 -->
+  <div id="internal-navbar-placeholder"></div>
 
-      /* 修復：週導航區 - 水平三欄佈局 */
-      .week-navigation {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        padding: 16px 20px;
-        background: linear-gradient(135deg, #1b65b8 0%, #155a9d 100%);
-        border-radius: 12px;
-        color: white;
-      }
+  <main class="internal-container">
+    <div class="internal-page-header">
+      <h1 class="internal-page-title">工時管理</h1>
+      <p class="internal-page-description">記錄每天的工作時間，自動計算加班費和補休</p>
+    </div>
 
-      .week-title {
-        font-size: 18px;
-        font-weight: 700;
-        flex: 1;
-        text-align: center;
-      }
-
-      .week-nav-btns {
-        display: flex;
-        gap: 10px;
-        flex-shrink: 0;
-      }
-
-      .week-nav-btns button {
-        padding: 8px 16px;
-        background: rgba(255,255,255,0.2);
-        border: 1px solid rgba(255,255,255,0.3);
-        color: white;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.2s;
-      }
-
-      .week-nav-btns button:hover {
-        background: rgba(255,255,255,0.3);
-      }
-
-      .action-buttons {
-        display: flex;
-        gap: 10px;
-        flex-shrink: 0;
-      }
-
-      /* 試算表表格 */
-      .timesheet-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        background: white;
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
-        overflow: hidden;
-      }
-
-      .timesheet-table th {
-        background: #1b65b8;
-        color: white;
-        padding: 12px 8px;
-        text-align: center;
-        font-weight: 700;
-        font-size: 14px;
-        border: 1px solid #155a9d;
-      }
-
-      .timesheet-table td {
-        padding: 0;
-        border: 1px solid #e9ecef;
-        position: relative;
-      }
-
-      /* 固定左側三欄 */
-      .timesheet-table th:nth-child(1),
-      .timesheet-table th:nth-child(2),
-      .timesheet-table th:nth-child(3) {
-        position: sticky;
-        left: 0;
-        z-index: 10;
-        background: #1b65b8;
-      }
-
-      .timesheet-table th:nth-child(2) {
-        left: 200px;
-      }
-
-      .timesheet-table th:nth-child(3) {
-        left: 350px;
-      }
-
-      .timesheet-table td:nth-child(1),
-      .timesheet-table td:nth-child(2),
-      .timesheet-table td:nth-child(3) {
-        position: sticky;
-        background: #f8f9fa;
-        z-index: 5;
-      }
-
-      .timesheet-table td:nth-child(1) {
-        left: 0;
-      }
-
-      .timesheet-table td:nth-child(2) {
-        left: 200px;
-      }
-
-      .timesheet-table td:nth-child(3) {
-        left: 350px;
-      }
-
-      /* 下拉選單樣式 */
-      .cell-select {
-        width: 100%;
-        height: 100%;
-        min-height: 48px;
-        padding: 8px;
-        border: none;
-        background: #f8f9fa;
-        font-size: 14px;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-
-      .cell-select:hover {
-        background: #e9ecef;
-      }
-
-      .cell-select:focus {
-        outline: 2px solid #1b65b8;
-        background: white;
-      }
-
-      /* 數字輸入儲存格 */
-      .cell-input {
-        width: 100%;
-        height: 48px;
-        padding: 8px;
-        border: none;
-        text-align: center;
-        font-size: 14px;
-        font-weight: 600;
-        background: white;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-
-      .cell-input:hover {
-        background: #fff9c4;
-      }
-
-      .cell-input:focus {
-        outline: 2px solid #1b65b8;
-        background: white;
-      }
-
-      .cell-input.has-value {
-        background: #c8e6c9;
-        color: #2e7d32;
-      }
-
-      .cell-input.weekend {
-        background: #fff3cd;
-      }
-
-      .cell-input.holiday {
-        background: #ffebee;
-      }
-
-      .cell-input.editing {
-        background: white !important;
-        box-shadow: inset 0 0 0 2px #1b65b8;
-      }
-
-      /* 操作按鈕 */
-      .row-actions {
-        display: flex;
-        gap: 4px;
-        justify-content: center;
-        padding: 8px;
-      }
-
-      .btn-delete-row {
-        padding: 6px 12px;
-        background: #dc3545;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 600;
-        transition: all 0.2s;
-      }
-
-      .btn-delete-row:hover {
-        background: #c62828;
-        transform: scale(1.05);
-      }
-
-      /* 修復：按鈕樣式 - 移除margin，適配week-navigation佈局 */
-      .btn-add-row {
-        padding: 8px 16px;
-        background: rgba(255,255,255,0.2);
-        border: 1px solid rgba(255,255,255,0.3);
-        color: white;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 15px;
-        font-weight: 600;
-        transition: all 0.2s;
-      }
-
-      .btn-add-row:hover {
-        background: rgba(255,255,255,0.3);
-      }
-
-      .btn-save-all {
-        padding: 8px 16px;
-        background: #28a745;
-        border: 1px solid rgba(255,255,255,0.3);
-        color: white;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 15px;
-        font-weight: 600;
-        transition: all 0.2s;
-      }
-
-      .btn-save-all:hover:not(:disabled) {
-        background: #218838;
-      }
-
-      .btn-save-all:disabled {
-        background: rgba(255,255,255,0.1);
-        border-color: rgba(255,255,255,0.2);
-        cursor: not-allowed;
-        opacity: 0.6;
-      }
-
-      /* 週彙總區 */
-      .week-summary {
-        margin-top: 24px;
-        padding: 20px;
-        background: #f8f9fa;
-        border-radius: 12px;
-        display: flex;
-        gap: 32px;
-        flex-wrap: wrap;
-      }
-
-      .summary-item {
-        flex: 1;
-        min-width: 200px;
-      }
-
-      .summary-label {
-        font-size: 14px;
-        color: #6c757d;
-        margin-bottom: 8px;
-      }
-
-      .summary-value {
-        font-size: 28px;
-        font-weight: 700;
-        color: #1b65b8;
-      }
-
-      /* 日期徽章 */
-      .date-badge {
-        display: inline-block;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
-        margin-left: 4px;
-      }
-
-      .badge-holiday {
-        background: #ffebee;
-        color: #c62828;
-      }
-
-      .badge-weekend {
-        background: #fff3cd;
-        color: #856404;
-      }
-
-      .badge-makeup {
-        background: #e3f2fd;
-        color: #1565c0;
-      }
-
-      /* 訊息提示 */
-      .message-toast {
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        padding: 16px 24px;
-        border-radius: 8px;
-        background: white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 1000;
-        display: none;
-        animation: slideIn 0.3s ease;
-      }
-
-      .message-toast.show {
-        display: block;
-      }
-
-      .message-toast.success {
-        border-left: 4px solid #28a745;
-        color: #28a745;
-      }
-
-      .message-toast.error {
-        border-left: 4px solid #dc3545;
-        color: #dc3545;
-      }
-
-      @keyframes slideIn {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-    </style>
-  </head>
-  <body class="internal-container">
-    <main class="internal-main">
-      <div class="week-navigation">
-        <div class="week-nav-btns">
-          <button id="btnPrevWeek">← 上一週</button>
-          <button id="btnThisWeek">本週</button>
-          <button id="btnNextWeek">下一週 →</button>
-        </div>
-        <div class="week-title" id="weekTitle">2025年11月4日 - 11月10日</div>
-        <div class="action-buttons">
-          <button class="btn-add-row" id="btnAddRow">+ 新增列</button>
-          <button class="btn-save-all" id="btnSaveAll" disabled>儲存所有變更</button>
-        </div>
+    <!-- 週導航區 -->
+    <div class="week-navigation-container">
+      <div class="week-nav-left">
+        <button class="btn-secondary" id="btnPrevWeek" aria-label="上一週">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M11 2L5 8l6 6" stroke="currentColor" stroke-width="2" fill="none"/>
+          </svg>
+          上一週
+        </button>
+        <button class="btn-primary" id="btnThisWeek">本週</button>
+        <button class="btn-secondary" id="btnNextWeek" aria-label="下一週">
+          下一週
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M5 2l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none"/>
+          </svg>
+        </button>
       </div>
+      
+      <div class="week-nav-center">
+        <h2 class="week-title" id="weekTitle">載入中...</h2>
+      </div>
+      
+      <div class="week-nav-right">
+        <button class="btn-success" id="btnAddRow">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          新增列
+        </button>
+        <button class="btn-primary" id="btnSaveAll">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M13 2H3a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V3a1 1 0 00-1-1z"/>
+            <path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" fill="none"/>
+          </svg>
+          儲存所有變更 <span id="pendingCount" class="pending-count hidden">(0)</span>
+        </button>
+      </div>
+    </div>
 
-      <div class="timesheet-container">
+    <!-- 工時表格容器 -->
+    <div class="timesheet-wrapper">
+      <div class="timesheet-scroll-container">
         <table class="timesheet-table" id="timesheetTable">
           <thead>
             <tr>
-              <th style="width: 200px;">客戶</th>
-              <th style="width: 150px;">業務類型</th>
-              <th style="width: 150px;">工時類型</th>
-              <th style="width: 80px;">週一<br><span class="date-badge" id="dateLabel0">11/4</span></th>
-              <th style="width: 80px;">週二<br><span class="date-badge" id="dateLabel1">11/5</span></th>
-              <th style="width: 80px;">週三<br><span class="date-badge" id="dateLabel2">11/6</span></th>
-              <th style="width: 80px;">週四<br><span class="date-badge" id="dateLabel3">11/7</span></th>
-              <th style="width: 80px;">週五<br><span class="date-badge" id="dateLabel4">11/8</span></th>
-              <th style="width: 80px;">週六<br><span class="date-badge" id="dateLabel5">11/9</span></th>
-              <th style="width: 80px;">週日<br><span class="date-badge" id="dateLabel6">11/10</span></th>
-              <th style="width: 80px;">操作</th>
+              <th class="col-client sticky-col">客戶</th>
+              <th class="col-service sticky-col">服務項目</th>
+              <th class="col-service-item sticky-col">服務子項目</th>
+              <th class="col-worktype sticky-col">工時類型</th>
+              <th class="col-date" id="dateHeader0">週一<br><span class="date-label" id="dateLabel0">-</span></th>
+              <th class="col-date" id="dateHeader1">週二<br><span class="date-label" id="dateLabel1">-</span></th>
+              <th class="col-date" id="dateHeader2">週三<br><span class="date-label" id="dateLabel2">-</span></th>
+              <th class="col-date" id="dateHeader3">週四<br><span class="date-label" id="dateLabel3">-</span></th>
+              <th class="col-date" id="dateHeader4">週五<br><span class="date-label" id="dateLabel4">-</span></th>
+              <th class="col-date" id="dateHeader5">週六<br><span class="date-label" id="dateLabel5">-</span></th>
+              <th class="col-date" id="dateHeader6">週日<br><span class="date-label" id="dateLabel6">-</span></th>
+              <th class="col-action">操作</th>
             </tr>
           </thead>
-          <tbody id="tbody">
-            <!-- 動態生成列 -->
+          <tbody id="timesheetBody">
+            <!-- 動態生成工時記錄列 -->
           </tbody>
           <tfoot>
-            <!-- 新增：請假記錄行 -->
-            <tr id="leave-records-row" style="border-top: 2px solid #1b65b8;">
-              <td colspan="3" style="font-weight: 700; text-align: left; padding: 12px; background: #e7f3ff;">
-                請假記錄
-              </td>
-              <!-- 7個日期欄位，由 JS 動態生成 -->
+            <!-- 請假記錄行 -->
+            <tr class="leave-records-row" id="leaveRecordsRow">
+              <td colspan="4" class="footer-label">請假記錄</td>
+              <td class="leave-cell" id="leaveCell0">-</td>
+              <td class="leave-cell" id="leaveCell1">-</td>
+              <td class="leave-cell" id="leaveCell2">-</td>
+              <td class="leave-cell" id="leaveCell3">-</td>
+              <td class="leave-cell" id="leaveCell4">-</td>
+              <td class="leave-cell" id="leaveCell5">-</td>
+              <td class="leave-cell" id="leaveCell6">-</td>
+              <td class="footer-action"></td>
             </tr>
-            <!-- 原有：工時完整性行 -->
-            <tr id="completeness-row">
-              <td colspan="3" style="font-weight: 700; text-align: left; padding: 12px; background: #f8f9fa;">
-                工時完整性
-              </td>
-              <!-- 7個日期欄位，由 JS 動態生成 -->
+            <!-- 工時完整性行 -->
+            <tr class="completeness-row" id="completenessRow">
+              <td colspan="4" class="footer-label">工時完整性</td>
+              <td class="completeness-cell" id="completenessCell0">-</td>
+              <td class="completeness-cell" id="completenessCell1">-</td>
+              <td class="completeness-cell" id="completenessCell2">-</td>
+              <td class="completeness-cell" id="completenessCell3">-</td>
+              <td class="completeness-cell" id="completenessCell4">-</td>
+              <td class="completeness-cell" id="completenessCell5">-</td>
+              <td class="completeness-cell" id="completenessCell6">-</td>
+              <td class="footer-action"></td>
             </tr>
           </tfoot>
         </table>
       </div>
+    </div>
 
-      <div class="week-summary">
-        <div class="summary-item">
-          <div class="summary-label">本週總工時</div>
-          <div class="summary-value" id="sumTotal">0</div>
-      </div>
-        <div class="summary-item">
-          <div class="summary-label">本週加班工時</div>
-          <div class="summary-value" id="sumOvertime">0</div>
+    <!-- 工時統計區塊 -->
+    <div class="summary-container">
+      <!-- 本週統計 -->
+      <div class="summary-row">
+        <h3 class="summary-title">本週統計</h3>
+        <div class="summary-cards">
+          <div class="summary-card">
+            <div class="summary-label">本週總工時</div>
+            <div class="summary-value" id="weeklyTotalHours">0.0</div>
+            <div class="summary-unit">小時</div>
           </div>
-        <div class="summary-item">
-          <div class="summary-label">本週加權工時</div>
-          <div class="summary-value" id="sumWeighted">0</div>
+          <div class="summary-card">
+            <div class="summary-label">本週加班工時</div>
+            <div class="summary-value" id="weeklyOvertimeHours">0.0</div>
+            <div class="summary-unit">小時</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">本週加權工時</div>
+            <div class="summary-value" id="weeklyWeightedHours">0.0</div>
+            <div class="summary-unit">小時</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">本週請假時數</div>
+            <div class="summary-value" id="weeklyLeaveHours">0.0</div>
+            <div class="summary-unit">小時</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 本月統計 -->
+      <div class="summary-row">
+        <h3 class="summary-title">本月統計</h3>
+        <div class="summary-cards">
+          <div class="summary-card">
+            <div class="summary-label">本月總工時</div>
+            <div class="summary-value" id="monthlyTotalHours">0.0</div>
+            <div class="summary-unit">小時</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">本月加班工時</div>
+            <div class="summary-value" id="monthlyOvertimeHours">0.0</div>
+            <div class="summary-unit">小時</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">本月加權工時</div>
+            <div class="summary-value" id="monthlyWeightedHours">0.0</div>
+            <div class="summary-unit">小時</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">本月請假時數</div>
+            <div class="summary-value" id="monthlyLeaveHours">0.0</div>
+            <div class="summary-unit">小時</div>
+          </div>
+        </div>
       </div>
     </div>
 
-      <div class="message-toast" id="toast"></div>
-    </main>
+  </main>
 
-    <script type="module" src="/assets/js/components/timesheets.js"></script>
-    <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
-  </body>
-  </html>
+  <!-- Toast 通知容器 -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- 載入內部系統頁尾 -->
+  <div id="internal-footer-placeholder"></div>
+
+  <!-- JavaScript -->
+  <script src="/assets/js/components/bootstrap.js"></script>
+  <script src="/assets/js/components/timesheets.js"></script>
+</body>
+</html>
