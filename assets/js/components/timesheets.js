@@ -1264,6 +1264,67 @@ async function handleDeleteRow(rowIndex) {
   const hasHours = row.hours.some(h => h && h > 0);
   
   if (hasHours) {
+    // 檢查刪除正常工時是否會影響加班記錄的前提條件
+    const workType = state.workTypes.find(wt => wt.id == row.work_type_id);
+    const standardHours = 8;
+    
+    if (workType && !workType.isOvertime) {
+      // 這是正常工時類型，檢查每一天
+      const warnings = [];
+      
+      row.hours.forEach((hours, dayIndex) => {
+        if (hours && hours > 0) {
+          const day = state.weekDays[dayIndex];
+          const dateDisplay = formatDateDisplay(new Date(day.iso + 'T00:00:00'));
+          
+          // 計算刪除後該天的正常工時
+          let remainingNormalHours = 0;
+          state.rows.forEach((r, idx) => {
+            if (idx !== rowIndex) {  // 排除即將刪除的這一行
+              const rWorkType = state.workTypes.find(wt => wt.id == r.work_type_id);
+              if (rWorkType && !rWorkType.isOvertime && r.hours[dayIndex]) {
+                remainingNormalHours += r.hours[dayIndex];
+              }
+            }
+          });
+          
+          const leaveHours = state.leaves.get(day.iso)?.hours || 0;
+          const totalNormalWork = leaveHours + remainingNormalHours;
+          
+          // 檢查是否有加班記錄
+          const hasOvertimeRecords = state.rows.some((r, idx) => {
+            if (idx === rowIndex) return false;  // 排除即將刪除的這一行
+            const rWorkType = state.workTypes.find(wt => wt.id == r.work_type_id);
+            return rWorkType && rWorkType.isOvertime && r.hours[dayIndex] && r.hours[dayIndex] > 0;
+          });
+          
+          if (hasOvertimeRecords && totalNormalWork < standardHours) {
+            const shortage = standardHours - totalNormalWork;
+            warnings.push(
+              `${dateDisplay}：\n` +
+              `  刪除後正常工時：${remainingNormalHours} 小時\n` +
+              `  請假：${leaveHours} 小時\n` +
+              `  累計：${totalNormalWork} 小時（不足 ${shortage} 小時）\n` +
+              `  ⚠️  該日有加班記錄，但不滿足加班前提條件（需 >= 8 小時）`
+            );
+          }
+        }
+      });
+      
+      if (warnings.length > 0) {
+        const warningText = 
+          '⚠️  刪除此正常工時後，以下日期的加班記錄將不符合前提條件：\n\n' +
+          warnings.join('\n\n') +
+          '\n\n如果繼續刪除，儲存時會報錯。\n' +
+          '建議：先刪除加班記錄，或填寫正確的正常工時。\n\n' +
+          '確定要繼續刪除嗎？';
+        
+        if (!confirm(warningText)) {
+          return;
+        }
+      }
+    }
+    
     if (!confirm('刪除此列將清除本週該組合的所有工時，確定刪除？')) {
       return;
     }
@@ -1346,6 +1407,73 @@ async function saveAllChanges() {
     } else {
       showToast('✅ 目前沒有待儲存的變更', 'info');
     }
+    return;
+  }
+  
+  // 儲存前驗證：檢查加班記錄的前提條件
+  const standardHours = 8;
+  const validationErrors = [];
+  
+  // 按日期分組檢查
+  const dayChecks = new Map();  // Map<dayIndex, {normalHours, leaveHours, hasOvertime}>
+  
+  state.rows.forEach((row, rowIndex) => {
+    const workType = state.workTypes.find(wt => wt.id == row.work_type_id);
+    if (!workType) return;
+    
+    row.hours.forEach((hours, dayIndex) => {
+      if (hours && hours > 0) {
+        if (!dayChecks.has(dayIndex)) {
+          const day = state.weekDays[dayIndex];
+          dayChecks.set(dayIndex, {
+            day,
+            normalHours: 0,
+            leaveHours: state.leaves.get(day.iso)?.hours || 0,
+            hasOvertime: false,
+            overtimeRows: []
+          });
+        }
+        
+        const check = dayChecks.get(dayIndex);
+        
+        if (workType.isOvertime) {
+          check.hasOvertime = true;
+          check.overtimeRows.push({ rowIndex, workType, hours });
+        } else {
+          check.normalHours += hours;
+        }
+      }
+    });
+  });
+  
+  // 檢查每一天的加班前提條件
+  dayChecks.forEach((check, dayIndex) => {
+    if (check.hasOvertime) {
+      const totalNormalWork = check.normalHours + check.leaveHours;
+      
+      if (totalNormalWork < standardHours) {
+        const shortage = standardHours - totalNormalWork;
+        const dateDisplay = formatDateDisplay(new Date(check.day.iso + 'T00:00:00'));
+        const overtimeNames = check.overtimeRows.map(ot => ot.workType.name).join('、');
+        
+        validationErrors.push(
+          `❌ ${dateDisplay}：有加班記錄（${overtimeNames}），但不滿足加班前提條件\n\n` +
+          `正常工時：${check.normalHours} 小時\n` +
+          `請假：${check.leaveHours} 小時\n` +
+          `累計：${totalNormalWork} 小時（不足 ${shortage} 小時）\n\n` +
+          `💡 請先填寫「一般」工時至少 ${shortage} 小時`
+        );
+      }
+    }
+  });
+  
+  // 如果有驗證錯誤，阻止儲存
+  if (validationErrors.length > 0) {
+    showToast(
+      '❌ 儲存失敗：資料不符合業務規則\n\n' +
+      validationErrors.join('\n\n---\n\n'),
+      'error'
+    );
     return;
   }
   
