@@ -1195,6 +1195,44 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     }
   }
   
+  // 驗證每日總工時上限（12 小時）
+  const DAILY_MAX_HOURS = 12;
+  let existingDailyTotal = 0;
+  
+  // 計算當天所有行的總工時（排除當前正在編輯的單元格）
+  state.rows.forEach((r, idx) => {
+    if (r.hours[dayIndex]) {
+      if (idx === rowIndex) {
+        // 排除當前行的舊值（如果有）
+        // 因為我們要加上新值
+      } else {
+        existingDailyTotal += r.hours[dayIndex];
+      }
+    }
+  });
+  
+  const newDailyTotal = existingDailyTotal + rounded;
+  
+  if (newDailyTotal > DAILY_MAX_HOURS) {
+    const excess = newDailyTotal - DAILY_MAX_HOURS;
+    const remaining = DAILY_MAX_HOURS - existingDailyTotal;
+    showToast(
+      `❌ ${dateDisplay}：每日總工時不可超過 ${DAILY_MAX_HOURS} 小時\n\n` +
+      `當日已有：${existingDailyTotal} 小時\n` +
+      `嘗試新增：${rounded} 小時\n` +
+      `累計總工時：${newDailyTotal} 小時（超過 ${excess} 小時）\n\n` +
+      `💡 您最多還可以填 ${Math.max(0, remaining)} 小時`,
+      'error'
+    );
+    row.hours[dayIndex] = null;
+    const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
+    if (input) {
+      input.value = '';
+      input.closest('td').classList.remove('has-value');
+    }
+    return;
+  }
+  
   row.hours[dayIndex] = rounded;
   
   // 記錄待儲存變更
