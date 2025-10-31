@@ -1040,6 +1040,43 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     return;
   }
   
+  // 驗證加班前置條件：必須先填滿正常工時（正常工時 + 請假 >= 8 小時）
+  if (workType && workType.isOvertime) {
+    const leaveHours = state.leaves.get(day.iso)?.hours || 0;
+    const standardHours = 8; // 正常工作日標準工時
+    
+    // 計算當天已填的正常工時
+    let existingNormalHours = 0;
+    state.rows.forEach((r, idx) => {
+      const rWorkType = state.workTypes.find(wt => wt.id == r.work_type_id);
+      if (rWorkType && !rWorkType.isOvertime && r.hours[dayIndex]) {
+        existingNormalHours += r.hours[dayIndex];
+      }
+    });
+    
+    const totalNormalWork = leaveHours + existingNormalHours;
+    
+    if (totalNormalWork < standardHours) {
+      const shortage = standardHours - totalNormalWork;
+      showToast(
+        `❌ ${dateDisplay}：尚未填滿正常工時，不可填寫加班類型\n\n` +
+        `請假：${leaveHours} 小時\n` +
+        `已填正常工時：${existingNormalHours} 小時\n` +
+        `累計：${totalNormalWork} 小時（標準：${standardHours} 小時）\n\n` +
+        `💡 請先填滿 ${shortage} 小時的正常工時\n` +
+        `（使用「一般」工時類型），再填寫「${workType.name}」`,
+        'error'
+      );
+      row.hours[dayIndex] = null;
+      const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
+      if (input) {
+        input.value = '';
+        input.closest('td').classList.remove('has-value');
+      }
+      return;
+    }
+  }
+  
   // 驗證正常工時與請假衝突：如果當天已請滿假（>= 8小時），不可再填正常工時
   if (workType && !workType.isOvertime) {
     const leaveHours = state.leaves.get(day.iso)?.hours || 0;
