@@ -726,11 +726,9 @@ function createHoursCell(row, rowIndex, dayIndex) {
   }
   
   const input = document.createElement('input');
-  input.type = 'number';
+  input.type = 'text';
   input.className = 'hours-input';
-  input.step = '0.5';
-  input.min = '0';
-  input.max = '12';
+  input.inputMode = 'decimal';  // 移动设备显示数字键盘
   input.dataset.rowIndex = rowIndex;
   input.dataset.dayIndex = dayIndex;
   
