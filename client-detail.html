@@ -810,9 +810,12 @@
     async function saveClient() {
       clearFormErrors();
       
+      const assigneeValue = document.getElementById('inputAssignee').value;
+      const assigneeUserId = assigneeValue ? parseInt(assigneeValue) : 0;
+      
       const payload = {
         company_name: document.getElementById('inputCompanyName').value.trim(),
-        assignee_user_id: parseInt(document.getElementById('inputAssignee').value) || null,
+        assignee_user_id: assigneeUserId,
         phone: document.getElementById('inputPhone').value.trim() || null,
         email: document.getElementById('inputEmail').value.trim() || null,
         client_notes: document.getElementById('inputClientNotes').value.trim() || null,
@@ -823,6 +826,10 @@
       let hasError = false;
       if (!payload.company_name) {
         showFieldError('company_name', '公司名稱為必填');
+        hasError = true;
+      }
+      if (!assigneeUserId || assigneeUserId <= 0) {
+        showFieldError('assignee', '請選擇負責人員');
         hasError = true;
       }
       
