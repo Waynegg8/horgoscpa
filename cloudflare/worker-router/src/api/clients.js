@@ -8,12 +8,11 @@ export async function handleClients(request, env, me, requestId, url) {
 	console.log(`[CLIENTS.JS] 收到請求: ${method} ${url.pathname}`);
 	
 	// ⭐ 路由优先级 1: GET /api/v1/clients/:clientId/services/:serviceId/items
-	const matchItems = url.pathname.match(/\/clients\/[^\/]+\/services\/\d+\/items$/);
+	const matchItems = url.pathname.match(/^\/internal\/api\/v1\/clients\/([^\/]+)\/services\/(\d+)\/items$/);
 	console.log(`[CLIENTS.JS] 路由1匹配結果 (items):`, matchItems);
 	if (method === "GET" && matchItems) {
-		const pathParts = url.pathname.split("/");
-		const clientId = pathParts[pathParts.length - 4];
-		const serviceId = parseInt(pathParts[pathParts.length - 2]);
+		const clientId = matchItems[1];
+		const serviceId = parseInt(matchItems[2]);
 		
 		try {
 			const client = await env.DATABASE.prepare(
@@ -60,11 +59,10 @@ export async function handleClients(request, env, me, requestId, url) {
 	}
 	
 	// ⭐ 路由优先级 2: GET /api/v1/clients/:clientId/services
-	const matchServices = url.pathname.match(/\/clients\/[^\/]+\/services$/);
+	const matchServices = url.pathname.match(/^\/internal\/api\/v1\/clients\/([^\/]+)\/services$/);
 	console.log(`[CLIENTS.JS] 路由2匹配結果 (services):`, matchServices);
 	if (method === "GET" && matchServices) {
-		const pathParts = url.pathname.split("/");
-		const clientId = pathParts[pathParts.length - 2];
+		const clientId = matchServices[1];
 		
 		console.log('[API DEBUG] 服務項目路由匹配！clientId:', clientId);
 		
@@ -565,7 +563,7 @@ export async function handleClients(request, env, me, requestId, url) {
 	// ==================== 客户服务管理 API ====================
 	
 	// POST /api/v1/clients/:clientId/services - 新增客户服务（新结构）
-	const matchAddService = url.pathname.match(/\/clients\/([^\/]+)\/services$/);
+	const matchAddService = url.pathname.match(/^\/internal\/api\/v1\/clients\/([^\/]+)\/services$/);
 	console.log(`[CLIENTS.JS] 檢查新增服務路由: matchAddService =`, matchAddService, `method = ${method}`);
 	if (method === "POST" && matchAddService) {
 		console.log('[CLIENTS.JS] ✅ 匹配新增服務路由');
@@ -641,7 +639,7 @@ export async function handleClients(request, env, me, requestId, url) {
 	}
 	
 	// PUT /api/v1/clients/:clientId/services/:serviceId - 更新客户服务（新结构）
-	const matchUpdateService = url.pathname.match(/\/clients\/([^\/]+)\/services\/(\d+)$/);
+	const matchUpdateService = url.pathname.match(/^\/internal\/api\/v1\/clients\/([^\/]+)\/services\/(\d+)$/);
 	if (method === "PUT" && matchUpdateService) {
 		const clientId = matchUpdateService[1];
 		const clientServiceId = Number(matchUpdateService[2]);
