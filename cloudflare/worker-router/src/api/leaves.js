@@ -102,6 +102,10 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			if (start_date && end_date && end_date < start_date) errors.push({ field:"end_date", message:"結束日期不可早於開始日期" });
 			if (!["day","half","hour"].includes(unit)) errors.push({ field:"unit", message:"單位錯誤" });
 			if (!Number.isFinite(amount) || amount <= 0) errors.push({ field:"amount", message:"需大於 0" });
+			// 如果單位是小時，驗證必須是 0.5 的倍數（與工時系統保持一致）
+			if (unit === 'hour' && Math.abs(amount * 2 - Math.round(amount * 2)) > 1e-9) {
+				errors.push({ field:"amount", message:"請假小時數必須是 0.5 的倍數（例如：0.5、1、1.5、2）" });
+			}
 			if (reason.length > 200) errors.push({ field:"reason", message:"請勿超過 200 字" });
 			if (["maternity","menstrual"].includes(leave_type) && me.gender === 'M') errors.push({ field:"leave_type", message:"此假別僅限女性" });
 			if (leave_type === 'paternity' && me.gender === 'F') errors.push({ field:"leave_type", message:"此假別僅限男性" });
