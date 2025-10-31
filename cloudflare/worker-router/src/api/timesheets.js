@@ -44,26 +44,26 @@ async function handleGetTimelogs(request, env, me, requestId, url) {
 		const startDate = (params.get("start_date") || "").trim();
 		const endDate = (params.get("end_date") || "").trim();
 		
-		const where = ["is_deleted = 0"];
-		const binds = [];
-		
-		// 權限控制：員工只能看自己的
-		if (!me.is_admin) {
-			where.push("user_id = ?");
-			binds.push(String(me.user_id));
-		}
-		
-		// 日期範圍篩選
-		if (startDate) {
-			where.push("work_date >= ?");
-			binds.push(startDate);
-		}
-		if (endDate) {
-			where.push("work_date <= ?");
-			binds.push(endDate);
-		}
-		
-	const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+	const where = ["t.is_deleted = 0"];
+	const binds = [];
+	
+	// 權限控制：員工只能看自己的
+	if (!me.is_admin) {
+		where.push("t.user_id = ?");
+		binds.push(String(me.user_id));
+	}
+	
+	// 日期範圍篩選
+	if (startDate) {
+		where.push("t.work_date >= ?");
+		binds.push(startDate);
+	}
+	if (endDate) {
+		where.push("t.work_date <= ?");
+		binds.push(endDate);
+	}
+	
+const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 	
 	const rows = await env.DATABASE.prepare(
 		`SELECT t.timesheet_id, t.user_id, t.work_date, t.client_id, t.service_id, t.service_item_id, t.service_name, t.work_type, t.hours, t.note,
