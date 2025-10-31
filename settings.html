@@ -108,29 +108,42 @@
         <!-- 任务模板 -->
         <div class="tab-panel" id="tab-templates">
             <div class="search-bar">
-                <button class="btn btn-primary" id="btnAddTemplate">+ 新增</button>
+                <button class="btn btn-primary" id="btnAddTemplate">+ 新增模板</button>
             </div>
-            <div class="card">
+            
+            <!-- 新增模板表单 -->
+            <div class="card hidden" id="addTemplateForm">
+                <div class="card-header"><h3>新增任務模板</h3></div>
                 <div class="card-body">
-                    <div class="data-table-container">
-                        <table class="data-table" id="templatesTable">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>模板名稱</th>
-                                    <th>服務項目</th>
-                                    <th>客戶</th>
-                                    <th>任務數</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="6" class="loading">載入中...</td></tr>
-                            </tbody>
-                        </table>
+                    <div class="form-group">
+                        <label>模板名稱 *</label>
+                        <input type="text" id="newTemplateName" class="form-control" placeholder="例如：記帳服務標準流程">
+                    </div>
+                    <div class="form-group">
+                        <label>服務項目 *</label>
+                        <select id="newTemplateService" class="form-control">
+                            <option value="">請選擇服務項目</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>綁定客戶（可選）</label>
+                        <select id="newTemplateClient" class="form-control">
+                            <option value="">通用模板（不綁定客戶）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>說明</label>
+                        <textarea id="newTemplateDesc" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="action-btns">
+                        <button class="btn btn-primary" onclick="saveTemplate()">儲存模板</button>
+                        <button class="btn btn-secondary" onclick="cancelTemplate()">取消</button>
                     </div>
                 </div>
             </div>
+
+            <!-- 模板列表 -->
+            <div id="templatesList"></div>
         </div>
 
         <!-- 用户 -->
@@ -540,7 +553,7 @@
                 
                 // 加载对应数据
                 const tab = btn.dataset.tab;
-                if (tab === 'templates') loadTemplates();
+                if (tab === 'templates') { loadTemplates(); loadTemplateOptions(); }
                 else if (tab === 'users') loadUsers();
                 else if (tab === 'clients') loadClients();
                 else if (tab === 'tasks') loadTasks();
@@ -560,14 +573,8 @@
         
         // 任务模板 - 新增
         document.getElementById('btnAddTemplate')?.addEventListener('click', () => {
-            const name = prompt('請輸入模板名稱：');
-            if (!name) return;
-            fetch('/internal/api/v1/task-templates', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ template_name: name })
-            }).then(() => { alert('新增成功'); loadTemplates(); }).catch(() => alert('新增失敗'));
+            document.getElementById('addTemplateForm').classList.remove('hidden');
+            loadTemplateOptions();
         });
 
         // 用户 - 新增
@@ -665,34 +672,228 @@
             }
         }
 
-        // 任务模板
+        // 任务模板 - 加载服务和客户下拉选项
+        async function loadTemplateOptions() {
+            try {
+                const [servicesRes, clientsRes] = await Promise.all([
+                    fetch('/internal/api/v1/services', { credentials: 'include' }),
+                    fetch('/internal/api/v1/clients?perPage=200', { credentials: 'include' })
+                ]);
+                const services = await servicesRes.json();
+                const clients = await clientsRes.json();
+                
+                const serviceSelect = document.getElementById('newTemplateService');
+                if (services.data) {
+                    serviceSelect.innerHTML = '<option value="">請選擇服務項目</option>' + 
+                        services.data.map(s => `<option value="${s.service_id}">${s.service_name}</option>`).join('');
+                }
+                
+                const clientSelect = document.getElementById('newTemplateClient');
+                if (clients.data) {
+                    clientSelect.innerHTML = '<option value="">通用模板（不綁定客戶）</option>' + 
+                        clients.data.map(c => `<option value="${c.clientId}">${c.companyName}</option>`).join('');
+                }
+            } catch (e) {}
+        }
+
+        // 任务模板 - 加载列表
         async function loadTemplates() {
-            const tbody = document.querySelector('#templatesTable tbody');
+            const container = document.getElementById('templatesList');
             try {
                 const res = await fetch('/internal/api/v1/task-templates', { credentials: 'include' });
                 const json = await res.json();
+                
                 if (!json.data || json.data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+                    container.innerHTML = '<div class="card"><div class="card-body" style="text-align:center;color:#999">暫無模板</div></div>';
                     return;
                 }
-                tbody.innerHTML = json.data.map(t => `
-                    <tr>
-                        <td>${t.template_id}</td>
-                        <td>${t.template_name}</td>
-                        <td>${t.service_name || '-'}</td>
-                        <td>${t.client_name || '通用'}</td>
-                        <td>${t.stages_count || 0}</td>
-                        <td><button class="btn btn-sm btn-danger" onclick="deleteTemplate(${t.template_id})">刪除</button></td>
-                    </tr>
+                
+                container.innerHTML = json.data.map(t => `
+                    <div class="card" style="margin-bottom:24px">
+                        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+                            <div>
+                                <h3 style="margin:0;font-size:16px">${t.template_name}</h3>
+                                <div style="font-size:13px;color:#666;margin-top:4px">
+                                    服務：${t.service_name || '-'} | 客戶：${t.client_name || '通用'} | ${t.stages_count || 0} 個任務
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:8px">
+                                <button class="btn btn-sm btn-secondary" onclick="toggleTasks(${t.template_id})">▼ 任務</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteTemplate(${t.template_id})">刪除</button>
+                            </div>
+                        </div>
+                        <div class="card-body hidden" id="tasks-${t.template_id}">
+                            <button class="btn btn-sm btn-primary" onclick="showAddTask(${t.template_id})" style="margin-bottom:16px">+ 新增任務</button>
+                            <div id="task-form-${t.template_id}" class="hidden" style="background:#f9f9f9;padding:16px;border-radius:8px;margin-bottom:16px">
+                                <div class="form-group">
+                                    <label>任務名稱 *</label>
+                                    <input type="text" id="task-name-${t.template_id}" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label>排序順序</label>
+                                    <input type="number" id="task-order-${t.template_id}" class="form-control" value="1">
+                                </div>
+                                <div class="form-group">
+                                    <label>連結SOP（可選）</label>
+                                    <select id="task-sop-${t.template_id}" class="form-control">
+                                        <option value="">無</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>連結附件（可選）</label>
+                                    <input type="text" id="task-attachment-${t.template_id}" class="form-control" placeholder="附件ID">
+                                </div>
+                                <div class="action-btns">
+                                    <button class="btn btn-sm btn-primary" onclick="saveTask(${t.template_id})">儲存</button>
+                                    <button class="btn btn-sm btn-secondary" onclick="cancelTask(${t.template_id})">取消</button>
+                                </div>
+                            </div>
+                            <div id="task-list-${t.template_id}">載入中...</div>
+                        </div>
+                    </div>
                 `).join('');
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
+                container.innerHTML = '<div class="card"><div class="card-body" style="text-align:center;color:#f44">載入失敗</div></div>';
             }
         }
+
+        // 切换任务列表显示
+        async function toggleTasks(templateId) {
+            const tasksDiv = document.getElementById(`tasks-${templateId}`);
+            if (tasksDiv.classList.contains('hidden')) {
+                tasksDiv.classList.remove('hidden');
+                await loadTasksForTemplate(templateId);
+            } else {
+                tasksDiv.classList.add('hidden');
+            }
+        }
+
+        // 加载某个模板的任务
+        async function loadTasksForTemplate(templateId) {
+            const listDiv = document.getElementById(`task-list-${templateId}`);
+            try {
+                const res = await fetch(`/internal/api/v1/task-templates/${templateId}/stages`, { credentials: 'include' });
+                const json = await res.json();
+                
+                if (!json.data || json.data.length === 0) {
+                    listDiv.innerHTML = '<div style="color:#999;font-size:13px">尚無任務</div>';
+                    return;
+                }
+                
+                listDiv.innerHTML = '<table class="data-table"><thead><tr><th>順序</th><th>任務名稱</th><th>SOP</th><th>附件</th><th>操作</th></tr></thead><tbody>' +
+                    json.data.map(task => `
+                        <tr>
+                            <td>${task.stage_order}</td>
+                            <td>${task.task_name}</td>
+                            <td>${task.sop_id || '-'}</td>
+                            <td>${task.attachment_id || '-'}</td>
+                            <td><button class="btn btn-sm btn-danger" onclick="deleteTask(${templateId}, ${task.stage_id})">刪除</button></td>
+                        </tr>
+                    `).join('') + '</tbody></table>';
+            } catch (e) {
+                listDiv.innerHTML = '<div style="color:#f44">載入失敗</div>';
+            }
+        }
+
+        // 显示新增任务表单
+        function showAddTask(templateId) {
+            document.getElementById(`task-form-${templateId}`).classList.remove('hidden');
+        }
+        function cancelTask(templateId) {
+            document.getElementById(`task-form-${templateId}`).classList.add('hidden');
+        }
+
+        // 保存任务
+        async function saveTask(templateId) {
+            const name = document.getElementById(`task-name-${templateId}`).value;
+            const order = document.getElementById(`task-order-${templateId}`).value;
+            const sopId = document.getElementById(`task-sop-${templateId}`).value;
+            const attachmentId = document.getElementById(`task-attachment-${templateId}`).value;
+            
+            if (!name) return alert('請輸入任務名稱');
+            
+            try {
+                const res = await fetch(`/internal/api/v1/task-templates/${templateId}/stages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        task_name: name,
+                        stage_order: parseInt(order) || 1,
+                        sop_id: sopId ? parseInt(sopId) : null,
+                        attachment_id: attachmentId ? parseInt(attachmentId) : null
+                    })
+                });
+                if (!res.ok) throw new Error();
+                alert('新增成功');
+                cancelTask(templateId);
+                loadTasksForTemplate(templateId);
+            } catch (e) {
+                alert('新增失敗');
+            }
+        }
+
+        // 删除任务
+        async function deleteTask(templateId, stageId) {
+            if (!confirm('確定刪除此任務？')) return;
+            try {
+                await fetch(`/internal/api/v1/task-templates/${templateId}/stages/${stageId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                loadTasksForTemplate(templateId);
+            } catch (e) {
+                alert('刪除失敗');
+            }
+        }
+
+        // 删除模板
         async function deleteTemplate(id) {
-            if (!confirm('確定刪除？')) return;
-            await fetch('/internal/api/v1/task-templates/' + id, { method: 'DELETE', credentials: 'include' });
-            loadTemplates();
+            if (!confirm('確定刪除此模板？所有任務也會被刪除')) return;
+            try {
+                await fetch('/internal/api/v1/task-templates/' + id, { method: 'DELETE', credentials: 'include' });
+                loadTemplates();
+            } catch (e) {
+                alert('刪除失敗');
+            }
+        }
+
+        // 保存模板
+        async function saveTemplate() {
+            const name = document.getElementById('newTemplateName').value;
+            const serviceId = document.getElementById('newTemplateService').value;
+            const clientId = document.getElementById('newTemplateClient').value;
+            const desc = document.getElementById('newTemplateDesc').value;
+            
+            if (!name || !serviceId) return alert('請輸入模板名稱並選擇服務項目');
+            
+            try {
+                const res = await fetch('/internal/api/v1/task-templates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        template_name: name,
+                        service_id: parseInt(serviceId),
+                        client_id: clientId ? parseInt(clientId) : null,
+                        description: desc
+                    })
+                });
+                if (!res.ok) throw new Error();
+                alert('新增成功');
+                cancelTemplate();
+                loadTemplates();
+            } catch (e) {
+                alert('新增失敗');
+            }
+        }
+
+        function cancelTemplate() {
+            document.getElementById('addTemplateForm').classList.add('hidden');
+            document.getElementById('newTemplateName').value = '';
+            document.getElementById('newTemplateService').value = '';
+            document.getElementById('newTemplateClient').value = '';
+            document.getElementById('newTemplateDesc').value = '';
         }
 
         // 用户管理
