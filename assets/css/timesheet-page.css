@@ -79,6 +79,8 @@
 .btn-success {
   background: #28a745;
   color: white;
+  opacity: 1 !important; /* 確保始終可見 */
+  visibility: visible !important; /* 確保始終可見 */
 }
 
 .btn-success:hover {
@@ -150,30 +152,30 @@
 
 .col-client.sticky-col {
   left: 0;
-  width: 95px; /* 固定寬度 */
-  min-width: 95px;
-  max-width: 95px;
+  width: 120px; /* 增加寬度 */
+  min-width: 120px;
+  max-width: 120px;
 }
 
 .col-service.sticky-col {
-  left: 95px;
-  width: 75px; /* 固定寬度 */
-  min-width: 75px;
-  max-width: 75px;
+  left: 120px;
+  width: 90px; /* 增加寬度 */
+  min-width: 90px;
+  max-width: 90px;
 }
 
 .col-service-item.sticky-col {
-  left: 170px;
-  width: 75px; /* 固定寬度 */
-  min-width: 75px;
-  max-width: 75px;
+  left: 210px;
+  width: 90px; /* 增加寬度 */
+  min-width: 90px;
+  max-width: 90px;
 }
 
 .col-worktype.sticky-col {
-  left: 245px;
-  width: 100px; /* 固定寬度 */
-  min-width: 100px;
-  max-width: 100px;
+  left: 300px;
+  width: 120px; /* 增加寬度 */
+  min-width: 120px;
+  max-width: 120px;
 }
 
 /* 表頭固定列也需要設置left */
@@ -184,34 +186,34 @@
 }
 
 .timesheet-table thead th.col-service {
-  left: 100px;
+  left: 120px;
   z-index: 15;
   background: #f8f9fa !important;
 }
 
 .timesheet-table thead th.col-service-item {
-  left: 180px;
+  left: 210px;
   z-index: 15;
   background: #f8f9fa !important;
 }
 
 .timesheet-table thead th.col-worktype {
-  left: 260px;
+  left: 300px;
   z-index: 15;
   background: #f8f9fa !important;
 }
 
 /* 日期欄位 */
 .col-date {
-  width: 60px; /* 固定寬度 */
-  min-width: 60px;
-  max-width: 60px;
+  width: 70px; /* 增加寬度 */
+  min-width: 70px;
+  max-width: 70px;
 }
 
 .col-action {
-  width: 60px; /* 固定寬度 */
-  min-width: 60px;
-  max-width: 60px;
+  width: 70px; /* 增加寬度 */
+  min-width: 70px;
+  max-width: 70px;
 }
 
 .date-label {
