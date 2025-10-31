@@ -1,511 +1,183 @@
 <!doctype html>
 <html lang="zh-Hant">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="系統設定（管理員）" />
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>系統設定｜管理員</title>
-    <link rel="icon" href="/favicon.ico" />
-    <link rel="stylesheet" href="/assets/css/common.css" />
-    <link rel="stylesheet" href="/assets/css/settings-page.css?v=20251031-100" />
-  </head>
-  <body class="internal-container">
-    <div id="permBar" class="alert alert-danger" style="display:none;" role="alert">您沒有權限檢視此頁面</div>
-    <div id="msgBar" class="alert alert-info" style="display:none;" role="status"></div>
-
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/assets/css/settings-page.css?v=200">
+</head>
+<body class="internal-container">
+    <div id="permBar" class="alert alert-danger" style="display:none">您沒有權限</div>
+    
     <nav class="settings-nav">
-      <button class="nav-tab active" data-tab="system">系統參數</button>
-      <button class="nav-tab" data-tab="services">服務項目</button>
-      <button class="nav-tab" data-tab="task-templates">任務模板</button>
-      <button class="nav-tab" data-tab="users">用戶</button>
-      <button class="nav-tab" data-tab="clients">客戶</button>
-      <button class="nav-tab" data-tab="tasks">任務</button>
-      <button class="nav-tab" data-tab="timesheets">工時</button>
-      <button class="nav-tab" data-tab="leaves">假期</button>
-      <button class="nav-tab" data-tab="receipts">收據</button>
-      <button class="nav-tab" data-tab="payroll">薪資</button>
-      <button class="nav-tab" data-tab="overhead">成本</button>
-      <button class="nav-tab" data-tab="attachments">附件</button>
-      <button class="nav-tab" data-tab="sop">知識庫</button>
-      <button class="nav-tab" data-tab="lifecycle">生命週期</button>
-      <button class="nav-tab" data-tab="cms">CMS</button>
-      <button class="nav-tab" data-tab="automation">自動化</button>
-      <button class="nav-tab" data-tab="holidays">假日</button>
+        <button class="nav-tab active" data-tab="system">系統參數</button>
+        <button class="nav-tab" data-tab="services">服務項目</button>
     </nav>
 
     <main class="settings-content">
-      
-      <div class="tab-panel active" id="tab-system">
-        <div class="card">
-          <div class="card-header">
-            <h2>危險設定</h2>
-          </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label for="rule_comp_hours_expiry">補休有效期規則</label>
-              <select id="rule_comp_hours_expiry" disabled>
-                <option value="current_month">當月到期</option>
-                <option value="next_month">次月到期</option>
-                <option value="3_months">3 個月</option>
-                <option value="6_months">6 個月</option>
-              </select>
+        
+        <!-- 系统参数 -->
+        <div class="tab-panel active" id="tab-system">
+            <div class="card">
+                <div class="card-header"><h2>危險設定</h2></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>補休有效期規則</label>
+                        <select id="rule_comp_hours_expiry" disabled>
+                            <option>當月到期</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>每日工時上限</label>
+                        <input type="text" value="12" readonly>
+                    </div>
+                    <button class="btn btn-danger" disabled>儲存</button>
+                </div>
             </div>
-            <div class="form-group">
-              <label>每日工時上限（唯讀）</label>
-              <input type="text" value="12" readonly />
+
+            <div class="card">
+                <div class="card-header"><h2>薪資參數</h2></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>全勤獎金（元）</label>
+                        <input type="number" id="attendance_bonus_amount" disabled>
+                    </div>
+                    <button class="btn btn-primary" disabled>儲存</button>
+                </div>
             </div>
-            <div class="form-group">
-              <label>月薪制換算時數（唯讀）</label>
-              <input type="text" value="240" readonly />
-            </div>
-            <button id="btnSaveDanger" class="btn btn-danger" type="button" disabled>儲存危險設定</button>
-          </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <h2>薪資相關參數</h2>
-          </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label for="attendance_bonus_amount">全勤獎金金額（元）</label>
-              <input id="attendance_bonus_amount" type="number" min="0" step="1" placeholder="1000" disabled />
+        <!-- 服务项目 -->
+        <div class="tab-panel" id="tab-services">
+            <div class="search-bar">
+                <button class="btn btn-primary" id="btnAddService">+ 新增</button>
             </div>
-            <button id="btnSavePayroll" class="btn btn-primary" type="button" disabled>儲存薪資參數</button>
-          </div>
+
+            <div class="card hidden" id="addServiceForm">
+                <div class="card-header"><h3>新增服務項目</h3></div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>服務名稱 *</label>
+                        <input type="text" id="newServiceName">
+                    </div>
+                    <div class="action-btns">
+                        <button class="btn btn-primary" onclick="saveService()">儲存</button>
+                        <button class="btn btn-secondary" onclick="cancelService()">取消</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="data-table-container">
+                        <table class="data-table" id="servicesTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>服務名稱</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="3" class="loading">載入中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="card">
-          <div class="card-header">
-            <h2>成本分析參數</h2>
-          </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label for="overhead_cost_per_hour">每小時管理成本（元/小時）</label>
-              <input id="overhead_cost_per_hour" type="number" min="0" step="0.01" placeholder="100" disabled />
-            </div>
-            <div class="form-group">
-              <label for="target_profit_margin">目標毛利率（%）</label>
-              <input id="target_profit_margin" type="number" min="0" max="100" step="0.1" placeholder="50" disabled />
-            </div>
-            <button id="btnSaveCost" class="btn btn-primary" type="button" disabled>儲存成本參數</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <h2>一般設定</h2>
-          </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label for="company_name">公司名稱</label>
-              <input id="company_name" type="text" placeholder="範例：霍爾果斯會計師事務所" disabled />
-            </div>
-            <div class="form-group">
-              <label for="contact_email">聯絡信箱</label>
-              <input id="contact_email" type="email" placeholder="contact@horgoscpa.com" disabled />
-            </div>
-            <div class="form-group">
-              <label for="timezone">系統時區</label>
-              <input id="timezone" type="text" placeholder="Asia/Taipei" disabled />
-            </div>
-            <div class="form-group">
-              <label for="currency">幣別</label>
-              <input id="currency" type="text" placeholder="TWD" disabled />
-            </div>
-            <div class="form-group">
-              <label for="timesheet_min_unit">工時最小單位（小時）</label>
-              <select id="timesheet_min_unit" disabled>
-                <option value="0.25">0.25</option>
-                <option value="0.5">0.5</option>
-                <option value="1">1</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="soft_delete_enabled">啟用軟刪除</label>
-              <select id="soft_delete_enabled" disabled>
-                <option value="1">啟用</option>
-                <option value="0">停用</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="workday_start">工作日開始時間</label>
-              <input id="workday_start" type="time" disabled />
-            </div>
-            <div class="form-group">
-              <label for="workday_end">工作日結束時間</label>
-              <input id="workday_end" type="time" disabled />
-            </div>
-            <div class="form-group">
-              <label for="report_locale">報表語系</label>
-              <input id="report_locale" type="text" placeholder="zh-TW" disabled />
-            </div>
-            <button id="btnSaveGeneral" class="btn btn-primary" type="button" disabled>儲存一般設定</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="tab-panel" id="tab-services">
-        <div class="search-bar">
-          <button class="btn btn-primary" id="btnAddService">+ 新增</button>
-        </div>
-
-        <div class="card hidden" id="addServiceForm">
-          <div class="card-header">
-            <h3>新增服務項目</h3>
-          </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label>服務名稱 *</label>
-              <input type="text" id="newServiceName" class="form-control" placeholder="例如：記帳服務" required>
-            </div>
-            <div class="form-group">
-              <label>服務代碼</label>
-              <input type="text" id="newServiceCode" class="form-control" placeholder="例如：ACCOUNTING">
-            </div>
-            <div class="form-group">
-              <label>說明</label>
-              <textarea id="newServiceDesc" class="form-control" rows="2" placeholder="服務內容說明"></textarea>
-            </div>
-            <div class="form-group">
-              <label>排序</label>
-              <input type="number" id="newServiceOrder" class="form-control" value="0" min="0">
-            </div>
-            <div class="action-btns">
-              <button class="btn btn-primary" onclick="saveNewService()">儲存</button>
-              <button class="btn btn-secondary" onclick="cancelAddService()">取消</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-body">
-            <div class="data-table-container">
-              <table class="data-table" id="servicesTable">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>服務名稱</th>
-                    <th>服務代碼</th>
-                    <th>說明</th>
-                    <th>排序</th>
-                    <th>狀態</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td colspan="7" class="loading">載入中...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div class="card hidden" id="serviceItemsCard">
-          <div class="card-header">
-            <h3 id="serviceItemsTitle">服務子項目</h3>
-            <button class="btn btn-primary" id="btnAddServiceItem">+ 新增子項目</button>
-          </div>
-          <div class="card-body">
-            <div class="hidden" id="addServiceItemForm">
-              <h4>新增子項目</h4>
-              <div class="form-group">
-                <label>子項目名稱 *</label>
-                <input type="text" id="newItemName" class="form-control" placeholder="例如：收集憑證" required>
-              </div>
-              <div class="form-group">
-                <label>項目代碼</label>
-                <input type="text" id="newItemCode" class="form-control" placeholder="例如：ACC_COLLECT">
-              </div>
-              <div class="form-group">
-                <label>說明</label>
-                <textarea id="newItemDesc" class="form-control" rows="2" placeholder="子項目內容說明"></textarea>
-              </div>
-              <div class="form-group">
-                <label>排序</label>
-                <input type="number" id="newItemOrder" class="form-control" value="0" min="0">
-              </div>
-              <div class="action-btns">
-                <button class="btn btn-primary" onclick="saveNewServiceItem()">儲存</button>
-                <button class="btn btn-secondary" onclick="cancelAddServiceItem()">取消</button>
-              </div>
-            </div>
-            
-            <div class="data-table-container">
-              <table class="data-table" id="serviceItemsTable">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>子項目名稱</th>
-                    <th>項目代碼</th>
-                    <th>說明</th>
-                    <th>排序</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td colspan="6" class="loading">請先選擇服務項目</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="tab-panel" id="tab-task-templates">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-users">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-clients">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-tasks">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-timesheets">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-leaves">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-receipts">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-payroll">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-overhead">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-attachments">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-sop">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-lifecycle">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-cms">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-automation">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
-
-      <div class="tab-panel" id="tab-holidays">
-        <p>此模組尚未完成，後續開發中...</p>
-      </div>
 
     </main>
 
-    <script src="/assets/js/components/bootstrap.js"></script>
     <script>
-      const apiBase = '/internal/api/v1';
-      
-      // Tab切換
-      document.querySelectorAll('.nav-tab').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const tab = btn.dataset.tab;
-          document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
-          document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-          btn.classList.add('active');
-          document.getElementById('tab-' + tab).classList.add('active');
+        // Tab切换
+        document.querySelectorAll('.nav-tab').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            };
         });
-      });
 
-      // 載入系統設定
-      async function loadSettings() {
-        try {
-          const res = await fetch(`${apiBase}/settings`, { credentials: 'include' });
-          if (!res.ok) throw new Error('載入失敗');
-          const json = await res.json();
-          
-          if (json.data) {
-            Object.keys(json.data).forEach(key => {
-              const el = document.getElementById(key);
-              if (el) el.value = json.data[key] || '';
-            });
-          }
-        } catch (err) {
-          console.error('載入系統設定失敗:', err);
-        }
-      }
-
-      // 載入服務項目
-      async function loadServices() {
-        const tbody = document.querySelector('#servicesTable tbody');
-        tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
-        
-        try {
-          const res = await fetch(`${apiBase}/services`, { credentials: 'include' });
-          if (!res.ok) throw new Error('載入失敗');
-          const json = await res.json();
-          
-          if (!json.data || json.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無資料</td></tr>';
-            return;
-          }
-          
-          tbody.innerHTML = json.data.map(service => `
-            <tr onclick="selectService(${service.service_id}, '${service.service_name}')" style="cursor: pointer;">
-              <td>${service.service_id}</td>
-              <td><strong>${service.service_name}</strong></td>
-              <td>${service.service_code || '-'}</td>
-              <td>${service.description || '-'}</td>
-              <td>${service.display_order}</td>
-              <td><span class="status-badge ${service.is_active ? 'status-active' : 'status-inactive'}">
-                ${service.is_active ? '啟用' : '停用'}
-              </span></td>
-              <td>
-                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); editService(${service.service_id})">編輯</button>
-                <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteService(${service.service_id})">刪除</button>
-              </td>
-            </tr>
-          `).join('');
-        } catch (err) {
-          tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗</td></tr>';
-          console.error('載入服務項目失敗:', err);
-        }
-      }
-
-      // 新增服務
-      document.getElementById('btnAddService').addEventListener('click', () => {
-        document.getElementById('addServiceForm').classList.remove('hidden');
-      });
-
-      function cancelAddService() {
-        document.getElementById('addServiceForm').classList.add('hidden');
-        document.getElementById('newServiceName').value = '';
-        document.getElementById('newServiceCode').value = '';
-        document.getElementById('newServiceDesc').value = '';
-        document.getElementById('newServiceOrder').value = '0';
-      }
-
-      async function saveNewService() {
-        const name = document.getElementById('newServiceName').value.trim();
-        if (!name) {
-          alert('請輸入服務名稱');
-          return;
-        }
-        
-        const data = {
-          service_name: name,
-          service_code: document.getElementById('newServiceCode').value.trim() || null,
-          description: document.getElementById('newServiceDesc').value.trim() || null,
-          display_order: parseInt(document.getElementById('newServiceOrder').value) || 0
+        // 新增服务
+        document.getElementById('btnAddService').onclick = () => {
+            document.getElementById('addServiceForm').classList.remove('hidden');
         };
-        
-        try {
-          const res = await fetch(`${apiBase}/services`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(data)
-          });
-          
-          if (!res.ok) throw new Error('新增失敗');
-          
-          alert('新增成功');
-          cancelAddService();
-          loadServices();
-        } catch (err) {
-          alert('新增失敗: ' + err.message);
-        }
-      }
 
-      function editService(id) {
-        alert('編輯功能開發中...');
-      }
-
-      async function deleteService(id) {
-        if (!confirm('確定要刪除此服務項目嗎？')) return;
-        
-        try {
-          const res = await fetch(`${apiBase}/services/${id}`, {
-            method: 'DELETE',
-            credentials: 'include'
-          });
-          
-          if (!res.ok) throw new Error('刪除失敗');
-          
-          alert('刪除成功');
-          loadServices();
-        } catch (err) {
-          alert('刪除失敗: ' + err.message);
+        function cancelService() {
+            document.getElementById('addServiceForm').classList.add('hidden');
         }
-      }
 
-      function selectService(id, name) {
-        document.getElementById('serviceItemsCard').classList.remove('hidden');
-        document.getElementById('serviceItemsTitle').textContent = `${name} - 子項目`;
-        loadServiceItems(id);
-      }
+        async function saveService() {
+            const name = document.getElementById('newServiceName').value;
+            if (!name) return alert('請輸入服務名稱');
+            
+            try {
+                const res = await fetch('/internal/api/v1/services', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ service_name: name })
+                });
+                if (!res.ok) throw new Error('失敗');
+                alert('新增成功');
+                cancelService();
+                loadServices();
+            } catch (e) {
+                alert('失敗: ' + e.message);
+            }
+        }
 
-      async function loadServiceItems(serviceId) {
-        const tbody = document.querySelector('#serviceItemsTable tbody');
-        tbody.innerHTML = '<tr><td colspan="6" class="loading">載入中...</td></tr>';
-        
-        try {
-          const res = await fetch(`${apiBase}/services/${serviceId}/items`, { credentials: 'include' });
-          if (!res.ok) throw new Error('載入失敗');
-          const json = await res.json();
-          
-          if (!json.data || json.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無子項目</td></tr>';
-            return;
-          }
-          
-          tbody.innerHTML = json.data.map(item => `
-            <tr>
-              <td>${item.item_id}</td>
-              <td>${item.item_name}</td>
-              <td>${item.item_code || '-'}</td>
-              <td>${item.description || '-'}</td>
-              <td>${item.display_order}</td>
-              <td>
-                <button class="btn btn-sm btn-primary" onclick="editServiceItem(${item.item_id})">編輯</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteServiceItem(${item.item_id})">刪除</button>
-              </td>
-            </tr>
-          `).join('');
-        } catch (err) {
-          tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
-          console.error('載入子項目失敗:', err);
+        // 加载服务
+        async function loadServices() {
+            const tbody = document.querySelector('#servicesTable tbody');
+            try {
+                const res = await fetch('/internal/api/v1/services', { credentials: 'include' });
+                const json = await res.json();
+                
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = json.data.map(s => `
+                    <tr>
+                        <td>${s.service_id}</td>
+                        <td>${s.service_name}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteService(${s.service_id})">刪除</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="3" class="loading">載入失敗</td></tr>';
+            }
         }
-      }
 
-      // 初始化
-      (async function init() {
-        const res = await fetch(`${apiBase}/auth/me`, { credentials: 'include' });
-        if (!res.ok) {
-          document.getElementById('permBar').style.display = 'block';
-          return;
+        async function deleteService(id) {
+            if (!confirm('確定刪除？')) return;
+            try {
+                await fetch('/internal/api/v1/services/' + id, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                loadServices();
+            } catch (e) {
+                alert('刪除失敗');
+            }
         }
-        const userData = await res.json();
-        if (!userData.user || userData.user.role !== 'admin') {
-          document.getElementById('permBar').style.display = 'block';
-          return;
-        }
-        
-        loadSettings();
-        loadServices();
-      })();
+
+        // 初始化
+        (async () => {
+            const res = await fetch('/internal/api/v1/auth/me', { credentials: 'include' });
+            if (!res.ok) {
+                document.getElementById('permBar').style.display = 'block';
+                return;
+            }
+            loadServices();
+        })();
     </script>
-  </body>
+</body>
 </html>

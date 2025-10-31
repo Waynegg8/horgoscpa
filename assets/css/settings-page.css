@@ -1,119 +1,78 @@
-/* ============================================
-   系统设定页面 CSS - 完全重写
-   ============================================ */
+/* 系统设定页 - 完全重写 确保所有卡片宽度一致 */
 
+/* 基础重置 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* 颜色变量 */
 :root {
     --primary: #3b82f6;
-    --primary-hover: #2563eb;
     --gray-50: #f9fafb;
-    --gray-100: #f3f4f6;
     --gray-200: #e5e7eb;
     --gray-300: #d1d5db;
-    --gray-400: #9ca3af;
     --gray-500: #6b7280;
     --gray-600: #4b5563;
     --gray-700: #374151;
-    --gray-800: #1f2937;
     --gray-900: #111827;
     --red: #ef4444;
     --green: #10b981;
 }
 
-* {
-    box-sizing: border-box;
-}
-
+/* Body */
 body.internal-container {
-    min-height: 100vh;
     background: #fafafa;
-    margin: 0;
-    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* ============================================
-   通知栏
-   ============================================ */
-
+/* 通知栏 */
 .alert {
     padding: 12px 24px;
-    margin: 0;
     font-size: 14px;
-    border-bottom: 1px solid;
 }
+.alert-danger { background: #fef2f2; color: #991b1b; }
+.alert-info { background: #eff6ff; color: #1e40af; }
 
-.alert-danger {
-    background: #fef2f2;
-    color: #991b1b;
-    border-color: #fecaca;
-}
-
-.alert-info {
-    background: #eff6ff;
-    color: #1e40af;
-    border-color: #bfdbfe;
-}
-
-/* ============================================
-   Tab 导航
-   ============================================ */
-
+/* Tab导航 */
 .settings-nav {
     background: white;
     border-bottom: 1px solid var(--gray-200);
-    padding: 0;
     display: flex;
-    gap: 0;
     overflow-x: auto;
 }
-
 .nav-tab {
     padding: 16px 24px;
-    background: transparent;
+    background: none;
     border: none;
     border-bottom: 2px solid transparent;
     color: var(--gray-600);
     font-size: 14px;
-    font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
-    white-space: nowrap;
 }
-
-.nav-tab:hover {
-    color: var(--primary);
-    background: var(--gray-50);
-}
-
 .nav-tab.active {
     color: var(--primary);
     border-bottom-color: var(--primary);
-    background: #eff6ff;
 }
 
-/* ============================================
-   内容区域
-   ============================================ */
-
+/* 主内容区 */
 .settings-content {
-    padding: 32px 48px;
+    padding: 32px;
 }
 
-.tab-panel {
-    display: none;
+/* Tab面板 */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* 搜索栏 */
+.search-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
 }
 
-.tab-panel.active {
-    display: block;
-}
-
-/* ============================================
-   卡片
-   ============================================ */
-
+/* 卡片 - 核心样式 */
 .card {
     background: white;
-    border-radius: 12px;
     border: 1px solid var(--gray-200);
+    border-radius: 12px;
     margin-bottom: 32px;
 }
 
@@ -130,7 +89,6 @@ body.internal-container {
 .card-header h4 {
     font-size: 16px;
     font-weight: 600;
-    color: var(--gray-900);
     margin: 0;
 }
 
@@ -138,10 +96,7 @@ body.internal-container {
     padding: 24px;
 }
 
-/* ============================================
-   表单
-   ============================================ */
-
+/* 表单 */
 .form-group {
     margin-bottom: 20px;
 }
@@ -151,57 +106,22 @@ body.internal-container {
     margin-bottom: 8px;
     font-size: 14px;
     font-weight: 500;
-    color: var(--gray-700);
 }
 
-.form-control,
-input[type="text"],
-input[type="number"],
-input[type="email"],
-input[type="password"],
-input[type="time"],
+input,
 select,
-textarea {
+textarea,
+.form-control {
     width: 100%;
     padding: 10px 14px;
     border: 1px solid var(--gray-300);
     border-radius: 8px;
     font-size: 14px;
-    transition: all 0.15s ease;
 }
 
-.form-control:focus,
-input:focus,
-select:focus,
-textarea:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
+textarea { resize: vertical; }
 
-textarea {
-    resize: vertical;
-}
-
-/* ============================================
-   搜索栏
-   ============================================ */
-
-.search-bar {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 24px;
-}
-
-.search-bar input,
-.search-bar select {
-    flex: 1;
-}
-
-/* ============================================
-   按钮
-   ============================================ */
-
+/* 按钮 */
 .btn {
     padding: 10px 20px;
     border: none;
@@ -209,7 +129,6 @@ textarea {
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
 }
 
 .btn-primary {
@@ -217,26 +136,14 @@ textarea {
     color: white;
 }
 
-.btn-primary:hover {
-    background: var(--primary-hover);
-}
-
 .btn-secondary {
     background: var(--gray-200);
     color: var(--gray-700);
 }
 
-.btn-secondary:hover {
-    background: var(--gray-300);
-}
-
 .btn-danger {
     background: var(--red);
     color: white;
-}
-
-.btn-danger:hover {
-    background: #dc2626;
 }
 
 .btn-sm {
@@ -250,14 +157,11 @@ textarea {
     margin-top: 20px;
 }
 
-/* ============================================
-   表格
-   ============================================ */
-
+/* 表格 */
 .data-table-container {
     overflow-x: auto;
-    border-radius: 8px;
     border: 1px solid var(--gray-200);
+    border-radius: 8px;
 }
 
 .data-table {
@@ -269,24 +173,12 @@ textarea {
     background: var(--gray-50);
 }
 
-.data-table th {
-    padding: 12px 16px;
-    text-align: left;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--gray-700);
-    border-bottom: 1px solid var(--gray-200);
-}
-
+.data-table th,
 .data-table td {
     padding: 12px 16px;
+    text-align: left;
     font-size: 14px;
-    color: var(--gray-900);
     border-bottom: 1px solid var(--gray-200);
-}
-
-.data-table tbody tr:last-child td {
-    border-bottom: none;
 }
 
 .data-table tbody tr:hover {
@@ -299,57 +191,16 @@ textarea {
     padding: 32px;
 }
 
-/* ============================================
-   状态徽章
-   ============================================ */
-
+/* 状态徽章 */
 .status-badge {
     display: inline-block;
     padding: 4px 12px;
     border-radius: 12px;
     font-size: 12px;
-    font-weight: 500;
 }
 
-.status-active {
-    background: #d1fae5;
-    color: #065f46;
-}
+.status-active { background: #d1fae5; color: #065f46; }
+.status-inactive { background: #fee2e2; color: #991b1b; }
 
-.status-inactive {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-/* ============================================
-   工具类
-   ============================================ */
-
-.hidden {
-    display: none !important;
-}
-
-/* ============================================
-   响应式
-   ============================================ */
-
-@media (max-width: 768px) {
-    .settings-content {
-        padding: 20px 16px;
-    }
-    
-    .search-bar {
-        flex-direction: column;
-    }
-    
-    .action-btns {
-        flex-direction: column;
-    }
-    
-    .card-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-}
-
+/* 工具类 */
+.hidden { display: none !important; }
