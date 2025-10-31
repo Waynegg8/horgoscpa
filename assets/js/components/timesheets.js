@@ -16,7 +16,7 @@ const state = {
   clientServices: new Map(),       // Map<client_id, Array<service>>
   serviceItems: new Map(),         // Map<`${client_id}_${service_id}`, Array<item>>
   workTypes: [],                   // 工時類型列表（硬編碼）
-  holidays: new Map(),             // Map<iso, {is_national_holiday, is_makeup_workday, is_weekly_restday}>
+  holidays: new Map(),             // Map<iso, {is_national_holiday, is_weekly_restday}>
   leaves: new Map(),               // Map<iso, {hours, types:[{type, hours}]}>
   rows: [],                        // [{client_id, service_id, service_item_id, work_type_id, hours:[h0..h6], timesheetIds:[id0..id6], user_name}]
   pending: new Map(),              // Map<`${rowIdx}_${dayIdx}`, {rowIndex, dayIndex, value}>
@@ -39,7 +39,7 @@ function initWorkTypes() {
       name: '一般',
       multiplier: 1.0,
       isOvertime: false,
-      allowedOn: ['workday', 'makeup']
+      allowedOn: ['workday']  // 只允許工作日（不含休息日、例假日、國定假日）
     },
     {
       id: 2,
@@ -47,7 +47,7 @@ function initWorkTypes() {
       multiplier: 1.34,
       isOvertime: true,
       maxHours: 2,
-      allowedOn: ['workday', 'makeup']
+      allowedOn: ['workday']
     },
     {
       id: 3,
@@ -56,7 +56,7 @@ function initWorkTypes() {
       isOvertime: true,
       maxHours: 2,
       requiresTypes: [2],
-      allowedOn: ['workday', 'makeup']
+      allowedOn: ['workday']
     },
     {
       id: 4,
@@ -176,20 +176,15 @@ function getDateType(dateStr) {
     return 'national_holiday';
   }
   
-  // 優先級 2: 補班日
-  if (holiday && holiday.is_makeup_workday) {
-    return 'makeup';
-  }
-  
   const date = new Date(dateStr + 'T00:00:00');
   const dow = date.getDay();
   
-  // 優先級 3: 週日（例假日）
+  // 優先級 2: 週日（例假日）
   if (dow === 0) {
     return 'weekly_restday';
   }
   
-  // 優先級 4: 週六（休息日）
+  // 優先級 3: 週六（休息日）
   if (dow === 6) {
     return 'restday';
   }
@@ -208,7 +203,7 @@ function buildWeekDays() {
     const iso = formatDate(date);
     const dow = date.getDay();
     const type = getDateType(iso);
-    const mustWork = (type === 'workday' || type === 'makeup');
+    const mustWork = (type === 'workday');  // 只有工作日需要上班
     
     state.weekDays.push({ index: i, iso, dow, type, mustWork });
     state.weekDateTypes.set(iso, type);
@@ -320,7 +315,6 @@ async function loadHolidays() {
       data.data.forEach(h => {
         state.holidays.set(h.holiday_date, {
           is_national_holiday: h.is_national_holiday || false,
-          is_makeup_workday: h.is_makeup_workday || false,
           is_weekly_restday: h.is_weekly_restday || false
         });
       });
@@ -550,8 +544,6 @@ function renderWeekHeader() {
       let badge = '';
       if (day.type === 'national_holiday') {
         badge = '<span class="date-badge badge-holiday">國定</span>';
-      } else if (day.type === 'makeup') {
-        badge = '<span class="date-badge badge-makeup">補班</span>';
       } else if (day.type === 'weekly_restday') {
         badge = '<span class="date-badge badge-restday">例假</span>';
       } else if (day.type === 'restday') {
@@ -1017,7 +1009,7 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     updatePendingCount();
     updateWeeklySummary();
     updateDailyNormalHours();
-    renderCompleteness();
+  renderCompleteness();
     return;
   }
   
@@ -1288,7 +1280,6 @@ function isWorkTypeAllowed(workType, dateType) {
 function getDayTypeText(dateType) {
   const typeMap = {
     'workday': '工作日',
-    'makeup': '補班日',
     'restday': '休息日',
     'weekly_restday': '例假日',
     'national_holiday': '國定假日'
@@ -1364,7 +1355,7 @@ async function saveAllChanges() {
     state.pending.clear();
     updatePendingCount();
     showToast(`✅ 已儲存所有變更（${successCount} 筆）`, 'success');
-    await loadWeek();
+  await loadWeek();
   } else {
     // 有失敗的
     const errorMessages = [];
