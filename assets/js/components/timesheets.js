@@ -517,6 +517,8 @@ function renderTable() {
   if (state.rows.length === 0) {
     tbody.innerHTML = '<tr><td colspan="12" class="empty-state">尚無工時記錄，點擊右上角「新增列」開始填寫</td></tr>';
     updateWeeklySummary();
+    updateDailyNormalHours();
+    renderCompleteness();
     return;
   }
   
@@ -548,6 +550,8 @@ function renderTable() {
   });
   
   updateWeeklySummary();
+  updateDailyNormalHours();
+  renderCompleteness();
 }
 
 function createClientCell(row, rowIndex) {
@@ -847,6 +851,8 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     state.pending.delete(key);
     updatePendingCount();
     updateWeeklySummary();
+    updateDailyNormalHours(); // 更新每日工時統計
+    renderCompleteness(); // 重新渲染完整性檢查
     return;
   }
   
@@ -912,6 +918,8 @@ function handleHoursInput(rowIndex, dayIndex, value) {
   
   updatePendingCount();
   updateWeeklySummary();
+  updateDailyNormalHours(); // 更新每日工時統計
+  renderCompleteness(); // 重新渲染完整性檢查
 }
 
 function handleHoursBlur(rowIndex, dayIndex) {
@@ -1052,6 +1060,24 @@ function updateWeeklySummary() {
   document.getElementById('weeklyOvertimeHours').textContent = overtimeHours.toFixed(1);
   document.getElementById('weeklyWeightedHours').textContent = weightedHours.toFixed(1);
   document.getElementById('weeklyLeaveHours').textContent = leaveHours.toFixed(1);
+}
+
+function updateDailyNormalHours() {
+  // 重新計算每日正常工時
+  state.dailyNormalHours.clear();
+  
+  state.rows.forEach(row => {
+    const workType = state.workTypes.find(wt => wt.id == row.work_type_id);
+    if (!workType || workType.isOvertime) return; // 只計算正常工時
+    
+    row.hours.forEach((hours, dayIndex) => {
+      if (hours && hours > 0) {
+        const day = state.weekDays[dayIndex];
+        const current = state.dailyNormalHours.get(day.iso) || 0;
+        state.dailyNormalHours.set(day.iso, current + hours);
+      }
+    });
+  });
 }
 
 function renderMonthlySummary() {
