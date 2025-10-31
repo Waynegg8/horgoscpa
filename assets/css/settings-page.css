@@ -113,6 +113,9 @@ body.internal-container {
     display: none;
     max-width: 700px;
     margin: 0 auto;
+    /* 测试标记：如果看到红色边框说明CSS已更新 */
+    border: 3px solid red;
+    padding: 20px;
 }
 
 .tab-panel.active {
