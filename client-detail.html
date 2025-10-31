@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/assets/css/common.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-system.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-components.css?v=3">
-  <link rel="stylesheet" href="/assets/css/client-detail-page.css?v=1">
+  <link rel="stylesheet" href="/assets/css/client-detail-page.css?v=10">
 </head>
 <body>
   <div id="navbar-placeholder"></div>
@@ -354,9 +354,9 @@
         
         if (json.ok && json.data) {
           const select = document.getElementById('inputAssignee');
-          select.innerHTML = '<option value="">請選擇</option>' +
+          select.innerHTML = '<option value="">請選擇負責人員</option>' +
             json.data.map(u => 
-              `<option value="${u.user_id}">${u.username} (${u.display_name || u.username})</option>`
+              `<option value="${u.user_id}">${u.name || u.username}</option>`
             ).join('');
         }
       } catch (err) {

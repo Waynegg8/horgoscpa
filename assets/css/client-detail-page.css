@@ -1,16 +1,22 @@
-/* 客戶詳情頁樣式 */
+/* ========================================
+   客戶詳情頁統一樣式系統
+   ======================================== */
 
+/* ===== 頁面容器 ===== */
 .page-container {
   max-width: 1600px;
   margin: 0 auto;
-  padding: 32px 48px;
+  padding: 40px 60px;
+  background: #f9fafb;
+  min-height: calc(100vh - 80px);
 }
 
+/* ===== 頁面頭部 ===== */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
   gap: 24px;
 }
 
@@ -26,6 +32,7 @@
   font-size: 14px;
   margin-bottom: 12px;
   transition: color 0.2s;
+  font-weight: 500;
 }
 
 .back-link:hover {
@@ -33,7 +40,7 @@
 }
 
 .page-title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #111827;
   margin: 0;
@@ -46,449 +53,46 @@
   flex-shrink: 0;
 }
 
-/* 內容卡片 */
+/* ===== 內容卡片 ===== */
 .content-card {
   background: #ffffff;
-  border-radius: 12px;
-  padding: 32px 40px;
-  margin-bottom: 32px;
+  border-radius: 16px;
+  padding: 40px 48px;
+  margin-bottom: 28px;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .card-title {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   color: #111827;
-  margin: 0 0 20px 0;
+  margin: 0 0 28px 0;
   letter-spacing: -0.3px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f3f4f6;
 }
 
 .card-header-with-action {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-}
-
-/* 信息網格 */
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px 32px;
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.info-item.full-width {
-  grid-column: 1 / -1;
-}
-
-.info-item label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.info-value {
-  font-size: 15px;
-  color: #111827;
-  line-height: 1.6;
-}
-
-.tag {
-  display: inline-block;
-  padding: 4px 12px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #374151;
-  margin-right: 6px;
-  margin-bottom: 6px;
-}
-
-/* 服務卡片 */
-.service-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 20px 24px;
-  margin-bottom: 16px;
-  background: #fafafa;
-  transition: all 0.2s;
-}
-
-.service-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.service-card:last-child {
-  margin-bottom: 0;
-}
-
-.service-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 28px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 2px solid #f3f4f6;
 }
 
-.service-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-}
-
-.service-title h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
+.card-header-with-action .card-title {
   margin: 0;
-  letter-spacing: -0.3px;
-}
-
-.service-status {
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.status-active {
-  background: #d1fae5;
-  color: #065f46;
-  border: 1px solid #10b981;
-}
-
-.status-suspended {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #f59e0b;
-}
-
-.status-expired {
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #ef4444;
-}
-
-.status-cancelled {
-  background: #f3f4f6;
-  color: #4b5563;
-  border: 1px solid #9ca3af;
-}
-
-.service-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.service-body {
   padding: 0;
-}
-
-.service-info {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px 24px;
-}
-
-.info-row {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 14px;
-}
-
-.info-row.full-width {
-  grid-column: 1 / -1;
-}
-
-.info-label {
-  color: #6b7280;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.highlight {
-  color: #2563eb;
-  font-weight: 700;
-  font-size: 16px;
-}
-
-/* 無數據狀態 */
-.no-data {
-  text-align: center;
-  color: #9ca3af;
-  padding: 40px 20px;
-  font-size: 15px;
-}
-
-.loading-text {
-  text-align: center;
-  color: #9ca3af;
-  padding: 40px 20px;
-  font-size: 15px;
-}
-
-/* 收費明細 Modal 樣式 */
-.billing-summary {
-  display: flex;
-  gap: 32px;
-  padding: 16px 20px;
-  background: #f9fafb;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  border: 1px solid #e5e7eb;
-}
-
-.summary-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.summary-label {
-  font-size: 14px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.summary-value {
-  font-size: 16px;
-  color: #111827;
-  font-weight: 700;
-}
-
-.billing-actions {
-  margin-bottom: 16px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* 數據表格 */
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.data-table thead {
-  background: #f9fafb;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.data-table th {
-  padding: 12px 16px;
-  text-align: left;
-  font-weight: 600;
-  color: #374151;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.data-table tbody tr {
-  border-bottom: 1px solid #f3f4f6;
-  transition: background-color 0.15s;
-}
-
-.data-table tbody tr:hover {
-  background: #fafafa;
-}
-
-.data-table td {
-  padding: 14px 16px;
-  color: #111827;
-}
-
-.data-table td.no-data {
-  text-align: center;
-  color: #9ca3af;
-  padding: 32px;
-}
-
-/* 按鈕樣式增強 */
-.btn-link {
-  background: none;
   border: none;
-  color: #2563eb;
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: 13px;
-  padding: 4px 8px;
-  transition: color 0.2s;
 }
 
-.btn-link:hover {
-  color: #1d4ed8;
-}
-
-.btn-link.text-danger {
-  color: #dc2626;
-}
-
-.btn-link.text-danger:hover {
-  color: #b91c1c;
-}
-
-/* Modal 基礎樣式覆寫 */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
-  align-items: center;
-  justify-content: center;
-  overflow-y: auto;
-}
-
-.modal.active,
-.modal[style*="display: flex"] {
-  display: flex !important;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 700px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  margin: 20px;
-}
-
-.modal-header {
-  padding: 24px 28px;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  background: white;
-  z-index: 10;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 28px;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.modal-close:hover {
-  background: #f3f4f6;
-  color: #111827;
-}
-
-.modal-form,
-.modal-body {
-  padding: 24px 28px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group.full-width {
-  grid-column: 1 / -1;
-}
-
-.form-group label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  padding: 10px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.error-text,
-.error-message {
-  color: #dc2626;
-  font-size: 13px;
-  margin-top: 4px;
-  display: none;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 28px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
-}
-
-/* 可編輯表單樣式 - 現代化設計 */
+/* ===== 表單系統 - 統一設計 ===== */
 .edit-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
 }
 
 .form-row-2col {
@@ -510,31 +114,39 @@
 
 .form-field label {
   font-size: 13px;
-  font-weight: 600;
-  color: #6b7280;
+  font-weight: 700;
+  color: #374151;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
 }
 
 .form-field input,
 .form-field select,
 .form-field textarea {
-  padding: 12px 16px;
-  border: 2px solid #e5e7eb;
+  width: 100%;
+  padding: 14px 18px;
+  border: 2px solid #d1d5db;
   border-radius: 10px;
   font-size: 15px;
-  transition: all 0.2s;
-  font-family: inherit;
-  background: white;
-  color: #111827;
   font-weight: 500;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: #ffffff;
+  color: #111827;
+  box-sizing: border-box;
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
 }
 
 .form-field input:disabled {
   background: #f9fafb;
-  color: #9ca3af;
+  color: #6b7280;
   cursor: not-allowed;
-  border-color: #f3f4f6;
+  border-color: #e5e7eb;
 }
 
 .form-field input:focus,
@@ -543,68 +155,511 @@
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-  background: #ffffff;
 }
 
 .form-field textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 110px;
   line-height: 1.6;
 }
 
 .form-field select {
   cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 20px;
+  padding-right: 42px;
 }
 
-/* 標籤顯示 */
+.error-text {
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 6px;
+  display: none;
+}
+
+.error-text:not(:empty) {
+  display: block;
+}
+
+/* ===== 標籤顯示 ===== */
 #tagsDisplay {
-  padding: 12px 16px;
+  padding: 14px 18px;
   background: #f9fafb;
-  border: 2px solid #e5e7eb;
+  border: 2px solid #d1d5db;
   border-radius: 10px;
-  min-height: 48px;
+  min-height: 52px;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-/* 服務列表容器 - 單列布局 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e40af;
+  white-space: nowrap;
+}
+
+/* ===== 服務列表 ===== */
 #servicesList {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
-/* 服務卡片 - 占滿寬度 */
 .service-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 32px 40px;
-  margin-bottom: 0;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 32px 36px;
   background: #ffffff;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  width: 100%;
 }
 
 .service-card:hover {
   border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.12);
   transform: translateY(-2px);
+}
+
+.service-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.service-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.service-title h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.service-status {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.status-active {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1.5px solid #10b981;
+}
+
+.status-suspended {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1.5px solid #f59e0b;
+}
+
+.status-expired {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1.5px solid #ef4444;
+}
+
+.status-cancelled {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1.5px solid #9ca3af;
+}
+
+.service-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.service-body {
+  padding: 0;
 }
 
 .service-info {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 24px 48px;
-  padding: 20px 0;
+  gap: 20px 32px;
 }
 
-/* 響應式設計 */
+.info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info-row.full-width {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.info-label {
+  color: #6b7280;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.info-row > span:not(.info-label) {
+  color: #111827;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.highlight {
+  color: #2563eb !important;
+  font-weight: 700 !important;
+  font-size: 18px !important;
+}
+
+/* ===== Modal 系統 ===== */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: auto;
+}
+
+.modal-header {
+  padding: 28px 32px;
+  border-bottom: 2px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.3px;
+}
+
+.modal-close {
+  background: #f3f4f6;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  background: #e5e7eb;
+  color: #111827;
+  transform: rotate(90deg);
+}
+
+.modal-form,
+.modal-body {
+  padding: 28px 32px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 20px 32px 28px;
+  border-top: 2px solid #e5e7eb;
+  position: sticky;
+  bottom: 0;
+  background: white;
+}
+
+/* Modal表單群組 */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-family: inherit;
+  background: white;
+  color: #111827;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.form-group select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 18px;
+  padding-right: 38px;
+}
+
+.form-group .error-text {
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* Checkbox樣式 */
+.form-group label input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.required {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* ===== 數據表格 ===== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.data-table thead {
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.data-table th {
+  padding: 14px 18px;
+  text-align: left;
+  font-weight: 700;
+  color: #374151;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.15s;
+}
+
+.data-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.data-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.data-table td {
+  padding: 16px 18px;
+  color: #111827;
+  font-weight: 500;
+}
+
+.data-table td.no-data {
+  text-align: center;
+  color: #9ca3af;
+  padding: 40px;
+  font-size: 14px;
+}
+
+/* ===== 收費明細樣式 ===== */
+.billing-summary {
+  display: flex;
+  gap: 40px;
+  padding: 20px 24px;
+  background: #f0f9ff;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 2px solid #bfdbfe;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.summary-label {
+  font-size: 13px;
+  color: #1e40af;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-size: 18px;
+  color: #111827;
+  font-weight: 700;
+}
+
+.billing-actions {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ===== 按鈕樣式 ===== */
+.btn-link {
+  background: none;
+  border: none;
+  color: #2563eb;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  transition: all 0.2s;
+  border-radius: 6px;
+}
+
+.btn-link:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.btn-link.text-danger {
+  color: #dc2626;
+}
+
+.btn-link.text-danger:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* ===== 狀態樣式 ===== */
+.no-data {
+  text-align: center;
+  color: #9ca3af;
+  padding: 60px 20px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.loading-text {
+  text-align: center;
+  color: #9ca3af;
+  padding: 60px 20px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* ===== 響應式設計 ===== */
+@media (max-width: 1024px) {
+  .page-container {
+    padding: 32px 40px;
+  }
+
+  .content-card {
+    padding: 32px 36px;
+  }
+
+  .service-info {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .page-container {
-    padding: 20px 16px;
+    padding: 24px 20px;
   }
 
   .page-header {
@@ -621,17 +676,22 @@
   }
 
   .content-card {
-    padding: 20px 16px;
+    padding: 24px 20px;
   }
 
-  .info-grid {
+  .card-title {
+    font-size: 18px;
+  }
+
+  .form-row-2col {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 20px;
   }
 
   .service-header {
     flex-direction: column;
-    gap: 12px;
+    align-items: flex-start;
+    gap: 16px;
   }
 
   .service-actions {
@@ -641,7 +701,12 @@
 
   .service-actions .btn-sm {
     flex: 1;
-    min-width: 80px;
+    min-width: 90px;
+  }
+
+  .service-info {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
   }
 
   .billing-summary {
@@ -655,54 +720,66 @@
 
   .data-table th,
   .data-table td {
-    padding: 10px 12px;
+    padding: 12px 14px;
   }
 
   .form-row {
     grid-template-columns: 1fr;
-    gap: 16px;
   }
 
   .modal-content {
     width: 95%;
-    margin: 10px;
+    max-width: none;
   }
 
   .modal-header,
   .modal-form,
-  .modal-body {
-    padding: 20px;
-  }
-
-  .service-info {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .form-row-2col {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  .modal-body,
+  .modal-footer {
+    padding: 20px 24px;
   }
 }
 
 @media (max-width: 480px) {
+  .page-container {
+    padding: 20px 16px;
+  }
+
   .page-title {
     font-size: 24px;
   }
 
+  .content-card {
+    padding: 20px 16px;
+    border-radius: 12px;
+  }
+
+  .service-card {
+    padding: 20px;
+  }
+
   .service-info {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .data-table {
+    font-size: 12px;
   }
 
   .data-table th,
   .data-table td {
-    padding: 8px 10px;
-    font-size: 12px;
+    padding: 10px 12px;
+  }
+
+  .modal-header h3 {
+    font-size: 18px;
   }
 
   .modal-header,
   .modal-form,
-  .modal-body {
-    padding: 16px;
+  .modal-body,
+  .modal-footer {
+    padding: 16px 20px;
   }
 }
-

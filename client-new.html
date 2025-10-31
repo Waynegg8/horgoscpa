@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/assets/css/common.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-system.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-components.css?v=3">
-  <link rel="stylesheet" href="/assets/css/client-detail-page.css?v=2">
+  <link rel="stylesheet" href="/assets/css/client-detail-page.css?v=10">
 </head>
 <body>
   <div id="navbar-placeholder"></div>
@@ -160,7 +160,7 @@
             <textarea id="serviceServiceNotes" rows="3"></textarea>
           </div>
         </div>
-        <div class="modal-actions">
+        <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeServiceModal()">取消</button>
           <button type="submit" class="btn btn-primary">儲存</button>
         </div>
@@ -193,7 +193,7 @@
           const select = document.getElementById('inputAssignee');
           select.innerHTML = '<option value="">請選擇負責人員</option>' +
             json.data.map(u => 
-              `<option value="${u.user_id}">${u.username} (${u.display_name || u.username})</option>`
+              `<option value="${u.user_id}">${u.name || u.username}</option>`
             ).join('');
         }
       } catch (err) {
