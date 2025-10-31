@@ -1040,17 +1040,49 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     return;
   }
   
-  // 驗證時數限制
-  if (workType && workType.maxHours && rounded > workType.maxHours) {
-    showToast(`❌ ${dateDisplay}：${workType.name}最多只能填 ${workType.maxHours} 小時\n\n您填了 ${rounded} 小時，請改為 ${workType.maxHours} 或更少`, 'error');
-    // 清空輸入框
-    row.hours[dayIndex] = null;
-    const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
-    if (input) {
-      input.value = '';
-      input.closest('td').classList.remove('has-value');
+  // 驗證時數限制：檢查同一天同一工時類型的累計工時
+  if (workType && workType.maxHours) {
+    // 先檢查單次輸入是否超過限制
+    if (rounded > workType.maxHours) {
+      showToast(`❌ ${dateDisplay}：${workType.name}單次最多只能填 ${workType.maxHours} 小時\n\n您填了 ${rounded} 小時，請改為 ${workType.maxHours} 或更少`, 'error');
+      // 清空輸入框
+      row.hours[dayIndex] = null;
+      const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
+      if (input) {
+        input.value = '';
+        input.closest('td').classList.remove('has-value');
+      }
+      return;
     }
-    return;
+    
+    // 計算同一天同一工時類型的現有總工時（排除當前行）
+    let existingTotal = 0;
+    state.rows.forEach((r, idx) => {
+      if (idx !== rowIndex && r.work_type_id == row.work_type_id && r.hours[dayIndex]) {
+        existingTotal += r.hours[dayIndex];
+      }
+    });
+    
+    // 檢查累計是否超過限制
+    const totalAfter = existingTotal + rounded;
+    if (totalAfter > workType.maxHours) {
+      showToast(
+        `❌ ${dateDisplay}：「${workType.name}」當日累計不可超過 ${workType.maxHours} 小時\n\n` +
+        `現有：${existingTotal} 小時\n` +
+        `新增：${rounded} 小時\n` +
+        `累計：${totalAfter} 小時（超過 ${totalAfter - workType.maxHours} 小時）\n\n` +
+        `請調整工時數量或使用其他工時類型`,
+        'error'
+      );
+      // 清空輸入框
+      row.hours[dayIndex] = null;
+      const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
+      if (input) {
+        input.value = '';
+        input.closest('td').classList.remove('has-value');
+      }
+      return;
+    }
   }
   
   // 驗證前置要求
