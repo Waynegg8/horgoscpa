@@ -257,11 +257,10 @@ async function loadClientServices(clientId) {
     const response = await apiCall(`/internal/api/v1/clients/${clientId}/services`);
     console.log('[DEBUG] API 完整回應:', response);
     console.log('[DEBUG] response.data:', response.data);
-    console.log('[DEBUG] response.data.data:', response.data?.data);
     
-    // API 回應結構: { success, status, data: { ok, code, message, data: [...] } }
-    const services = response.data?.data || [];
-    console.log('[DEBUG] 最終解析服務項目:', services);
+    // API 回應結構: { ok, code, message, data: [...] }
+    const services = response.data || [];
+    console.log('[DEBUG] 最終解析服務項目 (應該是陣列):', services);
     state.clientServices.set(clientId, services);
     return services;
   } catch (error) {
