@@ -484,22 +484,84 @@
   border-top: 1px solid #e5e7eb;
 }
 
-/* 服務列表容器優化 */
-#servicesList {
+/* 可編輯表單樣式 */
+.edit-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-/* 服務卡片優化 - 更寬敞的布局 */
+.form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.form-row-1col {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+  font-family: inherit;
+  background: white;
+}
+
+.form-field input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* 服務列表容器 - 單列布局 */
+#servicesList {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 服務卡片 - 占滿寬度 */
 .service-card {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 24px 28px;
+  padding: 28px 32px;
   margin-bottom: 0;
   background: #ffffff;
   transition: all 0.2s;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  width: 100%;
 }
 
 .service-card:hover {
@@ -510,8 +572,8 @@
 
 .service-info {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px 32px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px 32px;
   padding: 16px 0;
 }
 
@@ -589,7 +651,12 @@
   }
 
   .service-info {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .form-row-2col {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 }
 

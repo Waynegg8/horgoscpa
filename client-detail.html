@@ -16,50 +16,67 @@
     <div class="page-header">
       <div class="header-left">
         <a href="/internal/clients" class="back-link">← 返回客戶列表</a>
-        <h1 class="page-title" id="clientTitle">客戶詳情</h1>
+        <h1 class="page-title" id="clientTitle">客戶資料</h1>
       </div>
       <div class="header-actions">
-        <button class="btn btn-secondary" onclick="editClient()">編輯客戶</button>
+        <button class="btn btn-secondary" onclick="cancelEdit()">取消</button>
+        <button class="btn btn-primary" onclick="saveClient()">儲存</button>
       </div>
     </div>
 
-    <!-- 客戶基本信息 -->
+    <!-- 客戶基本信息 - 可編輯表單 -->
     <div class="content-card">
       <h2 class="card-title">基本信息</h2>
-      <div class="info-grid" id="clientInfo">
-        <div class="info-item">
-          <label>公司名稱</label>
-          <div class="info-value" id="companyName">-</div>
+      <form id="clientForm" class="edit-form">
+        <div class="form-row-2col">
+          <div class="form-field">
+            <label for="inputCompanyName">公司名稱（必填）</label>
+            <input type="text" id="inputCompanyName" required />
+            <span class="error-text" id="error_company_name"></span>
+          </div>
+          <div class="form-field">
+            <label for="inputTaxId">統一編號</label>
+            <input type="text" id="inputTaxId" disabled />
+          </div>
         </div>
-        <div class="info-item">
-          <label>統一編號</label>
-          <div class="info-value" id="taxId">-</div>
+        <div class="form-row-2col">
+          <div class="form-field">
+            <label for="inputAssignee">負責人員</label>
+            <select id="inputAssignee">
+              <option value="">載入中...</option>
+            </select>
+            <span class="error-text" id="error_assignee"></span>
+          </div>
+          <div class="form-field">
+            <label for="inputPhone">聯絡電話</label>
+            <input type="text" id="inputPhone" />
+            <span class="error-text" id="error_phone"></span>
+          </div>
         </div>
-        <div class="info-item">
-          <label>負責人</label>
-          <div class="info-value" id="assignee">-</div>
+        <div class="form-row-2col">
+          <div class="form-field">
+            <label for="inputEmail">Email</label>
+            <input type="email" id="inputEmail" />
+            <span class="error-text" id="error_email"></span>
+          </div>
+          <div class="form-field">
+            <label>標籤</label>
+            <div id="tagsDisplay">-</div>
+          </div>
         </div>
-        <div class="info-item">
-          <label>聯絡電話</label>
-          <div class="info-value" id="phone">-</div>
+        <div class="form-row-1col">
+          <div class="form-field">
+            <label for="inputClientNotes">客戶備註</label>
+            <textarea id="inputClientNotes" rows="3"></textarea>
+          </div>
         </div>
-        <div class="info-item">
-          <label>Email</label>
-          <div class="info-value" id="email">-</div>
+        <div class="form-row-1col">
+          <div class="form-field">
+            <label for="inputPaymentNotes">收款備註</label>
+            <textarea id="inputPaymentNotes" rows="3"></textarea>
+          </div>
         </div>
-        <div class="info-item">
-          <label>標籤</label>
-          <div class="info-value" id="tags">-</div>
-        </div>
-        <div class="info-item full-width">
-          <label>客戶備註</label>
-          <div class="info-value" id="clientNotes">-</div>
-        </div>
-        <div class="info-item full-width">
-          <label>收款備註</label>
-          <div class="info-value" id="paymentNotes">-</div>
-        </div>
-      </div>
+      </form>
     </div>
 
     <!-- 客戶服務 -->
@@ -71,62 +88,6 @@
       <div id="servicesList">
         <div class="loading-text">載入中...</div>
       </div>
-    </div>
-  </div>
-
-  <!-- 編輯客戶 Modal -->
-  <div id="editClientModal" class="modal">
-    <div class="modal-content" style="max-width: 700px;">
-      <div class="modal-header">
-        <h3>編輯客戶</h3>
-        <button class="modal-close" onclick="closeEditClientModal()">&times;</button>
-      </div>
-      <form id="editClientForm" class="modal-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="editCompanyName">公司名稱（必填）</label>
-            <input type="text" id="editCompanyName" required />
-            <div class="error-text" id="error_company_name"></div>
-          </div>
-          <div class="form-group">
-            <label for="editAssignee">負責人員</label>
-            <select id="editAssignee">
-              <option value="">請選擇</option>
-            </select>
-            <div class="error-text" id="error_assignee"></div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="editPhone">電話</label>
-            <input type="text" id="editPhone" />
-            <div class="error-text" id="error_phone"></div>
-          </div>
-          <div class="form-group">
-            <label for="editEmail">Email</label>
-            <input type="email" id="editEmail" />
-            <div class="error-text" id="error_email"></div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label for="editClientNotes">客戶備註</label>
-            <textarea id="editClientNotes" rows="3"></textarea>
-            <div class="error-text" id="error_client_notes"></div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label for="editPaymentNotes">收款備註</label>
-            <textarea id="editPaymentNotes" rows="3"></textarea>
-            <div class="error-text" id="error_payment_notes"></div>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" onclick="closeEditClientModal()">取消</button>
-          <button type="submit" class="btn btn-primary">儲存</button>
-        </div>
-      </form>
     </div>
   </div>
 
@@ -351,22 +312,29 @@
         }
 
         const client = json.data;
-        document.getElementById('clientTitle').textContent = client.companyName || '客戶詳情';
-        document.getElementById('companyName').textContent = client.companyName || '-';
-        document.getElementById('taxId').textContent = client.taxId || '-';
-        document.getElementById('assignee').textContent = client.assigneeName || '-';
-        document.getElementById('phone').textContent = client.phone || '-';
-        document.getElementById('email').textContent = client.email || '-';
-        document.getElementById('clientNotes').textContent = client.clientNotes || '-';
-        document.getElementById('paymentNotes').textContent = client.paymentNotes || '-';
         
-        // 標籤
+        // 更新頁面標題
+        document.getElementById('clientTitle').textContent = client.companyName || '客戶資料';
+        
+        // 預填表單
+        document.getElementById('inputCompanyName').value = client.companyName || '';
+        document.getElementById('inputTaxId').value = client.taxId || '';
+        document.getElementById('inputPhone').value = client.phone || '';
+        document.getElementById('inputEmail').value = client.email || '';
+        document.getElementById('inputClientNotes').value = client.clientNotes || '';
+        document.getElementById('inputPaymentNotes').value = client.paymentNotes || '';
+        
+        // 載入並設置負責人
+        await loadEmployees();
+        document.getElementById('inputAssignee').value = client.assigneeUserId || '';
+        
+        // 標籤顯示
         if (client.tags && client.tags.length > 0) {
-          document.getElementById('tags').innerHTML = client.tags.map(t => 
+          document.getElementById('tagsDisplay').innerHTML = client.tags.map(t => 
             `<span class="tag">${t.tag_name}</span>`
           ).join(' ');
         } else {
-          document.getElementById('tags').textContent = '-';
+          document.getElementById('tagsDisplay').textContent = '-';
         }
 
         // 顯示服務列表
@@ -375,6 +343,24 @@
       } catch (err) {
         console.error('載入客戶詳情失敗:', err);
         alert('載入失敗');
+      }
+    }
+    
+    // 載入員工列表
+    async function loadEmployees() {
+      try {
+        const res = await fetch('/internal/api/v1/users');
+        const json = await res.json();
+        
+        if (json.ok && json.data) {
+          const select = document.getElementById('inputAssignee');
+          select.innerHTML = '<option value="">請選擇</option>' +
+            json.data.map(u => 
+              `<option value="${u.user_id}">${u.username} (${u.display_name || u.username})</option>`
+            ).join('');
+        }
+      } catch (err) {
+        console.error('載入員工列表失敗:', err);
       }
     }
 
@@ -792,78 +778,32 @@
       }
     }
 
-    // 編輯客戶（本地Modal）
-    async function editClient() {
-      try {
-        const res = await fetch(`/internal/api/v1/clients/${currentClientId}`);
-        const json = await res.json();
-        
-        if (!json.ok || !json.data) {
-          alert('載入客戶資料失敗');
-          return;
-        }
-        
-        const client = json.data;
-        
-        // 預填表單
-        document.getElementById('editCompanyName').value = client.companyName || '';
-        document.getElementById('editAssignee').value = client.assigneeUserId || '';
-        document.getElementById('editPhone').value = client.phone || '';
-        document.getElementById('editEmail').value = client.email || '';
-        document.getElementById('editClientNotes').value = client.clientNotes || '';
-        document.getElementById('editPaymentNotes').value = client.paymentNotes || '';
-        
-        // 載入員工列表
-        await loadEmployeesForEdit();
-        
-        // 設置選中的員工
-        document.getElementById('editAssignee').value = client.assigneeUserId || '';
-        
-        clearFormErrors('edit_client');
-        document.getElementById('editClientModal').style.display = 'flex';
-        
-      } catch (err) {
-        console.error('載入客戶失敗:', err);
-        alert('載入失敗');
-      }
+    // 取消編輯
+    function cancelEdit() {
+      window.location.href = '/internal/clients';
     }
     
-    // 載入員工列表（編輯用）
-    async function loadEmployeesForEdit() {
-      try {
-        const res = await fetch('/internal/api/v1/users');
-        const json = await res.json();
-        
-        if (json.ok && json.data) {
-          const select = document.getElementById('editAssignee');
-          select.innerHTML = '<option value="">請選擇</option>' +
-            json.data.map(u => 
-              `<option value="${u.user_id}">${u.username} (${u.display_name || u.username})</option>`
-            ).join('');
-        }
-      } catch (err) {
-        console.error('載入員工列表失敗:', err);
-      }
-    }
-    
-    // 關閉編輯客戶Modal
-    function closeEditClientModal() {
-      document.getElementById('editClientModal').style.display = 'none';
-    }
-    
-    // 提交編輯客戶表單
-    document.getElementById('editClientForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      clearFormErrors('edit_client');
+    // 儲存客戶資料
+    async function saveClient() {
+      clearFormErrors();
       
       const payload = {
-        company_name: document.getElementById('editCompanyName').value.trim(),
-        assignee_user_id: document.getElementById('editAssignee').value || null,
-        phone: document.getElementById('editPhone').value.trim() || null,
-        email: document.getElementById('editEmail').value.trim() || null,
-        client_notes: document.getElementById('editClientNotes').value.trim() || null,
-        payment_notes: document.getElementById('editPaymentNotes').value.trim() || null
+        company_name: document.getElementById('inputCompanyName').value.trim(),
+        assignee_user_id: parseInt(document.getElementById('inputAssignee').value) || null,
+        phone: document.getElementById('inputPhone').value.trim() || null,
+        email: document.getElementById('inputEmail').value.trim() || null,
+        client_notes: document.getElementById('inputClientNotes').value.trim() || null,
+        payment_notes: document.getElementById('inputPaymentNotes').value.trim() || null
       };
+      
+      // 驗證
+      let hasError = false;
+      if (!payload.company_name) {
+        showFieldError('company_name', '公司名稱為必填');
+        hasError = true;
+      }
+      
+      if (hasError) return;
       
       try {
         const res = await fetch(`/internal/api/v1/clients/${currentClientId}`, {
@@ -878,11 +818,7 @@
         if (!res.ok || !json.ok) {
           if (json.errors && Array.isArray(json.errors)) {
             json.errors.forEach(err => {
-              const errorEl = document.getElementById(`error_${err.field}`);
-              if (errorEl) {
-                errorEl.textContent = err.message;
-                errorEl.style.display = 'block';
-              }
+              showFieldError(err.field, err.message);
             });
           } else {
             alert(json.message || '儲存失敗');
@@ -890,18 +826,17 @@
           return;
         }
         
-        alert('已更新');
-        closeEditClientModal();
-        loadClientData(); // 重新載入客戶資料
+        alert('已儲存');
+        loadClientDetail(); // 重新載入
         
       } catch (err) {
         console.error('儲存失敗:', err);
         alert('儲存失敗，請稍後再試');
       }
-    });
+    }
 
     // 顯示欄位錯誤
-    function showFieldError(formPrefix, field, message) {
+    function showFieldError(field, message) {
       const errorEl = document.getElementById(`error_${field}`);
       if (errorEl) {
         errorEl.textContent = message;
