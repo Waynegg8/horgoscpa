@@ -106,9 +106,9 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       try {
         const rows = await env.DATABASE.prepare(
           `SELECT u.user_id, u.name, u.username,
-                  SUM(t.hours) AS total,
-                  SUM(CASE WHEN wt.isOvertime = 0 THEN t.hours ELSE 0 END) AS normal,
-                  SUM(CASE WHEN wt.isOvertime = 1 THEN t.hours ELSE 0 END) AS overtime
+                  COALESCE(SUM(t.hours), 0) AS total,
+                  COALESCE(SUM(CASE WHEN wt.isOvertime = 0 THEN t.hours ELSE 0 END), 0) AS normal,
+                  COALESCE(SUM(CASE WHEN wt.isOvertime = 1 THEN t.hours ELSE 0 END), 0) AS overtime
            FROM Users u
            LEFT JOIN Timesheets t ON t.user_id = u.user_id AND t.is_deleted = 0 AND substr(t.work_date, 1, 7) = ?
            LEFT JOIN (
@@ -119,17 +119,19 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
            ) wt ON CAST(t.work_type AS INTEGER) = wt.work_type_id
            WHERE u.is_deleted = 0
            GROUP BY u.user_id, u.name, u.username
-           ORDER BY total DESC`
+           ORDER BY total DESC, u.name ASC`
         ).bind(targetYm).all();
         
         res.employeeHours = (rows?.results || []).map(r => ({
           userId: r.user_id,
-          name: r.name || r.username,
+          name: r.name || r.username || '未命名',
           total: Number(r.total || 0),
           normal: Number(r.normal || 0),
           overtime: Number(r.overtime || 0)
         }));
-      } catch (_) {}
+      } catch (e) {
+        console.error('Employee hours query error:', e);
+      }
 
       // Financial status - 根据finMode返回对应数据
       try {

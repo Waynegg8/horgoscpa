@@ -149,9 +149,9 @@
           
           // 各员工工时
           const empHours = Array.isArray(data?.employeeHours) ? data.employeeHours : [];
-          const hoursHtml = empHours.length ? empHours.map(e => {
-            const totalStr = fmtNum(e.total);
-            const meta = e.total > 0 ? `正常 ${fmtNum(e.normal)} ｜ 加班 ${fmtNum(e.overtime)}` : '';
+          const hoursHtml = empHours.length > 0 ? empHours.map(e => {
+            const totalStr = fmtNum(e.total || 0);
+            const meta = (e.total && e.total > 0) ? `正常 ${fmtNum(e.normal)} ｜ 加班 ${fmtNum(e.overtime)}` : '';
             return `<div class="emp-row">
               <span class="name">${e.name || '未命名'}</span>
               <div class="hours">
@@ -160,7 +160,7 @@
                 ${meta ? `<div class="muted">${meta}</div>` : ''}
               </div>
             </div>`;
-          }).join('') : '<div class="muted">尚無工時記錄</div>';
+          }).join('') : '<div class="muted">無法載入員工資料</div>';
           
           // 各员工任务状态 - 改为列表形式，可点击跳转
           const empTasks = Array.isArray(data?.employeeTasks) ? data.employeeTasks : [];
