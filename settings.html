@@ -729,9 +729,13 @@
         const tabBtns = document.querySelectorAll('.tab-btn');
         const tabPanels = document.querySelectorAll('.tab-panel');
 
+        console.log('找到', tabBtns.length, '個tab按鈕');
+        console.log('找到', tabPanels.length, '個tab面板');
+
         tabBtns.forEach(btn => {
           btn.addEventListener('click', () => {
             const targetTab = btn.getAttribute('data-tab');
+            console.log('點擊tab:', targetTab);
             
             // 移除所有active狀態
             tabBtns.forEach(b => b.classList.remove('active'));
@@ -741,7 +745,10 @@
             btn.classList.add('active');
             const targetPanel = document.getElementById('tab-' + targetTab);
             if (targetPanel) {
+              console.log('切換到面板:', targetPanel.id);
               targetPanel.classList.add('active');
+            } else {
+              console.error('找不到面板: tab-' + targetTab);
             }
 
             // 載入對應tab的資料
