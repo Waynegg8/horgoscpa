@@ -235,7 +235,7 @@ async function apiCall(url, options = {}) {
 
 async function loadClients() {
   try {
-    const data = await apiCall('/api/v1/clients?perPage=100');
+    const data = await apiCall('/internal/api/v1/clients?perPage=100');
     state.clients = data.data || [];
   } catch (error) {
     showToast('載入客戶列表失敗：' + error.message, 'error');
@@ -252,7 +252,7 @@ async function loadClientServices(clientId) {
   }
   
   try {
-    const data = await apiCall(`/api/v1/clients/${clientId}/services`);
+    const data = await apiCall(`/internal/api/v1/clients/${clientId}/services`);
     const services = data.data || [];
     state.clientServices.set(clientId, services);
     return services;
@@ -273,7 +273,7 @@ async function loadServiceItems(clientId, serviceId) {
   }
   
   try {
-    const data = await apiCall(`/api/v1/clients/${clientId}/services/${serviceId}/items`);
+    const data = await apiCall(`/internal/api/v1/clients/${clientId}/services/${serviceId}/items`);
     const items = data.data || [];
     state.serviceItems.set(key, items);
     return items;
@@ -290,7 +290,7 @@ async function loadHolidays() {
   const end = formatDate(endDate);
   
   try {
-    const data = await apiCall(`/api/v1/holidays?start_date=${start}&end_date=${end}`);
+    const data = await apiCall(`/internal/api/v1/holidays?start_date=${start}&end_date=${end}`);
     state.holidays.clear();
     
     if (data.data) {
@@ -314,7 +314,7 @@ async function loadLeaves() {
   const end = formatDate(endDate);
   
   try {
-    const data = await apiCall(`/api/v1/leaves?dateFrom=${start}&dateTo=${end}&status=approved`);
+    const data = await apiCall(`/internal/api/v1/leaves?dateFrom=${start}&dateTo=${end}&status=approved`);
     state.leaves.clear();
     
     if (data.data) {
@@ -351,7 +351,7 @@ async function loadTimesheets() {
   const end = formatDate(endDate);
   
   try {
-    const data = await apiCall(`/api/v1/timelogs?start_date=${start}&end_date=${end}`);
+    const data = await apiCall(`/internal/api/v1/timelogs?start_date=${start}&end_date=${end}`);
     const logs = data.data || [];
     
     // 建立 rows 結構
@@ -402,7 +402,7 @@ async function loadMonthlySummary() {
   const monthStr = `${year}-${month}`;
   
   try {
-    const data = await apiCall(`/api/v1/timelogs/summary?month=${monthStr}`);
+    const data = await apiCall(`/internal/api/v1/timelogs/summary?month=${monthStr}`);
     state.monthlySummary = data.data || {
       total_hours: 0,
       overtime_hours: 0,
@@ -937,7 +937,7 @@ async function handleDeleteRow(rowIndex) {
       endDate.setDate(endDate.getDate() + 6);
       const end = formatDate(endDate);
       
-      await apiCall('/api/v1/timelogs/batch', {
+      await apiCall('/internal/api/v1/timelogs/batch', {
         method: 'DELETE',
         body: JSON.stringify({
           start_date: start,
@@ -989,7 +989,7 @@ async function saveAllChanges() {
     const row = state.rows[change.rowIndex];
     const day = state.weekDays[change.dayIndex];
     
-    return apiCall('/api/v1/timelogs', {
+    return apiCall('/internal/api/v1/timelogs', {
       method: 'POST',
       body: JSON.stringify({
         work_date: day.iso,
