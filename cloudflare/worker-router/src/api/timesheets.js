@@ -184,6 +184,18 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 	}
 	
 	try {
+		// 獲取工時類型
+		const workType = WORK_TYPES[work_type_id];
+		if (!workType) {
+			return jsonResponse(422, {
+				ok: false,
+				code: "VALIDATION_ERROR",
+				message: "無效的工時類型",
+				errors: [{ field: "work_type_id", message: "工時類型不存在" }],
+				meta: { requestId }
+			}, corsHeaders);
+		}
+		
 		// 計算加權工時
 		const weighted_hours = calculateWeightedHours(work_type_id, hours);
 		
