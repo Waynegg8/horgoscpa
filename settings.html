@@ -7,7 +7,7 @@
     <title>系統設定｜管理員</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
-    <link rel="stylesheet" href="/assets/css/settings-page.css?v=20251031-004" />
+    <link rel="stylesheet" href="/assets/css/settings-page.css?v=20251031-005" />
   </head>
   <body class="internal-container">
     <!-- 通知栏 -->
@@ -166,10 +166,6 @@
       <!-- 服務項目管理 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-services">
-        <div class="tab-header">
-          <h2>服務項目</h2>
-          <button class="btn btn-primary" id="btnAddService">+ 新增</button>
-        </div>
         
         <!-- 新增服務項目表單（默認隱藏） -->
         <div class="card" id="addServiceForm" style="display:none; margin-bottom: 20px; background: #f8f9fa;">
@@ -202,6 +198,10 @@
           </div>
         </div>
         
+        <div class="search-bar">
+          <button class="btn btn-primary" id="btnAddService">+ 新增</button>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <div class="subtitle">點擊服務項目查看子項目</div>
@@ -287,10 +287,6 @@
       <!-- 任務模板管理 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-task-templates">
-        <div class="tab-header">
-          <h2>任務模板</h2>
-          <button class="btn btn-primary" id="btnAddTemplate">+ 新增</button>
-        </div>
         
         <!-- 新增任務模板表單（默認隱藏） -->
         <div class="card" id="addTemplateForm" style="display:none; margin-bottom: 20px; background: #f8f9fa;">
@@ -336,6 +332,7 @@
             <option value="null">統一模板</option>
           </select>
           <button class="btn btn-primary" id="btnSearchTemplates">篩選</button>
+          <button class="btn btn-primary" id="btnAddTemplate">+ 新增</button>
         </div>
 
         <div class="card">
