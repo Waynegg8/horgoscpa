@@ -7,7 +7,7 @@
     <title>系統設定｜管理員</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
-    <link rel="stylesheet" href="/assets/css/settings-page.css?v=20251031-008" />
+    <link rel="stylesheet" href="/assets/css/settings-page.css?v=20251031-009" />
   </head>
   <body class="internal-container">
     <!-- 通知栏 -->
@@ -41,125 +41,125 @@
       <!-- 系統參數 Tab -->
       <!-- ========================================== -->
       <div class="tab-panel active" id="tab-system">
-      <section class="card" aria-labelledby="danger-title">
-        <div class="card-header">
-          <h2 id="danger-title">危險設定</h2>
-          <div class="subtitle">變更前請確認風險，非管理員不可操作</div>
+        <div class="card">
+          <div class="card-header">
+            <h2>危險設定</h2>
+            <div class="subtitle">變更前請確認風險，非管理員不可操作</div>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label for="rule_comp_hours_expiry">補休有效期規則</label>
+              <select id="rule_comp_hours_expiry" disabled>
+                <option value="current_month">當月到期</option>
+                <option value="next_month">次月到期</option>
+                <option value="3_months">3 個月</option>
+                <option value="6_months">6 個月</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>每日工時上限（唯讀）</label>
+              <input type="text" value="12" readonly />
+            </div>
+            <div class="form-group">
+              <label>月薪制換算時數（唯讀）</label>
+              <input type="text" value="240" readonly />
+            </div>
+            <div>
+              <button id="btnSaveDanger" class="btn btn-danger" type="button" disabled>儲存危險設定</button>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label for="rule_comp_hours_expiry">補休有效期規則</label>
-            <select id="rule_comp_hours_expiry" disabled>
-              <option value="current_month">當月到期</option>
-              <option value="next_month">次月到期</option>
-              <option value="3_months">3 個月</option>
-              <option value="6_months">6 個月</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>每日工時上限（唯讀）</label>
-            <input type="text" value="12" readonly />
-          </div>
-          <div class="form-group">
-            <label>月薪制換算時數（唯讀）</label>
-            <input type="text" value="240" readonly />
-          </div>
-          <div>
-            <button id="btnSaveDanger" class="btn btn-danger" type="button" disabled>儲存危險設定</button>
-          </div>
-        </div>
-      </section>
 
-      <section class="card" aria-labelledby="payroll-title" style="margin-top:20px;">
-        <div class="card-header">
-          <h2 id="payroll-title">薪資相關參數</h2>
-          <div class="subtitle">全勤獎金與薪資計算相關設定</div>
-        </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label for="attendance_bonus_amount">全勤獎金金額（元）</label>
-            <input id="attendance_bonus_amount" type="number" min="0" step="1" placeholder="1000" disabled />
+        <div class="card">
+          <div class="card-header">
+            <h2>薪資相關參數</h2>
+            <div class="subtitle">全勤獎金與薪資計算相關設定</div>
           </div>
-          <div>
-            <button id="btnSavePayroll" class="btn btn-primary" type="button" disabled>儲存薪資參數</button>
+          <div class="card-body">
+            <div class="form-group">
+              <label for="attendance_bonus_amount">全勤獎金金額（元）</label>
+              <input id="attendance_bonus_amount" type="number" min="0" step="1" placeholder="1000" disabled />
+            </div>
+            <div>
+              <button id="btnSavePayroll" class="btn btn-primary" type="button" disabled>儲存薪資參數</button>
+            </div>
           </div>
         </div>
-      </section>
 
-      <section class="card" aria-labelledby="cost-title" style="margin-top:20px;">
-        <div class="card-header">
-          <h2 id="cost-title">成本分析參數</h2>
-          <div class="subtitle">管理成本與盈利目標設定</div>
+        <div class="card">
+          <div class="card-header">
+            <h2>成本分析參數</h2>
+            <div class="subtitle">管理成本與盈利目標設定</div>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label for="overhead_cost_per_hour">每小時管理成本（元/小時）</label>
+              <input id="overhead_cost_per_hour" type="number" min="0" step="0.01" placeholder="100" disabled />
+            </div>
+            <div class="form-group">
+              <label for="target_profit_margin">目標毛利率（%）</label>
+              <input id="target_profit_margin" type="number" min="0" max="100" step="0.1" placeholder="50" disabled />
+            </div>
+            <div>
+              <button id="btnSaveCost" class="btn btn-primary" type="button" disabled>儲存成本參數</button>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label for="overhead_cost_per_hour">每小時管理成本（元/小時）</label>
-            <input id="overhead_cost_per_hour" type="number" min="0" step="0.01" placeholder="100" disabled />
-          </div>
-          <div class="form-group">
-            <label for="target_profit_margin">目標毛利率（%）</label>
-            <input id="target_profit_margin" type="number" min="0" max="100" step="0.1" placeholder="50" disabled />
-          </div>
-          <div>
-            <button id="btnSaveCost" class="btn btn-primary" type="button" disabled>儲存成本參數</button>
-          </div>
-        </div>
-      </section>
 
-      <section class="card" aria-labelledby="general-title" style="margin-top:20px;">
-        <div class="card-header">
-          <h2 id="general-title">一般設定</h2>
-          <div class="subtitle">公司資訊等一般參數</div>
+        <div class="card">
+          <div class="card-header">
+            <h2>一般設定</h2>
+            <div class="subtitle">公司資訊等一般參數</div>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label for="company_name">公司名稱</label>
+              <input id="company_name" type="text" placeholder="範例：霍爾果斯會計師事務所" disabled />
+            </div>
+            <div class="form-group">
+              <label for="contact_email">聯絡信箱</label>
+              <input id="contact_email" type="email" placeholder="contact@horgoscpa.com" disabled />
+            </div>
+            <div class="form-group">
+              <label for="timezone">系統時區</label>
+              <input id="timezone" type="text" placeholder="Asia/Taipei" disabled />
+            </div>
+            <div class="form-group">
+              <label for="currency">幣別</label>
+              <input id="currency" type="text" placeholder="TWD" disabled />
+            </div>
+            <div class="form-group">
+              <label for="timesheet_min_unit">工時最小單位（小時）</label>
+              <select id="timesheet_min_unit" disabled>
+                <option value="0.25">0.25</option>
+                <option value="0.5">0.5</option>
+                <option value="1">1</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="soft_delete_enabled">啟用軟刪除</label>
+              <select id="soft_delete_enabled" disabled>
+                <option value="1">啟用</option>
+                <option value="0">停用</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="workday_start">工作日開始時間</label>
+              <input id="workday_start" type="time" disabled />
+            </div>
+            <div class="form-group">
+              <label for="workday_end">工作日結束時間</label>
+              <input id="workday_end" type="time" disabled />
+            </div>
+            <div class="form-group">
+              <label for="report_locale">報表語系</label>
+              <input id="report_locale" type="text" placeholder="zh-TW" disabled />
+            </div>
+            <div>
+              <button id="btnSaveGeneral" class="btn btn-primary" type="button" disabled>儲存一般設定</button>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label for="company_name">公司名稱</label>
-            <input id="company_name" type="text" placeholder="範例：霍爾果斯會計師事務所" disabled />
-          </div>
-          <div class="form-group">
-            <label for="contact_email">聯絡信箱</label>
-            <input id="contact_email" type="email" placeholder="contact@horgoscpa.com" disabled />
-          </div>
-          <div class="form-group">
-            <label for="timezone">系統時區</label>
-            <input id="timezone" type="text" placeholder="Asia/Taipei" disabled />
-          </div>
-          <div class="form-group">
-            <label for="currency">幣別</label>
-            <input id="currency" type="text" placeholder="TWD" disabled />
-          </div>
-          <div class="form-group">
-            <label for="timesheet_min_unit">工時最小單位（小時）</label>
-            <select id="timesheet_min_unit" disabled>
-              <option value="0.25">0.25</option>
-              <option value="0.5">0.5</option>
-              <option value="1">1</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="soft_delete_enabled">啟用軟刪除</label>
-            <select id="soft_delete_enabled" disabled>
-              <option value="1">啟用</option>
-              <option value="0">停用</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="workday_start">工作日開始時間</label>
-            <input id="workday_start" type="time" disabled />
-          </div>
-          <div class="form-group">
-            <label for="workday_end">工作日結束時間</label>
-            <input id="workday_end" type="time" disabled />
-          </div>
-          <div class="form-group">
-            <label for="report_locale">報表語系</label>
-            <input id="report_locale" type="text" placeholder="zh-TW" disabled />
-          </div>
-          <div>
-            <button id="btnSaveGeneral" class="btn btn-primary" type="button" disabled>儲存一般設定</button>
-          </div>
-        </div>
-      </section>
       </div>
 
       <!-- ========================================== -->
