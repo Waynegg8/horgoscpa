@@ -612,19 +612,19 @@
       addRow.style.display = 'table-row';
       addRow.innerHTML = `
         <td>
-          <select id="new-month-${clientServiceId}" style="width: 100%; padding: 6px; font-size: 14px;">
+          <select id="new-month-${clientServiceId}">
             <option value="">月份</option>
             ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m => `<option value="${m}">${m}月</option>`).join('')}
           </select>
         </td>
         <td>
-          <input type="number" id="new-amount-${clientServiceId}" placeholder="金額" step="0.01" min="0" style="width: 100%; padding: 6px; font-size: 14px;" />
+          <input type="number" id="new-amount-${clientServiceId}" placeholder="金額" step="0.01" min="0" />
         </td>
         <td>
-          <input type="number" id="new-due-${clientServiceId}" value="30" min="1" style="width: 100%; padding: 6px; font-size: 14px;" />
+          <input type="number" id="new-due-${clientServiceId}" value="30" min="1" />
         </td>
         <td>
-          <input type="text" id="new-notes-${clientServiceId}" placeholder="備註" style="width: 100%; padding: 6px; font-size: 14px;" />
+          <input type="text" id="new-notes-${clientServiceId}" placeholder="備註" />
         </td>
         <td>
           <button class="table-btn-link" onclick="saveBilling(${clientServiceId}, null)">儲存</button>
@@ -638,18 +638,18 @@
       const row = document.querySelector(`[data-schedule-id="${scheduleId}"]`);
       row.innerHTML = `
         <td>
-          <select id="edit-month-${scheduleId}" style="width: 100%; padding: 6px; font-size: 14px;">
+          <select id="edit-month-${scheduleId}">
             ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m => `<option value="${m}" ${m === month ? 'selected' : ''}>${m}月</option>`).join('')}
           </select>
         </td>
         <td>
-          <input type="number" id="edit-amount-${scheduleId}" value="${amount}" step="0.01" min="0" style="width: 100%; padding: 6px; font-size: 14px;" />
+          <input type="number" id="edit-amount-${scheduleId}" value="${amount}" step="0.01" min="0" />
         </td>
         <td>
-          <input type="number" id="edit-due-${scheduleId}" value="${dueDays}" min="1" style="width: 100%; padding: 6px; font-size: 14px;" />
+          <input type="number" id="edit-due-${scheduleId}" value="${dueDays}" min="1" />
         </td>
         <td>
-          <input type="text" id="edit-notes-${scheduleId}" value="${notes}" placeholder="備註" style="width: 100%; padding: 6px; font-size: 14px;" />
+          <input type="text" id="edit-notes-${scheduleId}" value="${notes}" placeholder="備註" />
         </td>
         <td>
           <button class="table-btn-link" onclick="saveBilling(${clientServiceId}, ${scheduleId})">儲存</button>
