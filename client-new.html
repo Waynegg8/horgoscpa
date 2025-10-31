@@ -150,15 +150,19 @@
     function renderServices(services) {
       const tbody = document.getElementById('servicesList');
       
+      const serviceOptions = allServices && allServices.length > 0
+        ? allServices.filter(s => s.is_active).map(s => 
+            `<option value="${s.service_id}">${s.service_name}</option>`
+          ).join('')
+        : '';
+      
       const addServiceRowHtml = `
         <tr id="add-service-row" style="display: none;">
           <td></td>
           <td>
             <select id="new-service-id" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
               <option value="">請選擇服務</option>
-              ${allServices.filter(s => s.is_active).map(s => 
-                `<option value="${s.service_id}">${s.service_name}</option>`
-              ).join('')}
+              ${serviceOptions}
             </select>
           </td>
           <td>

@@ -127,11 +127,13 @@
         return;
       }
 
+      // 先加載服務選項和模板，再加載客戶詳情
       await Promise.all([
-        loadClientDetail(),
         loadServices(),
         loadTemplates()
       ]);
+      
+      await loadClientDetail();
     }
 
     // 載入客戶詳情
@@ -202,15 +204,23 @@
     function renderServices(services) {
       const tbody = document.getElementById('servicesList');
       
+      console.log('渲染服務列表，allServices數量:', allServices.length);
+      
+      const serviceOptions = allServices && allServices.length > 0
+        ? allServices.filter(s => s.is_active).map(s => 
+            `<option value="${s.service_id}">${s.service_name}</option>`
+          ).join('')
+        : '';
+      
+      console.log('可用服務選項數量:', serviceOptions ? serviceOptions.split('</option>').length - 1 : 0);
+      
       const addServiceRowHtml = `
         <tr id="add-service-row" style="display: none;">
           <td></td>
           <td>
             <select id="new-service-id" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
               <option value="">請選擇服務</option>
-              ${allServices.filter(s => s.is_active).map(s => 
-                `<option value="${s.service_id}">${s.service_name}</option>`
-              ).join('')}
+              ${serviceOptions}
             </select>
           </td>
           <td>
@@ -382,6 +392,7 @@
         
         if (json.ok && json.data) {
           allServices = json.data;
+          console.log('已載入服務選項:', allServices.length, '項');
         }
       } catch (err) {
         console.error('載入服務選項失敗:', err);
