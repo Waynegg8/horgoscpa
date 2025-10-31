@@ -180,61 +180,6 @@
     </div>
   </div>
 
-  <!-- 新增/編輯收費明細 Modal -->
-  <div id="addBillingModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-header">
-        <h3 id="addBillingModalTitle">新增月份收費</h3>
-        <button class="modal-close" onclick="closeAddBillingModal()">&times;</button>
-      </div>
-      <form id="addBillingForm">
-        <input type="hidden" id="editScheduleId">
-        
-        <div class="form-group">
-          <label>月份 <span class="required">*</span></label>
-          <select id="billingMonth" required>
-            <option value="">請選擇月份</option>
-            <option value="1">1月</option>
-            <option value="2">2月</option>
-            <option value="3">3月</option>
-            <option value="4">4月</option>
-            <option value="5">5月</option>
-            <option value="6">6月</option>
-            <option value="7">7月</option>
-            <option value="8">8月</option>
-            <option value="9">9月</option>
-            <option value="10">10月</option>
-            <option value="11">11月</option>
-            <option value="12">12月</option>
-          </select>
-          <div class="error-message" id="error_billing_month"></div>
-        </div>
-
-        <div class="form-group">
-          <label>金額 <span class="required">*</span></label>
-          <input type="number" id="billingAmount" min="0" step="0.01" required>
-          <div class="error-message" id="error_billing_amount"></div>
-        </div>
-
-        <div class="form-group">
-          <label>收款期限（天）</label>
-          <input type="number" id="paymentDueDays" value="30" min="1" required>
-          <div class="error-message" id="error_payment_due_days"></div>
-        </div>
-
-        <div class="form-group">
-          <label>備註</label>
-          <textarea id="billingNotes" rows="2"></textarea>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeAddBillingModal()">取消</button>
-          <button type="submit" class="btn btn-primary">儲存</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <div id="footer-placeholder"></div>
 
   <script src="/assets/js/components/bootstrap.js?v=3"></script>
@@ -426,38 +371,38 @@
 
         const schedules = json.data.schedules || [];
         
-        if (schedules.length === 0) {
-          container.innerHTML = '<p class="no-data-inline">尚未設定收費明細</p>';
-          return;
-        }
-
         // 排序by月份
         schedules.sort((a, b) => a.billing_month - b.billing_month);
 
         container.innerHTML = `
-          <table class="billing-table">
+          <table class="billing-table" id="billing-table-${clientServiceId}">
             <thead>
               <tr>
                 <th>月份</th>
                 <th>金額</th>
                 <th>收款期限（天）</th>
                 <th>備註</th>
-                <th>操作</th>
+                <th style="width: 140px;">操作</th>
               </tr>
             </thead>
             <tbody>
               ${schedules.map(s => `
-                <tr>
+                <tr data-schedule-id="${s.schedule_id}">
                   <td>${s.billing_month}月</td>
                   <td class="amount">$${s.billing_amount.toLocaleString('zh-TW')}</td>
                   <td>${s.payment_due_days}天</td>
                   <td>${s.notes || '-'}</td>
                   <td>
-                    <button class="table-btn-link" onclick="editBillingInline(${clientServiceId}, ${s.schedule_id}, ${s.billing_month}, ${s.billing_amount}, ${s.payment_due_days}, '${(s.notes || '').replace(/'/g, "\\'")}')">編輯</button>
+                    <button class="table-btn-link" onclick="startEditBilling(${clientServiceId}, ${s.schedule_id}, ${s.billing_month}, ${s.billing_amount}, ${s.payment_due_days}, '${(s.notes || '').replace(/'/g, "\\'")}')">編輯</button>
                     <button class="table-btn-link danger" onclick="deleteBillingInline(${clientServiceId}, ${s.schedule_id}, ${s.billing_month})">刪除</button>
                   </td>
                 </tr>
               `).join('')}
+              <tr id="add-row-${clientServiceId}" class="add-billing-row">
+                <td colspan="5" style="text-align: center; padding: 12px;">
+                  <button type="button" class="table-btn-link" style="font-size: 14px; font-weight: 500;" onclick="showAddBillingRow(${clientServiceId})">+ 新增月份收費</button>
+                </td>
+              </tr>
             </tbody>
           </table>
         `;
@@ -643,26 +588,131 @@
       }
     }
 
-    // 打開新增收費表單
-    function openAddBillingForm(clientServiceId) {
-      currentBillingServiceId = clientServiceId;
-      document.getElementById('addBillingModalTitle').textContent = '新增月份收費';
-      document.getElementById('addBillingForm').reset();
-      document.getElementById('editScheduleId').value = '';
-      document.getElementById('paymentDueDays').value = '30';
-      document.getElementById('addBillingModal').style.display = 'flex';
+    // 顯示新增收費行
+    function showAddBillingRow(clientServiceId) {
+      const addRow = document.getElementById(`add-row-${clientServiceId}`);
+      addRow.innerHTML = `
+        <td>
+          <select id="new-month-${clientServiceId}" style="width: 100%; padding: 6px; font-size: 14px;">
+            <option value="">月份</option>
+            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m => `<option value="${m}">${m}月</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <input type="number" id="new-amount-${clientServiceId}" placeholder="金額" step="0.01" min="0" style="width: 100%; padding: 6px; font-size: 14px;" />
+        </td>
+        <td>
+          <input type="number" id="new-due-${clientServiceId}" value="30" min="1" style="width: 100%; padding: 6px; font-size: 14px;" />
+        </td>
+        <td>
+          <input type="text" id="new-notes-${clientServiceId}" placeholder="備註" style="width: 100%; padding: 6px; font-size: 14px;" />
+        </td>
+        <td>
+          <button class="table-btn-link" onclick="saveBilling(${clientServiceId}, null)">儲存</button>
+          <button class="table-btn-link danger" onclick="cancelBillingEdit(${clientServiceId}, null)">取消</button>
+        </td>
+      `;
     }
 
-    // 編輯收費明細（內嵌）
-    function editBillingInline(clientServiceId, scheduleId, month, amount, dueDays, notes) {
-      currentBillingServiceId = clientServiceId;
-      document.getElementById('addBillingModalTitle').textContent = '編輯月份收費';
-      document.getElementById('editScheduleId').value = scheduleId;
-      document.getElementById('billingMonth').value = month;
-      document.getElementById('billingAmount').value = amount;
-      document.getElementById('paymentDueDays').value = dueDays;
-      document.getElementById('billingNotes').value = notes;
-      document.getElementById('addBillingModal').style.display = 'flex';
+    // 開始編輯收費明細
+    function startEditBilling(clientServiceId, scheduleId, month, amount, dueDays, notes) {
+      const row = document.querySelector(`[data-schedule-id="${scheduleId}"]`);
+      row.innerHTML = `
+        <td>
+          <select id="edit-month-${scheduleId}" style="width: 100%; padding: 6px; font-size: 14px;">
+            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m => `<option value="${m}" ${m === month ? 'selected' : ''}>${m}月</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <input type="number" id="edit-amount-${scheduleId}" value="${amount}" step="0.01" min="0" style="width: 100%; padding: 6px; font-size: 14px;" />
+        </td>
+        <td>
+          <input type="number" id="edit-due-${scheduleId}" value="${dueDays}" min="1" style="width: 100%; padding: 6px; font-size: 14px;" />
+        </td>
+        <td>
+          <input type="text" id="edit-notes-${scheduleId}" value="${notes}" placeholder="備註" style="width: 100%; padding: 6px; font-size: 14px;" />
+        </td>
+        <td>
+          <button class="table-btn-link" onclick="saveBilling(${clientServiceId}, ${scheduleId})">儲存</button>
+          <button class="table-btn-link danger" onclick="cancelBillingEdit(${clientServiceId}, ${scheduleId})">取消</button>
+        </td>
+      `;
+    }
+
+    // 儲存收費明細（新增或編輯）
+    async function saveBilling(clientServiceId, scheduleId) {
+      const isEdit = scheduleId !== null;
+      
+      let month, amount, dueDays, notes;
+      
+      if (isEdit) {
+        month = document.getElementById(`edit-month-${scheduleId}`).value;
+        amount = document.getElementById(`edit-amount-${scheduleId}`).value;
+        dueDays = document.getElementById(`edit-due-${scheduleId}`).value;
+        notes = document.getElementById(`edit-notes-${scheduleId}`).value;
+      } else {
+        month = document.getElementById(`new-month-${clientServiceId}`).value;
+        amount = document.getElementById(`new-amount-${clientServiceId}`).value;
+        dueDays = document.getElementById(`new-due-${clientServiceId}`).value;
+        notes = document.getElementById(`new-notes-${clientServiceId}`).value;
+      }
+      
+      if (!month || !amount || !dueDays) {
+        alert('請填寫必填欄位');
+        return;
+      }
+      
+      const data = {
+        billing_month: parseInt(month),
+        billing_amount: parseFloat(amount),
+        payment_due_days: parseInt(dueDays),
+        notes: notes || null
+      };
+      
+      try {
+        const url = isEdit 
+          ? `/internal/api/v1/billing/${scheduleId}`
+          : `/internal/api/v1/billing/service/${clientServiceId}`;
+        
+        const res = await fetch(url, {
+          method: isEdit ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert(json.message || '操作失敗');
+          return;
+        }
+
+        alert(isEdit ? '收費明細已更新' : '收費明細已新增');
+        
+        // 重新載入該服務的收費明細
+        const services = (await (await fetch(`/internal/api/v1/clients/${currentClientId}`)).json()).data.services;
+        const index = services.findIndex(s => s.client_service_id === clientServiceId);
+        if (index !== -1) {
+          await loadBillingInline(index, clientServiceId);
+        }
+        
+        // 重新載入客戶以更新年度總額
+        await loadClientDetail();
+        
+      } catch (err) {
+        console.error('儲存收費明細失敗:', err);
+        alert('操作失敗');
+      }
+    }
+
+    // 取消編輯收費明細
+    async function cancelBillingEdit(clientServiceId, scheduleId) {
+      // 重新載入該服務的收費明細
+      const services = (await (await fetch(`/internal/api/v1/clients/${currentClientId}`)).json()).data.services;
+      const index = services.findIndex(s => s.client_service_id === clientServiceId);
+      if (index !== -1) {
+        await loadBillingInline(index, clientServiceId);
+      }
     }
 
     // 刪除收費明細（內嵌）
@@ -700,183 +750,13 @@
     }
 
     // 暴露函數到全局
-    window.openAddBillingForm = openAddBillingForm;
-    window.editBillingInline = editBillingInline;
+    window.showAddBillingRow = showAddBillingRow;
+    window.startEditBilling = startEditBilling;
+    window.saveBilling = saveBilling;
+    window.cancelBillingEdit = cancelBillingEdit;
     window.deleteBillingInline = deleteBillingInline;
 
-    // 查看收費明細
-    async function viewBilling(clientServiceId, serviceName) {
-      currentBillingServiceId = clientServiceId;
-      document.getElementById('billingClientServiceId').value = clientServiceId;
-      document.getElementById('billingServiceName').textContent = serviceName;
-      document.getElementById('billingModalTitle').textContent = `收費明細 - ${serviceName}`;
-      
-      await loadBillingSchedule();
-      document.getElementById('billingModal').style.display = 'flex';
-    }
 
-    // 載入收費明細
-    async function loadBillingSchedule() {
-      const clientServiceId = currentBillingServiceId;
-      
-      try {
-        const res = await fetch(`/internal/api/v1/billing/service/${clientServiceId}`);
-        const json = await res.json();
-        
-        if (!json.ok) {
-          alert(json.message || '載入失敗');
-          return;
-        }
-
-        const schedules = json.data.schedules || [];
-        const yearTotal = json.data.year_total || 0;
-        
-        document.getElementById('billingYearTotal').textContent = `$${yearTotal.toLocaleString('zh-TW')}`;
-        
-        const tbody = document.getElementById('billingScheduleList');
-        if (schedules.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="no-data">暫無收費明細</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = schedules.map(s => `
-          <tr>
-            <td>${s.billing_month}月</td>
-            <td>$${s.billing_amount.toLocaleString('zh-TW')}</td>
-            <td>${s.payment_due_days}天</td>
-            <td>${s.notes || '-'}</td>
-            <td>
-              <button class="btn-link" onclick="editBillingSchedule(${s.schedule_id}, ${s.billing_month}, ${s.billing_amount}, ${s.payment_due_days}, '${s.notes || ''}')">編輯</button>
-              <button class="btn-link text-danger" onclick="deleteBillingSchedule(${s.schedule_id}, ${s.billing_month})">刪除</button>
-            </td>
-          </tr>
-        `).join('');
-        
-      } catch (err) {
-        console.error('載入收費明細失敗:', err);
-        alert('載入失敗');
-      }
-    }
-
-    // 關閉收費明細Modal
-    function closeBillingModal() {
-      document.getElementById('billingModal').style.display = 'none';
-    }
-
-    // 打開新增收費明細Modal
-    function openAddBillingModal() {
-      document.getElementById('addBillingModalTitle').textContent = '新增月份收費';
-      document.getElementById('addBillingForm').reset();
-      document.getElementById('editScheduleId').value = '';
-      document.getElementById('paymentDueDays').value = '30';
-      clearFormErrors('billing');
-      document.getElementById('addBillingModal').style.display = 'flex';
-    }
-
-    // 編輯收費明細
-    function editBillingSchedule(scheduleId, month, amount, dueDays, notes) {
-      document.getElementById('addBillingModalTitle').textContent = '編輯月份收費';
-      document.getElementById('editScheduleId').value = scheduleId;
-      document.getElementById('billingMonth').value = month;
-      document.getElementById('billingAmount').value = amount;
-      document.getElementById('paymentDueDays').value = dueDays;
-      document.getElementById('billingNotes').value = notes;
-      clearFormErrors('billing');
-      document.getElementById('addBillingModal').style.display = 'flex';
-    }
-
-    // 關閉新增收費明細Modal
-    function closeAddBillingModal() {
-      document.getElementById('addBillingModal').style.display = 'none';
-    }
-
-    // 提交收費明細表單
-    document.getElementById('addBillingForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      clearFormErrors('billing');
-      
-      const scheduleId = document.getElementById('editScheduleId').value;
-      const isEdit = !!scheduleId;
-      
-      const data = {
-        billing_month: parseInt(document.getElementById('billingMonth').value),
-        billing_amount: parseFloat(document.getElementById('billingAmount').value),
-        payment_due_days: parseInt(document.getElementById('paymentDueDays').value),
-        notes: document.getElementById('billingNotes').value
-      };
-
-      try {
-        const url = isEdit 
-          ? `/internal/api/v1/billing/${scheduleId}`
-          : `/internal/api/v1/billing/service/${currentBillingServiceId}`;
-        
-        const res = await fetch(url, {
-          method: isEdit ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        
-        const json = await res.json();
-        
-        if (!json.ok) {
-          if (json.errors) {
-            json.errors.forEach(err => {
-              showFieldError('billing', err.field, err.message);
-            });
-          } else {
-            alert(json.message || '操作失敗');
-          }
-          return;
-        }
-
-        alert(isEdit ? '收費明細已更新' : '收費明細已新增');
-        closeAddBillingModal();
-        
-        // 重新載入該服務的收費明細
-        const clientData = await (await fetch(`/internal/api/v1/clients/${currentClientId}`)).json();
-        if (clientData.ok && clientData.data.services) {
-          const index = clientData.data.services.findIndex(s => s.client_service_id === currentBillingServiceId);
-          if (index !== -1) {
-            await loadBillingInline(index, currentBillingServiceId);
-          }
-        }
-        
-        // 重新載入客戶以更新年度總額
-        await loadClientDetail();
-        
-      } catch (err) {
-        console.error('提交收費明細失敗:', err);
-        alert('操作失敗');
-      }
-    });
-
-    // 刪除收費明細
-    async function deleteBillingSchedule(scheduleId, month) {
-      if (!confirm(`確定要刪除${month}月的收費明細嗎？`)) return;
-      
-      try {
-        const res = await fetch(`/internal/api/v1/billing/${scheduleId}`, {
-          method: 'DELETE'
-        });
-        
-        const json = await res.json();
-        
-        if (!json.ok) {
-          alert(json.message || '刪除失敗');
-          return;
-        }
-
-        alert('收費明細已刪除');
-        await Promise.all([
-          loadBillingSchedule(),
-          loadClientDetail()
-        ]);
-        
-      } catch (err) {
-        console.error('刪除收費明細失敗:', err);
-        alert('刪除失敗');
-      }
-    }
 
     // 取消編輯
     function cancelEdit() {
