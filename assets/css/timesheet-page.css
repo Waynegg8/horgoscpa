@@ -142,26 +142,26 @@
 
 .col-client.sticky-col {
   left: 0;
-  min-width: 140px;
-  max-width: 140px;
+  min-width: 130px;
+  max-width: 130px;
 }
 
 .col-service.sticky-col {
-  left: 140px;
-  min-width: 120px;
-  max-width: 120px;
+  left: 130px;
+  min-width: 110px;
+  max-width: 110px;
 }
 
 .col-service-item.sticky-col {
-  left: 260px;
-  min-width: 120px;
-  max-width: 120px;
+  left: 240px;
+  min-width: 110px;
+  max-width: 110px;
 }
 
 .col-worktype.sticky-col {
-  left: 380px;
-  min-width: 120px;
-  max-width: 120px;
+  left: 350px;
+  min-width: 140px;
+  max-width: 140px;
 }
 
 /* 表頭固定列也需要設置left */
@@ -172,19 +172,19 @@
 }
 
 .timesheet-table thead th.col-service {
-  left: 140px;
+  left: 130px;
   z-index: 15;
   background: #f8f9fa !important;
 }
 
 .timesheet-table thead th.col-service-item {
-  left: 260px;
+  left: 240px;
   z-index: 15;
   background: #f8f9fa !important;
 }
 
 .timesheet-table thead th.col-worktype {
-  left: 380px;
+  left: 350px;
   z-index: 15;
   background: #f8f9fa !important;
 }
@@ -248,8 +248,11 @@
   padding: 6px 8px;
   border: 1px solid #ced4da;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 13px;
   background: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cell-select:focus {
