@@ -31,34 +31,6 @@ body.internal-container {
 .alert-danger { background: #fef2f2; color: #991b1b; }
 .alert-info { background: #eff6ff; color: #1e40af; }
 
-/* 内部导航栏 */
-.internal-navbar {
-    background: #1e293b;
-    padding: 0 32px;
-    display: flex;
-    gap: 24px;
-    border-bottom: 1px solid #334155;
-}
-.internal-navbar .nav-link {
-    padding: 16px 20px;
-    color: #cbd5e1;
-    text-decoration: none;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 14px;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-}
-.internal-navbar .nav-link:hover {
-    color: white;
-    background: rgba(255,255,255,0.05);
-}
-.internal-navbar .nav-link.active {
-    color: white;
-    border-bottom-color: #3b82f6;
-}
-
 /* Tab导航 */
 .settings-nav {
     background: white;
@@ -83,8 +55,6 @@ body.internal-container {
 /* 主内容区 */
 .settings-content {
     padding: 32px;
-    max-width: 1400px;
-    margin: 0 auto;
 }
 
 /* Tab面板 */

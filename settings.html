@@ -1,37 +1,15 @@
 <!doctype html>
 <html lang="zh-Hant">
-<head>
+  <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>系統設定｜管理員</title>
     <link rel="stylesheet" href="/assets/css/common.css">
     <link rel="stylesheet" href="/assets/css/internal-system.css">
-    <link rel="stylesheet" href="/assets/css/settings-page.css?v=201">
-</head>
-<body class="internal-container">
-    
-    <header class="internal-navbar">
-        <div class="internal-nav-container">
-            <a class="internal-nav-brand" href="/internal/dashboard">
-                <img src="/assets/images/logo-white.png" alt="HorgosCPA 內部系統" style="height:32px" />
-                <span>內部系統</span>
-            </a>
-            <nav class="internal-nav-links">
-                <a class="internal-nav-link" href="/internal/dashboard">儀表板</a>
-                <a class="internal-nav-link" href="/internal/clients">客戶</a>
-                <a class="internal-nav-link" href="/internal/timesheets">工時</a>
-                <a class="internal-nav-link" href="/internal/leaves">假期</a>
-                <a class="internal-nav-link" href="/internal/tasks">任務</a>
-                <a class="internal-nav-link" href="/internal/receipts">收據</a>
-                <a class="internal-nav-link" href="/internal/reports">報表</a>
-                <a class="internal-nav-link active" href="/internal/settings">設定</a>
-            </nav>
-            <div class="internal-nav-user">
-                <span class="internal-user-name" id="internalUserName">—</span>
-            </div>
-        </div>
-    </header>
-    
+    <link rel="stylesheet" href="/assets/css/internal-components.css">
+    <link rel="stylesheet" href="/assets/css/settings-page.css?v=202">
+  </head>
+<body>
     <div id="permBar" class="alert alert-danger" style="display:none">您沒有權限</div>
     
     <nav class="settings-nav">
@@ -550,6 +528,7 @@
 
     </main>
 
+    <script src="/assets/js/components/bootstrap.js?v=3"></script>
     <script>
         // Tab切换
         document.querySelectorAll('.nav-tab').forEach(btn => {
@@ -579,11 +558,43 @@
             };
         });
         
-        // 新增按钮事件
-        const btns = ['btnAddTemplate', 'btnAddUser', 'btnAddClient', 'btnAddSOP', 'btnAddLifecycle', 'btnAddCMS', 'btnAddAutomation'];
-        btns.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.onclick = () => alert('新增功能開發中');
+        // 任务模板 - 新增
+        document.getElementById('btnAddTemplate')?.addEventListener('click', () => {
+            const name = prompt('請輸入模板名稱：');
+            if (!name) return;
+            fetch('/internal/api/v1/task-templates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ template_name: name })
+            }).then(() => { alert('新增成功'); loadTemplates(); }).catch(() => alert('新增失敗'));
+        });
+
+        // 用户 - 新增
+        document.getElementById('btnAddUser')?.addEventListener('click', () => {
+            alert('請透過管理員工具新增用戶');
+        });
+
+        // 客户 - 新增
+        document.getElementById('btnAddClient')?.addEventListener('click', () => {
+            window.location.href = '/internal/client-new';
+        });
+
+        // SOP - 新增
+        document.getElementById('btnAddSOP')?.addEventListener('click', () => {
+            const title = prompt('請輸入SOP標題：');
+            if (!title) return;
+            fetch('/internal/api/v1/sop', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ title, content: '' })
+            }).then(() => { alert('新增成功'); loadSOP(); }).catch(() => alert('新增失敗'));
+        });
+
+        // 生命周期、CMS、自动化 - 新增
+        ['btnAddLifecycle', 'btnAddCMS', 'btnAddAutomation'].forEach(id => {
+            document.getElementById(id)?.addEventListener('click', () => alert('此功能開發中'));
         });
 
         // 新增服务
@@ -828,7 +839,7 @@
             const tbody = document.querySelector('#costsTable tbody');
             try {
                 const res = await fetch('/internal/api/v1/overhead', { credentials: 'include' });
-                const json = await res.json();
+            const json = await res.json();
                 if (!json.data || json.data.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
                     return;
@@ -872,7 +883,7 @@
                         <td><button class="btn btn-sm btn-danger" onclick="deleteSOP(${s.sop_id})">刪除</button></td>
                     </tr>
                 `).join('');
-            } catch (e) {
+          } catch (e) {
                 tbody.innerHTML = '<tr><td colspan="5" class="loading">載入失敗</td></tr>';
             }
         }
@@ -908,7 +919,7 @@
                         <td><button class="btn btn-sm btn-secondary">編輯</button></td>
                     </tr>
                 `).join('');
-            } catch (e) {
+          } catch (e) {
                 tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
             }
         }
@@ -932,7 +943,7 @@
                         <td><button class="btn btn-sm btn-danger" onclick="deleteRule(${r.rule_id})">刪除</button></td>
                     </tr>
                 `).join('');
-            } catch (e) {
+          } catch (e) {
                 tbody.innerHTML = '<tr><td colspan="5" class="loading">載入失敗</td></tr>';
             }
         }
@@ -960,7 +971,7 @@
                         <td>${h.holiday_type || '國定假日'}</td>
                     </tr>
                 `).join('');
-            } catch (e) {
+          } catch (e) {
                 tbody.innerHTML = '<tr><td colspan="3" class="loading">載入失敗</td></tr>';
             }
         }
