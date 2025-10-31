@@ -90,26 +90,39 @@
           return `<div class="card list"><div class="card-title">${title}</div><div class="list-body">${rowsHtml||'<div class=\"muted\">尚無資料</div>'}</div></div>`;
         }
 
-        function listCardWithMonthPicker(title, rowsHtml, currentYm, onPrev, onNext){
+        function generateMonthOptions(selectedYm) {
+          // 生成最近12个月的选项
+          const options = [];
+          const now = new Date();
+          for (let i = 0; i < 12; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const label = formatYm(ym);
+            const selected = ym === selectedYm ? ' selected' : '';
+            options.push(`<option value="${ym}"${selected}>${label}</option>`);
+          }
+          return options.join('');
+        }
+
+        function listCardWithMonthDropdown(title, rowsHtml, currentYm){
+          const options = generateMonthOptions(currentYm);
           return `<div class="card list"><div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
             <span>${title}</span>
-            <div class="month-picker" style="display:flex;align-items:center;gap:8px;font-size:14px;">
-              <button type="button" class="month-nav-btn prev" data-action="prev" style="padding:4px 8px;cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:4px;">◀</button>
-              <span class="current-month" style="min-width:80px;text-align:center;font-weight:500;">${currentYm}</span>
-              <button type="button" class="month-nav-btn next" data-action="next" style="padding:4px 8px;cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:4px;">▶</button>
-            </div>
+            <select class="month-dropdown" style="padding:6px 12px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:14px;font-weight:500;cursor:pointer;outline:none;transition:border-color 0.2s;" onchange="this.style.borderColor='#3498db'" onfocus="this.style.borderColor='#3498db'" onblur="this.style.borderColor='#ddd'">
+              ${options}
+            </select>
           </div><div class="list-body">${rowsHtml||'<div class=\"muted\">尚無資料</div>'}</div></div>`;
         }
 
-        function listCardWithFinancePicker(title, rowsHtml, currentYm, mode){
-          const displayText = mode === 'ytd' ? `${currentYm.split('-')[0]}年累計` : formatYm(currentYm);
+        function listCardWithFinanceDropdown(title, rowsHtml, currentYm, mode){
+          const options = generateMonthOptions(currentYm);
           return `<div class="card list"><div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
             <span>${title}</span>
-            <div class="finance-picker" style="display:flex;align-items:center;gap:8px;font-size:14px;">
-              <button type="button" class="month-nav-btn prev" data-action="prev" style="padding:4px 8px;cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:4px;">◀</button>
-              <span class="current-period" style="min-width:100px;text-align:center;font-weight:500;">${displayText}</span>
-              <button type="button" class="month-nav-btn next" data-action="next" style="padding:4px 8px;cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:4px;">▶</button>
-              <button type="button" class="ytd-btn" data-action="ytd" style="padding:4px 12px;cursor:pointer;border:1px solid ${mode === 'ytd' ? '#3498db' : '#ddd'};background:${mode === 'ytd' ? '#3498db' : '#fff'};color:${mode === 'ytd' ? '#fff' : '#333'};border-radius:4px;font-weight:500;">本年累計</button>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <select class="finance-month-dropdown" style="padding:6px 12px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:14px;font-weight:500;cursor:pointer;outline:none;transition:border-color 0.2s;${mode === 'ytd' ? 'opacity:0.5;pointer-events:none;' : ''}" onchange="this.style.borderColor='#3498db'" onfocus="this.style.borderColor='#3498db'" onblur="this.style.borderColor='#ddd'">
+                ${options}
+              </select>
+              <button type="button" class="ytd-btn" style="padding:6px 14px;cursor:pointer;border:1px solid ${mode === 'ytd' ? '#3498db' : '#ddd'};background:${mode === 'ytd' ? '#3498db' : '#fff'};color:${mode === 'ytd' ? '#fff' : '#333'};border-radius:6px;font-weight:500;font-size:14px;transition:all 0.2s;white-space:nowrap;">本年累計</button>
             </div>
           </div><div class="list-body">${rowsHtml||'<div class=\"muted\">尚無資料</div>'}</div></div>`;
         }
@@ -149,8 +162,6 @@
           
           // 各员工工时
           const empHours = Array.isArray(data?.employeeHours) ? data.employeeHours : [];
-          console.log('Employee Hours Data:', empHours); // 调试信息
-          
           let hoursHtml = '';
           if (empHours.length > 0) {
             hoursHtml = empHours.map(e => {
@@ -218,41 +229,20 @@
           
           // 1. 先渲染财务状况（独占一行）
           const finFrag = document.createElement('div');
-          finFrag.innerHTML = listCardWithFinancePicker('財務狀況', finHtml, financeYm, financeMode);
+          finFrag.innerHTML = listCardWithFinanceDropdown('財務狀況', finHtml, financeYm, financeMode);
           const finCard = finFrag.firstElementChild;
           finCard.classList.add('finance-card'); // 添加类以确保全宽
           grid.appendChild(finCard);
           
-          // 添加财务月份选择器事件监听
+          // 添加财务月份下拉选单和按钮事件监听
           if (finCard) {
-            const prevBtn = finCard.querySelector('.month-nav-btn.prev');
-            const nextBtn = finCard.querySelector('.month-nav-btn.next');
+            const dropdown = finCard.querySelector('.finance-month-dropdown');
             const ytdBtn = finCard.querySelector('.ytd-btn');
             
-            if (prevBtn) {
-              prevBtn.addEventListener('click', () => {
-                if (financeMode === 'ytd') {
-                  // 年度模式下，切换到上一年
-                  const currentYear = parseInt(financeYm.split('-')[0]);
-                  financeYm = `${currentYear - 1}-12`;
-                } else {
-                  // 月度模式下，切换到上个月
-                  financeYm = addMonth(financeYm, -1);
-                }
-                refresh();
-              });
-            }
-            
-            if (nextBtn) {
-              nextBtn.addEventListener('click', () => {
-                if (financeMode === 'ytd') {
-                  // 年度模式下，切换到下一年
-                  const currentYear = parseInt(financeYm.split('-')[0]);
-                  financeYm = `${currentYear + 1}-12`;
-                } else {
-                  // 月度模式下，切换到下个月
-                  financeYm = addMonth(financeYm, 1);
-                }
+            if (dropdown) {
+              dropdown.addEventListener('change', (e) => {
+                financeYm = e.target.value;
+                financeMode = 'month'; // 选择月份时自动切换回月度模式
                 refresh();
               });
             }
@@ -271,25 +261,18 @@
             }
           }
           
-          // 2. 渲染各员工工时（带月份选择器）
+          // 2. 渲染各员工工时（带月份下拉选单）
           const hoursFrag = document.createElement('div');
-          hoursFrag.innerHTML = listCardWithMonthPicker('各員工工時', hoursHtml, formatYm(currentYm));
+          hoursFrag.innerHTML = listCardWithMonthDropdown('各員工工時', hoursHtml, currentYm);
           grid.appendChild(hoursFrag.firstElementChild);
           
-          // 添加月份选择器事件监听
+          // 添加月份下拉选单事件监听
           const hoursCard = Array.from(grid.querySelectorAll('.card.list')).find(c => c.textContent.includes('各員工工時'));
           if (hoursCard) {
-            const prevBtn = hoursCard.querySelector('.month-nav-btn.prev');
-            const nextBtn = hoursCard.querySelector('.month-nav-btn.next');
-            if (prevBtn) {
-              prevBtn.addEventListener('click', () => {
-                currentYm = addMonth(currentYm, -1);
-                refresh();
-              });
-            }
-            if (nextBtn) {
-              nextBtn.addEventListener('click', () => {
-                currentYm = addMonth(currentYm, 1);
+            const dropdown = hoursCard.querySelector('.month-dropdown');
+            if (dropdown) {
+              dropdown.addEventListener('change', (e) => {
+                currentYm = e.target.value;
                 refresh();
               });
             }
@@ -351,11 +334,9 @@
             if (res.status === 401) { location.assign('/login?redirect=/internal/dashboard'); return; }
             const json = await res.json();
             if (!res.ok || !json || json.ok !== true) throw new Error();
-            console.log('Dashboard API Response:', json); // 调试：查看完整响应
             const role = json.data?.role || (me?.isAdmin ? 'admin' : 'employee');
             if (role === 'admin') {
               const d = json.data?.admin || {};
-              console.log('Admin Dashboard Data:', d); // 调试：查看管理员数据
               const empTasks = d.employeeTasks || [];
               const totalOverdue = empTasks.reduce((sum, e) => sum + (e.overdue || 0), 0);
               const notices = [];
