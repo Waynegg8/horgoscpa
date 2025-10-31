@@ -127,9 +127,34 @@
           </div><div class="list-body">${rowsHtml||'<div class=\"muted\">尚無資料</div>'}</div></div>`;
         }
 
-        function fmtNum(n){ try { return Number(n||0).toLocaleString('zh-TW'); } catch(_) { return String(n||0); } }
-        function fmtTwd(n){ return fmtNum(n); }
-        function fmtPct(n){ const v = Number(n||0); return `${(Math.round(v*10)/10).toFixed(1)}%`; }
+        // 格式化数字：0 显示为 "-"，非0显示带千分号
+        function fmtNum(n){ 
+          const val = Number(n||0); 
+          if (val === 0) return '-';
+          try { 
+            return val.toLocaleString('zh-TW'); 
+          } catch(_) { 
+            return String(val); 
+          } 
+        }
+        
+        // 格式化金额：0 显示为 "-"，非0显示带千分号
+        function fmtTwd(n){ 
+          const val = Number(n||0);
+          if (val === 0) return '-';
+          try {
+            return val.toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+          } catch(_) {
+            return String(val);
+          }
+        }
+        
+        // 格式化百分比：0 显示为 "-"
+        function fmtPct(n){ 
+          const v = Number(n||0); 
+          if (v === 0) return '-';
+          return `${(Math.round(v*10)/10).toFixed(1)}%`;
+        }
 
         function renderEmployeeDashboard(data){
           grid.innerHTML = '';
