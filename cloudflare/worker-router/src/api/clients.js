@@ -372,6 +372,131 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 	}
 
+	// GET /api/v1/clients/:clientId/services/:serviceId/items - 取得服務子項目
+	if (method === "GET" && url.pathname.match(/\/clients\/[^\/]+\/services\/\d+\/items$/)) {
+		const pathParts = url.pathname.split("/");
+		const clientId = pathParts[pathParts.length - 4];
+		const serviceId = parseInt(pathParts[pathParts.length - 2]);
+		
+		try {
+			// 檢查客戶是否存在
+			const client = await env.DATABASE.prepare(
+				`SELECT client_id FROM Clients WHERE client_id = ? AND is_deleted = 0`
+			).bind(clientId).first();
+			
+			if (!client) {
+				return jsonResponse(404, {
+					ok: false,
+					code: "NOT_FOUND",
+					message: "客戶不存在",
+					meta: { requestId }
+				}, corsHeaders);
+			}
+			
+			// 查詢該服務的所有子項目
+			const items = await env.DATABASE.prepare(
+				`SELECT item_id, item_name, item_code, description, sort_order
+				 FROM ServiceItems
+				 WHERE service_id = ? AND is_active = 1
+				 ORDER BY sort_order ASC, item_id ASC`
+			).bind(serviceId).all();
+			
+			const data = items.results.map(item => ({
+				item_id: item.item_id,
+				item_name: item.item_name,
+				item_code: item.item_code,
+				description: item.description || ""
+			}));
+			
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "查詢成功",
+				data,
+				meta: { requestId }
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+	
+	// GET /api/v1/clients/:clientId/services - 取得客戶服務項目
+	if (method === "GET" && url.pathname.match(/\/clients\/[^\/]+\/services$/)) {
+		const clientId = url.pathname.split("/")[4];
+		
+		try {
+			// 檢查客戶是否存在
+			const client = await env.DATABASE.prepare(
+				`SELECT client_id FROM Clients WHERE client_id = ? AND is_deleted = 0`
+			).bind(clientId).first();
+			
+			if (!client) {
+				return jsonResponse(404, {
+					ok: false,
+					code: "NOT_FOUND",
+					message: "客戶不存在",
+					meta: { requestId }
+				}, corsHeaders);
+			}
+			
+			// 查詢該客戶的服務項目
+			// 策略：先查詢該客戶在 ClientServices 中的服務，如果沒有則返回所有可用服務
+			const clientServices = await env.DATABASE.prepare(
+				`SELECT DISTINCT cs.service_id
+				 FROM ClientServices cs
+				 WHERE cs.client_id = ? AND cs.is_deleted = 0 AND cs.service_id IS NOT NULL`
+			).bind(clientId).all();
+			
+			let services;
+			
+			if (clientServices.results && clientServices.results.length > 0) {
+				// 客戶有指定服務，只返回這些服務
+				const serviceIds = clientServices.results.map(r => r.service_id);
+				const placeholders = serviceIds.map(() => '?').join(',');
+				
+				services = await env.DATABASE.prepare(
+					`SELECT service_id, service_name, service_code, description
+					 FROM Services
+					 WHERE service_id IN (${placeholders}) AND is_active = 1
+					 ORDER BY sort_order ASC, service_id ASC`
+				).bind(...serviceIds).all();
+			} else {
+				// 客戶沒有指定服務，返回所有可用服務
+				services = await env.DATABASE.prepare(
+					`SELECT service_id, service_name, service_code, description
+					 FROM Services
+					 WHERE is_active = 1
+					 ORDER BY sort_order ASC, service_id ASC`
+				).all();
+			}
+			
+			const data = services.results.map(service => ({
+				service_id: service.service_id,
+				service_name: service.service_name,
+				service_code: service.service_code,
+				description: service.description || ""
+			}));
+			
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "查詢成功",
+				data,
+				meta: { requestId }
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
 	return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 }
 

@@ -66,7 +66,7 @@ async function handleGetTimelogs(request, env, me, requestId, url) {
 		const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 		
 		const rows = await env.DATABASE.prepare(
-			`SELECT timesheet_id, user_id, work_date, client_id, service_name, work_type, hours, note
+			`SELECT timesheet_id, user_id, work_date, client_id, service_id, service_item_id, service_name, work_type, hours, note
 			 FROM Timesheets
 			 ${whereSql}
 			 ORDER BY work_date ASC, timesheet_id ASC`
@@ -77,7 +77,8 @@ async function handleGetTimelogs(request, env, me, requestId, url) {
 			user_id: r.user_id,
 			work_date: r.work_date,
 			client_id: r.client_id || "",
-			service_id: parseInt(r.service_name) || 1, // 暫時映射
+			service_id: parseInt(r.service_id) || parseInt(r.service_name) || 1, // 優先使用新欄位，向後相容
+			service_item_id: parseInt(r.service_item_id) || 1,
 			work_type_id: parseInt(r.work_type) || 1,
 			hours: Number(r.hours || 0),
 			notes: r.note || "",
@@ -121,6 +122,7 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 	const work_date = String(body?.work_date || "").trim();
 	const client_id = String(body?.client_id || "").trim();
 	const service_id = parseInt(body?.service_id) || 0;
+	const service_item_id = parseInt(body?.service_item_id) || 0;
 	const work_type_id = parseInt(body?.work_type_id) || 0;
 	const hours = Number(body?.hours);
 	const notes = String(body?.notes || "").trim();
@@ -137,7 +139,11 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 	}
 	
 	if (!service_id) {
-		errors.push({ field: "service_id", message: "請選擇業務類型" });
+		errors.push({ field: "service_id", message: "請選擇服務項目" });
+	}
+	
+	if (!service_item_id) {
+		errors.push({ field: "service_item_id", message: "請選擇服務子項目" });
 	}
 	
 	if (!work_type_id || !WORK_TYPES[work_type_id]) {
@@ -181,12 +187,19 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		const existingRow = await env.DATABASE.prepare(
 			`SELECT timesheet_id, hours 
 			 FROM Timesheets 
-			 WHERE user_id = ? AND work_date = ? AND client_id = ? AND service_name = ? AND work_type = ? AND is_deleted = 0`
+			 WHERE user_id = ? 
+			   AND work_date = ? 
+			   AND client_id = ? 
+			   AND service_id = ? 
+			   AND service_item_id = ? 
+			   AND work_type = ? 
+			   AND is_deleted = 0`
 		).bind(
 			String(me.user_id), 
 			work_date, 
 			client_id, 
-			String(service_id),
+			service_id,
+			service_item_id,
 			String(work_type_id)
 		).first();
 		
@@ -226,13 +239,15 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 			}
 			
 			await env.DATABASE.prepare(
-				`INSERT INTO Timesheets (user_id, work_date, client_id, service_name, work_type, hours, note, created_at, updated_at)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+				`INSERT INTO Timesheets (user_id, work_date, client_id, service_id, service_item_id, service_name, work_type, hours, note, created_at, updated_at)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 			).bind(
 				String(me.user_id), 
 				work_date, 
 				client_id, 
-				String(service_id),
+				service_id,
+				service_item_id,
+				String(service_id), // 保留舊欄位以向後相容
 				String(work_type_id),
 				hours, 
 				notes, 
@@ -314,10 +329,11 @@ async function handleDeleteTimelogsBatch(request, env, me, requestId, url) {
 	const start_date = String(body?.start_date || "").trim();
 	const end_date = String(body?.end_date || "").trim();
 	const client_id = String(body?.client_id || "").trim();
-	const service_id = String(body?.service_id || "").trim();
+	const service_id = parseInt(body?.service_id) || 0;
+	const service_item_id = parseInt(body?.service_item_id) || 0;
 	const work_type_id = String(body?.work_type_id || "").trim();
 	
-	if (!start_date || !end_date || !client_id || !service_id || !work_type_id) {
+	if (!start_date || !end_date || !client_id || !service_id || !service_item_id || !work_type_id) {
 		return jsonResponse(400, { 
 			ok: false, 
 			code: "BAD_REQUEST", 
@@ -335,7 +351,8 @@ async function handleDeleteTimelogsBatch(request, env, me, requestId, url) {
 			   AND work_date >= ? 
 			   AND work_date <= ? 
 			   AND client_id = ? 
-			   AND service_name = ? 
+			   AND service_id = ? 
+			   AND service_item_id = ?
 			   AND work_type = ?
 			   AND is_deleted = 0`
 		).bind(
@@ -344,7 +361,8 @@ async function handleDeleteTimelogsBatch(request, env, me, requestId, url) {
 			start_date, 
 			end_date, 
 			client_id, 
-			service_id, 
+			service_id,
+			service_item_id,
 			work_type_id
 		).run();
 		
@@ -367,11 +385,115 @@ async function handleDeleteTimelogsBatch(request, env, me, requestId, url) {
 }
 
 /**
+ * GET /api/v1/timelogs/summary - 月統計
+ */
+async function handleGetMonthlySummary(request, env, me, requestId, url) {
+	const corsHeaders = getCorsHeadersForRequest(request, env);
+	
+	try {
+		const params = url.searchParams;
+		const month = (params.get("month") || "").trim(); // 格式：YYYY-MM
+		
+		// 驗證月份格式
+		if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+			return jsonResponse(400, {
+				ok: false,
+				code: "INVALID_MONTH",
+				message: "月份格式錯誤，應為 YYYY-MM",
+				meta: { requestId }
+			}, corsHeaders);
+		}
+		
+		// 計算月份起始和結束日期
+		const [year, monthNum] = month.split('-');
+		const startDate = `${year}-${monthNum}-01`;
+		const nextMonth = parseInt(monthNum) === 12 ? `${parseInt(year) + 1}-01` : `${year}-${String(parseInt(monthNum) + 1).padStart(2, '0')}`;
+		const endDate = `${nextMonth}-01`;
+		
+		// 權限控制：員工只能查詢自己的，管理員可以指定 user_id
+		let userId = me.user_id;
+		if (me.role === 'admin' && params.get("user_id")) {
+			userId = parseInt(params.get("user_id"));
+		}
+		
+		// 查詢當月工時記錄
+		const timelogs = await env.DATABASE.prepare(
+			`SELECT work_type, hours
+			 FROM Timesheets
+			 WHERE user_id = ?
+			   AND work_date >= ?
+			   AND work_date < ?
+			   AND is_deleted = 0`
+		).bind(userId, startDate, endDate).all();
+		
+		// 計算統計數據
+		let totalHours = 0;
+		let overtimeHours = 0;
+		let weightedHours = 0;
+		
+		timelogs.results.forEach(log => {
+			const hours = parseFloat(log.hours) || 0;
+			const workTypeId = parseInt(log.work_type) || 1;
+			const workType = WORK_TYPES[workTypeId];
+			
+			if (workType) {
+				totalHours += hours;
+				
+				if (workType.isOvertime) {
+					overtimeHours += hours;
+				}
+				
+				weightedHours += calculateWeightedHours(workTypeId, hours);
+			}
+		});
+		
+		// 查詢當月請假時數
+		const leaveResult = await env.DATABASE.prepare(
+			`SELECT COALESCE(SUM(hours), 0) as leave_hours
+			 FROM Leaves
+			 WHERE user_id = ?
+			   AND start_date >= ?
+			   AND start_date < ?
+			   AND status = 'approved'
+			   AND is_deleted = 0`
+		).bind(userId, startDate, endDate).first();
+		
+		const leaveHours = parseFloat(leaveResult?.leave_hours) || 0;
+		
+		// 回傳統計結果
+		return jsonResponse(200, {
+			ok: true,
+			code: "SUCCESS",
+			message: "查詢成功",
+			data: {
+				month,
+				total_hours: Math.round(totalHours * 10) / 10,
+				overtime_hours: Math.round(overtimeHours * 10) / 10,
+				weighted_hours: Math.round(weightedHours * 10) / 10,
+				leave_hours: Math.round(leaveHours * 10) / 10
+			},
+			meta: { requestId }
+		}, corsHeaders);
+		
+	} catch (err) {
+		console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+		const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+		if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+		return jsonResponse(500, body, corsHeaders);
+	}
+}
+
+/**
  * 主路由處理
  */
 export async function handleTimesheets(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
+	
+	// GET /api/v1/timelogs/summary - 月統計
+	if (method === "GET" && url.pathname.endsWith("/summary")) {
+		return handleGetMonthlySummary(request, env, me, requestId, url);
+	}
 	
 	// GET /api/v1/timelogs
 	if (method === "GET") {
