@@ -555,6 +555,8 @@
       if (hasError) return;
       
       try {
+        console.log('新增客戶請求數據:', payload);
+        
         const res = await fetch('/internal/api/v1/clients', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -563,9 +565,12 @@
         });
         
         const json = await res.json();
+        console.log('新增客戶響應:', json);
         
         if (!res.ok || !json.ok) {
           if (json.errors && Array.isArray(json.errors)) {
+            const errorMsg = json.errors.map(e => `${e.field}: ${e.message}`).join('\n');
+            alert(`${json.message}\n\n${errorMsg}`);
             json.errors.forEach(err => {
               showFieldError(err.field, err.message);
             });
