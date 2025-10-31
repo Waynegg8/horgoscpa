@@ -344,26 +344,9 @@
 }
 
 .billing-detail-cell {
-  padding: 0 !important;
-}
-
-.billing-container {
-  padding: 20px 32px;
+  padding: 16px 32px !important;
+  background: #f9fafb;
   border-top: 2px solid #e5e7eb;
-}
-
-.billing-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.billing-header h4 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: #111827;
 }
 
 .billing-content {

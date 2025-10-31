@@ -316,20 +316,15 @@
             <td class="amount">$${(svc.year_total || 0).toLocaleString('zh-TW')}</td>
             <td>${svc.start_date || '-'}</td>
             <td class="actions-cell">
+              <button type="button" class="table-btn table-btn-primary" onclick="showAddBillingRow(${svc.client_service_id})">新增收費</button>
               <button type="button" class="table-btn table-btn-secondary" onclick="editService(${svc.client_service_id})">編輯</button>
               <button type="button" class="table-btn table-btn-danger" onclick="deleteService(${svc.client_service_id}, '${svc.service_name}')">刪除</button>
             </td>
           </tr>
           <tr class="billing-detail-row" id="billing-row-${index}" style="display: none;">
             <td colspan="7" class="billing-detail-cell">
-              <div class="billing-container">
-                <div class="billing-header">
-                  <h4>收費明細 - ${svc.service_name}</h4>
-                  <button type="button" class="table-btn table-btn-primary" onclick="openAddBillingForm(${svc.client_service_id})">+ 新增月份收費</button>
-                </div>
-                <div class="billing-content" id="billing-content-${index}">
-                  <p class="loading-text">載入中...</p>
-                </div>
+              <div class="billing-content" id="billing-content-${index}">
+                <p class="loading-text">載入中...</p>
               </div>
             </td>
           </tr>
@@ -378,11 +373,11 @@
           <table class="billing-table" id="billing-table-${clientServiceId}">
             <thead>
               <tr>
-                <th>月份</th>
+                <th style="width: 80px;">月份</th>
                 <th>金額</th>
-                <th>收款期限（天）</th>
+                <th style="width: 100px;">期限</th>
                 <th>備註</th>
-                <th style="width: 140px;">操作</th>
+                <th style="width: 130px;">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -398,11 +393,7 @@
                   </td>
                 </tr>
               `).join('')}
-              <tr id="add-row-${clientServiceId}" class="add-billing-row">
-                <td colspan="5" style="text-align: center; padding: 12px;">
-                  <button type="button" class="table-btn-link" style="font-size: 14px; font-weight: 500;" onclick="showAddBillingRow(${clientServiceId})">+ 新增月份收費</button>
-                </td>
-              </tr>
+              <tr id="add-row-${clientServiceId}" style="display: none;"></tr>
             </tbody>
           </table>
         `;
@@ -589,8 +580,36 @@
     }
 
     // 顯示新增收費行
-    function showAddBillingRow(clientServiceId) {
+    async function showAddBillingRow(clientServiceId) {
+      // 獲取當前客戶的所有服務
+      const res = await fetch(`/internal/api/v1/clients/${currentClientId}`);
+      const json = await res.json();
+      
+      if (!json.ok) {
+        alert('載入服務失敗');
+        return;
+      }
+      
+      const services = json.data.services || [];
+      const index = services.findIndex(s => s.client_service_id === clientServiceId);
+      
+      if (index === -1) {
+        alert('找不到該服務');
+        return;
+      }
+      
+      // 自動展開收費明細行
+      const detailRow = document.getElementById(`billing-row-${index}`);
+      const icon = document.getElementById(`expand-icon-${index}`);
+      
+      if (detailRow.style.display === 'none') {
+        detailRow.style.display = 'table-row';
+        icon.textContent = '▼';
+      }
+      
+      // 顯示新增表單
       const addRow = document.getElementById(`add-row-${clientServiceId}`);
+      addRow.style.display = 'table-row';
       addRow.innerHTML = `
         <td>
           <select id="new-month-${clientServiceId}" style="width: 100%; padding: 6px; font-size: 14px;">

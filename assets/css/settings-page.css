@@ -111,11 +111,10 @@ body.internal-container {
 
 .tab-panel {
     display: none;
+    width: 100%;
     max-width: 700px;
     margin: 0 auto;
-    /* 测试标记：如果看到红色边框说明CSS已更新 */
-    border: 3px solid red;
-    padding: 20px;
+    box-sizing: border-box;
 }
 
 .tab-panel.active {
@@ -162,7 +161,9 @@ body.internal-container {
     border: 1px solid var(--gray-200);
     margin-bottom: 32px;
     overflow: hidden;
-    width: 100%;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .card-header {
