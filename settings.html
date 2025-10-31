@@ -7,7 +7,7 @@
     <title>系統設定｜管理員</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
-    <link rel="stylesheet" href="/assets/css/settings-page.css?v=20251031-009" />
+    <link rel="stylesheet" href="/assets/css/settings-page.css?v=20251031-010" />
   </head>
   <body class="internal-container">
     <!-- 通知栏 -->
@@ -167,39 +167,36 @@
       <!-- ========================================== -->
       <div class="tab-panel" id="tab-services">
         
-        <!-- 新增服務項目表單（默認隱藏） -->
-        <div class="card" id="addServiceForm" style="display:none; margin-bottom: 20px; background: #f8f9fa;">
+        <div class="search-bar">
+          <button class="btn btn-primary" id="btnAddService">+ 新增</button>
+        </div>
+
+        <div class="card" id="addServiceForm" style="display:none;">
           <div class="card-header">
             <h3>新增服務項目</h3>
           </div>
           <div class="card-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-              <div>
-                <label>服務名稱 *</label>
-                <input type="text" id="newServiceName" class="form-control" placeholder="例如：記帳服務" required>
-              </div>
-              <div>
-                <label>服務代碼</label>
-                <input type="text" id="newServiceCode" class="form-control" placeholder="例如：ACCOUNTING">
-              </div>
-              <div style="grid-column: 1 / -1;">
-                <label>說明</label>
-                <textarea id="newServiceDesc" class="form-control" rows="2" placeholder="服務內容說明"></textarea>
-              </div>
-              <div>
-                <label>排序</label>
-                <input type="number" id="newServiceOrder" class="form-control" value="0" min="0">
-              </div>
+            <div class="form-group">
+              <label>服務名稱 *</label>
+              <input type="text" id="newServiceName" class="form-control" placeholder="例如：記帳服務" required>
+            </div>
+            <div class="form-group">
+              <label>服務代碼</label>
+              <input type="text" id="newServiceCode" class="form-control" placeholder="例如：ACCOUNTING">
+            </div>
+            <div class="form-group">
+              <label>說明</label>
+              <textarea id="newServiceDesc" class="form-control" rows="2" placeholder="服務內容說明"></textarea>
+            </div>
+            <div class="form-group">
+              <label>排序</label>
+              <input type="number" id="newServiceOrder" class="form-control" value="0" min="0">
             </div>
             <div class="action-btns">
               <button class="btn btn-primary" onclick="saveNewService()">儲存</button>
               <button class="btn btn-secondary" onclick="cancelAddService()">取消</button>
             </div>
           </div>
-        </div>
-        
-        <div class="search-bar">
-          <button class="btn btn-primary" id="btnAddService">+ 新增</button>
         </div>
 
         <div class="card">
@@ -211,13 +208,13 @@
               <table class="data-table" id="servicesTable">
                 <thead>
                   <tr>
-                    <th style="width: 60px;">ID</th>
+                    <th>ID</th>
                     <th>服務名稱</th>
                     <th>服務代碼</th>
                     <th>說明</th>
-                    <th style="width: 80px;">排序</th>
-                    <th style="width: 80px;">狀態</th>
-                    <th style="width: 150px;">操作</th>
+                    <th>排序</th>
+                    <th>狀態</th>
+                    <th>操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -228,33 +225,29 @@
           </div>
         </div>
 
-        <!-- 服務子項目區域 -->
         <div class="card" id="serviceItemsCard" style="display:none;">
           <div class="card-header">
             <h3 id="serviceItemsTitle">服務子項目</h3>
             <button class="btn btn-primary" id="btnAddServiceItem">+ 新增子項目</button>
           </div>
           <div class="card-body">
-            <!-- 新增子項目表單（默認隱藏） -->
-            <div id="addServiceItemForm" style="display:none; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px;">
-              <h4 style="margin-bottom: 15px;">新增子項目</h4>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <div>
-                  <label>子項目名稱 *</label>
-                  <input type="text" id="newItemName" class="form-control" placeholder="例如：收集憑證" required>
-                </div>
-                <div>
-                  <label>項目代碼</label>
-                  <input type="text" id="newItemCode" class="form-control" placeholder="例如：ACC_COLLECT">
-                </div>
-                <div style="grid-column: 1 / -1;">
-                  <label>說明</label>
-                  <textarea id="newItemDesc" class="form-control" rows="2" placeholder="子項目內容說明"></textarea>
-                </div>
-                <div>
-                  <label>排序</label>
-                  <input type="number" id="newItemOrder" class="form-control" value="0" min="0">
-                </div>
+            <div id="addServiceItemForm" style="display:none;">
+              <h4>新增子項目</h4>
+              <div class="form-group">
+                <label>子項目名稱 *</label>
+                <input type="text" id="newItemName" class="form-control" placeholder="例如：收集憑證" required>
+              </div>
+              <div class="form-group">
+                <label>項目代碼</label>
+                <input type="text" id="newItemCode" class="form-control" placeholder="例如：ACC_COLLECT">
+              </div>
+              <div class="form-group">
+                <label>說明</label>
+                <textarea id="newItemDesc" class="form-control" rows="2" placeholder="子項目內容說明"></textarea>
+              </div>
+              <div class="form-group">
+                <label>排序</label>
+                <input type="number" id="newItemOrder" class="form-control" value="0" min="0">
               </div>
               <div class="action-btns">
                 <button class="btn btn-primary" onclick="saveNewServiceItem()">儲存</button>
@@ -266,12 +259,12 @@
               <table class="data-table" id="serviceItemsTable">
                 <thead>
                   <tr>
-                    <th style="width: 60px;">ID</th>
+                    <th>ID</th>
                     <th>子項目名稱</th>
                     <th>項目代碼</th>
                     <th>說明</th>
-                    <th style="width: 80px;">排序</th>
-                    <th style="width: 150px;">操作</th>
+                    <th>排序</th>
+                    <th>操作</th>
                   </tr>
                 </thead>
                 <tbody>
