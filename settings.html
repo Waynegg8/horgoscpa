@@ -10,6 +10,13 @@
   <body class="internal-container">
     <div id="permBar" class="alert alert-danger" style="display:none">您沒有權限</div>
     
+    <nav class="internal-navbar">
+        <a href="/dashboard.html" class="nav-link">儀表板</a>
+        <a href="/settings.html" class="nav-link active">系統設定</a>
+        <a href="/receipts.html" class="nav-link">收據收款</a>
+        <button class="nav-link" onclick="logout()">登出</button>
+    </nav>
+    
     <nav class="settings-nav">
         <button class="nav-tab active" data-tab="system">系統參數</button>
         <button class="nav-tab" data-tab="services">服務項目</button>
@@ -534,7 +541,32 @@
                 document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
                 btn.classList.add('active');
                 document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                
+                // 加载对应数据
+                const tab = btn.dataset.tab;
+                if (tab === 'templates') loadTemplates();
+                else if (tab === 'users') loadUsers();
+                else if (tab === 'clients') loadClients();
+                else if (tab === 'tasks') loadTasks();
+                else if (tab === 'timesheets') loadTimesheets();
+                else if (tab === 'leaves') loadLeaves();
+                else if (tab === 'receipts') loadReceipts();
+                else if (tab === 'payroll') loadPayroll();
+                else if (tab === 'costs') loadCosts();
+                else if (tab === 'attachments') loadAttachments();
+                else if (tab === 'sop') loadSOP();
+                else if (tab === 'lifecycle') loadLifecycle();
+                else if (tab === 'cms') loadCMS();
+                else if (tab === 'automation') loadAutomation();
+                else if (tab === 'holidays') loadHolidays();
             };
+        });
+        
+        // 新增按钮事件
+        const btns = ['btnAddTemplate', 'btnAddUser', 'btnAddClient', 'btnAddSOP', 'btnAddLifecycle', 'btnAddCMS', 'btnAddAutomation'];
+        btns.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.onclick = () => alert('新增功能開發中');
         });
 
         // 新增服务
@@ -605,80 +637,322 @@
             }
         }
 
-        // 加载函数
+        // 任务模板
         async function loadTemplates() {
             const tbody = document.querySelector('#templatesTable tbody');
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+            try {
+                const res = await fetch('/internal/api/v1/task-templates', { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(t => `
+                    <tr>
+                        <td>${t.template_id}</td>
+                        <td>${t.template_name}</td>
+                        <td>${t.service_name || '-'}</td>
+                        <td>${t.client_name || '通用'}</td>
+                        <td>${t.stages_count || 0}</td>
+                        <td><button class="btn btn-sm btn-danger" onclick="deleteTemplate(${t.template_id})">刪除</button></td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
+            }
+        }
+        async function deleteTemplate(id) {
+            if (!confirm('確定刪除？')) return;
+            await fetch('/internal/api/v1/task-templates/' + id, { method: 'DELETE', credentials: 'include' });
+            loadTemplates();
         }
 
+        // 用户管理
         async function loadUsers() {
             const tbody = document.querySelector('#usersTable tbody');
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+            try {
+                const res = await fetch('/internal/api/v1/users', { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(u => `
+                    <tr>
+                        <td>${u.user_id}</td>
+                        <td>${u.name}</td>
+                        <td>${u.username}</td>
+                        <td>${u.is_admin ? '管理員' : '員工'}</td>
+                        <td><span class="status-badge status-active">啟用</span></td>
+                        <td><button class="btn btn-sm btn-secondary">編輯</button></td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
+            }
         }
 
+        // 客户管理
         async function loadClients() {
             const tbody = document.querySelector('#clientsTable tbody');
-            tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
+            try {
+                const res = await fetch('/internal/api/v1/clients?perPage=50', { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(c => `
+                    <tr>
+                        <td>${c.clientId}</td>
+                        <td>${c.companyName}</td>
+                        <td>${c.assigneeName || '-'}</td>
+                        <td><span class="status-badge status-active">活躍</span></td>
+                        <td><button class="btn btn-sm btn-secondary">檢視</button></td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">載入失敗</td></tr>';
+            }
         }
 
+        // 任务管理
         async function loadTasks() {
             const tbody = document.querySelector('#tasksTable tbody');
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+            try {
+                const res = await fetch('/internal/api/v1/tasks?perPage=50', { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(t => `
+                    <tr>
+                        <td>${t.taskId}</td>
+                        <td>${t.taskName}</td>
+                        <td>${t.clientName || '-'}</td>
+                        <td>${t.assigneeName || '-'}</td>
+                        <td>${t.status}</td>
+                        <td>${t.dueDate || '-'}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
+            }
         }
 
+        // 工时管理
         async function loadTimesheets() {
             const tbody = document.querySelector('#timesheetsTable tbody');
-            tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
+            const date = document.getElementById('filterTimesheetDate').value || new Date().toISOString().slice(0,10);
+            try {
+                const res = await fetch(`/internal/api/v1/timelogs?log_date=${date}`, { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(t => `
+                    <tr>
+                        <td>${t.log_id}</td>
+                        <td>${t.user_name}</td>
+                        <td>${t.log_date}</td>
+                        <td>${t.hours_logged}h</td>
+                        <td>${t.status || '已提交'}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">載入失敗</td></tr>';
+            }
         }
 
+        // 假期管理
         async function loadLeaves() {
             const tbody = document.querySelector('#leavesTable tbody');
-            tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無資料</td></tr>';
+            const status = document.getElementById('filterLeaveStatus').value;
+            try {
+                const url = status ? `/internal/api/v1/leaves?status=${status}` : '/internal/api/v1/leaves';
+                const res = await fetch(url, { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(l => `
+                    <tr>
+                        <td>${l.leave_id}</td>
+                        <td>${l.user_name}</td>
+                        <td>${l.leave_type_name}</td>
+                        <td>${l.start_date}</td>
+                        <td>${l.end_date}</td>
+                        <td>${l.status}</td>
+                        <td><button class="btn btn-sm btn-secondary">審核</button></td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗</td></tr>';
+            }
         }
 
+        // 收据管理
         async function loadReceipts() {
             const tbody = document.querySelector('#receiptsTable tbody');
-            tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="loading">此功能請至收據收款頁面</td></tr>';
         }
 
+        // 薪资管理
         async function loadPayroll() {
             const tbody = document.querySelector('#payrollTable tbody');
             tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
         }
 
+        // 成本管理
         async function loadCosts() {
             const tbody = document.querySelector('#costsTable tbody');
-            tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
+            try {
+                const res = await fetch('/internal/api/v1/overhead', { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(c => `
+                    <tr>
+                        <td>${c.category_name}</td>
+                        <td>${c.item_name}</td>
+                        <td>${c.amount}</td>
+                        <td>${c.effective_date || '-'}</td>
+                        <td>${c.notes || '-'}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">載入失敗</td></tr>';
+            }
         }
 
+        // 附件系统
         async function loadAttachments() {
             const tbody = document.querySelector('#attachmentsTable tbody');
             tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
         }
 
+        // 知识库
         async function loadSOP() {
             const tbody = document.querySelector('#sopTable tbody');
-            tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
+            try {
+                const res = await fetch('/internal/api/v1/sop', { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(s => `
+                    <tr>
+                        <td>${s.sop_id}</td>
+                        <td>${s.title}</td>
+                        <td>${s.category || '-'}</td>
+                        <td>${s.created_at}</td>
+                        <td><button class="btn btn-sm btn-danger" onclick="deleteSOP(${s.sop_id})">刪除</button></td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">載入失敗</td></tr>';
+            }
+        }
+        async function deleteSOP(id) {
+            if (!confirm('確定刪除？')) return;
+            await fetch('/internal/api/v1/sop/' + id, { method: 'DELETE', credentials: 'include' });
+            loadSOP();
         }
 
+        // 服务生命周期
         async function loadLifecycle() {
             const tbody = document.querySelector('#lifecycleTable tbody');
             tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
         }
 
+        // CMS内容
         async function loadCMS() {
             const tbody = document.querySelector('#cmsTable tbody');
-            tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+            try {
+                const res = await fetch('/internal/api/v1/admin/articles', { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(a => `
+                    <tr>
+                        <td>${a.article_id}</td>
+                        <td>${a.title}</td>
+                        <td>${a.category || '-'}</td>
+                        <td>${a.is_published ? '已發布' : '草稿'}</td>
+                        <td>${a.published_at || '-'}</td>
+                        <td><button class="btn btn-sm btn-secondary">編輯</button></td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
+            }
         }
 
+        // 自动化规则
         async function loadAutomation() {
             const tbody = document.querySelector('#automationTable tbody');
-            tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
+            try {
+                const res = await fetch('/internal/api/v1/automation/rules', { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(r => `
+                    <tr>
+                        <td>${r.rule_id}</td>
+                        <td>${r.rule_name}</td>
+                        <td>${r.trigger_event || '-'}</td>
+                        <td>${r.is_active ? '啟用' : '停用'}</td>
+                        <td><button class="btn btn-sm btn-danger" onclick="deleteRule(${r.rule_id})">刪除</button></td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">載入失敗</td></tr>';
+            }
+        }
+        async function deleteRule(id) {
+            if (!confirm('確定刪除？')) return;
+            await fetch('/internal/api/v1/automation/rules/' + id, { method: 'DELETE', credentials: 'include' });
+            loadAutomation();
         }
 
+        // 国定假日
         async function loadHolidays() {
             const tbody = document.querySelector('#holidaysTable tbody');
-            tbody.innerHTML = '<tr><td colspan="3" class="loading">暫無資料</td></tr>';
+            const year = document.getElementById('filterYear').value || new Date().getFullYear();
+            try {
+                const res = await fetch(`/internal/api/v1/holidays?year=${year}`, { credentials: 'include' });
+                const json = await res.json();
+                if (!json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="loading">暫無資料</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = json.data.map(h => `
+                    <tr>
+                        <td>${h.holiday_date}</td>
+                        <td>${h.holiday_name}</td>
+                        <td>${h.holiday_type || '國定假日'}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="3" class="loading">載入失敗</td></tr>';
+            }
+        }
+
+        // 登出
+        async function logout() {
+            if (!confirm('確定登出？')) return;
+            await fetch('/internal/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
+            window.location.href = '/login.html';
         }
 
         // 初始化
@@ -689,7 +963,7 @@
                 return;
             }
             loadServices();
-      })();
+        })();
     </script>
   </body>
   </html>
