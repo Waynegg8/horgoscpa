@@ -835,8 +835,7 @@
 
 /* 內聯編輯輸入框 */
 .billing-table input[type="number"],
-.billing-table input[type="text"],
-.billing-table select {
+.billing-table input[type="text"] {
   width: 100%;
   padding: 8px 12px;
   font-size: 14px;
@@ -853,12 +852,7 @@
   color: #9ca3af;
 }
 
-.billing-table select {
-  cursor: pointer;
-}
-
-.billing-table input:focus,
-.billing-table select:focus {
+.billing-table input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
