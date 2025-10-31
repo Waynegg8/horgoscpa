@@ -449,6 +449,8 @@
       };
 
       try {
+        console.log('新增服務請求數據:', data);
+        
         const res = await fetch(`/internal/api/v1/clients/${currentClientId}/services`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -456,9 +458,15 @@
         });
         
         const json = await res.json();
+        console.log('新增服務響應:', json);
         
         if (!json.ok) {
-          alert(json.message || '新增失敗');
+          if (json.errors && json.errors.length > 0) {
+            const errorMsg = json.errors.map(e => `${e.field}: ${e.message}`).join('\n');
+            alert(`${json.message}\n\n${errorMsg}`);
+          } else {
+            alert(json.message || '新增失敗');
+          }
           return;
         }
 
