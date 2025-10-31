@@ -184,20 +184,22 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 	
 	try {
 		// 檢查是否已存在相同組合的記錄（UPSERT 邏輯）
-		// 註：不使用 service_id/service_item_id 作為匹配條件，避免修改服務項目時創建重複記錄
 		const existingRow = await env.DATABASE.prepare(
 			`SELECT timesheet_id, hours 
 			 FROM Timesheets 
 			 WHERE user_id = ? 
 			   AND work_date = ? 
 			   AND client_id = ? 
+			   AND service_id = ? 
+			   AND service_item_id = ? 
 			   AND work_type = ? 
-			   AND is_deleted = 0 
-			 LIMIT 1`
+			   AND is_deleted = 0`
 		).bind(
 			String(me.user_id), 
 			work_date, 
 			client_id, 
+			service_id,
+			service_item_id,
 			String(work_type_id)
 		).first();
 		
@@ -212,9 +214,9 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 			
 			await env.DATABASE.prepare(
 				`UPDATE Timesheets 
-				 SET service_id = ?, service_item_id = ?, hours = ?, updated_at = ?
+				 SET hours = ?, updated_at = ?
 				 WHERE timesheet_id = ?`
-			).bind(service_id, service_item_id, hours, new Date().toISOString(), log_id).run();
+			).bind(hours, new Date().toISOString(), log_id).run();
 			
 		} else {
 			// INSERT：新增記錄
