@@ -18,7 +18,10 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
   }
 
   try {
-    const ym = ymToday();
+    // 从查询参数获取月份，如果没有则使用当前月份
+    const searchParams = new URL(url).searchParams;
+    const requestedYm = searchParams.get('ym');
+    const ym = requestedYm && /^\d{4}-\d{2}$/.test(requestedYm) ? requestedYm : ymToday();
     const today = todayYmd();
 
     // Employee metrics
@@ -91,22 +94,18 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
     }
 
     // Admin metrics
-    async function getAdminMetrics() {
+    async function getAdminMetrics(targetYm) {
       const res = { employeeHours: [], employeeTasks: [], financialStatus: null, revenueTrend: [] };
       
-      // Employee hours (各员工分别工时 - 查询最近30天，避免跨月问题)
+      // Employee hours (各员工分别工时 - 按指定月份查询)
       try {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const startDate = thirtyDaysAgo.toISOString().slice(0, 10);
-        
         const rows = await env.DATABASE.prepare(
           `SELECT u.user_id, u.name, u.username,
                   SUM(t.hours) AS total,
                   SUM(CASE WHEN wt.isOvertime = 0 THEN t.hours ELSE 0 END) AS normal,
                   SUM(CASE WHEN wt.isOvertime = 1 THEN t.hours ELSE 0 END) AS overtime
            FROM Users u
-           LEFT JOIN Timesheets t ON t.user_id = u.user_id AND t.is_deleted = 0 AND t.work_date >= ?
+           LEFT JOIN Timesheets t ON t.user_id = u.user_id AND t.is_deleted = 0 AND substr(t.work_date, 1, 7) = ?
            LEFT JOIN (
              SELECT 1 as work_type_id, 0 as isOvertime
              UNION SELECT 2, 1 UNION SELECT 3, 1 UNION SELECT 4, 1 UNION SELECT 5, 1 
@@ -116,7 +115,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
            WHERE u.is_deleted = 0
            GROUP BY u.user_id, u.name, u.username
            ORDER BY total DESC`
-        ).bind(startDate).all();
+        ).bind(targetYm).all();
         
         res.employeeHours = (rows?.results || []).map(r => ({
           userId: r.user_id,
@@ -198,7 +197,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
 
     const data = { role: me.is_admin ? 'admin' : 'employee' };
     if (me.is_admin) {
-      data.admin = await getAdminMetrics();
+      data.admin = await getAdminMetrics(ym);
     } else {
       data.employee = await getEmployeeMetrics();
     }

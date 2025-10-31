@@ -40,9 +40,31 @@
 
         let me = null;
         let refreshTimer = null;
+        let currentYm = null; // 当前查看的年月，格式：YYYY-MM
 
         function formatLocalDate(d){
           try { return new Intl.DateTimeFormat('zh-TW', { dateStyle:'full', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }).format(d); } catch(_) { return d.toISOString().slice(0,10); }
+        }
+
+        function formatYm(ym){
+          // "2025-10" => "2025年10月"
+          if (!ym) return '';
+          const [y, m] = ym.split('-');
+          return `${y}年${parseInt(m)}月`;
+        }
+
+        function addMonth(ym, delta){
+          // "2025-10" + 1 => "2025-11"
+          const [y, m] = ym.split('-').map(Number);
+          const d = new Date(y, m - 1 + delta, 1);
+          const newY = d.getFullYear();
+          const newM = d.getMonth() + 1;
+          return `${newY}-${String(newM).padStart(2, '0')}`;
+        }
+
+        function getCurrentYm(){
+          const now = new Date();
+          return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         }
 
         function showNotices(items){
@@ -64,6 +86,17 @@
 
         function listCard(title, rowsHtml){
           return `<div class="card list"><div class="card-title">${title}</div><div class="list-body">${rowsHtml||'<div class=\"muted\">尚無資料</div>'}</div></div>`;
+        }
+
+        function listCardWithMonthPicker(title, rowsHtml, currentYm, onPrev, onNext){
+          return `<div class="card list"><div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>${title}</span>
+            <div class="month-picker" style="display:flex;align-items:center;gap:8px;font-size:14px;">
+              <button type="button" class="month-nav-btn prev" data-action="prev" style="padding:4px 8px;cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:4px;">◀</button>
+              <span class="current-month" style="min-width:80px;text-align:center;font-weight:500;">${currentYm}</span>
+              <button type="button" class="month-nav-btn next" data-action="next" style="padding:4px 8px;cursor:pointer;border:1px solid #ddd;background:#fff;border-radius:4px;">▶</button>
+            </div>
+          </div><div class="list-body">${rowsHtml||'<div class=\"muted\">尚無資料</div>'}</div></div>`;
         }
 
         function fmtNum(n){ try { return Number(n||0).toLocaleString('zh-TW'); } catch(_) { return String(n||0); } }
@@ -150,9 +183,28 @@
               <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利率</div><div class="fin-metric-value">${fmtPct(fs.margin)}</div></div>
             </div>`;
           
-          // 渲染各员工最近30天工时
-          frag.innerHTML = listCard('各員工工時（最近30天）', hoursHtml);
-          grid.appendChild(frag);
+          // 渲染各员工工时（带月份选择器）
+          frag.innerHTML = listCardWithMonthPicker('各員工工時', hoursHtml, formatYm(currentYm));
+          grid.appendChild(frag.firstElementChild);
+          
+          // 添加月份选择器事件监听
+          const hoursCard = grid.querySelector('.card.list');
+          if (hoursCard) {
+            const prevBtn = hoursCard.querySelector('.month-nav-btn.prev');
+            const nextBtn = hoursCard.querySelector('.month-nav-btn.next');
+            if (prevBtn) {
+              prevBtn.addEventListener('click', () => {
+                currentYm = addMonth(currentYm, -1);
+                refresh();
+              });
+            }
+            if (nextBtn) {
+              nextBtn.addEventListener('click', () => {
+                currentYm = addMonth(currentYm, 1);
+                refresh();
+              });
+            }
+          }
           
           // 渲染各员工任务状态（每个员工一张卡片）
           const tasksFrag = document.createElement('div');
@@ -187,7 +239,19 @@
 
         async function refresh(){
           try {
-            const res = await fetch(`${apiBase}/dashboard`, { credentials:'include' });
+            // 初始化月份（如果未设置）
+            if (!currentYm) {
+              currentYm = getCurrentYm();
+            }
+            
+            // 构建查询参数
+            const params = new URLSearchParams();
+            if (me?.isAdmin && currentYm) {
+              params.set('ym', currentYm);
+            }
+            
+            const url = `${apiBase}/dashboard${params.toString() ? '?' + params.toString() : ''}`;
+            const res = await fetch(url, { credentials:'include' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/dashboard'); return; }
             const json = await res.json();
             if (!res.ok || !json || json.ok !== true) throw new Error();
