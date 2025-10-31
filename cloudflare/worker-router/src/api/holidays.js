@@ -35,13 +35,14 @@ export async function handleHolidays(request, env, me, requestId, url) {
 				 ORDER BY holiday_date ASC`
 			).bind(...binds).all();
 			
-			const data = (rows?.results || []).map(r => ({
-				date: r.holiday_date,
-				name: r.name || "",
-				is_national_holiday: Boolean(r.is_national_holiday),
-				is_weekly_restday: Boolean(r.is_weekly_restday),
-				is_makeup_workday: Boolean(r.is_makeup_workday),
-			}));
+		const data = (rows?.results || []).map(r => ({
+			holiday_date: r.holiday_date, // 前端期望的欄位名稱
+			date: r.holiday_date,         // 向後兼容
+			name: r.name || "",
+			is_national_holiday: Boolean(r.is_national_holiday),
+			is_weekly_restday: Boolean(r.is_weekly_restday),
+			is_makeup_workday: Boolean(r.is_makeup_workday),
+		}));
 			
 			return jsonResponse(200, { 
 				ok: true, 
