@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>客戶詳情 - 內部系統</title>
+  <link rel="stylesheet" href="/assets/css/common.css?v=3">
+  <link rel="stylesheet" href="/assets/css/internal-system.css?v=3">
+  <link rel="stylesheet" href="/assets/css/internal-components.css?v=3">
+  <link rel="stylesheet" href="/assets/css/client-detail-page.css?v=1">
+</head>
+<body>
+  <div id="navbar-placeholder"></div>
+  
+  <div class="page-container">
+    <div class="page-header">
+      <div class="header-left">
+        <a href="/internal/clients" class="back-link">← 返回客戶列表</a>
+        <h1 class="page-title" id="clientTitle">客戶詳情</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="editClient()">編輯客戶</button>
+      </div>
+    </div>
+
+    <!-- 客戶基本信息 -->
+    <div class="content-card">
+      <h2 class="card-title">基本信息</h2>
+      <div class="info-grid" id="clientInfo">
+        <div class="info-item">
+          <label>公司名稱</label>
+          <div class="info-value" id="companyName">-</div>
+        </div>
+        <div class="info-item">
+          <label>統一編號</label>
+          <div class="info-value" id="taxId">-</div>
+        </div>
+        <div class="info-item">
+          <label>負責人</label>
+          <div class="info-value" id="assignee">-</div>
+        </div>
+        <div class="info-item">
+          <label>聯絡電話</label>
+          <div class="info-value" id="phone">-</div>
+        </div>
+        <div class="info-item">
+          <label>Email</label>
+          <div class="info-value" id="email">-</div>
+        </div>
+        <div class="info-item">
+          <label>標籤</label>
+          <div class="info-value" id="tags">-</div>
+        </div>
+        <div class="info-item full-width">
+          <label>客戶備註</label>
+          <div class="info-value" id="clientNotes">-</div>
+        </div>
+        <div class="info-item full-width">
+          <label>收款備註</label>
+          <div class="info-value" id="paymentNotes">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 客戶服務 -->
+    <div class="content-card">
+      <div class="card-header-with-action">
+        <h2 class="card-title">客戶服務</h2>
+        <button class="btn btn-primary" onclick="openAddServiceModal()">+ 新增服務</button>
+      </div>
+      <div id="servicesList">
+        <div class="loading-text">載入中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增/編輯服務 Modal -->
+  <div id="serviceModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 id="serviceModalTitle">新增服務</h3>
+        <button class="modal-close" onclick="closeServiceModal()">&times;</button>
+      </div>
+      <form id="serviceForm">
+        <input type="hidden" id="serviceClientServiceId">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>服務項目 <span class="required">*</span></label>
+            <select id="serviceServiceId" required>
+              <option value="">請選擇服務</option>
+            </select>
+            <div class="error-message" id="error_service_id"></div>
+          </div>
+          <div class="form-group">
+            <label>服務狀態</label>
+            <select id="serviceStatus">
+              <option value="active">使用中</option>
+              <option value="suspended">暫停</option>
+              <option value="expired">已到期</option>
+              <option value="cancelled">已取消</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>服務週期</label>
+            <select id="serviceServiceCycle">
+              <option value="monthly">每月</option>
+              <option value="quarterly">每季</option>
+              <option value="yearly">每年</option>
+              <option value="one-time">一次性</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>任務模板</label>
+            <select id="serviceTaskTemplateId">
+              <option value="">無（手動建立任務）</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>開始日期</label>
+            <input type="date" id="serviceStartDate">
+          </div>
+          <div class="form-group">
+            <label>結束日期</label>
+            <input type="date" id="serviceEndDate">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="serviceAutoGenerateTasks" checked>
+            自動生成任務
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>服務備註</label>
+          <textarea id="serviceServiceNotes" rows="3"></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeServiceModal()">取消</button>
+          <button type="submit" class="btn btn-primary">儲存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 收費明細 Modal -->
+  <div id="billingModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+      <div class="modal-header">
+        <h3 id="billingModalTitle">收費明細</h3>
+        <button class="modal-close" onclick="closeBillingModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="billingClientServiceId">
+        
+        <div class="billing-summary">
+          <div class="summary-item">
+            <span class="summary-label">服務名稱：</span>
+            <span id="billingServiceName" class="summary-value">-</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">年度總額：</span>
+            <span id="billingYearTotal" class="summary-value">$0</span>
+          </div>
+        </div>
+
+        <div class="billing-actions">
+          <button class="btn btn-primary btn-sm" onclick="openAddBillingModal()">+ 新增月份收費</button>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>月份</th>
+              <th>金額</th>
+              <th>收款期限（天）</th>
+              <th>備註</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="billingScheduleList">
+            <tr>
+              <td colspan="5" class="no-data">暫無收費明細</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeBillingModal()">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增/編輯收費明細 Modal -->
+  <div id="addBillingModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="addBillingModalTitle">新增月份收費</h3>
+        <button class="modal-close" onclick="closeAddBillingModal()">&times;</button>
+      </div>
+      <form id="addBillingForm">
+        <input type="hidden" id="editScheduleId">
+        
+        <div class="form-group">
+          <label>月份 <span class="required">*</span></label>
+          <select id="billingMonth" required>
+            <option value="">請選擇月份</option>
+            <option value="1">1月</option>
+            <option value="2">2月</option>
+            <option value="3">3月</option>
+            <option value="4">4月</option>
+            <option value="5">5月</option>
+            <option value="6">6月</option>
+            <option value="7">7月</option>
+            <option value="8">8月</option>
+            <option value="9">9月</option>
+            <option value="10">10月</option>
+            <option value="11">11月</option>
+            <option value="12">12月</option>
+          </select>
+          <div class="error-message" id="error_billing_month"></div>
+        </div>
+
+        <div class="form-group">
+          <label>金額 <span class="required">*</span></label>
+          <input type="number" id="billingAmount" min="0" step="0.01" required>
+          <div class="error-message" id="error_billing_amount"></div>
+        </div>
+
+        <div class="form-group">
+          <label>收款期限（天）</label>
+          <input type="number" id="paymentDueDays" value="30" min="1" required>
+          <div class="error-message" id="error_payment_due_days"></div>
+        </div>
+
+        <div class="form-group">
+          <label>備註</label>
+          <textarea id="billingNotes" rows="2"></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeAddBillingModal()">取消</button>
+          <button type="submit" class="btn btn-primary">儲存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="/assets/js/components/bootstrap.js?v=3"></script>
+  <script>
+    let currentClientId = null;
+    let currentEditingServiceId = null;
+    let currentBillingServiceId = null;
+    let allServices = [];
+    let allTemplates = [];
+
+    // 頁面初始化
+    async function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      currentClientId = urlParams.get('id');
+      
+      if (!currentClientId) {
+        alert('缺少客戶ID');
+        window.location.href = '/internal/clients';
+        return;
+      }
+
+      await Promise.all([
+        loadClientDetail(),
+        loadServices(),
+        loadTemplates()
+      ]);
+    }
+
+    // 載入客戶詳情
+    async function loadClientDetail() {
+      try {
+        const res = await fetch(`/internal/api/v1/clients/${currentClientId}`);
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert(json.message || '載入失敗');
+          return;
+        }
+
+        const client = json.data;
+        document.getElementById('clientTitle').textContent = client.companyName || '客戶詳情';
+        document.getElementById('companyName').textContent = client.companyName || '-';
+        document.getElementById('taxId').textContent = client.taxId || '-';
+        document.getElementById('assignee').textContent = client.assigneeName || '-';
+        document.getElementById('phone').textContent = client.phone || '-';
+        document.getElementById('email').textContent = client.email || '-';
+        document.getElementById('clientNotes').textContent = client.clientNotes || '-';
+        document.getElementById('paymentNotes').textContent = client.paymentNotes || '-';
+        
+        // 標籤
+        if (client.tags && client.tags.length > 0) {
+          document.getElementById('tags').innerHTML = client.tags.map(t => 
+            `<span class="tag">${t.tag_name}</span>`
+          ).join(' ');
+        } else {
+          document.getElementById('tags').textContent = '-';
+        }
+
+        // 顯示服務列表
+        renderServices(client.services || []);
+        
+      } catch (err) {
+        console.error('載入客戶詳情失敗:', err);
+        alert('載入失敗');
+      }
+    }
+
+    // 渲染服務列表
+    function renderServices(services) {
+      const container = document.getElementById('servicesList');
+      
+      if (!services || services.length === 0) {
+        container.innerHTML = '<div class="no-data">暫無服務</div>';
+        return;
+      }
+
+      container.innerHTML = services.map(svc => {
+        const statusClass = {
+          'active': 'status-active',
+          'suspended': 'status-suspended',
+          'expired': 'status-expired',
+          'cancelled': 'status-cancelled'
+        }[svc.status] || '';
+        
+        const statusText = {
+          'active': '使用中',
+          'suspended': '暫停',
+          'expired': '已到期',
+          'cancelled': '已取消'
+        }[svc.status] || svc.status;
+
+        const cycleText = {
+          'monthly': '每月',
+          'quarterly': '每季',
+          'yearly': '每年',
+          'one-time': '一次性'
+        }[svc.service_cycle] || svc.service_cycle;
+
+        return `
+          <div class="service-card">
+            <div class="service-header">
+              <div class="service-title">
+                <h3>${svc.service_name || '-'}</h3>
+                <span class="service-status ${statusClass}">${statusText}</span>
+              </div>
+              <div class="service-actions">
+                <button class="btn btn-sm btn-secondary" onclick="viewBilling(${svc.client_service_id}, '${svc.service_name}')">收費明細</button>
+                <button class="btn btn-sm btn-secondary" onclick="editService(${svc.client_service_id})">編輯</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteService(${svc.client_service_id}, '${svc.service_name}')">刪除</button>
+              </div>
+            </div>
+            <div class="service-body">
+              <div class="service-info">
+                <div class="info-row">
+                  <span class="info-label">服務週期：</span>
+                  <span>${cycleText}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">年度總額：</span>
+                  <span class="highlight">$${(svc.year_total || 0).toLocaleString('zh-TW')}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">開始日期：</span>
+                  <span>${svc.start_date || '-'}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">結束日期：</span>
+                  <span>${svc.end_date || '-'}</span>
+                </div>
+                ${svc.service_notes ? `
+                <div class="info-row full-width">
+                  <span class="info-label">備註：</span>
+                  <span>${svc.service_notes}</span>
+                </div>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 載入服務類型選項
+    async function loadServices() {
+      try {
+        const res = await fetch('/internal/api/v1/client-services/services');
+        const json = await res.json();
+        
+        if (json.ok && json.data) {
+          allServices = json.data;
+          const select = document.getElementById('serviceServiceId');
+          select.innerHTML = '<option value="">請選擇服務</option>' +
+            allServices.filter(s => s.is_active).map(s => 
+              `<option value="${s.service_id}">${s.service_name}</option>`
+            ).join('');
+        }
+      } catch (err) {
+        console.error('載入服務選項失敗:', err);
+      }
+    }
+
+    // 載入任務模板選項
+    async function loadTemplates() {
+      try {
+        const res = await fetch('/internal/api/v1/task-templates');
+        const json = await res.json();
+        
+        if (json.ok && json.data) {
+          allTemplates = json.data;
+          const select = document.getElementById('serviceTaskTemplateId');
+          select.innerHTML = '<option value="">無（手動建立任務）</option>' +
+            allTemplates.filter(t => t.is_active).map(t => 
+              `<option value="${t.template_id}">${t.template_name}</option>`
+            ).join('');
+        }
+      } catch (err) {
+        console.error('載入模板選項失敗:', err);
+      }
+    }
+
+    // 打開新增服務Modal
+    function openAddServiceModal() {
+      currentEditingServiceId = null;
+      document.getElementById('serviceModalTitle').textContent = '新增服務';
+      document.getElementById('serviceForm').reset();
+      document.getElementById('serviceClientServiceId').value = '';
+      document.getElementById('serviceStatus').value = 'active';
+      document.getElementById('serviceServiceCycle').value = 'monthly';
+      document.getElementById('serviceAutoGenerateTasks').checked = true;
+      clearFormErrors('service');
+      document.getElementById('serviceModal').style.display = 'flex';
+    }
+
+    // 編輯服務
+    async function editService(clientServiceId) {
+      currentEditingServiceId = clientServiceId;
+      
+      try {
+        const res = await fetch(`/internal/api/v1/clients/${currentClientId}`);
+        const json = await res.json();
+        
+        if (!json.ok || !json.data) {
+          alert('載入服務資料失敗');
+          return;
+        }
+
+        const service = json.data.services.find(s => s.client_service_id === clientServiceId);
+        if (!service) {
+          alert('找不到服務');
+          return;
+        }
+
+        document.getElementById('serviceModalTitle').textContent = '編輯服務';
+        document.getElementById('serviceClientServiceId').value = service.client_service_id;
+        document.getElementById('serviceServiceId').value = service.service_id;
+        document.getElementById('serviceStatus').value = service.status;
+        document.getElementById('serviceServiceCycle').value = service.service_cycle || 'monthly';
+        document.getElementById('serviceTaskTemplateId').value = service.task_template_id || '';
+        document.getElementById('serviceAutoGenerateTasks').checked = service.auto_generate_tasks !== false;
+        document.getElementById('serviceStartDate').value = service.start_date || '';
+        document.getElementById('serviceEndDate').value = service.end_date || '';
+        document.getElementById('serviceServiceNotes').value = service.service_notes || '';
+        
+        clearFormErrors('service');
+        document.getElementById('serviceModal').style.display = 'flex';
+        
+      } catch (err) {
+        console.error('載入服務失敗:', err);
+        alert('載入失敗');
+      }
+    }
+
+    // 關閉服務Modal
+    function closeServiceModal() {
+      document.getElementById('serviceModal').style.display = 'none';
+    }
+
+    // 提交服務表單
+    document.getElementById('serviceForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearFormErrors('service');
+      
+      const clientServiceId = document.getElementById('serviceClientServiceId').value;
+      const isEdit = !!clientServiceId;
+      
+      const data = {
+        service_id: parseInt(document.getElementById('serviceServiceId').value),
+        status: document.getElementById('serviceStatus').value,
+        service_cycle: document.getElementById('serviceServiceCycle').value,
+        task_template_id: document.getElementById('serviceTaskTemplateId').value || null,
+        auto_generate_tasks: document.getElementById('serviceAutoGenerateTasks').checked,
+        start_date: document.getElementById('serviceStartDate').value || null,
+        end_date: document.getElementById('serviceEndDate').value || null,
+        service_notes: document.getElementById('serviceServiceNotes').value
+      };
+
+      try {
+        const url = isEdit 
+          ? `/internal/api/v1/clients/${currentClientId}/services/${clientServiceId}`
+          : `/internal/api/v1/clients/${currentClientId}/services`;
+        
+        const res = await fetch(url, {
+          method: isEdit ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        const json = await res.json();
+        
+        if (!json.ok) {
+          if (json.errors) {
+            json.errors.forEach(err => {
+              showFieldError('service', err.field, err.message);
+            });
+          } else {
+            alert(json.message || '操作失敗');
+          }
+          return;
+        }
+
+        alert(isEdit ? '服務已更新' : '服務已新增');
+        closeServiceModal();
+        await loadClientDetail();
+        
+      } catch (err) {
+        console.error('提交服務失敗:', err);
+        alert('操作失敗');
+      }
+    });
+
+    // 刪除服務
+    async function deleteService(clientServiceId, serviceName) {
+      if (!confirm(`確定要刪除服務「${serviceName}」嗎？`)) return;
+      
+      try {
+        const res = await fetch(`/internal/api/v1/clients/${currentClientId}/services/${clientServiceId}`, {
+          method: 'DELETE'
+        });
+        
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert(json.message || '刪除失敗');
+          return;
+        }
+
+        alert('服務已刪除');
+        await loadClientDetail();
+        
+      } catch (err) {
+        console.error('刪除服務失敗:', err);
+        alert('刪除失敗');
+      }
+    }
+
+    // 查看收費明細
+    async function viewBilling(clientServiceId, serviceName) {
+      currentBillingServiceId = clientServiceId;
+      document.getElementById('billingClientServiceId').value = clientServiceId;
+      document.getElementById('billingServiceName').textContent = serviceName;
+      document.getElementById('billingModalTitle').textContent = `收費明細 - ${serviceName}`;
+      
+      await loadBillingSchedule();
+      document.getElementById('billingModal').style.display = 'flex';
+    }
+
+    // 載入收費明細
+    async function loadBillingSchedule() {
+      const clientServiceId = currentBillingServiceId;
+      
+      try {
+        const res = await fetch(`/internal/api/v1/billing/service/${clientServiceId}`);
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert(json.message || '載入失敗');
+          return;
+        }
+
+        const schedules = json.data.schedules || [];
+        const yearTotal = json.data.year_total || 0;
+        
+        document.getElementById('billingYearTotal').textContent = `$${yearTotal.toLocaleString('zh-TW')}`;
+        
+        const tbody = document.getElementById('billingScheduleList');
+        if (schedules.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="no-data">暫無收費明細</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = schedules.map(s => `
+          <tr>
+            <td>${s.billing_month}月</td>
+            <td>$${s.billing_amount.toLocaleString('zh-TW')}</td>
+            <td>${s.payment_due_days}天</td>
+            <td>${s.notes || '-'}</td>
+            <td>
+              <button class="btn-link" onclick="editBillingSchedule(${s.schedule_id}, ${s.billing_month}, ${s.billing_amount}, ${s.payment_due_days}, '${s.notes || ''}')">編輯</button>
+              <button class="btn-link text-danger" onclick="deleteBillingSchedule(${s.schedule_id}, ${s.billing_month})">刪除</button>
+            </td>
+          </tr>
+        `).join('');
+        
+      } catch (err) {
+        console.error('載入收費明細失敗:', err);
+        alert('載入失敗');
+      }
+    }
+
+    // 關閉收費明細Modal
+    function closeBillingModal() {
+      document.getElementById('billingModal').style.display = 'none';
+    }
+
+    // 打開新增收費明細Modal
+    function openAddBillingModal() {
+      document.getElementById('addBillingModalTitle').textContent = '新增月份收費';
+      document.getElementById('addBillingForm').reset();
+      document.getElementById('editScheduleId').value = '';
+      document.getElementById('paymentDueDays').value = '30';
+      clearFormErrors('billing');
+      document.getElementById('addBillingModal').style.display = 'flex';
+    }
+
+    // 編輯收費明細
+    function editBillingSchedule(scheduleId, month, amount, dueDays, notes) {
+      document.getElementById('addBillingModalTitle').textContent = '編輯月份收費';
+      document.getElementById('editScheduleId').value = scheduleId;
+      document.getElementById('billingMonth').value = month;
+      document.getElementById('billingAmount').value = amount;
+      document.getElementById('paymentDueDays').value = dueDays;
+      document.getElementById('billingNotes').value = notes;
+      clearFormErrors('billing');
+      document.getElementById('addBillingModal').style.display = 'flex';
+    }
+
+    // 關閉新增收費明細Modal
+    function closeAddBillingModal() {
+      document.getElementById('addBillingModal').style.display = 'none';
+    }
+
+    // 提交收費明細表單
+    document.getElementById('addBillingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearFormErrors('billing');
+      
+      const scheduleId = document.getElementById('editScheduleId').value;
+      const isEdit = !!scheduleId;
+      
+      const data = {
+        billing_month: parseInt(document.getElementById('billingMonth').value),
+        billing_amount: parseFloat(document.getElementById('billingAmount').value),
+        payment_due_days: parseInt(document.getElementById('paymentDueDays').value),
+        notes: document.getElementById('billingNotes').value
+      };
+
+      try {
+        const url = isEdit 
+          ? `/internal/api/v1/billing/${scheduleId}`
+          : `/internal/api/v1/billing/service/${currentBillingServiceId}`;
+        
+        const res = await fetch(url, {
+          method: isEdit ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        const json = await res.json();
+        
+        if (!json.ok) {
+          if (json.errors) {
+            json.errors.forEach(err => {
+              showFieldError('billing', err.field, err.message);
+            });
+          } else {
+            alert(json.message || '操作失敗');
+          }
+          return;
+        }
+
+        alert(isEdit ? '收費明細已更新' : '收費明細已新增');
+        closeAddBillingModal();
+        await Promise.all([
+          loadBillingSchedule(),
+          loadClientDetail() // 更新年度總額顯示
+        ]);
+        
+      } catch (err) {
+        console.error('提交收費明細失敗:', err);
+        alert('操作失敗');
+      }
+    });
+
+    // 刪除收費明細
+    async function deleteBillingSchedule(scheduleId, month) {
+      if (!confirm(`確定要刪除${month}月的收費明細嗎？`)) return;
+      
+      try {
+        const res = await fetch(`/internal/api/v1/billing/${scheduleId}`, {
+          method: 'DELETE'
+        });
+        
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert(json.message || '刪除失敗');
+          return;
+        }
+
+        alert('收費明細已刪除');
+        await Promise.all([
+          loadBillingSchedule(),
+          loadClientDetail()
+        ]);
+        
+      } catch (err) {
+        console.error('刪除收費明細失敗:', err);
+        alert('刪除失敗');
+      }
+    }
+
+    // 編輯客戶（返回客戶列表頁編輯）
+    function editClient() {
+      window.location.href = `/internal/clients?edit=${currentClientId}`;
+    }
+
+    // 顯示欄位錯誤
+    function showFieldError(formPrefix, field, message) {
+      const errorEl = document.getElementById(`error_${field}`);
+      if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+      }
+    }
+
+    // 清除表單錯誤
+    function clearFormErrors(formPrefix) {
+      document.querySelectorAll('.error-message').forEach(el => {
+        el.textContent = '';
+        el.style.display = 'none';
+      });
+    }
+
+    // 點擊Modal外部關閉
+    window.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal')) {
+        e.target.style.display = 'none';
+      }
+    });
+
+    // 初始化
+    init();
+  </script>
+</body>
+</html>
+
