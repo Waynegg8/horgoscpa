@@ -183,6 +183,33 @@ export async function handleClients(request, env, me, requestId, url) {
 				});
 			}
 			
+			// 查询客户服务列表
+			const servicesRows = await env.DATABASE.prepare(
+				`SELECT cs.client_service_id, cs.service_id, cs.status, 
+				        cs.monthly_fee, cs.billing_frequency, cs.billing_months_per_year,
+				        cs.start_date, cs.end_date, cs.billing_day, cs.service_notes,
+				        s.service_name, s.service_code
+				 FROM ClientServices cs
+				 LEFT JOIN Services s ON s.service_id = cs.service_id
+				 WHERE cs.client_id = ? AND cs.is_deleted = 0
+				 ORDER BY cs.client_service_id ASC`
+			).bind(clientId).all();
+			
+			const services = (servicesRows?.results || []).map(svc => ({
+				client_service_id: svc.client_service_id,
+				service_id: svc.service_id,
+				service_name: svc.service_name || "",
+				service_code: svc.service_code || "",
+				status: svc.status || "active",
+				monthly_fee: Number(svc.monthly_fee || 0),
+				billing_frequency: svc.billing_frequency || "monthly",
+				billing_months_per_year: Number(svc.billing_months_per_year || 12),
+				start_date: svc.start_date || null,
+				end_date: svc.end_date || null,
+				billing_day: Number(svc.billing_day || 1),
+				service_notes: svc.service_notes || ""
+			}));
+			
 			const data = {
 				clientId: row.client_id,
 				companyName: row.company_name,
@@ -194,6 +221,7 @@ export async function handleClients(request, env, me, requestId, url) {
 				clientNotes: row.client_notes || "",
 				paymentNotes: row.payment_notes || "",
 				tags: tags,
+				services: services,
 				createdAt: row.created_at,
 				updatedAt: row.updated_at
 			};
@@ -501,6 +529,195 @@ export async function handleClients(request, env, me, requestId, url) {
 				message: `已更新 ${updatedCount} 個客戶`, 
 				data: { updated_count: updatedCount },
 				meta: { requestId } 
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
+	// ==================== 客户服务管理 API ====================
+	
+	// POST /api/v1/clients/:clientId/services - 新增客户服务
+	const matchAddService = url.pathname.match(/\/clients\/([^\/]+)\/services$/);
+	if (method === "POST" && matchAddService) {
+		const clientId = matchAddService[1];
+		let body;
+		try {
+			body = await request.json();
+		} catch (_) {
+			return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, corsHeaders);
+		}
+		
+		const errors = [];
+		const serviceId = Number(body?.service_id || 0);
+		const monthlyFee = Number(body?.monthly_fee || 0);
+		const billingFrequency = String(body?.billing_frequency || "monthly").trim();
+		const billingMonthsPerYear = Number(body?.billing_months_per_year || 12);
+		const startDate = String(body?.start_date || "").trim();
+		const endDate = String(body?.end_date || "").trim();
+		const billingDay = Number(body?.billing_day || 1);
+		const serviceNotes = String(body?.service_notes || "").trim();
+		
+		// 验证
+		if (!serviceId || serviceId <= 0) {
+			errors.push({ field: "service_id", message: "請選擇服務項目" });
+		}
+		if (monthlyFee < 0) {
+			errors.push({ field: "monthly_fee", message: "收費金額不能為負數" });
+		}
+		if (!["monthly", "quarterly", "yearly", "one-time"].includes(billingFrequency)) {
+			errors.push({ field: "billing_frequency", message: "計費頻率格式錯誤" });
+		}
+		if (billingMonthsPerYear < 1 || billingMonthsPerYear > 24) {
+			errors.push({ field: "billing_months_per_year", message: "每年收費月數範圍：1-24" });
+		}
+		if (billingDay < 1 || billingDay > 31) {
+			errors.push({ field: "billing_day", message: "扣款日期範圍：1-31" });
+		}
+		if (errors.length) {
+			return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } }, corsHeaders);
+		}
+		
+		try {
+			// 检查客户是否存在
+			const client = await env.DATABASE.prepare(
+				"SELECT client_id FROM Clients WHERE client_id = ? AND is_deleted = 0"
+			).bind(clientId).first();
+			if (!client) {
+				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "客戶不存在", meta: { requestId } }, corsHeaders);
+			}
+			
+			// 检查服务是否存在
+			const service = await env.DATABASE.prepare(
+				"SELECT service_id FROM Services WHERE service_id = ? AND is_active = 1"
+			).bind(serviceId).first();
+			if (!service) {
+				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "服務不存在", meta: { requestId } }, corsHeaders);
+			}
+			
+			// 插入客户服务
+			const result = await env.DATABASE.prepare(
+				`INSERT INTO ClientServices (client_id, service_id, status, monthly_fee, billing_frequency, 
+				 billing_months_per_year, start_date, end_date, billing_day, service_notes)
+				 VALUES (?, ?, 'active', ?, ?, ?, ?, ?, ?, ?)`
+			).bind(clientId, serviceId, monthlyFee, billingFrequency, billingMonthsPerYear, 
+				startDate || null, endDate || null, billingDay, serviceNotes).run();
+			
+			const clientServiceId = result?.meta?.last_row_id;
+			
+			return jsonResponse(201, {
+				ok: true,
+				code: "CREATED",
+				message: "服務已新增",
+				data: { client_service_id: clientServiceId },
+				meta: { requestId }
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+	
+	// PUT /api/v1/clients/:clientId/services/:serviceId - 更新客户服务
+	const matchUpdateService = url.pathname.match(/\/clients\/([^\/]+)\/services\/(\d+)$/);
+	if (method === "PUT" && matchUpdateService) {
+		const clientId = matchUpdateService[1];
+		const clientServiceId = Number(matchUpdateService[2]);
+		let body;
+		try {
+			body = await request.json();
+		} catch (_) {
+			return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, corsHeaders);
+		}
+		
+		const errors = [];
+		const monthlyFee = Number(body?.monthly_fee || 0);
+		const billingFrequency = String(body?.billing_frequency || "monthly").trim();
+		const billingMonthsPerYear = Number(body?.billing_months_per_year || 12);
+		const startDate = String(body?.start_date || "").trim();
+		const endDate = String(body?.end_date || "").trim();
+		const billingDay = Number(body?.billing_day || 1);
+		const serviceNotes = String(body?.service_notes || "").trim();
+		const status = String(body?.status || "active").trim();
+		
+		// 验证
+		if (monthlyFee < 0) {
+			errors.push({ field: "monthly_fee", message: "收費金額不能為負數" });
+		}
+		if (!["monthly", "quarterly", "yearly", "one-time"].includes(billingFrequency)) {
+			errors.push({ field: "billing_frequency", message: "計費頻率格式錯誤" });
+		}
+		if (!["active", "suspended", "expired", "cancelled"].includes(status)) {
+			errors.push({ field: "status", message: "狀態格式錯誤" });
+		}
+		if (errors.length) {
+			return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } }, corsHeaders);
+		}
+		
+		try {
+			// 检查客户服务是否存在
+			const existing = await env.DATABASE.prepare(
+				"SELECT client_service_id FROM ClientServices WHERE client_service_id = ? AND client_id = ? AND is_deleted = 0"
+			).bind(clientServiceId, clientId).first();
+			if (!existing) {
+				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "客戶服務不存在", meta: { requestId } }, corsHeaders);
+			}
+			
+			// 更新客户服务
+			await env.DATABASE.prepare(
+				`UPDATE ClientServices SET monthly_fee = ?, billing_frequency = ?, billing_months_per_year = ?,
+				 start_date = ?, end_date = ?, billing_day = ?, service_notes = ?, status = ?
+				 WHERE client_service_id = ?`
+			).bind(monthlyFee, billingFrequency, billingMonthsPerYear, startDate || null, endDate || null, 
+				billingDay, serviceNotes, status, clientServiceId).run();
+			
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "服務已更新",
+				data: { client_service_id: clientServiceId },
+				meta: { requestId }
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+	
+	// DELETE /api/v1/clients/:clientId/services/:serviceId - 删除客户服务
+	if (method === "DELETE" && matchUpdateService) {
+		const clientId = matchUpdateService[1];
+		const clientServiceId = Number(matchUpdateService[2]);
+		
+		try {
+			// 检查客户服务是否存在
+			const existing = await env.DATABASE.prepare(
+				"SELECT client_service_id FROM ClientServices WHERE client_service_id = ? AND client_id = ? AND is_deleted = 0"
+			).bind(clientServiceId, clientId).first();
+			if (!existing) {
+				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "客戶服務不存在", meta: { requestId } }, corsHeaders);
+			}
+			
+			// 软删除客户服务
+			await env.DATABASE.prepare(
+				"UPDATE ClientServices SET is_deleted = 1 WHERE client_service_id = ?"
+			).bind(clientServiceId).run();
+			
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "服務已刪除",
+				meta: { requestId }
 			}, corsHeaders);
 			
 		} catch (err) {

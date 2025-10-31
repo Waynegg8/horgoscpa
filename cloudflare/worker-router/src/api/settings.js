@@ -23,8 +23,28 @@ function normalizeKey(key){
 
 export async function handleSettings(request, env, me, requestId, url, path){
   const corsHeaders = getCorsHeadersForRequest(request, env);
-  if (!me?.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
   const method = request.method.toUpperCase();
+  
+  // GET /internal/api/v1/users - 获取所有员工列表（所有登录用户都可访问）
+  if (path === "/internal/api/v1/users" && method === "GET"){
+    try {
+      const rows = await env.DATABASE.prepare(
+        "SELECT user_id, username, name, is_admin FROM Users WHERE is_deleted = 0 ORDER BY user_id ASC"
+      ).all();
+      const data = (rows?.results || []).map(r => ({
+        user_id: r.user_id,
+        username: r.username,
+        name: r.name || r.username,
+        is_admin: Boolean(r.is_admin)
+      }));
+      return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+      return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+    }
+  }
+  
+  if (!me?.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
 
   // GET all settings
   if (path === "/internal/api/v1/admin/settings" && method === "GET"){

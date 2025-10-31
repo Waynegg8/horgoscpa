@@ -136,6 +136,13 @@ export default {
 			return handleAutomation(request, env, me, requestId, url, path);
 		}
 
+		// 用戶列表（所有登录用户可访问）
+		if (path === "/internal/api/v1/users") {
+			const me = await getSessionUser(request, env);
+			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+			return handleSettings(request, env, me, requestId, url, path);
+		}
+		
 		// 系統設定（管理員）
 		if (path === "/internal/api/v1/admin/settings" || path.startsWith("/internal/api/v1/admin/settings/")) {
 			const me = await getSessionUser(request, env);
