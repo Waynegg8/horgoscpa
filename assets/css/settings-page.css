@@ -155,13 +155,15 @@ body.internal-container {
    卡片
    ============================================ */
 
-.card {
+.card,
+section.card {
     background: white;
     border-radius: 12px;
     border: 1px solid var(--gray-200);
     margin-bottom: 32px;
     overflow: hidden;
-    width: 100%;
+    width: 100% !important;
+    max-width: none !important;
 }
 
 .card-header {
