@@ -410,11 +410,11 @@ async function handleGetMonthlySummary(request, env, me, requestId, url) {
 		const nextMonth = parseInt(monthNum) === 12 ? `${parseInt(year) + 1}-01` : `${year}-${String(parseInt(monthNum) + 1).padStart(2, '0')}`;
 		const endDate = `${nextMonth}-01`;
 		
-		// 權限控制：員工只能查詢自己的，管理員可以指定 user_id
-		let userId = me.user_id;
-		if (me.role === 'admin' && params.get("user_id")) {
-			userId = parseInt(params.get("user_id"));
-		}
+	// 權限控制：員工只能查詢自己的，管理員可以指定 user_id
+	let userId = me.user_id;
+	if (me.is_admin && params.get("user_id")) {
+		userId = parseInt(params.get("user_id"));
+	}
 		
 		// 查詢當月工時記錄
 		const timelogs = await env.DATABASE.prepare(
