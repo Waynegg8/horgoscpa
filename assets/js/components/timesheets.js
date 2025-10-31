@@ -16,7 +16,7 @@ const state = {
   workTypes: [],                   // 工時類型列表（硬編碼）
   holidays: new Map(),             // Map<iso, {is_national_holiday, is_makeup_workday, is_weekly_restday}>
   leaves: new Map(),               // Map<iso, {hours, types:[{type, hours}]}>
-  rows: [],                        // [{client_id, service_id, service_item_id, work_type_id, hours:[h0..h6]}]
+  rows: [],                        // [{client_id, service_id, service_item_id, work_type_id, hours:[h0..h6], timesheetIds:[id0..id6]}]
   pending: new Map(),              // Map<`${rowIdx}_${dayIdx}`, {rowIndex, dayIndex, value}>
   weekDateTypes: new Map(),        // Map<iso, type>
   weekDays: [],                    // [{index, iso, dow, type, mustWork}]
@@ -385,7 +385,8 @@ async function loadTimesheets() {
           service_id: log.service_id,
           service_item_id: log.service_item_id,
           work_type_id: log.work_type_id,
-          hours: [null, null, null, null, null, null, null]
+          hours: [null, null, null, null, null, null, null],
+          timesheetIds: [null, null, null, null, null, null, null]
         });
       }
       
@@ -394,6 +395,7 @@ async function loadTimesheets() {
       
       if (dayIndex >= 0) {
         row.hours[dayIndex] = parseFloat(log.hours) || 0;
+        row.timesheetIds[dayIndex] = log.timesheet_id;
       }
     });
     
@@ -1053,17 +1055,25 @@ async function saveAllChanges() {
   const savePromises = changes.map(change => {
     const row = state.rows[change.rowIndex];
     const day = state.weekDays[change.dayIndex];
+    const timesheetId = row.timesheetIds && row.timesheetIds[change.dayIndex];
+    
+    const payload = {
+      work_date: day.iso,
+      client_id: row.client_id,
+      service_id: row.service_id,
+      service_item_id: row.service_item_id,
+      work_type_id: row.work_type_id,
+      hours: change.value
+    };
+    
+    // 如果有 timesheet_id，傳遞它（讓後端可以更新所有欄位）
+    if (timesheetId) {
+      payload.timesheet_id = timesheetId;
+    }
     
     return apiCall('/internal/api/v1/timelogs', {
       method: 'POST',
-      body: JSON.stringify({
-        work_date: day.iso,
-        client_id: row.client_id,
-        service_id: row.service_id,
-        service_item_id: row.service_item_id,
-        work_type_id: row.work_type_id,
-        hours: change.value
-      })
+      body: JSON.stringify(payload)
     });
   });
   
@@ -1235,7 +1245,8 @@ function addNewRow() {
     service_id: null,
     service_item_id: null,
     work_type_id: null,
-    hours: [null, null, null, null, null, null, null]
+    hours: [null, null, null, null, null, null, null],
+    timesheetIds: [null, null, null, null, null, null, null]
   });
   
   renderTable();
