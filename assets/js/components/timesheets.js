@@ -1078,15 +1078,28 @@ async function saveAllChanges() {
   });
   
   try {
-    await Promise.all(savePromises);
+    const results = await Promise.all(savePromises);
+    console.log('[SAVE] 所有保存结果:', results);
     state.pending.clear();
     updatePendingCount();
     showToast('已儲存所有變更', 'success');
     
     // 重新載入資料
-  await loadWeek();
+    await loadWeek();
   } catch (error) {
-    showToast('儲存失敗：' + error.message, 'error');
+    console.error('[SAVE ERROR] 详细错误:', error);
+    // 如果是 API 错误，显示更详细的信息
+    let errorMsg = error.message;
+    if (error.response) {
+      try {
+        const errorData = await error.response.json();
+        errorMsg = errorData.message || errorMsg;
+        console.error('[SAVE ERROR] API 返回:', errorData);
+      } catch (e) {
+        // ignore
+      }
+    }
+    showToast('儲存失敗：' + errorMsg, 'error');
   }
 }
 
