@@ -92,13 +92,35 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
 
     // Admin metrics
     async function getAdminMetrics() {
-      const res = { companyOverview: null, financialStatus: null, pendingItems: null, revenueTrend: [] };
-      // Company overview
+      const res = { employeeHours: [], employeeTasks: [], financialStatus: null, revenueTrend: [] };
+      
+      // Employee hours (各员工分别工时)
       try {
-        const hoursRow = await env.DATABASE.prepare(`SELECT SUM(hours) AS total FROM Timesheets WHERE is_deleted = 0 AND substr(work_date,1,7) = ?`).bind(ym).first();
-        const empRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS c FROM Users WHERE is_deleted = 0`).first();
-        const actRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS c FROM ClientServices WHERE is_deleted = 0 AND status = 'active'`).first();
-        res.companyOverview = { month: ym, totalHours: Number(hoursRow?.total || 0), employeeCount: Number(empRow?.c || 0), activeServices: Number(actRow?.c || 0), attendanceRate: null };
+        const rows = await env.DATABASE.prepare(
+          `SELECT u.user_id, u.name, u.username,
+                  SUM(t.hours) AS total,
+                  SUM(CASE WHEN wt.isOvertime = 0 THEN t.hours ELSE 0 END) AS normal,
+                  SUM(CASE WHEN wt.isOvertime = 1 THEN t.hours ELSE 0 END) AS overtime
+           FROM Users u
+           LEFT JOIN Timesheets t ON t.user_id = u.user_id AND t.is_deleted = 0 AND substr(t.work_date,1,7) = ?
+           LEFT JOIN (
+             SELECT 1 as work_type_id, 0 as isOvertime
+             UNION SELECT 2, 1 UNION SELECT 3, 1 UNION SELECT 4, 1 UNION SELECT 5, 1 
+             UNION SELECT 6, 1 UNION SELECT 7, 1 UNION SELECT 8, 1 UNION SELECT 9, 1 
+             UNION SELECT 10, 1 UNION SELECT 11, 1
+           ) wt ON CAST(t.work_type AS INTEGER) = wt.work_type_id
+           WHERE u.is_deleted = 0
+           GROUP BY u.user_id, u.name, u.username
+           ORDER BY total DESC`
+        ).bind(ym).all();
+        
+        res.employeeHours = (rows?.results || []).map(r => ({
+          userId: r.user_id,
+          name: r.name || r.username,
+          total: Number(r.total || 0),
+          normal: Number(r.normal || 0),
+          overtime: Number(r.overtime || 0)
+        }));
       } catch (_) {}
 
       // Financial status
@@ -130,16 +152,29 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         res.financialStatus = { month: ym, ar, paid, overdue, revenue, cost, profit, margin, collectionRate };
       } catch (_) {}
 
-      // Pending items (counts only; short lists optional)
+      // Employee tasks (各员工任务状态：已完成/进行中/逾期)
       try {
-        let leavePending = 0;
-        try {
-          const r = await env.DATABASE.prepare(`SELECT COUNT(1) AS c FROM LeaveRequests WHERE status = 'pending'`).first();
-          leavePending = Number(r?.c || 0);
-        } catch (_) {}
-        const tasksOverdueRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS c FROM ActiveTasks WHERE is_deleted = 0 AND status NOT IN ('completed','cancelled') AND due_date < ?`).bind(today).first();
-        const recOverdueRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS c FROM Receipts WHERE is_deleted = 0 AND status IN ('unpaid','partial') AND due_date < ?`).bind(today).first();
-        res.pendingItems = { leavePending, overdueTasks: Number(tasksOverdueRow?.c || 0), overdueReceipts: Number(recOverdueRow?.c || 0) };
+        const rows = await env.DATABASE.prepare(
+          `SELECT u.user_id, u.name, u.username,
+                  COUNT(CASE WHEN t.status = 'completed' THEN 1 END) AS completed,
+                  COUNT(CASE WHEN t.status = 'in_progress' THEN 1 END) AS inProgress,
+                  COUNT(CASE WHEN t.status NOT IN ('completed','cancelled') AND t.due_date < ? THEN 1 END) AS overdue,
+                  COUNT(CASE WHEN t.status = 'pending' THEN 1 END) AS pending
+           FROM Users u
+           LEFT JOIN ActiveTasks t ON t.assignee_user_id = u.user_id AND t.is_deleted = 0
+           WHERE u.is_deleted = 0
+           GROUP BY u.user_id, u.name, u.username
+           ORDER BY overdue DESC, inProgress DESC`
+        ).bind(today).all();
+        
+        res.employeeTasks = (rows?.results || []).map(r => ({
+          userId: r.user_id,
+          name: r.name || r.username,
+          completed: Number(r.completed || 0),
+          inProgress: Number(r.inProgress || 0),
+          overdue: Number(r.overdue || 0),
+          pending: Number(r.pending || 0)
+        }));
       } catch (_) {}
 
       // Revenue trend (last 6 months)

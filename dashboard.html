@@ -63,15 +63,6 @@
           return `<div class="card list"><div class="card-title">${title}</div><div class="list-body">${rowsHtml||'<div class=\"muted\">尚無資料</div>'}</div></div>`;
         }
 
-        function chartCard(title){
-          return `<div class="card chart"><div class="card-title">${title}</div><div class="chart-placeholder">圖表占位</div></div>`;
-        }
-
-        function quickActions(actions){
-          const btns = (actions||[]).map(a=>`<button class="btn" type="button" onclick="location.assign('${a.href}')">${a.text}</button>`).join(' ');
-          return `<div class="card actions"><div class="card-title">快速操作</div><div class="actions-body">${btns||'<div class=\"muted\">—</div>'}</div></div>`;
-        }
-
         function fmtNum(n){ try { return Number(n||0).toLocaleString('zh-TW'); } catch(_) { return String(n||0); } }
         function fmtTwd(n){ return fmtNum(n); }
         function fmtPct(n){ const v = Number(n||0); return `${(Math.round(v*10)/10).toFixed(1)}%`; }
@@ -97,11 +88,6 @@
             statCard('本月總工時', fmtNum(h.total), hoursMeta),
             listCard('我的任務（待辦/進行中）', taskRows),
             listCard('我的假期', leavesHtml),
-            quickActions([
-              { text:'填寫工時', href:'/internal/timesheets' },
-              { text:'申請假期', href:'/internal/leaves' },
-              { text:'查看我的報表', href:'/internal/reports' },
-            ]),
             listCard('最近動態', (Array.isArray(data?.recentActivities) && data.recentActivities.length) ? data.recentActivities.map(a=>`<div class="activity">${a.text||''}</div>`).join('') : '<div class="muted">最近 7 天沒有活動</div>'),
           ].join('');
           grid.appendChild(frag);
@@ -110,9 +96,30 @@
         function renderAdminDashboard(data){
           grid.innerHTML = '';
           const frag = document.createElement('div');
-          const ov = data?.companyOverview || { totalHours:0, employeeCount:0, activeServices:0, attendanceRate:null };
+          
+          // 各员工工时
+          const empHours = Array.isArray(data?.employeeHours) ? data.employeeHours : [];
+          const hoursHtml = empHours.length ? empHours.map(e => {
+            const totalStr = fmtNum(e.total);
+            const meta = e.total > 0 ? `正常：${fmtNum(e.normal)} ｜ 加班：${fmtNum(e.overtime)}` : '';
+            return `<div class="emp-row"><span class="name">${e.name}</span><span class="hours"><b>${totalStr}</b> 小時</span>${meta ? `<div class="muted" style="font-size:12px;margin-top:4px;">${meta}</div>` : ''}</div>`;
+          }).join('') : '<div class="muted">尚無工時記錄</div>';
+          
+          // 各员工任务状态
+          const empTasks = Array.isArray(data?.employeeTasks) ? data.employeeTasks : [];
+          const tasksHtml = empTasks.length ? empTasks.map(e => {
+            const total = e.completed + e.inProgress + e.overdue + e.pending;
+            if (total === 0) return `<div class="emp-task-row"><span class="name">${e.name}</span><span class="muted">無任務</span></div>`;
+            const badges = [];
+            if (e.overdue > 0) badges.push(`<span class="badge danger">逾期 ${e.overdue}</span>`);
+            if (e.inProgress > 0) badges.push(`<span class="badge info">進行中 ${e.inProgress}</span>`);
+            if (e.completed > 0) badges.push(`<span class="badge success">已完成 ${e.completed}</span>`);
+            if (e.pending > 0) badges.push(`<span class="badge">待辦 ${e.pending}</span>`);
+            return `<div class="emp-task-row"><span class="name">${e.name}</span><div class="badges">${badges.join(' ')}</div></div>`;
+          }).join('') : '<div class="muted">尚無任務</div>';
+          
+          // 财务状况
           const fs = data?.financialStatus || { ar:0, paid:0, overdue:0, revenue:0, cost:0, profit:0, margin:0, collectionRate:0 };
-          const pd = data?.pendingItems || { leavePending:0, overdueTasks:0, overdueReceipts:0 };
           const finHtml = `
               <div class="kv"><span>應收</span><b class="num">${fmtTwd(fs.ar)}</b></div>
               <div class="kv"><span>收款</span><b class="num">${fmtTwd(fs.paid)}</b></div>
@@ -121,22 +128,11 @@
               <div class="kv"><span>營收</span><b class="num">${fmtTwd(fs.revenue)}</b></div>
               <div class="kv"><span>成本</span><b class="num">${fmtTwd(fs.cost)}</b></div>
               <div class="kv"><span>毛利/率</span><b class="num">${fmtTwd(fs.profit)} / ${fmtPct(fs.margin)}</b></div>`;
-          const pendingHtml = `
-              <div class="todo">假期待審（${fmtNum(pd.leavePending)}）</div>
-              <div class="todo">逾期任務（${fmtNum(pd.overdueTasks)}）</div>
-              <div class="todo">逾期應收（${fmtNum(pd.overdueReceipts)}）</div>`;
+          
           frag.innerHTML = [
-            statCard('本月總工時', fmtNum(ov.totalHours), `出勤率：—｜進行中服務：${fmtNum(ov.activeServices)}`),
-            statCard('員工數', fmtNum(ov.employeeCount)),
+            listCard('各員工本月工時', hoursHtml),
+            listCard('各員工任務狀態', tasksHtml),
             listCard('財務狀況（本月）', finHtml),
-            chartCard('近 6 個月｜收入/成本/毛利 趨勢'),
-            listCard('待處理事項', pendingHtml),
-            quickActions([
-              { text:'新增客戶', href:'/internal/clients' },
-              { text:'開立收據', href:'/internal/receipts' },
-              { text:'查看報表', href:'/internal/reports' },
-              { text:'系統設定', href:'/internal/settings' },
-            ]),
           ].join('');
           grid.appendChild(frag);
         }
@@ -170,9 +166,10 @@
             const role = json.data?.role || (me?.isAdmin ? 'admin' : 'employee');
             if (role === 'admin') {
               const d = json.data?.admin || {};
-              const pd = d.pendingItems || { overdueReceipts:0 };
+              const empTasks = d.employeeTasks || [];
+              const totalOverdue = empTasks.reduce((sum, e) => sum + (e.overdue || 0), 0);
               const notices = [];
-              if (pd.overdueReceipts > 0) notices.push({ level:'warning', text:`有 ${pd.overdueReceipts} 筆逾期應收待處理`, link:'/internal/receipts' });
+              if (totalOverdue > 0) notices.push({ level:'warning', text:`全公司共有 ${totalOverdue} 個逾期任務`, link:'/internal/tasks' });
               showNotices(notices);
               renderAdminDashboard(d);
             } else {

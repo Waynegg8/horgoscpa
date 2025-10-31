@@ -18,3 +18,20 @@
 .employee-hours-item .name { display: flex; align-items: center; gap: 10px; }
 .employee-hours-item .value { font-weight: 700; font-size: 18px; color: var(--primary-color); }
 .employee-hours-item .value span { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+
+/* Employee work hours row */
+.emp-row { padding: 12px 0; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: flex-start; }
+.emp-row:last-child { border-bottom: none; }
+.emp-row .name { font-weight: 600; color: #333; flex: 1; }
+.emp-row .hours { font-size: 16px; color: #1a73e8; text-align: right; }
+
+/* Employee task status row */
+.emp-task-row { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.emp-task-row:last-child { border-bottom: none; }
+.emp-task-row .name { font-weight: 600; color: #333; display: block; margin-bottom: 8px; }
+.emp-task-row .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.emp-task-row .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+.emp-task-row .badge.success { background: #d4edda; color: #155724; }
+.emp-task-row .badge.info { background: #d1ecf1; color: #0c5460; }
+.emp-task-row .badge.danger { background: #f8d7da; color: #721c24; }
+.emp-task-row .badge:not(.success):not(.info):not(.danger) { background: #e2e3e5; color: #383d41; }
