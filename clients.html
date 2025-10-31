@@ -332,6 +332,43 @@
 
         function setError(msg){ if (errEl) errEl.textContent = msg || ''; }
 
+        // 加载员工列表并填充下拉选单
+        let employeesList = [];
+        async function loadEmployees() {
+          try {
+            const res = await fetch(`${apiBase}/users`, {
+              method: 'GET',
+              credentials: 'include'
+            });
+            const json = await res.json();
+            if (json.ok && Array.isArray(json.data)) {
+              employeesList = json.data;
+              populateEmployeeSelects();
+            }
+          } catch (err) {
+            console.error('加载员工列表失败', err);
+          }
+        }
+        
+        function populateEmployeeSelects() {
+          const selects = [
+            document.getElementById('f_assignee'),          // 新增客户
+            document.getElementById('edit_assignee'),       // 编辑客户
+            document.getElementById('batch_assignee')       // 批量分配
+          ];
+          
+          selects.forEach(select => {
+            if (!select) return;
+            select.innerHTML = '';
+            employeesList.forEach(emp => {
+              const option = document.createElement('option');
+              option.value = emp.user_id;
+              option.textContent = `${emp.name}${emp.is_admin ? ' (管理員)' : ''}`;
+              select.appendChild(option);
+            });
+          });
+        }
+
         function renderRows(rows) {
           tbody.innerHTML = '';
           if (!rows || rows.length === 0) {
@@ -444,6 +481,7 @@
         document.getElementById('next').addEventListener('click', function(){ state.page++; load(); });
 
         // 初始化載入
+        loadEmployees(); // 加载员工列表
         load();
 
         // —— 查看客戶詳情 ——
