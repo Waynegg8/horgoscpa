@@ -985,6 +985,12 @@ function handleHoursInput(rowIndex, dayIndex, value) {
   // 檢查必填欄位
   if (!row.client_id || !row.service_id || !row.service_item_id) {
     showToast(`請先選擇客戶、服務項目與服務子項目`, 'warning');
+    // 清空輸入框，避免 UI 與 state 不同步
+    const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
+    if (input) {
+      input.value = '';
+      input.closest('td').classList.remove('has-value');
+    }
     return;
   }
   
@@ -993,6 +999,12 @@ function handleHoursInput(rowIndex, dayIndex, value) {
     const allowedTypes = getAllowedWorkTypesForDate(day.type);
     const typesText = allowedTypes.map(wt => wt.name).join('、');
     showToast(`您正在填 ${dateDisplay}（${dayTypeText}），請先選擇工時類型：${typesText}`, 'warning');
+    // 清空輸入框，避免 UI 與 state 不同步
+    const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
+    if (input) {
+      input.value = '';
+      input.closest('td').classList.remove('has-value');
+    }
     return;
   }
   
@@ -1031,6 +1043,13 @@ function handleHoursInput(rowIndex, dayIndex, value) {
   // 驗證時數限制
   if (workType && workType.maxHours && rounded > workType.maxHours) {
     showToast(`❌ ${dateDisplay}：${workType.name}最多只能填 ${workType.maxHours} 小時\n\n您填了 ${rounded} 小時，請改為 ${workType.maxHours} 或更少`, 'error');
+    // 清空輸入框
+    row.hours[dayIndex] = null;
+    const input = document.querySelector(`input[data-row-index="${rowIndex}"][data-day-index="${dayIndex}"]`);
+    if (input) {
+      input.value = '';
+      input.closest('td').classList.remove('has-value');
+    }
     return;
   }
   
