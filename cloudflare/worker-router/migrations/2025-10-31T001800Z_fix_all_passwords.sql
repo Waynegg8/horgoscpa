@@ -1,8 +1,9 @@
 -- Fix all user passwords to 111111 using PBKDF2
 -- Password: 111111
--- Format: pbkdf2$310000$salt$hash
+-- Format: pbkdf2$100000$salt$hash
+-- Note: Cloudflare Workers crypto API max iterations is 100000
 
 UPDATE Users 
-SET password_hash = 'pbkdf2$310000$AunoPI+FGTfidsGvc8c08Q==$mWFxV58XNwW8AvOr4CFnfWn4Lr3McDoh45d39wJuKio='
+SET password_hash = 'pbkdf2$100000$+9PMuJVh17FuHvSjN9gMdQ==$fx+Q65o1T+hfJTdvio5RXuZKjtrDWvadNI1tOmArQrc='
 WHERE username IN ('admin', 'liu', 'tian', 'chen');
 
