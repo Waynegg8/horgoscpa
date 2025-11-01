@@ -8,9 +8,8 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/knowledge-page.css" />
-    <!-- Quill富文本编辑器 -->
-    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
-    <link href="/assets/vendor/quill-better-table.css" rel="stylesheet">
+    <!-- Quill 2.0 富文本编辑器（內建表格支持） -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
     <style>
       .tabs {
         display: flex;
@@ -936,52 +935,34 @@
     </div>
 
 
-    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
     <script>
-      // 簡易表格模組（替代 quill-better-table）
-      window.QuillBetterTable = {
-        // 提供一個基礎的表格功能
-        insertTable: function(quill, rows, cols) {
-          const range = quill.getSelection();
-          if (range) {
-            let tableHTML = '<table class="simple-table"><tbody>';
-            for (let i = 0; i < rows; i++) {
-              tableHTML += '<tr>';
-              for (let j = 0; j < cols; j++) {
-                tableHTML += '<td><br></td>';
-              }
-              tableHTML += '</tr>';
-            }
-            tableHTML += '</tbody></table><p><br></p>';
-            
-            const delta = quill.clipboard.convert(tableHTML);
-            quill.updateContents(delta, 'user');
-            quill.setSelection(range.index + delta.length(), 0);
-          }
-        }
-      };
+      // Quill 2.0 已內建表格支持，無需額外模組
+      console.log('✅ Quill 2.0 已載入（內建表格支持）');
       
-      // 添加簡單表格樣式
+      // 添加表格樣式優化
       const style = document.createElement('style');
       style.textContent = `
-        .ql-editor .simple-table {
+        .ql-editor table {
           border-collapse: collapse;
           width: 100%;
           margin: 12px 0;
         }
-        .ql-editor .simple-table td {
+        .ql-editor table td,
+        .ql-editor table th {
           border: 1px solid #ddd;
           padding: 8px;
           min-width: 50px;
-          min-height: 30px;
         }
-        .ql-editor .simple-table td:hover {
+        .ql-editor table th {
           background: #f5f5f5;
+          font-weight: 600;
+        }
+        .ql-editor table tr:hover {
+          background: #fafafa;
         }
       `;
       document.head.appendChild(style);
-      
-      console.log('✅ 簡易表格模組已載入');
     </script>
     <script>
       (function(){
@@ -994,32 +975,24 @@
         let faqEditor = null;
         let isQuillReady = false;
         
-        // 等待 Quill 和表格模組載入完成
+        // 等待 Quill 2.0 載入完成
         function waitForQuillAndTable() {
           return new Promise((resolve, reject) => {
             let attempts = 0;
-            const maxAttempts = 100; // 最多等待 10 秒（增加等待時間）
+            const maxAttempts = 50; // 最多等待 5 秒
             
             const checkInterval = setInterval(() => {
               attempts++;
               
-              if (typeof Quill !== 'undefined' && typeof QuillBetterTable !== 'undefined') {
+              if (typeof Quill !== 'undefined') {
                 clearInterval(checkInterval);
-                console.log('✅ Quill 和表格模組載入成功');
+                console.log('✅ Quill 2.0 載入成功（內建表格支持）');
                 isQuillReady = true;
                 resolve();
               } else if (attempts >= maxAttempts) {
                 clearInterval(checkInterval);
-                console.error('❌ Quill 或表格模組載入超時');
-                console.error('Quill:', typeof Quill !== 'undefined' ? '已載入' : '未載入');
-                console.error('QuillBetterTable:', typeof QuillBetterTable !== 'undefined' ? '已載入' : '未載入');
-                
-                // 提供更詳細的錯誤訊息
-                const missingModules = [];
-                if (typeof Quill === 'undefined') missingModules.push('Quill');
-                if (typeof QuillBetterTable === 'undefined') missingModules.push('QuillBetterTable');
-                
-                reject(new Error(`模組載入超時: ${missingModules.join(', ')}`));
+                console.error('❌ Quill 載入超時');
+                reject(new Error('Quill 載入超時'));
               }
             }, 100);
           });
@@ -1100,15 +1073,14 @@
           console.log('FAQ 編輯器已初始化');
         }
         
-        // 註冊表格模組（簡化版，不需要註冊）
+        // Quill 2.0 內建表格支持，不需要註冊額外模組
         function registerTableModule() {
           if (!isQuillReady) {
             console.error('❌ Quill 尚未準備好');
             return false;
           }
           
-          // 簡易模組不需要註冊，直接返回 true
-          console.log('✅ 簡易表格模組可用');
+          console.log('✅ Quill 2.0 表格功能已就緒');
           return true;
         }
         
@@ -1141,7 +1113,7 @@
             return;
           }
           
-          // 配置（簡化版）
+          // 配置（Quill 2.0 with 表格支持）
           const config = {
             theme: 'snow',
             modules: {
@@ -1152,36 +1124,17 @@
                 ['blockquote', 'code-block'],
                 ['link'],
                 [{ 'color': [] }],
+                ['table'],  // Quill 2.0 內建表格按鈕
                 ['clean']
-              ]
+              ],
+              table: true  // 啟用表格模組
             },
             placeholder: '請輸入SOP內容...'
           };
           
           window.sopDrawerEditor = new Quill('#sop-editor-drawer', config);
           
-          // 在工具欄添加表格按鈕
-          const toolbarContainer = container.previousElementSibling;
-          if (toolbarContainer && toolbarContainer.classList.contains('ql-toolbar')) {
-            const tableBtn = document.createElement('button');
-            tableBtn.className = 'ql-table';
-            tableBtn.innerHTML = '📊 插入表格';
-            tableBtn.title = '插入 3x3 表格';
-            tableBtn.style.cssText = 'padding:4px 8px;font-size:12px;';
-            tableBtn.onclick = function(e) {
-              e.preventDefault();
-              QuillBetterTable.insertTable(window.sopDrawerEditor, 3, 3);
-            };
-            toolbarContainer.appendChild(tableBtn);
-            
-            // 添加提示
-            const hint = document.createElement('div');
-            hint.style.cssText = 'padding:6px 8px;font-size:11px;color:#6b7280;background:#f9fafb;border-top:1px solid #e5e7eb;';
-            hint.textContent = '💡 提示：插入表格後可直接編輯內容，右鍵選擇單元格可進行更多操作';
-            toolbarContainer.parentNode.insertBefore(hint, container);
-          }
-          
-          console.log('✅ SOP 編輯器已初始化（含簡易表格功能）');
+          console.log('✅ SOP 編輯器已初始化（Quill 2.0 含完整表格功能）');
         }
         
         // 初始化抽屜中的 FAQ 編輯器
@@ -1213,7 +1166,7 @@
             return;
           }
           
-          // 配置（簡化版）
+          // 配置（Quill 2.0 with 表格支持）
           const config = {
             theme: 'snow',
             modules: {
@@ -1224,36 +1177,17 @@
                 ['blockquote', 'code-block'],
                 ['link'],
                 [{ 'color': [] }],
+                ['table'],  // Quill 2.0 內建表格按鈕
                 ['clean']
-              ]
+              ],
+              table: true  // 啟用表格模組
             },
             placeholder: '請輸入FAQ答案...'
           };
           
           window.faqDrawerEditor = new Quill('#faq-editor-drawer', config);
           
-          // 在工具欄添加表格按鈕
-          const toolbarContainer = container.previousElementSibling;
-          if (toolbarContainer && toolbarContainer.classList.contains('ql-toolbar')) {
-            const tableBtn = document.createElement('button');
-            tableBtn.className = 'ql-table';
-            tableBtn.innerHTML = '📊 插入表格';
-            tableBtn.title = '插入 3x3 表格';
-            tableBtn.style.cssText = 'padding:4px 8px;font-size:12px;';
-            tableBtn.onclick = function(e) {
-              e.preventDefault();
-              QuillBetterTable.insertTable(window.faqDrawerEditor, 3, 3);
-            };
-            toolbarContainer.appendChild(tableBtn);
-            
-            // 添加提示
-            const hint = document.createElement('div');
-            hint.style.cssText = 'padding:6px 8px;font-size:11px;color:#6b7280;background:#f9fafb;border-top:1px solid #e5e7eb;';
-            hint.textContent = '💡 提示：插入表格後可直接編輯內容，右鍵選擇單元格可進行更多操作';
-            toolbarContainer.parentNode.insertBefore(hint, container);
-          }
-          
-          console.log('✅ FAQ 編輯器已初始化（含簡易表格功能）');
+          console.log('✅ FAQ 編輯器已初始化（Quill 2.0 含完整表格功能）');
         }
         
         // 清空 SOP 表單（已廢棄，保留以防引用）
