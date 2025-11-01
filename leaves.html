@@ -9,62 +9,86 @@
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/leaves-page.css" />
     <style>
-      /* 统一表单控件样式 */
-      .form-control {
+      /* 统一表单控件样式 - 强制所有输入框相同高度 */
+      .form-control,
+      input.form-control,
+      select.form-control,
+      input[type="text"].form-control,
+      input[type="date"].form-control {
         height: 44px !important;
         min-height: 44px !important;
         max-height: 44px !important;
-        padding: 10px 12px !important;
-        font-size: 14px;
-        line-height: 1.5;
-        border: 1px solid rgba(15, 23, 42, 0.15);
-        border-radius: 8px;
-        width: 100%;
-        box-sizing: border-box;
+        padding: 0 12px !important;
+        font-size: 14px !important;
+        line-height: 44px !important;
+        border: 1px solid rgba(15, 23, 42, 0.15) !important;
+        border-radius: 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
         transition: border-color 0.2s;
-        vertical-align: middle;
+        vertical-align: middle !important;
+        background-color: white !important;
+        display: block !important;
+        margin: 0 !important;
       }
       
       /* textarea 使用自定义高度 */
       textarea.form-control {
-        height: auto !important;
+        height: 80px !important;
         min-height: 80px !important;
         max-height: 200px !important;
+        padding: 10px 12px !important;
+        line-height: 1.5 !important;
+        resize: vertical !important;
       }
       
       .form-control:focus {
-        outline: none;
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        outline: none !important;
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
       }
       
       .form-control:disabled,
       .form-control[readonly] {
-        background-color: #f1f5f9;
+        background-color: #f1f5f9 !important;
         cursor: not-allowed;
       }
       
       /* 确保select下拉箭头不被遮挡 */
       select.form-control {
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23334155' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23334155' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 12px center !important;
         padding-right: 36px !important;
+        line-height: 1 !important;
       }
       
-      /* 日期选择器 - 统一高度 */
+      /* 日期选择器 - 统一高度并移除浏览器默认样式 */
       input[type="date"].form-control {
-        padding-right: 12px !important;
-        -webkit-appearance: none;
-        -moz-appearance: none;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        line-height: 1 !important;
       }
       
-      /* 针对日期输入框的浏览器特定样式 */
+      /* 移除日期选择器的内部控件影响高度 */
       input[type="date"].form-control::-webkit-inner-spin-button,
       input[type="date"].form-control::-webkit-calendar-picker-indicator {
-        height: 24px;
-        margin: 0;
+        height: 20px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      /* 移除 WebKit 的日期输入框默认样式 */
+      input[type="date"].form-control::-webkit-datetime-edit {
+        padding: 0 !important;
+        line-height: 1 !important;
+      }
+      
+      input[type="date"].form-control::-webkit-datetime-edit-fields-wrapper {
+        padding: 0 !important;
       }
     </style>
   </head>
@@ -75,9 +99,22 @@
         <select id="user-select" aria-label="選擇員工" style="display:none;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:180px;">
           <option value="">全部員工</option>
         </select>
+        <select id="leave-type-filter" aria-label="篩選假別" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:180px;">
+          <option value="">全部假別</option>
+          <option value="annual">特休</option>
+          <option value="sick">病假</option>
+          <option value="personal">事假</option>
+          <option value="comp">補休</option>
+          <option value="menstrual">生理假</option>
+          <option value="maternity">產假</option>
+          <option value="prenatal_checkup">產檢假</option>
+          <option value="paternity">陪產檢及陪產假</option>
+          <option value="marriage">婚假</option>
+          <option value="funeral">喪假</option>
+          <option value="public">公假</option>
+        </select>
         <button id="btn-apply" class="clients-btn" type="button">申請假期</button>
         <button id="btn-event" class="clients-btn btn-secondary" type="button">登記生活事件</button>
-        <input id="q" type="search" placeholder="搜尋假別/原因…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
       </div>
     </header>
 
@@ -221,7 +258,7 @@
 
         const balanceEl = document.getElementById('balances');
         const tbody = document.getElementById('tbody');
-        const qEl = document.getElementById('q');
+        const leaveTypeFilterEl = document.getElementById('leave-type-filter');
         const prevBtn = document.getElementById('prev');
         const nextBtn = document.getElementById('next');
         const userSelectEl = document.getElementById('user-select');
@@ -307,7 +344,8 @@
           const params = new URLSearchParams();
           params.set('page', String(state.page));
           params.set('perPage', String(state.perPage));
-          if (qEl.value.trim()) params.set('q', qEl.value.trim());
+          const selectedType = leaveTypeFilterEl.value.trim();
+          if (selectedType) params.set('type', selectedType);
           if (state.isAdmin && state.selectedUserId) {
             params.set('user_id', state.selectedUserId);
           }
@@ -320,7 +358,7 @@
             renderRows(json.data || []);
             renderPager();
           } catch (_) {
-            tbody.innerHTML = '<tr><td colspan="7" style="color:#c0392b;">載入失敗</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="color:#c0392b;">載入失敗</td></tr>';
             renderPager();
           }
         }
@@ -557,10 +595,8 @@
           }
         });
 
-        // 簡易搜尋
-        const q = document.getElementById('q');
-        let timer = null;
-        q.addEventListener('input', ()=>{ clearTimeout(timer); timer = setTimeout(()=>{ state.page=1; loadLeaves(); }, 300); });
+        // 假別篩選
+        leaveTypeFilterEl.addEventListener('change', ()=>{ state.page=1; loadLeaves(); });
         prevBtn.addEventListener('click', ()=>{ if (state.page>1) { state.page--; loadLeaves(); } });
         nextBtn.addEventListener('click', ()=>{ state.page++; loadLeaves(); });
         
