@@ -9,8 +9,8 @@
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/knowledge-page.css" />
     <!-- Quill富文本编辑器 -->
-    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
-    <link href="https://unpkg.com/quill-better-table@1.2.10/dist/quill-better-table.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/quill-better-table@1.2.10/dist/quill-better-table.css" rel="stylesheet">
     <style>
       .tabs {
         display: flex;
@@ -936,8 +936,24 @@
     </div>
 
 
-    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-    <script src="https://unpkg.com/quill-better-table@1.2.10/dist/quill-better-table.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill-better-table@1.2.10/dist/quill-better-table.js"></script>
+    <script>
+      // 備用載入機制：如果 jsdelivr 失敗，嘗試從 unpkg 載入
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          if (typeof QuillBetterTable === 'undefined') {
+            console.warn('⚠️ jsdelivr 載入失敗，嘗試從 unpkg 載入表格模組...');
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/quill-better-table@1.2.10/dist/quill-better-table.js';
+            script.onerror = function() {
+              console.error('❌ 所有 CDN 都載入失敗');
+            };
+            document.head.appendChild(script);
+          }
+        }, 2000);
+      });
+    </script>
     <script>
       (function(){
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
@@ -953,7 +969,7 @@
         function waitForQuillAndTable() {
           return new Promise((resolve, reject) => {
             let attempts = 0;
-            const maxAttempts = 50; // 最多等待 5 秒
+            const maxAttempts = 100; // 最多等待 10 秒（增加等待時間）
             
             const checkInterval = setInterval(() => {
               attempts++;
@@ -968,7 +984,13 @@
                 console.error('❌ Quill 或表格模組載入超時');
                 console.error('Quill:', typeof Quill !== 'undefined' ? '已載入' : '未載入');
                 console.error('QuillBetterTable:', typeof QuillBetterTable !== 'undefined' ? '已載入' : '未載入');
-                reject(new Error('Quill 或表格模組載入超時'));
+                
+                // 提供更詳細的錯誤訊息
+                const missingModules = [];
+                if (typeof Quill === 'undefined') missingModules.push('Quill');
+                if (typeof QuillBetterTable === 'undefined') missingModules.push('QuillBetterTable');
+                
+                reject(new Error(`模組載入超時: ${missingModules.join(', ')}`));
               }
             }, 100);
           });
@@ -2672,7 +2694,10 @@
               console.log('✅ 編輯器初始化完成');
             } catch (e) {
               console.error('❌ 編輯器初始化失敗:', e);
-              alert('編輯器載入失敗，請刷新頁面重試');
+              
+              // 顯示詳細錯誤訊息
+              const errorMsg = `編輯器載入失敗\n\n可能原因：\n1. 網路連線問題\n2. CDN 服務暫時無法訪問\n3. 防火牆或廣告攔截器\n\n建議：\n1. 檢查網路連線\n2. 關閉廣告攔截器\n3. 刷新頁面重試\n\n技術詳情：${e.message}`;
+              alert(errorMsg);
             }
             
             // 載入標籤庫並初始化篩選下拉選單
