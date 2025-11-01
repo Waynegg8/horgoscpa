@@ -443,11 +443,8 @@
           
           <!-- 右側：SOP 預覽區域 -->
           <div class="right-panel">
-            <section class="resource-preview-card">
-              <div class="resource-preview-header">
-                <h3 class="resource-preview-title">📖 SOP 預覽</h3>
-              </div>
-              <div id="sopPreviewArea" class="resource-preview-content" style="min-height:85vh;">
+            <section class="resource-preview-card" style="padding:0;">
+              <div id="sopPreviewArea" class="resource-preview-content" style="min-height:90vh;">
                 <div class="resource-preview-empty">
                   <div class="empty-icon">📖</div>
                   <p class="empty-text">點擊左側 SOP 查看內容</p>
@@ -819,6 +816,21 @@
         let currentTab = 'sop';
         let sopEditor = null;
         let faqEditor = null;
+        
+        // 工具函數：取得分類名稱
+        function getCategoryName(category, type = 'sop') {
+          const categoryMap = {
+            'accounting': '記帳流程',
+            'tax': '稅務流程',
+            'business': '工商登記',
+            'hr': '人事管理',
+            'finance': '財務管理',
+            'contract': '合同範本',
+            'internal': '內部流程',
+            'other': '其他'
+          };
+          return categoryMap[category] || category || '未分類';
+        }
         
         let sopState = { page:1, perPage:12, total:0 };
         let faqState = { page:1, perPage:12, total:0 };
