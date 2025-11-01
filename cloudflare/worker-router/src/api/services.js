@@ -240,6 +240,51 @@ export async function handleServices(request, env, me, requestId, url, path) {
   // 服务子项目（ServiceItems）管理
   // ========================================
 
+  // GET /internal/api/v1/services/items - 获取所有服务项
+  if (method === "GET" && path === "/internal/api/v1/services/items") {
+    try {
+      const rows = await env.DATABASE.prepare(`
+        SELECT si.item_id, si.service_id, si.item_name, si.item_code, si.description,
+               si.is_active, si.sort_order, si.created_at, si.updated_at,
+               s.service_name
+        FROM ServiceItems si
+        LEFT JOIN Services s ON s.service_id = si.service_id
+        WHERE si.is_active = 1
+        ORDER BY si.service_id ASC, si.sort_order ASC, si.item_id ASC
+      `).all();
+
+      const data = (rows?.results || []).map(r => ({
+        item_id: r.item_id,
+        service_id: r.service_id,
+        service_name: r.service_name || "",
+        item_name: r.item_name || "",
+        item_code: r.item_code || "",
+        description: r.description || "",
+        is_active: Boolean(r.is_active),
+        sort_order: r.sort_order || 0,
+        created_at: r.created_at,
+        updated_at: r.updated_at
+      }));
+
+      return jsonResponse(200, {
+        ok: true,
+        code: "SUCCESS",
+        message: "查询成功",
+        data,
+        meta: { requestId }
+      }, corsHeaders);
+
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, {
+        ok: false,
+        code: "INTERNAL_ERROR",
+        message: "服务器错误",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+  }
+
   // GET /internal/api/v1/services/:id/items - 获取服务的所有子项目
   const matchGetItems = path.match(/^\/internal\/api\/v1\/services\/(\d+)\/items$/);
   if (method === "GET" && matchGetItems) {

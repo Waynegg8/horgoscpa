@@ -14,10 +14,14 @@
   <body class="clients-page">
     <main class="clients-content" style="padding: 20px;">
       <section class="clients-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px;">
-          <div class="clients-search" style="flex: 1; max-width: 400px;">
-            <input id="q" type="search" placeholder="搜尋公司名稱…" aria-label="搜尋" />
-            <button id="btn-search" class="clients-btn" type="button">搜尋</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 12px; align-items: center; flex: 1;">
+            <div class="clients-search" style="flex: 1; max-width: 400px;">
+              <input id="q" type="search" placeholder="搜尋公司名稱或統編…" aria-label="搜尋" />
+            </div>
+            <select id="tag-filter" style="padding: 10px 14px; border: 1px solid rgba(15,23,42,0.15); border-radius: 8px; font-size: 14px; background: white; color: #374151; cursor: pointer;">
+              <option value="">全部標籤</option>
+            </select>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
             <div id="batch-actions" style="display:none;gap:8px;">
@@ -44,6 +48,7 @@
                 <th>負責人</th>
                 <th>標籤</th>
                 <th>服務數量</th>
+                <th>全年收費總額</th>
                 <th>電話</th>
                 <th>Email</th>
                 <th>建立時間</th>
@@ -120,6 +125,37 @@
           }
         }
         
+        // 加载标签列表并填充筛选下拉选单
+        let allTags = [];
+        async function loadTags() {
+          try {
+            const res = await fetch(`${apiBase}/tags`, {
+              method: 'GET',
+              credentials: 'include'
+            });
+            const json = await res.json();
+            if (json.ok && Array.isArray(json.data)) {
+              allTags = json.data;
+              populateTagFilter();
+            }
+          } catch (err) {
+            console.error('加载标签列表失败', err);
+          }
+        }
+        
+        function populateTagFilter() {
+          const tagFilter = document.getElementById('tag-filter');
+          if (!tagFilter) return;
+          
+          tagFilter.innerHTML = '<option value="">全部標籤</option>';
+          allTags.forEach(tag => {
+            const option = document.createElement('option');
+            option.value = tag.tag_id;
+            option.textContent = tag.tag_name;
+            tagFilter.appendChild(option);
+          });
+        }
+        
         function populateEmployeeSelects() {
           const selects = [
             document.getElementById('f_assignee'),          // 新增客户
@@ -170,6 +206,12 @@
               ? `<span class="service-count" style="background:#2563eb;color:#fff;padding:4px 10px;border-radius:12px;font-size:13px;font-weight:600;">${serviceCount} 個服務</span>`
               : '<span style="color:#9ca3af;">無</span>';
             
+            // 全年收费总额（需要从后端API返回）
+            const yearTotal = r.year_total || r.yearTotal || 0;
+            const yearTotalHtml = yearTotal > 0 
+              ? `<span style="color:#059669;font-weight:600;">NT$ ${yearTotal.toLocaleString()}</span>`
+              : '<span style="color:#9ca3af;">-</span>';
+            
             // 联络人显示（显示第一个联络人）
             const contactPerson = r.contact_person_1 || r.contactPerson1 || '';
             
@@ -184,6 +226,7 @@
               <td>${assigneeName}</td>
               <td>${tagsHtml}</td>
               <td>${serviceCountHtml}</td>
+              <td>${yearTotalHtml}</td>
               <td>${r.phone||''}</td>
               <td>${r.email||''}</td>
               <td>${createdDate}</td>
@@ -206,21 +249,20 @@
           });
         }
 
-        let state = { page: 1, perPage: 50, total: 0, q: '' };
+        let state = { page: 1, perPage: 50, total: 0, q: '', tag_id: '' };
 
         async function load() {
           setError('');
           const params = new URLSearchParams();
           params.set('page', String(state.page));
           params.set('perPage', String(state.perPage));
-          // 修復：搜索支持公司名稱和統一編號
+          // 搜索支持公司名稱和統一編號
           if (state.q) {
-            // 如果搜索詞是8位數字，則搜索統編；否則搜索公司名稱
-            if (/^\d{8}$/.test(state.q)) {
-              params.set('client_id', state.q);
-            } else {
-              params.set('company_name', state.q);
-            }
+            params.set('q', state.q);
+          }
+          // 标签筛选
+          if (state.tag_id) {
+            params.set('tag_id', state.tag_id);
           }
           try {
             const res = await fetch(`${apiBase}/clients?${params.toString()}`, { credentials: 'include' });
@@ -252,17 +294,29 @@
           load();
         }
 
+        function applyTagFilter() {
+          const tagFilter = document.getElementById('tag-filter');
+          state.tag_id = tagFilter.value;
+          state.page = 1;
+          load();
+        }
+
+        // 实时搜索
         let timer = null;
         qEl.addEventListener('input', function () {
           clearTimeout(timer);
           timer = setTimeout(applySearch, 300);
         });
-        document.getElementById('btn-search').addEventListener('click', applySearch);
+        
+        // 标签筛选
+        document.getElementById('tag-filter').addEventListener('change', applyTagFilter);
+        
         document.getElementById('prev').addEventListener('click', function(){ if (state.page>1) { state.page--; load(); } });
         document.getElementById('next').addEventListener('click', function(){ state.page++; load(); });
 
         // 初始化載入
         loadEmployees(); // 加载员工列表
+        loadTags(); // 加载标签列表
         load();
 
         // —— 查看客戶詳情 ——

@@ -32,6 +32,19 @@
   function markActiveNav(){
     const path = location.pathname;
     let seg = path.replace(/^\/internal\//, '').split(/[/?#]/)[0] || 'dashboard';
+    
+    // 特殊路径映射：将详情页/新增页映射到列表页
+    const pathMapping = {
+      'client-detail': 'clients',
+      'client-new': 'clients',
+      'task-detail': 'tasks',
+      'task-new': 'tasks'
+    };
+    
+    if (pathMapping[seg]) {
+      seg = pathMapping[seg];
+    }
+    
     const selector = `a.internal-nav-link[href^="/internal/${seg}"]`;
     const a = document.querySelector(selector) || document.querySelector('a.internal-nav-link[href="/internal/dashboard"]');
     if (a) a.classList.add('active');

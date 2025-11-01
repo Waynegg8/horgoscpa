@@ -270,23 +270,33 @@ export async function handleClients(request, env, me, requestId, url) {
 		const page = Math.max(1, parseInt(params.get("page") || "1", 10));
 		const perPage = Math.min(100, Math.max(1, parseInt(params.get("perPage") || "50", 10)));
 		const offset = (page - 1) * perPage;
-		const companyName = (params.get("company_name") || params.get("q") || "").trim();
+		const searchQuery = (params.get("q") || "").trim();
+		const tagId = params.get("tag_id") || "";
 		try {
 			const where = ["c.is_deleted = 0"];
 			const binds = [];
-			if (companyName) {
-				where.push("c.company_name LIKE ?");
-				binds.push(`%${companyName}%`);
+			
+			// 搜索：支持公司名称和统编
+			if (searchQuery) {
+				where.push("(c.company_name LIKE ? OR c.tax_registration_number LIKE ?)");
+				binds.push(`%${searchQuery}%`, `%${searchQuery}%`);
 			}
+			
+			// 标签筛选
+			if (tagId) {
+				where.push("EXISTS (SELECT 1 FROM ClientTagAssignments cta WHERE cta.client_id = c.client_id AND cta.tag_id = ?)");
+				binds.push(tagId);
+			}
+			
 			const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 			const countRow = await env.DATABASE.prepare(
-				`SELECT COUNT(1) as total FROM Clients c ${whereSql}`
+				`SELECT COUNT(DISTINCT c.client_id) as total FROM Clients c ${whereSql}`
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
 			const rows = await env.DATABASE.prepare(
 				`SELECT c.client_id, c.company_name, c.tax_registration_number, c.contact_person_1, c.phone, c.email, c.created_at, 
 				        u.name as assignee_name,
-				        GROUP_CONCAT(t.tag_name, ',') as tags
+				        GROUP_CONCAT(DISTINCT t.tag_name, ',') as tags
 				 FROM Clients c
 				 LEFT JOIN Users u ON u.user_id = c.assignee_user_id
 				 LEFT JOIN ClientTagAssignments a ON a.client_id = c.client_id
@@ -296,17 +306,31 @@ export async function handleClients(request, env, me, requestId, url) {
 				 ORDER BY c.created_at DESC
 				 LIMIT ? OFFSET ?`
 			).bind(...binds, perPage, offset).all();
-			const data = (rows?.results || []).map((r) => ({
-				clientId: r.client_id,
-				companyName: r.company_name,
-				taxId: r.tax_registration_number,
-				contact_person_1: r.contact_person_1 || "",
-				assigneeName: r.assignee_name || "",
-				tags: (r.tags ? String(r.tags).split(",").filter(Boolean) : []),
-				phone: r.phone || "",
-				email: r.email || "",
-				createdAt: r.created_at,
+			
+			// 为每个客户计算全年收费总额
+			const data = await Promise.all((rows?.results || []).map(async (r) => {
+				// 查询该客户所有服务的收费总额
+				const billingRow = await env.DATABASE.prepare(
+					`SELECT SUM(sb.billing_amount) as year_total
+					 FROM ClientServices cs
+					 LEFT JOIN ServiceBillingSchedule sb ON sb.client_service_id = cs.client_service_id
+					 WHERE cs.client_id = ? AND cs.is_deleted = 0`
+				).bind(r.client_id).first();
+				
+				return {
+					clientId: r.client_id,
+					companyName: r.company_name,
+					taxId: r.tax_registration_number,
+					contact_person_1: r.contact_person_1 || "",
+					assigneeName: r.assignee_name || "",
+					tags: (r.tags ? String(r.tags).split(",").filter(Boolean) : []),
+					phone: r.phone || "",
+					email: r.email || "",
+					createdAt: r.created_at,
+					year_total: Number(billingRow?.year_total || 0)
+				};
 			}));
+			
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
 			return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta }, corsHeaders);
 		} catch (err) {

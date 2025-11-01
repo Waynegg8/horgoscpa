@@ -124,6 +124,91 @@ export async function handleTasks(request, env, me, requestId, url) {
 		}
 	}
 
+	// PUT /api/v1/tasks/:id - 更新任務（含分配負責人）
+	if (method === "PUT" && url.pathname.match(/\/tasks\/\d+$/)) {
+		const taskId = url.pathname.split("/").pop();
+		let body;
+		try { body = await request.json(); } catch (_) {
+			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
+		}
+
+		const errors = [];
+		const updates = [];
+		const binds = [];
+
+		// 可更新的欄位
+		if (body.hasOwnProperty('task_name')) {
+			const taskName = String(body.task_name || "").trim();
+			if (taskName.length < 1 || taskName.length > 200) errors.push({ field:"task_name", message:"長度需 1–200" });
+			else { updates.push("task_name = ?"); binds.push(taskName); }
+		}
+		if (body.hasOwnProperty('due_date')) {
+			const dueDate = body.due_date ? String(body.due_date) : null;
+			if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) errors.push({ field:"due_date", message:"日期格式 YYYY-MM-DD" });
+			else { updates.push("due_date = ?"); binds.push(dueDate); }
+		}
+		if (body.hasOwnProperty('status')) {
+			const status = String(body.status || "").trim();
+			if (!["pending","in_progress","completed","cancelled"].includes(status)) errors.push({ field:"status", message:"狀態無效" });
+			else { 
+				updates.push("status = ?"); 
+				binds.push(status);
+				if (status === "completed") {
+					updates.push("completed_date = ?");
+					binds.push(new Date().toISOString());
+				}
+			}
+		}
+		if (body.hasOwnProperty('assignee_user_id')) {
+			const assigneeUserId = body.assignee_user_id ? Number(body.assignee_user_id) : null;
+			if (assigneeUserId !== null && (!Number.isInteger(assigneeUserId) || assigneeUserId <= 0)) {
+				errors.push({ field:"assignee_user_id", message:"格式錯誤" });
+			} else {
+				// 驗證負責人是否存在
+				if (assigneeUserId) {
+					const u = await env.DATABASE.prepare("SELECT 1 FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1").bind(assigneeUserId).first();
+					if (!u) {
+						errors.push({ field:"assignee_user_id", message:"負責人不存在" });
+					}
+				}
+				if (errors.length === 0) {
+					updates.push("assignee_user_id = ?");
+					binds.push(assigneeUserId);
+				}
+			}
+		}
+		if (body.hasOwnProperty('notes')) {
+			const notes = String(body.notes || "").trim();
+			updates.push("notes = ?");
+			binds.push(notes || null);
+		}
+
+		if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
+		if (updates.length === 0) return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"沒有要更新的欄位", meta:{ requestId } }, corsHeaders);
+
+		try {
+			// 檢查任務是否存在
+			const task = await env.DATABASE.prepare("SELECT task_id, assignee_user_id FROM ActiveTasks WHERE task_id = ? AND is_deleted = 0 LIMIT 1").bind(taskId).first();
+			if (!task) return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"任務不存在", meta:{ requestId } }, corsHeaders);
+
+			// 權限檢查：只有管理員或任務負責人可以更新
+			if (!me.is_admin && Number(task.assignee_user_id) !== Number(me.user_id)) {
+				return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"無權限更新此任務", meta:{ requestId } }, corsHeaders);
+			}
+
+			// 執行更新
+			const sql = `UPDATE ActiveTasks SET ${updates.join(", ")} WHERE task_id = ?`;
+			await env.DATABASE.prepare(sql).bind(...binds, taskId).run();
+
+			return jsonResponse(200, { ok:true, code:"OK", message:"已更新", data:{ taskId }, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
 	return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 }
 

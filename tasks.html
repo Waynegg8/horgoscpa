@@ -104,8 +104,10 @@
               <div class="field__error" id="te_due"></div>
             </div>
             <div class="field">
-              <label for="tf_assignee">負責人員 ID（可留空）</label>
-              <input id="tf_assignee" name="assignee_user_id" type="number" min="1" />
+              <label for="tf_assignee">負責人員（可留空）</label>
+              <select id="tf_assignee" name="assignee_user_id">
+                <option value="">請選擇負責人</option>
+              </select>
               <div class="field__error" id="te_assignee"></div>
             </div>
             <div class="field" style="grid-column:1 / -1;">
@@ -148,10 +150,34 @@
 
         let state = { page:1, perPage:20, q:'', status:'all', due:'all', view:'list', total:0 };
         let cacheRows = [];
+        let employeesList = [];
 
         const zhStatus = { pending:'待開始', in_progress:'進行中', completed:'已完成', cancelled:'已取消' };
 
         function setError(m){ if (errEl) errEl.textContent = m || ''; }
+
+        // 加载员工列表
+        async function loadEmployees(){
+          try {
+            const res = await fetch(`${apiBase}/users`, { credentials: 'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/tasks'); return; }
+            const json = await res.json();
+            if (res.ok && json && json.ok === true) {
+              employeesList = json.data || [];
+              // 填充下拉選單
+              const assigneeSelect = document.getElementById('tf_assignee');
+              assigneeSelect.innerHTML = '<option value="">請選擇負責人</option>';
+              employeesList.forEach(emp => {
+                const opt = document.createElement('option');
+                opt.value = emp.userId;
+                opt.textContent = emp.name;
+                assigneeSelect.appendChild(opt);
+              });
+            }
+          } catch (e) {
+            console.error('載入員工列表失敗', e);
+          }
+        }
 
         async function load(){
           setError('');
@@ -183,16 +209,59 @@
           tbody.innerHTML = '';
           cacheRows.forEach(r => {
             const tr = document.createElement('tr');
+            
+            // 創建負責人單元格（支持快速分配）
+            const assigneeTd = document.createElement('td');
+            assigneeTd.style.cssText = 'padding:10px 8px;border-bottom:1px solid #f0f0f0;';
+            
+            // 創建下拉選單
+            const assigneeSelect = document.createElement('select');
+            assigneeSelect.style.cssText = 'padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:14px;width:100%;max-width:150px;';
+            assigneeSelect.innerHTML = '<option value="">未分配</option>';
+            employeesList.forEach(emp => {
+              const opt = document.createElement('option');
+              opt.value = emp.userId;
+              opt.textContent = emp.name;
+              opt.selected = (r.assigneeName && r.assigneeName === emp.name);
+              assigneeSelect.appendChild(opt);
+            });
+            
+            // 快速分配事件
+            assigneeSelect.addEventListener('change', async function() {
+              const newAssigneeId = this.value ? Number(this.value) : null;
+              const prevValue = this.value;
+              try {
+                this.disabled = true;
+                const res = await fetch(`${apiBase}/tasks/${r.taskId}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ assignee_user_id: newAssigneeId })
+                });
+                if (res.status === 401) { location.assign('/login?redirect=/internal/tasks'); return; }
+                const json = await res.json();
+                if (!res.ok || !json || json.ok !== true) throw new Error((json && json.message) || '分配失敗');
+                load(); // 重新載入列表
+              } catch (e) {
+                alert(e.message || '分配失敗，請稍後再試');
+                this.value = prevValue; // 恢復選擇
+                this.disabled = false;
+              }
+            });
+            
+            assigneeTd.appendChild(assigneeSelect);
+            
             tr.innerHTML = `
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.taskName}</td>
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.clientName||''}</td>
-              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.assigneeName||''}</td>
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.progress.completed}/${r.progress.total}</td>
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.dueDate? r.dueDate.slice(5) : ''}</td>
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${zhStatus[r.status]||r.status}</td>
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.hasSop? '有 SOP':'—'}</td>
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;"><button type="button">查看</button></td>
             `;
+            // 插入負責人單元格到正確位置（第3列）
+            tr.insertBefore(assigneeTd, tr.children[2]);
             tbody.appendChild(tr);
           });
           renderPager();
@@ -231,6 +300,7 @@
 
         // init
         switchView('list');
+        loadEmployees(); // 載入員工列表
         load();
 
         // ===== 新增任務：開關與送出 =====
