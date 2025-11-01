@@ -101,6 +101,7 @@ export async function handleAuthMe(request, env, requestId) {
 			name: row.name,
 			email: row.email,
 			isAdmin: row.is_admin === 1,
+			gender: row.gender || 'M',
 		};
 		return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta: { requestId } }, getCorsHeadersForRequest(request, env));
 	} catch (err) {
