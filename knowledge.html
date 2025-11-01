@@ -1578,6 +1578,69 @@
           if (overlay) overlay.classList.add('show');
         };
         
+        // SOP 抽屜控制
+        window.openSopDrawer = function(sopData = null) {
+          const drawer = document.getElementById('sopEditDrawer');
+          const overlay = document.getElementById('drawerOverlay');
+          if (!drawer || !overlay) return;
+          
+          // 填充數據或清空
+          document.getElementById('sop-id-drawer').value = sopData?.sop_id || '';
+          document.getElementById('sop-title-drawer').value = sopData?.title || '';
+          document.getElementById('sop-category-drawer').value = sopData?.category || '';
+          document.getElementById('sop-tags-drawer').value = Array.isArray(sopData?.tags) ? sopData.tags.join(', ') : (sopData?.tags || '');
+          
+          // 設置編輯器內容
+          if (window.sopDrawerEditor) {
+            window.sopDrawerEditor.root.innerHTML = sopData?.content || '';
+          }
+          
+          drawer.classList.add('show');
+          overlay.classList.add('show');
+          overlay.onclick = closeSopDrawer;
+        };
+        
+        window.closeSopDrawer = function() {
+          const drawer = document.getElementById('sopEditDrawer');
+          const overlay = document.getElementById('drawerOverlay');
+          if (drawer) drawer.classList.remove('show');
+          if (overlay) {
+            overlay.classList.remove('show');
+            overlay.onclick = null;
+          }
+        };
+        
+        // FAQ 抽屜控制
+        window.openFaqDrawer = function(faqData = null) {
+          const drawer = document.getElementById('faqEditDrawer');
+          const overlay = document.getElementById('drawerOverlay');
+          if (!drawer || !overlay) return;
+          
+          // 填充數據或清空
+          document.getElementById('faq-id-drawer').value = faqData?.faq_id || '';
+          document.getElementById('faq-question-drawer').value = faqData?.question || '';
+          document.getElementById('faq-category-drawer').value = faqData?.category || '';
+          document.getElementById('faq-tags-drawer').value = Array.isArray(faqData?.tags) ? faqData.tags.join(', ') : (faqData?.tags || '');
+          
+          // 設置編輯器內容
+          if (window.faqDrawerEditor) {
+            window.faqDrawerEditor.root.innerHTML = faqData?.answer || '';
+          }
+          
+          drawer.classList.add('show');
+          overlay.classList.add('show');
+          overlay.onclick = closeFaqDrawer;
+        };
+        
+        window.closeFaqDrawer = function() {
+          const drawer = document.getElementById('faqEditDrawer');
+          const overlay = document.getElementById('drawerOverlay');
+          if (drawer) drawer.classList.remove('show');
+          if (overlay) {
+            overlay.classList.remove('show');
+            overlay.onclick = null;
+          }
+        };
 
         if (fileUploadAreaModal && fileInputModal) {
           fileUploadAreaModal.addEventListener('click', () => fileInputModal.click());
