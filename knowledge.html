@@ -149,6 +149,33 @@
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       }
+      /* 標籤按鈕樣式 */
+      .tag-btn {
+        padding: 4px 10px;
+        font-size: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 16px;
+        background: white;
+        color: #6b7280;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+      .tag-btn:hover {
+        border-color: #2563eb;
+        color: #2563eb;
+        background: #eff6ff;
+      }
+      .tag-btn.selected {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
+      }
+      .tag-btn.selected:hover {
+        background: #1d4ed8;
+        border-color: #1d4ed8;
+      }
+      
       /* 側邊抽屜式面板 */
       .drawer {
         position: fixed;
@@ -572,8 +599,8 @@
                 ➕ 新增
               </button>
             </label>
-            <div id="sop-tags-checkboxes" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
-              <!-- 標籤複選框會動態載入 -->
+            <div id="sop-tags-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
+              <!-- 標籤按鈕會動態載入 -->
             </div>
           </div>
           
@@ -630,8 +657,8 @@
                 ➕ 新增
               </button>
             </label>
-            <div id="faq-tags-checkboxes" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
-              <!-- 標籤複選框會動態載入 -->
+            <div id="faq-tags-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
+              <!-- 標籤按鈕會動態載入 -->
             </div>
           </div>
           
@@ -689,8 +716,8 @@
                   ➕ 新增
                 </button>
               </label>
-              <div id="resource-tags-checkboxes" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
-                <!-- 標籤複選框會動態載入 -->
+              <div id="resource-tags-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
+                <!-- 標籤按鈕會動態載入 -->
               </div>
             </div>
             
@@ -1763,30 +1790,27 @@
           availableTags.sort(); // 排序
         }
         
-        // 載入標籤複選框
+        // 載入標籤按鈕（按鈕式標籤選擇器）
         function loadTagCheckboxes(containerId, selectedTags = []) {
           const container = document.getElementById(containerId);
           if (!container) return;
           
           container.innerHTML = '';
           availableTags.forEach(tag => {
-            const label = document.createElement('label');
-            label.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px;border-radius:4px;transition:background 0.2s;';
-            label.onmouseover = () => label.style.background = '#e5e7eb';
-            label.onmouseout = () => label.style.background = 'transparent';
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = tag;
+            button.dataset.tag = tag;
             
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = tag;
-            checkbox.checked = selectedTags.includes(tag);
-            checkbox.style.cssText = 'cursor:pointer;';
+            const isSelected = selectedTags.includes(tag);
+            button.className = isSelected ? 'tag-btn selected' : 'tag-btn';
             
-            const span = document.createElement('span');
-            span.textContent = tag;
+            // 點擊切換選中狀態
+            button.onclick = function() {
+              this.classList.toggle('selected');
+            };
             
-            label.appendChild(checkbox);
-            label.appendChild(span);
-            container.appendChild(label);
+            container.appendChild(button);
           });
         }
         
@@ -1849,8 +1873,8 @@
           const container = document.getElementById(containerId);
           if (!container) return [];
           
-          const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
-          return Array.from(checkboxes).map(cb => cb.value);
+          const selectedButtons = container.querySelectorAll('.tag-btn.selected');
+          return Array.from(selectedButtons).map(btn => btn.dataset.tag);
         }
         
         window.openUploadDocModal = function() {
