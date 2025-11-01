@@ -1058,14 +1058,16 @@
           
           try {
             // Step 1: 获取上传签名
-            const signRes = await fetch(`${apiBase}/attachments/upload-url`, {
+            const signRes = await fetch(`${apiBase}/attachments/upload-sign`, {
               method: 'POST',
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                fileName: selectedFile.name,
-                contentType: selectedFile.type,
-                entityType: 'document'
+                entity_type: 'sop',
+                entity_id: 'temp_' + Date.now(),
+                filename: selectedFile.name,
+                content_type: selectedFile.type,
+                content_length: selectedFile.size
               })
             });
             
@@ -1078,13 +1080,18 @@
             const uploadRes = await fetch(signJson.data.uploadUrl, {
               method: 'PUT',
               body: selectedFile,
-              headers: {
-                'Content-Type': selectedFile.type
-              }
+              headers: signJson.data.headers,
+              credentials: 'include'
             });
             
             if (!uploadRes.ok) {
-              throw new Error('文件上傳失敗');
+              const errorText = await uploadRes.text();
+              throw new Error(`文件上傳失敗: ${errorText}`);
+            }
+            
+            const uploadJson = await uploadRes.json();
+            if (!uploadJson.ok) {
+              throw new Error(uploadJson.message || '文件上傳失敗');
             }
             
             // Step 3: 创建文档记录
@@ -1096,7 +1103,7 @@
                 title,
                 description,
                 file_name: selectedFile.name,
-                file_url: signJson.data.publicUrl,
+                file_url: uploadJson.data.object_key,
                 file_size: selectedFile.size,
                 file_type: selectedFile.type,
                 category,
