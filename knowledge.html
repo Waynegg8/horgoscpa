@@ -880,7 +880,63 @@
           console.log('FAQ 編輯器已初始化');
         }
         
-        // 清空 SOP 表單
+        // 初始化抽屜中的 SOP 編輯器
+        function initSopDrawerEditor() {
+          if (window.sopDrawerEditor) return; // 已初始化则跳过
+          
+          const container = document.getElementById('sop-editor-drawer');
+          if (!container) {
+            console.error('SOP 抽屜編輯器容器未找到');
+            return;
+          }
+          
+          window.sopDrawerEditor = new Quill('#sop-editor-drawer', {
+            theme: 'snow',
+            modules: {
+              toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link', 'image'],
+                [{ 'color': [] }, { 'background': [] }],
+                ['clean']
+              ]
+            },
+            placeholder: '請輸入SOP內容...'
+          });
+          
+          console.log('SOP 抽屜編輯器已初始化');
+        }
+        
+        // 初始化抽屜中的 FAQ 編輯器
+        function initFaqDrawerEditor() {
+          if (window.faqDrawerEditor) return; // 已初始化则跳过
+          
+          const container = document.getElementById('faq-editor-drawer');
+          if (!container) {
+            console.error('FAQ 抽屜編輯器容器未找到');
+            return;
+          }
+          
+          window.faqDrawerEditor = new Quill('#faq-editor-drawer', {
+            theme: 'snow',
+            modules: {
+              toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link'],
+                [{ 'color': [] }],
+                ['clean']
+              ]
+            },
+            placeholder: '請輸入FAQ答案...'
+          });
+          
+          console.log('FAQ 抽屜編輯器已初始化');
+        }
+        
+        // 清空 SOP 表單（已廢棄，保留以防引用）
         function resetSopForm() {
           document.getElementById('sop-id-inline').value = '';
           document.getElementById('sop-title-inline').value = '';
@@ -973,9 +1029,8 @@
             <div class="doc-title" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.title||''} ${v}</div>
           `;
           
-          // 點擊卡片預覽（雙擊編輯）
+          // 點擊卡片預覽
           el.addEventListener('click', () => viewSOP(item.id || item.sop_id));
-          el.addEventListener('dblclick', () => editSOP(item.id || item.sop_id));
           
           return el;
         }
@@ -1018,9 +1073,8 @@
             <div class="doc-title" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">❓ ${item.question||''}</div>
           `;
           
-          // 點擊卡片預覽（雙擊編輯）
+          // 點擊卡片預覽
           el.addEventListener('click', () => viewFAQ(item.faq_id));
-          el.addEventListener('dblclick', () => editFAQ(item.faq_id));
           
           return el;
         }
@@ -1545,15 +1599,13 @@
 
         document.getElementById('btn-new').addEventListener('click', () => {
           if (currentTab === 'sop') {
-            // 清空表單並聚焦
-            resetSopForm();
-            document.getElementById('sop-title-inline').focus();
+            // 打開 SOP 編輯抽屜（新增模式）
+            openSopDrawer(null);
           } else if (currentTab === 'faq') {
-            // 清空表單並聚焦
-            resetFaqForm();
-            document.getElementById('faq-question-inline').focus();
+            // 打開 FAQ 編輯抽屜（新增模式）
+            openFaqDrawer(null);
           } else if (currentTab === 'resources') {
-            // 打開上傳模態框
+            // 打開上傳抽屜
             openUploadDocModal();
           }
         });
@@ -1651,21 +1703,80 @@
           if (overlay) overlay.classList.add('show');
         };
         
+        // SOP 固定模板
+        const SOP_TEMPLATE = `
+          <h2>📋 作業目的</h2>
+          <p>說明此流程的目標與重要性...</p>
+          
+          <h2>👥 適用對象</h2>
+          <p>此流程適用於：會計部門全體同仁 / 特定職位...</p>
+          
+          <h2>📝 作業流程</h2>
+          <h3>步驟一：準備階段</h3>
+          <ul>
+            <li>檢查所需文件是否齊全</li>
+            <li>確認系統權限與工具</li>
+            <li>預估所需時間：約 XX 分鐘</li>
+          </ul>
+          
+          <h3>步驟二：執行階段</h3>
+          <ol>
+            <li>登入系統並選擇對應功能</li>
+            <li>依序填寫必填欄位</li>
+            <li>檢查資料正確性</li>
+            <li>提交並保存記錄</li>
+          </ol>
+          
+          <h3>步驟三：確認階段</h3>
+          <ul>
+            <li>核對結果是否符合預期</li>
+            <li>通知相關人員</li>
+            <li>歸檔相關文件</li>
+          </ul>
+          
+          <h2>⚠️ 注意事項</h2>
+          <ul>
+            <li><strong>重要：</strong>務必在每月 X 日前完成</li>
+            <li>若遇到錯誤，請聯繫 XXX（分機 XXX）</li>
+            <li>相關表單存放位置：共享資料夾 / XXX 路徑</li>
+          </ul>
+          
+          <h2>📞 相關聯絡人</h2>
+          <p>負責人：XXX（分機 XXX）<br>覆核人：XXX（分機 XXX）</p>
+          
+          <h2>📎 相關文件</h2>
+          <ul>
+            <li>表單範本連結</li>
+            <li>系統操作手冊連結</li>
+          </ul>
+        `.trim();
+        
         // SOP 抽屜控制
         window.openSopDrawer = function(sopData = null) {
           const drawer = document.getElementById('sopEditDrawer');
           const overlay = document.getElementById('drawerOverlay');
           if (!drawer || !overlay) return;
           
-          // 填充數據或清空
-          document.getElementById('sop-id-drawer').value = sopData?.sop_id || '';
-          document.getElementById('sop-title-drawer').value = sopData?.title || '';
-          document.getElementById('sop-category-drawer').value = sopData?.category || '';
-          document.getElementById('sop-tags-drawer').value = Array.isArray(sopData?.tags) ? sopData.tags.join(', ') : (sopData?.tags || '');
-          
-          // 設置編輯器內容
-          if (window.sopDrawerEditor) {
-            window.sopDrawerEditor.root.innerHTML = sopData?.content || '';
+          // 如果是新增模式（sopData 為 null），使用模板
+          if (!sopData) {
+            document.getElementById('sop-id-drawer').value = '';
+            document.getElementById('sop-title-drawer').value = '【請填寫標題】例如：月度記帳流程';
+            document.getElementById('sop-category-drawer').value = '';
+            document.getElementById('sop-tags-drawer').value = '';
+            
+            if (window.sopDrawerEditor) {
+              window.sopDrawerEditor.root.innerHTML = SOP_TEMPLATE;
+            }
+          } else {
+            // 編輯模式：填充現有數據
+            document.getElementById('sop-id-drawer').value = sopData.sop_id || '';
+            document.getElementById('sop-title-drawer').value = sopData.title || '';
+            document.getElementById('sop-category-drawer').value = sopData.category || '';
+            document.getElementById('sop-tags-drawer').value = Array.isArray(sopData.tags) ? sopData.tags.join(', ') : (sopData.tags || '');
+            
+            if (window.sopDrawerEditor) {
+              window.sopDrawerEditor.root.innerHTML = sopData.content || '';
+            }
           }
           
           drawer.classList.add('show');
@@ -1683,21 +1794,68 @@
           }
         };
         
+        // FAQ 固定模板
+        const FAQ_TEMPLATE = `
+          <h3>💡 簡短回答</h3>
+          <p>用一到兩句話簡單回答這個問題...</p>
+          
+          <h3>📖 詳細說明</h3>
+          <p><strong>情境說明：</strong></p>
+          <p>這個問題通常發生在什麼情況下...</p>
+          
+          <p><strong>解決方案：</strong></p>
+          <ol>
+            <li>第一步：具體操作步驟</li>
+            <li>第二步：相關設定或確認事項</li>
+            <li>第三步：驗證結果</li>
+          </ol>
+          
+          <h3>💼 實際案例</h3>
+          <p><em>例如：</em>某客戶在報稅時遇到 XXX 問題，我們透過 YYY 方式解決...</p>
+          
+          <h3>⚠️ 注意事項</h3>
+          <ul>
+            <li>特別提醒：XXX 情況下需要額外注意...</li>
+            <li>常見錯誤：避免 XXX 操作</li>
+          </ul>
+          
+          <h3>🔗 相關資源</h3>
+          <ul>
+            <li>相關 SOP 連結或文件</li>
+            <li>法規參考或官方網站</li>
+            <li>內部聯絡人：XXX（分機 XXX）</li>
+          </ul>
+          
+          <hr>
+          <p style="color:#6b7280;font-size:14px;"><em>最後更新：請在儲存前填寫當前日期</em></p>
+        `.trim();
+        
         // FAQ 抽屜控制
         window.openFaqDrawer = function(faqData = null) {
           const drawer = document.getElementById('faqEditDrawer');
           const overlay = document.getElementById('drawerOverlay');
           if (!drawer || !overlay) return;
           
-          // 填充數據或清空
-          document.getElementById('faq-id-drawer').value = faqData?.faq_id || '';
-          document.getElementById('faq-question-drawer').value = faqData?.question || '';
-          document.getElementById('faq-category-drawer').value = faqData?.category || '';
-          document.getElementById('faq-tags-drawer').value = Array.isArray(faqData?.tags) ? faqData.tags.join(', ') : (faqData?.tags || '');
-          
-          // 設置編輯器內容
-          if (window.faqDrawerEditor) {
-            window.faqDrawerEditor.root.innerHTML = faqData?.answer || '';
+          // 如果是新增模式（faqData 為 null），使用模板
+          if (!faqData) {
+            document.getElementById('faq-id-drawer').value = '';
+            document.getElementById('faq-question-drawer').value = '【請填寫問題】例如：如何處理跨月份的發票？';
+            document.getElementById('faq-category-drawer').value = '';
+            document.getElementById('faq-tags-drawer').value = '常見, 重要';
+            
+            if (window.faqDrawerEditor) {
+              window.faqDrawerEditor.root.innerHTML = FAQ_TEMPLATE;
+            }
+          } else {
+            // 編輯模式：填充現有數據
+            document.getElementById('faq-id-drawer').value = faqData.faq_id || '';
+            document.getElementById('faq-question-drawer').value = faqData.question || '';
+            document.getElementById('faq-category-drawer').value = faqData.category || '';
+            document.getElementById('faq-tags-drawer').value = Array.isArray(faqData.tags) ? faqData.tags.join(', ') : (faqData.tags || '');
+            
+            if (window.faqDrawerEditor) {
+              window.faqDrawerEditor.root.innerHTML = faqData.answer || '';
+            }
           }
           
           drawer.classList.add('show');
@@ -1761,23 +1919,25 @@
 
         // Form提交（placeholder）
         // SOP Form提交
-        document.getElementById('sopFormInline').addEventListener('submit', async (e) => {
+        // SOP 抽屜表單提交
+        document.getElementById('sopFormDrawer').addEventListener('submit', async (e) => {
           e.preventDefault();
           
-          if (!sopEditor) {
+          if (!window.sopDrawerEditor) {
             alert('編輯器未初始化，請重試');
             return;
           }
           
-          const sopId = document.getElementById('sop-id-inline').value;
-          const title = document.getElementById('sop-title-inline').value;
-          const category = document.getElementById('sop-category-inline').value;
-          const tags = document.getElementById('sop-tags-inline').value.split(',').map(t => t.trim()).filter(Boolean);
-          const content = sopEditor.root.innerHTML;
+          const sopId = document.getElementById('sop-id-drawer').value;
+          const title = document.getElementById('sop-title-drawer').value;
+          const category = document.getElementById('sop-category-drawer').value;
+          const tags = document.getElementById('sop-tags-drawer').value.split(',').map(t => t.trim()).filter(Boolean);
+          const content = window.sopDrawerEditor.root.innerHTML;
           
-          const submitBtn = document.getElementById('sopSubmitBtnInline');
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          const originalText = submitBtn.innerHTML;
           submitBtn.disabled = true;
-          submitBtn.querySelector('span').textContent = '處理中...';
+          submitBtn.innerHTML = '<span>處理中...</span>';
           
           try {
             const method = sopId ? 'PUT' : 'POST';
@@ -1793,37 +1953,43 @@
             const json = await res.json();
             if (json.ok) {
               alert(sopId ? '更新成功' : '新增成功');
-              resetSopForm();
+              closeSopDrawer();
               loadSOPs();
+              // 如果是新增或已有預覽，自動預覽新內容
+              if (json.data && json.data.sop_id) {
+                viewSOP(json.data.sop_id);
+              }
             } else {
               alert('保存失敗：' + (json.error || '未知錯誤'));
             }
           } catch (err) {
             alert('保存失敗');
+            console.error(err);
           } finally {
             submitBtn.disabled = false;
-            submitBtn.querySelector('span').textContent = '💾 儲存 SOP';
+            submitBtn.innerHTML = originalText;
           }
         });
 
-        // FAQ Form提交
-        document.getElementById('faqFormInline').addEventListener('submit', async (e) => {
+        // FAQ 抽屜表單提交
+        document.getElementById('faqFormDrawer').addEventListener('submit', async (e) => {
           e.preventDefault();
           
-          if (!faqEditor) {
+          if (!window.faqDrawerEditor) {
             alert('編輯器未初始化，請重試');
             return;
           }
           
-          const faqId = document.getElementById('faq-id-inline').value;
-          const question = document.getElementById('faq-question-inline').value;
-          const category = document.getElementById('faq-category-inline').value;
-          const tags = document.getElementById('faq-tags-inline').value.split(',').map(t => t.trim()).filter(Boolean);
-          const answer = faqEditor.root.innerHTML;
+          const faqId = document.getElementById('faq-id-drawer').value;
+          const question = document.getElementById('faq-question-drawer').value;
+          const category = document.getElementById('faq-category-drawer').value;
+          const tags = document.getElementById('faq-tags-drawer').value.split(',').map(t => t.trim()).filter(Boolean);
+          const answer = window.faqDrawerEditor.root.innerHTML;
           
-          const submitBtn = document.getElementById('faqSubmitBtnInline');
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          const originalText = submitBtn.innerHTML;
           submitBtn.disabled = true;
-          submitBtn.querySelector('span').textContent = '處理中...';
+          submitBtn.innerHTML = '<span>處理中...</span>';
           
           try {
             const method = faqId ? 'PUT' : 'POST';
@@ -1839,16 +2005,21 @@
             const json = await res.json();
             if (json.ok) {
               alert(faqId ? '更新成功' : '新增成功');
-              resetFaqForm();
+              closeFaqDrawer();
               loadFAQs();
+              // 如果是新增或已有預覽，自動預覽新內容
+              if (json.data && json.data.faq_id) {
+                viewFAQ(json.data.faq_id);
+              }
             } else {
               alert('保存失敗：' + (json.error || '未知錯誤'));
             }
           } catch (err) {
             alert('保存失敗');
+            console.error(err);
           } finally {
             submitBtn.disabled = false;
-            submitBtn.querySelector('span').textContent = '💾 儲存 FAQ';
+            submitBtn.innerHTML = originalText;
           }
         });
 
@@ -1909,9 +2080,9 @@
               modal.classList.remove('show');
             });
             
-            // 立即初始化編輯器
-            initSopEditor();
-            initFaqEditor();
+            // 立即初始化編輯器（頁面模式已移除，現在只初始化抽屜編輯器）
+            initSopDrawerEditor();
+            initFaqDrawerEditor();
             // 切換到 SOP 標籤
             switchTab('sop');
           }
