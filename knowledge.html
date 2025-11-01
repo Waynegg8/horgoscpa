@@ -987,6 +987,9 @@
           border: 1px solid #ddd;
           padding: 8px;
           min-width: 50px;
+          min-height: 35px; /* 最小行高 */
+          height: auto; /* 允許內容自動撐開 */
+          vertical-align: top; /* 內容從頂部對齊 */
         }
         .ql-editor table th {
           background: #f5f5f5;
@@ -994,6 +997,13 @@
         }
         .ql-editor table tr:hover {
           background: #fafafa;
+        }
+        
+        /* 允許用戶手動調整行高（通過在單元格內添加內容） */
+        .ql-editor table td p,
+        .ql-editor table th p {
+          margin: 0;
+          min-height: 1.5em;
         }
       `;
       document.head.appendChild(style);
@@ -1334,6 +1344,14 @@
                 console.log(`🔧 嘗試插入 ${rowNum}x${colNum} 表格...`);
                 tableModule.insertTable(rowNum, colNum);
                 console.log('✅ 表格插入成功');
+                
+                // 顯示使用提示
+                setTimeout(() => {
+                  alert('💡 表格使用提示：\n\n' +
+                        '✅ 列寬調整：拖動列邊界即可\n' +
+                        '✅ 行高調整：在單元格內添加內容或按 Enter 換行\n' +
+                        '✅ 右鍵菜單：可插入/刪除行列');
+                }, 300);
               } else {
                 console.error('❌ Better Table 模組或 insertTable 方法未找到');
                 alert('表格功能暫時無法使用');
@@ -1513,6 +1531,14 @@
                 console.log(`🔧 嘗試插入 ${rowNum}x${colNum} 表格...`);
                 tableModule.insertTable(rowNum, colNum);
                 console.log('✅ 表格插入成功');
+                
+                // 顯示使用提示
+                setTimeout(() => {
+                  alert('💡 表格使用提示：\n\n' +
+                        '✅ 列寬調整：拖動列邊界即可\n' +
+                        '✅ 行高調整：在單元格內添加內容或按 Enter 換行\n' +
+                        '✅ 右鍵菜單：可插入/刪除行列');
+                }, 300);
               } else {
                 console.error('❌ Better Table 模組或 insertTable 方法未找到');
                 alert('表格功能暫時無法使用');
