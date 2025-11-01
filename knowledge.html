@@ -946,6 +946,13 @@
         
         if (window.Quill && BetterTable) {
           try {
+            // 首先調用 Better Table 的靜態 register() 方法來註冊所有 blots
+            if (typeof BetterTable.register === 'function') {
+              BetterTable.register();
+              console.log('✅ Better Table blots 已註冊');
+            }
+            
+            // 然後註冊模組本身
             Quill.register({
               'modules/better-table': BetterTable
             }, true);
