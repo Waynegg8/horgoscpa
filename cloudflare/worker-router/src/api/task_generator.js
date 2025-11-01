@@ -216,6 +216,9 @@ export async function generateTasksForComponents(env, targetDate = null) {
         
         const startDateStr = formatDate(now);
         
+        // 设置服务归属月份（格式：YYYY-MM）
+        const serviceMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+        
         const insertResult = await env.DATABASE.prepare(`
           INSERT INTO ActiveTasks (
             client_service_id,
@@ -224,10 +227,11 @@ export async function generateTasksForComponents(env, targetDate = null) {
             task_name,
             start_date,
             due_date,
+            service_month,
             status,
             assignee_user_id,
             notes
-          ) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
         `).bind(
           component.client_service_id,
           component.component_id,
@@ -235,6 +239,7 @@ export async function generateTasksForComponents(env, targetDate = null) {
           taskName,
           startDateStr,
           dueDateStr,
+          serviceMonth,
           component.assignee_user_id || null,
           `由系統於 ${startDateStr} 自動生成`
         ).run();

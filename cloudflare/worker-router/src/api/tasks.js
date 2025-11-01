@@ -13,6 +13,9 @@ export async function handleTasks(request, env, me, requestId, url) {
 			const status = (params.get("status") || "").trim();
 			const due = (params.get("due") || "").trim();
 			const componentId = (params.get("component_id") || "").trim();
+			const serviceYear = (params.get("service_year") || "").trim();
+			const serviceMonth = (params.get("service_month") || "").trim();
+			const hideCompleted = params.get("hide_completed") === "1";
 			const where = ["t.is_deleted = 0"];
 			const binds = [];
 			if (!me.is_admin && !componentId) {
@@ -24,8 +27,8 @@ export async function handleTasks(request, env, me, requestId, url) {
 				binds.push(componentId);
 			}
 			if (q) {
-				where.push("(t.task_name LIKE ? OR c.company_name LIKE ?)");
-				binds.push(`%${q}%`, `%${q}%`);
+				where.push("(t.task_name LIKE ? OR c.company_name LIKE ? OR c.tax_id LIKE ?)");
+				binds.push(`%${q}%`, `%${q}%`, `%${q}%`);
 			}
 			if (status && ["pending","in_progress","completed","cancelled"].includes(status)) {
 				where.push("t.status = ?");
@@ -37,6 +40,18 @@ export async function handleTasks(request, env, me, requestId, url) {
 			if (due === "soon") {
 				where.push("date(t.due_date) BETWEEN date('now') AND date('now','+3 days')");
 			}
+			// 按服务月份筛选
+			if (serviceYear && serviceMonth) {
+				where.push("t.service_month = ?");
+				binds.push(`${serviceYear}-${serviceMonth.padStart(2, '0')}`);
+			} else if (serviceYear) {
+				where.push("t.service_month LIKE ?");
+				binds.push(`${serviceYear}-%`);
+			}
+			// 隐藏已完成任务
+			if (hideCompleted) {
+				where.push("t.status != 'completed'");
+			}
 			const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 			const countRow = await env.DATABASE.prepare(
 				`SELECT COUNT(1) as total
@@ -47,7 +62,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
 			const rows = await env.DATABASE.prepare(
-				`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes,
+				`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes, t.service_month,
 				        c.company_name AS client_name, c.tax_id AS client_tax_id, c.client_id,
 				        s.service_name,
 				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id) AS total_stages,
@@ -60,7 +75,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 				 LEFT JOIN Services s ON s.service_id = cs.service_id
 				 LEFT JOIN Users u ON u.user_id = t.assignee_user_id
 				 ${whereSql}
-				 ORDER BY c.company_name ASC, s.service_name ASC, date(t.due_date) ASC NULLS LAST, t.task_id DESC
+				 ORDER BY c.company_name ASC, s.service_name ASC, t.service_month DESC, date(t.due_date) ASC NULLS LAST, t.task_id DESC
 				 LIMIT ? OFFSET ?`
 			).bind(...binds, perPage, offset).all();
 			const data = (rows?.results || []).map((r) => ({
@@ -70,6 +85,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 				clientTaxId: r.client_tax_id || "",
 				clientId: r.client_id || "",
 				serviceName: r.service_name || "",
+				serviceMonth: r.service_month || "",
 				assigneeName: r.assignee_name || "",
 				assigneeUserId: r.assignee_user_id || null,
 				progress: { completed: Number(r.completed_stages || 0), total: Number(r.total_stages || 0) },
@@ -98,10 +114,21 @@ export async function handleTasks(request, env, me, requestId, url) {
 		const dueDate = body?.due_date ? String(body.due_date) : null;
 		const assigneeUserId = body?.assignee_user_id ? Number(body.assignee_user_id) : null;
 		const stageNames = Array.isArray(body?.stage_names) ? body.stage_names.filter(s => typeof s === 'string' && s.trim().length > 0).map(s => s.trim()) : [];
+		
+		// service_month: 默认当前月份，但允许用户指定
+		let serviceMonth = body?.service_month ? String(body.service_month).trim() : null;
+		if (!serviceMonth) {
+			const now = new Date();
+			const year = now.getFullYear();
+			const month = String(now.getMonth() + 1).padStart(2, '0');
+			serviceMonth = `${year}-${month}`;
+		}
+		
 		const errors = [];
 		if (!Number.isInteger(clientServiceId) || clientServiceId <= 0) errors.push({ field:"client_service_id", message:"必填" });
 		if (taskName.length < 1 || taskName.length > 200) errors.push({ field:"task_name", message:"長度需 1–200" });
 		if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) errors.push({ field:"due_date", message:"日期格式 YYYY-MM-DD" });
+		if (serviceMonth && !/^\d{4}-\d{2}$/.test(serviceMonth)) errors.push({ field:"service_month", message:"格式需 YYYY-MM" });
 		if (assigneeUserId !== null && (!Number.isInteger(assigneeUserId) || assigneeUserId <= 0)) errors.push({ field:"assignee_user_id", message:"格式錯誤" });
 		if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
 
@@ -113,7 +140,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 				if (!u) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"負責人不存在", errors:[{ field:"assignee_user_id", message:"不存在" }], meta:{ requestId } }, corsHeaders);
 			}
 			const now = new Date().toISOString();
-			await env.DATABASE.prepare("INSERT INTO ActiveTasks (client_service_id, template_id, task_name, start_date, due_date, status, assignee_user_id, created_at) VALUES (?, NULL, ?, NULL, ?, 'pending', ?, ?)").bind(clientServiceId, taskName, dueDate, assigneeUserId, now).run();
+			await env.DATABASE.prepare("INSERT INTO ActiveTasks (client_service_id, template_id, task_name, start_date, due_date, service_month, status, assignee_user_id, created_at) VALUES (?, NULL, ?, NULL, ?, ?, 'pending', ?, ?)").bind(clientServiceId, taskName, dueDate, serviceMonth, assigneeUserId, now).run();
 			const idRow = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
 			const taskId = String(idRow?.id);
 			if (stageNames.length > 0) {
@@ -122,7 +149,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 					await env.DATABASE.prepare("INSERT INTO ActiveTaskStages (task_id, stage_name, stage_order, status) VALUES (?, ?, ?, 'pending')").bind(taskId, s, order++).run();
 				}
 			}
-			return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data:{ taskId, taskName, clientServiceId, dueDate, assigneeUserId }, meta:{ requestId } }, corsHeaders);
+			return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data:{ taskId, taskName, clientServiceId, dueDate, serviceMonth, assigneeUserId }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
 			const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
@@ -137,7 +164,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 		try {
 			const task = await env.DATABASE.prepare(
 				`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes, t.client_service_id,
-				        t.completed_date, t.created_at,
+				        t.completed_date, t.created_at, t.service_month,
 				        c.company_name AS client_name, c.tax_id AS client_tax_id, c.client_id,
 				        s.service_name,
 				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id) AS total_stages,
@@ -162,6 +189,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 				client_tax_id: task.client_tax_id || "",
 				client_id: task.client_id || "",
 				service_name: task.service_name || "",
+				service_month: task.service_month || "",
 				assignee_name: task.assignee_name || "",
 				assignee_user_id: task.assignee_user_id || null,
 				client_service_id: task.client_service_id || null,
@@ -240,6 +268,15 @@ export async function handleTasks(request, env, me, requestId, url) {
 			const notes = String(body.notes || "").trim();
 			updates.push("notes = ?");
 			binds.push(notes || null);
+		}
+		if (body.hasOwnProperty('service_month')) {
+			const serviceMonth = body.service_month ? String(body.service_month).trim() : null;
+			if (serviceMonth && !/^\d{4}-\d{2}$/.test(serviceMonth)) {
+				errors.push({ field:"service_month", message:"格式需 YYYY-MM" });
+			} else {
+				updates.push("service_month = ?");
+				binds.push(serviceMonth);
+			}
 		}
 
 		if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);

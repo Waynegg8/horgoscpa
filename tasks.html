@@ -83,23 +83,45 @@
           <h1 style="margin:0;font-size:22px;font-weight:700;">任務</h1>
           <div class="toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
             <input id="q" type="search" placeholder="搜尋任務/客戶/統編…" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
-            <select id="f_assignee">
+            <select id="f_year" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+              <option value="all">全部年份</option>
+            </select>
+            <select id="f_month" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+              <option value="all">全部月份</option>
+              <option value="1">1月</option>
+              <option value="2">2月</option>
+              <option value="3">3月</option>
+              <option value="4">4月</option>
+              <option value="5">5月</option>
+              <option value="6">6月</option>
+              <option value="7">7月</option>
+              <option value="8">8月</option>
+              <option value="9">9月</option>
+              <option value="10">10月</option>
+              <option value="11">11月</option>
+              <option value="12">12月</option>
+            </select>
+            <select id="f_assignee" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
               <option value="all">全部負責人</option>
             </select>
-            <select id="f_tags">
+            <select id="f_tags" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
               <option value="all">全部標籤</option>
             </select>
-            <select id="f_status">
+            <select id="f_status" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
               <option value="all">全部狀態</option>
               <option value="pending">待開始</option>
               <option value="in_progress">進行中</option>
               <option value="completed">已完成</option>
             </select>
-            <select id="f_due">
+            <select id="f_due" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
               <option value="all">全部到期狀態</option>
               <option value="soon">即將到期（≤3天）</option>
               <option value="overdue">已逾期</option>
             </select>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fff;">
+              <input type="checkbox" id="f_hide_completed" style="cursor:pointer;" />
+              <span style="font-size:14px;">隐藏已完成</span>
+            </label>
             <button id="btn-batch-assign" type="button" class="clients-btn btn-secondary" style="padding:8px 12px;display:none;">批量分配</button>
             <button id="btn-new-task" type="button" class="clients-btn" style="padding:8px 12px;">新增任務</button>
           </div>
@@ -120,16 +142,16 @@
         </div>
         <div class="modal__body">
           <p style="margin-bottom:16px;color:#6b7280;">已選擇 <strong id="selected-count">0</strong> 個任務</p>
-          <div class="field">
+            <div class="field">
             <label for="batch_assignee">選擇負責人</label>
             <select id="batch_assignee">
-              <option value="">請選擇負責人</option>
-            </select>
-          </div>
+                <option value="">請選擇負責人</option>
+              </select>
+            </div>
           <div class="modal__actions" style="margin-top:20px;">
             <button class="btn-secondary" id="batch-cancel">取消</button>
             <button class="clients-btn" id="batch-submit">確認分配</button>
-          </div>
+            </div>
         </div>
       </div>
     </div>
@@ -145,11 +167,26 @@
         let allTags = [];
         let employeesList = [];
         let selectedTaskIds = new Set();
-        
+
         const zhStatus = { pending:'待開始', in_progress:'進行中', completed:'已完成', cancelled:'已取消' };
-        
+
         // 初始化
         async function init() {
+          // 初始化年份下拉（最近5年）
+          const currentYear = new Date().getFullYear();
+          const yearSelect = document.getElementById('f_year');
+          yearSelect.innerHTML = '<option value="all">全部年份</option>';
+          for (let i = 0; i < 5; i++) {
+            const year = currentYear - i;
+            const selected = i === 0 ? ' selected' : '';
+            yearSelect.innerHTML += `<option value="${year}"${selected}>${year}年</option>`;
+          }
+          
+          // 默认设置：显示当前年 + 全部月份 + 隐藏已完成
+          // 这样能看到当前年所有未完成的任务（包括历史遗留的）
+          document.getElementById('f_month').value = 'all';  // 全部月份
+          document.getElementById('f_hide_completed').checked = true;  // 默认隐藏已完成
+          
           await Promise.all([
             loadEmployees(),
             loadAllClients(),
@@ -213,12 +250,23 @@
         // 加載任務
         async function loadAllTasks() {
           try {
-            const res = await fetch(`${apiBase}/tasks?perPage=1000`, { credentials: 'include' });
+            const params = new URLSearchParams({ perPage: '1000' });
+            
+            // 年月筛选
+            const year = document.getElementById('f_year').value;
+            const month = document.getElementById('f_month').value;
+            if (year !== 'all') params.append('service_year', year);
+            if (month !== 'all') params.append('service_month', month);
+            
+            // 注意：不传 hide_completed 给后端，前端自己处理
+            // 这样才能实现"显示有未完成任务的组的所有任务"的逻辑
+            
+            const res = await fetch(`${apiBase}/tasks?${params}`, { credentials: 'include' });
             if (res.status === 401) { location.href = '/login?redirect=/internal/tasks'; return; }
             const json = await res.json();
             if (json.ok) {
               allTasks = json.data || [];
-              render();
+            render();
             }
           } catch (e) {
             console.error('載入任務失敗', e);
@@ -268,8 +316,9 @@
           });
         }
         
-        // 按客戶和服務分組
+        // 按客戶和服務+月份分組
         function groupByClientAndService(tasks) {
+          const hideCompleted = document.getElementById('f_hide_completed').checked;
           const grouped = new Map();
           
           // 先添加所有客戶
@@ -278,11 +327,11 @@
               clientId: client.client_id,
               clientName: client.company_name || '未命名客戶',
               clientTaxId: client.tax_id || '—',
-              services: new Map()
+              serviceGroups: new Map()
             });
           });
           
-          // 添加任務
+          // 添加任務（按服務+月份分組）
           tasks.forEach(task => {
             const clientId = task.clientId || 'unknown';
             if (!grouped.has(clientId)) {
@@ -290,24 +339,59 @@
                 clientId,
                 clientName: task.clientName || '未命名客戶',
                 clientTaxId: task.clientTaxId || '—',
-                services: new Map()
+                serviceGroups: new Map()
               });
             }
             
             const client = grouped.get(clientId);
             const serviceName = task.serviceName || '一般任務';
+            const serviceMonth = task.serviceMonth || '';
             
-            if (!client.services.has(serviceName)) {
-              client.services.set(serviceName, []);
+            // 组合键：服務名 + 月份
+            const groupKey = serviceMonth ? `${serviceName}|||${serviceMonth}` : serviceName;
+            
+            if (!client.serviceGroups.has(groupKey)) {
+              client.serviceGroups.set(groupKey, {
+                serviceName,
+                serviceMonth,
+                tasks: []
+              });
             }
             
-            client.services.get(serviceName).push(task);
+            client.serviceGroups.get(groupKey).tasks.push(task);
           });
           
-          // 排序服務和任務
+          // 如果勾选"隐藏已完成"，过滤掉全部完成的组
+          if (hideCompleted) {
+            grouped.forEach(client => {
+              const filteredGroups = new Map();
+              
+              client.serviceGroups.forEach((group, key) => {
+                // 检查是否有未完成任务
+                const hasIncomplete = group.tasks.some(t => t.status !== 'completed');
+                
+                // 只保留有未完成任务的组
+                if (hasIncomplete) {
+                  filteredGroups.set(key, group);
+                }
+              });
+              
+              client.serviceGroups = filteredGroups;
+            });
+          }
+          
+          // 排序服務組和任務
           grouped.forEach(client => {
-            const sortedServices = new Map([...client.services.entries()].sort((a, b) => a[0].localeCompare(b[0], 'zh-TW')));
-            client.services = sortedServices;
+            const sortedGroups = new Map([...client.serviceGroups.entries()].sort((a, b) => {
+              // 先按服务名排序
+              const serviceCompare = a[1].serviceName.localeCompare(b[1].serviceName, 'zh-TW');
+              if (serviceCompare !== 0) return serviceCompare;
+              
+              // 再按月份降序排序（最新月份在前）
+              return (b[1].serviceMonth || '').localeCompare(a[1].serviceMonth || '');
+            }));
+            
+            client.serviceGroups = sortedGroups;
           });
           
           return grouped;
@@ -322,7 +406,7 @@
           let html = '';
           
           grouped.forEach((client, clientId) => {
-            const hasServices = client.services.size > 0 && Array.from(client.services.values()).some(tasks => tasks.length > 0);
+            const hasGroups = client.serviceGroups.size > 0;
             const clientIdSafe = clientId.replace(/[^a-zA-Z0-9]/g, '_');
             
             html += `
@@ -334,29 +418,33 @@
                 <div id="group-${clientIdSafe}" style="display:none;">
             `;
             
-            if (!hasServices) {
+            if (!hasGroups) {
               html += `
                 <div style="padding:16px;text-align:center;color:#9ca3af;font-size:14px;">
                   此客戶目前沒有任務
-                  <select style="margin-left:12px;padding:6px 10px;border:1px solid #d1d5db;border-radius:4px;">
-                    <option value="">選擇負責人</option>
-                    ${employeesList.map(e => `<option value="${e.user_id}">${e.name}</option>`).join('')}
-                  </select>
                 </div>
               `;
             } else {
-              client.services.forEach((tasks, serviceName) => {
+              client.serviceGroups.forEach((group, groupKey) => {
+                const tasks = group.tasks;
                 if (tasks.length === 0) return;
                 
-                const serviceIdSafe = serviceName.replace(/[^a-zA-Z0-9]/g, '_');
-                const groupIdSafe = `${clientIdSafe}_${serviceIdSafe}`;
+                // 计算完成情况
+                const completed = tasks.filter(t => t.status === 'completed').length;
+                const total = tasks.length;
+                
+                // 格式化服务+月份标题
+                const monthText = group.serviceMonth ? ` - ${group.serviceMonth.slice(0, 4)}年${parseInt(group.serviceMonth.slice(5))}月` : '';
+                const serviceTitle = `${group.serviceName}${monthText}`;
+                
+                const groupIdSafe = groupKey.replace(/[^a-zA-Z0-9]/g, '_');
                 
                 html += `
                   <div class="service-group">
                     <div class="service-header" onclick="toggleService('${groupIdSafe}')">
                       <span id="icon-${groupIdSafe}" style="font-size:14px;">▶</span>
-                      <strong style="font-size:14px;color:#374151;">${serviceName}</strong>
-                      <span style="color:#9ca3af;font-size:13px;">(${tasks.length})</span>
+                      <strong style="font-size:14px;color:#374151;">${serviceTitle}</strong>
+                      <span style="color:#9ca3af;font-size:13px;">(${total}個任務: ${completed}已完成, ${total - completed}未完成)</span>
                     </div>
                     <div id="group-${groupIdSafe}" style="display:none;">
                 `;
@@ -469,8 +557,8 @@
           const assigneeId = document.getElementById('batch_assignee').value;
           if (!assigneeId) {
             alert('請選擇負責人');
-            return;
-          }
+              return;
+            }
           
           try {
             const tasks = Array.from(selectedTaskIds);
@@ -503,10 +591,15 @@
         document.getElementById('f_status').addEventListener('change', render);
         document.getElementById('f_due').addEventListener('change', render);
         
+        // 年月筛选和隐藏已完成 - 需要重新加载任务
+        document.getElementById('f_year').addEventListener('change', loadAllTasks);
+        document.getElementById('f_month').addEventListener('change', loadAllTasks);
+        document.getElementById('f_hide_completed').addEventListener('change', loadAllTasks);
+        
         // 啟動
         init();
       })();
     </script>
   </body>
-</html>
+  </html>
 
