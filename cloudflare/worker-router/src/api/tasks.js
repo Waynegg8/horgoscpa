@@ -63,7 +63,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 			const total = Number(countRow?.total || 0);
 			const rows = await env.DATABASE.prepare(
 				`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes, t.service_month,
-				        c.company_name AS client_name, c.tax_id AS client_tax_id, c.client_id,
+				        c.company_name AS client_name, c.tax_registration_number AS client_tax_id, c.client_id,
 				        s.service_name,
 				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id) AS total_stages,
 				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id AND s.status = 'completed') AS completed_stages,

@@ -1656,7 +1656,7 @@
                        onkeyup="filterCompSOPs${clientServiceId}(this.value)" />
                 
                 <!-- SOP列表 -->
-                <div id="new-comp-sop-list-${clientServiceId}" style="max-height: 200px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 6px; padding: 8px; background: #f9fafb;">
+                <div id="new-comp-sop-list-${clientServiceId}" style="max-height: 200px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 4px; padding: 6px; background: white;">
                   ${allSOPs.length > 0 ? (() => {
                     // 按分类分组
                     const grouped = {};
@@ -1669,17 +1669,17 @@
                     return Object.entries(grouped).map(([category, sops]) => {
                       const catName = getCategoryText(category);
                       return `
-                        <div style="margin-bottom: 8px;">
-                          <div style="font-weight: 600; font-size: 11px; color: #6b7280; margin-bottom: 4px; padding: 2px 6px; background: #e5e7eb; border-radius: 3px;">${catName}</div>
+                        <div style="margin-bottom: 6px;">
+                          <div style="font-weight: 600; font-size: 11px; color: #6b7280; margin-bottom: 3px; padding: 2px 6px; background: #e5e7eb; border-radius: 3px;">${catName}</div>
                           ${sops.map(sop => `
                             <label class="comp-sop-option" data-sop-title="${sop.title.toLowerCase()}" data-sop-category="${category}"
-                                   style="display: flex; align-items: center; gap: 6px; padding: 3px 4px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; margin-left: 8px;" 
+                                   style="display: flex; align-items: center; gap: 6px; padding: 3px 4px; cursor: pointer; font-size: 13px; margin-bottom: 2px; margin-left: 8px; border-radius: 3px;" 
                                    onmouseover="this.style.background='#e5e7eb'" 
                                    onmouseout="this.style.background='transparent'">
                               <input type="checkbox" class="comp-sop-checkbox" value="${sop.sop_id}" 
                                      style="cursor: pointer; flex-shrink: 0;" 
                                      onchange="updateCompSOPSelection${clientServiceId}(this)" />
-                              <span style="font-size: 13px; color: #374151;">${sop.title}</span>
+                              <span style="color: #374151;">${sop.title}</span>
                             </label>
                           `).join('')}
                         </div>
