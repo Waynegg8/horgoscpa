@@ -1187,10 +1187,15 @@
           }
           
           // 配置（Quill 1.3.7 + Better Table 完整配置）
+          const BetterTable = window.quillBetterTable;
+          
+          // 調試：查看 Better Table 結構
+          console.log('Better Table 模組:', BetterTable);
+          console.log('keyboardBindings:', BetterTable.keyboardBindings);
+          
           const config = {
             theme: 'snow',
             modules: {
-              table: false,  // 禁用內建表格
               'better-table': {
                 operationMenu: {
                   items: {
@@ -1227,9 +1232,6 @@
                     text: '背景顏色：'
                   }
                 }
-              },
-              keyboard: {
-                bindings: window.quillBetterTable ? window.quillBetterTable.keyboardBindings : {}
               },
               toolbar: [
                 [{ 'header': [2, 3, false] }],
@@ -1325,7 +1327,6 @@
           const config = {
             theme: 'snow',
             modules: {
-              table: false,  // 禁用內建表格
               'better-table': {
                 operationMenu: {
                   items: {
@@ -1362,9 +1363,6 @@
                     text: '背景顏色：'
                   }
                 }
-              },
-              keyboard: {
-                bindings: window.quillBetterTable ? window.quillBetterTable.keyboardBindings : {}
               },
               toolbar: [
                 [{ 'header': [2, 3, false] }],
