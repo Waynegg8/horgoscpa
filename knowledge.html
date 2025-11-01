@@ -1215,15 +1215,29 @@
             const fileType = doc.fileType || '';
             const fileName = doc.fileName || '';
             
+            // 添加工具欄（包含刪除按鈕）
+            const toolbar = `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb;">
+                <div style="font-size:13px;color:#6b7280;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">
+                  ${doc.title || doc.fileName || '未命名文檔'}
+                </div>
+                <button onclick="deleteDocument(${doc.document_id})" class="btn" style="padding:4px 10px;font-size:11px;background:#fee;color:#dc2626;border:1px solid #fca;margin-left:12px;" title="刪除文檔">
+                  🗑️ 刪除
+                </button>
+              </div>
+            `;
+            
             if (fileType.includes('pdf') || fileName.match(/\.pdf$/i)) {
               // PDF預覽 - 使用 iframe 原生控制
               previewArea.innerHTML = `
-                <iframe src="${blobUrl}#view=FitH" style="width:100%;height:100%;min-height:85vh;border:none;background:white;"></iframe>
+                ${toolbar}
+                <iframe src="${blobUrl}#view=FitH" style="width:100%;height:calc(100% - 40px);min-height:82vh;border:none;background:white;"></iframe>
               `;
             } else if (fileType.includes('image') || fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
               // 圖片預覽 - 直接顯示，使用原生右鍵功能
               previewArea.innerHTML = `
-                <div style="width:100%;height:100%;min-height:85vh;display:flex;align-items:center;justify-content:center;background:#f5f5f5;">
+                ${toolbar}
+                <div style="width:100%;height:calc(100% - 40px);min-height:82vh;display:flex;align-items:center;justify-content:center;background:#f5f5f5;">
                   <img src="${blobUrl}" style="max-width:100%;max-height:100%;object-fit:contain;" />
                 </div>
               `;
@@ -1346,28 +1360,22 @@
               if (!previewArea) return;
               
               previewArea.innerHTML = `
-                <div style="padding:32px;max-width:900px;margin:0 auto;">
-                  <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:2px solid #e5e7eb;">
-                    <h1 style="margin:0 0 16px 0;font-size:28px;font-weight:700;color:#1f2937;">${sop.title || '未命名'}</h1>
-                    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:14px;color:#6b7280;">
-                      <span style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-weight:600;">分類：</span>
-                        <span style="padding:4px 12px;background:#f3f4f6;border-radius:12px;font-size:13px;">${getCategoryName(sop.category, 'sop')}</span>
-                      </span>
-                      ${sop.tags && sop.tags.length ? `
-                        <span style="display:flex;align-items:center;gap:6px;">
-                          <span style="font-weight:600;">標籤：</span>
-                          ${(Array.isArray(sop.tags) ? sop.tags : sop.tags.split(',')).map(tag => 
-                            `<span style="padding:4px 10px;background:#eff6ff;color:#2563eb;border-radius:12px;font-size:12px;">${tag.trim()}</span>`
-                          ).join('')}
-                        </span>
-                      ` : ''}
-                      <button onclick="editSOP(${id})" class="btn primary" style="margin-left:auto;padding:8px 16px;font-size:14px;">
+                <div style="padding:20px 24px;max-width:900px;margin:0 auto;">
+                  <div style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #e5e7eb;">
+                    <h1 style="margin:0 0 8px 0;font-size:18px;font-weight:600;color:#1f2937;">${sop.title || '未命名'}</h1>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:#6b7280;">
+                      <span style="padding:2px 8px;background:#f3f4f6;border-radius:8px;font-size:11px;">${getCategoryName(sop.category, 'sop')}</span>
+                      ${sop.tags && sop.tags.length ? 
+                        (Array.isArray(sop.tags) ? sop.tags : sop.tags.split(',')).map(tag => 
+                          `<span style="padding:2px 6px;background:#eff6ff;color:#2563eb;border-radius:6px;font-size:10px;">${tag.trim()}</span>`
+                        ).join('') : ''
+                      }
+                      <button onclick="editSOP(${id})" class="btn primary" style="margin-left:auto;padding:4px 10px;font-size:12px;">
                         ✏️ 編輯
                       </button>
                     </div>
                   </div>
-                  <div class="ql-editor" style="padding:0;font-size:16px;line-height:1.8;color:#374151;">
+                  <div class="ql-editor" style="padding:0;font-size:14px;line-height:1.7;color:#374151;">
                     ${sop.content || '<p style="color:#9ca3af;">暫無內容</p>'}
                   </div>
                 </div>
@@ -1498,33 +1506,27 @@
               if (!previewArea) return;
               
               previewArea.innerHTML = `
-                <div style="padding:32px;max-width:900px;margin:0 auto;">
-                  <div style="margin-bottom:32px;padding-bottom:24px;border-bottom:2px solid #e5e7eb;">
-                    <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;">
-                      <span style="font-size:36px;line-height:1;">❓</span>
-                      <h1 style="margin:0;font-size:26px;font-weight:700;color:#1f2937;flex:1;">${faq.question || '未命名問題'}</h1>
+                <div style="padding:20px 24px;max-width:900px;margin:0 auto;">
+                  <div style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #e5e7eb;">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                      <span style="font-size:20px;line-height:1;">❓</span>
+                      <h1 style="margin:0;font-size:18px;font-weight:600;color:#1f2937;flex:1;">${faq.question || '未命名問題'}</h1>
                     </div>
-                    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:14px;color:#6b7280;margin-left:52px;">
-                      <span style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-weight:600;">分類：</span>
-                        <span style="padding:4px 12px;background:#f3f4f6;border-radius:12px;font-size:13px;">${getCategoryName(faq.category, 'faq')}</span>
-                      </span>
-                      ${faq.tags && faq.tags.length ? `
-                        <span style="display:flex;align-items:center;gap:6px;">
-                          <span style="font-weight:600;">標籤：</span>
-                          ${(Array.isArray(faq.tags) ? faq.tags : faq.tags.split(',')).map(tag => 
-                            `<span style="padding:4px 10px;background:#fef3c7;color:#d97706;border-radius:12px;font-size:12px;">${tag.trim()}</span>`
-                          ).join('')}
-                        </span>
-                      ` : ''}
-                      <button onclick="editFAQ(${id})" class="btn primary" style="margin-left:auto;padding:8px 16px;font-size:14px;">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:#6b7280;margin-left:30px;">
+                      <span style="padding:2px 8px;background:#f3f4f6;border-radius:8px;font-size:11px;">${getCategoryName(faq.category, 'faq')}</span>
+                      ${faq.tags && faq.tags.length ? 
+                        (Array.isArray(faq.tags) ? faq.tags : faq.tags.split(',')).map(tag => 
+                          `<span style="padding:2px 6px;background:#fef3c7;color:#d97706;border-radius:6px;font-size:10px;">${tag.trim()}</span>`
+                        ).join('') : ''
+                      }
+                      <button onclick="editFAQ(${id})" class="btn primary" style="margin-left:auto;padding:4px 10px;font-size:12px;">
                         ✏️ 編輯
                       </button>
                     </div>
                   </div>
-                  <div style="margin-left:52px;">
-                    <h3 style="margin:0 0 16px 0;font-size:18px;font-weight:600;color:#059669;">💡 回答</h3>
-                    <div class="ql-editor" style="padding:0;font-size:16px;line-height:1.8;color:#374151;">
+                  <div style="margin-left:30px;">
+                    <h3 style="margin:0 0 10px 0;font-size:14px;font-weight:600;color:#059669;">💡 回答</h3>
+                    <div class="ql-editor" style="padding:0;font-size:14px;line-height:1.7;color:#374151;">
                       ${faq.answer || '<p style="color:#9ca3af;">暫無回答</p>'}
                     </div>
                   </div>
@@ -1580,7 +1582,7 @@
         
         // Resource CRUD functions
         window.deleteResource = async function(id) {
-          if(!confirm('確定刪除此文檔？')) return;
+          if(!confirm('確定刪除此文檔？刪除後將無法恢復。')) return;
           try {
             const res = await fetch(`${apiBase}/documents/${id}`, { 
               method: 'DELETE',
@@ -1589,6 +1591,26 @@
             const json = await res.json();
             if (json.ok) {
               alert('刪除成功');
+              
+              // 清空預覽區域
+              const previewArea = document.getElementById('documentPreviewArea');
+              if (previewArea) {
+                previewArea.innerHTML = `
+                  <div class="resource-preview-empty">
+                    <div class="empty-icon">📂</div>
+                    <p class="empty-text">點擊左側文檔查看詳情</p>
+                    <p class="empty-hint">支援線上預覽 PDF、圖片等格式</p>
+                  </div>
+                `;
+              }
+              
+              // 清理 blob URL
+              if (currentPreviewBlobUrl) {
+                URL.revokeObjectURL(currentPreviewBlobUrl);
+                currentPreviewBlobUrl = null;
+              }
+              
+              // 重新載入列表
               loadResources();
             } else {
               alert('刪除失敗：' + (json.error || '未知錯誤'));
@@ -1597,6 +1619,9 @@
             alert('刪除失敗');
           }
         };
+        
+        // deleteDocument 別名（用於預覽頁面）
+        window.deleteDocument = window.deleteResource;
 
         // 事件绑定
         document.querySelectorAll('.tab-button').forEach(btn => {
