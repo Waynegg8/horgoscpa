@@ -973,8 +973,9 @@
             <div class="doc-title" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.title||''} ${v}</div>
           `;
           
-          // 點擊卡片直接編輯
-          el.addEventListener('click', () => editSOP(item.id || item.sop_id));
+          // 點擊卡片預覽（雙擊編輯）
+          el.addEventListener('click', () => viewSOP(item.id || item.sop_id));
+          el.addEventListener('dblclick', () => editSOP(item.id || item.sop_id));
           
           return el;
         }
@@ -1017,8 +1018,9 @@
             <div class="doc-title" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">❓ ${item.question||''}</div>
           `;
           
-          // 點擊卡片直接編輯
-          el.addEventListener('click', () => editFAQ(item.faq_id));
+          // 點擊卡片預覽（雙擊編輯）
+          el.addEventListener('click', () => viewFAQ(item.faq_id));
+          el.addEventListener('dblclick', () => editFAQ(item.faq_id));
           
           return el;
         }
@@ -1273,27 +1275,66 @@
         
         // SOP CRUD functions（移除viewSOP，直接使用editSOP）
         
-        window.editSOP = async function(id) {
+        // 預覽 SOP（點擊列表時）
+        window.viewSOP = async function(id) {
           try {
             const res = await fetch(`${apiBase}/sop/${id}`, { credentials:'include' });
             const json = await res.json();
             if (json.ok && json.data) {
               const sop = json.data;
-              document.getElementById('sop-id-inline').value = sop.sop_id;
-              document.getElementById('sop-title-inline').value = sop.title || '';
-              document.getElementById('sop-category-inline').value = sop.category || '';
-              document.getElementById('sop-tags-inline').value = Array.isArray(sop.tags) ? sop.tags.join(', ') : '';
+              const previewArea = document.getElementById('sopPreviewArea');
+              if (!previewArea) return;
               
-              // 設置編輯器內容
-              if (sopEditor) {
-                sopEditor.root.innerHTML = sop.content || '';
-              }
-              
-              // 更新按鈕文字
-              document.getElementById('sopSubmitBtnInline').querySelector('span').textContent = '💾 更新 SOP';
-              
-              // 聚焦到標題欄位
-              document.getElementById('sop-title-inline').focus();
+              previewArea.innerHTML = `
+                <div style="padding:32px;max-width:900px;margin:0 auto;">
+                  <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:2px solid #e5e7eb;">
+                    <h1 style="margin:0 0 16px 0;font-size:28px;font-weight:700;color:#1f2937;">${sop.title || '未命名'}</h1>
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:14px;color:#6b7280;">
+                      <span style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-weight:600;">分類：</span>
+                        <span style="padding:4px 12px;background:#f3f4f6;border-radius:12px;font-size:13px;">${getCategoryName(sop.category, 'sop')}</span>
+                      </span>
+                      ${sop.tags && sop.tags.length ? `
+                        <span style="display:flex;align-items:center;gap:6px;">
+                          <span style="font-weight:600;">標籤：</span>
+                          ${(Array.isArray(sop.tags) ? sop.tags : sop.tags.split(',')).map(tag => 
+                            `<span style="padding:4px 10px;background:#eff6ff;color:#2563eb;border-radius:12px;font-size:12px;">${tag.trim()}</span>`
+                          ).join('')}
+                        </span>
+                      ` : ''}
+                      <button onclick="editSOP(${id})" class="btn primary" style="margin-left:auto;padding:8px 16px;font-size:14px;">
+                        ✏️ 編輯
+                      </button>
+                    </div>
+                  </div>
+                  <div class="ql-editor" style="padding:0;font-size:16px;line-height:1.8;color:#374151;">
+                    ${sop.content || '<p style="color:#9ca3af;">暫無內容</p>'}
+                  </div>
+                </div>
+              `;
+            }
+          } catch (err) {
+            console.error('載入SOP失敗:', err);
+            const previewArea = document.getElementById('sopPreviewArea');
+            if (previewArea) {
+              previewArea.innerHTML = `
+                <div class="resource-preview-empty">
+                  <div style="font-size:48px;margin-bottom:16px;color:#c0392b;">⚠️</div>
+                  <p class="empty-text" style="color:#c0392b;">載入失敗</p>
+                  <p class="empty-hint">${err.message}</p>
+                </div>
+              `;
+            }
+          }
+        };
+        
+        // 編輯 SOP（打開抽屜）
+        window.editSOP = async function(id) {
+          try {
+            const res = await fetch(`${apiBase}/sop/${id}`, { credentials:'include' });
+            const json = await res.json();
+            if (json.ok && json.data) {
+              openSopDrawer(json.data);
             }
           } catch (err) {
             alert('載入SOP失敗');
@@ -1386,43 +1427,75 @@
           }
         };
         
-        window.editFAQ = async function(id) {
+        // 預覽 FAQ（點擊列表時）
+        window.viewFAQ = async function(id) {
           try {
             const res = await fetch(`${apiBase}/faq/${id}`, { credentials:'include' });
             const json = await res.json();
             if (json.ok && json.data) {
               const faq = json.data;
-              document.getElementById('faq-id-inline').value = faq.faq_id;
-              document.getElementById('faq-question-inline').value = faq.question || '';
-              document.getElementById('faq-category-inline').value = faq.category || '';
-              document.getElementById('faq-tags-inline').value = Array.isArray(faq.tags) ? faq.tags.join(', ') : '';
+              const previewArea = document.getElementById('faqPreviewArea');
+              if (!previewArea) return;
               
-              // 設置編輯器內容並啟用
-              if (faqEditor) {
-                faqEditor.root.innerHTML = faq.answer || '';
-                faqEditor.enable(true);  // 確保可編輯
-              }
-              
-              // 啟用輸入欄位
-              document.getElementById('faq-question-inline').disabled = false;
-              document.getElementById('faq-category-inline').disabled = false;
-              document.getElementById('faq-tags-inline').disabled = false;
-              
-              // 顯示提交按鈕，隱藏查看模式的按鈕
-              document.getElementById('faqSubmitBtnInline').style.display = 'block';
-              const actionDiv = document.getElementById('faq-view-actions');
-              if (actionDiv) actionDiv.style.display = 'none';
-              
-              // 更新按鈕文字
-              document.getElementById('faqSubmitBtnInline').querySelector('span').textContent = '💾 更新 FAQ';
-              
-              // 聚焦到問題欄位
-              document.getElementById('faq-question-inline').focus();
-            } else {
-              alert('載入失敗：' + (json.error || '未知錯誤'));
+              previewArea.innerHTML = `
+                <div style="padding:32px;max-width:900px;margin:0 auto;">
+                  <div style="margin-bottom:32px;padding-bottom:24px;border-bottom:2px solid #e5e7eb;">
+                    <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;">
+                      <span style="font-size:36px;line-height:1;">❓</span>
+                      <h1 style="margin:0;font-size:26px;font-weight:700;color:#1f2937;flex:1;">${faq.question || '未命名問題'}</h1>
+                    </div>
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:14px;color:#6b7280;margin-left:52px;">
+                      <span style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-weight:600;">分類：</span>
+                        <span style="padding:4px 12px;background:#f3f4f6;border-radius:12px;font-size:13px;">${getCategoryName(faq.category, 'faq')}</span>
+                      </span>
+                      ${faq.tags && faq.tags.length ? `
+                        <span style="display:flex;align-items:center;gap:6px;">
+                          <span style="font-weight:600;">標籤：</span>
+                          ${(Array.isArray(faq.tags) ? faq.tags : faq.tags.split(',')).map(tag => 
+                            `<span style="padding:4px 10px;background:#fef3c7;color:#d97706;border-radius:12px;font-size:12px;">${tag.trim()}</span>`
+                          ).join('')}
+                        </span>
+                      ` : ''}
+                      <button onclick="editFAQ(${id})" class="btn primary" style="margin-left:auto;padding:8px 16px;font-size:14px;">
+                        ✏️ 編輯
+                      </button>
+                    </div>
+                  </div>
+                  <div style="margin-left:52px;">
+                    <h3 style="margin:0 0 16px 0;font-size:18px;font-weight:600;color:#059669;">💡 回答</h3>
+                    <div class="ql-editor" style="padding:0;font-size:16px;line-height:1.8;color:#374151;">
+                      ${faq.answer || '<p style="color:#9ca3af;">暫無回答</p>'}
+                    </div>
+                  </div>
+                </div>
+              `;
             }
           } catch (err) {
-            alert('載入FAQ失敗：未知錯誤');
+            console.error('載入FAQ失敗:', err);
+            const previewArea = document.getElementById('faqPreviewArea');
+            if (previewArea) {
+              previewArea.innerHTML = `
+                <div class="resource-preview-empty">
+                  <div style="font-size:48px;margin-bottom:16px;color:#c0392b;">⚠️</div>
+                  <p class="empty-text" style="color:#c0392b;">載入失敗</p>
+                  <p class="empty-hint">${err.message}</p>
+                </div>
+              `;
+            }
+          }
+        };
+        
+        // 編輯 FAQ（打開抽屜）
+        window.editFAQ = async function(id) {
+          try {
+            const res = await fetch(`${apiBase}/faq/${id}`, { credentials:'include' });
+            const json = await res.json();
+            if (json.ok && json.data) {
+              openFaqDrawer(json.data);
+            }
+          } catch (err) {
+            alert('載入FAQ失敗');
           }
         };
         

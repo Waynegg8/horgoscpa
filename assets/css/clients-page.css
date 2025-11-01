@@ -76,42 +76,42 @@
 	border-collapse: collapse;
 }
 
-/* 设置各列宽度 - 使用百分比和最小宽度 */
+/* 设置各列宽度 - 优化布局避免横向滚动 */
 .clients-table th:nth-child(1),
-.clients-table td:nth-child(1) { width: 40px; min-width: 40px; } /* 复选框 */
+.clients-table td:nth-child(1) { width: 36px; min-width: 36px; } /* 复选框 */
 
 .clients-table th:nth-child(2),
-.clients-table td:nth-child(2) { min-width: 120px; max-width: 200px; } /* 公司名称 */
+.clients-table td:nth-child(2) { min-width: 110px; max-width: 180px; } /* 公司名称 */
 
 .clients-table th:nth-child(3),
-.clients-table td:nth-child(3) { width: 90px; min-width: 90px; } /* 统一编号 */
+.clients-table td:nth-child(3) { width: 85px; min-width: 85px; } /* 统一编号 */
 
 .clients-table th:nth-child(4),
-.clients-table td:nth-child(4) { width: 70px; min-width: 70px; } /* 联络人 */
+.clients-table td:nth-child(4) { width: 60px; min-width: 60px; } /* 联络人 */
 
 .clients-table th:nth-child(5),
-.clients-table td:nth-child(5) { width: 70px; min-width: 70px; } /* 负责人 */
+.clients-table td:nth-child(5) { width: 60px; min-width: 60px; } /* 负责人 */
 
 .clients-table th:nth-child(6),
-.clients-table td:nth-child(6) { min-width: 100px; max-width: 150px; } /* 标签 */
+.clients-table td:nth-child(6) { min-width: 90px; max-width: 140px; } /* 标签 */
 
 .clients-table th:nth-child(7),
-.clients-table td:nth-child(7) { width: 80px; min-width: 80px; } /* 服务数量 */
+.clients-table td:nth-child(7) { width: 50px; min-width: 50px; } /* 服务数量 */
 
 .clients-table th:nth-child(8),
-.clients-table td:nth-child(8) { width: 110px; min-width: 110px; } /* 全年收费总额 */
+.clients-table td:nth-child(8) { width: 95px; min-width: 95px; } /* 全年收费总额 */
 
 .clients-table th:nth-child(9),
-.clients-table td:nth-child(9) { width: 100px; min-width: 100px; } /* 电话 */
+.clients-table td:nth-child(9) { width: 95px; min-width: 95px; } /* 电话 */
 
 .clients-table th:nth-child(10),
-.clients-table td:nth-child(10) { min-width: 140px; max-width: 180px; } /* Email */
+.clients-table td:nth-child(10) { min-width: 130px; max-width: 170px; } /* Email */
 
 .clients-table th:nth-child(11),
-.clients-table td:nth-child(11) { width: 90px; min-width: 90px; } /* 建立时间 */
+.clients-table td:nth-child(11) { width: 85px; min-width: 85px; } /* 建立时间 */
 
 .clients-table th:nth-child(12),
-.clients-table td:nth-child(12) { width: 120px; min-width: 120px; max-width: 120px; } /* 操作 */
+.clients-table td:nth-child(12) { width: 90px; min-width: 90px; max-width: 90px; } /* 操作 */
 
 .clients-table th,
 .clients-table td {
@@ -271,7 +271,7 @@
 
 /* 表格内按钮统一样式 - 使用更高优先级 */
 .clients-table button.btn {
-	padding: 3px 6px !important;
+	padding: 2px 5px !important;
 	font-size: 10px !important;
 	border: none !important;
 	border-radius: 3px !important;
@@ -280,7 +280,7 @@
 	white-space: nowrap !important;
 	transition: all 0.15s !important;
 	display: inline-block !important;
-	line-height: 1.4 !important;
+	line-height: 1.3 !important;
 	margin: 0 1px !important;
 }
 
@@ -305,7 +305,7 @@
 
 .clients-table tbody td:last-child {
 	white-space: nowrap !important;
-	padding: 8px 2px !important;
+	padding: 6px 2px !important;
 	text-align: center !important;
 	overflow: visible !important;
 }
@@ -324,11 +324,11 @@
 	overflow: hidden;
 }
 
-/* 表格容器支持横向滚动 */
+/* 表格容器 - 取消横向滚动，让表格自适应 */
 .clients-table-wrap {
-	overflow-x: auto;
-	margin: 0 -12px;
-	padding: 0 12px;
+	overflow-x: visible;
+	margin: 0;
+	padding: 0;
 }
 
 /* 优化chip样式，更紧凑 */
@@ -365,13 +365,13 @@
 /* 数据显示样式 */
 .text-muted {
 	color: #9ca3af !important;
-	font-size: 11px !important;
+	font-size: 10px !important;
 }
 
 .text-success {
 	color: #059669 !important;
 	font-weight: 600 !important;
-	font-size: 11px !important;
+	font-size: 10px !important;
 }
 
 /* 列对齐 */
@@ -382,7 +382,8 @@
 
 .clients-table th:nth-child(8),
 .clients-table td:nth-child(8) {
-	text-align: right;
+	text-align: left;
+	padding-left: 8px !important;
 }
 
 /* 操作列居中 */
