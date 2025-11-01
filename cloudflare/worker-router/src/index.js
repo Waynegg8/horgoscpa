@@ -23,6 +23,7 @@ import { handleTaskTemplates } from "./api/task_templates.js";
 import { handleServices } from "./api/services.js";
 import { handleServiceComponents } from "./api/service_components.js";
 import { handleManualGeneration } from "./api/task_generator.js";
+import { handleTimesheetStats } from "./api/timesheet_stats.js";
 
 export default {
 	async fetch(request, env) {
@@ -101,6 +102,12 @@ export default {
 		const me = await getSessionUser(request, env);
 		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 		return handleTimesheets(request, env, me, requestId, url);
+	}
+	
+	// 工时统计和成本分析
+	if (path === "/internal/api/v1/timesheets/my-stats" || path === "/internal/api/v1/admin/cost-analysis") {
+		const result = await handleTimesheetStats(request, env, path);
+		if (result) return result;
 	}
 		if (path === "/internal/api/v1/receipts") {
 			const me = await getSessionUser(request, env);
