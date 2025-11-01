@@ -1013,38 +1013,7 @@
           }
         };
         
-        // 模態框控制
-        window.resetUploadForm = function() {
-          const form = document.getElementById('resourceFormModal');
-          if (form) form.reset();
-          selectedFile = null;
-          const info = document.getElementById('uploadedFileInfoModal');
-          if (info) info.style.display = 'none';
-        };
-        
-        window.closeUploadDocModal = function() {
-          const modal = document.getElementById('uploadDocModal');
-          if (modal) {
-            modal.classList.remove('show');
-            setTimeout(() => resetUploadForm(), 200);
-          }
-        };
-        
-        window.openUploadDocModal = function() {
-          const modal = document.getElementById('uploadDocModal');
-          if (modal) {
-            modal.classList.add('show');
-          }
-        };
-        
-        // 點擊模態框背景關閉
-        document.addEventListener('click', (e) => {
-          if (e.target.classList.contains('modal') && e.target.classList.contains('show')) {
-            if (e.target.id === 'uploadDocModal') {
-              closeUploadDocModal();
-            }
-          }
-        });
+        // 模態框控制函數會在 selectedFile 聲明後定義
         
         // SOP CRUD functions（移除viewSOP，直接使用editSOP）
         
@@ -1302,25 +1271,65 @@
 
         // 資源搜索和篩選
         let resourcesSearchTimer = null;
-        document.getElementById('resources-search').addEventListener('input', (e) => {
-          clearTimeout(resourcesSearchTimer);
-          resourcesSearchTimer = setTimeout(() => {
-            resourcesState.q = e.target.value.trim();
+        const resourcesSearchEl = document.getElementById('resources-search');
+        const resourcesCategoryFilterEl = document.getElementById('resources-category-filter');
+        
+        if (resourcesSearchEl) {
+          resourcesSearchEl.addEventListener('input', (e) => {
+            clearTimeout(resourcesSearchTimer);
+            resourcesSearchTimer = setTimeout(() => {
+              resourcesState.q = e.target.value.trim();
+              resourcesState.page = 1;
+              loadResources();
+            }, 300);
+          });
+        }
+        
+        if (resourcesCategoryFilterEl) {
+          resourcesCategoryFilterEl.addEventListener('change', (e) => {
+            resourcesState.category = e.target.value;
             resourcesState.page = 1;
             loadResources();
-          }, 300);
-        });
-        
-        document.getElementById('resources-category-filter').addEventListener('change', (e) => {
-          resourcesState.category = e.target.value;
-          resourcesState.page = 1;
-          loadResources();
-        });
+          });
+        }
 
-        // 文件上传
+        // 文件上传 - selectedFile 必須在這裡聲明
+        let selectedFile = null;
         const fileUploadAreaModal = document.getElementById('fileUploadAreaModal');
         const fileInputModal = document.getElementById('file-input-modal');
-        let selectedFile = null;
+
+        // 模態框控制函數（現在可以安全訪問 selectedFile）
+        window.resetUploadForm = function() {
+          const form = document.getElementById('resourceFormModal');
+          if (form) form.reset();
+          selectedFile = null;
+          const info = document.getElementById('uploadedFileInfoModal');
+          if (info) info.style.display = 'none';
+        };
+        
+        window.closeUploadDocModal = function() {
+          const modal = document.getElementById('uploadDocModal');
+          if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => resetUploadForm(), 200);
+          }
+        };
+        
+        window.openUploadDocModal = function() {
+          const modal = document.getElementById('uploadDocModal');
+          if (modal) {
+            modal.classList.add('show');
+          }
+        };
+        
+        // 點擊模態框背景關閉
+        document.addEventListener('click', (e) => {
+          if (e.target.classList.contains('modal') && e.target.classList.contains('show')) {
+            if (e.target.id === 'uploadDocModal') {
+              closeUploadDocModal();
+            }
+          }
+        });
 
         if (fileUploadAreaModal && fileInputModal) {
           fileUploadAreaModal.addEventListener('click', () => fileInputModal.click());

@@ -58,23 +58,23 @@ async function getDocumentsList(request, env, me, corsHeaders) {
     const offset = (page - 1) * perPage;
     
     // 构建查询条件
-    let whereClauses = ['is_deleted = 0'];
+    let whereClauses = ['d.is_deleted = 0'];
     const params = [];
     
     if (q) {
-      whereClauses.push('(title LIKE ? OR description LIKE ? OR file_name LIKE ?)');
+      whereClauses.push('(d.title LIKE ? OR d.description LIKE ? OR d.file_name LIKE ?)');
       params.push(`%${q}%`, `%${q}%`, `%${q}%`);
     }
     
     if (category && category !== 'all') {
-      whereClauses.push('category = ?');
+      whereClauses.push('d.category = ?');
       params.push(category);
     }
     
     if (tags) {
       const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
       tagList.forEach(tag => {
-        whereClauses.push('tags LIKE ?');
+        whereClauses.push('d.tags LIKE ?');
         params.push(`%${tag}%`);
       });
     }
@@ -82,7 +82,7 @@ async function getDocumentsList(request, env, me, corsHeaders) {
     const whereSQL = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
     
     // 查询总数
-    const countSQL = `SELECT COUNT(*) as total FROM InternalDocuments ${whereSQL}`;
+    const countSQL = `SELECT COUNT(*) as total FROM InternalDocuments d ${whereSQL}`;
     const countResult = await env.DATABASE.prepare(countSQL).bind(...params).first();
     const total = countResult?.total || 0;
     

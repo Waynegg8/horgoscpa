@@ -112,7 +112,7 @@
 .clients-table td:nth-child(11) { width: 90px; } /* 建立时间 */
 
 .clients-table th:nth-child(12),
-.clients-table td:nth-child(12) { width: 130px; } /* 操作 */
+.clients-table td:nth-child(12) { width: 150px; min-width: 150px; } /* 操作 */
 
 .clients-table th,
 .clients-table td {
@@ -264,47 +264,42 @@
 	font-weight: 500;
 }
 
-/* 表格内按钮统一样式 */
-.clients-table .btn {
-	padding: 5px 12px;
-	font-size: 12px;
-	border: none;
-	border-radius: 6px;
-	cursor: pointer;
-	font-weight: 500;
-	white-space: nowrap;
-	transition: opacity 0.2s;
+/* 表格内按钮统一样式 - 使用更高优先级 */
+.clients-table button.btn {
+	padding: 6px 12px !important;
+	font-size: 12px !important;
+	border: none !important;
+	border-radius: 6px !important;
+	cursor: pointer !important;
+	font-weight: 500 !important;
+	white-space: nowrap !important;
+	transition: opacity 0.2s !important;
+	display: inline-block !important;
 }
 
-.clients-table .btn:hover {
-	opacity: 0.85;
+.clients-table button.btn:hover {
+	opacity: 0.85 !important;
 }
 
-.clients-table .btn-sm {
-	padding: 5px 10px;
-	font-size: 12px;
+.clients-table button.btn.btn-sm {
+	padding: 6px 12px !important;
+	font-size: 12px !important;
 }
 
-.clients-table .btn-secondary {
-	background: #3b82f6;
-	color: #fff;
+.clients-table button.btn.btn-secondary {
+	background: #3b82f6 !important;
+	color: #fff !important;
 }
 
-.clients-table .btn-danger {
-	background: #ef4444;
-	color: #fff;
+.clients-table button.btn.btn-danger {
+	background: #ef4444 !important;
+	color: #fff !important;
+	margin-left: 4px !important;
 }
 
-.clients-table td:last-child {
-	white-space: nowrap;
-}
-
-.clients-table td:last-child .btn {
-	margin-right: 4px;
-}
-
-.clients-table td:last-child .btn:last-child {
-	margin-right: 0;
+.clients-table tbody td:last-child {
+	white-space: nowrap !important;
+	padding: 8px 10px !important;
 }
 
 /* 让特定列允许换行 */
