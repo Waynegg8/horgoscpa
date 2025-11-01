@@ -1302,11 +1302,19 @@
           tableBtn.className = 'ql-table-insert';
           tableBtn.style.cssText = 'margin-left: 8px; padding: 4px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;';
           tableBtn.onclick = () => {
-            const tableModule = window.sopDrawerEditor.getModule('better-table');
-            if (tableModule) {
-              tableModule.insertTable(3, 3);
-            } else {
-              console.error('Better Table 模組未找到');
+            try {
+              const tableModule = window.sopDrawerEditor.getModule('better-table');
+              if (tableModule && tableModule.insertTable) {
+                console.log('🔧 嘗試插入表格...');
+                tableModule.insertTable(3, 3);
+                console.log('✅ 表格插入成功');
+              } else {
+                console.error('❌ Better Table 模組或 insertTable 方法未找到');
+                alert('表格功能暫時無法使用');
+              }
+            } catch (error) {
+              console.error('❌ 插入表格時出錯:', error);
+              alert('插入表格失敗: ' + error.message);
             }
           };
           toolbarContainer.appendChild(tableBtn);
@@ -1456,11 +1464,19 @@
           tableBtn.className = 'ql-table-insert';
           tableBtn.style.cssText = 'margin-left: 8px; padding: 4px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;';
           tableBtn.onclick = () => {
-            const tableModule = window.faqDrawerEditor.getModule('better-table');
-            if (tableModule) {
-              tableModule.insertTable(3, 3);
-            } else {
-              console.error('Better Table 模組未找到');
+            try {
+              const tableModule = window.faqDrawerEditor.getModule('better-table');
+              if (tableModule && tableModule.insertTable) {
+                console.log('🔧 嘗試插入表格...');
+                tableModule.insertTable(3, 3);
+                console.log('✅ 表格插入成功');
+              } else {
+                console.error('❌ Better Table 模組或 insertTable 方法未找到');
+                alert('表格功能暫時無法使用');
+              }
+            } catch (error) {
+              console.error('❌ 插入表格時出錯:', error);
+              alert('插入表格失敗: ' + error.message);
             }
           };
           toolbarContainer.appendChild(tableBtn);
