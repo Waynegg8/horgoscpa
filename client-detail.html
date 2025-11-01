@@ -1644,28 +1644,24 @@
                 <label>📖 服務SOP（可選）</label>
                 
                 <!-- 已选择的SOP标签 -->
-                <div id="selected-comp-sops-${clientServiceId}" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 32px; padding: 8px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
-                  <span style="color: #9ca3af; font-size: 12px;">尚未選擇SOP</span>
+                <div id="selected-comp-sops-${clientServiceId}" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;">
+                  <span style="color: #9ca3af; font-size: 11px;">尚未選擇SOP</span>
                 </div>
                 
                 <!-- 搜索框 -->
                 <input type="text" 
                        id="comp-sop-search-${clientServiceId}"
                        placeholder="🔍 搜尋SOP..." 
-                       style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; margin-bottom: 8px;"
+                       style="width: 100%; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; margin-bottom: 6px;"
                        onkeyup="filterCompSOPs${clientServiceId}(this.value)" />
                 
                 <!-- SOP列表 -->
-                <div id="new-comp-sop-list-${clientServiceId}" style="max-height: 200px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 4px; padding: 6px; background: white;">
+                <div id="new-comp-sop-list-${clientServiceId}" style="max-height: 150px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 4px; padding: 6px; background: white;">
                   <div style="color: #9ca3af; text-align: center; padding: 20px;">載入中...</div>
                 </div>
                 <small style="display: block; margin-top: 5px; color: #6b7280;">💡 選擇SOP作為服務流程參考（目前僅支持選擇一個）</small>
               </div>
               
-              <div class="form-field">
-                <label>備註</label>
-                <textarea id="new-comp-notes-${clientServiceId}" rows="2"></textarea>
-              </div>
               <div style="margin-top: 15px;">
                 <button class="btn btn-primary" onclick="saveNewComponent(${clientServiceId})">儲存</button>
                 <button class="btn btn-secondary" onclick="cancelAddComponent(${clientServiceId})">取消</button>
@@ -2200,7 +2196,7 @@
         const checkboxes = document.querySelectorAll('.comp-sop-checkbox:checked');
         
         if (checkboxes.length === 0) {
-          container.innerHTML = '<span style="color: #9ca3af; font-size: 12px;">尚未選擇SOP</span>';
+          container.innerHTML = '<span style="color: #9ca3af; font-size: 11px;">尚未選擇SOP</span>';
           return;
         }
         
@@ -2210,7 +2206,7 @@
         const sop = allSOPs.find(s => s.sop_id === sopId);
         
         if (!sop) {
-          container.innerHTML = '<span style="color: #9ca3af; font-size: 12px;">尚未選擇SOP</span>';
+          container.innerHTML = '<span style="color: #9ca3af; font-size: 11px;">尚未選擇SOP</span>';
           return;
         }
         
@@ -2432,7 +2428,6 @@
       document.getElementById(`new-comp-service-item-${clientServiceId}`).value = '';
       document.getElementById(`new-comp-template-${clientServiceId}`).innerHTML = '<option value="">請先選擇服務項目</option>';
       document.getElementById(`new-comp-hours-${clientServiceId}`).value = '';
-      document.getElementById(`new-comp-notes-${clientServiceId}`).value = '';
     }
 
     // 儲存新服務組成部分
@@ -2445,7 +2440,6 @@
       const dueValue = document.getElementById(`new-comp-due-value-${clientServiceId}`).value;
       const hours = document.getElementById(`new-comp-hours-${clientServiceId}`).value;
       const advance = document.getElementById(`new-comp-advance-${clientServiceId}`).value;
-      const notes = document.getElementById(`new-comp-notes-${clientServiceId}`).value.trim();
       
       // 收集选中的SOP（目前只支持单个）
       const sopCheckboxes = document.querySelectorAll(`#new-comp-sop-list-${clientServiceId} .comp-sop-checkbox:checked`);
@@ -2479,7 +2473,6 @@
         due_date_value: dueValue ? parseInt(dueValue) : null,
         estimated_hours: hours ? parseFloat(hours) : null,
         advance_days: advance ? parseInt(advance) : 7,
-        notes: notes || null,
         sop_id: sopId,  // 单个SOP
         auto_generate_task: true,
         tasks: tasks.map(task => ({
