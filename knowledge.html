@@ -1306,15 +1306,33 @@
           // 在工具欄添加表格插入按鈕
           const toolbarContainer = document.querySelector('#sop-editor-drawer').previousElementSibling;
           const tableBtn = document.createElement('button');
+          tableBtn.type = 'button'; // 防止觸發表單提交
           tableBtn.innerHTML = '📊 插入表格';
           tableBtn.className = 'ql-table-insert';
           tableBtn.style.cssText = 'margin-left: 8px; padding: 4px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;';
-          tableBtn.onclick = () => {
+          tableBtn.onclick = (e) => {
+            e.preventDefault(); // 防止觸發表單提交
+            e.stopPropagation();
+            
+            // 顯示表格尺寸選擇器
+            const rows = prompt('請輸入表格行數（1-10）:', '3');
+            if (!rows) return;
+            const cols = prompt('請輸入表格列數（1-10）:', '3');
+            if (!cols) return;
+            
+            const rowNum = parseInt(rows);
+            const colNum = parseInt(cols);
+            
+            if (isNaN(rowNum) || isNaN(colNum) || rowNum < 1 || rowNum > 10 || colNum < 1 || colNum > 10) {
+              alert('請輸入 1-10 之間的數字');
+              return;
+            }
+            
             try {
               const tableModule = window.sopDrawerEditor.getModule('better-table');
               if (tableModule && tableModule.insertTable) {
-                console.log('🔧 嘗試插入表格...');
-                tableModule.insertTable(3, 3);
+                console.log(`🔧 嘗試插入 ${rowNum}x${colNum} 表格...`);
+                tableModule.insertTable(rowNum, colNum);
                 console.log('✅ 表格插入成功');
               } else {
                 console.error('❌ Better Table 模組或 insertTable 方法未找到');
@@ -1467,15 +1485,33 @@
           // 在工具欄添加表格按鈕
           const toolbarContainer = document.querySelector('#faq-editor-drawer').previousElementSibling;
           const tableBtn = document.createElement('button');
+          tableBtn.type = 'button'; // 防止觸發表單提交
           tableBtn.innerHTML = '📊 插入表格';
           tableBtn.className = 'ql-table-insert';
           tableBtn.style.cssText = 'margin-left: 8px; padding: 4px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;';
-          tableBtn.onclick = () => {
+          tableBtn.onclick = (e) => {
+            e.preventDefault(); // 防止觸發表單提交
+            e.stopPropagation();
+            
+            // 顯示表格尺寸選擇器
+            const rows = prompt('請輸入表格行數（1-10）:', '3');
+            if (!rows) return;
+            const cols = prompt('請輸入表格列數（1-10）:', '3');
+            if (!cols) return;
+            
+            const rowNum = parseInt(rows);
+            const colNum = parseInt(cols);
+            
+            if (isNaN(rowNum) || isNaN(colNum) || rowNum < 1 || rowNum > 10 || colNum < 1 || colNum > 10) {
+              alert('請輸入 1-10 之間的數字');
+              return;
+            }
+            
             try {
               const tableModule = window.faqDrawerEditor.getModule('better-table');
               if (tableModule && tableModule.insertTable) {
-                console.log('🔧 嘗試插入表格...');
-                tableModule.insertTable(3, 3);
+                console.log(`🔧 嘗試插入 ${rowNum}x${colNum} 表格...`);
+                tableModule.insertTable(rowNum, colNum);
                 console.log('✅ 表格插入成功');
               } else {
                 console.error('❌ Better Table 模組或 insertTable 方法未找到');
