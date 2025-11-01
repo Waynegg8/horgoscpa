@@ -183,6 +183,57 @@ export async function handleAttachments(request, env, me, requestId, url, path) 
 		}
 	}
 
+	// GET /internal/api/v1/attachments/:id/download - 下载附件
+	const matchDownload = path.match(/^\/internal\/api\/v1\/attachments\/(\d+)\/download$/);
+	if (method === "GET" && matchDownload) {
+		const attachmentId = matchDownload[1];
+		try {
+			const attachment = await env.DATABASE.prepare(
+				`SELECT object_key, filename, content_type FROM Attachments WHERE attachment_id = ? AND is_deleted = 0`
+			).bind(attachmentId).first();
+			
+			if (!attachment) {
+				return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"附件不存在", meta:{ requestId } }, corsHeaders);
+			}
+			
+			if (!env.R2_BUCKET) {
+				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"R2 未綁定", meta:{ requestId } }, corsHeaders);
+			}
+			
+			const object = await env.R2_BUCKET.get(attachment.object_key);
+			if (!object) {
+				return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"檔案不存在", meta:{ requestId } }, corsHeaders);
+			}
+			
+			return new Response(object.body, {
+				headers: {
+					'Content-Type': attachment.content_type || 'application/octet-stream',
+					'Content-Disposition': `attachment; filename="${attachment.filename}"`,
+					...corsHeaders
+				}
+			});
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
+	// DELETE /internal/api/v1/attachments/:id - 删除附件
+	const matchDelete = path.match(/^\/internal\/api\/v1\/attachments\/(\d+)$/);
+	if (method === "DELETE" && matchDelete) {
+		const attachmentId = matchDelete[1];
+		try {
+			await env.DATABASE.prepare(
+				`UPDATE Attachments SET is_deleted = 1 WHERE attachment_id = ?`
+			).bind(attachmentId).run();
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"已刪除", meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
 	return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 }
 

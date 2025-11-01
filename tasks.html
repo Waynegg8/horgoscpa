@@ -48,80 +48,60 @@
         <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <h1 style="margin:0;font-size:22px;font-weight:700;">任務</h1>
           <div class="toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-            <div style="display:flex;gap:6px;">
-              <button id="btn-list" type="button" class="clients-btn" style="padding:8px 12px;">列表視圖</button>
-              <button id="btn-kanban" type="button" class="clients-btn btn-secondary" style="padding:8px 12px;">看板視圖</button>
-            </div>
             <input id="q" type="search" placeholder="搜尋任務/客戶/統編…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
+            <select id="f_assignee" aria-label="負責人">
+              <option value="all">全部負責人</option>
+            </select>
+            <select id="f_tags" aria-label="客戶標籤">
+              <option value="all">全部標籤</option>
+            </select>
             <select id="f_status" aria-label="狀態">
               <option value="all">全部狀態</option>
-              <option value="todo">待開始</option>
-              <option value="doing">進行中</option>
-              <option value="done">已完成</option>
+              <option value="pending">待開始</option>
+              <option value="in_progress">進行中</option>
+              <option value="completed">已完成</option>
             </select>
             <select id="f_due" aria-label="到期狀態">
               <option value="all">全部到期狀態</option>
               <option value="soon">即將到期（≤3天）</option>
               <option value="overdue">已逾期</option>
             </select>
+            <button id="btn-batch-assign" type="button" class="clients-btn btn-secondary" style="padding:8px 12px;display:none;">批量分配</button>
             <button id="btn-new-task" type="button" class="clients-btn" style="padding:8px 12px;">新增任務</button>
           </div>
         </header>
 
         <p id="tasks-error" style="color:#c0392b;min-height:1.25rem;margin:8px 0 0 0;"></p>
 
-        <!-- 列表視圖 -->
+        <!-- 列表視圖 - 按客戶和服務分組 -->
         <div id="view-list" class="tasks-grid">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:12px;gap:8px;">
-            <button id="btn-view-flat" type="button" class="clients-btn" style="padding:6px 12px;font-size:14px;">平鋪視圖</button>
-            <button id="btn-view-grouped" type="button" class="clients-btn btn-secondary" style="padding:6px 12px;font-size:14px;">分組視圖</button>
-          </div>
-          
-          <!-- 平鋪表格視圖 -->
-          <table id="table-flat" style="width:100%;border-collapse:collapse;">
-            <thead>
-              <tr>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;">任務名稱</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;">客戶</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;width:100px;">統編</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;">負責人</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;width:80px;">進度</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;width:100px;">到期日</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;width:90px;">狀態</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;width:100px;">操作</th>
-              </tr>
-            </thead>
-            <tbody id="tbody"></tbody>
-          </table>
-          
-          <!-- 分組視圖 -->
-          <div id="table-grouped" style="display:none;">
-            <div id="grouped-content"></div>
-          </div>
-        </div>
-
-        <!-- 看板視圖 -->
-        <div id="view-kanban" style="display:none;gap:16px;grid-template-columns:repeat(3,1fr);" class="tasks-grid">
-          <div>
-            <h3>待開始</h3>
-            <div id="col-todo"></div>
-          </div>
-          <div>
-            <h3>進行中</h3>
-            <div id="col-doing"></div>
-          </div>
-          <div>
-            <h3>已完成</h3>
-            <div id="col-done"></div>
-          </div>
-        </div>
-
-        <div class="clients-pagination" id="pager" style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px;">
-          <button type="button" id="prev">上一頁</button>
-          <button type="button" id="next">下一頁</button>
+          <div id="grouped-content" style="margin-top:16px;"></div>
         </div>
       </section>
     </main>
+
+    <!-- 批量分配負責人彈窗 -->
+    <div class="modal-overlay" id="batchAssignModal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal" role="document">
+        <div class="modal__header">
+          <h2 class="modal__title">批量分配負責人</h2>
+          <button class="modal__close" type="button" id="batch-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <p style="margin-bottom:16px;color:#6b7280;">已選擇 <strong id="selected-count">0</strong> 個任務</p>
+          <div class="field">
+            <label for="batch_assignee">選擇負責人</label>
+            <select id="batch_assignee" name="batch_assignee">
+              <option value="">請選擇負責人</option>
+            </select>
+          </div>
+          <div class="modal__actions" style="margin-top:20px;">
+            <button class="btn-secondary" type="button" id="batch-cancel">取消</button>
+            <button class="clients-btn" type="button" id="batch-submit">確認分配</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 新增任務彈窗 -->
     <div class="modal-overlay" id="taskModal" aria-hidden="true" role="dialog" aria-modal="true">
@@ -175,33 +155,28 @@
         const qEl = document.getElementById('q');
         const statusEl = document.getElementById('f_status');
         const dueEl = document.getElementById('f_due');
-        const tbody = document.getElementById('tbody');
-        const colTodo = document.getElementById('col-todo');
-        const colDoing = document.getElementById('col-doing');
-        const colDone = document.getElementById('col-done');
-        const viewList = document.getElementById('view-list');
-        const viewKanban = document.getElementById('view-kanban');
-        const btnList = document.getElementById('btn-list');
-        const btnKanban = document.getElementById('btn-kanban');
-        const prevBtn = document.getElementById('prev');
-        const nextBtn = document.getElementById('next');
+        const assigneeEl = document.getElementById('f_assignee');
+        const tagsEl = document.getElementById('f_tags');
         const errEl = document.getElementById('tasks-error');
         const modal = document.getElementById('taskModal');
         const form = document.getElementById('taskForm');
         const btnOpen = document.getElementById('btn-new-task');
         const btnClose = document.getElementById('task-close');
         const btnCancel = document.getElementById('task-cancel');
+        const batchModal = document.getElementById('batchAssignModal');
+        const btnBatchAssign = document.getElementById('btn-batch-assign');
+        const btnBatchClose = document.getElementById('batch-close');
+        const btnBatchCancel = document.getElementById('batch-cancel');
+        const btnBatchSubmit = document.getElementById('batch-submit');
 
-        let state = { page:1, perPage:20, q:'', status:'all', due:'all', view:'list', listMode:'flat', total:0 };
-        let cacheRows = [];
+        let state = { q:'', status:'all', due:'all', assignee:'all', tags:'all' };
+        let allTasks = [];
+        let allClients = [];
+        let allTags = [];
         let employeesList = [];
+        let selectedTaskIds = new Set();
 
         const zhStatus = { pending:'待開始', in_progress:'進行中', completed:'已完成', cancelled:'已取消' };
-        
-        const btnViewFlat = document.getElementById('btn-view-flat');
-        const btnViewGrouped = document.getElementById('btn-view-grouped');
-        const tableFlat = document.getElementById('table-flat');
-        const tableGrouped = document.getElementById('table-grouped');
 
         function setError(m){ if (errEl) errEl.textContent = m || ''; }
 
@@ -213,18 +188,83 @@
             const json = await res.json();
             if (res.ok && json && json.ok === true) {
               employeesList = json.data || [];
-              // 填充下拉選單
+              
+              // 填充任務表單的負責人下拉
               const assigneeSelect = document.getElementById('tf_assignee');
-              assigneeSelect.innerHTML = '<option value="">請選擇負責人</option>';
-              employeesList.forEach(emp => {
-                const opt = document.createElement('option');
-                opt.value = emp.userId;
-                opt.textContent = emp.name;
-                assigneeSelect.appendChild(opt);
-              });
+              if (assigneeSelect) {
+                assigneeSelect.innerHTML = '<option value="">請選擇負責人</option>';
+                employeesList.forEach(emp => {
+                  const opt = document.createElement('option');
+                  opt.value = emp.user_id;
+                  opt.textContent = emp.name;
+                  assigneeSelect.appendChild(opt);
+                });
+              }
+              
+              // 填充批量分配的負責人下拉
+              const batchSelect = document.getElementById('batch_assignee');
+              if (batchSelect) {
+                batchSelect.innerHTML = '<option value="">請選擇負責人</option>';
+                employeesList.forEach(emp => {
+                  const opt = document.createElement('option');
+                  opt.value = emp.user_id;
+                  opt.textContent = emp.name;
+                  batchSelect.appendChild(opt);
+                });
+              }
+              
+              // 填充篩選的負責人下拉
+              if (assigneeEl) {
+                assigneeEl.innerHTML = '<option value="all">全部負責人</option>';
+                employeesList.forEach(emp => {
+                  const opt = document.createElement('option');
+                  opt.value = emp.user_id;
+                  opt.textContent = emp.name;
+                  assigneeEl.appendChild(opt);
+                });
+              }
             }
           } catch (e) {
             console.error('載入員工列表失敗', e);
+          }
+        }
+        
+        // 加載所有客戶
+        async function loadAllClients() {
+          try {
+            const res = await fetch(`${apiBase}/clients?perPage=1000`, { credentials: 'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/tasks'); return; }
+            const json = await res.json();
+            if (res.ok && json && json.ok === true) {
+              allClients = json.data || [];
+            }
+          } catch (e) {
+            console.error('載入客戶列表失敗', e);
+          }
+        }
+        
+        // 加載所有標籤
+        async function loadAllTags() {
+          try {
+            const res = await fetch(`${apiBase}/tags`, { credentials: 'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/tasks'); return; }
+            const json = await res.json();
+            if (res.ok && json && json.ok === true) {
+              allTags = json.data || [];
+              
+              // 填充標籤篩選下拉
+              if (tagsEl) {
+                tagsEl.innerHTML = '<option value="all">全部標籤</option>';
+                allTags.forEach(tag => {
+                  const opt = document.createElement('option');
+                  opt.value = tag.tag_id;
+                  opt.textContent = tag.tag_name;
+                  tagsEl.appendChild(opt);
+                });
+              }
+            }
+          } catch (e) {
+            console.error('載入標籤列表失敗', e);
           }
         }
 
@@ -449,70 +489,6 @@
           }
         };
 
-        function renderList(){
-          tbody.innerHTML = '';
-          cacheRows.forEach(r => {
-            const tr = document.createElement('tr');
-            
-            // 創建負責人單元格（支持快速分配）
-            const assigneeTd = document.createElement('td');
-            assigneeTd.style.cssText = 'padding:10px 8px;border-bottom:1px solid #f0f0f0;';
-            
-            // 創建下拉選單
-            const assigneeSelect = document.createElement('select');
-            assigneeSelect.style.cssText = 'padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:14px;width:100%;max-width:150px;';
-            assigneeSelect.innerHTML = '<option value="">未分配</option>';
-            employeesList.forEach(emp => {
-              const opt = document.createElement('option');
-              opt.value = emp.userId;
-              opt.textContent = emp.name;
-              opt.selected = (r.assigneeName && r.assigneeName === emp.name);
-              assigneeSelect.appendChild(opt);
-            });
-            
-            // 快速分配事件
-            assigneeSelect.addEventListener('change', async function() {
-              const newAssigneeId = this.value ? Number(this.value) : null;
-              const prevValue = this.value;
-              try {
-                this.disabled = true;
-                const res = await fetch(`${apiBase}/tasks/${r.taskId}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'include',
-                  body: JSON.stringify({ assignee_user_id: newAssigneeId })
-                });
-                if (res.status === 401) { location.assign('/login?redirect=/internal/tasks'); return; }
-                const json = await res.json();
-                if (!res.ok || !json || json.ok !== true) throw new Error((json && json.message) || '分配失敗');
-                load(); // 重新載入列表
-              } catch (e) {
-                alert(e.message || '分配失敗，請稍後再試');
-                this.value = prevValue; // 恢復選擇
-                this.disabled = false;
-              }
-            });
-            
-            assigneeTd.appendChild(assigneeSelect);
-            
-            tr.innerHTML = `
-              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.taskName}</td>
-              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.clientName||''}</td>
-              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;color:#6b7280;font-size:13px;">${r.clientTaxId||'—'}</td>
-              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.progress.completed}/${r.progress.total}</td>
-              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.dueDate? r.dueDate.slice(5) : ''}</td>
-              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${zhStatus[r.status]||r.status}</td>
-              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">
-                <a href="/internal/task-detail?id=${r.taskId}" style="color:#3b82f6;text-decoration:none;">查看詳情</a>
-              </td>
-            `;
-            // 插入負責人單元格到正確位置（第4列，因為前面加了統編列）
-            tr.insertBefore(assigneeTd, tr.children[3]);
-            tbody.appendChild(tr);
-          });
-          renderPager();
-        }
-
         function renderKanban(){
           colTodo.innerHTML = ''; colDoing.innerHTML = ''; colDone.innerHTML = '';
           cacheRows.forEach(r => {
@@ -536,11 +512,7 @@
 
         function render(){ 
           if (state.view==='list') {
-            if (state.listMode === 'flat') {
-              renderList();
-            } else {
-              renderGrouped();
-            }
+            renderGrouped();
           } else {
             renderKanban();
           }
@@ -557,22 +529,6 @@
           } 
           render(); 
         }
-        
-        function switchListMode(mode) {
-          state.listMode = mode;
-          if (mode === 'flat') {
-            tableFlat.style.display = 'table';
-            tableGrouped.style.display = 'none';
-            btnViewFlat.classList.remove('btn-secondary');
-            btnViewGrouped.classList.add('btn-secondary');
-          } else {
-            tableFlat.style.display = 'none';
-            tableGrouped.style.display = 'block';
-            btnViewFlat.classList.add('btn-secondary');
-            btnViewGrouped.classList.remove('btn-secondary');
-          }
-          render();
-        }
 
         // events
         let timer = null;
@@ -583,8 +539,6 @@
         nextBtn.addEventListener('click', () => { state.page++; load(); });
         btnList.addEventListener('click', () => switchView('list'));
         btnKanban.addEventListener('click', () => switchView('kanban'));
-        btnViewFlat.addEventListener('click', () => switchListMode('flat'));
-        btnViewGrouped.addEventListener('click', () => switchListMode('grouped'));
 
         // init
         switchView('list');

@@ -8,20 +8,16 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/reports-page.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   </head>
   <body class="reports-page">
-    <header class="reports-header">
-      <h1 class="page-title">報表分析</h1>
-      <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此報表</div>
-    </header>
+    <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此報表</div>
 
-    <nav class="reports-tab-container" role="tablist" aria-label="報表分頁">
-      <div class="reports-tab-header">
-        <button class="tab" role="tab" aria-selected="false" data-tab="client-cost" data-admin-only="true">客戶成本分析</button>
-        <button class="tab" role="tab" aria-selected="true" data-tab="employee-hours">員工工時分析</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="payroll" data-admin-only="true">薪資報表</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="receivables" data-admin-only="true">收款分析</button>
-      </div>
+    <nav class="reports-tabs" role="tablist" aria-label="報表分頁">
+      <button class="tab active" role="tab" aria-selected="true" data-tab="employee-hours">員工工時分析</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="client-cost" data-admin-only="true">客戶成本分析</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="payroll" data-admin-only="true">薪資報表</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="receivables" data-admin-only="true">收款分析</button>
     </nav>
 
     <main class="reports-content">
@@ -30,27 +26,38 @@
         <div class="report-filters" aria-label="客戶成本分析篩選">
           <div class="filter-row">
             <div class="filter-group">
-              <label for="cc-date-from">開始日期</label>
-              <input id="cc-date-from" type="date" />
+              <label for="cc-year">年度</label>
+              <select id="cc-year" class="form-select"></select>
             </div>
             <div class="filter-group">
-              <label for="cc-date-to">結束日期</label>
-              <input id="cc-date-to" type="date" />
+              <label for="cc-month">月份</label>
+              <select id="cc-month" class="form-select">
+                <option value="">全年</option>
+                <option value="1">1月</option>
+                <option value="2">2月</option>
+                <option value="3">3月</option>
+                <option value="4">4月</option>
+                <option value="5">5月</option>
+                <option value="6">6月</option>
+                <option value="7">7月</option>
+                <option value="8">8月</option>
+                <option value="9">9月</option>
+                <option value="10">10月</option>
+                <option value="11">11月</option>
+                <option value="12">12月</option>
+              </select>
             </div>
             <div class="filter-group">
-              <label for="cc-client">客戶（可選）</label>
-              <input id="cc-client" type="search" placeholder="輸入客戶名稱或代碼" />
+              <label for="cc-client">客戶</label>
+              <select id="cc-client" class="form-select">
+                <option value="">全部客戶</option>
+              </select>
             </div>
-            <div class="filter-group">
-              <label>包含年終獎金分攤</label>
-              <input id="cc-include-bonus" type="checkbox" aria-label="包含年終獎金分攤" />
-            </div>
-            <div class="filter-group" style="min-width:140px;flex:0">
+            <div class="filter-group filter-actions">
               <button id="cc-query" class="btn primary" type="button">查詢</button>
-              <button id="cc-reset" class="btn" type="button" style="margin-left:8px;">重置</button>
+              <button id="cc-reset" class="btn" type="button">重置</button>
             </div>
           </div>
-          <div id="cc-yearend-tip" class="info-bar" style="display:none;">建議勾選包含年終獎金以查看真實成本</div>
         </div>
 
         <section class="report-content">
@@ -97,7 +104,7 @@
             <div class="chart-container">
               <div class="chart-title">客戶毛利率排名</div>
               <div class="chart-wrapper">
-                <div class="placeholder muted" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">圖表占位</div>
+                <canvas id="cc-profit-chart"></canvas>
               </div>
             </div>
           </div>
@@ -109,16 +116,35 @@
         <div class="report-filters" aria-label="員工工時分析篩選">
           <div class="filter-row">
             <div class="filter-group">
-              <label for="eh-year-month">年/月</label>
-              <input id="eh-year-month" type="month" />
+              <label for="eh-year">年度</label>
+              <select id="eh-year" class="form-select"></select>
             </div>
             <div class="filter-group">
-              <label for="eh-employee">員工（可選）</label>
-              <input id="eh-employee" type="search" placeholder="輸入員工姓名或帳號" />
+              <label for="eh-month">月份</label>
+              <select id="eh-month" class="form-select">
+                <option value="1">1月</option>
+                <option value="2">2月</option>
+                <option value="3">3月</option>
+                <option value="4">4月</option>
+                <option value="5">5月</option>
+                <option value="6">6月</option>
+                <option value="7">7月</option>
+                <option value="8">8月</option>
+                <option value="9">9月</option>
+                <option value="10">10月</option>
+                <option value="11">11月</option>
+                <option value="12">12月</option>
+              </select>
             </div>
-            <div class="filter-group" style="min-width:140px;flex:0">
+            <div class="filter-group">
+              <label for="eh-employee">員工</label>
+              <select id="eh-employee" class="form-select">
+                <option value="">全部員工</option>
+              </select>
+            </div>
+            <div class="filter-group filter-actions">
               <button id="eh-query" class="btn primary" type="button">查詢</button>
-              <button id="eh-reset" class="btn" type="button" style="margin-left:8px;">重置</button>
+              <button id="eh-reset" class="btn" type="button">重置</button>
             </div>
           </div>
         </div>
@@ -145,14 +171,7 @@
             <div class="chart-container">
               <div class="chart-title">客戶工時分布（餅圖）</div>
               <div class="chart-wrapper">
-                <div class="placeholder muted" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">圖表占位</div>
-              </div>
-            </div>
-
-            <div class="chart-container">
-              <div class="chart-title">每日工時（折線）</div>
-              <div class="chart-wrapper">
-                <div class="placeholder muted" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">圖表占位</div>
+                <canvas id="eh-client-dist-chart"></canvas>
               </div>
             </div>
 
@@ -171,16 +190,35 @@
         <div class="report-filters" aria-label="薪資報表篩選">
           <div class="filter-row">
             <div class="filter-group">
-              <label for="pr-year-month">年/月</label>
-              <input id="pr-year-month" type="month" />
+              <label for="pr-year">年度</label>
+              <select id="pr-year" class="form-select"></select>
             </div>
             <div class="filter-group">
-              <label for="pr-employee">員工（可選）</label>
-              <input id="pr-employee" type="search" placeholder="輸入員工姓名或帳號" />
+              <label for="pr-month">月份</label>
+              <select id="pr-month" class="form-select">
+                <option value="1">1月</option>
+                <option value="2">2月</option>
+                <option value="3">3月</option>
+                <option value="4">4月</option>
+                <option value="5">5月</option>
+                <option value="6">6月</option>
+                <option value="7">7月</option>
+                <option value="8">8月</option>
+                <option value="9">9月</option>
+                <option value="10">10月</option>
+                <option value="11">11月</option>
+                <option value="12">12月</option>
+              </select>
             </div>
-            <div class="filter-group" style="min-width:140px;flex:0">
+            <div class="filter-group">
+              <label for="pr-employee">員工</label>
+              <select id="pr-employee" class="form-select">
+                <option value="">全部員工</option>
+              </select>
+            </div>
+            <div class="filter-group filter-actions">
               <button id="pr-query" class="btn primary" type="button">查詢</button>
-              <button id="pr-reset" class="btn" type="button" style="margin-left:8px;">重置</button>
+              <button id="pr-reset" class="btn" type="button">重置</button>
             </div>
           </div>
         </div>
@@ -227,16 +265,30 @@
         <div class="report-filters" aria-label="收款分析篩選">
           <div class="filter-row">
             <div class="filter-group">
-              <label for="rc-date-from">開始日期</label>
-              <input id="rc-date-from" type="date" />
+              <label for="rc-year">年度</label>
+              <select id="rc-year" class="form-select"></select>
             </div>
             <div class="filter-group">
-              <label for="rc-date-to">結束日期</label>
-              <input id="rc-date-to" type="date" />
+              <label for="rc-month">月份</label>
+              <select id="rc-month" class="form-select">
+                <option value="">全年</option>
+                <option value="1">1月</option>
+                <option value="2">2月</option>
+                <option value="3">3月</option>
+                <option value="4">4月</option>
+                <option value="5">5月</option>
+                <option value="6">6月</option>
+                <option value="7">7月</option>
+                <option value="8">8月</option>
+                <option value="9">9月</option>
+                <option value="10">10月</option>
+                <option value="11">11月</option>
+                <option value="12">12月</option>
+              </select>
             </div>
-            <div class="filter-group" style="min-width:140px;flex:0">
+            <div class="filter-group filter-actions">
               <button id="rc-query" class="btn primary" type="button">查詢</button>
-              <button id="rc-reset" class="btn" type="button" style="margin-left:8px;">重置</button>
+              <button id="rc-reset" class="btn" type="button">重置</button>
             </div>
           </div>
         </div>
@@ -273,7 +325,7 @@
             <div class="chart-container">
               <div class="chart-title">月度趨勢：開立 vs 收款</div>
               <div class="chart-wrapper">
-                <div class="placeholder muted" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">圖表占位</div>
+                <canvas id="rc-trend-chart"></canvas>
               </div>
             </div>
 
@@ -311,6 +363,29 @@
           'receivables': document.getElementById('panel-receivables'),
         };
 
+        // Chart instances
+        let ccProfitChart = null;
+        let ehClientDistChart = null;
+        let rcTrendChart = null;
+
+        // Helper function to destroy chart if exists
+        function destroyChart(chartInstance) {
+          if (chartInstance) {
+            chartInstance.destroy();
+          }
+          return null;
+        }
+
+        // Generate colors for charts
+        function generateColors(count) {
+          const colors = [
+            '#2c5f7c', '#3498db', '#27ae60', '#f39c12', '#e74c3c', 
+            '#9b59b6', '#1abc9c', '#34495e', '#16a085', '#c0392b',
+            '#8e44ad', '#2980b9', '#d35400', '#c0392b', '#7f8c8d'
+          ];
+          return Array.from({length: count}, (_, i) => colors[i % colors.length]);
+        }
+
         function setActiveTab(key){
           tabs.forEach(b=>{
             const selected = b.getAttribute('data-tab') === key;
@@ -341,58 +416,97 @@
           try { return new Date(a) <= new Date(b); } catch(_) { return false; }
         }
 
+        function initializeYearSelects() {
+          const currentYear = new Date().getFullYear();
+          const years = [];
+          for (let y = currentYear; y >= currentYear - 5; y--) {
+            years.push(y);
+          }
+          
+          ['cc-year', 'eh-year', 'pr-year', 'rc-year'].forEach(id => {
+            const select = document.getElementById(id);
+            if (select) {
+              select.innerHTML = years.map(y => `<option value="${y}">${y}年</option>`).join('');
+              select.value = currentYear;
+            }
+          });
+        }
+
+        async function loadClientsList() {
+          try {
+            const res = await fetch(`${apiBase}/clients`, { credentials: 'include' });
+            if (!res.ok) return;
+            const json = await res.json();
+            const clients = json.data || [];
+            const select = document.getElementById('cc-client');
+            if (select) {
+              select.innerHTML = '<option value="">全部客戶</option>' + 
+                clients.map(c => `<option value="${c.client_id}">${c.company_name}</option>`).join('');
+            }
+          } catch (e) {
+            console.error('Failed to load clients:', e);
+          }
+        }
+
+        async function loadEmployeesList() {
+          try {
+            const res = await fetch(`${apiBase}/settings/users`, { credentials: 'include' });
+            if (!res.ok) return;
+            const json = await res.json();
+            const users = json.data || [];
+            ['eh-employee', 'pr-employee'].forEach(id => {
+              const select = document.getElementById(id);
+              if (select) {
+                select.innerHTML = '<option value="">全部員工</option>' + 
+                  users.map(u => `<option value="${u.user_id}">${u.name || u.username}</option>`).join('');
+              }
+            });
+          } catch (e) {
+            console.error('Failed to load employees:', e);
+          }
+        }
+
         function attachValidation(){
-          const ccFrom = document.getElementById('cc-date-from');
-          const ccTo = document.getElementById('cc-date-to');
           const ccQuery = document.getElementById('cc-query');
           const ccReset = document.getElementById('cc-reset');
-          const bonus = document.getElementById('cc-include-bonus');
-          const tip = document.getElementById('cc-yearend-tip');
 
-          const rcFrom = document.getElementById('rc-date-from');
-          const rcTo = document.getElementById('rc-date-to');
           const rcQuery = document.getElementById('rc-query');
           const rcReset = document.getElementById('rc-reset');
 
-          const ehYM = document.getElementById('eh-year-month');
           const ehQuery = document.getElementById('eh-query');
           const ehReset = document.getElementById('eh-reset');
 
-          const prYM = document.getElementById('pr-year-month');
           const prQuery = document.getElementById('pr-query');
           const prReset = document.getElementById('pr-reset');
 
-          ccQuery?.addEventListener('click', ()=>{
-            if (!validateDateRange(ccFrom, ccTo)) { alert('請選擇有效日期區間'); return; }
-            loadClientCost();
-          });
-          ccReset?.addEventListener('click', ()=>{ ccFrom.value=''; ccTo.value=''; document.getElementById('cc-client').value=''; bonus.checked=false; tip.style.display='none'; });
-          bonus?.addEventListener('change', ()=>{ /* 切換年終分攤後重新查詢 */ if (validateDateRange(ccFrom, ccTo)) loadClientCost(); });
-          ccTo?.addEventListener('change', ()=>{
-            // 若包含 12 月，顯示提示
-            try {
-              const to = new Date(ccTo.value);
-              tip.style.display = (to.getMonth() === 11) ? 'block' : 'none';
-            } catch(_) { tip.style.display = 'none'; }
+          ccQuery?.addEventListener('click', loadClientCost);
+          ccReset?.addEventListener('click', ()=>{ 
+            document.getElementById('cc-year').value = new Date().getFullYear();
+            document.getElementById('cc-month').value = '';
+            document.getElementById('cc-client').value = '';
           });
 
-          rcQuery?.addEventListener('click', ()=>{
-            if (!validateDateRange(rcFrom, rcTo)) { alert('請選擇有效日期區間'); return; }
-            loadRevenue();
+          rcQuery?.addEventListener('click', loadRevenue);
+          rcReset?.addEventListener('click', ()=>{ 
+            document.getElementById('rc-year').value = new Date().getFullYear();
+            document.getElementById('rc-month').value = '';
           });
-          rcReset?.addEventListener('click', ()=>{ rcFrom.value=''; rcTo.value=''; });
 
-          ehQuery?.addEventListener('click', ()=>{
-            if (!/^\d{4}-\d{2}$/.test(ehYM.value||'')) { alert('請選擇查詢月份'); return; }
-            loadEmployeeHours();
+          ehQuery?.addEventListener('click', loadEmployeeHours);
+          ehReset?.addEventListener('click', ()=>{ 
+            const now = new Date();
+            document.getElementById('eh-year').value = now.getFullYear();
+            document.getElementById('eh-month').value = String(now.getMonth() + 1);
+            document.getElementById('eh-employee').value = '';
           });
-          ehReset?.addEventListener('click', ()=>{ ehYM.value=''; document.getElementById('eh-employee').value=''; });
 
-          prQuery?.addEventListener('click', ()=>{
-            if (!/^\d{4}-\d{2}$/.test(prYM.value||'')) { alert('請選擇查詢月份'); return; }
-            loadPayroll();
+          prQuery?.addEventListener('click', loadPayroll);
+          prReset?.addEventListener('click', ()=>{ 
+            const now = new Date();
+            document.getElementById('pr-year').value = now.getFullYear();
+            document.getElementById('pr-month').value = String(now.getMonth() + 1);
+            document.getElementById('pr-employee').value = '';
           });
-          prReset?.addEventListener('click', ()=>{ prYM.value=''; document.getElementById('pr-employee').value=''; });
         }
 
         function formatNumber(n){ try { return Number(n||0).toLocaleString(); } catch(_) { return String(n||0); } }
@@ -402,16 +516,29 @@
           const tbody = panel.querySelector('.report-table tbody');
           const totalValueEl = panel.querySelector('.summary-card.type-info .value');
           const warnValueEl = panel.querySelector('.summary-card.type-warning .value');
-          const from = (document.getElementById('cc-date-from')||{}).value;
-          const to = (document.getElementById('cc-date-to')||{}).value;
-          const client = (document.getElementById('cc-client')||{}).value?.trim();
-          const includeBonus = (document.getElementById('cc-include-bonus')||{}).checked === true;
-          if (!from || !to) return;
+          const year = document.getElementById('cc-year').value;
+          const month = document.getElementById('cc-month').value;
+          const client = document.getElementById('cc-client').value;
+          
+          if (!year) { alert('請選擇年度'); return; }
+          
+          // 计算日期范围
+          let startDate, endDate;
+          if (month) {
+            const y = parseInt(year);
+            const m = parseInt(month);
+            startDate = `${y}-${String(m).padStart(2,'0')}-01`;
+            const lastDay = new Date(y, m, 0).getDate();
+            endDate = `${y}-${String(m).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+          } else {
+            startDate = `${year}-01-01`;
+            endDate = `${year}-12-31`;
+          }
+          
           const params = new URLSearchParams();
-          params.set('start_date', from);
-          params.set('end_date', to);
+          params.set('start_date', startDate);
+          params.set('end_date', endDate);
           if (client) params.set('client_id', client);
-          if (includeBonus) params.set('include_year_end_bonus', 'true');
           try {
             tbody.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/reports/client-cost-analysis?${params.toString()}`, { credentials:'include' });
@@ -424,15 +551,16 @@
             if (!rows.length) {
               tbody.innerHTML = '<tr><td colspan="10" class="muted">尚無資料</td></tr>';
             } else {
-              rows.forEach(r => {
+              rows.forEach((r, idx) => {
                 const salary = Number(r?.cost_breakdown?.salary_cost || 0);
                 const oh = Number(r?.cost_breakdown?.overhead_cost || 0);
                 const bonus = Number(r?.cost_breakdown?.year_end_bonus || 0);
                 const total = Number(r?.cost_breakdown?.total_cost || (salary+oh+bonus));
                 totalCostAll += total;
                 const tr = document.createElement('tr');
+                tr.style.cursor = r.user_breakdown && r.user_breakdown.length > 0 ? 'pointer' : 'default';
                 tr.innerHTML = `
-                  <td>${r.company_name||r.client_id||''}</td>
+                  <td>${r.company_name||r.client_id||''} ${r.user_breakdown && r.user_breakdown.length > 0 ? '<span style="color:#3498db;font-size:0.85em;">▼</span>' : ''}</td>
                   <td class="number-cell">${formatNumber(r.total_actual_hours)}</td>
                   <td class="number-cell">${formatNumber(r.total_weighted_hours)}</td>
                   <td class="number-cell">${formatNumber(salary)}</td>
@@ -444,11 +572,105 @@
                   <td class="number-cell ${Number(r.profit_margin||0) >= 0 ? 'positive-value':'negative-value'}">${Number(r.profit_margin||0).toFixed(1)}%</td>
                 `;
                 tbody.appendChild(tr);
+                
+                // Add click handler to toggle user breakdown
+                if (r.user_breakdown && r.user_breakdown.length > 0) {
+                  const detailRowId = `detail-row-${idx}`;
+                  tr.addEventListener('click', function() {
+                    const existingDetail = document.getElementById(detailRowId);
+                    if (existingDetail) {
+                      existingDetail.remove();
+                      tr.querySelector('span').textContent = '▼';
+                    } else {
+                      const detailTr = document.createElement('tr');
+                      detailTr.id = detailRowId;
+                      detailTr.style.backgroundColor = '#f8f9fa';
+                      detailTr.innerHTML = `
+                        <td colspan="10" style="padding:15px;">
+                          <div style="font-weight:700;margin-bottom:10px;color:var(--primary-color);">員工明細</div>
+                          <table style="width:100%;font-size:0.9em;">
+                            <thead>
+                              <tr style="background:#e9ecef;">
+                                <th style="padding:8px;text-align:left;">員工</th>
+                                <th style="padding:8px;text-align:right;">實際工時</th>
+                                <th style="padding:8px;text-align:right;">加權工時</th>
+                                <th style="padding:8px;text-align:right;">時薪成本率</th>
+                                <th style="padding:8px;text-align:right;">薪資成本</th>
+                                <th style="padding:8px;text-align:right;">管理成本</th>
+                                <th style="padding:8px;text-align:right;">總成本</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              ${r.user_breakdown.map(u => `
+                                <tr>
+                                  <td style="padding:8px;">${u.username}</td>
+                                  <td style="padding:8px;text-align:right;">${formatNumber(u.actual_hours)}</td>
+                                  <td style="padding:8px;text-align:right;">${formatNumber(u.weighted_hours)}</td>
+                                  <td style="padding:8px;text-align:right;">${formatNumber(u.hourly_cost_rate)}</td>
+                                  <td style="padding:8px;text-align:right;">${formatNumber(u.salary_cost)}</td>
+                                  <td style="padding:8px;text-align:right;">${formatNumber(u.overhead_cost)}</td>
+                                  <td style="padding:8px;text-align:right;font-weight:700;">${formatNumber(u.total_cost)}</td>
+                                </tr>
+                              `).join('')}
+                            </tbody>
+                          </table>
+                        </td>
+                      `;
+                      tr.after(detailTr);
+                      tr.querySelector('span').textContent = '▲';
+                    }
+                  });
+                }
               });
             }
             totalValueEl.textContent = formatNumber(totalCostAll);
             const hasWarn = Array.isArray(json.warnings) && json.warnings.length > 0;
             warnValueEl.textContent = hasWarn ? '警示' : '正常';
+
+            // Render profit margin chart
+            ccProfitChart = destroyChart(ccProfitChart);
+            if (rows.length > 0) {
+              const ctx = document.getElementById('cc-profit-chart');
+              const chartData = rows.slice(0, 10).map(r => ({
+                name: r.company_name || r.client_id,
+                margin: Number(r.profit_margin || 0)
+              }));
+              ccProfitChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                  labels: chartData.map(d => d.name),
+                  datasets: [{
+                    label: '毛利率 (%)',
+                    data: chartData.map(d => d.margin),
+                    backgroundColor: chartData.map(d => d.margin >= 0 ? '#27ae60' : '#e74c3c'),
+                    borderColor: chartData.map(d => d.margin >= 0 ? '#229954' : '#c0392b'),
+                    borderWidth: 1
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                      callbacks: {
+                        label: (context) => `毛利率: ${context.parsed.y.toFixed(1)}%`
+                      }
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: { display: true, text: '毛利率 (%)' },
+                      ticks: { callback: (value) => value + '%' }
+                    },
+                    x: {
+                      ticks: { maxRotation: 45, minRotation: 45 }
+                    }
+                  }
+                }
+              });
+            }
           } catch (_) {
             tbody.innerHTML = '<tr><td colspan="10" style="color:#c0392b;">查詢失敗</td></tr>';
           }
@@ -456,13 +678,16 @@
 
         async function loadEmployeeHours(){
           const panel = document.getElementById('panel-employee-hours');
-          const ym = (document.getElementById('eh-year-month')||{}).value;
-          if (!/^\d{4}-\d{2}$/.test(ym||'')) return;
-          const userField = (document.getElementById('eh-employee')||{}).value?.trim();
+          const year = document.getElementById('eh-year').value;
+          const month = document.getElementById('eh-month').value;
+          const userId = document.getElementById('eh-employee').value;
+          
+          if (!year || !month) { alert('請選擇年度和月份'); return; }
+          
           const params = new URLSearchParams();
-          params.set('year', ym.slice(0,4));
-          params.set('month', ym.slice(5,7));
-          if (/^\d+$/.test(userField)) params.set('user_id', userField);
+          params.set('year', year);
+          params.set('month', month);
+          if (userId) params.set('user_id', userId);
           const totalValueEl = panel.querySelector('.summary-card.type-info .value');
           const utilValueEl = panel.querySelector('.summary-card.type-success .value');
           const listEl = panel.querySelector('.employee-hours-list');
@@ -493,6 +718,44 @@
             const avgUtil = rows.length ? (utilSum/rows.length) : 0;
             totalValueEl.textContent = formatNumber(totalHours);
             utilValueEl.textContent = `${avgUtil.toFixed(2)}%`;
+
+            // Render client distribution pie chart
+            ehClientDistChart = destroyChart(ehClientDistChart);
+            if (rows.length > 0 && rows[0].client_distribution && rows[0].client_distribution.length > 0) {
+              const ctx = document.getElementById('eh-client-dist-chart');
+              const dist = rows[0].client_distribution;
+              const colors = generateColors(dist.length);
+              ehClientDistChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                  labels: dist.map(d => d.company_name),
+                  datasets: [{
+                    data: dist.map(d => d.hours),
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { position: 'right' },
+                    tooltip: {
+                      callbacks: {
+                        label: (context) => {
+                          const label = context.label || '';
+                          const value = context.parsed || 0;
+                          const pct = dist[context.dataIndex]?.percentage || 0;
+                          return `${label}: ${value.toFixed(1)}h (${pct}%)`;
+                        }
+                      }
+                    }
+                  }
+                }
+              });
+            }
+
           } catch (_) {
             listEl.innerHTML = '<div style="color:#c0392b;padding:10px;">查詢失敗</div>';
           }
@@ -500,13 +763,16 @@
 
         async function loadPayroll(){
           const panel = document.getElementById('panel-payroll');
-          const ym = (document.getElementById('pr-year-month')||{}).value;
-          if (!/^\d{4}-\d{2}$/.test(ym||'')) return;
-          const userField = (document.getElementById('pr-employee')||{}).value?.trim();
+          const year = document.getElementById('pr-year').value;
+          const month = document.getElementById('pr-month').value;
+          const userId = document.getElementById('pr-employee').value;
+          
+          if (!year || !month) { alert('請選擇年度和月份'); return; }
+          
           const params = new URLSearchParams();
-          params.set('year', ym.slice(0,4));
-          params.set('month', ym.slice(5,7));
-          if (/^\d+$/.test(userField)) params.set('user_id', userField);
+          params.set('year', year);
+          params.set('month', month);
+          if (userId) params.set('user_id', userId);
           const totalValueEl = panel.querySelector('.summary-card.type-info .value');
           const tbody = panel.querySelector('.report-table tbody');
           try {
@@ -544,12 +810,27 @@
 
         async function loadRevenue(){
           const panel = document.getElementById('panel-receivables');
-          const from = (document.getElementById('rc-date-from')||{}).value;
-          const to = (document.getElementById('rc-date-to')||{}).value;
-          if (!from || !to) return;
+          const year = document.getElementById('rc-year').value;
+          const month = document.getElementById('rc-month').value;
+          
+          if (!year) { alert('請選擇年度'); return; }
+          
+          // 计算日期范围
+          let startDate, endDate;
+          if (month) {
+            const y = parseInt(year);
+            const m = parseInt(month);
+            startDate = `${y}-${String(m).padStart(2,'0')}-01`;
+            const lastDay = new Date(y, m, 0).getDate();
+            endDate = `${y}-${String(m).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+          } else {
+            startDate = `${year}-01-01`;
+            endDate = `${year}-12-31`;
+          }
+          
           const params = new URLSearchParams();
-          params.set('start_date', from);
-          params.set('end_date', to);
+          params.set('start_date', startDate);
+          params.set('end_date', endDate);
           const values = panel.querySelectorAll('.summary-card .value');
           const tbody = panel.querySelector('.report-table tbody');
           try {
@@ -581,22 +862,79 @@
                 tbody.appendChild(tr);
               });
             }
-            // Chart placeholder update with simple summary
-            const chartPH = panel.querySelector('.chart-wrapper .placeholder');
-            if (chartPH) chartPH.textContent = `共 ${d.monthly_trend?.length||0} 個月份資料`;
+            // Render monthly trend chart
+            rcTrendChart = destroyChart(rcTrendChart);
+            if (d.monthly_trend && d.monthly_trend.length > 0) {
+              const ctx = document.getElementById('rc-trend-chart');
+              const trend = d.monthly_trend;
+              rcTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                  labels: trend.map(t => t.month),
+                  datasets: [
+                    {
+                      label: '開立金額',
+                      data: trend.map(t => t.receipts),
+                      borderColor: '#3498db',
+                      backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                      tension: 0.3,
+                      fill: true
+                    },
+                    {
+                      label: '收款金額',
+                      data: trend.map(t => t.paid),
+                      borderColor: '#27ae60',
+                      backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                      tension: 0.3,
+                      fill: true
+                    }
+                  ]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                      mode: 'index',
+                      intersect: false,
+                      callbacks: {
+                        label: (context) => `${context.dataset.label}: ${formatNumber(context.parsed.y)}`
+                      }
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: { display: true, text: '金額 (元)' },
+                      ticks: {
+                        callback: (value) => formatNumber(value)
+                      }
+                    },
+                    x: {
+                      title: { display: true, text: '月份' }
+                    }
+                  }
+                }
+              });
+            }
           } catch (_) {
             tbody.innerHTML = '<tr><td colspan="4" style="color:#c0392b;">查詢失敗</td></tr>';
           }
         }
 
         async function bootstrap(){
-          // 預設月份：本月
+          // 初始化年度选择器
+          initializeYearSelects();
+          
+          // 設置預設月份
           const now = new Date();
-          const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-          const ehYM = document.getElementById('eh-year-month');
-          const prYM = document.getElementById('pr-year-month');
-          if (ehYM) ehYM.value = ym;
-          if (prYM) prYM.value = ym;
+          const currentMonth = String(now.getMonth() + 1);
+          document.getElementById('eh-month').value = currentMonth;
+          document.getElementById('pr-month').value = currentMonth;
+
+          // 載入客戶和員工列表
+          await Promise.all([loadClientsList(), loadEmployeesList()]);
 
           // 權限：根據 /auth/me 決定可見的分頁
           try {
@@ -608,8 +946,8 @@
               const adminOnly = btn.getAttribute('data-admin-only') === 'true';
               if (adminOnly && !isAdmin) btn.style.display = 'none';
             });
-            // 預設啟用分頁：管理員=客戶成本；員工=員工工時
-            setActiveTab(isAdmin ? 'client-cost' : 'employee-hours');
+            // 預設啟用分頁：員工工時
+            setActiveTab('employee-hours');
             permBar.style.display = 'none';
           } catch (_) {
             // 若讀取角色失敗，僅顯示員工工時分頁
@@ -620,20 +958,6 @@
           }
 
           attachValidation();
-
-          // 預設日期區間：當月
-          const y = now.getFullYear();
-          const m = String(now.getMonth()+1).padStart(2,'0');
-          const firstDay = `${y}-${m}-01`;
-          const today = `${y}-${m}-${String(now.getDate()).padStart(2,'0')}`;
-          const ccFrom = document.getElementById('cc-date-from');
-          const ccTo = document.getElementById('cc-date-to');
-          const rcFrom = document.getElementById('rc-date-from');
-          const rcTo = document.getElementById('rc-date-to');
-          if (ccFrom && !ccFrom.value) ccFrom.value = firstDay;
-          if (ccTo && !ccTo.value) ccTo.value = today;
-          if (rcFrom && !rcFrom.value) rcFrom.value = firstDay;
-          if (rcTo && !rcTo.value) rcTo.value = today;
         }
 
         bootstrap();

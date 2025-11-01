@@ -100,20 +100,27 @@
             <button type="button" class="btn" id="btn-refresh-emp" disabled>刷新</button>
           </div>
           <div class="info-box" style="margin-bottom: 12px; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 14px; color: #1e40af;">
-            <strong>計算說明：</strong>員工時薪 = 年度總薪資 ÷ (全年工時 - 特休時數)，成本 = 員工時薪 × 加權工時 + 分攤管理費用
+            <strong>計算說明：</strong><br>
+            • <strong>月工時基準</strong> = (2080小時 - 特休時數) ÷ 12個月<br>
+            • <strong>員工時薪</strong> = 月薪 ÷ 月工時基準<br>
+            • <strong>加權工時</strong> = 考慮加班費倍率的等效工時<br>
+            &nbsp;&nbsp;- 平日加班：實際工時 × 倍率（1.34或1.67）<br>
+            &nbsp;&nbsp;- <span style="color:#dc2626;">國定假日/例假日（8小時內）：16.0加權工時（含加班費8小時+強制補休8小時）</span><br>
+            • <strong>薪資成本</strong> = 員工時薪 × 加權工時 + 補休到期轉加班費<br>
+            • <strong>總成本</strong> = 薪資成本 + 分攤管理費用
           </div>
           <table class="table" aria-label="員工成本列表">
             <thead>
               <tr>
                 <th>姓名</th>
-                <th>年度總薪資</th>
-                <th>年工時</th>
-                <th>特休時數</th>
-                <th>實際工時</th>
+                <th>月薪</th>
+                <th>月工時基準</th>
                 <th>員工時薪</th>
                 <th>本月工時</th>
                 <th>加權工時</th>
-                <th>本月薪資成本</th>
+                <th>工時成本</th>
+                <th>補休轉加班費</th>
+                <th>薪資小計</th>
                 <th>分攤管理費</th>
                 <th>本月總成本</th>
               </tr>
@@ -400,25 +407,32 @@
               const annualHours = Number(emp.annualHours || 0);
               const annualLeaveHours = Number(emp.annualLeaveHours || 0);
               const actualHours = annualHours - annualLeaveHours;
-              const hourlyRate = actualHours > 0 ? annualSalary / actualHours : 0;
+              
+              // 用月薪和月工時基準計算時薪（更直觀）
+              const monthlySalary = annualSalary / 12;
+              const monthlyBaseHours = actualHours / 12;
+              const hourlyRate = monthlyBaseHours > 0 ? monthlySalary / monthlyBaseHours : 0;
+              
               const monthHours = Number(emp.monthHours || 0);
               const weightedHours = Number(emp.weightedHours || 0);
               const laborCost = Number(emp.laborCost || 0);
+              const expiredCompCost = Number(emp.expiredCompCost || 0);
               const overheadAllocation = Number(emp.overheadAllocation || 0);
               const empTotalCost = laborCost + overheadAllocation;
+              const workTimeCost = laborCost - expiredCompCost;
               totalCost += empTotalCost;
               tr.innerHTML = `
                 <td>${emp.name||''}</td>
-                <td>${formatCurrency(annualSalary)}</td>
-                <td>${annualHours.toFixed(1)}</td>
-                <td>${annualLeaveHours.toFixed(1)}</td>
-                <td>${actualHours.toFixed(1)}</td>
-                <td>${formatCurrency(hourlyRate)}</td>
+                <td>${formatCurrency(monthlySalary)}</td>
+                <td>${monthlyBaseHours.toFixed(1)} hrs</td>
+                <td style="font-weight:600;">${formatCurrency(hourlyRate)}</td>
                 <td>${monthHours.toFixed(1)}</td>
-                <td>${weightedHours.toFixed(1)}</td>
-                <td>${formatCurrency(laborCost)}</td>
+                <td style="font-weight:600;color:#0ea5e9;">${weightedHours.toFixed(1)}</td>
+                <td>${formatCurrency(workTimeCost)}</td>
+                <td style="color:#dc2626;">${formatCurrency(expiredCompCost)}</td>
+                <td style="font-weight:600;">${formatCurrency(laborCost)}</td>
                 <td>${formatCurrency(overheadAllocation)}</td>
-                <td>${formatCurrency(empTotalCost)}</td>
+                <td style="font-weight:600;color:#16a34a;">${formatCurrency(empTotalCost)}</td>
               `;
               tbodyEmployee.appendChild(tr);
             });

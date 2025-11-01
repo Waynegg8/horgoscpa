@@ -47,8 +47,9 @@ export async function handleTasks(request, env, me, requestId, url) {
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
 			const rows = await env.DATABASE.prepare(
-				`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id,
-				        c.company_name AS client_name,
+				`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes,
+				        c.company_name AS client_name, c.tax_id AS client_tax_id, c.client_id,
+				        s.service_name,
 				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id) AS total_stages,
 				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id AND s.status = 'completed') AS completed_stages,
 				        (CASE WHEN t.related_sop_id IS NOT NULL OR t.client_specific_sop_id IS NOT NULL THEN 1 ELSE 0 END) AS has_sop,
@@ -56,19 +57,25 @@ export async function handleTasks(request, env, me, requestId, url) {
 				 FROM ActiveTasks t
 				 LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
 				 LEFT JOIN Clients c ON c.client_id = cs.client_id
+				 LEFT JOIN Services s ON s.service_id = cs.service_id
 				 LEFT JOIN Users u ON u.user_id = t.assignee_user_id
 				 ${whereSql}
-				 ORDER BY date(t.due_date) ASC NULLS LAST, t.task_id DESC
+				 ORDER BY c.company_name ASC, s.service_name ASC, date(t.due_date) ASC NULLS LAST, t.task_id DESC
 				 LIMIT ? OFFSET ?`
 			).bind(...binds, perPage, offset).all();
 			const data = (rows?.results || []).map((r) => ({
 				taskId: String(r.task_id),
 				taskName: r.task_name,
 				clientName: r.client_name || "",
+				clientTaxId: r.client_tax_id || "",
+				clientId: r.client_id || "",
+				serviceName: r.service_name || "",
 				assigneeName: r.assignee_name || "",
+				assigneeUserId: r.assignee_user_id || null,
 				progress: { completed: Number(r.completed_stages || 0), total: Number(r.total_stages || 0) },
 				dueDate: r.due_date || null,
 				status: r.status,
+				notes: r.notes || "",
 				hasSop: Number(r.has_sop || 0) === 1,
 			}));
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
@@ -116,6 +123,58 @@ export async function handleTasks(request, env, me, requestId, url) {
 				}
 			}
 			return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data:{ taskId, taskName, clientServiceId, dueDate, assigneeUserId }, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
+	// GET /api/v1/tasks/:id - 獲取任務詳情
+	if (method === "GET" && url.pathname.match(/\/tasks\/\d+$/)) {
+		const taskId = url.pathname.split("/").pop();
+		try {
+			const task = await env.DATABASE.prepare(
+				`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes, t.client_service_id,
+				        t.completed_date, t.created_at,
+				        c.company_name AS client_name, c.tax_id AS client_tax_id, c.client_id,
+				        s.service_name,
+				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id) AS total_stages,
+				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id AND s.status = 'completed') AS completed_stages,
+				        u.name AS assignee_name
+				 FROM ActiveTasks t
+				 LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
+				 LEFT JOIN Clients c ON c.client_id = cs.client_id
+				 LEFT JOIN Services s ON s.service_id = cs.service_id
+				 LEFT JOIN Users u ON u.user_id = t.assignee_user_id
+				 WHERE t.task_id = ? AND t.is_deleted = 0`
+			).bind(taskId).first();
+			
+			if (!task) {
+				return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"任務不存在", meta:{ requestId } }, corsHeaders);
+			}
+			
+			const data = {
+				task_id: String(task.task_id),
+				task_name: task.task_name,
+				client_name: task.client_name || "",
+				client_tax_id: task.client_tax_id || "",
+				client_id: task.client_id || "",
+				service_name: task.service_name || "",
+				assignee_name: task.assignee_name || "",
+				assignee_user_id: task.assignee_user_id || null,
+				client_service_id: task.client_service_id || null,
+				completed_stages: Number(task.completed_stages || 0),
+				total_stages: Number(task.total_stages || 0),
+				due_date: task.due_date || null,
+				status: task.status,
+				notes: task.notes || "",
+				completed_date: task.completed_date || null,
+				created_at: task.created_at || null
+			};
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
 			const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
@@ -206,6 +265,125 @@ export async function handleTasks(request, env, me, requestId, url) {
 			const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
 			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
 			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
+	// GET /api/v1/tasks/:id/stages - 獲取任務階段
+	if (method === "GET" && url.pathname.match(/\/tasks\/\d+\/stages$/)) {
+		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
+		try {
+			const stages = await env.DATABASE.prepare(
+				`SELECT stage_id, stage_name, stage_order, status, started_at, completed_at
+				 FROM ActiveTaskStages
+				 WHERE task_id = ?
+				 ORDER BY stage_order ASC`
+			).bind(taskId).all();
+			
+			const data = (stages?.results || []).map(s => ({
+				stage_id: s.stage_id,
+				stage_name: s.stage_name,
+				stage_order: s.stage_order,
+				status: s.status,
+				started_at: s.started_at,
+				completed_at: s.completed_at
+			}));
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
+	// POST /api/v1/tasks/:id/stages/:stageId/start - 開始階段
+	if (method === "POST" && url.pathname.match(/\/tasks\/\d+\/stages\/\d+\/start$/)) {
+		const parts = url.pathname.split("/");
+		const taskId = parts[parts.length - 4];
+		const stageId = parts[parts.length - 2];
+		try {
+			await env.DATABASE.prepare(
+				`UPDATE ActiveTaskStages SET status = 'in_progress', started_at = ? WHERE stage_id = ?`
+			).bind(new Date().toISOString(), stageId).run();
+			
+			await env.DATABASE.prepare(
+				`UPDATE ActiveTasks SET status = 'in_progress' WHERE task_id = ? AND status = 'pending'`
+			).bind(taskId).run();
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"已開始", meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
+	// POST /api/v1/tasks/:id/stages/:stageId/complete - 完成階段
+	if (method === "POST" && url.pathname.match(/\/tasks\/\d+\/stages\/\d+\/complete$/)) {
+		const parts = url.pathname.split("/");
+		const taskId = parts[parts.length - 4];
+		const stageId = parts[parts.length - 2];
+		try {
+			await env.DATABASE.prepare(
+				`UPDATE ActiveTaskStages SET status = 'completed', completed_at = ? WHERE stage_id = ?`
+			).bind(new Date().toISOString(), stageId).run();
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"已完成", meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
+	// GET /api/v1/tasks/:id/sops - 獲取任務關聯的SOP
+	if (method === "GET" && url.pathname.match(/\/tasks\/\d+\/sops$/)) {
+		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
+		try {
+			const sops = await env.DATABASE.prepare(
+				`SELECT s.sop_id, s.title, s.category, s.version
+				 FROM ActiveTaskSOPs ats
+				 JOIN SOPDocuments s ON s.sop_id = ats.sop_id
+				 WHERE ats.task_id = ? AND s.is_deleted = 0
+				 ORDER BY ats.sort_order ASC`
+			).bind(taskId).all();
+			
+			const data = (sops?.results || []).map(s => ({
+				id: s.sop_id,
+				title: s.title,
+				category: s.category || "",
+				version: s.version || 1
+			}));
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
+	// PUT /api/v1/tasks/:id/sops - 更新任務關聯的SOP
+	if (method === "PUT" && url.pathname.match(/\/tasks\/\d+\/sops$/)) {
+		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
+		let body;
+		try { body = await request.json(); } catch (_) {
+			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
+		}
+		
+		const sopIds = Array.isArray(body?.sop_ids) ? body.sop_ids : [];
+		
+		try {
+			// 刪除現有關聯
+			await env.DATABASE.prepare(`DELETE FROM ActiveTaskSOPs WHERE task_id = ?`).bind(taskId).run();
+			
+			// 添加新關聯
+			for (let i = 0; i < sopIds.length; i++) {
+				await env.DATABASE.prepare(
+					`INSERT INTO ActiveTaskSOPs (task_id, sop_id, sort_order) VALUES (?, ?, ?)`
+				).bind(taskId, sopIds[i], i).run();
+			}
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"已更新", meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
 		}
 	}
 

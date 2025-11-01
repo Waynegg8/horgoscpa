@@ -5,6 +5,50 @@ export async function handleReceipts(request, env, me, requestId, url) {
 	const method = request.method.toUpperCase();
 	const path = url.pathname;
 
+	// GET /internal/api/v1/receipts/reminders - 获取应开收据提醒
+	if (method === "GET" && path === "/internal/api/v1/receipts/reminders") {
+		try {
+			// 查询已完成的服务任务，但还没开收据的
+			const now = new Date();
+			const currentMonth = now.getMonth() + 1;
+			
+			const reminders = await env.DATABASE.prepare(
+				`SELECT DISTINCT
+				   c.client_id, c.company_name AS client_name,
+				   cs.client_service_id, s.service_name,
+				   sbs.billing_month, sbs.billing_amount AS amount
+				 FROM ClientServices cs
+				 JOIN Clients c ON c.client_id = cs.client_id
+				 JOIN Services s ON s.service_id = cs.service_id
+				 JOIN ServiceBillingSchedule sbs ON sbs.client_service_id = cs.client_service_id
+				 WHERE cs.status = 'active'
+				   AND sbs.billing_month = ?
+				   AND NOT EXISTS (
+				     SELECT 1 FROM Receipts r 
+				     WHERE r.client_service_id = cs.client_service_id 
+				       AND r.billing_month = sbs.billing_month
+				       AND r.is_deleted = 0
+				   )
+				 ORDER BY c.company_name, s.service_name
+				 LIMIT 20`
+			).bind(currentMonth).all();
+			
+			const data = (reminders?.results || []).map(r => ({
+				client_id: r.client_id,
+				client_name: r.client_name,
+				client_service_id: r.client_service_id,
+				service_name: r.service_name,
+				billing_month: r.billing_month,
+				amount: Number(r.amount || 0)
+			}));
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
 	// GET /internal/api/v1/receipts/suggest-amount - 根据服务和月份建议金额
 	if (method === "GET" && path === "/internal/api/v1/receipts/suggest-amount") {
 		const clientServiceId = parseInt(url.searchParams.get("client_service_id") || "0", 10);

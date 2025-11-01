@@ -224,22 +224,72 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				// 6. 計算員工時薪
 				const hourlyRate = actualHours > 0 ? annualSalary / actualHours : 0;
 				
-				// 7. 獲取本月實際工時
+				// 7. 獲取本月實際工時記錄
+				const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
 				const timesheetRows = await env.DATABASE.prepare(
-					`SELECT SUM(hours) as total_hours FROM Timesheets 
-					 WHERE user_id = ? AND year = ? AND month = ? AND is_deleted = 0`
-				).bind(userId, year, month).first();
-				const monthHours = Number(timesheetRows?.total_hours || 0);
+					`SELECT work_type, hours
+					 FROM Timesheets 
+					 WHERE user_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
+				).bind(userId, yearMonth).all();
+				const timesheets = timesheetRows?.results || [];
 				
-				// 8. 計算加權工時（暫時使用1.0權重，未來可從系統設定獲取）
-				// TODO: 從系統設定或員工職級獲取權重係數
-				const weightMultiplier = 1.0;
-				const weightedHours = monthHours * weightMultiplier;
+				// 工時類型倍率對照表
+				const WORK_TYPE_MULTIPLIERS = {
+					1: 1.0,   // 正常工時
+					2: 1.34,  // 平日加班（前2小時）
+					3: 1.67,  // 平日加班（後2小時）
+					4: 1.34,  // 休息日加班（前2小時）
+					5: 1.67,  // 休息日加班（第3-8小時）
+					6: 2.67,  // 休息日加班（第9-12小時）
+					7: 2.0,   // 國定假日加班（8小時內）- 特殊處理（強制補休）
+					8: 1.34,  // 國定假日加班（第9-10小時）
+					9: 1.67,  // 國定假日加班（第11-12小時）
+					10: 2.0,  // 例假日加班（8小時內）- 特殊處理（強制補休）
+					11: 2.0   // 例假日加班（第9-12小時）
+				};
 				
-				// 9. 計算本月薪資成本
+				// 必須給補休的工時類型（需要雙重計算成本）
+				const MANDATORY_COMP_LEAVE_TYPES = [7, 10]; // 國定假日和例假日8小時內
+				
+				// 8. 計算總工時和加權工時
+				let monthHours = 0;
+				let weightedHours = 0;
+				
+				for (const ts of timesheets) {
+					const hours = Number(ts.hours || 0);
+					const workTypeId = parseInt(ts.work_type) || 1;
+					const multiplier = WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0;
+					
+					monthHours += hours;
+					
+					// 特殊情況：國定假日/例假日 8小時內類型
+					// 需要支付加班費 + 強制給補休，所以成本是雙倍
+					if (MANDATORY_COMP_LEAVE_TYPES.includes(workTypeId)) {
+						// 加班費成本（固定8小時加權）+ 強制補休成本（8小時）
+						weightedHours += 8.0 + 8.0; // = 16.0
+					} else {
+						// 一般情況：實際工時 × 倍率
+						weightedHours += hours * multiplier;
+					}
+				}
+				
+				// 9. 計算本月實際成本
+				// 注意：使用補休不減少加權工時成本，因為補休是用之前加班的成本抵銷
+				// 補休使用只影響實際工作時數，不影響成本計算
 				const laborCost = Math.round(hourlyRate * weightedHours);
 				
-				// 10. 計算分攤管理費用
+				// 10. 獲取本月補休到期轉加班費（需要額外計入成本）
+				const expiredCompRow = await env.DATABASE.prepare(
+					`SELECT SUM(amount_cents) as expired_amount 
+					 FROM CompensatoryOvertimePay 
+					 WHERE user_id = ? AND year_month = ?`
+				).bind(userId, `${year}-${String(month).padStart(2, '0')}`).first();
+				const expiredCompCost = Math.round(Number(expiredCompRow?.expired_amount || 0) / 100);
+				
+				// 最終薪資成本 = 本月工時成本 + 補休到期轉加班費
+				const totalLaborCost = laborCost + expiredCompCost;
+				
+				// 11. 計算分攤管理費用
 				// 按工時比例分攤
 				const overheadRow = await env.DATABASE.prepare(
 					`SELECT SUM(m.amount) as total FROM MonthlyOverheadCosts m
@@ -267,9 +317,10 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					hourlyRate: Math.round(hourlyRate),
 					monthHours,
 					weightedHours,
-					laborCost,
+					laborCost: totalLaborCost,
+					expiredCompCost, // 補休到期轉加班費
 					overheadAllocation,
-					totalCost: laborCost + overheadAllocation
+					totalCost: totalLaborCost + overheadAllocation
 				});
 			}
 
@@ -297,52 +348,72 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"year/month 不合法", meta:{ requestId } }, corsHeaders);
 			}
 
+			// 工時類型倍率對照表
+			const WORK_TYPE_MULTIPLIERS = {
+				1: 1.0, 2: 1.34, 3: 1.67, 4: 1.34, 5: 1.67, 
+				6: 2.67, 7: 2.0, 8: 1.34, 9: 1.67, 10: 2.0, 11: 2.0
+			};
+
 			// 1. 獲取所有客戶
 			const clientsRows = await env.DATABASE.prepare(
 				"SELECT client_id, company_name FROM Clients WHERE is_deleted = 0 ORDER BY company_name ASC"
 			).all();
 			const clientsList = clientsRows?.results || [];
 
+			const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
 			const clients = [];
 
 			for (const client of clientsList) {
 				const clientId = client.client_id;
 				
-				// 2. 獲取該客戶本月所有任務的工時
-				const taskRows = await env.DATABASE.prepare(
-					`SELECT t.task_id, ts.user_id, SUM(ts.hours) as total_hours
-					 FROM Tasks t
-					 LEFT JOIN Timesheets ts ON ts.task_id = t.task_id AND ts.year = ? AND ts.month = ? AND ts.is_deleted = 0
-					 WHERE t.client_id = ? AND t.is_deleted = 0
-					 GROUP BY t.task_id, ts.user_id`
-				).bind(year, month, clientId).all();
-				const taskData = taskRows?.results || [];
+				// 2. 獲取該客戶本月所有任務的工時記錄（包含work_type）
+				const timesheetRows = await env.DATABASE.prepare(
+					`SELECT ts.user_id, ts.work_type, ts.hours, ts.task_id
+					 FROM Timesheets ts
+					 JOIN Tasks t ON t.task_id = ts.task_id
+					 WHERE t.client_id = ? AND substr(ts.work_date, 1, 7) = ? 
+					   AND ts.is_deleted = 0 AND t.is_deleted = 0`
+				).bind(clientId, yearMonth).all();
+				const timesheets = timesheetRows?.results || [];
+				
+				if (timesheets.length === 0) continue;
 				
 				let totalHours = 0;
 				let weightedHours = 0;
 				let laborCost = 0;
 				const taskCount = new Set();
+				const userHourlyRates = {}; // 快取員工時薪
 				
-				// 3. 計算每個任務的成本
-				for (const task of taskData) {
-					if (!task.user_id) continue;
-					taskCount.add(task.task_id);
+				// 3. 計算每筆工時的成本
+				for (const ts of timesheets) {
+					if (!ts.user_id) continue;
+					taskCount.add(ts.task_id);
 					
-					const hours = Number(task.total_hours || 0);
+					const hours = Number(ts.hours || 0);
+					const workTypeId = parseInt(ts.work_type) || 1;
+					const multiplier = WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0;
+					
 					totalHours += hours;
 					
-					// 獲取員工時薪
-					const userRow = await env.DATABASE.prepare(
-						"SELECT user_id FROM Users WHERE user_id = ? AND is_deleted = 0"
-					).bind(task.user_id).first();
-					if (!userRow) continue;
+					// 計算加權工時
+					let tsWeightedHours;
+					if (MANDATORY_COMP_LEAVE_TYPES.includes(workTypeId)) {
+						// 特殊情況：國定假日/例假日 8小時內（強制補休）
+						// 成本 = 加班費 + 強制補休
+						tsWeightedHours = 8.0 + 8.0; // = 16.0
+					} else {
+						tsWeightedHours = hours * multiplier;
+					}
+					weightedHours += tsWeightedHours;
 					
-					// 簡化計算：使用固定時薪（實際應從員工成本計算）
-					const hourlyRate = 200; // TODO: 從員工成本分析獲取實際時薪
-					const weight = 1.0;
-					const taskWeightedHours = hours * weight;
-					weightedHours += taskWeightedHours;
-					laborCost += Math.round(hourlyRate * taskWeightedHours);
+					// 獲取或計算員工時薪
+					if (!userHourlyRates[ts.user_id]) {
+						// 簡化計算：使用固定時薪
+						// TODO: 從員工成本分析獲取實際時薪（考慮年薪和特休）
+						userHourlyRates[ts.user_id] = 200;
+					}
+					
+					laborCost += Math.round(userHourlyRates[ts.user_id] * tsWeightedHours);
 				}
 				
 				// 4. 計算分攤管理費用（按工時比例）
@@ -408,32 +479,40 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"year/month 不合法", meta:{ requestId } }, corsHeaders);
 			}
 
+			// 工時類型倍率對照表
+			const WORK_TYPE_MULTIPLIERS = {
+				1: 1.0, 2: 1.34, 3: 1.67, 4: 1.34, 5: 1.67, 
+				6: 2.67, 7: 2.0, 8: 1.34, 9: 1.67, 10: 2.0, 11: 2.0
+			};
+			
+			// 必須給補休的工時類型
+			const MANDATORY_COMP_LEAVE_TYPES = [7, 10];
+
+			const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
+			
 			// 1. 獲取所有有工時記錄的任務
 			const taskRows = await env.DATABASE.prepare(
-				`SELECT 
+				`SELECT DISTINCT
 					t.task_id, 
 					t.title, 
 					t.client_id,
 					c.company_name,
 					t.assigned_to,
-					u.full_name as assignee_name,
-					SUM(ts.hours) as total_hours
+					u.full_name as assignee_name
 				 FROM Tasks t
 				 JOIN Clients c ON c.client_id = t.client_id
 				 LEFT JOIN Users u ON u.user_id = t.assigned_to
-				 LEFT JOIN Timesheets ts ON ts.task_id = t.task_id AND ts.year = ? AND ts.month = ? AND ts.is_deleted = 0
+				 JOIN Timesheets ts ON ts.task_id = t.task_id AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
 				 WHERE t.is_deleted = 0 AND c.is_deleted = 0
-				 GROUP BY t.task_id, t.title, t.client_id, c.company_name, t.assigned_to, u.full_name
-				 HAVING total_hours > 0
 				 ORDER BY c.company_name ASC, t.title ASC`
-			).bind(year, month).all();
+			).bind(yearMonth).all();
 			const taskList = taskRows?.results || [];
 
 			// 2. 獲取總工時和總管理費用用於分攤
 			const totalHoursRow = await env.DATABASE.prepare(
 				`SELECT SUM(hours) as total FROM Timesheets 
-				 WHERE year = ? AND month = ? AND is_deleted = 0`
-			).bind(year, month).first();
+				 WHERE substr(work_date, 1, 7) = ? AND is_deleted = 0`
+			).bind(yearMonth).first();
 			const totalMonthHours = Number(totalHoursRow?.total || 0);
 			
 			const overheadRow = await env.DATABASE.prepare(
@@ -442,10 +521,36 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			).bind(year, month).first();
 			const totalOverhead = Number(overheadRow?.total || 0);
 
-			const tasks = taskList.map(task => {
-				const hours = Number(task.total_hours || 0);
-				const weight = 1.0; // TODO: 從系統設定獲取
-				const weightedHours = hours * weight;
+			const tasks = [];
+			
+			// 3. 為每個任務計算成本
+			for (const task of taskList) {
+				// 獲取該任務的所有工時記錄
+				const timesheetRows = await env.DATABASE.prepare(
+					`SELECT work_type, hours
+					 FROM Timesheets 
+					 WHERE task_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
+				).bind(task.task_id, yearMonth).all();
+				const timesheets = timesheetRows?.results || [];
+				
+				let hours = 0;
+				let weightedHours = 0;
+				
+				for (const ts of timesheets) {
+					const tsHours = Number(ts.hours || 0);
+					const workTypeId = parseInt(ts.work_type) || 1;
+					const multiplier = WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0;
+					
+					hours += tsHours;
+					
+					// 計算加權工時
+					if (MANDATORY_COMP_LEAVE_TYPES.includes(workTypeId)) {
+						// 國定假日/例假日8小時內：加班費 + 強制補休
+						weightedHours += 8.0 + 8.0; // = 16.0
+					} else {
+						weightedHours += tsHours * multiplier;
+					}
+				}
 				
 				// 簡化計算：使用固定時薪
 				const hourlyRate = 200; // TODO: 從員工成本分析獲取實際時薪
@@ -456,7 +561,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					? Math.round(totalOverhead * (hours / totalMonthHours))
 					: 0;
 				
-				return {
+				tasks.push({
 					taskId: task.task_id,
 					taskTitle: task.title,
 					clientId: task.client_id,
@@ -468,8 +573,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					laborCost,
 					overheadAllocation,
 					totalCost: laborCost + overheadAllocation
-				};
-			});
+				});
+			}
 
 			return jsonResponse(200, { 
 				ok:true, 

@@ -36,22 +36,93 @@ export async function handleReports(request, env, me, requestId, url, path) {
 				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇有效日期區間", meta:{ requestId } }, corsHeaders);
 			}
 
-			// 實際工時（以 Timesheets 為準，簡化：weighted_hours = hours）
+			// 工時倍率對照表（根據勞基法）
+			const workTypeMultipliers = {
+				'normal': 1.0,
+				'ot-weekday': 1.34,
+				'ot-rest': 1.67,
+				'holiday': 2.0
+			};
+
+			// 獲取每個客戶每個員工的工時明細（按 work_type）
 			const binds = [start, end];
 			let where = "t.is_deleted = 0 AND t.work_date >= ? AND t.work_date <= ?";
 			if (clientId) { where += " AND t.client_id = ?"; binds.push(clientId); }
 			const hoursRows = await env.DATABASE.prepare(
-				`SELECT t.client_id, SUM(t.hours) AS actual_hours
+				`SELECT t.client_id, t.user_id, t.work_type, SUM(t.hours) AS hours
 				 FROM Timesheets t
 				 WHERE ${where}
-				 GROUP BY t.client_id`
+				 GROUP BY t.client_id, t.user_id, t.work_type`
 			).bind(...binds).all();
-			const hoursByClient = new Map();
+			
+			// 按客戶和員工組織數據
+			const clientUserHours = new Map(); // Map<client_id, Map<user_id, {actual, weighted, byType}>>
+			const allUserIds = new Set();
+			const allClientIds = new Set();
+			
 			for (const r of (hoursRows?.results || [])) {
 				if (!r.client_id) continue;
-				hoursByClient.set(r.client_id, Number(r.actual_hours || 0));
+				allClientIds.add(r.client_id);
+				allUserIds.add(r.user_id);
+				
+				if (!clientUserHours.has(r.client_id)) {
+					clientUserHours.set(r.client_id, new Map());
+				}
+				const userMap = clientUserHours.get(r.client_id);
+				if (!userMap.has(r.user_id)) {
+					userMap.set(r.user_id, { actual: 0, weighted: 0, byType: {} });
+				}
+				const userData = userMap.get(r.user_id);
+				const hours = Number(r.hours || 0);
+				const multiplier = workTypeMultipliers[r.work_type] || 1.0;
+				userData.actual += hours;
+				userData.weighted += hours * multiplier;
+				userData.byType[r.work_type] = hours;
 			}
-			const clientIds = Array.from(hoursByClient.keys());
+
+			// 獲取所有涉及用戶的薪資信息
+			const userSalaries = new Map();
+			if (allUserIds.size > 0) {
+				const userIdArray = Array.from(allUserIds);
+				const placeholders = userIdArray.map(() => "?").join(",");
+				const salaryRows = await env.DATABASE.prepare(
+					`SELECT user_id, username, COALESCE(base_salary, 40000) AS base_salary, 
+					 COALESCE(regular_allowance, 0) AS regular_allowance
+					 FROM Users WHERE user_id IN (${placeholders})`
+				).bind(...userIdArray).all();
+				for (const r of (salaryRows?.results || [])) {
+					const baseSalary = Number(r.base_salary || 40000);
+					const allowance = Number(r.regular_allowance || 0);
+					const salaryHourlyRate = (baseSalary + allowance) / 240;
+					userSalaries.set(r.user_id, {
+						username: r.username,
+						base_salary: baseSalary,
+						regular_allowance: allowance,
+						salary_rate: Number(salaryHourlyRate.toFixed(2))
+					});
+				}
+			}
+
+			// 計算管理成本率（每小時）
+			const startYm = parseInt(start.slice(0,4) + start.slice(5,7), 10);
+			const endYm = parseInt(end.slice(0,4) + end.slice(5,7), 10);
+			const ohRows = await env.DATABASE.prepare(
+				`SELECT (year*100+month) AS ym, SUM(amount) AS amt
+				 FROM MonthlyOverheadCosts
+				 WHERE is_deleted = 0 AND (year*100+month) >= ? AND (year*100+month) <= ?
+				 GROUP BY ym`
+			).bind(startYm, endYm).all();
+			const totalOverhead = (ohRows?.results || []).reduce((s, r) => s + Number(r.amt || 0), 0);
+			
+			// 計算總工時以得出每小時管理成本
+			const totalActualHours = Array.from(clientUserHours.values())
+				.reduce((sum, userMap) => {
+					return sum + Array.from(userMap.values()).reduce((s, u) => s + u.actual, 0);
+				}, 0);
+			const overheadPerHour = totalActualHours > 0 ? totalOverhead / totalActualHours : 0;
+
+			const warnings = [];
+			if (totalOverhead <= 0) warnings.push({ type: "overhead_missing", message: "本期間管理成本未輸入" });
 
 			// 營收（Receipts：排除 cancelled）
 			const recBinds = [start, end];
@@ -66,65 +137,93 @@ export async function handleReports(request, env, me, requestId, url, path) {
 			const revenueByClient = new Map();
 			for (const r of (recRows?.results || [])) {
 				revenueByClient.set(r.client_id, Number(r.total_receipts || 0));
-				if (!hoursByClient.has(r.client_id)) clientIds.push(r.client_id);
+				allClientIds.add(r.client_id);
 			}
-
-			// 管理成本總額（跨月份加總）
-			const startYm = parseInt(start.slice(0,4) + start.slice(5,7), 10);
-			const endYm = parseInt(end.slice(0,4) + end.slice(5,7), 10);
-			const ohRows = await env.DATABASE.prepare(
-				`SELECT (year*100+month) AS ym, SUM(amount) AS amt
-				 FROM MonthlyOverheadCosts
-				 WHERE is_deleted = 0 AND (year*100+month) >= ? AND (year*100+month) <= ?
-				 GROUP BY ym`
-			).bind(startYm, endYm).all();
-			const totalOverhead = (ohRows?.results || []).reduce((s, r) => s + Number(r.amt || 0), 0);
-
-			// 以工時占比分攤管理成本（簡化）
-			const totalHours = Array.from(hoursByClient.values()).reduce((s, x) => s + x, 0);
-			const warnings = [];
-			if (totalOverhead <= 0) warnings.push({ type: "overhead_missing", message: "本期間管理成本未輸入" });
 
 			// 取公司名稱
 			const nameMap = new Map();
-			if (clientIds.length) {
-				const placeholders = clientIds.map(() => "?").join(",");
+			if (allClientIds.size > 0) {
+				const clientIdArray = Array.from(allClientIds);
+				const placeholders = clientIdArray.map(() => "?").join(",");
 				const nameRows = await env.DATABASE.prepare(
 					`SELECT client_id, company_name FROM Clients WHERE client_id IN (${placeholders})`
-				).bind(...clientIds).all();
+				).bind(...clientIdArray).all();
 				for (const r of (nameRows?.results || [])) nameMap.set(r.client_id, r.company_name);
 			}
 
+			// 組裝結果
 			const data = [];
-			for (const cid of clientIds) {
-				const actual = Number(hoursByClient.get(cid) || 0);
-				const weighted = actual; // 簡化：未有倍率維表
-				const revenue = Number(revenueByClient.get(cid) || 0);
-				const ohAlloc = totalHours > 0 ? Math.round(totalOverhead * (actual / totalHours)) : 0;
-				const salaryCost = 0; // 尚無足夠資料，先回 0
-				const bonusAlloc = includeBonus ? 0 : 0; // 尚無年終資料來源
-				const totalCost = salaryCost + ohAlloc + bonusAlloc;
+			for (const cid of allClientIds) {
+				const userMap = clientUserHours.get(cid) || new Map();
+				let totalActual = 0;
+				let totalWeighted = 0;
+				let totalSalaryCost = 0;
+				let totalOverheadCost = 0;
+				const userBreakdown = [];
+
+				for (const [uid, userData] of userMap.entries()) {
+					const userInfo = userSalaries.get(uid) || { username: `User${uid}`, salary_rate: 167 };
+					const actual = userData.actual;
+					const weighted = userData.weighted;
+					const overheadRate = Number(overheadPerHour.toFixed(2));
+					const hourlyCostRate = userInfo.salary_rate + overheadRate;
+					
+					// 成本計算：使用加權工時 × 薪資時薪 + 實際工時 × 管理成本時薪
+					const salaryCost = Math.round(weighted * userInfo.salary_rate);
+					const overheadCost = Math.round(actual * overheadRate);
+					const userTotalCost = salaryCost + overheadCost;
+					
+					totalActual += actual;
+					totalWeighted += weighted;
+					totalSalaryCost += salaryCost;
+					totalOverheadCost += overheadCost;
+
+					userBreakdown.push({
+						user_id: uid,
+						username: userInfo.username,
+						actual_hours: Number(actual.toFixed(2)),
+						weighted_hours: Number(weighted.toFixed(2)),
+						hourly_cost_rate: Number(hourlyCostRate.toFixed(2)),
+						salary_rate: userInfo.salary_rate,
+						overhead_rate: overheadRate,
+						total_cost: userTotalCost,
+						salary_cost: salaryCost,
+						overhead_cost: overheadCost,
+						year_end_bonus_allocated: 0, // 暫時未實現年終分攤
+						year_end_bonus_ratio: 0
+					});
+				}
+
+				const revenue = revenueByClient.get(cid) || 0;
+				const totalCost = totalSalaryCost + totalOverheadCost;
 				const grossProfit = revenue - totalCost;
 				const margin = revenue > 0 ? Number(((grossProfit / revenue) * 100).toFixed(1)) : 0;
+
 				data.push({
 					client_id: cid,
 					company_name: nameMap.get(cid) || cid,
-					total_actual_hours: Number(actual.toFixed(2)),
-					total_weighted_hours: Number(weighted.toFixed(2)),
+					total_actual_hours: Number(totalActual.toFixed(2)),
+					total_weighted_hours: Number(totalWeighted.toFixed(2)),
 					cost_breakdown: {
-						salary_cost: salaryCost,
-						overhead_cost: ohAlloc,
-						year_end_bonus: bonusAlloc,
+						salary_cost: totalSalaryCost,
+						overhead_cost: totalOverheadCost,
+						year_end_bonus: 0,
 						total_cost: totalCost,
 					},
 					labor_cost: totalCost,
 					revenue,
 					gross_profit: grossProfit,
 					profit_margin: margin,
-					cost_percentage: totalCost > 0 ? { salary: Number(((salaryCost/totalCost)*100).toFixed(1)), overhead: Number((((ohAlloc)/(totalCost))*100).toFixed(1)) } : { salary: 0, overhead: 0 },
-					user_breakdown: [],
+					cost_percentage: totalCost > 0 ? { 
+						salary: Number(((totalSalaryCost/totalCost)*100).toFixed(1)), 
+						overhead: Number(((totalOverheadCost/totalCost)*100).toFixed(1)) 
+					} : { salary: 0, overhead: 0 },
+					user_breakdown: userBreakdown,
 				});
 			}
+
+			// 按毛利率排序
+			data.sort((a, b) => b.profit_margin - a.profit_margin);
 
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, warnings, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
@@ -155,11 +254,14 @@ export async function handleReports(request, env, me, requestId, url, path) {
 			const binds = [ym];
 			if (userFilterId) { where += " AND t.user_id = ?"; binds.push(userFilterId); }
 
-			// 彙總（每人）
+			// 彙總（每人）- 區分可計費/非計費工時
 			const aggRows = await env.DATABASE.prepare(
-				`SELECT t.user_id, SUM(t.hours) AS total_hours,
+				`SELECT t.user_id, 
+					SUM(t.hours) AS total_hours,
 					SUM(CASE WHEN t.work_type = 'normal' THEN t.hours ELSE 0 END) AS normal_hours,
-					SUM(CASE WHEN t.work_type LIKE 'ot-%' THEN t.hours ELSE 0 END) AS overtime_hours
+					SUM(CASE WHEN t.work_type LIKE 'ot-%' OR t.work_type = 'holiday' THEN t.hours ELSE 0 END) AS overtime_hours,
+					SUM(CASE WHEN t.client_id IS NOT NULL THEN t.hours ELSE 0 END) AS billable_hours,
+					SUM(CASE WHEN t.client_id IS NULL THEN t.hours ELSE 0 END) AS non_billable_hours
 				 FROM Timesheets t
 				 WHERE ${where}
 				 GROUP BY t.user_id`
@@ -215,15 +317,19 @@ export async function handleReports(request, env, me, requestId, url, path) {
 				distByUser.set(String(r.user_id), arr);
 			}
 
+			// 計算工作天數（簡化：取該月份的工作日數，假設每月 22 天）
+			const workingDays = 22;
+
 			const data = [];
 			for (const r of (aggRows?.results || [])) {
 				const uid = String(r.user_id);
 				const total = Number(r.total_hours || 0);
 				const normal = Number(r.normal_hours || 0);
 				const ot = Number(r.overtime_hours || 0);
-				const billable = total; // 簡化：無 is_billable 資料，全部視為可計費
-				const nonBillable = 0;
-				const utilization = total > 0 ? Number(((billable/total)*100).toFixed(2)) : 0;
+				const billable = Number(r.billable_hours || 0);
+				const nonBillable = Number(r.non_billable_hours || 0);
+				// 使用率：可計費工時 / (工作天數 × 8)
+				const utilization = (workingDays * 8) > 0 ? Number(((billable / (workingDays * 8)) * 100).toFixed(2)) : 0;
 				let dist = distByUser.get(uid) || [];
 				const distTotal = dist.reduce((s,x)=> s + x.hours, 0) || 1;
 				dist = dist.map(x => ({ client_id: x.client_id, company_name: x.company_name, hours: x.hours, percentage: Number(((x.hours/distTotal)*100).toFixed(2)) }));
