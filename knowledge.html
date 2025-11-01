@@ -849,10 +849,18 @@
             resourcesList.innerHTML = '<div class="doc-card"><div class="doc-title">載入中…</div></div>';
             
             const params = buildResourceParams(resourcesState);
+            console.log('[Resources] 請求參數:', params);
             const res = await fetch(`${apiBase}/documents?${params}`, { credentials:'include' });
+            console.log('[Resources] 回應狀態:', res.status);
+            
             if (res.status === 401) { location.assign('/login?redirect=/internal/knowledge'); return; }
+            
             const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error();
+            console.log('[Resources] 回應資料:', json);
+            
+            if (!res.ok || !json || json.ok !== true) {
+              throw new Error(json?.message || `HTTP ${res.status}`);
+            }
             
             const items = Array.isArray(json.data) ? json.data : [];
             resourcesState.total = (json.meta && json.meta.total) || items.length;
@@ -866,8 +874,9 @@
             
             items.forEach(it => resourcesList.appendChild(createResourceCard(it)));
             updatePager('resources', resourcesState);
-          } catch (_) {
-            document.getElementById('resourcesList').innerHTML = '<div class="doc-card"><div class="doc-title" style="color:#c0392b;">載入失敗</div></div>';
+          } catch (err) {
+            console.error('[Resources] 載入失敗:', err);
+            document.getElementById('resourcesList').innerHTML = `<div class="doc-card"><div class="doc-title" style="color:#c0392b;">載入失敗</div><div class="doc-excerpt" style="font-size:11px;color:#666;">${err.message}</div></div>`;
           }
         }
 
