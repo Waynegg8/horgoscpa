@@ -52,7 +52,7 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
       LEFT JOIN Services s ON sc.service_id = s.service_id
       LEFT JOIN ServiceItems si ON sc.service_item_id = si.item_id
       LEFT JOIN TaskTemplates tt ON sc.task_template_id = tt.template_id
-      LEFT JOIN SOP sop ON sc.sop_id = sop.sop_id
+      LEFT JOIN SOPDocuments sop ON sc.sop_id = sop.sop_id
       WHERE sc.client_service_id = ? AND sc.is_active = 1
       ORDER BY sc.component_id
     `).bind(clientServiceId).all();
