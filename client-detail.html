@@ -1289,7 +1289,7 @@
         `;
         
         manualTasksList.insertAdjacentHTML('beforeend', taskHtml);
-        updateCustomTaskDisplay${clientServiceId}(taskIdx);
+        window[`updateCustomTaskDisplay${clientServiceId}`](taskIdx);
       };
       
       // 删除自定义任务
