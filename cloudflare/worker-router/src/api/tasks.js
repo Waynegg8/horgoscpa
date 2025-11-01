@@ -3,6 +3,61 @@ import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 export async function handleTasks(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
+	
+	// GET /api/v1/tasks/:id - 獲取任務詳情（必须在列表查询之前检查）
+	if (method === "GET" && url.pathname.match(/\/tasks\/\d+$/)) {
+		const taskId = url.pathname.split("/").pop();
+		try {
+		const task = await env.DATABASE.prepare(
+			`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes, t.client_service_id,
+			        t.completed_date, t.created_at, t.service_month,
+			        c.company_name AS client_name, c.tax_registration_number AS client_tax_id, c.client_id,
+			        s.service_name,
+			        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id) AS total_stages,
+			        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id AND s.status = 'completed') AS completed_stages,
+			        u.name AS assignee_name
+			 FROM ActiveTasks t
+			 LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
+			 LEFT JOIN Clients c ON c.client_id = cs.client_id
+			 LEFT JOIN Services s ON s.service_id = cs.service_id
+			 LEFT JOIN Users u ON u.user_id = t.assignee_user_id
+			 WHERE t.task_id = ? AND t.is_deleted = 0`
+		).bind(taskId).first();
+			
+			if (!task) {
+				return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"任務不存在", meta:{ requestId } }, corsHeaders);
+			}
+			
+			const data = {
+				task_id: String(task.task_id),
+				task_name: task.task_name,
+				client_name: task.client_name || "",
+				client_tax_id: task.client_tax_id || "",
+				client_id: task.client_id || "",
+				service_name: task.service_name || "",
+				service_month: task.service_month || "",
+				assignee_name: task.assignee_name || "",
+				assignee_user_id: task.assignee_user_id || null,
+				client_service_id: task.client_service_id || null,
+				completed_stages: Number(task.completed_stages || 0),
+				total_stages: Number(task.total_stages || 0),
+				due_date: task.due_date || null,
+				status: task.status,
+				notes: task.notes || "",
+				completed_date: task.completed_date || null,
+				created_at: task.created_at || null
+			};
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+	
+	// GET /api/v1/tasks - 獲取任務列表
 	if (method === "GET") {
 		try {
 			const params = url.searchParams;
@@ -150,59 +205,6 @@ export async function handleTasks(request, env, me, requestId, url) {
 				}
 			}
 			return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data:{ taskId, taskName, clientServiceId, dueDate, serviceMonth, assigneeUserId }, meta:{ requestId } }, corsHeaders);
-		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
-			const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
-			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
-			return jsonResponse(500, body, corsHeaders);
-		}
-	}
-
-	// GET /api/v1/tasks/:id - 獲取任務詳情
-	if (method === "GET" && url.pathname.match(/\/tasks\/\d+$/)) {
-		const taskId = url.pathname.split("/").pop();
-		try {
-		const task = await env.DATABASE.prepare(
-			`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes, t.client_service_id,
-			        t.completed_date, t.created_at, t.service_month,
-			        c.company_name AS client_name, c.tax_registration_number AS client_tax_id, c.client_id,
-			        s.service_name,
-			        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id) AS total_stages,
-			        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id AND s.status = 'completed') AS completed_stages,
-			        u.name AS assignee_name
-			 FROM ActiveTasks t
-			 LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
-			 LEFT JOIN Clients c ON c.client_id = cs.client_id
-			 LEFT JOIN Services s ON s.service_id = cs.service_id
-			 LEFT JOIN Users u ON u.user_id = t.assignee_user_id
-			 WHERE t.task_id = ? AND t.is_deleted = 0`
-		).bind(taskId).first();
-			
-			if (!task) {
-				return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"任務不存在", meta:{ requestId } }, corsHeaders);
-			}
-			
-			const data = {
-				task_id: String(task.task_id),
-				task_name: task.task_name,
-				client_name: task.client_name || "",
-				client_tax_id: task.client_tax_id || "",
-				client_id: task.client_id || "",
-				service_name: task.service_name || "",
-				service_month: task.service_month || "",
-				assignee_name: task.assignee_name || "",
-				assignee_user_id: task.assignee_user_id || null,
-				client_service_id: task.client_service_id || null,
-				completed_stages: Number(task.completed_stages || 0),
-				total_stages: Number(task.total_stages || 0),
-				due_date: task.due_date || null,
-				status: task.status,
-				notes: task.notes || "",
-				completed_date: task.completed_date || null,
-				created_at: task.created_at || null
-			};
-			
-			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
 			const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
