@@ -8,8 +8,9 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/knowledge-page.css" />
-    <!-- Quill 2.0 富文本编辑器（內建表格支持） -->
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+    <!-- Quill 1.3.7 富文本编辑器 + Better Table 插件 -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/quill-better-table@1.2.10/dist/quill-better-table.css" rel="stylesheet">
     <style>
       .tabs {
         display: flex;
@@ -935,10 +936,18 @@
     </div>
 
 
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill-better-table@1.2.10/dist/quill-better-table.min.js"></script>
     <script>
-      // Quill 2.0 已內建表格支持，無需額外模組
-      console.log('✅ Quill 2.0 已載入（內建表格支持）');
+      // 註冊 Better Table 模組
+      if (window.Quill && window.QuillBetterTable) {
+        Quill.register({
+          'modules/better-table': QuillBetterTable.default
+        }, true);
+        console.log('✅ Quill 1.3.7 + Better Table 已載入');
+      } else {
+        console.error('❌ Quill 或 Better Table 載入失敗');
+      }
       
       // 添加表格樣式優化
       const style = document.createElement('style');
@@ -975,7 +984,7 @@
         let faqEditor = null;
         let isQuillReady = false;
         
-        // 等待 Quill 2.0 載入完成
+        // 等待 Quill 和 Better Table 載入完成
         function waitForQuillAndTable() {
           return new Promise((resolve, reject) => {
             let attempts = 0;
@@ -984,18 +993,51 @@
             const checkInterval = setInterval(() => {
               attempts++;
               
-              if (typeof Quill !== 'undefined') {
+              if (typeof Quill !== 'undefined' && typeof QuillBetterTable !== 'undefined') {
                 clearInterval(checkInterval);
-                console.log('✅ Quill 2.0 載入成功（內建表格支持）');
+                console.log('✅ Quill 1.3.7 + Better Table 載入成功');
                 isQuillReady = true;
                 resolve();
               } else if (attempts >= maxAttempts) {
                 clearInterval(checkInterval);
-                console.error('❌ Quill 載入超時');
-                reject(new Error('Quill 載入超時'));
+                console.error('❌ Quill 或 Better Table 載入超時');
+                reject(new Error('模組載入超時'));
               }
             }, 100);
           });
+        }
+        
+        // 圖片上傳處理器
+        function imageHandler() {
+          const input = document.createElement('input');
+          input.setAttribute('type', 'file');
+          input.setAttribute('accept', 'image/*');
+          input.click();
+          
+          input.onchange = async () => {
+            const file = input.files[0];
+            if (!file) return;
+            
+            // 檢查文件大小（限制 5MB）
+            if (file.size > 5 * 1024 * 1024) {
+              alert('圖片大小不能超過 5MB');
+              return;
+            }
+            
+            try {
+              // 轉換為 Base64
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const range = this.quill.getSelection(true);
+                this.quill.insertEmbed(range.index, 'image', e.target.result);
+                this.quill.setSelection(range.index + 1);
+              };
+              reader.readAsDataURL(file);
+            } catch (error) {
+              console.error('圖片插入失敗:', error);
+              alert('圖片插入失敗，請重試');
+            }
+          };
         }
         
         // 工具函數：取得分類名稱
@@ -1073,14 +1115,19 @@
           console.log('FAQ 編輯器已初始化');
         }
         
-        // Quill 2.0 內建表格支持，不需要註冊額外模組
+        // 檢查 Better Table 模組是否已註冊
         function registerTableModule() {
-          if (!isQuillReady) {
-            console.error('❌ Quill 尚未準備好');
+          if (!window.Quill) {
+            console.error('❌ Quill 尚未載入');
             return false;
           }
           
-          console.log('✅ Quill 2.0 表格功能已就緒');
+          if (!window.QuillBetterTable) {
+            console.error('❌ Better Table 模組尚未載入');
+            return false;
+          }
+          
+          console.log('✅ Better Table 模組已就緒');
           return true;
         }
         
@@ -1113,28 +1160,57 @@
             return;
           }
           
-          // 配置（Quill 2.0 with 表格支持）
+          // 配置（Quill 1.3.7 + Better Table）
           const config = {
             theme: 'snow',
             modules: {
+              'better-table': {
+                operationMenu: {
+                  items: {
+                    insertColumnRight: { text: '向右插入列' },
+                    insertColumnLeft: { text: '向左插入列' },
+                    insertRowUp: { text: '向上插入行' },
+                    insertRowDown: { text: '向下插入行' },
+                    mergeCells: { text: '合併單元格' },
+                    unmergeCells: { text: '取消合併' },
+                    deleteColumn: { text: '刪除列' },
+                    deleteRow: { text: '刪除行' },
+                    deleteTable: { text: '刪除表格' }
+                  }
+                }
+              },
               toolbar: [
                 [{ 'header': [2, 3, false] }],
                 ['bold', 'italic', 'underline'],
                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                 ['blockquote', 'code-block'],
-                ['link'],
+                ['link', 'image'],
                 [{ 'color': [] }],
-                ['table'],  // Quill 2.0 內建表格按鈕
                 ['clean']
-              ],
-              table: true  // 啟用表格模組
+              ]
             },
             placeholder: '請輸入SOP內容...'
           };
           
           window.sopDrawerEditor = new Quill('#sop-editor-drawer', config);
           
-          console.log('✅ SOP 編輯器已初始化（Quill 2.0 含完整表格功能）');
+          // 添加表格插入按鈕
+          const toolbar = window.sopDrawerEditor.getModule('toolbar');
+          toolbar.addHandler('image', imageHandler);
+          
+          // 在工具欄添加表格按鈕
+          const toolbarContainer = document.querySelector('#sop-editor-drawer').previousElementSibling;
+          const tableBtn = document.createElement('button');
+          tableBtn.innerHTML = '📊 插入表格';
+          tableBtn.className = 'ql-table-insert';
+          tableBtn.style.cssText = 'margin-left: 8px; padding: 4px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;';
+          tableBtn.onclick = () => {
+            const tableModule = window.sopDrawerEditor.getModule('better-table');
+            tableModule.insertTable(3, 3);
+          };
+          toolbarContainer.appendChild(tableBtn);
+          
+          console.log('✅ SOP 編輯器已初始化（含表格與圖片功能）');
         }
         
         // 初始化抽屜中的 FAQ 編輯器
@@ -1166,28 +1242,57 @@
             return;
           }
           
-          // 配置（Quill 2.0 with 表格支持）
+          // 配置（Quill 1.3.7 + Better Table）
           const config = {
             theme: 'snow',
             modules: {
+              'better-table': {
+                operationMenu: {
+                  items: {
+                    insertColumnRight: { text: '向右插入列' },
+                    insertColumnLeft: { text: '向左插入列' },
+                    insertRowUp: { text: '向上插入行' },
+                    insertRowDown: { text: '向下插入行' },
+                    mergeCells: { text: '合併單元格' },
+                    unmergeCells: { text: '取消合併' },
+                    deleteColumn: { text: '刪除列' },
+                    deleteRow: { text: '刪除行' },
+                    deleteTable: { text: '刪除表格' }
+                  }
+                }
+              },
               toolbar: [
                 [{ 'header': [2, 3, false] }],
                 ['bold', 'italic', 'underline'],
                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                 ['blockquote', 'code-block'],
-                ['link'],
+                ['link', 'image'],
                 [{ 'color': [] }],
-                ['table'],  // Quill 2.0 內建表格按鈕
                 ['clean']
-              ],
-              table: true  // 啟用表格模組
+              ]
             },
             placeholder: '請輸入FAQ答案...'
           };
           
           window.faqDrawerEditor = new Quill('#faq-editor-drawer', config);
           
-          console.log('✅ FAQ 編輯器已初始化（Quill 2.0 含完整表格功能）');
+          // 添加表格插入按鈕
+          const toolbar = window.faqDrawerEditor.getModule('toolbar');
+          toolbar.addHandler('image', imageHandler);
+          
+          // 在工具欄添加表格按鈕
+          const toolbarContainer = document.querySelector('#faq-editor-drawer').previousElementSibling;
+          const tableBtn = document.createElement('button');
+          tableBtn.innerHTML = '📊 插入表格';
+          tableBtn.className = 'ql-table-insert';
+          tableBtn.style.cssText = 'margin-left: 8px; padding: 4px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;';
+          tableBtn.onclick = () => {
+            const tableModule = window.faqDrawerEditor.getModule('better-table');
+            tableModule.insertTable(3, 3);
+          };
+          toolbarContainer.appendChild(tableBtn);
+          
+          console.log('✅ FAQ 編輯器已初始化（含表格與圖片功能）');
         }
         
         // 清空 SOP 表單（已廢棄，保留以防引用）

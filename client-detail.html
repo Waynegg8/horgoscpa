@@ -1999,26 +1999,26 @@
                         
                         return Object.entries(grouped).map(([category, sops]) => {
                           const catName = getCategoryText(category);
-                          return \`
+                          return `
                             <div style="margin-bottom: 8px;">
-                              <div style="font-weight: 600; font-size: 11px; color: #6b7280; margin-bottom: 4px; padding: 2px 4px; background: #f3f4f6; border-radius: 3px;">\${catName}</div>
-                              \${sops.map(sop => {
+                              <div style="font-weight: 600; font-size: 11px; color: #6b7280; margin-bottom: 4px; padding: 2px 4px; background: #f3f4f6; border-radius: 3px;">${catName}</div>
+                              ${sops.map(sop => {
                                 const isChecked = task.sop_ids && task.sop_ids.includes(sop.sop_id);
-                                return \`
-                                  <label class="sop-option" data-sop-title="\${sop.title.toLowerCase()}" data-sop-category="\${category}"
+                                return `
+                                  <label class="sop-option" data-sop-title="${sop.title.toLowerCase()}" data-sop-category="${category}"
                                          style="display: flex; align-items: center; gap: 6px; padding: 4px; cursor: pointer; font-size: 12px; margin-left: 8px;" 
                                          onmouseover="this.style.background='#f3f4f6'" 
                                          onmouseout="this.style.background='transparent'">
-                                    <input type="checkbox" value="\${sop.sop_id}" 
-                                           \${isChecked ? 'checked' : ''}
+                                    <input type="checkbox" value="${sop.sop_id}" 
+                                           ${isChecked ? 'checked' : ''}
                                            onchange="updateTaskSOPs${clientServiceId}(${idx}, this)"
                                            style="cursor: pointer;" />
-                                    <span style="color: #374151;">\${sop.title}</span>
+                                    <span style="color: #374151;">${sop.title}</span>
                                   </label>
-                                \`;
+                                `;
                               }).join('')}
                             </div>
-                          \`;
+                          `;
                         }).join('');
                       })() : '<div style="color: #9ca3af; font-size: 12px; text-align: center; padding: 10px;">暫無SOP</div>'}
                     </div>

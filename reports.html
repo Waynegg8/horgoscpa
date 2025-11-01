@@ -62,55 +62,41 @@
           </div>
         </div>
 
-        <section class="report-content">
-          <div class="report-header">
-            <h2>客戶成本分析</h2>
-            <p class="subtitle">含加權工時、管理成本警示與毛利率</p>
-          </div>
-          <div class="report-body">
-            <div class="report-summary">
-              <div class="summary-card type-info">
-                <div class="label">總成本</div>
-                <div class="value">—</div>
-                <div class="description">期間總管理＋薪資成本</div>
-              </div>
-              <div class="summary-card type-warning">
-                <div class="label">管理成本警示</div>
-                <div class="value">—</div>
-                <div class="description">未輸入或不完整時提示</div>
-              </div>
+        <div class="card">
+          <h3 class="card-title">客戶成本分析</h3>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">總成本</div>
+              <div class="stat-value" id="cc-total-cost">—</div>
             </div>
-
-            <div class="report-table-wrapper">
-              <table class="report-table" aria-label="客戶成本明細">
-                <thead>
-                  <tr>
-                    <th>客戶</th>
-                    <th>實際工時</th>
-                    <th>加權工時</th>
-                    <th>薪資成本</th>
-                    <th>管理成本</th>
-                    <th>年終分攤</th>
-                    <th>總成本</th>
-                    <th>收據金額</th>
-                    <th>毛利</th>
-                    <th>毛利率</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td colspan="10" class="muted">尚無資料</td></tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div class="chart-container">
-              <div class="chart-title">客戶毛利率排名</div>
-              <div class="chart-wrapper">
-                <canvas id="cc-profit-chart"></canvas>
-              </div>
+            <div class="stat-item">
+              <div class="stat-label">管理成本</div>
+              <div class="stat-value" id="cc-overhead-status">—</div>
             </div>
           </div>
-        </section>
+
+          <div class="report-table-wrapper">
+            <table class="report-table" aria-label="客戶成本明細">
+              <thead>
+                <tr>
+                  <th>客戶</th>
+                  <th class="text-right">實際工時</th>
+                  <th class="text-right">加權工時</th>
+                  <th class="text-right">薪資成本</th>
+                  <th class="text-right">管理成本</th>
+                  <th class="text-right">年終分攤</th>
+                  <th class="text-right">總成本</th>
+                  <th class="text-right">收據金額</th>
+                  <th class="text-right">毛利</th>
+                  <th class="text-right">毛利率</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="10" class="muted">尚無資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <!-- 員工工時分析（管理員；員工看到精簡版「我的工時」） -->
@@ -151,40 +137,33 @@
           </div>
         </div>
 
-        <section class="report-content">
-          <div class="report-header">
-            <h2>員工工時分析</h2>
-            <p class="subtitle">月度工時、客戶分布與每日趨勢</p>
-          </div>
-          <div class="report-body">
-            <div class="report-summary">
-              <div class="summary-card type-info">
-                <div class="label">總工時</div>
-                <div class="value">—</div>
-                <div class="description">本月總計</div>
-              </div>
-              <div class="summary-card type-success">
-                <div class="label">使用率</div>
-                <div class="value">—</div>
-                <div class="description">可計費占比</div>
-              </div>
+        <div class="card">
+          <h3 class="card-title">員工工時分析</h3>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">總工時</div>
+              <div class="stat-value" id="eh-total-hours">—</div>
             </div>
-
-            <div class="chart-container">
-              <div class="chart-title">客戶工時分布（餅圖）</div>
-              <div class="chart-wrapper">
-                <canvas id="eh-client-dist-chart"></canvas>
-              </div>
-            </div>
-
-            <div class="employee-hours-list" aria-label="員工工時一覽">
-              <div class="employee-hours-item">
-                <div class="employee-hours-name">範例員工</div>
-                <div class="employee-hours-value">— <span class="employee-hours-unit">小時</span></div>
-              </div>
+            <div class="stat-item">
+              <div class="stat-label">使用率</div>
+              <div class="stat-value" id="eh-utilization">—</div>
             </div>
           </div>
-        </section>
+
+          <div class="chart-container">
+            <div class="chart-title">客戶工時分布</div>
+            <div class="chart-wrapper">
+              <canvas id="eh-client-dist-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="employee-hours-list" aria-label="員工工時一覽">
+            <div class="employee-hours-item">
+              <div class="employee-hours-name">範例員工</div>
+              <div class="employee-hours-value">— <span class="employee-hours-unit">小時</span></div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- 薪資報表（管理員） -->
@@ -225,41 +204,35 @@
           </div>
         </div>
 
-        <section class="report-content">
-          <div class="report-header">
-            <h2>薪資報表</h2>
-            <p class="subtitle">月度薪資匯總與個人明細</p>
-          </div>
-          <div class="report-body">
-            <div class="report-summary">
-              <div class="summary-card type-info">
-                <div class="label">總薪資</div>
-                <div class="value">—</div>
-                <div class="description">應發＋淨發概覽</div>
-              </div>
+        <div class="card">
+          <h3 class="card-title">薪資報表</h3>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">總薪資</div>
+              <div class="stat-value" id="pr-total-salary">—</div>
             </div>
+          </div>
 
-            <div class="report-table-wrapper">
-              <table class="report-table" aria-label="薪資明細">
-                <thead>
-                  <tr>
-                    <th>員工</th>
-                    <th>底薪</th>
-                    <th>津貼</th>
-                    <th>獎金</th>
-                    <th>加班費</th>
-                    <th>應發</th>
-                    <th>淨發</th>
-                    <th>全勤</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td colspan="8" class="muted">尚無資料</td></tr>
-                </tbody>
-              </table>
-            </div>
+          <div class="report-table-wrapper">
+            <table class="report-table" aria-label="薪資明細">
+              <thead>
+                <tr>
+                  <th>員工</th>
+                  <th class="text-right">底薪</th>
+                  <th class="text-right">津貼</th>
+                  <th class="text-right">獎金</th>
+                  <th class="text-right">加班費</th>
+                  <th class="text-right">應發</th>
+                  <th class="text-right">淨發</th>
+                  <th>全勤</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="8" class="muted">尚無資料</td></tr>
+              </tbody>
+            </table>
           </div>
-        </section>
+        </div>
       </section>
 
       <!-- 收款分析（管理員） -->
@@ -295,59 +268,50 @@
           </div>
         </div>
 
-        <section class="report-content">
-          <div class="report-header">
-            <h2>收款分析</h2>
-            <p class="subtitle">應收、收款率、月度趨勢與客戶明細</p>
-          </div>
-          <div class="report-body">
-            <div class="report-summary">
-              <div class="summary-card type-info">
-                <div class="label">總開立</div>
-                <div class="value">—</div>
-                <div class="description">查詢期間</div>
-              </div>
-              <div class="summary-card type-success">
-                <div class="label">已收</div>
-                <div class="value">—</div>
-                <div class="description">查詢期間</div>
-              </div>
-              <div class="summary-card type-warning">
-                <div class="label">應收</div>
-                <div class="value">—</div>
-                <div class="description">查詢期間</div>
-              </div>
-              <div class="summary-card type-info">
-                <div class="label">收款率</div>
-                <div class="value">—</div>
-                <div class="description">已收/開立</div>
-              </div>
+        <div class="card">
+          <h3 class="card-title">收款分析</h3>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">總開立</div>
+              <div class="stat-value" id="rc-total-receipts">—</div>
             </div>
-
-            <div class="chart-container">
-              <div class="chart-title">月度趨勢：開立 vs 收款</div>
-              <div class="chart-wrapper">
-                <canvas id="rc-trend-chart"></canvas>
-              </div>
+            <div class="stat-item">
+              <div class="stat-label">已收</div>
+              <div class="stat-value" id="rc-total-paid">—</div>
             </div>
-
-            <div class="report-table-wrapper">
-              <table class="report-table" aria-label="客戶收款明細">
-                <thead>
-                  <tr>
-                    <th>客戶</th>
-                    <th>開立</th>
-                    <th>已收</th>
-                    <th>應收</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td colspan="4" class="muted">尚無資料</td></tr>
-                </tbody>
-              </table>
+            <div class="stat-item">
+              <div class="stat-label">應收</div>
+              <div class="stat-value" id="rc-total-outstanding">—</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">收款率</div>
+              <div class="stat-value" id="rc-collection-rate">—</div>
             </div>
           </div>
-        </section>
+
+          <div class="chart-container">
+            <div class="chart-title">月度趨勢：開立 vs 收款</div>
+            <div class="chart-wrapper">
+              <canvas id="rc-trend-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="report-table-wrapper">
+            <table class="report-table" aria-label="客戶收款明細">
+              <thead>
+                <tr>
+                  <th>客戶</th>
+                  <th class="text-right">開立</th>
+                  <th class="text-right">已收</th>
+                  <th class="text-right">應收</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" class="muted">尚無資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
     </main>
 
@@ -366,7 +330,6 @@
         };
 
         // Chart instances
-        let ccProfitChart = null;
         let ehClientDistChart = null;
         let rcTrendChart = null;
 
@@ -388,27 +351,15 @@
           return Array.from({length: count}, (_, i) => colors[i % colors.length]);
         }
 
-        function setActiveTab(key){
-          tabs.forEach(b=>{
-            const selected = b.getAttribute('data-tab') === key;
-            b.classList.toggle('active', selected);
-            b.setAttribute('aria-selected', selected ? 'true' : 'false');
-          });
-          Object.entries(panels).forEach(([k,el])=>{
-            if (!el) return;
-            if (k === key) el.classList.add('show'); else el.classList.remove('show');
-          });
-          // 自動載入對應分頁資料
-          if (key === 'client-cost') loadClientCost();
-          else if (key === 'employee-hours') loadEmployeeHours();
-          else if (key === 'payroll') loadPayroll();
-          else if (key === 'receivables') loadRevenue();
-        }
-
         tabs.forEach(btn => {
           btn.addEventListener('click', ()=>{
+            tabs.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
             const key = btn.getAttribute('data-tab');
-            setActiveTab(key);
+            Object.entries(panels).forEach(([k,el])=>{
+              if (!el) return;
+              if (k === key) el.classList.add('show'); else el.classList.remove('show');
+            });
           });
         });
 
@@ -439,11 +390,11 @@
             const res = await fetch(`${apiBase}/clients`, { credentials: 'include' });
             if (!res.ok) return;
             const json = await res.json();
-            const clients = json.data || [];
+            const clients = (json.data || []).filter(c => c && c.client_id && c.company_name);
             const select = document.getElementById('cc-client');
             if (select) {
               select.innerHTML = '<option value="">全部客戶</option>' + 
-                clients.map(c => `<option value="${c.client_id}">${c.company_name}</option>`).join('');
+                clients.map(c => `<option value="${c.client_id}">${c.company_name || c.client_id}</option>`).join('');
             }
           } catch (e) {
             console.error('Failed to load clients:', e);
@@ -511,20 +462,29 @@
           });
         }
 
-        function formatNumber(n){ try { return Number(n||0).toLocaleString(); } catch(_) { return String(n||0); } }
+        function formatNumber(n){ 
+          const num = Number(n||0);
+          if (num === 0) return '—';
+          try { return num.toLocaleString(); } catch(_) { return String(n||0); } 
+        }
+        
+        function formatValue(n){
+          const num = Number(n||0);
+          if (num === 0) return '—';
+          return num.toFixed(1);
+        }
 
         async function loadClientCost(){
           const panel = document.getElementById('panel-client-cost');
           const tbody = panel.querySelector('.report-table tbody');
-          const totalValueEl = panel.querySelector('.summary-card.type-info .value');
-          const warnValueEl = panel.querySelector('.summary-card.type-warning .value');
+          const totalCostEl = document.getElementById('cc-total-cost');
+          const overheadStatusEl = document.getElementById('cc-overhead-status');
           const year = document.getElementById('cc-year').value;
           const month = document.getElementById('cc-month').value;
           const client = document.getElementById('cc-client').value;
           
           if (!year) { alert('請選擇年度'); return; }
           
-          // 计算日期范围
           let startDate, endDate;
           if (month) {
             const y = parseInt(year);
@@ -563,19 +523,18 @@
                 tr.style.cursor = r.user_breakdown && r.user_breakdown.length > 0 ? 'pointer' : 'default';
                 tr.innerHTML = `
                   <td>${r.company_name||r.client_id||''} ${r.user_breakdown && r.user_breakdown.length > 0 ? '<span style="color:#3498db;font-size:0.85em;">▼</span>' : ''}</td>
-                  <td class="number-cell">${formatNumber(r.total_actual_hours)}</td>
-                  <td class="number-cell">${formatNumber(r.total_weighted_hours)}</td>
-                  <td class="number-cell">${formatNumber(salary)}</td>
-                  <td class="number-cell">${formatNumber(oh)}</td>
-                  <td class="number-cell">${formatNumber(bonus)}</td>
-                  <td class="number-cell">${formatNumber(total)}</td>
-                  <td class="number-cell">${formatNumber(r.revenue||0)}</td>
-                  <td class="number-cell">${formatNumber(r.gross_profit||0)}</td>
-                  <td class="number-cell ${Number(r.profit_margin||0) >= 0 ? 'positive-value':'negative-value'}">${Number(r.profit_margin||0).toFixed(1)}%</td>
+                  <td class="text-right">${formatValue(r.total_actual_hours)}</td>
+                  <td class="text-right">${formatValue(r.total_weighted_hours)}</td>
+                  <td class="text-right">${formatNumber(salary)}</td>
+                  <td class="text-right">${formatNumber(oh)}</td>
+                  <td class="text-right">${formatNumber(bonus)}</td>
+                  <td class="text-right">${formatNumber(total)}</td>
+                  <td class="text-right">${formatNumber(r.revenue||0)}</td>
+                  <td class="text-right">${formatNumber(r.gross_profit||0)}</td>
+                  <td class="text-right ${Number(r.profit_margin||0) >= 0 ? 'positive-value':'negative-value'}">${Number(r.profit_margin||0) === 0 ? '—' : Number(r.profit_margin||0).toFixed(1)+'%'}</td>
                 `;
                 tbody.appendChild(tr);
                 
-                // Add click handler to toggle user breakdown
                 if (r.user_breakdown && r.user_breakdown.length > 0) {
                   const detailRowId = `detail-row-${idx}`;
                   tr.addEventListener('click', function() {
@@ -589,7 +548,7 @@
                       detailTr.style.backgroundColor = '#f8f9fa';
                       detailTr.innerHTML = `
                         <td colspan="10" style="padding:15px;">
-                          <div style="font-weight:700;margin-bottom:10px;color:var(--primary-color);">員工明細</div>
+                          <div style="font-weight:700;margin-bottom:10px;">員工明細</div>
                           <table style="width:100%;font-size:0.9em;">
                             <thead>
                               <tr style="background:#e9ecef;">
@@ -606,8 +565,8 @@
                               ${r.user_breakdown.map(u => `
                                 <tr>
                                   <td style="padding:8px;">${u.username}</td>
-                                  <td style="padding:8px;text-align:right;">${formatNumber(u.actual_hours)}</td>
-                                  <td style="padding:8px;text-align:right;">${formatNumber(u.weighted_hours)}</td>
+                                  <td style="padding:8px;text-align:right;">${formatValue(u.actual_hours)}</td>
+                                  <td style="padding:8px;text-align:right;">${formatValue(u.weighted_hours)}</td>
                                   <td style="padding:8px;text-align:right;">${formatNumber(u.hourly_cost_rate)}</td>
                                   <td style="padding:8px;text-align:right;">${formatNumber(u.salary_cost)}</td>
                                   <td style="padding:8px;text-align:right;">${formatNumber(u.overhead_cost)}</td>
@@ -625,54 +584,9 @@
                 }
               });
             }
-            totalValueEl.textContent = formatNumber(totalCostAll);
+            totalCostEl.textContent = formatNumber(totalCostAll);
             const hasWarn = Array.isArray(json.warnings) && json.warnings.length > 0;
-            warnValueEl.textContent = hasWarn ? '警示' : '正常';
-
-            // Render profit margin chart
-            ccProfitChart = destroyChart(ccProfitChart);
-            if (rows.length > 0) {
-              const ctx = document.getElementById('cc-profit-chart');
-              const chartData = rows.slice(0, 10).map(r => ({
-                name: r.company_name || r.client_id,
-                margin: Number(r.profit_margin || 0)
-              }));
-              ccProfitChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                  labels: chartData.map(d => d.name),
-                  datasets: [{
-                    label: '毛利率 (%)',
-                    data: chartData.map(d => d.margin),
-                    backgroundColor: chartData.map(d => d.margin >= 0 ? '#27ae60' : '#e74c3c'),
-                    borderColor: chartData.map(d => d.margin >= 0 ? '#229954' : '#c0392b'),
-                    borderWidth: 1
-                  }]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                      callbacks: {
-                        label: (context) => `毛利率: ${context.parsed.y.toFixed(1)}%`
-                      }
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      title: { display: true, text: '毛利率 (%)' },
-                      ticks: { callback: (value) => value + '%' }
-                    },
-                    x: {
-                      ticks: { maxRotation: 45, minRotation: 45 }
-                    }
-                  }
-                }
-              });
-            }
+            overheadStatusEl.textContent = hasWarn ? '警示' : '正常';
           } catch (_) {
             tbody.innerHTML = '<tr><td colspan="10" style="color:#c0392b;">查詢失敗</td></tr>';
           }
@@ -690,8 +604,8 @@
           params.set('year', year);
           params.set('month', month);
           if (userId) params.set('user_id', userId);
-          const totalValueEl = panel.querySelector('.summary-card.type-info .value');
-          const utilValueEl = panel.querySelector('.summary-card.type-success .value');
+          const totalHoursEl = document.getElementById('eh-total-hours');
+          const utilizationEl = document.getElementById('eh-utilization');
           const listEl = panel.querySelector('.employee-hours-list');
           try {
             listEl.innerHTML = '<div class="muted" style="padding:10px;">載入中…</div>';
@@ -718,8 +632,8 @@
               });
             }
             const avgUtil = rows.length ? (utilSum/rows.length) : 0;
-            totalValueEl.textContent = formatNumber(totalHours);
-            utilValueEl.textContent = `${avgUtil.toFixed(2)}%`;
+            totalHoursEl.textContent = totalHours === 0 ? '—' : formatNumber(totalHours);
+            utilizationEl.textContent = avgUtil === 0 ? '—' : `${avgUtil.toFixed(1)}%`;
 
             // Render client distribution pie chart
             ehClientDistChart = destroyChart(ehClientDistChart);
@@ -775,7 +689,7 @@
           params.set('year', year);
           params.set('month', month);
           if (userId) params.set('user_id', userId);
-          const totalValueEl = panel.querySelector('.summary-card.type-info .value');
+          const totalSalaryEl = document.getElementById('pr-total-salary');
           const tbody = panel.querySelector('.report-table tbody');
           try {
             tbody.innerHTML = '<tr><td colspan="8" class="muted">載入中…</td></tr>';
@@ -785,7 +699,7 @@
             if (!res.ok || !json || json.ok !== true) throw new Error();
             const data = json.data || { summary:{}, by_employee:[] };
             const byEmp = Array.isArray(data.by_employee) ? data.by_employee : [];
-            totalValueEl.textContent = formatNumber(data.summary?.total_gross_salary || 0);
+            totalSalaryEl.textContent = formatNumber(data.summary?.total_gross_salary || 0);
             tbody.innerHTML = '';
             if (!byEmp.length) {
               tbody.innerHTML = '<tr><td colspan="8" class="muted">尚無資料</td></tr>';
@@ -794,12 +708,12 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                   <td>${r.username||r.user_id}</td>
-                  <td class="number-cell">${formatNumber(r.base_salary)}</td>
-                  <td class="number-cell">${formatNumber(r.total_allowances)}</td>
-                  <td class="number-cell">${formatNumber(r.total_bonuses)}</td>
-                  <td class="number-cell">${formatNumber(r.overtime_pay)}</td>
-                  <td class="number-cell">${formatNumber(r.gross_salary)}</td>
-                  <td class="number-cell">${formatNumber(r.net_salary)}</td>
+                  <td class="text-right">${formatNumber(r.base_salary)}</td>
+                  <td class="text-right">${formatNumber(r.total_allowances)}</td>
+                  <td class="text-right">${formatNumber(r.total_bonuses)}</td>
+                  <td class="text-right">${formatNumber(r.overtime_pay)}</td>
+                  <td class="text-right">${formatNumber(r.gross_salary)}</td>
+                  <td class="text-right">${formatNumber(r.net_salary)}</td>
                   <td>${r.has_full_attendance ? '是' : '否'}</td>
                 `;
                 tbody.appendChild(tr);
@@ -833,7 +747,10 @@
           const params = new URLSearchParams();
           params.set('start_date', startDate);
           params.set('end_date', endDate);
-          const values = panel.querySelectorAll('.summary-card .value');
+          const totalReceiptsEl = document.getElementById('rc-total-receipts');
+          const totalPaidEl = document.getElementById('rc-total-paid');
+          const totalOutstandingEl = document.getElementById('rc-total-outstanding');
+          const collectionRateEl = document.getElementById('rc-collection-rate');
           const tbody = panel.querySelector('.report-table tbody');
           try {
             tbody.innerHTML = '<tr><td colspan="4" class="muted">載入中…</td></tr>';
@@ -842,12 +759,12 @@
             const json = await res.json();
             if (!res.ok || !json || json.ok !== true) throw new Error();
             const d = json.data || { summary:{}, monthly_trend:[], by_client:[] };
-            // Summary cards: 開立 / 已收 / 應收 / 收款率
-            if (values[0]) values[0].textContent = formatNumber(d.summary?.total_receipts || 0);
-            if (values[1]) values[1].textContent = formatNumber(d.summary?.total_paid || 0);
-            if (values[2]) values[2].textContent = formatNumber(d.summary?.total_outstanding || 0);
-            if (values[3]) values[3].textContent = `${Number(d.summary?.collection_rate||0).toFixed(1)}%`;
-            // Table by client
+            totalReceiptsEl.textContent = formatNumber(d.summary?.total_receipts || 0);
+            totalPaidEl.textContent = formatNumber(d.summary?.total_paid || 0);
+            totalOutstandingEl.textContent = formatNumber(d.summary?.total_outstanding || 0);
+            const rate = Number(d.summary?.collection_rate||0);
+            collectionRateEl.textContent = rate === 0 ? '—' : `${rate.toFixed(1)}%`;
+            
             const list = Array.isArray(d.by_client) ? d.by_client : [];
             tbody.innerHTML = '';
             if (!list.length) {
@@ -857,9 +774,9 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                   <td>${r.company_name||r.client_id}</td>
-                  <td class="number-cell">${formatNumber(r.total_receipts)}</td>
-                  <td class="number-cell">${formatNumber(r.total_paid)}</td>
-                  <td class="number-cell">${formatNumber(r.total_outstanding)}</td>
+                  <td class="text-right">${formatNumber(r.total_receipts)}</td>
+                  <td class="text-right">${formatNumber(r.total_paid)}</td>
+                  <td class="text-right">${formatNumber(r.total_outstanding)}</td>
                 `;
                 tbody.appendChild(tr);
               });
@@ -948,13 +865,9 @@
               const adminOnly = btn.getAttribute('data-admin-only') === 'true';
               if (adminOnly && !isAdmin) btn.style.display = 'none';
             });
-            // 預設啟用分頁：員工工時
-            setActiveTab('employee-hours');
             permBar.style.display = 'none';
           } catch (_) {
-            // 若讀取角色失敗，僅顯示員工工時分頁
             tabs.forEach(btn => { if (btn.getAttribute('data-admin-only') === 'true') btn.style.display = 'none'; });
-            setActiveTab('employee-hours');
             permBar.textContent = '載入使用者資訊失敗，僅顯示個人報表';
             permBar.style.display = 'block';
           }
