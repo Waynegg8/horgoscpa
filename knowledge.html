@@ -1128,8 +1128,12 @@
         // 初始化
         ensureSession().then(ok => { 
           if (ok) { 
+            // 确保所有模态框都是关闭状态
+            document.getElementById('sopModal').classList.remove('show');
+            document.getElementById('faqModal').classList.remove('show');
+            document.getElementById('resourceModal').classList.remove('show');
             // 编辑器会在打开Modal时按需初始化
-            loadSOPs();
+            switchTab('sop');
           }
         });
       })();
