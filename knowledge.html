@@ -8,9 +8,9 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/knowledge-page.css" />
-    <!-- Quill 1.3.7 富文本编辑器 + Better Table 插件 -->
+    <!-- Quill 1.3.7 富文本编辑器 + Better Table 插件（本地文件） -->
     <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/quill-better-table@1.2.10/dist/quill-better-table.css" rel="stylesheet">
+    <link href="/assets/vendor/quill-better-table.css" rel="stylesheet">
     <style>
       .tabs {
         display: flex;
@@ -937,17 +937,33 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/quill-better-table@1.2.10/dist/quill-better-table.min.js"></script>
+    <script src="/assets/vendor/quill-better-table.js"></script>
     <script>
-      // 註冊 Better Table 模組
-      if (window.Quill && window.QuillBetterTable) {
-        Quill.register({
-          'modules/better-table': QuillBetterTable.default
-        }, true);
-        console.log('✅ Quill 1.3.7 + Better Table 已載入');
-      } else {
-        console.error('❌ Quill 或 Better Table 載入失敗');
-      }
+      // 等待所有腳本載入後註冊 Better Table 模組
+      window.addEventListener('load', function() {
+        // 注意：模組導出為 window.quillBetterTable（小寫 q）
+        const BetterTable = window.quillBetterTable;
+        
+        if (window.Quill && BetterTable) {
+          try {
+            Quill.register({
+              'modules/better-table': BetterTable
+            }, true);
+            console.log('✅ Quill 1.3.7 + Better Table 已載入並註冊');
+            window.quillModulesReady = true;
+          } catch (e) {
+            console.error('❌ Better Table 註冊失敗:', e);
+            window.quillModulesReady = false;
+          }
+        } else {
+          console.error('❌ Quill 或 Better Table 載入失敗');
+          console.log('Quill:', typeof window.Quill);
+          console.log('quillBetterTable:', typeof window.quillBetterTable);
+          window.quillModulesReady = false;
+        }
+      });
+      
+      window.quillModulesReady = false;
       
       // 添加表格樣式優化
       const style = document.createElement('style');
@@ -988,19 +1004,29 @@
         function waitForQuillAndTable() {
           return new Promise((resolve, reject) => {
             let attempts = 0;
-            const maxAttempts = 50; // 最多等待 5 秒
+            const maxAttempts = 100; // 最多等待 10 秒
             
             const checkInterval = setInterval(() => {
               attempts++;
               
-              if (typeof Quill !== 'undefined' && typeof QuillBetterTable !== 'undefined') {
+              // 檢查全局標誌
+              if (window.quillModulesReady === true) {
                 clearInterval(checkInterval);
-                console.log('✅ Quill 1.3.7 + Better Table 載入成功');
+                console.log('✅ 模組已就緒，可以初始化編輯器');
                 isQuillReady = true;
                 resolve();
+              } else if (window.quillModulesReady === false && attempts > 30) {
+                // 給予足夠時間載入，但如果明確失敗則提前報錯
+                clearInterval(checkInterval);
+                console.error('❌ 模組載入失敗');
+                console.log('請檢查：');
+                console.log('1. /assets/vendor/quill-better-table.js 是否存在');
+                console.log('2. 網路連線是否正常（Quill CDN）');
+                console.log('3. 瀏覽器控制台是否有其他錯誤');
+                reject(new Error('模組載入失敗'));
               } else if (attempts >= maxAttempts) {
                 clearInterval(checkInterval);
-                console.error('❌ Quill 或 Better Table 載入超時');
+                console.error('❌ 模組載入超時');
                 reject(new Error('模組載入超時'));
               }
             }, 100);
@@ -1122,7 +1148,7 @@
             return false;
           }
           
-          if (!window.QuillBetterTable) {
+          if (!window.quillBetterTable) {
             console.error('❌ Better Table 模組尚未載入');
             return false;
           }
