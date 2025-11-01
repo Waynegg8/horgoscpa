@@ -162,21 +162,21 @@ export async function handleTasks(request, env, me, requestId, url) {
 	if (method === "GET" && url.pathname.match(/\/tasks\/\d+$/)) {
 		const taskId = url.pathname.split("/").pop();
 		try {
-			const task = await env.DATABASE.prepare(
-				`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes, t.client_service_id,
-				        t.completed_date, t.created_at, t.service_month,
-				        c.company_name AS client_name, c.tax_id AS client_tax_id, c.client_id,
-				        s.service_name,
-				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id) AS total_stages,
-				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id AND s.status = 'completed') AS completed_stages,
-				        u.name AS assignee_name
-				 FROM ActiveTasks t
-				 LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
-				 LEFT JOIN Clients c ON c.client_id = cs.client_id
-				 LEFT JOIN Services s ON s.service_id = cs.service_id
-				 LEFT JOIN Users u ON u.user_id = t.assignee_user_id
-				 WHERE t.task_id = ? AND t.is_deleted = 0`
-			).bind(taskId).first();
+		const task = await env.DATABASE.prepare(
+			`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes, t.client_service_id,
+			        t.completed_date, t.created_at, t.service_month,
+			        c.company_name AS client_name, c.tax_registration_number AS client_tax_id, c.client_id,
+			        s.service_name,
+			        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id) AS total_stages,
+			        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id AND s.status = 'completed') AS completed_stages,
+			        u.name AS assignee_name
+			 FROM ActiveTasks t
+			 LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
+			 LEFT JOIN Clients c ON c.client_id = cs.client_id
+			 LEFT JOIN Services s ON s.service_id = cs.service_id
+			 LEFT JOIN Users u ON u.user_id = t.assignee_user_id
+			 WHERE t.task_id = ? AND t.is_deleted = 0`
+		).bind(taskId).first();
 			
 			if (!task) {
 				return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"任務不存在", meta:{ requestId } }, corsHeaders);

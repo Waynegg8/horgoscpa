@@ -45,28 +45,46 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
         sc.*,
         s.service_name,
         si.item_name as service_item_name,
-        tt.template_name,
-        sop.title as sop_title,
-        sop.category as sop_category
+        tt.template_name
       FROM ServiceComponents sc
       LEFT JOIN Services s ON sc.service_id = s.service_id
       LEFT JOIN ServiceItems si ON sc.service_item_id = si.item_id
       LEFT JOIN TaskTemplates tt ON sc.task_template_id = tt.template_id
-      LEFT JOIN SOPDocuments sop ON sc.sop_id = sop.sop_id
       WHERE sc.client_service_id = ? AND sc.is_active = 1
       ORDER BY sc.component_id
     `).bind(clientServiceId).all();
 
+    // 如果有sop_id，单独查询SOP信息
+    const componentsWithSOP = await Promise.all(
+      (components.results || []).map(async (c) => {
+        let sopInfo = null;
+        if (c.sop_id) {
+          try {
+            const sop = await env.DATABASE.prepare(
+              'SELECT title, category FROM SOPDocuments WHERE sop_id = ?'
+            ).bind(c.sop_id).first();
+            if (sop) {
+              sopInfo = { sop_title: sop.title, sop_category: sop.category };
+            }
+          } catch (err) {
+            console.error('查询SOP失败:', err);
+          }
+        }
+        return {
+          ...c,
+          ...sopInfo,
+          delivery_months: c.delivery_months ? JSON.parse(c.delivery_months) : null
+        };
+      })
+    );
+
     return jsonResponse(200, {
       ok: true,
-      data: components.results.map(c => ({
-        ...c,
-        delivery_months: c.delivery_months ? JSON.parse(c.delivery_months) : null
-      }))
+      data: componentsWithSOP
     }, corsHeaders);
   } catch (err) {
     console.error('获取服务组成部分失败:', err);
-    return jsonResponse(500, { ok: false, message: '获取失败' }, corsHeaders);
+    return jsonResponse(500, { ok: false, message: '获取失败', error: String(err) }, corsHeaders);
   }
 }
 
