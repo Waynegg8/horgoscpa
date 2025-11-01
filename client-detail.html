@@ -872,7 +872,7 @@
                 </div>
                 <div class="form-field">
                   <label>服務類型</label>
-                  <select id="new-comp-service-${clientServiceId}">
+                  <select id="new-comp-service-${clientServiceId}" onchange="updateTemplateOptions${clientServiceId}(this.value)">
                     <option value="">請選擇</option>
                     ${servicesHtml}
                   </select>
@@ -892,8 +892,7 @@
                 <div class="form-field">
                   <label>任務模板</label>
                   <select id="new-comp-template-${clientServiceId}" onchange="loadTemplateStages${clientServiceId}(this.value)">
-                    <option value="">不使用模板</option>
-                    ${templatesHtml}
+                    <option value="">請先選擇服務類型</option>
                   </select>
                   <small style="display: block; margin-top: 5px; color: #3b82f6;">
                     ✨ 選擇模板後，會自動帶入建議的期限規則，您可以再調整
@@ -901,48 +900,19 @@
                 </div>
               </div>
               
-              <!-- 模板阶段明细 -->
-              <div id="template-stages-${clientServiceId}" style="display: none; margin-top: 15px; padding: 15px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+              <!-- 独立任务列表 -->
+              <div id="template-stages-${clientServiceId}" style="display: none; margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                  <strong style="color: #374151;">📋 任務階段設定</strong>
-                  <small style="color: #6b7280;">可以針對此客戶自定義調整</small>
+                  <div>
+                    <strong style="color: #856404; font-size: 15px;">📋 將自動生成以下獨立任務</strong>
+                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #856404;">每個任務可單獨設定期限和預估工時</p>
+                  </div>
                 </div>
                 <div id="stages-list-${clientServiceId}">
-                  <!-- 阶段列表会动态加载到这里 -->
+                  <!-- 任务列表会动态加载到这里 -->
                 </div>
               </div>
               
-              <div class="form-row-2col">
-                <div class="form-field">
-                  <label>📅 任務期限規則</label>
-                  <select id="new-comp-due-rule-${clientServiceId}" onchange="updateDueDateHelp${clientServiceId}(this.value)">
-                    <option value="end_of_month">當月月底（例：1/31, 2/28, 3/31）</option>
-                    <option value="specific_day">當月指定日（例：每月5日 → 1/5, 2/5）</option>
-                    <option value="next_month_day">次月指定日（例：次月15日 → 2/15, 3/15）</option>
-                    <option value="days_after_start">相對天數（例：30天後）</option>
-                  </select>
-                  <small id="due-help-${clientServiceId}" style="display: block; margin-top: 5px; color: #6b7280;">
-                    選擇後會自動計算任務截止日期
-                  </small>
-                </div>
-                <div class="form-field">
-                  <label id="due-value-label-${clientServiceId}">期限日期值</label>
-                  <input type="number" id="new-comp-due-value-${clientServiceId}" placeholder="留空則使用預設值" min="1" max="31" />
-                  <small id="due-value-help-${clientServiceId}" style="display: block; margin-top: 5px; color: #6b7280;">
-                    只有在選擇「指定日」或「相對天數」時需要填寫
-                  </small>
-                </div>
-              </div>
-              <div class="form-row-2col">
-                <div class="form-field">
-                  <label>預估工時（小時）</label>
-                  <input type="number" id="new-comp-hours-${clientServiceId}" placeholder="例如：8" min="0" step="0.5" />
-                </div>
-                <div class="form-field">
-                  <label>提前生成（天）</label>
-                  <input type="number" id="new-comp-advance-${clientServiceId}" value="7" min="0" />
-                </div>
-              </div>
               <div class="form-field">
                 <label>備註</label>
                 <textarea id="new-comp-notes-${clientServiceId}" rows="2"></textarea>
@@ -1027,6 +997,100 @@
       const form = document.getElementById(`add-component-form-${clientServiceId}`);
       form.style.display = 'block';
       
+      // 创建期限日期预览函数
+      window[`updateDueDatePreview${clientServiceId}`] = function() {
+        const rule = document.getElementById(`new-comp-due-rule-${clientServiceId}`).value;
+        const value = document.getElementById(`new-comp-due-value-${clientServiceId}`).value;
+        const previewText = document.getElementById(`preview-text-${clientServiceId}`);
+        const valueField = document.getElementById(`due-value-field-${clientServiceId}`);
+        
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth() + 1;
+        const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+        
+        let examples = [];
+        
+        switch(rule) {
+          case 'end_of_month':
+            valueField.style.display = 'none';
+            examples = [
+              `1月執行 → 1/31到期`,
+              `2月執行 → 2/28到期`,
+              `3月執行 → 3/31到期`
+            ];
+            previewText.innerHTML = examples.join('<br>');
+            break;
+            
+          case 'specific_day':
+            valueField.style.display = 'block';
+            if (value && value >= 1 && value <= 31) {
+              examples = [
+                `1月執行 → 1/${value}到期`,
+                `2月執行 → 2/${value}到期`,
+                `${currentMonth}月執行 → ${currentMonth}/${value}到期`
+              ];
+              previewText.innerHTML = `<span style="color: #059669; font-weight: 600;">每月${value}日到期</span><br><span style="font-size: 13px;">${examples.join(' | ')}</span>`;
+            } else {
+              previewText.innerHTML = '請輸入1-31的日期，例如：5（代表每月5日到期）';
+              previewText.style.color = '#9ca3af';
+            }
+            break;
+            
+          case 'next_month_day':
+            valueField.style.display = 'block';
+            if (value && value >= 1 && value <= 31) {
+              examples = [
+                `1月執行 → 2/${value}到期`,
+                `2月執行 → 3/${value}到期`,
+                `${currentMonth}月執行 → ${nextMonth}/${value}到期`
+              ];
+              previewText.innerHTML = `<span style="color: #059669; font-weight: 600;">次月${value}日到期</span><br><span style="font-size: 13px;">${examples.join(' | ')}</span>`;
+            } else {
+              previewText.innerHTML = '請輸入1-31的日期，例如：15（代表次月15日到期）';
+              previewText.style.color = '#9ca3af';
+            }
+            break;
+            
+          case 'days_after_start':
+            valueField.style.display = 'block';
+            if (value && value >= 1) {
+              const exampleDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+              exampleDate.setDate(exampleDate.getDate() + parseInt(value));
+              examples = [
+                `1月1日 + ${value}天 → ${exampleDate.getMonth() === 0 ? '1' : exampleDate.getMonth() + 1}/${exampleDate.getDate()}`,
+                `從每月1日起算${value}天後到期`
+              ];
+              previewText.innerHTML = `<span style="color: #059669; font-weight: 600;">月初後${value}天到期</span><br><span style="font-size: 13px;">${examples.join('<br>')}</span>`;
+            } else {
+              previewText.innerHTML = '請輸入天數，例如：30（代表從月初起算30天後到期）';
+              previewText.style.color = '#9ca3af';
+            }
+            break;
+        }
+      };
+      
+      // 创建根据服务类型更新模板选项的函数
+      window[`updateTemplateOptions${clientServiceId}`] = function(serviceId) {
+        const templateSelect = document.getElementById(`new-comp-template-${clientServiceId}`);
+        
+        if (!serviceId) {
+          templateSelect.innerHTML = '<option value="">請先選擇服務類型</option>';
+          return;
+        }
+        
+        // 筛选匹配的模板（service_id匹配或通用模板service_id为null）
+        const filteredTemplates = allTemplates.filter(t => 
+          t.service_id == serviceId || t.service_id === null
+        );
+        
+        if (filteredTemplates.length === 0) {
+          templateSelect.innerHTML = '<option value="">該服務類型暫無可用模板</option>';
+        } else {
+          templateSelect.innerHTML = '<option value="">不使用模板</option>' + 
+            filteredTemplates.map(t => `<option value="${t.template_id}">${t.template_name}</option>`).join('');
+        }
+      };
+      
       // 创建加载模板阶段的函数
       window[`loadTemplateStages${clientServiceId}`] = async function(templateId) {
         const stagesContainer = document.getElementById(`template-stages-${clientServiceId}`);
@@ -1074,41 +1138,117 @@
             return;
           }
           
-          // 渲染阶段列表
-          stagesList.innerHTML = `
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <thead style="background: white;">
-                <tr>
-                  <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">順序</th>
-                  <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">階段名稱</th>
-                  <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">說明</th>
-                  <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">預估時間</th>
-                  <th style="padding: 8px; text-align: center; border-bottom: 2px solid #e5e7eb;">SOP</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${stages.map((stage, idx) => `
-                  <tr style="background: ${idx % 2 === 0 ? 'white' : '#f9fafb'};">
-                    <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${stage.stage_order || idx + 1}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: 500;">${stage.stage_name}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${stage.description || '-'}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${stage.estimated_hours ? stage.estimated_hours + 'h' : '-'}</td>
-                    <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">
-                      ${(stage.sop_id || stage.attachment_id) ? '✅' : '-'}
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            <div style="margin-top: 10px; padding: 10px; background: #fef3c7; border-radius: 6px; font-size: 13px; color: #92400e;">
-              💡 <strong>提示：</strong>這些階段會在任務生成時自動創建。您可以在任務生成後針對個別任務進行調整。
+          // 渲染独立任务列表（带默认值）
+          stagesList.innerHTML = stages.map((stage, idx) => `
+            <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e5e7eb;">
+              <div style="display: flex; align-items: start; gap: 15px;">
+                <div style="flex-shrink: 0; width: 30px; height: 30px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                  ${stage.stage_order || idx + 1}
+                </div>
+                <div style="flex: 1;">
+                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                    <div>
+                      <h6 style="margin: 0; font-size: 15px; color: #1f2937;">${stage.stage_name}</h6>
+                      ${stage.description ? `<p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">${stage.description}</p>` : ''}
+                    </div>
+                    ${(stage.sop_id || stage.attachment_id) ? '<span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 12px;">📄 有SOP</span>' : ''}
+                  </div>
+                  
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
+                    <div>
+                      <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📅 期限規則</label>
+                      <select style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; background: #f0f9ff;" 
+                              id="stage-due-rule-${idx}-${clientServiceId}"
+                              onchange="updateDueDateDisplay${clientServiceId}(${idx})">
+                        <option value="end_of_month" ${stage.due_date_rule === 'end_of_month' ? 'selected' : ''}>每月最後一天</option>
+                        <option value="specific_day" ${stage.due_date_rule === 'specific_day' ? 'selected' : ''}>每月固定日期</option>
+                        <option value="next_month_day" ${stage.due_date_rule === 'next_month_day' ? 'selected' : ''}>次月固定日期</option>
+                        <option value="days_after_start" ${stage.due_date_rule === 'days_after_start' ? 'selected' : ''}>從月初起算天數</option>
+                      </select>
+                      <small id="due-display-${idx}-${clientServiceId}" style="display: block; margin-top: 3px; font-size: 11px; color: #3b82f6;"></small>
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📊 日期/天數</label>
+                      <input type="number" min="1" max="31" placeholder="請輸入" value="${stage.due_date_value || ''}"
+                             style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; background: #f0f9ff;"
+                             id="stage-due-value-${idx}-${clientServiceId}"
+                             onchange="updateDueDateDisplay${clientServiceId}(${idx})" />
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">⏱️ 預估工時</label>
+                      <input type="number" min="0" step="0.5" value="${stage.estimated_hours || ''}" placeholder="例如：2"
+                             style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
+                             id="stage-hours-${idx}-${clientServiceId}" />
+                      <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">小時</small>
+                    </div>
+                    <div>
+                      <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📆 提前生成</label>
+                      <input type="number" min="0" value="${stage.advance_days || 7}" placeholder="7"
+                             style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
+                             id="stage-advance-${idx}-${clientServiceId}" />
+                      <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">天前生成</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('') + `
+            <div style="margin-top: 15px; padding: 12px; background: #f0f9ff; border-radius: 6px; border-left: 4px solid #3b82f6;">
+              <p style="margin: 0; font-size: 13px; color: #1e40af;">
+                <strong>💡 說明：</strong>這些任務會根據「提供頻率」自動生成。例如選擇「每月」，就會每月自動創建這${stages.length}個任務。
+              </p>
             </div>
           `;
+          
+          // 初始化期限显示
+          stages.forEach((stage, idx) => {
+            setTimeout(() => {
+              window[`updateDueDateDisplay${clientServiceId}`](idx);
+            }, 50);
+          });
           
         } catch (err) {
           console.error('載入模板階段失敗:', err);
           stagesList.innerHTML = '<p style="color: #ef4444; font-size: 14px;">載入失敗</p>';
         }
+      };
+      
+      // 创建期限显示更新函数
+      window[`updateDueDateDisplay${clientServiceId}`] = function(idx) {
+        const rule = document.getElementById(`stage-due-rule-${idx}-${clientServiceId}`)?.value;
+        const value = document.getElementById(`stage-due-value-${idx}-${clientServiceId}`)?.value;
+        const display = document.getElementById(`due-display-${idx}-${clientServiceId}`);
+        
+        if (!display) return;
+        
+        let text = '';
+        switch(rule) {
+          case 'end_of_month':
+            text = '例：1月31日、2月28日、3月31日';
+            break;
+          case 'specific_day':
+            if (value) {
+              text = `例：每月${value}日`;
+            } else {
+              text = '請填寫日期';
+            }
+            break;
+          case 'next_month_day':
+            if (value) {
+              text = `例：1月執行→2/${value}、2月執行→3/${value}`;
+            } else {
+              text = '請填寫日期';
+            }
+            break;
+          case 'days_after_start':
+            if (value) {
+              text = `例：月初後第${value}天`;
+            } else {
+              text = '請填寫天數';
+            }
+            break;
+        }
+        display.textContent = text;
       };
       
       // 创建动态帮助函数

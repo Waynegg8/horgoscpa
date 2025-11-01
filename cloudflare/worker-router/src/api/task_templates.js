@@ -383,7 +383,8 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
     try {
       const stagesRows = await env.DATABASE.prepare(
         `SELECT stage_id, stage_name, stage_order, description, 
-                estimated_hours, sop_id, attachment_id
+                estimated_hours, sop_id, attachment_id,
+                due_date_rule, due_date_value, due_date_offset_days, advance_days
          FROM TaskTemplateStages
          WHERE template_id = ?
          ORDER BY stage_order ASC`
@@ -396,7 +397,11 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
         description: s.description || "",
         estimated_hours: Number(s.estimated_hours || 0),
         sop_id: s.sop_id || null,
-        attachment_id: s.attachment_id || null
+        attachment_id: s.attachment_id || null,
+        due_date_rule: s.due_date_rule || 'end_of_month',
+        due_date_value: s.due_date_value || null,
+        due_date_offset_days: s.due_date_offset_days || 0,
+        advance_days: s.advance_days || 7
       }));
 
       return jsonResponse(200, {
