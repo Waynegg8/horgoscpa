@@ -133,33 +133,29 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			}
 			const leave_type = String(body?.leave_type || "").trim();
 			const start_date = String(body?.start_date || "").trim();
-			const unit = String(body?.unit || "day").trim();
 			const amount = Number(body?.amount);
 			const start_time = String(body?.start_time || "").trim();
 			const end_time = String(body?.end_time || "").trim();
 			const errors = [];
 			if (!leave_type) errors.push({ field:"leave_type", message:"必選假別" });
 			if (!/^\d{4}-\d{2}-\d{2}$/.test(start_date)) errors.push({ field:"start_date", message:"日期格式 YYYY-MM-DD" });
-			if (!["day","half","hour"].includes(unit)) errors.push({ field:"unit", message:"單位錯誤" });
 			if (!Number.isFinite(amount) || amount <= 0) errors.push({ field:"amount", message:"需大於 0" });
-			// 如果單位是小時，驗證必須是 0.5 的倍數（與工時系統保持一致）
-			if (unit === 'hour' && Math.abs(amount * 2 - Math.round(amount * 2)) > 1e-9) {
+			// 驗證必須是 0.5 的倍數（半小時）
+			if (Math.abs(amount * 2 - Math.round(amount * 2)) > 1e-9) {
 				errors.push({ field:"amount", message:"請假小時數必須是 0.5 的倍數（例如：0.5、1、1.5、2）" });
 			}
-			// 如果是小時單位，必須提供時間
-			if (unit === 'hour') {
-				if (!/^\d{2}:\d{2}$/.test(start_time)) errors.push({ field:"start_time", message:"請選擇開始時間（格式 HH:MM）" });
-				if (!/^\d{2}:\d{2}$/.test(end_time)) errors.push({ field:"end_time", message:"請選擇結束時間（格式 HH:MM）" });
-				
-				// 驗證時間必須是30分鐘的倍數
-				if (start_time && /^\d{2}:\d{2}$/.test(start_time)) {
-					const [h, m] = start_time.split(':').map(Number);
-					if (m !== 0 && m !== 30) errors.push({ field:"start_time", message:"時間必須是整點或半點（如 9:00、9:30）" });
-				}
-				if (end_time && /^\d{2}:\d{2}$/.test(end_time)) {
-					const [h, m] = end_time.split(':').map(Number);
-					if (m !== 0 && m !== 30) errors.push({ field:"end_time", message:"時間必須是整點或半點（如 9:00、9:30）" });
-				}
+			// 必須提供時間
+			if (!/^\d{2}:\d{2}$/.test(start_time)) errors.push({ field:"start_time", message:"請選擇開始時間（格式 HH:MM）" });
+			if (!/^\d{2}:\d{2}$/.test(end_time)) errors.push({ field:"end_time", message:"請選擇結束時間（格式 HH:MM）" });
+			
+			// 驗證時間必須是30分鐘的倍數
+			if (start_time && /^\d{2}:\d{2}$/.test(start_time)) {
+				const [h, m] = start_time.split(':').map(Number);
+				if (m !== 0 && m !== 30) errors.push({ field:"start_time", message:"時間必須是整點或半點（如 9:00、9:30）" });
+			}
+			if (end_time && /^\d{2}:\d{2}$/.test(end_time)) {
+				const [h, m] = end_time.split(':').map(Number);
+				if (m !== 0 && m !== 30) errors.push({ field:"end_time", message:"時間必須是整點或半點（如 9:00、9:30）" });
 			}
 			// 性別限制檢查
 			const femaleOnlyLeaveTypes = ['maternity', 'menstrual', 'prenatal_checkup'];
@@ -175,7 +171,7 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			// 需要先登記生活事件的假別，檢查是否有足夠餘額
 			const lifeEventLeaveTypes = ['marriage', 'funeral', 'maternity', 'prenatal_checkup', 'paternity'];
 			if (lifeEventLeaveTypes.includes(leave_type)) {
-				const daysNeeded = unit === 'hour' ? amount / 8 : (unit === 'half' ? amount * 0.5 : amount);
+				const daysNeeded = amount / 8; // 統一使用小時，8小時=1天
 				const grantRow = await env.DATABASE.prepare(
 					`SELECT SUM(days_remaining) as available FROM LifeEventLeaveGrants 
 					 WHERE user_id = ? AND leave_type = ? AND status = 'active' 
@@ -190,7 +186,7 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			
 			// 補休特殊處理：檢查餘額（FIFO）
 			if (leave_type === 'comp') {
-				const hoursNeeded = unit === 'hour' ? amount : (unit === 'half' ? 4 : 8) * amount;
+				const hoursNeeded = amount; // 統一使用小時
 				const compGrants = await env.DATABASE.prepare(
 					`SELECT grant_id, hours_remaining FROM CompensatoryLeaveGrants 
 					 WHERE user_id = ? AND status = 'active' AND hours_remaining > 0 
@@ -205,16 +201,16 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
 
 			try {
-				// 建立請假申請（自動批准，結束日期等於開始日期）
+				// 建立請假申請（自動批准，結束日期等於開始日期，統一使用小時單位）
 				await env.DATABASE.prepare(
-					"INSERT INTO LeaveRequests (user_id, leave_type, start_date, end_date, unit, amount, start_time, end_time, status, submitted_at, reviewed_at, reviewed_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved', datetime('now'), datetime('now'), ?)"
-				).bind(String(me.user_id), leave_type, start_date, start_date, unit, amount, start_time || null, end_time || null, String(me.user_id)).run();
+					"INSERT INTO LeaveRequests (user_id, leave_type, start_date, end_date, unit, amount, start_time, end_time, status, submitted_at, reviewed_at, reviewed_by) VALUES (?, ?, ?, ?, 'hour', ?, ?, ?, 'approved', datetime('now'), datetime('now'), ?)"
+				).bind(String(me.user_id), leave_type, start_date, start_date, amount, start_time || null, end_time || null, String(me.user_id)).run();
 				const idRow = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
 				const leaveId = String(idRow?.id);
 				
 				// 如果是補休，立即扣減（FIFO）
 				if (leave_type === 'comp') {
-					const hoursNeeded = unit === 'hour' ? amount : (unit === 'half' ? 4 : 8) * amount;
+					const hoursNeeded = amount; // 統一使用小時
 					const compGrants = await env.DATABASE.prepare(
 						`SELECT grant_id, hours_remaining FROM CompensatoryLeaveGrants 
 						 WHERE user_id = ? AND status = 'active' AND hours_remaining > 0 
