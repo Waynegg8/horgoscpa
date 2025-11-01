@@ -437,7 +437,8 @@
                 const monthText = group.serviceMonth ? ` - ${group.serviceMonth.slice(0, 4)}年${parseInt(group.serviceMonth.slice(5))}月` : '';
                 const serviceTitle = `${group.serviceName}${monthText}`;
                 
-                const groupIdSafe = groupKey.replace(/[^a-zA-Z0-9]/g, '_');
+                // 生成唯一ID：客户ID + 服务组键
+                const groupIdSafe = `${clientIdSafe}_${groupKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
                 
                 html += `
                   <div class="service-group">
