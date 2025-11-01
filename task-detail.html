@@ -310,16 +310,20 @@
 
         taskSOPs = json.data;
         console.log('SOP 列表:', taskSOPs);
+        console.log('第一個 SOP 詳情:', JSON.stringify(taskSOPs[0], null, 2));
         
-        container.innerHTML = taskSOPs.map(sop => `
-          <div class="sop-item">
-            <div>
-              <div class="sop-title">${sop.title || '未命名'}</div>
-              <div class="sop-meta">${getCategoryText(sop.category)} • v${sop.version || '1'}</div>
+        container.innerHTML = taskSOPs.map(sop => {
+          console.log('渲染 SOP:', sop);
+          return `
+            <div class="sop-item">
+              <div>
+                <div class="sop-title">${sop.title || '未命名'}</div>
+                <div class="sop-meta">${getCategoryText(sop.category)} • v${sop.version || '1'}</div>
+              </div>
+              <a href="/internal/knowledge?id=${sop.id}" target="_blank" class="btn btn-sm btn-secondary">查看</a>
             </div>
-            <a href="/internal/knowledge?id=${sop.id}" target="_blank" class="btn btn-sm btn-secondary">查看</a>
-          </div>
-        `).join('');
+          `;
+        }).join('');
         
       } catch (err) {
         console.error('載入任務 SOP 失敗:', err);
@@ -409,6 +413,8 @@
       
       // 獲取當前任務已關聯的 SOP ID
       const linkedSOPIds = taskSOPs.map(s => s.id);
+      console.log('當前已關聯的 SOP IDs:', linkedSOPIds);
+      console.log('所有可用的 SOP:', allSOPs.length);
       
       // 按分類分組 SOP
       const sopByCategory = {};
@@ -424,7 +430,10 @@
           <div style="font-weight: 600; color: #374151; margin-bottom: 8px;">${getCategoryText(cat)}</div>`;
         
         sopByCategory[cat].forEach(sop => {
-          const checked = linkedSOPIds.includes(sop.id) ? 'checked' : '';
+          const isLinked = linkedSOPIds.includes(sop.id);
+          const checked = isLinked ? 'checked' : '';
+          console.log(`SOP ${sop.id} (${sop.title}): 已關聯=${isLinked}, checked="${checked}"`);
+          
           html += `
             <label style="display: flex; align-items: center; gap: 8px; padding: 8px; cursor: pointer; border-radius: 4px;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
               <input type="checkbox" value="${sop.id}" ${checked} style="cursor: pointer;" />
@@ -443,6 +452,8 @@
       
       container.innerHTML = html;
       modal.style.display = 'flex';
+      
+      console.log('彈窗已開啟，HTML 已生成');
     }
 
     // 關閉 SOP 彈窗
@@ -454,29 +465,39 @@
     async function saveSOPLinks() {
       const checkboxes = document.querySelectorAll('#sopCheckboxList input[type="checkbox"]:checked');
       const sopIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+      
+      console.log('準備儲存 SOP 關聯:', sopIds);
 
       try {
-        const res = await fetch(`${apiBase}/tasks/${currentTaskId}/sops`, {
+        const url = `${apiBase}/tasks/${currentTaskId}/sops`;
+        console.log('API URL:', url);
+        
+        const res = await fetch(url, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ sop_ids: sopIds })
         });
         
+        console.log('響應狀態:', res.status);
+        
         if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
         const json = await res.json();
+        
+        console.log('響應數據:', json);
         
         if (!json.ok) {
           alert(json.message || '儲存失敗');
           return;
         }
 
+        alert('SOP 關聯已更新');
         closeSOPModal();
         await loadTaskSOPs();
         
       } catch (err) {
         console.error('儲存 SOP 關聯失敗:', err);
-        alert('儲存失敗');
+        alert('儲存失敗: ' + err.message);
       }
     }
 
