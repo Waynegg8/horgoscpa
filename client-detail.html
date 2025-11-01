@@ -2290,7 +2290,7 @@
         const selectedOption = batchAssigneeSelect.options[batchAssigneeSelect.selectedIndex];
         const assigneeName = selectedOption.textContent;
         
-        if (confirm(\`確定要將所有 \${tasks.length} 個任務的負責人設置為「\${assigneeName}」嗎？\\n\\n之後您仍可單獨修改個別任務的負責人。\`)) {
+        if (confirm(`確定要將所有 ${tasks.length} 個任務的負責人設置為「${assigneeName}」嗎？\n\n之後您仍可單獨修改個別任務的負責人。`)) {
           // 批量设置所有任务的负责人
           tasks.forEach(task => {
             task.assignee_user_id = assigneeUserId;
@@ -2299,7 +2299,7 @@
           // 重新渲染任务列表
           window[`renderTasksList${clientServiceId}`]();
           
-          alert(\`已成功將所有任務的負責人設置為「\${assigneeName}」\`);
+          alert(`已成功將所有任務的負責人設置為「${assigneeName}」`);
         }
       };
       
