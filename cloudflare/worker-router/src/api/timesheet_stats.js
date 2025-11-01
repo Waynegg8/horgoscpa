@@ -24,7 +24,7 @@ async function getMyStats(request, env, userId) {
   
   try {
     // 获取工时数据（支持有任务和无任务两种情况）
-    const stats = await env.DB.prepare(`
+    const stats = await env.DATABASE.prepare(`
       SELECT 
         t.timesheet_id,
         t.work_date,
@@ -147,7 +147,7 @@ async function getCostAnalysis(request, env) {
   
   try {
     // 获取客户信息和收费
-    const client = await env.DB.prepare(`
+    const client = await env.DATABASE.prepare(`
       SELECT 
         c.*,
         cs.client_service_id,
@@ -167,7 +167,7 @@ async function getCostAnalysis(request, env) {
     }
     
     // 获取工时和成本数据
-    const costData = await env.DB.prepare(`
+    const costData = await env.DATABASE.prepare(`
       SELECT 
         sc.component_id,
         sc.component_name,

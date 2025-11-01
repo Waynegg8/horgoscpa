@@ -110,7 +110,7 @@ async function copyStagesFromTemplate(env, taskId, templateId) {
   if (!templateId) return;
   
   try {
-    const stages = await env.DB.prepare(`
+    const stages = await env.DATABASE.prepare(`
       SELECT stage_name, stage_order, description, estimated_hours
       FROM TaskTemplateStages
       WHERE template_id = ?
@@ -118,7 +118,7 @@ async function copyStagesFromTemplate(env, taskId, templateId) {
     `).bind(templateId).all();
     
     for (const stage of stages.results || []) {
-      await env.DB.prepare(`
+      await env.DATABASE.prepare(`
         INSERT INTO ActiveTaskStages (task_id, stage_name, stage_order, status)
         VALUES (?, ?, ?, 'pending')
       `).bind(taskId, stage.stage_name, stage.stage_order).run();
@@ -147,7 +147,7 @@ export async function generateTasksForComponents(env, targetDate = null) {
   
   try {
     // 获取所有启用的服务组成部分
-    const components = await env.DB.prepare(`
+    const components = await env.DATABASE.prepare(`
       SELECT 
         sc.*,
         cs.client_id,
@@ -192,7 +192,7 @@ export async function generateTasksForComponents(env, targetDate = null) {
       }
       
       // 检查是否已经生成过（避免重复）
-      const existing = await env.DB.prepare(`
+      const existing = await env.DATABASE.prepare(`
         SELECT task_id FROM ActiveTasks
         WHERE component_id = ?
           AND due_date = ?
@@ -216,7 +216,7 @@ export async function generateTasksForComponents(env, targetDate = null) {
         
         const startDateStr = formatDate(now);
         
-        const insertResult = await env.DB.prepare(`
+        const insertResult = await env.DATABASE.prepare(`
           INSERT INTO ActiveTasks (
             client_service_id,
             component_id,

@@ -40,7 +40,7 @@ export async function handleServiceComponents(request, env, path) {
 
 async function listServiceComponents(env, corsHeaders, clientServiceId) {
   try {
-    const components = await env.DB.prepare(`
+    const components = await env.DATABASE.prepare(`
       SELECT 
         sc.*,
         s.service_name,
@@ -93,7 +93,7 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
       }, corsHeaders);
     }
 
-    const result = await env.DB.prepare(`
+    const result = await env.DATABASE.prepare(`
       INSERT INTO ServiceComponents (
         client_service_id, service_id, service_item_id, component_name,
         delivery_frequency, delivery_months,
@@ -131,7 +131,7 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
 
 async function deleteServiceComponent(env, corsHeaders, componentId) {
   try {
-    const tasks = await env.DB.prepare(
+    const tasks = await env.DATABASE.prepare(
       'SELECT COUNT(*) as count FROM ActiveTasks WHERE component_id = ? AND is_deleted = 0'
     ).bind(componentId).first();
 
@@ -142,7 +142,7 @@ async function deleteServiceComponent(env, corsHeaders, componentId) {
       }, corsHeaders);
     }
 
-    await env.DB.prepare(
+    await env.DATABASE.prepare(
       'UPDATE ServiceComponents SET is_active = 0 WHERE component_id = ?'
     ).bind(componentId).run();
 

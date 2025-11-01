@@ -123,15 +123,14 @@
         margin-bottom: 6px !important;
       }
       
-      /* 修复按钮容器超出边界的问题 */
-      .modal__actions {
-        display: flex !important;
-        justify-content: flex-end !important;
-        gap: 12px !important;
-        margin-top: 16px !important;
-        padding: 0 !important;
-        width: 100% !important;
+      /* 修复模态框内容溢出问题 */
+      .modal {
         box-sizing: border-box !important;
+      }
+      
+      .modal__body {
+        box-sizing: border-box !important;
+        overflow: hidden !important;
       }
       
       /* 确保表单网格不会溢出 */
@@ -139,9 +138,22 @@
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         gap: 16px !important;
-        width: 100% !important;
         box-sizing: border-box !important;
-        max-width: 100% !important;
+        margin: 0 !important;
+      }
+      
+      /* 修复按钮容器超出边界的问题 */
+      .modal__actions {
+        display: flex !important;
+        justify-content: flex-end !important;
+        gap: 12px !important;
+        margin-top: 16px !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+      }
+      
+      .modal__actions button {
+        flex-shrink: 0 !important;
       }
     </style>
   </head>
