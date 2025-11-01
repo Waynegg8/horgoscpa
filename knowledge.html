@@ -1028,23 +1028,26 @@
           return el;
         }
 
-        // 文檔預覽功能
+        // 文檔預覽功能（在右側預覽區域顯示）
+        let currentPreviewBlobUrl = null;
+        
         window.previewDocument = async function(doc) {
-          const modal = document.getElementById('docPreviewModal');
-          const titleEl = document.getElementById('previewDocTitle');
-          const contentEl = document.getElementById('previewDocContent');
-          const downloadBtn = document.getElementById('downloadDocBtn');
+          const previewArea = document.getElementById('documentPreviewArea');
+          if (!previewArea) return;
           
-          if (!modal || !titleEl || !contentEl) return;
-          
-          // 設置標題
-          titleEl.textContent = `📄 ${doc.title || '文檔預覽'}`;
-          
-          // 顯示模態框
-          modal.classList.add('show');
+          // 清理之前的 blob URL
+          if (currentPreviewBlobUrl) {
+            URL.revokeObjectURL(currentPreviewBlobUrl);
+            currentPreviewBlobUrl = null;
+          }
           
           // 顯示載入中
-          contentEl.innerHTML = '<div style="text-align:center;color:#6b7280;"><div style="font-size:48px;margin-bottom:16px;">⏳</div><div>載入中...</div></div>';
+          previewArea.innerHTML = `
+            <div style="text-align:center;padding:60px 20px;color:#6b7280;">
+              <div style="font-size:48px;margin-bottom:16px;">⏳</div>
+              <div>載入中...</div>
+            </div>
+          `;
           
           try {
             // 構建文件URL
@@ -1058,10 +1061,7 @@
             
             const blob = await res.blob();
             const blobUrl = URL.createObjectURL(blob);
-            
-            // 設置下載按鈕
-            downloadBtn.href = blobUrl;
-            downloadBtn.download = doc.fileName || 'document';
+            currentPreviewBlobUrl = blobUrl;
             
             // 根據文件類型顯示預覽
             const fileType = doc.fileType || '';
@@ -1069,17 +1069,40 @@
             
             if (fileType.includes('pdf') || fileName.match(/\.pdf$/i)) {
               // PDF預覽
-              contentEl.innerHTML = `<iframe src="${blobUrl}" style="width:100%;height:100%;border:none;"></iframe>`;
+              previewArea.innerHTML = `
+                <div style="display:flex;flex-direction:column;height:100%;min-height:600px;">
+                  <div style="padding:12px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
+                    <h4 style="margin:0;font-size:14px;font-weight:600;color:#374151;">📕 ${doc.title}</h4>
+                    <a href="${blobUrl}" download="${doc.fileName || 'document.pdf'}" class="btn" style="padding:6px 12px;font-size:13px;text-decoration:none;">
+                      💾 下載
+                    </a>
+                  </div>
+                  <iframe src="${blobUrl}" style="width:100%;flex:1;border:none;"></iframe>
+                </div>
+              `;
             } else if (fileType.includes('image') || fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
               // 圖片預覽
-              contentEl.innerHTML = `<img src="${blobUrl}" style="max-width:100%;max-height:100%;object-fit:contain;" />`;
+              previewArea.innerHTML = `
+                <div style="display:flex;flex-direction:column;height:100%;min-height:600px;">
+                  <div style="padding:12px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
+                    <h4 style="margin:0;font-size:14px;font-weight:600;color:#374151;">🖼️ ${doc.title}</h4>
+                    <a href="${blobUrl}" download="${doc.fileName || 'image'}" class="btn" style="padding:6px 12px;font-size:13px;text-decoration:none;">
+                      💾 下載
+                    </a>
+                  </div>
+                  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:20px;background:#f9fafb;">
+                    <img src="${blobUrl}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);" />
+                  </div>
+                </div>
+              `;
             } else {
               // 其他文件類型，顯示下載提示
-              contentEl.innerHTML = `
-                <div style="text-align:center;padding:40px;">
+              previewArea.innerHTML = `
+                <div style="text-align:center;padding:60px 20px;">
                   <div style="font-size:64px;margin-bottom:20px;">📄</div>
-                  <h3 style="margin-bottom:12px;color:#374151;">${doc.title}</h3>
-                  <p style="color:#6b7280;margin-bottom:24px;">此文件類型不支援線上預覽</p>
+                  <h3 style="margin-bottom:12px;color:#374151;font-size:18px;">${doc.title}</h3>
+                  <p style="color:#6b7280;margin-bottom:8px;font-size:13px;">${doc.fileName || ''}</p>
+                  <p style="color:#9ca3af;margin-bottom:24px;font-size:13px;">此文件類型不支援線上預覽</p>
                   <a href="${blobUrl}" download="${doc.fileName || 'document'}" class="btn primary" style="text-decoration:none;">
                     <span>💾 下載文件</span>
                   </a>
@@ -1088,24 +1111,13 @@
             }
           } catch (err) {
             console.error('預覽文檔失敗:', err);
-            contentEl.innerHTML = `
-              <div style="text-align:center;padding:40px;color:#c0392b;">
+            previewArea.innerHTML = `
+              <div style="text-align:center;padding:60px 20px;color:#c0392b;">
                 <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
-                <div>載入失敗：${err.message}</div>
+                <div style="font-size:16px;font-weight:600;margin-bottom:8px;">載入失敗</div>
+                <div style="font-size:13px;color:#6b7280;">${err.message}</div>
               </div>
             `;
-          }
-        };
-        
-        window.closeDocPreview = function() {
-          const modal = document.getElementById('docPreviewModal');
-          if (modal) {
-            modal.classList.remove('show');
-            // 清理 blob URL
-            const downloadBtn = document.getElementById('downloadDocBtn');
-            if (downloadBtn && downloadBtn.href.startsWith('blob:')) {
-              URL.revokeObjectURL(downloadBtn.href);
-            }
           }
         };
 
