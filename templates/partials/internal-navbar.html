@@ -14,14 +14,86 @@
       <a class="internal-nav-link" href="/internal/leaves">假期</a>
       <a class="internal-nav-link" href="/internal/tasks">任務</a>
       <a class="internal-nav-link" href="/internal/receipts">收據</a>
+      <a class="internal-nav-link" href="/internal/payroll">薪資</a>
+      <a class="internal-nav-link" href="/internal/costs">成本</a>
+      <a class="internal-nav-link" href="/internal/knowledge">知識庫</a>
+      <a class="internal-nav-link" href="/internal/cms">內容管理</a>
       <a class="internal-nav-link" href="/internal/reports">報表</a>
       <a class="internal-nav-link" href="/internal/settings">設定</a>
     </nav>
     <div class="internal-nav-user">
       <span class="internal-user-name" id="internalUserName">—</span>
+      <button class="internal-logout-btn" id="internalLogoutBtn">登出</button>
     </div>
   </div>
   
 </header>
+
+<script>
+(function() {
+  'use strict';
+
+  // 處理移動端選單切換
+  const mobileToggle = document.getElementById('internalMobileToggle');
+  const navLinks = document.getElementById('internalNavLinks');
+  if (mobileToggle && navLinks) {
+    mobileToggle.addEventListener('click', function() {
+      navLinks.classList.toggle('active');
+      mobileToggle.classList.toggle('active');
+    });
+  }
+
+  // 處理登出
+  const logoutBtn = document.getElementById('internalLogoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async function() {
+      if (!confirm('確定要登出嗎？')) {
+        return;
+      }
+
+      logoutBtn.disabled = true;
+      logoutBtn.textContent = '登出中...';
+
+      try {
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+        
+        const res = await fetch(apiBase + '/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+
+        const json = await res.json().catch(() => null);
+        
+        if (res.ok && json && json.ok === true) {
+          // 登出成功，導向登入頁
+          location.assign('/login');
+        } else {
+          // 登出失敗，顯示錯誤訊息
+          alert('登出失敗，請稍後再試');
+          logoutBtn.disabled = false;
+          logoutBtn.textContent = '登出';
+        }
+      } catch (err) {
+        console.error('登出錯誤:', err);
+        alert('網路或伺服器異常，請稍後再試');
+        logoutBtn.disabled = false;
+        logoutBtn.textContent = '登出';
+      }
+    });
+  }
+
+  // 高亮當前頁面的導航連結
+  const currentPath = window.location.pathname;
+  const navLinksElements = document.querySelectorAll('.internal-nav-link');
+  navLinksElements.forEach(link => {
+    const linkPath = new URL(link.href).pathname;
+    if (currentPath === linkPath || (linkPath !== '/internal/dashboard' && currentPath.startsWith(linkPath))) {
+      link.classList.add('active');
+    }
+  });
+})();
+</script>
 
 

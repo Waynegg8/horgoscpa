@@ -125,7 +125,7 @@ export async function getSessionUser(request, env) {
 	const sessionId = getCookie(request, cookieName);
 	if (!sessionId || !env.DATABASE) return null;
 	const row = await env.DATABASE.prepare(
-		"SELECT s.id as session_id, s.user_id, s.expires_at, u.username, u.name, u.email, u.is_admin FROM sessions s JOIN Users u ON u.user_id = s.user_id WHERE s.id = ? LIMIT 1"
+		"SELECT s.id as session_id, s.user_id, s.expires_at, u.username, u.name, u.email, u.is_admin, u.gender FROM sessions s JOIN Users u ON u.user_id = s.user_id WHERE s.id = ? LIMIT 1"
 	).bind(sessionId).first();
 	if (!row) return null;
 	const exp = Date.parse(row.expires_at);

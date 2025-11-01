@@ -1,5 +1,5 @@
 import { jsonResponse, generateRequestId, corsPreflightResponse, getSessionUser, getCorsHeadersForRequest } from "./utils.js";
-import { handleLogin, handleAuthMe } from "./auth.js";
+import { handleLogin, handleAuthMe, handleLogout } from "./auth.js";
 import { handleClients } from "./api/clients.js";
 import { handleTasks } from "./api/tasks.js";
 import { handleTimesheets } from "./api/timesheets.js";
@@ -42,13 +42,16 @@ export default {
 			return corsPreflightResponse(request, env);
 		}
 
-		// Auth routes
-		if (path === "/internal/api/v1/auth/login") {
-			return handleLogin(request, env, requestId);
-		}
-		if (path === "/internal/api/v1/auth/me") {
-			return handleAuthMe(request, env, requestId);
-		}
+	// Auth routes
+	if (path === "/internal/api/v1/auth/login") {
+		return handleLogin(request, env, requestId);
+	}
+	if (path === "/internal/api/v1/auth/me") {
+		return handleAuthMe(request, env, requestId);
+	}
+	if (path === "/internal/api/v1/auth/logout") {
+		return handleLogout(request, env, requestId);
+	}
 
 		// DEV routes (no session required, but env must not be prod)
 		if (path.startsWith("/internal/api/v1/admin/dev-")) {

@@ -111,5 +111,41 @@ export async function handleAuthMe(request, env, requestId) {
 	}
 }
 
+export async function handleLogout(request, env, requestId) {
+	if (request.method.toUpperCase() !== "POST") {
+		return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "方法不允許", meta: { requestId } }, getCorsHeadersForRequest(request, env));
+	}
+	try {
+		// 取得當前 session
+		const cookieName = String(env.SESSION_COOKIE_NAME || "session");
+		const cookie = request.headers.get("Cookie") || "";
+		const sessionId = cookie.split(";").map(s => s.trim()).find(s => s.startsWith(`${cookieName}=`))?.split("=")[1];
+
+		// 若有 session，從資料庫中刪除
+		if (sessionId && env.DATABASE) {
+			await env.DATABASE.prepare("DELETE FROM sessions WHERE id = ?").bind(sessionId).run();
+		}
+
+		// 清除 Cookie
+		const clearCookie = [
+			`${cookieName}=`,
+			"Domain=horgoscpa.com",
+			"Path=/",
+			"HttpOnly",
+			"Secure",
+			"SameSite=Lax",
+			"Max-Age=0",
+		].join("; ");
+
+		const corsHeaders = getCorsHeadersForRequest(request, env);
+		return jsonResponse(200, { ok: true, code: "OK", message: "已登出", meta: { requestId } }, { "Set-Cookie": clearCookie, ...corsHeaders });
+	} catch (err) {
+		console.error(JSON.stringify({ level: "error", requestId, path: "/internal/api/v1/auth/logout", err: String(err) }));
+		const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+		if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+		return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
+	}
+}
+
 
 
