@@ -136,11 +136,13 @@ async function getDocumentsList(request, env, me, corsHeaders) {
     
   } catch (err) {
     console.error('获取文档列表失败:', err);
+    console.error('错误详情:', err.message, err.stack);
     return new Response(JSON.stringify({
       ok: false,
       code: 'INTERNAL_ERROR',
       message: '伺服器錯誤',
-      error: String(err),
+      error: err.message || String(err),
+      stack: err.stack || '',
       meta: { requestId: 'doc-list' }
     }), {
       status: 500,
