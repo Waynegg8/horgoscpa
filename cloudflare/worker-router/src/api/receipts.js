@@ -153,6 +153,272 @@ export async function handleReceipts(request, env, me, requestId, url) {
 		}
 	}
 
+	// GET /internal/api/v1/receipts/statistics - 应收账款统计
+	if (method === "GET" && path === "/internal/api/v1/receipts/statistics") {
+		try {
+			const today = new Date().toISOString().split('T')[0];
+			
+			// 总应收（未收款+部分收款）
+			const totalRow = await env.DATABASE.prepare(
+				`SELECT SUM(total_amount - COALESCE(paid_amount, 0)) as total_receivable
+				 FROM Receipts 
+				 WHERE is_deleted = 0 AND status IN ('unpaid', 'partial')`
+			).first();
+			
+			// 逾期应收
+			const overdueRow = await env.DATABASE.prepare(
+				`SELECT SUM(total_amount - COALESCE(paid_amount, 0)) as overdue_receivable
+				 FROM Receipts 
+				 WHERE is_deleted = 0 AND status IN ('unpaid', 'partial') AND due_date < ?`
+			).bind(today).first();
+			
+			// 各状态统计
+			const statusStats = await env.DATABASE.prepare(
+				`SELECT status, COUNT(*) as count, SUM(total_amount) as amount
+				 FROM Receipts 
+				 WHERE is_deleted = 0
+				 GROUP BY status`
+			).all();
+			
+			const data = {
+				totalReceivable: Number(totalRow?.total_receivable || 0),
+				overdueReceivable: Number(overdueRow?.overdue_receivable || 0),
+				statusBreakdown: (statusStats?.results || []).map(s => ({
+					status: s.status,
+					count: Number(s.count || 0),
+					amount: Number(s.amount || 0)
+				}))
+			};
+			
+			return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta: { requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
+		}
+	}
+
+	// GET /internal/api/v1/receipts/aging-report - 账龄分析
+	if (method === "GET" && path === "/internal/api/v1/receipts/aging-report") {
+		try {
+			const today = new Date().toISOString().split('T')[0];
+			
+			const receipts = await env.DATABASE.prepare(
+				`SELECT r.receipt_id, r.client_id, c.company_name as client_name,
+				        r.receipt_date, r.due_date, r.total_amount, 
+				        COALESCE(r.paid_amount, 0) as paid_amount,
+				        (r.total_amount - COALESCE(r.paid_amount, 0)) as outstanding_amount,
+				        julianday(?) - julianday(r.due_date) as days_overdue
+				 FROM Receipts r
+				 LEFT JOIN Clients c ON c.client_id = r.client_id
+				 WHERE r.is_deleted = 0 AND r.status IN ('unpaid', 'partial')
+				 ORDER BY days_overdue DESC`
+			).bind(today).all();
+			
+			const aging = {
+				current: [],      // 未到期
+				days_30: [],      // 1-30天
+				days_60: [],      // 31-60天
+				days_90: [],      // 61-90天
+				over_90: []       // 90天以上
+			};
+			
+			let totals = { current: 0, days_30: 0, days_60: 0, days_90: 0, over_90: 0 };
+			
+			(receipts?.results || []).forEach(r => {
+				const item = {
+					receiptId: r.receipt_id,
+					clientId: r.client_id,
+					clientName: r.client_name || "",
+					receiptDate: r.receipt_date,
+					dueDate: r.due_date,
+					outstandingAmount: Number(r.outstanding_amount || 0),
+					daysOverdue: Math.round(Number(r.days_overdue || 0))
+				};
+				
+				const days = item.daysOverdue;
+				if (days < 0) {
+					aging.current.push(item);
+					totals.current += item.outstandingAmount;
+				} else if (days <= 30) {
+					aging.days_30.push(item);
+					totals.days_30 += item.outstandingAmount;
+				} else if (days <= 60) {
+					aging.days_60.push(item);
+					totals.days_60 += item.outstandingAmount;
+				} else if (days <= 90) {
+					aging.days_90.push(item);
+					totals.days_90 += item.outstandingAmount;
+				} else {
+					aging.over_90.push(item);
+					totals.over_90 += item.outstandingAmount;
+				}
+			});
+			
+			const data = { aging, totals };
+			return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta: { requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
+		}
+	}
+
+	// GET /internal/api/v1/receipts/:id - 收据详情
+	const getDetailMatch = path.match(/^\/internal\/api\/v1\/receipts\/([^/]+)$/);
+	if (method === "GET" && getDetailMatch) {
+		const receiptId = decodeURIComponent(getDetailMatch[1]);
+		
+		try {
+			// 获取收据基本信息
+			const receipt = await env.DATABASE.prepare(
+				`SELECT r.*, c.company_name as client_name, u.full_name as created_by_name
+				 FROM Receipts r
+				 LEFT JOIN Clients c ON c.client_id = r.client_id
+				 LEFT JOIN Users u ON u.user_id = r.created_by
+				 WHERE r.receipt_id = ? AND r.is_deleted = 0`
+			).bind(receiptId).first();
+			
+			if (!receipt) {
+				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "收據不存在", meta: { requestId } }, corsHeaders);
+			}
+			
+			// 获取收据明细
+			const items = await env.DATABASE.prepare(
+				`SELECT item_id, service_name, quantity, unit_price, subtotal, notes
+				 FROM ReceiptItems
+				 WHERE receipt_id = ?
+				 ORDER BY item_id`
+			).bind(receiptId).all();
+			
+			// 获取收款记录
+			const payments = await env.DATABASE.prepare(
+				`SELECT p.payment_id, p.payment_date, p.payment_amount, p.payment_method,
+				        p.reference_number, p.notes, p.created_at, u.full_name as created_by_name
+				 FROM Payments p
+				 LEFT JOIN Users u ON u.user_id = p.created_by
+				 WHERE p.receipt_id = ? AND p.is_deleted = 0
+				 ORDER BY p.payment_date DESC, p.payment_id DESC`
+			).bind(receiptId).all();
+			
+			const data = {
+				receiptId: receipt.receipt_id,
+				clientId: receipt.client_id,
+				clientName: receipt.client_name || "",
+				receiptDate: receipt.receipt_date,
+				dueDate: receipt.due_date,
+				totalAmount: Number(receipt.total_amount || 0),
+				paidAmount: Number(receipt.paid_amount || 0),
+				outstandingAmount: Number(receipt.total_amount || 0) - Number(receipt.paid_amount || 0),
+				status: receipt.status,
+				receiptType: receipt.receipt_type || "normal",
+				relatedTaskId: receipt.related_task_id,
+				clientServiceId: receipt.client_service_id,
+				billingMonth: receipt.billing_month,
+				notes: receipt.notes || "",
+				createdBy: receipt.created_by_name || "",
+				createdAt: receipt.created_at,
+				items: (items?.results || []).map(i => ({
+					itemId: i.item_id,
+					serviceName: i.service_name,
+					quantity: Number(i.quantity || 1),
+					unitPrice: Number(i.unit_price || 0),
+					subtotal: Number(i.subtotal || 0),
+					notes: i.notes || ""
+				})),
+				payments: (payments?.results || []).map(p => ({
+					paymentId: p.payment_id,
+					paymentDate: p.payment_date,
+					paymentAmount: Number(p.payment_amount || 0),
+					paymentMethod: p.payment_method,
+					referenceNumber: p.reference_number || "",
+					notes: p.notes || "",
+					createdBy: p.created_by_name || "",
+					createdAt: p.created_at
+				}))
+			};
+			
+			return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta: { requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
+		}
+	}
+
+	// POST /internal/api/v1/receipts/:id/payments - 新增收款记录
+	const addPaymentMatch = path.match(/^\/internal\/api\/v1\/receipts\/([^/]+)\/payments$/);
+	if (method === "POST" && addPaymentMatch) {
+		const receiptId = decodeURIComponent(addPaymentMatch[1]);
+		
+		let body;
+		try { body = await request.json(); } catch (_) {
+			return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, corsHeaders);
+		}
+		
+		const payment_date = String(body?.payment_date || "").trim();
+		const payment_amount = Number(body?.payment_amount);
+		const payment_method = String(body?.payment_method || "transfer").trim();
+		const reference_number = String(body?.reference_number || "").trim();
+		const notes = String(body?.notes || "").trim();
+		
+		const errors = [];
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(payment_date)) errors.push({ field: "payment_date", message: "日期格式 YYYY-MM-DD" });
+		if (!Number.isFinite(payment_amount) || payment_amount <= 0) errors.push({ field: "payment_amount", message: "必須大於 0" });
+		if (!["cash", "transfer", "check", "other"].includes(payment_method)) errors.push({ field: "payment_method", message: "收款方式不合法" });
+		if (errors.length) return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } }, corsHeaders);
+		
+		try {
+			// 检查收据是否存在
+			const receipt = await env.DATABASE.prepare(
+				"SELECT receipt_id, total_amount, COALESCE(paid_amount, 0) as paid_amount, status FROM Receipts WHERE receipt_id = ? AND is_deleted = 0"
+			).bind(receiptId).first();
+			
+			if (!receipt) {
+				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "收據不存在", meta: { requestId } }, corsHeaders);
+			}
+			
+			if (receipt.status === "cancelled") {
+				return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "已作廢的收據不可收款", meta: { requestId } }, corsHeaders);
+			}
+			
+			const outstanding = Number(receipt.total_amount) - Number(receipt.paid_amount);
+			if (payment_amount > outstanding) {
+				return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: `收款金額超過未收金額（${outstanding}）`, meta: { requestId } }, corsHeaders);
+			}
+			
+			// 插入收款记录
+			const insertResult = await env.DATABASE.prepare(
+				`INSERT INTO Payments (receipt_id, payment_date, payment_amount, payment_method, reference_number, notes, created_by, created_at, updated_at)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			).bind(
+				receiptId, payment_date, payment_amount, payment_method, reference_number, notes,
+				String(me.user_id), new Date().toISOString(), new Date().toISOString()
+			).run();
+			
+			// 更新收据的已收金额和状态
+			const newPaidAmount = Number(receipt.paid_amount) + payment_amount;
+			const newStatus = newPaidAmount >= Number(receipt.total_amount) ? "paid" : (newPaidAmount > 0 ? "partial" : "unpaid");
+			
+			await env.DATABASE.prepare(
+				"UPDATE Receipts SET paid_amount = ?, status = ?, updated_at = ? WHERE receipt_id = ?"
+			).bind(newPaidAmount, newStatus, new Date().toISOString(), receiptId).run();
+			
+			const data = {
+				paymentId: insertResult.meta.last_row_id,
+				receiptId: receiptId,
+				paymentDate: payment_date,
+				paymentAmount: payment_amount,
+				paymentMethod: payment_method,
+				receiptStatus: newStatus,
+				paidAmount: newPaidAmount,
+				outstandingAmount: Number(receipt.total_amount) - newPaidAmount
+			};
+			
+			return jsonResponse(201, { ok: true, code: "CREATED", message: "已記錄收款", data, meta: { requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
+		}
+	}
+
 	if (method === "POST" && path === "/internal/api/v1/receipts") {
 		let body;
 		try { body = await request.json(); } catch (_) {
@@ -164,6 +430,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 		const total_amount = Number(body?.total_amount);
 		let statusVal = String(body?.status || "unpaid").trim();
 		const notes = (body?.notes || "").trim();
+		const items = Array.isArray(body?.items) ? body.items : [];
 		
 		// 新字段
 		let receiptType = String(body?.receipt_type || "normal").trim();
@@ -183,6 +450,28 @@ export async function handleReceipts(request, env, me, requestId, url) {
 		if (billingMonth && (billingMonth < 1 || billingMonth > 12)) {
 			errors.push({ field:"billing_month", message:"月份必须在1-12之间" });
 		}
+		
+		// 验证items
+		if (items.length > 0) {
+			let itemsTotal = 0;
+			items.forEach((item, idx) => {
+				const service_name = String(item?.service_name || "").trim();
+				const quantity = Number(item?.quantity || 1);
+				const unit_price = Number(item?.unit_price || 0);
+				
+				if (!service_name) errors.push({ field: `items[${idx}].service_name`, message: "必填" });
+				if (!Number.isFinite(quantity) || quantity <= 0) errors.push({ field: `items[${idx}].quantity`, message: "必須大於 0" });
+				if (!Number.isFinite(unit_price) || unit_price < 0) errors.push({ field: `items[${idx}].unit_price`, message: "必須大於等於 0" });
+				
+				itemsTotal += quantity * unit_price;
+			});
+			
+			// 检查items总计是否与total_amount一致（允许小误差）
+			if (Math.abs(itemsTotal - total_amount) > 0.01) {
+				errors.push({ field: "items", message: `明細總計（${itemsTotal}）與總金額（${total_amount}）不符` });
+			}
+		}
+		
 		if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
 
 		try {
@@ -224,16 +513,33 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				due_date = `${y}-${m2}-${day}`;
 			}
 
+			// 插入收据
 			await env.DATABASE.prepare(
-				`INSERT INTO Receipts (receipt_id, client_id, receipt_date, due_date, total_amount, status, 
+				`INSERT INTO Receipts (receipt_id, client_id, receipt_date, due_date, total_amount, paid_amount, status, 
 				 receipt_type, related_task_id, client_service_id, billing_month, 
 				 is_auto_generated, notes, created_by, created_at, updated_at) 
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
+				 VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
 			).bind(
 				receipt_id, client_id, receipt_date, due_date, total_amount, statusVal, 
 				receiptType, relatedTaskId, clientServiceId, billingMonth,
 				notes, String(me.user_id), new Date().toISOString(), new Date().toISOString()
 			).run();
+			
+			// 插入收据明细
+			if (items.length > 0) {
+				for (const item of items) {
+					const service_name = String(item.service_name).trim();
+					const quantity = Number(item.quantity || 1);
+					const unit_price = Number(item.unit_price || 0);
+					const subtotal = quantity * unit_price;
+					const item_notes = String(item.notes || "").trim();
+					
+					await env.DATABASE.prepare(
+						`INSERT INTO ReceiptItems (receipt_id, service_name, quantity, unit_price, subtotal, notes, created_at)
+						 VALUES (?, ?, ?, ?, ?, ?, ?)`
+					).bind(receipt_id, service_name, quantity, unit_price, subtotal, item_notes, new Date().toISOString()).run();
+				}
+			}
 			
 			const data = { 
 				receiptId: receipt_id, 
@@ -245,7 +551,8 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				receiptType: receiptType,
 				relatedTaskId: relatedTaskId,
 				clientServiceId: clientServiceId,
-				billingMonth: billingMonth
+				billingMonth: billingMonth,
+				itemsCount: items.length
 			};
 			return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
@@ -253,6 +560,99 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
 			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
 			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
+	// PATCH /internal/api/v1/receipts/:id - 编辑收据
+	const patchMatch = path.match(/^\/internal\/api\/v1\/receipts\/([^/]+)$/);
+	if (method === "PATCH" && patchMatch) {
+		const receiptId = decodeURIComponent(patchMatch[1]);
+		
+		let body;
+		try { body = await request.json(); } catch (_) {
+			return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, corsHeaders);
+		}
+		
+		try {
+			// 检查收据是否存在
+			const existing = await env.DATABASE.prepare(
+				"SELECT * FROM Receipts WHERE receipt_id = ? AND is_deleted = 0"
+			).bind(receiptId).first();
+			
+			if (!existing) {
+				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "收據不存在", meta: { requestId } }, corsHeaders);
+			}
+			
+			// 构建更新字段
+			const updates = [];
+			const binds = [];
+			
+			if (body.due_date !== undefined) {
+				const due_date = String(body.due_date || "").trim();
+				if (due_date && !/^\d{4}-\d{2}-\d{2}$/.test(due_date)) {
+					return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "到期日格式錯誤", meta: { requestId } }, corsHeaders);
+				}
+				updates.push("due_date = ?");
+				binds.push(due_date || null);
+			}
+			
+			if (body.notes !== undefined) {
+				updates.push("notes = ?");
+				binds.push(String(body.notes || "").trim());
+			}
+			
+			if (body.status !== undefined) {
+				const status = String(body.status).trim();
+				if (!["unpaid", "partial", "paid", "cancelled"].includes(status)) {
+					return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "狀態不合法", meta: { requestId } }, corsHeaders);
+				}
+				updates.push("status = ?");
+				binds.push(status);
+			}
+			
+			if (updates.length === 0) {
+				return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "未提供更新字段", meta: { requestId } }, corsHeaders);
+			}
+			
+			updates.push("updated_at = ?");
+			binds.push(new Date().toISOString());
+			binds.push(receiptId);
+			
+			await env.DATABASE.prepare(
+				`UPDATE Receipts SET ${updates.join(", ")} WHERE receipt_id = ?`
+			).bind(...binds).run();
+			
+			return jsonResponse(200, { ok: true, code: "OK", message: "已更新", meta: { requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
+		}
+	}
+
+	// DELETE /internal/api/v1/receipts/:id - 作废收据
+	const deleteMatch = path.match(/^\/internal\/api\/v1\/receipts\/([^/]+)$/);
+	if (method === "DELETE" && deleteMatch) {
+		const receiptId = decodeURIComponent(deleteMatch[1]);
+		
+		try {
+			// 检查收据是否存在
+			const existing = await env.DATABASE.prepare(
+				"SELECT receipt_id, status FROM Receipts WHERE receipt_id = ? AND is_deleted = 0"
+			).bind(receiptId).first();
+			
+			if (!existing) {
+				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "收據不存在", meta: { requestId } }, corsHeaders);
+			}
+			
+			// 标记为作废（软删除+状态改为cancelled）
+			await env.DATABASE.prepare(
+				"UPDATE Receipts SET status = 'cancelled', is_deleted = 1, updated_at = ? WHERE receipt_id = ?"
+			).bind(new Date().toISOString(), receiptId).run();
+			
+			return jsonResponse(200, { ok: true, code: "OK", message: "已作廢", meta: { requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
 		}
 	}
 

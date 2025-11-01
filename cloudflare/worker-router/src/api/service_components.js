@@ -105,7 +105,7 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
       due_date_offset_days = 0,
       estimated_hours,
       notes,
-      sop_id,
+      component_sop_ids = [],  // 服务层级SOP（多选）
       tasks = []
     } = body;
 
@@ -139,13 +139,57 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
       due_date_offset_days,
       estimated_hours || null,
       notes || null,
-      sop_id || null
+      null  // sop_id保留为null，改用ServiceComponentSOPs表
     ).run();
+
+    const componentId = result.meta.last_row_id;
+
+    // 保存服务层级SOP关联（多个）
+    if (component_sop_ids && Array.isArray(component_sop_ids) && component_sop_ids.length > 0) {
+      for (let i = 0; i < component_sop_ids.length; i++) {
+        await env.DATABASE.prepare(`
+          INSERT INTO ServiceComponentSOPs (component_id, sop_id, sort_order)
+          VALUES (?, ?, ?)
+        `).bind(componentId, component_sop_ids[i], i).run();
+      }
+    }
+
+    // 保存任务配置和任务层级的SOP
+    if (tasks && Array.isArray(tasks) && tasks.length > 0) {
+      for (let i = 0; i < tasks.length; i++) {
+        const task = tasks[i];
+        
+        // 插入任务配置
+        const taskResult = await env.DATABASE.prepare(`
+          INSERT INTO ServiceComponentTasks (
+            component_id, task_order, task_name, assignee_user_id, notes
+          ) VALUES (?, ?, ?, ?, ?)
+        `).bind(
+          componentId,
+          i,
+          task.task_name || '',
+          task.assignee_user_id || null,
+          task.notes || null
+        ).run();
+
+        const taskConfigId = taskResult.meta.last_row_id;
+
+        // 插入任务的SOP关联
+        if (task.sop_ids && Array.isArray(task.sop_ids) && task.sop_ids.length > 0) {
+          for (let j = 0; j < task.sop_ids.length; j++) {
+            await env.DATABASE.prepare(`
+              INSERT INTO ServiceComponentTaskSOPs (task_config_id, sop_id, sort_order)
+              VALUES (?, ?, ?)
+            `).bind(taskConfigId, task.sop_ids[j], j).run();
+          }
+        }
+      }
+    }
 
     return jsonResponse(201, {
       ok: true,
       message: '服务组成部分已创建',
-      data: { component_id: result.meta.last_row_id }
+      data: { component_id: componentId }
     }, corsHeaders);
   } catch (err) {
     console.error('创建服务组成部分失败:', err);

@@ -414,7 +414,7 @@
               <td>TWD</td>
               <td>${r.receiptDate||''}</td>
               <td><span class="${badgeCls}">${txt}</span></td>
-              <td><button type="button">查看</button></td>
+              <td><a href="/internal/receipt-detail?id=${encodeURIComponent(r.receiptId)}" style="color: #3b82f6; text-decoration: underline;">查看</a></td>
             `;
             tbody.appendChild(tr);
           });

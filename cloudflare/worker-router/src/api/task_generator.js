@@ -129,6 +129,73 @@ async function copyStagesFromTemplate(env, taskId, templateId) {
 }
 
 /**
+ * 复制服务层级的 SOP 到任务（来自ServiceComponentSOPs）
+ */
+async function copyServiceSOPsToTask(env, taskId, componentId) {
+  if (!componentId) return;
+  
+  try {
+    const componentSOPs = await env.DATABASE.prepare(`
+      SELECT sop_id, sort_order
+      FROM ServiceComponentSOPs
+      WHERE component_id = ?
+      ORDER BY sort_order
+    `).bind(componentId).all();
+    
+    for (const sop of componentSOPs.results || []) {
+      await env.DATABASE.prepare(`
+        INSERT OR IGNORE INTO ActiveTaskSOPs (task_id, sop_id, sort_order)
+        VALUES (?, ?, ?)
+      `).bind(taskId, sop.sop_id, sop.sort_order).run();
+    }
+    
+    if (componentSOPs.results && componentSOPs.results.length > 0) {
+      console.log(`[任务生成器] 已复制 ${componentSOPs.results.length} 个服务层级 SOP 到任务 ${taskId}`);
+    }
+  } catch (err) {
+    console.error('复制服务层级 SOP 失败:', err);
+  }
+}
+
+/**
+ * 复制任务层级的 SOP 到任务（来自ServiceComponentTaskSOPs）
+ */
+async function copyTaskSOPsToActiveTask(env, taskId, taskConfigId) {
+  if (!taskConfigId) return;
+  
+  try {
+    const taskSOPs = await env.DATABASE.prepare(`
+      SELECT sop_id, sort_order
+      FROM ServiceComponentTaskSOPs
+      WHERE task_config_id = ?
+      ORDER BY sort_order
+    `).bind(taskConfigId).all();
+    
+    // 获取当前任务已有的 SOP 数量，用于继续排序
+    const countRow = await env.DATABASE.prepare(`
+      SELECT MAX(sort_order) as max_order
+      FROM ActiveTaskSOPs
+      WHERE task_id = ?
+    `).bind(taskId).first();
+    
+    let nextSortOrder = (countRow?.max_order || -1) + 1;
+    
+    for (const sop of taskSOPs.results || []) {
+      await env.DATABASE.prepare(`
+        INSERT OR IGNORE INTO ActiveTaskSOPs (task_id, sop_id, sort_order)
+        VALUES (?, ?, ?)
+      `).bind(taskId, sop.sop_id, nextSortOrder++).run();
+    }
+    
+    if (taskSOPs.results && taskSOPs.results.length > 0) {
+      console.log(`[任务生成器] 已复制 ${taskSOPs.results.length} 个任务层级 SOP 到任务 ${taskId}`);
+    }
+  } catch (err) {
+    console.error('复制任务层级 SOP 失败:', err);
+  }
+}
+
+/**
  * 主函数：生成所有需要的任务
  */
 export async function generateTasksForComponents(env, targetDate = null) {
@@ -205,54 +272,106 @@ export async function generateTasksForComponents(env, targetDate = null) {
         continue;
       }
       
-      // 生成任务
+      // 查询该服务组成配置的子任务
       try {
-        const taskName = generateTaskName(
-          component,
-          { company_name: component.company_name },
-          currentYear,
-          currentMonth
-        );
+        const taskConfigs = await env.DATABASE.prepare(`
+          SELECT config_id, task_order, task_name, assignee_user_id, notes
+          FROM ServiceComponentTasks
+          WHERE component_id = ?
+          ORDER BY task_order
+        `).bind(component.component_id).all();
         
         const startDateStr = formatDate(now);
-        
-        // 设置服务归属月份（格式：YYYY-MM）
         const serviceMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
         
-        const insertResult = await env.DATABASE.prepare(`
-          INSERT INTO ActiveTasks (
-            client_service_id,
-            component_id,
-            template_id,
-            task_name,
-            start_date,
-            due_date,
-            service_month,
-            status,
-            assignee_user_id,
-            notes
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-        `).bind(
-          component.client_service_id,
-          component.component_id,
-          component.task_template_id || null,
-          taskName,
-          startDateStr,
-          dueDateStr,
-          serviceMonth,
-          component.assignee_user_id || null,
-          `由系統於 ${startDateStr} 自動生成`
-        ).run();
-        
-        const taskId = insertResult.meta.last_row_id;
-        
-        // 从模板复制阶段
-        if (component.task_template_id) {
-          await copyStagesFromTemplate(env, taskId, component.task_template_id);
+        // 如果没有配置子任务，生成一个默认任务
+        if (!taskConfigs.results || taskConfigs.results.length === 0) {
+          const taskName = generateTaskName(
+            component,
+            { company_name: component.company_name },
+            currentYear,
+            currentMonth
+          );
+          
+          const insertResult = await env.DATABASE.prepare(`
+            INSERT INTO ActiveTasks (
+              client_service_id,
+              component_id,
+              template_id,
+              task_name,
+              start_date,
+              due_date,
+              service_month,
+              status,
+              assignee_user_id,
+              notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+          `).bind(
+            component.client_service_id,
+            component.component_id,
+            component.task_template_id || null,
+            taskName,
+            startDateStr,
+            dueDateStr,
+            serviceMonth,
+            component.assignee_user_id || null,
+            `由系統於 ${startDateStr} 自動生成`
+          ).run();
+          
+          const taskId = insertResult.meta.last_row_id;
+          
+          // 从模板复制阶段
+          if (component.task_template_id) {
+            await copyStagesFromTemplate(env, taskId, component.task_template_id);
+          }
+          
+          // 从服务组成复制服务层级SOP
+          await copyServiceSOPsToTask(env, taskId, component.component_id);
+          
+          console.log(`[任务生成器] 已生成任务: ${taskName} (ID: ${taskId})`);
+          result.generated++;
+        } else {
+          // 为每个子任务配置生成独立的任务
+          for (const taskConfig of taskConfigs.results) {
+            const taskName = `${component.company_name} - ${taskConfig.task_name}`;
+            
+            const insertResult = await env.DATABASE.prepare(`
+              INSERT INTO ActiveTasks (
+                client_service_id,
+                component_id,
+                template_id,
+                task_name,
+                start_date,
+                due_date,
+                service_month,
+                status,
+                assignee_user_id,
+                notes
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+            `).bind(
+              component.client_service_id,
+              component.component_id,
+              component.task_template_id || null,
+              taskName,
+              startDateStr,
+              dueDateStr,
+              serviceMonth,
+              taskConfig.assignee_user_id || component.assignee_user_id || null,
+              taskConfig.notes || `由系統於 ${startDateStr} 自動生成`
+            ).run();
+            
+            const taskId = insertResult.meta.last_row_id;
+            
+            // 复制服务层级SOP（来自ServiceComponentSOPs）
+            await copyServiceSOPsToTask(env, taskId, component.component_id);
+            
+            // 复制任务层级SOP（来自ServiceComponentTaskSOPs）
+            await copyTaskSOPsToActiveTask(env, taskId, taskConfig.config_id);
+            
+            console.log(`[任务生成器] 已生成任务: ${taskName} (ID: ${taskId})`);
+            result.generated++;
+          }
         }
-        
-        console.log(`[任务生成器] 已生成任务: ${taskName} (ID: ${taskId})`);
-        result.generated++;
         
       } catch (err) {
         console.error(`[任务生成器] 生成任务失败:`, err);

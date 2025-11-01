@@ -1659,7 +1659,7 @@
                 <div id="new-comp-sop-list-${clientServiceId}" style="max-height: 150px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 4px; padding: 6px; background: white;">
                   <div style="color: #9ca3af; text-align: center; padding: 20px;">載入中...</div>
                 </div>
-                <small style="display: block; margin-top: 5px; color: #6b7280;">💡 選擇SOP作為服務流程參考（目前僅支持選擇一個）</small>
+                <small style="display: block; margin-top: 5px; color: #6b7280;">💡 選擇SOP作為服務流程參考（可多選）</small>
               </div>
               
               <div style="margin-top: 15px;">
@@ -2178,20 +2178,10 @@
         });
       };
       
-      // 更新服务组件SOP选择（单选模式）
+      // 更新服务组件SOP选择（多选模式）
       window[`updateCompSOPSelection${clientServiceId}`] = function(clickedCheckbox) {
         const container = document.getElementById(`selected-comp-sops-${clientServiceId}`);
         if (!container) return;
-        
-        // 单选模式：如果点击了一个复选框，取消其他所有复选框
-        if (clickedCheckbox && clickedCheckbox.checked) {
-          const allCheckboxes = document.querySelectorAll('.comp-sop-checkbox');
-          allCheckboxes.forEach(cb => {
-            if (cb !== clickedCheckbox) {
-              cb.checked = false;
-            }
-          });
-        }
         
         const checkboxes = document.querySelectorAll('.comp-sop-checkbox:checked');
         
@@ -2200,25 +2190,24 @@
           return;
         }
         
-        // 只显示第一个选中的（单选）
-        const checkbox = checkboxes[0];
-        const sopId = parseInt(checkbox.value);
-        const sop = allSOPs.find(s => s.sop_id === sopId);
+        // 显示所有选中的SOP标签
+        const tags = Array.from(checkboxes).map(checkbox => {
+          const sopId = parseInt(checkbox.value);
+          const sop = allSOPs.find(s => s.sop_id === sopId);
+          if (!sop) return '';
+          
+          return `
+            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 11px;">
+              ${sop.title}
+              <button type="button" 
+                      onclick="removeCompSOP${clientServiceId}(${sopId})"
+                      style="border: none; background: none; color: #1e40af; cursor: pointer; padding: 0; font-size: 14px; line-height: 1;"
+                      title="移除">×</button>
+            </span>
+          `;
+        }).join('');
         
-        if (!sop) {
-          container.innerHTML = '<span style="color: #9ca3af; font-size: 11px;">尚未選擇SOP</span>';
-          return;
-        }
-        
-        container.innerHTML = `
-          <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: #dbeafe; color: #1e40af; border-radius: 6px; font-size: 12px;">
-            ${sop.title}
-            <button type="button" 
-                    onclick="removeCompSOP${clientServiceId}(${sopId})"
-                    style="border: none; background: none; color: #1e40af; cursor: pointer; padding: 0; font-size: 16px; line-height: 1;"
-                    title="移除">×</button>
-          </span>
-        `;
+        container.innerHTML = tags;
       };
       
       // 移除服务组件SOP
@@ -2441,10 +2430,9 @@
       const hours = document.getElementById(`new-comp-hours-${clientServiceId}`).value;
       const advance = document.getElementById(`new-comp-advance-${clientServiceId}`).value;
       
-      // 收集选中的SOP（目前只支持单个）
+      // 收集选中的SOP（支持多选）
       const sopCheckboxes = document.querySelectorAll(`#new-comp-sop-list-${clientServiceId} .comp-sop-checkbox:checked`);
-      const sopIds = Array.from(sopCheckboxes).map(cb => parseInt(cb.value));
-      const sopId = sopIds.length > 0 ? sopIds[0] : null;  // 只取第一个
+      const component_sop_ids = Array.from(sopCheckboxes).map(cb => parseInt(cb.value));
 
       if (!name) {
         alert('請輸入服務名稱');
@@ -2473,16 +2461,17 @@
         due_date_value: dueValue ? parseInt(dueValue) : null,
         estimated_hours: hours ? parseFloat(hours) : null,
         advance_days: advance ? parseInt(advance) : 7,
-        sop_id: sopId,  // 单个SOP
+        component_sop_ids: component_sop_ids,  // 服务层级SOP（多选）
         auto_generate_task: true,
         tasks: tasks.map(task => ({
-          name: task.name,
+          task_name: task.name,
           due_rule: task.due_rule,
           due_value: task.due_value ? parseInt(task.due_value) : null,
           estimated_hours: task.estimated_hours ? parseFloat(task.estimated_hours) : null,
           advance_days: task.advance_days ? parseInt(task.advance_days) : 7,
           assignee_user_id: task.assignee_user_id ? parseInt(task.assignee_user_id) : null,
-          sop_ids: task.sop_ids || []  // 多个SOP
+          sop_ids: task.sop_ids || [],  // 任务层级SOP（多选）
+          notes: task.notes || ''
         }))
       };
 

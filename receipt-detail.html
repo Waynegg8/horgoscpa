@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="收據詳情" />
+    <title>收據詳情｜內部系統</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/receipts-page.css" />
+    <style>
+      .receipt-detail-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      
+      .receipt-header-section {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+      
+      .receipt-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 24px;
+      }
+      
+      .receipt-id-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #0f172a;
+      }
+      
+      .receipt-status-badge {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      
+      .receipt-status-badge.unpaid { background: #fee; color: #c00; }
+      .receipt-status-badge.partial { background: #ffc; color: #d97706; }
+      .receipt-status-badge.paid { background: #d4edda; color: #28a745; }
+      .receipt-status-badge.cancelled { background: #e2e8f0; color: #64748b; }
+      .receipt-status-badge.overdue { background: #dc3545; color: white; }
+      
+      .receipt-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+      }
+      
+      .receipt-info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      
+      .receipt-info-label {
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 500;
+      }
+      
+      .receipt-info-value {
+        font-size: 15px;
+        color: #0f172a;
+      }
+      
+      .receipt-amount-highlight {
+        font-size: 28px;
+        font-weight: 600;
+        color: #0f172a;
+      }
+      
+      .receipt-section {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+      
+      .receipt-section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 16px;
+      }
+      
+      .receipt-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      
+      .receipt-table th {
+        background: #f8fafc;
+        padding: 12px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+        border-bottom: 2px solid #e2e8f0;
+      }
+      
+      .receipt-table td {
+        padding: 12px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 14px;
+      }
+      
+      .receipt-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+      }
+      
+      .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        background: white;
+        color: #0f172a;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      
+      .btn:hover {
+        background: #f8fafc;
+      }
+      
+      .btn-primary {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+      }
+      
+      .btn-primary:hover {
+        background: #2563eb;
+      }
+      
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+        border-color: #ef4444;
+      }
+      
+      .btn-danger:hover {
+        background: #dc2626;
+      }
+      
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .modal-overlay.show {
+        display: flex;
+      }
+      
+      .modal {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      
+      .modal-header {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 20px;
+      }
+      
+      .modal-row {
+        margin-bottom: 16px;
+      }
+      
+      .modal-row label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #64748b;
+        margin-bottom: 6px;
+      }
+      
+      .modal-row input,
+      .modal-row select,
+      .modal-row textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+      
+      .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+      }
+      
+      .form-error {
+        background: #fee;
+        border: 1px solid #f88;
+        color: #c00;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 14px;
+      }
+      
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #94a3b8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="receipt-detail-container">
+      <!-- 返回按钮 -->
+      <div style="margin-bottom: 16px;">
+        <a href="/internal/receipts" class="btn">← 返回收據列表</a>
+      </div>
+      
+      <!-- 收据基本信息 -->
+      <div class="receipt-header-section" id="receiptHeader">
+        <!-- 动态加载 -->
+      </div>
+      
+      <!-- 收据明细 -->
+      <div class="receipt-section" id="receiptItemsSection" style="display: none;">
+        <h2 class="receipt-section-title">收據明細</h2>
+        <table class="receipt-table">
+          <thead>
+            <tr>
+              <th>服務項目</th>
+              <th>數量</th>
+              <th>單價</th>
+              <th>小計</th>
+              <th>備註</th>
+            </tr>
+          </thead>
+          <tbody id="itemsTableBody"></tbody>
+        </table>
+      </div>
+      
+      <!-- 收款记录 -->
+      <div class="receipt-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 class="receipt-section-title" style="margin: 0;">收款記錄</h2>
+          <button type="button" class="btn btn-primary" id="btn-add-payment">新增收款</button>
+        </div>
+        <table class="receipt-table">
+          <thead>
+            <tr>
+              <th>收款日期</th>
+              <th>收款金額</th>
+              <th>收款方式</th>
+              <th>參考號碼</th>
+              <th>記錄人</th>
+              <th>備註</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsTableBody"></tbody>
+        </table>
+      </div>
+      
+      <!-- 操作按钮 -->
+      <div class="receipt-actions">
+        <button type="button" class="btn" id="btn-edit">編輯收據</button>
+        <button type="button" class="btn btn-danger" id="btn-cancel-receipt">作廢收據</button>
+      </div>
+    </div>
+    
+    <!-- 新增收款弹窗 -->
+    <div id="paymentModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-header">新增收款記錄</div>
+        <div class="modal-body">
+          <div id="paymentFormError" class="form-error" style="display:none;"></div>
+          
+          <div class="modal-row">
+            <label for="paymentDate">收款日期 *</label>
+            <input id="paymentDate" type="date" required />
+          </div>
+          
+          <div class="modal-row">
+            <label for="paymentAmount">收款金額 *</label>
+            <input id="paymentAmount" type="number" min="0" step="0.01" required />
+            <small style="color: #64748b; margin-top: 4px; display: block;">
+              未收金額：<span id="outstandingDisplay">-</span>
+            </small>
+          </div>
+          
+          <div class="modal-row">
+            <label for="paymentMethod">收款方式 *</label>
+            <select id="paymentMethod" required>
+              <option value="transfer">轉帳</option>
+              <option value="cash">現金</option>
+              <option value="check">支票</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          
+          <div class="modal-row">
+            <label for="referenceNumber">參考號碼</label>
+            <input id="referenceNumber" type="text" placeholder="交易序號、支票號碼等" />
+          </div>
+          
+          <div class="modal-row">
+            <label for="paymentNotes">備註</label>
+            <textarea id="paymentNotes" rows="3" placeholder="其他說明"></textarea>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="btn-cancel-payment">取消</button>
+          <button type="button" class="btn btn-primary" id="btn-submit-payment">確認收款</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 编辑收据弹窗 -->
+    <div id="editModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-header">編輯收據</div>
+        <div class="modal-body">
+          <div id="editFormError" class="form-error" style="display:none;"></div>
+          
+          <div class="modal-row">
+            <label for="editDueDate">到期日</label>
+            <input id="editDueDate" type="date" />
+          </div>
+          
+          <div class="modal-row">
+            <label for="editNotes">備註</label>
+            <textarea id="editNotes" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="btn-cancel-edit">取消</button>
+          <button type="button" class="btn btn-primary" id="btn-submit-edit">儲存</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function(){
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+        
+        // 从 URL 获取收据ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const receiptId = urlParams.get('id');
+        
+        if (!receiptId) {
+          alert('缺少收據ID');
+          location.href = '/internal/receipts';
+          return;
+        }
+        
+        let receiptData = null;
+        
+        // 加载收据详情
+        async function loadReceiptDetail() {
+          try {
+            const res = await fetch(`${apiBase}/receipts/${encodeURIComponent(receiptId)}`, { credentials: 'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/receipt-detail?id=' + receiptId); return; }
+            if (res.status === 404) {
+              alert('收據不存在');
+              location.href = '/internal/receipts';
+              return;
+            }
+            
+            const json = await res.json();
+            if (!json.ok) throw new Error(json.message || '載入失敗');
+            
+            receiptData = json.data;
+            renderReceipt(receiptData);
+          } catch (err) {
+            alert('載入收據失敗：' + err.message);
+            console.error(err);
+          }
+        }
+        
+        // 渲染收据信息
+        function renderReceipt(data) {
+          const today = new Date().toISOString().split('T')[0];
+          const isOverdue = data.dueDate && data.dueDate < today && (data.status === 'unpaid' || data.status === 'partial');
+          
+          let statusBadgeClass = 'receipt-status-badge ';
+          let statusText = '';
+          
+          if (data.status === 'paid') {
+            statusBadgeClass += 'paid';
+            statusText = '已收款';
+          } else if (data.status === 'cancelled') {
+            statusBadgeClass += 'cancelled';
+            statusText = '已作廢';
+          } else if (isOverdue) {
+            statusBadgeClass += 'overdue';
+            statusText = '逾期';
+          } else if (data.status === 'partial') {
+            statusBadgeClass += 'partial';
+            statusText = '部分收款';
+          } else {
+            statusBadgeClass += 'unpaid';
+            statusText = '未收款';
+          }
+          
+          const receiptHeader = document.getElementById('receiptHeader');
+          receiptHeader.innerHTML = `
+            <div class="receipt-header-top">
+              <h1 class="receipt-id-title">收據 ${data.receiptId}</h1>
+              <span class="${statusBadgeClass}">${statusText}</span>
+            </div>
+            <div class="receipt-info-grid">
+              <div class="receipt-info-item">
+                <div class="receipt-info-label">客戶名稱</div>
+                <div class="receipt-info-value">${data.clientName}</div>
+              </div>
+              <div class="receipt-info-item">
+                <div class="receipt-info-label">開立日期</div>
+                <div class="receipt-info-value">${data.receiptDate}</div>
+              </div>
+              <div class="receipt-info-item">
+                <div class="receipt-info-label">到期日</div>
+                <div class="receipt-info-value">${data.dueDate || '-'}</div>
+              </div>
+              <div class="receipt-info-item">
+                <div class="receipt-info-label">收據類型</div>
+                <div class="receipt-info-value">${getReceiptTypeName(data.receiptType)}</div>
+              </div>
+              <div class="receipt-info-item">
+                <div class="receipt-info-label">總金額</div>
+                <div class="receipt-amount-highlight">$${(data.totalAmount || 0).toLocaleString()}</div>
+              </div>
+              <div class="receipt-info-item">
+                <div class="receipt-info-label">已收金額</div>
+                <div class="receipt-info-value" style="color: #10b981; font-size: 18px; font-weight: 600;">
+                  $${(data.paidAmount || 0).toLocaleString()}
+                </div>
+              </div>
+              <div class="receipt-info-item">
+                <div class="receipt-info-label">未收金額</div>
+                <div class="receipt-info-value" style="color: #ef4444; font-size: 18px; font-weight: 600;">
+                  $${(data.outstandingAmount || 0).toLocaleString()}
+                </div>
+              </div>
+              <div class="receipt-info-item">
+                <div class="receipt-info-label">建立人</div>
+                <div class="receipt-info-value">${data.createdBy || '-'}</div>
+              </div>
+            </div>
+            ${data.notes ? `
+              <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                <div class="receipt-info-label">備註</div>
+                <div class="receipt-info-value">${data.notes}</div>
+              </div>
+            ` : ''}
+          `;
+          
+          // 渲染收据明细
+          if (data.items && data.items.length > 0) {
+            const itemsSection = document.getElementById('receiptItemsSection');
+            itemsSection.style.display = 'block';
+            
+            const itemsTableBody = document.getElementById('itemsTableBody');
+            itemsTableBody.innerHTML = data.items.map(item => `
+              <tr>
+                <td>${item.serviceName}</td>
+                <td>${item.quantity}</td>
+                <td>$${(item.unitPrice || 0).toLocaleString()}</td>
+                <td>$${(item.subtotal || 0).toLocaleString()}</td>
+                <td>${item.notes || '-'}</td>
+              </tr>
+            `).join('');
+          }
+          
+          // 渲染收款记录
+          const paymentsTableBody = document.getElementById('paymentsTableBody');
+          if (data.payments && data.payments.length > 0) {
+            paymentsTableBody.innerHTML = data.payments.map(p => `
+              <tr>
+                <td>${p.paymentDate}</td>
+                <td style="color: #10b981; font-weight: 600;">$${(p.paymentAmount || 0).toLocaleString()}</td>
+                <td>${getPaymentMethodName(p.paymentMethod)}</td>
+                <td>${p.referenceNumber || '-'}</td>
+                <td>${p.createdBy || '-'}</td>
+                <td>${p.notes || '-'}</td>
+              </tr>
+            `).join('');
+          } else {
+            paymentsTableBody.innerHTML = '<tr><td colspan="6" class="empty-state">尚無收款記錄</td></tr>';
+          }
+          
+          // 更新未收金额显示
+          document.getElementById('outstandingDisplay').textContent = '$' + (data.outstandingAmount || 0).toLocaleString();
+          
+          // 如果已作废，禁用新增收款和编辑按钮
+          if (data.status === 'cancelled') {
+            document.getElementById('btn-add-payment').disabled = true;
+            document.getElementById('btn-edit').disabled = true;
+            document.getElementById('btn-cancel-receipt').disabled = true;
+          }
+        }
+        
+        function getReceiptTypeName(type) {
+          const names = {
+            'normal': '正常收據',
+            'prepayment': '預收款',
+            'deposit': '訂金'
+          };
+          return names[type] || type;
+        }
+        
+        function getPaymentMethodName(method) {
+          const names = {
+            'cash': '現金',
+            'transfer': '轉帳',
+            'check': '支票',
+            'other': '其他'
+          };
+          return names[method] || method;
+        }
+        
+        // 新增收款
+        const paymentModal = document.getElementById('paymentModal');
+        const btnAddPayment = document.getElementById('btn-add-payment');
+        const btnCancelPayment = document.getElementById('btn-cancel-payment');
+        const btnSubmitPayment = document.getElementById('btn-submit-payment');
+        const paymentFormError = document.getElementById('paymentFormError');
+        
+        btnAddPayment.addEventListener('click', () => {
+          // 设置默认日期为今天
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, '0');
+          const dd = String(today.getDate()).padStart(2, '0');
+          document.getElementById('paymentDate').value = `${yyyy}-${mm}-${dd}`;
+          
+          document.getElementById('paymentAmount').value = '';
+          document.getElementById('paymentMethod').value = 'transfer';
+          document.getElementById('referenceNumber').value = '';
+          document.getElementById('paymentNotes').value = '';
+          paymentFormError.style.display = 'none';
+          paymentModal.classList.add('show');
+        });
+        
+        btnCancelPayment.addEventListener('click', () => {
+          paymentModal.classList.remove('show');
+        });
+        
+        paymentModal.addEventListener('click', (e) => {
+          if (e.target === paymentModal) {
+            paymentModal.classList.remove('show');
+          }
+        });
+        
+        btnSubmitPayment.addEventListener('click', async () => {
+          paymentFormError.style.display = 'none';
+          
+          const payment_date = document.getElementById('paymentDate').value;
+          const payment_amount = Number(document.getElementById('paymentAmount').value);
+          const payment_method = document.getElementById('paymentMethod').value;
+          const reference_number = document.getElementById('referenceNumber').value.trim();
+          const notes = document.getElementById('paymentNotes').value.trim();
+          
+          if (!payment_date || !payment_amount || payment_amount <= 0) {
+            paymentFormError.textContent = '請填寫必填欄位';
+            paymentFormError.style.display = 'block';
+            return;
+          }
+          
+          if (payment_amount > receiptData.outstandingAmount) {
+            paymentFormError.textContent = `收款金額不可超過未收金額（$${receiptData.outstandingAmount.toLocaleString()}）`;
+            paymentFormError.style.display = 'block';
+            return;
+          }
+          
+          btnSubmitPayment.disabled = true;
+          
+          try {
+            const res = await fetch(`${apiBase}/receipts/${encodeURIComponent(receiptId)}/payments`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                payment_date,
+                payment_amount,
+                payment_method,
+                reference_number,
+                notes
+              })
+            });
+            
+            if (res.status === 401) { location.assign('/login?redirect=/internal/receipt-detail?id=' + receiptId); return; }
+            
+            const json = await res.json();
+            if (!json.ok) throw new Error(json.message || '新增失敗');
+            
+            alert('收款記錄已新增');
+            paymentModal.classList.remove('show');
+            await loadReceiptDetail(); // 重新加载
+          } catch (err) {
+            paymentFormError.textContent = err.message;
+            paymentFormError.style.display = 'block';
+          } finally {
+            btnSubmitPayment.disabled = false;
+          }
+        });
+        
+        // 编辑收据
+        const editModal = document.getElementById('editModal');
+        const btnEdit = document.getElementById('btn-edit');
+        const btnCancelEdit = document.getElementById('btn-cancel-edit');
+        const btnSubmitEdit = document.getElementById('btn-submit-edit');
+        const editFormError = document.getElementById('editFormError');
+        
+        btnEdit.addEventListener('click', () => {
+          document.getElementById('editDueDate').value = receiptData.dueDate || '';
+          document.getElementById('editNotes').value = receiptData.notes || '';
+          editFormError.style.display = 'none';
+          editModal.classList.add('show');
+        });
+        
+        btnCancelEdit.addEventListener('click', () => {
+          editModal.classList.remove('show');
+        });
+        
+        editModal.addEventListener('click', (e) => {
+          if (e.target === editModal) {
+            editModal.classList.remove('show');
+          }
+        });
+        
+        btnSubmitEdit.addEventListener('click', async () => {
+          editFormError.style.display = 'none';
+          
+          const due_date = document.getElementById('editDueDate').value;
+          const notes = document.getElementById('editNotes').value.trim();
+          
+          btnSubmitEdit.disabled = true;
+          
+          try {
+            const res = await fetch(`${apiBase}/receipts/${encodeURIComponent(receiptId)}`, {
+              method: 'PATCH',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ due_date, notes })
+            });
+            
+            if (res.status === 401) { location.assign('/login?redirect=/internal/receipt-detail?id=' + receiptId); return; }
+            
+            const json = await res.json();
+            if (!json.ok) throw new Error(json.message || '更新失敗');
+            
+            alert('收據已更新');
+            editModal.classList.remove('show');
+            await loadReceiptDetail(); // 重新加载
+          } catch (err) {
+            editFormError.textContent = err.message;
+            editFormError.style.display = 'block';
+          } finally {
+            btnSubmitEdit.disabled = false;
+          }
+        });
+        
+        // 作废收据
+        const btnCancelReceipt = document.getElementById('btn-cancel-receipt');
+        btnCancelReceipt.addEventListener('click', async () => {
+          if (!confirm('確定要作廢此收據嗎？此操作無法復原。')) return;
+          
+          try {
+            const res = await fetch(`${apiBase}/receipts/${encodeURIComponent(receiptId)}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+            
+            if (res.status === 401) { location.assign('/login?redirect=/internal/receipt-detail?id=' + receiptId); return; }
+            
+            const json = await res.json();
+            if (!json.ok) throw new Error(json.message || '作廢失敗');
+            
+            alert('收據已作廢');
+            location.href = '/internal/receipts';
+          } catch (err) {
+            alert('作廢失敗：' + err.message);
+          }
+        });
+        
+        // 初始化
+        loadReceiptDetail();
+      })();
+    </script>
+    <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
+  </body>
+</html>
+
