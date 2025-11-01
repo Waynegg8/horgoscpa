@@ -343,6 +343,7 @@
     let currentClientId = null;
     let currentEditingServiceId = null;
     let currentBillingServiceId = null;
+    let clientDetail = null;  // 存储客户详情
     let allServices = [];
     let allServiceItems = [];  // 存储所有服务项
     let allTemplates = [];
@@ -404,6 +405,7 @@
         }
 
         const client = json.data;
+        clientDetail = client;  // 存储到全局变量
         
         // 更新頁面標題
         document.getElementById('clientTitle').textContent = client.companyName || '客戶資料';

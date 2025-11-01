@@ -90,7 +90,10 @@ export default {
 	}
 	
 	// 服务项目API（必须精确匹配，避免与/clients/.../services冲突）
-	if (path === "/internal/api/v1/services" || /^\/internal\/api\/v1\/services\/\d+(\/|$)/.test(path)) {
+	if (path === "/internal/api/v1/services" || 
+	    path === "/internal/api/v1/services/items" ||
+	    /^\/internal\/api\/v1\/services\/\d+(\/|$)/.test(path) ||
+	    /^\/internal\/api\/v1\/services\/\d+\/items/.test(path)) {
 		const me = await getSessionUser(request, env);
 		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 		return handleServices(request, env, me, requestId, url, path);
