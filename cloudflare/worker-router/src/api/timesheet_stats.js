@@ -24,28 +24,36 @@ async function getMyStats(request, env, userId) {
   }
   
   try {
-    // 获取工时数据（按任务分组）
+    // 获取工时数据（支持有任务和无任务两种情况）
     const stats = await env.DB.prepare(`
       SELECT 
         t.timesheet_id,
         t.work_date,
         t.client_id,
+        t.task_id,
+        t.service_id,
+        t.service_item_id,
         t.hours,
         t.note,
         c.company_name,
-        at.task_id,
         at.task_name,
         at.component_id,
         sc.component_name,
         sc.estimated_hours,
         cs.client_service_id,
-        srv.service_name
+        s1.service_name as task_service_name,
+        s2.service_name as direct_service_name,
+        si.item_name as service_item_name
       FROM Timesheets t
       LEFT JOIN Clients c ON t.client_id = c.client_id
+      -- 如果有task_id，关联任务
       LEFT JOIN ActiveTasks at ON t.task_id = at.task_id
       LEFT JOIN ServiceComponents sc ON at.component_id = sc.component_id
       LEFT JOIN ClientServices cs ON at.client_service_id = cs.client_service_id
-      LEFT JOIN Services srv ON cs.service_id = srv.service_id
+      LEFT JOIN Services s1 ON cs.service_id = s1.service_id
+      -- 如果没有task_id，直接使用service_id
+      LEFT JOIN Services s2 ON t.service_id = s2.service_id
+      LEFT JOIN ServiceItems si ON t.service_item_id = si.item_id
       WHERE t.user_id = ? ${dateFilter}
         AND t.is_deleted = 0
       ORDER BY t.work_date DESC, t.timesheet_id DESC
@@ -66,45 +74,38 @@ async function getMyStats(request, env, userId) {
           client_id: row.client_id,
           client_name: clientName,
           total_hours: 0,
-          components: {}
+          services: {}
         };
       }
       
       byClient[clientKey].total_hours += row.hours || 0;
       
-      // 按服务组成部分分组
-      if (row.component_id) {
-        const compKey = row.component_id;
-        if (!byClient[clientKey].components[compKey]) {
-          byClient[clientKey].components[compKey] = {
-            component_id: row.component_id,
-            component_name: row.component_name,
-            service_name: row.service_name,
-            estimated_hours: row.estimated_hours,
-            actual_hours: 0,
-            tasks: []
-          };
-        }
-        
-        byClient[clientKey].components[compKey].actual_hours += row.hours || 0;
-        
-        // 添加任务信息
-        if (row.task_id && !byClient[clientKey].components[compKey].tasks.find(t => t.task_id === row.task_id)) {
-          byClient[clientKey].components[compKey].tasks.push({
-            task_id: row.task_id,
-            task_name: row.task_name
-          });
-        }
+      // 按服务子项目分组（不管有没有任务）
+      const serviceName = row.direct_service_name || row.task_service_name || '其他';
+      const itemName = row.service_item_name || '一般工作';
+      const serviceKey = `${serviceName}_${itemName}`;
+      
+      if (!byClient[clientKey].services[serviceKey]) {
+        byClient[clientKey].services[serviceKey] = {
+          service_name: serviceName,
+          service_item_name: itemName,
+          actual_hours: 0,
+          estimated_hours: row.component_id ? row.estimated_hours : null,
+          has_estimate: !!row.component_id
+        };
       }
+      
+      byClient[clientKey].services[serviceKey].actual_hours += row.hours || 0;
     }
     
     // 转换为数组
     const clientStats = Object.values(byClient).map(client => ({
       ...client,
-      components: Object.values(client.components).map(comp => ({
-        ...comp,
-        over_time: comp.actual_hours - (comp.estimated_hours || 0),
-        efficiency: comp.estimated_hours ? ((comp.actual_hours / comp.estimated_hours) * 100).toFixed(1) + '%' : '-'
+      services: Object.values(client.services).map(svc => ({
+        ...svc,
+        over_time: svc.estimated_hours ? (svc.actual_hours - svc.estimated_hours) : null,
+        status: !svc.estimated_hours ? '无预估' : 
+                (svc.actual_hours <= svc.estimated_hours ? '正常' : '超时')
       }))
     }));
     
