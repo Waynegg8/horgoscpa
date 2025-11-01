@@ -946,17 +946,23 @@
         
         if (window.Quill && BetterTable) {
           try {
+            console.log('🔍 Better Table 結構:', BetterTable);
+            console.log('🔍 register 方法:', typeof BetterTable.register);
+            
             // 首先調用 Better Table 的靜態 register() 方法來註冊所有 blots
             if (typeof BetterTable.register === 'function') {
               BetterTable.register();
               console.log('✅ Better Table blots 已註冊');
+            } else {
+              console.warn('⚠️ Better Table.register 不是函數，嘗試手動註冊 blots');
+              // 如果 register 方法不存在，直接註冊模組，讓 Quill 處理
             }
             
             // 然後註冊模組本身
             Quill.register({
               'modules/better-table': BetterTable
             }, true);
-            console.log('✅ Quill 1.3.7 + Better Table 已載入並註冊');
+            console.log('✅ Quill 1.3.7 + Better Table 模組已註冊');
             window.quillModulesReady = true;
           } catch (e) {
             console.error('❌ Better Table 註冊失敗:', e);
