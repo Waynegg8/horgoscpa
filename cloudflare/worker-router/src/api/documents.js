@@ -96,7 +96,7 @@ async function getDocumentsList(request, env, me, corsHeaders) {
         d.uploaded_by,
         d.created_at,
         d.updated_at,
-        u.username as uploader_name
+        COALESCE(u.username, u.name, '未知') as uploader_name
       FROM InternalDocuments d
       LEFT JOIN Users u ON d.uploaded_by = u.user_id
       ${whereSQL}
