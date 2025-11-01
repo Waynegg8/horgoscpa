@@ -4,6 +4,33 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
 
+	// POST /internal/api/v1/sop - 創建新 SOP
+	if (path === "/internal/api/v1/sop" && method === "POST") {
+		try {
+			const body = await request.json();
+			const { title, content, category, tags } = body;
+			
+			if (!title || !content) {
+				return jsonResponse(400, { ok:false, code:"VALIDATION_ERROR", message:"標題和內容為必填", meta:{ requestId } }, corsHeaders);
+			}
+			
+			const tagsJson = JSON.stringify(Array.isArray(tags) ? tags : []);
+			const now = new Date().toISOString();
+			
+			const result = await env.DATABASE.prepare(
+				`INSERT INTO SOPDocuments (title, content, category, tags, version, is_published, created_by, created_at, updated_at, is_deleted)
+				 VALUES (?, ?, ?, ?, 1, 1, ?, ?, ?, 0)`
+			).bind(title, content, category || '', tagsJson, String(me.user_id), now, now).run();
+			
+			const sopId = result.meta.last_row_id;
+			
+			return jsonResponse(201, { ok:true, code:"CREATED", message:"創建成功", data:{ sop_id: sopId }, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+	
 	// GET /internal/api/v1/sop
 	if (path === "/internal/api/v1/sop") {
 		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
@@ -86,6 +113,50 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			};
 
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+	
+	// PUT /internal/api/v1/sop/:id - 更新 SOP
+	const matchUpdate = path.match(/^\/internal\/api\/v1\/sop\/(\d+)$/);
+	if (method === "PUT" && matchUpdate) {
+		const sopId = parseInt(matchUpdate[1]);
+		try {
+			const body = await request.json();
+			const { title, content, category, tags } = body;
+			
+			if (!title || !content) {
+				return jsonResponse(400, { ok:false, code:"VALIDATION_ERROR", message:"標題和內容為必填", meta:{ requestId } }, corsHeaders);
+			}
+			
+			const tagsJson = JSON.stringify(Array.isArray(tags) ? tags : []);
+			const now = new Date().toISOString();
+			
+			await env.DATABASE.prepare(
+				`UPDATE SOPDocuments 
+				 SET title = ?, content = ?, category = ?, tags = ?, updated_at = ?, version = version + 1
+				 WHERE sop_id = ? AND is_deleted = 0`
+			).bind(title, content, category || '', tagsJson, now, sopId).run();
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"更新成功", data:{ sop_id: sopId }, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+	
+	// DELETE /internal/api/v1/sop/:id - 刪除 SOP
+	const matchDelete = path.match(/^\/internal\/api\/v1\/sop\/(\d+)$/);
+	if (method === "DELETE" && matchDelete) {
+		const sopId = parseInt(matchDelete[1]);
+		try {
+			await env.DATABASE.prepare(
+				`UPDATE SOPDocuments SET is_deleted = 1, updated_at = ? WHERE sop_id = ?`
+			).bind(new Date().toISOString(), sopId).run();
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"刪除成功", meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
