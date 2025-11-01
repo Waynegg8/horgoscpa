@@ -290,10 +290,30 @@
         
         <!-- 文檔列表 -->
         <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:16px;">
             <div style="font-weight:800;color:var(--text-primary);">📁 已上傳文檔</div>
             <div id="resourcesListInfo" class="muted">—</div>
           </div>
+          
+          <!-- 搜索和篩選 -->
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px;">
+            <div>
+              <input type="text" id="resources-search" placeholder="🔍 搜索文檔標題..." 
+                style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;font-size:14px;" />
+            </div>
+            <div>
+              <select id="resources-category-filter" 
+                style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;font-size:14px;">
+                <option value="">📂 全部分類</option>
+                <option value="contract">📄 合同範本</option>
+                <option value="finance">💰 財務表格</option>
+                <option value="hr">👥 人事文檔</option>
+                <option value="tax">📊 稅務參考</option>
+                <option value="other">📋 其他</option>
+              </select>
+            </div>
+          </div>
+          
           <div id="resourcesList"></div>
           <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
             <button id="resources-prev" type="button" class="btn">上一頁</button>
@@ -410,7 +430,7 @@
         
         let sopState = { page:1, perPage:12, total:0 };
         let faqState = { page:1, perPage:12, total:0 };
-        let resourcesState = { page:1, perPage:12, total:0 };
+        let resourcesState = { page:1, perPage:12, total:0, q:'', category:'' };
 
         // 初始化富文本编辑器（延迟初始化，在Modal打开时）
         function initSopEditor() {
@@ -598,7 +618,7 @@
             const resourcesList = document.getElementById('resourcesList');
             resourcesList.innerHTML = '<div class="doc-card"><div class="doc-title">載入中…</div></div>';
             
-            const params = buildParams(resourcesState);
+            const params = buildResourceParams(resourcesState);
             const res = await fetch(`${apiBase}/documents?${params}`, { credentials:'include' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/knowledge'); return; }
             const json = await res.json();
@@ -625,21 +645,48 @@
           const el = document.createElement('div');
           el.className = 'doc-card';
           const tagsTxt = Array.isArray(item.tags) ? item.tags.join(', ') : '';
-          const catText = getCategoryText(item.category);
+          
+          // 分類圖標和文字
+          const categoryMap = {
+            contract: { icon: '📄', text: '合同範本' },
+            finance: { icon: '💰', text: '財務表格' },
+            hr: { icon: '👥', text: '人事文檔' },
+            tax: { icon: '📊', text: '稅務參考' },
+            other: { icon: '📋', text: '其他' }
+          };
+          const cat = categoryMap[item.category] || { icon: '📎', text: '文檔' };
+          
+          // 文件類型圖標
+          const fileName = item.fileName || item.title || '';
+          let fileIcon = '📄';
+          if (fileName.match(/\.(pdf)$/i)) fileIcon = '📕';
+          else if (fileName.match(/\.(doc|docx)$/i)) fileIcon = '📘';
+          else if (fileName.match(/\.(xls|xlsx)$/i)) fileIcon = '📗';
+          else if (fileName.match(/\.(ppt|pptx)$/i)) fileIcon = '📙';
+          else if (fileName.match(/\.(jpg|jpeg|png|gif)$/i)) fileIcon = '🖼️';
+          
           const fileSize = item.fileSize ? `${(item.fileSize / 1024).toFixed(1)} KB` : '—';
           
           el.innerHTML = `
-            <div class="doc-title">📎 ${item.title||''}</div>
-            <div class="doc-excerpt">${item.description || '無描述'}</div>
-            <div class="doc-excerpt">分類：${catText}${tagsTxt ? `｜標籤：${tagsTxt}` : ''}｜大小：${fileSize}</div>
-            <div class="doc-meta">
-              <div class="doc-meta-item">上傳：${item.createdAt||''}</div>
+            <div class="doc-title">
+              <span style="margin-right:8px;">${fileIcon}</span>
+              ${item.title || '未命名文檔'}
+              <span style="margin-left:8px;padding:2px 8px;background:#f0f9ff;color:#0369a1;border-radius:4px;font-size:11px;font-weight:600;">
+                ${cat.icon} ${cat.text}
+              </span>
             </div>
-            <div class="doc-footer">
-              <div>上傳者：${item.uploaderName||'—'}</div>
-              <div>
-                <a href="${item.fileUrl}" target="_blank" class="btn">下載</a>
-                <button type="button" class="btn danger" onclick="deleteResource(${item.document_id})">刪除</button>
+            <div class="doc-excerpt" style="margin-top:8px;">${item.description || '無描述'}</div>
+            ${tagsTxt ? `<div class="doc-excerpt" style="margin-top:4px;color:#6b7280;">🏷️ ${tagsTxt}</div>` : ''}
+            <div class="doc-meta" style="margin-top:8px;">
+              <div class="doc-meta-item">📅 ${item.uploadedAt || item.createdAt || '—'}</div>
+              <div class="doc-meta-item">👤 ${item.uploaderName || '—'}</div>
+              <div class="doc-meta-item">📦 ${fileSize}</div>
+            </div>
+            <div class="doc-footer" style="margin-top:12px;">
+              <div style="font-size:12px;color:#6b7280;">${fileName}</div>
+              <div style="display:flex;gap:8px;">
+                <a href="${item.fileUrl}" target="_blank" class="btn" style="font-size:13px;">⬇️ 下載</a>
+                <button type="button" class="btn danger" onclick="deleteResource(${item.document_id})" style="font-size:13px;">🗑️ 刪除</button>
               </div>
             </div>
           `;
@@ -680,6 +727,17 @@
           
           const t = document.getElementById('tags').value.split(',').map(s=>s.trim()).filter(Boolean).join(',');
           if (t) params.set('tags', t);
+          
+          return params.toString();
+        }
+        
+        function buildResourceParams(state){
+          const params = new URLSearchParams();
+          params.set('page', String(state.page));
+          params.set('perPage', String(state.perPage));
+          
+          if (state.q) params.set('q', state.q);
+          if (state.category) params.set('category', state.category);
           
           return params.toString();
         }
@@ -916,6 +974,23 @@
         document.getElementById('faq-next').addEventListener('click', ()=>{ faqState.page++; loadFAQs(); });
         document.getElementById('resources-prev').addEventListener('click', ()=>{ if (resourcesState.page>1){ resourcesState.page--; loadResources(); } });
         document.getElementById('resources-next').addEventListener('click', ()=>{ resourcesState.page++; loadResources(); });
+
+        // 資源搜索和篩選
+        let resourcesSearchTimer = null;
+        document.getElementById('resources-search').addEventListener('input', (e) => {
+          clearTimeout(resourcesSearchTimer);
+          resourcesSearchTimer = setTimeout(() => {
+            resourcesState.q = e.target.value.trim();
+            resourcesState.page = 1;
+            loadResources();
+          }, 300);
+        });
+        
+        document.getElementById('resources-category-filter').addEventListener('change', (e) => {
+          resourcesState.category = e.target.value;
+          resourcesState.page = 1;
+          loadResources();
+        });
 
         // 文件上传
         const fileUploadAreaInline = document.getElementById('fileUploadAreaInline');
