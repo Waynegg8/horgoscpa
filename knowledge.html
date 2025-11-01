@@ -469,6 +469,25 @@
       </div>
     </main>
 
+    <!-- 文檔預覽模態框 -->
+    <div id="docPreviewModal" class="modal">
+      <div class="modal-content" style="max-width:1000px;max-height:90vh;">
+        <div class="modal-header">
+          <h2 id="previewDocTitle">📄 文檔預覽</h2>
+          <button class="close-modal" onclick="closeDocPreview()">&times;</button>
+        </div>
+        <div id="previewDocContent" style="width:100%;height:70vh;overflow:auto;background:#f5f5f5;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <div style="text-align:center;color:#6b7280;">載入中...</div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
+          <button class="btn" onclick="closeDocPreview()">關閉</button>
+          <a id="downloadDocBtn" class="btn primary" download style="text-decoration:none;display:inline-flex;align-items:center;">
+            <span>💾 下載</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
     <!-- 上傳文檔模態框 -->
     <div id="uploadDocModal" class="modal">
       <div class="modal-content">
@@ -929,11 +948,92 @@
           
           // 點擊卡片預覽
           el.addEventListener('click', () => {
-            window.open(item.fileUrl, '_blank');
+            previewDocument(item);
           });
           
           return el;
         }
+
+        // 文檔預覽功能
+        window.previewDocument = async function(doc) {
+          const modal = document.getElementById('docPreviewModal');
+          const titleEl = document.getElementById('previewDocTitle');
+          const contentEl = document.getElementById('previewDocContent');
+          const downloadBtn = document.getElementById('downloadDocBtn');
+          
+          if (!modal || !titleEl || !contentEl) return;
+          
+          // 設置標題
+          titleEl.textContent = `📄 ${doc.title || '文檔預覽'}`;
+          
+          // 顯示模態框
+          modal.classList.add('show');
+          
+          // 顯示載入中
+          contentEl.innerHTML = '<div style="text-align:center;color:#6b7280;"><div style="font-size:48px;margin-bottom:16px;">⏳</div><div>載入中...</div></div>';
+          
+          try {
+            // 構建文件URL
+            const fileUrl = `${apiBase}/documents/${doc.document_id}/download`;
+            
+            // 獲取文件
+            const res = await fetch(fileUrl, { credentials: 'include' });
+            if (!res.ok) {
+              throw new Error('無法載入文件');
+            }
+            
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            
+            // 設置下載按鈕
+            downloadBtn.href = blobUrl;
+            downloadBtn.download = doc.fileName || 'document';
+            
+            // 根據文件類型顯示預覽
+            const fileType = doc.fileType || '';
+            const fileName = doc.fileName || '';
+            
+            if (fileType.includes('pdf') || fileName.match(/\.pdf$/i)) {
+              // PDF預覽
+              contentEl.innerHTML = `<iframe src="${blobUrl}" style="width:100%;height:100%;border:none;"></iframe>`;
+            } else if (fileType.includes('image') || fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+              // 圖片預覽
+              contentEl.innerHTML = `<img src="${blobUrl}" style="max-width:100%;max-height:100%;object-fit:contain;" />`;
+            } else {
+              // 其他文件類型，顯示下載提示
+              contentEl.innerHTML = `
+                <div style="text-align:center;padding:40px;">
+                  <div style="font-size:64px;margin-bottom:20px;">📄</div>
+                  <h3 style="margin-bottom:12px;color:#374151;">${doc.title}</h3>
+                  <p style="color:#6b7280;margin-bottom:24px;">此文件類型不支援線上預覽</p>
+                  <a href="${blobUrl}" download="${doc.fileName || 'document'}" class="btn primary" style="text-decoration:none;">
+                    <span>💾 下載文件</span>
+                  </a>
+                </div>
+              `;
+            }
+          } catch (err) {
+            console.error('預覽文檔失敗:', err);
+            contentEl.innerHTML = `
+              <div style="text-align:center;padding:40px;color:#c0392b;">
+                <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
+                <div>載入失敗：${err.message}</div>
+              </div>
+            `;
+          }
+        };
+        
+        window.closeDocPreview = function() {
+          const modal = document.getElementById('docPreviewModal');
+          if (modal) {
+            modal.classList.remove('show');
+            // 清理 blob URL
+            const downloadBtn = document.getElementById('downloadDocBtn');
+            if (downloadBtn && downloadBtn.href.startsWith('blob:')) {
+              URL.revokeObjectURL(downloadBtn.href);
+            }
+          }
+        };
 
         // 通用函数
         function renderEmpty(container, type){

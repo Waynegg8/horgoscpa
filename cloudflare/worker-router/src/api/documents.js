@@ -20,6 +20,12 @@ export async function handleDocumentsRequest(request, env, ctx, pathname, me) {
     return await getDocumentById(env, docId, me, corsHeaders);
   }
   
+  // GET /internal/api/v1/documents/:id/download - 下载文档
+  if (method === 'GET' && pathname.match(/^\/internal\/api\/v1\/documents\/\d+\/download$/)) {
+    const docId = parseInt(pathname.split('/').slice(-2)[0]);
+    return await downloadDocument(env, docId, me, corsHeaders);
+  }
+  
   // POST /internal/api/v1/documents/upload - 上传文档（一步完成）
   if (method === 'POST' && pathname === '/internal/api/v1/documents/upload') {
     return await uploadDocument(request, env, me, corsHeaders);
@@ -217,6 +223,71 @@ async function getDocumentById(env, docId, me, corsHeaders) {
     return new Response(JSON.stringify({
       ok: false,
       error: '获取文档详情失败'
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+}
+
+// 下载文档
+async function downloadDocument(env, docId, me, corsHeaders) {
+  try {
+    // 获取文档信息
+    const doc = await env.DATABASE.prepare(`
+      SELECT file_url, file_name, file_type
+      FROM InternalDocuments
+      WHERE document_id = ? AND is_deleted = 0
+    `).bind(docId).first();
+    
+    if (!doc) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: '文档不存在'
+      }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+    
+    // 从 R2 获取文件
+    if (!env.R2_BUCKET) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: 'R2 未配置'
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+    
+    const object = await env.R2_BUCKET.get(doc.file_url);
+    
+    if (!object) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: '文件不存在於存儲中'
+      }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+    
+    // 返回文件
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': doc.file_type || 'application/octet-stream',
+        'Content-Disposition': `inline; filename="${doc.file_name || 'document'}"`,
+        'Cache-Control': 'private, max-age=3600',
+        ...corsHeaders
+      }
+    });
+    
+  } catch (err) {
+    console.error('下载文档失败:', err);
+    return new Response(JSON.stringify({
+      ok: false,
+      error: '下载文档失败'
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
