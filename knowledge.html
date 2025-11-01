@@ -1187,12 +1187,6 @@
           }
           
           // 配置（Quill 1.3.7 + Better Table 完整配置）
-          const BetterTable = window.quillBetterTable;
-          
-          // 調試：查看 Better Table 結構
-          console.log('Better Table 模組:', BetterTable);
-          console.log('keyboardBindings:', BetterTable.keyboardBindings);
-          
           const config = {
             theme: 'snow',
             modules: {
@@ -1231,6 +1225,12 @@
                     colors: ['#ffffff', '#e0e0e0', '#f3f3f3', '#fef2e8', '#e8f4fd'],
                     text: '背景顏色：'
                   }
+                }
+              },
+              keyboard: {
+                bindings: {
+                  // 添加一個空的 Backspace 綁定以確保數組存在
+                  // Better Table 會在初始化時修改這個綁定
                 }
               },
               toolbar: [
@@ -1362,6 +1362,12 @@
                     colors: ['#ffffff', '#e0e0e0', '#f3f3f3', '#fef2e8', '#e8f4fd'],
                     text: '背景顏色：'
                   }
+                }
+              },
+              keyboard: {
+                bindings: {
+                  // 添加一個空的 Backspace 綁定以確保數組存在
+                  // Better Table 會在初始化時修改這個綁定
                 }
               },
               toolbar: [
