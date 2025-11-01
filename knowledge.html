@@ -46,20 +46,18 @@
       /* 左右佈局優化 */
       .kb-layout {
         display: grid;
-        grid-template-columns: 280px 1fr;
-        gap: 20px;
+        grid-template-columns: 240px 1fr;
+        gap: 24px;
         transition: all 0.3s ease;
         position: relative;
       }
       .kb-layout.collapsed {
-        display: flex;
-        justify-content: center;
+        grid-template-columns: 0 1fr;
         gap: 0;
       }
       .kb-layout.collapsed .right-panel {
-        max-width: 900px;
+        max-width: 100%;
         width: 100%;
-        margin: 0 auto;
       }
       .left-panel {
         background: white;
@@ -124,19 +122,24 @@
         padding: 0;
         border: none;
         overflow: visible;
+        position: relative;
       }
       .kb-layout.collapsed .toggle-panel-btn {
+        position: fixed;
+        left: 20px;
+        top: 120px;
         right: auto;
-        left: 0;
-        border-radius: 8px 0 0 8px;
-        box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        z-index: 1000;
       }
       .kb-layout.collapsed .toggle-panel-btn::after {
         content: '▶';
       }
       .kb-layout.collapsed .toggle-panel-btn:hover {
         background: #eff6ff;
-        box-shadow: -2px 0 12px rgba(37, 99, 235, 0.2);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        transform: scale(1.05);
       }
       .doc-card {
         cursor: pointer;
@@ -146,6 +149,39 @@
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       }
+      /* 側邊抽屜式面板 */
+      .drawer {
+        position: fixed;
+        top: 0;
+        right: -600px;
+        width: 600px;
+        height: 100vh;
+        background: white;
+        box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+        z-index: 9999;
+        transition: right 0.3s ease;
+        overflow-y: auto;
+      }
+      .drawer.show {
+        right: 0;
+      }
+      .drawer-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: rgba(0,0,0,0.5);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s, visibility 0.3s;
+      }
+      .drawer-overlay.show {
+        opacity: 1;
+        visibility: visible;
+      }
+      /* 保留模態框樣式給其他可能的用途 */
       .modal {
         position: fixed;
         z-index: 9999;
@@ -562,13 +598,20 @@
       </div>
     </main>
 
-    <!-- 上傳文檔模態框 -->
-    <div id="uploadDocModal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>📤 上傳文檔</h2>
-          <button class="close-modal" onclick="closeUploadDocModal()">&times;</button>
+    <!-- 抽屜遮罩 -->
+    <div id="drawerOverlay" class="drawer-overlay" onclick="closeUploadDocModal()"></div>
+    
+    <!-- 上傳文檔抽屜 -->
+    <div id="uploadDocModal" class="drawer">
+      <div style="padding:24px;border-bottom:1px solid #e5e7eb;background:#f9fafb;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h2 style="margin:0;font-size:20px;font-weight:700;color:#1f2937;">📤 上傳文檔</h2>
+          <button class="close-modal" onclick="closeUploadDocModal()" style="font-size:32px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:0;line-height:1;">&times;</button>
         </div>
+        <p style="margin:8px 0 0 0;font-size:13px;color:#6b7280;">上傳文檔到資源中心，支援PDF、Word、Excel等格式</p>
+      </div>
+      
+      <div style="padding:24px;">
           
           <form id="resourceFormModal">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
@@ -1070,28 +1113,28 @@
             if (fileType.includes('pdf') || fileName.match(/\.pdf$/i)) {
               // PDF預覽
               previewArea.innerHTML = `
-                <div style="display:flex;flex-direction:column;height:100%;min-height:600px;">
-                  <div style="padding:12px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
-                    <h4 style="margin:0;font-size:14px;font-weight:600;color:#374151;">📕 ${doc.title}</h4>
-                    <a href="${blobUrl}" download="${doc.fileName || 'document.pdf'}" class="btn" style="padding:6px 12px;font-size:13px;text-decoration:none;">
+                <div style="display:flex;flex-direction:column;height:100%;min-height:800px;">
+                  <div style="padding:16px 20px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
+                    <h4 style="margin:0;font-size:16px;font-weight:600;color:#374151;">📕 ${doc.title}</h4>
+                    <a href="${blobUrl}" download="${doc.fileName || 'document.pdf'}" class="btn primary" style="padding:8px 16px;font-size:14px;text-decoration:none;">
                       💾 下載
                     </a>
                   </div>
-                  <iframe src="${blobUrl}" style="width:100%;flex:1;border:none;"></iframe>
+                  <iframe src="${blobUrl}" style="width:100%;flex:1;border:none;background:white;"></iframe>
                 </div>
               `;
             } else if (fileType.includes('image') || fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
               // 圖片預覽
               previewArea.innerHTML = `
-                <div style="display:flex;flex-direction:column;height:100%;min-height:600px;">
-                  <div style="padding:12px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
-                    <h4 style="margin:0;font-size:14px;font-weight:600;color:#374151;">🖼️ ${doc.title}</h4>
-                    <a href="${blobUrl}" download="${doc.fileName || 'image'}" class="btn" style="padding:6px 12px;font-size:13px;text-decoration:none;">
+                <div style="display:flex;flex-direction:column;height:100%;min-height:800px;">
+                  <div style="padding:16px 20px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
+                    <h4 style="margin:0;font-size:16px;font-weight:600;color:#374151;">🖼️ ${doc.title}</h4>
+                    <a href="${blobUrl}" download="${doc.fileName || 'image'}" class="btn primary" style="padding:8px 16px;font-size:14px;text-decoration:none;">
                       💾 下載
                     </a>
                   </div>
-                  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:20px;background:#f9fafb;">
-                    <img src="${blobUrl}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);" />
+                  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px;background:#f9fafb;">
+                    <img src="${blobUrl}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.15);" />
                   </div>
                 </div>
               `;
@@ -1494,28 +1537,20 @@
         };
         
         window.closeUploadDocModal = function() {
-          const modal = document.getElementById('uploadDocModal');
-          if (modal) {
-            modal.classList.remove('show');
-            setTimeout(() => resetUploadForm(), 200);
-          }
+          const drawer = document.getElementById('uploadDocModal');
+          const overlay = document.getElementById('drawerOverlay');
+          if (drawer) drawer.classList.remove('show');
+          if (overlay) overlay.classList.remove('show');
+          setTimeout(() => resetUploadForm(), 300);
         };
         
         window.openUploadDocModal = function() {
-          const modal = document.getElementById('uploadDocModal');
-          if (modal) {
-            modal.classList.add('show');
-          }
+          const drawer = document.getElementById('uploadDocModal');
+          const overlay = document.getElementById('drawerOverlay');
+          if (drawer) drawer.classList.add('show');
+          if (overlay) overlay.classList.add('show');
         };
         
-        // 點擊模態框背景關閉
-        document.addEventListener('click', (e) => {
-          if (e.target.classList.contains('modal') && e.target.classList.contains('show')) {
-            if (e.target.id === 'uploadDocModal') {
-              closeUploadDocModal();
-            }
-          }
-        });
 
         if (fileUploadAreaModal && fileInputModal) {
           fileUploadAreaModal.addEventListener('click', () => fileInputModal.click());
