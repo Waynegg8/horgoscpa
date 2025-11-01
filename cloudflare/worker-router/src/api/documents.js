@@ -75,7 +75,7 @@ async function getDocumentsList(request, env, me) {
     
     // 查询总数
     const countSQL = `SELECT COUNT(*) as total FROM InternalDocuments ${whereSQL}`;
-    const countResult = await env.DB.prepare(countSQL).bind(...params).first();
+    const countResult = await env.DATABASE.prepare(countSQL).bind(...params).first();
     const total = countResult?.total || 0;
     
     // 查询数据
@@ -101,7 +101,7 @@ async function getDocumentsList(request, env, me) {
       LIMIT ? OFFSET ?
     `;
     
-    const results = await env.DB.prepare(dataSQL)
+    const results = await env.DATABASE.prepare(dataSQL)
       .bind(...params, perPage, offset)
       .all();
     
@@ -144,7 +144,7 @@ async function getDocumentsList(request, env, me) {
 // 获取单个文档详情
 async function getDocumentById(env, docId, me) {
   try {
-    const result = await env.DB.prepare(`
+    const result = await env.DATABASE.prepare(`
       SELECT 
         d.document_id,
         d.title,
@@ -229,7 +229,7 @@ async function createDocument(request, env, me) {
     const tagsStr = Array.isArray(tags) ? tags.join(',') : (tags || '');
     const now = new Date().toISOString();
     
-    const result = await env.DB.prepare(`
+    const result = await env.DATABASE.prepare(`
       INSERT INTO InternalDocuments (
         title,
         description,
@@ -298,7 +298,7 @@ async function updateDocument(request, env, docId, me) {
     const { title, description, category, tags } = body;
     
     // 验证文档是否存在
-    const existing = await env.DB.prepare(
+    const existing = await env.DATABASE.prepare(
       'SELECT document_id FROM InternalDocuments WHERE document_id = ? AND is_deleted = 0'
     ).bind(docId).first();
     
@@ -326,7 +326,7 @@ async function updateDocument(request, env, docId, me) {
     const tagsStr = Array.isArray(tags) ? tags.join(',') : (tags || '');
     const now = new Date().toISOString();
     
-    await env.DB.prepare(`
+    await env.DATABASE.prepare(`
       UPDATE InternalDocuments
       SET 
         title = ?,
@@ -374,7 +374,7 @@ async function updateDocument(request, env, docId, me) {
 async function deleteDocument(env, docId, me) {
   try {
     // 验证文档是否存在
-    const existing = await env.DB.prepare(
+    const existing = await env.DATABASE.prepare(
       'SELECT document_id, file_url FROM InternalDocuments WHERE document_id = ? AND is_deleted = 0'
     ).bind(docId).first();
     
@@ -389,7 +389,7 @@ async function deleteDocument(env, docId, me) {
     }
     
     // 软删除
-    await env.DB.prepare(`
+    await env.DATABASE.prepare(`
       UPDATE InternalDocuments
       SET is_deleted = 1, updated_at = ?
       WHERE document_id = ?

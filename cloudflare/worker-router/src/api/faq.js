@@ -75,7 +75,7 @@ async function getFAQList(request, env, me) {
     
     // 查询总数
     const countSQL = `SELECT COUNT(*) as total FROM InternalFAQ ${whereSQL}`;
-    const countResult = await env.DB.prepare(countSQL).bind(...params).first();
+    const countResult = await env.DATABASE.prepare(countSQL).bind(...params).first();
     const total = countResult?.total || 0;
     
     // 查询数据
@@ -95,7 +95,7 @@ async function getFAQList(request, env, me) {
       LIMIT ? OFFSET ?
     `;
     
-    const results = await env.DB.prepare(dataSQL)
+    const results = await env.DATABASE.prepare(dataSQL)
       .bind(...params, perPage, offset)
       .all();
     
@@ -133,7 +133,7 @@ async function getFAQList(request, env, me) {
 // 获取单个FAQ详情
 async function getFAQById(env, faqId, me) {
   try {
-    const result = await env.DB.prepare(`
+    const result = await env.DATABASE.prepare(`
       SELECT 
         faq_id, 
         question, 
@@ -207,7 +207,7 @@ async function createFAQ(request, env, me) {
     const tagsStr = Array.isArray(tags) ? tags.join(',') : (tags || '');
     const now = new Date().toISOString();
     
-    const result = await env.DB.prepare(`
+    const result = await env.DATABASE.prepare(`
       INSERT INTO InternalFAQ (
         question, 
         answer, 
@@ -264,7 +264,7 @@ async function updateFAQ(request, env, faqId, me) {
     const { question, answer, category, tags } = body;
     
     // 验证FAQ是否存在
-    const existing = await env.DB.prepare(
+    const existing = await env.DATABASE.prepare(
       'SELECT faq_id FROM InternalFAQ WHERE faq_id = ? AND is_deleted = 0'
     ).bind(faqId).first();
     
@@ -292,7 +292,7 @@ async function updateFAQ(request, env, faqId, me) {
     const tagsStr = Array.isArray(tags) ? tags.join(',') : (tags || '');
     const now = new Date().toISOString();
     
-    await env.DB.prepare(`
+    await env.DATABASE.prepare(`
       UPDATE InternalFAQ
       SET 
         question = ?,
@@ -340,7 +340,7 @@ async function updateFAQ(request, env, faqId, me) {
 async function deleteFAQ(env, faqId, me) {
   try {
     // 验证FAQ是否存在
-    const existing = await env.DB.prepare(
+    const existing = await env.DATABASE.prepare(
       'SELECT faq_id FROM InternalFAQ WHERE faq_id = ? AND is_deleted = 0'
     ).bind(faqId).first();
     
@@ -355,7 +355,7 @@ async function deleteFAQ(env, faqId, me) {
     }
     
     // 软删除
-    await env.DB.prepare(`
+    await env.DATABASE.prepare(`
       UPDATE InternalFAQ
       SET is_deleted = 1, updated_at = ?
       WHERE faq_id = ?
