@@ -160,6 +160,7 @@
         <button onclick="closeBillingModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
       </div>
       
+      <!-- 选择服务 -->
       <div style="margin-bottom: 20px;">
         <label style="display: block; margin-bottom: 8px; font-weight: 500;">選擇服務 *</label>
         <select id="modal-service-select" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
@@ -167,7 +168,29 @@
         </select>
       </div>
       
+      <!-- 收费类型选择 -->
       <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500;">收費類型 *</label>
+        <div style="display: flex; gap: 12px;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 10px 16px; border: 2px solid #d1d5db; border-radius: 6px; flex: 1;">
+            <input type="radio" name="billing-type" value="monthly" checked onchange="switchBillingType('monthly')" style="cursor: pointer;" />
+            <div>
+              <div style="font-weight: 500; font-size: 14px;">按月收費</div>
+              <div style="font-size: 12px; color: #6b7280;">每月固定金額</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 10px 16px; border: 2px solid #d1d5db; border-radius: 6px; flex: 1;">
+            <input type="radio" name="billing-type" value="one-time" onchange="switchBillingType('one-time')" style="cursor: pointer;" />
+            <div>
+              <div style="font-weight: 500; font-size: 14px;">一次性收費</div>
+              <div style="font-size: 12px; color: #6b7280;">設立費、顧問費等</div>
+            </div>
+          </label>
+        </div>
+      </div>
+      
+      <!-- 按月收费表单 -->
+      <div id="monthly-billing-form" style="margin-bottom: 20px;">
         <h4 style="margin: 0 0 12px 0; font-size: 16px; color: #1f2937;">批量設定收費</h4>
         <p style="margin: 0 0 15px 0; font-size: 13px; color: #6b7280;">一次設定多個月份的收費金額</p>
         
@@ -207,6 +230,45 @@
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" class="modal-month-checkbox" value="11" checked style="cursor: pointer;" /><span>11月</span></label>
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" class="modal-month-checkbox" value="12" checked style="cursor: pointer;" /><span>12月</span></label>
           </div>
+        </div>
+      </div>
+      
+      <!-- 一次性收费表单 -->
+      <div id="onetime-billing-form" style="display: none; margin-bottom: 20px;">
+        <h4 style="margin: 0 0 12px 0; font-size: 16px; color: #1f2937;">設定一次性收費</h4>
+        <p style="margin: 0 0 15px 0; font-size: 13px; color: #6b7280;">例如：設立費、顧問費、專案費用等</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 15px;">
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">項目名稱 *</label>
+            <input type="text" id="modal-onetime-description" placeholder="例如：設立費" maxlength="100"
+                   style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+            <small style="display: block; margin-top: 4px; color: #6b7280; font-size: 12px;">用於識別這筆收費</small>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">收費金額 *</label>
+            <input type="number" id="modal-onetime-amount" placeholder="5000" step="0.01" min="0" required 
+                   style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 15px;">
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">收費日期 *</label>
+            <input type="date" id="modal-onetime-date" required 
+                   style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">付款期限（天）</label>
+            <input type="number" id="modal-onetime-due" value="30" min="1" 
+                   style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
+        </div>
+        
+        <div>
+          <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">備註</label>
+          <textarea id="modal-onetime-notes" rows="3" placeholder="選填：補充說明"
+                    style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; resize: vertical;"></textarea>
         </div>
       </div>
       
@@ -549,19 +611,55 @@
         return;
       }
       
-      billingList.innerHTML = filteredData.map(billing => `
-        <tr>
-          <td><strong>${billing.service_name}</strong></td>
-          <td>${billing.billing_month}月</td>
-          <td class="amount">$${billing.billing_amount.toLocaleString('zh-TW')}</td>
-          <td>${billing.payment_due_days}天</td>
-          <td>${billing.notes || '-'}</td>
-          <td>
-            <button class="table-btn-link" onclick="editBillingRow(${billing.schedule_id}, ${billing.client_service_id}, ${billing.billing_month}, ${billing.billing_amount}, ${billing.payment_due_days}, '${(billing.notes || '').replace(/'/g, "\\'")}')">編輯</button>
-            <button class="table-btn-link danger" onclick="deleteBillingRow(${billing.schedule_id}, '${billing.service_name}', ${billing.billing_month})">刪除</button>
-          </td>
-        </tr>
-      `).join('');
+      billingList.innerHTML = filteredData.map(billing => {
+        // 判断是按月收费还是一次性收费
+        const isOneTime = billing.billing_type === 'one-time' || billing.billing_month === 0;
+        
+        // 月份/类型显示
+        let monthDisplay = '';
+        if (isOneTime) {
+          // 一次性收费：显示项目名称和日期
+          const dateStr = billing.billing_date ? new Date(billing.billing_date).toLocaleDateString('zh-TW') : '';
+          monthDisplay = `<div style="font-weight: 500; color: #f59e0b;">一次性</div><div style="font-size: 12px; color: #6b7280;">${billing.description || dateStr}</div>`;
+        } else {
+          // 按月收费：显示月份
+          monthDisplay = `${billing.billing_month}月`;
+        }
+        
+        // 备注显示
+        const notesDisplay = billing.notes || billing.description || '-';
+        
+        // 删除时的标识
+        const deleteLabel = isOneTime ? `一次性收費（${billing.description || ''}）` : `${billing.billing_month}月`;
+        
+        return `
+          <tr>
+            <td><strong>${billing.service_name}</strong></td>
+            <td>${monthDisplay}</td>
+            <td class="amount">$${billing.billing_amount.toLocaleString('zh-TW')}</td>
+            <td>${billing.payment_due_days}天</td>
+            <td>${notesDisplay}</td>
+            <td>
+              <button class="table-btn-link" onclick="editBillingRow(${billing.schedule_id}, ${billing.client_service_id}, ${billing.billing_month}, ${billing.billing_amount}, ${billing.payment_due_days}, '${(billing.notes || '').replace(/'/g, "\\'")}')">編輯</button>
+              <button class="table-btn-link danger" onclick="deleteBillingRow(${billing.schedule_id}, '${billing.service_name}', '${deleteLabel}')">刪除</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    // 切换收费类型
+    function switchBillingType(type) {
+      const monthlyForm = document.getElementById('monthly-billing-form');
+      const onetimeForm = document.getElementById('onetime-billing-form');
+      
+      if (type === 'monthly') {
+        monthlyForm.style.display = 'block';
+        onetimeForm.style.display = 'none';
+      } else if (type === 'one-time') {
+        monthlyForm.style.display = 'none';
+        onetimeForm.style.display = 'block';
+      }
     }
     
     // 显示新增收费弹窗
@@ -573,6 +671,10 @@
       const monthCheckboxes = document.getElementById('modal-month-checkboxes');
       
       modalTitle.textContent = '新增收費';
+      
+      // 重置收费类型为按月
+      document.querySelector('input[name="billing-type"][value="monthly"]').checked = true;
+      switchBillingType('monthly');
       
       // 加载服务选项
       const clientRes = await fetch(`/internal/api/v1/clients/${currentClientId}`);
@@ -598,6 +700,10 @@
         }
       });
       
+      // 设置一次性收费日期为今天
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('modal-onetime-date').value = today;
+      
       modal.style.display = 'flex';
     }
     
@@ -606,32 +712,64 @@
       const modal = document.getElementById('billingModal');
       modal.style.display = 'none';
       
-      // 重置表单
+      // 重置收费类型
+      document.querySelector('input[name="billing-type"][value="monthly"]').checked = true;
+      switchBillingType('monthly');
+      
+      // 重置按月收费表单
       document.getElementById('modal-service-select').value = '';
       document.getElementById('modal-batch-amount').value = '';
       document.getElementById('modal-batch-due').value = '30';
       document.getElementById('modal-batch-range').value = 'all';
       document.getElementById('modal-month-checkboxes').style.display = 'none';
-      
-      // 重置所有月份复选框
       document.querySelectorAll('.modal-month-checkbox').forEach(cb => cb.checked = true);
+      
+      // 重置一次性收费表单
+      document.getElementById('modal-onetime-description').value = '';
+      document.getElementById('modal-onetime-amount').value = '';
+      document.getElementById('modal-onetime-date').value = '';
+      document.getElementById('modal-onetime-due').value = '30';
+      document.getElementById('modal-onetime-notes').value = '';
     }
     
     // 从弹窗保存收费
     async function saveBillingFromModal() {
       const serviceId = document.getElementById('modal-service-select').value;
-      const amount = parseFloat(document.getElementById('modal-batch-amount').value);
-      const dueDays = parseInt(document.getElementById('modal-batch-due').value);
-      const range = document.getElementById('modal-batch-range').value;
+      const billingType = document.querySelector('input[name="billing-type"]:checked').value;
       
       if (!serviceId) {
         alert('請選擇服務');
         return;
       }
       
+      try {
+        if (billingType === 'monthly') {
+          // 按月收费
+          await saveMonthlyBilling(serviceId);
+        } else if (billingType === 'one-time') {
+          // 一次性收费
+          await saveOneTimeBilling(serviceId);
+        }
+        
+        closeBillingModal();
+        
+        // 重新加载收费列表和服务列表
+        await loadAllBilling();
+        await loadClientDetail();
+        
+      } catch (err) {
+        alert(err.message || '新增失敗，請稍後再試');
+      }
+    }
+    
+    // 保存按月收费
+    async function saveMonthlyBilling(serviceId) {
+      const amount = parseFloat(document.getElementById('modal-batch-amount').value);
+      const dueDays = parseInt(document.getElementById('modal-batch-due').value);
+      const range = document.getElementById('modal-batch-range').value;
+      
       if (!amount || amount <= 0) {
-        alert('請輸入有效的金額');
-        return;
+        throw new Error('請輸入有效的金額');
       }
       
       // 确定要新增的月份
@@ -644,40 +782,74 @@
       }
       
       if (months.length === 0) {
-        alert('請至少選擇一個月份');
-        return;
+        throw new Error('請至少選擇一個月份');
       }
       
-      try {
-        // 批量创建收费
-        for (const month of months) {
-          const res = await fetch('/internal/api/v1/billing', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              client_service_id: parseInt(serviceId),
-              billing_month: month,
-              billing_amount: amount,
-              payment_due_days: dueDays
-            })
-          });
-          
-          if (!res.ok) {
-            const json = await res.json();
-            throw new Error(json.message || `${month}月新增失敗`);
-          }
+      // 批量创建收费
+      for (const month of months) {
+        const res = await fetch('/internal/api/v1/billing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_service_id: parseInt(serviceId),
+            billing_type: 'monthly',
+            billing_month: month,
+            billing_amount: amount,
+            payment_due_days: dueDays
+          })
+        });
+        
+        if (!res.ok) {
+          const json = await res.json();
+          throw new Error(json.message || `${month}月新增失敗`);
         }
-        
-        alert(`已成功新增 ${months.length} 個月份的收費`);
-        closeBillingModal();
-        
-        // 重新加载收费列表和服务列表
-        await loadAllBilling();
-        await loadClientDetail();
-        
-      } catch (err) {
-        alert(err.message || '批量新增失敗，請稍後再試');
       }
+      
+      alert(`已成功新增 ${months.length} 個月份的收費`);
+    }
+    
+    // 保存一次性收费
+    async function saveOneTimeBilling(serviceId) {
+      const description = document.getElementById('modal-onetime-description').value.trim();
+      const amount = parseFloat(document.getElementById('modal-onetime-amount').value);
+      const date = document.getElementById('modal-onetime-date').value;
+      const dueDays = parseInt(document.getElementById('modal-onetime-due').value);
+      const notes = document.getElementById('modal-onetime-notes').value.trim();
+      
+      if (!description) {
+        throw new Error('請輸入項目名稱');
+      }
+      
+      if (!amount || amount <= 0) {
+        throw new Error('請輸入有效的金額');
+      }
+      
+      if (!date) {
+        throw new Error('請選擇收費日期');
+      }
+      
+      const res = await fetch('/internal/api/v1/billing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_service_id: parseInt(serviceId),
+          billing_type: 'one-time',
+          billing_month: 0,  // 一次性收费不使用月份
+          billing_amount: amount,
+          payment_due_days: dueDays,
+          billing_date: date,
+          description: description,
+          notes: notes || null
+        })
+      });
+      
+      const json = await res.json();
+      
+      if (!json.ok) {
+        throw new Error(json.message || '新增一次性收費失敗');
+      }
+      
+      alert('已成功新增一次性收費');
     }
     
     // 编辑收费
@@ -687,8 +859,8 @@
     }
     
     // 删除收费
-    async function deleteBillingRow(scheduleId, serviceName, month) {
-      if (!confirm(`確定要刪除「${serviceName}」${month}月的收費嗎？`)) {
+    async function deleteBillingRow(scheduleId, serviceName, deleteLabel) {
+      if (!confirm(`確定要刪除「${serviceName}」的${deleteLabel}收費嗎？`)) {
         return;
       }
       
@@ -1291,6 +1463,7 @@
     }
 
     // 暴露函數到全局（新的独立收费功能）
+    window.switchBillingType = switchBillingType;
     window.showAddBillingModal = showAddBillingModal;
     window.closeBillingModal = closeBillingModal;
     window.saveBillingFromModal = saveBillingFromModal;

@@ -37,10 +37,11 @@ export async function handleBilling(request, env, me, requestId, url, path) {
 
       // 获取收费明细
       const rows = await env.DATABASE.prepare(
-        `SELECT schedule_id, billing_month, billing_amount, payment_due_days, notes, created_at, updated_at
+        `SELECT schedule_id, billing_month, billing_amount, payment_due_days, notes, 
+                billing_type, billing_date, description, created_at, updated_at
          FROM ServiceBillingSchedule
          WHERE client_service_id = ?
-         ORDER BY billing_month ASC`
+         ORDER BY billing_type ASC, billing_month ASC`
       ).bind(clientServiceId).all();
 
       const data = (rows?.results || []).map(r => ({
@@ -49,6 +50,9 @@ export async function handleBilling(request, env, me, requestId, url, path) {
         billing_amount: Number(r.billing_amount || 0),
         payment_due_days: Number(r.payment_due_days || 30),
         notes: r.notes || "",
+        billing_type: r.billing_type || 'monthly',
+        billing_date: r.billing_date || null,
+        description: r.description || null,
         created_at: r.created_at,
         updated_at: r.updated_at
       }));
@@ -73,7 +77,119 @@ export async function handleBilling(request, env, me, requestId, url, path) {
     }
   }
 
-  // POST /internal/api/v1/billing/service/:serviceId - 新增收费明细
+  // POST /internal/api/v1/billing - 新增收费明细（新endpoint）
+  if (method === "POST" && path === "/internal/api/v1/billing") {
+    let body;
+    try {
+      body = await request.json();
+    } catch (_) {
+      return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "请求格式错误", meta: { requestId } }, corsHeaders);
+    }
+
+    const clientServiceId = parseId(body?.client_service_id);
+    if (!clientServiceId) {
+      return jsonResponse(400, { ok: false, code: "INVALID_ID", message: "服务ID无效", meta: { requestId } }, corsHeaders);
+    }
+
+    const errors = [];
+    const billingType = String(body?.billing_type || "monthly").trim();
+    const billingMonth = parseInt(body?.billing_month, 10);
+    const billingAmount = parseFloat(body?.billing_amount);
+    const paymentDueDays = parseInt(body?.payment_due_days || 30, 10);
+    const notes = String(body?.notes || "").trim();
+    const billingDate = String(body?.billing_date || "").trim();
+    const description = String(body?.description || "").trim();
+
+    // 验证收费类型
+    if (!['monthly', 'one-time'].includes(billingType)) {
+      errors.push({ field: "billing_type", message: "收费类型必须为monthly或one-time" });
+    }
+
+    // 根据类型验证字段
+    if (billingType === 'monthly') {
+      if (!Number.isInteger(billingMonth) || billingMonth < 1 || billingMonth > 12) {
+        errors.push({ field: "billing_month", message: "月份必须在1-12之间" });
+      }
+    } else if (billingType === 'one-time') {
+      if (!billingDate) {
+        errors.push({ field: "billing_date", message: "一次性收费必须提供日期" });
+      }
+      if (!description) {
+        errors.push({ field: "description", message: "一次性收费必须提供说明" });
+      }
+    }
+
+    if (isNaN(billingAmount) || billingAmount < 0) {
+      errors.push({ field: "billing_amount", message: "金额必须为非负数" });
+    }
+    if (!Number.isInteger(paymentDueDays) || paymentDueDays < 1) {
+      errors.push({ field: "payment_due_days", message: "收款期限必须大于0" });
+    }
+
+    if (errors.length) {
+      return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "输入有误", errors, meta: { requestId } }, corsHeaders);
+    }
+
+    try {
+      // 检查服务是否存在
+      const service = await env.DATABASE.prepare(
+        "SELECT client_service_id FROM ClientServices WHERE client_service_id = ? AND is_deleted = 0"
+      ).bind(clientServiceId).first();
+
+      if (!service) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "服务不存在", meta: { requestId } }, corsHeaders);
+      }
+
+      // 如果是按月收费，检查该月份是否已存在
+      if (billingType === 'monthly') {
+        const existing = await env.DATABASE.prepare(
+          "SELECT schedule_id FROM ServiceBillingSchedule WHERE client_service_id = ? AND billing_month = ? AND billing_type = 'monthly'"
+        ).bind(clientServiceId, billingMonth).first();
+
+        if (existing) {
+          return jsonResponse(422, {
+            ok: false,
+            code: "DUPLICATE",
+            message: "该月份已设定收费",
+            errors: [{ field: "billing_month", message: "该月份已存在" }],
+            meta: { requestId }
+          }, corsHeaders);
+        }
+      }
+
+      // 插入收费明细
+      const result = await env.DATABASE.prepare(
+        `INSERT INTO ServiceBillingSchedule 
+         (client_service_id, billing_type, billing_month, billing_amount, payment_due_days, notes, billing_date, description)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        clientServiceId, 
+        billingType, 
+        billingType === 'monthly' ? billingMonth : 0, 
+        billingAmount, 
+        paymentDueDays, 
+        notes || null,
+        billingDate || null,
+        description || null
+      ).run();
+
+      const scheduleId = result?.meta?.last_row_id;
+
+      return jsonResponse(201, {
+        ok: true,
+        code: "CREATED",
+        message: "收费明细已新增",
+        data: { schedule_id: scheduleId },
+        meta: { requestId }
+      }, corsHeaders);
+
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "服务器错误", meta: { requestId } }, corsHeaders);
+    }
+  }
+  
+  // POST /internal/api/v1/billing/service/:serviceId - 新增收费明细（旧endpoint，保留兼容性）
   if (method === "POST" && matchGet) {
     const clientServiceId = parseId(matchGet[1]);
     if (!clientServiceId) {
@@ -135,8 +251,8 @@ export async function handleBilling(request, env, me, requestId, url, path) {
 
       // 插入收费明细
       const result = await env.DATABASE.prepare(
-        `INSERT INTO ServiceBillingSchedule (client_service_id, billing_month, billing_amount, payment_due_days, notes)
-         VALUES (?, ?, ?, ?, ?)`
+        `INSERT INTO ServiceBillingSchedule (client_service_id, billing_type, billing_month, billing_amount, payment_due_days, notes)
+         VALUES (?, 'monthly', ?, ?, ?, ?)`
       ).bind(clientServiceId, billingMonth, billingAmount, paymentDueDays, notes).run();
 
       const scheduleId = result?.meta?.last_row_id;
