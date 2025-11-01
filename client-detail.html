@@ -897,18 +897,42 @@
               </div>
               <div class="form-row-2col">
                 <div class="form-field">
-                  <label>期限規則</label>
-                  <select id="new-comp-due-rule-${clientServiceId}">
-                    <option value="end_of_month">當月月底</option>
-                    <option value="specific_day">當月指定日</option>
-                    <option value="next_month_day">次月指定日</option>
-                    <option value="days_after_start">相對天數</option>
+                  <label>📅 任務期限規則</label>
+                  <select id="new-comp-due-rule-${clientServiceId}" onchange="updateDueDateHelp${clientServiceId}(this.value)">
+                    <option value="end_of_month">當月月底（例：1/31, 2/28, 3/31）</option>
+                    <option value="specific_day">當月指定日（例：每月5日 → 1/5, 2/5）</option>
+                    <option value="next_month_day">次月指定日（例：次月15日 → 2/15, 3/15）</option>
+                    <option value="days_after_start">相對天數（例：30天後）</option>
                   </select>
+                  <small id="due-help-${clientServiceId}" style="display: block; margin-top: 5px; color: #6b7280;">
+                    選擇後會自動計算任務截止日期
+                  </small>
                 </div>
                 <div class="form-field">
-                  <label>期限日期值（如適用）</label>
-                  <input type="number" id="new-comp-due-value-${clientServiceId}" placeholder="例如：15" min="1" max="31" />
+                  <label id="due-value-label-${clientServiceId}">期限日期值</label>
+                  <input type="number" id="new-comp-due-value-${clientServiceId}" placeholder="留空則使用預設值" min="1" max="31" />
+                  <small id="due-value-help-${clientServiceId}" style="display: block; margin-top: 5px; color: #6b7280;">
+                    只有在選擇「指定日」或「相對天數」時需要填寫
+                  </small>
                 </div>
+              </div>
+              
+              <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 12px; margin: 10px 0; border-radius: 4px;">
+                <strong style="color: #1e40af;">💡 期限規則說明：</strong>
+                <ul style="margin: 8px 0 0 20px; font-size: 13px; color: #374151;">
+                  <li><strong>當月月底</strong> - 任務期限為執行月份的最後一天<br>
+                    <span style="color: #6b7280;">範例：1月執行 → 期限 1/31</span>
+                  </li>
+                  <li><strong>當月指定日</strong> - 任務期限為執行月份的指定日期<br>
+                    <span style="color: #6b7280;">範例：指定5日，1月執行 → 期限 1/5</span>
+                  </li>
+                  <li><strong>次月指定日</strong> - 任務期限為下個月的指定日期<br>
+                    <span style="color: #6b7280;">範例：指定15日，1月執行 → 期限 2/15</span>
+                  </li>
+                  <li><strong>相對天數</strong> - 任務期限為執行月份1日加上指定天數<br>
+                    <span style="color: #6b7280;">範例：30天，1月執行 → 期限 1/31</span>
+                  </li>
+                </ul>
               </div>
               <div class="form-row-2col">
                 <div class="form-field">
@@ -990,6 +1014,36 @@
     function showAddComponentForm(clientServiceId) {
       const form = document.getElementById(`add-component-form-${clientServiceId}`);
       form.style.display = 'block';
+      
+      // 创建动态帮助函数
+      window[`updateDueDateHelp${clientServiceId}`] = function(rule) {
+        const valueLabel = document.getElementById(`due-value-label-${clientServiceId}`);
+        const valueHelp = document.getElementById(`due-value-help-${clientServiceId}`);
+        const dueHelp = document.getElementById(`due-help-${clientServiceId}`);
+        
+        switch(rule) {
+          case 'end_of_month':
+            valueLabel.textContent = '期限日期值（不需要填寫）';
+            valueHelp.textContent = '系統會自動使用當月最後一天';
+            dueHelp.innerHTML = '✅ 例如：1月執行的任務 → 截止日期 1/31';
+            break;
+          case 'specific_day':
+            valueLabel.textContent = '📅 指定日期（必填）';
+            valueHelp.textContent = '填寫1-31，表示每月的幾號';
+            dueHelp.innerHTML = '✅ 例如：填寫 <strong>5</strong>，1月執行 → 截止日期 1/5';
+            break;
+          case 'next_month_day':
+            valueLabel.textContent = '📅 下月日期（必填）';
+            valueHelp.textContent = '填寫1-31，表示下個月的幾號';
+            dueHelp.innerHTML = '✅ 例如：填寫 <strong>15</strong>，1月執行 → 截止日期 2/15';
+            break;
+          case 'days_after_start':
+            valueLabel.textContent = '⏱️ 天數（必填）';
+            valueHelp.textContent = '填寫天數，從執行月份1日開始計算';
+            dueHelp.innerHTML = '✅ 例如：填寫 <strong>30</strong>，1月執行 → 截止日期 1/31';
+            break;
+        }
+      };
     }
 
     // 取消新增
