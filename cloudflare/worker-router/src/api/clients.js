@@ -296,7 +296,7 @@ export async function handleClients(request, env, me, requestId, url) {
 			const rows = await env.DATABASE.prepare(
 				`SELECT c.client_id, c.company_name, c.tax_registration_number, c.contact_person_1, c.phone, c.email, c.created_at, 
 				        u.name as assignee_name,
-				        GROUP_CONCAT(DISTINCT t.tag_name, ',') as tags
+				        GROUP_CONCAT(t.tag_name, ',') as tags
 				 FROM Clients c
 				 LEFT JOIN Users u ON u.user_id = c.assignee_user_id
 				 LEFT JOIN ClientTagAssignments a ON a.client_id = c.client_id
