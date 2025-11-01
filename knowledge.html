@@ -699,12 +699,12 @@
           </div>
           
           <div class="form-group">
-            <label>
-              標籤
-              <button type="button" onclick="addNewTag('sop')" class="btn" style="padding:2px 8px;font-size:11px;margin-left:8px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;" title="新增標籤選項">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <label style="margin:0;">標籤</label>
+              <button type="button" onclick="event.preventDefault();event.stopPropagation();addNewTag('sop')" class="btn" style="padding:2px 8px;font-size:11px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;" title="新增標籤選項">
                 ➕ 新增
               </button>
-            </label>
+            </div>
             <div id="sop-tags-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
               <!-- 標籤按鈕會動態載入 -->
             </div>
@@ -757,12 +757,12 @@
           </div>
           
           <div class="form-group">
-            <label>
-              標籤
-              <button type="button" onclick="addNewTag('faq')" class="btn" style="padding:2px 8px;font-size:11px;margin-left:8px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;" title="新增標籤選項">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <label style="margin:0;">標籤</label>
+              <button type="button" onclick="event.preventDefault();event.stopPropagation();addNewTag('faq')" class="btn" style="padding:2px 8px;font-size:11px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;" title="新增標籤選項">
                 ➕ 新增
               </button>
-            </label>
+            </div>
             <div id="faq-tags-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
               <!-- 標籤按鈕會動態載入 -->
             </div>
@@ -816,12 +816,12 @@
             </div>
             
             <div class="form-group" style="margin:0 0 16px 0;">
-              <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--text-secondary);">
-                標籤
-                <button type="button" onclick="addNewTag('resource')" class="btn" style="padding:2px 8px;font-size:11px;margin-left:8px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;" title="新增標籤選項">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <label style="margin:0;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
+                <button type="button" onclick="event.preventDefault();event.stopPropagation();addNewTag('resource')" class="btn" style="padding:2px 8px;font-size:11px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;" title="新增標籤選項">
                   ➕ 新增
                 </button>
-              </label>
+              </div>
               <div id="resource-tags-checkboxes" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
                 <!-- 標籤按鈕會動態載入 -->
               </div>
