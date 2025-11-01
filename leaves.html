@@ -147,13 +147,18 @@
         display: flex !important;
         justify-content: flex-end !important;
         gap: 12px !important;
-        margin-top: 16px !important;
+        margin-top: 8px !important;
         padding: 0 !important;
         box-sizing: border-box !important;
       }
       
       .modal__actions button {
         flex-shrink: 0 !important;
+      }
+      
+      /* 减少模态框底部内边距以容纳按钮 */
+      .modal__body {
+        padding: 20px 20px 16px 20px !important;
       }
     </style>
   </head>
