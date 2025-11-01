@@ -25,6 +25,13 @@
         vertical-align: middle;
       }
       
+      /* textarea 使用自定义高度 */
+      textarea.form-control {
+        height: auto !important;
+        min-height: 80px !important;
+        max-height: 200px !important;
+      }
+      
       .form-control:focus {
         outline: none;
         border-color: #2563eb;
@@ -134,7 +141,7 @@
             </div>
             <div class="field" style="grid-column:1 / -1;">
               <label for="event_notes">備註（選填）</label>
-              <textarea id="event_notes" name="notes" maxlength="200" placeholder="例如：關係、證明文件等" class="form-control" style="height:80px;resize:vertical;"></textarea>
+              <textarea id="event_notes" name="notes" maxlength="200" placeholder="例如：關係、證明文件等" class="form-control"></textarea>
               <div class="field__error" id="e_event_notes"></div>
             </div>
             <div class="modal__actions" style="grid-column:1 / -1;">
