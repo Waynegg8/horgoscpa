@@ -147,7 +147,7 @@
         display: flex !important;
         justify-content: flex-end !important;
         gap: 12px !important;
-        margin-top: 8px !important;
+        margin-top: 4px !important;
         padding: 0 !important;
         box-sizing: border-box !important;
       }
@@ -158,7 +158,13 @@
       
       /* 减少模态框底部内边距以容纳按钮 */
       .modal__body {
-        padding: 20px 20px 16px 20px !important;
+        padding: 20px 20px 12px 20px !important;
+      }
+      
+      /* 减少最后一个字段的错误提示高度 */
+      .field__error {
+        min-height: 14px !important;
+        margin-bottom: 0 !important;
       }
     </style>
   </head>
