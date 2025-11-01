@@ -15,7 +15,6 @@
         display: flex;
         gap: 8px;
         border-bottom: 2px solid #e5e7eb;
-        margin-bottom: 20px;
       }
       .tab-button {
         padding: 12px 24px;
@@ -203,14 +202,9 @@
     </style>
   </head>
   <body class="knowledge-page">
-    <header class="page-header" style="padding:16px 20px;display:flex;align-items:center;gap:12px;">
-      <h1 class="page-title" style="margin:0;font-size:24px;font-weight:800;color:var(--text-primary);">內部知識庫</h1>
-      <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限執行此操作</div>
-    </header>
-
     <!-- Tab切换 -->
-    <section style="padding:0 20px;">
-      <div class="tabs">
+    <section style="padding:12px 20px 0 20px;">
+      <div class="tabs" style="margin-bottom:0;">
         <button class="tab-button active" data-tab="sop">📖 SOP 流程文檔</button>
         <button class="tab-button" data-tab="faq">❓ FAQ 常見問答</button>
         <button class="tab-button" data-tab="resources">📁 資源中心</button>
@@ -218,7 +212,7 @@
     </section>
 
     <!-- 筛选区域 -->
-    <section class="filters" style="padding:0 20px 16px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+    <section class="filters" style="padding:12px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
       <div style="flex:1;min-width:220px;">
         <label for="q" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">搜尋</label>
         <input id="q" type="search" placeholder="搜尋標題/內容…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;" />
@@ -248,7 +242,7 @@
     </section>
 
     <!-- 列表区域 -->
-    <main class="content" style="padding:0 20px 24px 20px;">
+    <main class="content" style="padding:0 20px 24px 20px;margin-top:-8px;">
       <!-- SOP Tab -->
       <div id="sop-content" class="tab-content active">
         <div class="kb-layout" id="sop-layout">
