@@ -19,12 +19,6 @@
         <button id="btn-apply" class="clients-btn" type="button">申請假期</button>
         <button id="btn-event" class="clients-btn btn-secondary" type="button">登記生活事件</button>
         <input id="q" type="search" placeholder="搜尋假別/原因…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
-        <select id="status" aria-label="狀態">
-          <option value="all">全部</option>
-          <option value="pending">待審</option>
-          <option value="approved">已核准</option>
-          <option value="rejected">已駁回</option>
-        </select>
       </div>
     </header>
 
@@ -42,12 +36,9 @@
           <thead>
             <tr>
               <th>假別</th>
-              <th>起日</th>
-              <th>迄日</th>
-              <th>天數/小時</th>
-              <th>狀態</th>
+              <th>日期與時間</th>
+              <th>時數</th>
               <th>提交日期</th>
-              <th>原因</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -172,7 +163,6 @@
         const balanceEl = document.getElementById('balances');
         const tbody = document.getElementById('tbody');
         const qEl = document.getElementById('q');
-        const statusEl = document.getElementById('status');
         const prevBtn = document.getElementById('prev');
         const nextBtn = document.getElementById('next');
         const userSelectEl = document.getElementById('user-select');
@@ -212,11 +202,17 @@
               balanceEl.innerHTML = '<p style="color:rgba(15,23,42,0.7);">無餘額資料</p>';
               return;
             }
+            // 去重：如果有重複的假期類型，只保留第一個
+            const seen = new Set();
             data.forEach(b => {
+              if (seen.has(b.type)) return; // 跳過重複的
+              seen.add(b.type);
+              
               const el = document.createElement('div');
               el.className = 'balance-card';
               const label = zhType[b.type] || b.type;
-              el.innerHTML = `<h4>${label}</h4><p>剩餘 ${b.remain} / 年度額度 ${b.total}</p>`;
+              const unit = b.type === 'comp' ? '小時' : '天';
+              el.innerHTML = `<h4>${label}</h4><p>剩餘 ${b.remain} ${unit} / 年度額度 ${b.total} ${unit}</p>`;
               balanceEl.appendChild(el);
             });
           } catch (_) {
@@ -233,14 +229,10 @@
           tbody.innerHTML = '';
           rows.forEach(r => {
             const tr = document.createElement('tr');
-            const badge = r.status==='approved'? 'badge approved' : (r.status==='rejected'? 'badge rejected':'badge pending');
-            const txt = zhStatus[r.status] || r.status;
-            let amountText = `${r.amount} 小時`;
-            if (r.startTime && r.endTime) {
-              amountText += ` (${r.startTime}-${r.endTime})`;
-            }
             const typeText = zhType[r.type] || r.type;
-            tr.innerHTML = `<td>${typeText}</td><td>${r.start}</td><td>${r.end}</td><td>${amountText}</td><td><span class="${badge}">${txt}</span></td><td>${r.submittedAt?.slice(0,10) || ''}</td><td>${r.reason||''}</td>`;
+            const dateTimeText = r.start + (r.startTime && r.endTime ? ` ${r.startTime}-${r.endTime}` : '');
+            const hours = `${r.amount} 小時`;
+            tr.innerHTML = `<td>${typeText}</td><td>${dateTimeText}</td><td>${hours}</td><td>${r.submittedAt?.slice(0,10) || ''}</td>`;
             tbody.appendChild(tr);
           });
         }
@@ -250,7 +242,6 @@
           params.set('page', String(state.page));
           params.set('perPage', String(state.perPage));
           if (qEl.value.trim()) params.set('q', qEl.value.trim());
-          if (statusEl.value !== 'all') params.set('status', statusEl.value);
           if (state.isAdmin && state.selectedUserId) {
             params.set('user_id', state.selectedUserId);
           }
@@ -500,20 +491,10 @@
           }
         });
 
-        // 簡易搜尋/狀態過濾（骨架）
+        // 簡易搜尋
         const q = document.getElementById('q');
-        const status = document.getElementById('status');
         let timer = null;
-        function applyFilter(){
-          const keyword = (q.value||'').trim();
-          const st = status.value;
-          let rows = mockList.slice();
-          if (st !== 'all') rows = rows.filter(r => r.status === st);
-          if (keyword) rows = rows.filter(r => r.type.includes(keyword) || (r.reason||'').includes(keyword));
-          renderRows(rows);
-        }
         q.addEventListener('input', ()=>{ clearTimeout(timer); timer = setTimeout(()=>{ state.page=1; loadLeaves(); }, 300); });
-        status.addEventListener('change', ()=>{ state.page=1; loadLeaves(); });
         prevBtn.addEventListener('click', ()=>{ if (state.page>1) { state.page--; loadLeaves(); } });
         nextBtn.addEventListener('click', ()=>{ state.page++; loadLeaves(); });
         

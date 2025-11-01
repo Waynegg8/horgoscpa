@@ -119,9 +119,8 @@ export async function handleDevSeeding(request, env, requestId, path) {
 			await env.DATABASE.prepare(
 				"INSERT OR REPLACE INTO LeaveBalances(user_id, leave_type, year, total, used, remain, updated_at) VALUES "+
 				"(1,'annual',?,30,3,27,datetime('now')),"+
-				"(1,'sick',?,30,1,29,datetime('now')),"+
-				"(1,'comp',?,24,16,8,datetime('now'))"
-			).bind(y, y, y).run();
+				"(1,'sick',?,30,1,29,datetime('now'))"
+			).bind(y, y).run();
 			await env.DATABASE.prepare(
 				"INSERT INTO LeaveRequests (user_id, leave_type, start_date, end_date, unit, amount, reason, status, submitted_at) VALUES "+
 				"(1,'annual',date('now','-10 day'),date('now','-10 day'),'day',1,'', 'approved', datetime('now','-10 day')),"+

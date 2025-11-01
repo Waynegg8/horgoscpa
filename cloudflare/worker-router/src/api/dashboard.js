@@ -78,16 +78,23 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
 
       // Leaves (balances and recent)
       try {
+        // 排除補休類型（補休由 CompensatoryLeaveGrants 計算）
         const rows = await env.DATABASE.prepare(
-          `SELECT leave_type AS type, remain AS remaining, total, used FROM LeaveBalances WHERE user_id = ?`
+          `SELECT leave_type AS type, remain AS remaining, total, used FROM LeaveBalances WHERE user_id = ? AND leave_type != 'comp'`
         ).bind(String(me.user_id)).all();
         const bal = { annual: 0, sick: 0, compHours: 0 };
         for (const r of (rows?.results || [])) {
           const t = (r.type || '').toLowerCase();
           if (t === 'annual') bal.annual = Number(r.remaining || 0);
           else if (t === 'sick') bal.sick = Number(r.remaining || 0);
-          else if (t === 'comp') bal.compHours = Number(r.remaining || 0);
         }
+        
+        // 補休餘額從 CompensatoryLeaveGrants 計算
+        const compRow = await env.DATABASE.prepare(
+          `SELECT SUM(hours_remaining) as total FROM CompensatoryLeaveGrants 
+           WHERE user_id = ? AND status = 'active' AND hours_remaining > 0`
+        ).bind(String(me.user_id)).first();
+        bal.compHours = Number(compRow?.total || 0);
         const recentRows = await env.DATABASE.prepare(
           `SELECT leave_type AS type, start_date, end_date, amount, status FROM LeaveRequests WHERE user_id = ? ORDER BY submitted_at DESC LIMIT 3`
         ).bind(String(me.user_id)).all();
