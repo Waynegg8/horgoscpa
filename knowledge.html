@@ -2356,7 +2356,9 @@
             button.className = isSelected ? 'tag-btn selected' : 'tag-btn';
             
             // 點擊切換選中狀態
-            button.onclick = function() {
+            button.onclick = function(e) {
+              e.preventDefault();
+              e.stopPropagation();
               this.classList.toggle('selected');
             };
             
