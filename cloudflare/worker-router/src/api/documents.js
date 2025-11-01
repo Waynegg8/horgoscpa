@@ -3,12 +3,15 @@
  * 提供文档上传、列表、删除功能
  */
 
+import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+
 export async function handleDocumentsRequest(request, env, ctx, pathname, me) {
+  const corsHeaders = getCorsHeadersForRequest(request, env);
   const method = request.method;
   
   // GET /internal/api/v1/documents - 获取文档列表
   if (method === 'GET' && pathname === '/internal/api/v1/documents') {
-    return await getDocumentsList(request, env, me);
+    return await getDocumentsList(request, env, me, corsHeaders);
   }
   
   // GET /internal/api/v1/documents/:id - 获取单个文档详情
@@ -38,7 +41,7 @@ export async function handleDocumentsRequest(request, env, ctx, pathname, me) {
 }
 
 // 获取文档列表
-async function getDocumentsList(request, env, me) {
+async function getDocumentsList(request, env, me, corsHeaders) {
   try {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page')) || 1;
@@ -123,20 +126,25 @@ async function getDocumentsList(request, env, me) {
     
     return new Response(JSON.stringify({
       ok: true,
+      code: 'OK',
+      message: '成功',
       data: documents,
-      meta: { total, page, perPage }
+      meta: { total, page, perPage, requestId: 'doc-list' }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
     
   } catch (err) {
     console.error('获取文档列表失败:', err);
     return new Response(JSON.stringify({
       ok: false,
-      error: '获取文档列表失败'
+      code: 'INTERNAL_ERROR',
+      message: '伺服器錯誤',
+      error: String(err),
+      meta: { requestId: 'doc-list' }
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
   }
 }
