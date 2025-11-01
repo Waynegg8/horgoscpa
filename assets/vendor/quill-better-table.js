@@ -2957,6 +2957,13 @@ class quill_better_table_BetterTable extends Module {
     // prevent user hits backspace to delete table cell
 
     const KeyBoard = quill.getModule('keyboard');
+    
+    // 安全檢查：確保 keyboard 模組存在
+    if (!KeyBoard || !quill.keyboard) {
+      console.error('❌ Keyboard 模組未初始化');
+      return;
+    }
+    
     quill.keyboard.addBinding({
       key: 'Backspace'
     }, {}, function (range, context) {
