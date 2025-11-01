@@ -104,7 +104,7 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 					binds.push(String(me.user_id)); 
 				}
 				
-				if (q) { where.push("(l.reason LIKE ? OR l.leave_type LIKE ?)"); binds.push(`%${q}%`, `%${q}%`); }
+				if (q) { where.push("l.leave_type LIKE ?"); binds.push(`%${q}%`); }
 				if (status && ["pending","approved","rejected"].includes(status)) { where.push("l.status = ?"); binds.push(status); }
 				if (type) { where.push("l.leave_type = ?"); binds.push(type); }
 				if (dateFrom) { where.push("l.start_date >= ?"); binds.push(dateFrom); }
@@ -113,7 +113,7 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				const countRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS total FROM LeaveRequests l ${whereSql}`).bind(...binds).first();
 				const total = Number(countRow?.total || 0);
 				const rows = await env.DATABASE.prepare(
-					`SELECT l.leave_id, l.leave_type, l.start_date, l.end_date, l.unit, l.amount, l.start_time, l.end_time, l.reason, l.status, l.submitted_at
+					`SELECT l.leave_id, l.leave_type, l.start_date, l.end_date, l.unit, l.amount, l.start_time, l.end_time, l.status, l.submitted_at
 					 FROM LeaveRequests l
 					 ${whereSql}
 					 ORDER BY l.submitted_at DESC, l.leave_id DESC
@@ -128,7 +128,6 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 					amount: Number(r.amount || 0),
 					startTime: r.start_time || null,
 					endTime: r.end_time || null,
-					reason: r.reason || "",
 					status: r.status,
 					submittedAt: r.submitted_at,
 				}));
