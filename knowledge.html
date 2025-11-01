@@ -1435,70 +1435,30 @@
           const title = document.getElementById('resource-title-modal').value;
           const description = document.getElementById('resource-description-modal').value;
           const category = document.getElementById('resource-category-modal').value;
-          const tags = document.getElementById('resource-tags-modal').value.split(',').map(t => t.trim()).filter(Boolean);
+          const tags = document.getElementById('resource-tags-modal').value;
           
           try {
-            // Step 1: 获取上传签名
-            const signRes = await fetch(`${apiBase}/attachments/upload-sign`, {
+            // 使用 FormData 一步完成上传
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('title', title);
+            formData.append('description', description);
+            formData.append('category', category);
+            formData.append('tags', tags);
+            
+            const uploadRes = await fetch(`${apiBase}/documents/upload`, {
               method: 'POST',
               credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                entity_type: 'sop',
-                entity_id: 'temp_' + Date.now(),
-                filename: selectedFile.name,
-                content_type: selectedFile.type,
-                content_length: selectedFile.size
-              })
+              body: formData
             });
-            
-            const signJson = await signRes.json();
-            if (!signJson.ok || !signJson.data) {
-              throw new Error('獲取上傳URL失敗');
-            }
-            
-            // Step 2: 上传文件到R2
-            const uploadRes = await fetch(signJson.data.uploadUrl, {
-              method: 'PUT',
-              body: selectedFile,
-              headers: signJson.data.headers,
-              credentials: 'include'
-            });
-            
-            if (!uploadRes.ok) {
-              const errorText = await uploadRes.text();
-              throw new Error(`文件上傳失敗: ${errorText}`);
-            }
             
             const uploadJson = await uploadRes.json();
-            if (!uploadJson.ok) {
-              throw new Error(uploadJson.message || '文件上傳失敗');
-            }
-            
-            // Step 3: 创建文档记录
-            const docRes = await fetch(`${apiBase}/documents`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                title,
-                description,
-                file_name: selectedFile.name,
-                file_url: uploadJson.data.object_key,
-                file_size: selectedFile.size,
-                file_type: selectedFile.type,
-                category,
-                tags
-              })
-            });
-            
-            const docJson = await docRes.json();
-            if (docJson.ok) {
+            if (uploadJson.ok) {
               alert('上傳成功！');
               closeUploadDocModal();
               loadResources();
             } else {
-              alert('創建文檔記錄失敗：' + (docJson.error || '未知錯誤'));
+              alert('上傳失敗：' + (uploadJson.error || '未知錯誤'));
             }
           } catch (err) {
             alert('上傳失敗：' + err.message);

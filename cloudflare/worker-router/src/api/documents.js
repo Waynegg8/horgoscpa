@@ -17,24 +17,29 @@ export async function handleDocumentsRequest(request, env, ctx, pathname, me) {
   // GET /internal/api/v1/documents/:id - 获取单个文档详情
   if (method === 'GET' && pathname.match(/^\/internal\/api\/v1\/documents\/\d+$/)) {
     const docId = parseInt(pathname.split('/').pop());
-    return await getDocumentById(env, docId, me);
+    return await getDocumentById(env, docId, me, corsHeaders);
+  }
+  
+  // POST /internal/api/v1/documents/upload - 上传文档（一步完成）
+  if (method === 'POST' && pathname === '/internal/api/v1/documents/upload') {
+    return await uploadDocument(request, env, me, corsHeaders);
   }
   
   // POST /internal/api/v1/documents - 创建文档记录（上传后）
   if (method === 'POST' && pathname === '/internal/api/v1/documents') {
-    return await createDocument(request, env, me);
+    return await createDocument(request, env, me, corsHeaders);
   }
   
   // PUT /internal/api/v1/documents/:id - 更新文档信息
   if (method === 'PUT' && pathname.match(/^\/internal\/api\/v1\/documents\/\d+$/)) {
     const docId = parseInt(pathname.split('/').pop());
-    return await updateDocument(request, env, docId, me);
+    return await updateDocument(request, env, docId, me, corsHeaders);
   }
   
   // DELETE /internal/api/v1/documents/:id - 删除文档
   if (method === 'DELETE' && pathname.match(/^\/internal\/api\/v1\/documents\/\d+$/)) {
     const docId = parseInt(pathname.split('/').pop());
-    return await deleteDocument(env, docId, me);
+    return await deleteDocument(env, docId, me, corsHeaders);
   }
   
   return null;
@@ -152,7 +157,7 @@ async function getDocumentsList(request, env, me, corsHeaders) {
 }
 
 // 获取单个文档详情
-async function getDocumentById(env, docId, me) {
+async function getDocumentById(env, docId, me, corsHeaders) {
   try {
     const result = await env.DATABASE.prepare(`
       SELECT 
@@ -168,7 +173,7 @@ async function getDocumentById(env, docId, me) {
         d.uploaded_by,
         d.created_at,
         d.updated_at,
-        u.username as uploader_name
+        COALESCE(u.username, u.name, '未知') as uploader_name
       FROM InternalDocuments d
       LEFT JOIN Users u ON d.uploaded_by = u.user_id
       WHERE d.document_id = ? AND d.is_deleted = 0
@@ -180,7 +185,7 @@ async function getDocumentById(env, docId, me) {
         error: '文档不存在'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
     
@@ -204,7 +209,7 @@ async function getDocumentById(env, docId, me) {
       ok: true,
       data: document
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
     
   } catch (err) {
@@ -214,13 +219,140 @@ async function getDocumentById(env, docId, me) {
       error: '获取文档详情失败'
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+}
+
+// 上传文档（一步完成：上传到R2 + 创建DB记录）
+async function uploadDocument(request, env, me, corsHeaders) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file');
+    const title = formData.get('title');
+    const description = formData.get('description') || '';
+    const category = formData.get('category') || '';
+    const tags = formData.get('tags') || '';
+    
+    // 验证必填字段
+    if (!file || !title) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: '文件和标题为必填项'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+    
+    // 验证文件大小（最大 10MB）
+    if (file.size > 10 * 1024 * 1024) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: '文件大小不能超过 10MB'
+      }), {
+        status: 413,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+    
+    // 生成 R2 对象键
+    const now = Date.now();
+    const envName = String(env.APP_ENV || 'dev');
+    const ext = file.name.split('.').pop() || 'bin';
+    const objectKey = `private/${envName}/documents/${now}_${file.name}`;
+    
+    // 上传到 R2
+    if (!env.R2_BUCKET) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: 'R2 未配置'
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+    
+    await env.R2_BUCKET.put(objectKey, file.stream(), {
+      httpMetadata: {
+        contentType: file.type,
+        contentDisposition: `attachment; filename="${file.name}"`
+      },
+      customMetadata: {
+        ownerId: String(me.user_id),
+        module: 'documents'
+      }
+    });
+    
+    // 创建数据库记录
+    const tagsStr = tags;
+    const nowISO = new Date().toISOString();
+    
+    const result = await env.DATABASE.prepare(`
+      INSERT INTO InternalDocuments (
+        title,
+        description,
+        file_name,
+        file_url,
+        file_size,
+        file_type,
+        category,
+        tags,
+        uploaded_by,
+        created_at,
+        updated_at,
+        is_deleted
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+    `).bind(
+      title,
+      description || null,
+      file.name,
+      objectKey,
+      file.size,
+      file.type,
+      category || null,
+      tagsStr,
+      me?.user_id || null,
+      nowISO,
+      nowISO
+    ).run();
+    
+    return new Response(JSON.stringify({
+      ok: true,
+      data: {
+        document_id: result.meta.last_row_id,
+        title,
+        description,
+        fileName: file.name,
+        fileUrl: objectKey,
+        fileSize: file.size,
+        fileType: file.type,
+        category,
+        tags: tagsStr ? tagsStr.split(',').map(t => t.trim()) : [],
+        uploadedBy: me?.user_id,
+        createdAt: nowISO,
+        updatedAt: nowISO
+      }
+    }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+    
+  } catch (err) {
+    console.error('上传文档失败:', err);
+    console.error('错误详情:', err.message, err.stack);
+    return new Response(JSON.stringify({
+      ok: false,
+      error: '上传文档失败：' + (err.message || String(err))
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
   }
 }
 
 // 创建文档记录
-async function createDocument(request, env, me) {
+async function createDocument(request, env, me, corsHeaders) {
   try {
     const body = await request.json();
     const { title, description, file_name, file_url, file_size, file_type, category, tags } = body;
@@ -232,7 +364,7 @@ async function createDocument(request, env, me) {
         error: '标题、文件名和文件URL为必填项'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
     
@@ -286,7 +418,7 @@ async function createDocument(request, env, me) {
       }
     }), {
       status: 201,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
     
   } catch (err) {
@@ -296,13 +428,13 @@ async function createDocument(request, env, me) {
       error: '创建文档记录失败'
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
   }
 }
 
 // 更新文档信息
-async function updateDocument(request, env, docId, me) {
+async function updateDocument(request, env, docId, me, corsHeaders) {
   try {
     const body = await request.json();
     const { title, description, category, tags } = body;
@@ -318,7 +450,7 @@ async function updateDocument(request, env, docId, me) {
         error: '文档不存在'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
     
@@ -329,7 +461,7 @@ async function updateDocument(request, env, docId, me) {
         error: '标题为必填项'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
     
@@ -365,7 +497,7 @@ async function updateDocument(request, env, docId, me) {
         updatedAt: now
       }
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
     
   } catch (err) {
@@ -375,13 +507,13 @@ async function updateDocument(request, env, docId, me) {
       error: '更新文档信息失败'
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
   }
 }
 
 // 删除文档
-async function deleteDocument(env, docId, me) {
+async function deleteDocument(env, docId, me, corsHeaders) {
   try {
     // 验证文档是否存在
     const existing = await env.DATABASE.prepare(
@@ -394,7 +526,7 @@ async function deleteDocument(env, docId, me) {
         error: '文档不存在'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
     
@@ -415,7 +547,7 @@ async function deleteDocument(env, docId, me) {
       ok: true,
       message: '文档已删除'
     }), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
     
   } catch (err) {
@@ -425,7 +557,7 @@ async function deleteDocument(env, docId, me) {
       error: '删除文档失败'
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
   }
 }
