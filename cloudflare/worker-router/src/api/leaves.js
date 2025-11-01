@@ -9,24 +9,54 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 		}
 		try {
-			const params = url.searchParams; const year = parseInt(params.get("year") || String(new Date().getFullYear()), 10);
+			const params = url.searchParams; 
+			const year = parseInt(params.get("year") || String(new Date().getFullYear()), 10);
+			const queryUserId = params.get("user_id");
+			
+			// 確定查詢的用戶ID：管理員可以指定，員工只能查自己
+			let targetUserId = String(me.user_id);
+			if (queryUserId && me.is_admin) {
+				targetUserId = String(queryUserId);
+			}
+			
+			// 排除補休類型（補休由 CompensatoryLeaveGrants 計算）
 			const rows = await env.DATABASE.prepare(
-				"SELECT leave_type, year, total, used, remain FROM LeaveBalances WHERE user_id = ? AND year = ?"
-			).bind(String(me.user_id), year).all();
+				"SELECT leave_type, year, total, used, remain FROM LeaveBalances WHERE user_id = ? AND year = ? AND leave_type != 'comp'"
+			).bind(targetUserId, year).all();
 			const data = (rows?.results || []).map(r => ({ type: r.leave_type, year: Number(r.year), total: Number(r.total), used: Number(r.used), remain: Number(r.remain) }));
 			
 			// 補休餘額從 CompensatoryLeaveGrants 計算（當月有效）
 			const compRow = await env.DATABASE.prepare(
 				`SELECT SUM(hours_remaining) as total FROM CompensatoryLeaveGrants 
 				 WHERE user_id = ? AND status = 'active' AND hours_remaining > 0`
-			).bind(String(me.user_id)).first();
+			).bind(targetUserId).first();
 			const compRemain = Number(compRow?.total || 0);
 			
 			if (compRemain > 0) {
 				data.push({ type: 'comp', year, total: compRemain, used: 0, remain: compRemain });
 			}
 			
-			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, year } }, corsHeaders);
+			// 添加生活事件假期餘額
+			const lifeEventRows = await env.DATABASE.prepare(
+				`SELECT event_type, leave_type, days_granted, days_used, days_remaining, valid_until
+				 FROM LifeEventLeaveGrants 
+				 WHERE user_id = ? AND status = 'active' AND days_remaining > 0 
+				 AND date(valid_until) >= date('now')`
+			).bind(targetUserId).all();
+			
+			(lifeEventRows?.results || []).forEach(r => {
+				const typeName = r.leave_type;
+				data.push({ 
+					type: typeName, 
+					year, 
+					total: Number(r.days_granted || 0), 
+					used: Number(r.days_used || 0), 
+					remain: Number(r.days_remaining || 0),
+					validUntil: r.valid_until
+				});
+			});
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, year, userId: targetUserId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
@@ -45,9 +75,19 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				const type = (params.get("type") || "").trim();
 				const dateFrom = (params.get("dateFrom") || "").trim();
 				const dateTo = (params.get("dateTo") || "").trim();
+				const queryUserId = params.get("user_id");
 				const where = ["l.is_deleted = 0"];
 				const binds = [];
-				if (!me.is_admin) { where.push("l.user_id = ?"); binds.push(String(me.user_id)); }
+				
+				// 管理員可以指定user_id，員工只能看自己的
+				if (queryUserId && me.is_admin) {
+					where.push("l.user_id = ?");
+					binds.push(String(queryUserId));
+				} else if (!me.is_admin) { 
+					where.push("l.user_id = ?"); 
+					binds.push(String(me.user_id)); 
+				}
+				
 				if (q) { where.push("(l.reason LIKE ? OR l.leave_type LIKE ?)"); binds.push(`%${q}%`, `%${q}%`); }
 				if (status && ["pending","approved","rejected"].includes(status)) { where.push("l.status = ?"); binds.push(status); }
 				if (type) { where.push("l.leave_type = ?"); binds.push(type); }
@@ -57,7 +97,7 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				const countRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS total FROM LeaveRequests l ${whereSql}`).bind(...binds).first();
 				const total = Number(countRow?.total || 0);
 				const rows = await env.DATABASE.prepare(
-					`SELECT l.leave_id, l.leave_type, l.start_date, l.end_date, l.unit, l.amount, l.reason, l.status, l.submitted_at
+					`SELECT l.leave_id, l.leave_type, l.start_date, l.end_date, l.unit, l.amount, l.start_time, l.end_time, l.reason, l.status, l.submitted_at
 					 FROM LeaveRequests l
 					 ${whereSql}
 					 ORDER BY l.submitted_at DESC, l.leave_id DESC
@@ -70,6 +110,8 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 					end: r.end_date,
 					unit: r.unit,
 					amount: Number(r.amount || 0),
+					startTime: r.start_time || null,
+					endTime: r.end_time || null,
 					reason: r.reason || "",
 					status: r.status,
 					submittedAt: r.submitted_at,
@@ -91,24 +133,60 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			}
 			const leave_type = String(body?.leave_type || "").trim();
 			const start_date = String(body?.start_date || "").trim();
-			const end_date = String(body?.end_date || "").trim();
 			const unit = String(body?.unit || "day").trim();
 			const amount = Number(body?.amount);
-			const reason = (body?.reason || "").trim();
+			const start_time = String(body?.start_time || "").trim();
+			const end_time = String(body?.end_time || "").trim();
 			const errors = [];
 			if (!leave_type) errors.push({ field:"leave_type", message:"必選假別" });
 			if (!/^\d{4}-\d{2}-\d{2}$/.test(start_date)) errors.push({ field:"start_date", message:"日期格式 YYYY-MM-DD" });
-			if (!/^\d{4}-\d{2}-\d{2}$/.test(end_date)) errors.push({ field:"end_date", message:"日期格式 YYYY-MM-DD" });
-			if (start_date && end_date && end_date < start_date) errors.push({ field:"end_date", message:"結束日期不可早於開始日期" });
 			if (!["day","half","hour"].includes(unit)) errors.push({ field:"unit", message:"單位錯誤" });
 			if (!Number.isFinite(amount) || amount <= 0) errors.push({ field:"amount", message:"需大於 0" });
 			// 如果單位是小時，驗證必須是 0.5 的倍數（與工時系統保持一致）
 			if (unit === 'hour' && Math.abs(amount * 2 - Math.round(amount * 2)) > 1e-9) {
 				errors.push({ field:"amount", message:"請假小時數必須是 0.5 的倍數（例如：0.5、1、1.5、2）" });
 			}
-			if (reason.length > 200) errors.push({ field:"reason", message:"請勿超過 200 字" });
-			if (["maternity","menstrual"].includes(leave_type) && me.gender === 'M') errors.push({ field:"leave_type", message:"此假別僅限女性" });
-			if (leave_type === 'paternity' && me.gender === 'F') errors.push({ field:"leave_type", message:"此假別僅限男性" });
+			// 如果是小時單位，必須提供時間
+			if (unit === 'hour') {
+				if (!/^\d{2}:\d{2}$/.test(start_time)) errors.push({ field:"start_time", message:"請選擇開始時間（格式 HH:MM）" });
+				if (!/^\d{2}:\d{2}$/.test(end_time)) errors.push({ field:"end_time", message:"請選擇結束時間（格式 HH:MM）" });
+				
+				// 驗證時間必須是30分鐘的倍數
+				if (start_time && /^\d{2}:\d{2}$/.test(start_time)) {
+					const [h, m] = start_time.split(':').map(Number);
+					if (m !== 0 && m !== 30) errors.push({ field:"start_time", message:"時間必須是整點或半點（如 9:00、9:30）" });
+				}
+				if (end_time && /^\d{2}:\d{2}$/.test(end_time)) {
+					const [h, m] = end_time.split(':').map(Number);
+					if (m !== 0 && m !== 30) errors.push({ field:"end_time", message:"時間必須是整點或半點（如 9:00、9:30）" });
+				}
+			}
+			// 性別限制檢查
+			const femaleOnlyLeaveTypes = ['maternity', 'menstrual', 'prenatal_checkup'];
+			const maleOnlyLeaveTypes = ['paternity'];
+			
+			if (femaleOnlyLeaveTypes.includes(leave_type) && me.gender === 'M') {
+				errors.push({ field:"leave_type", message:"此假別僅限女性" });
+			}
+			if (maleOnlyLeaveTypes.includes(leave_type) && me.gender === 'F') {
+				errors.push({ field:"leave_type", message:"此假別僅限男性" });
+			}
+			
+			// 需要先登記生活事件的假別，檢查是否有足夠餘額
+			const lifeEventLeaveTypes = ['marriage', 'funeral', 'maternity', 'prenatal_checkup', 'paternity'];
+			if (lifeEventLeaveTypes.includes(leave_type)) {
+				const daysNeeded = unit === 'hour' ? amount / 8 : (unit === 'half' ? amount * 0.5 : amount);
+				const grantRow = await env.DATABASE.prepare(
+					`SELECT SUM(days_remaining) as available FROM LifeEventLeaveGrants 
+					 WHERE user_id = ? AND leave_type = ? AND status = 'active' 
+					 AND date(valid_until) >= date('now')`
+				).bind(String(me.user_id), leave_type).first();
+				
+				const availableDays = Number(grantRow?.available || 0);
+				if (availableDays < daysNeeded) {
+					errors.push({ field:"leave_type", message:`${leave_type}餘額不足，請先登記生活事件。剩餘：${availableDays}日，需要：${daysNeeded}日` });
+				}
+			}
 			
 			// 補休特殊處理：檢查餘額（FIFO）
 			if (leave_type === 'comp') {
@@ -127,10 +205,10 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
 
 			try {
-				// 建立請假申請
+				// 建立請假申請（自動批准，結束日期等於開始日期）
 				await env.DATABASE.prepare(
-					"INSERT INTO LeaveRequests (user_id, leave_type, start_date, end_date, unit, amount, reason, status, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))"
-				).bind(String(me.user_id), leave_type, start_date, end_date, unit, amount, reason).run();
+					"INSERT INTO LeaveRequests (user_id, leave_type, start_date, end_date, unit, amount, start_time, end_time, status, submitted_at, reviewed_at, reviewed_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved', datetime('now'), datetime('now'), ?)"
+				).bind(String(me.user_id), leave_type, start_date, start_date, unit, amount, start_time || null, end_time || null, String(me.user_id)).run();
 				const idRow = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
 				const leaveId = String(idRow?.id);
 				
@@ -161,7 +239,7 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 					}
 				}
 				
-				return jsonResponse(201, { ok:true, code:"CREATED", message:"已送出審核", data:{ leaveId }, meta:{ requestId } }, corsHeaders);
+				return jsonResponse(201, { ok:true, code:"CREATED", message:"申請成功", data:{ leaveId }, meta:{ requestId } }, corsHeaders);
 			} catch (err) {
 				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
@@ -327,6 +405,106 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 		}
 	}
 
+	// 登記生活事件，自動授予假期
+	if (path === "/internal/api/v1/leaves/life-events" && method === "POST") {
+		let body;
+		try { body = await request.json(); } catch (_) {
+			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
+		}
+		
+		const event_type = String(body?.event_type || "").trim();
+		const event_date = String(body?.event_date || "").trim();
+		const notes = String(body?.notes || "").trim();
+		const user_id = body?.user_id ? String(body.user_id) : String(me.user_id);
+		
+		// 權限檢查：非管理員只能為自己登記
+		if (!me.is_admin && user_id !== String(me.user_id)) {
+			return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
+		}
+		
+		const errors = [];
+		if (!event_type) errors.push({ field:"event_type", message:"請選擇事件類型" });
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(event_date)) errors.push({ field:"event_date", message:"日期格式 YYYY-MM-DD" });
+		
+		// 定義各種生活事件的假期規則（依勞基法及性別工作平等法）
+		const eventRules = {
+			marriage: { leave_type: 'marriage', days: 8, valid_days: 365, name: '婚假', gender: null },
+			funeral_parent: { leave_type: 'funeral', days: 8, valid_days: 365, name: '喪假（父母/養父母/繼父母/配偶喪亡）', gender: null },
+			funeral_grandparent: { leave_type: 'funeral', days: 6, valid_days: 365, name: '喪假（祖父母/子女/配偶之父母喪亡）', gender: null },
+			funeral_sibling: { leave_type: 'funeral', days: 3, valid_days: 365, name: '喪假（曾祖父母/兄弟姊妹/配偶之祖父母喪亡）', gender: null },
+			maternity: { leave_type: 'maternity', days: 56, valid_days: 180, name: '產假（分娩前後8週）', gender: 'F' },
+			miscarriage: { leave_type: 'maternity', days: 28, valid_days: 180, name: '產假（妊娠3個月以上流產4週）', gender: 'F' },
+			pregnancy: { leave_type: 'prenatal_checkup', days: 7, valid_days: 365, name: '產檢假（妊娠期間7日）', gender: 'F' },
+			paternity: { leave_type: 'paternity', days: 7, valid_days: 60, name: '陪產檢及陪產假（配偶分娩或懷孕7日）', gender: 'M' },
+		};
+		
+		const rule = eventRules[event_type];
+		if (!rule) {
+			errors.push({ field:"event_type", message:"無效的事件類型" });
+		}
+		
+		// 性別限制檢查
+		if (rule && rule.gender) {
+			// 獲取目標用戶的性別
+			const userRow = await env.DATABASE.prepare(
+				"SELECT gender FROM Users WHERE user_id = ?"
+			).bind(user_id).first();
+			
+			const userGender = userRow?.gender;
+			if (userGender !== rule.gender) {
+				const genderName = rule.gender === 'F' ? '女性' : '男性';
+				errors.push({ field:"event_type", message:`此事件類型僅限${genderName}` });
+			}
+		}
+		
+		if (errors.length) {
+			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
+		}
+		
+		try {
+			// 計算有效期
+			const eventDateObj = new Date(event_date);
+			const validFrom = event_date;
+			const validUntilObj = new Date(eventDateObj);
+			validUntilObj.setDate(validUntilObj.getDate() + rule.valid_days);
+			const validUntil = validUntilObj.toISOString().slice(0, 10);
+			
+			// 建立生活事件假期授予記錄
+			await env.DATABASE.prepare(
+				`INSERT INTO LifeEventLeaveGrants 
+				 (user_id, event_type, event_date, leave_type, days_granted, days_used, days_remaining, 
+				  valid_from, valid_until, notes, status, created_by) 
+				 VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 'active', ?)`
+			).bind(
+				user_id, 
+				event_type, 
+				event_date, 
+				rule.leave_type, 
+				rule.days, 
+				rule.days, 
+				validFrom, 
+				validUntil, 
+				notes || null, 
+				String(me.user_id)
+			).run();
+			
+			const idRow = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
+			const grantId = String(idRow?.id);
+			
+			return jsonResponse(201, { 
+				ok:true, 
+				code:"CREATED", 
+				message:`已登記${rule.name}，授予 ${rule.days} 天假期`, 
+				data:{ grantId, daysGranted: rule.days, validUntil }, 
+				meta:{ requestId } 
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+	
 	return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 }
 

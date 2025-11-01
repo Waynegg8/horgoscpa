@@ -11,8 +11,11 @@
   </head>
   <body class="leaves-page">
     <header class="leaves-header">
-      <h1 class="leaves-title">我的假期</h1>
+      <h1 class="leaves-title">假期管理</h1>
       <div class="leaves-toolbar">
+        <select id="user-select" aria-label="選擇員工" style="display:none;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:180px;">
+          <option value="">全部員工</option>
+        </select>
         <button id="btn-apply" class="clients-btn" type="button">申請假期</button>
         <button id="btn-event" class="clients-btn btn-secondary" type="button">登記生活事件</button>
         <input id="q" type="search" placeholder="搜尋假別/原因…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
@@ -56,6 +59,50 @@
       </section>
     </main>
 
+    <!-- 登記生活事件對話框 -->
+    <div class="modal-overlay" id="eventModal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal" role="document">
+        <div class="modal__header">
+          <h2 class="modal__title">登記生活事件</h2>
+          <button class="modal__close" type="button" id="btn-event-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <form id="eventForm" class="form-grid">
+            <div class="field">
+              <label for="event_type">事件類型</label>
+              <select id="event_type" name="event_type" required>
+                <option value="">請選擇</option>
+                <option value="marriage">結婚（8日婚假，工資照給）</option>
+                <option value="funeral_parent">父母/養父母/繼父母/配偶喪亡（8日喪假）</option>
+                <option value="funeral_grandparent">祖父母/子女/配偶之父母喪亡（6日喪假）</option>
+                <option value="funeral_sibling">曾祖父母/兄弟姊妹/配偶之祖父母喪亡（3日喪假）</option>
+                <option value="maternity" data-gender="F">分娩（8週產假，女性）</option>
+                <option value="miscarriage" data-gender="F">妊娠3個月以上流產（4週產假，女性）</option>
+                <option value="pregnancy" data-gender="F">妊娠（7日產檢假，女性）</option>
+                <option value="paternity" data-gender="M">配偶分娩或懷孕（7日陪產檢及陪產假，男性）</option>
+              </select>
+              <div class="field__hint">事件類型會依您的性別自動過濾。</div>
+              <div class="field__error" id="e_event_type"></div>
+            </div>
+            <div class="field">
+              <label for="event_date">事件日期</label>
+              <input id="event_date" name="event_date" type="date" required />
+              <div class="field__error" id="e_event_date"></div>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="event_notes">備註（選填）</label>
+              <textarea id="event_notes" name="notes" maxlength="200" placeholder="例如：關係、證明文件等"></textarea>
+              <div class="field__error" id="e_event_notes"></div>
+            </div>
+            <div class="modal__actions" style="grid-column:1 / -1;">
+              <button class="btn-secondary" type="button" id="btn-event-cancel">取消</button>
+              <button class="clients-btn" type="submit" id="btn-event-submit">登記</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <!-- 申請假期對話框（骨架） -->
     <div class="modal-overlay" id="applyModal" aria-hidden="true" role="dialog" aria-modal="true">
       <div class="modal" role="document">
@@ -70,25 +117,24 @@
               <select id="leave_type" name="leave_type" required>
                 <option value="">請選擇</option>
                 <option value="annual">特休</option>
-                <option value="sick">病假</option>
+                <option value="sick">病假（普通傷病假）</option>
                 <option value="personal">事假</option>
                 <option value="comp">補休</option>
-                <option value="maternity">產假（女性）</option>
-                <option value="menstrual">生理假（女性）</option>
-                <option value="paternity">陪產假（男性）</option>
+                <option value="menstrual" data-gender="F">生理假（女性，每月1日）</option>
+                <option value="maternity" data-gender="F">產假（女性，需先登記生活事件）</option>
+                <option value="prenatal_checkup" data-gender="F">產檢假（女性，需先登記生活事件）</option>
+                <option value="paternity" data-gender="M">陪產檢及陪產假（男性，需先登記生活事件）</option>
+                <option value="marriage">婚假（需先登記生活事件）</option>
+                <option value="funeral">喪假（需先登記生活事件）</option>
+                <option value="public">公假</option>
               </select>
-              <div class="field__hint">假別將依性別自動過濾（示意）。</div>
+              <div class="field__hint">假別會依您的性別自動過濾，生活事件假期需先登記事件。</div>
               <div class="field__error" id="e_type"></div>
             </div>
             <div class="field">
-              <label for="start_date">開始日期</label>
+              <label for="start_date">日期</label>
               <input id="start_date" name="start_date" type="date" required />
               <div class="field__error" id="e_start"></div>
-            </div>
-            <div class="field">
-              <label for="end_date">結束日期</label>
-              <input id="end_date" name="end_date" type="date" required />
-              <div class="field__error" id="e_end"></div>
             </div>
             <div class="field">
               <label for="unit">請假單位</label>
@@ -103,14 +149,19 @@
               <input id="amount" name="amount" type="number" step="0.5" min="0.5" value="1" />
               <div class="field__error" id="e_amount"></div>
             </div>
-            <div class="field" style="grid-column:1 / -1;">
-              <label for="reason">原因（最多 200 字）</label>
-              <textarea id="reason" name="reason" maxlength="200"></textarea>
-              <div class="field__error" id="e_reason"></div>
+            <div class="field time-field" id="start_time_field" style="display:none;">
+              <label for="start_time">開始時間</label>
+              <input id="start_time" name="start_time" type="time" step="1800" />
+              <div class="field__error" id="e_start_time"></div>
+            </div>
+            <div class="field time-field" id="end_time_field" style="display:none;">
+              <label for="end_time">結束時間</label>
+              <input id="end_time" name="end_time" type="time" step="1800" />
+              <div class="field__error" id="e_end_time"></div>
             </div>
             <div class="modal__actions" style="grid-column:1 / -1;">
               <button class="btn-secondary" type="button" id="btn-cancel">取消</button>
-              <button class="clients-btn" type="submit" id="btn-submit">送出申請（骨架）</button>
+              <button class="clients-btn" type="submit" id="btn-submit">送出申請</button>
             </div>
           </form>
         </div>
@@ -128,17 +179,35 @@
         const statusEl = document.getElementById('status');
         const prevBtn = document.getElementById('prev');
         const nextBtn = document.getElementById('next');
+        const userSelectEl = document.getElementById('user-select');
 
-        const zhType = { annual:'特休', sick:'病假', personal:'事假', comp:'補休', maternity:'產假', menstrual:'生理假', paternity:'陪產假' };
+        const zhType = { 
+          annual:'特休', 
+          sick:'病假', 
+          personal:'事假', 
+          comp:'補休', 
+          menstrual:'生理假', 
+          maternity:'產假', 
+          prenatal_checkup:'產檢假',
+          paternity:'陪產檢及陪產假', 
+          marriage:'婚假', 
+          funeral:'喪假',
+          public:'公假'
+        };
         const zhStatus = { pending:'待審', approved:'已核准', rejected:'已駁回' };
 
-        let state = { page:1, perPage:20, total:0 };
+        let state = { page:1, perPage:20, total:0, isAdmin: false, selectedUserId: null };
 
         async function loadBalances(){
           balanceEl.innerHTML = '';
           const year = new Date().getFullYear();
           try {
-            const res = await fetch(`${apiBase}/leaves/balances?year=${year}`, { credentials:'include' });
+            const params = new URLSearchParams();
+            params.set('year', year);
+            if (state.isAdmin && state.selectedUserId) {
+              params.set('user_id', state.selectedUserId);
+            }
+            const res = await fetch(`${apiBase}/leaves/balances?${params.toString()}`, { credentials:'include' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
             const json = await res.json();
             if (!res.ok || !json || json.ok !== true) throw new Error();
@@ -170,7 +239,10 @@
             const tr = document.createElement('tr');
             const badge = r.status==='approved'? 'badge approved' : (r.status==='rejected'? 'badge rejected':'badge pending');
             const txt = zhStatus[r.status] || r.status;
-            const amountText = r.unit==='hour' ? `${r.amount} 小時` : `${r.amount} 天`;
+            let amountText = r.unit==='hour' ? `${r.amount} 小時` : `${r.amount} 天`;
+            if (r.unit === 'hour' && r.startTime && r.endTime) {
+              amountText += ` (${r.startTime}-${r.endTime})`;
+            }
             const typeText = zhType[r.type] || r.type;
             tr.innerHTML = `<td>${typeText}</td><td>${r.start}</td><td>${r.end}</td><td>${amountText}</td><td><span class="${badge}">${txt}</span></td><td>${r.submittedAt?.slice(0,10) || ''}</td><td>${r.reason||''}</td>`;
             tbody.appendChild(tr);
@@ -183,6 +255,9 @@
           params.set('perPage', String(state.perPage));
           if (qEl.value.trim()) params.set('q', qEl.value.trim());
           if (statusEl.value !== 'all') params.set('status', statusEl.value);
+          if (state.isAdmin && state.selectedUserId) {
+            params.set('user_id', state.selectedUserId);
+          }
           try {
             const res = await fetch(`${apiBase}/leaves?${params.toString()}`, { credentials:'include' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
@@ -197,6 +272,51 @@
           }
         }
 
+        // 登記生活事件對話框
+        const eventModal = document.getElementById('eventModal');
+        const eventOpenBtn = document.getElementById('btn-event');
+        const eventCloseBtn = document.getElementById('btn-event-close');
+        const eventCancelBtn = document.getElementById('btn-event-cancel');
+        const eventForm = document.getElementById('eventForm');
+        function openEventModal(){ eventModal.classList.add('active'); eventModal.setAttribute('aria-hidden','false'); document.getElementById('event_type').focus(); }
+        function closeEventModal(){ eventModal.classList.remove('active'); eventModal.setAttribute('aria-hidden','true'); eventForm.reset(); clearEventErrors(); }
+        function clearEventErrors(){ ['event_type','event_date','event_notes'].forEach(k=>{ const el=document.getElementById('e_'+k); if(el) el.textContent=''; }); }
+        eventOpenBtn.addEventListener('click', openEventModal);
+        eventCloseBtn.addEventListener('click', closeEventModal);
+        eventCancelBtn.addEventListener('click', closeEventModal);
+
+        eventForm.addEventListener('submit', async function(e){
+          e.preventDefault();
+          clearEventErrors();
+          const eventType = document.getElementById('event_type').value;
+          const eventDate = document.getElementById('event_date').value;
+          const notes = document.getElementById('event_notes').value.trim();
+          let hasErr = false;
+          if (!eventType) { document.getElementById('e_event_type').textContent='請選擇事件類型'; hasErr = true; }
+          if (!eventDate) { document.getElementById('e_event_date').textContent='請選擇日期'; hasErr = true; }
+          if (hasErr) return;
+          const payload = { event_type: eventType, event_date: eventDate, notes };
+          const submitBtn = document.getElementById('btn-event-submit');
+          submitBtn.disabled = true; submitBtn.textContent = '登記中…';
+          try {
+            const res = await fetch(`${apiBase}/leaves/life-events`, { method:'POST', headers:{ 'Content-Type':'application/json' }, credentials:'include', body: JSON.stringify(payload) });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
+            const json = await res.json().catch(()=>null);
+            if (!res.ok || !json || json.ok !== true) {
+              const msg = (json && json.message) || '登記失敗';
+              alert(msg);
+              return;
+            }
+            alert(json.message || '登記成功');
+            closeEventModal();
+            await loadBalances();
+          } catch (_) {
+            alert('登記失敗，請稍後再試');
+          } finally {
+            submitBtn.disabled = false; submitBtn.textContent = '登記';
+          }
+        });
+        
         // 申請假期對話框（骨架）
         const modal = document.getElementById('applyModal');
         const openBtn = document.getElementById('btn-apply');
@@ -205,29 +325,57 @@
         const form = document.getElementById('applyForm');
         function openModal(){ modal.classList.add('active'); modal.setAttribute('aria-hidden','false'); document.getElementById('leave_type').focus(); }
         function closeModal(){ modal.classList.remove('active'); modal.setAttribute('aria-hidden','true'); form.reset(); clearErrors(); }
-        function clearErrors(){ ['type','start','end','amount','reason'].forEach(k=>{ const el=document.getElementById('e_'+k); if(el) el.textContent=''; }); }
+        function clearErrors(){ ['type','start','amount','start_time','end_time'].forEach(k=>{ const el=document.getElementById('e_'+k); if(el) el.textContent=''; }); }
         openBtn.addEventListener('click', openModal);
         closeBtn.addEventListener('click', closeModal);
         cancelBtn.addEventListener('click', closeModal);
+
+        // 監聽單位變化，顯示/隱藏時間欄位
+        const unitSelect = document.getElementById('unit');
+        const startTimeField = document.getElementById('start_time_field');
+        const endTimeField = document.getElementById('end_time_field');
+        const startTimeInput = document.getElementById('start_time');
+        const endTimeInput = document.getElementById('end_time');
+        
+        unitSelect.addEventListener('change', function() {
+          if (this.value === 'hour') {
+            startTimeField.style.display = 'block';
+            endTimeField.style.display = 'block';
+            startTimeInput.required = true;
+            endTimeInput.required = true;
+          } else {
+            startTimeField.style.display = 'none';
+            endTimeField.style.display = 'none';
+            startTimeInput.required = false;
+            endTimeInput.required = false;
+            startTimeInput.value = '';
+            endTimeInput.value = '';
+          }
+        });
 
         form.addEventListener('submit', async function(e){
           e.preventDefault();
           clearErrors();
           const t = document.getElementById('leave_type').value;
           const s = document.getElementById('start_date').value;
-          const ed = document.getElementById('end_date').value;
           const unit = document.getElementById('unit').value;
           const amt = parseFloat(document.getElementById('amount').value);
-          const rsn = document.getElementById('reason').value.trim();
+          const startTime = document.getElementById('start_time').value;
+          const endTime = document.getElementById('end_time').value;
           let hasErr = false;
           if (!t) { document.getElementById('e_type').textContent='請選擇假別'; hasErr = true; }
-          if (!s) { document.getElementById('e_start').textContent='請選擇開始日期'; hasErr = true; }
-          if (!ed) { document.getElementById('e_end').textContent='請選擇結束日期'; hasErr = true; }
-          if (s && ed && ed < s) { document.getElementById('e_end').textContent='結束日期不可早於開始日期'; hasErr = true; }
+          if (!s) { document.getElementById('e_start').textContent='請選擇日期'; hasErr = true; }
           if (!Number.isFinite(amt) || amt <= 0) { document.getElementById('e_amount').textContent='請輸入正確的天數/小時'; hasErr = true; }
-          if (rsn.length > 200) { document.getElementById('e_reason').textContent='請勿超過 200 字'; hasErr = true; }
+          if (unit === 'hour') {
+            if (!startTime) { document.getElementById('e_start_time').textContent='請選擇開始時間'; hasErr = true; }
+            if (!endTime) { document.getElementById('e_end_time').textContent='請選擇結束時間'; hasErr = true; }
+          }
           if (hasErr) return;
-          const payload = { leave_type: t, start_date: s, end_date: ed, unit, amount: amt, reason: rsn };
+          const payload = { leave_type: t, start_date: s, unit, amount: amt };
+          if (unit === 'hour') {
+            payload.start_time = startTime;
+            payload.end_time = endTime;
+          }
           const submitBtn = document.getElementById('btn-submit');
           submitBtn.disabled = true; submitBtn.textContent = '送出中…';
           try {
@@ -241,13 +389,13 @@
               } else { alert(msg); }
               return;
             }
-            alert('已送出審核');
+            alert('申請成功');
             closeModal();
             state.page = 1; await loadBalances(); await loadLeaves();
           } catch (_) {
             alert('送出失敗，請稍後再試');
           } finally {
-            submitBtn.disabled = false; submitBtn.textContent = '送出申請（骨架）';
+            submitBtn.disabled = false; submitBtn.textContent = '送出申請';
           }
         });
 
@@ -267,10 +415,93 @@
         status.addEventListener('change', ()=>{ state.page=1; loadLeaves(); });
         prevBtn.addEventListener('click', ()=>{ if (state.page>1) { state.page--; loadLeaves(); } });
         nextBtn.addEventListener('click', ()=>{ state.page++; loadLeaves(); });
+        
+        // 員工選擇器變更
+        userSelectEl.addEventListener('change', function() {
+          state.selectedUserId = this.value || null;
+          state.page = 1;
+          loadBalances();
+          loadLeaves();
+        });
 
-        // init
-        loadBalances();
-        loadLeaves();
+        // 根據性別過濾假期選項
+        function filterLeaveTypesByGender(gender) {
+          const leaveTypeSelect = document.getElementById('leave_type');
+          const options = leaveTypeSelect.querySelectorAll('option');
+          options.forEach(option => {
+            const requiredGender = option.getAttribute('data-gender');
+            if (requiredGender && requiredGender !== gender) {
+              option.style.display = 'none';
+              option.disabled = true;
+            } else {
+              option.style.display = '';
+              option.disabled = false;
+            }
+          });
+        }
+
+        // 根據性別過濾生活事件選項
+        function filterEventTypesByGender(gender) {
+          const eventTypeSelect = document.getElementById('event_type');
+          const options = eventTypeSelect.querySelectorAll('option');
+          options.forEach(option => {
+            const requiredGender = option.getAttribute('data-gender');
+            if (requiredGender && requiredGender !== gender) {
+              option.style.display = 'none';
+              option.disabled = true;
+            } else {
+              option.style.display = '';
+              option.disabled = false;
+            }
+          });
+        }
+
+        // 初始化：檢查用戶權限並載入員工列表
+        async function init() {
+          try {
+            // 獲取當前用戶信息
+            const meRes = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
+            if (meRes.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
+            const meJson = await meRes.json();
+            if (meJson.ok && meJson.data) {
+              state.isAdmin = meJson.data.isAdmin || false;
+              const userGender = meJson.data.gender || null;
+              
+              // 根據性別過濾假期選項
+              if (userGender) {
+                filterLeaveTypesByGender(userGender);
+                filterEventTypesByGender(userGender);
+              }
+              
+              // 如果是管理員，顯示員工選擇器並載入員工列表
+              if (state.isAdmin) {
+                userSelectEl.style.display = 'block';
+                
+                // 載入員工列表
+                const usersRes = await fetch(`${apiBase}/settings/users`, { credentials:'include' });
+                if (usersRes.ok) {
+                  const usersJson = await usersRes.json();
+                  if (usersJson.ok && usersJson.data) {
+                    usersJson.data.forEach(user => {
+                      const option = document.createElement('option');
+                      option.value = user.userId;
+                      option.textContent = user.name;
+                      userSelectEl.appendChild(option);
+                    });
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            console.error('初始化失敗:', err);
+          }
+          
+          // 載入數據
+          loadBalances();
+          loadLeaves();
+        }
+        
+        init();
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
