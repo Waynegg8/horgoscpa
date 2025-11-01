@@ -93,6 +93,14 @@ export default {
 		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 		return handleServices(request, env, me, requestId, url, path);
 	}
+	
+	// 服务组成部分API
+	if (path.includes("/client-services/") && path.includes("/components") || 
+	    path.includes("/service-components/")) {
+		const result = await handleServiceComponents(request, env, path);
+		if (result) return result;
+	}
+	
 		if (path === "/internal/api/v1/tasks") {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
