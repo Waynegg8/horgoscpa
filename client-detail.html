@@ -1657,34 +1657,7 @@
                 
                 <!-- SOP列表 -->
                 <div id="new-comp-sop-list-${clientServiceId}" style="max-height: 200px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 4px; padding: 6px; background: white;">
-                  ${allSOPs.length > 0 ? (() => {
-                    // 按分类分组
-                    const grouped = {};
-                    allSOPs.forEach(sop => {
-                      const cat = sop.category || 'other';
-                      if (!grouped[cat]) grouped[cat] = [];
-                      grouped[cat].push(sop);
-                    });
-                    
-                    let html = '';
-                    Object.entries(grouped).forEach(([category, sops]) => {
-                      const catName = getCategoryText(category);
-                      html += '<div style="margin-bottom: 6px;">';
-                      html += '<div style="font-weight: 600; font-size: 11px; color: #6b7280; margin-bottom: 3px; padding: 2px 6px; background: #e5e7eb; border-radius: 3px;">' + catName + '</div>';
-                      
-                      sops.forEach(sop => {
-                        html += '<label class="comp-sop-option" data-sop-title="' + (sop.title || '').toLowerCase() + '" data-sop-category="' + category + '"';
-                        html += ' style="display: flex; align-items: center; gap: 6px; padding: 3px 4px; cursor: pointer; font-size: 13px; margin-bottom: 2px; margin-left: 8px; border-radius: 3px;"';
-                        html += ' onmouseover="this.style.background=\'#e5e7eb\'" onmouseout="this.style.background=\'transparent\'">';
-                        html += '<input type="checkbox" class="comp-sop-checkbox" value="' + sop.sop_id + '" style="cursor: pointer; flex-shrink: 0;" onchange="updateCompSOPSelection' + clientServiceId + '(this)" />';
-                        html += '<span style="color: #374151;">' + (sop.title || '未命名') + '</span>';
-                        html += '</label>';
-                      });
-                      
-                      html += '</div>';
-                    });
-                    return html;
-                  })() : '<div style="color: #9ca3af; text-align: center; padding: 20px;">暫無SOP</div>'}
+                  <div style="color: #9ca3af; text-align: center; padding: 20px;">載入中...</div>
                 </div>
                 <small style="display: block; margin-top: 5px; color: #6b7280;">💡 選擇SOP作為服務流程參考（目前僅支持選擇一個）</small>
               </div>
@@ -2416,6 +2389,38 @@
       
       // 初始化任务配置区域（默认手动模式）
       window[`loadTemplateStages${clientServiceId}`]('');
+      
+      // 渲染SOP列表
+      const sopListContainer = document.getElementById(`new-comp-sop-list-${clientServiceId}`);
+      if (sopListContainer && allSOPs && allSOPs.length > 0) {
+        // 按分类分组
+        const grouped = {};
+        allSOPs.forEach(sop => {
+          const cat = sop.category || 'other';
+          if (!grouped[cat]) grouped[cat] = [];
+          grouped[cat].push(sop);
+        });
+        
+        let html = '';
+        Object.entries(grouped).forEach(([category, sops]) => {
+          const catName = getCategoryText(category);
+          html += '<div style="margin-bottom: 6px;">';
+          html += '<div style="font-weight: 600; font-size: 11px; color: #6b7280; margin-bottom: 3px; padding: 2px 6px; background: #e5e7eb; border-radius: 3px;">' + catName + '</div>';
+          
+          sops.forEach(sop => {
+            const sopTitle = sop.title || '未命名';
+            html += '<label class="comp-sop-option" data-sop-title="' + sopTitle.toLowerCase() + '" data-sop-category="' + category + '" style="display: flex; align-items: center; gap: 6px; padding: 3px 4px; cursor: pointer; font-size: 13px; margin-bottom: 2px; margin-left: 8px; border-radius: 3px;" onmouseover="this.style.background=\'#e5e7eb\'" onmouseout="this.style.background=\'transparent\'">';
+            html += '<input type="checkbox" class="comp-sop-checkbox" value="' + sop.sop_id + '" style="cursor: pointer; flex-shrink: 0;" onchange="updateCompSOPSelection' + clientServiceId + '(this)" />';
+            html += '<span style="color: #374151;">' + sopTitle + '</span>';
+            html += '</label>';
+          });
+          
+          html += '</div>';
+        });
+        sopListContainer.innerHTML = html;
+      } else {
+        sopListContainer.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">暫無SOP</div>';
+      }
     }
 
     // 取消新增

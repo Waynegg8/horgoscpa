@@ -240,20 +240,29 @@
     // 載入任務詳情
     async function loadTaskDetail() {
       try {
-        const res = await fetch(`${apiBase}/tasks/${currentTaskId}`, { credentials: 'include' });
+        const url = `${apiBase}/tasks/${currentTaskId}`;
+        console.log('載入任務詳情 URL:', url);
+        
+        const res = await fetch(url, { credentials: 'include' });
+        console.log('任務詳情響應狀態:', res.status);
+        
         if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
         if (res.status === 404) {
           alert('任務不存在');
           window.location.href = '/internal/tasks';
           return;
         }
+        
         const json = await res.json();
+        console.log('任務詳情數據:', json);
+        
         if (!json.ok) {
           alert(json.message || '載入失敗');
           return;
         }
 
         currentTask = json.data;
+        console.log('當前任務:', currentTask);
         
         // 更新頁面
         document.getElementById('taskTitle').textContent = currentTask.task_name || '任務詳情';
@@ -264,12 +273,14 @@
         document.getElementById('dueDate').value = currentTask.due_date || '';
         document.getElementById('taskNotes').value = currentTask.notes || '';
         
+        console.log('已填充表單字段');
+        
         // 更新進度
         updateProgress(currentTask.completed_stages || 0, currentTask.total_stages || 0);
         
       } catch (err) {
         console.error('載入任務詳情失敗:', err);
-        alert('載入失敗');
+        alert('載入失敗: ' + err.message);
       }
     }
 
