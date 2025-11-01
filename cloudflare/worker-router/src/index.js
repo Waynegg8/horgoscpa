@@ -106,11 +106,11 @@ export default {
 		if (result) return result;
 	}
 	
-		if (path === "/internal/api/v1/tasks") {
-			const me = await getSessionUser(request, env);
-			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
-			return handleTasks(request, env, me, requestId, url);
-		}
+	if (path === "/internal/api/v1/tasks" || path.startsWith("/internal/api/v1/tasks/")) {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		return handleTasks(request, env, me, requestId, url);
+	}
 	if (path === "/internal/api/v1/timesheets" || path.startsWith("/internal/api/v1/timelogs")) {
 		const me = await getSessionUser(request, env);
 		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
@@ -127,11 +127,11 @@ export default {
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handleReceipts(request, env, me, requestId, url);
 		}
-		if (path === "/internal/api/v1/attachments" || path === "/internal/api/v1/attachments/upload-sign" || path === "/internal/api/v1/attachments/upload-direct") {
-			const me = await getSessionUser(request, env);
-			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
-			return handleAttachments(request, env, me, requestId, url, path);
-		}
+	if (path === "/internal/api/v1/attachments" || path.startsWith("/internal/api/v1/attachments/")) {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		return handleAttachments(request, env, me, requestId, url, path);
+	}
 		if (path === "/internal/api/v1/leaves" || path === "/internal/api/v1/leaves/balances" || path === "/internal/api/v1/leaves/life-events" || path === "/internal/api/v1/admin/cron/execute" || path === "/internal/api/v1/admin/cron/history") {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));

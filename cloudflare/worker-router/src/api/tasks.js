@@ -310,14 +310,14 @@ export async function handleTasks(request, env, me, requestId, url) {
 		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
 		try {
 			const stages = await env.DATABASE.prepare(
-				`SELECT stage_id, stage_name, stage_order, status, started_at, completed_at
+				`SELECT active_stage_id, stage_name, stage_order, status, started_at, completed_at
 				 FROM ActiveTaskStages
 				 WHERE task_id = ?
 				 ORDER BY stage_order ASC`
 			).bind(taskId).all();
 			
 			const data = (stages?.results || []).map(s => ({
-				stage_id: s.stage_id,
+				stage_id: s.active_stage_id,
 				stage_name: s.stage_name,
 				stage_order: s.stage_order,
 				status: s.status,
@@ -339,7 +339,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 		const stageId = parts[parts.length - 2];
 		try {
 			await env.DATABASE.prepare(
-				`UPDATE ActiveTaskStages SET status = 'in_progress', started_at = ? WHERE stage_id = ?`
+				`UPDATE ActiveTaskStages SET status = 'in_progress', started_at = ? WHERE active_stage_id = ?`
 			).bind(new Date().toISOString(), stageId).run();
 			
 			await env.DATABASE.prepare(
@@ -360,7 +360,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 		const stageId = parts[parts.length - 2];
 		try {
 			await env.DATABASE.prepare(
-				`UPDATE ActiveTaskStages SET status = 'completed', completed_at = ? WHERE stage_id = ?`
+				`UPDATE ActiveTaskStages SET status = 'completed', completed_at = ? WHERE active_stage_id = ?`
 			).bind(new Date().toISOString(), stageId).run();
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"已完成", meta:{ requestId } }, corsHeaders);

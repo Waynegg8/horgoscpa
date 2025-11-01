@@ -107,14 +107,6 @@
       </div>
     </div>
 
-    <!-- 任務階段 -->
-    <div class="content-card">
-      <h2 class="card-title">任務階段</h2>
-      <div id="stagesList" class="stages-list">
-        <p style="color: #9ca3af;">載入中...</p>
-      </div>
-    </div>
-
     <!-- 關聯的 SOP -->
     <div class="content-card">
       <div class="card-header-with-action">
@@ -191,7 +183,6 @@
     let allUsers = [];
     let allSOPs = [];
     let taskSOPs = [];
-    let taskStages = [];
 
     // 初始化
     async function init() {
@@ -209,7 +200,6 @@
         loadAllSOPs(),
         loadTaskDetail(),
         loadTaskSOPs(),
-        loadTaskStages(),
         loadTaskDocuments()
       ]);
     }
@@ -288,51 +278,6 @@
       const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
       document.getElementById('progressFill').style.width = percentage + '%';
       document.getElementById('progressText').textContent = `${completed}/${total}`;
-    }
-
-    // 載入任務階段
-    async function loadTaskStages() {
-      try {
-        const res = await fetch(`${apiBase}/tasks/${currentTaskId}/stages`, { credentials: 'include' });
-        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
-        const json = await res.json();
-        
-        const container = document.getElementById('stagesList');
-        
-        if (!json.ok || !json.data || json.data.length === 0) {
-          container.innerHTML = '<p style="color: #9ca3af;">此任務沒有階段</p>';
-          return;
-        }
-
-        taskStages = json.data;
-        
-        container.innerHTML = taskStages.map((stage, idx) => {
-          const statusClass = stage.status === 'completed' ? 'completed' : stage.status === 'in_progress' ? 'in-progress' : 'pending';
-          const statusText = stage.status === 'completed' ? '已完成' : stage.status === 'in_progress' ? '進行中' : '待開始';
-          
-          return `
-            <div class="stage-item ${statusClass}">
-              <div class="stage-header">
-                <div>
-                  <span class="stage-number">${idx + 1}</span>
-                  <span class="stage-name">${stage.stage_name}</span>
-                  <span class="stage-status status-${statusClass}">${statusText}</span>
-                </div>
-                <div class="stage-actions">
-                  ${stage.status === 'pending' ? `<button class="btn btn-sm btn-primary" onclick="startStage(${stage.stage_id})">開始</button>` : ''}
-                  ${stage.status === 'in_progress' ? `<button class="btn btn-sm btn-success" onclick="completeStage(${stage.stage_id})">完成</button>` : ''}
-                </div>
-              </div>
-              ${stage.started_at ? `<div class="stage-time">開始時間：${formatDateTime(stage.started_at)}</div>` : ''}
-              ${stage.completed_at ? `<div class="stage-time">完成時間：${formatDateTime(stage.completed_at)}</div>` : ''}
-            </div>
-          `;
-        }).join('');
-        
-      } catch (err) {
-        console.error('載入任務階段失敗:', err);
-        document.getElementById('stagesList').innerHTML = '<p style="color: #ef4444;">載入失敗</p>';
-      }
     }
 
     // 載入任務關聯的 SOP
@@ -433,54 +378,6 @@
       } catch (err) {
         console.error('儲存任務信息失敗:', err);
         alert('儲存失敗');
-      }
-    }
-
-    // 開始階段
-    async function startStage(stageId) {
-      try {
-        const res = await fetch(`${apiBase}/tasks/${currentTaskId}/stages/${stageId}/start`, {
-          method: 'POST',
-          credentials: 'include'
-        });
-        
-        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
-        const json = await res.json();
-        
-        if (!json.ok) {
-          alert(json.message || '操作失敗');
-          return;
-        }
-
-        await Promise.all([loadTaskDetail(), loadTaskStages()]);
-        
-      } catch (err) {
-        console.error('開始階段失敗:', err);
-        alert('操作失敗');
-      }
-    }
-
-    // 完成階段
-    async function completeStage(stageId) {
-      try {
-        const res = await fetch(`${apiBase}/tasks/${currentTaskId}/stages/${stageId}/complete`, {
-          method: 'POST',
-          credentials: 'include'
-        });
-        
-        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
-        const json = await res.json();
-        
-        if (!json.ok) {
-          alert(json.message || '操作失敗');
-          return;
-        }
-
-        await Promise.all([loadTaskDetail(), loadTaskStages()]);
-        
-      } catch (err) {
-        console.error('完成階段失敗:', err);
-        alert('操作失敗');
       }
     }
 

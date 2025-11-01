@@ -1671,17 +1671,19 @@
                       return `
                         <div style="margin-bottom: 6px;">
                           <div style="font-weight: 600; font-size: 11px; color: #6b7280; margin-bottom: 3px; padding: 2px 6px; background: #e5e7eb; border-radius: 3px;">${catName}</div>
-                          ${sops.map(sop => `
-                            <label class="comp-sop-option" data-sop-title="${sop.title.toLowerCase()}" data-sop-category="${category}"
-                                   style="display: flex; align-items: center; gap: 6px; padding: 3px 4px; cursor: pointer; font-size: 13px; margin-bottom: 2px; margin-left: 8px; border-radius: 3px;" 
-                                   onmouseover="this.style.background='#e5e7eb'" 
-                                   onmouseout="this.style.background='transparent'">
-                              <input type="checkbox" class="comp-sop-checkbox" value="${sop.sop_id}" 
-                                     style="cursor: pointer; flex-shrink: 0;" 
-                                     onchange="updateCompSOPSelection${clientServiceId}(this)" />
-                              <span style="color: #374151;">${sop.title}</span>
-                            </label>
-                          `).join('')}
+                          ${sops.map(sop => {
+                            return `
+                              <label class="comp-sop-option" data-sop-title="${sop.title.toLowerCase()}" data-sop-category="${category}"
+                                     style="display: flex; align-items: center; gap: 6px; padding: 3px 4px; cursor: pointer; font-size: 13px; margin-bottom: 2px; margin-left: 8px; border-radius: 3px;" 
+                                     onmouseover="this.style.background='#e5e7eb'" 
+                                     onmouseout="this.style.background='transparent'">
+                                <input type="checkbox" class="comp-sop-checkbox" value="${sop.sop_id}" 
+                                       style="cursor: pointer; flex-shrink: 0;" 
+                                       onchange="updateCompSOPSelection${clientServiceId}(this)" />
+                                <span style="color: #374151;">${sop.title}</span>
+                              </label>
+                            `;
+                          }).join('')}
                         </div>
                       `;
                     }).join('');
