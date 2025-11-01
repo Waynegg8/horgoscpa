@@ -57,6 +57,60 @@ export async function handleTasks(request, env, me, requestId, url) {
 		}
 	}
 	
+	// GET /api/v1/tasks/:id/sops - 獲取任務關聯的SOP（必须在列表查询之前）
+	if (method === "GET" && url.pathname.match(/\/tasks\/\d+\/sops$/)) {
+		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
+		try {
+			const sops = await env.DATABASE.prepare(
+				`SELECT s.sop_id, s.title, s.category, s.version
+				 FROM ActiveTaskSOPs ats
+				 JOIN SOPDocuments s ON s.sop_id = ats.sop_id
+				 WHERE ats.task_id = ? AND s.is_deleted = 0
+				 ORDER BY ats.sort_order ASC`
+			).bind(taskId).all();
+			
+			const data = (sops?.results || []).map(s => ({
+				id: s.sop_id,
+				title: s.title,
+				category: s.category || "",
+				version: s.version || 1
+			}));
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
+	// PUT /api/v1/tasks/:id/sops - 更新任務關聯的SOP（必须在列表查询之前）
+	if (method === "PUT" && url.pathname.match(/\/tasks\/\d+\/sops$/)) {
+		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
+		let body;
+		try { body = await request.json(); } catch (_) {
+			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
+		}
+		
+		const sopIds = Array.isArray(body?.sop_ids) ? body.sop_ids : [];
+		
+		try {
+			// 刪除現有關聯
+			await env.DATABASE.prepare(`DELETE FROM ActiveTaskSOPs WHERE task_id = ?`).bind(taskId).run();
+			
+			// 添加新關聯
+			for (let i = 0; i < sopIds.length; i++) {
+				await env.DATABASE.prepare(
+					`INSERT INTO ActiveTaskSOPs (task_id, sop_id, sort_order) VALUES (?, ?, ?)`
+				).bind(taskId, sopIds[i], i).run();
+			}
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"已更新", meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+	
 	// GET /api/v1/tasks - 獲取任務列表
 	if (method === "GET") {
 		try {
@@ -366,60 +420,6 @@ export async function handleTasks(request, env, me, requestId, url) {
 			).bind(new Date().toISOString(), stageId).run();
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"已完成", meta:{ requestId } }, corsHeaders);
-		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
-			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
-		}
-	}
-
-	// GET /api/v1/tasks/:id/sops - 獲取任務關聯的SOP
-	if (method === "GET" && url.pathname.match(/\/tasks\/\d+\/sops$/)) {
-		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
-		try {
-			const sops = await env.DATABASE.prepare(
-				`SELECT s.sop_id, s.title, s.category, s.version
-				 FROM ActiveTaskSOPs ats
-				 JOIN SOPDocuments s ON s.sop_id = ats.sop_id
-				 WHERE ats.task_id = ? AND s.is_deleted = 0
-				 ORDER BY ats.sort_order ASC`
-			).bind(taskId).all();
-			
-			const data = (sops?.results || []).map(s => ({
-				id: s.sop_id,
-				title: s.title,
-				category: s.category || "",
-				version: s.version || 1
-			}));
-			
-			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
-		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
-			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
-		}
-	}
-
-	// PUT /api/v1/tasks/:id/sops - 更新任務關聯的SOP
-	if (method === "PUT" && url.pathname.match(/\/tasks\/\d+\/sops$/)) {
-		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
-		let body;
-		try { body = await request.json(); } catch (_) {
-			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
-		}
-		
-		const sopIds = Array.isArray(body?.sop_ids) ? body.sop_ids : [];
-		
-		try {
-			// 刪除現有關聯
-			await env.DATABASE.prepare(`DELETE FROM ActiveTaskSOPs WHERE task_id = ?`).bind(taskId).run();
-			
-			// 添加新關聯
-			for (let i = 0; i < sopIds.length; i++) {
-				await env.DATABASE.prepare(
-					`INSERT INTO ActiveTaskSOPs (task_id, sop_id, sort_order) VALUES (?, ?, ?)`
-				).bind(taskId, sopIds[i], i).run();
-			}
-			
-			return jsonResponse(200, { ok:true, code:"OK", message:"已更新", meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
