@@ -26,6 +26,11 @@ database_name = "horgoscpa-db"
 database_id = "98c44e77-3cf0-440e-b2a3-dd952d183e6f"
 migrations_dir = "migrations"
 
+# R2 Storage（文档存储）
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "horgoscpa-documents"
+
 # Cron Triggers（定時任務）
 [triggers]
 crons = [
