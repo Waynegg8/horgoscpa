@@ -410,8 +410,10 @@
         let faqState = { page:1, perPage:12, total:0 };
         let resourcesState = { page:1, perPage:12, total:0 };
 
-        // 初始化富文本编辑器
-        function initEditors() {
+        // 初始化富文本编辑器（延迟初始化，在Modal打开时）
+        function initSopEditor() {
+          if (sopEditor) return; // 已初始化则跳过
+          
           sopEditor = new Quill('#sop-editor-container', {
             theme: 'snow',
             modules: {
@@ -427,6 +429,10 @@
             },
             placeholder: '請輸入SOP內容...'
           });
+        }
+        
+        function initFaqEditor() {
+          if (faqEditor) return; // 已初始化则跳过
           
           faqEditor = new Quill('#faq-editor-container', {
             theme: 'snow',
@@ -695,14 +701,18 @@
           document.getElementById('sopModal').classList.remove('show');
           document.getElementById('sopForm').reset();
           document.getElementById('sop-id').value = '';
-          sopEditor.setContents([]);
+          if (sopEditor) {
+            sopEditor.setContents([]);
+          }
         };
 
         window.closeFaqModal = function() {
           document.getElementById('faqModal').classList.remove('show');
           document.getElementById('faqForm').reset();
           document.getElementById('faq-id').value = '';
-          faqEditor.setContents([]);
+          if (faqEditor) {
+            faqEditor.setContents([]);
+          }
         };
 
         window.closeResourceModal = function() {
@@ -734,9 +744,16 @@
               document.getElementById('sop-title').value = sop.title || '';
               document.getElementById('sop-category').value = sop.category || '';
               document.getElementById('sop-tags').value = Array.isArray(sop.tags) ? sop.tags.join(', ') : '';
-              sopEditor.root.innerHTML = sop.content || '';
               document.getElementById('sopModalTitle').textContent = '編輯 SOP';
               document.getElementById('sopModal').classList.add('show');
+              
+              // 初始化编辑器并设置内容
+              setTimeout(() => {
+                initSopEditor();
+                if (sopEditor) {
+                  sopEditor.root.innerHTML = sop.content || '';
+                }
+              }, 100);
             }
           } catch (err) {
             alert('載入SOP失敗');
@@ -785,9 +802,16 @@
               document.getElementById('faq-question').value = faq.question || '';
               document.getElementById('faq-category').value = faq.category || '';
               document.getElementById('faq-tags').value = Array.isArray(faq.tags) ? faq.tags.join(', ') : '';
-              faqEditor.root.innerHTML = faq.answer || '';
               document.getElementById('faqModalTitle').textContent = '編輯 FAQ';
               document.getElementById('faqModal').classList.add('show');
+              
+              // 初始化编辑器并设置内容
+              setTimeout(() => {
+                initFaqEditor();
+                if (faqEditor) {
+                  faqEditor.root.innerHTML = faq.answer || '';
+                }
+              }, 100);
             }
           } catch (err) {
             alert('載入FAQ失敗');
@@ -842,9 +866,13 @@
           if (currentTab === 'sop') {
             document.getElementById('sopModalTitle').textContent = '新增 SOP';
             document.getElementById('sopModal').classList.add('show');
+            // 延迟初始化编辑器，确保Modal已显示
+            setTimeout(() => initSopEditor(), 100);
           } else if (currentTab === 'faq') {
             document.getElementById('faqModalTitle').textContent = '新增 FAQ';
             document.getElementById('faqModal').classList.add('show');
+            // 延迟初始化编辑器，确保Modal已显示
+            setTimeout(() => initFaqEditor(), 100);
           } else if (currentTab === 'resources') {
             document.getElementById('resourceModalTitle').textContent = '上傳文檔';
             document.getElementById('resourceModal').classList.add('show');
@@ -940,6 +968,11 @@
         document.getElementById('sopForm').addEventListener('submit', async (e) => {
           e.preventDefault();
           
+          if (!sopEditor) {
+            alert('編輯器未初始化，請重試');
+            return;
+          }
+          
           const sopId = document.getElementById('sop-id').value;
           const title = document.getElementById('sop-title').value;
           const category = document.getElementById('sop-category').value;
@@ -973,6 +1006,11 @@
         // FAQ Form提交
         document.getElementById('faqForm').addEventListener('submit', async (e) => {
           e.preventDefault();
+          
+          if (!faqEditor) {
+            alert('編輯器未初始化，請重試');
+            return;
+          }
           
           const faqId = document.getElementById('faq-id').value;
           const question = document.getElementById('faq-question').value;
@@ -1083,7 +1121,7 @@
         // 初始化
         ensureSession().then(ok => { 
           if (ok) { 
-            initEditors();
+            // 编辑器会在打开Modal时按需初始化
             loadSOPs();
           }
         });
