@@ -54,6 +54,13 @@
         transition: all 0.3s ease;
         position: relative;
       }
+      /* FAQ 列表欄加倍寬度 */
+      #faq-layout {
+        grid-template-columns: 480px 1fr;
+      }
+      #faq-layout.collapsed {
+        grid-template-columns: 0 1fr;
+      }
       .kb-layout.collapsed {
         grid-template-columns: 0 1fr;
         gap: 0;
