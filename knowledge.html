@@ -411,8 +411,11 @@
         </select>
       </div>
       <div style="flex:1;min-width:220px;">
-        <label for="tags" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">標籤（以逗號分隔）</label>
-        <input id="tags" type="text" placeholder="例如：報稅, 月結, 提醒" aria-label="標籤" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;" />
+        <label for="tags" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">篩選標籤</label>
+        <select id="tags" aria-label="標籤" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;">
+          <option value="">全部標籤</option>
+          <!-- 標籤選項會動態載入 -->
+        </select>
       </div>
       <div class="toolbar-spacer" style="flex:1;"></div>
       <div>
@@ -563,9 +566,15 @@
           </div>
           
           <div class="form-group">
-            <label>標籤</label>
-            <input type="text" id="sop-tags-drawer" placeholder="記帳, 月結, 報稅" />
-            <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
+            <label>
+              標籤
+              <button type="button" onclick="addNewTag('sop')" class="btn" style="padding:2px 8px;font-size:11px;margin-left:8px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;" title="新增標籤選項">
+                ➕ 新增
+              </button>
+            </label>
+            <div id="sop-tags-checkboxes" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
+              <!-- 標籤複選框會動態載入 -->
+            </div>
           </div>
           
           <div class="form-group">
@@ -615,9 +624,15 @@
           </div>
           
           <div class="form-group">
-            <label>標籤</label>
-            <input type="text" id="faq-tags-drawer" placeholder="常見, 重要" />
-            <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
+            <label>
+              標籤
+              <button type="button" onclick="addNewTag('faq')" class="btn" style="padding:2px 8px;font-size:11px;margin-left:8px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;" title="新增標籤選項">
+                ➕ 新增
+              </button>
+            </label>
+            <div id="faq-tags-checkboxes" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
+              <!-- 標籤複選框會動態載入 -->
+            </div>
           </div>
           
           <div class="form-group">
@@ -668,17 +683,14 @@
             </div>
             
             <div class="form-group" style="margin:0 0 16px 0;">
-              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
-              <div style="display:flex;gap:8px;align-items:flex-start;">
-                <div style="flex:1;position:relative;">
-                  <select id="resource-tags-modal" multiple size="3" style="width:100%;padding:6px 8px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;font-size:13px;">
-                    <!-- 標籤選項會動態載入 -->
-                  </select>
-                  <div style="font-size:11px;color:#6b7280;margin-top:4px;">按住 Ctrl 可多選</div>
-                </div>
-                <button type="button" onclick="addNewTag()" class="btn" style="padding:6px 12px;font-size:12px;white-space:nowrap;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;" title="新增標籤選項">
+              <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--text-secondary);">
+                標籤
+                <button type="button" onclick="addNewTag('resource')" class="btn" style="padding:2px 8px;font-size:11px;margin-left:8px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;" title="新增標籤選項">
                   ➕ 新增
                 </button>
+              </label>
+              <div id="resource-tags-checkboxes" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;background:#fafbfc;max-height:120px;overflow-y:auto;">
+                <!-- 標籤複選框會動態載入 -->
               </div>
             </div>
             
@@ -1732,25 +1744,73 @@
         // 標籤庫（可擴展）
         let availableTags = [
           '重要', '範本', '參考', '內部', '客戶',
-          '財務', '稅務', '人事', '合同', '法規'
+          '財務', '稅務', '人事', '合同', '法規',
+          '常見', '緊急', '月結', '報稅', '記帳'
         ];
         
-        // 載入標籤選項
-        function loadTagOptions() {
-          const select = document.getElementById('resource-tags-modal');
+        // 從 localStorage 載入自訂標籤
+        function loadCustomTags() {
+          const saved = localStorage.getItem('customTags');
+          if (saved) {
+            try {
+              const customTags = JSON.parse(saved);
+              // 合併並去重
+              availableTags = [...new Set([...availableTags, ...customTags])];
+            } catch (e) {
+              console.error('載入自訂標籤失敗:', e);
+            }
+          }
+          availableTags.sort(); // 排序
+        }
+        
+        // 載入標籤複選框
+        function loadTagCheckboxes(containerId, selectedTags = []) {
+          const container = document.getElementById(containerId);
+          if (!container) return;
+          
+          container.innerHTML = '';
+          availableTags.forEach(tag => {
+            const label = document.createElement('label');
+            label.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px;border-radius:4px;transition:background 0.2s;';
+            label.onmouseover = () => label.style.background = '#e5e7eb';
+            label.onmouseout = () => label.style.background = 'transparent';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = tag;
+            checkbox.checked = selectedTags.includes(tag);
+            checkbox.style.cssText = 'cursor:pointer;';
+            
+            const span = document.createElement('span');
+            span.textContent = tag;
+            
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            container.appendChild(label);
+          });
+        }
+        
+        // 載入篩選下拉選單的標籤選項
+        function loadFilterTagOptions() {
+          const select = document.getElementById('tags');
           if (!select) return;
           
-          select.innerHTML = '';
+          // 保留第一個「全部標籤」選項
+          const currentValue = select.value;
+          select.innerHTML = '<option value="">全部標籤</option>';
+          
           availableTags.forEach(tag => {
             const option = document.createElement('option');
             option.value = tag;
             option.textContent = tag;
             select.appendChild(option);
           });
+          
+          select.value = currentValue;
         }
         
         // 新增標籤
-        window.addNewTag = function() {
+        window.addNewTag = function(type) {
           const newTag = prompt('請輸入新標籤名稱：');
           if (!newTag || !newTag.trim()) return;
           
@@ -1764,36 +1824,33 @@
           
           // 添加到標籤庫
           availableTags.push(tagName);
-          availableTags.sort(); // 排序
-          
-          // 重新載入選項
-          loadTagOptions();
-          
-          // 自動選中新標籤
-          const select = document.getElementById('resource-tags-modal');
-          if (select) {
-            Array.from(select.options).forEach(opt => {
-              if (opt.value === tagName) opt.selected = true;
-            });
-          }
+          availableTags.sort();
           
           // 保存到 localStorage
           localStorage.setItem('customTags', JSON.stringify(availableTags));
+          
+          // 重新載入對應的複選框，並自動選中新標籤
+          if (type === 'resource') {
+            loadTagCheckboxes('resource-tags-checkboxes', [tagName]);
+          } else if (type === 'sop') {
+            const currentChecked = getCheckedTags('sop-tags-checkboxes');
+            loadTagCheckboxes('sop-tags-checkboxes', [...currentChecked, tagName]);
+          } else if (type === 'faq') {
+            const currentChecked = getCheckedTags('faq-tags-checkboxes');
+            loadTagCheckboxes('faq-tags-checkboxes', [...currentChecked, tagName]);
+          }
+          
+          // 更新篩選下拉選單
+          loadFilterTagOptions();
         };
         
-        // 從 localStorage 載入自訂標籤
-        function loadCustomTags() {
-          const saved = localStorage.getItem('customTags');
-          if (saved) {
-            try {
-              const customTags = JSON.parse(saved);
-              // 合併並去重
-              availableTags = [...new Set([...availableTags, ...customTags])];
-              availableTags.sort();
-            } catch (e) {
-              console.error('載入自訂標籤失敗:', e);
-            }
-          }
+        // 獲取已選中的標籤
+        function getCheckedTags(containerId) {
+          const container = document.getElementById(containerId);
+          if (!container) return [];
+          
+          const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
+          return Array.from(checkboxes).map(cb => cb.value);
         }
         
         window.openUploadDocModal = function() {
@@ -1804,7 +1861,7 @@
           
           // 載入標籤選項
           loadCustomTags();
-          loadTagOptions();
+          loadTagCheckboxes('resource-tags-checkboxes');
         };
         
         // SOP 固定模板
@@ -1866,21 +1923,28 @@
             document.getElementById('sop-id-drawer').value = '';
             document.getElementById('sop-title-drawer').value = '【請填寫標題】例如：月度記帳流程';
             document.getElementById('sop-category-drawer').value = '';
-            document.getElementById('sop-tags-drawer').value = '';
             
             if (window.sopDrawerEditor) {
               window.sopDrawerEditor.root.innerHTML = SOP_TEMPLATE;
             }
+            
+            // 載入標籤複選框（新增時不選中任何標籤）
+            loadCustomTags();
+            loadTagCheckboxes('sop-tags-checkboxes', []);
           } else {
             // 編輯模式：填充現有數據
             document.getElementById('sop-id-drawer').value = sopData.sop_id || '';
             document.getElementById('sop-title-drawer').value = sopData.title || '';
             document.getElementById('sop-category-drawer').value = sopData.category || '';
-            document.getElementById('sop-tags-drawer').value = Array.isArray(sopData.tags) ? sopData.tags.join(', ') : (sopData.tags || '');
             
             if (window.sopDrawerEditor) {
               window.sopDrawerEditor.root.innerHTML = sopData.content || '';
             }
+            
+            // 載入標籤複選框（編輯時選中已有標籤）
+            const existingTags = Array.isArray(sopData.tags) ? sopData.tags : (sopData.tags ? sopData.tags.split(',').map(t => t.trim()) : []);
+            loadCustomTags();
+            loadTagCheckboxes('sop-tags-checkboxes', existingTags);
           }
           
           drawer.classList.add('show');
@@ -1945,21 +2009,28 @@
             document.getElementById('faq-id-drawer').value = '';
             document.getElementById('faq-question-drawer').value = '【請填寫問題】例如：如何處理跨月份的發票？';
             document.getElementById('faq-category-drawer').value = '';
-            document.getElementById('faq-tags-drawer').value = '常見, 重要';
             
             if (window.faqDrawerEditor) {
               window.faqDrawerEditor.root.innerHTML = FAQ_TEMPLATE;
             }
+            
+            // 載入標籤複選框（新增時預選「常見」和「重要」）
+            loadCustomTags();
+            loadTagCheckboxes('faq-tags-checkboxes', ['常見', '重要']);
           } else {
             // 編輯模式：填充現有數據
             document.getElementById('faq-id-drawer').value = faqData.faq_id || '';
             document.getElementById('faq-question-drawer').value = faqData.question || '';
             document.getElementById('faq-category-drawer').value = faqData.category || '';
-            document.getElementById('faq-tags-drawer').value = Array.isArray(faqData.tags) ? faqData.tags.join(', ') : (faqData.tags || '');
             
             if (window.faqDrawerEditor) {
               window.faqDrawerEditor.root.innerHTML = faqData.answer || '';
             }
+            
+            // 載入標籤複選框（編輯時選中已有標籤）
+            const existingTags = Array.isArray(faqData.tags) ? faqData.tags : (faqData.tags ? faqData.tags.split(',').map(t => t.trim()) : []);
+            loadCustomTags();
+            loadTagCheckboxes('faq-tags-checkboxes', existingTags);
           }
           
           drawer.classList.add('show');
@@ -2035,7 +2106,7 @@
           const sopId = document.getElementById('sop-id-drawer').value;
           const title = document.getElementById('sop-title-drawer').value;
           const category = document.getElementById('sop-category-drawer').value;
-          const tags = document.getElementById('sop-tags-drawer').value.split(',').map(t => t.trim()).filter(Boolean);
+          const tags = getCheckedTags('sop-tags-checkboxes');
           const content = window.sopDrawerEditor.root.innerHTML;
           
           const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -2087,7 +2158,7 @@
           const faqId = document.getElementById('faq-id-drawer').value;
           const question = document.getElementById('faq-question-drawer').value;
           const category = document.getElementById('faq-category-drawer').value;
-          const tags = document.getElementById('faq-tags-drawer').value.split(',').map(t => t.trim()).filter(Boolean);
+          const tags = getCheckedTags('faq-tags-checkboxes');
           const answer = window.faqDrawerEditor.root.innerHTML;
           
           const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -2143,9 +2214,8 @@
           const title = document.getElementById('resource-title-modal').value;
           const category = document.getElementById('resource-category-modal').value;
           
-          // 從多選框獲取選中的標籤
-          const tagSelect = document.getElementById('resource-tags-modal');
-          const selectedTags = Array.from(tagSelect.selectedOptions).map(opt => opt.value);
+          // 從複選框獲取選中的標籤
+          const selectedTags = getCheckedTags('resource-tags-checkboxes');
           const tags = selectedTags.join(',');
           
           try {
@@ -2189,6 +2259,11 @@
             // 立即初始化編輯器（頁面模式已移除，現在只初始化抽屜編輯器）
             initSopDrawerEditor();
             initFaqDrawerEditor();
+            
+            // 載入標籤庫並初始化篩選下拉選單
+            loadCustomTags();
+            loadFilterTagOptions();
+            
             // 切換到 SOP 標籤
             switchTab('sop');
           }
