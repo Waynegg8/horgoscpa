@@ -285,7 +285,9 @@
       try {
         const res = await fetch(`${apiBase}/tasks/${currentTaskId}/sops`, { credentials: 'include' });
         if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        
         const json = await res.json();
+        console.log('載入 SOP 數據:', json);
         
         const container = document.getElementById('sopList');
         
@@ -296,12 +298,13 @@
         }
 
         taskSOPs = json.data;
+        console.log('SOP 列表:', taskSOPs);
         
         container.innerHTML = taskSOPs.map(sop => `
           <div class="sop-item">
             <div>
-              <div class="sop-title">${sop.title}</div>
-              <div class="sop-meta">${getCategoryText(sop.category)} • v${sop.version}</div>
+              <div class="sop-title">${sop.title || '未命名'}</div>
+              <div class="sop-meta">${getCategoryText(sop.category)} • v${sop.version || '1'}</div>
             </div>
             <a href="/internal/knowledge?id=${sop.id}" target="_blank" class="btn btn-sm btn-secondary">查看</a>
           </div>
@@ -316,9 +319,16 @@
     // 載入任務文檔
     async function loadTaskDocuments() {
       try {
-        const res = await fetch(`${apiBase}/attachments?entity_type=task&entity_id=${currentTaskId}`, { credentials: 'include' });
+        const url = `${apiBase}/attachments?entity_type=task&entity_id=${currentTaskId}`;
+        console.log('載入附件 URL:', url);
+        
+        const res = await fetch(url, { credentials: 'include' });
+        console.log('附件響應狀態:', res.status);
+        
         if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        
         const json = await res.json();
+        console.log('附件數據:', json);
         
         const tbody = document.getElementById('documentsList');
         
@@ -329,13 +339,13 @@
 
         tbody.innerHTML = json.data.map(doc => `
           <tr>
-            <td>${doc.filename}</td>
-            <td>${doc.contentType}</td>
-            <td>${formatFileSize(doc.sizeBytes)}</td>
+            <td>${doc.filename || '未知文件'}</td>
+            <td>${doc.contentType || '-'}</td>
+            <td>${formatFileSize(doc.sizeBytes || 0)}</td>
             <td>${formatDateTime(doc.uploadedAt)}</td>
-            <td>${doc.uploaderName}</td>
+            <td>${doc.uploaderName || '未知'}</td>
             <td>
-              <button class="table-btn-link" onclick="downloadDocument(${doc.id}, '${doc.filename}')">下載</button>
+              <button class="table-btn-link" onclick="downloadDocument(${doc.id}, '${(doc.filename || 'file').replace(/'/g, "\\'")}')">下載</button>
               <button class="table-btn-link danger" onclick="deleteDocument(${doc.id})">刪除</button>
             </td>
           </tr>
@@ -343,7 +353,7 @@
         
       } catch (err) {
         console.error('載入任務文檔失敗:', err);
-        document.getElementById('documentsList').innerHTML = '<tr><td colspan="6" style="color: #ef4444;">載入失敗</td></tr>';
+        document.getElementById('documentsList').innerHTML = '<tr><td colspan="6" style="color: #ef4444;">載入失敗: ' + err.message + '</td></tr>';
       }
     }
 

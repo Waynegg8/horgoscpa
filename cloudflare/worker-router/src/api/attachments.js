@@ -126,7 +126,8 @@ export async function handleAttachments(request, env, me, requestId, url, path) 
 		}
 	}
 
-	if (method === "GET") {
+	// GET /internal/api/v1/attachments - 获取附件列表
+	if (path === "/internal/api/v1/attachments" && method === "GET") {
 		try {
 			const params = url.searchParams;
 			const entityType = (params.get("entity_type") || "").trim();
