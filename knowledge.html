@@ -197,9 +197,58 @@
     <main class="content" style="padding:0 20px 24px 20px;">
       <!-- SOP Tab -->
       <div id="sop-content" class="tab-content active">
+        <!-- SOP 編輯區域 -->
+        <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;margin-bottom:20px;">
+          <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">📝 編輯 SOP</h3>
+          
+          <form id="sopFormInline">
+            <input type="hidden" id="sop-id-inline" />
+            
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標題 *</label>
+                <input type="text" id="sop-title-inline" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="請輸入 SOP 標題" />
+              </div>
+              
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">分類 *</label>
+                <select id="sop-category-inline" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+                  <option value="">請選擇</option>
+                  <option value="accounting">記帳流程</option>
+                  <option value="tax">稅務流程</option>
+                  <option value="business">工商登記</option>
+                  <option value="hr">人事管理</option>
+                  <option value="finance">財務管理</option>
+                  <option value="internal">內部流程</option>
+                  <option value="other">其他</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group" style="margin:0 0 16px 0;">
+              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
+              <input type="text" id="sop-tags-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="記帳, 月結, 報稅" />
+              <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
+            </div>
+            
+            <div class="form-group" style="margin:0 0 16px 0;">
+              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">內容 *</label>
+              <div id="sop-editor-inline" style="height:300px;"></div>
+            </div>
+            
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+              <button type="button" class="btn" onclick="resetSopForm()">清空</button>
+              <button type="submit" class="btn primary" id="sopSubmitBtnInline">
+                <span>💾 儲存 SOP</span>
+              </button>
+            </div>
+          </form>
+        </section>
+        
+        <!-- SOP 列表 -->
       <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
-          <div style="font-weight:800;color:var(--text-primary);">SOP 列表</div>
+            <div style="font-weight:800;color:var(--text-primary);">📖 SOP 列表</div>
             <div id="sopListInfo" class="muted">—</div>
         </div>
         <div id="sopsList"></div>
@@ -212,9 +261,58 @@
 
       <!-- FAQ Tab -->
       <div id="faq-content" class="tab-content">
+        <!-- FAQ 編輯區域 -->
+        <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;margin-bottom:20px;">
+          <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">❓ 編輯 FAQ</h3>
+          
+          <form id="faqFormInline">
+            <input type="hidden" id="faq-id-inline" />
+            
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">問題 *</label>
+                <input type="text" id="faq-question-inline" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="請輸入問題" />
+              </div>
+              
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">分類</label>
+                <select id="faq-category-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+                  <option value="">請選擇</option>
+                  <option value="accounting">記帳流程</option>
+                  <option value="tax">稅務流程</option>
+                  <option value="business">工商登記</option>
+                  <option value="hr">人事管理</option>
+                  <option value="finance">財務管理</option>
+                  <option value="internal">內部流程</option>
+                  <option value="other">其他</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group" style="margin:0 0 16px 0;">
+              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
+              <input type="text" id="faq-tags-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="常見, 重要" />
+              <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
+            </div>
+            
+            <div class="form-group" style="margin:0 0 16px 0;">
+              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">答案 *</label>
+              <div id="faq-editor-inline" style="height:300px;"></div>
+            </div>
+            
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+              <button type="button" class="btn" onclick="resetFaqForm()">清空</button>
+              <button type="submit" class="btn primary" id="faqSubmitBtnInline">
+                <span>💾 儲存 FAQ</span>
+              </button>
+            </div>
+          </form>
+        </section>
+        
+        <!-- FAQ 列表 -->
         <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
-            <div style="font-weight:800;color:var(--text-primary);">FAQ 列表</div>
+            <div style="font-weight:800;color:var(--text-primary);">❓ FAQ 列表</div>
             <div id="faqListInfo" class="muted">—</div>
           </div>
           <div id="faqsList"></div>
@@ -323,8 +421,8 @@
       </div>
     </main>
 
-    <!-- SOP模态框 -->
-    <div id="sopModal" class="modal" onclick="if(event.target === this) closeSopModal()">
+    <!-- SOP模态框 (已棄用，改用內聯表單) -->
+    <div id="sopModal" class="modal" style="display:none;" onclick="if(event.target === this) closeSopModal()">
       <div class="modal-content">
         <div class="modal-header">
           <h2 id="sopModalTitle">新增 SOP</h2>
@@ -369,8 +467,8 @@
       </div>
     </div>
 
-    <!-- FAQ模态框 -->
-    <div id="faqModal" class="modal" onclick="if(event.target === this) closeFaqModal()">
+    <!-- FAQ模态框 (已棄用，改用內聯表單) -->
+    <div id="faqModal" class="modal" style="display:none;" onclick="if(event.target === this) closeFaqModal()">
       <div class="modal-content">
         <div class="modal-header">
           <h2 id="faqModalTitle">新增 FAQ</h2>
@@ -432,11 +530,11 @@
         let faqState = { page:1, perPage:12, total:0 };
         let resourcesState = { page:1, perPage:12, total:0, q:'', category:'' };
 
-        // 初始化富文本编辑器（延迟初始化，在Modal打开时）
+        // 初始化富文本编辑器（頁面加載時初始化）
         function initSopEditor() {
           if (sopEditor) return; // 已初始化则跳过
           
-          sopEditor = new Quill('#sop-editor-container', {
+          sopEditor = new Quill('#sop-editor-inline', {
             theme: 'snow',
             modules: {
               toolbar: [
@@ -456,7 +554,7 @@
         function initFaqEditor() {
           if (faqEditor) return; // 已初始化则跳过
           
-          faqEditor = new Quill('#faq-editor-container', {
+          faqEditor = new Quill('#faq-editor-inline', {
             theme: 'snow',
             modules: {
               toolbar: [
@@ -470,6 +568,26 @@
             },
             placeholder: '請輸入FAQ答案...'
           });
+        }
+        
+        // 清空 SOP 表單
+        function resetSopForm() {
+          document.getElementById('sop-id-inline').value = '';
+          document.getElementById('sop-title-inline').value = '';
+          document.getElementById('sop-category-inline').value = '';
+          document.getElementById('sop-tags-inline').value = '';
+          if (sopEditor) sopEditor.setText('');
+          document.getElementById('sopSubmitBtnInline').querySelector('span').textContent = '💾 儲存 SOP';
+        }
+        
+        // 清空 FAQ 表單
+        function resetFaqForm() {
+          document.getElementById('faq-id-inline').value = '';
+          document.getElementById('faq-question-inline').value = '';
+          document.getElementById('faq-category-inline').value = '';
+          document.getElementById('faq-tags-inline').value = '';
+          if (faqEditor) faqEditor.setText('');
+          document.getElementById('faqSubmitBtnInline').querySelector('span').textContent = '💾 儲存 FAQ';
         }
 
         async function ensureSession(){
@@ -757,22 +875,14 @@
         }
 
         // Modal函数
+        // 已棄用：改用內聯表單
         window.closeSopModal = function() {
           document.getElementById('sopModal').classList.remove('show');
-          document.getElementById('sopForm').reset();
-          document.getElementById('sop-id').value = '';
-          if (sopEditor) {
-            sopEditor.setContents([]);
-          }
         };
 
+        // 已棄用：改用內聯表單
         window.closeFaqModal = function() {
           document.getElementById('faqModal').classList.remove('show');
-          document.getElementById('faqForm').reset();
-          document.getElementById('faq-id').value = '';
-          if (faqEditor) {
-            faqEditor.setContents([]);
-          }
         };
 
 
@@ -795,20 +905,22 @@
             const json = await res.json();
             if (json.ok && json.data) {
               const sop = json.data;
-              document.getElementById('sop-id').value = sop.sop_id;
-              document.getElementById('sop-title').value = sop.title || '';
-              document.getElementById('sop-category').value = sop.category || '';
-              document.getElementById('sop-tags').value = Array.isArray(sop.tags) ? sop.tags.join(', ') : '';
-              document.getElementById('sopModalTitle').textContent = '編輯 SOP';
-              document.getElementById('sopModal').classList.add('show');
+              document.getElementById('sop-id-inline').value = sop.sop_id;
+              document.getElementById('sop-title-inline').value = sop.title || '';
+              document.getElementById('sop-category-inline').value = sop.category || '';
+              document.getElementById('sop-tags-inline').value = Array.isArray(sop.tags) ? sop.tags.join(', ') : '';
               
-              // 初始化编辑器并设置内容
-              setTimeout(() => {
-                initSopEditor();
-                if (sopEditor) {
-                  sopEditor.root.innerHTML = sop.content || '';
-                }
-              }, 100);
+              // 設置編輯器內容
+              if (sopEditor) {
+                sopEditor.root.innerHTML = sop.content || '';
+              }
+              
+              // 更新按鈕文字
+              document.getElementById('sopSubmitBtnInline').querySelector('span').textContent = '💾 更新 SOP';
+              
+              // 滾動到表單
+              document.getElementById('sopFormInline').scrollIntoView({ behavior: 'smooth', block: 'start' });
+              document.getElementById('sop-title-inline').focus();
             }
           } catch (err) {
             alert('載入SOP失敗');
@@ -853,20 +965,22 @@
             const json = await res.json();
             if (json.ok && json.data) {
               const faq = json.data;
-              document.getElementById('faq-id').value = faq.faq_id;
-              document.getElementById('faq-question').value = faq.question || '';
-              document.getElementById('faq-category').value = faq.category || '';
-              document.getElementById('faq-tags').value = Array.isArray(faq.tags) ? faq.tags.join(', ') : '';
-              document.getElementById('faqModalTitle').textContent = '編輯 FAQ';
-              document.getElementById('faqModal').classList.add('show');
+              document.getElementById('faq-id-inline').value = faq.faq_id;
+              document.getElementById('faq-question-inline').value = faq.question || '';
+              document.getElementById('faq-category-inline').value = faq.category || '';
+              document.getElementById('faq-tags-inline').value = Array.isArray(faq.tags) ? faq.tags.join(', ') : '';
               
-              // 初始化编辑器并设置内容
-              setTimeout(() => {
-                initFaqEditor();
-                if (faqEditor) {
-                  faqEditor.root.innerHTML = faq.answer || '';
-                }
-              }, 100);
+              // 設置編輯器內容
+              if (faqEditor) {
+                faqEditor.root.innerHTML = faq.answer || '';
+              }
+              
+              // 更新按鈕文字
+              document.getElementById('faqSubmitBtnInline').querySelector('span').textContent = '💾 更新 FAQ';
+              
+              // 滾動到表單
+              document.getElementById('faqFormInline').scrollIntoView({ behavior: 'smooth', block: 'start' });
+              document.getElementById('faq-question-inline').focus();
             }
           } catch (err) {
             alert('載入FAQ失敗');
@@ -919,15 +1033,15 @@
 
         document.getElementById('btn-new').addEventListener('click', () => {
           if (currentTab === 'sop') {
-            document.getElementById('sopModalTitle').textContent = '新增 SOP';
-            document.getElementById('sopModal').classList.add('show');
-            // 延迟初始化编辑器，确保Modal已显示
-            setTimeout(() => initSopEditor(), 100);
+            // 清空並滾動到內聯表單
+            resetSopForm();
+            document.getElementById('sopFormInline').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.getElementById('sop-title-inline').focus();
           } else if (currentTab === 'faq') {
-            document.getElementById('faqModalTitle').textContent = '新增 FAQ';
-            document.getElementById('faqModal').classList.add('show');
-            // 延迟初始化编辑器，确保Modal已显示
-            setTimeout(() => initFaqEditor(), 100);
+            // 清空並滾動到內聯表單
+            resetFaqForm();
+            document.getElementById('faqFormInline').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.getElementById('faq-question-inline').focus();
           } else if (currentTab === 'resources') {
             // 資源中心使用內聯表單，滾動到上傳區域
             document.getElementById('resourceFormInline').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1047,7 +1161,7 @@
 
         // Form提交（placeholder）
         // SOP Form提交
-        document.getElementById('sopForm').addEventListener('submit', async (e) => {
+        document.getElementById('sopFormInline').addEventListener('submit', async (e) => {
           e.preventDefault();
           
           if (!sopEditor) {
@@ -1055,11 +1169,15 @@
             return;
           }
           
-          const sopId = document.getElementById('sop-id').value;
-          const title = document.getElementById('sop-title').value;
-          const category = document.getElementById('sop-category').value;
-          const tags = document.getElementById('sop-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+          const sopId = document.getElementById('sop-id-inline').value;
+          const title = document.getElementById('sop-title-inline').value;
+          const category = document.getElementById('sop-category-inline').value;
+          const tags = document.getElementById('sop-tags-inline').value.split(',').map(t => t.trim()).filter(Boolean);
           const content = sopEditor.root.innerHTML;
+          
+          const submitBtn = document.getElementById('sopSubmitBtnInline');
+          submitBtn.disabled = true;
+          submitBtn.querySelector('span').textContent = '處理中...';
           
           try {
             const method = sopId ? 'PUT' : 'POST';
@@ -1075,18 +1193,21 @@
             const json = await res.json();
             if (json.ok) {
               alert(sopId ? '更新成功' : '新增成功');
-              closeSopModal();
+              resetSopForm();
               loadSOPs();
             } else {
               alert('保存失敗：' + (json.error || '未知錯誤'));
             }
           } catch (err) {
             alert('保存失敗');
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.querySelector('span').textContent = '💾 儲存 SOP';
           }
         });
 
         // FAQ Form提交
-        document.getElementById('faqForm').addEventListener('submit', async (e) => {
+        document.getElementById('faqFormInline').addEventListener('submit', async (e) => {
           e.preventDefault();
           
           if (!faqEditor) {
@@ -1094,11 +1215,15 @@
             return;
           }
           
-          const faqId = document.getElementById('faq-id').value;
-          const question = document.getElementById('faq-question').value;
-          const category = document.getElementById('faq-category').value;
-          const tags = document.getElementById('faq-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+          const faqId = document.getElementById('faq-id-inline').value;
+          const question = document.getElementById('faq-question-inline').value;
+          const category = document.getElementById('faq-category-inline').value;
+          const tags = document.getElementById('faq-tags-inline').value.split(',').map(t => t.trim()).filter(Boolean);
           const answer = faqEditor.root.innerHTML;
+          
+          const submitBtn = document.getElementById('faqSubmitBtnInline');
+          submitBtn.disabled = true;
+          submitBtn.querySelector('span').textContent = '處理中...';
           
           try {
             const method = faqId ? 'PUT' : 'POST';
@@ -1114,13 +1239,16 @@
             const json = await res.json();
             if (json.ok) {
               alert(faqId ? '更新成功' : '新增成功');
-              closeFaqModal();
+              resetFaqForm();
               loadFAQs();
             } else {
               alert('保存失敗：' + (json.error || '未知錯誤'));
             }
           } catch (err) {
             alert('保存失敗');
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.querySelector('span').textContent = '💾 儲存 FAQ';
           }
         });
 
@@ -1216,10 +1344,10 @@
         // 初始化
         ensureSession().then(ok => { 
           if (ok) { 
-            // 确保所有模态框都是关闭状态
-            document.getElementById('sopModal').classList.remove('show');
-            document.getElementById('faqModal').classList.remove('show');
-            // 编辑器会在打开Modal时按需初始化
+            // 立即初始化編輯器
+            initSopEditor();
+            initFaqEditor();
+            // 切換到 SOP 標籤
             switchTab('sop');
           }
         });
