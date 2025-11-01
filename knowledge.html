@@ -52,13 +52,14 @@
         position: relative;
       }
       .kb-layout.collapsed {
-        grid-template-columns: 1fr;
+        display: flex;
+        justify-content: center;
         gap: 0;
-        justify-items: center;
       }
-      .kb-layout.collapsed .list-card {
+      .kb-layout.collapsed .right-panel {
         max-width: 900px;
         width: 100%;
+        margin: 0 auto;
       }
       .left-panel {
         background: white;
@@ -78,6 +79,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: auto;
+      }
+      .right-panel {
+        transition: all 0.3s ease;
       }
       .kb-layout.collapsed .panel-content {
         display: none;
@@ -262,6 +270,78 @@
       .uploaded-file-info.show {
         display: block;
       }
+      
+      /* 資源預覽卡片樣式 */
+      .resource-preview-card {
+        background: white;
+        border: 1px solid rgba(15,23,42,0.08);
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        overflow: hidden;
+        position: sticky;
+        top: 20px;
+        transition: all 0.3s ease;
+      }
+      
+      .resource-preview-card:hover {
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+      }
+      
+      .resource-preview-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(15,23,42,0.08);
+      }
+      
+      .resource-preview-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .resource-preview-content {
+        padding: 32px 24px;
+        min-height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .resource-preview-empty {
+        text-align: center;
+        max-width: 400px;
+        padding: 40px 20px;
+      }
+      
+      .empty-icon {
+        font-size: 80px;
+        margin-bottom: 20px;
+        animation: float 3s ease-in-out infinite;
+        opacity: 0.8;
+      }
+      
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      
+      .empty-text {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 8px 0;
+      }
+      
+      .empty-hint {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin: 0;
+        opacity: 0.7;
+      }
     </style>
   </head>
   <body class="knowledge-page">
@@ -326,8 +406,9 @@
           </div>
           
           <!-- 右側：SOP 編輯區域 -->
-          <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;position:sticky;top:20px;height:fit-content;">
-            <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">📝 編輯 SOP</h3>
+          <div class="right-panel">
+            <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;position:sticky;top:20px;height:fit-content;">
+              <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">📝 編輯 SOP</h3>
             
             <form id="sopFormInline">
               <input type="hidden" id="sop-id-inline" />
@@ -369,7 +450,8 @@
                 </button>
               </div>
             </form>
-    </section>
+            </section>
+          </div>
         </div>
       </div>
 
@@ -436,7 +518,8 @@
                 </button>
               </div>
             </form>
-      </section>
+            </section>
+          </div>
         </div>
       </div>
 
@@ -461,37 +544,23 @@
           </div>
           
           <!-- 右側：文檔預覽區域 -->
-          <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;position:sticky;top:20px;height:fit-content;">
-            <div id="documentPreviewArea">
-              <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">📄 文檔預覽</h3>
-              <div style="text-align:center;padding:60px 20px;color:#9ca3af;">
-                <div style="font-size:48px;margin-bottom:16px;">📂</div>
-                <p>點擊左側文檔查看詳情</p>
+          <div class="right-panel">
+            <section class="resource-preview-card">
+              <div class="resource-preview-header">
+                <h3 class="resource-preview-title">📄 文檔預覽</h3>
               </div>
-        </div>
-      </section>
+              <div id="documentPreviewArea" class="resource-preview-content">
+                <div class="resource-preview-empty">
+                  <div class="empty-icon">📂</div>
+                  <p class="empty-text">點擊左側文檔查看詳情</p>
+                  <p class="empty-hint">支援線上預覽 PDF、圖片等格式</p>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
       </div>
     </main>
-
-    <!-- 文檔預覽模態框 -->
-    <div id="docPreviewModal" class="modal">
-      <div class="modal-content" style="max-width:1000px;max-height:90vh;">
-        <div class="modal-header">
-          <h2 id="previewDocTitle">📄 文檔預覽</h2>
-          <button class="close-modal" onclick="closeDocPreview()">&times;</button>
-        </div>
-        <div id="previewDocContent" style="width:100%;height:70vh;overflow:auto;background:#f5f5f5;border-radius:8px;display:flex;align-items:center;justify-content:center;">
-          <div style="text-align:center;color:#6b7280;">載入中...</div>
-        </div>
-        <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
-          <button class="btn" onclick="closeDocPreview()">關閉</button>
-          <a id="downloadDocBtn" class="btn primary" download style="text-decoration:none;display:inline-flex;align-items:center;">
-            <span>💾 下載</span>
-          </a>
-        </div>
-      </div>
-    </div>
 
     <!-- 上傳文檔模態框 -->
     <div id="uploadDocModal" class="modal">
