@@ -91,7 +91,7 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       }
       .modal {
-        display: none;
+        display: none !important;
         position: fixed;
         z-index: 1000;
         left: 0;
@@ -102,7 +102,7 @@
         overflow-y: auto;
       }
       .modal.show {
-        display: block;
+        display: block !important;
       }
       .modal-content {
         background-color: white;
@@ -985,13 +985,26 @@
         
         // 模態框控制
         window.closeUploadDocModal = function() {
-          document.getElementById('uploadDocModal').classList.remove('show');
+          const modal = document.getElementById('uploadDocModal');
+          modal.classList.remove('show');
+          modal.style.display = 'none';
           resetUploadForm();
         };
         
         window.openUploadDocModal = function() {
-          document.getElementById('uploadDocModal').classList.add('show');
+          const modal = document.getElementById('uploadDocModal');
+          modal.style.display = 'block';
+          modal.classList.add('show');
         };
+        
+        // 點擊模態框背景關閉
+        document.addEventListener('click', (e) => {
+          if (e.target.classList.contains('modal') && e.target.classList.contains('show')) {
+            if (e.target.id === 'uploadDocModal') {
+              closeUploadDocModal();
+            }
+          }
+        });
         
         // SOP CRUD functions（移除viewSOP，直接使用editSOP）
         
@@ -1501,7 +1514,13 @@
 
         // 初始化
         ensureSession().then(ok => { 
-          if (ok) { 
+          if (ok) {
+            // 確保所有模態框初始狀態為隱藏
+            document.querySelectorAll('.modal').forEach(modal => {
+              modal.classList.remove('show');
+              modal.style.display = 'none';
+            });
+            
             // 立即初始化編輯器
             initSopEditor();
             initFaqEditor();
