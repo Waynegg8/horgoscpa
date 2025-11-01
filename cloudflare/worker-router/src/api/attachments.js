@@ -132,6 +132,8 @@ export async function handleAttachments(request, env, me, requestId, url, path) 
 			const params = url.searchParams;
 			const entityType = (params.get("entity_type") || "").trim();
 			const entityId = (params.get("entity_id") || "").trim();
+			console.log(JSON.stringify({ level:"info", requestId, action:"get_attachments", entityType, entityId }));
+			
 			if (!entityType || !entityId) {
 				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"entity_type 與 entity_id 必填", meta:{ requestId } }, corsHeaders);
 			}
@@ -159,15 +161,26 @@ export async function handleAttachments(request, env, me, requestId, url, path) 
 				else if (fileType === 'word') { where.push("(LOWER(filename) GLOB '*.doc' OR LOWER(filename) GLOB '*.docx' OR LOWER(content_type) IN ('application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'))"); }
 			}
 			const whereSql = `WHERE ${where.join(" AND ")}`;
+			
+			console.log(JSON.stringify({ level:"debug", requestId, whereSql, binds }));
+			
 			const countRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS total FROM Attachments ${whereSql}`).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
-			const rows = await env.DATABASE.prepare(
-				`SELECT a.attachment_id, a.filename, a.content_type, a.size_bytes, a.uploader_user_id, a.uploaded_at, u.username AS uploader_name
+			
+			console.log(JSON.stringify({ level:"debug", requestId, total }));
+			
+			const sql = `SELECT a.attachment_id, a.filename, a.content_type, a.size_bytes, a.uploader_user_id, a.uploaded_at, u.name AS uploader_name
 				 FROM Attachments a LEFT JOIN Users u ON u.user_id = a.uploader_user_id
 				 ${whereSql}
 				 ORDER BY a.uploaded_at DESC
-				 LIMIT ? OFFSET ?`
-			).bind(...binds, perPage, offset).all();
+				 LIMIT ? OFFSET ?`;
+			
+			console.log(JSON.stringify({ level:"debug", requestId, sql: sql.substring(0, 200) }));
+			
+			const rows = await env.DATABASE.prepare(sql).bind(...binds, perPage, offset).all();
+			
+			console.log(JSON.stringify({ level:"debug", requestId, rowCount: rows?.results?.length || 0 }));
+			
 			const data = (rows?.results || []).map(r => ({
 				id: r.attachment_id,
 				filename: r.filename,
@@ -179,7 +192,7 @@ export async function handleAttachments(request, env, me, requestId, url, path) 
 			}));
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, page, perPage, total } }, corsHeaders);
 		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path:"/internal/api/v1/attachments", err:String(err) }));
+			console.error(JSON.stringify({ level:"error", requestId, path:"/internal/api/v1/attachments", err:String(err), stack: err.stack }));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
 		}
 	}
