@@ -1186,24 +1186,50 @@
             return;
           }
           
-          // 配置（Quill 1.3.7 + Better Table）
+          // 配置（Quill 1.3.7 + Better Table 完整配置）
           const config = {
             theme: 'snow',
             modules: {
+              table: false,  // 禁用內建表格
               'better-table': {
                 operationMenu: {
                   items: {
-                    insertColumnRight: { text: '向右插入列' },
-                    insertColumnLeft: { text: '向左插入列' },
-                    insertRowUp: { text: '向上插入行' },
-                    insertRowDown: { text: '向下插入行' },
-                    mergeCells: { text: '合併單元格' },
-                    unmergeCells: { text: '取消合併' },
-                    deleteColumn: { text: '刪除列' },
-                    deleteRow: { text: '刪除行' },
-                    deleteTable: { text: '刪除表格' }
+                    unmergeCells: {
+                      text: '取消合併單元格'
+                    },
+                    mergeCells: {
+                      text: '合併單元格'
+                    },
+                    insertColumnRight: {
+                      text: '向右插入列'
+                    },
+                    insertColumnLeft: {
+                      text: '向左插入列'
+                    },
+                    insertRowUp: {
+                      text: '向上插入行'
+                    },
+                    insertRowDown: {
+                      text: '向下插入行'
+                    },
+                    removeCol: {
+                      text: '刪除當前列'
+                    },
+                    removeRow: {
+                      text: '刪除當前行'
+                    },
+                    removeTable: {
+                      text: '刪除表格'
+                    }
+                  },
+                  color: {
+                    colors: ['#ffffff', '#e0e0e0', '#f3f3f3', '#fef2e8', '#e8f4fd'],
+                    text: '背景顏色：'
                   }
                 }
+              },
+              keyboard: {
+                bindings: window.quillBetterTable ? window.quillBetterTable.keyboardBindings : {}
               },
               toolbar: [
                 [{ 'header': [2, 3, false] }],
@@ -1220,11 +1246,34 @@
           
           window.sopDrawerEditor = new Quill('#sop-editor-drawer', config);
           
-          // 添加表格插入按鈕
+          // 自定義圖片處理器
           const toolbar = window.sopDrawerEditor.getModule('toolbar');
-          toolbar.addHandler('image', imageHandler);
+          toolbar.addHandler('image', function() {
+            const input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*');
+            input.click();
+            
+            input.onchange = () => {
+              const file = input.files[0];
+              if (!file) return;
+              
+              if (file.size > 5 * 1024 * 1024) {
+                alert('圖片大小不能超過 5MB');
+                return;
+              }
+              
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const range = window.sopDrawerEditor.getSelection(true);
+                window.sopDrawerEditor.insertEmbed(range.index, 'image', e.target.result);
+                window.sopDrawerEditor.setSelection(range.index + 1);
+              };
+              reader.readAsDataURL(file);
+            };
+          });
           
-          // 在工具欄添加表格按鈕
+          // 在工具欄添加表格插入按鈕
           const toolbarContainer = document.querySelector('#sop-editor-drawer').previousElementSibling;
           const tableBtn = document.createElement('button');
           tableBtn.innerHTML = '📊 插入表格';
@@ -1232,7 +1281,11 @@
           tableBtn.style.cssText = 'margin-left: 8px; padding: 4px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;';
           tableBtn.onclick = () => {
             const tableModule = window.sopDrawerEditor.getModule('better-table');
-            tableModule.insertTable(3, 3);
+            if (tableModule) {
+              tableModule.insertTable(3, 3);
+            } else {
+              console.error('Better Table 模組未找到');
+            }
           };
           toolbarContainer.appendChild(tableBtn);
           
@@ -1268,24 +1321,50 @@
             return;
           }
           
-          // 配置（Quill 1.3.7 + Better Table）
+          // 配置（Quill 1.3.7 + Better Table 完整配置）
           const config = {
             theme: 'snow',
             modules: {
+              table: false,  // 禁用內建表格
               'better-table': {
                 operationMenu: {
                   items: {
-                    insertColumnRight: { text: '向右插入列' },
-                    insertColumnLeft: { text: '向左插入列' },
-                    insertRowUp: { text: '向上插入行' },
-                    insertRowDown: { text: '向下插入行' },
-                    mergeCells: { text: '合併單元格' },
-                    unmergeCells: { text: '取消合併' },
-                    deleteColumn: { text: '刪除列' },
-                    deleteRow: { text: '刪除行' },
-                    deleteTable: { text: '刪除表格' }
+                    unmergeCells: {
+                      text: '取消合併單元格'
+                    },
+                    mergeCells: {
+                      text: '合併單元格'
+                    },
+                    insertColumnRight: {
+                      text: '向右插入列'
+                    },
+                    insertColumnLeft: {
+                      text: '向左插入列'
+                    },
+                    insertRowUp: {
+                      text: '向上插入行'
+                    },
+                    insertRowDown: {
+                      text: '向下插入行'
+                    },
+                    removeCol: {
+                      text: '刪除當前列'
+                    },
+                    removeRow: {
+                      text: '刪除當前行'
+                    },
+                    removeTable: {
+                      text: '刪除表格'
+                    }
+                  },
+                  color: {
+                    colors: ['#ffffff', '#e0e0e0', '#f3f3f3', '#fef2e8', '#e8f4fd'],
+                    text: '背景顏色：'
                   }
                 }
+              },
+              keyboard: {
+                bindings: window.quillBetterTable ? window.quillBetterTable.keyboardBindings : {}
               },
               toolbar: [
                 [{ 'header': [2, 3, false] }],
@@ -1302,9 +1381,32 @@
           
           window.faqDrawerEditor = new Quill('#faq-editor-drawer', config);
           
-          // 添加表格插入按鈕
+          // 自定義圖片處理器
           const toolbar = window.faqDrawerEditor.getModule('toolbar');
-          toolbar.addHandler('image', imageHandler);
+          toolbar.addHandler('image', function() {
+            const input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*');
+            input.click();
+            
+            input.onchange = () => {
+              const file = input.files[0];
+              if (!file) return;
+              
+              if (file.size > 5 * 1024 * 1024) {
+                alert('圖片大小不能超過 5MB');
+                return;
+              }
+              
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const range = window.faqDrawerEditor.getSelection(true);
+                window.faqDrawerEditor.insertEmbed(range.index, 'image', e.target.result);
+                window.faqDrawerEditor.setSelection(range.index + 1);
+              };
+              reader.readAsDataURL(file);
+            };
+          });
           
           // 在工具欄添加表格按鈕
           const toolbarContainer = document.querySelector('#faq-editor-drawer').previousElementSibling;
@@ -1314,7 +1416,11 @@
           tableBtn.style.cssText = 'margin-left: 8px; padding: 4px 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;';
           tableBtn.onclick = () => {
             const tableModule = window.faqDrawerEditor.getModule('better-table');
-            tableModule.insertTable(3, 3);
+            if (tableModule) {
+              tableModule.insertTable(3, 3);
+            } else {
+              console.error('Better Table 模組未找到');
+            }
           };
           toolbarContainer.appendChild(tableBtn);
           
