@@ -52,7 +52,7 @@
         position: relative;
       }
       .kb-layout.collapsed {
-        grid-template-columns: 0 1fr;
+        grid-template-columns: 40px 1fr;
       }
       .left-panel {
         background: white;
@@ -68,8 +68,10 @@
         padding: 0;
         border: none;
         box-shadow: none;
-        width: 0;
-        min-width: 0;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       .kb-layout.collapsed .panel-content {
         display: none;
@@ -95,10 +97,16 @@
       }
       .toggle-panel-btn:hover {
         background: #f3f4f6;
-        width: 32px;
+        transform: translateY(-50%) scale(1.05);
       }
       .kb-layout.collapsed .toggle-panel-btn {
-        right: -30px;
+        position: static;
+        transform: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      .kb-layout.collapsed .toggle-panel-btn:hover {
+        transform: scale(1.05);
       }
       .doc-card {
         cursor: pointer;
@@ -185,10 +193,20 @@
         min-height: 100px;
         font-family: inherit;
       }
-      #editor-container {
-        min-height: 300px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
+      /* Quill 編輯器容器樣式 */
+      .ql-container {
+        font-size: 14px;
+        min-height: 350px;
+      }
+      .ql-editor {
+        min-height: 320px;
+      }
+      .ql-toolbar {
+        border-radius: 6px 6px 0 0;
+      }
+      #sop-editor-inline .ql-container,
+      #faq-editor-inline .ql-container {
+        border-radius: 0 0 6px 6px;
       }
       .file-upload-area {
         border: 2px dashed #d1d5db;
@@ -313,7 +331,7 @@
               
               <div class="form-group" style="margin:0 0 16px 0;">
                 <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">內容 *</label>
-                <div id="sop-editor-inline" style="height:400px;"></div>
+                <div id="sop-editor-inline" style="min-height:400px;background:white;border:1px solid #d1d5db;border-radius:6px;"></div>
               </div>
               
               <div style="display:flex;gap:10px;justify-content:flex-end;">
@@ -380,7 +398,7 @@
               
               <div class="form-group" style="margin:0 0 16px 0;">
                 <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">答案 *</label>
-                <div id="faq-editor-inline" style="height:400px;"></div>
+                <div id="faq-editor-inline" style="min-height:400px;background:white;border:1px solid #d1d5db;border-radius:6px;"></div>
               </div>
               
               <div style="display:flex;gap:10px;justify-content:flex-end;">
@@ -608,6 +626,12 @@
         function initSopEditor() {
           if (sopEditor) return; // 已初始化则跳过
           
+          const container = document.getElementById('sop-editor-inline');
+          if (!container) {
+            console.error('SOP 編輯器容器未找到');
+            return;
+          }
+          
           sopEditor = new Quill('#sop-editor-inline', {
             theme: 'snow',
             modules: {
@@ -623,10 +647,18 @@
             },
             placeholder: '請輸入SOP內容...'
           });
+          
+          console.log('SOP 編輯器已初始化');
         }
         
         function initFaqEditor() {
           if (faqEditor) return; // 已初始化则跳过
+          
+          const container = document.getElementById('faq-editor-inline');
+          if (!container) {
+            console.error('FAQ 編輯器容器未找到');
+            return;
+          }
           
           faqEditor = new Quill('#faq-editor-inline', {
             theme: 'snow',
@@ -642,6 +674,8 @@
             },
             placeholder: '請輸入FAQ答案...'
           });
+          
+          console.log('FAQ 編輯器已初始化');
         }
         
         // 清空 SOP 表單
