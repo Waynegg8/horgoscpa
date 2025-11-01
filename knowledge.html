@@ -197,20 +197,33 @@
     <main class="content" style="padding:0 20px 24px 20px;">
       <!-- SOP Tab -->
       <div id="sop-content" class="tab-content active">
-        <!-- SOP 編輯區域 -->
-        <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;margin-bottom:20px;">
-          <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">📝 編輯 SOP</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <!-- 左側：SOP 列表 -->
+      <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
+              <div style="font-weight:800;color:var(--text-primary);">📖 SOP 列表</div>
+              <div id="sopListInfo" class="muted">—</div>
+        </div>
+        <div id="sopsList"></div>
+        <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+              <button id="sop-prev" type="button" class="btn">上一頁</button>
+              <button id="sop-next" type="button" class="btn">下一頁</button>
+            </div>
+          </section>
           
-          <form id="sopFormInline">
-            <input type="hidden" id="sop-id-inline" />
+          <!-- 右側：SOP 編輯區域 -->
+          <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;position:sticky;top:20px;height:fit-content;">
+            <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">📝 編輯 SOP</h3>
             
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
-              <div class="form-group" style="margin:0;">
+            <form id="sopFormInline">
+              <input type="hidden" id="sop-id-inline" />
+              
+              <div class="form-group" style="margin:0 0 16px 0;">
                 <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標題 *</label>
                 <input type="text" id="sop-title-inline" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="請輸入 SOP 標題" />
               </div>
               
-              <div class="form-group" style="margin:0;">
+              <div class="form-group" style="margin:0 0 16px 0;">
                 <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">分類 *</label>
                 <select id="sop-category-inline" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
                   <option value="">請選擇</option>
@@ -223,58 +236,58 @@
                   <option value="other">其他</option>
                 </select>
               </div>
-            </div>
-            
-            <div class="form-group" style="margin:0 0 16px 0;">
-              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
-              <input type="text" id="sop-tags-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="記帳, 月結, 報稅" />
-              <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
-            </div>
-            
-            <div class="form-group" style="margin:0 0 16px 0;">
-              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">內容 *</label>
-              <div id="sop-editor-inline" style="height:300px;"></div>
-            </div>
-            
-            <div style="display:flex;gap:10px;justify-content:flex-end;">
-              <button type="button" class="btn" onclick="resetSopForm()">清空</button>
-              <button type="submit" class="btn primary" id="sopSubmitBtnInline">
-                <span>💾 儲存 SOP</span>
-              </button>
-            </div>
-          </form>
-        </section>
-        
-        <!-- SOP 列表 -->
-      <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
-            <div style="font-weight:800;color:var(--text-primary);">📖 SOP 列表</div>
-            <div id="sopListInfo" class="muted">—</div>
+              
+              <div class="form-group" style="margin:0 0 16px 0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
+                <input type="text" id="sop-tags-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="記帳, 月結, 報稅" />
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
+              </div>
+              
+              <div class="form-group" style="margin:0 0 16px 0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">內容 *</label>
+                <div id="sop-editor-inline" style="height:400px;"></div>
+              </div>
+              
+              <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button type="button" class="btn" onclick="resetSopForm()">清空</button>
+                <button type="submit" class="btn primary" id="sopSubmitBtnInline">
+                  <span>💾 儲存 SOP</span>
+                </button>
+              </div>
+            </form>
+          </section>
         </div>
-        <div id="sopsList"></div>
-        <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-            <button id="sop-prev" type="button" class="btn">上一頁</button>
-            <button id="sop-next" type="button" class="btn">下一頁</button>
-          </div>
-        </section>
       </div>
 
       <!-- FAQ Tab -->
       <div id="faq-content" class="tab-content">
-        <!-- FAQ 編輯區域 -->
-        <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;margin-bottom:20px;">
-          <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">❓ 編輯 FAQ</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <!-- 左側：FAQ 列表 -->
+          <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
+              <div style="font-weight:800;color:var(--text-primary);">❓ FAQ 列表</div>
+              <div id="faqListInfo" class="muted">—</div>
+            </div>
+            <div id="faqsList"></div>
+            <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+              <button id="faq-prev" type="button" class="btn">上一頁</button>
+              <button id="faq-next" type="button" class="btn">下一頁</button>
+            </div>
+          </section>
           
-          <form id="faqFormInline">
-            <input type="hidden" id="faq-id-inline" />
+          <!-- 右側：FAQ 編輯區域 -->
+          <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;position:sticky;top:20px;height:fit-content;">
+            <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">❓ 編輯 FAQ</h3>
             
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
-              <div class="form-group" style="margin:0;">
+            <form id="faqFormInline">
+              <input type="hidden" id="faq-id-inline" />
+              
+              <div class="form-group" style="margin:0 0 16px 0;">
                 <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">問題 *</label>
                 <input type="text" id="faq-question-inline" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="請輸入問題" />
               </div>
               
-              <div class="form-group" style="margin:0;">
+              <div class="form-group" style="margin:0 0 16px 0;">
                 <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">分類</label>
                 <select id="faq-category-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
                   <option value="">請選擇</option>
@@ -287,46 +300,67 @@
                   <option value="other">其他</option>
                 </select>
               </div>
-            </div>
-            
-            <div class="form-group" style="margin:0 0 16px 0;">
-              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
-              <input type="text" id="faq-tags-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="常見, 重要" />
-              <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
-            </div>
-            
-            <div class="form-group" style="margin:0 0 16px 0;">
-              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">答案 *</label>
-              <div id="faq-editor-inline" style="height:300px;"></div>
-            </div>
-            
-            <div style="display:flex;gap:10px;justify-content:flex-end;">
-              <button type="button" class="btn" onclick="resetFaqForm()">清空</button>
-              <button type="submit" class="btn primary" id="faqSubmitBtnInline">
-                <span>💾 儲存 FAQ</span>
-              </button>
-            </div>
-          </form>
-        </section>
-        
-        <!-- FAQ 列表 -->
-        <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
-            <div style="font-weight:800;color:var(--text-primary);">❓ FAQ 列表</div>
-            <div id="faqListInfo" class="muted">—</div>
-          </div>
-          <div id="faqsList"></div>
-          <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-            <button id="faq-prev" type="button" class="btn">上一頁</button>
-            <button id="faq-next" type="button" class="btn">下一頁</button>
-          </div>
-        </section>
+              
+              <div class="form-group" style="margin:0 0 16px 0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
+                <input type="text" id="faq-tags-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="常見, 重要" />
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
+              </div>
+              
+              <div class="form-group" style="margin:0 0 16px 0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">答案 *</label>
+                <div id="faq-editor-inline" style="height:400px;"></div>
+              </div>
+              
+              <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button type="button" class="btn" onclick="resetFaqForm()">清空</button>
+                <button type="submit" class="btn primary" id="faqSubmitBtnInline">
+                  <span>💾 儲存 FAQ</span>
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
       </div>
 
       <!-- 资源中心 Tab -->
       <div id="resources-content" class="tab-content">
-        <!-- 上傳區域 -->
-        <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;margin-bottom:20px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <!-- 左側：文檔列表 -->
+          <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:16px;">
+              <div style="font-weight:800;color:var(--text-primary);">📁 已上傳文檔</div>
+              <div id="resourcesListInfo" class="muted">—</div>
+            </div>
+            
+            <!-- 搜索和篩選 -->
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px;">
+              <div>
+                <input type="text" id="resources-search" placeholder="🔍 搜索文檔標題..." 
+                  style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;font-size:14px;" />
+              </div>
+              <div>
+                <select id="resources-category-filter" 
+                  style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;font-size:14px;">
+                  <option value="">📂 全部分類</option>
+                  <option value="contract">📄 合同範本</option>
+                  <option value="finance">💰 財務表格</option>
+                  <option value="hr">👥 人事文檔</option>
+                  <option value="tax">📊 稅務參考</option>
+                  <option value="other">📋 其他</option>
+                </select>
+              </div>
+            </div>
+            
+            <div id="resourcesList"></div>
+            <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+              <button id="resources-prev" type="button" class="btn">上一頁</button>
+              <button id="resources-next" type="button" class="btn">下一頁</button>
+            </div>
+          </section>
+          
+          <!-- 右側：上傳區域 -->
+          <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;position:sticky;top:20px;height:fit-content;">
           <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">📤 上傳文檔</h3>
           
           <form id="resourceFormInline">
@@ -385,39 +419,7 @@
             </div>
           </form>
         </section>
-        
-        <!-- 文檔列表 -->
-        <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:16px;">
-            <div style="font-weight:800;color:var(--text-primary);">📁 已上傳文檔</div>
-            <div id="resourcesListInfo" class="muted">—</div>
-          </div>
-          
-          <!-- 搜索和篩選 -->
-          <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px;">
-            <div>
-              <input type="text" id="resources-search" placeholder="🔍 搜索文檔標題..." 
-                style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;font-size:14px;" />
-            </div>
-            <div>
-              <select id="resources-category-filter" 
-                style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;font-size:14px;">
-                <option value="">📂 全部分類</option>
-                <option value="contract">📄 合同範本</option>
-                <option value="finance">💰 財務表格</option>
-                <option value="hr">👥 人事文檔</option>
-                <option value="tax">📊 稅務參考</option>
-                <option value="other">📋 其他</option>
-              </select>
-            </div>
-          </div>
-          
-          <div id="resourcesList"></div>
-          <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-            <button id="resources-prev" type="button" class="btn">上一頁</button>
-            <button id="resources-next" type="button" class="btn">下一頁</button>
         </div>
-      </section>
       </div>
     </main>
 
@@ -918,8 +920,7 @@
               // 更新按鈕文字
               document.getElementById('sopSubmitBtnInline').querySelector('span').textContent = '💾 更新 SOP';
               
-              // 滾動到表單
-              document.getElementById('sopFormInline').scrollIntoView({ behavior: 'smooth', block: 'start' });
+              // 聚焦到標題欄位
               document.getElementById('sop-title-inline').focus();
             }
           } catch (err) {
@@ -978,8 +979,7 @@
               // 更新按鈕文字
               document.getElementById('faqSubmitBtnInline').querySelector('span').textContent = '💾 更新 FAQ';
               
-              // 滾動到表單
-              document.getElementById('faqFormInline').scrollIntoView({ behavior: 'smooth', block: 'start' });
+              // 聚焦到問題欄位
               document.getElementById('faq-question-inline').focus();
             }
           } catch (err) {
@@ -1033,18 +1033,16 @@
 
         document.getElementById('btn-new').addEventListener('click', () => {
           if (currentTab === 'sop') {
-            // 清空並滾動到內聯表單
+            // 清空表單並聚焦
             resetSopForm();
-            document.getElementById('sopFormInline').scrollIntoView({ behavior: 'smooth', block: 'start' });
             document.getElementById('sop-title-inline').focus();
           } else if (currentTab === 'faq') {
-            // 清空並滾動到內聯表單
+            // 清空表單並聚焦
             resetFaqForm();
-            document.getElementById('faqFormInline').scrollIntoView({ behavior: 'smooth', block: 'start' });
             document.getElementById('faq-question-inline').focus();
           } else if (currentTab === 'resources') {
-            // 資源中心使用內聯表單，滾動到上傳區域
-            document.getElementById('resourceFormInline').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // 聚焦到標題欄位
+            resetUploadForm();
             document.getElementById('resource-title-inline').focus();
           }
         });
