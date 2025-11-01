@@ -52,8 +52,13 @@
         position: relative;
       }
       .kb-layout.collapsed {
-        grid-template-columns: 0 1fr;
+        grid-template-columns: 1fr;
         gap: 0;
+        justify-items: center;
+      }
+      .kb-layout.collapsed .list-card {
+        max-width: 900px;
+        width: 100%;
       }
       .left-panel {
         background: white;
