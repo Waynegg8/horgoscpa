@@ -1125,7 +1125,6 @@
                 [{ 'indent': '-1'}, { 'indent': '+1' }],
                 ['link', 'image'],
                 [{ 'color': [] }, { 'background': [] }],
-                ['clean']
               ]
             },
             placeholder: '請輸入SOP內容...'
@@ -1152,7 +1151,6 @@
                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                 ['link'],
                 [{ 'color': [] }],
-                ['clean']
               ]
             },
             placeholder: '請輸入FAQ答案...'
@@ -1279,7 +1277,6 @@
                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                 ['image'],
                 [{ 'color': [] }],
-                ['clean']
               ]
             },
             placeholder: '請輸入SOP內容...'
@@ -1314,19 +1311,14 @@
             };
           });
           
-          // 確保工具欄使用 flexbox 並在最後添加表格插入按鈕
+          // 在工具欄最後添加表格插入按鈕
           const toolbarContainer = document.querySelector('#sop-editor-drawer').previousElementSibling;
-          // 設置工具欄為 flex 容器
-          toolbarContainer.style.display = 'flex';
-          toolbarContainer.style.alignItems = 'center';
           
           const tableBtn = document.createElement('button');
           tableBtn.type = 'button'; // 防止觸發表單提交
-          tableBtn.innerHTML = `<span class="material-icons" style="font-size: 18px;">table_chart</span><span>表格</span>`;
           tableBtn.className = 'ql-table-insert';
-          tableBtn.style.cssText = 'margin-left: auto; padding: 5px 10px; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 4px;';
-          tableBtn.onmouseover = () => { tableBtn.style.background = '#e5e7eb'; };
-          tableBtn.onmouseout = () => { tableBtn.style.background = '#f3f4f6'; };
+          tableBtn.innerHTML = `<span class="material-icons" style="font-size: 18px;">table_chart</span>`;
+          tableBtn.title = '插入表格'; // 使用 tooltip 而不是文字
           tableBtn.onclick = (e) => {
             e.preventDefault(); // 防止觸發表單提交
             e.stopPropagation();
@@ -1464,7 +1456,6 @@
                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                 ['image'],
                 [{ 'color': [] }],
-                ['clean']
               ]
             },
             placeholder: '請輸入FAQ答案...'
@@ -1499,19 +1490,14 @@
             };
           });
           
-          // 確保工具欄使用 flexbox 並在最後添加表格按鈕
+          // 在工具欄最後添加表格按鈕
           const toolbarContainer = document.querySelector('#faq-editor-drawer').previousElementSibling;
-          // 設置工具欄為 flex 容器
-          toolbarContainer.style.display = 'flex';
-          toolbarContainer.style.alignItems = 'center';
           
           const tableBtn = document.createElement('button');
           tableBtn.type = 'button'; // 防止觸發表單提交
-          tableBtn.innerHTML = `<span class="material-icons" style="font-size: 18px;">table_chart</span><span>表格</span>`;
           tableBtn.className = 'ql-table-insert';
-          tableBtn.style.cssText = 'margin-left: auto; padding: 5px 10px; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 4px;';
-          tableBtn.onmouseover = () => { tableBtn.style.background = '#e5e7eb'; };
-          tableBtn.onmouseout = () => { tableBtn.style.background = '#f3f4f6'; };
+          tableBtn.innerHTML = `<span class="material-icons" style="font-size: 18px;">table_chart</span>`;
+          tableBtn.title = '插入表格'; // 使用 tooltip 而不是文字
           tableBtn.onclick = (e) => {
             e.preventDefault(); // 防止觸發表單提交
             e.stopPropagation();
