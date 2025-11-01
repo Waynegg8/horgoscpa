@@ -346,6 +346,19 @@
     let allServices = [];
     let allServiceItems = [];  // 存储所有服务项
     let allTemplates = [];
+    let allUsers = [];  // 存储所有员工
+    let allSOPs = [];  // 存储所有SOP
+    
+    // 辅助函数：获取分类文本
+    function getCategoryText(category) {
+      const categoryMap = {
+        'accounting': '記帳流程',
+        'tax': '稅務流程',
+        'business': '工商登記',
+        'internal': '內部流程'
+      };
+      return categoryMap[category] || category;
+    }
 
     // 頁面初始化
     async function init() {
@@ -358,11 +371,13 @@
         return;
       }
 
-      // 先加載服務選項、服務項和模板，再加載客戶詳情
+      // 先加載服務選項、服務項、模板、員工和SOP，再加載客戶詳情
       await Promise.all([
         loadServices(),
         loadServiceItems(),
-        loadTemplates()
+        loadTemplates(),
+        loadAllUsers(),
+        loadAllSOPs()
       ]);
       
       await loadClientDetail();
@@ -1131,6 +1146,37 @@
         console.error('載入模板選項失敗:', err);
       }
     }
+    
+    // 載入所有員工
+    async function loadAllUsers() {
+      try {
+        const res = await fetch('/internal/api/v1/users');
+        const json = await res.json();
+        
+        if (json.ok && json.data) {
+          allUsers = json.data;
+          console.log('已載入員工列表:', allUsers.length, '人');
+        }
+      } catch (err) {
+        console.error('載入員工列表失敗:', err);
+      }
+    }
+    
+    // 載入所有SOP
+    async function loadAllSOPs() {
+      try {
+        const res = await fetch('/internal/api/v1/sop');
+        const json = await res.json();
+        
+        if (json.ok && json.data) {
+          // 内部知识库不需要发布状态，所有SOP都可用
+          allSOPs = json.data.filter(sop => !sop.is_deleted);
+          console.log('已載入SOP列表:', allSOPs.length, '篇');
+        }
+      } catch (err) {
+        console.error('載入SOP列表失敗:', err);
+      }
+    }
 
     // 顯示新增服務行
     function showAddServiceRow() {
@@ -1499,27 +1545,26 @@
 
         const components = json.data || [];
         
-        // 獲取服務項選項（按服務分組）
-        let serviceItemsHtml = '';
-        const groupedItems = {};
-        allServiceItems.forEach(item => {
-          if (!groupedItems[item.service_id]) {
-            groupedItems[item.service_id] = [];
-          }
-          groupedItems[item.service_id].push(item);
-        });
+        // 從clientDetail中找到當前服務，獲取其service_id
+        const currentService = clientDetail.services.find(s => s.client_service_id === clientServiceId);
+        const currentServiceId = currentService?.service_id;
         
-        // 按服務分組顯示服務項
-        allServices.forEach(service => {
-          const items = groupedItems[service.service_id] || [];
-          if (items.length > 0) {
-            serviceItemsHtml += `<optgroup label="${service.service_name}">`;
-            items.forEach(item => {
-              serviceItemsHtml += `<option value="${item.item_id}" data-service-id="${item.service_id}">${item.item_name}</option>`;
-            });
-            serviceItemsHtml += `</optgroup>`;
-          }
-        });
+        if (!currentServiceId) {
+          container.innerHTML = '<p class="error-text">無法獲取服務信息</p>';
+          return;
+        }
+        
+        // 只顯示當前服務下的服務項目
+        let serviceItemsHtml = '';
+        const currentServiceItems = allServiceItems.filter(item => item.service_id === currentServiceId);
+        
+        if (currentServiceItems.length === 0) {
+          serviceItemsHtml = '<option value="">此服務暫無可用項目</option>';
+        } else {
+          currentServiceItems.forEach(item => {
+            serviceItemsHtml += `<option value="${item.item_id}" data-service-id="${item.service_id}">${item.item_name}</option>`;
+          });
+        }
 
         container.innerHTML = `
           <div style="padding: 20px; background: #f9fafb; border-radius: 8px;">
@@ -1571,9 +1616,79 @@
                   </div>
                   <button type="button" class="table-btn table-btn-primary" onclick="addCustomTask${clientServiceId}()">+ 新增任務</button>
                 </div>
+                
+                <!-- 批量设置负责人 -->
+                <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #3b82f6;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-size: 13px; font-weight: 500; color: #1e40af; white-space: nowrap;">👥 批量設置負責人：</label>
+                    <select id="batch-assignee-${clientServiceId}" style="flex: 1; max-width: 200px; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;">
+                      <option value="">請選擇員工</option>
+                      ${allUsers.map(u => `<option value="${u.user_id}">${u.username}</option>`).join('')}
+                    </select>
+                    <button type="button" class="table-btn" style="background: #3b82f6; color: white; padding: 6px 12px; font-size: 13px;" 
+                            onclick="batchAssignTasks${clientServiceId}()">
+                      套用到所有任務
+                    </button>
+                    <small style="color: #6b7280; font-size: 12px;">💡 之後可單獨修改個別任務</small>
+                  </div>
+                </div>
+                
                 <div id="tasks-list-${clientServiceId}">
                   <!-- 任务列表会动态加载到这里 -->
                 </div>
+              </div>
+              
+              <div class="form-field">
+                <label>📖 服務SOP（可選，可多選）</label>
+                
+                <!-- 已选择的SOP标签 -->
+                <div id="selected-comp-sops-${clientServiceId}" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 32px; padding: 8px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                  <span style="color: #9ca3af; font-size: 12px;">尚未選擇SOP</span>
+                </div>
+                
+                <!-- 搜索框 -->
+                <input type="text" 
+                       id="comp-sop-search-${clientServiceId}"
+                       placeholder="🔍 搜尋SOP..." 
+                       style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; margin-bottom: 8px;"
+                       onkeyup="filterCompSOPs${clientServiceId}(this.value)" />
+                
+                <!-- SOP列表 -->
+                <div id="new-comp-sop-list-${clientServiceId}" style="max-height: 200px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 6px; padding: 10px; background: #f9fafb;">
+                  ${allSOPs.length > 0 ? (() => {
+                    // 按分类分组
+                    const grouped = {};
+                    allSOPs.forEach(sop => {
+                      const cat = sop.category || 'other';
+                      if (!grouped[cat]) grouped[cat] = [];
+                      grouped[cat].push(sop);
+                    });
+                    
+                    return Object.entries(grouped).map(([category, sops]) => {
+                      const catName = getCategoryText(category);
+                      return `
+                        <div style="margin-bottom: 12px;">
+                          <div style="font-weight: 600; font-size: 12px; color: #6b7280; margin-bottom: 6px; padding: 4px 6px; background: #f3f4f6; border-radius: 4px;">${catName}</div>
+                          ${sops.map(sop => `
+                            <label class="comp-sop-option" data-sop-title="${sop.title.toLowerCase()}" data-sop-category="${category}"
+                                   style="display: flex; align-items: start; gap: 8px; padding: 6px; cursor: pointer; border-radius: 4px; margin-bottom: 4px; margin-left: 8px;" 
+                                   onmouseover="this.style.background='#f3f4f6'" 
+                                   onmouseout="this.style.background='transparent'">
+                              <input type="checkbox" class="comp-sop-checkbox" value="${sop.sop_id}" 
+                                     style="margin-top: 3px; cursor: pointer;" 
+                                     onchange="updateCompSOPSelection${clientServiceId}()" />
+                              <div style="flex: 1;">
+                                <div style="font-weight: 500; font-size: 14px; color: #1f2937;">${sop.title}</div>
+                                ${sop.category ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">分類：${getCategoryText(sop.category)}</div>` : ''}
+                              </div>
+                            </label>
+                          `).join('')}
+                        </div>
+                      `;
+                    }).join('');
+                  })() : '<div style="color: #9ca3af; text-align: center; padding: 20px;">暫無SOP</div>'}
+                </div>
+                <small style="display: block; margin-top: 5px; color: #6b7280;">💡 可選擇多個SOP作為服務流程參考</small>
               </div>
               
               <div class="form-field">
@@ -1808,6 +1923,8 @@
             due_value: stage.due_date_value || '',
             estimated_hours: stage.estimated_hours || '',
             advance_days: stage.advance_days || 7,
+            assignee_user_id: '',
+            sop_ids: stage.sop_id ? [stage.sop_id] : [],  // 兼容旧的单一SOP
             stage_order: stage.stage_order || (idx + 1),
             fromTemplate: true
           }));
@@ -1847,6 +1964,80 @@
                 
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
                   <div>
+                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">👤 負責人員</label>
+                    <select style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
+                            onchange="window.customTasks${clientServiceId}[${idx}].assignee_user_id = this.value">
+                      <option value="">未指定</option>
+                      ${allUsers.map(u => `<option value="${u.user_id}" ${task.assignee_user_id == u.user_id ? 'selected' : ''}>${u.username}</option>`).join('')}
+                    </select>
+                  </div>
+                  <div style="grid-column: span 2;">
+                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📖 任務SOP（可選，可多選）</label>
+                    
+                    <!-- 已选择的SOP标签 -->
+                    <div id="selected-sops-${idx}-${clientServiceId}" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; min-height: 28px;">
+                      <!-- 动态填充已选择的SOP标签 -->
+                    </div>
+                    
+                    <!-- 搜索框 -->
+                    <input type="text" 
+                           id="sop-search-${idx}-${clientServiceId}"
+                           placeholder="🔍 搜尋SOP..." 
+                           style="width: 100%; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; margin-bottom: 6px;"
+                           onkeyup="filterTaskSOPs${clientServiceId}(${idx}, this.value)" />
+                    
+                    <!-- SOP列表 -->
+                    <div id="task-sop-list-${idx}-${clientServiceId}" style="max-height: 150px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 4px; padding: 8px; background: white;">
+                      ${allSOPs.length > 0 ? (() => {
+                        // 按分类分组
+                        const grouped = {};
+                        allSOPs.forEach(sop => {
+                          const cat = sop.category || 'other';
+                          if (!grouped[cat]) grouped[cat] = [];
+                          grouped[cat].push(sop);
+                        });
+                        
+                        return Object.entries(grouped).map(([category, sops]) => {
+                          const catName = getCategoryText(category);
+                          return \`
+                            <div style="margin-bottom: 8px;">
+                              <div style="font-weight: 600; font-size: 11px; color: #6b7280; margin-bottom: 4px; padding: 2px 4px; background: #f3f4f6; border-radius: 3px;">\${catName}</div>
+                              \${sops.map(sop => {
+                                const isChecked = task.sop_ids && task.sop_ids.includes(sop.sop_id);
+                                return \`
+                                  <label class="sop-option" data-sop-title="\${sop.title.toLowerCase()}" data-sop-category="\${category}"
+                                         style="display: flex; align-items: center; gap: 6px; padding: 4px; cursor: pointer; font-size: 12px; margin-left: 8px;" 
+                                         onmouseover="this.style.background='#f3f4f6'" 
+                                         onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" value="\${sop.sop_id}" 
+                                           \${isChecked ? 'checked' : ''}
+                                           onchange="updateTaskSOPs${clientServiceId}(${idx}, this)"
+                                           style="cursor: pointer;" />
+                                    <span style="color: #374151;">\${sop.title}</span>
+                                  </label>
+                                \`;
+                              }).join('')}
+                            </div>
+                          \`;
+                        }).join('');
+                      })() : '<div style="color: #9ca3af; font-size: 12px; text-align: center; padding: 10px;">暫無SOP</div>'}
+                    </div>
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">⏱️ 預估工時</label>
+                    <input type="number" min="0" step="0.5" value="${task.estimated_hours || ''}" placeholder="例如：2"
+                           style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
+                           onchange="window.customTasks${clientServiceId}[${idx}].estimated_hours = this.value" />
+                    <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">小時</small>
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📆 提前生成</label>
+                    <input type="number" min="0" value="${task.advance_days || 7}" placeholder="7"
+                           style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
+                           onchange="window.customTasks${clientServiceId}[${idx}].advance_days = this.value" />
+                    <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">天前生成</small>
+                  </div>
+                  <div>
                     <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📅 期限規則</label>
                     <select style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
                             onchange="window.customTasks${clientServiceId}[${idx}].due_rule = this.value; window.updateCustomTaskDisplay${clientServiceId}(${idx})">
@@ -1863,20 +2054,6 @@
                            style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
                            onchange="window.customTasks${clientServiceId}[${idx}].due_value = this.value; window.updateCustomTaskDisplay${clientServiceId}(${idx})" />
                   </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">⏱️ 預估工時</label>
-                    <input type="number" min="0" step="0.5" value="${task.estimated_hours || ''}" placeholder="例如：2"
-                           style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
-                           onchange="window.customTasks${clientServiceId}[${idx}].estimated_hours = this.value" />
-                    <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">小時</small>
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📆 提前生成</label>
-                    <input type="number" min="0" value="${task.advance_days || 7}" placeholder="7"
-                           style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
-                           onchange="window.customTasks${clientServiceId}[${idx}].advance_days = this.value" />
-                    <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">天前生成</small>
-                  </div>
                 </div>
                 
                 <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
@@ -1887,9 +2064,12 @@
           </div>
         `).join('');
         
-        // 初始化期限显示
+        // 初始化期限显示和已选择SOP标签
         tasks.forEach((task, idx) => {
-          setTimeout(() => window[`updateCustomTaskDisplay${clientServiceId}`](idx), 50);
+          setTimeout(() => {
+            window[`updateCustomTaskDisplay${clientServiceId}`](idx);
+            window[`renderSelectedTaskSOPs${clientServiceId}`](idx);
+          }, 50);
         });
       };
       
@@ -1906,6 +2086,8 @@
           due_value: '',
           estimated_hours: '',
           advance_days: 7,
+          assignee_user_id: '',
+          sop_ids: [],
           fromTemplate: false
         });
         
@@ -1919,6 +2101,205 @@
           window[`customTasks${clientServiceId}`].splice(idx, 1);
           // 重新渲染任务列表
           window[`renderTasksList${clientServiceId}`]();
+        }
+      };
+      
+      // 更新任务的SOP列表
+      window[`updateTaskSOPs${clientServiceId}`] = function(idx, checkbox) {
+        const task = window[`customTasks${clientServiceId}`]?.[idx];
+        if (!task) return;
+        
+        if (!task.sop_ids) {
+          task.sop_ids = [];
+        }
+        
+        const sopId = parseInt(checkbox.value);
+        if (checkbox.checked) {
+          if (!task.sop_ids.includes(sopId)) {
+            task.sop_ids.push(sopId);
+          }
+        } else {
+          task.sop_ids = task.sop_ids.filter(id => id !== sopId);
+        }
+        
+        // 更新已选择的SOP标签显示
+        window[`renderSelectedTaskSOPs${clientServiceId}`](idx);
+      };
+      
+      // 渲染已选择的任务SOP标签
+      window[`renderSelectedTaskSOPs${clientServiceId}`] = function(idx) {
+        const task = window[`customTasks${clientServiceId}`]?.[idx];
+        if (!task) return;
+        
+        const container = document.getElementById(`selected-sops-${idx}-${clientServiceId}`);
+        if (!container) return;
+        
+        if (!task.sop_ids || task.sop_ids.length === 0) {
+          container.innerHTML = '<span style="color: #9ca3af; font-size: 11px;">尚未選擇SOP</span>';
+          return;
+        }
+        
+        // 渲染标签
+        const tags = task.sop_ids.map(sopId => {
+          const sop = allSOPs.find(s => s.sop_id === sopId);
+          if (!sop) return '';
+          
+          return `
+            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 11px;">
+              ${sop.title}
+              <button type="button" 
+                      onclick="removeTaskSOP${clientServiceId}(${idx}, ${sopId})"
+                      style="border: none; background: none; color: #1e40af; cursor: pointer; padding: 0; font-size: 14px; line-height: 1;"
+                      title="移除">×</button>
+            </span>
+          `;
+        }).join('');
+        
+        container.innerHTML = tags;
+      };
+      
+      // 移除任务SOP
+      window[`removeTaskSOP${clientServiceId}`] = function(idx, sopId) {
+        const task = window[`customTasks${clientServiceId}`]?.[idx];
+        if (!task) return;
+        
+        task.sop_ids = task.sop_ids.filter(id => id !== sopId);
+        
+        // 取消对应的checkbox
+        const listContainer = document.getElementById(`task-sop-list-${idx}-${clientServiceId}`);
+        if (listContainer) {
+          const checkbox = listContainer.querySelector(`input[value="${sopId}"]`);
+          if (checkbox) checkbox.checked = false;
+        }
+        
+        // 更新标签显示
+        window[`renderSelectedTaskSOPs${clientServiceId}`](idx);
+      };
+      
+      // 过滤任务SOP列表
+      window[`filterTaskSOPs${clientServiceId}`] = function(idx, searchTerm) {
+        const listContainer = document.getElementById(`task-sop-list-${idx}-${clientServiceId}`);
+        if (!listContainer) return;
+        
+        const term = searchTerm.toLowerCase().trim();
+        const options = listContainer.querySelectorAll('.sop-option');
+        
+        let visibleCount = 0;
+        options.forEach(option => {
+          const title = option.getAttribute('data-sop-title');
+          if (!term || title.includes(term)) {
+            option.style.display = 'flex';
+            visibleCount++;
+          } else {
+            option.style.display = 'none';
+          }
+        });
+        
+        // 隐藏空分类
+        const categories = listContainer.querySelectorAll('div > div[style*="font-weight: 600"]');
+        categories.forEach(catHeader => {
+          const categoryDiv = catHeader.parentElement;
+          const visibleOptions = Array.from(categoryDiv.querySelectorAll('.sop-option')).filter(o => o.style.display !== 'none');
+          categoryDiv.style.display = visibleOptions.length > 0 ? 'block' : 'none';
+        });
+      };
+      
+      // 更新服务组件SOP选择（渲染已选择的标签）
+      window[`updateCompSOPSelection${clientServiceId}`] = function() {
+        const container = document.getElementById(`selected-comp-sops-${clientServiceId}`);
+        if (!container) return;
+        
+        const checkboxes = document.querySelectorAll('.comp-sop-checkbox:checked');
+        
+        if (checkboxes.length === 0) {
+          container.innerHTML = '<span style="color: #9ca3af; font-size: 12px;">尚未選擇SOP</span>';
+          return;
+        }
+        
+        const tags = Array.from(checkboxes).map(checkbox => {
+          const sopId = parseInt(checkbox.value);
+          const sop = allSOPs.find(s => s.sop_id === sopId);
+          if (!sop) return '';
+          
+          return `
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: #dbeafe; color: #1e40af; border-radius: 6px; font-size: 12px;">
+              ${sop.title}
+              <button type="button" 
+                      onclick="removeCompSOP${clientServiceId}(${sopId})"
+                      style="border: none; background: none; color: #1e40af; cursor: pointer; padding: 0; font-size: 16px; line-height: 1;"
+                      title="移除">×</button>
+            </span>
+          `;
+        }).join('');
+        
+        container.innerHTML = tags;
+      };
+      
+      // 移除服务组件SOP
+      window[`removeCompSOP${clientServiceId}`] = function(sopId) {
+        const checkbox = document.querySelector(`.comp-sop-checkbox[value="${sopId}"]`);
+        if (checkbox) {
+          checkbox.checked = false;
+          window[`updateCompSOPSelection${clientServiceId}`]();
+        }
+      };
+      
+      // 过滤服务组件SOP列表
+      window[`filterCompSOPs${clientServiceId}`] = function(searchTerm) {
+        const listContainer = document.getElementById(`new-comp-sop-list-${clientServiceId}`);
+        if (!listContainer) return;
+        
+        const term = searchTerm.toLowerCase().trim();
+        const options = listContainer.querySelectorAll('.comp-sop-option');
+        
+        options.forEach(option => {
+          const title = option.getAttribute('data-sop-title');
+          if (!term || title.includes(term)) {
+            option.style.display = 'flex';
+          } else {
+            option.style.display = 'none';
+          }
+        });
+        
+        // 隐藏空分类
+        const categories = listContainer.querySelectorAll('div > div[style*="font-weight: 600"]');
+        categories.forEach(catHeader => {
+          const categoryDiv = catHeader.parentElement;
+          const visibleOptions = Array.from(categoryDiv.querySelectorAll('.comp-sop-option')).filter(o => o.style.display !== 'none');
+          categoryDiv.style.display = visibleOptions.length > 0 ? 'block' : 'none';
+        });
+      };
+      
+      // 批量设置负责人
+      window[`batchAssignTasks${clientServiceId}`] = function() {
+        const batchAssigneeSelect = document.getElementById(`batch-assignee-${clientServiceId}`);
+        const assigneeUserId = batchAssigneeSelect.value;
+        
+        if (!assigneeUserId) {
+          alert('請先選擇負責人員');
+          return;
+        }
+        
+        const tasks = window[`customTasks${clientServiceId}`];
+        if (!tasks || tasks.length === 0) {
+          alert('目前沒有任務可以設置');
+          return;
+        }
+        
+        // 获取选中的员工名称
+        const selectedOption = batchAssigneeSelect.options[batchAssigneeSelect.selectedIndex];
+        const assigneeName = selectedOption.textContent;
+        
+        if (confirm(\`確定要將所有 \${tasks.length} 個任務的負責人設置為「\${assigneeName}」嗎？\\n\\n之後您仍可單獨修改個別任務的負責人。\`)) {
+          // 批量设置所有任务的负责人
+          tasks.forEach(task => {
+            task.assignee_user_id = assigneeUserId;
+          });
+          
+          // 重新渲染任务列表
+          window[`renderTasksList${clientServiceId}`]();
+          
+          alert(\`已成功將所有任務的負責人設置為「\${assigneeName}」\`);
         }
       };
       
@@ -2043,6 +2424,10 @@
       const hours = document.getElementById(`new-comp-hours-${clientServiceId}`).value;
       const advance = document.getElementById(`new-comp-advance-${clientServiceId}`).value;
       const notes = document.getElementById(`new-comp-notes-${clientServiceId}`).value.trim();
+      
+      // 收集选中的多个SOP
+      const sopCheckboxes = document.querySelectorAll(`#new-comp-sop-list-${clientServiceId} .comp-sop-checkbox:checked`);
+      const sopIds = Array.from(sopCheckboxes).map(cb => parseInt(cb.value));
 
       if (!name) {
         alert('請輸入服務名稱');
@@ -2057,6 +2442,9 @@
       const serviceItemSelect = document.getElementById(`new-comp-service-item-${clientServiceId}`);
       const selectedOption = serviceItemSelect.options[serviceItemSelect.selectedIndex];
       const serviceId = selectedOption.getAttribute('data-service-id');
+      
+      // 獲取自定義任務配置
+      const tasks = window[`customTasks${clientServiceId}`] || [];
 
       const data = {
         component_name: name,
@@ -2069,7 +2457,17 @@
         estimated_hours: hours ? parseFloat(hours) : null,
         advance_days: advance ? parseInt(advance) : 7,
         notes: notes || null,
-        auto_generate_task: true
+        sop_ids: sopIds,  // 多个SOP
+        auto_generate_task: true,
+        tasks: tasks.map(task => ({
+          name: task.name,
+          due_rule: task.due_rule,
+          due_value: task.due_value ? parseInt(task.due_value) : null,
+          estimated_hours: task.estimated_hours ? parseFloat(task.estimated_hours) : null,
+          advance_days: task.advance_days ? parseInt(task.advance_days) : 7,
+          assignee_user_id: task.assignee_user_id ? parseInt(task.assignee_user_id) : null,
+          sop_ids: task.sop_ids || []  // 多个SOP
+        }))
       };
 
       try {

@@ -3,22 +3,171 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="知識庫（SOP）" />
-    <title>知識庫｜SOP 列表</title>
+    <meta name="description" content="內部知識庫" />
+    <title>知識庫｜SOP / FAQ / 資源中心</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/knowledge-page.css" />
+    <!-- Quill富文本编辑器 -->
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <style>
+      .tabs {
+        display: flex;
+        gap: 8px;
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 20px;
+      }
+      .tab-button {
+        padding: 12px 24px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        color: #6b7280;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s;
+      }
+      .tab-button:hover {
+        color: #1f2937;
+        background: #f9fafb;
+      }
+      .tab-button.active {
+        color: #2563eb;
+        border-bottom-color: #2563eb;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        overflow-y: auto;
+      }
+      .modal.show {
+        display: block;
+      }
+      .modal-content {
+        background-color: white;
+        margin: 50px auto;
+        padding: 30px;
+        border-radius: 12px;
+        max-width: 800px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+      .modal-header h2 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2937;
+      }
+      .close-modal {
+        font-size: 28px;
+        font-weight: bold;
+        color: #9ca3af;
+        cursor: pointer;
+        border: none;
+        background: none;
+        padding: 0;
+        line-height: 1;
+      }
+      .close-modal:hover {
+        color: #4b5563;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+      }
+      .form-group input[type="text"],
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      .form-group textarea {
+        min-height: 100px;
+        font-family: inherit;
+      }
+      #editor-container {
+        min-height: 300px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+      }
+      .file-upload-area {
+        border: 2px dashed #d1d5db;
+        border-radius: 8px;
+        padding: 40px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .file-upload-area:hover {
+        border-color: #2563eb;
+        background: #f0f7ff;
+      }
+      .file-upload-area.dragover {
+        border-color: #2563eb;
+        background: #dbeafe;
+      }
+      .uploaded-file-info {
+        margin-top: 16px;
+        padding: 12px;
+        background: #f0f7ff;
+        border-radius: 6px;
+        display: none;
+      }
+      .uploaded-file-info.show {
+        display: block;
+      }
+    </style>
   </head>
   <body class="knowledge-page">
     <header class="page-header" style="padding:16px 20px;display:flex;align-items:center;gap:12px;">
-      <h1 class="page-title" style="margin:0;font-size:24px;font-weight:800;color:var(--text-primary);">知識庫（SOP）</h1>
+      <h1 class="page-title" style="margin:0;font-size:24px;font-weight:800;color:var(--text-primary);">內部知識庫</h1>
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限執行此操作</div>
     </header>
 
+    <!-- Tab切换 -->
+    <section style="padding:0 20px;">
+      <div class="tabs">
+        <button class="tab-button active" data-tab="sop">📖 SOP 流程文檔</button>
+        <button class="tab-button" data-tab="faq">❓ FAQ 常見問答</button>
+        <button class="tab-button" data-tab="resources">📁 資源中心</button>
+      </div>
+    </section>
+
+    <!-- 筛选区域 -->
     <section class="filters" style="padding:0 20px 16px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
       <div style="flex:1;min-width:220px;">
         <label for="q" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">搜尋</label>
-        <input id="q" type="search" placeholder="搜尋標題/標籤…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;" />
+        <input id="q" type="search" placeholder="搜尋標題/內容…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;" />
       </div>
       <div>
         <label for="category" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">分類</label>
@@ -27,59 +176,273 @@
           <option value="accounting">記帳流程</option>
           <option value="tax">稅務流程</option>
           <option value="business">工商登記</option>
-          <option value="internal">內部</option>
+          <option value="hr">人事管理</option>
+          <option value="finance">財務管理</option>
+          <option value="contract">合同範本</option>
+          <option value="internal">內部流程</option>
+          <option value="other">其他</option>
         </select>
       </div>
       <div style="flex:1;min-width:220px;">
         <label for="tags" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">標籤（以逗號分隔）</label>
         <input id="tags" type="text" placeholder="例如：報稅, 月結, 提醒" aria-label="標籤" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;" />
       </div>
-      <div>
-        <label for="status" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">發布狀態</label>
-        <select id="status" aria-label="發布狀態" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:140px;">
-          <option value="all">全部</option>
-          <option value="published">已發布</option>
-          <option value="draft">草稿</option>
-        </select>
-      </div>
       <div class="toolbar-spacer" style="flex:1;"></div>
       <div>
-        <button id="btn-new" class="btn primary" type="button">新增 SOP</button>
+        <button id="btn-new" class="btn primary" type="button">+ 新增</button>
       </div>
     </section>
 
+    <!-- 列表区域 -->
     <main class="content" style="padding:0 20px 24px 20px;">
+      <!-- SOP Tab -->
+      <div id="sop-content" class="tab-content active">
       <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
           <div style="font-weight:800;color:var(--text-primary);">SOP 列表</div>
-          <div id="listInfo" class="muted">—</div>
+            <div id="sopListInfo" class="muted">—</div>
         </div>
         <div id="sopsList"></div>
         <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-          <button id="prev" type="button" class="btn">上一頁</button>
-          <button id="next" type="button" class="btn">下一頁</button>
+            <button id="sop-prev" type="button" class="btn">上一頁</button>
+            <button id="sop-next" type="button" class="btn">下一頁</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- FAQ Tab -->
+      <div id="faq-content" class="tab-content">
+        <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
+            <div style="font-weight:800;color:var(--text-primary);">FAQ 列表</div>
+            <div id="faqListInfo" class="muted">—</div>
+          </div>
+          <div id="faqsList"></div>
+          <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+            <button id="faq-prev" type="button" class="btn">上一頁</button>
+            <button id="faq-next" type="button" class="btn">下一頁</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- 资源中心 Tab -->
+      <div id="resources-content" class="tab-content">
+        <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
+            <div style="font-weight:800;color:var(--text-primary);">資源中心</div>
+            <div id="resourcesListInfo" class="muted">—</div>
+          </div>
+          <div id="resourcesList"></div>
+          <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+            <button id="resources-prev" type="button" class="btn">上一頁</button>
+            <button id="resources-next" type="button" class="btn">下一頁</button>
         </div>
       </section>
+      </div>
     </main>
 
+    <!-- SOP模态框 -->
+    <div id="sopModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="sopModalTitle">新增 SOP</h2>
+          <button class="close-modal" onclick="closeSopModal()">&times;</button>
+        </div>
+        <form id="sopForm">
+          <input type="hidden" id="sop-id" />
+          
+          <div class="form-group">
+            <label for="sop-title">標題 *</label>
+            <input type="text" id="sop-title" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="sop-category">分類</label>
+            <select id="sop-category">
+              <option value="">請選擇</option>
+              <option value="accounting">記帳流程</option>
+              <option value="tax">稅務流程</option>
+              <option value="business">工商登記</option>
+              <option value="hr">人事管理</option>
+              <option value="internal">內部流程</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="sop-tags">標籤（以逗號分隔）</label>
+            <input type="text" id="sop-tags" placeholder="例如：月結, 報稅, 對帳" />
+          </div>
+          
+          <div class="form-group">
+            <label>內容 *</label>
+            <div id="sop-editor-container"></div>
+          </div>
+          
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px;">
+            <button type="button" class="btn" onclick="closeSopModal()">取消</button>
+            <button type="submit" class="btn primary">儲存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- FAQ模态框 -->
+    <div id="faqModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="faqModalTitle">新增 FAQ</h2>
+          <button class="close-modal" onclick="closeFaqModal()">&times;</button>
+        </div>
+        <form id="faqForm">
+          <input type="hidden" id="faq-id" />
+          
+          <div class="form-group">
+            <label for="faq-question">問題 *</label>
+            <input type="text" id="faq-question" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="faq-category">分類</label>
+            <select id="faq-category">
+              <option value="">請選擇</option>
+              <option value="accounting">記帳流程</option>
+              <option value="tax">稅務流程</option>
+              <option value="business">工商登記</option>
+              <option value="hr">人事管理</option>
+              <option value="finance">財務管理</option>
+              <option value="internal">內部流程</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="faq-tags">標籤（以逗號分隔）</label>
+            <input type="text" id="faq-tags" placeholder="例如：新手, 常見, 重要" />
+          </div>
+          
+          <div class="form-group">
+            <label>答案 *</label>
+            <div id="faq-editor-container"></div>
+          </div>
+          
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px;">
+            <button type="button" class="btn" onclick="closeFaqModal()">取消</button>
+            <button type="submit" class="btn primary">儲存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 资源上传模态框 -->
+    <div id="resourceModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="resourceModalTitle">上傳文檔</h2>
+          <button class="close-modal" onclick="closeResourceModal()">&times;</button>
+        </div>
+        <form id="resourceForm">
+          <input type="hidden" id="resource-id" />
+          <input type="hidden" id="resource-file-url" />
+          
+          <div class="form-group">
+            <label>選擇文件 *</label>
+            <div class="file-upload-area" id="fileUploadArea">
+              <div style="font-size: 48px; margin-bottom: 12px;">📎</div>
+              <div style="font-weight: 600; margin-bottom: 8px;">點擊或拖拽文件到此處</div>
+              <div style="font-size: 12px; color: #6b7280;">支持 PDF, Word, Excel, PowerPoint, 圖片等格式</div>
+              <input type="file" id="file-input" style="display: none;" />
+            </div>
+            <div class="uploaded-file-info" id="uploadedFileInfo">
+              <div style="font-weight: 600; margin-bottom: 4px;">已選擇文件：</div>
+              <div id="fileName" style="color: #2563eb;"></div>
+              <div id="fileSize" style="font-size: 12px; color: #6b7280; margin-top: 4px;"></div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="resource-title">文檔標題 *</label>
+            <input type="text" id="resource-title" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="resource-description">描述</label>
+            <textarea id="resource-description" rows="3"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="resource-category">分類</label>
+            <select id="resource-category">
+              <option value="">請選擇</option>
+              <option value="contract">合同範本</option>
+              <option value="finance">財務表格</option>
+              <option value="hr">人事文檔</option>
+              <option value="tax">稅務參考</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="resource-tags">標籤（以逗號分隔）</label>
+            <input type="text" id="resource-tags" placeholder="例如：範本, 重要, 參考" />
+          </div>
+          
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px;">
+            <button type="button" class="btn" onclick="closeResourceModal()">取消</button>
+            <button type="submit" class="btn primary" id="resourceSubmitBtn">上傳</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <script>
       (function(){
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
         const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
 
-        const permBar = document.getElementById('permBar');
-        const btnNew = document.getElementById('btn-new');
-        const q = document.getElementById('q');
-        const category = document.getElementById('category');
-        const tags = document.getElementById('tags');
-        const status = document.getElementById('status');
-        const sopsList = document.getElementById('sopsList');
-        const listInfo = document.getElementById('listInfo');
-        const prevBtn = document.getElementById('prev');
-        const nextBtn = document.getElementById('next');
-
         let me = null;
-        let state = { page:1, perPage:12, total:0 };
+        let currentTab = 'sop';
+        let sopEditor = null;
+        let faqEditor = null;
+        
+        let sopState = { page:1, perPage:12, total:0 };
+        let faqState = { page:1, perPage:12, total:0 };
+        let resourcesState = { page:1, perPage:12, total:0 };
+
+        // 初始化富文本编辑器
+        function initEditors() {
+          sopEditor = new Quill('#sop-editor-container', {
+            theme: 'snow',
+            modules: {
+              toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'indent': '-1'}, { 'indent': '+1' }],
+                ['link', 'image'],
+                [{ 'color': [] }, { 'background': [] }],
+                ['clean']
+              ]
+            },
+            placeholder: '請輸入SOP內容...'
+          });
+          
+          faqEditor = new Quill('#faq-editor-container', {
+            theme: 'snow',
+            modules: {
+              toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link'],
+                [{ 'color': [] }],
+                ['clean']
+              ]
+            },
+            placeholder: '請輸入FAQ答案...'
+          });
+        }
 
         async function ensureSession(){
           try {
@@ -87,111 +450,645 @@
             if (res.status === 401) { location.assign('/login?redirect=/internal/knowledge'); return false; }
             const json = await res.json();
             me = (json && json.ok && json.data) ? json.data : null;
-            permBar.style.display = 'none';
-            // 刪除按鈕僅管理員可見（之後在詳情/編輯頁處理）；列表頁「新增 SOP」員工與管理員皆可見
-            btnNew.style.display = 'inline-flex';
             return true;
           } catch (_) {
-            permBar.textContent = '載入使用者資訊失敗';
-            permBar.style.display = 'block';
-            btnNew.style.display = 'none';
             return false;
           }
         }
 
-        function renderEmpty(){
+        // Tab切换
+        function switchTab(tabName) {
+          currentTab = tabName;
+          
+          // 更新tab按钮状态
+          document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+          });
+          
+          // 更新内容区域
+          document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+          });
+          document.getElementById(`${tabName}-content`).classList.add('active');
+          
+          // 加载对应数据
+          if (tabName === 'sop') loadSOPs();
+          else if (tabName === 'faq') loadFAQs();
+          else if (tabName === 'resources') loadResources();
+        }
+
+        // SOP相关函数
+        async function loadSOPs(){
+          try {
+            const sopsList = document.getElementById('sopsList');
+            sopsList.innerHTML = '<div class="doc-card"><div class="doc-title">載入中…</div></div>';
+            
+            const params = buildParams(sopState);
+            const res = await fetch(`${apiBase}/sop?${params}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/knowledge'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            
+            const items = Array.isArray(json.data) ? json.data : [];
+            sopState.total = (json.meta && json.meta.total) || items.length;
           sopsList.innerHTML = '';
-          const card = document.createElement('div');
-          card.className = 'doc-card';
-          card.innerHTML = '<div class="doc-title">尚無 SOP</div><div class="doc-excerpt">請使用右上角「新增 SOP」建立第一筆</div>';
-          sopsList.appendChild(card);
-          listInfo.textContent = '0 筆';
-          prevBtn.disabled = true; nextBtn.disabled = true;
+            
+            if (!items.length) {
+              renderEmpty(sopsList, 'sop');
+              document.getElementById('sopListInfo').textContent = '0 筆';
+              return;
+            }
+            
+            items.forEach(it => sopsList.appendChild(createSopCard(it)));
+            updatePager('sop', sopState);
+          } catch (_) {
+            document.getElementById('sopsList').innerHTML = '<div class="doc-card"><div class="doc-title" style="color:#c0392b;">載入失敗</div></div>';
+          }
         }
 
         function createSopCard(item){
           const el = document.createElement('div');
           el.className = 'doc-card';
-          const badge = item.isPublished ? '<span class="badge" style="margin-left:8px;background:#e8f5e9;color:#2e7d32;padding:2px 6px;border-radius:6px;">已發布</span>' : '<span class="badge" style="margin-left:8px;background:#eef2f7;color:#64748b;padding:2px 6px;border-radius:6px;">草稿</span>';
           const v = `<span class="badge" style="margin-left:8px;background:#e7f0ff;color:#1d4ed8;padding:2px 6px;border-radius:6px;">v${item.version||1}</span>`;
           const tagsTxt = Array.isArray(item.tags) ? item.tags.join(', ') : '';
+          const catText = getCategoryText(item.category);
+          
           el.innerHTML = `
-            <div class="doc-title">${item.title||''} ${v} ${badge}</div>
-            <div class="doc-excerpt">分類：${item.category||'—'}${tagsTxt ? `｜標籤：${tagsTxt}` : ''}</div>
+            <div class="doc-title">${item.title||''} ${v}</div>
+            <div class="doc-excerpt">分類：${catText}${tagsTxt ? `｜標籤：${tagsTxt}` : ''}</div>
             <div class="doc-meta">
               <div class="doc-meta-item">更新：${item.updatedAt||''}</div>
             </div>
             <div class="doc-footer">
               <div>作者：${item.createdBy||''}</div>
-              <div><button type="button" class="btn">查看</button> <button type="button" class="btn">編輯</button></div>
+              <div>
+                <button type="button" class="btn" onclick="viewSOP(${item.sop_id})">查看</button>
+                <button type="button" class="btn" onclick="editSOP(${item.sop_id})">編輯</button>
+                <button type="button" class="btn danger" onclick="deleteSOP(${item.sop_id})">刪除</button>
+              </div>
             </div>
           `;
           return el;
         }
 
-        function updatePager(){
+        // FAQ相关函数
+        async function loadFAQs(){
+          try {
+            const faqsList = document.getElementById('faqsList');
+            faqsList.innerHTML = '<div class="doc-card"><div class="doc-title">載入中…</div></div>';
+            
+            const params = buildParams(faqState);
+            const res = await fetch(`${apiBase}/faq?${params}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/knowledge'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            
+            const items = Array.isArray(json.data) ? json.data : [];
+            faqState.total = (json.meta && json.meta.total) || items.length;
+            faqsList.innerHTML = '';
+            
+            if (!items.length) {
+              renderEmpty(faqsList, 'faq');
+              document.getElementById('faqListInfo').textContent = '0 筆';
+              return;
+            }
+            
+            items.forEach(it => faqsList.appendChild(createFaqCard(it)));
+            updatePager('faq', faqState);
+          } catch (_) {
+            document.getElementById('faqsList').innerHTML = '<div class="doc-card"><div class="doc-title" style="color:#c0392b;">載入失敗</div></div>';
+          }
+        }
+
+        function createFaqCard(item){
+          const el = document.createElement('div');
+          el.className = 'doc-card';
+          const tagsTxt = Array.isArray(item.tags) ? item.tags.join(', ') : '';
+          const catText = getCategoryText(item.category);
+          
+          el.innerHTML = `
+            <div class="doc-title">❓ ${item.question||''}</div>
+            <div class="doc-excerpt">分類：${catText}${tagsTxt ? `｜標籤：${tagsTxt}` : ''}</div>
+            <div class="doc-meta">
+              <div class="doc-meta-item">更新：${item.updatedAt||''}</div>
+            </div>
+            <div class="doc-footer">
+              <div>作者：${item.createdBy||''}</div>
+              <div>
+                <button type="button" class="btn" onclick="viewFAQ(${item.faq_id})">查看</button>
+                <button type="button" class="btn" onclick="editFAQ(${item.faq_id})">編輯</button>
+                <button type="button" class="btn danger" onclick="deleteFAQ(${item.faq_id})">刪除</button>
+              </div>
+            </div>
+          `;
+          return el;
+        }
+
+        // 资源中心相关函数
+        async function loadResources(){
+          try {
+            const resourcesList = document.getElementById('resourcesList');
+            resourcesList.innerHTML = '<div class="doc-card"><div class="doc-title">載入中…</div></div>';
+            
+            const params = buildParams(resourcesState);
+            const res = await fetch(`${apiBase}/documents?${params}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/knowledge'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            
+            const items = Array.isArray(json.data) ? json.data : [];
+            resourcesState.total = (json.meta && json.meta.total) || items.length;
+            resourcesList.innerHTML = '';
+            
+            if (!items.length) {
+              renderEmpty(resourcesList, 'resources');
+              document.getElementById('resourcesListInfo').textContent = '0 筆';
+              return;
+            }
+            
+            items.forEach(it => resourcesList.appendChild(createResourceCard(it)));
+            updatePager('resources', resourcesState);
+          } catch (_) {
+            document.getElementById('resourcesList').innerHTML = '<div class="doc-card"><div class="doc-title" style="color:#c0392b;">載入失敗</div></div>';
+          }
+        }
+
+        function createResourceCard(item){
+          const el = document.createElement('div');
+          el.className = 'doc-card';
+          const tagsTxt = Array.isArray(item.tags) ? item.tags.join(', ') : '';
+          const catText = getCategoryText(item.category);
+          const fileSize = item.fileSize ? `${(item.fileSize / 1024).toFixed(1)} KB` : '—';
+          
+          el.innerHTML = `
+            <div class="doc-title">📎 ${item.title||''}</div>
+            <div class="doc-excerpt">${item.description || '無描述'}</div>
+            <div class="doc-excerpt">分類：${catText}${tagsTxt ? `｜標籤：${tagsTxt}` : ''}｜大小：${fileSize}</div>
+            <div class="doc-meta">
+              <div class="doc-meta-item">上傳：${item.createdAt||''}</div>
+            </div>
+            <div class="doc-footer">
+              <div>上傳者：${item.uploaderName||'—'}</div>
+              <div>
+                <a href="${item.fileUrl}" target="_blank" class="btn">下載</a>
+                <button type="button" class="btn danger" onclick="deleteResource(${item.document_id})">刪除</button>
+              </div>
+            </div>
+          `;
+          return el;
+        }
+
+        // 通用函数
+        function renderEmpty(container, type){
+          const messages = {
+            sop: '尚無 SOP，請點擊右上角「+ 新增」按鈕建立',
+            faq: '尚無 FAQ，請點擊右上角「+ 新增」按鈕建立',
+            resources: '尚無文檔，請點擊右上角「+ 新增」按鈕上傳'
+          };
+          container.innerHTML = `<div class="doc-card"><div class="doc-title">暫無資料</div><div class="doc-excerpt">${messages[type]}</div></div>`;
+        }
+
+        function updatePager(type, state){
+          const prevBtn = document.getElementById(`${type}-prev`);
+          const nextBtn = document.getElementById(`${type}-next`);
+          const listInfo = document.getElementById(`${type}ListInfo`);
+          
           prevBtn.disabled = state.page <= 1;
           const lastPage = Math.max(1, Math.ceil(state.total / state.perPage));
           nextBtn.disabled = state.page >= lastPage;
           listInfo.textContent = `${state.total} 筆｜第 ${state.page}/${lastPage} 頁`;
         }
 
-        function buildParams(){
+        function buildParams(state){
           const params = new URLSearchParams();
           params.set('page', String(state.page));
           params.set('perPage', String(state.perPage));
-          if (q.value.trim()) params.set('q', q.value.trim());
-          const cat = category.value;
+          
+          const q = document.getElementById('q').value.trim();
+          if (q) params.set('q', q);
+          
+          const cat = document.getElementById('category').value;
           if (cat && cat !== 'all') params.set('category', cat);
-          const t = tags.value.split(',').map(s=>s.trim()).filter(Boolean).join(',');
+          
+          const t = document.getElementById('tags').value.split(',').map(s=>s.trim()).filter(Boolean).join(',');
           if (t) params.set('tags', t);
-          const st = status.value;
-          if (st && st !== 'all') params.set('published', st === 'published' ? '1' : '0');
-          return params;
+          
+          return params.toString();
         }
 
-        async function loadSOPs(){
+        function getCategoryText(cat) {
+          const map = {
+            accounting: '記帳流程',
+            tax: '稅務流程',
+            business: '工商登記',
+            hr: '人事管理',
+            finance: '財務管理',
+            contract: '合同範本',
+            internal: '內部流程',
+            other: '其他'
+          };
+          return map[cat] || '未分類';
+        }
+
+        // Modal函数
+        window.closeSopModal = function() {
+          document.getElementById('sopModal').classList.remove('show');
+          document.getElementById('sopForm').reset();
+          document.getElementById('sop-id').value = '';
+          sopEditor.setContents([]);
+        };
+
+        window.closeFaqModal = function() {
+          document.getElementById('faqModal').classList.remove('show');
+          document.getElementById('faqForm').reset();
+          document.getElementById('faq-id').value = '';
+          faqEditor.setContents([]);
+        };
+
+        window.closeResourceModal = function() {
+          document.getElementById('resourceModal').classList.remove('show');
+          document.getElementById('resourceForm').reset();
+          document.getElementById('uploadedFileInfo').classList.remove('show');
+        };
+
+        // SOP CRUD functions
+        window.viewSOP = async function(id) {
           try {
-            sopsList.innerHTML = '';
-            const loading = document.createElement('div');
-            loading.className = 'doc-card';
-            loading.innerHTML = '<div class="doc-title">載入中…</div>';
-            sopsList.appendChild(loading);
-            const res = await fetch(`${apiBase}/sop?${buildParams().toString()}`, { credentials:'include' });
-            if (res.status === 401) { location.assign('/login?redirect=/internal/knowledge'); return; }
+            const res = await fetch(`${apiBase}/sop/${id}`, { credentials:'include' });
             const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error();
-            const items = Array.isArray(json.data) ? json.data : [];
-            state.total = (json.meta && json.meta.total) || items.length;
-            sopsList.innerHTML = '';
-            if (!items.length) { renderEmpty(); return; }
-            items.forEach(it => sopsList.appendChild(createSopCard(it)));
-            updatePager();
-          } catch (_) {
-            sopsList.innerHTML = '';
-            const card = document.createElement('div');
-            card.className = 'doc-card';
-            card.innerHTML = '<div class="doc-title" style="color:#c0392b;">載入失敗</div><div class="doc-excerpt">請稍後再試</div>';
-            sopsList.appendChild(card);
-            listInfo.textContent = '—';
+            if (json.ok && json.data) {
+              alert(`SOP: ${json.data.title}\n\n${json.data.content || '無內容'}`);
+            }
+          } catch (err) {
+            alert('載入SOP失敗');
+          }
+        };
+        
+        window.editSOP = async function(id) {
+          try {
+            const res = await fetch(`${apiBase}/sop/${id}`, { credentials:'include' });
+            const json = await res.json();
+            if (json.ok && json.data) {
+              const sop = json.data;
+              document.getElementById('sop-id').value = sop.sop_id;
+              document.getElementById('sop-title').value = sop.title || '';
+              document.getElementById('sop-category').value = sop.category || '';
+              document.getElementById('sop-tags').value = Array.isArray(sop.tags) ? sop.tags.join(', ') : '';
+              sopEditor.root.innerHTML = sop.content || '';
+              document.getElementById('sopModalTitle').textContent = '編輯 SOP';
+              document.getElementById('sopModal').classList.add('show');
+            }
+          } catch (err) {
+            alert('載入SOP失敗');
+          }
+        };
+        
+        window.deleteSOP = async function(id) {
+          if(!confirm('確定刪除此SOP？')) return;
+          try {
+            const res = await fetch(`${apiBase}/sop/${id}`, { 
+              method: 'DELETE',
+              credentials:'include'
+            });
+            const json = await res.json();
+            if (json.ok) {
+              alert('刪除成功');
+              loadSOPs();
+            } else {
+              alert('刪除失敗：' + (json.error || '未知錯誤'));
+            }
+          } catch (err) {
+            alert('刪除失敗');
+          }
+        };
+        
+        // FAQ CRUD functions
+        window.viewFAQ = async function(id) {
+          try {
+            const res = await fetch(`${apiBase}/faq/${id}`, { credentials:'include' });
+            const json = await res.json();
+            if (json.ok && json.data) {
+              alert(`問題: ${json.data.question}\n\n答案: ${json.data.answer || '無答案'}`);
+            }
+          } catch (err) {
+            alert('載入FAQ失敗');
+          }
+        };
+        
+        window.editFAQ = async function(id) {
+          try {
+            const res = await fetch(`${apiBase}/faq/${id}`, { credentials:'include' });
+            const json = await res.json();
+            if (json.ok && json.data) {
+              const faq = json.data;
+              document.getElementById('faq-id').value = faq.faq_id;
+              document.getElementById('faq-question').value = faq.question || '';
+              document.getElementById('faq-category').value = faq.category || '';
+              document.getElementById('faq-tags').value = Array.isArray(faq.tags) ? faq.tags.join(', ') : '';
+              faqEditor.root.innerHTML = faq.answer || '';
+              document.getElementById('faqModalTitle').textContent = '編輯 FAQ';
+              document.getElementById('faqModal').classList.add('show');
+            }
+          } catch (err) {
+            alert('載入FAQ失敗');
+          }
+        };
+        
+        window.deleteFAQ = async function(id) {
+          if(!confirm('確定刪除此FAQ？')) return;
+          try {
+            const res = await fetch(`${apiBase}/faq/${id}`, { 
+              method: 'DELETE',
+              credentials:'include'
+            });
+            const json = await res.json();
+            if (json.ok) {
+              alert('刪除成功');
+              loadFAQs();
+            } else {
+              alert('刪除失敗：' + (json.error || '未知錯誤'));
+            }
+          } catch (err) {
+            alert('刪除失敗');
+          }
+        };
+        
+        // Resource CRUD functions
+        window.deleteResource = async function(id) {
+          if(!confirm('確定刪除此文檔？')) return;
+          try {
+            const res = await fetch(`${apiBase}/documents/${id}`, { 
+              method: 'DELETE',
+              credentials:'include'
+            });
+            const json = await res.json();
+            if (json.ok) {
+              alert('刪除成功');
+              loadResources();
+            } else {
+              alert('刪除失敗：' + (json.error || '未知錯誤'));
+            }
+          } catch (err) {
+            alert('刪除失敗');
+          }
+        };
+
+        // 事件绑定
+        document.querySelectorAll('.tab-button').forEach(btn => {
+          btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+
+        document.getElementById('btn-new').addEventListener('click', () => {
+          if (currentTab === 'sop') {
+            document.getElementById('sopModalTitle').textContent = '新增 SOP';
+            document.getElementById('sopModal').classList.add('show');
+          } else if (currentTab === 'faq') {
+            document.getElementById('faqModalTitle').textContent = '新增 FAQ';
+            document.getElementById('faqModal').classList.add('show');
+          } else if (currentTab === 'resources') {
+            document.getElementById('resourceModalTitle').textContent = '上傳文檔';
+            document.getElementById('resourceModal').classList.add('show');
+          }
+        });
+
+        // 搜索和筛选
+        let timer=null;
+        document.getElementById('q').addEventListener('input', ()=>{ 
+          clearTimeout(timer); 
+          timer=setTimeout(()=>{ 
+            sopState.page=1; 
+            faqState.page=1; 
+            resourcesState.page=1; 
+            if (currentTab === 'sop') loadSOPs();
+            else if (currentTab === 'faq') loadFAQs();
+            else if (currentTab === 'resources') loadResources();
+          }, 300); 
+        });
+        
+        document.getElementById('category').addEventListener('change', ()=>{ 
+          sopState.page=1; 
+          faqState.page=1; 
+          resourcesState.page=1; 
+          if (currentTab === 'sop') loadSOPs();
+          else if (currentTab === 'faq') loadFAQs();
+          else if (currentTab === 'resources') loadResources();
+        });
+        
+        document.getElementById('tags').addEventListener('change', ()=>{ 
+          sopState.page=1; 
+          faqState.page=1; 
+          resourcesState.page=1; 
+          if (currentTab === 'sop') loadSOPs();
+          else if (currentTab === 'faq') loadFAQs();
+          else if (currentTab === 'resources') loadResources();
+        });
+
+        // 分页按钮
+        document.getElementById('sop-prev').addEventListener('click', ()=>{ if (sopState.page>1){ sopState.page--; loadSOPs(); } });
+        document.getElementById('sop-next').addEventListener('click', ()=>{ sopState.page++; loadSOPs(); });
+        document.getElementById('faq-prev').addEventListener('click', ()=>{ if (faqState.page>1){ faqState.page--; loadFAQs(); } });
+        document.getElementById('faq-next').addEventListener('click', ()=>{ faqState.page++; loadFAQs(); });
+        document.getElementById('resources-prev').addEventListener('click', ()=>{ if (resourcesState.page>1){ resourcesState.page--; loadResources(); } });
+        document.getElementById('resources-next').addEventListener('click', ()=>{ resourcesState.page++; loadResources(); });
+
+        // 文件上传
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('file-input');
+        let selectedFile = null;
+
+        fileUploadArea.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', (e) => {
+          if (e.target.files.length > 0) {
+            selectedFile = e.target.files[0];
+            displayFileInfo(selectedFile);
+          }
+        });
+
+        fileUploadArea.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          fileUploadArea.classList.add('dragover');
+        });
+
+        fileUploadArea.addEventListener('dragleave', () => {
+          fileUploadArea.classList.remove('dragover');
+        });
+
+        fileUploadArea.addEventListener('drop', (e) => {
+          e.preventDefault();
+          fileUploadArea.classList.remove('dragover');
+          if (e.dataTransfer.files.length > 0) {
+            selectedFile = e.dataTransfer.files[0];
+            fileInput.files = e.dataTransfer.files;
+            displayFileInfo(selectedFile);
+          }
+        });
+
+        function displayFileInfo(file) {
+          document.getElementById('fileName').textContent = file.name;
+          document.getElementById('fileSize').textContent = `大小：${(file.size / 1024).toFixed(1)} KB`;
+          document.getElementById('uploadedFileInfo').classList.add('show');
+          
+          // 自动填充标题（如果为空）
+          if (!document.getElementById('resource-title').value) {
+            document.getElementById('resource-title').value = file.name.split('.')[0];
           }
         }
 
-        // 事件綁定
-        let timer=null;
-        q.addEventListener('input', ()=>{ clearTimeout(timer); timer=setTimeout(()=>{ state.page=1; loadSOPs(); }, 300); });
-        category.addEventListener('change', ()=>{ state.page=1; loadSOPs(); });
-        tags.addEventListener('change', ()=>{ state.page=1; loadSOPs(); });
-        status.addEventListener('change', ()=>{ state.page=1; loadSOPs(); });
-        prevBtn.addEventListener('click', ()=>{ if (state.page>1){ state.page--; loadSOPs(); } });
-        nextBtn.addEventListener('click', ()=>{ state.page++; loadSOPs(); });
-        btnNew.addEventListener('click', ()=>{ alert('骨架：新增 SOP 對話框（後續任務實作）'); });
+        // Form提交（placeholder）
+        // SOP Form提交
+        document.getElementById('sopForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const sopId = document.getElementById('sop-id').value;
+          const title = document.getElementById('sop-title').value;
+          const category = document.getElementById('sop-category').value;
+          const tags = document.getElementById('sop-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+          const content = sopEditor.root.innerHTML;
+          
+          try {
+            const method = sopId ? 'PUT' : 'POST';
+            const url = sopId ? `${apiBase}/sop/${sopId}` : `${apiBase}/sop`;
+            
+            const res = await fetch(url, {
+              method,
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title, category, tags, content })
+            });
+            
+            const json = await res.json();
+            if (json.ok) {
+              alert(sopId ? '更新成功' : '新增成功');
+              closeSopModal();
+              loadSOPs();
+            } else {
+              alert('保存失敗：' + (json.error || '未知錯誤'));
+            }
+          } catch (err) {
+            alert('保存失敗');
+          }
+        });
 
-        ensureSession().then(ok => { if (ok) { loadSOPs(); } else { renderEmpty(); } });
+        // FAQ Form提交
+        document.getElementById('faqForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const faqId = document.getElementById('faq-id').value;
+          const question = document.getElementById('faq-question').value;
+          const category = document.getElementById('faq-category').value;
+          const tags = document.getElementById('faq-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+          const answer = faqEditor.root.innerHTML;
+          
+          try {
+            const method = faqId ? 'PUT' : 'POST';
+            const url = faqId ? `${apiBase}/faq/${faqId}` : `${apiBase}/faq`;
+            
+            const res = await fetch(url, {
+              method,
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ question, category, tags, answer })
+            });
+            
+            const json = await res.json();
+            if (json.ok) {
+              alert(faqId ? '更新成功' : '新增成功');
+              closeFaqModal();
+              loadFAQs();
+            } else {
+              alert('保存失敗：' + (json.error || '未知錯誤'));
+            }
+          } catch (err) {
+            alert('保存失敗');
+          }
+        });
+
+        // 资源上传Form提交
+        document.getElementById('resourceForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          if (!selectedFile) {
+            alert('請選擇要上傳的文件');
+            return;
+          }
+          
+          const title = document.getElementById('resource-title').value;
+          const description = document.getElementById('resource-description').value;
+          const category = document.getElementById('resource-category').value;
+          const tags = document.getElementById('resource-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+          
+          try {
+            // Step 1: 获取上传签名
+            const signRes = await fetch(`${apiBase}/attachments/upload-url`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                fileName: selectedFile.name,
+                contentType: selectedFile.type,
+                entityType: 'document'
+              })
+            });
+            
+            const signJson = await signRes.json();
+            if (!signJson.ok || !signJson.data) {
+              throw new Error('獲取上傳URL失敗');
+            }
+            
+            // Step 2: 上传文件到R2
+            const uploadRes = await fetch(signJson.data.uploadUrl, {
+              method: 'PUT',
+              body: selectedFile,
+              headers: {
+                'Content-Type': selectedFile.type
+              }
+            });
+            
+            if (!uploadRes.ok) {
+              throw new Error('文件上傳失敗');
+            }
+            
+            // Step 3: 创建文档记录
+            const docRes = await fetch(`${apiBase}/documents`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title,
+                description,
+                file_name: selectedFile.name,
+                file_url: signJson.data.publicUrl,
+                file_size: selectedFile.size,
+                file_type: selectedFile.type,
+                category,
+                tags
+              })
+            });
+            
+            const docJson = await docRes.json();
+            if (docJson.ok) {
+              alert('上傳成功');
+              closeResourceModal();
+              selectedFile = null;
+              loadResources();
+            } else {
+              alert('創建文檔記錄失敗：' + (docJson.error || '未知錯誤'));
+            }
+          } catch (err) {
+            alert('上傳失敗：' + err.message);
+          }
+        });
+
+        // 初始化
+        ensureSession().then(ok => { 
+          if (ok) { 
+            initEditors();
+            loadSOPs();
+          }
+        });
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
   </body>
   </html>
-
-

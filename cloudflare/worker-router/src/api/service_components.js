@@ -83,7 +83,9 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
       due_date_value,
       due_date_offset_days = 0,
       estimated_hours,
-      notes
+      notes,
+      sop_id,
+      tasks = []
     } = body;
 
     if (!component_name || !service_id || !delivery_frequency) {
@@ -99,8 +101,8 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
         delivery_frequency, delivery_months,
         task_template_id, auto_generate_task, advance_days,
         due_date_rule, due_date_value, due_date_offset_days,
-        estimated_hours, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        estimated_hours, notes, sop_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       clientServiceId,
       service_id,
@@ -115,7 +117,8 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
       due_date_value || null,
       due_date_offset_days,
       estimated_hours || null,
-      notes || null
+      notes || null,
+      sop_id || null
     ).run();
 
     return jsonResponse(201, {

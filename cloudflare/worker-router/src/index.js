@@ -11,6 +11,8 @@ import { handleOverhead } from "./api/overhead.js";
 import { handleReports } from "./api/reports.js";
 import { handleAttachments } from "./api/attachments.js";
 import { handleSOP } from "./api/sop.js";
+import { handleFAQRequest } from "./api/faq.js";
+import { handleDocumentsRequest } from "./api/documents.js";
 import { handleClientServices } from "./api/client_services.js";
 import { handleCMS } from "./api/cms.js";
 import { handleSettings } from "./api/settings.js";
@@ -168,13 +170,29 @@ export default {
 			return handleReports(request, env, me, requestId, url, path);
 		}
 
-		if (path === "/internal/api/v1/sop") {
-			const me = await getSessionUser(request, env);
-			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
-			return handleSOP(request, env, me, requestId, url, path);
-		}
+	if (path === "/internal/api/v1/sop" || path.startsWith("/internal/api/v1/sop/")) {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		return handleSOP(request, env, me, requestId, url, path);
+	}
+	
+	// FAQ API
+	if (path === "/internal/api/v1/faq" || path.startsWith("/internal/api/v1/faq/")) {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		const result = await handleFAQRequest(request, env, null, path, me);
+		if (result) return result;
+	}
+	
+	// 内部文档资源中心 API
+	if (path === "/internal/api/v1/documents" || path.startsWith("/internal/api/v1/documents/")) {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		const result = await handleDocumentsRequest(request, env, null, path, me);
+		if (result) return result;
+	}
 
-		if (path === "/internal/api/v1/dashboard") {
+	if (path === "/internal/api/v1/dashboard") {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handleDashboard(request, env, me, requestId, url, path);

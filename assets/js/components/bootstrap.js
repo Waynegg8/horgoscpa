@@ -45,9 +45,17 @@
       seg = pathMapping[seg];
     }
     
-    const selector = `a.internal-nav-link[href^="/internal/${seg}"]`;
-    const a = document.querySelector(selector) || document.querySelector('a.internal-nav-link[href="/internal/dashboard"]');
-    if (a) a.classList.add('active');
+    // 先尝试精确匹配，再尝试模糊匹配
+    const selector = `a.internal-nav-link[href="/internal/${seg}"], a.internal-nav-link[href="/internal/${seg}.html"]`;
+    const a = document.querySelector(selector);
+    
+    if (a) {
+      a.classList.add('active');
+    } else if (seg === 'dashboard') {
+      // 只有真正在 dashboard 页面时才高亮 dashboard
+      const dashboardLink = document.querySelector('a.internal-nav-link[href="/internal/dashboard"]');
+      if (dashboardLink) dashboardLink.classList.add('active');
+    }
   }
 
   async function populateUser(){
