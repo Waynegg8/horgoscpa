@@ -48,11 +48,12 @@
         display: grid;
         grid-template-columns: 280px 1fr;
         gap: 20px;
-        transition: grid-template-columns 0.3s ease;
+        transition: all 0.3s ease;
         position: relative;
       }
       .kb-layout.collapsed {
-        grid-template-columns: 40px 1fr;
+        grid-template-columns: 0 1fr;
+        gap: 0;
       }
       .left-panel {
         background: white;
@@ -78,46 +79,51 @@
       }
       .toggle-panel-btn {
         position: absolute;
-        right: -24px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 24px;
-        height: 60px;
+        right: -20px;
+        top: 20px;
+        width: 32px;
+        height: 48px;
         cursor: pointer;
         background: white;
-        border: 1px solid rgba(15,23,42,0.08);
+        border: 1px solid #d1d5db;
         border-radius: 0 8px 8px 0;
-        box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+        box-shadow: 2px 0 8px rgba(0,0,0,0.1);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
-        color: #6b7280;
+        font-size: 16px;
+        color: #2563eb;
         transition: all 0.2s;
-        z-index: 10;
+        z-index: 100;
       }
       .toggle-panel-btn::after {
         content: '◀';
+        font-weight: bold;
       }
       .toggle-panel-btn:hover {
-        background: #f3f4f6;
-        color: #374151;
-        width: 28px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        box-shadow: 2px 0 12px rgba(37, 99, 235, 0.2);
+      }
+      .kb-layout.collapsed .left-panel {
+        width: 0;
+        min-width: 0;
+        padding: 0;
+        border: none;
+        overflow: visible;
       }
       .kb-layout.collapsed .toggle-panel-btn {
-        position: static;
-        transform: none;
-        width: 100%;
-        height: 100%;
-        border: 1px solid rgba(15,23,42,0.08);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        right: auto;
+        left: 0;
+        border-radius: 8px 0 0 8px;
+        box-shadow: -2px 0 8px rgba(0,0,0,0.1);
       }
       .kb-layout.collapsed .toggle-panel-btn::after {
         content: '▶';
       }
       .kb-layout.collapsed .toggle-panel-btn:hover {
-        width: 100%;
-        transform: scale(1.05);
+        background: #eff6ff;
+        box-shadow: -2px 0 12px rgba(37, 99, 235, 0.2);
       }
       .doc-card {
         cursor: pointer;
@@ -128,7 +134,6 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       }
       .modal {
-        display: none;
         position: fixed;
         z-index: 9999;
         left: 0;
@@ -136,11 +141,16 @@
         width: 100%;
         height: 100%;
         background-color: rgba(0,0,0,0.5);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s, visibility 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       .modal.show {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        opacity: 1;
+        visibility: visible;
       }
       .modal-content {
         background-color: white;
@@ -836,20 +846,40 @@
         async function loadResources(){
           try {
             const resourcesList = document.getElementById('resourcesList');
+            if (!resourcesList) {
+              console.error('[Resources] resourcesList 元素不存在');
+              return;
+            }
+            
             resourcesList.innerHTML = '<div class="doc-card"><div class="doc-title">載入中…</div></div>';
             
             const params = buildResourceParams(resourcesState);
             console.log('[Resources] 請求參數:', params);
-            const res = await fetch(`${apiBase}/documents?${params}`, { credentials:'include' });
-            console.log('[Resources] 回應狀態:', res.status);
+            const res = await fetch(`${apiBase}/documents?${params}`, { 
+              credentials: 'include',
+              headers: { 'Accept': 'application/json' }
+            });
+            console.log('[Resources] 回應狀態:', res.status, res.statusText);
             
-            if (res.status === 401) { location.assign('/login?redirect=/internal/knowledge'); return; }
+            if (res.status === 401) { 
+              location.assign('/login?redirect=/internal/knowledge'); 
+              return; 
+            }
             
-            const json = await res.json();
+            let json;
+            try {
+              const text = await res.text();
+              console.log('[Resources] 原始回應:', text.substring(0, 500));
+              json = JSON.parse(text);
+            } catch (parseErr) {
+              console.error('[Resources] JSON解析失敗:', parseErr);
+              throw new Error('伺服器回應格式錯誤');
+            }
+            
             console.log('[Resources] 回應資料:', json);
             
-            if (!res.ok || !json || json.ok !== true) {
-              throw new Error(json?.message || `HTTP ${res.status}`);
+            if (!json || json.ok !== true) {
+              throw new Error(json?.error || json?.message || `HTTP ${res.status}: ${res.statusText}`);
             }
             
             const items = Array.isArray(json.data) ? json.data : [];
@@ -858,7 +888,8 @@
             
             if (!items.length) {
               renderEmpty(resourcesList, 'resources');
-              document.getElementById('resourcesListInfo').textContent = '0 筆';
+              const infoEl = document.getElementById('resourcesListInfo');
+              if (infoEl) infoEl.textContent = '0 筆';
               return;
             }
             
@@ -866,7 +897,10 @@
             updatePager('resources', resourcesState);
           } catch (err) {
             console.error('[Resources] 載入失敗:', err);
-            document.getElementById('resourcesList').innerHTML = `<div class="doc-card"><div class="doc-title" style="color:#c0392b;">載入失敗</div><div class="doc-excerpt" style="font-size:11px;color:#666;">${err.message}</div></div>`;
+            const resourcesList = document.getElementById('resourcesList');
+            if (resourcesList) {
+              resourcesList.innerHTML = `<div class="doc-card"><div class="doc-title" style="color:#c0392b;">載入失敗</div><div class="doc-excerpt" style="font-size:11px;color:#666;">${err.message}</div></div>`;
+            }
           }
         }
 
@@ -988,15 +1022,17 @@
         
         window.closeUploadDocModal = function() {
           const modal = document.getElementById('uploadDocModal');
-          modal.classList.remove('show');
-          modal.style.display = 'none';
-          resetUploadForm();
+          if (modal) {
+            modal.classList.remove('show');
+            setTimeout(() => resetUploadForm(), 200);
+          }
         };
         
         window.openUploadDocModal = function() {
           const modal = document.getElementById('uploadDocModal');
-          modal.classList.add('show');
-          // 不需要設置 style.display，CSS .modal.show 會處理
+          if (modal) {
+            modal.classList.add('show');
+          }
         };
         
         // 點擊模態框背景關閉
