@@ -107,10 +107,10 @@ export async function handleAttachments(request, env, me, requestId, url, path) 
 			const reqLen = parseInt(request.headers.get("Content-Length") || "0", 10);
 			if (reqCt !== String(payload.contentType).toLowerCase()) return jsonResponse(415, { ok:false, code:"INVALID_FILE_TYPE", message:"Content-Type 不匹配", meta:{ requestId } }, corsHeaders);
 			if (!Number.isFinite(reqLen) || reqLen !== Number(payload.contentLength)) return jsonResponse(400, { ok:false, code:"VALIDATION_ERROR", message:"Content-Length 不匹配", meta:{ requestId } }, corsHeaders);
-			if (!env.R2_BUCKET_ATTACHMENTS) return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"R2 未綁定", meta:{ requestId } }, corsHeaders);
+			if (!env.R2_BUCKET) return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"R2 未綁定", meta:{ requestId } }, corsHeaders);
 			// 寫入 R2
 			const cd = `attachment; filename="${sanitizeFilename(payload.filename)}"`;
-			await env.R2_BUCKET_ATTACHMENTS.put(payload.objectKey, request.body, {
+			await env.R2_BUCKET.put(payload.objectKey, request.body, {
 				httpMetadata: { contentType: payload.contentType, contentDisposition: cd },
 				customMetadata: { ownerId: String(me.user_id), module: "attachments", entityId: `${payload.entityType}:${payload.entityId}` },
 			});

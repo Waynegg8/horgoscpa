@@ -57,6 +57,41 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 		}
 	}
 
+	// GET /internal/api/v1/sop/:id - 獲取單個 SOP 詳情
+	const matchDetail = path.match(/^\/internal\/api\/v1\/sop\/(\d+)$/);
+	if (method === "GET" && matchDetail) {
+		const sopId = parseInt(matchDetail[1]);
+		try {
+			const row = await env.DATABASE.prepare(
+				`SELECT sop_id, title, content, category, tags, version, is_published, created_by, created_at, updated_at
+				 FROM SOPDocuments
+				 WHERE sop_id = ? AND is_deleted = 0`
+			).bind(sopId).first();
+
+			if (!row) {
+				return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"SOP 不存在", meta:{ requestId } }, corsHeaders);
+			}
+
+			const data = {
+				id: row.sop_id,
+				title: row.title,
+				content: row.content || "",
+				category: row.category || "",
+				tags: (() => { try { return JSON.parse(row.tags || "[]"); } catch(_) { return []; } })(),
+				version: Number(row.version || 1),
+				isPublished: row.is_published === 1,
+				createdBy: row.created_by,
+				createdAt: row.created_at,
+				updatedAt: row.updated_at,
+			};
+
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
 	return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"不存在", meta:{ requestId } }, corsHeaders);
 }
 

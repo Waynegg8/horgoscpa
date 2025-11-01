@@ -43,6 +43,53 @@
       .tab-content.active {
         display: block;
       }
+      
+      /* 左右佈局優化 */
+      .kb-layout {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 20px;
+        transition: grid-template-columns 0.3s ease;
+      }
+      .kb-layout.collapsed {
+        grid-template-columns: 50px 1fr;
+      }
+      .left-panel {
+        background: white;
+        border: 1px solid rgba(15,23,42,0.08);
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        padding: 16px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+      .kb-layout.collapsed .left-panel {
+        padding: 16px 8px;
+      }
+      .kb-layout.collapsed .panel-content {
+        display: none;
+      }
+      .toggle-panel-btn {
+        cursor: pointer;
+        font-size: 20px;
+        padding: 8px;
+        background: #f3f4f6;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 12px;
+        transition: background 0.2s;
+      }
+      .toggle-panel-btn:hover {
+        background: #e5e7eb;
+      }
+      .doc-card {
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .doc-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
       .modal {
         display: none;
         position: fixed;
@@ -197,19 +244,22 @@
     <main class="content" style="padding:0 20px 24px 20px;">
       <!-- SOP Tab -->
       <div id="sop-content" class="tab-content active">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="kb-layout" id="sop-layout">
           <!-- 左側：SOP 列表 -->
-      <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
+          <div class="left-panel">
+            <div class="toggle-panel-btn" onclick="togglePanel('sop')" title="收合/展開">☰</div>
+            <div class="panel-content">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
-              <div style="font-weight:800;color:var(--text-primary);">📖 SOP 列表</div>
-              <div id="sopListInfo" class="muted">—</div>
+                <div style="font-weight:800;color:var(--text-primary);">📖 SOP 列表</div>
+                <div id="sopListInfo" class="muted">—</div>
         </div>
-        <div id="sopsList"></div>
+              <div id="sopsList" style="max-height: calc(100vh - 350px); overflow-y: auto;"></div>
         <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-              <button id="sop-prev" type="button" class="btn">上一頁</button>
-              <button id="sop-next" type="button" class="btn">下一頁</button>
+                <button id="sop-prev" type="button" class="btn">上一頁</button>
+                <button id="sop-next" type="button" class="btn">下一頁</button>
+        </div>
             </div>
-          </section>
+          </div>
           
           <!-- 右側：SOP 編輯區域 -->
           <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;position:sticky;top:20px;height:fit-content;">
@@ -255,25 +305,28 @@
                 </button>
               </div>
             </form>
-          </section>
+      </section>
         </div>
       </div>
 
       <!-- FAQ Tab -->
       <div id="faq-content" class="tab-content">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="kb-layout" id="faq-layout">
           <!-- 左側：FAQ 列表 -->
-          <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
-              <div style="font-weight:800;color:var(--text-primary);">❓ FAQ 列表</div>
-              <div id="faqListInfo" class="muted">—</div>
+          <div class="left-panel">
+            <div class="toggle-panel-btn" onclick="togglePanel('faq')" title="收合/展開">☰</div>
+            <div class="panel-content">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
+                <div style="font-weight:800;color:var(--text-primary);">❓ FAQ 列表</div>
+                <div id="faqListInfo" class="muted">—</div>
+              </div>
+              <div id="faqsList" style="max-height: calc(100vh - 350px); overflow-y: auto;"></div>
+              <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+                <button id="faq-prev" type="button" class="btn">上一頁</button>
+                <button id="faq-next" type="button" class="btn">下一頁</button>
+              </div>
             </div>
-            <div id="faqsList"></div>
-            <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-              <button id="faq-prev" type="button" class="btn">上一頁</button>
-              <button id="faq-next" type="button" class="btn">下一頁</button>
-            </div>
-          </section>
+          </div>
           
           <!-- 右側：FAQ 編輯區域 -->
           <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;position:sticky;top:20px;height:fit-content;">
@@ -325,16 +378,18 @@
 
       <!-- 资源中心 Tab -->
       <div id="resources-content" class="tab-content">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="kb-layout" id="resources-layout">
           <!-- 左側：文檔列表 -->
-          <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:16px;">
-              <div style="font-weight:800;color:var(--text-primary);">📁 已上傳文檔</div>
-              <div id="resourcesListInfo" class="muted">—</div>
-            </div>
-            
-            <!-- 搜索和篩選 -->
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px;">
+          <div class="left-panel">
+            <div class="toggle-panel-btn" onclick="togglePanel('resources')" title="收合/展開">☰</div>
+            <div class="panel-content">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:16px;">
+                <div style="font-weight:800;color:var(--text-primary);">📁 已上傳文檔</div>
+                <div id="resourcesListInfo" class="muted">—</div>
+              </div>
+              
+              <!-- 搜索和篩選 -->
+              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
               <div>
                 <input type="text" id="resources-search" placeholder="🔍 搜索文檔標題..." 
                   style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;font-size:14px;" />
@@ -350,29 +405,48 @@
                   <option value="other">📋 其他</option>
                 </select>
               </div>
-            </div>
+        </div>
             
-            <div id="resourcesList"></div>
-            <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-              <button id="resources-prev" type="button" class="btn">上一頁</button>
-              <button id="resources-next" type="button" class="btn">下一頁</button>
+              <div id="resourcesList" style="max-height: calc(100vh - 450px); overflow-y: auto;"></div>
+        <div class="pagination" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+                <button id="resources-prev" type="button" class="btn">上一頁</button>
+                <button id="resources-next" type="button" class="btn">下一頁</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 右側：文檔預覽區域 -->
+          <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;position:sticky;top:20px;height:fit-content;">
+            <div id="documentPreviewArea">
+              <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">📄 文檔預覽</h3>
+              <div style="text-align:center;padding:60px 20px;color:#9ca3af;">
+                <div style="font-size:48px;margin-bottom:16px;">📂</div>
+                <p>點擊左側文檔查看詳情</p>
+              </div>
             </div>
           </section>
+        </div>
+      </div>
+    </main>
+
+    <!-- 上傳文檔模態框 -->
+    <div id="uploadDocModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>📤 上傳文檔</h2>
+          <button class="close-modal" onclick="closeUploadDocModal()">&times;</button>
+        </div>
           
-          <!-- 右側：上傳區域 -->
-          <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;position:sticky;top:20px;height:fit-content;">
-          <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">📤 上傳文檔</h3>
-          
-          <form id="resourceFormInline">
+          <form id="resourceFormModal">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
               <div class="form-group" style="margin:0;">
                 <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">文檔標題 *</label>
-                <input type="text" id="resource-title-inline" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="請輸入文檔標題" />
+                <input type="text" id="resource-title-modal" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="請輸入文檔標題" />
               </div>
               
               <div class="form-group" style="margin:0;">
                 <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">分類</label>
-                <select id="resource-category-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+                <select id="resource-category-modal" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
                   <option value="">請選擇</option>
                   <option value="contract">合同範本</option>
                   <option value="finance">財務表格</option>
@@ -386,39 +460,38 @@
             <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
               <div class="form-group" style="margin:0;">
                 <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">描述</label>
-                <textarea id="resource-description-inline" rows="2" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;resize:vertical;" placeholder="文檔簡介（可選）"></textarea>
+                <textarea id="resource-description-modal" rows="2" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;resize:vertical;" placeholder="文檔簡介（可選）"></textarea>
               </div>
               
               <div class="form-group" style="margin:0;">
                 <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
-                <input type="text" id="resource-tags-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="範本, 重要" />
+                <input type="text" id="resource-tags-modal" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="範本, 重要" />
                 <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
               </div>
             </div>
             
             <div class="form-group" style="margin:0 0 16px 0;">
               <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">選擇文件 *</label>
-              <div class="file-upload-area" id="fileUploadAreaInline" style="border:2px dashed rgba(15,23,42,0.2);border-radius:12px;padding:32px;text-align:center;cursor:pointer;background:#f9fafb;transition:all 0.2s;">
+              <div class="file-upload-area" id="fileUploadAreaModal" style="border:2px dashed rgba(15,23,42,0.2);border-radius:12px;padding:32px;text-align:center;cursor:pointer;background:#f9fafb;transition:all 0.2s;">
                 <div style="font-size:48px;margin-bottom:12px;">📎</div>
                 <div style="font-weight:600;margin-bottom:8px;color:var(--text-primary);">點擊或拖拽文件到此處</div>
                 <div style="font-size:13px;color:#6b7280;">支持 PDF, Word, Excel, PowerPoint, 圖片等格式</div>
-                <input type="file" id="file-input-inline" style="display:none;" />
+                <input type="file" id="file-input-modal" style="display:none;" />
               </div>
-              <div class="uploaded-file-info" id="uploadedFileInfoInline" style="display:none;margin-top:12px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;">
+              <div class="uploaded-file-info" id="uploadedFileInfoModal" style="display:none;margin-top:12px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;">
                 <div style="font-weight:600;margin-bottom:4px;color:#0369a1;">已選擇文件：</div>
-                <div id="fileNameInline" style="color:#0c4a6e;"></div>
-                <div id="fileSizeInline" style="font-size:12px;color:#075985;margin-top:4px;"></div>
+                <div id="fileNameModal" style="color:#0c4a6e;"></div>
+                <div id="fileSizeModal" style="font-size:12px;color:#075985;margin-top:4px;"></div>
               </div>
             </div>
             
             <div style="display:flex;gap:10px;justify-content:flex-end;">
-              <button type="button" class="btn" onclick="resetUploadForm()">清空</button>
-              <button type="submit" class="btn primary" id="resourceSubmitBtnInline">
+              <button type="button" class="btn" onclick="closeUploadDocModal()">取消</button>
+              <button type="submit" class="btn primary" id="resourceSubmitBtnModal">
                 <span>📤 上傳文檔</span>
               </button>
             </div>
           </form>
-        </section>
         </div>
       </div>
     </main>
@@ -670,12 +743,14 @@
             <div class="doc-footer">
               <div>作者：${item.createdBy||''}</div>
               <div>
-                <button type="button" class="btn" onclick="viewSOP(${item.sop_id})">查看</button>
-                <button type="button" class="btn" onclick="editSOP(${item.sop_id})">編輯</button>
-                <button type="button" class="btn danger" onclick="deleteSOP(${item.sop_id})">刪除</button>
+                <button type="button" class="btn danger" onclick="event.stopPropagation(); deleteSOP(${item.id || item.sop_id})">刪除</button>
               </div>
             </div>
           `;
+          
+          // 點擊卡片直接編輯
+          el.addEventListener('click', () => editSOP(item.id || item.sop_id));
+          
           return el;
         }
 
@@ -714,21 +789,33 @@
           const tagsTxt = Array.isArray(item.tags) ? item.tags.join(', ') : '';
           const catText = getCategoryText(item.category);
           
+          // 取答案的文字預覽（去除 HTML 標籤）
+          let answerPreview = '';
+          if (item.answer) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = item.answer;
+            const text = tempDiv.textContent || tempDiv.innerText || '';
+            answerPreview = text.length > 100 ? text.substring(0, 100) + '...' : text;
+          }
+          
           el.innerHTML = `
             <div class="doc-title">❓ ${item.question||''}</div>
-            <div class="doc-excerpt">分類：${catText}${tagsTxt ? `｜標籤：${tagsTxt}` : ''}</div>
+            ${answerPreview ? `<div class="doc-excerpt" style="margin-top: 8px; color: #555;">${answerPreview}</div>` : ''}
+            <div class="doc-excerpt" style="margin-top: 4px;">分類：${catText}${tagsTxt ? `｜標籤：${tagsTxt}` : ''}</div>
             <div class="doc-meta">
               <div class="doc-meta-item">更新：${item.updatedAt||''}</div>
             </div>
             <div class="doc-footer">
               <div>作者：${item.createdBy||''}</div>
               <div>
-                <button type="button" class="btn" onclick="viewFAQ(${item.faq_id})">查看</button>
-                <button type="button" class="btn" onclick="editFAQ(${item.faq_id})">編輯</button>
-                <button type="button" class="btn danger" onclick="deleteFAQ(${item.faq_id})">刪除</button>
+                <button type="button" class="btn danger" onclick="event.stopPropagation(); deleteFAQ(${item.faq_id})">刪除</button>
               </div>
             </div>
           `;
+          
+          // 點擊卡片直接編輯
+          el.addEventListener('click', () => editFAQ(item.faq_id));
+          
           return el;
         }
 
@@ -888,18 +975,25 @@
         };
 
 
-        // SOP CRUD functions
-        window.viewSOP = async function(id) {
-          try {
-            const res = await fetch(`${apiBase}/sop/${id}`, { credentials:'include' });
-            const json = await res.json();
-            if (json.ok && json.data) {
-              alert(`SOP: ${json.data.title}\n\n${json.data.content || '無內容'}`);
-            }
-          } catch (err) {
-            alert('載入SOP失敗');
+        // 面板收合功能
+        window.togglePanel = function(tab) {
+          const layout = document.getElementById(`${tab}-layout`);
+          if (layout) {
+            layout.classList.toggle('collapsed');
           }
         };
+        
+        // 模態框控制
+        window.closeUploadDocModal = function() {
+          document.getElementById('uploadDocModal').classList.remove('show');
+          resetUploadForm();
+        };
+        
+        window.openUploadDocModal = function() {
+          document.getElementById('uploadDocModal').classList.add('show');
+        };
+        
+        // SOP CRUD functions（移除viewSOP，直接使用editSOP）
         
         window.editSOP = async function(id) {
           try {
@@ -953,10 +1047,64 @@
             const res = await fetch(`${apiBase}/faq/${id}`, { credentials:'include' });
             const json = await res.json();
             if (json.ok && json.data) {
-              alert(`問題: ${json.data.question}\n\n答案: ${json.data.answer || '無答案'}`);
+              const faq = json.data;
+              
+              // 填充表單為只讀模式
+              document.getElementById('faq-id-inline').value = faq.faq_id;
+              document.getElementById('faq-question-inline').value = faq.question || '';
+              document.getElementById('faq-category-inline').value = faq.category || '';
+              document.getElementById('faq-tags-inline').value = Array.isArray(faq.tags) ? faq.tags.join(', ') : '';
+              
+              // 設置編輯器內容並禁用
+              if (faqEditor) {
+                faqEditor.root.innerHTML = faq.answer || '<p>無答案</p>';
+                faqEditor.enable(false);  // 設為只讀
+              }
+              
+              // 禁用輸入欄位
+              document.getElementById('faq-question-inline').disabled = true;
+              document.getElementById('faq-category-inline').disabled = true;
+              document.getElementById('faq-tags-inline').disabled = true;
+              
+              // 隱藏提交按鈕，顯示編輯按鈕
+              const submitBtn = document.getElementById('faqSubmitBtnInline');
+              submitBtn.style.display = 'none';
+              
+              // 添加編輯和返回按鈕
+              let actionDiv = document.getElementById('faq-view-actions');
+              if (!actionDiv) {
+                actionDiv = document.createElement('div');
+                actionDiv.id = 'faq-view-actions';
+                actionDiv.style.display = 'flex';
+                actionDiv.style.gap = '8px';
+                actionDiv.innerHTML = `
+                  <button type="button" class="btn btn-primary" onclick="editFAQ(${faq.faq_id})">
+                    <span>✏️ 編輯</span>
+                  </button>
+                  <button type="button" class="btn" onclick="resetFaqForm()">
+                    <span>↩️ 返回新增</span>
+                  </button>
+                `;
+                submitBtn.parentNode.insertBefore(actionDiv, submitBtn);
+              } else {
+                actionDiv.style.display = 'flex';
+                actionDiv.innerHTML = `
+                  <button type="button" class="btn btn-primary" onclick="editFAQ(${faq.faq_id})">
+                    <span>✏️ 編輯</span>
+                  </button>
+                  <button type="button" class="btn" onclick="resetFaqForm()">
+                    <span>↩️ 返回新增</span>
+                  </button>
+                `;
+              }
+              
+              // 聚焦到問題欄位（雖然禁用，但可以看到內容）
+              document.getElementById('faq-question-inline').focus();
+            } else {
+              alert('載入失敗：' + (json.error || '未知錯誤'));
             }
           } catch (err) {
-            alert('載入FAQ失敗');
+            alert('載入FAQ失敗：未知錯誤');
           }
         };
         
@@ -971,19 +1119,32 @@
               document.getElementById('faq-category-inline').value = faq.category || '';
               document.getElementById('faq-tags-inline').value = Array.isArray(faq.tags) ? faq.tags.join(', ') : '';
               
-              // 設置編輯器內容
+              // 設置編輯器內容並啟用
               if (faqEditor) {
                 faqEditor.root.innerHTML = faq.answer || '';
+                faqEditor.enable(true);  // 確保可編輯
               }
+              
+              // 啟用輸入欄位
+              document.getElementById('faq-question-inline').disabled = false;
+              document.getElementById('faq-category-inline').disabled = false;
+              document.getElementById('faq-tags-inline').disabled = false;
+              
+              // 顯示提交按鈕，隱藏查看模式的按鈕
+              document.getElementById('faqSubmitBtnInline').style.display = 'block';
+              const actionDiv = document.getElementById('faq-view-actions');
+              if (actionDiv) actionDiv.style.display = 'none';
               
               // 更新按鈕文字
               document.getElementById('faqSubmitBtnInline').querySelector('span').textContent = '💾 更新 FAQ';
               
               // 聚焦到問題欄位
               document.getElementById('faq-question-inline').focus();
+            } else {
+              alert('載入失敗：' + (json.error || '未知錯誤'));
             }
           } catch (err) {
-            alert('載入FAQ失敗');
+            alert('載入FAQ失敗：未知錯誤');
           }
         };
         
@@ -1041,9 +1202,8 @@
             resetFaqForm();
             document.getElementById('faq-question-inline').focus();
           } else if (currentTab === 'resources') {
-            // 聚焦到標題欄位
-            resetUploadForm();
-            document.getElementById('resource-title-inline').focus();
+            // 打開上傳模態框
+            openUploadDocModal();
           }
         });
 
@@ -1105,56 +1265,56 @@
         });
 
         // 文件上传
-        const fileUploadAreaInline = document.getElementById('fileUploadAreaInline');
-        const fileInputInline = document.getElementById('file-input-inline');
+        const fileUploadAreaModal = document.getElementById('fileUploadAreaModal');
+        const fileInputModal = document.getElementById('file-input-modal');
         let selectedFile = null;
 
-        fileUploadAreaInline.addEventListener('click', () => fileInputInline.click());
+        fileUploadAreaModal.addEventListener('click', () => fileInputModal.click());
         
-        fileInputInline.addEventListener('change', (e) => {
+        fileInputModal.addEventListener('change', (e) => {
           if (e.target.files.length > 0) {
             selectedFile = e.target.files[0];
             displayFileInfo(selectedFile);
           }
         });
 
-        fileUploadAreaInline.addEventListener('dragover', (e) => {
+        fileUploadAreaModal.addEventListener('dragover', (e) => {
           e.preventDefault();
-          fileUploadAreaInline.style.borderColor = '#2563eb';
-          fileUploadAreaInline.style.background = '#eff6ff';
+          fileUploadAreaModal.style.borderColor = '#2563eb';
+          fileUploadAreaModal.style.background = '#eff6ff';
         });
 
-        fileUploadAreaInline.addEventListener('dragleave', () => {
-          fileUploadAreaInline.style.borderColor = '';
-          fileUploadAreaInline.style.background = '';
+        fileUploadAreaModal.addEventListener('dragleave', () => {
+          fileUploadAreaModal.style.borderColor = '';
+          fileUploadAreaModal.style.background = '';
         });
 
-        fileUploadAreaInline.addEventListener('drop', (e) => {
+        fileUploadAreaModal.addEventListener('drop', (e) => {
           e.preventDefault();
-          fileUploadAreaInline.style.borderColor = '';
-          fileUploadAreaInline.style.background = '';
+          fileUploadAreaModal.style.borderColor = '';
+          fileUploadAreaModal.style.background = '';
           if (e.dataTransfer.files.length > 0) {
             selectedFile = e.dataTransfer.files[0];
-            fileInputInline.files = e.dataTransfer.files;
+            fileInputModal.files = e.dataTransfer.files;
             displayFileInfo(selectedFile);
           }
         });
 
         function displayFileInfo(file) {
-          document.getElementById('fileNameInline').textContent = file.name;
-          document.getElementById('fileSizeInline').textContent = `大小：${(file.size / 1024).toFixed(1)} KB`;
-          document.getElementById('uploadedFileInfoInline').style.display = 'block';
+          document.getElementById('fileNameModal').textContent = file.name;
+          document.getElementById('fileSizeModal').textContent = `大小：${(file.size / 1024).toFixed(1)} KB`;
+          document.getElementById('uploadedFileInfoModal').style.display = 'block';
           
           // 自动填充标题（如果为空）
-          if (!document.getElementById('resource-title-inline').value) {
-            document.getElementById('resource-title-inline').value = file.name.split('.')[0];
+          if (!document.getElementById('resource-title-modal').value) {
+            document.getElementById('resource-title-modal').value = file.name.split('.')[0];
           }
         }
         
         window.resetUploadForm = function() {
-          document.getElementById('resourceFormInline').reset();
+          document.getElementById('resourceFormModal').reset();
           selectedFile = null;
-          document.getElementById('uploadedFileInfoInline').style.display = 'none';
+          document.getElementById('uploadedFileInfoModal').style.display = 'none';
         };
 
         // Form提交（placeholder）
@@ -1251,7 +1411,7 @@
         });
 
         // 资源上传Form提交
-        document.getElementById('resourceFormInline').addEventListener('submit', async (e) => {
+        document.getElementById('resourceFormModal').addEventListener('submit', async (e) => {
           e.preventDefault();
           
           if (!selectedFile) {
@@ -1259,14 +1419,14 @@
             return;
           }
           
-          const submitBtn = document.getElementById('resourceSubmitBtnInline');
+          const submitBtn = document.getElementById('resourceSubmitBtnModal');
           submitBtn.disabled = true;
           submitBtn.innerHTML = '<span>⏳ 上傳中...</span>';
           
-          const title = document.getElementById('resource-title-inline').value;
-          const description = document.getElementById('resource-description-inline').value;
-          const category = document.getElementById('resource-category-inline').value;
-          const tags = document.getElementById('resource-tags-inline').value.split(',').map(t => t.trim()).filter(Boolean);
+          const title = document.getElementById('resource-title-modal').value;
+          const description = document.getElementById('resource-description-modal').value;
+          const category = document.getElementById('resource-category-modal').value;
+          const tags = document.getElementById('resource-tags-modal').value.split(',').map(t => t.trim()).filter(Boolean);
           
           try {
             // Step 1: 获取上传签名
@@ -1326,7 +1486,7 @@
             const docJson = await docRes.json();
             if (docJson.ok) {
               alert('上傳成功！');
-              resetUploadForm();
+              closeUploadDocModal();
               loadResources();
             } else {
               alert('創建文檔記錄失敗：' + (docJson.error || '未知錯誤'));
