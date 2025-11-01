@@ -38,12 +38,27 @@ export async function handleDevSeeding(request, env, requestId, path) {
 			const exists = await env.DATABASE.prepare("SELECT user_id FROM Users WHERE LOWER(username) = ? LIMIT 1").bind(username).first();
 			if (!email) email = `${username}@example.com`;
 			const passwordHash = await hashPasswordPBKDF2(password);
+			let userId;
 			if (exists) {
 				await env.DATABASE.prepare("UPDATE Users SET username = ?, name = ?, email = ?, password_hash = ?, updated_at = ? WHERE user_id = ?").bind(username, name, email, passwordHash, new Date().toISOString(), exists.user_id).run();
+				userId = exists.user_id;
 			} else {
 				await env.DATABASE.prepare("INSERT INTO Users (username, password_hash, name, email, gender, start_date, created_at, updated_at) VALUES (?, ?, ?, ?, 'M', date('now'), datetime('now'), datetime('now'))").bind(username, passwordHash, name, email).run();
+				const idRow = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
+				userId = idRow?.id;
+				
+				// 自動為新用戶初始化基本假期余額
+				const currentYear = new Date().getFullYear();
+				// 病假：30天/年
+				await env.DATABASE.prepare(
+					"INSERT OR IGNORE INTO LeaveBalances (user_id, leave_type, year, total, used, remain, updated_at) VALUES (?, 'sick', ?, 30, 0, 30, datetime('now'))"
+				).bind(userId, currentYear).run();
+				// 事假：14天/年
+				await env.DATABASE.prepare(
+					"INSERT OR IGNORE INTO LeaveBalances (user_id, leave_type, year, total, used, remain, updated_at) VALUES (?, 'personal', ?, 14, 0, 14, datetime('now'))"
+				).bind(userId, currentYear).run();
 			}
-			return jsonResponse(200, { ok:true, code:"OK", message:"已建立/更新測試用戶", data:{ username, email }, meta:{ requestId } }, corsHeaders);
+			return jsonResponse(200, { ok:true, code:"OK", message:"已建立/更新測試用戶", data:{ username, email, userId }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 			const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
@@ -119,8 +134,9 @@ export async function handleDevSeeding(request, env, requestId, path) {
 			await env.DATABASE.prepare(
 				"INSERT OR REPLACE INTO LeaveBalances(user_id, leave_type, year, total, used, remain, updated_at) VALUES "+
 				"(1,'annual',?,30,3,27,datetime('now')),"+
-				"(1,'sick',?,30,1,29,datetime('now'))"
-			).bind(y, y).run();
+				"(1,'sick',?,30,1,29,datetime('now')),"+
+				"(1,'personal',?,14,0,14,datetime('now'))"
+			).bind(y, y, y).run();
 			await env.DATABASE.prepare(
 				"INSERT INTO LeaveRequests (user_id, leave_type, start_date, end_date, unit, amount, reason, status, submitted_at) VALUES "+
 				"(1,'annual',date('now','-10 day'),date('now','-10 day'),'day',1,'', 'approved', datetime('now','-10 day')),"+

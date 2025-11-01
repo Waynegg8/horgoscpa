@@ -1,5 +1,18 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 
+// 确保用户有基本假期余额记录
+async function ensureBasicLeaveBalances(env, userId, year) {
+	// 病假：30天/年
+	await env.DATABASE.prepare(
+		"INSERT OR IGNORE INTO LeaveBalances (user_id, leave_type, year, total, used, remain, updated_at) VALUES (?, 'sick', ?, 30, 0, 30, datetime('now'))"
+	).bind(userId, year).run();
+	
+	// 事假：14天/年
+	await env.DATABASE.prepare(
+		"INSERT OR IGNORE INTO LeaveBalances (user_id, leave_type, year, total, used, remain, updated_at) VALUES (?, 'personal', ?, 14, 0, 14, datetime('now'))"
+	).bind(userId, year).run();
+}
+
 export async function handleLeaves(request, env, me, requestId, url, path) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
@@ -18,6 +31,9 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			if (queryUserId && me.is_admin) {
 				targetUserId = String(queryUserId);
 			}
+			
+			// 确保用户有基本假期余额记录
+			await ensureBasicLeaveBalances(env, targetUserId, year);
 			
 			// 排除補休類型（補休由 CompensatoryLeaveGrants 計算）
 			const rows = await env.DATABASE.prepare(
