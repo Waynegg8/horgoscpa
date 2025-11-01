@@ -72,16 +72,16 @@
               <label for="event_type">事件類型</label>
               <select id="event_type" name="event_type" required>
                 <option value="">請選擇</option>
-                <option value="marriage">結婚（8日婚假，工資照給）</option>
-                <option value="funeral_parent">父母/養父母/繼父母/配偶喪亡（8日喪假）</option>
-                <option value="funeral_grandparent">祖父母/子女/配偶之父母喪亡（6日喪假）</option>
-                <option value="funeral_sibling">曾祖父母/兄弟姊妹/配偶之祖父母喪亡（3日喪假）</option>
-                <option value="maternity" data-gender="F">分娩（8週產假，女性）</option>
-                <option value="miscarriage" data-gender="F">妊娠3個月以上流產（4週產假，女性）</option>
-                <option value="pregnancy" data-gender="F">妊娠（7日產檢假，女性）</option>
-                <option value="paternity" data-gender="M">配偶分娩或懷孕（7日陪產檢及陪產假，男性）</option>
+                <option value="marriage">結婚</option>
+                <option value="funeral_parent">父母/養父母/繼父母/配偶喪亡</option>
+                <option value="funeral_grandparent">祖父母/子女/配偶之父母喪亡</option>
+                <option value="funeral_sibling">曾祖父母/兄弟姊妹/配偶之祖父母喪亡</option>
+                <option value="maternity" data-gender="F">分娩</option>
+                <option value="miscarriage" data-gender="F">妊娠3個月以上流產</option>
+                <option value="pregnancy" data-gender="F">妊娠</option>
+                <option value="paternity" data-gender="M">配偶分娩或懷孕</option>
               </select>
-              <div class="field__hint">事件類型會依您的性別自動過濾。</div>
+              <div class="field__hint">選項會依您的性別自動過濾。</div>
               <div class="field__error" id="e_event_type"></div>
             </div>
             <div class="field">
@@ -117,13 +117,13 @@
               <select id="leave_type" name="leave_type" required>
                 <option value="">請選擇</option>
                 <option value="annual">特休</option>
-                <option value="sick">病假（普通傷病假）</option>
+                <option value="sick">病假</option>
                 <option value="personal">事假</option>
                 <option value="comp">補休</option>
-                <option value="menstrual" data-gender="F">生理假（女性，每月1日）</option>
-                <option value="maternity" data-gender="F" data-life-event="true" style="display:none;">產假（女性）</option>
-                <option value="prenatal_checkup" data-gender="F" data-life-event="true" style="display:none;">產檢假（女性）</option>
-                <option value="paternity" data-gender="M" data-life-event="true" style="display:none;">陪產檢及陪產假（男性）</option>
+                <option value="menstrual" data-gender="F">生理假</option>
+                <option value="maternity" data-gender="F" data-life-event="true" style="display:none;">產假</option>
+                <option value="prenatal_checkup" data-gender="F" data-life-event="true" style="display:none;">產檢假</option>
+                <option value="paternity" data-gender="M" data-life-event="true" style="display:none;">陪產檢及陪產假</option>
                 <option value="marriage" data-life-event="true" style="display:none;">婚假</option>
                 <option value="funeral" data-life-event="true" style="display:none;">喪假</option>
                 <option value="public">公假</option>
