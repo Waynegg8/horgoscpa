@@ -12,11 +12,16 @@ export async function handleTasks(request, env, me, requestId, url) {
 			const q = (params.get("q") || "").trim();
 			const status = (params.get("status") || "").trim();
 			const due = (params.get("due") || "").trim();
+			const componentId = (params.get("component_id") || "").trim();
 			const where = ["t.is_deleted = 0"];
 			const binds = [];
-			if (!me.is_admin) {
+			if (!me.is_admin && !componentId) {
 				where.push("t.assignee_user_id = ?");
 				binds.push(String(me.user_id));
+			}
+			if (componentId) {
+				where.push("t.component_id = ?");
+				binds.push(componentId);
 			}
 			if (q) {
 				where.push("(t.task_name LIKE ? OR c.company_name LIKE ?)");

@@ -142,29 +142,18 @@
         margin: 0 !important;
       }
       
-      /* 修复按钮容器超出边界的问题 */
+      /* 按钮容器样式 */
       .modal__actions {
         display: flex !important;
         justify-content: flex-end !important;
         gap: 12px !important;
-        margin-top: 4px !important;
+        margin: 0 !important;
         padding: 0 !important;
         box-sizing: border-box !important;
       }
       
       .modal__actions button {
         flex-shrink: 0 !important;
-      }
-      
-      /* 减少模态框底部内边距以容纳按钮 */
-      .modal__body {
-        padding: 20px 20px 12px 20px !important;
-      }
-      
-      /* 减少最后一个字段的错误提示高度 */
-      .field__error {
-        min-height: 14px !important;
-        margin-bottom: 0 !important;
       }
     </style>
   </head>
@@ -253,14 +242,16 @@
               <div class="field__hint" style="visibility:hidden;">占位</div>
               <div class="field__error" id="e_event_date"></div>
             </div>
-            <div class="field" style="grid-column:1 / -1;">
+            <div class="field">
               <label for="event_notes">備註（選填）</label>
               <textarea id="event_notes" name="notes" maxlength="200" placeholder="例如：關係、證明文件等" class="form-control"></textarea>
               <div class="field__error" id="e_event_notes"></div>
             </div>
-            <div class="modal__actions" style="grid-column:1 / -1;">
-              <button class="btn-secondary" type="button" id="btn-event-cancel">取消</button>
-              <button class="clients-btn" type="submit" id="btn-event-submit">登記</button>
+            <div class="field" style="display:flex; align-items:flex-end; padding-bottom:20px;">
+              <div class="modal__actions" style="width:100%;">
+                <button class="btn-secondary" type="button" id="btn-event-cancel">取消</button>
+                <button class="clients-btn" type="submit" id="btn-event-submit">登記</button>
+              </div>
             </div>
           </form>
         </div>
@@ -319,9 +310,11 @@
               <input id="hours_display" type="text" readonly class="form-control" style="background:#f1f5f9;cursor:not-allowed;" placeholder="自動計算" />
               <div class="field__hint">時數將根據開始和結束時間自動計算（扣除午休）</div>
             </div>
-            <div class="modal__actions" style="grid-column:1 / -1;">
-              <button class="btn-secondary" type="button" id="btn-cancel">取消</button>
-              <button class="clients-btn" type="submit" id="btn-submit">送出申請</button>
+            <div class="field" style="display:flex; align-items:flex-end; padding-bottom:20px;">
+              <div class="modal__actions" style="width:100%;">
+                <button class="btn-secondary" type="button" id="btn-cancel">取消</button>
+                <button class="clients-btn" type="submit" id="btn-submit">送出申請</button>
+              </div>
             </div>
           </form>
         </div>

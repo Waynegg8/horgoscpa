@@ -889,12 +889,27 @@
                 </div>
                 <div class="form-field">
                   <label>任務模板</label>
-                  <select id="new-comp-template-${clientServiceId}">
+                  <select id="new-comp-template-${clientServiceId}" onchange="loadTemplateStages${clientServiceId}(this.value)">
                     <option value="">不使用模板</option>
                     ${templatesHtml}
                   </select>
+                  <small style="display: block; margin-top: 5px; color: #6b7280;">
+                    選擇後可查看和自定義任務階段
+                  </small>
                 </div>
               </div>
+              
+              <!-- 模板阶段明细 -->
+              <div id="template-stages-${clientServiceId}" style="display: none; margin-top: 15px; padding: 15px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <strong style="color: #374151;">📋 任務階段設定</strong>
+                  <small style="color: #6b7280;">可以針對此客戶自定義調整</small>
+                </div>
+                <div id="stages-list-${clientServiceId}">
+                  <!-- 阶段列表会动态加载到这里 -->
+                </div>
+              </div>
+              
               <div class="form-row-2col">
                 <div class="form-field">
                   <label>📅 任務期限規則</label>
@@ -970,6 +985,19 @@
                       <div>⚡ <strong>提前生成：</strong>${comp.advance_days}天</div>
                     </div>
                     ${comp.notes ? `<div style="margin-top: 8px; font-size: 13px; color: #9ca3af;">💡 ${comp.notes}</div>` : ''}
+                    
+                    <!-- 任务明细区域 -->
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="font-size: 13px; color: #374151;">📋 相關任務</strong>
+                        <button class="table-btn-link" onclick="toggleComponentTasks(${comp.component_id})" style="font-size: 12px;">
+                          <span id="tasks-toggle-${comp.component_id}">展開</span>
+                        </button>
+                      </div>
+                      <div id="tasks-list-${comp.component_id}" style="display: none; margin-top: 8px;">
+                        <div class="loading-text" style="font-size: 13px;">載入中...</div>
+                      </div>
+                    </div>
                   </div>
                   <div style="display: flex; gap: 5px;">
                     <button class="table-btn-link" onclick="editComponent(${comp.component_id})">編輯</button>
@@ -1014,6 +1042,73 @@
     function showAddComponentForm(clientServiceId) {
       const form = document.getElementById(`add-component-form-${clientServiceId}`);
       form.style.display = 'block';
+      
+      // 创建加载模板阶段的函数
+      window[`loadTemplateStages${clientServiceId}`] = async function(templateId) {
+        const stagesContainer = document.getElementById(`template-stages-${clientServiceId}`);
+        const stagesList = document.getElementById(`stages-list-${clientServiceId}`);
+        
+        if (!templateId) {
+          stagesContainer.style.display = 'none';
+          return;
+        }
+        
+        // 显示容器
+        stagesContainer.style.display = 'block';
+        stagesList.innerHTML = '<p style="color: #6b7280; font-size: 14px;">載入中...</p>';
+        
+        try {
+          const res = await fetch(`/internal/api/v1/task-templates/${templateId}/stages`);
+          const json = await res.json();
+          
+          if (!json.ok || !json.data) {
+            stagesList.innerHTML = '<p style="color: #ef4444; font-size: 14px;">載入失敗</p>';
+            return;
+          }
+          
+          const stages = json.data;
+          
+          if (stages.length === 0) {
+            stagesList.innerHTML = '<p style="color: #6b7280; font-size: 14px;">此模板暫無階段設定</p>';
+            return;
+          }
+          
+          // 渲染阶段列表
+          stagesList.innerHTML = `
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+              <thead style="background: white;">
+                <tr>
+                  <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">順序</th>
+                  <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">階段名稱</th>
+                  <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">說明</th>
+                  <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">預估時間</th>
+                  <th style="padding: 8px; text-align: center; border-bottom: 2px solid #e5e7eb;">SOP</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${stages.map((stage, idx) => `
+                  <tr style="background: ${idx % 2 === 0 ? 'white' : '#f9fafb'};">
+                    <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${stage.stage_order || idx + 1}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-weight: 500;">${stage.stage_name}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${stage.description || '-'}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${stage.estimated_hours ? stage.estimated_hours + 'h' : '-'}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+                      ${(stage.sop_id || stage.attachment_id) ? '✅' : '-'}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div style="margin-top: 10px; padding: 10px; background: #fef3c7; border-radius: 6px; font-size: 13px; color: #92400e;">
+              💡 <strong>提示：</strong>這些階段會在任務生成時自動創建。您可以在任務生成後針對個別任務進行調整。
+            </div>
+          `;
+          
+        } catch (err) {
+          console.error('載入模板階段失敗:', err);
+          stagesList.innerHTML = '<p style="color: #ef4444; font-size: 14px;">載入失敗</p>';
+        }
+      };
       
       // 创建动态帮助函数
       window[`updateDueDateHelp${clientServiceId}`] = function(rule) {
@@ -1151,6 +1246,81 @@
       alert('編輯功能開發中，請先刪除後重新新增');
     }
 
+    // 切換任務列表顯示
+    async function toggleComponentTasks(componentId) {
+      const tasksList = document.getElementById(`tasks-list-${componentId}`);
+      const toggleText = document.getElementById(`tasks-toggle-${componentId}`);
+      
+      if (tasksList.style.display === 'none') {
+        // 展開並載入任務
+        tasksList.style.display = 'block';
+        toggleText.textContent = '收起';
+        await loadComponentTasks(componentId);
+      } else {
+        // 收起
+        tasksList.style.display = 'none';
+        toggleText.textContent = '展開';
+      }
+    }
+
+    // 載入服務組成的任務列表
+    async function loadComponentTasks(componentId) {
+      const container = document.getElementById(`tasks-list-${componentId}`);
+      
+      try {
+        const res = await fetch(`/internal/api/v1/tasks?component_id=${componentId}`);
+        const json = await res.json();
+        
+        if (!json.ok) {
+          container.innerHTML = '<p style="color: #ef4444; font-size: 13px;">載入失敗</p>';
+          return;
+        }
+
+        const tasks = json.data || [];
+        
+        if (tasks.length === 0) {
+          container.innerHTML = '<p style="color: #6b7280; font-size: 13px;">尚未生成任務（任務會在接近期限時自動生成）</p>';
+          return;
+        }
+
+        // 渲染任務列表
+        container.innerHTML = tasks.map(task => {
+          const statusColors = {
+            'pending': { bg: '#fef3c7', text: '#92400e', label: '待處理' },
+            'in_progress': { bg: '#dbeafe', text: '#1e40af', label: '進行中' },
+            'completed': { bg: '#d1fae5', text: '#065f46', label: '已完成' },
+            'cancelled': { bg: '#f3f4f6', text: '#6b7280', label: '已取消' }
+          };
+          
+          const statusStyle = statusColors[task.status] || statusColors['pending'];
+          
+          return `
+            <div style="background: #f9fafb; padding: 10px; border-radius: 6px; margin-bottom: 6px; font-size: 13px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="flex: 1;">
+                  <strong style="color: #1f2937;">${task.task_name}</strong>
+                  <div style="color: #6b7280; margin-top: 4px; display: flex; gap: 12px;">
+                    <span>📅 截止：${task.due_date || '-'}</span>
+                    <span>👤 負責：${task.assignee_name || '未分配'}</span>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="background: ${statusStyle.bg}; color: ${statusStyle.text}; padding: 2px 8px; border-radius: 4px; font-size: 12px;">
+                    ${statusStyle.label}
+                  </span>
+                  <a href="/internal/tasks?task_id=${task.task_id}" class="table-btn-link" style="font-size: 12px;" target="_blank">查看</a>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        
+      } catch (err) {
+        console.error('載入任務失敗:', err);
+        container.innerHTML = '<p style="color: #ef4444; font-size: 13px;">載入失敗</p>';
+      }
+    }
+
     // 暴露函數到全局
     window.showComponentsSection = showComponentsSection;
     window.loadComponentsInline = loadComponentsInline;
@@ -1159,6 +1329,8 @@
     window.saveNewComponent = saveNewComponent;
     window.deleteComponent = deleteComponent;
     window.editComponent = editComponent;
+    window.toggleComponentTasks = toggleComponentTasks;
+    window.loadComponentTasks = loadComponentTasks;
 
     // 取消編輯
     function cancelEdit() {
@@ -1253,4 +1425,5 @@
   </script>
 </body>
 </html>
+
 
