@@ -203,14 +203,14 @@
             
             const serviceCount = (r.services && Array.isArray(r.services)) ? r.services.length : 0;
             const serviceCountHtml = serviceCount > 0 
-              ? `<span class="service-count" style="background:#2563eb;color:#fff;padding:4px 10px;border-radius:12px;font-size:13px;font-weight:600;">${serviceCount} 個服務</span>`
-              : '<span style="color:#9ca3af;">無</span>';
+              ? `<span class="service-count" style="background:#2563eb;color:#fff;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;">${serviceCount}</span>`
+              : '<span class="text-muted">無</span>';
             
             // 全年收费总额（需要从后端API返回）
             const yearTotal = r.year_total || r.yearTotal || 0;
             const yearTotalHtml = yearTotal > 0 
-              ? `<span style="color:#059669;font-weight:600;">NT$ ${yearTotal.toLocaleString()}</span>`
-              : '<span style="color:#9ca3af;">-</span>';
+              ? `<span class="text-success">NT$ ${yearTotal.toLocaleString()}</span>`
+              : '<span class="text-muted">-</span>';
             
             // 联络人显示（显示第一个联络人）
             const contactPerson = r.contact_person_1 || r.contactPerson1 || '';
@@ -220,7 +220,7 @@
             
             tr.innerHTML = `
               <td><input type="checkbox" class="client-checkbox" data-client-id="${r.clientId}" /></td>
-              <td><a href="/internal/client-detail?id=${r.clientId}" class="client-name-link" style="color:#2563eb;text-decoration:none;font-weight:600;">${r.companyName}</a></td>
+              <td><a href="/internal/client-detail?id=${r.clientId}" class="client-name-link">${r.companyName}</a></td>
               <td>${r.taxId||''}</td>
               <td>${contactPerson}</td>
               <td>${assigneeName}</td>
@@ -231,7 +231,7 @@
               <td>${r.email||''}</td>
               <td>${createdDate}</td>
               <td>
-                <button type="button" class="btn btn-sm btn-secondary" data-act="view" data-id="${r.clientId}">查看</button> 
+                <button type="button" class="btn btn-sm btn-secondary" data-act="view" data-id="${r.clientId}">查看</button>
                 <button type="button" class="btn btn-sm btn-danger" data-act="del" data-id="${r.clientId}">刪除</button>
               </td>
             `;

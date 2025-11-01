@@ -74,19 +74,63 @@
 .clients-table {
 	width: 100%;
 	border-collapse: collapse;
+	table-layout: fixed;
 }
+
+/* 设置各列宽度 */
+.clients-table th:nth-child(1),
+.clients-table td:nth-child(1) { width: 40px; } /* 复选框 */
+
+.clients-table th:nth-child(2),
+.clients-table td:nth-child(2) { width: 150px; } /* 公司名称 */
+
+.clients-table th:nth-child(3),
+.clients-table td:nth-child(3) { width: 90px; } /* 统一编号 */
+
+.clients-table th:nth-child(4),
+.clients-table td:nth-child(4) { width: 80px; } /* 联络人 */
+
+.clients-table th:nth-child(5),
+.clients-table td:nth-child(5) { width: 80px; } /* 负责人 */
+
+.clients-table th:nth-child(6),
+.clients-table td:nth-child(6) { width: 120px; } /* 标签 */
+
+.clients-table th:nth-child(7),
+.clients-table td:nth-child(7) { width: 90px; } /* 服务数量 */
+
+.clients-table th:nth-child(8),
+.clients-table td:nth-child(8) { width: 110px; } /* 全年收费总额 */
+
+.clients-table th:nth-child(9),
+.clients-table td:nth-child(9) { width: 100px; } /* 电话 */
+
+.clients-table th:nth-child(10),
+.clients-table td:nth-child(10) { width: 140px; } /* Email */
+
+.clients-table th:nth-child(11),
+.clients-table td:nth-child(11) { width: 90px; } /* 建立时间 */
+
+.clients-table th:nth-child(12),
+.clients-table td:nth-child(12) { width: 130px; } /* 操作 */
 
 .clients-table th,
 .clients-table td {
-	padding: 10px 12px;
+	padding: 8px 10px;
 	border-bottom: 1px solid #eee;
 	text-align: left;
-	font-size: 14px;
+	font-size: 12px;
+	white-space: nowrap;
+	vertical-align: middle;
 }
 
 .clients-table th {
-	font-weight: 700;
+	font-weight: 600;
 	color: rgba(15,23,42,0.8);
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+	background: #f8fafc;
 }
 
 .chip {
@@ -218,5 +262,126 @@
 	font-size: 0.875rem;
 	margin: 2px;
 	font-weight: 500;
+}
+
+/* 表格内按钮统一样式 */
+.clients-table .btn {
+	padding: 5px 12px;
+	font-size: 12px;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-weight: 500;
+	white-space: nowrap;
+	transition: opacity 0.2s;
+}
+
+.clients-table .btn:hover {
+	opacity: 0.85;
+}
+
+.clients-table .btn-sm {
+	padding: 5px 10px;
+	font-size: 12px;
+}
+
+.clients-table .btn-secondary {
+	background: #3b82f6;
+	color: #fff;
+}
+
+.clients-table .btn-danger {
+	background: #ef4444;
+	color: #fff;
+}
+
+.clients-table td:last-child {
+	white-space: nowrap;
+}
+
+.clients-table td:last-child .btn {
+	margin-right: 4px;
+}
+
+.clients-table td:last-child .btn:last-child {
+	margin-right: 0;
+}
+
+/* 让特定列允许换行 */
+.clients-table td:nth-child(2) {
+	white-space: normal;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* 标签列允许换行 */
+.clients-table td:nth-child(6) {
+	white-space: normal;
+	line-height: 1.4;
+}
+
+/* Email列可能较长，使用省略号 */
+.clients-table td:nth-child(10) {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* 表格容器支持横向滚动 */
+.clients-table-wrap {
+	overflow-x: auto;
+	margin: 0 -12px;
+	padding: 0 12px;
+}
+
+/* 优化chip样式，更紧凑 */
+.clients-table .chip {
+	padding: 2px 8px;
+	font-size: 11px;
+	margin: 1px;
+}
+
+/* 服务数量标签样式 */
+.clients-table .service-count {
+	font-size: 11px !important;
+	padding: 3px 8px !important;
+}
+
+/* 客户名称链接样式 */
+.client-name-link {
+	color: #2563eb !important;
+	text-decoration: none !important;
+	font-weight: 600 !important;
+	font-size: 12px !important;
+}
+
+.client-name-link:hover {
+	text-decoration: underline !important;
+}
+
+/* 数据显示样式 */
+.text-muted {
+	color: #9ca3af !important;
+}
+
+.text-success {
+	color: #059669 !important;
+	font-weight: 600 !important;
+}
+
+/* 列对齐 */
+.clients-table th:nth-child(7),
+.clients-table td:nth-child(7) {
+	text-align: center;
+}
+
+.clients-table th:nth-child(8),
+.clients-table td:nth-child(8) {
+	text-align: right;
+}
+
+/* 操作列居中 */
+.clients-table th:nth-child(12),
+.clients-table td:nth-child(12) {
+	text-align: center;
 }
 
