@@ -3,8 +3,7 @@
  * 区分员工和管理员权限
  */
 
-import { requireLogin } from '../auth.js';
-import { jsonResponse, errorResponse } from '../utils.js';
+import { jsonResponse, getCorsHeadersForRequest, getSessionUser } from '../utils.js';
 
 /**
  * 获取我的工时统计（员工权限）
