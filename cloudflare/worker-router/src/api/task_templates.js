@@ -382,15 +382,11 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
 
     try {
       const stagesRows = await env.DATABASE.prepare(
-        `SELECT tts.stage_id, tts.stage_name, tts.stage_order, tts.description, 
-                tts.estimated_hours, tts.sop_id, tts.attachment_id,
-                sop.title as sop_title,
-                att.original_filename as attachment_name, att.file_url as attachment_url
-         FROM TaskTemplateStages tts
-         LEFT JOIN SOPDocuments sop ON sop.sop_id = tts.sop_id
-         LEFT JOIN Attachments att ON att.attachment_id = tts.attachment_id
-         WHERE tts.template_id = ?
-         ORDER BY tts.stage_order ASC`
+        `SELECT stage_id, stage_name, stage_order, description, 
+                estimated_hours, sop_id, attachment_id
+         FROM TaskTemplateStages
+         WHERE template_id = ?
+         ORDER BY stage_order ASC`
       ).bind(templateId).all();
 
       const stages = (stagesRows?.results || []).map(s => ({
@@ -400,10 +396,7 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
         description: s.description || "",
         estimated_hours: Number(s.estimated_hours || 0),
         sop_id: s.sop_id || null,
-        sop_title: s.sop_title || "",
-        attachment_id: s.attachment_id || null,
-        attachment_name: s.attachment_name || "",
-        attachment_url: s.attachment_url || ""
+        attachment_id: s.attachment_id || null
       }));
 
       return jsonResponse(200, {
