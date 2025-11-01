@@ -2976,8 +2976,12 @@ class quill_better_table_BetterTable extends Module {
     // expected my binding callback excute first
     // I changed the order of binding callbacks
 
-    let thisBinding = quill.keyboard.bindings['Backspace'].pop();
-    quill.keyboard.bindings['Backspace'].splice(0, 1, thisBinding); // add Matchers to match and render quill-better-table for initialization
+    // 安全檢查：確保 Backspace 綁定數組存在且不為空
+    if (quill.keyboard.bindings['Backspace'] && quill.keyboard.bindings['Backspace'].length > 0) {
+      let thisBinding = quill.keyboard.bindings['Backspace'].pop();
+      quill.keyboard.bindings['Backspace'].splice(0, 1, thisBinding);
+    }
+    // add Matchers to match and render quill-better-table for initialization
     // or pasting
 
     quill.clipboard.addMatcher('td', matchTableCell);
