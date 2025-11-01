@@ -27,7 +27,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 				binds.push(componentId);
 			}
 			if (q) {
-				where.push("(t.task_name LIKE ? OR c.company_name LIKE ? OR c.tax_id LIKE ?)");
+				where.push("(t.task_name LIKE ? OR c.company_name LIKE ? OR c.tax_registration_number LIKE ?)");
 				binds.push(`%${q}%`, `%${q}%`, `%${q}%`);
 			}
 			if (status && ["pending","in_progress","completed","cancelled"].includes(status)) {

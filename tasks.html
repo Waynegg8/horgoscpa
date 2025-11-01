@@ -322,11 +322,11 @@
           const grouped = new Map();
           
           // 先添加所有客戶
-          allClients.sort((a, b) => (a.company_name || '').localeCompare(b.company_name || '', 'zh-TW')).forEach(client => {
-            grouped.set(client.client_id, {
-              clientId: client.client_id,
-              clientName: client.company_name || '未命名客戶',
-              clientTaxId: client.tax_id || '—',
+          allClients.sort((a, b) => (a.companyName || '').localeCompare(b.companyName || '', 'zh-TW')).forEach(client => {
+            grouped.set(client.clientId, {
+              clientId: client.clientId,
+              clientName: client.companyName || '未命名客戶',
+              clientTaxId: client.taxId || '—',
               serviceGroups: new Map()
             });
           });
