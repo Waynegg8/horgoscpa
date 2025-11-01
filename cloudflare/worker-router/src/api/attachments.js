@@ -169,8 +169,8 @@ export async function handleAttachments(request, env, me, requestId, url, path) 
 			
 			console.log(JSON.stringify({ level:"debug", requestId, total }));
 			
-			const sql = `SELECT a.attachment_id, a.filename, a.content_type, a.size_bytes, a.uploader_user_id, a.uploaded_at, u.name AS uploader_name
-				 FROM Attachments a LEFT JOIN Users u ON u.user_id = a.uploader_user_id
+			const sql = `SELECT a.attachment_id, a.filename, a.content_type, a.size_bytes, a.uploader_user_id, a.uploaded_at
+				 FROM Attachments a
 				 ${whereSql}
 				 ORDER BY a.uploaded_at DESC
 				 LIMIT ? OFFSET ?`;
@@ -181,13 +181,26 @@ export async function handleAttachments(request, env, me, requestId, url, path) 
 			
 			console.log(JSON.stringify({ level:"debug", requestId, rowCount: rows?.results?.length || 0 }));
 			
+			// 如果有结果，再查询上传者姓名
+			const uploaderIds = [...new Set((rows?.results || []).map(r => r.uploader_user_id).filter(Boolean))];
+			let uploaderMap = {};
+			if (uploaderIds.length > 0) {
+				const placeholders = uploaderIds.map(() => '?').join(',');
+				const uploaders = await env.DATABASE.prepare(
+					`SELECT user_id, name FROM Users WHERE user_id IN (${placeholders})`
+				).bind(...uploaderIds).all();
+				uploaders?.results?.forEach(u => {
+					uploaderMap[u.user_id] = u.name;
+				});
+			}
+			
 			const data = (rows?.results || []).map(r => ({
 				id: r.attachment_id,
 				filename: r.filename,
 				contentType: r.content_type,
 				sizeBytes: Number(r.size_bytes || 0),
 				uploaderUserId: r.uploader_user_id,
-				uploaderName: r.uploader_name || String(r.uploader_user_id || ''),
+				uploaderName: uploaderMap[r.uploader_user_id] || String(r.uploader_user_id || ''),
 				uploadedAt: r.uploaded_at,
 			}));
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, page, perPage, total } }, corsHeaders);
