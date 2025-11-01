@@ -441,7 +441,7 @@
             </div>
           </div>
           
-          <!-- 右側：SOP 編輯區域 -->
+          <!-- 右側：SOP 預覽區域 -->
           <div class="right-panel">
             <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;position:sticky;top:20px;height:fit-content;">
               <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">📝 編輯 SOP</h3>
@@ -599,7 +599,113 @@
     </main>
 
     <!-- 抽屜遮罩 -->
-    <div id="drawerOverlay" class="drawer-overlay" onclick="closeUploadDocModal()"></div>
+    <div id="drawerOverlay" class="drawer-overlay"></div>
+    
+    <!-- SOP 編輯抽屜 -->
+    <div id="sopEditDrawer" class="drawer">
+      <div style="padding:24px;border-bottom:1px solid #e5e7eb;background:#f9fafb;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h2 style="margin:0;font-size:20px;font-weight:700;color:#1f2937;">📝 編輯 SOP</h2>
+          <button onclick="closeSopDrawer()" style="font-size:32px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:0;line-height:1;">&times;</button>
+        </div>
+        <p style="margin:8px 0 0 0;font-size:13px;color:#6b7280;">建立或編輯標準作業流程文檔</p>
+      </div>
+      
+      <div style="padding:24px;">
+        <form id="sopFormDrawer">
+          <input type="hidden" id="sop-id-drawer" />
+          
+          <div class="form-group">
+            <label>標題 *</label>
+            <input type="text" id="sop-title-drawer" required placeholder="請輸入 SOP 標題" />
+          </div>
+
+          <div class="form-group">
+            <label>分類 *</label>
+            <select id="sop-category-drawer" required>
+              <option value="">請選擇</option>
+              <option value="accounting">記帳流程</option>
+              <option value="tax">稅務流程</option>
+              <option value="business">工商登記</option>
+              <option value="hr">人事管理</option>
+              <option value="finance">財務管理</option>
+              <option value="internal">內部流程</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>標籤</label>
+            <input type="text" id="sop-tags-drawer" placeholder="記帳, 月結, 報稅" />
+            <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
+          </div>
+          
+          <div class="form-group">
+            <label>內容 *</label>
+            <div id="sop-editor-drawer" style="min-height:400px;background:white;border:1px solid #d1d5db;border-radius:6px;"></div>
+          </div>
+          
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px;">
+            <button type="button" class="btn" onclick="closeSopDrawer()">取消</button>
+            <button type="submit" class="btn primary" id="sopSubmitBtnDrawer">
+              <span>💾 儲存 SOP</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- FAQ 編輯抽屜 -->
+    <div id="faqEditDrawer" class="drawer">
+      <div style="padding:24px;border-bottom:1px solid #e5e7eb;background:#f9fafb;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h2 style="margin:0;font-size:20px;font-weight:700;color:#1f2937;">❓ 編輯 FAQ</h2>
+          <button onclick="closeFaqDrawer()" style="font-size:32px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:0;line-height:1;">&times;</button>
+        </div>
+        <p style="margin:8px 0 0 0;font-size:13px;color:#6b7280;">建立或編輯常見問題解答</p>
+      </div>
+      
+      <div style="padding:24px;">
+        <form id="faqFormDrawer">
+          <input type="hidden" id="faq-id-drawer" />
+          
+          <div class="form-group">
+            <label>問題 *</label>
+            <input type="text" id="faq-question-drawer" required placeholder="請輸入問題" />
+          </div>
+
+          <div class="form-group">
+            <label>分類 *</label>
+            <select id="faq-category-drawer" required>
+              <option value="">請選擇</option>
+              <option value="accounting">記帳相關</option>
+              <option value="tax">稅務相關</option>
+              <option value="hr">人事相關</option>
+              <option value="system">系統操作</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>標籤</label>
+            <input type="text" id="faq-tags-drawer" placeholder="常見, 重要" />
+            <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
+          </div>
+          
+          <div class="form-group">
+            <label>回答 *</label>
+            <div id="faq-editor-drawer" style="min-height:300px;background:white;border:1px solid #d1d5db;border-radius:6px;"></div>
+          </div>
+          
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px;">
+            <button type="button" class="btn" onclick="closeFaqDrawer()">取消</button>
+            <button type="submit" class="btn primary" id="faqSubmitBtnDrawer">
+              <span>💾 儲存 FAQ</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
     
     <!-- 上傳文檔抽屜 -->
     <div id="uploadDocModal" class="drawer">
