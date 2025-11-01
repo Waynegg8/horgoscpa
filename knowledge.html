@@ -143,6 +143,7 @@
         background-color: rgba(0,0,0,0.5);
         opacity: 0;
         visibility: hidden;
+        pointer-events: none;
         transition: opacity 0.2s, visibility 0.2s;
         display: flex;
         align-items: center;
@@ -151,6 +152,7 @@
       .modal.show {
         opacity: 1;
         visibility: visible;
+        pointer-events: auto;
       }
       .modal-content {
         background-color: white;
@@ -1320,36 +1322,38 @@
         const fileInputModal = document.getElementById('file-input-modal');
         let selectedFile = null;
 
-        fileUploadAreaModal.addEventListener('click', () => fileInputModal.click());
-        
-        fileInputModal.addEventListener('change', (e) => {
-          if (e.target.files.length > 0) {
-            selectedFile = e.target.files[0];
-            displayFileInfo(selectedFile);
-          }
-        });
+        if (fileUploadAreaModal && fileInputModal) {
+          fileUploadAreaModal.addEventListener('click', () => fileInputModal.click());
+          
+          fileInputModal.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+              selectedFile = e.target.files[0];
+              displayFileInfo(selectedFile);
+            }
+          });
 
-        fileUploadAreaModal.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          fileUploadAreaModal.style.borderColor = '#2563eb';
-          fileUploadAreaModal.style.background = '#eff6ff';
-        });
+          fileUploadAreaModal.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadAreaModal.style.borderColor = '#2563eb';
+            fileUploadAreaModal.style.background = '#eff6ff';
+          });
 
-        fileUploadAreaModal.addEventListener('dragleave', () => {
-          fileUploadAreaModal.style.borderColor = '';
-          fileUploadAreaModal.style.background = '';
-        });
+          fileUploadAreaModal.addEventListener('dragleave', () => {
+            fileUploadAreaModal.style.borderColor = '';
+            fileUploadAreaModal.style.background = '';
+          });
 
-        fileUploadAreaModal.addEventListener('drop', (e) => {
-          e.preventDefault();
-          fileUploadAreaModal.style.borderColor = '';
-          fileUploadAreaModal.style.background = '';
-          if (e.dataTransfer.files.length > 0) {
-            selectedFile = e.dataTransfer.files[0];
-            fileInputModal.files = e.dataTransfer.files;
-            displayFileInfo(selectedFile);
-          }
-        });
+          fileUploadAreaModal.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadAreaModal.style.borderColor = '';
+            fileUploadAreaModal.style.background = '';
+            if (e.dataTransfer.files.length > 0) {
+              selectedFile = e.dataTransfer.files[0];
+              fileInputModal.files = e.dataTransfer.files;
+              displayFileInfo(selectedFile);
+            }
+          });
+        }
 
         function displayFileInfo(file) {
           document.getElementById('fileNameModal').textContent = file.name;
@@ -1510,7 +1514,6 @@
             // 確保所有模態框初始狀態為隱藏
             document.querySelectorAll('.modal').forEach(modal => {
               modal.classList.remove('show');
-              modal.style.display = 'none';
             });
             
             // 立即初始化編輯器
