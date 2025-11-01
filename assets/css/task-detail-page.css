@@ -1,0 +1,244 @@
+/* 任務詳情頁面樣式 */
+
+.progress-bar {
+  height: 20px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+  transition: width 0.3s ease;
+  border-radius: 10px;
+}
+
+/* 任務階段列表 */
+.stages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage-item {
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.stage-item.in-progress {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.stage-item.completed {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.stage-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stage-header > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.stage-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.stage-item.completed .stage-number {
+  background: #10b981;
+}
+
+.stage-item.in-progress .stage-number {
+  background: #f59e0b;
+}
+
+.stage-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: #1f2937;
+}
+
+.stage-status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.stage-status.status-pending {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.stage-status.status-in-progress {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.stage-status.status-completed {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.stage-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.stage-time {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* SOP 列表 */
+.sop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sop-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.sop-item:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.sop-title {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.sop-meta {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* 數據表格 */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead {
+  background: #f9fafb;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+}
+
+.data-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.loading-text {
+  text-align: center;
+  color: #9ca3af;
+  padding: 24px;
+}
+
+/* 表格按鈕 */
+.table-btn-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.table-btn-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.table-btn-link.danger {
+  color: #ef4444;
+}
+
+.table-btn-link.danger:hover {
+  color: #dc2626;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .stage-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .stage-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .sop-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .data-table {
+    font-size: 13px;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 8px 12px;
+  }
+}
+

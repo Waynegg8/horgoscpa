@@ -145,7 +145,7 @@ export default {
 			if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handlePayroll(request, env, me, requestId, url, path);
 		}
-		if (path.startsWith("/internal/api/v1/admin/overhead")) {
+		if (path.startsWith("/internal/api/v1/admin/overhead") || path.startsWith("/internal/api/v1/admin/costs")) {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, getCorsHeadersForRequest(request, env));

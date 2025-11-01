@@ -183,6 +183,307 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 		}
 	}
 
+	// ============ 員工成本分析 ============
+	if (path === "/internal/api/v1/admin/costs/employee") {
+		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
+		try {
+			const params = url.searchParams;
+			const year = parseInt(params.get("year") || "0", 10);
+			const month = parseInt(params.get("month") || "0", 10);
+			if (!Number.isFinite(year) || year < 2000 || month < 1 || month > 12) {
+				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"year/month 不合法", meta:{ requestId } }, corsHeaders);
+			}
+
+			// 1. 獲取所有員工
+			const usersRows = await env.DATABASE.prepare(
+				"SELECT user_id, full_name, hire_date FROM Users WHERE is_deleted = 0 ORDER BY full_name ASC"
+			).all();
+			const users = usersRows?.results || [];
+
+			const employees = [];
+			
+			for (const user of users) {
+				const userId = user.user_id;
+				
+				// 2. 計算年度總薪資（假設從系統設定中獲取，這裡暫時使用固定值40000月薪 * 12）
+				// TODO: 從薪資設定表中獲取實際薪資
+				const annualSalary = 40000 * 12; // 暫時固定值
+				
+				// 3. 計算年度總工時（2080小時 = 40小時/週 × 52週）
+				const annualHours = 2080;
+				
+				// 4. 計算年度特休時數
+				const leaveBalanceRow = await env.DATABASE.prepare(
+					"SELECT annual_leave_balance FROM LeaveBalances WHERE user_id = ? AND year = ?"
+				).bind(userId, year).first();
+				const annualLeaveHours = Number(leaveBalanceRow?.annual_leave_balance || 0);
+				
+				// 5. 計算實際工時
+				const actualHours = annualHours - annualLeaveHours;
+				
+				// 6. 計算員工時薪
+				const hourlyRate = actualHours > 0 ? annualSalary / actualHours : 0;
+				
+				// 7. 獲取本月實際工時
+				const timesheetRows = await env.DATABASE.prepare(
+					`SELECT SUM(hours) as total_hours FROM Timesheets 
+					 WHERE user_id = ? AND year = ? AND month = ? AND is_deleted = 0`
+				).bind(userId, year, month).first();
+				const monthHours = Number(timesheetRows?.total_hours || 0);
+				
+				// 8. 計算加權工時（暫時使用1.0權重，未來可從系統設定獲取）
+				// TODO: 從系統設定或員工職級獲取權重係數
+				const weightMultiplier = 1.0;
+				const weightedHours = monthHours * weightMultiplier;
+				
+				// 9. 計算本月薪資成本
+				const laborCost = Math.round(hourlyRate * weightedHours);
+				
+				// 10. 計算分攤管理費用
+				// 按工時比例分攤
+				const overheadRow = await env.DATABASE.prepare(
+					`SELECT SUM(m.amount) as total FROM MonthlyOverheadCosts m
+					 WHERE m.year = ? AND m.month = ? AND m.is_deleted = 0`
+				).bind(year, month).first();
+				const totalOverhead = Number(overheadRow?.total || 0);
+				
+				const totalMonthHoursRow = await env.DATABASE.prepare(
+					`SELECT SUM(hours) as total FROM Timesheets 
+					 WHERE year = ? AND month = ? AND is_deleted = 0`
+				).bind(year, month).first();
+				const totalMonthHours = Number(totalMonthHoursRow?.total || 0);
+				
+				const overheadAllocation = totalMonthHours > 0 
+					? Math.round(totalOverhead * (monthHours / totalMonthHours))
+					: 0;
+				
+				employees.push({
+					userId,
+					name: user.full_name,
+					annualSalary,
+					annualHours,
+					annualLeaveHours,
+					actualHours,
+					hourlyRate: Math.round(hourlyRate),
+					monthHours,
+					weightedHours,
+					laborCost,
+					overheadAllocation,
+					totalCost: laborCost + overheadAllocation
+				});
+			}
+
+			return jsonResponse(200, { 
+				ok:true, 
+				code:"OK", 
+				message:"成功", 
+				data:{ year, month, employees }, 
+				meta:{ requestId, count: employees.length } 
+			}, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
+	// ============ 客戶成本彙總 ============
+	if (path === "/internal/api/v1/admin/costs/client") {
+		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
+		try {
+			const params = url.searchParams;
+			const year = parseInt(params.get("year") || "0", 10);
+			const month = parseInt(params.get("month") || "0", 10);
+			if (!Number.isFinite(year) || year < 2000 || month < 1 || month > 12) {
+				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"year/month 不合法", meta:{ requestId } }, corsHeaders);
+			}
+
+			// 1. 獲取所有客戶
+			const clientsRows = await env.DATABASE.prepare(
+				"SELECT client_id, company_name FROM Clients WHERE is_deleted = 0 ORDER BY company_name ASC"
+			).all();
+			const clientsList = clientsRows?.results || [];
+
+			const clients = [];
+
+			for (const client of clientsList) {
+				const clientId = client.client_id;
+				
+				// 2. 獲取該客戶本月所有任務的工時
+				const taskRows = await env.DATABASE.prepare(
+					`SELECT t.task_id, ts.user_id, SUM(ts.hours) as total_hours
+					 FROM Tasks t
+					 LEFT JOIN Timesheets ts ON ts.task_id = t.task_id AND ts.year = ? AND ts.month = ? AND ts.is_deleted = 0
+					 WHERE t.client_id = ? AND t.is_deleted = 0
+					 GROUP BY t.task_id, ts.user_id`
+				).bind(year, month, clientId).all();
+				const taskData = taskRows?.results || [];
+				
+				let totalHours = 0;
+				let weightedHours = 0;
+				let laborCost = 0;
+				const taskCount = new Set();
+				
+				// 3. 計算每個任務的成本
+				for (const task of taskData) {
+					if (!task.user_id) continue;
+					taskCount.add(task.task_id);
+					
+					const hours = Number(task.total_hours || 0);
+					totalHours += hours;
+					
+					// 獲取員工時薪
+					const userRow = await env.DATABASE.prepare(
+						"SELECT user_id FROM Users WHERE user_id = ? AND is_deleted = 0"
+					).bind(task.user_id).first();
+					if (!userRow) continue;
+					
+					// 簡化計算：使用固定時薪（實際應從員工成本計算）
+					const hourlyRate = 200; // TODO: 從員工成本分析獲取實際時薪
+					const weight = 1.0;
+					const taskWeightedHours = hours * weight;
+					weightedHours += taskWeightedHours;
+					laborCost += Math.round(hourlyRate * taskWeightedHours);
+				}
+				
+				// 4. 計算分攤管理費用（按工時比例）
+				const overheadRow = await env.DATABASE.prepare(
+					`SELECT SUM(m.amount) as total FROM MonthlyOverheadCosts m
+					 WHERE m.year = ? AND m.month = ? AND m.is_deleted = 0`
+				).bind(year, month).first();
+				const totalOverhead = Number(overheadRow?.total || 0);
+				
+				const totalMonthHoursRow = await env.DATABASE.prepare(
+					`SELECT SUM(hours) as total FROM Timesheets 
+					 WHERE year = ? AND month = ? AND is_deleted = 0`
+				).bind(year, month).first();
+				const totalMonthHours = Number(totalMonthHoursRow?.total || 0);
+				
+				const overheadAllocation = totalMonthHours > 0 
+					? Math.round(totalOverhead * (totalHours / totalMonthHours))
+					: 0;
+				
+				// 5. 獲取本月收入（從收據系統）
+				const revenueRow = await env.DATABASE.prepare(
+					`SELECT SUM(amount_cents) as total FROM Receipts 
+					 WHERE client_id = ? AND year = ? AND month = ? AND is_deleted = 0`
+				).bind(clientId, year, month).first();
+				const revenue = Math.round(Number(revenueRow?.total || 0) / 100);
+				
+				if (totalHours > 0 || revenue > 0) {
+					clients.push({
+						clientId,
+						clientName: client.company_name,
+						taskCount: taskCount.size,
+						totalHours,
+						weightedHours,
+						laborCost,
+						overheadAllocation,
+						totalCost: laborCost + overheadAllocation,
+						revenue
+					});
+				}
+			}
+
+			return jsonResponse(200, { 
+				ok:true, 
+				code:"OK", 
+				message:"成功", 
+				data:{ year, month, clients }, 
+				meta:{ requestId, count: clients.length } 
+			}, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
+	// ============ 任務成本明細 ============
+	if (path === "/internal/api/v1/admin/costs/task") {
+		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
+		try {
+			const params = url.searchParams;
+			const year = parseInt(params.get("year") || "0", 10);
+			const month = parseInt(params.get("month") || "0", 10);
+			if (!Number.isFinite(year) || year < 2000 || month < 1 || month > 12) {
+				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"year/month 不合法", meta:{ requestId } }, corsHeaders);
+			}
+
+			// 1. 獲取所有有工時記錄的任務
+			const taskRows = await env.DATABASE.prepare(
+				`SELECT 
+					t.task_id, 
+					t.title, 
+					t.client_id,
+					c.company_name,
+					t.assigned_to,
+					u.full_name as assignee_name,
+					SUM(ts.hours) as total_hours
+				 FROM Tasks t
+				 JOIN Clients c ON c.client_id = t.client_id
+				 LEFT JOIN Users u ON u.user_id = t.assigned_to
+				 LEFT JOIN Timesheets ts ON ts.task_id = t.task_id AND ts.year = ? AND ts.month = ? AND ts.is_deleted = 0
+				 WHERE t.is_deleted = 0 AND c.is_deleted = 0
+				 GROUP BY t.task_id, t.title, t.client_id, c.company_name, t.assigned_to, u.full_name
+				 HAVING total_hours > 0
+				 ORDER BY c.company_name ASC, t.title ASC`
+			).bind(year, month).all();
+			const taskList = taskRows?.results || [];
+
+			// 2. 獲取總工時和總管理費用用於分攤
+			const totalHoursRow = await env.DATABASE.prepare(
+				`SELECT SUM(hours) as total FROM Timesheets 
+				 WHERE year = ? AND month = ? AND is_deleted = 0`
+			).bind(year, month).first();
+			const totalMonthHours = Number(totalHoursRow?.total || 0);
+			
+			const overheadRow = await env.DATABASE.prepare(
+				`SELECT SUM(m.amount) as total FROM MonthlyOverheadCosts m
+				 WHERE m.year = ? AND m.month = ? AND m.is_deleted = 0`
+			).bind(year, month).first();
+			const totalOverhead = Number(overheadRow?.total || 0);
+
+			const tasks = taskList.map(task => {
+				const hours = Number(task.total_hours || 0);
+				const weight = 1.0; // TODO: 從系統設定獲取
+				const weightedHours = hours * weight;
+				
+				// 簡化計算：使用固定時薪
+				const hourlyRate = 200; // TODO: 從員工成本分析獲取實際時薪
+				const laborCost = Math.round(hourlyRate * weightedHours);
+				
+				// 按工時比例分攤管理費用
+				const overheadAllocation = totalMonthHours > 0 
+					? Math.round(totalOverhead * (hours / totalMonthHours))
+					: 0;
+				
+				return {
+					taskId: task.task_id,
+					taskTitle: task.title,
+					clientId: task.client_id,
+					clientName: task.company_name,
+					assigneeId: task.assigned_to,
+					assigneeName: task.assignee_name || '未指派',
+					hours,
+					weightedHours,
+					laborCost,
+					overheadAllocation,
+					totalCost: laborCost + overheadAllocation
+				};
+			});
+
+			return jsonResponse(200, { 
+				ok:true, 
+				code:"OK", 
+				message:"成功", 
+				data:{ year, month, tasks }, 
+				meta:{ requestId, count: tasks.length } 
+			}, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
 	return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"不存在", meta:{ requestId } }, corsHeaders);
 }
 

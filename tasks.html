@@ -8,6 +8,39 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/tasks-page.css" />
+    <style>
+      /* 日期選擇器 - 整框可點擊 */
+      input[type="date"] {
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        line-height: 1 !important;
+        cursor: pointer !important;
+        position: relative !important;
+      }
+      
+      input[type="date"]::-webkit-calendar-picker-indicator {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        opacity: 0 !important;
+        cursor: pointer !important;
+      }
+      
+      input[type="date"]::-webkit-inner-spin-button {
+        display: none !important;
+      }
+      
+      input[type="date"]::-webkit-datetime-edit {
+        padding: 0 !important;
+        line-height: 1 !important;
+      }
+    </style>
   </head>
   <body>
     <main class="clients-content" style="padding:24px;">
@@ -19,7 +52,7 @@
               <button id="btn-list" type="button" class="clients-btn" style="padding:8px 12px;">列表視圖</button>
               <button id="btn-kanban" type="button" class="clients-btn btn-secondary" style="padding:8px 12px;">看板視圖</button>
             </div>
-            <input id="q" type="search" placeholder="搜尋任務/客戶…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
+            <input id="q" type="search" placeholder="搜尋任務/客戶/統編…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
             <select id="f_status" aria-label="狀態">
               <option value="all">全部狀態</option>
               <option value="todo">待開始</option>
@@ -39,21 +72,32 @@
 
         <!-- 列表視圖 -->
         <div id="view-list" class="tasks-grid">
-          <table style="width:100%;border-collapse:collapse;">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:12px;gap:8px;">
+            <button id="btn-view-flat" type="button" class="clients-btn" style="padding:6px 12px;font-size:14px;">平鋪視圖</button>
+            <button id="btn-view-grouped" type="button" class="clients-btn btn-secondary" style="padding:6px 12px;font-size:14px;">分組視圖</button>
+          </div>
+          
+          <!-- 平鋪表格視圖 -->
+          <table id="table-flat" style="width:100%;border-collapse:collapse;">
             <thead>
               <tr>
                 <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;">任務名稱</th>
                 <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;">客戶</th>
+                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;width:100px;">統編</th>
                 <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;">負責人</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;">進度</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;">到期日</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;">狀態</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;">SOP</th>
-                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;">操作</th>
+                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;width:80px;">進度</th>
+                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;width:100px;">到期日</th>
+                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;width:90px;">狀態</th>
+                <th style="text-align:left;padding:10px 8px;border-bottom:1px solid #eee;width:100px;">操作</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
           </table>
+          
+          <!-- 分組視圖 -->
+          <div id="table-grouped" style="display:none;">
+            <div id="grouped-content"></div>
+          </div>
         </div>
 
         <!-- 看板視圖 -->
@@ -148,11 +192,16 @@
         const btnClose = document.getElementById('task-close');
         const btnCancel = document.getElementById('task-cancel');
 
-        let state = { page:1, perPage:20, q:'', status:'all', due:'all', view:'list', total:0 };
+        let state = { page:1, perPage:20, q:'', status:'all', due:'all', view:'list', listMode:'flat', total:0 };
         let cacheRows = [];
         let employeesList = [];
 
         const zhStatus = { pending:'待開始', in_progress:'進行中', completed:'已完成', cancelled:'已取消' };
+        
+        const btnViewFlat = document.getElementById('btn-view-flat');
+        const btnViewGrouped = document.getElementById('btn-view-grouped');
+        const tableFlat = document.getElementById('table-flat');
+        const tableGrouped = document.getElementById('table-grouped');
 
         function setError(m){ if (errEl) errEl.textContent = m || ''; }
 
@@ -204,6 +253,201 @@
           prevBtn.disabled = state.page <= 1;
           nextBtn.disabled = state.page * state.perPage >= state.total;
         }
+        
+        // 按客戶和服務分組任務
+        function groupTasksByClientAndService(tasks) {
+          const grouped = {};
+          
+          tasks.forEach(task => {
+            const clientName = task.clientName || '未指定客戶';
+            const serviceName = task.serviceName || '一般任務';
+            
+            if (!grouped[clientName]) {
+              grouped[clientName] = {};
+            }
+            
+            if (!grouped[clientName][serviceName]) {
+              grouped[clientName][serviceName] = [];
+            }
+            
+            grouped[clientName][serviceName].push(task);
+          });
+          
+          return grouped;
+        }
+        
+        // 渲染分組視圖
+        function renderGrouped() {
+          const container = document.getElementById('grouped-content');
+          const grouped = groupTasksByClientAndService(cacheRows);
+          
+          let html = '';
+          
+          Object.keys(grouped).sort().forEach(clientName => {
+            const clientTasks = grouped[clientName];
+            const totalTasks = Object.values(clientTasks).flat().length;
+            
+            html += `
+              <div style="margin-bottom:24px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                <div style="background:#f9fafb;padding:12px 16px;border-bottom:1px solid #e5e7eb;cursor:pointer;" onclick="toggleClientGroup('${clientName.replace(/'/g, "\\'")}')">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                      <span id="icon-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}" style="font-size:16px;">▼</span>
+                      <strong style="font-size:16px;color:#1f2937;">${clientName}</strong>
+                      <span style="background:#e5e7eb;color:#374151;padding:4px 10px;border-radius:12px;font-size:13px;font-weight:500;">${totalTasks} 個任務</span>
+                    </div>
+                  </div>
+                </div>
+                <div id="group-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}" style="display:block;">
+            `;
+            
+            Object.keys(clientTasks).sort().forEach(serviceName => {
+              const tasks = clientTasks[serviceName];
+              
+              html += `
+                <div style="border-bottom:1px solid #f3f4f6;">
+                  <div style="background:#ffffff;padding:10px 16px;border-bottom:1px solid #f9fafb;cursor:pointer;" onclick="toggleServiceGroup('${clientName.replace(/'/g, "\\'")}', '${serviceName.replace(/'/g, "\\'")}')">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span id="icon-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}-${serviceName.replace(/[^a-zA-Z0-9]/g, '_')}" style="font-size:14px;color:#6b7280;">▼</span>
+                      <strong style="font-size:14px;color:#374151;">${serviceName}</strong>
+                      <span style="color:#9ca3af;font-size:13px;">(${tasks.length})</span>
+                    </div>
+                  </div>
+                  <div id="tasks-${clientName.replace(/[^a-zA-Z0-9]/g, '_')}-${serviceName.replace(/[^a-zA-Z0-9]/g, '_')}" style="display:block;">
+              `;
+              
+              tasks.forEach(r => {
+                const assigneeSelect = createAssigneeSelect(r);
+                
+                html += `
+                  <div style="display:grid;grid-template-columns:2fr 100px 1fr 80px 100px 90px 100px;gap:12px;padding:12px 16px;border-bottom:1px solid #f9fafb;align-items:center;">
+                    <div>
+                      <div style="font-weight:500;color:#1f2937;margin-bottom:4px;">${r.taskName}</div>
+                      <div style="font-size:12px;color:#6b7280;">進度：${r.progress.completed}/${r.progress.total}</div>
+                    </div>
+                    <div style="font-size:13px;color:#6b7280;">${r.clientTaxId||'—'}</div>
+                    <div id="assignee-${r.taskId}"></div>
+                    <div style="font-size:13px;color:#4b5563;">${r.dueDate ? r.dueDate.slice(5) : '—'}</div>
+                    <div><span style="display:inline-block;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;${getStatusStyle(r.status)}">${zhStatus[r.status]||r.status}</span></div>
+                    <div><a href="/internal/task-detail?id=${r.taskId}" style="color:#3b82f6;text-decoration:none;font-size:14px;">查看詳情</a></div>
+                  </div>
+                `;
+              });
+              
+              html += `
+                  </div>
+                </div>
+              `;
+            });
+            
+            html += `
+                </div>
+              </div>
+            `;
+          });
+          
+          if (Object.keys(grouped).length === 0) {
+            html = '<div style="text-align:center;padding:48px;color:#9ca3af;">沒有任務</div>';
+          }
+          
+          container.innerHTML = html;
+          
+          // 為每個任務添加負責人下拉選單
+          cacheRows.forEach(r => {
+            const assigneeContainer = document.getElementById(`assignee-${r.taskId}`);
+            if (assigneeContainer) {
+              const select = createAssigneeSelectElement(r);
+              assigneeContainer.appendChild(select);
+            }
+          });
+          
+          renderPager();
+        }
+        
+        // 創建負責人下拉選單元素
+        function createAssigneeSelectElement(task) {
+          const select = document.createElement('select');
+          select.style.cssText = 'padding:6px 10px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;width:100%;';
+          select.innerHTML = '<option value="">未分配</option>';
+          employeesList.forEach(emp => {
+            const opt = document.createElement('option');
+            opt.value = emp.userId;
+            opt.textContent = emp.name;
+            opt.selected = (task.assigneeName && task.assigneeName === emp.name);
+            select.appendChild(opt);
+          });
+          
+          select.addEventListener('change', async function() {
+            const newAssigneeId = this.value ? Number(this.value) : null;
+            const prevValue = this.value;
+            try {
+              this.disabled = true;
+              const res = await fetch(`${apiBase}/tasks/${task.taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ assignee_user_id: newAssigneeId })
+              });
+              if (res.status === 401) { location.assign('/login?redirect=/internal/tasks'); return; }
+              const json = await res.json();
+              if (!res.ok || !json || json.ok !== true) throw new Error((json && json.message) || '分配失敗');
+              load();
+            } catch (e) {
+              alert(e.message || '分配失敗，請稍後再試');
+              this.value = prevValue;
+              this.disabled = false;
+            }
+          });
+          
+          return select;
+        }
+        
+        // 獲取狀態樣式
+        function getStatusStyle(status) {
+          const styles = {
+            'pending': 'background:#f3f4f6;color:#6b7280;',
+            'in_progress': 'background:#fef3c7;color:#d97706;',
+            'completed': 'background:#d1fae5;color:#059669;',
+            'cancelled': 'background:#fee2e2;color:#dc2626;'
+          };
+          return styles[status] || styles['pending'];
+        }
+        
+        // 切換客戶分組
+        window.toggleClientGroup = function(clientName) {
+          const groupId = 'group-' + clientName.replace(/[^a-zA-Z0-9]/g, '_');
+          const iconId = 'icon-' + clientName.replace(/[^a-zA-Z0-9]/g, '_');
+          const group = document.getElementById(groupId);
+          const icon = document.getElementById(iconId);
+          
+          if (group && icon) {
+            if (group.style.display === 'none') {
+              group.style.display = 'block';
+              icon.textContent = '▼';
+            } else {
+              group.style.display = 'none';
+              icon.textContent = '▶';
+            }
+          }
+        };
+        
+        // 切換服務分組
+        window.toggleServiceGroup = function(clientName, serviceName) {
+          const tasksId = 'tasks-' + clientName.replace(/[^a-zA-Z0-9]/g, '_') + '-' + serviceName.replace(/[^a-zA-Z0-9]/g, '_');
+          const iconId = 'icon-' + clientName.replace(/[^a-zA-Z0-9]/g, '_') + '-' + serviceName.replace(/[^a-zA-Z0-9]/g, '_');
+          const tasks = document.getElementById(tasksId);
+          const icon = document.getElementById(iconId);
+          
+          if (tasks && icon) {
+            if (tasks.style.display === 'none') {
+              tasks.style.display = 'block';
+              icon.textContent = '▼';
+            } else {
+              tasks.style.display = 'none';
+              icon.textContent = '▶';
+            }
+          }
+        };
 
         function renderList(){
           tbody.innerHTML = '';
@@ -254,14 +498,16 @@
             tr.innerHTML = `
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.taskName}</td>
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.clientName||''}</td>
+              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;color:#6b7280;font-size:13px;">${r.clientTaxId||'—'}</td>
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.progress.completed}/${r.progress.total}</td>
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.dueDate? r.dueDate.slice(5) : ''}</td>
               <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${zhStatus[r.status]||r.status}</td>
-              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">${r.hasSop? '有 SOP':'—'}</td>
-              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;"><button type="button">查看</button></td>
+              <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;">
+                <a href="/internal/task-detail?id=${r.taskId}" style="color:#3b82f6;text-decoration:none;">查看詳情</a>
+              </td>
             `;
-            // 插入負責人單元格到正確位置（第3列）
-            tr.insertBefore(assigneeTd, tr.children[2]);
+            // 插入負責人單元格到正確位置（第4列，因為前面加了統編列）
+            tr.insertBefore(assigneeTd, tr.children[3]);
             tbody.appendChild(tr);
           });
           renderPager();
@@ -273,20 +519,60 @@
             const card = document.createElement('div');
             const cls = r.status==='completed' ? 'completed' : (r.status==='pending' ? 'low-priority' : 'medium-priority');
             card.className = 'task-card ' + cls;
+            card.style.cursor = 'pointer';
             card.innerHTML = `
               <div class="task-card-header"><h4 class="task-card-title">${r.taskName}</h4></div>
               <div class="task-card-meta">
                 <div class="task-card-meta-item">客戶：${r.clientName||''}</div>
+                ${r.clientTaxId ? `<div class="task-card-meta-item">統編：${r.clientTaxId}</div>` : ''}
                 <div class="task-card-meta-item">進度：${r.progress.completed}/${r.progress.total}</div>
                 <div class="task-card-meta-item">到期：${r.dueDate? r.dueDate.slice(5):''}</div>
               </div>`;
+            card.addEventListener('click', () => { location.href = `/internal/task-detail?id=${r.taskId}`; });
             if (r.status==='pending') colTodo.appendChild(card); else if (r.status==='in_progress') colDoing.appendChild(card); else colDone.appendChild(card);
           });
           renderPager();
         }
 
-        function render(){ if (state.view==='list') renderList(); else renderKanban(); }
-        function switchView(v){ state.view = v; if (v==='list'){ viewList.style.display='block'; viewKanban.style.display='none'; } else { viewList.style.display='none'; viewKanban.style.display='grid'; } render(); }
+        function render(){ 
+          if (state.view==='list') {
+            if (state.listMode === 'flat') {
+              renderList();
+            } else {
+              renderGrouped();
+            }
+          } else {
+            renderKanban();
+          }
+        }
+        
+        function switchView(v){ 
+          state.view = v; 
+          if (v==='list'){ 
+            viewList.style.display='block'; 
+            viewKanban.style.display='none';
+          } else { 
+            viewList.style.display='none'; 
+            viewKanban.style.display='grid'; 
+          } 
+          render(); 
+        }
+        
+        function switchListMode(mode) {
+          state.listMode = mode;
+          if (mode === 'flat') {
+            tableFlat.style.display = 'table';
+            tableGrouped.style.display = 'none';
+            btnViewFlat.classList.remove('btn-secondary');
+            btnViewGrouped.classList.add('btn-secondary');
+          } else {
+            tableFlat.style.display = 'none';
+            tableGrouped.style.display = 'block';
+            btnViewFlat.classList.add('btn-secondary');
+            btnViewGrouped.classList.remove('btn-secondary');
+          }
+          render();
+        }
 
         // events
         let timer = null;
@@ -297,6 +583,8 @@
         nextBtn.addEventListener('click', () => { state.page++; load(); });
         btnList.addEventListener('click', () => switchView('list'));
         btnKanban.addEventListener('click', () => switchView('kanban'));
+        btnViewFlat.addEventListener('click', () => switchListMode('flat'));
+        btnViewGrouped.addEventListener('click', () => switchListMode('grouped'));
 
         // init
         switchView('list');

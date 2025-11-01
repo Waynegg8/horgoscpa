@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>任務詳情 - 內部系統</title>
+  <link rel="stylesheet" href="/assets/css/common.css?v=3">
+  <link rel="stylesheet" href="/assets/css/internal-system.css?v=3">
+  <link rel="stylesheet" href="/assets/css/internal-components.css?v=3">
+  <link rel="stylesheet" href="/assets/css/task-detail-page.css?v=1">
+  <style>
+    /* 日期選擇器 - 整框可點擊 */
+    input[type="date"].form-control {
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      line-height: 1 !important;
+      cursor: pointer !important;
+      position: relative !important;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      width: 100%;
+    }
+    
+    /* 讓日曆圖標覆蓋整個輸入框，使整個區域都可以點擊 */
+    input[type="date"].form-control::-webkit-calendar-picker-indicator {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      opacity: 0 !important;
+      cursor: pointer !important;
+    }
+    
+    input[type="date"].form-control::-webkit-inner-spin-button {
+      display: none !important;
+    }
+    
+    input[type="date"].form-control::-webkit-datetime-edit {
+      padding: 0 !important;
+      line-height: 1 !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="navbar-placeholder"></div>
+  
+  <div class="page-container">
+    <div class="page-header-simple">
+      <a href="/internal/tasks" class="back-link">← 返回任務列表</a>
+      <h1 class="page-title" id="taskTitle">任務詳情</h1>
+    </div>
+
+    <!-- 任務基本信息 -->
+    <div class="content-card">
+      <h2 class="card-title">基本信息</h2>
+      <div class="form-row-2col">
+        <div class="form-field">
+          <label for="taskName">任務名稱</label>
+          <input type="text" id="taskName" class="form-control" readonly />
+        </div>
+        <div class="form-field">
+          <label for="taskStatus">狀態</label>
+          <select id="taskStatus" class="form-control">
+            <option value="pending">待開始</option>
+            <option value="in_progress">進行中</option>
+            <option value="completed">已完成</option>
+            <option value="cancelled">已取消</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2col">
+        <div class="form-field">
+          <label for="clientName">客戶</label>
+          <input type="text" id="clientName" class="form-control" readonly />
+        </div>
+        <div class="form-field">
+          <label for="assigneeUser">負責人</label>
+          <select id="assigneeUser" class="form-control">
+            <option value="">載入中...</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2col">
+        <div class="form-field">
+          <label for="dueDate">到期日</label>
+          <input type="date" id="dueDate" class="form-control" />
+        </div>
+        <div class="form-field">
+          <label>進度</label>
+          <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0;">
+            <div class="progress-bar" style="flex: 1;">
+              <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+            </div>
+            <span id="progressText" style="font-weight: 600; color: #1f2937;">0/0</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-row-1col">
+        <div class="form-field">
+          <label for="taskNotes">備註</label>
+          <textarea id="taskNotes" class="form-control" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" onclick="saveTaskInfo()">儲存變更</button>
+      </div>
+    </div>
+
+    <!-- 任務階段 -->
+    <div class="content-card">
+      <h2 class="card-title">任務階段</h2>
+      <div id="stagesList" class="stages-list">
+        <p style="color: #9ca3af;">載入中...</p>
+      </div>
+    </div>
+
+    <!-- 關聯的 SOP -->
+    <div class="content-card">
+      <div class="card-header-with-action">
+        <h2 class="card-title">📖 關聯的 SOP</h2>
+        <button class="btn btn-primary btn-sm" onclick="showManageSOPModal()">管理 SOP</button>
+      </div>
+      <div id="sopList" class="sop-list">
+        <p style="color: #9ca3af;">載入中...</p>
+      </div>
+    </div>
+
+    <!-- 任務文檔 -->
+    <div class="content-card">
+      <div class="card-header-with-action">
+        <h2 class="card-title">📎 任務文檔</h2>
+        <button class="btn btn-primary btn-sm" onclick="uploadTaskDocument()">+ 上傳文檔</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>文件名稱</th>
+              <th>文件類型</th>
+              <th style="width: 120px;">大小</th>
+              <th style="width: 150px;">上傳時間</th>
+              <th style="width: 100px;">上傳者</th>
+              <th style="width: 120px;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="documentsList">
+            <tr>
+              <td colspan="6" class="loading-text">載入中...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <!-- 管理 SOP 彈窗 -->
+  <div id="sopModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; padding: 24px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0;">管理任務 SOP</h3>
+        <button onclick="closeSOPModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 12px;">選擇要關聯到此任務的 SOP（可多選）</p>
+        <div id="sopCheckboxList" style="max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px;">
+          <p style="color: #9ca3af;">載入中...</p>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="closeSOPModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveSOPLinks()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 文件上傳隱藏 input -->
+  <input type="file" id="fileInput" style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.docx,.doc" />
+
+  <script src="/assets/js/components/bootstrap.js?v=3"></script>
+  <script>
+    const onProdHost = location.hostname.endsWith('horgoscpa.com');
+    const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+    
+    let currentTaskId = null;
+    let currentTask = null;
+    let allUsers = [];
+    let allSOPs = [];
+    let taskSOPs = [];
+    let taskStages = [];
+
+    // 初始化
+    async function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      currentTaskId = urlParams.get('id');
+      
+      if (!currentTaskId) {
+        alert('缺少任務ID');
+        window.location.href = '/internal/tasks';
+        return;
+      }
+
+      await Promise.all([
+        loadUsers(),
+        loadAllSOPs(),
+        loadTaskDetail(),
+        loadTaskSOPs(),
+        loadTaskStages(),
+        loadTaskDocuments()
+      ]);
+    }
+
+    // 載入員工列表
+    async function loadUsers() {
+      try {
+        const res = await fetch(`${apiBase}/users`, { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
+        if (json.ok && json.data) {
+          allUsers = json.data;
+          const select = document.getElementById('assigneeUser');
+          select.innerHTML = '<option value="">未分配</option>' +
+            allUsers.map(u => 
+              `<option value="${u.user_id}">${u.name || u.username}</option>`
+            ).join('');
+        }
+      } catch (err) {
+        console.error('載入員工列表失敗:', err);
+      }
+    }
+
+    // 載入所有 SOP
+    async function loadAllSOPs() {
+      try {
+        const res = await fetch(`${apiBase}/sop?perPage=100`, { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
+        if (json.ok && json.data) {
+          allSOPs = json.data;
+        }
+      } catch (err) {
+        console.error('載入 SOP 列表失敗:', err);
+      }
+    }
+
+    // 載入任務詳情
+    async function loadTaskDetail() {
+      try {
+        const res = await fetch(`${apiBase}/tasks/${currentTaskId}`, { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        if (res.status === 404) {
+          alert('任務不存在');
+          window.location.href = '/internal/tasks';
+          return;
+        }
+        const json = await res.json();
+        if (!json.ok) {
+          alert(json.message || '載入失敗');
+          return;
+        }
+
+        currentTask = json.data;
+        
+        // 更新頁面
+        document.getElementById('taskTitle').textContent = currentTask.task_name || '任務詳情';
+        document.getElementById('taskName').value = currentTask.task_name || '';
+        document.getElementById('taskStatus').value = currentTask.status || 'pending';
+        document.getElementById('clientName').value = currentTask.client_name || '';
+        document.getElementById('assigneeUser').value = currentTask.assignee_user_id || '';
+        document.getElementById('dueDate').value = currentTask.due_date || '';
+        document.getElementById('taskNotes').value = currentTask.notes || '';
+        
+        // 更新進度
+        updateProgress(currentTask.completed_stages || 0, currentTask.total_stages || 0);
+        
+      } catch (err) {
+        console.error('載入任務詳情失敗:', err);
+        alert('載入失敗');
+      }
+    }
+
+    // 更新進度
+    function updateProgress(completed, total) {
+      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+      document.getElementById('progressFill').style.width = percentage + '%';
+      document.getElementById('progressText').textContent = `${completed}/${total}`;
+    }
+
+    // 載入任務階段
+    async function loadTaskStages() {
+      try {
+        const res = await fetch(`${apiBase}/tasks/${currentTaskId}/stages`, { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
+        
+        const container = document.getElementById('stagesList');
+        
+        if (!json.ok || !json.data || json.data.length === 0) {
+          container.innerHTML = '<p style="color: #9ca3af;">此任務沒有階段</p>';
+          return;
+        }
+
+        taskStages = json.data;
+        
+        container.innerHTML = taskStages.map((stage, idx) => {
+          const statusClass = stage.status === 'completed' ? 'completed' : stage.status === 'in_progress' ? 'in-progress' : 'pending';
+          const statusText = stage.status === 'completed' ? '已完成' : stage.status === 'in_progress' ? '進行中' : '待開始';
+          
+          return `
+            <div class="stage-item ${statusClass}">
+              <div class="stage-header">
+                <div>
+                  <span class="stage-number">${idx + 1}</span>
+                  <span class="stage-name">${stage.stage_name}</span>
+                  <span class="stage-status status-${statusClass}">${statusText}</span>
+                </div>
+                <div class="stage-actions">
+                  ${stage.status === 'pending' ? `<button class="btn btn-sm btn-primary" onclick="startStage(${stage.stage_id})">開始</button>` : ''}
+                  ${stage.status === 'in_progress' ? `<button class="btn btn-sm btn-success" onclick="completeStage(${stage.stage_id})">完成</button>` : ''}
+                </div>
+              </div>
+              ${stage.started_at ? `<div class="stage-time">開始時間：${formatDateTime(stage.started_at)}</div>` : ''}
+              ${stage.completed_at ? `<div class="stage-time">完成時間：${formatDateTime(stage.completed_at)}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+        
+      } catch (err) {
+        console.error('載入任務階段失敗:', err);
+        document.getElementById('stagesList').innerHTML = '<p style="color: #ef4444;">載入失敗</p>';
+      }
+    }
+
+    // 載入任務關聯的 SOP
+    async function loadTaskSOPs() {
+      try {
+        const res = await fetch(`${apiBase}/tasks/${currentTaskId}/sops`, { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
+        
+        const container = document.getElementById('sopList');
+        
+        if (!json.ok || !json.data || json.data.length === 0) {
+          container.innerHTML = '<p style="color: #9ca3af;">此任務尚未關聯任何 SOP</p>';
+          taskSOPs = [];
+          return;
+        }
+
+        taskSOPs = json.data;
+        
+        container.innerHTML = taskSOPs.map(sop => `
+          <div class="sop-item">
+            <div>
+              <div class="sop-title">${sop.title}</div>
+              <div class="sop-meta">${getCategoryText(sop.category)} • v${sop.version}</div>
+            </div>
+            <a href="/internal/knowledge?id=${sop.id}" target="_blank" class="btn btn-sm btn-secondary">查看</a>
+          </div>
+        `).join('');
+        
+      } catch (err) {
+        console.error('載入任務 SOP 失敗:', err);
+        document.getElementById('sopList').innerHTML = '<p style="color: #ef4444;">載入失敗</p>';
+      }
+    }
+
+    // 載入任務文檔
+    async function loadTaskDocuments() {
+      try {
+        const res = await fetch(`${apiBase}/attachments?entity_type=task&entity_id=${currentTaskId}`, { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
+        
+        const tbody = document.getElementById('documentsList');
+        
+        if (!json.ok || !json.data || json.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #9ca3af;">尚無文檔</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = json.data.map(doc => `
+          <tr>
+            <td>${doc.filename}</td>
+            <td>${doc.contentType}</td>
+            <td>${formatFileSize(doc.sizeBytes)}</td>
+            <td>${formatDateTime(doc.uploadedAt)}</td>
+            <td>${doc.uploaderName}</td>
+            <td>
+              <button class="table-btn-link" onclick="downloadDocument(${doc.id}, '${doc.filename}')">下載</button>
+              <button class="table-btn-link danger" onclick="deleteDocument(${doc.id})">刪除</button>
+            </td>
+          </tr>
+        `).join('');
+        
+      } catch (err) {
+        console.error('載入任務文檔失敗:', err);
+        document.getElementById('documentsList').innerHTML = '<tr><td colspan="6" style="color: #ef4444;">載入失敗</td></tr>';
+      }
+    }
+
+    // 儲存任務信息
+    async function saveTaskInfo() {
+      const data = {
+        status: document.getElementById('taskStatus').value,
+        due_date: document.getElementById('dueDate').value || null,
+        assignee_user_id: document.getElementById('assigneeUser').value ? parseInt(document.getElementById('assigneeUser').value) : null,
+        notes: document.getElementById('taskNotes').value.trim()
+      };
+
+      try {
+        const res = await fetch(`${apiBase}/tasks/${currentTaskId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+        
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert(json.message || '儲存失敗');
+          return;
+        }
+
+        alert('已儲存');
+        await loadTaskDetail();
+        
+      } catch (err) {
+        console.error('儲存任務信息失敗:', err);
+        alert('儲存失敗');
+      }
+    }
+
+    // 開始階段
+    async function startStage(stageId) {
+      try {
+        const res = await fetch(`${apiBase}/tasks/${currentTaskId}/stages/${stageId}/start`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert(json.message || '操作失敗');
+          return;
+        }
+
+        await Promise.all([loadTaskDetail(), loadTaskStages()]);
+        
+      } catch (err) {
+        console.error('開始階段失敗:', err);
+        alert('操作失敗');
+      }
+    }
+
+    // 完成階段
+    async function completeStage(stageId) {
+      try {
+        const res = await fetch(`${apiBase}/tasks/${currentTaskId}/stages/${stageId}/complete`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert(json.message || '操作失敗');
+          return;
+        }
+
+        await Promise.all([loadTaskDetail(), loadTaskStages()]);
+        
+      } catch (err) {
+        console.error('完成階段失敗:', err);
+        alert('操作失敗');
+      }
+    }
+
+    // 顯示管理 SOP 彈窗
+    function showManageSOPModal() {
+      const modal = document.getElementById('sopModal');
+      const container = document.getElementById('sopCheckboxList');
+      
+      // 獲取當前任務已關聯的 SOP ID
+      const linkedSOPIds = taskSOPs.map(s => s.id);
+      
+      // 按分類分組 SOP
+      const sopByCategory = {};
+      allSOPs.forEach(sop => {
+        const cat = sop.category || 'other';
+        if (!sopByCategory[cat]) sopByCategory[cat] = [];
+        sopByCategory[cat].push(sop);
+      });
+      
+      let html = '';
+      Object.keys(sopByCategory).forEach(cat => {
+        html += `<div style="margin-bottom: 16px;">
+          <div style="font-weight: 600; color: #374151; margin-bottom: 8px;">${getCategoryText(cat)}</div>`;
+        
+        sopByCategory[cat].forEach(sop => {
+          const checked = linkedSOPIds.includes(sop.id) ? 'checked' : '';
+          html += `
+            <label style="display: flex; align-items: center; gap: 8px; padding: 8px; cursor: pointer; border-radius: 4px;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
+              <input type="checkbox" value="${sop.id}" ${checked} style="cursor: pointer;" />
+              <span style="flex: 1;">${sop.title}</span>
+              <span style="font-size: 12px; color: #9ca3af;">v${sop.version}</span>
+            </label>
+          `;
+        });
+        
+        html += '</div>';
+      });
+      
+      if (allSOPs.length === 0) {
+        html = '<p style="color: #9ca3af;">尚無可用的 SOP</p>';
+      }
+      
+      container.innerHTML = html;
+      modal.style.display = 'flex';
+    }
+
+    // 關閉 SOP 彈窗
+    function closeSOPModal() {
+      document.getElementById('sopModal').style.display = 'none';
+    }
+
+    // 儲存 SOP 關聯
+    async function saveSOPLinks() {
+      const checkboxes = document.querySelectorAll('#sopCheckboxList input[type="checkbox"]:checked');
+      const sopIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+      try {
+        const res = await fetch(`${apiBase}/tasks/${currentTaskId}/sops`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ sop_ids: sopIds })
+        });
+        
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert(json.message || '儲存失敗');
+          return;
+        }
+
+        closeSOPModal();
+        await loadTaskSOPs();
+        
+      } catch (err) {
+        console.error('儲存 SOP 關聯失敗:', err);
+        alert('儲存失敗');
+      }
+    }
+
+    // 上傳任務文檔
+    function uploadTaskDocument() {
+      const fileInput = document.getElementById('fileInput');
+      fileInput.onchange = async function() {
+        if (!this.files || this.files.length === 0) return;
+        
+        const file = this.files[0];
+        
+        // 驗證文件大小
+        if (file.size > 10 * 1024 * 1024) {
+          alert('文件大小不能超過 10MB');
+          return;
+        }
+        
+        try {
+          // 獲取上傳簽名
+          const signRes = await fetch(`${apiBase}/attachments/upload-sign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              entity_type: 'task',
+              entity_id: currentTaskId,
+              filename: file.name,
+              content_type: file.type || 'application/octet-stream',
+              content_length: file.size
+            })
+          });
+          
+          if (signRes.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+          const signJson = await signRes.json();
+          
+          if (!signJson.ok) {
+            alert(signJson.message || '獲取上傳簽名失敗');
+            return;
+          }
+          
+          // 上傳文件
+          const uploadRes = await fetch(signJson.data.uploadUrl, {
+            method: 'PUT',
+            headers: signJson.data.headers,
+            body: file
+          });
+          
+          if (!uploadRes.ok) {
+            alert('上傳失敗');
+            return;
+          }
+          
+          alert('上傳成功');
+          await loadTaskDocuments();
+          
+        } catch (err) {
+          console.error('上傳文檔失敗:', err);
+          alert('上傳失敗');
+        } finally {
+          this.value = ''; // 重置文件輸入
+        }
+      };
+      
+      fileInput.click();
+    }
+
+    // 下載文檔
+    async function downloadDocument(attachmentId, filename) {
+      try {
+        const res = await fetch(`${apiBase}/attachments/${attachmentId}/download`, { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        if (!res.ok) {
+          alert('下載失敗');
+          return;
+        }
+        
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+      } catch (err) {
+        console.error('下載文檔失敗:', err);
+        alert('下載失敗');
+      }
+    }
+
+    // 刪除文檔
+    async function deleteDocument(attachmentId) {
+      if (!confirm('確定要刪除此文檔嗎？')) return;
+      
+      try {
+        const res = await fetch(`${apiBase}/attachments/${attachmentId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert(json.message || '刪除失敗');
+          return;
+        }
+
+        await loadTaskDocuments();
+        
+      } catch (err) {
+        console.error('刪除文檔失敗:', err);
+        alert('刪除失敗');
+      }
+    }
+
+    // 輔助函數
+    function getCategoryText(category) {
+      const categoryMap = {
+        'accounting': '記帳流程',
+        'tax': '稅務流程',
+        'business': '工商登記',
+        'internal': '內部流程',
+        'other': '其他'
+      };
+      return categoryMap[category] || category;
+    }
+
+    function formatDateTime(dateStr) {
+      if (!dateStr) return '-';
+      const d = new Date(dateStr);
+      return d.toLocaleString('zh-TW', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // 頁面加載時初始化
+    init();
+  </script>
+</body>
+</html>
+

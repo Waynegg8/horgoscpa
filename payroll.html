@@ -28,7 +28,6 @@
         <button class="tab" role="tab" aria-selected="false" data-tab="emp">員工薪資設定</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="bonus">績效獎金調整</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="yearend">年終獎金</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="reports">薪資報表</button>
       </nav>
     </header>
 
@@ -173,20 +172,6 @@
           </table>
         </div>
       </section>
-
-      <!-- 薪資報表 -->
-      <section id="panel-reports" class="panel" role="tabpanel" aria-labelledby="tab-reports">
-        <div class="card">
-          <div class="section-toolbar">
-            <label for="monthReport">月份</label>
-            <input id="monthReport" type="month" />
-            <div class="toolbar-spacer"></div>
-            <button class="btn" disabled>下載 CSV</button>
-            <button class="btn" disabled>下載 PDF</button>
-          </div>
-          <div class="placeholder muted">尚無報表，請選擇月份後匯出。</div>
-        </div>
-      </section>
     </main>
 
     <script>
@@ -203,7 +188,6 @@
           emp: document.getElementById('panel-emp'),
           bonus: document.getElementById('panel-bonus'),
           yearend: document.getElementById('panel-yearend'),
-          reports: document.getElementById('panel-reports'),
         };
 
         // 計算分頁 DOM
@@ -399,8 +383,6 @@
         monthInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
         const monthBonus = document.getElementById('monthBonus');
         if (monthBonus) monthBonus.value = monthInput.value;
-        const monthReport = document.getElementById('monthReport');
-        if (monthReport) monthReport.value = monthInput.value;
 
         // 綁定事件
         let timer = null;

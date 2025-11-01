@@ -8,6 +8,88 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/receipts-page.css" />
+    <style>
+      /* 日期選擇器 - 整框可點擊 */
+      input[type="date"] {
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        line-height: 1 !important;
+        cursor: pointer !important;
+        position: relative !important;
+      }
+      
+      input[type="date"]::-webkit-calendar-picker-indicator {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        opacity: 0 !important;
+        cursor: pointer !important;
+      }
+      
+      input[type="date"]::-webkit-inner-spin-button {
+        display: none !important;
+      }
+      
+      input[type="date"]::-webkit-datetime-edit {
+        padding: 0 !important;
+        line-height: 1 !important;
+      }
+      
+      /* 提醒通知樣式 */
+      .reminder-banner {
+        background: #fef3c7;
+        border: 1px solid #fbbf24;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: start;
+        gap: 12px;
+      }
+      
+      .reminder-banner-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+      }
+      
+      .reminder-banner-content {
+        flex: 1;
+      }
+      
+      .reminder-banner-title {
+        font-weight: 600;
+        color: #92400e;
+        margin-bottom: 8px;
+      }
+      
+      .reminder-banner-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      
+      .reminder-banner-item {
+        padding: 6px 0;
+        color: #78350f;
+        font-size: 14px;
+      }
+      
+      .reminder-banner-item a {
+        color: #d97706;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+      
+      .reminder-banner-item a:hover {
+        color: #b45309;
+      }
+    </style>
   </head>
   <body class="receipts-page">
     <header class="receipts-header">
@@ -27,6 +109,9 @@
     </header>
 
     <main class="receipts-content">
+      <!-- 開收據提醒 -->
+      <div id="reminderBanner" style="display: none;"></div>
+      
       <section class="receipts-card">
         <table class="receipts-table" aria-label="收據列表">
           <thead>
@@ -66,8 +151,15 @@
           </div>
           
           <div class="modal-row">
-            <label for="clientId">客戶ID</label>
-            <input id="clientId" type="text" placeholder="例如 c_001" />
+            <label for="clientSelect">選擇客戶（必填）</label>
+            <select id="clientSelect">
+              <option value="">載入中...</option>
+            </select>
+          </div>
+          
+          <div class="modal-row" style="display: none;">
+            <label for="clientId">客戶ID（自動填入）</label>
+            <input id="clientId" type="text" placeholder="例如 c_001" readonly />
           </div>
           
           <div class="modal-row" id="serviceRow" style="display:none;">
@@ -173,6 +265,140 @@
 
         let state = { page:1, perPage:20, total:0 };
         let currentClientServices = [];
+        let allClients = [];
+
+        // 載入應開收據提醒
+        async function loadReceiptReminders() {
+          try {
+            const res = await fetch(`${apiBase}/receipts/reminders`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/receipts'); return; }
+            const json = await res.json();
+            
+            const banner = document.getElementById('reminderBanner');
+            
+            if (!json.ok || !json.data || json.data.length === 0) {
+              banner.style.display = 'none';
+              return;
+            }
+            
+            const reminders = json.data;
+            banner.innerHTML = `
+              <div class="reminder-banner">
+                <div class="reminder-banner-icon">⚠️</div>
+                <div class="reminder-banner-content">
+                  <div class="reminder-banner-title">待開收據提醒（${reminders.length} 項）</div>
+                  <ul class="reminder-banner-list">
+                    ${reminders.map(r => `
+                      <li class="reminder-banner-item">
+                        <strong>${r.client_name}</strong> - ${r.service_name}
+                        （${r.billing_month}月，金額：$${(r.amount || 0).toLocaleString()}）
+                        <a onclick="createReceiptFromReminder('${r.client_id}', ${r.client_service_id}, ${r.billing_month}, ${r.amount})">立即開收據</a>
+                      </li>
+                    `).join('')}
+                  </ul>
+                </div>
+              </div>
+            `;
+            banner.style.display = 'block';
+            
+          } catch (err) {
+            console.error('載入提醒失敗:', err);
+          }
+        }
+
+        // 從提醒快速創建收據
+        window.createReceiptFromReminder = function(clientId, clientServiceId, billingMonth, amount) {
+          // 打開彈窗
+          openModal();
+          
+          // 自動填充數據
+          inputReceiptType.value = 'normal';
+          inputClientId.value = clientId;
+          inputBillingMonth.value = String(billingMonth);
+          inputAmount.value = String(amount);
+          
+          // 設置客戶選擇
+          const clientSelectEl = document.getElementById('clientSelect');
+          if (clientSelectEl) {
+            clientSelectEl.value = clientId;
+            clientSelectEl.dispatchEvent(new Event('change'));
+          }
+          
+          // 等待服務列表載入後選擇對應服務
+          setTimeout(() => {
+            if (clientServiceId) {
+              inputClientService.value = String(clientServiceId);
+              inputClientService.dispatchEvent(new Event('change'));
+            }
+          }, 1000);
+        };
+
+        // 載入客戶列表
+        async function loadClients() {
+          try {
+            const res = await fetch(`${apiBase}/clients?perPage=1000`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/receipts'); return; }
+            const json = await res.json();
+            
+            if (json.ok && json.data) {
+              allClients = json.data;
+              
+              // 填充客戶下拉選單
+              const clientSelect = document.getElementById('clientSelect');
+              if (clientSelect) {
+                clientSelect.innerHTML = '<option value="">請選擇客戶</option>' +
+                  allClients.map(c => 
+                    `<option value="${c.client_id}">${c.company_name}${c.tax_id ? ' (' + c.tax_id + ')' : ''}</option>`
+                  ).join('');
+              }
+            }
+          } catch (err) {
+            console.error('載入客戶列表失敗:', err);
+          }
+        }
+        
+        // 監聽客戶選擇變化
+        const clientSelectEl = document.getElementById('clientSelect');
+        if (clientSelectEl) {
+          clientSelectEl.addEventListener('change', async function() {
+            const clientId = this.value;
+            inputClientId.value = clientId;
+            
+            if (!clientId) {
+              inputClientService.innerHTML = '<option value="">請選擇服務</option>';
+              currentClientServices = [];
+              serviceRow.style.display = 'none';
+              billingMonthRow.style.display = 'none';
+              return;
+            }
+            
+            // 如果是正常收據，加載客戶服務
+            if (inputReceiptType.value === 'normal') {
+              try {
+                const res = await fetch(`${apiBase}/clients/${clientId}`, { credentials: 'include' });
+                if (!res.ok) {
+                  inputClientService.innerHTML = '<option value="">請選擇服務</option>';
+                  currentClientServices = [];
+                  return;
+                }
+                
+                const json = await res.json();
+                if (json.ok && json.data && json.data.services) {
+                  currentClientServices = json.data.services.filter(s => s.status === 'active');
+                  inputClientService.innerHTML = '<option value="">請選擇服務</option>' +
+                    currentClientServices.map(s => 
+                      `<option value="${s.client_service_id}">${s.service_name}</option>`
+                    ).join('');
+                    
+                  serviceRow.style.display = 'block';
+                  billingMonthRow.style.display = 'block';
+                }
+              } catch (err) {
+                console.error('載入客戶服務失敗:', err);
+              }
+            }
+          });
+        }
 
         function render(rows){
           tbody.innerHTML = '';
@@ -439,6 +665,9 @@
 
         btnCreate.addEventListener('click', createReceipt);
 
+        // 初始化
+        loadReceiptReminders();
+        loadClients();
         load();
       })();
     </script>

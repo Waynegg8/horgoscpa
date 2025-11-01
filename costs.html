@@ -21,15 +21,15 @@
         <button id="btn-export-pdf" type="button" class="btn" disabled>匯出 PDF</button>
       </div>
       <nav class="costs-tabs" role="tablist" aria-label="管理成本分頁">
-        <button class="tab" role="tab" aria-selected="false" data-tab="items">成本項目設定</button>
-        <button class="tab active" role="tab" aria-selected="true" data-tab="records">月度成本記錄</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="analysis">成本分析</button>
+        <button class="tab active" role="tab" aria-selected="true" data-tab="items">成本項目設定</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="employee">員工成本分析</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="client">客戶任務成本</button>
       </nav>
     </header>
 
     <main class="costs-content">
       <!-- 成本項目設定 -->
-      <section id="panel-items" class="panel" role="tabpanel" aria-labelledby="tab-items">
+      <section id="panel-items" class="panel show" role="tabpanel" aria-labelledby="tab-items">
         <div class="card">
           <div class="section-toolbar">
             <input id="itemSearch" type="search" placeholder="搜尋代碼/名稱…" />
@@ -39,7 +39,7 @@
               <option value="variable">變動</option>
             </select>
             <div class="toolbar-spacer"></div>
-            <button class="btn primary" disabled>新增項目</button>
+            <button id="btn-add-item" type="button" class="btn primary" disabled>新增項目</button>
           </div>
           <table class="table" aria-label="成本項目列表">
             <thead>
@@ -50,31 +50,30 @@
                 <th>分攤方式</th>
                 <th>描述</th>
                 <th>狀態</th>
+                <th>操作</th>
               </tr>
             </thead>
-            <tbody>
-              <tr><td colspan="6" class="muted">尚無資料</td></tr>
+            <tbody id="tbody-items">
+              <tr><td colspan="7" class="muted">尚無資料</td></tr>
             </tbody>
           </table>
         </div>
-      </section>
-
-      <!-- 月度成本記錄 -->
-      <section id="panel-records" class="panel show" role="tabpanel" aria-labelledby="tab-records">
-        <div class="card">
+        
+        <div class="card" style="margin-top: 16px;">
+          <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">月度管理費用記錄</h3>
           <div class="section-toolbar">
             <input id="recordSearch" type="search" placeholder="搜尋項目/備註…" />
             <div class="toolbar-spacer"></div>
-            <button class="btn primary" disabled>新增記錄</button>
+            <button id="btn-add-record" type="button" class="btn primary" disabled>新增記錄</button>
           </div>
           <div class="stats-cards">
             <div class="stat">
-              <div class="stat-label">本月總管理成本</div>
-              <div class="stat-value">—</div>
-              <div class="stat-meta muted">固定：—｜變動：—</div>
+              <div class="stat-label">本月總管理費用</div>
+              <div class="stat-value" id="stat-total">—</div>
+              <div class="stat-meta muted" id="stat-breakdown">固定：—｜變動：—</div>
             </div>
           </div>
-          <table class="table" aria-label="月度成本記錄">
+          <table class="table" aria-label="月度管理費用記錄">
             <thead>
               <tr>
                 <th>項目名稱</th>
@@ -82,43 +81,131 @@
                 <th>備註</th>
                 <th>錄入人</th>
                 <th>錄入時間</th>
-                <th>更新時間</th>
+                <th>操作</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="tbody-records">
               <tr><td colspan="6" class="muted">尚無資料</td></tr>
             </tbody>
           </table>
-          <div class="pagination">
-            <button type="button" id="prev">上一頁</button>
-            <button type="button" id="next">下一頁</button>
+        </div>
+      </section>
+
+      <!-- 員工成本分析 -->
+      <section id="panel-employee" class="panel" role="tabpanel" aria-labelledby="tab-employee">
+        <div class="card">
+          <div class="section-toolbar">
+            <input id="empSearch" type="search" placeholder="搜尋員工…" />
+            <div class="toolbar-spacer"></div>
+            <button type="button" class="btn" id="btn-refresh-emp" disabled>刷新</button>
+          </div>
+          <div class="info-box" style="margin-bottom: 12px; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 14px; color: #1e40af;">
+            <strong>計算說明：</strong>員工時薪 = 年度總薪資 ÷ (全年工時 - 特休時數)，成本 = 員工時薪 × 加權工時 + 分攤管理費用
+          </div>
+          <table class="table" aria-label="員工成本列表">
+            <thead>
+              <tr>
+                <th>姓名</th>
+                <th>年度總薪資</th>
+                <th>年工時</th>
+                <th>特休時數</th>
+                <th>實際工時</th>
+                <th>員工時薪</th>
+                <th>本月工時</th>
+                <th>加權工時</th>
+                <th>本月薪資成本</th>
+                <th>分攤管理費</th>
+                <th>本月總成本</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-employee">
+              <tr><td colspan="11" class="muted">載入中…</td></tr>
+            </tbody>
+          </table>
+          <div class="summary-row" style="margin-top: 12px; padding: 12px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 600;">
+              <span>本月總計：</span>
+              <span id="emp-total-cost">—</span>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- 成本分析 -->
-      <section id="panel-analysis" class="panel" role="tabpanel" aria-labelledby="tab-analysis">
+      <!-- 客戶任務成本 -->
+      <section id="panel-client" class="panel" role="tabpanel" aria-labelledby="tab-client">
         <div class="card">
           <div class="section-toolbar">
+            <input id="clientSearch" type="search" placeholder="搜尋客戶/任務…" />
+            <select id="viewType">
+              <option value="client">按客戶彙總</option>
+              <option value="task">按任務明細</option>
+            </select>
             <div class="toolbar-spacer"></div>
-            <button class="btn" disabled>刷新</button>
+            <button type="button" class="btn" id="btn-refresh-client" disabled>刷新</button>
           </div>
-          <div class="analysis-grid">
-            <div class="analysis-card">
-              <div class="analysis-title">類別結構（固定 vs 變動）</div>
-              <div class="placeholder muted">圓餅圖占位</div>
-            </div>
-            <div class="analysis-card">
-              <div class="analysis-title">項目拆分表</div>
-              <table class="table">
-                <thead><tr><th>項目</th><th>金額</th><th>占比</th></tr></thead>
-                <tbody>
-                  <tr><td colspan="3" class="muted">尚無資料</td></tr>
-                </tbody>
-              </table>
+          
+          <div id="client-view">
+            <table class="table" aria-label="客戶成本彙總">
+              <thead>
+                <tr>
+                  <th>客戶名稱</th>
+                  <th>任務數</th>
+                  <th>總工時</th>
+                  <th>加權工時</th>
+                  <th>人力成本</th>
+                  <th>分攤管理費</th>
+                  <th>總成本</th>
+                  <th>本月收入</th>
+                  <th>利潤</th>
+                  <th>利潤率</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-clients">
+                <tr><td colspan="10" class="muted">載入中…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="task-view" style="display: none;">
+            <table class="table" aria-label="任務成本明細">
+              <thead>
+                <tr>
+                  <th>客戶名稱</th>
+                  <th>任務標題</th>
+                  <th>負責人</th>
+                  <th>工時</th>
+                  <th>加權工時</th>
+                  <th>人力成本</th>
+                  <th>分攤管理費</th>
+                  <th>總成本</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-tasks">
+                <tr><td colspan="8" class="muted">載入中…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="summary-row" style="margin-top: 12px; padding: 12px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px;">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+              <div>
+                <div style="font-size: 12px; color: #64748b;">總成本</div>
+                <div style="font-size: 18px; font-weight: 600;" id="client-total-cost">—</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #64748b;">總收入</div>
+                <div style="font-size: 18px; font-weight: 600;" id="client-total-revenue">—</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #64748b;">總利潤</div>
+                <div style="font-size: 18px; font-weight: 600;" id="client-total-profit">—</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #64748b;">平均利潤率</div>
+                <div style="font-size: 18px; font-weight: 600;" id="client-avg-margin">—</div>
+              </div>
             </div>
           </div>
-          <div id="analysisNotice" class="info-bar" style="display:none;">本月份未輸入管理成本，報表僅顯示薪資成本</div>
         </div>
       </section>
     </main>
@@ -132,19 +219,35 @@
         const tabs = Array.from(document.querySelectorAll('.costs-tabs .tab'));
         const panels = {
           items: document.getElementById('panel-items'),
-          records: document.getElementById('panel-records'),
-          analysis: document.getElementById('panel-analysis'),
+          employee: document.getElementById('panel-employee'),
+          client: document.getElementById('panel-client'),
         };
 
         const monthInput = document.getElementById('month');
+
+        // 成本項目設定
+        const itemSearch = document.getElementById('itemSearch');
+        const itemCategory = document.getElementById('itemCategory');
+        const tbodyItems = document.getElementById('tbody-items');
+
+        // 月度管理費用記錄
         const recordSearch = document.getElementById('recordSearch');
-        const recordsPanel = panels.records;
-        const recordsTbody = recordsPanel.querySelector('tbody');
-        const statValueEl = recordsPanel.querySelector('.stat-value');
-        const statMetaEl = recordsPanel.querySelector('.stat-meta');
-        const analysisPanel = panels.analysis;
-        const analysisTableBody = analysisPanel.querySelector('table tbody');
-        const analysisNotice = document.getElementById('analysisNotice');
+        const tbodyRecords = document.getElementById('tbody-records');
+        const statTotal = document.getElementById('stat-total');
+        const statBreakdown = document.getElementById('stat-breakdown');
+
+        // 員工成本分析
+        const empSearch = document.getElementById('empSearch');
+        const tbodyEmployee = document.getElementById('tbody-employee');
+        const empTotalCost = document.getElementById('emp-total-cost');
+
+        // 客戶任務成本
+        const clientSearch = document.getElementById('clientSearch');
+        const viewType = document.getElementById('viewType');
+        const clientView = document.getElementById('client-view');
+        const taskView = document.getElementById('task-view');
+        const tbodyClients = document.getElementById('tbody-clients');
+        const tbodyTasks = document.getElementById('tbody-tasks');
 
         function setTabsEnabled(enabled){
           tabs.forEach(b=>{ b.disabled = !enabled; });
@@ -159,6 +262,9 @@
             Object.entries(panels).forEach(([k,el])=>{
               if (k === key) el.classList.add('show'); else el.classList.remove('show');
             });
+            // 載入對應資料
+            if (key === 'employee') loadEmployeeCosts();
+            if (key === 'client') loadClientCosts();
           });
         });
 
@@ -172,24 +278,46 @@
           return { year, month };
         }
 
-        function renderRecords(items){
-          recordsTbody.innerHTML = '';
-          if (!items || items.length === 0) {
-            recordsTbody.innerHTML = '<tr><td colspan="6" class="muted">尚無資料</td></tr>';
-            return;
+        function formatCurrency(val){
+          return 'NT$ ' + Number(val || 0).toLocaleString();
+        }
+
+        // ============ 成本項目設定 ============
+        async function loadItems(){
+          const params = new URLSearchParams();
+          const q = itemSearch.value.trim();
+          if (q) params.set('q', q);
+          const cat = itemCategory.value;
+          if (cat && cat !== 'all') params.set('category', cat);
+          try {
+            tbodyItems.innerHTML = '<tr><td colspan="7" class="muted">載入中…</td></tr>';
+            const res = await fetch(`${apiBase}/admin/overhead-types?${params.toString()}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const items = json.data || [];
+            if (items.length === 0) {
+              tbodyItems.innerHTML = '<tr><td colspan="7" class="muted">尚無資料</td></tr>';
+              return;
+            }
+            tbodyItems.innerHTML = '';
+            items.forEach(item => {
+              const tr = document.createElement('tr');
+              const allocationText = { per_employee: '按員工數', per_hour: '按工時', per_revenue: '按收入' }[item.allocationMethod] || item.allocationMethod;
+              tr.innerHTML = `
+                <td>${item.code||''}</td>
+                <td>${item.name||''}</td>
+                <td>${item.category === 'fixed' ? '固定' : '變動'}</td>
+                <td>${allocationText}</td>
+                <td>${item.description||''}</td>
+                <td>${item.isActive ? '啟用' : '停用'}</td>
+                <td><button class="btn-link" disabled>編輯</button></td>
+              `;
+              tbodyItems.appendChild(tr);
+            });
+          } catch (_) {
+            tbodyItems.innerHTML = '<tr><td colspan="7" style="color:#c0392b;">載入失敗</td></tr>';
           }
-          items.forEach(r => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${r.costName||''}</td>
-              <td>${Number(r.amount||0).toLocaleString()}</td>
-              <td>${r.notes||''}</td>
-              <td>${r.recordedBy||''}</td>
-              <td>${r.recordedAt||''}</td>
-              <td>${r.updatedAt||''}</td>
-            `;
-            recordsTbody.appendChild(tr);
-          });
         }
 
         async function loadRecords(){
@@ -201,71 +329,226 @@
           const q = recordSearch.value.trim();
           if (q) params.set('q', q);
           try {
-            recordsTbody.innerHTML = '<tr><td colspan="6" class="muted">載入中…</td></tr>';
+            tbodyRecords.innerHTML = '<tr><td colspan="6" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/overhead-costs?${params.toString()}`, { credentials:'include' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             const json = await res.json();
             if (!res.ok || !json || json.ok !== true) throw new Error();
             const data = json.data || {};
             const items = data.items || [];
-            renderRecords(items);
+            if (items.length === 0) {
+              tbodyRecords.innerHTML = '<tr><td colspan="6" class="muted">尚無資料</td></tr>';
+            } else {
+              tbodyRecords.innerHTML = '';
+              items.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                  <td>${r.costName||''}</td>
+                  <td>${formatCurrency(r.amount)}</td>
+                  <td>${r.notes||''}</td>
+                  <td>${r.recordedBy||''}</td>
+                  <td>${r.recordedAt||''}</td>
+                  <td><button class="btn-link" disabled>編輯</button></td>
+                `;
+                tbodyRecords.appendChild(tr);
+              });
+            }
             const total = Number(data.total||0);
             const totalFixed = Number(data.totalFixed||0);
             const totalVariable = Number(data.totalVariable||0);
-            statValueEl.textContent = total.toLocaleString();
-            statMetaEl.textContent = `固定：${totalFixed.toLocaleString()}｜變動：${totalVariable.toLocaleString()}`;
+            statTotal.textContent = formatCurrency(total);
+            statBreakdown.textContent = `固定：${formatCurrency(totalFixed)}｜變動：${formatCurrency(totalVariable)}`;
           } catch (_) {
-            recordsTbody.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
-            statValueEl.textContent = '—';
-            statMetaEl.textContent = '固定：—｜變動：—';
+            tbodyRecords.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
+            statTotal.textContent = '—';
+            statBreakdown.textContent = '固定：—｜變動：—';
           }
         }
 
-        function renderAnalysis(data){
-          // 類別結構占位更新
-          const fixed = Number((data && data.breakdown_by_category && data.breakdown_by_category.fixed) || 0);
-          const variable = Number((data && data.breakdown_by_category && data.breakdown_by_category.variable) || 0);
-          const placeholder = analysisPanel.querySelector('.placeholder');
-          if (placeholder) placeholder.textContent = `固定 ${fixed.toLocaleString()} ｜ 變動 ${variable.toLocaleString()}`;
-
-          // 項目拆分表
-          const list = (data && data.breakdown_by_type) || [];
-          analysisTableBody.innerHTML = '';
-          if (!list.length) {
-            analysisTableBody.innerHTML = '<tr><td colspan="3" class="muted">尚無資料</td></tr>';
-          } else {
-            list.forEach(x => {
-              const tr = document.createElement('tr');
-              tr.innerHTML = `
-                <td>${x.costName||''}</td>
-                <td>${Number(x.amount||0).toLocaleString()}</td>
-                <td>${Number(x.percentage||0).toFixed(1)}%</td>
-              `;
-              analysisTableBody.appendChild(tr);
-            });
-          }
-        }
-
-        async function loadAnalysis(){
+        // ============ 員工成本分析 ============
+        async function loadEmployeeCosts(){
           const ym = parseYearMonth();
           if (!ym) return;
           const params = new URLSearchParams();
           params.set('year', String(ym.year));
           params.set('month', String(ym.month));
+          const q = empSearch.value.trim();
+          if (q) params.set('q', q);
           try {
-            analysisTableBody.innerHTML = '<tr><td colspan="3" class="muted">載入中…</td></tr>';
-            const res = await fetch(`${apiBase}/admin/overhead-summary?${params.toString()}`, { credentials:'include' });
+            tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">載入中…</td></tr>';
+            const res = await fetch(`${apiBase}/admin/costs/employee?${params.toString()}`, { credentials:'include' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
+            if (res.status === 501) {
+              tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">功能尚未實作，敬請期待</td></tr>';
+              empTotalCost.textContent = '—';
+              return;
+            }
             const json = await res.json();
             if (!res.ok || !json || json.ok !== true) throw new Error();
             const data = json.data || {};
-            const total = Number(data.total_overhead||0);
-            analysisNotice.style.display = total > 0 ? 'none' : 'block';
-            renderAnalysis(data);
-          } catch (_) {
-            analysisTableBody.innerHTML = '<tr><td colspan="3" style="color:#c0392b;">載入失敗</td></tr>';
-            analysisNotice.style.display = 'none';
+            const employees = data.employees || [];
+            if (employees.length === 0) {
+              tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">尚無資料</td></tr>';
+              empTotalCost.textContent = formatCurrency(0);
+              return;
+            }
+            tbodyEmployee.innerHTML = '';
+            let totalCost = 0;
+            employees.forEach(emp => {
+              const tr = document.createElement('tr');
+              const annualSalary = Number(emp.annualSalary || 0);
+              const annualHours = Number(emp.annualHours || 0);
+              const annualLeaveHours = Number(emp.annualLeaveHours || 0);
+              const actualHours = annualHours - annualLeaveHours;
+              const hourlyRate = actualHours > 0 ? annualSalary / actualHours : 0;
+              const monthHours = Number(emp.monthHours || 0);
+              const weightedHours = Number(emp.weightedHours || 0);
+              const laborCost = Number(emp.laborCost || 0);
+              const overheadAllocation = Number(emp.overheadAllocation || 0);
+              const empTotalCost = laborCost + overheadAllocation;
+              totalCost += empTotalCost;
+              tr.innerHTML = `
+                <td>${emp.name||''}</td>
+                <td>${formatCurrency(annualSalary)}</td>
+                <td>${annualHours.toFixed(1)}</td>
+                <td>${annualLeaveHours.toFixed(1)}</td>
+                <td>${actualHours.toFixed(1)}</td>
+                <td>${formatCurrency(hourlyRate)}</td>
+                <td>${monthHours.toFixed(1)}</td>
+                <td>${weightedHours.toFixed(1)}</td>
+                <td>${formatCurrency(laborCost)}</td>
+                <td>${formatCurrency(overheadAllocation)}</td>
+                <td>${formatCurrency(empTotalCost)}</td>
+              `;
+              tbodyEmployee.appendChild(tr);
+            });
+            empTotalCost.textContent = formatCurrency(totalCost);
+          } catch (err) {
+            tbodyEmployee.innerHTML = '<tr><td colspan="11" style="color:#c0392b;">載入失敗</td></tr>';
+            empTotalCost.textContent = '—';
           }
+        }
+
+        // ============ 客戶任務成本 ============
+        async function loadClientCosts(){
+          const view = viewType.value;
+          if (view === 'client') {
+            clientView.style.display = 'block';
+            taskView.style.display = 'none';
+            await loadClientSummary();
+          } else {
+            clientView.style.display = 'none';
+            taskView.style.display = 'block';
+            await loadTaskDetails();
+          }
+        }
+
+        async function loadClientSummary(){
+          const ym = parseYearMonth();
+          if (!ym) return;
+          const params = new URLSearchParams();
+          params.set('year', String(ym.year));
+          params.set('month', String(ym.month));
+          const q = clientSearch.value.trim();
+          if (q) params.set('q', q);
+          try {
+            tbodyClients.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
+            const res = await fetch(`${apiBase}/admin/costs/client?${params.toString()}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
+            if (res.status === 501) {
+              tbodyClients.innerHTML = '<tr><td colspan="10" class="muted">功能尚未實作，敬請期待</td></tr>';
+              return;
+            }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const data = json.data || {};
+            const clients = data.clients || [];
+            if (clients.length === 0) {
+              tbodyClients.innerHTML = '<tr><td colspan="10" class="muted">尚無資料</td></tr>';
+              updateClientSummary(0, 0, 0, 0);
+              return;
+            }
+            tbodyClients.innerHTML = '';
+            let totalCost = 0, totalRevenue = 0, totalProfit = 0;
+            clients.forEach(client => {
+              const tr = document.createElement('tr');
+              const cost = Number(client.totalCost || 0);
+              const revenue = Number(client.revenue || 0);
+              const profit = revenue - cost;
+              const margin = revenue > 0 ? (profit / revenue * 100) : 0;
+              totalCost += cost;
+              totalRevenue += revenue;
+              totalProfit += profit;
+              tr.innerHTML = `
+                <td>${client.clientName||''}</td>
+                <td>${client.taskCount||0}</td>
+                <td>${Number(client.totalHours||0).toFixed(1)}</td>
+                <td>${Number(client.weightedHours||0).toFixed(1)}</td>
+                <td>${formatCurrency(client.laborCost)}</td>
+                <td>${formatCurrency(client.overheadAllocation)}</td>
+                <td>${formatCurrency(cost)}</td>
+                <td>${formatCurrency(revenue)}</td>
+                <td style="color:${profit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(profit)}</td>
+                <td>${margin.toFixed(1)}%</td>
+              `;
+              tbodyClients.appendChild(tr);
+            });
+            const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue * 100) : 0;
+            updateClientSummary(totalCost, totalRevenue, totalProfit, avgMargin);
+          } catch (_) {
+            tbodyClients.innerHTML = '<tr><td colspan="10" style="color:#c0392b;">載入失敗</td></tr>';
+          }
+        }
+
+        async function loadTaskDetails(){
+          const ym = parseYearMonth();
+          if (!ym) return;
+          const params = new URLSearchParams();
+          params.set('year', String(ym.year));
+          params.set('month', String(ym.month));
+          const q = clientSearch.value.trim();
+          if (q) params.set('q', q);
+          try {
+            tbodyTasks.innerHTML = '<tr><td colspan="8" class="muted">載入中…</td></tr>';
+            const res = await fetch(`${apiBase}/admin/costs/task?${params.toString()}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
+            if (res.status === 501) {
+              tbodyTasks.innerHTML = '<tr><td colspan="8" class="muted">功能尚未實作，敬請期待</td></tr>';
+              return;
+            }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const data = json.data || {};
+            const tasks = data.tasks || [];
+            if (tasks.length === 0) {
+              tbodyTasks.innerHTML = '<tr><td colspan="8" class="muted">尚無資料</td></tr>';
+              return;
+            }
+            tbodyTasks.innerHTML = '';
+            tasks.forEach(task => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${task.clientName||''}</td>
+                <td>${task.taskTitle||''}</td>
+                <td>${task.assigneeName||''}</td>
+                <td>${Number(task.hours||0).toFixed(1)}</td>
+                <td>${Number(task.weightedHours||0).toFixed(1)}</td>
+                <td>${formatCurrency(task.laborCost)}</td>
+                <td>${formatCurrency(task.overheadAllocation)}</td>
+                <td>${formatCurrency(task.totalCost)}</td>
+              `;
+              tbodyTasks.appendChild(tr);
+            });
+          } catch (_) {
+            tbodyTasks.innerHTML = '<tr><td colspan="8" style="color:#c0392b;">載入失敗</td></tr>';
+          }
+        }
+
+        function updateClientSummary(cost, revenue, profit, margin){
+          document.getElementById('client-total-cost').textContent = formatCurrency(cost);
+          document.getElementById('client-total-revenue').textContent = formatCurrency(revenue);
+          document.getElementById('client-total-profit').textContent = formatCurrency(profit);
+          document.getElementById('client-avg-margin').textContent = margin.toFixed(1) + '%';
         }
 
         async function ensureAdmin(){
@@ -295,11 +578,19 @@
 
         // 事件
         let searchTimer = null;
-        recordSearch.addEventListener('input', ()=>{ clearTimeout(searchTimer); searchTimer = setTimeout(()=>{ loadRecords(); }, 300); });
-        monthInput.addEventListener('change', ()=>{ loadRecords(); loadAnalysis(); });
+        itemSearch.addEventListener('input', ()=>{ clearTimeout(searchTimer); searchTimer = setTimeout(loadItems, 300); });
+        itemCategory.addEventListener('change', loadItems);
+        recordSearch.addEventListener('input', ()=>{ clearTimeout(searchTimer); searchTimer = setTimeout(loadRecords, 300); });
+        empSearch.addEventListener('input', ()=>{ clearTimeout(searchTimer); searchTimer = setTimeout(loadEmployeeCosts, 300); });
+        clientSearch.addEventListener('input', ()=>{ clearTimeout(searchTimer); searchTimer = setTimeout(loadClientCosts, 300); });
+        viewType.addEventListener('change', loadClientCosts);
+        monthInput.addEventListener('change', ()=>{ loadItems(); loadRecords(); });
+
+        document.getElementById('btn-refresh-emp')?.addEventListener('click', loadEmployeeCosts);
+        document.getElementById('btn-refresh-client')?.addEventListener('click', loadClientCosts);
 
         // 初始化
-        ensureAdmin().then(ok => { if (ok) { loadRecords(); loadAnalysis(); } });
+        ensureAdmin().then(ok => { if (ok) { loadItems(); loadRecords(); } });
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
