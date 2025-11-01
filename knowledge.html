@@ -1023,9 +1023,19 @@
           console.log('FAQ 編輯器已初始化');
         }
         
-        // 註冊表格模組
-        if (typeof Quill !== 'undefined' && typeof QuillBetterTable !== 'undefined') {
-          Quill.register('modules/better-table', QuillBetterTable);
+        // 註冊表格模組（延遲註冊，確保模組已載入）
+        function registerTableModule() {
+          if (typeof Quill !== 'undefined' && typeof QuillBetterTable !== 'undefined') {
+            try {
+              Quill.register('modules/better-table', QuillBetterTable);
+              console.log('表格模組註冊成功');
+              return true;
+            } catch (e) {
+              console.error('表格模組註冊失敗:', e);
+              return false;
+            }
+          }
+          return false;
         }
         
         // 初始化抽屜中的 SOP 編輯器
@@ -1038,7 +1048,11 @@
             return;
           }
           
-          window.sopDrawerEditor = new Quill('#sop-editor-drawer', {
+          // 先嘗試註冊表格模組
+          const hasTable = registerTableModule();
+          
+          // 基礎配置
+          const config = {
             theme: 'snow',
             modules: {
               toolbar: [
@@ -1049,108 +1063,118 @@
                 ['link'],
                 [{ 'color': [] }],
                 ['clean']
-              ],
-              'better-table': {
-                operationMenu: {
-                  items: {
-                    insertColumnRight: { text: '右側插入列' },
-                    insertColumnLeft: { text: '左側插入列' },
-                    insertRowUp: { text: '上方插入行' },
-                    insertRowDown: { text: '下方插入行' },
-                    mergeCells: { text: '合併儲存格' },
-                    unmergeCells: { text: '取消合併' },
-                    deleteColumn: { text: '刪除列' },
-                    deleteRow: { text: '刪除行' },
-                    deleteTable: { text: '刪除表格' }
-                  }
-                }
-              },
-              keyboard: {
-                bindings: QuillBetterTable.keyboardBindings
-              }
+              ]
             },
             placeholder: '請輸入SOP內容...'
-          });
+          };
           
-          // 添加表格按鈕
-          const toolbar = window.sopDrawerEditor.getModule('toolbar');
-          toolbar.addHandler('table', function() {
-            const tableModule = window.sopDrawerEditor.getModule('better-table');
-            tableModule.insertTable(3, 3);
-          });
-          
-          // 在工具欄添加表格按鈕
-          const toolbarContainer = container.previousElementSibling;
-          if (toolbarContainer && toolbarContainer.classList.contains('ql-toolbar')) {
-            const tableBtn = document.createElement('button');
-            tableBtn.className = 'ql-table';
-            tableBtn.innerHTML = '📊 插入表格';
-            tableBtn.title = '插入 3x3 表格';
-            tableBtn.style.cssText = 'padding:4px 8px;font-size:12px;';
-            tableBtn.onclick = function(e) {
-              e.preventDefault();
-              const tableModule = window.sopDrawerEditor.getModule('better-table');
-              tableModule.insertTable(3, 3);
-            };
-            toolbarContainer.appendChild(tableBtn);
-            
-            // 添加表格操作按鈕組
-            const tableOpsDiv = document.createElement('div');
-            tableOpsDiv.style.cssText = 'display:none;padding:8px;background:#f9fafb;border-top:1px solid #e5e7eb;gap:6px;flex-wrap:wrap;';
-            tableOpsDiv.id = 'sop-table-ops';
-            
-            const ops = [
-              { text: '➕ 上方插入行', action: 'insertRowUp' },
-              { text: '➕ 下方插入行', action: 'insertRowDown' },
-              { text: '➕ 左側插入列', action: 'insertColumnLeft' },
-              { text: '➕ 右側插入列', action: 'insertColumnRight' },
-              { text: '🗑️ 刪除行', action: 'deleteRow' },
-              { text: '🗑️ 刪除列', action: 'deleteColumn' },
-              { text: '🗑️ 刪除表格', action: 'deleteTable' }
-            ];
-            
-            ops.forEach(op => {
-              const btn = document.createElement('button');
-              btn.textContent = op.text;
-              btn.style.cssText = 'padding:4px 8px;font-size:11px;border:1px solid #d1d5db;background:white;border-radius:4px;cursor:pointer;';
-              btn.onmouseover = () => btn.style.background = '#e5e7eb';
-              btn.onmouseout = () => btn.style.background = 'white';
-              btn.onclick = function(e) {
-                e.preventDefault();
-                const tableModule = window.sopDrawerEditor.getModule('better-table');
-                const table = tableModule.getTable();
-                if (table && table[0]) {
-                  tableModule[op.action]();
-                } else {
-                  alert('請先將游標放在表格內');
+          // 如果表格模組可用，添加表格配置
+          if (hasTable) {
+            config.modules['better-table'] = {
+              operationMenu: {
+                items: {
+                  insertColumnRight: { text: '右側插入列' },
+                  insertColumnLeft: { text: '左側插入列' },
+                  insertRowUp: { text: '上方插入行' },
+                  insertRowDown: { text: '下方插入行' },
+                  mergeCells: { text: '合併儲存格' },
+                  unmergeCells: { text: '取消合併' },
+                  deleteColumn: { text: '刪除列' },
+                  deleteRow: { text: '刪除行' },
+                  deleteTable: { text: '刪除表格' }
                 }
-              };
-              tableOpsDiv.appendChild(btn);
-            });
-            
-            toolbarContainer.parentNode.insertBefore(tableOpsDiv, container);
+              }
+            };
+            config.modules.keyboard = {
+              bindings: QuillBetterTable.keyboardBindings
+            };
           }
           
-          // 監聽游標位置，顯示/隱藏表格操作按鈕
-          window.sopDrawerEditor.on('selection-change', function(range) {
-            const tableOpsDiv = document.getElementById('sop-table-ops');
-            if (!tableOpsDiv) return;
-            
-            if (range) {
-              const [table] = window.sopDrawerEditor.scroll.descendant(
-                (blot) => blot.statics.blotName === 'table',
-                range.index
-              );
-              
-              if (table) {
-                tableOpsDiv.style.display = 'flex';
-              } else {
-                tableOpsDiv.style.display = 'none';
-              }
-            }
-          });
+          window.sopDrawerEditor = new Quill('#sop-editor-drawer', config);
           
-          console.log('SOP 抽屜編輯器已初始化');
+          // 只在表格模組可用時添加表格功能
+          if (hasTable) {
+            const toolbar = window.sopDrawerEditor.getModule('toolbar');
+            toolbar.addHandler('table', function() {
+              const tableModule = window.sopDrawerEditor.getModule('better-table');
+              if (tableModule) tableModule.insertTable(3, 3);
+            });
+            
+            // 在工具欄添加表格按鈕
+            const toolbarContainer = container.previousElementSibling;
+            if (toolbarContainer && toolbarContainer.classList.contains('ql-toolbar')) {
+              const tableBtn = document.createElement('button');
+              tableBtn.className = 'ql-table';
+              tableBtn.innerHTML = '📊 插入表格';
+              tableBtn.title = '插入 3x3 表格';
+              tableBtn.style.cssText = 'padding:4px 8px;font-size:12px;';
+              tableBtn.onclick = function(e) {
+                e.preventDefault();
+                const tableModule = window.sopDrawerEditor.getModule('better-table');
+                if (tableModule) tableModule.insertTable(3, 3);
+              };
+              toolbarContainer.appendChild(tableBtn);
+              
+              // 添加表格操作按鈕組
+              const tableOpsDiv = document.createElement('div');
+              tableOpsDiv.style.cssText = 'display:none;padding:8px;background:#f9fafb;border-top:1px solid #e5e7eb;gap:6px;flex-wrap:wrap;';
+              tableOpsDiv.id = 'sop-table-ops';
+              
+              const ops = [
+                { text: '➕ 上方插入行', action: 'insertRowUp' },
+                { text: '➕ 下方插入行', action: 'insertRowDown' },
+                { text: '➕ 左側插入列', action: 'insertColumnLeft' },
+                { text: '➕ 右側插入列', action: 'insertColumnRight' },
+                { text: '🗑️ 刪除行', action: 'deleteRow' },
+                { text: '🗑️ 刪除列', action: 'deleteColumn' },
+                { text: '🗑️ 刪除表格', action: 'deleteTable' }
+              ];
+              
+              ops.forEach(op => {
+                const btn = document.createElement('button');
+                btn.textContent = op.text;
+                btn.style.cssText = 'padding:4px 8px;font-size:11px;border:1px solid #d1d5db;background:white;border-radius:4px;cursor:pointer;';
+                btn.onmouseover = () => btn.style.background = '#e5e7eb';
+                btn.onmouseout = () => btn.style.background = 'white';
+                btn.onclick = function(e) {
+                  e.preventDefault();
+                  const tableModule = window.sopDrawerEditor.getModule('better-table');
+                  if (tableModule) {
+                    const table = tableModule.getTable();
+                    if (table && table[0]) {
+                      tableModule[op.action]();
+                    } else {
+                      alert('請先將游標放在表格內');
+                    }
+                  }
+                };
+                tableOpsDiv.appendChild(btn);
+              });
+              
+              toolbarContainer.parentNode.insertBefore(tableOpsDiv, container);
+            }
+            
+            // 監聽游標位置，顯示/隱藏表格操作按鈕
+            window.sopDrawerEditor.on('selection-change', function(range) {
+              const tableOpsDiv = document.getElementById('sop-table-ops');
+              if (!tableOpsDiv) return;
+              
+              if (range) {
+                const [table] = window.sopDrawerEditor.scroll.descendant(
+                  (blot) => blot.statics.blotName === 'table',
+                  range.index
+                );
+                
+                if (table) {
+                  tableOpsDiv.style.display = 'flex';
+                } else {
+                  tableOpsDiv.style.display = 'none';
+                }
+              }
+            });
+          }
+          
+          console.log('SOP 抽屜編輯器已初始化' + (hasTable ? '（含表格功能）' : ''));
         }
         
         // 初始化抽屜中的 FAQ 編輯器
@@ -1163,7 +1187,11 @@
             return;
           }
           
-          window.faqDrawerEditor = new Quill('#faq-editor-drawer', {
+          // 先嘗試註冊表格模組
+          const hasTable = registerTableModule();
+          
+          // 基礎配置
+          const config = {
             theme: 'snow',
             modules: {
               toolbar: [
@@ -1174,108 +1202,118 @@
                 ['link'],
                 [{ 'color': [] }],
                 ['clean']
-              ],
-              'better-table': {
-                operationMenu: {
-                  items: {
-                    insertColumnRight: { text: '右側插入列' },
-                    insertColumnLeft: { text: '左側插入列' },
-                    insertRowUp: { text: '上方插入行' },
-                    insertRowDown: { text: '下方插入行' },
-                    mergeCells: { text: '合併儲存格' },
-                    unmergeCells: { text: '取消合併' },
-                    deleteColumn: { text: '刪除列' },
-                    deleteRow: { text: '刪除行' },
-                    deleteTable: { text: '刪除表格' }
-                  }
-                }
-              },
-              keyboard: {
-                bindings: QuillBetterTable.keyboardBindings
-              }
+              ]
             },
             placeholder: '請輸入FAQ答案...'
-          });
+          };
           
-          // 添加表格按鈕
-          const toolbar = window.faqDrawerEditor.getModule('toolbar');
-          toolbar.addHandler('table', function() {
-            const tableModule = window.faqDrawerEditor.getModule('better-table');
-            tableModule.insertTable(3, 3);
-          });
-          
-          // 在工具欄添加表格按鈕
-          const toolbarContainer = container.previousElementSibling;
-          if (toolbarContainer && toolbarContainer.classList.contains('ql-toolbar')) {
-            const tableBtn = document.createElement('button');
-            tableBtn.className = 'ql-table';
-            tableBtn.innerHTML = '📊 插入表格';
-            tableBtn.title = '插入 3x3 表格';
-            tableBtn.style.cssText = 'padding:4px 8px;font-size:12px;';
-            tableBtn.onclick = function(e) {
-              e.preventDefault();
-              const tableModule = window.faqDrawerEditor.getModule('better-table');
-              tableModule.insertTable(3, 3);
-            };
-            toolbarContainer.appendChild(tableBtn);
-            
-            // 添加表格操作按鈕組
-            const tableOpsDiv = document.createElement('div');
-            tableOpsDiv.style.cssText = 'display:none;padding:8px;background:#f9fafb;border-top:1px solid #e5e7eb;gap:6px;flex-wrap:wrap;';
-            tableOpsDiv.id = 'faq-table-ops';
-            
-            const ops = [
-              { text: '➕ 上方插入行', action: 'insertRowUp' },
-              { text: '➕ 下方插入行', action: 'insertRowDown' },
-              { text: '➕ 左側插入列', action: 'insertColumnLeft' },
-              { text: '➕ 右側插入列', action: 'insertColumnRight' },
-              { text: '🗑️ 刪除行', action: 'deleteRow' },
-              { text: '🗑️ 刪除列', action: 'deleteColumn' },
-              { text: '🗑️ 刪除表格', action: 'deleteTable' }
-            ];
-            
-            ops.forEach(op => {
-              const btn = document.createElement('button');
-              btn.textContent = op.text;
-              btn.style.cssText = 'padding:4px 8px;font-size:11px;border:1px solid #d1d5db;background:white;border-radius:4px;cursor:pointer;';
-              btn.onmouseover = () => btn.style.background = '#e5e7eb';
-              btn.onmouseout = () => btn.style.background = 'white';
-              btn.onclick = function(e) {
-                e.preventDefault();
-                const tableModule = window.faqDrawerEditor.getModule('better-table');
-                const table = tableModule.getTable();
-                if (table && table[0]) {
-                  tableModule[op.action]();
-                } else {
-                  alert('請先將游標放在表格內');
+          // 如果表格模組可用，添加表格配置
+          if (hasTable) {
+            config.modules['better-table'] = {
+              operationMenu: {
+                items: {
+                  insertColumnRight: { text: '右側插入列' },
+                  insertColumnLeft: { text: '左側插入列' },
+                  insertRowUp: { text: '上方插入行' },
+                  insertRowDown: { text: '下方插入行' },
+                  mergeCells: { text: '合併儲存格' },
+                  unmergeCells: { text: '取消合併' },
+                  deleteColumn: { text: '刪除列' },
+                  deleteRow: { text: '刪除行' },
+                  deleteTable: { text: '刪除表格' }
                 }
-              };
-              tableOpsDiv.appendChild(btn);
-            });
-            
-            toolbarContainer.parentNode.insertBefore(tableOpsDiv, container);
+              }
+            };
+            config.modules.keyboard = {
+              bindings: QuillBetterTable.keyboardBindings
+            };
           }
           
-          // 監聽游標位置，顯示/隱藏表格操作按鈕
-          window.faqDrawerEditor.on('selection-change', function(range) {
-            const tableOpsDiv = document.getElementById('faq-table-ops');
-            if (!tableOpsDiv) return;
-            
-            if (range) {
-              const [table] = window.faqDrawerEditor.scroll.descendant(
-                (blot) => blot.statics.blotName === 'table',
-                range.index
-              );
-              
-              if (table) {
-                tableOpsDiv.style.display = 'flex';
-              } else {
-                tableOpsDiv.style.display = 'none';
-              }
-            }
-          });
+          window.faqDrawerEditor = new Quill('#faq-editor-drawer', config);
           
-          console.log('FAQ 抽屜編輯器已初始化');
+          // 只在表格模組可用時添加表格功能
+          if (hasTable) {
+            const toolbar = window.faqDrawerEditor.getModule('toolbar');
+            toolbar.addHandler('table', function() {
+              const tableModule = window.faqDrawerEditor.getModule('better-table');
+              if (tableModule) tableModule.insertTable(3, 3);
+            });
+            
+            // 在工具欄添加表格按鈕
+            const toolbarContainer = container.previousElementSibling;
+            if (toolbarContainer && toolbarContainer.classList.contains('ql-toolbar')) {
+              const tableBtn = document.createElement('button');
+              tableBtn.className = 'ql-table';
+              tableBtn.innerHTML = '📊 插入表格';
+              tableBtn.title = '插入 3x3 表格';
+              tableBtn.style.cssText = 'padding:4px 8px;font-size:12px;';
+              tableBtn.onclick = function(e) {
+                e.preventDefault();
+                const tableModule = window.faqDrawerEditor.getModule('better-table');
+                if (tableModule) tableModule.insertTable(3, 3);
+              };
+              toolbarContainer.appendChild(tableBtn);
+              
+              // 添加表格操作按鈕組
+              const tableOpsDiv = document.createElement('div');
+              tableOpsDiv.style.cssText = 'display:none;padding:8px;background:#f9fafb;border-top:1px solid #e5e7eb;gap:6px;flex-wrap:wrap;';
+              tableOpsDiv.id = 'faq-table-ops';
+              
+              const ops = [
+                { text: '➕ 上方插入行', action: 'insertRowUp' },
+                { text: '➕ 下方插入行', action: 'insertRowDown' },
+                { text: '➕ 左側插入列', action: 'insertColumnLeft' },
+                { text: '➕ 右側插入列', action: 'insertColumnRight' },
+                { text: '🗑️ 刪除行', action: 'deleteRow' },
+                { text: '🗑️ 刪除列', action: 'deleteColumn' },
+                { text: '🗑️ 刪除表格', action: 'deleteTable' }
+              ];
+              
+              ops.forEach(op => {
+                const btn = document.createElement('button');
+                btn.textContent = op.text;
+                btn.style.cssText = 'padding:4px 8px;font-size:11px;border:1px solid #d1d5db;background:white;border-radius:4px;cursor:pointer;';
+                btn.onmouseover = () => btn.style.background = '#e5e7eb';
+                btn.onmouseout = () => btn.style.background = 'white';
+                btn.onclick = function(e) {
+                  e.preventDefault();
+                  const tableModule = window.faqDrawerEditor.getModule('better-table');
+                  if (tableModule) {
+                    const table = tableModule.getTable();
+                    if (table && table[0]) {
+                      tableModule[op.action]();
+                    } else {
+                      alert('請先將游標放在表格內');
+                    }
+                  }
+                };
+                tableOpsDiv.appendChild(btn);
+              });
+              
+              toolbarContainer.parentNode.insertBefore(tableOpsDiv, container);
+            }
+            
+            // 監聽游標位置，顯示/隱藏表格操作按鈕
+            window.faqDrawerEditor.on('selection-change', function(range) {
+              const tableOpsDiv = document.getElementById('faq-table-ops');
+              if (!tableOpsDiv) return;
+              
+              if (range) {
+                const [table] = window.faqDrawerEditor.scroll.descendant(
+                  (blot) => blot.statics.blotName === 'table',
+                  range.index
+                );
+                
+                if (table) {
+                  tableOpsDiv.style.display = 'flex';
+                } else {
+                  tableOpsDiv.style.display = 'none';
+                }
+              }
+            });
+          }
+          
+          console.log('FAQ 抽屜編輯器已初始化' + (hasTable ? '（含表格功能）' : ''));
         }
         
         // 清空 SOP 表單（已廢棄，保留以防引用）
