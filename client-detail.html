@@ -415,6 +415,8 @@
         
         if (json.ok && json.data) {
           allTemplates = json.data;
+          // 保存到全局，供模板选择时使用
+          window.taskTemplatesData = json.data;
         }
       } catch (err) {
         console.error('載入模板選項失敗:', err);
@@ -893,8 +895,8 @@
                     <option value="">不使用模板</option>
                     ${templatesHtml}
                   </select>
-                  <small style="display: block; margin-top: 5px; color: #6b7280;">
-                    選擇後可查看和自定義任務階段
+                  <small style="display: block; margin-top: 5px; color: #3b82f6;">
+                    ✨ 選擇模板後，會自動帶入建議的期限規則，您可以再調整
                   </small>
                 </div>
               </div>
@@ -930,24 +932,6 @@
                     只有在選擇「指定日」或「相對天數」時需要填寫
                   </small>
                 </div>
-              </div>
-              
-              <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 12px; margin: 10px 0; border-radius: 4px;">
-                <strong style="color: #1e40af;">💡 期限規則說明：</strong>
-                <ul style="margin: 8px 0 0 20px; font-size: 13px; color: #374151;">
-                  <li><strong>當月月底</strong> - 任務期限為執行月份的最後一天<br>
-                    <span style="color: #6b7280;">範例：1月執行 → 期限 1/31</span>
-                  </li>
-                  <li><strong>當月指定日</strong> - 任務期限為執行月份的指定日期<br>
-                    <span style="color: #6b7280;">範例：指定5日，1月執行 → 期限 1/5</span>
-                  </li>
-                  <li><strong>次月指定日</strong> - 任務期限為下個月的指定日期<br>
-                    <span style="color: #6b7280;">範例：指定15日，1月執行 → 期限 2/15</span>
-                  </li>
-                  <li><strong>相對天數</strong> - 任務期限為執行月份1日加上指定天數<br>
-                    <span style="color: #6b7280;">範例：30天，1月執行 → 期限 1/31</span>
-                  </li>
-                </ul>
               </div>
               <div class="form-row-2col">
                 <div class="form-field">
@@ -1051,6 +1035,23 @@
         if (!templateId) {
           stagesContainer.style.display = 'none';
           return;
+        }
+        
+        // 先从已加载的模板列表中获取模板信息，自动填充期限规则
+        const templateData = window.taskTemplatesData?.find(t => t.template_id == templateId);
+        if (templateData) {
+          // 自动填充期限规则
+          if (templateData.default_due_date_rule) {
+            document.getElementById(`new-comp-due-rule-${clientServiceId}`).value = templateData.default_due_date_rule;
+            // 触发帮助信息更新
+            window[`updateDueDateHelp${clientServiceId}`](templateData.default_due_date_rule);
+          }
+          if (templateData.default_due_date_value) {
+            document.getElementById(`new-comp-due-value-${clientServiceId}`).value = templateData.default_due_date_value;
+          }
+          if (templateData.default_advance_days != null) {
+            document.getElementById(`new-comp-advance-${clientServiceId}`).value = templateData.default_advance_days;
+          }
         }
         
         // 显示容器

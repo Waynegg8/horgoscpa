@@ -18,6 +18,8 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
       let query = `
         SELECT tt.template_id, tt.template_name, tt.service_id, tt.client_id, tt.description, 
                tt.sop_id, tt.is_active, tt.created_at,
+               tt.default_due_date_rule, tt.default_due_date_value, 
+               tt.default_due_date_offset_days, tt.default_advance_days,
                s.service_name, s.service_code,
                c.company_name as client_name,
                (SELECT COUNT(*) FROM TaskTemplateStages WHERE template_id = tt.template_id) as stages_count
@@ -62,7 +64,11 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
         sop_id: r.sop_id || null,
         is_active: Boolean(r.is_active),
         created_at: r.created_at,
-        stages_count: r.stages_count || 0
+        stages_count: r.stages_count || 0,
+        default_due_date_rule: r.default_due_date_rule || null,
+        default_due_date_value: r.default_due_date_value || null,
+        default_due_date_offset_days: r.default_due_date_offset_days || 0,
+        default_advance_days: r.default_advance_days || 7
       }));
 
       return jsonResponse(200, {
@@ -377,7 +383,7 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
     try {
       const stagesRows = await env.DATABASE.prepare(
         `SELECT tts.stage_id, tts.stage_name, tts.stage_order, tts.description, 
-                tts.estimated_hours, tts.dependencies, tts.sop_id, tts.attachment_id,
+                tts.estimated_hours, tts.sop_id, tts.attachment_id,
                 sop.title as sop_title,
                 att.original_filename as attachment_name, att.file_url as attachment_url
          FROM TaskTemplateStages tts
@@ -393,7 +399,6 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
         stage_order: s.stage_order,
         description: s.description || "",
         estimated_hours: Number(s.estimated_hours || 0),
-        dependencies: s.dependencies || "",
         sop_id: s.sop_id || null,
         sop_title: s.sop_title || "",
         attachment_id: s.attachment_id || null,
@@ -439,7 +444,6 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
     const stageOrder = body?.stage_order ? parseInt(body.stage_order, 10) : null;
     const description = String(body?.description || "").trim();
     const estimatedHours = body?.estimated_hours ? parseFloat(body.estimated_hours) : null;
-    const dependencies = String(body?.dependencies || "").trim();
     const sopId = body?.sop_id ? parseInt(body.sop_id, 10) : null;
     const attachmentId = body?.attachment_id ? parseInt(body.attachment_id, 10) : null;
 
@@ -467,9 +471,9 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
 
       // 插入阶段
       const result = await env.DATABASE.prepare(
-        `INSERT INTO TaskTemplateStages (template_id, stage_name, stage_order, description, estimated_hours, dependencies, sop_id, attachment_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).bind(templateId, stageName, stageOrder, description, estimatedHours, dependencies, sopId, attachmentId).run();
+        `INSERT INTO TaskTemplateStages (template_id, stage_name, stage_order, description, estimated_hours, sop_id, attachment_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).bind(templateId, stageName, stageOrder, description, estimatedHours, sopId, attachmentId).run();
 
       return jsonResponse(201, {
         ok: true,
