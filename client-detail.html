@@ -35,6 +35,16 @@
         </div>
         <div class="form-row-2col">
           <div class="form-field">
+            <label for="inputContactPerson1">公司聯絡人1</label>
+            <input type="text" id="inputContactPerson1" placeholder="例如：張先生" />
+          </div>
+          <div class="form-field">
+            <label for="inputContactPerson2">公司聯絡人2</label>
+            <input type="text" id="inputContactPerson2" placeholder="例如：李小姐" />
+          </div>
+        </div>
+        <div class="form-row-2col">
+          <div class="form-field">
             <label for="inputAssignee">負責人員</label>
             <select id="inputAssignee">
               <option value="">載入中...</option>
@@ -54,8 +64,11 @@
             <span class="error-text" id="error_email"></span>
           </div>
           <div class="form-field">
-            <label>標籤</label>
-            <div id="tagsDisplay">-</div>
+            <label>標籤管理</label>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;" id="tagsDisplay">
+              <span style="color: #9ca3af;">載入中...</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="showTagsModal()" style="margin-top: 8px;">+ 管理標籤</button>
           </div>
         </div>
         <div class="form-row-1col">
@@ -107,6 +120,35 @@
 
   <div id="footer-placeholder"></div>
 
+  <!-- 標籤管理彈窗 -->
+  <div id="tagsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; padding: 24px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0;">管理標籤</h3>
+        <button onclick="closeTagsModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #6b7280;">已選標籤</h4>
+        <div id="selectedTagsList" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 40px; padding: 12px; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb;">
+          <!-- 已选标签 -->
+        </div>
+      </div>
+      
+      <div>
+        <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #6b7280;">所有標籤（點擊選擇/取消）</h4>
+        <div id="allTagsList" style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span style="color: #9ca3af;">載入中...</span>
+        </div>
+      </div>
+      
+      <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-secondary" onclick="closeTagsModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveTags()">儲存</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/assets/js/components/bootstrap.js?v=3"></script>
   <script>
     let currentClientId = null;
@@ -154,6 +196,8 @@
         // 預填表單
         document.getElementById('inputCompanyName').value = client.companyName || '';
         document.getElementById('inputTaxId').value = client.taxId || '';
+        document.getElementById('inputContactPerson1').value = client.contact_person_1 || client.contactPerson1 || '';
+        document.getElementById('inputContactPerson2').value = client.contact_person_2 || client.contactPerson2 || '';
         document.getElementById('inputPhone').value = client.phone || '';
         document.getElementById('inputEmail').value = client.email || '';
         document.getElementById('inputClientNotes').value = client.clientNotes || '';
@@ -164,13 +208,11 @@
         document.getElementById('inputAssignee').value = client.assigneeUserId || '';
         
         // 標籤顯示
-        if (client.tags && client.tags.length > 0) {
-          document.getElementById('tagsDisplay').innerHTML = client.tags.map(t => 
-            `<span class="tag">${t.tag_name}</span>`
-          ).join(' ');
-        } else {
-          document.getElementById('tagsDisplay').textContent = '-';
-        }
+        window.currentClientTags = client.tags || [];
+        renderTagsDisplay();
+        
+        // 載入所有標籤
+        loadAllTags();
 
         // 顯示服務列表
         renderServices(client.services || []);
@@ -602,7 +644,7 @@
       }
     }
 
-    // 顯示新增收費行
+    // 顯示批量新增收費對話框
     async function showAddBillingRow(clientServiceId) {
       // 獲取當前客戶的所有服務
       const res = await fetch(`/internal/api/v1/clients/${currentClientId}`);
@@ -630,27 +672,116 @@
         icon.textContent = '▼';
       }
       
-      // 顯示新增表單
+      // 顯示批量新增表單
       const addRow = document.getElementById(`add-row-${clientServiceId}`);
       addRow.style.display = 'table-row';
       addRow.innerHTML = `
-        <td>
-          <input type="number" id="new-month-${clientServiceId}" placeholder="月份" min="1" max="12" required />
-        </td>
-        <td>
-          <input type="number" id="new-amount-${clientServiceId}" placeholder="金額" step="0.01" min="0" required />
-        </td>
-        <td>
-          <input type="number" id="new-due-${clientServiceId}" value="30" min="1" required />
-        </td>
-        <td>
-          <input type="text" id="new-notes-${clientServiceId}" placeholder="備註" />
-        </td>
-        <td>
-          <button class="table-btn-link" onclick="saveBilling(${clientServiceId}, null)">儲存</button>
-          <button class="table-btn-link danger" onclick="cancelBillingEdit(${clientServiceId}, null)">取消</button>
+        <td colspan="5" style="padding: 20px; background: #f9fafb;">
+          <div style="margin-bottom: 15px;">
+            <strong style="font-size: 15px; color: #1f2937;">💰 批量設定收費</strong>
+            <p style="margin: 5px 0 0 0; font-size: 13px; color: #6b7280;">一次設定多個月份的收費金額</p>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 15px;">
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">每月金額 *</label>
+              <input type="number" id="batch-amount-${clientServiceId}" placeholder="2000" step="0.01" min="0" required 
+                     style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">付款期限（天）</label>
+              <input type="number" id="batch-due-${clientServiceId}" value="30" min="1" 
+                     style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: 500;">月份範圍 *</label>
+              <select id="batch-months-${clientServiceId}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+                <option value="all">全年（1-12月）</option>
+                <option value="custom">自選月份</option>
+              </select>
+            </div>
+          </div>
+          
+          <div id="custom-months-${clientServiceId}" style="display: none; margin-bottom: 15px; padding: 12px; background: white; border-radius: 6px; border: 1px solid #d1d5db;">
+            <label style="display: block; margin-bottom: 8px; font-size: 13px; font-weight: 500;">選擇月份：</label>
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;">
+              ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m => `
+                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 6px; border-radius: 4px; hover:background: #f3f4f6;">
+                  <input type="checkbox" value="${m}" class="month-checkbox-${clientServiceId}" />
+                  <span style="font-size: 13px;">${m}月</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="saveBatchBilling(${clientServiceId})">💾 批量儲存</button>
+            <button class="btn btn-secondary" onclick="cancelBillingEdit(${clientServiceId}, null)">取消</button>
+          </div>
         </td>
       `;
+      
+      // 監聽月份範圍變化
+      document.getElementById(`batch-months-${clientServiceId}`).addEventListener('change', function(e) {
+        const customDiv = document.getElementById(`custom-months-${clientServiceId}`);
+        customDiv.style.display = e.target.value === 'custom' ? 'block' : 'none';
+      });
+    }
+    
+    // 批量儲存收費
+    async function saveBatchBilling(clientServiceId) {
+      const amount = document.getElementById(`batch-amount-${clientServiceId}`).value;
+      const dueDays = document.getElementById(`batch-due-${clientServiceId}`).value;
+      const monthsType = document.getElementById(`batch-months-${clientServiceId}`).value;
+      
+      if (!amount) {
+        alert('請填寫金額');
+        return;
+      }
+      
+      let months = [];
+      if (monthsType === 'all') {
+        months = [1,2,3,4,5,6,7,8,9,10,11,12];
+      } else {
+        const checkboxes = document.querySelectorAll(`.month-checkbox-${clientServiceId}:checked`);
+        months = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        if (months.length === 0) {
+          alert('請至少選擇一個月份');
+          return;
+        }
+      }
+      
+      try {
+        // 批量提交
+        const promises = months.map(month => {
+          const data = {
+            billing_month: month,
+            billing_amount: parseFloat(amount),
+            payment_due_days: parseInt(dueDays),
+            notes: null
+          };
+          return fetch(`/internal/api/v1/billing/service/${clientServiceId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+        });
+        
+        await Promise.all(promises);
+        alert(`已成功設定 ${months.length} 個月份的收費`);
+        
+        // 重新載入
+        const services = (await (await fetch(`/internal/api/v1/clients/${currentClientId}`)).json()).data.services;
+        const index = services.findIndex(s => s.client_service_id === clientServiceId);
+        if (index !== -1) {
+          await loadBillingInline(index, clientServiceId);
+        }
+        await loadClientDetail();
+        
+      } catch (err) {
+        console.error('批量儲存收費失敗:', err);
+        alert('操作失敗');
+      }
     }
 
     // 開始編輯收費明細
@@ -788,6 +919,7 @@
 
     // 暴露函數到全局
     window.showAddBillingRow = showAddBillingRow;
+    window.saveBatchBilling = saveBatchBilling;
     window.startEditBilling = startEditBilling;
     window.saveBilling = saveBilling;
     window.cancelBillingEdit = cancelBillingEdit;
@@ -837,19 +969,6 @@
               <h5 style="margin-top: 0;">新增服務組成部分</h5>
               <div class="form-row-2col">
                 <div class="form-field">
-                  <label>服務名稱</label>
-                  <input type="text" id="new-comp-name-${clientServiceId}" placeholder="例如：每月記帳" />
-                </div>
-                <div class="form-field">
-                  <label>服務類型</label>
-                  <select id="new-comp-service-${clientServiceId}" onchange="updateTemplateOptions${clientServiceId}(this.value)">
-                    <option value="">請選擇</option>
-                    ${servicesHtml}
-                  </select>
-                </div>
-              </div>
-              <div class="form-row-2col">
-                <div class="form-field">
                   <label>提供頻率</label>
                   <select id="new-comp-freq-${clientServiceId}">
                     <option value="monthly">每月</option>
@@ -860,41 +979,30 @@
                   </select>
                 </div>
                 <div class="form-field">
-                  <label>任務模板</label>
+                  <label>任務模板（可選）</label>
                   <select id="new-comp-template-${clientServiceId}" onchange="loadTemplateStages${clientServiceId}(this.value)">
-                    <option value="">請先選擇服務類型</option>
+                    <option value="">不使用模板（手動配置）</option>
+                    ${taskTemplatesData.map(t => `<option value="${t.template_id}">${t.template_name}</option>`).join('')}
                   </select>
                   <small style="display: block; margin-top: 5px; color: #3b82f6;">
-                    ✨ 選擇模板後，會自動帶入建議的期限規則，您可以再調整
+                    ✨ 選擇模板後可編輯任務內容，或手動配置
                   </small>
                 </div>
               </div>
               
-              <!-- 独立任务列表 -->
-              <div id="template-stages-${clientServiceId}" style="display: none; margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
+              <!-- 任务配置区域（统一界面） -->
+              <div id="tasks-config-${clientServiceId}" style="margin-top: 15px; padding: 15px; background: #f0f9ff; border-radius: 8px; border: 2px solid #3b82f6;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                   <div>
-                    <strong style="color: #856404; font-size: 15px;">📋 將自動生成以下獨立任務</strong>
-                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #856404;">每個任務可單獨設定期限和預估工時</p>
-                  </div>
-                  <button type="button" class="table-btn table-btn-secondary" onclick="addCustomTask${clientServiceId}()">+ 新增任務</button>
-                </div>
-                <div id="stages-list-${clientServiceId}">
-                  <!-- 任务列表会动态加载到这里 -->
-                </div>
-              </div>
-              
-              <!-- 手动配置任务区域（不使用模板时显示） -->
-              <div id="manual-tasks-${clientServiceId}" style="display: none; margin-top: 15px; padding: 15px; background: #f3f4f6; border-radius: 8px; border: 2px solid #9ca3af;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                  <div>
-                    <strong style="color: #374151; font-size: 15px;">📝 手動配置任務</strong>
-                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #6b7280;">未使用模板，請手動添加任務</p>
+                    <strong style="color: #1e40af; font-size: 15px;">📋 任務配置</strong>
+                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #3b82f6;">
+                      <span id="template-hint-${clientServiceId}">已選擇模板，可自由編輯或添加任務</span>
+                    </p>
                   </div>
                   <button type="button" class="table-btn table-btn-primary" onclick="addCustomTask${clientServiceId}()">+ 新增任務</button>
                 </div>
-                <div id="manual-tasks-list-${clientServiceId}">
-                  <!-- 手动任务列表 -->
+                <div id="tasks-list-${clientServiceId}">
+                  <!-- 任务列表会动态加载到这里 -->
                 </div>
               </div>
               
@@ -907,8 +1015,6 @@
                 <button class="btn btn-secondary" onclick="cancelAddComponent(${clientServiceId})">取消</button>
               </div>
             </div>
-            
-            ${components.length === 0 ? '<p style="color: #6b7280;">暫無服務組成部分，請點擊上方按鈕新增</p>' : ''}
             
             ${components.map((comp, i) => `
               <div class="component-item" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #3b82f6;">
@@ -1054,162 +1160,139 @@
         }
       };
       
-      // 创建根据服务类型更新模板选项的函数
-      window[`updateTemplateOptions${clientServiceId}`] = function(serviceId) {
-        const templateSelect = document.getElementById(`new-comp-template-${clientServiceId}`);
-        
-        if (!serviceId) {
-          templateSelect.innerHTML = '<option value="">請先選擇服務類型</option>';
-          return;
-        }
-        
-        // 筛选匹配的模板（service_id匹配或通用模板service_id为null）
-        const filteredTemplates = allTemplates.filter(t => 
-          t.service_id == serviceId || t.service_id === null
-        );
-        
-        if (filteredTemplates.length === 0) {
-          templateSelect.innerHTML = '<option value="">不使用模板（手動配置）</option>';
-        } else {
-          templateSelect.innerHTML = '<option value="">不使用模板（手動配置）</option>' + 
-            filteredTemplates.map(t => `<option value="${t.template_id}">${t.template_name}</option>`).join('');
-        }
-        
-        // 触发一次加载以显示手动配置区域
-        window[`loadTemplateStages${clientServiceId}`]('');
-      };
-      
       // 创建加载模板阶段的函数
       window[`loadTemplateStages${clientServiceId}`] = async function(templateId) {
-        const stagesContainer = document.getElementById(`template-stages-${clientServiceId}`);
-        const stagesList = document.getElementById(`stages-list-${clientServiceId}`);
-        const manualContainer = document.getElementById(`manual-tasks-${clientServiceId}`);
+        const tasksContainer = document.getElementById(`tasks-config-${clientServiceId}`);
+        const tasksList = document.getElementById(`tasks-list-${clientServiceId}`);
+        const templateHint = document.getElementById(`template-hint-${clientServiceId}`);
+        
+        // 初始化任务数组
+        if (!window[`customTasks${clientServiceId}`]) {
+          window[`customTasks${clientServiceId}`] = [];
+        }
         
         if (!templateId) {
-          // 没有选择模板，显示手动配置区域
-          stagesContainer.style.display = 'none';
-          manualContainer.style.display = 'block';
+          // 没有选择模板
+          templateHint.textContent = '未使用模板，手動配置任務';
+          window[`customTasks${clientServiceId}`] = [];
           // 初始化一个空任务
-          if (!window[`customTasks${clientServiceId}`]) {
-            window[`customTasks${clientServiceId}`] = [];
-            window[`addCustomTask${clientServiceId}`]();
-          }
+          window[`addCustomTask${clientServiceId}`]();
           return;
         }
         
-        // 选择了模板，隐藏手动配置区域
-        manualContainer.style.display = 'none';
+        // 选择了模板
+        templateHint.innerHTML = '<strong>✨ 已選擇模板</strong>，以下任務來自模板並可自由編輯（不影響原始模板）';
         
-        // 先从已加载的模板列表中获取模板信息，自动填充期限规则
-        const templateData = window.taskTemplatesData?.find(t => t.template_id == templateId);
-        if (templateData) {
-          // 自动填充期限规则
-          if (templateData.default_due_date_rule) {
-            document.getElementById(`new-comp-due-rule-${clientServiceId}`).value = templateData.default_due_date_rule;
-            // 触发帮助信息更新
-            window[`updateDueDateHelp${clientServiceId}`](templateData.default_due_date_rule);
-          }
-          if (templateData.default_due_date_value) {
-            document.getElementById(`new-comp-due-value-${clientServiceId}`).value = templateData.default_due_date_value;
-          }
-          if (templateData.default_advance_days != null) {
-            document.getElementById(`new-comp-advance-${clientServiceId}`).value = templateData.default_advance_days;
-          }
-        }
-        
-        // 显示容器
-        stagesContainer.style.display = 'block';
-        stagesList.innerHTML = '<p style="color: #6b7280; font-size: 14px;">載入中...</p>';
+        tasksList.innerHTML = '<p style="color: #6b7280; font-size: 14px;">載入中...</p>';
         
         try {
           const res = await fetch(`/internal/api/v1/task-templates/${templateId}/stages`);
           const json = await res.json();
           
           if (!json.ok || !json.data) {
-            stagesList.innerHTML = '<p style="color: #ef4444; font-size: 14px;">載入失敗</p>';
+            tasksList.innerHTML = '<p style="color: #ef4444; font-size: 14px;">載入失敗</p>';
             return;
           }
           
           const stages = json.data;
           
           if (stages.length === 0) {
-            stagesList.innerHTML = '<p style="color: #6b7280; font-size: 14px;">此模板暫無階段設定</p>';
+            tasksList.innerHTML = '<p style="color: #6b7280; font-size: 14px;">此模板暫無階段設定</p>';
+            window[`addCustomTask${clientServiceId}`]();
             return;
           }
           
-          // 渲染独立任务列表（带默认值）
-          stagesList.innerHTML = stages.map((stage, idx) => `
-            <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e5e7eb;">
-              <div style="display: flex; align-items: start; gap: 15px;">
-                <div style="flex-shrink: 0; width: 30px; height: 30px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                  ${stage.stage_order || idx + 1}
-                </div>
-                <div style="flex: 1;">
-                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                    <div>
-                      <h6 style="margin: 0; font-size: 15px; color: #1f2937;">${stage.stage_name}</h6>
-                      ${stage.description ? `<p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">${stage.description}</p>` : ''}
-                    </div>
-                    ${(stage.sop_id || stage.attachment_id) ? '<span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 12px;">📄 有SOP</span>' : ''}
-                  </div>
-                  
-                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
-                    <div>
-                      <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📅 期限規則</label>
-                      <select style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; background: #f0f9ff;" 
-                              id="stage-due-rule-${idx}-${clientServiceId}"
-                              onchange="updateDueDateDisplay${clientServiceId}(${idx})">
-                        <option value="end_of_month" ${stage.due_date_rule === 'end_of_month' ? 'selected' : ''}>每月最後一天</option>
-                        <option value="specific_day" ${stage.due_date_rule === 'specific_day' ? 'selected' : ''}>每月固定日期</option>
-                        <option value="next_month_day" ${stage.due_date_rule === 'next_month_day' ? 'selected' : ''}>次月固定日期</option>
-                        <option value="days_after_start" ${stage.due_date_rule === 'days_after_start' ? 'selected' : ''}>從月初起算天數</option>
-                      </select>
-                      <small id="due-display-${idx}-${clientServiceId}" style="display: block; margin-top: 3px; font-size: 11px; color: #3b82f6;"></small>
-                    </div>
-                    <div>
-                      <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📊 日期/天數</label>
-                      <input type="number" min="1" max="31" placeholder="請輸入" value="${stage.due_date_value || ''}"
-                             style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; background: #f0f9ff;"
-                             id="stage-due-value-${idx}-${clientServiceId}"
-                             onchange="updateDueDateDisplay${clientServiceId}(${idx})" />
-                    </div>
-                    <div>
-                      <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">⏱️ 預估工時</label>
-                      <input type="number" min="0" step="0.5" value="${stage.estimated_hours || ''}" placeholder="例如：2"
-                             style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
-                             id="stage-hours-${idx}-${clientServiceId}" />
-                      <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">小時</small>
-                    </div>
-                    <div>
-                      <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📆 提前生成</label>
-                      <input type="number" min="0" value="${stage.advance_days || 7}" placeholder="7"
-                             style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
-                             id="stage-advance-${idx}-${clientServiceId}" />
-                      <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">天前生成</small>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `).join('') + `
-            <div style="margin-top: 15px; padding: 12px; background: #f0f9ff; border-radius: 6px; border-left: 4px solid #3b82f6;">
-              <p style="margin: 0; font-size: 13px; color: #1e40af;">
-                <strong>💡 說明：</strong>這些任務會根據「提供頻率」自動生成。例如選擇「每月」，就會每月自動創建這${stages.length}個任務。
-              </p>
-            </div>
-          `;
+          // 将模板阶段转换为可编辑任务
+          window[`customTasks${clientServiceId}`] = stages.map((stage, idx) => ({
+            name: stage.stage_name,
+            description: stage.description || '',
+            due_rule: stage.due_date_rule || 'end_of_month',
+            due_value: stage.due_date_value || '',
+            estimated_hours: stage.estimated_hours || '',
+            advance_days: stage.advance_days || 7,
+            stage_order: stage.stage_order || (idx + 1),
+            fromTemplate: true
+          }));
           
-          // 初始化期限显示
-          stages.forEach((stage, idx) => {
-            setTimeout(() => {
-              window[`updateDueDateDisplay${clientServiceId}`](idx);
-            }, 50);
-          });
+          // 渲染任务列表
+          window[`renderTasksList${clientServiceId}`]();
           
         } catch (err) {
           console.error('載入模板階段失敗:', err);
-          stagesList.innerHTML = '<p style="color: #ef4444; font-size: 14px;">載入失敗</p>';
+          tasksList.innerHTML = '<p style="color: #ef4444; font-size: 14px;">載入失敗</p>';
         }
+      };
+      
+      // 创建统一的任务列表渲染函数
+      window[`renderTasksList${clientServiceId}`] = function() {
+        const tasksList = document.getElementById(`tasks-list-${clientServiceId}`);
+        const tasks = window[`customTasks${clientServiceId}`] || [];
+        
+        if (tasks.length === 0) {
+          tasksList.innerHTML = '<p style="color: #9ca3af; font-size: 13px;">點擊上方「+ 新增任務」按鈕開始配置</p>';
+          return;
+        }
+        
+        tasksList.innerHTML = tasks.map((task, idx) => `
+          <div id="custom-task-${idx}-${clientServiceId}" style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; border: 1px solid ${task.fromTemplate ? '#3b82f6' : '#d1d5db'};">
+            <div style="display: flex; align-items: start; gap: 15px;">
+              <div style="flex-shrink: 0; width: 30px; height: 30px; background: ${task.fromTemplate ? '#3b82f6' : '#6b7280'}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                ${task.stage_order || idx + 1}
+              </div>
+              <div style="flex: 1;">
+                <div style="margin-bottom: 10px;">
+                  <input type="text" placeholder="任務名稱" value="${task.name || ''}"
+                         style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; font-weight: 500;"
+                         onchange="window.customTasks${clientServiceId}[${idx}].name = this.value" />
+                  ${task.description ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">${task.description}</p>` : ''}
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📅 期限規則</label>
+                    <select style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
+                            onchange="window.customTasks${clientServiceId}[${idx}].due_rule = this.value; window.updateCustomTaskDisplay${clientServiceId}(${idx})">
+                      <option value="end_of_month" ${task.due_rule === 'end_of_month' ? 'selected' : ''}>每月最後一天</option>
+                      <option value="specific_day" ${task.due_rule === 'specific_day' ? 'selected' : ''}>每月固定日期</option>
+                      <option value="next_month_day" ${task.due_rule === 'next_month_day' ? 'selected' : ''}>次月固定日期</option>
+                      <option value="days_after_start" ${task.due_rule === 'days_after_start' ? 'selected' : ''}>從月初起算天數</option>
+                    </select>
+                    <small id="custom-task-display-${idx}-${clientServiceId}" style="display: block; margin-top: 3px; font-size: 11px; color: #3b82f6;"></small>
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📊 日期/天數</label>
+                    <input type="number" min="1" max="31" placeholder="請輸入" value="${task.due_value || ''}"
+                           style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
+                           onchange="window.customTasks${clientServiceId}[${idx}].due_value = this.value; window.updateCustomTaskDisplay${clientServiceId}(${idx})" />
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">⏱️ 預估工時</label>
+                    <input type="number" min="0" step="0.5" value="${task.estimated_hours || ''}" placeholder="例如：2"
+                           style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
+                           onchange="window.customTasks${clientServiceId}[${idx}].estimated_hours = this.value" />
+                    <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">小時</small>
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📆 提前生成</label>
+                    <input type="number" min="0" value="${task.advance_days || 7}" placeholder="7"
+                           style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
+                           onchange="window.customTasks${clientServiceId}[${idx}].advance_days = this.value" />
+                    <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">天前生成</small>
+                  </div>
+                </div>
+                
+                <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
+                  <button type="button" class="table-btn-link danger" onclick="removeCustomTask${clientServiceId}(${idx})">🗑️ 刪除此任務</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+        
+        // 初始化期限显示
+        tasks.forEach((task, idx) => {
+          setTimeout(() => window[`updateCustomTaskDisplay${clientServiceId}`](idx), 50);
+        });
       };
       
       // 创建手动添加任务的函数
@@ -1219,109 +1302,49 @@
         }
         
         const tasks = window[`customTasks${clientServiceId}`];
-        const taskIdx = tasks.length;
         tasks.push({
           name: '',
           due_rule: 'end_of_month',
-          due_value: null,
-          hours: null,
-          advance_days: 7
+          due_value: '',
+          estimated_hours: '',
+          advance_days: 7,
+          fromTemplate: false
         });
         
-        const manualTasksList = document.getElementById(`manual-tasks-list-${clientServiceId}`);
-        
-        const taskHtml = `
-          <div id="custom-task-${taskIdx}-${clientServiceId}" style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #d1d5db;">
-            <div style="display: flex; align-items: start; gap: 15px;">
-              <div style="flex-shrink: 0; width: 30px; height: 30px; background: #6b7280; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                ${taskIdx + 1}
-              </div>
-              <div style="flex: 1;">
-                <div style="margin-bottom: 10px;">
-                  <label style="display: block; font-size: 13px; color: #374151; margin-bottom: 4px; font-weight: 500;">任務名稱 *</label>
-                  <input type="text" placeholder="例如：收集憑證" 
-                         style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;"
-                         id="custom-task-name-${taskIdx}-${clientServiceId}" />
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📅 期限規則</label>
-                    <select style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
-                            id="custom-task-due-rule-${taskIdx}-${clientServiceId}"
-                            onchange="updateCustomTaskDisplay${clientServiceId}(${taskIdx})">
-                      <option value="end_of_month">每月最後一天</option>
-                      <option value="specific_day">每月固定日期</option>
-                      <option value="next_month_day">次月固定日期</option>
-                      <option value="days_after_start">從月初起算天數</option>
-                    </select>
-                    <small id="custom-task-display-${taskIdx}-${clientServiceId}" style="display: block; margin-top: 3px; font-size: 11px; color: #3b82f6;">例：1月31日、2月28日</small>
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📊 日期/天數</label>
-                    <input type="number" min="1" max="31" placeholder="請輸入"
-                           style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
-                           id="custom-task-due-value-${taskIdx}-${clientServiceId}"
-                           onchange="updateCustomTaskDisplay${clientServiceId}(${taskIdx})" />
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">⏱️ 預估工時</label>
-                    <input type="number" min="0" step="0.5" placeholder="例如：2"
-                           style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
-                           id="custom-task-hours-${taskIdx}-${clientServiceId}" />
-                    <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">小時</small>
-                  </div>
-                  <div>
-                    <label style="display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px;">📆 提前生成</label>
-                    <input type="number" min="0" value="7" placeholder="7"
-                           style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px;"
-                           id="custom-task-advance-${taskIdx}-${clientServiceId}" />
-                    <small style="display: block; margin-top: 3px; font-size: 11px; color: #6b7280;">天前生成</small>
-                  </div>
-                </div>
-                
-                <div style="margin-top: 10px; text-align: right;">
-                  <button type="button" class="table-btn-link danger" onclick="removeCustomTask${clientServiceId}(${taskIdx})">🗑️ 刪除此任務</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-        
-        manualTasksList.insertAdjacentHTML('beforeend', taskHtml);
-        window[`updateCustomTaskDisplay${clientServiceId}`](taskIdx);
+        // 重新渲染任务列表
+        window[`renderTasksList${clientServiceId}`]();
       };
       
       // 删除自定义任务
       window[`removeCustomTask${clientServiceId}`] = function(idx) {
-        const taskEl = document.getElementById(`custom-task-${idx}-${clientServiceId}`);
-        if (taskEl) taskEl.remove();
         if (window[`customTasks${clientServiceId}`]) {
-          window[`customTasks${clientServiceId}`][idx] = null;
+          window[`customTasks${clientServiceId}`].splice(idx, 1);
+          // 重新渲染任务列表
+          window[`renderTasksList${clientServiceId}`]();
         }
       };
       
       // 更新自定义任务的期限显示
       window[`updateCustomTaskDisplay${clientServiceId}`] = function(idx) {
-        const rule = document.getElementById(`custom-task-due-rule-${idx}-${clientServiceId}`)?.value;
-        const value = document.getElementById(`custom-task-due-value-${idx}-${clientServiceId}`)?.value;
-        const display = document.getElementById(`custom-task-display-${idx}-${clientServiceId}`);
+        const task = window[`customTasks${clientServiceId}`]?.[idx];
+        if (!task) return;
         
+        const display = document.getElementById(`custom-task-display-${idx}-${clientServiceId}`);
         if (!display) return;
         
         let text = '';
-        switch(rule) {
+        switch(task.due_rule) {
           case 'end_of_month':
             text = '例：1月31日、2月28日、3月31日';
             break;
           case 'specific_day':
-            text = value ? `例：每月${value}日` : '請填寫日期';
+            text = task.due_value ? `例：每月${task.due_value}日` : '請填寫日期';
             break;
           case 'next_month_day':
-            text = value ? `例：1月執行→2/${value}、2月執行→3/${value}` : '請填寫日期';
+            text = task.due_value ? `例：1月執行→2/${task.due_value}、2月執行→3/${task.due_value}` : '請填寫日期';
             break;
           case 'days_after_start':
-            text = value ? `例：月初後第${value}天` : '請填寫天數';
+            text = task.due_value ? `例：月初後第${task.due_value}天` : '請填寫天數';
             break;
         }
         display.textContent = text;
@@ -1394,6 +1417,9 @@
             break;
         }
       };
+      
+      // 初始化任务配置区域（默认手动模式）
+      window[`loadTemplateStages${clientServiceId}`]('');
     }
 
     // 取消新增
@@ -1601,6 +1627,8 @@
       
       const payload = {
         company_name: document.getElementById('inputCompanyName').value.trim(),
+        contact_person_1: document.getElementById('inputContactPerson1').value.trim() || null,
+        contact_person_2: document.getElementById('inputContactPerson2').value.trim() || null,
         assignee_user_id: assigneeUserId,
         phone: document.getElementById('inputPhone').value.trim() || null,
         email: document.getElementById('inputEmail').value.trim() || null,
@@ -1666,6 +1694,138 @@
         el.textContent = '';
         el.style.display = 'none';
       });
+    }
+
+    // ==================== 標籤管理 ====================
+    
+    let allTags = [];
+    window.currentClientTags = [];
+    window.selectedTagIds = new Set();
+    
+    // 載入所有標籤
+    async function loadAllTags() {
+      try {
+        const res = await fetch('/internal/api/v1/tags');
+        const json = await res.json();
+        if (json.ok && json.data) {
+          allTags = json.data;
+        }
+      } catch (err) {
+        console.error('載入標籤失敗:', err);
+      }
+    }
+    
+    // 渲染標籤顯示
+    function renderTagsDisplay() {
+      const container = document.getElementById('tagsDisplay');
+      if (!window.currentClientTags || window.currentClientTags.length === 0) {
+        container.innerHTML = '<span style="color: #9ca3af;">尚未設定標籤</span>';
+      } else {
+        container.innerHTML = window.currentClientTags.map(t => 
+          `<span style="display: inline-flex; align-items: center; padding: 4px 12px; background: ${t.tag_color || '#6b7280'}; color: white; border-radius: 4px; font-size: 13px;">${t.tag_name}</span>`
+        ).join('');
+      }
+    }
+    
+    // 顯示標籤管理彈窗
+    function showTagsModal() {
+      const modal = document.getElementById('tagsModal');
+      modal.style.display = 'flex';
+      
+      // 初始化選中的標籤
+      window.selectedTagIds = new Set(window.currentClientTags.map(t => t.tag_id));
+      
+      // 渲染所有標籤
+      renderAllTags();
+      renderSelectedTags();
+    }
+    
+    // 關閉標籤管理彈窗
+    function closeTagsModal() {
+      document.getElementById('tagsModal').style.display = 'none';
+    }
+    
+    // 渲染所有標籤列表
+    function renderAllTags() {
+      const container = document.getElementById('allTagsList');
+      if (allTags.length === 0) {
+        container.innerHTML = '<span style="color: #9ca3af;">暫無標籤</span>';
+        return;
+      }
+      
+      container.innerHTML = allTags.map(tag => {
+        const isSelected = window.selectedTagIds.has(tag.tag_id);
+        return `
+          <button type="button" 
+                  onclick="toggleTag(${tag.tag_id})"
+                  style="display: inline-flex; align-items: center; padding: 6px 14px; 
+                         background: ${isSelected ? tag.tag_color || '#3b82f6' : '#f3f4f6'}; 
+                         color: ${isSelected ? 'white' : '#374151'}; 
+                         border: ${isSelected ? 'none' : '1px solid #d1d5db'};
+                         border-radius: 4px; font-size: 13px; cursor: pointer; 
+                         transition: all 0.2s;">
+            ${isSelected ? '✓ ' : ''}${tag.tag_name}
+          </button>
+        `;
+      }).join('');
+    }
+    
+    // 渲染已選標籤
+    function renderSelectedTags() {
+      const container = document.getElementById('selectedTagsList');
+      const selectedTags = allTags.filter(t => window.selectedTagIds.has(t.tag_id));
+      
+      if (selectedTags.length === 0) {
+        container.innerHTML = '<span style="color: #9ca3af;">尚未選擇標籤</span>';
+      } else {
+        container.innerHTML = selectedTags.map(tag => 
+          `<span style="display: inline-flex; align-items: center; padding: 4px 12px; 
+                  background: ${tag.tag_color || '#6b7280'}; color: white; 
+                  border-radius: 4px; font-size: 13px;">
+            ${tag.tag_name}
+          </span>`
+        ).join('');
+      }
+    }
+    
+    // 切換標籤選擇狀態
+    function toggleTag(tagId) {
+      if (window.selectedTagIds.has(tagId)) {
+        window.selectedTagIds.delete(tagId);
+      } else {
+        window.selectedTagIds.add(tagId);
+      }
+      renderAllTags();
+      renderSelectedTags();
+    }
+    
+    // 儲存標籤
+    async function saveTags() {
+      const tagIds = Array.from(window.selectedTagIds);
+      
+      try {
+        const res = await fetch(`/internal/api/v1/clients/${currentClientId}/tags`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tag_ids: tagIds })
+        });
+        
+        const json = await res.json();
+        if (!json.ok) {
+          alert(json.message || '儲存失敗');
+          return;
+        }
+        
+        alert('標籤已更新');
+        closeTagsModal();
+        
+        // 重新載入客戶資料
+        await loadClientDetail();
+        
+      } catch (err) {
+        console.error('儲存標籤失敗:', err);
+        alert('儲存失敗');
+      }
     }
 
     // 點擊Modal外部關閉

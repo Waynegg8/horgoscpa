@@ -144,7 +144,7 @@ export async function handleClients(request, env, me, requestId, url) {
 		const clientId = url.pathname.split("/").pop();
 		try {
 			const row = await env.DATABASE.prepare(
-				`SELECT c.client_id, c.company_name, c.tax_registration_number, c.phone, c.email, 
+				`SELECT c.client_id, c.company_name, c.tax_registration_number, c.contact_person_1, c.contact_person_2, c.phone, c.email, 
 				        c.client_notes, c.payment_notes, c.created_at, c.updated_at,
 				        u.user_id as assignee_id, u.name as assignee_name,
 				        GROUP_CONCAT(t.tag_id || ':' || t.tag_name || ':' || COALESCE(t.tag_color, ''), '|') as tags
@@ -232,6 +232,8 @@ export async function handleClients(request, env, me, requestId, url) {
 				clientId: row.client_id,
 				companyName: row.company_name,
 				taxId: row.tax_registration_number,
+				contact_person_1: row.contact_person_1 || "",
+				contact_person_2: row.contact_person_2 || "",
 				assigneeUserId: row.assignee_id,
 				assigneeName: row.assignee_name || "",
 				phone: row.phone || "",
@@ -282,7 +284,7 @@ export async function handleClients(request, env, me, requestId, url) {
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
 			const rows = await env.DATABASE.prepare(
-				`SELECT c.client_id, c.company_name, c.tax_registration_number, c.phone, c.email, c.created_at, 
+				`SELECT c.client_id, c.company_name, c.tax_registration_number, c.contact_person_1, c.phone, c.email, c.created_at, 
 				        u.name as assignee_name,
 				        GROUP_CONCAT(t.tag_name, ',') as tags
 				 FROM Clients c
@@ -298,6 +300,7 @@ export async function handleClients(request, env, me, requestId, url) {
 				clientId: r.client_id,
 				companyName: r.company_name,
 				taxId: r.tax_registration_number,
+				contact_person_1: r.contact_person_1 || "",
 				assigneeName: r.assignee_name || "",
 				tags: (r.tags ? String(r.tags).split(",").filter(Boolean) : []),
 				phone: r.phone || "",
@@ -359,10 +362,12 @@ export async function handleClients(request, env, me, requestId, url) {
 					return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "標籤不存在", meta: { requestId } }, corsHeaders);
 				}
 			}
+			const contactPerson1 = (body?.contact_person_1 || "").trim();
+			const contactPerson2 = (body?.contact_person_2 || "").trim();
 			const now = new Date().toISOString();
 			await env.DATABASE.prepare(
-				"INSERT INTO Clients (client_id, company_name, assignee_user_id, phone, email, client_notes, payment_notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-			).bind(clientId, companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, now, now).run();
+				"INSERT INTO Clients (client_id, company_name, contact_person_1, contact_person_2, assignee_user_id, phone, email, client_notes, payment_notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+			).bind(clientId, companyName, contactPerson1, contactPerson2, assigneeUserId, phone, email, clientNotes, paymentNotes, now, now).run();
 			for (const tagId of tagIds) {
 				await env.DATABASE.prepare("INSERT OR IGNORE INTO ClientTagAssignments (client_id, tag_id, assigned_at) VALUES (?, ?, ?)").bind(clientId, tagId, now).run();
 			}
@@ -388,6 +393,8 @@ export async function handleClients(request, env, me, requestId, url) {
 		
 		const errors = [];
 		const companyName = String(body?.company_name || "").trim();
+		const contactPerson1 = (body?.contact_person_1 || "").trim();
+		const contactPerson2 = (body?.contact_person_2 || "").trim();
 		const assigneeUserId = Number(body?.assignee_user_id || 0);
 		const phone = (body?.phone || "").trim();
 		const email = (body?.email || "").trim();
@@ -430,8 +437,8 @@ export async function handleClients(request, env, me, requestId, url) {
 			
 			// 更新客戶資料
 			await env.DATABASE.prepare(
-				"UPDATE Clients SET company_name = ?, assignee_user_id = ?, phone = ?, email = ?, client_notes = ?, payment_notes = ?, updated_at = ? WHERE client_id = ?"
-			).bind(companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, now, clientId).run();
+				"UPDATE Clients SET company_name = ?, contact_person_1 = ?, contact_person_2 = ?, assignee_user_id = ?, phone = ?, email = ?, client_notes = ?, payment_notes = ?, updated_at = ? WHERE client_id = ?"
+			).bind(companyName, contactPerson1, contactPerson2, assigneeUserId, phone, email, clientNotes, paymentNotes, now, clientId).run();
 			
 			// 刪除舊的標籤關聯
 			await env.DATABASE.prepare("DELETE FROM ClientTagAssignments WHERE client_id = ?").bind(clientId).run();
