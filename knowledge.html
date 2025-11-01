@@ -978,6 +978,14 @@
         };
         
         // 模態框控制
+        window.resetUploadForm = function() {
+          const form = document.getElementById('resourceFormModal');
+          if (form) form.reset();
+          selectedFile = null;
+          const info = document.getElementById('uploadedFileInfoModal');
+          if (info) info.style.display = 'none';
+        };
+        
         window.closeUploadDocModal = function() {
           const modal = document.getElementById('uploadDocModal');
           modal.classList.remove('show');
@@ -1317,12 +1325,6 @@
             document.getElementById('resource-title-modal').value = file.name.split('.')[0];
           }
         }
-        
-        window.resetUploadForm = function() {
-          document.getElementById('resourceFormModal').reset();
-          selectedFile = null;
-          document.getElementById('uploadedFileInfoModal').style.display = 'none';
-        };
 
         // Form提交（placeholder）
         // SOP Form提交
