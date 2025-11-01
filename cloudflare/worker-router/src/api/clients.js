@@ -567,6 +567,7 @@ export async function handleClients(request, env, me, requestId, url) {
 	console.log(`[CLIENTS.JS] 檢查新增服務路由: matchAddService =`, matchAddService, `method = ${method}`);
 	if (method === "POST" && matchAddService) {
 		console.log('[CLIENTS.JS] ✅ 匹配新增服務路由');
+		console.log('[CLIENTS.JS] 新增服務 - pathname =', url.pathname);
 		const clientId = matchAddService[1];
 		let body;
 		try {
@@ -574,6 +575,14 @@ export async function handleClients(request, env, me, requestId, url) {
 		} catch (_) {
 			return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, corsHeaders);
 		}
+
+		console.log('[CLIENTS.JS] 新增服務 - clientId =', clientId, ' body =', JSON.stringify({
+			service_id: body?.service_id,
+			status: body?.status,
+			service_cycle: body?.service_cycle,
+			start_date: body?.start_date,
+			end_date: body?.end_date
+		}));
 		
 		const errors = [];
 		const serviceId = Number(body?.service_id || 0);
@@ -629,6 +638,8 @@ export async function handleClients(request, env, me, requestId, url) {
 				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 			).bind(clientId, serviceId, status, serviceCycle, taskTemplateId, autoGenerateTasks ? 1 : 0,
 				startDate || null, endDate || null, serviceNotes).run();
+
+			console.log('[CLIENTS.JS] 新增服務 - 插入成功 client_service_id =', result?.meta?.last_row_id);
 			
 			const clientServiceId = result?.meta?.last_row_id;
 			
