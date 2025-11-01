@@ -138,23 +138,23 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       }
       .modal {
-        display: none !important;
+        display: none;
         position: fixed;
-        z-index: 1000;
+        z-index: 9999;
         left: 0;
         top: 0;
-        width: 100vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
         background-color: rgba(0,0,0,0.5);
       }
       .modal.show {
         display: flex !important;
-        align-items: center;
-        justify-content: center;
+        align-items: center !important;
+        justify-content: center !important;
       }
       .modal-content {
         background-color: white;
-        margin: 0;
+        margin: auto;
         padding: 30px;
         border-radius: 12px;
         max-width: 800px;
@@ -997,8 +997,8 @@
         
         window.openUploadDocModal = function() {
           const modal = document.getElementById('uploadDocModal');
-          modal.style.display = 'block';
           modal.classList.add('show');
+          // 不需要設置 style.display，CSS .modal.show 會處理
         };
         
         // 點擊模態框背景關閉
