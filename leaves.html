@@ -90,6 +90,24 @@
       input[type="date"].form-control::-webkit-datetime-edit-fields-wrapper {
         padding: 0 !important;
       }
+      
+      /* 确保字段提示不影响输入框对齐 */
+      .field__hint {
+        min-height: 20px !important;
+        margin-top: 4px !important;
+        font-size: 12px !important;
+        color: rgba(15, 23, 42, 0.6) !important;
+      }
+      
+      /* 确保没有提示的字段也保持对齐 */
+      .field {
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      
+      .field label {
+        margin-bottom: 6px !important;
+      }
     </style>
   </head>
   <body class="leaves-page">
@@ -174,6 +192,7 @@
             <div class="field">
               <label for="event_date">事件日期</label>
               <input id="event_date" name="event_date" type="date" required class="form-control" />
+              <div class="field__hint" style="visibility:hidden;">占位</div>
               <div class="field__error" id="e_event_date"></div>
             </div>
             <div class="field" style="grid-column:1 / -1;">
