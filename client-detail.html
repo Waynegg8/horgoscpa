@@ -290,7 +290,8 @@
             <td class="amount">$${(svc.year_total || 0).toLocaleString('zh-TW')}</td>
             <td>${svc.start_date || '-'}</td>
             <td class="actions-cell">
-              <button type="button" class="table-btn table-btn-primary" onclick="showAddBillingRow(${svc.client_service_id})">新增收費</button>
+              <button type="button" class="table-btn table-btn-primary" onclick="showComponentsSection(${index}, ${svc.client_service_id})">配置服務內容</button>
+              <button type="button" class="table-btn table-btn-secondary" onclick="showAddBillingRow(${svc.client_service_id})">收費設定</button>
               <button type="button" class="table-btn table-btn-secondary" onclick="editService(${svc.client_service_id})">編輯</button>
               <button type="button" class="table-btn table-btn-danger" onclick="deleteService(${svc.client_service_id}, '${svc.service_name}')">刪除</button>
             </td>
@@ -298,6 +299,13 @@
           <tr class="billing-detail-row" id="billing-row-${index}" style="display: none;">
             <td colspan="7" class="billing-detail-cell">
               <div class="billing-content" id="billing-content-${index}">
+                <p class="loading-text">載入中...</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="component-detail-row" id="component-row-${index}" style="display: none;">
+            <td colspan="7" class="component-detail-cell">
+              <div class="component-content" id="component-content-${index}">
                 <p class="loading-text">載入中...</p>
               </div>
             </td>
@@ -813,7 +821,290 @@
     window.cancelBillingEdit = cancelBillingEdit;
     window.deleteBillingInline = deleteBillingInline;
 
+    // ==================== 服務組成部分管理 ====================
 
+    // 顯示服務組成部分配置區域
+    async function showComponentsSection(index, clientServiceId) {
+      const componentRow = document.getElementById(`component-row-${index}`);
+      
+      if (componentRow.style.display === 'none') {
+        componentRow.style.display = 'table-row';
+        await loadComponentsInline(index, clientServiceId);
+      } else {
+        componentRow.style.display = 'none';
+      }
+    }
+
+    // 載入服務組成部分列表
+    async function loadComponentsInline(index, clientServiceId) {
+      const container = document.getElementById(`component-content-${index}`);
+      
+      try {
+        const res = await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`);
+        const json = await res.json();
+        
+        if (!json.ok) {
+          container.innerHTML = '<p class="error-text">載入失敗</p>';
+          return;
+        }
+
+        const components = json.data || [];
+        
+        // 獲取服務和模板選項
+        const servicesHtml = allServices.map(s => `<option value="${s.service_id}">${s.service_name}</option>`).join('');
+        const templatesHtml = allTemplates.map(t => `<option value="${t.template_id}">${t.template_name}</option>`).join('');
+
+        container.innerHTML = `
+          <div style="padding: 20px; background: #f9fafb; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <h4 style="margin: 0;">📦 服務包含內容</h4>
+              <button class="table-btn table-btn-primary" onclick="showAddComponentForm(${clientServiceId})">+ 新增服務項目</button>
+            </div>
+            
+            <div id="add-component-form-${clientServiceId}" style="display: none; background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #3b82f6;">
+              <h5 style="margin-top: 0;">新增服務組成部分</h5>
+              <div class="form-row-2col">
+                <div class="form-field">
+                  <label>服務名稱</label>
+                  <input type="text" id="new-comp-name-${clientServiceId}" placeholder="例如：每月記帳" />
+                </div>
+                <div class="form-field">
+                  <label>服務類型</label>
+                  <select id="new-comp-service-${clientServiceId}">
+                    <option value="">請選擇</option>
+                    ${servicesHtml}
+                  </select>
+                </div>
+              </div>
+              <div class="form-row-2col">
+                <div class="form-field">
+                  <label>提供頻率</label>
+                  <select id="new-comp-freq-${clientServiceId}">
+                    <option value="monthly">每月</option>
+                    <option value="bi-monthly">每兩個月</option>
+                    <option value="quarterly">每季</option>
+                    <option value="yearly">每年</option>
+                    <option value="one-time">一次性</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label>任務模板</label>
+                  <select id="new-comp-template-${clientServiceId}">
+                    <option value="">不使用模板</option>
+                    ${templatesHtml}
+                  </select>
+                </div>
+              </div>
+              <div class="form-row-2col">
+                <div class="form-field">
+                  <label>期限規則</label>
+                  <select id="new-comp-due-rule-${clientServiceId}">
+                    <option value="end_of_month">當月月底</option>
+                    <option value="specific_day">當月指定日</option>
+                    <option value="next_month_day">次月指定日</option>
+                    <option value="days_after_start">相對天數</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label>期限日期值（如適用）</label>
+                  <input type="number" id="new-comp-due-value-${clientServiceId}" placeholder="例如：15" min="1" max="31" />
+                </div>
+              </div>
+              <div class="form-row-2col">
+                <div class="form-field">
+                  <label>預估工時（小時）</label>
+                  <input type="number" id="new-comp-hours-${clientServiceId}" placeholder="例如：8" min="0" step="0.5" />
+                </div>
+                <div class="form-field">
+                  <label>提前生成（天）</label>
+                  <input type="number" id="new-comp-advance-${clientServiceId}" value="7" min="0" />
+                </div>
+              </div>
+              <div class="form-field">
+                <label>備註</label>
+                <textarea id="new-comp-notes-${clientServiceId}" rows="2"></textarea>
+              </div>
+              <div style="margin-top: 15px;">
+                <button class="btn btn-primary" onclick="saveNewComponent(${clientServiceId})">儲存</button>
+                <button class="btn btn-secondary" onclick="cancelAddComponent(${clientServiceId})">取消</button>
+              </div>
+            </div>
+            
+            ${components.length === 0 ? '<p style="color: #6b7280;">暫無服務組成部分，請點擊上方按鈕新增</p>' : ''}
+            
+            ${components.map((comp, i) => `
+              <div class="component-item" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #3b82f6;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                  <div style="flex: 1;">
+                    <h5 style="margin: 0 0 10px 0; color: #1f2937;">${comp.component_name}</h5>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 14px; color: #6b7280;">
+                      <div>📋 <strong>服務類型：</strong>${comp.service_name || '-'}</div>
+                      <div>🔄 <strong>提供頻率：</strong>${getFrequencyText(comp.delivery_frequency)}</div>
+                      <div>📝 <strong>任務模板：</strong>${comp.template_name || '無'}</div>
+                      <div>⏰ <strong>預估工時：</strong>${comp.estimated_hours || '-'}小時</div>
+                      <div>📅 <strong>期限規則：</strong>${getDueRuleText(comp.due_date_rule)}</div>
+                      <div>⚡ <strong>提前生成：</strong>${comp.advance_days}天</div>
+                    </div>
+                    ${comp.notes ? `<div style="margin-top: 8px; font-size: 13px; color: #9ca3af;">💡 ${comp.notes}</div>` : ''}
+                  </div>
+                  <div style="display: flex; gap: 5px;">
+                    <button class="table-btn-link" onclick="editComponent(${comp.component_id})">編輯</button>
+                    <button class="table-btn-link danger" onclick="deleteComponent(${comp.component_id}, '${comp.component_name}')">刪除</button>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        
+      } catch (err) {
+        console.error('載入服務組成部分失敗:', err);
+        container.innerHTML = '<p class="error-text">載入失敗</p>';
+      }
+    }
+
+    // 輔助函數：頻率文字
+    function getFrequencyText(freq) {
+      const map = {
+        'monthly': '每月',
+        'bi-monthly': '每兩個月',
+        'quarterly': '每季',
+        'yearly': '每年',
+        'one-time': '一次性'
+      };
+      return map[freq] || freq;
+    }
+
+    // 輔助函數：期限規則文字
+    function getDueRuleText(rule) {
+      const map = {
+        'end_of_month': '當月月底',
+        'specific_day': '當月指定日',
+        'next_month_day': '次月指定日',
+        'days_after_start': '相對天數'
+      };
+      return map[rule] || '-';
+    }
+
+    // 顯示新增表單
+    function showAddComponentForm(clientServiceId) {
+      const form = document.getElementById(`add-component-form-${clientServiceId}`);
+      form.style.display = 'block';
+    }
+
+    // 取消新增
+    function cancelAddComponent(clientServiceId) {
+      const form = document.getElementById(`add-component-form-${clientServiceId}`);
+      form.style.display = 'none';
+      // 清空表單
+      document.getElementById(`new-comp-name-${clientServiceId}`).value = '';
+      document.getElementById(`new-comp-service-${clientServiceId}`).value = '';
+      document.getElementById(`new-comp-hours-${clientServiceId}`).value = '';
+      document.getElementById(`new-comp-notes-${clientServiceId}`).value = '';
+    }
+
+    // 儲存新服務組成部分
+    async function saveNewComponent(clientServiceId) {
+      const name = document.getElementById(`new-comp-name-${clientServiceId}`).value.trim();
+      const serviceId = document.getElementById(`new-comp-service-${clientServiceId}`).value;
+      const frequency = document.getElementById(`new-comp-freq-${clientServiceId}`).value;
+      const templateId = document.getElementById(`new-comp-template-${clientServiceId}`).value;
+      const dueRule = document.getElementById(`new-comp-due-rule-${clientServiceId}`).value;
+      const dueValue = document.getElementById(`new-comp-due-value-${clientServiceId}`).value;
+      const hours = document.getElementById(`new-comp-hours-${clientServiceId}`).value;
+      const advance = document.getElementById(`new-comp-advance-${clientServiceId}`).value;
+      const notes = document.getElementById(`new-comp-notes-${clientServiceId}`).value.trim();
+
+      if (!name) {
+        alert('請輸入服務名稱');
+        return;
+      }
+      if (!serviceId) {
+        alert('請選擇服務類型');
+        return;
+      }
+
+      const data = {
+        component_name: name,
+        service_id: parseInt(serviceId),
+        delivery_frequency: frequency,
+        task_template_id: templateId ? parseInt(templateId) : null,
+        due_date_rule: dueRule,
+        due_date_value: dueValue ? parseInt(dueValue) : null,
+        estimated_hours: hours ? parseFloat(hours) : null,
+        advance_days: advance ? parseInt(advance) : 7,
+        notes: notes || null,
+        auto_generate_task: true
+      };
+
+      try {
+        const res = await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const json = await res.json();
+
+        if (!json.ok) {
+          alert(json.message || '新增失敗');
+          return;
+        }
+
+        alert('服務組成部分已新增');
+        cancelAddComponent(clientServiceId);
+        
+        // 重新載入組成部分列表
+        const services = (await (await fetch(`/internal/api/v1/clients/${currentClientId}`)).json()).data.services;
+        const index = services.findIndex(s => s.client_service_id === clientServiceId);
+        if (index !== -1) {
+          await loadComponentsInline(index, clientServiceId);
+        }
+
+      } catch (err) {
+        console.error('新增服務組成部分失敗:', err);
+        alert('操作失敗');
+      }
+    }
+
+    // 刪除服務組成部分
+    async function deleteComponent(componentId, componentName) {
+      if (!confirm(`確定要刪除服務組成部分「${componentName}」嗎？`)) return;
+
+      try {
+        const res = await fetch(`/internal/api/v1/service-components/${componentId}`, {
+          method: 'DELETE'
+        });
+
+        const json = await res.json();
+
+        if (!json.ok) {
+          alert(json.message || '刪除失敗');
+          return;
+        }
+
+        alert('服務組成部分已刪除');
+        await loadClientDetail();
+
+      } catch (err) {
+        console.error('刪除失敗:', err);
+        alert('刪除失敗');
+      }
+    }
+
+    // 編輯服務組成部分（簡化版，可以擴展）
+    function editComponent(componentId) {
+      alert('編輯功能開發中，請先刪除後重新新增');
+    }
+
+    // 暴露函數到全局
+    window.showComponentsSection = showComponentsSection;
+    window.loadComponentsInline = loadComponentsInline;
+    window.showAddComponentForm = showAddComponentForm;
+    window.cancelAddComponent = cancelAddComponent;
+    window.saveNewComponent = saveNewComponent;
+    window.deleteComponent = deleteComponent;
+    window.editComponent = editComponent;
 
     // 取消編輯
     function cancelEdit() {
