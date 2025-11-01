@@ -856,14 +856,9 @@
         }
 
         function updatePager(type, state){
-          const prevBtn = document.getElementById(`${type}-prev`);
-          const nextBtn = document.getElementById(`${type}-next`);
           const listInfo = document.getElementById(`${type}ListInfo`);
-          
-          prevBtn.disabled = state.page <= 1;
-          const lastPage = Math.max(1, Math.ceil(state.total / state.perPage));
-          nextBtn.disabled = state.page >= lastPage;
-          listInfo.textContent = `${state.total} 筆｜第 ${state.page}/${lastPage} 頁`;
+          if(!listInfo) return;
+          listInfo.textContent = `${state.total} 筆`;
         }
 
         function buildParams(state){
