@@ -667,16 +667,18 @@
               </div>
             </div>
             
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
-              <div class="form-group" style="margin:0;">
-                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">描述</label>
-                <textarea id="resource-description-modal" rows="2" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;resize:vertical;" placeholder="文檔簡介（可選）"></textarea>
-              </div>
-              
-              <div class="form-group" style="margin:0;">
-                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
-                <input type="text" id="resource-tags-modal" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="範本, 重要" />
-                <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
+            <div class="form-group" style="margin:0 0 16px 0;">
+              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
+              <div style="display:flex;gap:8px;align-items:flex-start;">
+                <div style="flex:1;position:relative;">
+                  <select id="resource-tags-modal" multiple size="3" style="width:100%;padding:6px 8px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;font-size:13px;">
+                    <!-- 標籤選項會動態載入 -->
+                  </select>
+                  <div style="font-size:11px;color:#6b7280;margin-top:4px;">按住 Ctrl 可多選</div>
+                </div>
+                <button type="button" onclick="addNewTag()" class="btn" style="padding:6px 12px;font-size:12px;white-space:nowrap;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;" title="新增標籤選項">
+                  ➕ 新增
+                </button>
               </div>
             </div>
             
@@ -1727,11 +1729,82 @@
           setTimeout(() => resetUploadForm(), 300);
         };
         
+        // 標籤庫（可擴展）
+        let availableTags = [
+          '重要', '範本', '參考', '內部', '客戶',
+          '財務', '稅務', '人事', '合同', '法規'
+        ];
+        
+        // 載入標籤選項
+        function loadTagOptions() {
+          const select = document.getElementById('resource-tags-modal');
+          if (!select) return;
+          
+          select.innerHTML = '';
+          availableTags.forEach(tag => {
+            const option = document.createElement('option');
+            option.value = tag;
+            option.textContent = tag;
+            select.appendChild(option);
+          });
+        }
+        
+        // 新增標籤
+        window.addNewTag = function() {
+          const newTag = prompt('請輸入新標籤名稱：');
+          if (!newTag || !newTag.trim()) return;
+          
+          const tagName = newTag.trim();
+          
+          // 檢查是否已存在
+          if (availableTags.includes(tagName)) {
+            alert('此標籤已存在！');
+            return;
+          }
+          
+          // 添加到標籤庫
+          availableTags.push(tagName);
+          availableTags.sort(); // 排序
+          
+          // 重新載入選項
+          loadTagOptions();
+          
+          // 自動選中新標籤
+          const select = document.getElementById('resource-tags-modal');
+          if (select) {
+            Array.from(select.options).forEach(opt => {
+              if (opt.value === tagName) opt.selected = true;
+            });
+          }
+          
+          // 保存到 localStorage
+          localStorage.setItem('customTags', JSON.stringify(availableTags));
+        };
+        
+        // 從 localStorage 載入自訂標籤
+        function loadCustomTags() {
+          const saved = localStorage.getItem('customTags');
+          if (saved) {
+            try {
+              const customTags = JSON.parse(saved);
+              // 合併並去重
+              availableTags = [...new Set([...availableTags, ...customTags])];
+              availableTags.sort();
+            } catch (e) {
+              console.error('載入自訂標籤失敗:', e);
+            }
+          }
+        }
+        
         window.openUploadDocModal = function() {
           const drawer = document.getElementById('uploadDocModal');
           const overlay = document.getElementById('drawerOverlay');
           if (drawer) drawer.classList.add('show');
           if (overlay) overlay.classList.add('show');
+          
+          // 載入標籤選項
+          loadCustomTags();
+          loadTagOptions();
         };
         
         // SOP 固定模板
@@ -2068,16 +2141,18 @@
           submitBtn.innerHTML = '<span>⏳ 上傳中...</span>';
           
           const title = document.getElementById('resource-title-modal').value;
-          const description = document.getElementById('resource-description-modal').value;
           const category = document.getElementById('resource-category-modal').value;
-          const tags = document.getElementById('resource-tags-modal').value;
+          
+          // 從多選框獲取選中的標籤
+          const tagSelect = document.getElementById('resource-tags-modal');
+          const selectedTags = Array.from(tagSelect.selectedOptions).map(opt => opt.value);
+          const tags = selectedTags.join(',');
           
           try {
             // 使用 FormData 一步完成上传
             const formData = new FormData();
             formData.append('file', selectedFile);
             formData.append('title', title);
-            formData.append('description', description);
             formData.append('category', category);
             formData.append('tags', tags);
             
