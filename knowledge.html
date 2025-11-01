@@ -227,9 +227,71 @@
 
       <!-- 资源中心 Tab -->
       <div id="resources-content" class="tab-content">
+        <!-- 上傳區域 -->
+        <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:20px;margin-bottom:20px;">
+          <h3 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:var(--text-primary);">📤 上傳文檔</h3>
+          
+          <form id="resourceFormInline">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">文檔標題 *</label>
+                <input type="text" id="resource-title-inline" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="請輸入文檔標題" />
+              </div>
+              
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">分類</label>
+                <select id="resource-category-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+                  <option value="">請選擇</option>
+                  <option value="contract">合同範本</option>
+                  <option value="finance">財務表格</option>
+                  <option value="hr">人事文檔</option>
+                  <option value="tax">稅務參考</option>
+                  <option value="other">其他</option>
+                </select>
+              </div>
+            </div>
+            
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">描述</label>
+                <textarea id="resource-description-inline" rows="2" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;resize:vertical;" placeholder="文檔簡介（可選）"></textarea>
+              </div>
+              
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">標籤</label>
+                <input type="text" id="resource-tags-inline" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="範本, 重要" />
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;">以逗號分隔</div>
+              </div>
+            </div>
+            
+            <div class="form-group" style="margin:0 0 16px 0;">
+              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">選擇文件 *</label>
+              <div class="file-upload-area" id="fileUploadAreaInline" style="border:2px dashed rgba(15,23,42,0.2);border-radius:12px;padding:32px;text-align:center;cursor:pointer;background:#f9fafb;transition:all 0.2s;">
+                <div style="font-size:48px;margin-bottom:12px;">📎</div>
+                <div style="font-weight:600;margin-bottom:8px;color:var(--text-primary);">點擊或拖拽文件到此處</div>
+                <div style="font-size:13px;color:#6b7280;">支持 PDF, Word, Excel, PowerPoint, 圖片等格式</div>
+                <input type="file" id="file-input-inline" style="display:none;" />
+              </div>
+              <div class="uploaded-file-info" id="uploadedFileInfoInline" style="display:none;margin-top:12px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;">
+                <div style="font-weight:600;margin-bottom:4px;color:#0369a1;">已選擇文件：</div>
+                <div id="fileNameInline" style="color:#0c4a6e;"></div>
+                <div id="fileSizeInline" style="font-size:12px;color:#075985;margin-top:4px;"></div>
+              </div>
+            </div>
+            
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+              <button type="button" class="btn" onclick="resetUploadForm()">清空</button>
+              <button type="submit" class="btn primary" id="resourceSubmitBtnInline">
+                <span>📤 上傳文檔</span>
+              </button>
+            </div>
+          </form>
+        </section>
+        
+        <!-- 文檔列表 -->
         <section class="list-card" style="background:white;border:1px solid rgba(15,23,42,0.08);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);padding:16px;">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px 6px;border-bottom:1px solid #f0f0f0;margin-bottom:10px;">
-            <div style="font-weight:800;color:var(--text-primary);">資源中心</div>
+            <div style="font-weight:800;color:var(--text-primary);">📁 已上傳文檔</div>
             <div id="resourcesListInfo" class="muted">—</div>
           </div>
           <div id="resourcesList"></div>
@@ -334,66 +396,6 @@
       </div>
     </div>
 
-    <!-- 资源上传模态框 -->
-    <div id="resourceModal" class="modal" onclick="if(event.target === this) closeResourceModal()">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 id="resourceModalTitle">上傳文檔</h2>
-          <button class="close-modal" onclick="event.stopPropagation(); closeResourceModal();">&times;</button>
-        </div>
-        <form id="resourceForm">
-          <input type="hidden" id="resource-id" />
-          <input type="hidden" id="resource-file-url" />
-          
-          <div class="form-group">
-            <label>選擇文件 *</label>
-            <div class="file-upload-area" id="fileUploadArea">
-              <div style="font-size: 48px; margin-bottom: 12px;">📎</div>
-              <div style="font-weight: 600; margin-bottom: 8px;">點擊或拖拽文件到此處</div>
-              <div style="font-size: 12px; color: #6b7280;">支持 PDF, Word, Excel, PowerPoint, 圖片等格式</div>
-              <input type="file" id="file-input" style="display: none;" />
-            </div>
-            <div class="uploaded-file-info" id="uploadedFileInfo">
-              <div style="font-weight: 600; margin-bottom: 4px;">已選擇文件：</div>
-              <div id="fileName" style="color: #2563eb;"></div>
-              <div id="fileSize" style="font-size: 12px; color: #6b7280; margin-top: 4px;"></div>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="resource-title">文檔標題 *</label>
-            <input type="text" id="resource-title" required />
-          </div>
-          
-          <div class="form-group">
-            <label for="resource-description">描述</label>
-            <textarea id="resource-description" rows="3"></textarea>
-          </div>
-          
-          <div class="form-group">
-            <label for="resource-category">分類</label>
-            <select id="resource-category">
-              <option value="">請選擇</option>
-              <option value="contract">合同範本</option>
-              <option value="finance">財務表格</option>
-              <option value="hr">人事文檔</option>
-              <option value="tax">稅務參考</option>
-              <option value="other">其他</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label for="resource-tags">標籤（以逗號分隔）</label>
-            <input type="text" id="resource-tags" placeholder="例如：範本, 重要, 參考" />
-          </div>
-          
-          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px;">
-            <button type="button" class="btn" onclick="closeResourceModal()">取消</button>
-            <button type="submit" class="btn primary" id="resourceSubmitBtn">上傳</button>
-          </div>
-        </form>
-      </div>
-    </div>
 
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
     <script>
@@ -715,11 +717,6 @@
           }
         };
 
-        window.closeResourceModal = function() {
-          document.getElementById('resourceModal').classList.remove('show');
-          document.getElementById('resourceForm').reset();
-          document.getElementById('uploadedFileInfo').classList.remove('show');
-        };
 
         // SOP CRUD functions
         window.viewSOP = async function(id) {
@@ -874,8 +871,9 @@
             // 延迟初始化编辑器，确保Modal已显示
             setTimeout(() => initFaqEditor(), 100);
           } else if (currentTab === 'resources') {
-            document.getElementById('resourceModalTitle').textContent = '上傳文檔';
-            document.getElementById('resourceModal').classList.add('show');
+            // 資源中心使用內聯表單，滾動到上傳區域
+            document.getElementById('resourceFormInline').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.getElementById('resource-title-inline').focus();
           }
         });
 
@@ -920,48 +918,57 @@
         document.getElementById('resources-next').addEventListener('click', ()=>{ resourcesState.page++; loadResources(); });
 
         // 文件上传
-        const fileUploadArea = document.getElementById('fileUploadArea');
-        const fileInput = document.getElementById('file-input');
+        const fileUploadAreaInline = document.getElementById('fileUploadAreaInline');
+        const fileInputInline = document.getElementById('file-input-inline');
         let selectedFile = null;
 
-        fileUploadArea.addEventListener('click', () => fileInput.click());
+        fileUploadAreaInline.addEventListener('click', () => fileInputInline.click());
         
-        fileInput.addEventListener('change', (e) => {
+        fileInputInline.addEventListener('change', (e) => {
           if (e.target.files.length > 0) {
             selectedFile = e.target.files[0];
             displayFileInfo(selectedFile);
           }
         });
 
-        fileUploadArea.addEventListener('dragover', (e) => {
+        fileUploadAreaInline.addEventListener('dragover', (e) => {
           e.preventDefault();
-          fileUploadArea.classList.add('dragover');
+          fileUploadAreaInline.style.borderColor = '#2563eb';
+          fileUploadAreaInline.style.background = '#eff6ff';
         });
 
-        fileUploadArea.addEventListener('dragleave', () => {
-          fileUploadArea.classList.remove('dragover');
+        fileUploadAreaInline.addEventListener('dragleave', () => {
+          fileUploadAreaInline.style.borderColor = '';
+          fileUploadAreaInline.style.background = '';
         });
 
-        fileUploadArea.addEventListener('drop', (e) => {
+        fileUploadAreaInline.addEventListener('drop', (e) => {
           e.preventDefault();
-          fileUploadArea.classList.remove('dragover');
+          fileUploadAreaInline.style.borderColor = '';
+          fileUploadAreaInline.style.background = '';
           if (e.dataTransfer.files.length > 0) {
             selectedFile = e.dataTransfer.files[0];
-            fileInput.files = e.dataTransfer.files;
+            fileInputInline.files = e.dataTransfer.files;
             displayFileInfo(selectedFile);
           }
         });
 
         function displayFileInfo(file) {
-          document.getElementById('fileName').textContent = file.name;
-          document.getElementById('fileSize').textContent = `大小：${(file.size / 1024).toFixed(1)} KB`;
-          document.getElementById('uploadedFileInfo').classList.add('show');
+          document.getElementById('fileNameInline').textContent = file.name;
+          document.getElementById('fileSizeInline').textContent = `大小：${(file.size / 1024).toFixed(1)} KB`;
+          document.getElementById('uploadedFileInfoInline').style.display = 'block';
           
           // 自动填充标题（如果为空）
-          if (!document.getElementById('resource-title').value) {
-            document.getElementById('resource-title').value = file.name.split('.')[0];
+          if (!document.getElementById('resource-title-inline').value) {
+            document.getElementById('resource-title-inline').value = file.name.split('.')[0];
           }
         }
+        
+        window.resetUploadForm = function() {
+          document.getElementById('resourceFormInline').reset();
+          selectedFile = null;
+          document.getElementById('uploadedFileInfoInline').style.display = 'none';
+        };
 
         // Form提交（placeholder）
         // SOP Form提交
@@ -1043,7 +1050,7 @@
         });
 
         // 资源上传Form提交
-        document.getElementById('resourceForm').addEventListener('submit', async (e) => {
+        document.getElementById('resourceFormInline').addEventListener('submit', async (e) => {
           e.preventDefault();
           
           if (!selectedFile) {
@@ -1051,10 +1058,14 @@
             return;
           }
           
-          const title = document.getElementById('resource-title').value;
-          const description = document.getElementById('resource-description').value;
-          const category = document.getElementById('resource-category').value;
-          const tags = document.getElementById('resource-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+          const submitBtn = document.getElementById('resourceSubmitBtnInline');
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span>⏳ 上傳中...</span>';
+          
+          const title = document.getElementById('resource-title-inline').value;
+          const description = document.getElementById('resource-description-inline').value;
+          const category = document.getElementById('resource-category-inline').value;
+          const tags = document.getElementById('resource-tags-inline').value.split(',').map(t => t.trim()).filter(Boolean);
           
           try {
             // Step 1: 获取上传签名
@@ -1113,15 +1124,17 @@
             
             const docJson = await docRes.json();
             if (docJson.ok) {
-              alert('上傳成功');
-              closeResourceModal();
-              selectedFile = null;
+              alert('上傳成功！');
+              resetUploadForm();
               loadResources();
             } else {
               alert('創建文檔記錄失敗：' + (docJson.error || '未知錯誤'));
             }
           } catch (err) {
             alert('上傳失敗：' + err.message);
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>📤 上傳文檔</span>';
           }
         });
 
@@ -1131,7 +1144,6 @@
             // 确保所有模态框都是关闭状态
             document.getElementById('sopModal').classList.remove('show');
             document.getElementById('faqModal').classList.remove('show');
-            document.getElementById('resourceModal').classList.remove('show');
             // 编辑器会在打开Modal时按需初始化
             switchTab('sop');
           }
