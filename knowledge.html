@@ -242,11 +242,11 @@
     </main>
 
     <!-- SOP模态框 -->
-    <div id="sopModal" class="modal">
+    <div id="sopModal" class="modal" onclick="if(event.target === this) closeSopModal()">
       <div class="modal-content">
         <div class="modal-header">
           <h2 id="sopModalTitle">新增 SOP</h2>
-          <button class="close-modal" onclick="closeSopModal()">&times;</button>
+          <button class="close-modal" onclick="event.stopPropagation(); closeSopModal();">&times;</button>
         </div>
         <form id="sopForm">
           <input type="hidden" id="sop-id" />
@@ -288,11 +288,11 @@
     </div>
 
     <!-- FAQ模态框 -->
-    <div id="faqModal" class="modal">
+    <div id="faqModal" class="modal" onclick="if(event.target === this) closeFaqModal()">
       <div class="modal-content">
         <div class="modal-header">
           <h2 id="faqModalTitle">新增 FAQ</h2>
-          <button class="close-modal" onclick="closeFaqModal()">&times;</button>
+          <button class="close-modal" onclick="event.stopPropagation(); closeFaqModal();">&times;</button>
         </div>
         <form id="faqForm">
           <input type="hidden" id="faq-id" />
@@ -335,11 +335,11 @@
     </div>
 
     <!-- 资源上传模态框 -->
-    <div id="resourceModal" class="modal">
+    <div id="resourceModal" class="modal" onclick="if(event.target === this) closeResourceModal()">
       <div class="modal-content">
         <div class="modal-header">
           <h2 id="resourceModalTitle">上傳文檔</h2>
-          <button class="close-modal" onclick="closeResourceModal()">&times;</button>
+          <button class="close-modal" onclick="event.stopPropagation(); closeResourceModal();">&times;</button>
         </div>
         <form id="resourceForm">
           <input type="hidden" id="resource-id" />
