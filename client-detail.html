@@ -2405,9 +2405,9 @@
           
           sops.forEach(sop => {
             const sopTitle = sop.title || '未命名';
-            html += '<label class="comp-sop-option" data-sop-title="' + sopTitle.toLowerCase() + '" data-sop-category="' + category + '" style="display: flex; align-items: center; gap: 6px; padding: 3px 4px; cursor: pointer; font-size: 13px; margin-bottom: 2px; margin-left: 8px; border-radius: 3px;" onmouseover="this.style.background=\'#e5e7eb\'" onmouseout="this.style.background=\'transparent\'">';
-            html += '<input type="checkbox" class="comp-sop-checkbox" value="' + sop.sop_id + '" style="cursor: pointer; flex-shrink: 0; width: 14px; height: 14px; margin: 0;" onchange="updateCompSOPSelection' + clientServiceId + '(this)" />';
-            html += '<span style="color: #374151; flex: 1; word-break: keep-all;">' + sopTitle + '</span>';
+            html += '<label class="comp-sop-option" data-sop-title="' + sopTitle.toLowerCase() + '" data-sop-category="' + category + '" style="display: flex; align-items: center; gap: 4px; padding: 3px 4px; cursor: pointer; font-size: 13px; margin-bottom: 2px; margin-left: 8px; border-radius: 3px;" onmouseover="this.style.background=\'#e5e7eb\'" onmouseout="this.style.background=\'transparent\'">';
+            html += '<input type="checkbox" class="comp-sop-checkbox" value="' + sop.sop_id + '" style="cursor: pointer; flex-shrink: 0; width: 13px; height: 13px; margin: 0; padding: 0;" onchange="updateCompSOPSelection' + clientServiceId + '(this)" />';
+            html += '<span style="color: #374151; line-height: 1.2;">' + sopTitle + '</span>';
             html += '</label>';
           });
           
