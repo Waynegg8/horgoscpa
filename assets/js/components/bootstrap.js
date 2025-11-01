@@ -60,7 +60,7 @@
 
   async function ensureNavbar(){
     if (document.querySelector('.internal-navbar')) return;
-    const html = await fetchText('/templates/partials/internal-navbar.html', 'tpl:internal-navbar:v1');
+    const html = await fetchText('/templates/partials/internal-navbar.html', 'tpl:internal-navbar:v2');
     document.body.insertAdjacentHTML('afterbegin', html);
     markActiveNav();
     bindMobileToggle();
