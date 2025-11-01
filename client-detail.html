@@ -1076,7 +1076,7 @@
         }
         
         // 触发一次加载以显示手动配置区域
-        loadTemplateStages${clientServiceId}('');
+        window[`loadTemplateStages${clientServiceId}`]('');
       };
       
       // 创建加载模板阶段的函数
@@ -1092,7 +1092,7 @@
           // 初始化一个空任务
           if (!window[`customTasks${clientServiceId}`]) {
             window[`customTasks${clientServiceId}`] = [];
-            addCustomTask${clientServiceId}();
+            window[`addCustomTask${clientServiceId}`]();
           }
           return;
         }
