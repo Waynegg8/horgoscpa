@@ -357,14 +357,14 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
           LEFT JOIN Clients c ON c.client_id = cs.client_id
           LEFT JOIN Services s ON s.service_id = cs.service_id
-          WHERE adj.requested_at >= datetime('now', '-' || ? || ' days')
+          WHERE adj.requested_at >= datetime('now', '-${days} days')
             AND adj.old_due_date IS NOT NULL 
             AND adj.new_due_date IS NOT NULL
             AND adj.adjustment_type IS NOT NULL
             ${userFilter}
           ORDER BY adj.requested_at DESC
           LIMIT 30
-        `).bind(days).all();
+        `).all();
         
         // 查询任务状态更新
         console.log('[仪表板] 查询状态更新，天数:', days);
@@ -394,13 +394,13 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
           LEFT JOIN Clients c ON c.client_id = cs.client_id
           LEFT JOIN Services s ON s.service_id = cs.service_id
-          WHERE su.updated_at >= datetime('now', '-' || ? || ' days')
+          WHERE su.updated_at >= datetime('now', '-${days} days')
             AND su.old_status IS NOT NULL
             AND su.new_status IS NOT NULL
             ${userFilter2}
           ORDER BY su.updated_at DESC
           LIMIT 30
-        `).bind(days).all();
+        `).all();
         console.log('[仪表板] 状态更新查询结果:', statusUpdates?.results?.length || 0, '条');
         
         // 查询假期申请
@@ -418,11 +418,11 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             u.name as user_name
           FROM Leaves l
           LEFT JOIN Users u ON u.user_id = l.user_id
-          WHERE l.applied_at >= datetime('now', '-' || ? || ' days')
+          WHERE l.applied_at >= datetime('now', '-${days} days')
             ${userFilter3}
           ORDER BY l.applied_at DESC
           LIMIT 30
-        `).bind(days).all();
+        `).all();
         
         // 查询工时缺失提醒（最近7天未填写工时的员工）
         let timesheetReminders = [];
