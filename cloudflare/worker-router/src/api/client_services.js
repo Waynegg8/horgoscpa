@@ -34,18 +34,23 @@ export async function handleClientServices(request, env, me, requestId, url, pat
       const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
       const totalRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS total FROM ClientServices cs LEFT JOIN Clients c ON c.client_id = cs.client_id ${whereSql}`).bind(...binds).first();
       const rows = await env.DATABASE.prepare(
-        `SELECT cs.client_service_id, cs.client_id, cs.status, cs.suspension_effective_date, c.company_name
-         FROM ClientServices cs LEFT JOIN Clients c ON c.client_id = cs.client_id
+        `SELECT cs.client_service_id, cs.client_id, cs.service_id, cs.status, cs.suspension_effective_date, 
+                c.company_name, s.service_name
+         FROM ClientServices cs 
+         LEFT JOIN Clients c ON c.client_id = cs.client_id
+         LEFT JOIN Services s ON s.service_id = cs.service_id
          ${whereSql}
          ORDER BY cs.client_service_id DESC
          LIMIT ? OFFSET ?`
       ).bind(...binds, perPage, offset).all();
       const data = (rows?.results || []).map(r => ({
-        id: r.client_service_id,
-        clientId: r.client_id,
-        clientName: r.company_name || r.client_id,
+        client_service_id: r.client_service_id,
+        client_id: r.client_id,
+        client_name: r.company_name || r.client_id,
+        service_id: r.service_id || null,
+        service_name: r.service_name || null,
         status: r.status,
-        suspensionEffectiveDate: r.suspension_effective_date || null,
+        suspension_effective_date: r.suspension_effective_date || null,
       }));
       return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, page, perPage, total: Number(totalRow?.total || 0) } }, corsHeaders);
     } catch (err) {
