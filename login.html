@@ -308,35 +308,11 @@
               return null;
             }).then(json => {
               if (json && json.ok && json.data) {
-                // 有效 session，顯示提示
-                const hint = document.createElement('div');
-                hint.style.cssText = `
-                  position: fixed;
-                  top: 20px;
-                  right: 20px;
-                  background: #4A90E2;
-                  color: white;
-                  padding: 12px 20px;
-                  border-radius: 6px;
-                  font-size: 14px;
-                  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                  z-index: 1000;
-                  cursor: pointer;
-                  transition: all 0.3s;
-                `;
-                hint.textContent = '✓ 已登入 - 點擊直接進入系統';
-                hint.onclick = () => {
+                // 有效 session，自動跳轉到儀表板（不顯示提示，避免混淆）
+                console.log('[Login] 檢測到有效 session，自動跳轉到儀表板');
+                setTimeout(() => {
                   location.assign(onProdHost ? '/internal/dashboard' : 'https://www.horgoscpa.com/internal/dashboard');
-                };
-                hint.onmouseenter = () => {
-                  hint.style.background = '#357ABD';
-                  hint.style.transform = 'translateY(-2px)';
-                };
-                hint.onmouseleave = () => {
-                  hint.style.background = '#4A90E2';
-                  hint.style.transform = 'translateY(0)';
-                };
-                document.body.appendChild(hint);
+                }, 500);
               }
             }).catch(() => {
               // 完全靜默處理錯誤（401等正常錯誤）

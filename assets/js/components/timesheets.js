@@ -1835,6 +1835,24 @@ document.getElementById('btnSaveAll').addEventListener('click', saveAllChanges);
 // ==================== 初始化 ====================
 
 async function init() {
+  // ⚡ 检查是否有预渲染内容（跳过耗时的重新渲染）
+  const tbody = document.getElementById('timesheetBody');
+  const hasPrerendered = tbody && tbody.children.length > 0;
+  
+  if (hasPrerendered) {
+    console.log('[Timesheets] ⚡ 检测到预渲染内容，跳过初始渲染');
+    // 只加载基础数据到 state，不重新渲染
+    initWorkTypes();
+    state.currentWeekStart = getMonday(new Date());
+    state.ready = true;
+    
+    // 后台静默加载数据（不渲染）
+    loadCurrentUser().catch(() => {});
+    loadClients().catch(() => {});
+    return;
+  }
+  
+  // 无预渲染内容：正常初始化流程
   initWorkTypes();
   state.currentWeekStart = getMonday(new Date());
   

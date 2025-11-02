@@ -45,13 +45,14 @@
     const pageKey = 'timesheets';
     const cachedHTML = window.Prerender.load(pageKey);
     
-    if (cachedHTML && cachedHTML.length > 1000) {
-      // 有缓存：DOMContentLoaded 后立即显示
+    if (cachedHTML && cachedHTML.length > 500) {
+      // 有缓存：DOMContentLoaded 后立即显示到 tbody
       document.addEventListener('DOMContentLoaded', function() {
         console.log('[Timesheets] ⚡ 使用预渲染 HTML');
-        const wrapper = document.querySelector('.timesheet-wrapper');
-        if (wrapper) {
-          wrapper.innerHTML = cachedHTML;
+        const tbody = document.getElementById('timesheetBody');
+        if (tbody) {
+          tbody.innerHTML = cachedHTML;
+          console.log('[Timesheets] ⚡ 预渲染内容已加载，跳过 init() 渲染');
         }
       });
     } else {
@@ -59,12 +60,12 @@
       console.log('[Timesheets] ℹ 无缓存，正常加载');
       window.addEventListener('load', function() {
         setTimeout(function() {
-          const wrapper = document.querySelector('.timesheet-wrapper');
-          if (wrapper && wrapper.innerHTML.length > 1000) {
-            window.Prerender.save(pageKey, wrapper.innerHTML);
-            console.log('[Timesheets] ✓ 预渲染已保存');
+          const tbody = document.getElementById('timesheetBody');
+          if (tbody && tbody.innerHTML.length > 500) {
+            window.Prerender.save(pageKey, tbody.innerHTML);
+            console.log('[Timesheets] ✓ 预渲染已保存 (tbody)');
           }
-        }, 3000); // 等待 3 秒确保数据完全渲染
+        }, 5000); // 等待 5 秒确保数据完全渲染
       });
     }
   })();
