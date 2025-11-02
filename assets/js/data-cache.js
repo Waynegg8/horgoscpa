@@ -266,59 +266,43 @@
     // 📊 P2: 中優先級 - 客戶、收據（並行加載）
     // 📁 P3: 低優先級 - 其他數據（並行加載，延遲100ms）
     
-    // 🔥 P0: 最高優先級（串行加載，確保最快）
+    // 🔥 P0: 最高優先級（最小數據量，極速加載）
     const p0Tasks = [
+      { key: 'me', endpoint: '/auth/me', priority: 'P0' },
+      { key: 'users', endpoint: '/users', priority: 'P0' },
       { key: 'dashboard', endpoint: '/dashboard', priority: 'P0' },
-      { key: 'timesheets_recent', endpoint: '/timesheets?limit=200', priority: 'P0' },
-      { key: 'tasks_pending', endpoint: '/tasks?perPage=100&status=pending', priority: 'P0' },
     ];
     
-    // ⚡ P1: 高優先級（並行加載）
+    // ⚡ P1: 高優先級（减少數據量）
     const p1Tasks = [
-      { key: 'me', endpoint: '/auth/me', priority: 'P1' },
-      { key: 'users', endpoint: '/users', priority: 'P1' },
-      { key: 'tasks_all', endpoint: '/tasks?perPage=200', priority: 'P1' },
-      { key: 'tasks_in_progress', endpoint: '/tasks?perPage=100&status=in_progress', priority: 'P1' },
-      { key: 'timesheets_summary', endpoint: '/timesheets/summary', priority: 'P1' },
+      { key: 'timesheets_recent', endpoint: '/timesheets?limit=50', priority: 'P1' }, // 从200减到50
+      { key: 'tasks_pending', endpoint: '/tasks?perPage=50&status=pending', priority: 'P1' }, // 从100减到50
+      { key: 'tasks_in_progress', endpoint: '/tasks?perPage=50&status=in_progress', priority: 'P1' }, // 从100减到50
+      { key: 'clients_page1', endpoint: '/clients?page=1&perPage=30', priority: 'P1' }, // 从50减到30
+      { key: 'tags', endpoint: '/tags', priority: 'P1' },
     ];
     
-    // 📊 P2: 中優先級（並行加載）
+    // 📊 P2: 中優先級（进一步减少数据量）
     const p2Tasks = [
-      { key: 'clients_all', endpoint: '/clients?perPage=2000', priority: 'P2' },
-      { key: 'clients_page1', endpoint: '/clients?page=1&perPage=50', priority: 'P2' },
-      { key: 'receipts_all', endpoint: '/receipts?perPage=200', priority: 'P2' },
-      { key: 'receipts_unpaid', endpoint: '/receipts?perPage=100&status=unpaid', priority: 'P2' },
+      { key: 'tasks_all', endpoint: '/tasks?perPage=100', priority: 'P2' }, // 从200减到100
+      { key: 'receipts_all', endpoint: '/receipts?perPage=100', priority: 'P2' }, // 从200减到100
+      { key: 'receipts_unpaid', endpoint: '/receipts?perPage=50&status=unpaid', priority: 'P2' }, // 从100减到50
       { key: 'receipts_statistics', endpoint: '/receipts/statistics', priority: 'P2' },
-      { key: 'tags', endpoint: '/tags', priority: 'P2' },
+      { key: 'clients_all', endpoint: '/clients?perPage=500', priority: 'P2' }, // 从2000减到500
       { key: 'settings', endpoint: '/settings', priority: 'P2' },
     ];
     
-    // 📁 P3: 低優先級（並行加載，延遲啟動）
+    // 📁 P3: 低優先級（后台加载，按需要）
     const p3Tasks = [
       { key: 'holidays', endpoint: '/holidays', priority: 'P3' },
-      { key: 'clients_page2', endpoint: '/clients?page=2&perPage=50', priority: 'P3' },
-      { key: 'clients_page3', endpoint: '/clients?page=3&perPage=50', priority: 'P3' },
+      { key: 'clients_page2', endpoint: '/clients?page=2&perPage=30', priority: 'P3' },
       { key: 'services_types', endpoint: '/services', priority: 'P3' },
-      { key: 'tasks_completed', endpoint: '/tasks?perPage=50&status=completed', priority: 'P3' },
+      { key: 'tasks_completed', endpoint: '/tasks?perPage=30&status=completed', priority: 'P3' }, // 从50减到30
       { key: 'receipts_aging', endpoint: '/receipts/aging-report', priority: 'P3' },
-      { key: 'leaves_all', endpoint: '/leaves?perPage=200', priority: 'P3' },
-      { key: 'leaves_pending', endpoint: '/leaves?perPage=50&status=pending', priority: 'P3' },
+      { key: 'leaves_all', endpoint: '/leaves?perPage=100', priority: 'P3' }, // 从200减到100
+      { key: 'leaves_pending', endpoint: '/leaves?perPage=30&status=pending', priority: 'P3' }, // 从50减到30
       { key: 'leaves_balances', endpoint: '/leaves/balances', priority: 'P3' },
       { key: 'automation_rules', endpoint: '/automation/rules', priority: 'P3' },
-      // 註：以下端點暫時移除，因為API尚未實現或需要特定參數
-      // { key: 'dashboard_stats', endpoint: '/dashboard?stats=true', priority: 'P3' },
-      // { key: 'task_templates', endpoint: '/task-templates?perPage=100', priority: 'P3' },
-      // { key: 'payroll_latest', endpoint: '/payroll?perPage=100', priority: 'P3' },
-      // { key: 'payroll_summary', endpoint: '/payroll/summary', priority: 'P3' },
-      // { key: 'costs_summary', endpoint: '/costs/summary', priority: 'P3' },
-      // { key: 'costs_by_client', endpoint: '/costs/by-client', priority: 'P3' },
-      // { key: 'costs_by_employee', endpoint: '/costs/by-employee', priority: 'P3' },
-      // { key: 'sop_list', endpoint: '/knowledge/sops?perPage=200', priority: 'P3' },
-      // { key: 'faq_list', endpoint: '/knowledge/faqs?perPage=200', priority: 'P3' },
-      // { key: 'documents_list', endpoint: '/knowledge/documents?perPage=200', priority: 'P3' },
-      // { key: 'billing_schedules', endpoint: '/billing/schedules?perPage=200', priority: 'P3' },
-      // { key: 'reports_overview', endpoint: '/reports/overview', priority: 'P3' },
-      // { key: 'attachments_recent', endpoint: '/attachments?perPage=100', priority: 'P3' },
     ];
     
     const allTasks = [...p0Tasks, ...p1Tasks, ...p2Tasks, ...p3Tasks];
