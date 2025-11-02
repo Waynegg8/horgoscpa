@@ -678,7 +678,45 @@
           grid.innerHTML = '<div class="card" style="padding:16px;">載入中…</div>';
         }
 
-        async function refresh(){
+        // ⚡ 预渲染支持
+        const PRERENDER_KEY = 'horgos_dashboard_prerender';
+        const PRERENDER_TTL = 5 * 60 * 1000; // 5分钟有效期
+        
+        // 加载预渲染的 HTML
+        function loadPrerenderedHTML() {
+          try {
+            const cached = localStorage.getItem(PRERENDER_KEY);
+            if (!cached) return null;
+            
+            const data = JSON.parse(cached);
+            const age = Date.now() - data.timestamp;
+            
+            if (age > PRERENDER_TTL) {
+              localStorage.removeItem(PRERENDER_KEY);
+              return null;
+            }
+            
+            console.log(`[Dashboard] ⚡ 使用预渲染 HTML（${Math.round(age / 1000)}秒前生成）`);
+            return data.html;
+          } catch (e) {
+            return null;
+          }
+        }
+        
+        // 保存预渲染的 HTML
+        function savePrerenderedHTML(html) {
+          try {
+            localStorage.setItem(PRERENDER_KEY, JSON.stringify({
+              html: html,
+              timestamp: Date.now()
+            }));
+            console.log('[Dashboard] ✓ 预渲染 HTML 已保存');
+          } catch (e) {
+            console.warn('[Dashboard] ⚠ 保存预渲染失败', e);
+          }
+        }
+
+        async function refresh(forceRender = false){
           try {
             // 初始化月份（如果未设置）
             if (!currentYm) {
@@ -714,7 +752,11 @@
             }
             
             const url = `${apiBase}/dashboard${params.toString() ? '?' + params.toString() : ''}`;
+            const startTime = Date.now();
             const res = await fetch(url, { credentials:'include' });
+            const fetchTime = Date.now() - startTime;
+            console.log(`[Dashboard] ⏱ Fetch 耗时: ${fetchTime}ms`);
+            
             if (res.status === 401) { location.assign('/login?redirect=/internal/dashboard'); return; }
             const json = await res.json();
             console.log('=== DASHBOARD API RESPONSE ===');
@@ -723,6 +765,8 @@
             console.log('==============================');
             if (!res.ok || !json || json.ok !== true) throw new Error();
             const role = json.data?.role || (me?.isAdmin ? 'admin' : 'employee');
+            const renderStartTime = Date.now();
+            
             if (role === 'admin') {
               const d = json.data?.admin || {};
               const empTasks = d.employeeTasks || [];
@@ -739,6 +783,12 @@
               showNotices(notices);
               renderEmployeeDashboard(d);
             }
+            
+            const renderTime = Date.now() - renderStartTime;
+            console.log(`[Dashboard] ⏱ 渲染耗时: ${renderTime}ms`);
+            
+            // ⚡ 保存预渲染 HTML
+            savePrerenderedHTML(grid.innerHTML);
           } catch (_) {
             // fallback to placeholders
             if (me && me.isAdmin) renderAdminDashboard(null); else renderEmployeeDashboard(null);
@@ -752,8 +802,19 @@
 
         // 初始化
         todayEl.textContent = formatLocalDate(new Date());
-        renderSkeleton();
-        ensureUser().then(ok => { if (ok) { refresh(); startAutoRefresh(); } else { grid.innerHTML = '<div class="card" style="padding:16px;color:#c0392b;">載入失敗</div>'; } });
+        
+        // ⚡ 尝试加载预渲染的 HTML（极速显示）
+        const prerenderedHTML = loadPrerenderedHTML();
+        if (prerenderedHTML) {
+          grid.innerHTML = prerenderedHTML;
+          console.log('[Dashboard] ⚡ 预渲染 HTML 已显示，后台更新中...');
+          // 后台更新（用户无感）
+          ensureUser().then(ok => { if (ok) { refresh(); startAutoRefresh(); } });
+        } else {
+          // 没有预渲染，显示骨架屏
+          renderSkeleton();
+          ensureUser().then(ok => { if (ok) { refresh(); startAutoRefresh(); } else { grid.innerHTML = '<div class="card" style="padding:16px;color:#c0392b;">載入失敗</div>'; } });
+        }
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>

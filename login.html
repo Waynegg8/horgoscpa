@@ -131,12 +131,20 @@
               const startTime = Date.now();
               
               // 立即預加載核心數據（P0+P1，約2-3秒）
-              window.DataCache.preloadCritical().then((result) => {
+              window.DataCache.preloadCritical().then(async (result) => {
                 const duration = ((Date.now() - startTime) / 1000).toFixed(1);
                 console.log(`[Login] ✅ 核心數據已就緒 (${duration}秒，${result.completed.length}/${result.total} 成功)`);
                 
-                submitBtn.textContent = '✓ 即將進入...';
+                submitBtn.textContent = '✓ 預渲染中...';
                 submitBtn.style.background = '#4CAF50';
+                
+                // ⚡ 預渲染 Dashboard（重要！）
+                try {
+                  await prerenderDashboard();
+                  console.log('[Login] ✓ Dashboard 預渲染完成');
+                } catch (e) {
+                  console.warn('[Login] ⚠ 預渲染失敗', e);
+                }
                 
                 // 啟動後台預加載（P2/P3），不等待
                 setTimeout(() => {
@@ -145,6 +153,7 @@
                 }, 100);
                 
                 // 短暫延遲後跳轉（讓用戶看到成功提示）
+                submitBtn.textContent = '✓ 即將進入...';
                 setTimeout(() => {
                   location.assign(redirect || fallback);
                 }, 300);
@@ -188,6 +197,24 @@
           // ℹ 策略：不在登入前預加載（因為所有 API 都需要認證）
           // 改為：登入成功後立即加載核心數據（P0+P1），然後再跳轉
           console.log('[Login] ℹ️ 等待用戶登入後再加載數據（避免 401 錯誤）');
+          
+          // ⚡ 預渲染 Dashboard（簡化版：只調用 API 觸發緩存）
+          async function prerenderDashboard() {
+            const onProdHost = location.hostname.endsWith('horgoscpa.com');
+            const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+            
+            try {
+              // 調用 dashboard API（會被 fetch 攔截器緩存）
+              const res = await fetch(apiBase + '/dashboard', { credentials: 'include' });
+              if (res.ok) {
+                const json = await res.json();
+                console.log('[Login] ✓ Dashboard 數據已加載並緩存');
+                return json;
+              }
+            } catch (e) {
+              console.warn('[Login] ⚠ Dashboard 數據加載失敗', e);
+            }
+          }
           
           // 📊 創建狀態指示器（右下角小圖標，不阻塞）
           function createStatusIndicator() {
