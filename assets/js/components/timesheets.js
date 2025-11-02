@@ -603,17 +603,17 @@ function renderTable() {
   
   tbody.innerHTML = '';
   
+  // ⚡ 标记开始渲染（包括空状态）
+  tbody.dataset.rendering = 'true';
+  
   if (state.rows.length === 0) {
     const colspan = state.isAdmin ? 13 : 12;
     tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state">尚無工時記錄，點擊右上角「新增列」開始填寫</td></tr>`;
     updateWeeklySummary();
     updateDailyNormalHours();
-    renderCompleteness();
+    renderCompleteness(); // 会触发保存事件（即使是空状态）
     return;
   }
-
-  // ⚡ 标记开始渲染真实数据
-  tbody.dataset.rendering = 'true';
   
   state.rows.forEach((row, rowIndex) => {
     const tr = document.createElement('tr');
