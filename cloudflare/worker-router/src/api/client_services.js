@@ -19,6 +19,74 @@ export async function handleClientServices(request, env, me, requestId, url, pat
   const corsHeaders = getCorsHeadersForRequest(request, env);
   const method = request.method.toUpperCase();
 
+  // POST /internal/api/v1/client-services - 创建客户服务关系
+  if (path === "/internal/api/v1/client-services" && method === "POST") {
+    let body;
+    try { body = await request.json(); } catch (_) {
+      return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
+    }
+    
+    const clientId = String(body?.client_id || "").trim();
+    const serviceId = parseInt(body?.service_id, 10);
+    const status = String(body?.status || "active").trim();
+    
+    if (!clientId) {
+      return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"客戶ID必填", meta:{ requestId } }, corsHeaders);
+    }
+    if (!Number.isFinite(serviceId) || serviceId <= 0) {
+      return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"服務ID無效", meta:{ requestId } }, corsHeaders);
+    }
+    
+    try {
+      // 檢查客戶是否存在
+      const client = await env.DATABASE.prepare("SELECT 1 FROM Clients WHERE client_id = ? AND is_deleted = 0").bind(clientId).first();
+      if (!client) {
+        return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"客戶不存在", meta:{ requestId } }, corsHeaders);
+      }
+      
+      // 檢查服務是否存在
+      const service = await env.DATABASE.prepare("SELECT 1 FROM Services WHERE service_id = ? AND is_active = 1").bind(serviceId).first();
+      if (!service) {
+        return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"服務類型不存在", meta:{ requestId } }, corsHeaders);
+      }
+      
+      // 檢查是否已存在
+      const existing = await env.DATABASE.prepare(
+        "SELECT client_service_id FROM ClientServices WHERE client_id = ? AND service_id = ? AND is_deleted = 0"
+      ).bind(clientId, serviceId).first();
+      
+      if (existing) {
+        return jsonResponse(200, { 
+          ok:true, 
+          code:"EXISTS", 
+          message:"客戶服務關係已存在", 
+          data:{ client_service_id: existing.client_service_id },
+          meta:{ requestId } 
+        }, corsHeaders);
+      }
+      
+      // 創建新關係
+      const result = await env.DATABASE.prepare(`
+        INSERT INTO ClientServices (client_id, service_id, status, created_at)
+        VALUES (?, ?, ?, datetime('now'))
+      `).bind(clientId, serviceId, status).run();
+      
+      const clientServiceId = result.meta.last_row_id;
+      
+      return jsonResponse(201, {
+        ok:true,
+        code:"CREATED",
+        message:"已建立客戶服務關係",
+        data:{ client_service_id: clientServiceId },
+        meta:{ requestId }
+      }, corsHeaders);
+      
+    } catch (err) {
+      console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+      return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+    }
+  }
+  
   // GET list: /internal/api/v1/client-services?status=active&q=...
   if (path === "/internal/api/v1/client-services" && method === "GET") {
     try {
