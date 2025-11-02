@@ -423,7 +423,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             l.reason,
             l.user_id,
             u.name as user_name
-          FROM Leaves l
+          FROM LeaveRequests l
           LEFT JOIN Users u ON u.user_id = l.user_id
           WHERE l.applied_at >= datetime('now', '-${days} days')
             ${userFilter3}
@@ -469,7 +469,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
                 SELECT u.user_id, u.name, dates.work_date
                 FROM Users u
                 CROSS JOIN (${dates.map(d => `SELECT '${d}' as work_date`).join(' UNION ALL ')}) dates
-                WHERE u.is_active = 1 ${userFilterForTimesheet}
+                WHERE u.is_deleted = 0 ${userFilterForTimesheet}
               )
               SELECT 
                 aud.user_id,
@@ -650,7 +650,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         const usersResult = await env.DATABASE.prepare(`
           SELECT user_id, name, email
           FROM Users
-          WHERE is_active = 1
+          WHERE is_deleted = 0
           ORDER BY name ASC
         `).all();
         res.teamMembers = (usersResult?.results || []).map(u => ({
