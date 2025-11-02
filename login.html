@@ -308,11 +308,47 @@
               return null;
             }).then(json => {
               if (json && json.ok && json.data) {
-                // 有效 session，自動跳轉到儀表板（不顯示提示，避免混淆）
-                console.log('[Login] 檢測到有效 session，自動跳轉到儀表板');
-                setTimeout(() => {
+                // 有效 session，顯示提示（用戶可以選擇是否進入）
+                const userName = json.data.username || json.data.name || '用戶';
+                const hint = document.createElement('div');
+                hint.style.cssText = `
+                  position: fixed;
+                  top: 20px;
+                  right: 20px;
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  color: white;
+                  padding: 16px 24px;
+                  border-radius: 12px;
+                  font-size: 14px;
+                  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+                  z-index: 1000;
+                  cursor: pointer;
+                  transition: all 0.3s;
+                  max-width: 300px;
+                `;
+                hint.innerHTML = `
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <span style="font-size:24px;">✓</span>
+                    <div>
+                      <div style="font-weight:600;margin-bottom:4px;">已登入為：${userName}</div>
+                      <div style="font-size:12px;opacity:0.9;">點擊直接進入系統</div>
+                    </div>
+                  </div>
+                `;
+                hint.onclick = () => {
                   location.assign(onProdHost ? '/internal/dashboard' : 'https://www.horgoscpa.com/internal/dashboard');
-                }, 500);
+                };
+                hint.onmouseenter = () => {
+                  hint.style.transform = 'translateY(-2px) scale(1.02)';
+                  hint.style.boxShadow = '0 12px 32px rgba(0,0,0,0.3)';
+                };
+                hint.onmouseleave = () => {
+                  hint.style.transform = 'translateY(0) scale(1)';
+                  hint.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
+                };
+                document.body.appendChild(hint);
+                
+                console.log('[Login] 檢測到有效 session:', userName);
               }
             }).catch(() => {
               // 完全靜默處理錯誤（401等正常錯誤）
