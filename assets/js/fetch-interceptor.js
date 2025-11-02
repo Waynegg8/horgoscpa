@@ -54,8 +54,6 @@
     '/knowledge/sops?perPage=200': 'sop_list',
     '/knowledge/faqs?perPage=200': 'faq_list',
     '/knowledge/documents?perPage=200': 'documents_list',
-    '/cms/posts?perPage=100': 'cms_posts',
-    '/cms/resources?perPage=100': 'cms_resources',
     '/attachments?perPage=100': 'attachments_recent',
   };
 

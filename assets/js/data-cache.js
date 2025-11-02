@@ -73,10 +73,6 @@
     reports_overview: ONE_HOUR,
     reports_financial: ONE_HOUR,
     
-    // === CMS內容 ===
-    cms_posts: ONE_HOUR,
-    cms_resources: ONE_HOUR,
-    
     // === 附件系統 ===
     attachments_recent: ONE_HOUR,
   };
@@ -218,8 +214,13 @@
       });
 
       if (res.status === 401) {
-        console.warn(`[DataCache] 未授權: ${endpoint}`);
+        // 401 錯誤靜默處理，不影響其他請求
         return { error: 'UNAUTHORIZED', fromCache: false };
+      }
+
+      // 對於404和422錯誤，也靜默處理
+      if (res.status === 404 || res.status === 422) {
+        return { error: `HTTP_${res.status}`, fromCache: false };
       }
 
       const json = await res.json();
@@ -229,15 +230,14 @@
         setCache(cacheKey, data);
         return { data, fromCache: false };
       } else {
-        console.warn(`[DataCache] API 錯誤: ${endpoint}`, json);
+        // API錯誤靜默處理
         return { error: json.message || 'API_ERROR', fromCache: false };
       }
     } catch (err) {
-      console.error(`[DataCache] 請求失敗: ${endpoint}`, err);
+      // 網絡錯誤和JSON解析錯誤都靜默處理
       // 如果有緩存（即使過期），在網絡失敗時也返回
       const staleCache = getCache(cacheKey);
       if (staleCache !== null) {
-        console.log(`[DataCache] 使用過期緩存: ${cacheKey}`);
         return { data: staleCache, fromCache: true, stale: true };
       }
       return { error: 'NETWORK_ERROR', fromCache: false };
@@ -245,7 +245,7 @@
   }
 
   /**
-   * 預加載所有關鍵數據（包含管理員專用數據）
+   * 預加載所有關鍵數據（按優先級順序加載）
    */
   async function preloadAll(options = {}) {
     if (preloadStatus.isPreloading) {
@@ -255,134 +255,132 @@
 
     const adminMode = options.adminMode !== false; // 默認啟用管理員模式
     
-    console.log(`[DataCache] 開始預加載${adminMode ? '（管理員完整模式）' : '（基礎模式）'}...`);
+    console.log(`[DataCache] 開始分波預加載${adminMode ? '（管理員完整模式）' : '（基礎模式）'}...`);
     preloadStatus.isPreloading = true;
     preloadStatus.completed = [];
     preloadStatus.failed = [];
     
-    // === 第1波：核心基礎數據（立即需要）===
-    const wave1Tasks = [
-      { key: 'me', endpoint: '/auth/me' },
-      { key: 'users', endpoint: '/users' },
-      { key: 'tags', endpoint: '/tags' },
-      { key: 'settings', endpoint: '/settings' },
-      { key: 'holidays', endpoint: '/holidays' },
+    // ===== 優先級設定 =====
+    // 🔥 P0: 最高優先級 - 儀表板、工時、任務（立即加載，串行）
+    // ⚡ P1: 高優先級 - 核心數據（並行加載）
+    // 📊 P2: 中優先級 - 客戶、收據（並行加載）
+    // 📁 P3: 低優先級 - 其他數據（並行加載，延遲100ms）
+    
+    // 🔥 P0: 最高優先級（串行加載，確保最快）
+    const p0Tasks = [
+      { key: 'dashboard', endpoint: '/dashboard', priority: 'P0' },
+      { key: 'timesheets_recent', endpoint: '/timesheets?limit=200', priority: 'P0' },
+      { key: 'tasks_pending', endpoint: '/tasks?perPage=100&status=pending', priority: 'P0' },
     ];
     
-    // === 第2波：客戶相關數據 ===
-    const wave2Tasks = [
-      { key: 'clients_all', endpoint: '/clients?perPage=2000' },
-      { key: 'clients_page1', endpoint: '/clients?page=1&perPage=50' },
-      { key: 'clients_page2', endpoint: '/clients?page=2&perPage=50' },
-      { key: 'clients_page3', endpoint: '/clients?page=3&perPage=50' },
-      { key: 'services_types', endpoint: '/services' },
+    // ⚡ P1: 高優先級（並行加載）
+    const p1Tasks = [
+      { key: 'me', endpoint: '/auth/me', priority: 'P1' },
+      { key: 'users', endpoint: '/users', priority: 'P1' },
+      { key: 'tasks_all', endpoint: '/tasks?perPage=200', priority: 'P1' },
+      { key: 'tasks_in_progress', endpoint: '/tasks?perPage=100&status=in_progress', priority: 'P1' },
+      { key: 'timesheets_summary', endpoint: '/timesheets/summary', priority: 'P1' },
     ];
     
-    // === 第3波：儀表板與統計 ===
-    const wave3Tasks = [
-      { key: 'dashboard', endpoint: '/dashboard' },
-      { key: 'dashboard_stats', endpoint: '/dashboard?stats=true' },
+    // 📊 P2: 中優先級（並行加載）
+    const p2Tasks = [
+      { key: 'clients_all', endpoint: '/clients?perPage=2000', priority: 'P2' },
+      { key: 'clients_page1', endpoint: '/clients?page=1&perPage=50', priority: 'P2' },
+      { key: 'receipts_all', endpoint: '/receipts?perPage=200', priority: 'P2' },
+      { key: 'receipts_unpaid', endpoint: '/receipts?perPage=100&status=unpaid', priority: 'P2' },
+      { key: 'receipts_statistics', endpoint: '/receipts/statistics', priority: 'P2' },
+      { key: 'tags', endpoint: '/tags', priority: 'P2' },
+      { key: 'settings', endpoint: '/settings', priority: 'P2' },
     ];
     
-    // === 第4波：任務系統（高頻訪問）===
-    const wave4Tasks = [
-      { key: 'tasks_all', endpoint: '/tasks?perPage=200' },
-      { key: 'tasks_pending', endpoint: '/tasks?perPage=100&status=pending' },
-      { key: 'tasks_in_progress', endpoint: '/tasks?perPage=100&status=in_progress' },
-      { key: 'tasks_completed', endpoint: '/tasks?perPage=50&status=completed' },
-      { key: 'task_templates', endpoint: '/task-templates?perPage=100' },
+    // 📁 P3: 低優先級（並行加載，延遲啟動）
+    const p3Tasks = [
+      { key: 'holidays', endpoint: '/holidays', priority: 'P3' },
+      { key: 'clients_page2', endpoint: '/clients?page=2&perPage=50', priority: 'P3' },
+      { key: 'clients_page3', endpoint: '/clients?page=3&perPage=50', priority: 'P3' },
+      { key: 'services_types', endpoint: '/services', priority: 'P3' },
+      { key: 'tasks_completed', endpoint: '/tasks?perPage=50&status=completed', priority: 'P3' },
+      { key: 'receipts_aging', endpoint: '/receipts/aging-report', priority: 'P3' },
+      { key: 'leaves_all', endpoint: '/leaves?perPage=200', priority: 'P3' },
+      { key: 'leaves_pending', endpoint: '/leaves?perPage=50&status=pending', priority: 'P3' },
+      { key: 'leaves_balances', endpoint: '/leaves/balances', priority: 'P3' },
+      { key: 'automation_rules', endpoint: '/automation/rules', priority: 'P3' },
+      // 註：以下端點暫時移除，因為API尚未實現或需要特定參數
+      // { key: 'dashboard_stats', endpoint: '/dashboard?stats=true', priority: 'P3' },
+      // { key: 'task_templates', endpoint: '/task-templates?perPage=100', priority: 'P3' },
+      // { key: 'payroll_latest', endpoint: '/payroll?perPage=100', priority: 'P3' },
+      // { key: 'payroll_summary', endpoint: '/payroll/summary', priority: 'P3' },
+      // { key: 'costs_summary', endpoint: '/costs/summary', priority: 'P3' },
+      // { key: 'costs_by_client', endpoint: '/costs/by-client', priority: 'P3' },
+      // { key: 'costs_by_employee', endpoint: '/costs/by-employee', priority: 'P3' },
+      // { key: 'sop_list', endpoint: '/knowledge/sops?perPage=200', priority: 'P3' },
+      // { key: 'faq_list', endpoint: '/knowledge/faqs?perPage=200', priority: 'P3' },
+      // { key: 'documents_list', endpoint: '/knowledge/documents?perPage=200', priority: 'P3' },
+      // { key: 'billing_schedules', endpoint: '/billing/schedules?perPage=200', priority: 'P3' },
+      // { key: 'reports_overview', endpoint: '/reports/overview', priority: 'P3' },
+      // { key: 'attachments_recent', endpoint: '/attachments?perPage=100', priority: 'P3' },
     ];
     
-    // === 第5波：收據與財務（高頻訪問）===
-    const wave5Tasks = [
-      { key: 'receipts_all', endpoint: '/receipts?perPage=200' },
-      { key: 'receipts_unpaid', endpoint: '/receipts?perPage=100&status=unpaid' },
-      { key: 'receipts_statistics', endpoint: '/receipts/statistics' },
-      { key: 'receipts_aging', endpoint: '/receipts/aging-report' },
-    ];
-    
-    // === 第6波：工時與假期 ===
-    const wave6Tasks = [
-      { key: 'timesheets_recent', endpoint: '/timesheets?limit=200' },
-      { key: 'timesheets_summary', endpoint: '/timesheets/summary' },
-      { key: 'leaves_all', endpoint: '/leaves?perPage=200' },
-      { key: 'leaves_pending', endpoint: '/leaves?perPage=50&status=pending' },
-      { key: 'leaves_balances', endpoint: '/leaves/balances' },
-    ];
-    
-    // === 第7波：薪資與成本 ===
-    const wave7Tasks = [
-      { key: 'payroll_latest', endpoint: '/payroll?perPage=100' },
-      { key: 'payroll_summary', endpoint: '/payroll/summary' },
-      { key: 'costs_summary', endpoint: '/costs/summary' },
-      { key: 'costs_by_client', endpoint: '/costs/by-client' },
-      { key: 'costs_by_employee', endpoint: '/costs/by-employee' },
-    ];
-    
-    // === 第8波：知識庫與文檔 ===
-    const wave8Tasks = [
-      { key: 'sop_list', endpoint: '/knowledge/sops?perPage=200' },
-      { key: 'faq_list', endpoint: '/knowledge/faqs?perPage=200' },
-      { key: 'documents_list', endpoint: '/knowledge/documents?perPage=200' },
-    ];
-    
-    // === 第9波：自動化與報表 ===
-    const wave9Tasks = [
-      { key: 'automation_rules', endpoint: '/automation/rules' },
-      { key: 'billing_schedules', endpoint: '/billing/schedules?perPage=200' },
-      { key: 'reports_overview', endpoint: '/reports/overview' },
-    ];
-    
-    // === 第10波：CMS內容與附件 ===
-    const wave10Tasks = [
-      { key: 'cms_posts', endpoint: '/cms/posts?perPage=100' },
-      { key: 'cms_resources', endpoint: '/cms/resources?perPage=100' },
-      { key: 'attachments_recent', endpoint: '/attachments?perPage=100' },
-    ];
-    
-    // 組合所有任務
-    const allWaves = [
-      ...wave1Tasks,  // 核心（5項）
-      ...wave2Tasks,  // 客戶（5項）
-      ...wave3Tasks,  // 儀表板（2項）
-      ...wave4Tasks,  // 任務（5項）
-      ...wave5Tasks,  // 收據（4項）
-      ...wave6Tasks,  // 工時假期（5項）
-      ...wave7Tasks,  // 薪資成本（5項）
-      ...wave8Tasks,  // 知識庫（3項）
-      ...wave9Tasks,  // 自動化（3項）
-      ...wave10Tasks, // CMS附件（3項）
-    ];
-    
-    const basicTasks = [...wave1Tasks, ...wave2Tasks]; // 基礎模式：10項
-    const adminFullTasks = allWaves; // 管理員完整模式：40項
-    
-    const tasks = adminMode ? adminFullTasks : basicTasks;
+    const allTasks = [...p0Tasks, ...p1Tasks, ...p2Tasks, ...p3Tasks];
+    const basicTasks = [...p0Tasks, ...p1Tasks]; // 基礎模式：8項
+    const tasks = adminMode ? allTasks : basicTasks;
     preloadStatus.total = tasks.length;
 
-    // 並行加載所有數據
-    const results = await Promise.allSettled(
-      tasks.map(async task => {
-        const startTime = Date.now();
-        const result = await fetchWithCache(task.endpoint, task.key, { forceRefresh: options.forceRefresh });
-        const duration = Date.now() - startTime;
-        
-        if (result.error) {
-          preloadStatus.failed.push(task.key);
-          console.warn(`[DataCache] ✗ ${task.key} 加載失敗 (${duration}ms)`, result.error);
-        } else {
-          preloadStatus.completed.push(task.key);
-          console.log(`[DataCache] ✓ ${task.key} 加載完成 (${duration}ms)${result.fromCache ? ' [緩存]' : ' [網絡]'}`);
+    // 加載單個任務
+    async function loadTask(task) {
+      const startTime = Date.now();
+      const result = await fetchWithCache(task.endpoint, task.key, { forceRefresh: options.forceRefresh });
+      const duration = Date.now() - startTime;
+      
+      if (result.error) {
+        preloadStatus.failed.push(task.key);
+        // 只在開發模式下顯示錯誤（靜默失敗）
+        if (result.error !== 'HTTP_404' && result.error !== 'HTTP_422') {
+          console.debug(`[DataCache] ${task.priority} ✗ ${task.key} 跳過 (${duration}ms)`);
         }
-        
-        return result;
-      })
-    );
+      } else {
+        preloadStatus.completed.push(task.key);
+        console.log(`[DataCache] ${task.priority} ✓ ${task.key} (${duration}ms)${result.fromCache ? ' [緩存]' : ''}`);
+      }
+      
+      return result;
+    }
+
+    // 🔥 第1階段：P0 最高優先級（串行加載，確保最快響應）
+    console.log('[DataCache] 🔥 P0階段：加載儀表板、工時表、任務...');
+    for (const task of p0Tasks) {
+      await loadTask(task);
+    }
+    
+    // ⚡ 第2階段：P1 高優先級（並行加載）
+    if (adminMode || p1Tasks.length > 0) {
+      console.log('[DataCache] ⚡ P1階段：加載核心數據...');
+      await Promise.allSettled(p1Tasks.map(task => loadTask(task)));
+    }
+    
+    // 📊 第3階段：P2 中優先級（並行加載）
+    if (adminMode) {
+      console.log('[DataCache] 📊 P2階段：加載客戶與收據...');
+      await Promise.allSettled(p2Tasks.map(task => loadTask(task)));
+    }
+    
+    // 📁 第4階段：P3 低優先級（並行加載，稍微延遲）
+    if (adminMode) {
+      console.log('[DataCache] 📁 P3階段：加載其他數據...');
+      // 延遲100ms，讓高優先級的數據先完全處理
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await Promise.allSettled(p3Tasks.map(task => loadTask(task)));
+    }
 
     preloadStatus.isPreloading = false;
     preloadStatus.lastPreloadTime = Date.now();
     
-    console.log(`[DataCache] 預加載完成: ${preloadStatus.completed.length}/${preloadStatus.total} 成功`);
+    const successCount = preloadStatus.completed.length;
+    const totalCount = preloadStatus.total;
+    const failCount = preloadStatus.failed.length;
+    
+    console.log(`[DataCache] ✅ 預加載完成: ${successCount}/${totalCount} 成功${failCount > 0 ? `, ${failCount} 跳過` : ''}`);
+    console.log(`[DataCache] 📊 階段: P0=${p0Tasks.length}, P1=${p1Tasks.length}, P2=${p2Tasks.length}, P3=${p3Tasks.length}`);
     
     // 發送自定義事件通知預加載完成
     window.dispatchEvent(new CustomEvent('datacache:preload:complete', {
@@ -396,7 +394,7 @@
     // 啟動循環預加載（1小時後自動刷新）
     startCyclicPreload(adminMode);
 
-    return results;
+    return { completed: preloadStatus.completed, failed: preloadStatus.failed };
   }
 
   /**
