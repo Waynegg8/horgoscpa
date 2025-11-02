@@ -122,11 +122,11 @@ export default {
 		const result = await handleTimesheetStats(request, env, path);
 		if (result) return result;
 	}
-		if (path === "/internal/api/v1/receipts") {
-			const me = await getSessionUser(request, env);
-			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
-			return handleReceipts(request, env, me, requestId, url);
-		}
+	if (path === "/internal/api/v1/receipts" || path.startsWith("/internal/api/v1/receipts/")) {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		return handleReceipts(request, env, me, requestId, url);
+	}
 	if (path === "/internal/api/v1/attachments" || path.startsWith("/internal/api/v1/attachments/")) {
 		const me = await getSessionUser(request, env);
 		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
