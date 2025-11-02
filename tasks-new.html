@@ -700,13 +700,13 @@
       
       // 根據scope篩選SOP
       const filteredSOPs = sops.filter(sop => {
-        const scope = sop.scope || 'both';
+        const scope = sop.scope;
         if (sopSelectorMode === 'service') {
-          // 服務層級：只顯示 service 或 both
-          return scope === 'service' || scope === 'both';
+          // 服務層級：只顯示 service
+          return scope === 'service';
         } else {
-          // 任務層級：只顯示 task 或 both
-          return scope === 'task' || scope === 'both';
+          // 任務層級：只顯示 task
+          return scope === 'task';
         }
       });
       

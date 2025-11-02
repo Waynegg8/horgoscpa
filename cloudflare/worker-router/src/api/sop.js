@@ -14,14 +14,18 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 				return jsonResponse(400, { ok:false, code:"VALIDATION_ERROR", message:"標題和內容為必填", meta:{ requestId } }, corsHeaders);
 			}
 			
+			// 驗證scope必須為service或task
+			if (!scope || (scope !== 'service' && scope !== 'task')) {
+				return jsonResponse(400, { ok:false, code:"VALIDATION_ERROR", message:"必須指定SOP適用層級（service或task）", meta:{ requestId } }, corsHeaders);
+			}
+			
 			const tagsJson = JSON.stringify(Array.isArray(tags) ? tags : []);
-			const scopeValue = scope || 'both'; // 默認為 both（兩者皆可）
 			const now = new Date().toISOString();
 			
 			const result = await env.DATABASE.prepare(
 				`INSERT INTO SOPDocuments (title, content, category, tags, scope, version, is_published, created_by, created_at, updated_at, is_deleted)
 				 VALUES (?, ?, ?, ?, ?, 1, 1, ?, ?, ?, 0)`
-			).bind(title, content, category || '', tagsJson, scopeValue, String(me.user_id), now, now).run();
+			).bind(title, content, category || '', tagsJson, scope, String(me.user_id), now, now).run();
 			
 			const sopId = result.meta.last_row_id;
 			
@@ -71,7 +75,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 				id: r.sop_id,
 				title: r.title,
 				category: r.category || "",
-				scope: r.scope || "both",
+				scope: r.scope || null,
 				tags: (() => { try { return JSON.parse(r.tags || "[]"); } catch(_) { return []; } })(),
 				version: Number(r.version || 1),
 				isPublished: r.is_published === 1,
@@ -106,7 +110,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 				title: row.title,
 				content: row.content || "",
 				category: row.category || "",
-				scope: row.scope || "both",
+				scope: row.scope || null,
 				tags: (() => { try { return JSON.parse(row.tags || "[]"); } catch(_) { return []; } })(),
 				version: Number(row.version || 1),
 				isPublished: row.is_published === 1,
@@ -135,14 +139,19 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			}
 			
 			const tagsJson = JSON.stringify(Array.isArray(tags) ? tags : []);
-			const scopeValue = scope || 'both'; // 默認為 both（兩者皆可）
+			
+			// 驗證scope必須為service或task
+			if (!scope || (scope !== 'service' && scope !== 'task')) {
+				return jsonResponse(400, { ok:false, code:"VALIDATION_ERROR", message:"必須指定SOP適用層級（service或task）", meta:{ requestId } }, corsHeaders);
+			}
+			
 			const now = new Date().toISOString();
 			
 			await env.DATABASE.prepare(
 				`UPDATE SOPDocuments 
 				 SET title = ?, content = ?, category = ?, tags = ?, scope = ?, updated_at = ?, version = version + 1
 				 WHERE sop_id = ? AND is_deleted = 0`
-			).bind(title, content, category || '', tagsJson, scopeValue, now, sopId).run();
+			).bind(title, content, category || '', tagsJson, scope, now, sopId).run();
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"更新成功", data:{ sop_id: sopId }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
