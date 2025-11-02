@@ -525,18 +525,27 @@
       }
     }
     
-    async function loadSOPs(category = null) {
+    async function loadSOPs(category = null, scope = null) {
       try {
         let url = `${apiBase}/sop?perPage=200`;
         if (category) {
           url += `&category=${encodeURIComponent(category)}`;
         }
+        if (scope) {
+          url += `&scope=${encodeURIComponent(scope)}`;
+        }
+        
+        console.log('[loadSOPs] URL:', url);
+        
         const res = await fetch(url, { credentials: 'include' });
         if (res.status === 401) return;
         const json = await res.json();
         
+        console.log('[loadSOPs] Response:', json);
+        
         if (json.ok && Array.isArray(json.data)) {
           sops = json.data;
+          console.log('[loadSOPs] Loaded:', sops.length, 'SOPs');
         }
       } catch (err) {
         console.error('載入SOP列表失敗:', err);
@@ -707,17 +716,21 @@
       }
       
       // 根據服務類型獲取對應的category
-      const selectedService = services.find(s => s.service_id == serviceId);
+      const selectedService = services.find(s => String(s.service_id) === String(serviceId));
       const serviceCode = selectedService?.service_code || '';
       
-      // 重新載入對應category的SOP
-      await loadSOPs(serviceCode);
+      console.log('[Task SOP] serviceId:', serviceId, 'serviceCode:', serviceCode);
+      
+      // 重新載入對應category和scope的SOP（直接在API层筛选）
+      await loadSOPs(serviceCode, 'task');
       
       sopSelectorMode = 'task';
       currentSOPTaskId = taskId;
       const modal = document.getElementById('sopModal');
       modal.style.display = 'flex';
       document.querySelector('#sopModal h3').textContent = `選擇任務SOP（${selectedService?.service_name || '通用'}）`;
+      
+      console.log('[Task SOP] Loaded SOPs:', sops.length);
       
       // 渲染SOP列表
       renderSOPList();
@@ -731,17 +744,21 @@
       }
       
       // 根據服務類型獲取對應的category
-      const selectedService = services.find(s => s.service_id == serviceId);
+      const selectedService = services.find(s => String(s.service_id) === String(serviceId));
       const serviceCode = selectedService?.service_code || '';
       
-      // 重新載入對應category的SOP
-      await loadSOPs(serviceCode);
+      console.log('[Service SOP] serviceId:', serviceId, 'serviceCode:', serviceCode);
+      
+      // 重新載入對應category和scope的SOP（直接在API层筛选）
+      await loadSOPs(serviceCode, 'service');
       
       sopSelectorMode = 'service';
       currentSOPTaskId = null;
       const modal = document.getElementById('sopModal');
       modal.style.display = 'flex';
       document.querySelector('#sopModal h3').textContent = `選擇服務層級SOP（${selectedService?.service_name || '通用'}）`;
+      
+      console.log('[Service SOP] Loaded SOPs:', sops.length);
       
       // 渲染SOP列表
       renderSOPList();
@@ -758,20 +775,10 @@
         ? serviceLevelSOPIds 
         : (selectedSOPs[currentSOPTaskId] || []);
       
-      // 根據scope篩選SOP
-      const filteredSOPs = sops.filter(sop => {
-        const scope = sop.scope;
-        if (sopSelectorMode === 'service') {
-          // 服務層級：只顯示 service
-          return scope === 'service';
-        } else {
-          // 任務層級：只顯示 task
-          return scope === 'task';
-        }
-      });
+      // API已經做了scope和category篩選，這裡只需要排序
+      const sortedSOPs = sops.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
       
-      // 按標題排序（不需要分類，因為已經在特定服務下）
-      const sortedSOPs = filteredSOPs.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+      console.log('[renderSOPList] mode:', sopSelectorMode, 'SOPs:', sortedSOPs.length);
       
       // 直接渲染SOP列表
       const html = sortedSOPs.map(sop => {
@@ -788,7 +795,7 @@
         `;
       }).join('');
       
-      listContainer.innerHTML = html || '<div style="text-align:center;padding:24px;color:#9ca3af;">暫無適用的SOP文檔</div>';
+      listContainer.innerHTML = html || `<div style="text-align:center;padding:24px;color:#9ca3af;">暫無適用於此服務的${sopSelectorMode === 'service' ? '服務層級' : '任務層級'}SOP文檔</div>`;
     }
     
     function toggleCategory(categoryId) {
