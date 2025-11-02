@@ -452,9 +452,10 @@
           console.log('[Dashboard] Employee Hours:', empHours);
           console.log('[Dashboard] Receipts Pending:', receiptsPending);
           
-          // 1. 各员工任务状态（列表形式，带月份筛选）
+          // 1. 各员工任务状态（列表形式，带智能月份筛选）
+          // 智能筛选说明：已完成任务只显示选定月份的，未完成任务显示所有月份的
           const tasksFrag = document.createElement('div');
-          tasksFrag.innerHTML = listCardWithMonthDropdown('各員工任務狀態', tasksHtml, currentYm);
+          tasksFrag.innerHTML = listCardWithMonthDropdown('各員工任務狀態 <span style="font-size:12px;color:#6b7280;font-weight:400;">(已完成僅顯示選定月份)</span>', tasksHtml, currentYm);
           const tasksCard = tasksFrag.firstElementChild;
           rightColumn.appendChild(tasksCard);
           
