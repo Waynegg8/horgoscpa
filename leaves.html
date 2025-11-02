@@ -387,6 +387,13 @@
         let state = { page:1, perPage:20, total:0, isAdmin: false, selectedUserId: null };
 
         async function loadBalances(){
+          // ⚡ 如果有预渲染内容，跳过清空
+          const main = document.getElementById('leavesMain');
+          if (main && main.dataset.prerendered === 'consumed') {
+            console.log('[Leaves] ⚡ 保留预渲染内容，跳过 loadBalances');
+            return;
+          }
+          
           balanceEl.innerHTML = '';
           const year = new Date().getFullYear();
           try {
@@ -435,6 +442,14 @@
         }
 
         function renderRows(rows){
+          // ⚡ 如果有预渲染内容，跳过清空和渲染
+          const main = document.getElementById('leavesMain');
+          if (main && main.dataset.prerendered === 'consumed') {
+            console.log('[Leaves] ⚡ 保留预渲染内容，跳过 renderRows');
+            main.dataset.prerendered = 'used'; // 标记为已使用
+            return;
+          }
+          
           tbody.innerHTML = '';
           rows.forEach(r => {
             const tr = document.createElement('tr');

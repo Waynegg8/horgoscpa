@@ -581,6 +581,14 @@ function renderWeekHeader() {
 
 function renderTable() {
   const tbody = document.getElementById('timesheetBody');
+  
+  // ⚡ 如果有预渲染内容且未使用，跳过渲染
+  if (tbody.dataset.prerendered === 'consumed') {
+    console.log('[Timesheets] ⚡ 保留预渲染内容，跳过 renderTable');
+    tbody.dataset.prerendered = 'used'; // 标记为已使用
+    return;
+  }
+  
   tbody.innerHTML = '';
   
   if (state.rows.length === 0) {
