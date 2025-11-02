@@ -530,46 +530,46 @@
 
     <!-- 筛选区域 -->
     <section class="filters" style="padding:12px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
-      <div style="flex:1;min-width:220px;">
+      <div style="flex:1;min-width:180px;max-width:240px;">
         <label for="q" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">搜尋</label>
         <input id="q" type="search" placeholder="搜尋標題/內容…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;" />
       </div>
-      <div>
+      <div style="width:150px;">
         <label for="category" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">服務類型</label>
-        <select id="category" aria-label="分類" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:180px;">
+        <select id="category" aria-label="分類" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;">
           <option value="all">全部</option>
           <!-- 動態加載服務類型 -->
         </select>
       </div>
-      <div>
-        <label for="scope" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">服務層級</label>
-        <select id="scope" aria-label="服務層級" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:150px;">
+      <div style="width:115px;">
+        <label for="scope" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">層級</label>
+        <select id="scope" aria-label="服務層級" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;">
           <option value="">全部層級</option>
-          <option value="service">🔷 服務層級</option>
-          <option value="task">📋 任務層級</option>
+          <option value="service">🔷 服務</option>
+          <option value="task">📋 任務</option>
         </select>
       </div>
-      <div>
+      <div style="width:150px;">
         <label for="client" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">客戶</label>
-        <select id="client" aria-label="客戶" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:180px;">
+        <select id="client" aria-label="客戶" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;">
           <option value="all">全部客戶</option>
           <!-- 動態加載客戶清單 -->
         </select>
       </div>
-      <div>
+      <div style="width:95px;">
         <label for="year" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">年度</label>
-        <select id="year" aria-label="年度" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:120px;">
-          <option value="all">全部年度</option>
-          <option value="2026">2026年</option>
-          <option value="2025">2025年</option>
-          <option value="2024">2024年</option>
-          <option value="2023">2023年</option>
+        <select id="year" aria-label="年度" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;">
+          <option value="all">全部</option>
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
         </select>
       </div>
-      <div>
+      <div style="width:95px;">
         <label for="month" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">月份</label>
-        <select id="month" aria-label="月份" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:120px;">
-          <option value="all">全部月份</option>
+        <select id="month" aria-label="月份" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;">
+          <option value="all">全部</option>
           <option value="1">1月</option>
           <option value="2">2月</option>
           <option value="3">3月</option>
@@ -584,20 +584,20 @@
           <option value="12">12月</option>
         </select>
       </div>
-      <div style="flex:1;min-width:220px;">
-        <label for="tags" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">篩選標籤</label>
+      <div style="width:140px;">
+        <label for="tags" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">標籤</label>
         <select id="tags" aria-label="標籤" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;">
-          <option value="">全部標籤</option>
+          <option value="">全部</option>
           <!-- 標籤選項會動態載入 -->
         </select>
       </div>
       <div>
         <label style="display:block;margin-bottom:6px;color:transparent;font-size:12px;">​</label>
-        <button type="button" onclick="openTagManager()" class="btn" style="padding:10px 16px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;">
+        <button type="button" onclick="openTagManager()" class="btn" style="padding:10px 14px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;white-space:nowrap;">
           🏷️ 管理標籤
         </button>
       </div>
-      <div class="toolbar-spacer" style="flex:1;"></div>
+      <div style="flex:1;"></div>
       <div style="display:flex;gap:8px;align-items:center;">
         <button id="btn-edit" class="btn" type="button" style="display:none;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">✏️ 編輯</button>
         <button id="btn-delete" class="btn" type="button" style="display:none;background:#fee;color:#dc2626;border:1px solid #fca;">🗑️ 刪除</button>
