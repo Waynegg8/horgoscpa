@@ -193,12 +193,24 @@
   <div id="statusModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
     <div style="background: white; border-radius: 8px; padding: 24px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="margin: 0;">更新狀態說明</h3>
+        <h3 style="margin: 0;">更新狀態</h3>
         <button onclick="closeStatusModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
       </div>
       
+      <!-- 逾期警告 -->
+      <div id="overdue_warning" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:12px;margin-bottom:16px;">
+        <div style="display:flex;align-items:start;gap:8px;">
+          <span style="color:#dc2626;font-size:20px;">⚠️</span>
+          <div>
+            <div style="font-weight:600;color:#dc2626;margin-bottom:4px;">此任務已逾期</div>
+            <div style="font-size:13px;color:#991b1b;">到期日：<span id="overdue_date_text"></span></div>
+            <div style="font-size:13px;color:#991b1b;">請在下方說明逾期原因</div>
+          </div>
+        </div>
+      </div>
+      
       <div style="margin-bottom: 16px;">
-        <label style="display:block;margin-bottom:6px;font-weight:500;">新狀態</label>
+        <label style="display:block;margin-bottom:6px;font-weight:500;">新狀態 <span style="color:#dc2626;">*</span></label>
         <select id="modal_status" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
           <option value="pending">待開始</option>
           <option value="in_progress">進行中</option>
@@ -208,28 +220,31 @@
       </div>
       
       <div style="margin-bottom: 16px;">
-        <label style="display:block;margin-bottom:6px;font-weight:500;">進度說明</label>
-        <textarea id="modal_progress_note" rows="3" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" placeholder="描述當前進度..."></textarea>
+        <label style="display:block;margin-bottom:6px;font-weight:500;">進度說明 <span style="color:#9ca3af;font-weight:400;">(選填)</span></label>
+        <textarea id="modal_progress_note" rows="3" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" placeholder="例如：已完成 80%，預計明天完成..."></textarea>
       </div>
       
       <div id="overdue_reason_section" style="margin-bottom: 16px; display:none;">
-        <label style="display:block;margin-bottom:6px;font-weight:500;color:#dc2626;">逾期原因 *</label>
-        <textarea id="modal_overdue_reason" rows="3" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" placeholder="任務已逾期，請說明原因..."></textarea>
+        <label style="display:block;margin-bottom:6px;font-weight:500;color:#dc2626;">逾期原因 <span style="color:#dc2626;">*</span></label>
+        <textarea id="modal_overdue_reason" rows="3" style="width:100%;padding:10px;border:1px solid #dc2626;border-radius:6px;" placeholder="說明為何無法在原定期限內完成..."></textarea>
+        <p style="font-size:12px;color:#991b1b;margin-top:4px;">⚠️ 任務已逾期，此欄位為必填</p>
       </div>
       
       <div style="margin-bottom: 16px;">
-        <label style="display:block;margin-bottom:6px;font-weight:500;">阻塞原因</label>
-        <textarea id="modal_blocker_reason" rows="2" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" placeholder="如果任務被阻塞，請說明原因..."></textarea>
+        <label style="display:block;margin-bottom:6px;font-weight:500;">遇到阻礙了嗎？ <span style="color:#9ca3af;font-weight:400;">(選填)</span></label>
+        <textarea id="modal_blocker_reason" rows="2" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" placeholder="例如：等待客戶回覆文件、系統問題等..."></textarea>
+        <p style="font-size:12px;color:#6b7280;margin-top:4px;">💡 如果任務被外部因素阻塞，請在此說明</p>
       </div>
       
       <div style="margin-bottom: 16px;">
-        <label style="display:block;margin-bottom:6px;font-weight:500;">預計完成日期</label>
+        <label style="display:block;margin-bottom:6px;font-weight:500;">預計完成日期 <span style="color:#9ca3af;font-weight:400;">(選填)</span></label>
         <input type="date" id="modal_expected_date" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
+        <p style="font-size:12px;color:#6b7280;margin-top:4px;">💡 更新預期的完成時間，方便團隊掌握進度</p>
       </div>
       
       <div style="display: flex; gap: 10px; justify-content: flex-end;">
         <button class="btn btn-secondary" onclick="closeStatusModal()">取消</button>
-        <button class="btn btn-primary" onclick="submitStatusUpdate()">更新狀態</button>
+        <button class="btn btn-primary" onclick="submitStatusUpdate()">確認更新</button>
       </div>
     </div>
   </div>
@@ -521,12 +536,30 @@
       const currentStatus = document.getElementById('taskStatus').value;
       document.getElementById('modal_status').value = currentStatus;
       
+      // 清空所有字段
+      document.getElementById('modal_progress_note').value = '';
+      document.getElementById('modal_overdue_reason').value = '';
+      document.getElementById('modal_blocker_reason').value = '';
+      document.getElementById('modal_expected_date').value = '';
+      
       // 檢查是否逾期
       const dueDate = document.getElementById('dueDate').value;
       const today = new Date().toISOString().split('T')[0];
       const isOverdue = dueDate && dueDate < today && currentTask.status !== 'completed';
       
-      document.getElementById('overdue_reason_section').style.display = isOverdue ? 'block' : 'none';
+      // 顯示/隱藏逾期相關區塊
+      const overdueWarning = document.getElementById('overdue_warning');
+      const overdueSection = document.getElementById('overdue_reason_section');
+      
+      if (isOverdue) {
+        overdueWarning.style.display = 'block';
+        overdueSection.style.display = 'block';
+        document.getElementById('overdue_date_text').textContent = dueDate;
+      } else {
+        overdueWarning.style.display = 'none';
+        overdueSection.style.display = 'none';
+      }
+      
       modal.style.display = 'flex';
     }
     
@@ -541,20 +574,29 @@
       const blocker_reason = document.getElementById('modal_blocker_reason').value.trim();
       const expected_date = document.getElementById('modal_expected_date').value;
       
+      console.log('[前端] 準備提交狀態更新:', { status, progress_note, overdue_reason, blocker_reason, expected_date });
+      
       // 檢查是否逾期且需要填寫原因
       const overdueSection = document.getElementById('overdue_reason_section');
-      if (overdueSection.style.display !== 'none' && !overdue_reason) {
-        alert('任務已逾期，必須填寫逾期原因');
+      const isOverdueVisible = overdueSection.style.display !== 'none';
+      
+      console.log('[前端] 逾期檢查:', { isOverdueVisible, overdue_reason_length: overdue_reason.length });
+      
+      if (isOverdueVisible && !overdue_reason) {
+        alert('⚠️ 此任務已逾期\n\n請在「逾期原因」欄位說明為何無法在期限內完成。');
+        document.getElementById('modal_overdue_reason').focus();
         return;
       }
       
       const data = {
         status,
-        progress_note,
-        overdue_reason,
-        blocker_reason,
+        progress_note: progress_note || null,
+        overdue_reason: overdue_reason || null,
+        blocker_reason: blocker_reason || null,
         expected_completion_date: expected_date || null
       };
+      
+      console.log('[前端] 發送數據:', data);
       
       try {
         const res = await fetch(`${apiBase}/tasks/${currentTaskId}/update-status`, {
@@ -564,21 +606,37 @@
           body: JSON.stringify(data)
         });
         
-        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        console.log('[前端] API 回應狀態:', res.status);
+        
+        if (res.status === 401) { 
+          window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); 
+          return; 
+        }
+        
         const json = await res.json();
+        console.log('[前端] API 回應數據:', json);
         
         if (!json.ok) {
-          alert(json.message || '更新失敗');
+          let errorMsg = json.message || '更新失敗';
+          
+          // 如果有詳細錯誤，顯示出來
+          if (json.errors && Array.isArray(json.errors)) {
+            const errorDetails = json.errors.map(e => `• ${e.field}: ${e.message}`).join('\n');
+            errorMsg = `${errorMsg}\n\n${errorDetails}`;
+          }
+          
+          alert(errorMsg);
+          console.error('[前端] 更新失敗詳情:', json);
           return;
         }
         
-        alert('狀態已更新');
+        alert('✅ 狀態已成功更新');
         closeStatusModal();
         await loadTaskDetail();
         
       } catch (err) {
-        console.error('更新狀態失敗:', err);
-        alert('更新失敗');
+        console.error('[前端] 更新狀態失敗:', err);
+        alert('❌ 更新失敗\n\n' + err.message);
       }
     }
     
