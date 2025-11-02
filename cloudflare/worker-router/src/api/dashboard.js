@@ -370,6 +370,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         `).bind(daysAgoStr).all();
         
         // 查询任务状态更新
+        console.log('[仪表板] 查询状态更新，daysAgoStr:', daysAgoStr);
         const statusUpdates = await env.DATABASE.prepare(`
           SELECT 
             su.update_id,
@@ -403,6 +404,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           ORDER BY su.updated_at DESC
           LIMIT 30
         `).bind(daysAgoStr).all();
+        console.log('[仪表板] 状态更新查询结果:', statusUpdates?.results?.length || 0, '条');
         
         // 查询假期申请
         const leaveApplications = await env.DATABASE.prepare(`
@@ -505,12 +507,23 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         }
         
         // 合并并排序（添加 activity_type 标识）
+        console.log('[仪表板] 合并活动前:');
+        console.log('  - adjustments.results:', adjustments?.results?.length || 0);
+        console.log('  - statusUpdates.results:', statusUpdates?.results?.length || 0);
+        console.log('  - leaveApplications.results:', leaveApplications?.results?.length || 0);
+        console.log('  - timesheetReminders:', timesheetReminders?.length || 0);
+        
         const allActivities = [
           ...(adjustments?.results || []).map(a => ({...a, activity_type: 'due_date_adjustment'})),
           ...(statusUpdates?.results || []).map(s => ({...s, activity_type: 'status_update'})),
           ...(leaveApplications?.results || []).map(l => ({...l, activity_type: 'leave_application'})),
           ...timesheetReminders
         ].sort((a, b) => (b.activity_time || '').localeCompare(a.activity_time || ''));
+        
+        console.log('[仪表板] 合并后总活动数:', allActivities.length);
+        if (allActivities.length > 0) {
+          console.log('[仪表板] 第一条活动示例:', allActivities[0]);
+        }
         
         // 格式化活动记录
         res.recentActivities = allActivities.slice(0, 15).map(act => {
@@ -639,6 +652,12 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         res.teamMembers = [];
       }
 
+      console.log('[仪表板] 最终返回数据:');
+      console.log('  - recentActivities.length:', res.recentActivities?.length || 0);
+      console.log('  - teamMembers.length:', res.teamMembers?.length || 0);
+      console.log('  - employeeHours.length:', res.employeeHours?.length || 0);
+      console.log('  - employeeTasks.length:', res.employeeTasks?.length || 0);
+      
       return res;
     }
 
