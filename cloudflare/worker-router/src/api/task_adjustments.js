@@ -236,6 +236,9 @@ export async function getAdjustmentHistory(env, taskId) {
       FROM TaskDueDateAdjustments tda
       LEFT JOIN Users u ON u.user_id = tda.requested_by
       WHERE tda.task_id = ?
+        AND tda.old_due_date IS NOT NULL
+        AND tda.new_due_date IS NOT NULL
+        AND tda.adjustment_type IS NOT NULL
       ORDER BY tda.requested_at DESC
     `).bind(taskId).all();
     

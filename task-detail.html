@@ -106,8 +106,7 @@
             <span id="adjustmentBadge" style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:500;">已調整</span>
             <span id="adjustmentText"></span>
           </div>
-          <button type="button" class="btn btn-sm btn-secondary" onclick="showAdjustDueDateModal()" style="margin-top:8px;">調整到期日</button>
-          <button type="button" class="btn btn-sm btn-link" onclick="showAdjustmentHistory()" style="margin-top:8px;margin-left:8px;">查看調整歷史</button>
+          <button type="button" class="btn btn-sm btn-link" onclick="showAdjustmentHistory()" style="margin-top:8px;">查看調整歷史</button>
         </div>
         <div class="form-field">
           <label for="originalDueDate">原始到期日</label>
@@ -285,35 +284,6 @@
     </div>
   </div>
 
-  <!-- 調整到期日彈窗 -->
-  <div id="dueDateModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 8px; padding: 24px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="margin: 0;">調整到期日</h3>
-        <button onclick="closeDueDateModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
-      </div>
-      
-      <div style="margin-bottom: 16px;">
-        <label style="display:block;margin-bottom:6px;font-weight:500;">當前到期日</label>
-        <input type="text" id="modal_current_due_date" readonly style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;background:#f3f4f6;" />
-      </div>
-      
-      <div style="margin-bottom: 16px;">
-        <label style="display:block;margin-bottom:6px;font-weight:500;">新到期日 *</label>
-        <input type="date" id="modal_new_due_date" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
-      </div>
-      
-      <div style="margin-bottom: 16px;">
-        <label style="display:block;margin-bottom:6px;font-weight:500;color:#dc2626;">調整原因 *</label>
-        <textarea id="modal_adjustment_reason" rows="4" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" placeholder="請說明為何需要調整到期日..."></textarea>
-      </div>
-      
-      <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button class="btn btn-secondary" onclick="closeDueDateModal()">取消</button>
-        <button class="btn btn-primary" onclick="submitDueDateAdjustment()">確認調整</button>
-      </div>
-    </div>
-  </div>
 
   <!-- 文件上傳隱藏 input -->
   <input type="file" id="fileInput" style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.docx,.doc" />
@@ -783,62 +753,6 @@
       }
     }
     
-    // 顯示調整到期日模態框
-    function showAdjustDueDateModal() {
-      const modal = document.getElementById('dueDateModal');
-      const currentDueDate = document.getElementById('dueDate').value;
-      document.getElementById('modal_current_due_date').value = currentDueDate || '未設定';
-      document.getElementById('modal_new_due_date').value = currentDueDate;
-      document.getElementById('modal_adjustment_reason').value = '';
-      modal.style.display = 'flex';
-    }
-    
-    function closeDueDateModal() {
-      document.getElementById('dueDateModal').style.display = 'none';
-    }
-    
-    async function submitDueDateAdjustment() {
-      const new_due_date = document.getElementById('modal_new_due_date').value;
-      const reason = document.getElementById('modal_adjustment_reason').value.trim();
-      
-      if (!new_due_date) {
-        alert('請選擇新的到期日');
-        return;
-      }
-      
-      if (!reason) {
-        alert('必須填寫調整原因');
-        return;
-      }
-      
-      const data = { new_due_date, reason };
-      
-      try {
-        const res = await fetch(`${apiBase}/tasks/${currentTaskId}/adjust-due-date`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(data)
-        });
-        
-        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
-        const json = await res.json();
-        
-        if (!json.ok) {
-          alert(json.message || '調整失敗');
-          return;
-        }
-        
-        alert('到期日已調整');
-        closeDueDateModal();
-        await loadTaskDetail();
-        
-      } catch (err) {
-        console.error('調整到期日失敗:', err);
-        alert('調整失敗');
-      }
-    }
-    
     // 顯示調整歷史
     async function showAdjustmentHistory() {
       try {
@@ -860,15 +774,17 @@
           return;
         }
         
-        let html = '<h3 style="margin-bottom:16px;">到期日調整歷史</h3>';
+        let html = '<h3 style="margin-bottom:16px;">📅 到期日調整歷史</h3>';
         html += '<div style="max-height:500px;overflow-y:auto;">';
         history.forEach(adj => {
           const typeLabels = {
-            'initial_create': '初始創建',
-            'manual_adjust': '手動調整',
-            'system_auto': '系統自動',
-            'overdue_adjust': '逾期調整'
+            'initial_create': { icon: '🆕', label: '初始創建時調整', color: '#3b82f6' },
+            'manual_adjust': { icon: '✏️', label: '手動調整', color: '#10b981' },
+            'system_auto': { icon: '🤖', label: '系統自動調整', color: '#f59e0b' },
+            'overdue_adjust': { icon: '⚠️', label: '逾期調整', color: '#ef4444' }
           };
+          
+          const typeInfo = typeLabels[adj.adjustment_type] || { icon: '📝', label: adj.adjustment_type || '未知', color: '#6b7280' };
           
           // 格式化日期时间
           const formatDateTime = (dt) => {
@@ -888,13 +804,15 @@
           };
           
           const daysChanged = Number(adj.days_changed || 0);
+          const isSystemAuto = adj.adjustment_type === 'system_auto';
           
           html += `
-            <div style="border:1px solid #e5e7eb;border-radius:6px;padding:12px;margin-bottom:12px;">
+            <div style="border:1px solid #e5e7eb;border-radius:6px;padding:12px;margin-bottom:12px;${isSystemAuto ? 'background:#fffbeb;' : ''}">
               <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                <span style="font-weight:600;">${typeLabels[adj.adjustment_type] || adj.adjustment_type || '未知'}</span>
+                <span style="font-weight:600;color:${typeInfo.color};">${typeInfo.icon} ${typeInfo.label}</span>
                 <span style="color:#6b7280;font-size:13px;">${formatDateTime(adj.requested_at)}</span>
               </div>
+              ${isSystemAuto ? '<div style="background:#fef3c7;color:#92400e;padding:6px 8px;border-radius:4px;font-size:12px;margin-bottom:8px;">💡 當前置任務延遲完成時，系統會自動延長後續任務的期限</div>' : ''}
               <div style="font-size:14px;margin-bottom:6px;">
                 <span style="color:#6b7280;">原到期日:</span> ${adj.old_due_date || '-'}
                 <span style="margin:0 8px;">→</span>
@@ -907,7 +825,7 @@
                 <strong>原因:</strong> ${adj.adjustment_reason || '無'}
               </div>
               <div style="font-size:13px;color:#6b7280;margin-top:4px;">
-                由 ${adj.requested_by_name || '系統'} 調整
+                ${isSystemAuto ? '🤖 系統自動調整' : `👤 由 ${adj.requested_by_name || '系統'} 調整`}
               </div>
             </div>
           `;
