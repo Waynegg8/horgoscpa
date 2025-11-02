@@ -45,6 +45,7 @@
         let financeYm = null; // 财务查看的年月
         let activityDays = 30; // 最近动态天数
         let activityUserId = ''; // 最近动态筛选的员工ID
+        let activityType = ''; // 最近动态筛选的类型
 
         function formatLocalDate(d){
           try { return new Intl.DateTimeFormat('zh-TW', { dateStyle:'full', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }).format(d); } catch(_) { return d.toISOString().slice(0,10); }
@@ -99,9 +100,16 @@
           ].join('');
           
           return `<div class="card list">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
               <div class="card-title">${title}</div>
-              <div style="display:flex;gap:8px;align-items:center;">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <select id="activityTypeFilter" style="padding:4px 8px;font-size:13px;border:1px solid #e5e7eb;border-radius:4px;background:#fff;">
+                  <option value="">全部類型</option>
+                  <option value="status_update" ${activityType == 'status_update' ? 'selected' : ''}>任務更新</option>
+                  <option value="due_date_adjustment" ${activityType == 'due_date_adjustment' ? 'selected' : ''}>期限調整</option>
+                  <option value="leave_application" ${activityType == 'leave_application' ? 'selected' : ''}>假期申請</option>
+                  <option value="timesheet_reminder" ${activityType == 'timesheet_reminder' ? 'selected' : ''}>工時提醒</option>
+                </select>
                 <select id="activityUserFilter" style="padding:4px 8px;font-size:13px;border:1px solid #e5e7eb;border-radius:4px;background:#fff;">
                   ${userOptions}
                 </select>
@@ -499,8 +507,16 @@
           
           // 添加筛选事件监听
           if (activitiesCard) {
+            const typeFilter = activitiesCard.querySelector('#activityTypeFilter');
             const userFilter = activitiesCard.querySelector('#activityUserFilter');
             const daysFilter = activitiesCard.querySelector('#activityDaysFilter');
+            
+            if (typeFilter) {
+              typeFilter.addEventListener('change', (e) => {
+                activityType = e.target.value;
+                refresh();
+              });
+            }
             
             if (userFilter) {
               userFilter.addEventListener('change', (e) => {
@@ -675,6 +691,9 @@
               }
               if (activityUserId) {
                 params.set('activity_user_id', activityUserId);
+              }
+              if (activityType) {
+                params.set('activity_type', activityType);
               }
             }
             

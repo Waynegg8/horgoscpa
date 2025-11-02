@@ -319,6 +319,8 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       } catch (_) {}
 
       // Recent Activities (任务调整、状态更新、假期申请、工时提醒)
+      // 工时侦测说明：工时提醒是每次请求仪表板时实时计算的，检查最近7天内（排除周末和国定假日）
+      // 哪些员工没有填写工时记录。这个逻辑在下方的 timesheetReminders 部分实现。
       console.log('========================================');
       console.log('[仪表板] 开始处理 Recent Activities');
       console.log('========================================');
@@ -326,7 +328,8 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         // 从查询参数获取筛选条件（默认30天）
         const days = parseInt(params.get('activity_days') || '30', 10);
         const filterUserId = params.get('activity_user_id');
-        console.log('[仪表板] 筛选参数 - days:', days, 'filterUserId:', filterUserId);
+        const filterType = params.get('activity_type'); // 类型筛选：status_update, due_date_adjustment, leave_application, timesheet_reminder
+        console.log('[仪表板] 筛选参数 - days:', days, 'filterUserId:', filterUserId, 'filterType:', filterType);
         
         // 不再使用 JavaScript 生成时间字符串，直接在 SQL 中使用 SQLite 的 datetime 函数
         // 这样可以避免时间格式不匹配的问题
@@ -529,14 +532,32 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           console.log('[仪表板] 第一条活动示例:', allActivities[0]);
         }
         
+        // 根据类型筛选
+        let filteredActivities = allActivities;
+        if (filterType) {
+          filteredActivities = allActivities.filter(act => act.activity_type === filterType);
+          console.log('[仪表板] 类型筛选后活动数:', filteredActivities.length, '(筛选类型:', filterType, ')');
+        }
+        
         // 格式化活动记录
-        res.recentActivities = allActivities.slice(0, 15).map(act => {
-          const time = act.activity_time ? new Date(act.activity_time).toLocaleString('zh-TW', { 
-            month: '2-digit', 
-            day: '2-digit', 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          }) : '';
+        res.recentActivities = filteredActivities.slice(0, 15).map(act => {
+          // 处理时区转换：SQLite 返回的时间是 UTC 时间（格式：YYYY-MM-DD HH:MM:SS）
+          // 需要明确添加 'Z' 标识为 UTC，然后转换为台湾时区（UTC+8）
+          let time = '';
+          if (act.activity_time) {
+            let dateStr = act.activity_time;
+            // 如果是 SQLite 格式（YYYY-MM-DD HH:MM:SS），添加 'Z' 标识为 UTC
+            if (dateStr.includes(' ') && !dateStr.includes('T')) {
+              dateStr = dateStr.replace(' ', 'T') + 'Z';
+            }
+            time = new Date(dateStr).toLocaleString('zh-TW', { 
+              timeZone: 'Asia/Taipei',
+              month: '2-digit', 
+              day: '2-digit', 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            });
+          }
           
           const statusMap = {
             'pending': '待開始',
