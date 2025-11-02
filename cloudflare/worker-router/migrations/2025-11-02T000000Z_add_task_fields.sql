@@ -49,9 +49,7 @@ ALTER TABLE ActiveTasks ADD COLUMN is_overdue BOOLEAN DEFAULT 0;
 ALTER TABLE ActiveTasks ADD COLUMN completed_at TEXT;
 -- 完成时间（用于计算前置任务完成时间）
 
-ALTER TABLE ActiveTasks ADD COLUMN component_id INTEGER;
--- 关联到服务组成
-
+-- 注意：component_id 已存在于数据库中
 -- 注意：service_month 已在 2025-11-01T220000Z_add_service_month.sql 中添加
 
 -- 创建索引
@@ -59,6 +57,6 @@ CREATE INDEX IF NOT EXISTS idx_active_tasks_prerequisite ON ActiveTasks(prerequi
 CREATE INDEX IF NOT EXISTS idx_active_tasks_overdue ON ActiveTasks(is_overdue);
 CREATE INDEX IF NOT EXISTS idx_active_tasks_completed_at ON ActiveTasks(completed_at);
 CREATE INDEX IF NOT EXISTS idx_active_tasks_adjustment_date ON ActiveTasks(last_adjustment_date);
-CREATE INDEX IF NOT EXISTS idx_active_tasks_component ON ActiveTasks(component_id);
+-- 注意：idx_active_tasks_component 可能已存在
 -- 注意：idx_active_tasks_service_month 已在 2025-11-01T220000Z_add_service_month.sql 中创建
 
