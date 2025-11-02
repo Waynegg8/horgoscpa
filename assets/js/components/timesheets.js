@@ -557,6 +557,12 @@ function resetWeekView() {
   state.dailyNormalHours.clear();
   state.weekDays = [];
   state.ready = false;
+  
+  // ⚡ 清除预渲染标记，确保切换周时能正常重新渲染
+  const tbody = document.getElementById('timesheetBody');
+  if (tbody) {
+    tbody.dataset.prerendered = '';
+  }
 }
 
 // ==================== 渲染函數 ====================
@@ -2021,7 +2027,29 @@ async function init() {
           // 标记为就绪
           state.ready = true;
           
-          console.log('[Timesheets] ✅ 所有数据已加载到 state，预渲染内容保持显示，功能正常');
+          // ⚡ 检查预渲染内容是否与实际数据匹配
+          const prerenderedRows = tbody.querySelectorAll('tr').length - 2; // 减去"請假記錄"和"工時完整性"
+          const actualRows = state.rows.length;
+          
+          if (actualRows > 0 && prerenderedRows === 0) {
+            // 预渲染是空状态，但实际有数据 -> 重新渲染
+            console.log('[Timesheets] ⚠ 预渲染内容过期（空状态 vs ' + actualRows + ' 行数据），重新渲染');
+            tbody.dataset.prerendered = ''; // 清除标记
+            tbody.dataset.rendering = ''; // 重置渲染标记
+            renderTable(); // 渲染真实数据（会设置 rendering='true' 并触发事件）
+          } else if (Math.abs(prerenderedRows - actualRows) > 0) {
+            // 行数不匹配 -> 重新渲染
+            console.log('[Timesheets] ⚠ 预渲染内容不匹配（' + prerenderedRows + ' vs ' + actualRows + ' 行），重新渲染');
+            tbody.dataset.prerendered = ''; // 清除标记
+            tbody.dataset.rendering = ''; // 重置渲染标记
+            renderTable(); // 渲染真实数据（会设置 rendering='true' 并触发事件）
+          } else {
+            console.log('[Timesheets] ✅ 预渲染内容匹配，保持显示（不更新缓存）');
+            // 仍需执行统计更新（但不触发保存事件，因为内容未变）
+            updateWeeklySummary();
+            updateDailyNormalHours();
+            // 注意：不调用 renderCompleteness()，避免触发不必要的保存
+          }
           
           // ⚡ 预加载前4周数据
           setTimeout(() => {
