@@ -319,7 +319,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       } catch (_) {}
 
       // Recent Activities (任务调整、状态更新、假期申请、工时提醒)
-      // 工时侦测说明：工时提醒是每次请求仪表板时实时计算的，检查最近7天内（排除周末和国定假日）
+      // 工时侦测说明：工时提醒是每次请求仪表板时实时计算的，检查用户选择的天数内（排除周末和国定假日）
       // 哪些员工没有填写工时记录。这个逻辑在下方的 timesheetReminders 部分实现。
       console.log('========================================');
       console.log('[仪表板] 开始处理 Recent Activities');
@@ -434,10 +434,10 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           LIMIT 30
         `).all();
         
-        // 查询工时缺失提醒（最近7天未填写工时的员工）
+        // 查询工时缺失提醒（根据用户选择的天数检查未填写工时的员工）
         let timesheetReminders = [];
         try {
-          // 获取最近7天的日期列表（排除周末和国定假日）
+          // 获取指定天数内的日期列表（排除周末和国定假日）
           const today = new Date();
           const dates = [];
           
@@ -445,12 +445,12 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           const holidaysResult = await env.DATABASE.prepare(`
             SELECT holiday_date 
             FROM Holidays 
-            WHERE holiday_date >= date('now', '-7 days') 
+            WHERE holiday_date >= date('now', '-${days} days') 
               AND holiday_date <= date('now')
           `).all();
           const holidays = new Set((holidaysResult?.results || []).map(h => h.holiday_date));
           
-          for (let i = 1; i <= 7; i++) {
+          for (let i = 1; i <= days; i++) {
             const d = new Date(today);
             d.setDate(d.getDate() - i);
             const dayOfWeek = d.getDay();
@@ -469,7 +469,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             
             const missingTimesheets = await env.DATABASE.prepare(`
               WITH AllUserDates AS (
-                SELECT u.user_id, u.name, dates.work_date
+                SELECT u.user_id, u.name, u.start_date, dates.work_date
                 FROM Users u
                 CROSS JOIN (${dates.map(d => `SELECT '${d}' as work_date`).join(' UNION ALL ')}) dates
                 WHERE u.is_deleted = 0 ${userFilterForTimesheet}
@@ -482,6 +482,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
               FROM AllUserDates aud
               LEFT JOIN Timesheets t ON t.user_id = aud.user_id AND t.work_date = aud.work_date
               WHERE t.timesheet_id IS NULL
+                AND aud.work_date >= aud.start_date
               ORDER BY aud.work_date DESC, aud.name ASC
               LIMIT 30
             `).all();
