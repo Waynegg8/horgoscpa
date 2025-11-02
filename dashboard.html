@@ -238,9 +238,9 @@
         }
 
         function renderAdminDashboard(data){
-          // 创建两列布局
+          // 创建两列布局（左侧稍窄，右侧稍宽）
           grid.innerHTML = `
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+            <div style="display:grid;grid-template-columns:2fr 3fr;gap:24px;align-items:start;">
               <div id="leftColumn" style="display:flex;flex-direction:column;gap:20px;"></div>
               <div id="rightColumn" style="display:flex;flex-direction:column;gap:20px;"></div>
             </div>
@@ -416,6 +416,10 @@
           
           // === 左侧：最近动态 ===
           const allUsers = Array.isArray(data?.admin?.teamMembers) ? data.admin.teamMembers : [];
+          
+          console.log('[Dashboard] Recent Activities:', recentActivities);
+          console.log('[Dashboard] Activities HTML length:', activitiesHtml.length);
+          console.log('[Dashboard] All Users:', allUsers);
           
           const activitiesFrag = document.createElement('div');
           activitiesFrag.innerHTML = listCardWithActivityFilter('📋 最近動態（任務·假期·工時）', activitiesHtml, allUsers);
