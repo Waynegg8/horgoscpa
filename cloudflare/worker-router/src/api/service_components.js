@@ -87,7 +87,7 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
               JOIN SOPDocuments sop ON sop.sop_id = scts.sop_id
               WHERE scts.task_config_id = ? AND sop.is_deleted = 0
               ORDER BY scts.sort_order
-            `).bind(task.task_config_id).all();
+            `).bind(task.config_id).all();
             
             return {
               ...task,
@@ -327,13 +327,13 @@ async function updateServiceComponent(request, env, corsHeaders, componentId) {
 
     // 删除旧的任务配置及其SOP关联
     const oldTasks = await env.DATABASE.prepare(
-      'SELECT task_config_id FROM ServiceComponentTasks WHERE component_id = ?'
+      'SELECT config_id FROM ServiceComponentTasks WHERE component_id = ?'
     ).bind(componentId).all();
     
     for (const oldTask of (oldTasks.results || [])) {
       await env.DATABASE.prepare(
         'DELETE FROM ServiceComponentTaskSOPs WHERE task_config_id = ?'
-      ).bind(oldTask.task_config_id).run();
+      ).bind(oldTask.config_id).run();
     }
     
     await env.DATABASE.prepare(
