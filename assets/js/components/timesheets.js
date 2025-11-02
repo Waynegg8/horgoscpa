@@ -6,6 +6,75 @@
  * - docs/開發指南/後端/工時管理-後端規格.md
  */
 
+// ==================== 性能監測系統 ====================
+
+const perfMonitor = {
+  startTime: Date.now(),
+  marks: {},
+  
+  mark(name) {
+    this.marks[name] = Date.now();
+    const elapsed = this.marks[name] - this.startTime;
+    console.log(`⏱ [Performance] ${name}: ${elapsed}ms`);
+  },
+  
+  report() {
+    const total = Date.now() - this.startTime;
+    console.log('\n╔════════════════════════════════════════════════════╗');
+    console.log('║          工時表加載性能報告                        ║');
+    console.log('╠════════════════════════════════════════════════════╣');
+    
+    const stages = [
+      { name: '⚡ 預渲染插入', key: 'prerender_inserted' },
+      { name: '👤 用戶信息加載', key: 'user_loaded' },
+      { name: '👥 客戶列表加載', key: 'clients_loaded' },
+      { name: '📅 假日/請假加載', key: 'holidays_leaves_loaded' },
+      { name: '⏰ 工時數據加載', key: 'timesheets_loaded' },
+      { name: '📊 月度統計加載', key: 'monthly_loaded' },
+      { name: '🎨 頁面渲染完成', key: 'render_complete' },
+      { name: '✅ 完全就緒', key: 'fully_ready' }
+    ];
+    
+    let prevTime = this.startTime;
+    stages.forEach(stage => {
+      if (this.marks[stage.key]) {
+        const absolute = this.marks[stage.key] - this.startTime;
+        const relative = this.marks[stage.key] - prevTime;
+        const absStr = absolute.toString().padStart(5, ' ');
+        const relStr = relative.toString().padStart(4, ' ');
+        console.log(`║ ${stage.name.padEnd(20, ' ')}: ${absStr}ms (+${relStr}ms) ║`);
+        prevTime = this.marks[stage.key];
+      }
+    });
+    
+    console.log('╠════════════════════════════════════════════════════╣');
+    const totalStr = total.toString().padStart(5, ' ');
+    console.log(`║ 📈 總計時間: ${totalStr}ms                              ║`);
+    console.log('╚════════════════════════════════════════════════════╝\n');
+    
+    // 判断性能等级
+    if (total < 100) {
+      console.log('🚀🚀🚀 性能评级: 极速（<100ms）- 预渲染完美命中！');
+    } else if (total < 300) {
+      console.log('⚡⚡ 性能评级: 很快（<300ms）- 预渲染有效');
+    } else if (total < 500) {
+      console.log('⚡ 性能评级: 快速（<500ms）');
+    } else if (total < 1000) {
+      console.log('✓ 性能评级: 正常（<1s）');
+    } else if (total < 2000) {
+      console.log('⚠ 性能评级: 偏慢（1-2s）');
+    } else {
+      console.log('❌ 性能评级: 缓慢（>2s）- 需要优化！');
+    }
+    
+    // 显示预渲染节省的时间
+    if (this.marks['prerender_inserted'] && total < 500) {
+      const saved = 500 - total;
+      console.log(`💡 预渲染节省约 ${saved}ms（相比正常加载 ~500ms）`);
+    }
+  }
+};
+
 // ==================== 全域狀態 ====================
 
 const state = {
@@ -236,6 +305,7 @@ async function loadCurrentUser() {
     state.currentUser = data.data || null;
     state.isAdmin = data.data?.isAdmin || false;
     console.log('[INFO] 當前用戶:', state.currentUser, '是否管理員:', state.isAdmin);
+    perfMonitor.mark('user_loaded');
   } catch (error) {
     console.error('[ERROR] 載入用戶信息失敗:', error);
     state.currentUser = null;
@@ -247,6 +317,7 @@ async function loadClients() {
   try {
     const data = await apiCall('/internal/api/v1/clients?perPage=100');
     state.clients = data.data || [];
+    perfMonitor.mark('clients_loaded');
   } catch (error) {
     showToast('載入客戶列表失敗：' + error.message, 'error');
     state.clients = [];
@@ -466,6 +537,7 @@ async function loadTimesheets() {
       }
     });
     
+    perfMonitor.mark('timesheets_loaded');
   } catch (error) {
     showToast('載入工時資料失敗：' + error.message, 'error');
     state.rows = [];
@@ -486,6 +558,7 @@ async function loadMonthlySummary() {
       leave_hours: 0
     };
     renderMonthlySummary();
+    perfMonitor.mark('monthly_loaded');
   } catch (error) {
     showToast('載入月統計失敗：' + error.message, 'error');
     state.monthlySummary = {
@@ -523,6 +596,7 @@ async function loadWeek() {
   
   // 1. 載入假日和請假資料（並行）
   await Promise.all([loadHolidays(), loadLeaves()]);
+  perfMonitor.mark('holidays_leaves_loaded');
   if (token !== state.token) return;
   
   // 2. 建立週模型和更新週標題
@@ -541,11 +615,14 @@ async function loadWeek() {
   // 5. 渲染表格
   state.ready = true;
   renderTable();
+  perfMonitor.mark('render_complete');
   
   // 6. 延遲渲染表尾（避免阻塞）
   requestAnimationFrame(() => {
     renderLeaveRow();
     renderCompleteness();
+    perfMonitor.mark('fully_ready');
+    perfMonitor.report(); // 输出性能报告
   });
 }
 
@@ -1990,6 +2067,9 @@ async function init() {
   const hasPrerendered = tbody && tbody.children.length > 0 && tbody.dataset.prerendered === 'true';
   
   if (hasPrerendered) {
+    // ⚡ 记录预渲染插入时间
+    perfMonitor.mark('prerender_inserted');
+    
     // ⚡ 检查预渲染质量（是否有完整结构）
     const htmlLength = tbody.innerHTML.length;
     const isValidPrerender = htmlLength > 200; // 只要有基本结构就使用（包括空状态）
@@ -2011,6 +2091,7 @@ async function init() {
           
           // 加载假日和请假数据到 state
           await Promise.all([loadHolidays(), loadLeaves()]);
+          perfMonitor.mark('holidays_leaves_loaded');
           
           // 建立周模型
           buildWeekDays();
@@ -2037,19 +2118,25 @@ async function init() {
             tbody.dataset.prerendered = ''; // 清除标记
             tbody.dataset.rendering = ''; // 重置渲染标记
             renderTable(); // 渲染真实数据（会设置 rendering='true' 并触发事件）
+            perfMonitor.mark('render_complete');
           } else if (Math.abs(prerenderedRows - actualRows) > 0) {
             // 行数不匹配 -> 重新渲染
             console.log('[Timesheets] ⚠ 预渲染内容不匹配（' + prerenderedRows + ' vs ' + actualRows + ' 行），重新渲染');
             tbody.dataset.prerendered = ''; // 清除标记
             tbody.dataset.rendering = ''; // 重置渲染标记
             renderTable(); // 渲染真实数据（会设置 rendering='true' 并触发事件）
+            perfMonitor.mark('render_complete');
           } else {
             console.log('[Timesheets] ✅ 预渲染内容匹配，保持显示（不更新缓存）');
             // 仍需执行统计更新（但不触发保存事件，因为内容未变）
             updateWeeklySummary();
             updateDailyNormalHours();
+            perfMonitor.mark('render_complete');
             // 注意：不调用 renderCompleteness()，避免触发不必要的保存
           }
+          
+          perfMonitor.mark('fully_ready');
+          perfMonitor.report(); // 输出性能报告
           
           // ⚡ 预加载前4周数据
           setTimeout(() => {
