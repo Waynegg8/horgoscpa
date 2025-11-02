@@ -541,6 +541,12 @@
           <!-- 標籤選項會動態載入 -->
         </select>
       </div>
+      <div>
+        <label style="display:block;margin-bottom:6px;color:transparent;font-size:12px;">​</label>
+        <button type="button" onclick="openTagManager()" class="btn" style="padding:10px 16px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;">
+          🏷️ 管理標籤
+        </button>
+      </div>
       <div class="toolbar-spacer" style="flex:1;"></div>
       <div style="display:flex;gap:8px;align-items:center;">
         <button id="btn-edit" class="btn" type="button" style="display:none;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">✏️ 編輯</button>
@@ -657,6 +663,30 @@
 
     <!-- 抽屜遮罩 -->
     <div id="drawerOverlay" class="drawer-overlay"></div>
+    
+    <!-- 標籤管理彈窗 -->
+    <div id="tagManagerModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+      <div style="background:white;border-radius:12px;width:90%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);">
+        <div style="padding:20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
+          <h3 style="margin:0;font-size:18px;font-weight:600;">🏷️ 標籤管理</h3>
+          <button onclick="closeTagManager()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#6b7280;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:4px;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">×</button>
+        </div>
+        <div style="padding:16px;overflow-y:auto;flex:1;">
+          <div style="margin-bottom:16px;padding:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;font-size:13px;color:#1e40af;">
+            💡 提示：編輯或刪除標籤不會影響已存在的SOP/FAQ，僅影響新增時的標籤選項
+          </div>
+          <div id="tagManagerList" style="display:flex;flex-direction:column;gap:8px;">
+            <!-- 標籤列表將動態添加 -->
+          </div>
+        </div>
+        <div style="padding:16px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:13px;color:#6b7280;">
+            共 <span id="tagCount">0</span> 個標籤
+          </div>
+          <button onclick="closeTagManager()" class="btn btn-secondary">關閉</button>
+        </div>
+      </div>
+    </div>
     
     <!-- SOP 編輯抽屜 -->
     <div id="sopEditDrawer" class="drawer">
@@ -2510,6 +2540,145 @@
           // 更新篩選下拉選單
           loadFilterTagOptions();
         };
+        
+        // 打開標籤管理器
+        window.openTagManager = function() {
+          const modal = document.getElementById('tagManagerModal');
+          if (!modal) return;
+          
+          modal.style.display = 'flex';
+          renderTagManagerList();
+        };
+        
+        // 關閉標籤管理器
+        window.closeTagManager = function() {
+          const modal = document.getElementById('tagManagerModal');
+          if (modal) modal.style.display = 'none';
+        };
+        
+        // 渲染標籤管理列表
+        function renderTagManagerList() {
+          const list = document.getElementById('tagManagerList');
+          const countSpan = document.getElementById('tagCount');
+          
+          if (!list) return;
+          
+          countSpan.textContent = availableTags.length;
+          
+          if (availableTags.length === 0) {
+            list.innerHTML = `
+              <div style="text-align:center;padding:40px;color:#9ca3af;">
+                <div style="font-size:48px;margin-bottom:16px;">🏷️</div>
+                <div style="font-size:14px;">尚無標籤</div>
+                <div style="font-size:12px;margin-top:8px;">點擊「➕ 新增」按鈕添加第一個標籤</div>
+              </div>
+            `;
+            return;
+          }
+          
+          list.innerHTML = availableTags.map(tag => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='#f9fafb'">
+              <div style="display:flex;align-items:center;gap:12px;flex:1;">
+                <span style="font-size:20px;">🏷️</span>
+                <span style="font-weight:500;font-size:14px;color:#1f2937;">${tag}</span>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button onclick="editTag('${tag.replace(/'/g, "\\'")}'); event.stopPropagation();" class="btn" style="padding:6px 12px;font-size:12px;background:white;color:#2563eb;border:1px solid #bfdbfe;" title="編輯標籤">
+                  ✏️ 編輯
+                </button>
+                <button onclick="deleteTag('${tag.replace(/'/g, "\\'")}'); event.stopPropagation();" class="btn" style="padding:6px 12px;font-size:12px;background:white;color:#dc2626;border:1px solid #fca5a5;" title="刪除標籤">
+                  🗑️ 刪除
+                </button>
+              </div>
+            </div>
+          `).join('');
+        }
+        
+        // 編輯標籤
+        window.editTag = function(oldTag) {
+          const newTag = prompt('請輸入新的標籤名稱：', oldTag);
+          if (!newTag || !newTag.trim()) return;
+          
+          const tagName = newTag.trim();
+          
+          // 檢查是否與其他標籤重複
+          if (tagName !== oldTag && availableTags.includes(tagName)) {
+            alert('此標籤名稱已存在！');
+            return;
+          }
+          
+          // 更新標籤
+          const index = availableTags.indexOf(oldTag);
+          if (index !== -1) {
+            availableTags[index] = tagName;
+            availableTags.sort();
+            
+            // 保存到 localStorage
+            localStorage.setItem('customTags', JSON.stringify(availableTags));
+            
+            // 重新渲染列表
+            renderTagManagerList();
+            
+            // 更新篩選下拉選單
+            loadFilterTagOptions();
+            
+            // 重新載入當前打開的標籤複選框（如果有）
+            refreshAllTagCheckboxes();
+            
+            alert('標籤已更新！');
+          }
+        };
+        
+        // 刪除標籤
+        window.deleteTag = function(tag) {
+          if (!confirm(`確定要刪除標籤「${tag}」嗎？\n\n此操作不會影響已存在的SOP/FAQ。`)) {
+            return;
+          }
+          
+          // 從標籤庫中移除
+          const index = availableTags.indexOf(tag);
+          if (index !== -1) {
+            availableTags.splice(index, 1);
+            
+            // 保存到 localStorage
+            localStorage.setItem('customTags', JSON.stringify(availableTags));
+            
+            // 重新渲染列表
+            renderTagManagerList();
+            
+            // 更新篩選下拉選單
+            loadFilterTagOptions();
+            
+            // 重新載入當前打開的標籤複選框（如果有）
+            refreshAllTagCheckboxes();
+            
+            alert('標籤已刪除！');
+          }
+        };
+        
+        // 刷新所有標籤複選框
+        function refreshAllTagCheckboxes() {
+          // SOP抽屜
+          const sopContainer = document.getElementById('sop-tags-checkboxes');
+          if (sopContainer && sopContainer.children.length > 0) {
+            const currentChecked = getCheckedTags('sop-tags-checkboxes');
+            loadTagCheckboxes('sop-tags-checkboxes', currentChecked);
+          }
+          
+          // FAQ抽屜
+          const faqContainer = document.getElementById('faq-tags-checkboxes');
+          if (faqContainer && faqContainer.children.length > 0) {
+            const currentChecked = getCheckedTags('faq-tags-checkboxes');
+            loadTagCheckboxes('faq-tags-checkboxes', currentChecked);
+          }
+          
+          // 資源上傳
+          const resourceContainer = document.getElementById('resource-tags-checkboxes');
+          if (resourceContainer && resourceContainer.children.length > 0) {
+            const currentChecked = getCheckedTags('resource-tags-checkboxes');
+            loadTagCheckboxes('resource-tags-checkboxes', currentChecked);
+          }
+        }
         
         // 獲取已選中的標籤
         function getCheckedTags(containerId) {
