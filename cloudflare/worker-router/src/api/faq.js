@@ -46,6 +46,7 @@ async function getFAQList(request, env, me) {
     const q = url.searchParams.get('q') || '';
     const category = url.searchParams.get('category') || '';
     const scope = url.searchParams.get('scope') || '';
+    const clientId = url.searchParams.get('client_id') || '';
     const tags = url.searchParams.get('tags') || '';
     
     const offset = (page - 1) * perPage;
@@ -67,6 +68,11 @@ async function getFAQList(request, env, me) {
     if (scope && (scope === 'service' || scope === 'task')) {
       whereClauses.push('scope = ?');
       params.push(scope);
+    }
+    
+    if (clientId && clientId !== 'all') {
+      whereClauses.push('client_id = ?');
+      params.push(parseInt(clientId));
     }
     
     if (tags) {
@@ -92,6 +98,7 @@ async function getFAQList(request, env, me) {
         answer, 
         category, 
         scope,
+        client_id,
         tags, 
         created_by, 
         created_at, 
@@ -112,6 +119,7 @@ async function getFAQList(request, env, me) {
       answer: row.answer,
       category: row.category,
       scope: row.scope || null,
+      clientId: row.client_id || null,
       tags: row.tags ? row.tags.split(',').map(t => t.trim()) : [],
       createdBy: row.created_by,
       createdAt: row.created_at,
@@ -148,6 +156,7 @@ async function getFAQById(env, faqId, me) {
         answer, 
         category, 
         scope,
+        client_id,
         tags, 
         created_by, 
         created_at, 
@@ -172,6 +181,7 @@ async function getFAQById(env, faqId, me) {
       answer: result.answer,
       category: result.category,
       scope: result.scope || null,
+      clientId: result.client_id || null,
       tags: result.tags ? result.tags.split(',').map(t => t.trim()) : [],
       createdBy: result.created_by,
       createdAt: result.created_at,
@@ -201,7 +211,7 @@ async function getFAQById(env, faqId, me) {
 async function createFAQ(request, env, me) {
   try {
     const body = await request.json();
-    const { question, answer, category, scope, tags } = body;
+    const { question, answer, category, scope, client_id, tags } = body;
     
     // 验证必填字段
     if (!question || !answer) {
@@ -233,17 +243,19 @@ async function createFAQ(request, env, me) {
         answer, 
         category, 
         scope,
+        client_id,
         tags, 
         created_by, 
         created_at, 
         updated_at,
         is_deleted
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).bind(
       question,
       answer,
       category || null,
       scope,
+      client_id || null,
       tagsStr,
       me?.user_id || null,
       now,
@@ -258,6 +270,7 @@ async function createFAQ(request, env, me) {
         answer,
         category,
         scope,
+        clientId: client_id || null,
         tags: tagsStr ? tagsStr.split(',').map(t => t.trim()) : [],
         createdBy: me?.user_id,
         createdAt: now,
@@ -284,7 +297,7 @@ async function createFAQ(request, env, me) {
 async function updateFAQ(request, env, faqId, me) {
   try {
     const body = await request.json();
-    const { question, answer, category, scope, tags } = body;
+    const { question, answer, category, scope, client_id, tags } = body;
     
     // 验证FAQ是否存在
     const existing = await env.DATABASE.prepare(
@@ -332,6 +345,7 @@ async function updateFAQ(request, env, faqId, me) {
         answer = ?,
         category = ?,
         scope = ?,
+        client_id = ?,
         tags = ?,
         updated_at = ?
       WHERE faq_id = ? AND is_deleted = 0
@@ -340,6 +354,7 @@ async function updateFAQ(request, env, faqId, me) {
       answer,
       category || null,
       scope,
+      client_id || null,
       tagsStr,
       now,
       faqId
@@ -353,6 +368,7 @@ async function updateFAQ(request, env, faqId, me) {
         answer,
         category,
         scope,
+        clientId: client_id || null,
         tags: tagsStr ? tagsStr.split(',').map(t => t.trim()) : [],
         updatedAt: now
       }

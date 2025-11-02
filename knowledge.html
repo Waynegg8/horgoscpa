@@ -542,6 +542,13 @@
           <option value="task">📋 任務層級</option>
         </select>
       </div>
+      <div>
+        <label for="client" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">客戶</label>
+        <select id="client" aria-label="客戶" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:180px;">
+          <option value="all">全部客戶</option>
+          <!-- 動態加載客戶清單 -->
+        </select>
+      </div>
       <div style="flex:1;min-width:220px;">
         <label for="tags" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">篩選標籤</label>
         <select id="tags" aria-label="標籤" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;">
@@ -727,6 +734,17 @@
           </div>
 
           <div class="form-group">
+            <label>客戶</label>
+            <select id="sop-client-drawer">
+              <option value="">不指定（通用）</option>
+              <!-- 動態加載客戶清單 -->
+            </select>
+            <div style="margin-top:6px;font-size:11px;color:#64748b;line-height:1.4;">
+              💡 選填：指定特定客戶專用的SOP，若不選擇則為通用SOP
+            </div>
+          </div>
+
+          <div class="form-group">
             <label>SOP 適用層級 *</label>
             <select id="sop-scope-drawer" required>
               <option value="">請選擇適用層級...</option>
@@ -793,6 +811,17 @@
             </select>
             <div style="font-size:12px;color:#6b7280;margin-top:6px;">
               💡 選擇此FAQ所屬的服務類型，方便按服務分類管理
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>客戶</label>
+            <select id="faq-client-drawer">
+              <option value="">不指定（通用）</option>
+              <!-- 動態加載客戶清單 -->
+            </select>
+            <div style="margin-top:6px;font-size:11px;color:#64748b;line-height:1.4;">
+              💡 選填：指定特定客戶專用的FAQ，若不選擇則為通用FAQ
             </div>
           </div>
           
@@ -870,6 +899,17 @@
                   <option value="service">🔷 服務層級</option>
                   <option value="task">📋 任務層級</option>
                 </select>
+              </div>
+            </div>
+            
+            <div class="form-group" style="margin:0 0 16px 0;">
+              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">客戶</label>
+              <select id="resource-client-modal" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+                <option value="">不指定（通用）</option>
+                <!-- 動態加載客戶清單 -->
+              </select>
+              <div style="margin-top:6px;font-size:11px;color:#64748b;line-height:1.4;">
+                💡 選填：指定特定客戶專用的文檔，若不選擇則為通用文檔
               </div>
             </div>
             
@@ -1701,6 +1741,59 @@
           }
         }
 
+        // 載入客戶列表
+        async function loadClients() {
+          try {
+            const res = await fetch(`${apiBase}/clients`, { credentials: 'include' });
+            if (!res.ok) return;
+            const json = await res.json();
+            
+            if (json.ok && Array.isArray(json.data)) {
+              const clients = json.data;
+              
+              // 填充篩選器下拉框
+              const clientFilter = document.getElementById('client');
+              if (clientFilter) {
+                const optionsHTML = clients.map(c => 
+                  `<option value="${c.client_id}">${c.client_name}</option>`
+                ).join('');
+                clientFilter.innerHTML = '<option value="all">全部客戶</option>' + optionsHTML;
+              }
+              
+              // 填充SOP抽屜的下拉框
+              const sopClientDrawer = document.getElementById('sop-client-drawer');
+              if (sopClientDrawer) {
+                const optionsHTML = clients.map(c => 
+                  `<option value="${c.client_id}">${c.client_name}</option>`
+                ).join('');
+                sopClientDrawer.innerHTML = '<option value="">不指定（通用）</option>' + optionsHTML;
+              }
+              
+              // 填充FAQ抽屜的下拉框
+              const faqClientDrawer = document.getElementById('faq-client-drawer');
+              if (faqClientDrawer) {
+                const optionsHTML = clients.map(c => 
+                  `<option value="${c.client_id}">${c.client_name}</option>`
+                ).join('');
+                faqClientDrawer.innerHTML = '<option value="">不指定（通用）</option>' + optionsHTML;
+              }
+              
+              // 填充資源上傳的下拉框
+              const resourceClientModal = document.getElementById('resource-client-modal');
+              if (resourceClientModal) {
+                const optionsHTML = clients.map(c => 
+                  `<option value="${c.client_id}">${c.client_name}</option>`
+                ).join('');
+                resourceClientModal.innerHTML = '<option value="">不指定（通用）</option>' + optionsHTML;
+              }
+              
+              console.log('✅ 客戶列表已載入:', clients.length, '個');
+            }
+          } catch (err) {
+            console.error('載入客戶列表失敗:', err);
+          }
+        }
+
         // 隱藏工具欄編輯/刪除按鈕
         function hideToolbarButtons() {
           const editBtn = document.getElementById('btn-edit');
@@ -2033,6 +2126,9 @@
           
           const scope = document.getElementById('scope').value;
           if (scope) params.set('scope', scope);
+          
+          const client = document.getElementById('client').value;
+          if (client && client !== 'all') params.set('client_id', client);
           
           const t = document.getElementById('tags').value.split(',').map(s=>s.trim()).filter(Boolean).join(',');
           if (t) params.set('tags', t);
@@ -2812,6 +2908,7 @@
             document.getElementById('sop-id-drawer').value = '';
             document.getElementById('sop-title-drawer').value = '【請填寫標題】例如：月度記帳流程';
             document.getElementById('sop-category-drawer').value = '';
+            document.getElementById('sop-client-drawer').value = '';
             document.getElementById('sop-scope-drawer').value = ''; // 必須手動選擇
             
             if (window.sopDrawerEditor) {
@@ -2826,6 +2923,7 @@
             document.getElementById('sop-id-drawer').value = sopData.sop_id || '';
             document.getElementById('sop-title-drawer').value = sopData.title || '';
             document.getElementById('sop-category-drawer').value = sopData.category || '';
+            document.getElementById('sop-client-drawer').value = sopData.clientId || sopData.client_id || '';
             document.getElementById('sop-scope-drawer').value = sopData.scope || '';
             
             if (window.sopDrawerEditor) {
@@ -2900,6 +2998,7 @@
             document.getElementById('faq-id-drawer').value = '';
             document.getElementById('faq-question-drawer').value = '【請填寫問題】例如：如何處理跨月份的發票？';
             document.getElementById('faq-category-drawer').value = '';
+            document.getElementById('faq-client-drawer').value = '';
             document.getElementById('faq-scope-drawer').value = '';
             
             if (window.faqDrawerEditor) {
@@ -2914,6 +3013,7 @@
             document.getElementById('faq-id-drawer').value = faqData.faq_id || '';
             document.getElementById('faq-question-drawer').value = faqData.question || '';
             document.getElementById('faq-category-drawer').value = faqData.category || '';
+            document.getElementById('faq-client-drawer').value = faqData.clientId || faqData.client_id || '';
             document.getElementById('faq-scope-drawer').value = faqData.scope || '';
             
             if (window.faqDrawerEditor) {
@@ -2999,6 +3099,7 @@
           const sopId = document.getElementById('sop-id-drawer').value;
           const title = document.getElementById('sop-title-drawer').value;
           const category = document.getElementById('sop-category-drawer').value;
+          const client_id = document.getElementById('sop-client-drawer').value || null;
           const scope = document.getElementById('sop-scope-drawer').value;
           const tags = getCheckedTags('sop-tags-checkboxes');
           const content = window.sopDrawerEditor.root.innerHTML;
@@ -3016,7 +3117,7 @@
               method,
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ title, category, scope, tags, content })
+              body: JSON.stringify({ title, category, client_id, scope, tags, content })
             });
             
             const json = await res.json();
@@ -3052,6 +3153,7 @@
           const faqId = document.getElementById('faq-id-drawer').value;
           const question = document.getElementById('faq-question-drawer').value;
           const category = document.getElementById('faq-category-drawer').value;
+          const client_id = document.getElementById('faq-client-drawer').value || null;
           const scope = document.getElementById('faq-scope-drawer').value;
           const tags = getCheckedTags('faq-tags-checkboxes');
           const answer = window.faqDrawerEditor.root.innerHTML;
@@ -3074,7 +3176,7 @@
               method,
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ question, category, scope, tags, answer })
+              body: JSON.stringify({ question, category, client_id, scope, tags, answer })
             });
             
             const json = await res.json();
@@ -3114,6 +3216,7 @@
           const title = document.getElementById('resource-title-modal').value;
           const category = document.getElementById('resource-category-modal').value;
           const scope = document.getElementById('resource-scope-modal').value;
+          const client_id = document.getElementById('resource-client-modal').value || '';
           
           if (!scope) {
             alert('請選擇資源適用層級');
@@ -3133,6 +3236,7 @@
             formData.append('title', title);
             formData.append('category', category);
             formData.append('scope', scope);
+            if (client_id) formData.append('client_id', client_id);
             formData.append('tags', tags);
             
             const uploadRes = await fetch(`${apiBase}/documents/upload`, {
@@ -3187,6 +3291,7 @@
             
             // 載入服務類型和標籤庫
             await loadServices();
+            await loadClients();
             loadCustomTags();
             loadFilterTagOptions();
             

@@ -8,7 +8,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 	if (path === "/internal/api/v1/sop" && method === "POST") {
 		try {
 			const body = await request.json();
-			const { title, content, category, tags, scope } = body;
+			const { title, content, category, tags, scope, client_id } = body;
 			
 			if (!title || !content) {
 				return jsonResponse(400, { ok:false, code:"VALIDATION_ERROR", message:"標題和內容為必填", meta:{ requestId } }, corsHeaders);
@@ -23,9 +23,9 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			const now = new Date().toISOString();
 			
 			const result = await env.DATABASE.prepare(
-				`INSERT INTO SOPDocuments (title, content, category, tags, scope, version, is_published, created_by, created_at, updated_at, is_deleted)
-				 VALUES (?, ?, ?, ?, ?, 1, 1, ?, ?, ?, 0)`
-			).bind(title, content, category || '', tagsJson, scope, String(me.user_id), now, now).run();
+				`INSERT INTO SOPDocuments (title, content, category, tags, scope, client_id, version, is_published, created_by, created_at, updated_at, is_deleted)
+				 VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?, ?, ?, 0)`
+			).bind(title, content, category || '', tagsJson, scope, client_id || null, String(me.user_id), now, now).run();
 			
 			const sopId = result.meta.last_row_id;
 			
@@ -47,6 +47,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			const q = (p.get("q") || "").trim();
 			const category = (p.get("category") || "").trim();
 			const scope = (p.get("scope") || "").trim();
+			const clientId = (p.get("client_id") || "").trim();
 			const tagsCsv = (p.get("tags") || "").trim();
 			const published = (p.get("published") || "all").trim().toLowerCase();
 
@@ -55,6 +56,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			if (q) { where.push("(title LIKE ? OR tags LIKE ?)"); binds.push(`%${q}%`, `%${q}%`); }
 			if (category && category !== "all") { where.push("category = ?"); binds.push(category); }
 			if (scope && (scope === "service" || scope === "task")) { where.push("scope = ?"); binds.push(scope); }
+			if (clientId && clientId !== "all") { where.push("client_id = ?"); binds.push(parseInt(clientId)); }
 			if (published !== "all") {
 				if (["1","true","published"].includes(published)) { where.push("is_published = 1"); }
 				else if (["0","false","draft"].includes(published)) { where.push("is_published = 0"); }
@@ -67,7 +69,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			const countRow = await env.DATABASE.prepare(`SELECT COUNT(1) AS total FROM SOPDocuments ${whereSql}`).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
 			const rows = await env.DATABASE.prepare(
-				`SELECT sop_id, title, category, tags, scope, version, is_published, created_by, created_at, updated_at
+				`SELECT sop_id, title, category, tags, scope, client_id, version, is_published, created_by, created_at, updated_at
 				 FROM SOPDocuments
 				 ${whereSql}
 				 ORDER BY updated_at DESC, sop_id DESC
@@ -78,6 +80,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 				title: r.title,
 				category: r.category || "",
 				scope: r.scope || null,
+				clientId: r.client_id || null,
 				tags: (() => { try { return JSON.parse(r.tags || "[]"); } catch(_) { return []; } })(),
 				version: Number(r.version || 1),
 				isPublished: r.is_published === 1,
@@ -98,7 +101,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 		const sopId = parseInt(matchDetail[1]);
 		try {
 			const row = await env.DATABASE.prepare(
-				`SELECT sop_id, title, content, category, tags, scope, version, is_published, created_by, created_at, updated_at
+				`SELECT sop_id, title, content, category, tags, scope, client_id, version, is_published, created_by, created_at, updated_at
 				 FROM SOPDocuments
 				 WHERE sop_id = ? AND is_deleted = 0`
 			).bind(sopId).first();
@@ -113,6 +116,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 				content: row.content || "",
 				category: row.category || "",
 				scope: row.scope || null,
+				clientId: row.client_id || null,
 				tags: (() => { try { return JSON.parse(row.tags || "[]"); } catch(_) { return []; } })(),
 				version: Number(row.version || 1),
 				isPublished: row.is_published === 1,
@@ -134,7 +138,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 		const sopId = parseInt(matchUpdate[1]);
 		try {
 			const body = await request.json();
-			const { title, content, category, tags, scope } = body;
+			const { title, content, category, tags, scope, client_id } = body;
 			
 			if (!title || !content) {
 				return jsonResponse(400, { ok:false, code:"VALIDATION_ERROR", message:"標題和內容為必填", meta:{ requestId } }, corsHeaders);
@@ -151,9 +155,9 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			
 			await env.DATABASE.prepare(
 				`UPDATE SOPDocuments 
-				 SET title = ?, content = ?, category = ?, tags = ?, scope = ?, updated_at = ?, version = version + 1
+				 SET title = ?, content = ?, category = ?, tags = ?, scope = ?, client_id = ?, updated_at = ?, version = version + 1
 				 WHERE sop_id = ? AND is_deleted = 0`
-			).bind(title, content, category || '', tagsJson, scope, now, sopId).run();
+			).bind(title, content, category || '', tagsJson, scope, client_id || null, now, sopId).run();
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"更新成功", data:{ sop_id: sopId }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
