@@ -125,13 +125,12 @@
     const onProdHost = location.hostname.endsWith('horgoscpa.com');
     const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
 
-    // 定义需要预渲染的页面
+    // 定义需要预渲染的页面（只包含存在的 API）
     const pages = [
       { key: 'dashboard', endpoint: '/dashboard', priority: 1 },
       { key: 'timesheets', endpoint: '/timesheets?limit=20', priority: 1 },
       { key: 'tasks', endpoint: '/tasks?perPage=20', priority: 1 },
       { key: 'clients', endpoint: '/clients?perPage=20', priority: 2 },
-      { key: 'receipts', endpoint: '/receipts?perPage=20', priority: 2 },
       { key: 'leaves', endpoint: '/leaves?perPage=20', priority: 3 },
     ];
 
