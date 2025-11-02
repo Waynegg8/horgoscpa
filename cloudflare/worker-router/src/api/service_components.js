@@ -29,6 +29,12 @@ export async function handleServiceComponents(request, env, path) {
     return await createServiceComponent(request, env, corsHeaders, clientServiceId);
   }
 
+  // PUT /internal/api/v1/service-components/:id
+  if (method === 'PUT' && path.match(/^\/internal\/api\/v1\/service-components\/(\d+)$/)) {
+    const componentId = parseInt(path.match(/\/service-components\/(\d+)$/)[1]);
+    return await updateServiceComponent(request, env, corsHeaders, componentId);
+  }
+
   // DELETE /internal/api/v1/service-components/:id
   if (method === 'DELETE' && path.match(/^\/internal\/api\/v1\/service-components\/(\d+)$/)) {
     const componentId = parseInt(path.match(/\/service-components\/(\d+)$/)[1]);
@@ -54,25 +60,46 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
       ORDER BY sc.component_id
     `).bind(clientServiceId).all();
 
-    // 如果有sop_id，单独查询SOP信息
-    const componentsWithSOP = await Promise.all(
+    // 查询每个组件的多个服务层级SOP和任务配置
+    const componentsWithDetails = await Promise.all(
       (components.results || []).map(async (c) => {
-        let sopInfo = null;
-        if (c.sop_id) {
-          try {
-            const sop = await env.DATABASE.prepare(
-              'SELECT title, category FROM SOPDocuments WHERE sop_id = ?'
-            ).bind(c.sop_id).first();
-            if (sop) {
-              sopInfo = { sop_title: sop.title, sop_category: sop.category };
-            }
-          } catch (err) {
-            console.error('查询SOP失败:', err);
-          }
-        }
+        // 查询服务层级的多个SOP
+        const componentSOPs = await env.DATABASE.prepare(`
+          SELECT sop.sop_id, sop.title, sop.category, scs.sort_order
+          FROM ServiceComponentSOPs scs
+          JOIN SOPDocuments sop ON sop.sop_id = scs.sop_id
+          WHERE scs.component_id = ? AND sop.is_deleted = 0
+          ORDER BY scs.sort_order
+        `).bind(c.component_id).all();
+        
+        // 查询任务配置及其关联的SOP
+        const tasks = await env.DATABASE.prepare(`
+          SELECT * FROM ServiceComponentTasks
+          WHERE component_id = ?
+          ORDER BY task_order
+        `).bind(c.component_id).all();
+        
+        const tasksWithSOPs = await Promise.all(
+          (tasks.results || []).map(async (task) => {
+            const taskSOPs = await env.DATABASE.prepare(`
+              SELECT sop.sop_id, sop.title, sop.category, scts.sort_order
+              FROM ServiceComponentTaskSOPs scts
+              JOIN SOPDocuments sop ON sop.sop_id = scts.sop_id
+              WHERE scts.task_config_id = ? AND sop.is_deleted = 0
+              ORDER BY scts.sort_order
+            `).bind(task.task_config_id).all();
+            
+            return {
+              ...task,
+              sops: taskSOPs.results || []
+            };
+          })
+        );
+        
         return {
           ...c,
-          ...sopInfo,
+          component_sops: componentSOPs.results || [],
+          tasks: tasksWithSOPs,
           delivery_months: c.delivery_months ? JSON.parse(c.delivery_months) : null
         };
       })
@@ -80,7 +107,7 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
 
     return jsonResponse(200, {
       ok: true,
-      data: componentsWithSOP
+      data: componentsWithDetails
     }, corsHeaders);
   } catch (err) {
     console.error('获取服务组成部分失败:', err);

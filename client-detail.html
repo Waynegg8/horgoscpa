@@ -1712,27 +1712,49 @@
                       <div>📅 <strong>期限規則：</strong>${getDueRuleText(comp.due_date_rule)}</div>
                       <div>⚡ <strong>提前生成：</strong>${comp.advance_days}天</div>
                     </div>
-                    ${comp.sop_title ? `
-                      <div style="margin-top: 10px; padding: 6px 10px; background: #f0f9ff; border-radius: 4px; border-left: 3px solid #3b82f6;">
-                        <div style="font-size: 12px; font-weight: 600; color: #1e40af; margin-bottom: 2px;">📖 服務SOP</div>
-                        <div style="font-size: 13px; color: #374151;">${comp.sop_title}</div>
-                        ${comp.sop_category ? `<div style="font-size: 11px; color: #6b7280; margin-top: 2px;">分類：${getCategoryText(comp.sop_category)}</div>` : ''}
+                    ${comp.component_sops && comp.component_sops.length > 0 ? `
+                      <div style="margin-top: 10px; padding: 8px 12px; background: #f0f9ff; border-radius: 4px; border-left: 3px solid #3b82f6;">
+                        <div style="font-size: 12px; font-weight: 600; color: #1e40af; margin-bottom: 4px;">📖 服務層級SOP（${comp.component_sops.length}個）</div>
+                        ${comp.component_sops.map(sop => `
+                          <div style="font-size: 13px; color: #374151; padding: 2px 0;">
+                            • ${sop.title}
+                            ${sop.category ? `<span style="font-size: 11px; color: #6b7280; margin-left: 4px;">[${getCategoryText(sop.category)}]</span>` : ''}
+                          </div>
+                        `).join('')}
                       </div>
                     ` : ''}
                     ${comp.notes ? `<div style="margin-top: 8px; font-size: 13px; color: #9ca3af;">💡 ${comp.notes}</div>` : ''}
                     
-                    <!-- 任务明细区域 -->
-                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
-                      <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <strong style="font-size: 13px; color: #374151;">📋 相關任務</strong>
-                        <button class="table-btn-link" onclick="toggleComponentTasks(${comp.component_id})" style="font-size: 12px;">
-                          <span id="tasks-toggle-${comp.component_id}">展開</span>
-                        </button>
+                    <!-- 任务配置区域 -->
+                    ${comp.tasks && comp.tasks.length > 0 ? `
+                      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                        <strong style="font-size: 13px; color: #374151;">📋 任務配置（${comp.tasks.length}個）</strong>
+                        <div style="margin-top: 8px;">
+                          ${comp.tasks.map((task, taskIdx) => `
+                            <div style="background: #f9fafb; padding: 10px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #10b981;">
+                              <div style="font-size: 13px; color: #1f2937; font-weight: 500; margin-bottom: 4px;">
+                                ${taskIdx + 1}. ${task.task_name || '未命名任務'}
+                              </div>
+                              <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">
+                                ${task.assignee_user_id ? `👤 負責人：${allUsers.find(u => u.user_id === task.assignee_user_id)?.username || '未知'} • ` : ''}
+                                ${task.estimated_hours ? `⏱️ 預估：${task.estimated_hours}小時` : ''}
+                                ${task.notes ? ` • 💡 ${task.notes}` : ''}
+                              </div>
+                              ${task.sops && task.sops.length > 0 ? `
+                                <div style="margin-top: 6px; padding: 6px 8px; background: #ecfdf5; border-radius: 4px; border-left: 2px solid #10b981;">
+                                  <div style="font-size: 11px; font-weight: 600; color: #047857; margin-bottom: 2px;">📖 任務SOP：</div>
+                                  ${task.sops.map(sop => `
+                                    <div style="font-size: 12px; color: #065f46;">
+                                      • ${sop.title}
+                                    </div>
+                                  `).join('')}
+                                </div>
+                              ` : ''}
+                            </div>
+                          `).join('')}
+                        </div>
                       </div>
-                      <div id="tasks-list-${comp.component_id}" style="display: none; margin-top: 8px;">
-                        <div class="loading-text" style="font-size: 13px;">載入中...</div>
-                      </div>
-                    </div>
+                    ` : ''}
                   </div>
                   <div style="display: flex; gap: 5px;">
                     <button class="table-btn-link" onclick="editComponent(${comp.component_id})">編輯</button>
