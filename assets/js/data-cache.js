@@ -71,10 +71,12 @@
     
     // === 報表數據 ===
     reports_overview: ONE_HOUR,
-    reports_financial: ONE_HOUR,
     
     // === 附件系統 ===
     attachments_recent: ONE_HOUR,
+    
+    // === 任務模板 ===
+    task_templates: ONE_HOUR,
   };
 
   const onProdHost = location.hostname.endsWith('horgoscpa.com');
@@ -292,17 +294,28 @@
       { key: 'settings', endpoint: '/settings', priority: 'P2' },
     ];
     
-    // 📁 P3: 低優先級（后台加载，按需要）
+    // 📁 P3: 低優先級（后台加载，包含所有端点）
     const p3Tasks = [
       { key: 'holidays', endpoint: '/holidays', priority: 'P3' },
       { key: 'clients_page2', endpoint: '/clients?page=2&perPage=30', priority: 'P3' },
+      { key: 'clients_page3', endpoint: '/clients?page=3&perPage=30', priority: 'P3' },
       { key: 'services_types', endpoint: '/services', priority: 'P3' },
-      { key: 'tasks_completed', endpoint: '/tasks?perPage=30&status=completed', priority: 'P3' }, // 从50减到30
+      { key: 'tasks_completed', endpoint: '/tasks?perPage=30&status=completed', priority: 'P3' },
       { key: 'receipts_aging', endpoint: '/receipts/aging-report', priority: 'P3' },
-      { key: 'leaves_all', endpoint: '/leaves?perPage=100', priority: 'P3' }, // 从200减到100
-      { key: 'leaves_pending', endpoint: '/leaves?perPage=30&status=pending', priority: 'P3' }, // 从50减到30
+      { key: 'leaves_all', endpoint: '/leaves?perPage=100', priority: 'P3' },
+      { key: 'leaves_pending', endpoint: '/leaves?perPage=30&status=pending', priority: 'P3' },
       { key: 'leaves_balances', endpoint: '/leaves/balances', priority: 'P3' },
       { key: 'automation_rules', endpoint: '/automation/rules', priority: 'P3' },
+      { key: 'sop_list', endpoint: '/knowledge/sops?perPage=100', priority: 'P3' },
+      { key: 'faq_list', endpoint: '/knowledge/faqs?perPage=100', priority: 'P3' },
+      { key: 'documents_list', endpoint: '/knowledge/documents?perPage=100', priority: 'P3' },
+      { key: 'payroll_latest', endpoint: '/payroll?perPage=50', priority: 'P3' },
+      { key: 'costs_summary', endpoint: '/costs?perPage=50', priority: 'P3' }, // 尝试使用不同参数
+      { key: 'task_templates', endpoint: '/tasks/templates?perPage=50', priority: 'P3' }, // 尝试不同路径
+      // 以下端点即使失败也尝试加载，静默处理错误
+      { key: 'billing_schedules', endpoint: '/billing-schedules?perPage=100', priority: 'P3' }, // 尝试不同路径
+      { key: 'reports_overview', endpoint: '/reports?perPage=50', priority: 'P3' }, // 尝试简化参数
+      { key: 'attachments_recent', endpoint: '/attachments/recent?limit=50', priority: 'P3' }, // 使用recent子路径
     ];
     
     const allTasks = [...p0Tasks, ...p1Tasks, ...p2Tasks, ...p3Tasks];
