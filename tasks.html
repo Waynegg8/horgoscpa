@@ -671,16 +671,10 @@
           
           if (serviceTemplates.length > 0) {
             document.getElementById('quick-task-name').innerHTML = '<option value="">請選擇任務名稱</option>' +
-              serviceTemplates.map(t => `<option value="${t.template_name}">${t.template_name}</option>`).join('') +
-              '<option value="__custom__">📝 自訂任務名稱...</option>';
+              serviceTemplates.map(t => `<option value="${t.template_name}">${t.template_name}</option>`).join('');
           } else {
-            // 如果没有模板，显示为文本输入
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = 'quick-task-name';
-            input.placeholder = '請輸入任務名稱';
-            input.style.cssText = 'width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;';
-            document.getElementById('quick-task-name').replaceWith(input);
+            // 如果没有模板，提示用户先设置模板
+            document.getElementById('quick-task-name').innerHTML = '<option value="">請先在系統設定中新增任務模板</option>';
           }
           
           // 填充前置任务下拉框
@@ -749,10 +743,18 @@
             });
             
             html += `
-                <label style="display:block;margin-top:8px;cursor:pointer;">
-                  <input type="checkbox" id="quick-adjust-subsequent" checked style="margin-right:6px;" />
-                  <span style="font-size:13px;color:#78350f;">自動延後後續任務到期日</span>
-                </label>
+                <div style="margin-top:12px;padding:8px;background:white;border-radius:4px;">
+                  <label style="display:block;margin-bottom:8px;cursor:pointer;">
+                    <input type="checkbox" id="quick-adjust-subsequent" checked style="margin-right:6px;" />
+                    <span style="font-size:13px;color:#78350f;font-weight:500;">自動延後後續任務到期日</span>
+                  </label>
+                  <div style="display:flex;align-items:center;gap:8px;padding-left:24px;">
+                    <label style="font-size:13px;color:#78350f;">延後</label>
+                    <input type="number" id="quick-delay-days" value="1" min="1" max="30" 
+                           style="width:60px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;text-align:center;" />
+                    <label style="font-size:13px;color:#78350f;">天</label>
+                  </div>
+                </div>
               </div>
             `;
             
@@ -776,30 +778,20 @@
         window.submitQuickTask = async function() {
           if (!quickAddContext) return;
           
-          let taskName = document.getElementById('quick-task-name').value.trim();
-          
-          // 如果选择了"自定义任务名称"
-          if (taskName === '__custom__') {
-            taskName = prompt('請輸入自訂任務名稱：');
-            if (!taskName || !taskName.trim()) {
-              alert('請輸入任務名稱');
-              return;
-            }
-            taskName = taskName.trim();
-          }
-          
+          const taskName = document.getElementById('quick-task-name').value.trim();
           const assigneeUserId = document.getElementById('quick-assignee').value || null;
           const dueDate = document.getElementById('quick-due-date').value || null;
           const prerequisiteTaskId = document.getElementById('quick-prerequisite').value || null;
           const notes = document.getElementById('quick-notes').value.trim() || null;
           
           if (!taskName) {
-            alert('請輸入任務名稱');
+            alert('請選擇任務名稱');
             return;
           }
           
           // 检查是否需要调整后续任务
           const adjustSubsequent = document.getElementById('quick-adjust-subsequent')?.checked;
+          const delayDays = parseInt(document.getElementById('quick-delay-days')?.value) || 1;
           
           try {
             const payload = {
@@ -830,7 +822,7 @@
               // 如果需要调整后续任务的到期日
               if (adjustSubsequent && quickAddContext.affectedTasks.length > 0 && dueDate) {
                 const newDueDate = new Date(dueDate);
-                newDueDate.setDate(newDueDate.getDate() + 1); // 后续任务至少要晚一天
+                newDueDate.setDate(newDueDate.getDate() + delayDays); // 根据用户设置的天数延后
                 const minNextDueDate = newDueDate.toISOString().split('T')[0];
                 
                 // 批量更新后续任务的到期日
@@ -850,7 +842,7 @@
                 });
                 
                 await Promise.all(updatePromises);
-                alert('✅ 任務新增成功，已自動調整後續任務到期日');
+                alert(`✅ 任務新增成功，已自動將後續任務延後 ${delayDays} 天`);
               } else {
                 alert('✅ 任務新增成功');
               }
