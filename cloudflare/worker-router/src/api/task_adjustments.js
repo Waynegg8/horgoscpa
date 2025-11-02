@@ -266,13 +266,13 @@ export async function getAdjustmentHistory(env, taskId) {
     try {
       statusUpdates = await env.DATABASE.prepare(`
         SELECT 
-          update_id as id,
-          old_status,
-          new_status,
-          progress_note,
-          blocker_reason,
-          overdue_reason,
-          updated_at as requested_at,
+          tsu.update_id as id,
+          tsu.old_status,
+          tsu.new_status,
+          tsu.progress_note,
+          tsu.blocker_reason,
+          tsu.overdue_reason,
+          tsu.updated_at as requested_at,
           u.name as requested_by_name
         FROM TaskStatusUpdates tsu
         LEFT JOIN Users u ON u.user_id = tsu.updated_by

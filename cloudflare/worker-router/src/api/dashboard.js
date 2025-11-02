@@ -334,8 +334,8 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             c.company_name as client_name,
             s.service_name
           FROM TaskStatusUpdates su
-          JOIN Users u ON u.user_id = su.updated_by
-          JOIN ActiveTasks t ON t.task_id = su.task_id
+          LEFT JOIN Users u ON u.user_id = su.updated_by
+          LEFT JOIN ActiveTasks t ON t.task_id = su.task_id
           LEFT JOIN Users assignee ON assignee.user_id = t.assignee_user_id
           LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
           LEFT JOIN Clients c ON c.client_id = cs.client_id
