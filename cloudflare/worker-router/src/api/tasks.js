@@ -598,17 +598,20 @@ export async function handleTasks(request, env, me, requestId, url) {
 		}
 		
 		const new_due_date = body?.new_due_date;
-		const reason = body?.reason || '';
+		const reason = (body?.reason || '').trim();
+		
+		console.log('[调整到期日] 收到数据:', { taskId, new_due_date, reason });
 		
 		const errors = [];
 		if (!new_due_date || !/^\d{4}-\d{2}-\d{2}$/.test(new_due_date)) {
 			errors.push({ field: 'new_due_date', message: '日期格式无效 (YYYY-MM-DD)' });
 		}
-		if (!reason.trim()) {
+		if (!reason) {
 			errors.push({ field: 'reason', message: '必须填写调整原因' });
 		}
 		
 		if (errors.length) {
+			console.log('[调整到期日] 验证失败:', errors);
 			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
 		}
 		
