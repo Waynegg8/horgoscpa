@@ -210,6 +210,10 @@
               // 填充批量分配下拉
               document.getElementById('batch_assignee').innerHTML = '<option value="">請選擇負責人</option>' +
                 employeesList.map(e => `<option value="${e.user_id}">${e.name}</option>`).join('');
+              
+              // 填充快速新增任务的负责人下拉框
+              document.getElementById('quick-assignee').innerHTML = '<option value="">未指定</option>' +
+                employeesList.map(e => `<option value="${e.user_id}">${e.name}</option>`).join('');
             }
           } catch (e) {
             console.error('載入員工失敗', e);
@@ -353,6 +357,9 @@
               client.serviceGroups.set(groupKey, {
                 serviceName,
                 serviceMonth,
+                clientServiceId: task.clientServiceId,
+                serviceId: task.serviceId,
+                clientId: task.clientId,
                 tasks: []
               });
             }
@@ -441,10 +448,17 @@
                 
                 html += `
                   <div class="service-group">
-                    <div class="service-header" onclick="toggleService('${groupIdSafe}')">
-                      <span id="icon-${groupIdSafe}" style="font-size:14px;">▶</span>
-                      <strong style="font-size:14px;color:#374151;">${serviceTitle}</strong>
-                      <span style="color:#9ca3af;font-size:13px;">(${total}個任務: ${completed}已完成, ${total - completed}未完成)</span>
+                    <div class="service-header" style="display:flex;align-items:center;justify-content:space-between;">
+                      <div onclick="toggleService('${groupIdSafe}')" style="flex:1;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                        <span id="icon-${groupIdSafe}" style="font-size:14px;">▶</span>
+                        <strong style="font-size:14px;color:#374151;">${serviceTitle}</strong>
+                        <span style="color:#9ca3af;font-size:13px;">(${total}個任務: ${completed}已完成, ${total - completed}未完成)</span>
+                      </div>
+                      <button onclick="openQuickAddTask('${group.clientId}', '${group.clientServiceId}', '${group.serviceId}', '${group.serviceName}', '${group.serviceMonth}', event)" 
+                              style="padding:4px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px;"
+                              title="為此服務新增任務">
+                        <span style="font-size:14px;">➕</span> 新增任務
+                      </button>
                     </div>
                     <div id="group-${groupIdSafe}" style="display:none;">
                 `;
@@ -600,10 +614,125 @@
           window.location.href = '/internal/tasks-new';
         });
         
+        // 快速新增任務
+        let quickAddContext = null;
+        
+        window.openQuickAddTask = function(clientId, clientServiceId, serviceId, serviceName, serviceMonth, event) {
+          event.stopPropagation(); // 防止触发折叠
+          
+          quickAddContext = { clientId, clientServiceId, serviceId, serviceName, serviceMonth };
+          
+          // 设置标题
+          const monthText = serviceMonth ? ` - ${serviceMonth.slice(0, 4)}年${parseInt(serviceMonth.slice(5))}月` : '';
+          document.getElementById('quick-modal-title').textContent = `新增任務：${serviceName}${monthText}`;
+          
+          // 清空表单
+          document.getElementById('quick-task-name').value = '';
+          document.getElementById('quick-assignee').value = '';
+          document.getElementById('quick-due-date').value = '';
+          document.getElementById('quick-notes').value = '';
+          
+          // 显示模态框
+          document.getElementById('quick-add-modal').style.display = 'flex';
+        };
+        
+        window.closeQuickAddModal = function() {
+          document.getElementById('quick-add-modal').style.display = 'none';
+          quickAddContext = null;
+        };
+        
+        window.submitQuickTask = async function() {
+          if (!quickAddContext) return;
+          
+          const taskName = document.getElementById('quick-task-name').value.trim();
+          const assigneeUserId = document.getElementById('quick-assignee').value || null;
+          const dueDate = document.getElementById('quick-due-date').value || null;
+          const notes = document.getElementById('quick-notes').value.trim() || null;
+          
+          if (!taskName) {
+            alert('請輸入任務名稱');
+            return;
+          }
+          
+          try {
+            const payload = {
+              client_service_id: quickAddContext.clientServiceId,
+              task_name: taskName,
+              assignee_user_id: assigneeUserId,
+              due_date: dueDate,
+              service_month: quickAddContext.serviceMonth,
+              notes: notes
+            };
+            
+            const res = await fetch(`${apiBase}/tasks`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(payload)
+            });
+            
+            const json = await res.json();
+            
+            if (json.ok) {
+              alert('✅ 任務新增成功');
+              closeQuickAddModal();
+              loadAllTasks(); // 重新加载任务列表
+            } else {
+              alert('❌ 新增失敗：' + (json.message || '未知錯誤'));
+            }
+          } catch (err) {
+            console.error('新增任務失敗', err);
+            alert('❌ 新增失敗：' + err.message);
+          }
+        };
+        
         // 啟動
         init();
       })();
     </script>
+    
+    <!-- 快速新增任務模態框 -->
+    <div id="quick-add-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+      <div style="background:white;border-radius:12px;width:90%;max-width:500px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+        <h3 id="quick-modal-title" style="margin:0 0 20px 0;font-size:18px;color:#1f2937;">新增任務</h3>
+        
+        <div style="margin-bottom:16px;">
+          <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">任務名稱 <span style="color:#dc2626;">*</span></label>
+          <input type="text" id="quick-task-name" placeholder="例如：提交營業稅申報" 
+                 style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;" />
+        </div>
+        
+        <div style="margin-bottom:16px;">
+          <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">負責人</label>
+          <select id="quick-assignee" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+            <option value="">未指定</option>
+          </select>
+        </div>
+        
+        <div style="margin-bottom:16px;">
+          <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">到期日</label>
+          <input type="date" id="quick-due-date" 
+                 style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;" />
+        </div>
+        
+        <div style="margin-bottom:20px;">
+          <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">備註</label>
+          <textarea id="quick-notes" rows="3" placeholder="選填..." 
+                    style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;resize:vertical;"></textarea>
+        </div>
+        
+        <div style="display:flex;gap:12px;justify-content:flex-end;">
+          <button onclick="closeQuickAddModal()" 
+                  style="padding:10px 20px;background:#f3f4f6;color:#374151;border:none;border-radius:6px;cursor:pointer;font-size:14px;">
+            取消
+          </button>
+          <button onclick="submitQuickTask()" 
+                  style="padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;">
+            ✅ 建立任務
+          </button>
+        </div>
+      </div>
+    </div>
   </body>
   </html>
 

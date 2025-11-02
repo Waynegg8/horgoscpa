@@ -402,6 +402,9 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           LIMIT 30
         `).all();
         console.log('[仪表板] 状态更新查询结果:', statusUpdates?.results?.length || 0, '条');
+        if (statusUpdates?.results?.length > 0) {
+          console.log('[仪表板] 第一条状态更新:', JSON.stringify(statusUpdates.results[0], null, 2));
+        }
         
         // 查询假期申请
         const leaveApplications = await env.DATABASE.prepare(`
@@ -628,6 +631,8 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         }).filter(Boolean);
       } catch (err) {
         console.error('[仪表板] 获取最近动态失败:', err);
+        console.error('[仪表板] 错误堆栈:', err.stack);
+        console.error('[仪表板] 错误详情:', JSON.stringify(err, null, 2));
         res.recentActivities = [];
       }
 

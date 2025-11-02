@@ -220,6 +220,8 @@ export async function handleTasks(request, env, me, requestId, url) {
 				clientName: r.client_name || "",
 				clientTaxId: r.client_tax_id || "",
 				clientId: r.client_id || "",
+				clientServiceId: r.client_service_id || null,
+				serviceId: r.service_id || null,
 				serviceName: r.service_name || "",
 				serviceMonth: r.service_month || "",
 				componentId: r.component_id || null,
