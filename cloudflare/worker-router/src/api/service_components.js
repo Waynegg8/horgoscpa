@@ -111,7 +111,13 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
     }, corsHeaders);
   } catch (err) {
     console.error('获取服务组成部分失败:', err);
-    return jsonResponse(500, { ok: false, message: '获取失败', error: String(err) }, corsHeaders);
+    console.error('错误堆栈:', err.stack);
+    return jsonResponse(500, { 
+      ok: false, 
+      message: '获取失败', 
+      error: String(err),
+      debug: err.message || String(err)
+    }, corsHeaders);
   }
 }
 

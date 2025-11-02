@@ -1541,7 +1541,8 @@
         const json = await res.json();
         
         if (!json.ok) {
-          container.innerHTML = '<p class="error-text">載入失敗</p>';
+          console.error('載入組件失敗:', json);
+          container.innerHTML = `<p class="error-text">載入失敗: ${json.message || json.debug || '未知錯誤'}</p>`;
           return;
         }
 
