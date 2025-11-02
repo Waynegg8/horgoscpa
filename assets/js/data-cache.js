@@ -247,6 +247,63 @@
   }
 
   /**
+   * 預加載核心數據（P0 + P1，用於登入後立即加載）
+   */
+  async function preloadCritical(options = {}) {
+    const forceRefresh = options.force === true;
+    
+    console.log('[DataCache] 🚀 預加載核心數據（P0+P1）...');
+    preloadStatus.isPreloading = true;
+    preloadStatus.completed = [];
+    preloadStatus.failed = [];
+    
+    // P0: 最高優先級
+    const p0Tasks = [
+      { key: 'me', endpoint: '/auth/me', priority: 'P0' },
+      { key: 'users', endpoint: '/users', priority: 'P0' },
+      { key: 'dashboard', endpoint: '/dashboard', priority: 'P0' },
+    ];
+    
+    // P1: 高優先級
+    const p1Tasks = [
+      { key: 'timesheets_recent', endpoint: '/timesheets?limit=10', priority: 'P1' },
+      { key: 'tasks_pending', endpoint: '/tasks?perPage=10&status=pending', priority: 'P1' },
+      { key: 'clients_page1', endpoint: '/clients?page=1&perPage=10', priority: 'P1' },
+      { key: 'tags', endpoint: '/tags', priority: 'P1' },
+    ];
+    
+    const tasks = [...p0Tasks, ...p1Tasks];
+    preloadStatus.total = tasks.length;
+    
+    async function loadTask(task) {
+      const startTime = Date.now();
+      const result = await fetchWithCache(task.endpoint, task.key, { forceRefresh });
+      const duration = Date.now() - startTime;
+      
+      if (result.error) {
+        preloadStatus.failed.push(task.key);
+      } else {
+        preloadStatus.completed.push(task.key);
+        console.log(`[DataCache] ${task.priority} ✓ ${task.key} (${duration}ms)`);
+      }
+      
+      return result;
+    }
+    
+    // 並行加載所有核心數據
+    await Promise.allSettled(tasks.map(task => loadTask(task)));
+    
+    preloadStatus.isPreloading = false;
+    console.log(`[DataCache] ✅ 核心數據預加載完成: ${preloadStatus.completed.length}/${tasks.length} 成功`);
+    
+    return {
+      completed: preloadStatus.completed,
+      failed: preloadStatus.failed,
+      total: tasks.length
+    };
+  }
+
+  /**
    * 預加載所有關鍵數據（按優先級順序加載）
    */
   async function preloadAll(options = {}) {
@@ -257,6 +314,7 @@
 
     const adminMode = options.adminMode !== false; // 默認啟用管理員模式
     const forceRefresh = options.force === true; // 是否強制刷新
+    const skipCritical = options.skipCritical === true; // 是否跳過核心數據（P0/P1）
     
     if (forceRefresh) {
       console.log(`[DataCache] 🔄 開始強制刷新所有數據${adminMode ? '（管理員完整模式）' : '（基礎模式）'}...`);
@@ -346,9 +404,19 @@
       { key: 'attachments_recent', endpoint: '/attachments/recent?limit=50', priority: 'P3' },
     ];
     
-    const allTasks = [...p0Tasks, ...p1Tasks, ...p2Tasks, ...p3Tasks];
-    const basicTasks = [...p0Tasks, ...p1Tasks]; // 基礎模式：8項
-    const tasks = adminMode ? allTasks : basicTasks;
+    // 根據選項決定要加載的任務
+    let tasks;
+    if (skipCritical) {
+      // 跳過 P0/P1，只加載 P2/P3（用於登入後背景加載）
+      tasks = [...p2Tasks, ...p3Tasks];
+      console.log('[DataCache] ⏭ 跳過核心數據（P0/P1 已加載），只加載 P2/P3');
+    } else if (adminMode) {
+      // 完整模式：加載所有數據
+      tasks = [...p0Tasks, ...p1Tasks, ...p2Tasks, ...p3Tasks];
+    } else {
+      // 基礎模式：只加載 P0/P1
+      tasks = [...p0Tasks, ...p1Tasks];
+    }
     preloadStatus.total = tasks.length;
 
     // 加載單個任務
@@ -639,6 +707,7 @@
   // 暴露全局 API
   window.DataCache = {
     // 預加載
+    preloadCritical,    // 核心數據預加載（P0+P1，登入後立即執行）
     preloadAll,
     getPreloadStatus,
     startCyclicPreload,
