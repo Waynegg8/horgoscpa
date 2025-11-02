@@ -14,6 +14,8 @@
     <!-- ⚡ 預加載系統（必須在所有其他腳本之前加載） -->
     <script src="/assets/js/data-cache.js"></script>
     <script src="/assets/js/fetch-interceptor.js"></script>
+    <script src="/assets/js/prerender.js"></script>
+    <script src="/assets/js/page-prerender.js"></script>
     <script>
     // 立即啟動預加載（如果尚未啟動）
     if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
@@ -25,6 +27,21 @@
         console.log(`[Clients] ✅ 預加載已完成 ${status.completed.length}/${status.total} 項`);
       }
     }
+    
+    // ⚡ 页面加载完成后初始化预渲染
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.PagePrerender) {
+        // 尝试加载预渲染 HTML
+        window.PagePrerender.init('.clients-card', function(isBackgroundUpdate) {
+          if (isBackgroundUpdate) {
+            console.log('[Clients] 🔄 后台更新数据');
+          }
+        });
+        
+        // 启用自动保存
+        window.PagePrerender.autoSave('.clients-card');
+      }
+    });
     </script>
   </head>
   <body class="clients-page">

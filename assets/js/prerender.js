@@ -19,11 +19,51 @@
         html: html,
         timestamp: Date.now()
       };
-      localStorage.setItem(PRERENDER_PREFIX + key, JSON.stringify(data));
-      console.log(`[Prerender] ✓ ${key} 已保存 (${Math.round(html.length / 1024)}KB)`);
+      
+      // 尝试保存
+      try {
+        localStorage.setItem(PRERENDER_PREFIX + key, JSON.stringify(data));
+        console.log(`[Prerender] ✓ ${key} 已保存 (${Math.round(html.length / 1024)}KB)`);
+      } catch (quotaError) {
+        // 容量不足，尝试清理
+        console.warn('[Prerender] ⚠ localStorage 容量不足，尝试清理...');
+        cleanupOldPrerender();
+        
+        // 再次尝试保存
+        localStorage.setItem(PRERENDER_PREFIX + key, JSON.stringify(data));
+        console.log(`[Prerender] ✓ ${key} 已保存（清理后）`);
+      }
     } catch (e) {
       console.warn(`[Prerender] ⚠ ${key} 保存失败`, e);
     }
+  }
+  
+  /**
+   * 清理最旧的预渲染
+   */
+  function cleanupOldPrerender() {
+    const keys = Object.keys(localStorage);
+    const prerenderedPages = keys
+      .filter(key => key.startsWith(PRERENDER_PREFIX))
+      .map(key => {
+        try {
+          const data = JSON.parse(localStorage.getItem(key));
+          return { key, timestamp: data.timestamp };
+        } catch (e) {
+          return null;
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.timestamp - b.timestamp); // 最旧的在前
+    
+    // 删除最旧的 50%
+    const toDelete = Math.ceil(prerenderedPages.length / 2);
+    for (let i = 0; i < toDelete; i++) {
+      localStorage.removeItem(prerenderedPages[i].key);
+      console.log(`[Prerender] 🗑 清理: ${prerenderedPages[i].key}`);
+    }
+    
+    console.log(`[Prerender] ✓ 已清理 ${toDelete} 个旧预渲染`);
   }
 
   /**
@@ -184,6 +224,61 @@
   }
 
   /**
+   * 获取 localStorage 使用情况
+   */
+  function getStorageUsage() {
+    let totalSize = 0;
+    let cacheSize = 0;
+    let prerenderSize = 0;
+    
+    for (let key in localStorage) {
+      if (localStorage.hasOwnProperty(key)) {
+        const itemSize = (localStorage[key].length + key.length) * 2; // UTF-16 = 2 bytes per char
+        totalSize += itemSize;
+        
+        if (key.startsWith('horgos_cache_')) {
+          cacheSize += itemSize;
+        } else if (key.startsWith(PRERENDER_PREFIX)) {
+          prerenderSize += itemSize;
+        }
+      }
+    }
+    
+    return {
+      total: Math.round(totalSize / 1024), // KB
+      cache: Math.round(cacheSize / 1024), // KB
+      prerender: Math.round(prerenderSize / 1024), // KB
+      other: Math.round((totalSize - cacheSize - prerenderSize) / 1024), // KB
+      limit: 5120, // 5MB (保守估计)
+      usage: Math.round((totalSize / (5 * 1024 * 1024)) * 100) // %
+    };
+  }
+
+  /**
+   * 检查 localStorage 容量
+   */
+  function checkStorageCapacity() {
+    const usage = getStorageUsage();
+    
+    console.log(`[Prerender] 📊 localStorage 使用情况:`);
+    console.log(`  - 总计: ${usage.total}KB / ${usage.limit}KB (${usage.usage}%)`);
+    console.log(`  - 数据缓存: ${usage.cache}KB`);
+    console.log(`  - HTML 预渲染: ${usage.prerender}KB`);
+    console.log(`  - 其他: ${usage.other}KB`);
+    
+    if (usage.usage > 80) {
+      console.warn('[Prerender] ⚠ localStorage 使用超过 80%，建议清理');
+      return { warning: true, usage };
+    } else if (usage.usage > 50) {
+      console.log('[Prerender] ℹ localStorage 使用正常');
+      return { warning: false, usage };
+    } else {
+      console.log('[Prerender] ✓ localStorage 容量充足');
+      return { warning: false, usage };
+    }
+  }
+
+  /**
    * 获取预渲染状态
    */
   function getPrerenderStatus() {
@@ -217,9 +312,14 @@
     load: loadPrerender,
     clearAll: clearAllPrerender,
     prerenderAllPages,
-    getStatus: getPrerenderStatus
+    getStatus: getPrerenderStatus,
+    getStorageUsage,
+    checkCapacity: checkStorageCapacity
   };
 
   console.log('[Prerender] 预渲染系统已就绪');
+  
+  // 启动时检查容量
+  checkStorageCapacity();
 })();
 
