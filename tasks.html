@@ -664,17 +664,17 @@
           document.getElementById('quick-selected-sops').innerHTML = '';
           document.getElementById('quick-affected-tasks').style.display = 'none';
           
-          // 填充任务模板下拉框（根据服务类型过滤）
-          const serviceTemplates = allTaskTemplates.filter(t => 
-            !t.service_id || t.service_id === serviceId
+          // 填充任务类型下拉框（从服务项目中获取）
+          const serviceItems = allServiceItems.filter(item => 
+            item.service_id === serviceId && item.is_active
           );
           
-          if (serviceTemplates.length > 0) {
-            document.getElementById('quick-task-name').innerHTML = '<option value="">請選擇任務名稱</option>' +
-              serviceTemplates.map(t => `<option value="${t.template_name}">${t.template_name}</option>`).join('');
+          if (serviceItems.length > 0) {
+            document.getElementById('quick-task-name').innerHTML = '<option value="">請選擇任務類型</option>' +
+              serviceItems.map(item => `<option value="${item.item_name}">${item.item_name}</option>`).join('');
           } else {
-            // 如果没有模板，提示用户先设置模板
-            document.getElementById('quick-task-name').innerHTML = '<option value="">請先在系統設定中新增任務模板</option>';
+            // 如果没有任务类型，提示用户先设置
+            document.getElementById('quick-task-name').innerHTML = '<option value="">請先在系統設定中為此服務新增任務類型</option>';
           }
           
           // 填充前置任务下拉框
@@ -785,7 +785,7 @@
           const notes = document.getElementById('quick-notes').value.trim() || null;
           
           if (!taskName) {
-            alert('請選擇任務名稱');
+            alert('請選擇任務類型');
             return;
           }
           
@@ -858,9 +858,10 @@
           }
         };
         
-        // SOP 和任务模板相关功能
+        // SOP 和服务项目相关功能
         let allSOPs = [];
-        let allTaskTemplates = [];
+        let allServices = [];
+        let allServiceItems = [];
         
         // 加载SOPs
         async function loadAllSOPs() {
@@ -875,16 +876,29 @@
           }
         }
         
-        // 加载任务模板
-        async function loadAllTaskTemplates() {
+        // 加载所有服务
+        async function loadAllServices() {
           try {
-            const res = await fetch(`${apiBase}/task-templates?perPage=500`, { credentials: 'include' });
+            const res = await fetch(`${apiBase}/services`, { credentials: 'include' });
             if (res.ok) {
               const json = await res.json();
-              allTaskTemplates = json.data || [];
+              allServices = json.data || [];
             }
           } catch (e) {
-            console.error('載入任務模板失敗', e);
+            console.error('載入服務失敗', e);
+          }
+        }
+        
+        // 加载所有服务项目（任务类型）
+        async function loadAllServiceItems() {
+          try {
+            const res = await fetch(`${apiBase}/services/items`, { credentials: 'include' });
+            if (res.ok) {
+              const json = await res.json();
+              allServiceItems = json.data || [];
+            }
+          } catch (e) {
+            console.error('載入服務項目失敗', e);
           }
         }
         
@@ -892,8 +906,15 @@
         window.openQuickSOPSelector = function() {
           if (!quickAddContext) return;
           
-          // 根据服务类型过滤SOP（只显示任务层级的SOP）
-          const filteredSOPs = allSOPs.filter(s => s.scope === 'task');
+          // 找到当前服务的service_code
+          const currentService = allServices.find(s => s.service_id === quickAddContext.serviceId);
+          const serviceCode = currentService?.service_code || '';
+          
+          // 根据服务类型和scope过滤SOP（只显示任务层级且匹配服务类型的SOP）
+          const filteredSOPs = allSOPs.filter(s => 
+            s.scope === 'task' && 
+            (s.category === serviceCode || s.category === serviceCode.toLowerCase())
+          );
           
           // 按分类分组
           const sopsByCategory = {};
@@ -925,7 +946,18 @@
           });
           
           if (html === '') {
-            html = '<div style="text-align:center;padding:24px;color:#9ca3af;">暫無可用的SOP文檔</div>';
+            const serviceName = currentService?.service_name || '此服務';
+            html = `
+              <div style="text-align:center;padding:24px;color:#9ca3af;">
+                <div style="font-size:48px;margin-bottom:16px;">📋</div>
+                <div style="font-size:14px;color:#6b7280;">
+                  暫無適用於 <strong>${serviceName}</strong> 的任務層級SOP文檔
+                </div>
+                <div style="font-size:13px;color:#9ca3af;margin-top:8px;">
+                  請先在知識庫中新增相關SOP
+                </div>
+              </div>
+            `;
           }
           
           document.getElementById('quick-sop-list').innerHTML = html;
@@ -984,7 +1016,8 @@
         // 啟動
         init();
         loadAllSOPs(); // 加载SOPs
-        loadAllTaskTemplates(); // 加载任务模板
+        loadAllServices(); // 加载服务
+        loadAllServiceItems(); // 加载服务项目
       })();
     </script>
     
@@ -994,9 +1027,12 @@
         <h3 id="quick-modal-title" style="margin:0 0 20px 0;font-size:18px;color:#1f2937;">新增任務</h3>
         
         <div style="margin-bottom:16px;">
-          <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">任務名稱 <span style="color:#dc2626;">*</span></label>
+          <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">
+            任務類型 <span style="color:#dc2626;">*</span>
+            <span style="font-size:12px;color:#6b7280;font-weight:normal;">（從服務項目中選擇）</span>
+          </label>
           <select id="quick-task-name" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
-            <option value="">請選擇任務名稱</option>
+            <option value="">請選擇任務類型</option>
           </select>
         </div>
         
