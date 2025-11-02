@@ -46,6 +46,8 @@ export async function handleServiceComponents(request, env, path) {
 
 async function listServiceComponents(env, corsHeaders, clientServiceId) {
   try {
+    console.log('[listServiceComponents] 开始查询, clientServiceId:', clientServiceId);
+    
     const components = await env.DATABASE.prepare(`
       SELECT 
         sc.*,
@@ -59,10 +61,14 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
       WHERE sc.client_service_id = ? AND sc.is_active = 1
       ORDER BY sc.component_id
     `).bind(clientServiceId).all();
+    
+    console.log('[listServiceComponents] 查询到组件数量:', components.results?.length || 0);
 
     // 查询每个组件的多个服务层级SOP和任务配置
     const componentsWithDetails = await Promise.all(
-      (components.results || []).map(async (c) => {
+      (components.results || []).map(async (c, index) => {
+        console.log(`[listServiceComponents] 处理组件 ${index + 1}/${components.results.length}, component_id:`, c.component_id);
+        
         // 查询服务层级的多个SOP
         const componentSOPs = await env.DATABASE.prepare(`
           SELECT sop.sop_id, sop.title, sop.category, scs.sort_order
@@ -72,6 +78,8 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
           ORDER BY scs.sort_order
         `).bind(c.component_id).all();
         
+        console.log(`[listServiceComponents] 组件 ${c.component_id} 的服务SOP数量:`, componentSOPs.results?.length || 0);
+        
         // 查询任务配置及其关联的SOP
         const tasks = await env.DATABASE.prepare(`
           SELECT * FROM ServiceComponentTasks
@@ -79,8 +87,12 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
           ORDER BY task_order
         `).bind(c.component_id).all();
         
+        console.log(`[listServiceComponents] 组件 ${c.component_id} 的任务数量:`, tasks.results?.length || 0);
+        
         const tasksWithSOPs = await Promise.all(
           (tasks.results || []).map(async (task) => {
+            console.log(`[listServiceComponents] 查询任务 ${task.config_id} 的SOP, task.config_id:`, task.config_id);
+            
             const taskSOPs = await env.DATABASE.prepare(`
               SELECT sop.sop_id, sop.title, sop.category, scts.sort_order
               FROM ServiceComponentTaskSOPs scts
@@ -89,12 +101,16 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
               ORDER BY scts.sort_order
             `).bind(task.config_id).all();
             
+            console.log(`[listServiceComponents] 任务 ${task.config_id} 的SOP数量:`, taskSOPs.results?.length || 0);
+            
             return {
               ...task,
               sops: taskSOPs.results || []
             };
           })
         );
+        
+        console.log(`[listServiceComponents] 组件 ${c.component_id} 处理完成`);
         
         return {
           ...c,
@@ -104,6 +120,8 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
         };
       })
     );
+    
+    console.log('[listServiceComponents] 所有组件处理完成，准备返回');
 
     return jsonResponse(200, {
       ok: true,
