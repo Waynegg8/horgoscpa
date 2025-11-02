@@ -1,4 +1,5 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+import { generateCacheKey, getCache, saveCache, invalidateCacheByType } from "../cache-helper.js";
 
 export async function handleClients(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -272,6 +273,21 @@ export async function handleClients(request, env, me, requestId, url) {
 		const offset = (page - 1) * perPage;
 		const searchQuery = (params.get("q") || "").trim();
 		const tagId = params.get("tag_id") || "";
+		
+		// ⚡ 尝试从缓存读取
+		const cacheKey = generateCacheKey('clients_list', { page, perPage, q: searchQuery, tag_id: tagId });
+		const cached = await getCache(env, cacheKey);
+		
+		if (cached && cached.data) {
+			return jsonResponse(200, { 
+				ok: true, 
+				code: "OK", 
+				message: "成功（缓存）", 
+				data: cached.data.list, 
+				meta: { ...cached.data.meta, requestId, ...cached.meta } 
+			}, corsHeaders);
+		}
+		
 		try {
 			const where = ["c.is_deleted = 0"];
 			const binds = [];
@@ -327,6 +343,12 @@ export async function handleClients(request, env, me, requestId, url) {
 			}));
 			
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
+			
+			// ⚡ 保存到缓存（不等待完成）
+			saveCache(env, cacheKey, 'clients_list', { list: data, meta }, {
+				scopeParams: { page, perPage, q: searchQuery, tag_id: tagId }
+			}).catch(err => console.error('[CLIENTS] 缓存保存失败:', err));
+			
 			return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
@@ -391,6 +413,12 @@ export async function handleClients(request, env, me, requestId, url) {
 				await env.DATABASE.prepare("INSERT OR IGNORE INTO ClientTagAssignments (client_id, tag_id, assigned_at) VALUES (?, ?, ?)").bind(clientId, tagId, now).run();
 			}
 			const data = { clientId, companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, tags: tagIds };
+			
+			// ⚡ 失效客户列表缓存
+			invalidateCacheByType(env, 'clients_list').catch(err => 
+				console.error('[CLIENTS] 失效缓存失败:', err)
+			);
+			
 			return jsonResponse(201, { ok: true, code: "CREATED", message: "已建立", data, meta: { requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
@@ -468,6 +496,12 @@ export async function handleClients(request, env, me, requestId, url) {
 			}
 			
 			const data = { clientId, companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, tags: tagIds, updatedAt: now };
+			
+			// ⚡ 失效客户列表缓存
+			invalidateCacheByType(env, 'clients_list').catch(err => 
+				console.error('[CLIENTS] 失效缓存失败:', err)
+			);
+			
 			return jsonResponse(200, { ok: true, code: "SUCCESS", message: "已更新", data, meta: { requestId } }, corsHeaders);
 			
 		} catch (err) {
@@ -494,6 +528,11 @@ export async function handleClients(request, env, me, requestId, url) {
 			await env.DATABASE.prepare(
 				"UPDATE Clients SET is_deleted = 1, deleted_at = ?, deleted_by = ? WHERE client_id = ?"
 			).bind(now, me.user_id, clientId).run();
+			
+			// ⚡ 失效客户列表缓存
+			invalidateCacheByType(env, 'clients_list').catch(err => 
+				console.error('[CLIENTS] 失效缓存失败:', err)
+			);
 			
 			return jsonResponse(200, { 
 				ok: true, 

@@ -1,147 +1,200 @@
 /**
- * ⚡ 通用缓存助手
- * 提供统一的缓存读写接口
+ * ⚡ 通用数据缓存辅助模块
+ * 策略：缓存永久有效，直到数据变动时主动失效
  */
 
 /**
+ * 生成缓存键
+ * @param {string} cacheType - 缓存类型（如 'clients_list', 'holidays_all'）
+ * @param {object} params - 参数对象（可选）
+ */
+export function generateCacheKey(cacheType, params = {}) {
+	if (!params || Object.keys(params).length === 0) {
+		return cacheType;
+	}
+	
+	// 按字母顺序排序参数，确保相同参数生成相同的key
+	const sortedParams = Object.keys(params)
+		.sort()
+		.map(k => `${k}=${params[k]}`)
+		.join('&');
+	
+	return `${cacheType}:${sortedParams}`;
+}
+
+/**
  * 获取缓存
- * @param {Object} env - Cloudflare环境对象
+ * @param {object} env - Cloudflare环境
  * @param {string} cacheKey - 缓存键
- * @returns {Promise<Object|null>} - 缓存数据或null
+ * @returns {Promise<object|null>} 缓存数据或null
  */
 export async function getCache(env, cacheKey) {
 	try {
 		const cache = await env.DATABASE.prepare(
-			`SELECT cached_data, expires_at, hit_count
+			`SELECT cached_data, last_updated_at, hit_count, data_version
 			 FROM UniversalDataCache
-			 WHERE cache_key = ?`
+			 WHERE cache_key = ? AND invalidated = 0`
 		).bind(cacheKey).first();
 		
-		if (!cache) {
-			return null;
-		}
+		if (!cache) return null;
 		
-		// 检查是否过期
-		const now = new Date();
-		const expiresAt = new Date(cache.expires_at);
-		
-		if (now > expiresAt) {
-			console.log(`[Cache] ⚠ 缓存已过期: ${cacheKey}`);
-			// 删除过期缓存
-			await env.DATABASE.prepare(
-				`DELETE FROM UniversalDataCache WHERE cache_key = ?`
-			).bind(cacheKey).run();
-			return null;
-		}
-		
-		// 更新命中次数和最后访问时间
+		// 更新访问时间和命中次数
 		await env.DATABASE.prepare(
 			`UPDATE UniversalDataCache 
-			 SET hit_count = hit_count + 1, last_accessed_at = ?
+			 SET last_accessed_at = datetime('now'), 
+			     hit_count = hit_count + 1 
 			 WHERE cache_key = ?`
-		).bind(now.toISOString(), cacheKey).run();
+		).bind(cacheKey).run();
 		
 		const data = JSON.parse(cache.cached_data || '{}');
-		console.log(`[Cache] ✓ 缓存命中: ${cacheKey} (命中次数: ${cache.hit_count + 1})`);
 		
-		return data;
+		console.log('[Cache] ✓ 缓存命中', {
+			key: cacheKey,
+			hits: (cache.hit_count || 0) + 1,
+			version: cache.data_version,
+			updated: cache.last_updated_at
+		});
+		
+		return {
+			data,
+			meta: {
+				cached: true,
+				hit_count: (cache.hit_count || 0) + 1,
+				version: cache.data_version,
+				last_updated: cache.last_updated_at
+			}
+		};
 	} catch (err) {
-		console.error(`[Cache] 读取缓存失败 (${cacheKey}):`, err);
+		console.error('[Cache] 读取失败:', err);
 		return null;
 	}
 }
 
 /**
- * 设置缓存
- * @param {Object} env - Cloudflare环境对象
+ * 保存缓存
+ * @param {object} env - Cloudflare环境
  * @param {string} cacheKey - 缓存键
  * @param {string} cacheType - 缓存类型
- * @param {Object} data - 要缓存的数据
- * @param {Object} options - 选项
- * @param {number} options.ttlMinutes - 生存时间（分钟），默认60
- * @param {number} options.userId - 用户ID（可选）
+ * @param {any} data - 要缓存的数据
+ * @param {object} options - 可选参数
  */
-export async function setCache(env, cacheKey, cacheType, data, options = {}) {
+export async function saveCache(env, cacheKey, cacheType, data, options = {}) {
 	try {
-		const now = new Date();
-		const ttlMinutes = options.ttlMinutes || 60;
-		const expiresAt = new Date(now.getTime() + ttlMinutes * 60 * 1000);
-		const cachedJson = JSON.stringify(data);
-		const dataSize = new Blob([cachedJson]).size;
+		const now = new Date().toISOString();
+		const cachedData = JSON.stringify(data);
+		const dataSize = new Blob([cachedData]).size;
+		const userId = options.userId || null;
+		const scopeParams = options.scopeParams ? JSON.stringify(options.scopeParams) : null;
 		
-		// UPSERT
+		// UPSERT：如果存在则更新，否则插入（同时递增版本号并重置失效标记）
 		await env.DATABASE.prepare(
-			`INSERT INTO UniversalDataCache (
-				cache_key, cache_type, cached_data, user_id, data_size, 
-				ttl_minutes, created_at, last_accessed_at, expires_at
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-			ON CONFLICT(cache_key) DO UPDATE SET
-				cached_data = excluded.cached_data,
-				data_size = excluded.data_size,
-				last_accessed_at = excluded.last_accessed_at,
-				expires_at = excluded.expires_at,
-				hit_count = 0`
-		).bind(
-			cacheKey,
-			cacheType,
-			cachedJson,
-			options.userId || null,
-			dataSize,
-			ttlMinutes,
-			now.toISOString(),
-			now.toISOString(),
-			expiresAt.toISOString()
-		).run();
+			`INSERT INTO UniversalDataCache (cache_key, cache_type, cached_data, data_version, invalidated, user_id, scope_params, data_size, last_updated_at, last_accessed_at, created_at)
+			 VALUES (?, ?, ?, 1, 0, ?, ?, ?, ?, ?, ?)
+			 ON CONFLICT(cache_key) DO UPDATE SET
+			   cached_data = excluded.cached_data,
+			   data_version = data_version + 1,
+			   invalidated = 0,
+			   data_size = excluded.data_size,
+			   last_updated_at = excluded.last_updated_at,
+			   last_accessed_at = excluded.last_accessed_at`
+		).bind(cacheKey, cacheType, cachedData, userId, scopeParams, dataSize, now, now, now).run();
 		
-		console.log(`[Cache] ✓ 缓存已保存: ${cacheKey} (${(dataSize / 1024).toFixed(2)}KB, TTL: ${ttlMinutes}min)`);
+		console.log('[Cache] ✓ 缓存已保存', {
+			key: cacheKey,
+			type: cacheType,
+			size: `${(dataSize / 1024).toFixed(1)}KB`
+		});
+		
+		return true;
 	} catch (err) {
-		console.error(`[Cache] 保存缓存失败 (${cacheKey}):`, err);
+		console.error('[Cache] 保存失败:', err);
+		return false;
 	}
 }
 
 /**
- * 删除缓存
- * @param {Object} env - Cloudflare环境对象
- * @param {string} cacheKey - 缓存键或模式（支持LIKE）
+ * 失效缓存（按缓存键）
+ * @param {object} env - Cloudflare环境
+ * @param {string} cacheKey - 缓存键
  */
-export async function deleteCache(env, cacheKey) {
+export async function invalidateCache(env, cacheKey) {
 	try {
-		if (cacheKey.includes('%')) {
-			// 批量删除（使用LIKE）
-			await env.DATABASE.prepare(
-				`DELETE FROM UniversalDataCache WHERE cache_key LIKE ?`
-			).bind(cacheKey).run();
-			console.log(`[Cache] ✓ 批量删除缓存: ${cacheKey}`);
-		} else {
-			// 单个删除
-			await env.DATABASE.prepare(
-				`DELETE FROM UniversalDataCache WHERE cache_key = ?`
-			).bind(cacheKey).run();
-			console.log(`[Cache] ✓ 删除缓存: ${cacheKey}`);
-		}
+		await env.DATABASE.prepare(
+			`UPDATE UniversalDataCache 
+			 SET invalidated = 1 
+			 WHERE cache_key = ?`
+		).bind(cacheKey).run();
+		
+		console.log('[Cache] ✓ 缓存已失效', { key: cacheKey });
 	} catch (err) {
-		console.error(`[Cache] 删除缓存失败 (${cacheKey}):`, err);
+		console.error('[Cache] 失效失败:', err);
 	}
 }
 
 /**
- * 清理过期缓存（定期执行）
- * @param {Object} env - Cloudflare环境对象
+ * 批量失效缓存（按缓存类型）
+ * @param {object} env - Cloudflare环境
+ * @param {string} cacheType - 缓存类型
+ * @param {object} filters - 过滤条件（可选）
  */
-export async function cleanExpiredCache(env) {
+export async function invalidateCacheByType(env, cacheType, filters = {}) {
+	try {
+		let sql = `UPDATE UniversalDataCache SET invalidated = 1 WHERE cache_type = ?`;
+		const binds = [cacheType];
+		
+		// 如果有 user_id 过滤
+		if (filters.userId) {
+			sql += ` AND user_id = ?`;
+			binds.push(filters.userId);
+		}
+		
+		const result = await env.DATABASE.prepare(sql).bind(...binds).run();
+		
+		console.log('[Cache] ✓ 批量失效', {
+			type: cacheType,
+			filters,
+			affected: result.changes || 0
+		});
+	} catch (err) {
+		console.error('[Cache] 批量失效失败:', err);
+	}
+}
+
+/**
+ * 清理过期的失效缓存（定期维护）
+ * @param {object} env - Cloudflare环境
+ * @param {number} daysOld - 保留天数（默认7天）
+ */
+export async function cleanupInvalidatedCache(env, daysOld = 7) {
 	try {
 		const result = await env.DATABASE.prepare(
-			`DELETE FROM UniversalDataCache WHERE datetime(expires_at) <= datetime('now')`
-		).run();
+			`DELETE FROM UniversalDataCache 
+			 WHERE invalidated = 1 
+			   AND datetime(last_updated_at) < datetime('now', '-' || ? || ' days')`
+		).bind(daysOld).run();
 		
-		const deletedCount = result?.meta?.changes || 0;
-		if (deletedCount > 0) {
-			console.log(`[Cache] ✓ 清理过期缓存: ${deletedCount} 项`);
-		}
-		return deletedCount;
+		console.log('[Cache] ✓ 清理完成', {
+			deleted: result.changes || 0,
+			older_than_days: daysOld
+		});
 	} catch (err) {
-		console.error('[Cache] 清理过期缓存失败:', err);
-		return 0;
+		console.error('[Cache] 清理失败:', err);
 	}
 }
 
+/**
+ * 获取缓存统计信息
+ * @param {object} env - Cloudflare环境
+ */
+export async function getCacheStats(env) {
+	try {
+		const stats = await env.DATABASE.prepare(
+			`SELECT * FROM CacheStats`
+		).all();
+		
+		return stats.results || [];
+	} catch (err) {
+		console.error('[Cache] 获取统计失败:', err);
+		return [];
+	}
+}

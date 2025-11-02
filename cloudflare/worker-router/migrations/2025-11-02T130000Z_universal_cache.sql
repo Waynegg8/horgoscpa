@@ -79,14 +79,44 @@ INSERT INTO CacheInvalidationRules (source_table, source_operation, target_cache
 ('Clients', 'DELETE', 'clients_list', NULL, '删除客户时失效客户列表缓存'),
 
 -- 假日表变动
-('Holidays', 'INSERT', 'holidays_range', NULL, '新增假日时失效假日缓存'),
-('Holidays', 'UPDATE', 'holidays_range', NULL, '更新假日时失效假日缓存'),
-('Holidays', 'DELETE', 'holidays_range', NULL, '删除假日时失效假日缓存'),
+('Holidays', 'INSERT', 'holidays_all', NULL, '新增假日时失效假日缓存'),
+('Holidays', 'UPDATE', 'holidays_all', NULL, '更新假日时失效假日缓存'),
+('Holidays', 'DELETE', 'holidays_all', NULL, '删除假日时失效假日缓存'),
 
 -- 请假表变动
-('LeaveRequests', 'INSERT', 'leaves_month', '{"user_id": "affected"}', '新增请假时失效请假缓存'),
-('LeaveRequests', 'UPDATE', 'leaves_month', '{"user_id": "affected"}', '更新请假时失效请假缓存'),
-('LeaveRequests', 'DELETE', 'leaves_month', '{"user_id": "affected"}', '删除请假时失效请假缓存');
+('LeaveRequests', 'INSERT', 'leaves_list', '{"user_id": "affected"}', '新增请假时失效该用户请假列表'),
+('LeaveRequests', 'UPDATE', 'leaves_list', '{"user_id": "affected"}', '更新请假时失效该用户请假列表'),
+('LeaveRequests', 'DELETE', 'leaves_list', '{"user_id": "affected"}', '删除请假时失效该用户请假列表'),
+('LeaveRequests', 'INSERT', 'leaves_balances', '{"user_id": "affected"}', '新增请假时失效该用户假期余额'),
+('LeaveRequests', 'UPDATE', 'leaves_balances', '{"user_id": "affected"}', '更新请假时失效该用户假期余额'),
+('LeaveRequests', 'DELETE', 'leaves_balances', '{"user_id": "affected"}', '删除请假时失效该用户假期余额'),
+
+-- 假期余额表变动
+('LeaveBalances', 'INSERT', 'leaves_balances', '{"user_id": "affected"}', '新增假期余额'),
+('LeaveBalances', 'UPDATE', 'leaves_balances', '{"user_id": "affected"}', '更新假期余额'),
+
+-- 任务表变动
+('Tasks', 'INSERT', 'tasks_list', NULL, '新增任务时失效任务列表缓存'),
+('Tasks', 'UPDATE', 'tasks_list', NULL, '更新任务时失效任务列表缓存'),
+('Tasks', 'DELETE', 'tasks_list', NULL, '删除任务时失效任务列表缓存'),
+
+-- 收据表变动
+('Receipts', 'INSERT', 'receipts_list', NULL, '新增收据时失效收据列表缓存'),
+('Receipts', 'UPDATE', 'receipts_list', NULL, '更新收据时失效收据列表缓存'),
+('Receipts', 'DELETE', 'receipts_list', NULL, '删除收据时失效收据列表缓存'),
+('Receipts', 'INSERT', 'receipts_statistics', NULL, '新增收据时失效统计缓存'),
+('Receipts', 'UPDATE', 'receipts_statistics', NULL, '更新收据时失效统计缓存'),
+
+-- 用户表变动
+('Users', 'INSERT', 'users_list', NULL, '新增用户时失效用户列表缓存'),
+('Users', 'UPDATE', 'users_list', NULL, '更新用户时失效用户列表缓存'),
+('Users', 'DELETE', 'users_list', NULL, '删除用户时失效用户列表缓存'),
+
+-- 服务类型表变动
+('Services', 'INSERT', 'services_list', NULL, '新增服务时失效服务列表缓存'),
+('Services', 'UPDATE', 'services_list', NULL, '更新服务时失效服务列表缓存'),
+('ServiceItems', 'INSERT', 'services_list', NULL, '新增服务项时失效服务列表缓存'),
+('ServiceItems', 'UPDATE', 'services_list', NULL, '更新服务项时失效服务列表缓存');
 
 CREATE INDEX IF NOT EXISTS idx_invalidation_rules 
 ON CacheInvalidationRules(source_table, source_operation);
