@@ -915,23 +915,24 @@
         window.openQuickSOPSelector = function() {
           if (!quickAddContext) return;
           
-          // 找到当前服务的service_code
-          const currentService = allServices.find(s => s.service_id === quickAddContext.serviceId);
+          // 找到当前服务的service_code（使用String转换确保类型匹配）
+          const currentService = allServices.find(s => String(s.service_id) === String(quickAddContext.serviceId));
           const serviceCode = currentService?.service_code || '';
           
-          console.log('[SOP Filter] serviceId:', quickAddContext.serviceId);
+          console.log('[SOP Filter] serviceId:', quickAddContext.serviceId, 'type:', typeof quickAddContext.serviceId);
           console.log('[SOP Filter] currentService:', currentService);
           console.log('[SOP Filter] serviceCode:', serviceCode);
-          console.log('[SOP Filter] allSOPs count:', allSOPs.length);
-          console.log('[SOP Filter] Sample SOP:', allSOPs[0]);
+          
+          if (!serviceCode) {
+            console.error('[SOP Filter] 无法找到服务信息！allServices:', allServices.map(s => ({id: s.service_id, name: s.service_name})));
+          }
           
           // 根据服务类型和scope过滤SOP（只显示任务层级且匹配服务类型的SOP）
-          const filteredSOPs = allSOPs.filter(s => {
-            const scopeMatch = s.scope === 'task';
-            const categoryMatch = s.category === serviceCode || s.category === serviceCode.toLowerCase() || s.category === serviceCode.toUpperCase();
-            console.log(`[SOP Filter] ${s.title}: scope=${s.scope} (match:${scopeMatch}), category=${s.category} vs ${serviceCode} (match:${categoryMatch})`);
-            return scopeMatch && categoryMatch;
-          });
+          const filteredSOPs = allSOPs.filter(s => 
+            s.scope === 'task' && 
+            serviceCode && 
+            (s.category === serviceCode || s.category === serviceCode.toLowerCase() || s.category === serviceCode.toUpperCase())
+          );
           
           console.log('[SOP Filter] Filtered SOPs count:', filteredSOPs.length);
           
