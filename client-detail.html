@@ -2494,7 +2494,7 @@
           estimated_hours: task.estimated_hours ? parseFloat(task.estimated_hours) : null,
           advance_days: task.advance_days ? parseInt(task.advance_days) : 7,
           assignee_user_id: task.assignee_user_id ? parseInt(task.assignee_user_id) : null,
-          sop_ids: task.sop_ids || [],  // 任务层级SOP（多选）
+          sop_ids: (task.sop_ids || []).filter(id => !isNaN(id) && id > 0),  // 任务层级SOP（多选），过滤无效ID
           notes: task.notes || ''
         }))
       };
@@ -2646,7 +2646,7 @@
             due_value: task.due_value,
             advance_days: task.advance_days || 7,
             notes: task.notes || '',
-            sop_ids: task.sops ? task.sops.map(s => s.sop_id) : []
+            sop_ids: task.sops ? task.sops.map(s => s.sop_id).filter(id => !isNaN(id) && id > 0) : []
           }));
           
           // 重新渲染任务列表
