@@ -1784,9 +1784,15 @@ function renderCompleteness() {
   const tbody = document.getElementById('timesheetBody');
   if (tbody && tbody.dataset.rendering === 'true') {
     tbody.dataset.rendering = 'complete';
+    console.log('[Timesheets] 🎯 触发 timesheets-rendered 事件 (rows=' + state.rows.length + ')');
     window.dispatchEvent(new CustomEvent('timesheets-rendered', { 
       detail: { rows: state.rows.length } 
     }));
+  } else {
+    console.log('[Timesheets] ⚠ 未触发事件:', {
+      hasTbody: !!tbody,
+      rendering: tbody ? tbody.dataset.rendering : 'N/A'
+    });
   }
 }
 
