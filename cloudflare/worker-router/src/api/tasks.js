@@ -295,15 +295,19 @@ export async function handleTasks(request, env, me, requestId, url) {
 				if (!u) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"負責人不存在", errors:[{ field:"assignee_user_id", message:"不存在" }], meta:{ requestId } }, corsHeaders);
 			}
 			
-			const now = new Date().toISOString();
-			const originalDueDate = defaultDueDate || dueDate; // 保存原始期限
-			
-			await env.DATABASE.prepare(`
-				INSERT INTO ActiveTasks (
-					client_service_id, template_id, task_name, start_date, due_date, service_month, 
-					status, assignee_user_id, prerequisite_task_id, original_due_date, created_at
-				) VALUES (?, NULL, ?, NULL, ?, ?, 'pending', ?, ?, ?, ?)
-			`).bind(clientServiceId, taskName, dueDate, serviceMonth, assigneeUserId, prerequisiteTaskId, originalDueDate, now).run();
+		const now = new Date().toISOString();
+		const originalDueDate = defaultDueDate || dueDate; // 保存原始期限
+		
+		// 预计完成日期默认等于到期日
+		const expectedCompletionDate = dueDate;
+		
+		await env.DATABASE.prepare(`
+			INSERT INTO ActiveTasks (
+				client_service_id, template_id, task_name, start_date, due_date, service_month, 
+				status, assignee_user_id, prerequisite_task_id, original_due_date, 
+				expected_completion_date, created_at
+			) VALUES (?, NULL, ?, NULL, ?, ?, 'pending', ?, ?, ?, ?, ?)
+		`).bind(clientServiceId, taskName, dueDate, serviceMonth, assigneeUserId, prerequisiteTaskId, originalDueDate, expectedCompletionDate, now).run();
 			
 			const idRow = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
 			const taskId = String(idRow?.id);
