@@ -414,20 +414,20 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         const leaveApplications = await env.DATABASE.prepare(`
           SELECT 
             l.leave_id,
-            l.applied_at as activity_time,
+            l.submitted_at as activity_time,
             l.leave_type,
             l.start_date,
             l.end_date,
-            l.days as leave_days,
+            l.amount as leave_days,
             l.status as leave_status,
             l.reason,
             l.user_id,
             u.name as user_name
           FROM LeaveRequests l
           LEFT JOIN Users u ON u.user_id = l.user_id
-          WHERE l.applied_at >= datetime('now', '-${days} days')
+          WHERE l.submitted_at >= datetime('now', '-${days} days')
             ${userFilter3}
-          ORDER BY l.applied_at DESC
+          ORDER BY l.submitted_at DESC
           LIMIT 30
         `).all();
         
