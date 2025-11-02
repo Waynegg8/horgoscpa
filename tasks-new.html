@@ -1,513 +1,261 @@
-<!doctype html>
-<html lang="zh-Hant">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="任務管理" />
-    <title>任務管理</title>
-    <link rel="icon" href="/favicon.ico" />
-    <link rel="stylesheet" href="/assets/css/common.css" />
-    <link rel="stylesheet" href="/assets/css/tasks-page.css" />
-    <style>
-      /* 日期選擇器 - 整框可點擊 */
-      input[type="date"] {
-        -webkit-appearance: none !important;
-        -moz-appearance: none !important;
-        cursor: pointer !important;
-        position: relative !important;
-      }
-      
-      input[type="date"]::-webkit-calendar-picker-indicator {
-        position: absolute !important;
-        top: 0; left: 0; right: 0; bottom: 0;
-        width: 100% !important; height: 100% !important;
-        margin: 0; padding: 0; opacity: 0; cursor: pointer !important;
-      }
-      
-      .client-group {
-        margin-bottom: 16px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      
-      .client-header {
-        background: #f9fafb;
-        padding: 12px 16px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        border-bottom: 1px solid #e5e7eb;
-      }
-      
-      .client-header:hover {
-        background: #f3f4f6;
-      }
-      
-      .service-group {
-        border-bottom: 1px solid #f3f4f6;
-      }
-      
-      .service-header {
-        background: #ffffff;
-        padding: 10px 16px 10px 40px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      
-      .service-header:hover {
-        background: #f9fafb;
-      }
-      
-      .task-row {
-        display: grid;
-        grid-template-columns: 40px 2fr 140px 90px 110px 110px 100px;
-        gap: 12px;
-        padding: 12px 16px 12px 56px;
-        border-bottom: 1px solid #f9fafb;
-        align-items: center;
-      }
-      
-      .task-row:hover {
-        background: #f9fafb;
-      }
-    </style>
-  </head>
-  <body>
-    <main class="clients-content" style="padding:24px;">
-      <section class="clients-card" style="background:#fff;border:1px solid rgba(15,23,42,0.08);border-radius:10px;padding:16px;">
-        <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <h1 style="margin:0;font-size:22px;font-weight:700;">任務</h1>
-          <div class="toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-            <input id="q" type="search" placeholder="搜尋任務/客戶/統編…" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
-            <select id="f_assignee">
-              <option value="all">全部負責人</option>
-            </select>
-            <select id="f_tags">
-              <option value="all">全部標籤</option>
-            </select>
-            <select id="f_status">
-              <option value="all">全部狀態</option>
-              <option value="pending">待開始</option>
-              <option value="in_progress">進行中</option>
-              <option value="completed">已完成</option>
-            </select>
-            <select id="f_due">
-              <option value="all">全部到期狀態</option>
-              <option value="soon">即將到期（≤3天）</option>
-              <option value="overdue">已逾期</option>
-            </select>
-            <button id="btn-batch-assign" type="button" class="clients-btn btn-secondary" style="padding:8px 12px;display:none;">批量分配</button>
-            <button id="btn-new-task" type="button" class="clients-btn" style="padding:8px 12px;">新增任務</button>
-          </div>
-        </header>
-
-        <p id="tasks-error" style="color:#c0392b;min-height:1.25rem;margin:8px 0 0 0;"></p>
-
-        <div id="tasks-list" style="margin-top:16px;"></div>
-      </section>
-    </main>
-
-    <!-- 批量分配彈窗 -->
-    <div class="modal-overlay" id="batchModal" aria-hidden="true">
-      <div class="modal">
-        <div class="modal__header">
-          <h2 class="modal__title">批量分配負責人</h2>
-          <button class="modal__close" id="batch-close">✕</button>
-        </div>
-        <div class="modal__body">
-          <p style="margin-bottom:16px;color:#6b7280;">已選擇 <strong id="selected-count">0</strong> 個任務</p>
-          <div class="field">
-            <label for="batch_assignee">選擇負責人</label>
-            <select id="batch_assignee">
-              <option value="">請選擇負責人</option>
-            </select>
-          </div>
-          <div class="modal__actions" style="margin-top:20px;">
-            <button class="btn-secondary" id="batch-cancel">取消</button>
-            <button class="clients-btn" id="batch-submit">確認分配</button>
-          </div>
-        </div>
-      </div>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新增任務 - 內部系統</title>
+  <link rel="stylesheet" href="/assets/css/common.css?v=3">
+  <link rel="stylesheet" href="/assets/css/internal-system.css?v=3">
+  <link rel="stylesheet" href="/assets/css/internal-components.css?v=3">
+</head>
+<body>
+  <div id="navbar-placeholder"></div>
+  
+  <div class="page-container">
+    <div class="page-header-simple">
+      <a href="/internal/tasks" class="back-link">← 返回任務列表</a>
+      <h1 class="page-title">新增任務</h1>
     </div>
 
-    <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
-    <script>
-      (function(){
-        const onProdHost = location.hostname.endsWith('horgoscpa.com');
-        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+    <div class="content-card">
+      <form id="taskForm" onsubmit="submitTask(event)">
+        <div class="form-row-2col">
+          <div class="form-field">
+            <label for="client_service_id">客戶服務 *</label>
+            <select id="client_service_id" required>
+              <option value="">載入中...</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="assignee_user_id">負責人</label>
+            <select id="assignee_user_id">
+              <option value="">未分配</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row-1col">
+          <div class="form-field">
+            <label for="task_name">任務名稱 *</label>
+            <input type="text" id="task_name" required maxlength="200" />
+          </div>
+        </div>
+
+        <div class="form-row-2col">
+          <div class="form-field">
+            <label for="service_month">服務月份 *</label>
+            <input type="month" id="service_month" required />
+          </div>
+          <div class="form-field">
+            <label for="due_date">到期日</label>
+            <input type="date" id="due_date" />
+            <input type="hidden" id="default_due_date" />
+            <p style="font-size:12px;color:#6b7280;margin-top:4px;" id="due_date_hint">系統預設到期日將根據服務自動計算</p>
+          </div>
+        </div>
+
+        <div id="adjustment_reason_section" style="margin-bottom:20px;display:none;">
+          <div class="form-field">
+            <label for="adjustment_reason" style="color:#dc2626;">調整原因 *（您修改了預設期限）</label>
+            <textarea id="adjustment_reason" rows="3" placeholder="請說明為何此任務的期限與系統預設不同，這有助於了解客戶的難度..." style="border-color:#dc2626;"></textarea>
+            <p style="font-size:12px;color:#6b7280;margin-top:4px;">提示：說明客戶的特殊需求或複雜度，例如「該客戶帳務複雜需額外處理時間」</p>
+          </div>
+        </div>
+
+        <div class="form-row-2col">
+          <div class="form-field">
+            <label for="prerequisite_task_id">前置任務（可選）</label>
+            <select id="prerequisite_task_id">
+              <option value="">無前置任務</option>
+            </select>
+            <p style="font-size:12px;color:#6b7280;margin-top:4px;">選擇必須先完成的任務</p>
+          </div>
+          <div class="form-field">
+            <label>任務階段（可選）</label>
+            <div id="stages_container">
+              <input type="text" class="stage_input" placeholder="階段 1" style="margin-bottom:8px;" />
+              <button type="button" onclick="addStage()" class="btn btn-sm btn-secondary">+ 添加階段</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" onclick="window.location.href='/internal/tasks'" class="btn btn-secondary">取消</button>
+          <button type="submit" class="btn btn-primary">建立任務</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="/assets/js/components/bootstrap.js?v=3"></script>
+  <script>
+    const onProdHost = location.hostname.endsWith('horgoscpa.com');
+    const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+    
+    let clientServices = [];
+    let defaultDueDate = null;
+    
+    async function init() {
+      // 設定當前月份為默認值
+      const now = new Date();
+      const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      document.getElementById('service_month').value = yearMonth;
+      
+      // 載入客戶服務列表
+      await loadClientServices();
+      
+      // 載入用戶列表
+      await loadUsers();
+      
+      // 設定監聽器
+      document.getElementById('due_date').addEventListener('change', checkDueDateChange);
+      document.getElementById('client_service_id').addEventListener('change', calculateDefaultDueDate);
+      document.getElementById('service_month').addEventListener('change', calculateDefaultDueDate);
+    }
+    
+    async function loadClientServices() {
+      try {
+        const res = await fetch(`${apiBase}/client-services`, { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
         
-        let allTasks = [];
-        let allClients = [];
-        let allTags = [];
-        let employeesList = [];
-        let selectedTaskIds = new Set();
-        
-        const zhStatus = { pending:'待開始', in_progress:'進行中', completed:'已完成', cancelled:'已取消' };
-        
-        // 初始化
-        async function init() {
-          await Promise.all([
-            loadEmployees(),
-            loadAllClients(),
-            loadAllTags(),
-            loadAllTasks()
-          ]);
+        const select = document.getElementById('client_service_id');
+        if (json.ok && Array.isArray(json.data)) {
+          clientServices = json.data;
+          select.innerHTML = '<option value="">請選擇客戶服務</option>' + 
+            clientServices.map(cs => `<option value="${cs.client_service_id}">${cs.client_name} - ${cs.service_name || '未指定服務'}</option>`).join('');
         }
+      } catch (err) {
+        console.error('載入客戶服務失敗:', err);
+      }
+    }
+    
+    async function loadUsers() {
+      try {
+        const res = await fetch(`${apiBase}/users`, { credentials: 'include' });
+        if (res.status === 401) return;
+        const json = await res.json();
         
-        // 加載員工
-        async function loadEmployees() {
-          try {
-            const res = await fetch(`${apiBase}/users`, { credentials: 'include' });
-            if (res.status === 401) { location.href = '/login?redirect=/internal/tasks'; return; }
-            const json = await res.json();
-            if (json.ok) {
-              employeesList = json.data || [];
-              
-              // 填充篩選下拉
-              document.getElementById('f_assignee').innerHTML = '<option value="all">全部負責人</option>' +
-                employeesList.map(e => `<option value="${e.user_id}">${e.name}</option>`).join('');
-              
-              // 填充批量分配下拉
-              document.getElementById('batch_assignee').innerHTML = '<option value="">請選擇負責人</option>' +
-                employeesList.map(e => `<option value="${e.user_id}">${e.name}</option>`).join('');
-            }
-          } catch (e) {
-            console.error('載入員工失敗', e);
-          }
+        const select = document.getElementById('assignee_user_id');
+        if (json.ok && Array.isArray(json.data)) {
+          select.innerHTML = '<option value="">未分配</option>' + 
+            json.data.map(u => `<option value="${u.user_id}">${u.name}</option>`).join('');
         }
-        
-        // 加載客戶
-        async function loadAllClients() {
-          try {
-            const res = await fetch(`${apiBase}/clients?perPage=1000`, { credentials: 'include' });
-            if (res.status === 401) { location.href = '/login?redirect=/internal/tasks'; return; }
-            const json = await res.json();
-            if (json.ok) {
-              allClients = json.data || [];
-            }
-          } catch (e) {
-            console.error('載入客戶失敗', e);
-          }
-        }
-        
-        // 加載標籤
-        async function loadAllTags() {
-          try {
-            const res = await fetch(`${apiBase}/tags`, { credentials: 'include' });
-            if (res.status === 401) { location.href = '/login?redirect=/internal/tasks'; return; }
-            const json = await res.json();
-            if (json.ok) {
-              allTags = json.data || [];
-              document.getElementById('f_tags').innerHTML = '<option value="all">全部標籤</option>' +
-                allTags.map(t => `<option value="${t.tag_id}">${t.tag_name}</option>`).join('');
-            }
-          } catch (e) {
-            console.error('載入標籤失敗', e);
-          }
-        }
-        
-        // 加載任務
-        async function loadAllTasks() {
-          try {
-            const res = await fetch(`${apiBase}/tasks?perPage=1000`, { credentials: 'include' });
-            if (res.status === 401) { location.href = '/login?redirect=/internal/tasks'; return; }
-            const json = await res.json();
-            if (json.ok) {
-              allTasks = json.data || [];
-              render();
-            }
-          } catch (e) {
-            console.error('載入任務失敗', e);
-            document.getElementById('tasks-error').textContent = '載入失敗';
-          }
-        }
-        
-        // 篩選任務
-        function filterTasks() {
-          const q = document.getElementById('q').value.toLowerCase();
-          const assignee = document.getElementById('f_assignee').value;
-          const tags = document.getElementById('f_tags').value;
-          const status = document.getElementById('f_status').value;
-          const due = document.getElementById('f_due').value;
-          
-          return allTasks.filter(task => {
-            // 搜索
-            if (q && !task.taskName.toLowerCase().includes(q) && 
-                !task.clientName.toLowerCase().includes(q) &&
-                !(task.clientTaxId && task.clientTaxId.includes(q))) {
-              return false;
-            }
-            
-            // 負責人
-            if (assignee !== 'all' && String(task.assigneeUserId) !== assignee) {
-              return false;
-            }
-            
-            // 狀態
-            if (status !== 'all' && task.status !== status) {
-              return false;
-            }
-            
-            // 到期
-            if (due === 'soon') {
-              const dueDate = new Date(task.dueDate);
-              const today = new Date();
-              const diff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-              if (diff > 3 || diff < 0) return false;
-            } else if (due === 'overdue') {
-              const dueDate = new Date(task.dueDate);
-              const today = new Date();
-              if (dueDate >= today || task.status === 'completed') return false;
-            }
-            
-            return true;
-          });
-        }
-        
-        // 按客戶和服務分組
-        function groupByClientAndService(tasks) {
-          const grouped = new Map();
-          
-          // 先添加所有客戶
-          allClients.sort((a, b) => (a.company_name || '').localeCompare(b.company_name || '', 'zh-TW')).forEach(client => {
-            grouped.set(client.client_id, {
-              clientId: client.client_id,
-              clientName: client.company_name || '未命名客戶',
-              clientTaxId: client.tax_id || '—',
-              services: new Map()
-            });
-          });
-          
-          // 添加任務
-          tasks.forEach(task => {
-            const clientId = task.clientId || 'unknown';
-            if (!grouped.has(clientId)) {
-              grouped.set(clientId, {
-                clientId,
-                clientName: task.clientName || '未命名客戶',
-                clientTaxId: task.clientTaxId || '—',
-                services: new Map()
-              });
-            }
-            
-            const client = grouped.get(clientId);
-            const serviceName = task.serviceName || '一般任務';
-            
-            if (!client.services.has(serviceName)) {
-              client.services.set(serviceName, []);
-            }
-            
-            client.services.get(serviceName).push(task);
-          });
-          
-          // 排序服務和任務
-          grouped.forEach(client => {
-            const sortedServices = new Map([...client.services.entries()].sort((a, b) => a[0].localeCompare(b[0], 'zh-TW')));
-            client.services = sortedServices;
-          });
-          
-          return grouped;
-        }
-        
-        // 渲染
-        function render() {
-          const filtered = filterTasks();
-          const grouped = groupByClientAndService(filtered);
-          const container = document.getElementById('tasks-list');
-          
-          let html = '';
-          
-          grouped.forEach((client, clientId) => {
-            const hasServices = client.services.size > 0 && Array.from(client.services.values()).some(tasks => tasks.length > 0);
-            const clientIdSafe = clientId.replace(/[^a-zA-Z0-9]/g, '_');
-            
-            html += `
-              <div class="client-group">
-                <div class="client-header" onclick="toggleClient('${clientIdSafe}')">
-                  <span id="icon-${clientIdSafe}" style="font-size:16px;">▶</span>
-                  <strong style="font-size:16px;color:#1f2937;">${client.clientName} ${client.clientTaxId !== '—' ? `(${client.clientTaxId})` : ''}</strong>
-                </div>
-                <div id="group-${clientIdSafe}" style="display:none;">
-            `;
-            
-            if (!hasServices) {
-              html += `
-                <div style="padding:16px;text-align:center;color:#9ca3af;font-size:14px;">
-                  此客戶目前沒有任務
-                  <select style="margin-left:12px;padding:6px 10px;border:1px solid #d1d5db;border-radius:4px;">
-                    <option value="">選擇負責人</option>
-                    ${employeesList.map(e => `<option value="${e.user_id}">${e.name}</option>`).join('')}
-                  </select>
-                </div>
-              `;
-            } else {
-              client.services.forEach((tasks, serviceName) => {
-                if (tasks.length === 0) return;
-                
-                const serviceIdSafe = serviceName.replace(/[^a-zA-Z0-9]/g, '_');
-                const groupIdSafe = `${clientIdSafe}_${serviceIdSafe}`;
-                
-                html += `
-                  <div class="service-group">
-                    <div class="service-header" onclick="toggleService('${groupIdSafe}')">
-                      <span id="icon-${groupIdSafe}" style="font-size:14px;">▶</span>
-                      <strong style="font-size:14px;color:#374151;">${serviceName}</strong>
-                      <span style="color:#9ca3af;font-size:13px;">(${tasks.length})</span>
-                    </div>
-                    <div id="group-${groupIdSafe}" style="display:none;">
-                `;
-                
-                tasks.forEach(task => {
-                  const checked = selectedTaskIds.has(task.taskId) ? 'checked' : '';
-                  html += `
-                    <div class="task-row">
-                      <div><input type="checkbox" ${checked} onchange="toggleTaskSelection('${task.taskId}', this.checked)" /></div>
-                      <div>
-                        <div style="font-weight:500;color:#1f2937;margin-bottom:4px;">${task.taskName}</div>
-                        <div style="font-size:12px;color:#6b7280;">進度：${task.progress.completed}/${task.progress.total}</div>
-                      </div>
-                      <div style="font-size:13px;color:#6b7280;">${task.assigneeName || '未分配'}</div>
-                      <div style="font-size:13px;color:#4b5563;">${task.dueDate ? task.dueDate.slice(5) : '—'}</div>
-                      <div><span style="display:inline-block;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;${getStatusStyle(task.status)}">${zhStatus[task.status]}</span></div>
-                      <div><a href="/internal/task-detail?id=${task.taskId}" style="color:#3b82f6;text-decoration:none;font-size:14px;">查看詳情</a></div>
-                    </div>
-                  `;
-                });
-                
-                html += `
-                    </div>
-                  </div>
-                `;
-              });
-            }
-            
-            html += `
-                </div>
-              </div>
-            `;
-          });
-          
-          if (html === '') {
-            html = '<div style="text-align:center;padding:48px;color:#9ca3af;">沒有符合條件的任務</div>';
-          }
-          
-          container.innerHTML = html;
-          updateBatchButton();
-        }
-        
-        // 狀態樣式
-        function getStatusStyle(status) {
-          const styles = {
-            'pending': 'background:#f3f4f6;color:#6b7280;',
-            'in_progress': 'background:#fef3c7;color:#d97706;',
-            'completed': 'background:#d1fae5;color:#059669;',
-            'cancelled': 'background:#fee2e2;color:#dc2626;'
-          };
-          return styles[status] || styles['pending'];
-        }
-        
-        // 切換客戶分組
-        window.toggleClient = function(id) {
-          const group = document.getElementById('group-' + id);
-          const icon = document.getElementById('icon-' + id);
-          if (group && icon) {
-            const isHidden = group.style.display === 'none';
-            group.style.display = isHidden ? 'block' : 'none';
-            icon.textContent = isHidden ? '▼' : '▶';
-          }
-        };
-        
-        // 切換服務分組
-        window.toggleService = function(id) {
-          const group = document.getElementById('group-' + id);
-          const icon = document.getElementById('icon-' + id);
-          if (group && icon) {
-            const isHidden = group.style.display === 'none';
-            group.style.display = isHidden ? 'block' : 'none';
-            icon.textContent = isHidden ? '▼' : '▶';
-          }
-        };
-        
-        // 任務選擇
-        window.toggleTaskSelection = function(taskId, checked) {
-          if (checked) {
-            selectedTaskIds.add(taskId);
-          } else {
-            selectedTaskIds.delete(taskId);
-          }
-          updateBatchButton();
-        };
-        
-        function updateBatchButton() {
-          const btn = document.getElementById('btn-batch-assign');
-          const count = document.getElementById('selected-count');
-          btn.style.display = selectedTaskIds.size > 0 ? 'inline-block' : 'none';
-          if (count) count.textContent = selectedTaskIds.size;
-        }
-        
-        // 批量分配
-        document.getElementById('btn-batch-assign').addEventListener('click', () => {
-          document.getElementById('batchModal').classList.add('active');
-          document.getElementById('batchModal').setAttribute('aria-hidden', 'false');
+      } catch (err) {
+        console.error('載入用戶失敗:', err);
+      }
+    }
+    
+    function calculateDefaultDueDate() {
+      // 簡化實現：預設為當月最後一天
+      const serviceMonth = document.getElementById('service_month').value;
+      if (!serviceMonth) return;
+      
+      const [year, month] = serviceMonth.split('-').map(Number);
+      const lastDay = new Date(year, month, 0).getDate();
+      defaultDueDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      
+      document.getElementById('default_due_date').value = defaultDueDate;
+      document.getElementById('due_date_hint').textContent = `系統預設：${defaultDueDate}`;
+      
+      // 如果還沒設定到期日，自動填入
+      if (!document.getElementById('due_date').value) {
+        document.getElementById('due_date').value = defaultDueDate;
+      }
+    }
+    
+    function checkDueDateChange() {
+      const dueDate = document.getElementById('due_date').value;
+      const defaultDate = document.getElementById('default_due_date').value;
+      
+      const section = document.getElementById('adjustment_reason_section');
+      const reasonField = document.getElementById('adjustment_reason');
+      
+      // 如果修改了預設期限，顯示原因欄位並設為必填
+      if (defaultDate && dueDate && dueDate !== defaultDate) {
+        section.style.display = 'block';
+        reasonField.required = true;
+      } else {
+        section.style.display = 'none';
+        reasonField.required = false;
+      }
+    }
+    
+    function addStage() {
+      const container = document.getElementById('stages_container');
+      const stageCount = container.querySelectorAll('.stage_input').length + 1;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'stage_input';
+      input.placeholder = `階段 ${stageCount}`;
+      input.style.marginBottom = '8px';
+      container.insertBefore(input, container.lastElementChild);
+    }
+    
+    async function submitTask(event) {
+      event.preventDefault();
+      
+      const dueDate = document.getElementById('due_date').value;
+      const defaultDate = document.getElementById('default_due_date').value;
+      const adjustmentReason = document.getElementById('adjustment_reason').value.trim();
+      
+      // 檢查是否需要填寫原因
+      if (defaultDate && dueDate && dueDate !== defaultDate && !adjustmentReason) {
+        alert('您修改了預設期限，必須填寫調整原因');
+        return;
+      }
+      
+      // 收集階段名稱
+      const stageInputs = document.querySelectorAll('.stage_input');
+      const stageNames = Array.from(stageInputs)
+        .map(input => input.value.trim())
+        .filter(name => name.length > 0);
+      
+      const data = {
+        client_service_id: parseInt(document.getElementById('client_service_id').value),
+        task_name: document.getElementById('task_name').value.trim(),
+        service_month: document.getElementById('service_month').value,
+        due_date: dueDate || null,
+        assignee_user_id: document.getElementById('assignee_user_id').value ? parseInt(document.getElementById('assignee_user_id').value) : null,
+        prerequisite_task_id: document.getElementById('prerequisite_task_id').value ? parseInt(document.getElementById('prerequisite_task_id').value) : null,
+        stage_names: stageNames
+      };
+      
+      // 如果調整了期限，添加相關欄位
+      if (defaultDate && dueDate && dueDate !== defaultDate && adjustmentReason) {
+        data.default_due_date = defaultDate;
+        data.adjustment_reason = adjustmentReason;
+      }
+      
+      try {
+        const res = await fetch(`${apiBase}/tasks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(data)
         });
         
-        document.getElementById('batch-close').addEventListener('click', () => {
-          document.getElementById('batchModal').classList.remove('active');
-          document.getElementById('batchModal').setAttribute('aria-hidden', 'true');
-        });
+        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const json = await res.json();
         
-        document.getElementById('batch-cancel').addEventListener('click', () => {
-          document.getElementById('batchModal').classList.remove('active');
-          document.getElementById('batchModal').setAttribute('aria-hidden', 'true');
-        });
+        if (!json.ok) {
+          alert(json.message || '建立失敗');
+          return;
+        }
         
-        document.getElementById('batch-submit').addEventListener('click', async () => {
-          const assigneeId = document.getElementById('batch_assignee').value;
-          if (!assigneeId) {
-            alert('請選擇負責人');
-            return;
-          }
-          
-          try {
-            const tasks = Array.from(selectedTaskIds);
-            await Promise.all(tasks.map(taskId =>
-              fetch(`${apiBase}/tasks/${taskId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ assignee_user_id: parseInt(assigneeId) })
-              })
-            ));
-            
-            alert('已成功分配');
-            selectedTaskIds.clear();
-            document.getElementById('batchModal').classList.remove('active');
-            await loadAllTasks();
-          } catch (e) {
-            alert('分配失敗');
-          }
-        });
+        alert('任務已建立');
+        window.location.href = '/internal/tasks';
         
-        // 篩選事件
-        let timer;
-        document.getElementById('q').addEventListener('input', () => {
-          clearTimeout(timer);
-          timer = setTimeout(render, 300);
-        });
-        document.getElementById('f_assignee').addEventListener('change', render);
-        document.getElementById('f_tags').addEventListener('change', render);
-        document.getElementById('f_status').addEventListener('change', render);
-        document.getElementById('f_due').addEventListener('change', render);
-        
-        // 啟動
-        init();
-      })();
-    </script>
-  </body>
+      } catch (err) {
+        console.error('建立任務失敗:', err);
+        alert('建立失敗');
+      }
+    }
+    
+    // 初始化
+    init();
+  </script>
+</body>
 </html>
-
-

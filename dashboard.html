@@ -173,12 +173,25 @@
               <div class="kv"><span>特休剩餘</span><b>${fmtNum(lv.balances?.annual||0)} 天</b></div>
               <div class="kv"><span>病假剩餘</span><b>${fmtNum(lv.balances?.sick||0)} 天</b></div>
               <div class="kv"><span>補休</span><b>${fmtNum(lv.balances?.compHours||0)} 小時</b></div>`;
+          // 收据已开但任务未完成提醒
+          const receiptsPending = Array.isArray(data?.receiptsPendingTasks) ? data.receiptsPendingTasks : [];
+          const receiptsHtml = receiptsPending.length ? receiptsPending.map(r => {
+            return `<div class="task-row warn">
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <span class="name">${r.client_name} - ${r.service_name}</span>
+                <div class="muted" style="font-size:12px;">收據 #${r.receipt_number} | 到期：${r.receipt_due_date || '—'}</div>
+                <div style="font-size:13px;color:#d97706;">待完成任務：${r.pending_tasks} / ${r.total_tasks}</div>
+              </div>
+            </div>`;
+          }).join('') : '<div class="muted">無待處理項目</div>';
+          
           frag.innerHTML = [
             statCard('本月總工時', fmtNum(h.total), hoursMeta),
             listCard('我的任務（待辦/進行中）', taskRows),
+            receiptsPending.length > 0 ? listCard('⚠️ 收據已開但任務未完成', receiptsHtml) : '',
             listCard('我的假期', leavesHtml),
             listCard('最近動態', (Array.isArray(data?.recentActivities) && data.recentActivities.length) ? data.recentActivities.map(a=>`<div class="activity">${a.text||''}</div>`).join('') : '<div class="muted">最近 7 天沒有活動</div>'),
-          ].join('');
+          ].filter(Boolean).join('');
           grid.appendChild(frag);
         }
 
@@ -275,6 +288,23 @@
           const tasksFrag = document.createElement('div');
           tasksFrag.innerHTML = listCard('各員工任務狀態', tasksHtml);
           grid.appendChild(tasksFrag.firstElementChild);
+          
+          // 2.5 收据已开但任务未完成提醒
+          const receiptsPending = Array.isArray(data?.receiptsPendingTasks) ? data.receiptsPendingTasks : [];
+          if (receiptsPending.length > 0) {
+            const receiptsHtml = receiptsPending.map(r => {
+              return `<div class="task-row warn">
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <span class="name">${r.client_name} - ${r.service_name}</span>
+                  <div class="muted" style="font-size:12px;">收據 #${r.receipt_number} | 到期：${r.receipt_due_date || '—'}</div>
+                  <div style="font-size:13px;color:#d97706;">待完成任務：${r.pending_tasks} / ${r.total_tasks}</div>
+                </div>
+              </div>`;
+            }).join('');
+            const receiptsFrag = document.createElement('div');
+            receiptsFrag.innerHTML = listCard('⚠️ 收據已開但任務未完成', receiptsHtml);
+            grid.appendChild(receiptsFrag.firstElementChild);
+          }
           
           // 3. 最后渲染财务状况（独占一行，在最下面）
           const finFrag = document.createElement('div');

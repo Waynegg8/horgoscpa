@@ -1,4 +1,5 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+import { autoAdjustDependentTasks, recordStatusUpdate, recordDueDateAdjustment, getAdjustmentHistory } from "./task_adjustments.js";
 
 export async function handleTasks(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -223,6 +224,11 @@ export async function handleTasks(request, env, me, requestId, url) {
 		const dueDate = body?.due_date ? String(body.due_date) : null;
 		const assigneeUserId = body?.assignee_user_id ? Number(body.assignee_user_id) : null;
 		const stageNames = Array.isArray(body?.stage_names) ? body.stage_names.filter(s => typeof s === 'string' && s.trim().length > 0).map(s => s.trim()) : [];
+		const prerequisiteTaskId = body?.prerequisite_task_id ? Number(body.prerequisite_task_id) : null;
+		
+		// 期限调整相关
+		const defaultDueDate = body?.default_due_date ? String(body.default_due_date) : null; // 系统预设期限
+		const adjustmentReason = body?.adjustment_reason ? String(body.adjustment_reason).trim() : null; // 调整原因
 		
 		// service_month: 默认当前月份，但允许用户指定
 		let serviceMonth = body?.service_month ? String(body.service_month).trim() : null;
@@ -239,6 +245,12 @@ export async function handleTasks(request, env, me, requestId, url) {
 		if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) errors.push({ field:"due_date", message:"日期格式 YYYY-MM-DD" });
 		if (serviceMonth && !/^\d{4}-\d{2}$/.test(serviceMonth)) errors.push({ field:"service_month", message:"格式需 YYYY-MM" });
 		if (assigneeUserId !== null && (!Number.isInteger(assigneeUserId) || assigneeUserId <= 0)) errors.push({ field:"assignee_user_id", message:"格式錯誤" });
+		
+		// 如果提供了default_due_date且实际due_date与之不同，必须填写原因
+		if (defaultDueDate && dueDate && defaultDueDate !== dueDate && !adjustmentReason) {
+			errors.push({ field:"adjustment_reason", message:"調整預設期限時必須填寫原因" });
+		}
+		
 		if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
 
 		try {
@@ -248,16 +260,42 @@ export async function handleTasks(request, env, me, requestId, url) {
 				const u = await env.DATABASE.prepare("SELECT 1 FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1").bind(assigneeUserId).first();
 				if (!u) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"負責人不存在", errors:[{ field:"assignee_user_id", message:"不存在" }], meta:{ requestId } }, corsHeaders);
 			}
+			
 			const now = new Date().toISOString();
-			await env.DATABASE.prepare("INSERT INTO ActiveTasks (client_service_id, template_id, task_name, start_date, due_date, service_month, status, assignee_user_id, created_at) VALUES (?, NULL, ?, NULL, ?, ?, 'pending', ?, ?)").bind(clientServiceId, taskName, dueDate, serviceMonth, assigneeUserId, now).run();
+			const originalDueDate = defaultDueDate || dueDate; // 保存原始期限
+			
+			await env.DATABASE.prepare(`
+				INSERT INTO ActiveTasks (
+					client_service_id, template_id, task_name, start_date, due_date, service_month, 
+					status, assignee_user_id, prerequisite_task_id, original_due_date, created_at
+				) VALUES (?, NULL, ?, NULL, ?, ?, 'pending', ?, ?, ?, ?)
+			`).bind(clientServiceId, taskName, dueDate, serviceMonth, assigneeUserId, prerequisiteTaskId, originalDueDate, now).run();
+			
 			const idRow = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
 			const taskId = String(idRow?.id);
+			
+			// 如果调整了默认期限，记录调整历史
+			if (defaultDueDate && dueDate && defaultDueDate !== dueDate && adjustmentReason) {
+				await recordDueDateAdjustment(
+					env,
+					taskId,
+					defaultDueDate,
+					dueDate,
+					adjustmentReason,
+					'initial_create',
+					me.user_id,
+					false,
+					true // 标记为初始创建时的调整
+				);
+			}
+			
 			if (stageNames.length > 0) {
 				let order = 1;
 				for (const s of stageNames) {
 					await env.DATABASE.prepare("INSERT INTO ActiveTaskStages (task_id, stage_name, stage_order, status) VALUES (?, ?, ?, 'pending')").bind(taskId, s, order++).run();
 				}
 			}
+			
 			return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data:{ taskId, taskName, clientServiceId, dueDate, serviceMonth, assigneeUserId }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
@@ -420,6 +458,166 @@ export async function handleTasks(request, env, me, requestId, url) {
 			).bind(new Date().toISOString(), stageId).run();
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"已完成", meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+	
+	// POST /api/v1/tasks/:id/update-status - 更新任务状态（逾期必填原因）
+	if (method === "POST" && url.pathname.match(/\/tasks\/\d+\/update-status$/)) {
+		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
+		let body;
+		try { body = await request.json(); } catch (_) {
+			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
+		}
+		
+		const status = body?.status;
+		const progress_note = body?.progress_note || null;
+		const blocker_reason = body?.blocker_reason || null;
+		const overdue_reason = body?.overdue_reason || null;
+		const expected_completion_date = body?.expected_completion_date || null;
+		
+		const errors = [];
+		if (!['pending', 'in_progress', 'completed', 'cancelled'].includes(status)) {
+			errors.push({ field: 'status', message: '状态无效' });
+		}
+		
+		try {
+			// 获取任务信息
+			const task = await env.DATABASE.prepare(`
+				SELECT task_id, due_date, status as current_status
+				FROM ActiveTasks
+				WHERE task_id = ? AND is_deleted = 0
+			`).bind(taskId).first();
+			
+			if (!task) {
+				return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"任務不存在", meta:{ requestId } }, corsHeaders);
+			}
+			
+			// 检查是否逾期
+			const today = new Date().toISOString().split('T')[0];
+			const isOverdue = task.due_date && task.due_date < today && task.current_status !== 'completed';
+			
+			// 如果任务逾期，必须填写逾期原因
+			if (isOverdue && !overdue_reason) {
+				errors.push({ field: 'overdue_reason', message: '任务逾期，必须填写逾期原因' });
+			}
+			
+			if (errors.length) {
+				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
+			}
+			
+			// 记录状态更新
+			await recordStatusUpdate(env, taskId, status, me.user_id, {
+				progress_note,
+				blocker_reason,
+				overdue_reason,
+				expected_completion_date
+			});
+			
+			// 更新任务状态
+			let completedAt = null;
+			if (status === 'completed') {
+				completedAt = new Date().toISOString();
+			}
+			
+			await env.DATABASE.prepare(`
+				UPDATE ActiveTasks
+				SET status = ?,
+					completed_at = ?,
+					is_overdue = ?
+				WHERE task_id = ?
+			`).bind(status, completedAt, isOverdue ? 1 : 0, taskId).run();
+			
+			// 如果任务完成，自动调整后续依赖任务
+			if (status === 'completed') {
+				try {
+					const adjustResult = await autoAdjustDependentTasks(env, taskId, me.user_id);
+					console.log(`[任务完成] 自动调整了 ${adjustResult.adjusted} 个后续任务`);
+				} catch (err) {
+					console.error('[任务完成] 自动调整后续任务失败:', err);
+					// 不阻塞主流程
+				}
+			}
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"已更新狀態", meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			const resBody = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") resBody.error = String(err);
+			return jsonResponse(500, resBody, corsHeaders);
+		}
+	}
+	
+	// POST /api/v1/tasks/:id/adjust-due-date - 调整到期日（必填原因）
+	if (method === "POST" && url.pathname.match(/\/tasks\/\d+\/adjust-due-date$/)) {
+		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
+		let body;
+		try { body = await request.json(); } catch (_) {
+			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
+		}
+		
+		const new_due_date = body?.new_due_date;
+		const reason = body?.reason || '';
+		
+		const errors = [];
+		if (!new_due_date || !/^\d{4}-\d{2}-\d{2}$/.test(new_due_date)) {
+			errors.push({ field: 'new_due_date', message: '日期格式无效 (YYYY-MM-DD)' });
+		}
+		if (!reason.trim()) {
+			errors.push({ field: 'reason', message: '必须填写调整原因' });
+		}
+		
+		if (errors.length) {
+			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
+		}
+		
+		try {
+			// 获取任务信息
+			const task = await env.DATABASE.prepare(`
+				SELECT task_id, due_date, status
+				FROM ActiveTasks
+				WHERE task_id = ? AND is_deleted = 0
+			`).bind(taskId).first();
+			
+			if (!task) {
+				return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"任務不存在", meta:{ requestId } }, corsHeaders);
+			}
+			
+			// 检查是否逾期
+			const today = new Date().toISOString().split('T')[0];
+			const isOverdue = task.due_date && task.due_date < today && task.status !== 'completed';
+			
+			// 记录调整
+			await recordDueDateAdjustment(
+				env,
+				taskId,
+				task.due_date,
+				new_due_date,
+				reason,
+				isOverdue ? 'overdue_adjust' : 'manual_adjust',
+				me.user_id,
+				isOverdue,
+				false
+			);
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"已調整到期日", meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			const resBody = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") resBody.error = String(err);
+			return jsonResponse(500, resBody, corsHeaders);
+		}
+	}
+	
+	// GET /api/v1/tasks/:id/adjustment-history - 查询调整历史
+	if (method === "GET" && url.pathname.match(/\/tasks\/\d+\/adjustment-history$/)) {
+		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
+		
+		try {
+			const history = await getAdjustmentHistory(env, taskId);
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data: history, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);

@@ -597,6 +597,11 @@
         document.getElementById('f_month').addEventListener('change', loadAllTasks);
         document.getElementById('f_hide_completed').addEventListener('change', loadAllTasks);
         
+        // 新增任务按钮
+        document.getElementById('btn-new-task').addEventListener('click', () => {
+          window.location.href = '/internal/tasks-new';
+        });
+        
         // 啟動
         init();
       })();

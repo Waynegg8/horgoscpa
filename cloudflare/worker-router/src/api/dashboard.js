@@ -264,11 +264,61 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       return res;
     }
 
+    // 获取收据已开但任务未完成的提醒
+    async function getReceiptsPendingTasks() {
+      try {
+        const receipts = await env.DATABASE.prepare(`
+          SELECT 
+            r.receipt_id,
+            r.receipt_number,
+            r.due_date as receipt_due_date,
+            r.status as receipt_status,
+            c.client_id,
+            c.company_name,
+            cs.client_service_id,
+            s.service_name,
+            COUNT(DISTINCT t.task_id) as total_tasks,
+            COUNT(DISTINCT CASE WHEN t.status = 'completed' THEN t.task_id END) as completed_tasks
+          FROM Receipts r
+          JOIN ClientServices cs ON cs.client_service_id = r.client_service_id
+          JOIN Clients c ON c.client_id = cs.client_id
+          LEFT JOIN Services s ON s.service_id = cs.service_id
+          LEFT JOIN ActiveTasks t ON t.client_service_id = cs.client_service_id 
+            AND t.service_month = r.service_month
+            AND t.is_deleted = 0
+          WHERE r.is_deleted = 0
+            AND r.status IN ('pending', 'partial')
+          GROUP BY r.receipt_id
+          HAVING completed_tasks < total_tasks AND total_tasks > 0
+          ORDER BY r.due_date ASC
+          LIMIT 10
+        `).all();
+        
+        return (receipts.results || []).map(r => ({
+          receipt_id: r.receipt_id,
+          receipt_number: r.receipt_number,
+          receipt_due_date: r.receipt_due_date,
+          receipt_status: r.receipt_status,
+          client_id: r.client_id,
+          client_name: r.company_name,
+          service_name: r.service_name || '',
+          total_tasks: Number(r.total_tasks || 0),
+          completed_tasks: Number(r.completed_tasks || 0),
+          pending_tasks: Number(r.total_tasks || 0) - Number(r.completed_tasks || 0)
+        }));
+      } catch (err) {
+        console.error('[Dashboard] getReceiptsPendingTasks 失败:', err);
+        return [];
+      }
+    }
+
     const data = { role: me.is_admin ? 'admin' : 'employee' };
     if (me.is_admin) {
       data.admin = await getAdminMetrics(ym, financeYm, financeMode);
+      data.admin.receiptsPendingTasks = await getReceiptsPendingTasks();
     } else {
       data.employee = await getEmployeeMetrics();
+      data.employee.receiptsPendingTasks = await getReceiptsPendingTasks();
     }
 
     return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, month: ym, financeYm, financeMode, today } }, corsHeaders);
