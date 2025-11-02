@@ -1,3 +1,17 @@
+<!-- ⚡ 緊急加載預加載系統（必須在所有其他腳本之前） -->
+<script src="/assets/js/data-cache.js"></script>
+<script src="/assets/js/fetch-interceptor.js"></script>
+<script>
+// 立即啟動預加載（如果尚未啟動）
+if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
+  const status = window.DataCache.getPreloadStatus();
+  if (status.completed.length === 0) {
+    console.log('[Navbar] 🚀 啟動背景預加載');
+    window.DataCache.preloadAll({ adminMode: true });
+  }
+}
+</script>
+
 <header class="internal-navbar">
   <div class="internal-nav-container">
     <a class="internal-nav-brand" href="/internal/dashboard">

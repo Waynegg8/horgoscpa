@@ -268,54 +268,76 @@
     // 📊 P2: 中優先級 - 客戶、收據（並行加載）
     // 📁 P3: 低優先級 - 其他數據（並行加載，延遲100ms）
     
-    // 🔥 P0: 最高優先級（最小數據量，極速加載）
+    // 🔥 P0: 最高優先級（極少數據量，閃電加載，1秒內完成）
+    // 只包含絕對必需的核心數據
     const p0Tasks = [
       { key: 'me', endpoint: '/auth/me', priority: 'P0' },
       { key: 'users', endpoint: '/users', priority: 'P0' },
       { key: 'dashboard', endpoint: '/dashboard', priority: 'P0' },
     ];
     
-    // ⚡ P1: 高優先級（减少數據量）
+    // ⚡ P1: 高優先級（頁面關鍵數據，2-3秒完成）
     const p1Tasks = [
-      { key: 'timesheets_recent', endpoint: '/timesheets?limit=50', priority: 'P1' }, // 从200减到50
-      { key: 'tasks_pending', endpoint: '/tasks?perPage=50&status=pending', priority: 'P1' }, // 从100减到50
-      { key: 'tasks_in_progress', endpoint: '/tasks?perPage=50&status=in_progress', priority: 'P1' }, // 从100减到50
-      { key: 'clients_page1', endpoint: '/clients?page=1&perPage=30', priority: 'P1' }, // 从50减到30
-      { key: 'tags', endpoint: '/tags', priority: 'P1' },
+      { key: 'timesheets_recent', endpoint: '/timesheets?limit=10', priority: 'P1' }, // 工時表首屏
+      { key: 'tasks_pending', endpoint: '/tasks?perPage=10&status=pending', priority: 'P1' }, // 任務首屏
+      { key: 'clients_page1', endpoint: '/clients?page=1&perPage=10', priority: 'P1' }, // 客戶首屏
+      { key: 'tags', endpoint: '/tags', priority: 'P1' }, // 標籤（小數據）
     ];
     
-    // 📊 P2: 中優先級（进一步减少数据量）
+    // 📊 P2: 中優先級（補充頁面數據）
     const p2Tasks = [
-      { key: 'tasks_all', endpoint: '/tasks?perPage=100', priority: 'P2' }, // 从200减到100
-      { key: 'receipts_all', endpoint: '/receipts?perPage=100', priority: 'P2' }, // 从200减到100
-      { key: 'receipts_unpaid', endpoint: '/receipts?perPage=50&status=unpaid', priority: 'P2' }, // 从100减到50
+      { key: 'tasks_in_progress', endpoint: '/tasks?perPage=20&status=in_progress', priority: 'P2' },
+      { key: 'clients_page2', endpoint: '/clients?page=2&perPage=15', priority: 'P2' },
       { key: 'receipts_statistics', endpoint: '/receipts/statistics', priority: 'P2' },
-      { key: 'clients_all', endpoint: '/clients?perPage=500', priority: 'P2' }, // 从2000减到500
+      { key: 'receipts_unpaid', endpoint: '/receipts?perPage=20&status=unpaid', priority: 'P2' },
       { key: 'settings', endpoint: '/settings', priority: 'P2' },
     ];
     
-    // 📁 P3: 低優先級（后台加载，包含所有端点）
+    // 📁 P3: 低優先級（后台加载，大量補充數據）
     const p3Tasks = [
-      { key: 'holidays', endpoint: '/holidays', priority: 'P3' },
-      { key: 'clients_page2', endpoint: '/clients?page=2&perPage=30', priority: 'P3' },
-      { key: 'clients_page3', endpoint: '/clients?page=3&perPage=30', priority: 'P3' },
-      { key: 'services_types', endpoint: '/services', priority: 'P3' },
-      { key: 'tasks_completed', endpoint: '/tasks?perPage=30&status=completed', priority: 'P3' },
+      // 更多任務數據
+      { key: 'tasks_all', endpoint: '/tasks?perPage=100', priority: 'P3' },
+      { key: 'tasks_completed', endpoint: '/tasks?perPage=50&status=completed', priority: 'P3' },
+      
+      // 更多客戶數據（分頁加載）
+      { key: 'clients_page3', endpoint: '/clients?page=3&perPage=20', priority: 'P3' },
+      { key: 'clients_page4', endpoint: '/clients?page=4&perPage=20', priority: 'P3' },
+      { key: 'clients_page5', endpoint: '/clients?page=5&perPage=20', priority: 'P3' },
+      { key: 'clients_all', endpoint: '/clients?perPage=300', priority: 'P3' },
+      
+      // 更多收據數據
+      { key: 'receipts_all', endpoint: '/receipts?perPage=100', priority: 'P3' },
+      { key: 'receipts_paid', endpoint: '/receipts?perPage=50&status=paid', priority: 'P3' },
       { key: 'receipts_aging', endpoint: '/receipts/aging-report', priority: 'P3' },
+      
+      // 更多工時數據
+      { key: 'timesheets_more', endpoint: '/timesheets?limit=100', priority: 'P3' },
+      
+      // 系統數據
+      { key: 'holidays', endpoint: '/holidays', priority: 'P3' },
+      { key: 'services_types', endpoint: '/services', priority: 'P3' },
+      
+      // 假期數據
       { key: 'leaves_all', endpoint: '/leaves?perPage=100', priority: 'P3' },
-      { key: 'leaves_pending', endpoint: '/leaves?perPage=30&status=pending', priority: 'P3' },
+      { key: 'leaves_pending', endpoint: '/leaves?perPage=50&status=pending', priority: 'P3' },
+      { key: 'leaves_approved', endpoint: '/leaves?perPage=50&status=approved', priority: 'P3' },
       { key: 'leaves_balances', endpoint: '/leaves/balances', priority: 'P3' },
-      { key: 'automation_rules', endpoint: '/automation/rules', priority: 'P3' },
+      
+      // 知識庫
       { key: 'sop_list', endpoint: '/knowledge/sops?perPage=100', priority: 'P3' },
       { key: 'faq_list', endpoint: '/knowledge/faqs?perPage=100', priority: 'P3' },
       { key: 'documents_list', endpoint: '/knowledge/documents?perPage=100', priority: 'P3' },
+      
+      // 薪資與成本
       { key: 'payroll_latest', endpoint: '/payroll?perPage=50', priority: 'P3' },
-      { key: 'costs_summary', endpoint: '/costs?perPage=50', priority: 'P3' }, // 尝试使用不同参数
-      { key: 'task_templates', endpoint: '/tasks/templates?perPage=50', priority: 'P3' }, // 尝试不同路径
-      // 以下端点即使失败也尝试加载，静默处理错误
-      { key: 'billing_schedules', endpoint: '/billing-schedules?perPage=100', priority: 'P3' }, // 尝试不同路径
-      { key: 'reports_overview', endpoint: '/reports?perPage=50', priority: 'P3' }, // 尝试简化参数
-      { key: 'attachments_recent', endpoint: '/attachments/recent?limit=50', priority: 'P3' }, // 使用recent子路径
+      { key: 'costs_summary', endpoint: '/costs?perPage=50', priority: 'P3' },
+      
+      // 其他（靜默失敗）
+      { key: 'automation_rules', endpoint: '/automation/rules', priority: 'P3' },
+      { key: 'task_templates', endpoint: '/tasks/templates?perPage=50', priority: 'P3' },
+      { key: 'billing_schedules', endpoint: '/billing-schedules?perPage=100', priority: 'P3' },
+      { key: 'reports_overview', endpoint: '/reports?perPage=50', priority: 'P3' },
+      { key: 'attachments_recent', endpoint: '/attachments/recent?limit=50', priority: 'P3' },
     ];
     
     const allTasks = [...p0Tasks, ...p1Tasks, ...p2Tasks, ...p3Tasks];
@@ -331,10 +353,7 @@
       
       if (result.error) {
         preloadStatus.failed.push(task.key);
-        // 只在開發模式下顯示錯誤（靜默失敗）
-        if (result.error !== 'HTTP_404' && result.error !== 'HTTP_422') {
-          console.debug(`[DataCache] ${task.priority} ✗ ${task.key} 跳過 (${duration}ms)`);
-        }
+        // 完全靜默失敗（不顯示任何錯誤）
       } else {
         preloadStatus.completed.push(task.key);
         console.log(`[DataCache] ${task.priority} ✓ ${task.key} (${duration}ms)${result.fromCache ? ' [緩存]' : ''}`);

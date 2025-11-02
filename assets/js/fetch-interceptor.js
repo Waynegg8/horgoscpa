@@ -152,22 +152,21 @@
   window.fetch = async function(url, options = {}) {
     const method = (options.method || 'GET').toUpperCase();
     
-    // 只攔截 GET 請求的 API 調用
-    if (method === 'GET' && isAPIRequest(url)) {
+    // 只在內部頁面攔截（不在登入頁面攔截）
+    const isInternalPage = location.pathname.startsWith('/internal/') && !location.pathname.includes('/login');
+    
+    // 只攔截 GET 請求的 API 調用，且必須在內部頁面
+    if (method === 'GET' && isAPIRequest(url) && isInternalPage) {
       const endpoint = extractEndpoint(url);
       const cacheKey = findCacheKey(endpoint);
       
       if (cacheKey) {
-        console.log(`[FetchInterceptor] 攔截請求: ${endpoint} -> ${cacheKey}`);
-        
         // 嘗試從緩存獲取
         const cachedResponse = await getFromCache(cacheKey);
         
         if (cachedResponse) {
           console.log(`[FetchInterceptor] ✓ 使用緩存: ${cacheKey}`);
           return cachedResponse;
-        } else {
-          console.log(`[FetchInterceptor] ⚠ 緩存未命中: ${cacheKey}，使用網絡請求`);
         }
       }
     }

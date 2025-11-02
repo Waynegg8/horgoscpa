@@ -115,24 +115,14 @@
               return;
             }
             
-            // 登入成功！立即跳轉（預加載在背景啟動）
+            // 登入成功！立即跳轉
             console.log('[Login] ✓ 登入成功');
             
-            // 立即跳轉，不等待任何預加載
+            // 立即跳轉，不等待任何預加載（預加載已在頁面加載時啟動）
             const redirect = getRedirectTarget();
             const fallback = onProdHost ? '/internal/dashboard' : 'https://www.horgoscpa.com/internal/dashboard';
             
-            // 在跳轉前啟動預加載（完全非阻塞）
-            if (window.DataCache && window.DataCache.preloadAll) {
-              // 預加載會在新頁面中繼續進行
-              window.DataCache.preloadAll({ adminMode: true }).then(() => {
-                console.log('[Login] ✓ 背景預加載完成');
-              }).catch(err => {
-                console.warn('[Login] ⚠ 背景預加載部分失敗', err);
-              });
-            }
-            
-            // 立即跳轉，無任何延遲
+            // 立即跳轉，無任何延遲（預加載會自動繼續）
             location.assign(redirect || fallback);
           } catch (err) {
             setError('網路或伺服器異常，請稍後再試');
@@ -155,16 +145,31 @@
         passwordEl.addEventListener('input', () => setError(''));
 
         // ===== 頁面加載時的預優化 =====
-        // 在用戶還沒登入時就開始準備，提升整體響應速度
+        // 🚀 關鍵：在登入頁面就立即開始預加載所有內容！
         (function pageLoadOptimization() {
-          console.log('[Login] 頁面加載優化啟動');
+          console.log('[Login] 🚀 立即啟動完整預加載系統');
+          
+          // 🔥 立即啟動預加載（不等待 session 檢查）
+          function startImmediatePreload() {
+            if (window.DataCache && window.DataCache.preloadAll) {
+              console.log('[Login] 開始預加載所有內容（管理員模式）...');
+              window.DataCache.preloadAll({ adminMode: true }).then(() => {
+                console.log('[Login] ✅ 預加載完成！現在登入將極速進入系統');
+              }).catch(err => {
+                console.warn('[Login] ⚠ 預加載部分失敗（正常，某些 API 需要登入）', err);
+              });
+            } else {
+              console.warn('[Login] ⚠ DataCache 尚未就緒，等待...');
+              setTimeout(startImmediatePreload, 100);
+            }
+          }
           
           // 1. 檢查是否已經有 session（用戶之前登入過且未過期）
           function checkExistingSession() {
             const onProdHost = location.hostname.endsWith('horgoscpa.com');
             const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
             
-            // 靜默檢查 session，不阻塞頁面
+            // 靜默檢查 session（完全靜默，不記錄任何日誌）
             fetch(apiBase + '/auth/me', {
               method: 'GET',
               credentials: 'include'
@@ -175,13 +180,7 @@
               return null;
             }).then(json => {
               if (json && json.ok && json.data) {
-                console.log('[Login] 檢測到有效 session，開始管理員完整預加載');
-                // 有效 session，立即啟動管理員完整預加載
-                if (window.DataCache && window.DataCache.preloadAll) {
-                  window.DataCache.preloadAll({ adminMode: true });
-                }
-                
-                // 提示用戶可以直接進入系統
+                // 有效 session，顯示提示
                 const hint = document.createElement('div');
                 hint.style.cssText = `
                   position: fixed;
@@ -210,11 +209,9 @@
                   hint.style.transform = 'translateY(0)';
                 };
                 document.body.appendChild(hint);
-              } else {
-                console.log('[Login] 無有效 session');
               }
-            }).catch(err => {
-              console.log('[Login] Session 檢查失敗（正常，用戶未登入）');
+            }).catch(() => {
+              // 完全靜默處理錯誤（401等正常錯誤）
             });
           }
           
@@ -242,33 +239,46 @@
             }
           }
           
-          // 3. 預加載關鍵靜態資源（CSS, JS）- 所有內部頁面需要的資源
+          // 3. 預加載所有靜態資源（忽略警告，專注登入後極致流暢）
           function preloadStaticResources() {
             const resources = [
-              // 核心系統樣式
+              // === 核心系統樣式（必須）===
+              { href: '/assets/css/common.css', as: 'style' },
               { href: '/assets/css/internal-system.css', as: 'style' },
               { href: '/assets/css/internal-components.css', as: 'style' },
               { href: '/assets/css/navbar.css', as: 'style' },
               { href: '/assets/css/footer.css', as: 'style' },
+              { href: '/assets/css/mobile-navbar.css', as: 'style' },
               
-              // 各頁面樣式（最常訪問的）
+              // === 所有頁面樣式（全面預加載）===
               { href: '/assets/css/dashboard-page.css', as: 'style' },
               { href: '/assets/css/clients-page.css', as: 'style' },
+              { href: '/assets/css/client-detail-page.css', as: 'style' },
               { href: '/assets/css/tasks-page.css', as: 'style' },
+              { href: '/assets/css/task-detail-page.css', as: 'style' },
               { href: '/assets/css/receipts-page.css', as: 'style' },
               { href: '/assets/css/timesheet-page.css', as: 'style' },
-              { href: '/assets/css/knowledge-page.css', as: 'style' },
+              { href: '/assets/css/leaves-page.css', as: 'style' },
               { href: '/assets/css/payroll-page.css', as: 'style' },
               { href: '/assets/css/costs-page.css', as: 'style' },
-              { href: '/assets/css/leaves-page.css', as: 'style' },
+              { href: '/assets/css/knowledge-page.css', as: 'style' },
               { href: '/assets/css/settings-page.css', as: 'style' },
               { href: '/assets/css/reports-page.css', as: 'style' },
+              { href: '/assets/css/lifecycle-page.css', as: 'style' },
+              { href: '/assets/css/rules-page.css', as: 'style' },
+              { href: '/assets/css/attachments-page.css', as: 'style' },
+              { href: '/assets/css/content-editor-page.css', as: 'style' },
               
-              // 核心 JavaScript（按優先級）
+              // === 核心 JavaScript（按載入順序）===
               { href: '/assets/js/data-cache.js', as: 'script' },
               { href: '/assets/js/fetch-interceptor.js', as: 'script' },
               { href: '/assets/js/data-helper.js', as: 'script' },
-              { href: '/assets/js/components/bootstrap.js', as: 'script' }
+              { href: '/assets/js/components/bootstrap.js', as: 'script' },
+              { href: '/assets/js/components/timesheets.js', as: 'script' },
+              
+              // === 第三方庫（如果需要）===
+              { href: '/assets/vendor/quill-better-table.css', as: 'style' },
+              { href: '/assets/vendor/quill-better-table.js', as: 'script' },
             ];
             
             resources.forEach(res => {
@@ -276,10 +286,13 @@
               link.rel = 'preload';
               link.href = res.href;
               link.as = res.as;
+              if (res.as === 'script') {
+                link.crossOrigin = 'anonymous';
+              }
               document.head.appendChild(link);
             });
             
-            console.log(`[Login] 已預加載 ${resources.length} 個關鍵靜態資源`);
+            console.log(`[Login] ✅ 已預加載 ${resources.length} 個靜態資源（登入後極致流暢）`);
           }
           
           // 4. DNS 預連接（加速 API 請求）
@@ -299,21 +312,19 @@
             console.log('[Login] 已建立 DNS 預連接和 API 預連接');
           }
           
-          // 5. 預熱 API 連接（發送輕量級請求建立連接池）
+          // 5. 預熱 API 連接（靜默建立連接）
           function warmupAPIConnection() {
             const onProdHost = location.hostname.endsWith('horgoscpa.com');
             const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
             
-            // 發送一個輕量級 OPTIONS 請求來建立連接
-            // 即使失敗也沒關係，目的是建立 TCP/TLS 連接
+            // 使用 GET 而不是 HEAD，避免 405 錯誤
+            // 完全靜默處理，不記錄任何日誌
             fetch(apiBase + '/auth/me', {
-              method: 'HEAD',
+              method: 'GET',
               credentials: 'include',
               cache: 'no-store'
-            }).then(() => {
-              console.log('[Login] API 連接已預熱');
             }).catch(() => {
-              console.log('[Login] API 連接預熱完成（建立連接）');
+              // 靜默處理錯誤（包括401、405等）
             });
           }
           
@@ -348,15 +359,15 @@
             }
           }
           
-          // 執行優化步驟（立即執行，不延遲）
-          // 無論用戶是否已登入，都積極準備
-          checkExistingSession();      // 檢查現有 session 並可能啟動預加載
+          // 🚀 立即執行所有優化步驟（不延遲，全力預加載）
+          startImmediatePreload();      // 🔥 最優先：立即啟動完整預加載
+          checkExistingSession();       // 檢查現有 session
           checkCachedData();            // 檢查已有的緩存數據
           preloadStaticResources();     // 立即預加載所有靜態資源
           setupDNSPrefetch();           // 立即建立 DNS 和 API 連接
-          prepareLocalStorage();        // 清理舊緩存，準備空間
+          prepareLocalStorage();        // 清理舊緩存
           
-          // 稍後預熱 API 連接（不阻塞頁面）
+          // 稍後預熱 API 連接
           setTimeout(() => {
             warmupAPIConnection();
           }, 50);

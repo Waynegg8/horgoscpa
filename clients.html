@@ -10,6 +10,22 @@
     <link rel="stylesheet" href="/assets/css/internal-system.css?v=3" />
     <link rel="stylesheet" href="/assets/css/internal-components.css?v=3" />
     <link rel="stylesheet" href="/assets/css/clients-page.css?v=9" />
+    
+    <!-- ⚡ 預加載系統（必須在所有其他腳本之前加載） -->
+    <script src="/assets/js/data-cache.js"></script>
+    <script src="/assets/js/fetch-interceptor.js"></script>
+    <script>
+    // 立即啟動預加載（如果尚未啟動）
+    if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
+      const status = window.DataCache.getPreloadStatus();
+      if (status.completed.length === 0) {
+        console.log('[Clients] 🚀 啟動背景預加載');
+        window.DataCache.preloadAll({ adminMode: true });
+      } else {
+        console.log(`[Clients] ✅ 預加載已完成 ${status.completed.length}/${status.total} 項`);
+      }
+    }
+    </script>
   </head>
   <body class="clients-page">
     <main class="clients-content" style="padding: 20px;">
