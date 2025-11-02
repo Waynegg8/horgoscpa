@@ -10,20 +10,19 @@
     <link rel="stylesheet" href="/assets/css/lifecycle-page.css" />
   </head>
   <body class="lifecycle-page">
-    <header class="lc-header">
-      <h1 class="lc-title">服務生命週期</h1>
+    <div style="padding:16px 20px;">
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限執行此操作</div>
-      <div class="lc-toolbar">
-        <input id="q" type="search" placeholder="搜尋客戶/服務…" aria-label="搜尋" />
+      <div class="lc-toolbar" style="margin-bottom:12px;">
+        <input id="q" type="search" placeholder="搜尋客戶/服務…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:300px;" />
       </div>
-      <nav class="lc-tabs" role="tablist" aria-label="狀態篩選">
+      <nav class="lc-tabs" role="tablist" aria-label="狀態篩選" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
         <button class="tab active" role="tab" aria-selected="true" data-status="all">全部</button>
         <button class="tab" role="tab" aria-selected="false" data-status="active">啟用中</button>
         <button class="tab" role="tab" aria-selected="false" data-status="suspended">已暫停</button>
         <button class="tab" role="tab" aria-selected="false" data-status="expired">已到期</button>
         <button class="tab" role="tab" aria-selected="false" data-status="cancelled">已取消</button>
       </nav>
-    </header>
+    </div>
 
     <main class="lc-content">
       <section class="lc-list">

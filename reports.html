@@ -11,16 +11,15 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   </head>
   <body class="reports-page">
-    <header class="reports-header">
-      <h1 class="reports-title">報表分析</h1>
+    <div style="padding:16px 20px;">
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此報表</div>
-      <nav class="reports-tabs" role="tablist" aria-label="報表分頁">
+      <nav class="reports-tabs" role="tablist" aria-label="報表分頁" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
         <button class="tab active" role="tab" aria-selected="true" data-tab="employee-hours">員工工時分析</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="client-cost" data-admin-only="true">客戶成本分析</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="payroll" data-admin-only="true">薪資報表</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="receivables" data-admin-only="true">收款分析</button>
       </nav>
-    </header>
+    </div>
 
     <main class="reports-content">
       <!-- 客戶成本分析（管理員） -->

@@ -10,24 +10,23 @@
     <link rel="stylesheet" href="/assets/css/attachments-page.css" />
   </head>
   <body class="attachments-page">
-    <header class="attachments-header">
-      <h1 class="attachments-title">附件</h1>
+    <div style="padding:16px 20px;">
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限上傳附件</div>
-      <div class="attachments-toolbar">
-        <div class="entity-picker">
+      <div class="attachments-toolbar" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+        <div class="entity-picker" style="display:flex;gap:8px;align-items:center;">
           <label for="entityType">實體</label>
-          <select id="entityType" aria-label="實體類型">
+          <select id="entityType" aria-label="實體類型" style="padding:8px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
             <option value="client">客戶</option>
             <option value="receipt">收據</option>
             <option value="sop">SOP</option>
             <option value="task">任務</option>
           </select>
-          <input id="entityId" type="text" placeholder="輸入實體ID（例如 c_001）" aria-label="實體ID" />
+          <input id="entityId" type="text" placeholder="輸入實體ID（例如 c_001）" aria-label="實體ID" style="padding:8px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:200px;" />
         </div>
-        <div class="toolbar-spacer"></div>
-        <div class="filters">
-          <input id="q" type="search" placeholder="搜尋檔名/上傳者…" aria-label="搜尋" />
-          <select id="fileType" aria-label="檔案類型">
+        <div class="toolbar-spacer" style="flex:1;"></div>
+        <div class="filters" style="display:flex;gap:8px;align-items:center;">
+          <input id="q" type="search" placeholder="搜尋檔名/上傳者…" aria-label="搜尋" style="padding:8px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:200px;" />
+          <select id="fileType" aria-label="檔案類型" style="padding:8px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
             <option value="all">全部類型</option>
             <option value="pdf">PDF</option>
             <option value="image">圖片</option>
@@ -35,11 +34,11 @@
             <option value="word">Word</option>
             <option value="other">其他</option>
           </select>
-          <label>起</label><input id="dateFrom" type="date" aria-label="開始日期" />
-          <label>迄</label><input id="dateTo" type="date" aria-label="結束日期" />
+          <label>起</label><input id="dateFrom" type="date" aria-label="開始日期" style="padding:8px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" />
+          <label>迄</label><input id="dateTo" type="date" aria-label="結束日期" style="padding:8px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" />
         </div>
       </div>
-    </header>
+    </div>
 
     <main class="attachments-content">
       <!-- 上傳區（有權限顯示） -->

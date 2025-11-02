@@ -10,16 +10,15 @@
     <link rel="stylesheet" href="/assets/css/content-editor-page.css" />
   </head>
   <body class="cms-page">
-    <header class="cms-header" style="padding:16px 20px;">
-      <h1 class="cms-title" style="margin:0 0 8px 0;font-size:24px;font-weight:800;color:var(--text-primary);">外部內容管理（CMS）</h1>
+    <div style="padding:16px 20px;">
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限存取此模組</div>
-      <nav class="cms-tabs" role="tablist" aria-label="內容類型">
+      <nav class="cms-tabs" role="tablist" aria-label="內容類型" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
         <button class="tab active" role="tab" aria-selected="true" data-tab="blog">Blog 文章</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="faq">FAQ</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="services">服務介紹</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="resources">資源下載</button>
       </nav>
-    </header>
+    </div>
 
     <main class="cms-content" style="padding:0 20px 24px 20px;">
       <!-- Blog 文章 -->

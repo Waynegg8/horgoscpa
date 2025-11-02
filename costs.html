@@ -10,22 +10,21 @@
     <link rel="stylesheet" href="/assets/css/costs-page.css" />
   </head>
   <body class="costs-page">
-    <header class="costs-header">
-      <h1 class="costs-title">管理成本</h1>
+    <div style="padding:16px 20px;">
       <div id="infoBar" class="info-bar" style="display:none;" role="alert">您沒有權限存取此模組</div>
-      <div class="costs-toolbar">
+      <div class="costs-toolbar" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
         <label for="month">月份</label>
         <input id="month" type="month" aria-label="月份" />
-        <div class="toolbar-spacer"></div>
+        <div class="toolbar-spacer" style="flex:1;"></div>
         <button id="btn-export-csv" type="button" class="btn" disabled>匯出 CSV</button>
         <button id="btn-export-pdf" type="button" class="btn" disabled>匯出 PDF</button>
       </div>
-      <nav class="costs-tabs" role="tablist" aria-label="管理成本分頁">
+      <nav class="costs-tabs" role="tablist" aria-label="管理成本分頁" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
         <button class="tab active" role="tab" aria-selected="true" data-tab="items">成本項目設定</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="employee">員工成本分析</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="client">客戶任務成本</button>
       </nav>
-    </header>
+    </div>
 
     <main class="costs-content">
       <!-- 成本項目設定 -->

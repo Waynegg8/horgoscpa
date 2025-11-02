@@ -10,10 +10,9 @@
     <link rel="stylesheet" href="/assets/css/rules-page.css" />
   </head>
   <body class="rules-page">
-    <header class="rules-header">
-      <h1 class="rules-title">業務規則設定</h1>
+    <div style="padding:16px 20px;">
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此設定</div>
-      <nav class="rules-tabs" role="tablist" aria-label="規則類別">
+      <nav class="rules-tabs" role="tablist" aria-label="規則類別" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
         <button class="tab active" role="tab" aria-selected="true" data-tab="holidays">國定假日</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="leave-types">假別類型</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="services">服務項目</button>
@@ -22,7 +21,7 @@
         <button class="tab admin-only" role="tab" aria-selected="false" data-tab="annual-rules" style="display:none;">特休規則</button>
         <button class="tab admin-only" role="tab" aria-selected="false" data-tab="cycles" style="display:none;">週期類型</button>
       </nav>
-    </header>
+    </div>
 
     <main class="rules-content">
       <!-- 國定假日 -->
