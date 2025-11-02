@@ -67,7 +67,7 @@
             <option value="completed">已完成</option>
             <option value="cancelled">已取消</option>
           </select>
-          <button type="button" class="btn btn-primary" onclick="showUpdateStatusModal()" style="margin-top:8px;padding:8px 16px;">📝 更新狀態說明</button>
+          <p style="font-size:12px;color:#6b7280;margin-top:4px;">✋ 狀態為唯讀，請使用下方按鈕更新</p>
         </div>
       </div>
       <div class="form-row-2col">
@@ -106,7 +106,6 @@
             <span id="adjustmentBadge" style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:500;">已調整</span>
             <span id="adjustmentText"></span>
           </div>
-          <button type="button" class="btn btn-sm btn-link" onclick="showAdjustmentHistory()" style="margin-top:8px;">查看調整歷史</button>
         </div>
         <div class="form-field">
           <label for="originalDueDate">原始到期日</label>
@@ -136,8 +135,13 @@
         </div>
       </div>
       
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" onclick="showAdjustmentHistory()">📅 查看調整歷史</button>
+      <div class="form-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <button type="button" class="btn btn-primary" onclick="showUpdateStatusModal()" style="background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);box-shadow:0 2px 4px rgba(59,130,246,0.3);">
+          📝 更新狀態說明
+        </button>
+        <button type="button" class="btn" onclick="showAdjustmentHistory()" style="background:linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);color:#fff;box-shadow:0 2px 4px rgba(139,92,246,0.3);border:none;">
+          📅 查看調整歷史
+        </button>
       </div>
     </div>
 
@@ -780,74 +784,111 @@
           return;
         }
         
-        let html = '<h3 style="margin-bottom:16px;">📅 到期日調整歷史</h3>';
-        html += '<div>';
-        history.forEach(adj => {
+        // 格式化日期
+        const formatDate = (dateStr) => {
+          if (!dateStr) return '-';
+          try {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+          } catch {
+            return dateStr;
+          }
+        };
+        
+        // 格式化日期时间
+        const formatDateTime = (dt) => {
+          if (!dt) return '-';
+          try {
+            const d = new Date(dt);
+            return d.toLocaleString('zh-TW', { 
+              year: 'numeric', 
+              month: '2-digit', 
+              day: '2-digit', 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            });
+          } catch {
+            return dt;
+          }
+        };
+        
+        let html = `
+          <div style="background:linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);padding:20px 24px;border-radius:8px 8px 0 0;margin:-24px -24px 20px -24px;">
+            <h3 style="margin:0;color:#fff;font-size:20px;font-weight:600;">📅 到期日調整歷史</h3>
+            <p style="margin:8px 0 0 0;color:rgba(255,255,255,0.9);font-size:14px;">共 ${history.length} 筆調整記錄</p>
+          </div>
+          <div style="max-height:500px;overflow-y:auto;">
+        `;
+        
+        history.forEach((adj, index) => {
           const typeLabels = {
-            'initial_create': { icon: '🆕', label: '初始創建時調整', color: '#3b82f6' },
-            'manual_adjust': { icon: '✏️', label: '手動調整', color: '#10b981' },
-            'system_auto': { icon: '🤖', label: '系統自動調整', color: '#f59e0b' },
-            'overdue_adjust': { icon: '⚠️', label: '逾期調整', color: '#ef4444' }
+            'initial_create': { icon: '🆕', label: '初始創建', color: '#3b82f6', bg: '#eff6ff' },
+            'manual_adjust': { icon: '✏️', label: '手動調整', color: '#10b981', bg: '#f0fdf4' },
+            'system_auto': { icon: '🤖', label: '系統自動', color: '#f59e0b', bg: '#fffbeb' },
+            'overdue_adjust': { icon: '⚠️', label: '逾期調整', color: '#ef4444', bg: '#fef2f2' }
           };
           
-          const typeInfo = typeLabels[adj.adjustment_type] || { icon: '📝', label: adj.adjustment_type || '未知', color: '#6b7280' };
-          
-          // 格式化日期时间
-          const formatDateTime = (dt) => {
-            if (!dt) return '-';
-            try {
-              const d = new Date(dt);
-              return d.toLocaleString('zh-TW', { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit', 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              });
-            } catch {
-              return dt;
-            }
-          };
-          
+          const typeInfo = typeLabels[adj.adjustment_type] || { icon: '📝', label: '未知類型', color: '#6b7280', bg: '#f9fafb' };
           const daysChanged = Number(adj.days_changed || 0);
           const isSystemAuto = adj.adjustment_type === 'system_auto';
           
           html += `
-            <div style="border:1px solid #e5e7eb;border-radius:6px;padding:12px;margin-bottom:12px;${isSystemAuto ? 'background:#fffbeb;' : ''}">
-              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                <span style="font-weight:600;color:${typeInfo.color};">${typeInfo.icon} ${typeInfo.label}</span>
-                <span style="color:#6b7280;font-size:13px;">${formatDateTime(adj.requested_at)}</span>
+            <div style="border:2px solid ${typeInfo.color};border-radius:8px;padding:16px;margin-bottom:${index === history.length - 1 ? '0' : '16px'};background:${typeInfo.bg};position:relative;">
+              <div style="position:absolute;top:-12px;left:16px;background:${typeInfo.color};color:#fff;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                ${typeInfo.icon} ${typeInfo.label}
               </div>
-              ${isSystemAuto ? '<div style="background:#fef3c7;color:#92400e;padding:6px 8px;border-radius:4px;font-size:12px;margin-bottom:8px;">💡 當前置任務延遲完成時，系統會自動延長後續任務的期限</div>' : ''}
-              <div style="font-size:14px;margin-bottom:6px;">
-                <span style="color:#6b7280;">原到期日:</span> ${adj.old_due_date || '-'}
-                <span style="margin:0 8px;">→</span>
-                <span style="color:#6b7280;">新到期日:</span> ${adj.new_due_date || '-'}
-                <span style="margin-left:12px;color:${daysChanged > 0 ? '#dc2626' : '#059669'};">
-                  ${daysChanged > 0 ? '+' : ''}${daysChanged} 天
-                </span>
-              </div>
-              <div style="font-size:14px;color:#4b5563;">
-                <strong>原因:</strong> ${adj.adjustment_reason || '無'}
-              </div>
-              <div style="font-size:13px;color:#6b7280;margin-top:4px;">
-                ${isSystemAuto ? '🤖 系統自動調整' : `👤 由 ${adj.requested_by_name || '系統'} 調整`}
+              
+              <div style="margin-top:12px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                  <div style="flex:1;">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                      <div style="background:#fff;padding:8px 12px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                        <span style="font-size:12px;color:#6b7280;display:block;margin-bottom:2px;">原到期日</span>
+                        <span style="font-size:15px;font-weight:600;color:#1f2937;">${formatDate(adj.old_due_date)}</span>
+                      </div>
+                      <div style="color:${typeInfo.color};font-size:20px;font-weight:bold;">→</div>
+                      <div style="background:#fff;padding:8px 12px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                        <span style="font-size:12px;color:#6b7280;display:block;margin-bottom:2px;">新到期日</span>
+                        <span style="font-size:15px;font-weight:600;color:#1f2937;">${formatDate(adj.new_due_date)}</span>
+                      </div>
+                      <div style="background:${daysChanged > 0 ? '#fef2f2' : '#f0fdf4'};color:${daysChanged > 0 ? '#dc2626' : '#059669'};padding:8px 12px;border-radius:6px;border:1px solid ${daysChanged > 0 ? '#fecaca' : '#bbf7d0'};font-weight:600;">
+                        ${daysChanged > 0 ? '延後' : '提前'} ${Math.abs(daysChanged)} 天
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                ${isSystemAuto ? '<div style="background:rgba(245,158,11,0.1);border-left:3px solid #f59e0b;color:#92400e;padding:10px 12px;border-radius:4px;font-size:13px;margin-bottom:12px;">💡 系統檢測到前置任務延遲完成，已自動調整後續任務期限</div>' : ''}
+                
+                <div style="background:#fff;padding:12px;border-radius:6px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                  <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">📝 調整原因</div>
+                  <div style="font-size:14px;color:#1f2937;line-height:1.5;">${adj.adjustment_reason || '無說明'}</div>
+                </div>
+                
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6b7280;">
+                  <span>👤 ${isSystemAuto ? '系統自動調整' : `由 ${adj.requested_by_name || '系統'} 調整`}</span>
+                  <span>🕐 ${formatDateTime(adj.requested_at)}</span>
+                </div>
               </div>
             </div>
           `;
         });
+        
         html += '</div>';
         
         const modal = document.createElement('div');
-        modal.style.cssText = 'display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;';
+        modal.style.cssText = 'display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(2px);';
         modal.innerHTML = `
-          <div style="background:white;border-radius:8px;padding:24px;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;">
+          <div style="background:white;border-radius:12px;padding:24px;max-width:800px;width:90%;max-height:85vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
             ${html}
-            <div style="margin-top:20px;text-align:right;">
-              <button class="btn btn-secondary" onclick="this.closest('div[style*=fixed]').remove()">關閉</button>
+            <div style="margin-top:20px;text-align:center;">
+              <button class="btn" onclick="this.closest('div[style*=fixed]').remove()" style="background:linear-gradient(135deg, #6b7280 0%, #4b5563 100%);color:#fff;padding:10px 32px;border:none;box-shadow:0 2px 4px rgba(0,0,0,0.2);min-width:120px;">關閉</button>
             </div>
           </div>
         `;
+        modal.onclick = (e) => {
+          if (e.target === modal) modal.remove();
+        };
         document.body.appendChild(modal);
         
       } catch (err) {
