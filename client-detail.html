@@ -1578,12 +1578,18 @@
               <h5 style="margin-top: 0;">新增服務組成部分</h5>
               <div class="form-row-2col">
                 <div class="form-field">
+                  <label>服務名稱 *</label>
+                  <input type="text" id="new-comp-name-${clientServiceId}" placeholder="例如：月度記帳服務" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+                </div>
+                <div class="form-field">
                   <label>服務項目 *</label>
                   <select id="new-comp-service-item-${clientServiceId}" onchange="filterTemplatesByServiceItem${clientServiceId}()">
                     <option value="">請選擇服務項目</option>
                     ${serviceItemsHtml}
                   </select>
                 </div>
+              </div>
+              <div class="form-row-2col">
                 <div class="form-field">
                   <label>提供頻率</label>
                   <select id="new-comp-freq-${clientServiceId}">
@@ -1594,8 +1600,33 @@
                     <option value="one-time">一次性</option>
                   </select>
                 </div>
+                <div class="form-field">
+                  <label>預估工時（小時）</label>
+                  <input type="number" id="new-comp-hours-${clientServiceId}" min="0" step="0.5" placeholder="例如：4" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+                </div>
               </div>
               <div class="form-row-2col">
+                <div class="form-field">
+                  <label>期限規則</label>
+                  <select id="new-comp-due-rule-${clientServiceId}" onchange="updateDueDatePreview${clientServiceId}()">
+                    <option value="end_of_month">每月最後一天</option>
+                    <option value="specific_day">每月固定日期</option>
+                    <option value="next_month_day">次月固定日期</option>
+                    <option value="days_after_start">從月初起算天數</option>
+                  </select>
+                </div>
+                <div class="form-field" id="due-value-field-${clientServiceId}">
+                  <label>日期/天數</label>
+                  <input type="number" id="new-comp-due-value-${clientServiceId}" min="1" max="31" placeholder="請輸入" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" onchange="updateDueDatePreview${clientServiceId}()" />
+                  <small id="preview-text-${clientServiceId}" style="display: block; margin-top: 5px; color: #3b82f6;"></small>
+                </div>
+              </div>
+              <div class="form-row-2col">
+                <div class="form-field">
+                  <label>提前生成（天）</label>
+                  <input type="number" id="new-comp-advance-${clientServiceId}" value="7" min="0" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
+                  <small style="display: block; margin-top: 5px; color: #6b7280;">在到期日前幾天生成任務</small>
+                </div>
                 <div class="form-field">
                   <label>任務模板（可選）</label>
                   <select id="new-comp-template-${clientServiceId}" onchange="loadTemplateStages${clientServiceId}(this.value)">
@@ -2415,8 +2446,17 @@
       // 清空表單
       document.getElementById(`new-comp-name-${clientServiceId}`).value = '';
       document.getElementById(`new-comp-service-item-${clientServiceId}`).value = '';
+      document.getElementById(`new-comp-freq-${clientServiceId}`).value = 'monthly';
       document.getElementById(`new-comp-template-${clientServiceId}`).innerHTML = '<option value="">請先選擇服務項目</option>';
       document.getElementById(`new-comp-hours-${clientServiceId}`).value = '';
+      document.getElementById(`new-comp-due-rule-${clientServiceId}`).value = 'end_of_month';
+      document.getElementById(`new-comp-due-value-${clientServiceId}`).value = '';
+      document.getElementById(`new-comp-advance-${clientServiceId}`).value = '7';
+      // 清空自定义任务
+      window[`customTasks${clientServiceId}`] = [];
+      if (document.getElementById(`tasks-list-${clientServiceId}`)) {
+        document.getElementById(`tasks-list-${clientServiceId}`).innerHTML = '';
+      }
     }
 
     // 儲存新服務組成部分
