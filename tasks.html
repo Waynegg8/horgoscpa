@@ -620,7 +620,23 @@
         window.openQuickAddTask = function(clientId, clientServiceId, serviceId, serviceName, serviceMonth, event) {
           event.stopPropagation(); // 防止触发折叠
           
-          quickAddContext = { clientId, clientServiceId, serviceId, serviceName, serviceMonth };
+          // 找出该服务组下的所有任务（用于前置任务选择）
+          const sameServiceTasks = allTasks.filter(t => 
+            t.clientId === clientId && 
+            t.serviceName === serviceName && 
+            t.serviceMonth === serviceMonth &&
+            t.status !== 'cancelled'
+          );
+          
+          quickAddContext = { 
+            clientId, 
+            clientServiceId, 
+            serviceId, 
+            serviceName, 
+            serviceMonth,
+            sameServiceTasks,
+            selectedSOPs: []
+          };
           
           // 设置标题
           const monthText = serviceMonth ? ` - ${serviceMonth.slice(0, 4)}年${parseInt(serviceMonth.slice(5))}月` : '';
@@ -630,7 +646,18 @@
           document.getElementById('quick-task-name').value = '';
           document.getElementById('quick-assignee').value = '';
           document.getElementById('quick-due-date').value = '';
+          document.getElementById('quick-prerequisite').value = '';
           document.getElementById('quick-notes').value = '';
+          document.getElementById('quick-selected-sops').innerHTML = '';
+          
+          // 填充前置任务下拉框
+          if (sameServiceTasks.length > 0) {
+            document.getElementById('quick-prerequisite').innerHTML = '<option value="">無前置任務</option>' +
+              sameServiceTasks.map(t => `<option value="${t.taskId}">${t.taskName}</option>`).join('');
+            document.getElementById('quick-prerequisite-group').style.display = 'block';
+          } else {
+            document.getElementById('quick-prerequisite-group').style.display = 'none';
+          }
           
           // 显示模态框
           document.getElementById('quick-add-modal').style.display = 'flex';
@@ -647,6 +674,7 @@
           const taskName = document.getElementById('quick-task-name').value.trim();
           const assigneeUserId = document.getElementById('quick-assignee').value || null;
           const dueDate = document.getElementById('quick-due-date').value || null;
+          const prerequisiteTaskId = document.getElementById('quick-prerequisite').value || null;
           const notes = document.getElementById('quick-notes').value.trim() || null;
           
           if (!taskName) {
@@ -660,9 +688,15 @@
               task_name: taskName,
               assignee_user_id: assigneeUserId,
               due_date: dueDate,
+              prerequisite_task_id: prerequisiteTaskId,
               service_month: quickAddContext.serviceMonth,
               notes: notes
             };
+            
+            // 如果有选择SOP，添加到payload
+            if (quickAddContext.selectedSOPs && quickAddContext.selectedSOPs.length > 0) {
+              payload.sop_ids = quickAddContext.selectedSOPs;
+            }
             
             const res = await fetch(`${apiBase}/tasks`, {
               method: 'POST',
@@ -686,14 +720,124 @@
           }
         };
         
+        // SOP 相关功能
+        let allSOPs = [];
+        
+        // 加载SOPs
+        async function loadAllSOPs() {
+          try {
+            const res = await fetch(`${apiBase}/sop?perPage=500`, { credentials: 'include' });
+            if (res.ok) {
+              const json = await res.json();
+              allSOPs = json.data || [];
+            }
+          } catch (e) {
+            console.error('載入SOP失敗', e);
+          }
+        }
+        
+        // 打开SOP选择器
+        window.openQuickSOPSelector = function() {
+          if (!quickAddContext) return;
+          
+          // 根据服务类型过滤SOP（只显示任务层级的SOP）
+          const filteredSOPs = allSOPs.filter(s => s.scope === 'task');
+          
+          // 按分类分组
+          const sopsByCategory = {};
+          filteredSOPs.forEach(sop => {
+            const cat = sop.category || '未分类';
+            if (!sopsByCategory[cat]) sopsByCategory[cat] = [];
+            sopsByCategory[cat].push(sop);
+          });
+          
+          // 渲染SOP列表
+          let html = '';
+          Object.keys(sopsByCategory).sort().forEach(category => {
+            html += `
+              <div style="margin-bottom:16px;">
+                <div style="font-weight:600;font-size:14px;color:#374151;margin-bottom:8px;padding:8px;background:#f3f4f6;border-radius:4px;">
+                  📁 ${category}
+                </div>
+            `;
+            sopsByCategory[category].forEach(sop => {
+              const isSelected = quickAddContext.selectedSOPs.includes(sop.sop_id);
+              html += `
+                <div onclick="toggleQuickSOP(${sop.sop_id})" style="cursor:pointer;padding:8px 12px;border:1px solid ${isSelected ? '#3b82f6' : '#e5e7eb'};border-radius:4px;margin-bottom:4px;background:${isSelected ? '#eff6ff' : 'white'};">
+                  <span style="font-size:18px;margin-right:8px;">${isSelected ? '☑️' : '⬜'}</span>
+                  <span style="font-weight:500;color:#1f2937;">${sop.title}</span>
+                </div>
+              `;
+            });
+            html += `</div>`;
+          });
+          
+          if (html === '') {
+            html = '<div style="text-align:center;padding:24px;color:#9ca3af;">暫無可用的SOP文檔</div>';
+          }
+          
+          document.getElementById('quick-sop-list').innerHTML = html;
+          document.getElementById('quick-sop-modal').style.display = 'flex';
+        };
+        
+        // 切换SOP选择
+        window.toggleQuickSOP = function(sopId) {
+          if (!quickAddContext) return;
+          
+          const idx = quickAddContext.selectedSOPs.indexOf(sopId);
+          if (idx > -1) {
+            quickAddContext.selectedSOPs.splice(idx, 1);
+          } else {
+            quickAddContext.selectedSOPs.push(sopId);
+          }
+          
+          // 重新渲染SOP列表
+          openQuickSOPSelector();
+        };
+        
+        // 确认SOP选择
+        window.confirmQuickSOPSelection = function() {
+          // 显示已选择的SOP
+          if (quickAddContext.selectedSOPs.length > 0) {
+            const selectedSOPObjects = allSOPs.filter(s => quickAddContext.selectedSOPs.includes(s.sop_id));
+            const html = selectedSOPObjects.map(s => `
+              <span style="display:inline-block;padding:4px 10px;background:#eff6ff;color:#3b82f6;border-radius:12px;font-size:12px;margin:2px;">
+                📄 ${s.title}
+                <span onclick="removeQuickSOP(${s.sop_id})" style="cursor:pointer;margin-left:4px;font-weight:bold;">×</span>
+              </span>
+            `).join('');
+            document.getElementById('quick-selected-sops').innerHTML = html;
+          } else {
+            document.getElementById('quick-selected-sops').innerHTML = '<span style="color:#9ca3af;font-size:13px;">未選擇</span>';
+          }
+          
+          closeQuickSOPModal();
+        };
+        
+        // 移除SOP
+        window.removeQuickSOP = function(sopId) {
+          if (!quickAddContext) return;
+          const idx = quickAddContext.selectedSOPs.indexOf(sopId);
+          if (idx > -1) {
+            quickAddContext.selectedSOPs.splice(idx, 1);
+          }
+          confirmQuickSOPSelection();
+        };
+        
+        // 关闭SOP模态框
+        window.closeQuickSOPModal = function() {
+          document.getElementById('quick-sop-modal').style.display = 'none';
+        };
+        
         // 啟動
         init();
+        loadAllSOPs(); // 加载SOPs
       })();
     </script>
     
     <!-- 快速新增任務模態框 -->
     <div id="quick-add-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
-      <div style="background:white;border-radius:12px;width:90%;max-width:500px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+      <div style="background:white;border-radius:12px;width:90%;max-width:550px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);max-height:90vh;overflow-y:auto;">
         <h3 id="quick-modal-title" style="margin:0 0 20px 0;font-size:18px;color:#1f2937;">新增任務</h3>
         
         <div style="margin-bottom:16px;">
@@ -715,6 +859,30 @@
                  style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;" />
         </div>
         
+        <div id="quick-prerequisite-group" style="margin-bottom:16px;display:none;">
+          <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">
+            🔗 前置任務
+            <span style="font-size:12px;color:#6b7280;font-weight:normal;">（此任務需要等待哪個任務完成？）</span>
+          </label>
+          <select id="quick-prerequisite" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+            <option value="">無前置任務</option>
+          </select>
+        </div>
+        
+        <div style="margin-bottom:16px;">
+          <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">
+            📄 相關SOP文檔
+            <span style="font-size:12px;color:#6b7280;font-weight:normal;">（任務層級）</span>
+          </label>
+          <div id="quick-selected-sops" style="min-height:28px;padding:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:8px;">
+            <span style="color:#9ca3af;font-size:13px;">未選擇</span>
+          </div>
+          <button type="button" onclick="openQuickSOPSelector()" 
+                  style="padding:6px 12px;background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:6px;cursor:pointer;font-size:13px;">
+            📚 選擇SOP文檔
+          </button>
+        </div>
+        
         <div style="margin-bottom:20px;">
           <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">備註</label>
           <textarea id="quick-notes" rows="3" placeholder="選填..." 
@@ -729,6 +897,28 @@
           <button onclick="submitQuickTask()" 
                   style="padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;">
             ✅ 建立任務
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SOP選擇模態框 -->
+    <div id="quick-sop-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;">
+      <div style="background:white;border-radius:12px;width:90%;max-width:600px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,0.15);max-height:80vh;display:flex;flex-direction:column;">
+        <h3 style="margin:0 0 16px 0;font-size:18px;color:#1f2937;">選擇SOP文檔</h3>
+        
+        <div id="quick-sop-list" style="flex:1;overflow-y:auto;margin-bottom:16px;">
+          <!-- SOP列表将动态填充 -->
+        </div>
+        
+        <div style="display:flex;gap:12px;justify-content:flex-end;border-top:1px solid #e5e7eb;padding-top:16px;">
+          <button onclick="closeQuickSOPModal()" 
+                  style="padding:10px 20px;background:#f3f4f6;color:#374151;border:none;border-radius:6px;cursor:pointer;font-size:14px;">
+            取消
+          </button>
+          <button onclick="confirmQuickSOPSelection()" 
+                  style="padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;">
+            ✅ 確認選擇
           </button>
         </div>
       </div>
