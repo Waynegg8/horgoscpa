@@ -10,25 +10,30 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <style>
     .form-section {
-      background: #f8fafc;
-      border-radius: 12px;
+      background: white;
       padding: 24px;
-      margin-bottom: 24px;
-      border: 1px solid #e2e8f0;
+      margin-bottom: 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .form-section:last-of-type {
+      border-bottom: none;
     }
     
     .form-section-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
-      color: #1e293b;
-      margin-bottom: 20px;
+      color: #475569;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
       gap: 8px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #f1f5f9;
     }
     
     .form-section-title .material-symbols-outlined {
-      font-size: 22px;
+      font-size: 20px;
       color: var(--primary-color);
     }
     
@@ -80,7 +85,8 @@
     }
     
     #adjustment_reason_section {
-      margin-bottom: 24px;
+      padding: 24px;
+      border-bottom: 1px solid #f1f5f9;
       animation: slideDown 0.3s ease-out;
     }
     
@@ -146,51 +152,53 @@
       color: var(--primary-color);
     }
     
-    .page-intro {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 24px;
-      border-radius: 12px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    
-    .page-intro h2 {
-      font-size: 20px;
-      margin-bottom: 8px;
-      font-weight: 600;
-    }
-    
-    .page-intro p {
-      font-size: 14px;
-      opacity: 0.95;
-      margin: 0;
+    .content-card {
+      border-radius: 8px;
+      background: white;
     }
     
     label {
       font-weight: 600;
       color: #334155;
+      font-size: 14px;
     }
     
     label .required-mark {
       color: #dc2626;
       margin-left: 2px;
     }
+    
+    input[type="text"],
+    input[type="date"],
+    input[type="month"],
+    select,
+    textarea {
+      font-size: 14px;
+    }
+    
+    .form-actions {
+      padding: 20px 24px;
+      background: #f8fafc;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
   </style>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
   
-  <div class="page-container">
-    <div class="page-header-simple">
-      <a href="/internal/tasks" class="back-link">← 返回任務列表</a>
-      <h1 class="page-title">新增任務</h1>
-    </div>
-
-    <div class="content-card">
-      <div class="page-intro">
-        <h2>📋 建立新任務</h2>
-        <p>填寫以下資訊來建立一個新的任務。系統將自動計算預設到期日，您也可以根據需要進行調整。</p>
+  <div class="page-container" style="max-width: 1200px; padding: 20px;">
+    <div class="content-card" style="box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #e5e7eb;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <a href="/internal/tasks" style="color: #64748b; text-decoration: none; display: flex; align-items: center; gap: 4px; font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='#2c5f7c'" onmouseout="this.style.color='#64748b'">
+            <span style="font-size: 18px;">←</span> 返回
+          </a>
+          <div style="width: 1px; height: 20px; background: #e5e7eb;"></div>
+          <h1 style="margin: 0; font-size: 20px; font-weight: 600; color: #1e293b;">新增任務</h1>
+        </div>
       </div>
 
       <form id="taskForm" onsubmit="submitTask(event)">
@@ -314,11 +322,12 @@
           </div>
         </div>
 
-        <div class="form-actions">
-          <button type="button" onclick="window.location.href='/internal/tasks'" class="btn btn-secondary">取消</button>
-          <button type="submit" class="btn btn-primary">✓ 建立任務</button>
-        </div>
       </form>
+      
+      <div class="form-actions">
+        <button type="button" onclick="window.location.href='/internal/tasks'" class="btn btn-secondary">取消</button>
+        <button type="submit" form="taskForm" class="btn btn-primary">✓ 建立任務</button>
+      </div>
     </div>
   </div>
 
