@@ -8,6 +8,8 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/login.css" />
+    <!-- 數據預加載系統 -->
+    <script src="/assets/js/data-cache.js"></script>
   </head>
   <body>
     <main class="login">
@@ -85,14 +87,23 @@
           }
           const onProdHost = location.hostname.endsWith('horgoscpa.com');
           const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+          
+          // 在發送登入請求的同時，準備預加載（但還不執行）
+          let preloadPromise = null;
+          
           try {
-            const res = await fetch(apiBase + '/auth/login', {
+            // 發送登入請求
+            const loginPromise = fetch(apiBase + '/auth/login', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
               body: JSON.stringify({ username, password })
             });
+            
+            // 等待登入請求完成
+            const res = await loginPromise;
             const json = await res.json().catch(() => null);
+            
             if (!res.ok || !json || json.ok !== true) {
               let msg = (json && json.message) || '登入失敗，請稍後再試';
               if (json && json.code === 'UNAUTHORIZED') msg = '帳號或密碼錯誤';
@@ -102,12 +113,28 @@
               setLoading(false);
               return;
             }
+            
+            // 登入成功！立即跳轉（預加載在背景啟動）
+            console.log('[Login] ✓ 登入成功');
+            
+            // 立即跳轉，不等待任何預加載
             const redirect = getRedirectTarget();
             const fallback = onProdHost ? '/internal/dashboard' : 'https://www.horgoscpa.com/internal/dashboard';
+            
+            // 在跳轉前啟動預加載（完全非阻塞）
+            if (window.DataCache && window.DataCache.preloadAll) {
+              // 預加載會在新頁面中繼續進行
+              window.DataCache.preloadAll({ adminMode: true }).then(() => {
+                console.log('[Login] ✓ 背景預加載完成');
+              }).catch(err => {
+                console.warn('[Login] ⚠ 背景預加載部分失敗', err);
+              });
+            }
+            
+            // 立即跳轉，無任何延遲
             location.assign(redirect || fallback);
           } catch (err) {
             setError('網路或伺服器異常，請稍後再試');
-          } finally {
             setLoading(false);
           }
         });
@@ -125,6 +152,132 @@
         });
         
         passwordEl.addEventListener('input', () => setError(''));
+
+        // ===== 頁面加載時的預優化 =====
+        // 在用戶還沒登入時就開始準備，提升整體響應速度
+        (function pageLoadOptimization() {
+          console.log('[Login] 頁面加載優化啟動');
+          
+          // 1. 檢查是否已經有 session（用戶之前登入過且未過期）
+          function checkExistingSession() {
+            const onProdHost = location.hostname.endsWith('horgoscpa.com');
+            const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+            
+            // 靜默檢查 session，不阻塞頁面
+            fetch(apiBase + '/auth/me', {
+              method: 'GET',
+              credentials: 'include'
+            }).then(res => {
+              if (res.ok) {
+                return res.json();
+              }
+              return null;
+            }).then(json => {
+              if (json && json.ok && json.data) {
+                console.log('[Login] 檢測到有效 session，開始管理員完整預加載');
+                // 有效 session，立即啟動管理員完整預加載
+                if (window.DataCache && window.DataCache.preloadAll) {
+                  window.DataCache.preloadAll({ adminMode: true });
+                }
+                
+                // 提示用戶可以直接進入系統
+                const hint = document.createElement('div');
+                hint.style.cssText = `
+                  position: fixed;
+                  top: 20px;
+                  right: 20px;
+                  background: #4A90E2;
+                  color: white;
+                  padding: 12px 20px;
+                  border-radius: 6px;
+                  font-size: 14px;
+                  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                  z-index: 1000;
+                  cursor: pointer;
+                  transition: all 0.3s;
+                `;
+                hint.textContent = '✓ 已登入 - 點擊直接進入系統';
+                hint.onclick = () => {
+                  location.assign(onProdHost ? '/internal/dashboard' : 'https://www.horgoscpa.com/internal/dashboard');
+                };
+                hint.onmouseenter = () => {
+                  hint.style.background = '#357ABD';
+                  hint.style.transform = 'translateY(-2px)';
+                };
+                hint.onmouseleave = () => {
+                  hint.style.background = '#4A90E2';
+                  hint.style.transform = 'translateY(0)';
+                };
+                document.body.appendChild(hint);
+              } else {
+                console.log('[Login] 無有效 session');
+              }
+            }).catch(err => {
+              console.log('[Login] Session 檢查失敗（正常，用戶未登入）');
+            });
+          }
+          
+          // 2. 預熱緩存系統，檢查是否有舊的有效緩存
+          function checkCachedData() {
+            if (window.DataCache) {
+              const cacheKeys = ['me', 'users', 'clients', 'tags', 'settings'];
+              let cachedCount = 0;
+              
+              cacheKeys.forEach(key => {
+                try {
+                  const cached = localStorage.getItem(`horgos_cache_1.0.0_${key}`);
+                  if (cached) {
+                    const data = JSON.parse(cached);
+                    if (data.timestamp && (Date.now() - data.timestamp) < 300000) { // 5分鐘內
+                      cachedCount++;
+                    }
+                  }
+                } catch (e) {}
+              });
+              
+              if (cachedCount > 0) {
+                console.log(`[Login] 發現 ${cachedCount} 個有效緩存，系統加載將更快`);
+              }
+            }
+          }
+          
+          // 3. 預加載關鍵靜態資源（CSS, JS）
+          function preloadStaticResources() {
+            const resources = [
+              { href: '/assets/css/internal-system.css', as: 'style' },
+              { href: '/assets/css/internal-components.css', as: 'style' },
+              { href: '/assets/css/dashboard-page.css', as: 'style' },
+              { href: '/assets/js/components/bootstrap.js', as: 'script' },
+              { href: '/assets/js/data-helper.js', as: 'script' }
+            ];
+            
+            resources.forEach(res => {
+              const link = document.createElement('link');
+              link.rel = 'preload';
+              link.href = res.href;
+              link.as = res.as;
+              document.head.appendChild(link);
+            });
+            
+            console.log('[Login] 已預加載 5 個關鍵靜態資源');
+          }
+          
+          // 4. DNS 預連接（加速 API 請求）
+          function setupDNSPrefetch() {
+            const link = document.createElement('link');
+            link.rel = 'dns-prefetch';
+            link.href = 'https://www.horgoscpa.com';
+            document.head.appendChild(link);
+          }
+          
+          // 執行優化步驟（延遲執行以不阻塞頁面渲染）
+          setTimeout(() => {
+            checkExistingSession();
+            checkCachedData();
+            preloadStaticResources();
+            setupDNSPrefetch();
+          }, 100);
+        })();
       })();
     </script>
   </body>

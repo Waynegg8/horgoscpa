@@ -549,6 +549,34 @@
           <!-- 動態加載客戶清單 -->
         </select>
       </div>
+      <div>
+        <label for="year" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">年度</label>
+        <select id="year" aria-label="年度" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:120px;">
+          <option value="all">全部年度</option>
+          <option value="2026">2026年</option>
+          <option value="2025">2025年</option>
+          <option value="2024">2024年</option>
+          <option value="2023">2023年</option>
+        </select>
+      </div>
+      <div>
+        <label for="month" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">月份</label>
+        <select id="month" aria-label="月份" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:120px;">
+          <option value="all">全部月份</option>
+          <option value="1">1月</option>
+          <option value="2">2月</option>
+          <option value="3">3月</option>
+          <option value="4">4月</option>
+          <option value="5">5月</option>
+          <option value="6">6月</option>
+          <option value="7">7月</option>
+          <option value="8">8月</option>
+          <option value="9">9月</option>
+          <option value="10">10月</option>
+          <option value="11">11月</option>
+          <option value="12">12月</option>
+        </select>
+      </div>
       <div style="flex:1;min-width:220px;">
         <label for="tags" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">篩選標籤</label>
         <select id="tags" aria-label="標籤" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;">
@@ -902,14 +930,47 @@
               </div>
             </div>
             
-            <div class="form-group" style="margin:0 0 16px 0;">
-              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">客戶</label>
-              <select id="resource-client-modal" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
-                <option value="">不指定（通用）</option>
-                <!-- 動態加載客戶清單 -->
-              </select>
-              <div style="margin-top:6px;font-size:11px;color:#64748b;line-height:1.4;">
-                💡 選填：指定特定客戶專用的文檔，若不選擇則為通用文檔
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">客戶</label>
+                <select id="resource-client-modal" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+                  <option value="">不指定（通用）</option>
+                  <!-- 動態加載客戶清單 -->
+                </select>
+                <div style="margin-top:6px;font-size:11px;color:#64748b;line-height:1.4;">
+                  💡 選填：指定特定客戶專用的文檔
+                </div>
+              </div>
+              
+              <div class="form-group" style="margin:0;">
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">年月</label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                  <select id="resource-year-modal" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+                    <option value="">不指定</option>
+                    <option value="2026">2026年</option>
+                    <option value="2025">2025年</option>
+                    <option value="2024">2024年</option>
+                    <option value="2023">2023年</option>
+                  </select>
+                  <select id="resource-month-modal" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+                    <option value="">不指定</option>
+                    <option value="1">1月</option>
+                    <option value="2">2月</option>
+                    <option value="3">3月</option>
+                    <option value="4">4月</option>
+                    <option value="5">5月</option>
+                    <option value="6">6月</option>
+                    <option value="7">7月</option>
+                    <option value="8">8月</option>
+                    <option value="9">9月</option>
+                    <option value="10">10月</option>
+                    <option value="11">11月</option>
+                    <option value="12">12月</option>
+                  </select>
+                </div>
+                <div style="margin-top:6px;font-size:11px;color:#64748b;line-height:1.4;">
+                  💡 選填：歸檔到指定年月
+                </div>
               </div>
             </div>
             
@@ -1994,11 +2055,43 @@
           else if (fileName.match(/\.(ppt|pptx)$/i)) fileIcon = '📙';
           else if (fileName.match(/\.(jpg|jpeg|png|gif)$/i)) fileIcon = '🖼️';
           
+          // 建立標籤顯示
+          const badges = [];
+          
+          // 年月標籤
+          if (item.docYear || item.docMonth) {
+            const yearStr = item.docYear || '?';
+            const monthStr = item.docMonth ? String(item.docMonth).padStart(2, '0') : '?';
+            badges.push(`<span style="background:#e7f0ff;color:#1d4ed8;padding:1px 6px;border-radius:3px;font-size:10px;margin-right:4px;">📅 ${yearStr}-${monthStr}</span>`);
+          }
+          
+          // 服務類型標籤
+          if (item.category) {
+            const categoryMap = {
+              'ACCT': '記帳',
+              'TAX_BT': '營業稅',
+              'TAX_IT': '所得稅',
+              'PAYROLL': '薪資',
+              'AUDIT': '審計',
+              'CONSULT': '諮詢'
+            };
+            const categoryLabel = categoryMap[item.category] || item.category;
+            badges.push(`<span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:3px;font-size:10px;margin-right:4px;">🏷️ ${categoryLabel}</span>`);
+          }
+          
+          // 任務附件標籤
+          if (item.taskId) {
+            badges.push(`<span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:3px;font-size:10px;margin-right:4px;">📋 任務附件</span>`);
+          }
+          
+          const badgesHtml = badges.length > 0 ? `<div style="margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${badges.join('')}</div>` : '';
+          
           el.innerHTML = `
             <div class="doc-title" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
               <span style="margin-right:6px;">${fileIcon}</span>
               ${item.title || '未命名文檔'}
             </div>
+            ${badgesHtml}
           `;
           
           // 點擊卡片預覽
@@ -2059,22 +2152,73 @@
             const fileType = doc.fileType || '';
             const fileName = doc.fileName || '';
             
+            // 建立元數據卡片
+            const categoryMap = {
+              'ACCT': '記帳',
+              'TAX_BT': '營業稅',
+              'TAX_IT': '所得稅',
+              'PAYROLL': '薪資',
+              'AUDIT': '審計',
+              'CONSULT': '諮詢'
+            };
+            const categoryLabel = doc.category ? (categoryMap[doc.category] || doc.category) : '未分類';
+            
+            const scopeMap = {
+              'service': '🔷 服務層級',
+              'task': '📋 任務層級'
+            };
+            const scopeLabel = doc.scope ? (scopeMap[doc.scope] || doc.scope) : '未設定';
+            
+            let metaItems = [];
+            
+            if (doc.category) {
+              metaItems.push(`<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;"><span style="color:#9ca3af;font-size:12px;">服務類型：</span><span style="color:#374151;font-size:12px;font-weight:500;">${categoryLabel}</span></div>`);
+            }
+            
+            if (doc.scope) {
+              metaItems.push(`<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;"><span style="color:#9ca3af;font-size:12px;">適用層級：</span><span style="color:#374151;font-size:12px;font-weight:500;">${scopeLabel}</span></div>`);
+            }
+            
+            if (doc.docYear || doc.docMonth) {
+              const yearStr = doc.docYear || '?';
+              const monthStr = doc.docMonth || '?';
+              metaItems.push(`<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;"><span style="color:#9ca3af;font-size:12px;">歸檔年月：</span><span style="color:#374151;font-size:12px;font-weight:500;">${yearStr}年${monthStr}月</span></div>`);
+            }
+            
+            if (doc.taskId) {
+              metaItems.push(`<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;"><span style="color:#9ca3af;font-size:12px;">關聯任務：</span><span style="color:#374151;font-size:12px;font-weight:500;">任務 #${doc.taskId}</span></div>`);
+            }
+            
+            if (doc.description) {
+              metaItems.push(`<div style="padding:6px 0;"><span style="color:#9ca3af;font-size:12px;">說明：</span><span style="color:#6b7280;font-size:11px;line-height:1.5;">${doc.description}</span></div>`);
+            }
+            
+            const metaCard = metaItems.length > 0 ? `
+              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:12px;">
+                <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px;">📋 文檔資訊</div>
+                ${metaItems.join('')}
+              </div>
+            ` : '';
+            
             if (fileType.includes('pdf') || fileName.match(/\.pdf$/i)) {
               // PDF預覽 - 使用 iframe 原生控制
               previewArea.innerHTML = `
-                <iframe src="${blobUrl}#view=FitH" style="width:100%;height:100%;min-height:85vh;border:none;background:white;"></iframe>
+                ${metaCard}
+                <iframe src="${blobUrl}#view=FitH" style="width:100%;height:calc(85vh - ${metaCard ? '200px' : '0px'});border:1px solid #e5e7eb;border-radius:8px;background:white;"></iframe>
               `;
             } else if (fileType.includes('image') || fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
               // 圖片預覽 - 直接顯示，使用原生右鍵功能
               previewArea.innerHTML = `
-                <div style="width:100%;height:100%;min-height:85vh;display:flex;align-items:center;justify-content:center;background:#f5f5f5;">
+                ${metaCard}
+                <div style="width:100%;height:calc(85vh - ${metaCard ? '200px' : '0px'});display:flex;align-items:center;justify-content:center;background:#f5f5f5;border:1px solid #e5e7eb;border-radius:8px;">
                   <img src="${blobUrl}" style="max-width:100%;max-height:100%;object-fit:contain;" />
                 </div>
               `;
             } else {
               // 其他文件類型，顯示下載提示
               previewArea.innerHTML = `
-                <div style="text-align:center;padding:60px 20px;">
+                ${metaCard}
+                <div style="text-align:center;padding:60px 20px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;">
                   <div style="font-size:64px;margin-bottom:20px;">📄</div>
                   <h3 style="margin-bottom:12px;color:#374151;font-size:18px;">${doc.title}</h3>
                   <p style="color:#6b7280;margin-bottom:8px;font-size:13px;">${doc.fileName || ''}</p>
@@ -2129,6 +2273,12 @@
           
           const client = document.getElementById('client').value;
           if (client && client !== 'all') params.set('client_id', client);
+          
+          const year = document.getElementById('year').value;
+          if (year && year !== 'all') params.set('year', year);
+          
+          const month = document.getElementById('month').value;
+          if (month && month !== 'all') params.set('month', month);
           
           const t = document.getElementById('tags').value.split(',').map(s=>s.trim()).filter(Boolean).join(',');
           if (t) params.set('tags', t);
@@ -2532,6 +2682,25 @@
           if (currentTab === 'sop') loadSOPs();
           else if (currentTab === 'faq') loadFAQs();
           else if (currentTab === 'resources') loadResources();
+        });
+        
+        document.getElementById('client').addEventListener('change', ()=>{ 
+          sopState.page=1; 
+          faqState.page=1; 
+          resourcesState.page=1; 
+          if (currentTab === 'sop') loadSOPs();
+          else if (currentTab === 'faq') loadFAQs();
+          else if (currentTab === 'resources') loadResources();
+        });
+        
+        document.getElementById('year').addEventListener('change', ()=>{ 
+          resourcesState.page=1; 
+          if (currentTab === 'resources') loadResources();
+        });
+        
+        document.getElementById('month').addEventListener('change', ()=>{ 
+          resourcesState.page=1; 
+          if (currentTab === 'resources') loadResources();
         });
 
         // 分页按钮
@@ -3217,6 +3386,8 @@
           const category = document.getElementById('resource-category-modal').value;
           const scope = document.getElementById('resource-scope-modal').value;
           const client_id = document.getElementById('resource-client-modal').value || '';
+          const doc_year = document.getElementById('resource-year-modal').value || '';
+          const doc_month = document.getElementById('resource-month-modal').value || '';
           
           if (!scope) {
             alert('請選擇資源適用層級');
@@ -3237,6 +3408,8 @@
             formData.append('category', category);
             formData.append('scope', scope);
             if (client_id) formData.append('client_id', client_id);
+            if (doc_year) formData.append('doc_year', doc_year);
+            if (doc_month) formData.append('doc_month', doc_month);
             formData.append('tags', tags);
             
             const uploadRes = await fetch(`${apiBase}/documents/upload`, {

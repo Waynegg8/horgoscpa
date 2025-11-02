@@ -61,6 +61,8 @@ async function getDocumentsList(request, env, me, corsHeaders) {
     const category = url.searchParams.get('category') || '';
     const scope = url.searchParams.get('scope') || '';
     const clientId = url.searchParams.get('client_id') || '';
+    const year = url.searchParams.get('year') || '';
+    const month = url.searchParams.get('month') || '';
     const tags = url.searchParams.get('tags') || '';
     
     const offset = (page - 1) * perPage;
@@ -87,6 +89,16 @@ async function getDocumentsList(request, env, me, corsHeaders) {
     if (clientId && clientId !== 'all') {
       whereClauses.push('d.client_id = ?');
       params.push(parseInt(clientId));
+    }
+    
+    if (year && year !== 'all') {
+      whereClauses.push('d.doc_year = ?');
+      params.push(parseInt(year));
+    }
+    
+    if (month && month !== 'all') {
+      whereClauses.push('d.doc_month = ?');
+      params.push(parseInt(month));
     }
     
     if (tags) {
@@ -117,6 +129,9 @@ async function getDocumentsList(request, env, me, corsHeaders) {
         d.category,
         d.scope,
         d.client_id,
+        d.doc_year,
+        d.doc_month,
+        d.task_id,
         d.tags,
         d.uploaded_by,
         d.created_at,
@@ -144,6 +159,9 @@ async function getDocumentsList(request, env, me, corsHeaders) {
       category: row.category,
       scope: row.scope || null,
       clientId: row.client_id || null,
+      docYear: row.doc_year || null,
+      docMonth: row.doc_month || null,
+      taskId: row.task_id || null,
       tags: row.tags ? row.tags.split(',').map(t => t.trim()) : [],
       uploadedBy: row.uploaded_by,
       uploaderName: row.uploader_name,
@@ -192,6 +210,9 @@ async function getDocumentById(env, docId, me, corsHeaders) {
         d.file_type,
         d.category,
         d.client_id,
+        d.doc_year,
+        d.doc_month,
+        d.task_id,
         d.tags,
         d.uploaded_by,
         d.created_at,
@@ -222,6 +243,9 @@ async function getDocumentById(env, docId, me, corsHeaders) {
       fileType: result.file_type,
       category: result.category,
       clientId: result.client_id || null,
+      docYear: result.doc_year || null,
+      docMonth: result.doc_month || null,
+      taskId: result.task_id || null,
       tags: result.tags ? result.tags.split(',').map(t => t.trim()) : [],
       uploadedBy: result.uploaded_by,
       uploaderName: result.uploader_name,
@@ -323,6 +347,9 @@ async function uploadDocument(request, env, me, corsHeaders) {
     const category = formData.get('category') || '';
     const scope = formData.get('scope') || '';
     const clientId = formData.get('client_id') || '';
+    const docYear = formData.get('doc_year') || '';
+    const docMonth = formData.get('doc_month') || '';
+    const taskId = formData.get('task_id') || '';
     const tags = formData.get('tags') || '';
     
     // 验证必填字段
@@ -400,12 +427,15 @@ async function uploadDocument(request, env, me, corsHeaders) {
         category,
         scope,
         client_id,
+        doc_year,
+        doc_month,
+        task_id,
         tags,
         uploaded_by,
         created_at,
         updated_at,
         is_deleted
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).bind(
       title,
       description || null,
@@ -416,6 +446,9 @@ async function uploadDocument(request, env, me, corsHeaders) {
       category || null,
       scope,
       clientId ? parseInt(clientId) : null,
+      docYear ? parseInt(docYear) : null,
+      docMonth ? parseInt(docMonth) : null,
+      taskId ? parseInt(taskId) : null,
       tagsStr,
       me?.user_id || null,
       nowISO,
@@ -435,6 +468,9 @@ async function uploadDocument(request, env, me, corsHeaders) {
         category,
         scope,
         clientId: clientId ? parseInt(clientId) : null,
+        docYear: docYear ? parseInt(docYear) : null,
+        docMonth: docMonth ? parseInt(docMonth) : null,
+        taskId: taskId ? parseInt(taskId) : null,
         tags: tagsStr ? tagsStr.split(',').map(t => t.trim()) : [],
         uploadedBy: me?.user_id,
         createdAt: nowISO,
@@ -462,7 +498,7 @@ async function uploadDocument(request, env, me, corsHeaders) {
 async function createDocument(request, env, me, corsHeaders) {
   try {
     const body = await request.json();
-    const { title, description, file_name, file_url, file_size, file_type, category, scope, client_id, tags } = body;
+    const { title, description, file_name, file_url, file_size, file_type, category, scope, client_id, doc_year, doc_month, task_id, tags } = body;
     
     // 验证必填字段
     if (!title || !file_name || !file_url) {
@@ -499,12 +535,15 @@ async function createDocument(request, env, me, corsHeaders) {
         category,
         scope,
         client_id,
+        doc_year,
+        doc_month,
+        task_id,
         tags,
         uploaded_by,
         created_at,
         updated_at,
         is_deleted
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).bind(
       title,
       description || null,
@@ -515,6 +554,9 @@ async function createDocument(request, env, me, corsHeaders) {
       category || null,
       scope,
       client_id || null,
+      doc_year || null,
+      doc_month || null,
+      task_id || null,
       tagsStr,
       me?.user_id || null,
       now,
@@ -534,6 +576,9 @@ async function createDocument(request, env, me, corsHeaders) {
         category,
         scope,
         clientId: client_id || null,
+        docYear: doc_year || null,
+        docMonth: doc_month || null,
+        taskId: task_id || null,
         tags: tagsStr ? tagsStr.split(',').map(t => t.trim()) : [],
         uploadedBy: me?.user_id,
         createdAt: now,
@@ -560,7 +605,7 @@ async function createDocument(request, env, me, corsHeaders) {
 async function updateDocument(request, env, docId, me, corsHeaders) {
   try {
     const body = await request.json();
-    const { title, description, category, scope, client_id, tags } = body;
+    const { title, description, category, scope, client_id, doc_year, doc_month, task_id, tags } = body;
     
     // 验证文档是否存在
     const existing = await env.DATABASE.prepare(
@@ -609,6 +654,9 @@ async function updateDocument(request, env, docId, me, corsHeaders) {
         category = ?,
         scope = ?,
         client_id = ?,
+        doc_year = ?,
+        doc_month = ?,
+        task_id = ?,
         tags = ?,
         updated_at = ?
       WHERE document_id = ? AND is_deleted = 0
@@ -618,6 +666,9 @@ async function updateDocument(request, env, docId, me, corsHeaders) {
       category || null,
       scope,
       client_id || null,
+      doc_year || null,
+      doc_month || null,
+      task_id || null,
       tagsStr,
       now,
       docId
@@ -632,6 +683,9 @@ async function updateDocument(request, env, docId, me, corsHeaders) {
         category,
         scope,
         clientId: client_id || null,
+        docYear: doc_year || null,
+        docMonth: doc_month || null,
+        taskId: task_id || null,
         tags: tagsStr ? tagsStr.split(',').map(t => t.trim()) : [],
         updatedAt: now
       }

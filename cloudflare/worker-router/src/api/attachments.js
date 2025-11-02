@@ -114,11 +114,112 @@ export async function handleAttachments(request, env, me, requestId, url, path) 
 				httpMetadata: { contentType: payload.contentType, contentDisposition: cd },
 				customMetadata: { ownerId: String(me.user_id), module: "attachments", entityId: `${payload.entityType}:${payload.entityId}` },
 			});
+			
 			// 建立 DB 紀錄
 			await env.DATABASE.prepare(
 				"INSERT INTO Attachments (entity_type, entity_id, object_key, filename, content_type, size_bytes, uploader_user_id, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 			).bind(payload.entityType, payload.entityId, payload.objectKey, payload.filename, payload.contentType, String(payload.contentLength), String(me.user_id), new Date().toISOString()).run();
 			const row = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
+			
+			// 如果是任務附件，同時保存到知識庫
+			if (payload.entityType === 'task') {
+				try {
+					// 查詢任務信息獲取客戶、服務、年月等信息
+					const task = await env.DATABASE.prepare(`
+						SELECT 
+							t.task_id,
+							t.task_title,
+							cs.client_id,
+							cs.service_id,
+							t.service_month,
+							s.service_code,
+							s.service_name
+						FROM Tasks t
+						LEFT JOIN ClientServices cs ON t.client_service_id = cs.client_service_id
+						LEFT JOIN Services s ON cs.service_id = s.service_id
+						WHERE t.task_id = ?
+					`).bind(payload.entityId).first();
+					
+					if (task) {
+						// 解析年月
+						let docYear = null;
+						let docMonth = null;
+						if (task.service_month) {
+							const match = task.service_month.match(/^(\d{4})-(\d{2})$/);
+							if (match) {
+								docYear = parseInt(match[1]);
+								docMonth = parseInt(match[2]);
+							}
+						}
+						
+						// 自動設置服務類型（category）和適用層級（scope）
+						const category = task.service_code || null;
+						const scope = 'task'; // 任務層級，自動設置
+						
+						// 生成描述，包含任務和服務信息
+						let description = `來自任務：${task.task_title || task.task_id}`;
+						if (task.service_name) {
+							description += ` | 服務：${task.service_name}`;
+						}
+						if (task.service_month) {
+							description += ` | 期別：${task.service_month}`;
+						}
+						
+						// 保存到知識庫
+						const nowISO = new Date().toISOString();
+						await env.DATABASE.prepare(`
+							INSERT INTO InternalDocuments (
+								title,
+								description,
+								file_name,
+								file_url,
+								file_size,
+								file_type,
+								category,
+								scope,
+								client_id,
+								doc_year,
+								doc_month,
+								task_id,
+								tags,
+								uploaded_by,
+								created_at,
+								updated_at,
+								is_deleted
+							) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+						`).bind(
+							payload.filename, // title
+							description, // description (包含任務和服務信息)
+							payload.filename, // file_name
+							payload.objectKey, // file_url (使用同一個R2路徑)
+							payload.contentLength, // file_size
+							payload.contentType, // file_type
+							category, // category (自動從任務關聯的服務取得)
+							scope, // scope (自動設置為'task')
+							task.client_id || null, // client_id (自動從任務取得)
+							docYear, // doc_year (自動從service_month解析)
+							docMonth, // doc_month (自動從service_month解析)
+							task.task_id, // task_id (關聯任務)
+							'任務附件', // tags (自動標記)
+							me.user_id, // uploaded_by
+							nowISO, // created_at
+							nowISO // updated_at
+						).run();
+						
+						console.log(`✅ 任務附件已自動同步到知識庫:`);
+						console.log(`   - 文件: ${payload.filename}`);
+						console.log(`   - 任務: ${task.task_id} (${task.task_title})`);
+						console.log(`   - 服務類型: ${category || '未設定'} (${task.service_name || ''})`);
+						console.log(`   - 客戶: ${task.client_id || '未設定'}`);
+						console.log(`   - 年月: ${docYear || '?'}年${docMonth || '?'}月`);
+						console.log(`   - 適用層級: ${scope} (自動設置)`);
+					}
+				} catch (err) {
+					// 知識庫保存失敗不影響附件上傳
+					console.error(`⚠️ 保存到知識庫失敗，但附件已上傳:`, err);
+				}
+			}
+			
 			return jsonResponse(201, { ok:true, code:"CREATED", message:"已上傳", data:{ attachment_id: row?.id, object_key: payload.objectKey }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
