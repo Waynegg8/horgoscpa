@@ -225,17 +225,19 @@ export async function recordDueDateAdjustment(env, taskId, oldDueDate, newDueDat
 }
 
 /**
- * 获取任务调整历史
+ * 获取任务调整历史（包含到期日调整和状态更新）
  */
 export async function getAdjustmentHistory(env, taskId) {
   try {
-    const adjustments = await env.DATABASE.prepare(`
+    // 获取到期日调整记录
+    const dueDateAdjustments = await env.DATABASE.prepare(`
       SELECT 
-        adjustment_id,
+        'due_date' as record_type,
+        adjustment_id as id,
         old_due_date,
         new_due_date,
         days_changed,
-        adjustment_reason,
+        adjustment_reason as reason,
         adjustment_type,
         is_overdue_adjustment,
         is_initial_creation,
@@ -251,19 +253,63 @@ export async function getAdjustmentHistory(env, taskId) {
       ORDER BY tda.requested_at DESC
     `).bind(taskId).all();
     
-    return (adjustments.results || []).map(adj => ({
-      adjustment_id: adj.adjustment_id,
-      old_due_date: adj.old_due_date,
-      new_due_date: adj.new_due_date,
-      days_changed: adj.days_changed,
-      adjustment_reason: adj.adjustment_reason || '',
-      adjustment_type: adj.adjustment_type,
-      is_overdue_adjustment: adj.is_overdue_adjustment === 1,
-      is_initial_creation: adj.is_initial_creation === 1,
-      is_system_auto: adj.is_system_auto === 1,
-      requested_at: adj.requested_at,
-      requested_by_name: adj.requested_by_name || ''
-    }));
+    // 获取状态更新记录
+    const statusUpdates = await env.DATABASE.prepare(`
+      SELECT 
+        'status_update' as record_type,
+        update_id as id,
+        old_status,
+        new_status,
+        progress_note,
+        blocker_reason,
+        overdue_reason,
+        updated_at as requested_at,
+        u.name as requested_by_name
+      FROM TaskStatusUpdates tsu
+      LEFT JOIN Users u ON u.user_id = tsu.updated_by
+      WHERE tsu.task_id = ?
+        AND tsu.old_status IS NOT NULL
+        AND tsu.new_status IS NOT NULL
+      ORDER BY tsu.updated_at DESC
+    `).bind(taskId).all();
+    
+    // 合并两种记录
+    const allRecords = [
+      ...(dueDateAdjustments.results || []).map(adj => ({
+        record_type: 'due_date',
+        id: adj.id,
+        old_due_date: adj.old_due_date,
+        new_due_date: adj.new_due_date,
+        days_changed: adj.days_changed,
+        reason: adj.reason || '',
+        adjustment_type: adj.adjustment_type,
+        is_overdue_adjustment: adj.is_overdue_adjustment === 1,
+        is_initial_creation: adj.is_initial_creation === 1,
+        is_system_auto: adj.is_system_auto === 1,
+        requested_at: adj.requested_at,
+        requested_by_name: adj.requested_by_name || ''
+      })),
+      ...(statusUpdates.results || []).map(upd => ({
+        record_type: 'status_update',
+        id: upd.id,
+        old_status: upd.old_status,
+        new_status: upd.new_status,
+        progress_note: upd.progress_note || '',
+        blocker_reason: upd.blocker_reason || '',
+        overdue_reason: upd.overdue_reason || '',
+        requested_at: upd.requested_at,
+        requested_by_name: upd.requested_by_name || ''
+      }))
+    ];
+    
+    // 按时间排序（最新的在前）
+    allRecords.sort((a, b) => {
+      const timeA = new Date(a.requested_at).getTime();
+      const timeB = new Date(b.requested_at).getTime();
+      return timeB - timeA;
+    });
+    
+    return allRecords;
   } catch (err) {
     console.error('[任务调整] getAdjustmentHistory 失败:', err);
     throw err;
