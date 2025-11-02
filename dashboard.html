@@ -326,78 +326,34 @@
           let activitiesHtml = '';
           if (recentActivities.length > 0) {
             activitiesHtml = recentActivities.map(act => {
-              // 构建任务详细信息卡片
-              const taskInfoCard = `
-                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;padding:8px;background:#f9fafb;border-radius:6px;font-size:12px;">
-                  <div><span style="color:#6b7280;">服務類型：</span><strong>${act.serviceName}</strong></div>
-                  <div><span style="color:#6b7280;">當前狀態：</span><strong style="color:#3b82f6;">${act.currentStatus}</strong></div>
-                  <div><span style="color:#6b7280;">負責人：</span><strong>${act.assigneeName}</strong></div>
-                  <div><span style="color:#6b7280;">當前期限：</span><strong>${act.currentDueDate}</strong></div>
-                </div>`;
-              
               if (act.type === 'due_date_adjustment') {
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
-                  <div class="activity-row" style="padding:14px;border-bottom:1px solid #e5e7eb;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#f9fafb';this.style.paddingLeft='18px'" onmouseout="this.style.background='white';this.style.paddingLeft='14px'">
-                    <div style="display:flex;align-items:start;gap:12px;">
-                      <div style="flex-shrink:0;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 2px 4px rgba(59,130,246,0.1);">📅</div>
-                      <div style="flex:1;min-width:0;">
-                        <div style="font-weight:600;color:#1f2937;margin-bottom:6px;font-size:15px;">${act.text}</div>
-                        <div style="font-weight:500;color:#374151;margin-bottom:4px;">${act.taskName}</div>
-                        <div style="font-size:13px;color:#6b7280;margin-bottom:8px;">客戶：${act.clientName}</div>
-                        <div style="display:inline-block;font-size:13px;color:#3b82f6;background:#eff6ff;padding:4px 10px;border-radius:4px;font-weight:500;margin-bottom:8px;">期限變更：${act.change}</div>
-                        ${act.reason ? `<div style="font-size:13px;color:#1f2937;background:#fffbeb;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:6px;margin-bottom:10px;font-weight:500;line-height:1.6;">
-                          <div style="color:#92400e;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
-                            <span style="font-size:16px;">💬</span>
-                            <span>調整原因</span>
-                          </div>
-                          <div style="color:#78350f;">${act.reason}</div>
-                        </div>` : '<div style="font-size:12px;color:#9ca3af;background:#f9fafb;padding:8px 10px;border-radius:4px;margin-bottom:8px;font-style:italic;">未填寫調整原因</div>'}
-                        ${taskInfoCard}
-                        <div style="font-size:12px;color:#9ca3af;margin-top:8px;display:flex;align-items:center;gap:4px;">⏰ ${act.time}</div>
-                      </div>
+                  <div style="padding:10px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">
+                      <div style="font-size:13px;font-weight:600;color:#1f2937;">📅 ${act.taskName}</div>
+                      <div style="font-size:11px;color:#9ca3af;">${act.time}</div>
                     </div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">${act.clientName} · ${act.serviceName}</div>
+                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+                      <span style="color:#3b82f6;font-weight:500;">${act.change}</span>
+                      <span style="color:#6b7280;">${act.assigneeName}</span>
+                    </div>
+                    ${act.reason ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;line-height:1.4;padding:6px;background:#fffbeb;border-radius:4px;">${act.reason}</div>` : ''}
                   </div>
                 </a>`;
               } else if (act.type === 'status_update') {
-                // 构建状态说明卡片
-                let noteCard = '';
-                if (act.note) {
-                  const isError = act.note.startsWith('🚫') || act.note.startsWith('⏰');
-                  const bgColor = isError ? '#fef2f2' : '#f0fdf4';
-                  const borderColor = isError ? '#dc2626' : '#16a34a';
-                  const titleColor = isError ? '#991b1b' : '#166534';
-                  const textColor = isError ? '#7f1d1d' : '#14532d';
-                  
-                  let title = '狀態說明';
-                  if (act.note.startsWith('🚫')) title = '阻礙原因';
-                  else if (act.note.startsWith('⏰')) title = '逾期原因';
-                  else if (act.note.startsWith('💬')) title = '進度說明';
-                  
-                  noteCard = `<div style="font-size:13px;color:${textColor};background:${bgColor};border-left:4px solid ${borderColor};padding:10px 12px;border-radius:6px;margin-bottom:10px;font-weight:500;line-height:1.6;">
-                    <div style="color:${titleColor};font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
-                      <span style="font-size:16px;">${act.note.substring(0, 2)}</span>
-                      <span>${title}</span>
-                    </div>
-                    <div>${act.note.substring(2).trim()}</div>
-                  </div>`;
-                } else {
-                  noteCard = '<div style="font-size:12px;color:#9ca3af;background:#f9fafb;padding:8px 10px;border-radius:4px;margin-bottom:8px;font-style:italic;">未填寫狀態說明</div>';
-                }
-                
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
-                  <div class="activity-row" style="padding:14px;border-bottom:1px solid #e5e7eb;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#f9fafb';this.style.paddingLeft='18px'" onmouseout="this.style.background='white';this.style.paddingLeft='14px'">
-                    <div style="display:flex;align-items:start;gap:12px;">
-                      <div style="flex-shrink:0;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 2px 4px rgba(16,185,129,0.1);">📝</div>
-                      <div style="flex:1;min-width:0;">
-                        <div style="font-weight:600;color:#1f2937;margin-bottom:6px;font-size:15px;">${act.text}</div>
-                        <div style="font-weight:500;color:#374151;margin-bottom:4px;">${act.taskName}</div>
-                        <div style="font-size:13px;color:#6b7280;margin-bottom:8px;">客戶：${act.clientName}</div>
-                        <div style="display:inline-block;font-size:13px;color:#10b981;background:#d1fae5;padding:4px 10px;border-radius:4px;font-weight:500;margin-bottom:8px;">狀態變更：${act.change}</div>
-                        ${noteCard}
-                        ${taskInfoCard}
-                        <div style="font-size:12px;color:#9ca3af;margin-top:8px;display:flex;align-items:center;gap:4px;">⏰ ${act.time}</div>
-                      </div>
+                  <div style="padding:10px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">
+                      <div style="font-size:13px;font-weight:600;color:#1f2937;">📝 ${act.taskName}</div>
+                      <div style="font-size:11px;color:#9ca3af;">${act.time}</div>
                     </div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">${act.clientName} · ${act.serviceName}</div>
+                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+                      <span style="color:#10b981;font-weight:500;">${act.change}</span>
+                      <span style="color:#6b7280;">${act.assigneeName}</span>
+                    </div>
+                    ${act.note ? `<div style="font-size:12px;color:#4b5563;margin-top:4px;line-height:1.4;padding:6px;background:${act.note.startsWith('🚫') || act.note.startsWith('⏰') ? '#fef2f2' : '#f0fdf4'};border-radius:4px;">${act.note}</div>` : ''}
                   </div>
                 </a>`;
               }

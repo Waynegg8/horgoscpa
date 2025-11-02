@@ -820,11 +820,10 @@
         };
         
         let html = `
-          <h3 style="margin:0 0 16px 0;font-size:18px;color:#1f2937;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">
-            📋 任務變更歷史
-            <span style="font-size:14px;color:#6b7280;font-weight:normal;margin-left:12px;">共 ${history.length} 筆記錄</span>
+          <h3 style="margin:0 0 12px 0;font-size:16px;color:#1f2937;border-bottom:1px solid #e5e7eb;padding-bottom:8px;">
+            📋 任務變更歷史 <span style="font-size:13px;color:#9ca3af;font-weight:normal;">(${history.length}筆)</span>
           </h3>
-          <div style="max-height:500px;overflow-y:auto;padding-right:8px;">
+          <div style="max-height:450px;overflow-y:auto;padding-right:6px;padding-bottom:10px;">
         `;
         
         history.forEach((record, index) => {
@@ -840,23 +839,21 @@
             const daysChanged = Number(record.days_changed || 0);
             
             html += `
-              <div style="border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:12px;background:#fafafa;">
-                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">
-                  <div style="font-weight:600;color:#1f2937;">
-                    ${typeInfo.icon} ${typeInfo.label}
-                  </div>
-                  <div style="font-size:13px;color:#6b7280;">${formatDateTime(record.requested_at)}</div>
+              <div style="border-left:3px solid #3b82f6;background:#f9fafb;padding:8px 10px;margin-bottom:8px;border-radius:4px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="font-size:13px;font-weight:600;color:#1f2937;">${typeInfo.icon} ${typeInfo.label}</span>
+                  <span style="font-size:11px;color:#9ca3af;">${formatDateTime(record.requested_at)}</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-                  <span style="background:#fff;padding:6px 10px;border-radius:4px;border:1px solid #e5e7eb;">${formatDate(record.old_due_date)}</span>
-                  <span style="color:#6b7280;">→</span>
-                  <span style="background:#fff;padding:6px 10px;border-radius:4px;border:1px solid #e5e7eb;">${formatDate(record.new_due_date)}</span>
-                  <span style="padding:4px 8px;border-radius:4px;background:${daysChanged > 0 ? '#fef2f2' : '#f0fdf4'};color:${daysChanged > 0 ? '#dc2626' : '#059669'};font-size:13px;font-weight:500;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:13px;">
+                  <span style="color:#6b7280;">${formatDate(record.old_due_date)}</span>
+                  <span style="color:#9ca3af;">→</span>
+                  <span style="color:#6b7280;">${formatDate(record.new_due_date)}</span>
+                  <span style="padding:2px 6px;border-radius:3px;background:${daysChanged > 0 ? '#fef2f2' : '#f0fdf4'};color:${daysChanged > 0 ? '#dc2626' : '#059669'};font-size:11px;font-weight:600;">
                     ${daysChanged > 0 ? '+' : ''}${daysChanged}天
                   </span>
                 </div>
-                ${record.reason ? `<div style="font-size:14px;color:#4b5563;padding:8px;background:#fff;border-radius:4px;border:1px solid #e5e7eb;word-break:break-word;">${record.reason}</div>` : ''}
-                <div style="font-size:12px;color:#6b7280;margin-top:8px;">操作者: ${record.requested_by_name || '系統'}</div>
+                ${record.reason ? `<div style="font-size:12px;color:#4b5563;margin-top:4px;line-height:1.4;word-break:break-word;">${record.reason}</div>` : ''}
+                <div style="font-size:11px;color:#9ca3af;margin-top:4px;">by ${record.requested_by_name || '系統'}</div>
               </div>
             `;
           } else if (record.record_type === 'status_update') {
@@ -865,22 +862,20 @@
             const newStatusLabel = statusLabels[record.new_status] || record.new_status;
             
             html += `
-              <div style="border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin-bottom:12px;background:#fafafa;">
-                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">
-                  <div style="font-weight:600;color:#1f2937;">
-                    📝 狀態更新
-                  </div>
-                  <div style="font-size:13px;color:#6b7280;">${formatDateTime(record.requested_at)}</div>
+              <div style="border-left:3px solid #10b981;background:#f9fafb;padding:8px 10px;margin-bottom:8px;border-radius:4px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="font-size:13px;font-weight:600;color:#1f2937;">📝 狀態更新</span>
+                  <span style="font-size:11px;color:#9ca3af;">${formatDateTime(record.requested_at)}</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-                  <span style="background:#fff;padding:6px 10px;border-radius:4px;border:1px solid #e5e7eb;">${oldStatusLabel}</span>
-                  <span style="color:#6b7280;">→</span>
-                  <span style="background:#fff;padding:6px 10px;border-radius:4px;border:1px solid #e5e7eb;">${newStatusLabel}</span>
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:13px;">
+                  <span style="color:#6b7280;">${oldStatusLabel}</span>
+                  <span style="color:#9ca3af;">→</span>
+                  <span style="color:#6b7280;">${newStatusLabel}</span>
                 </div>
-                ${record.progress_note ? `<div style="margin-bottom:6px;"><div style="font-size:12px;color:#6b7280;margin-bottom:3px;">進度說明</div><div style="font-size:14px;color:#4b5563;padding:8px;background:#fff;border-radius:4px;border:1px solid #e5e7eb;word-break:break-word;">${record.progress_note}</div></div>` : ''}
-                ${record.blocker_reason ? `<div style="margin-bottom:6px;"><div style="font-size:12px;color:#dc2626;margin-bottom:3px;">阻礙原因</div><div style="font-size:14px;color:#dc2626;padding:8px;background:#fef2f2;border-radius:4px;border:1px solid #fecaca;word-break:break-word;">${record.blocker_reason}</div></div>` : ''}
-                ${record.overdue_reason ? `<div style="margin-bottom:6px;"><div style="font-size:12px;color:#dc2626;margin-bottom:3px;">逾期原因</div><div style="font-size:14px;color:#dc2626;padding:8px;background:#fef2f2;border-radius:4px;border:1px solid #fecaca;word-break:break-word;">${record.overdue_reason}</div></div>` : ''}
-                <div style="font-size:12px;color:#6b7280;margin-top:8px;">操作者: ${record.requested_by_name || '系統'}</div>
+                ${record.progress_note ? `<div style="font-size:12px;color:#4b5563;margin-top:4px;line-height:1.4;word-break:break-word;">💬 ${record.progress_note}</div>` : ''}
+                ${record.blocker_reason ? `<div style="font-size:12px;color:#dc2626;margin-top:4px;line-height:1.4;word-break:break-word;">🚫 ${record.blocker_reason}</div>` : ''}
+                ${record.overdue_reason ? `<div style="font-size:12px;color:#dc2626;margin-top:4px;line-height:1.4;word-break:break-word;">⏰ ${record.overdue_reason}</div>` : ''}
+                <div style="font-size:11px;color:#9ca3af;margin-top:4px;">by ${record.requested_by_name || '系統'}</div>
               </div>
             `;
           }
@@ -891,9 +886,9 @@
         const modal = document.createElement('div');
         modal.style.cssText = 'display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;';
         modal.innerHTML = `
-          <div style="background:white;border-radius:8px;padding:20px;max-width:700px;width:90%;max-height:80vh;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+          <div style="background:white;border-radius:8px;padding:16px;max-width:650px;width:90%;max-height:75vh;display:flex;flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
             ${html}
-            <div style="margin-top:16px;text-align:right;border-top:1px solid #e5e7eb;padding-top:16px;">
+            <div style="margin-top:12px;text-align:right;border-top:1px solid #e5e7eb;padding-top:12px;flex-shrink:0;">
               <button class="btn btn-secondary" onclick="this.closest('div[style*=fixed]').remove()">關閉</button>
             </div>
           </div>
