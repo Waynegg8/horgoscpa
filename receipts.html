@@ -369,7 +369,7 @@
               if (clientSelect) {
                 clientSelect.innerHTML = '<option value="">請選擇客戶</option>' +
                   allClients.map(c => 
-                    `<option value="${c.client_id}">${c.company_name}${c.tax_id ? ' (' + c.tax_id + ')' : ''}</option>`
+                    `<option value="${c.clientId || c.client_id}">${c.companyName || c.company_name}${(c.taxId || c.tax_id) ? ' (' + (c.taxId || c.tax_id) + ')' : ''}</option>`
                   ).join('');
               }
             }

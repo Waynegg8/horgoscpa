@@ -136,10 +136,20 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
       tasks = []
     } = body;
 
-    if (!component_name || !service_id || !delivery_frequency) {
+    // 验证必填字段
+    if (!component_name || !service_id) {
       return jsonResponse(400, {
         ok: false,
-        message: '缺少必填字段'
+        message: '缺少必填字段',
+        debug: { component_name, service_id, delivery_frequency }
+      }, corsHeaders);
+    }
+
+    // 验证至少要有任务配置
+    if (!tasks || tasks.length === 0) {
+      return jsonResponse(400, {
+        ok: false,
+        message: '請至少新增一個任務'
       }, corsHeaders);
     }
 
@@ -155,15 +165,15 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
       clientServiceId,
       service_id,
       service_item_id || null,
-      component_name,
-      delivery_frequency,
+      component_name || '任務配置',
+      delivery_frequency || 'monthly',
       delivery_months ? JSON.stringify(delivery_months) : null,
       task_template_id || null,
       auto_generate_task ? 1 : 0,
-      advance_days,
+      advance_days || 7,
       due_date_rule || null,
       due_date_value || null,
-      due_date_offset_days,
+      due_date_offset_days || 0,
       estimated_hours || null,
       notes || null,
       null  // sop_id保留为null，改用ServiceComponentSOPs表
@@ -189,14 +199,19 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
         // 插入任务配置
         const taskResult = await env.DATABASE.prepare(`
           INSERT INTO ServiceComponentTasks (
-            component_id, task_order, task_name, assignee_user_id, notes
-          ) VALUES (?, ?, ?, ?, ?)
+            component_id, task_order, task_name, assignee_user_id, notes,
+            due_rule, due_value, estimated_hours, advance_days
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           componentId,
           i,
           task.task_name || '',
           task.assignee_user_id || null,
-          task.notes || null
+          task.notes || null,
+          task.due_rule || 'end_of_month',
+          task.due_value || null,
+          task.estimated_hours || null,
+          task.advance_days || 7
         ).run();
 
         const taskConfigId = taskResult.meta.last_row_id;
@@ -317,14 +332,19 @@ async function updateServiceComponent(request, env, corsHeaders, componentId) {
         
         const taskResult = await env.DATABASE.prepare(`
           INSERT INTO ServiceComponentTasks (
-            component_id, task_order, task_name, assignee_user_id, notes
-          ) VALUES (?, ?, ?, ?, ?)
+            component_id, task_order, task_name, assignee_user_id, notes,
+            due_rule, due_value, estimated_hours, advance_days
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           componentId,
           i,
           task.task_name || '',
           task.assignee_user_id || null,
-          task.notes || null
+          task.notes || null,
+          task.due_rule || 'end_of_month',
+          task.due_value || null,
+          task.estimated_hours || null,
+          task.advance_days || 7
         ).run();
 
         const taskConfigId = taskResult.meta.last_row_id;

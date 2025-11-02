@@ -1652,8 +1652,10 @@
               <div class="component-item" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #3b82f6;">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                   <div style="flex: 1;">
+                    <h5 style="margin: 0 0 12px 0; color: #1f2937; font-size: 15px;">任務配置 #${i + 1}</h5>
+                    
                     ${comp.component_sops && comp.component_sops.length > 0 ? `
-                      <div style="margin-top: 10px; padding: 8px 12px; background: #f0f9ff; border-radius: 4px; border-left: 3px solid #3b82f6;">
+                      <div style="padding: 8px 12px; background: #f0f9ff; border-radius: 4px; border-left: 3px solid #3b82f6; margin-bottom: 12px;">
                         <div style="font-size: 12px; font-weight: 600; color: #1e40af; margin-bottom: 4px;">📖 服務層級SOP（${comp.component_sops.length}個）</div>
                         ${comp.component_sops.map(sop => `
                           <div style="font-size: 13px; color: #374151; padding: 2px 0;">
@@ -1666,8 +1668,8 @@
                     
                     <!-- 任务配置区域 -->
                     ${comp.tasks && comp.tasks.length > 0 ? `
-                      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
-                        <strong style="font-size: 13px; color: #374151;">📋 任務配置（${comp.tasks.length}個）</strong>
+                      <div style="${comp.component_sops && comp.component_sops.length > 0 ? 'padding-top: 12px; border-top: 1px solid #e5e7eb;' : ''}">
+                        <strong style="font-size: 13px; color: #374151;">📋 任務列表（${comp.tasks.length}個）</strong>
                         <div style="margin-top: 8px;">
                           ${comp.tasks.map((task, taskIdx) => `
                             <div style="background: #f9fafb; padding: 10px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #10b981;">
@@ -1693,7 +1695,13 @@
                           `).join('')}
                         </div>
                       </div>
-                    ` : ''}
+                    ` : `
+                      <div style="padding: 12px; background: #fef3c7; border-radius: 6px; border-left: 3px solid #fbbf24;">
+                        <div style="font-size: 13px; color: #92400e;">
+                          ⚠️ 尚未配置任務，請點擊「編輯」添加任務
+                        </div>
+                      </div>
+                    `}
                   </div>
                   <div style="display: flex; gap: 5px;">
                     <button class="table-btn-link" onclick="editComponent(${comp.component_id})">編輯</button>
@@ -1914,6 +1922,7 @@
           return;
         }
         
+        // 渲染任务列表
         tasksList.innerHTML = tasks.map((task, idx) => `
           <div id="custom-task-${idx}-${clientServiceId}" style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; border: 1px solid ${task.fromTemplate ? '#3b82f6' : '#d1d5db'};">
             <div style="display: flex; align-items: start; gap: 15px;">
@@ -2569,6 +2578,12 @@
           return;
         }
         
+        // 先初始化表单（包括SOP列表和任务配置区域）
+        showAddComponentForm(clientServiceId);
+        
+        // 等待DOM更新
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // 获取组件完整数据
         const res = await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`);
         const json = await res.json();
@@ -2584,9 +2599,8 @@
           return;
         }
         
-        // 显示表单
+        // 获取表单
         const form = document.getElementById(`add-component-form-${clientServiceId}`);
-        form.style.display = 'block';
         
         // 标记为编辑模式
         form.setAttribute('data-edit-id', componentId);
@@ -2600,6 +2614,10 @@
               checkbox.checked = true;
             }
           });
+          // 更新已选择的SOP标签显示
+          if (window[`updateCompSOPSelection${clientServiceId}`]) {
+            window[`updateCompSOPSelection${clientServiceId}`]();
+          }
         }
         
         // 填充任务列表
@@ -2616,6 +2634,12 @@
           }));
           
           // 重新渲染任务列表
+          if (window[`renderTasksList${clientServiceId}`]) {
+            window[`renderTasksList${clientServiceId}`]();
+          }
+        } else {
+          // 如果没有任务，清空任务列表
+          window[`customTasks${clientServiceId}`] = [];
           if (window[`renderTasksList${clientServiceId}`]) {
             window[`renderTasksList${clientServiceId}`]();
           }

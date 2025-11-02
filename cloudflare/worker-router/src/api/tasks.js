@@ -507,10 +507,12 @@ export async function handleTasks(request, env, me, requestId, url) {
 		}
 		
 		const status = body?.status;
-		const progress_note = body?.progress_note || null;
-		const blocker_reason = body?.blocker_reason || null;
-		const overdue_reason = body?.overdue_reason || null;
+		const progress_note = (body?.progress_note || '').trim() || null;
+		const blocker_reason = (body?.blocker_reason || '').trim() || null;
+		const overdue_reason = (body?.overdue_reason || '').trim() || null;
 		const expected_completion_date = body?.expected_completion_date || null;
+		
+		console.log('[任务状态更新] 收到数据:', { status, progress_note, overdue_reason, blocker_reason, expected_completion_date });
 		
 		const errors = [];
 		if (!['pending', 'in_progress', 'completed', 'cancelled'].includes(status)) {
@@ -533,12 +535,15 @@ export async function handleTasks(request, env, me, requestId, url) {
 			const today = new Date().toISOString().split('T')[0];
 			const isOverdue = task.due_date && task.due_date < today && task.current_status !== 'completed';
 			
+			console.log('[任务状态更新] 逾期检查:', { due_date: task.due_date, today, isOverdue, overdue_reason });
+			
 			// 如果任务逾期，必须填写逾期原因
 			if (isOverdue && !overdue_reason) {
 				errors.push({ field: 'overdue_reason', message: '任务逾期，必须填写逾期原因' });
 			}
 			
 			if (errors.length) {
+				console.log('[任务状态更新] 验证失败:', errors);
 				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
 			}
 			
