@@ -465,13 +465,19 @@ async function loadWeek() {
   
   // ⚡ 检查是否有预渲染内容（避免覆盖）
   const tbody = document.getElementById('timesheetBody');
-  const hasPrerendered = tbody && tbody.children.length > 0 && tbody.dataset.prerendered !== 'consumed';
+  const prerenderedStatus = tbody ? tbody.dataset.prerendered : null;
   
-  if (hasPrerendered) {
+  // 只在首次加载且状态为 'consumed' 时跳过
+  if (prerenderedStatus === 'consumed' && tbody.children.length > 0) {
     console.log('[Timesheets] ⚡ 保留预渲染内容，跳过 loadWeek 渲染');
-    tbody.dataset.prerendered = 'consumed'; // 标记为已使用，下次切换周时正常加载
+    tbody.dataset.prerendered = 'used'; // 标记为已使用
     state.ready = true;
     return;
+  }
+  
+  // 'updating' 状态：后台更新，正常加载和渲染
+  if (prerenderedStatus === 'updating') {
+    console.log('[Timesheets] 🔄 后台更新中，正常加载和渲染');
   }
   
   // 1. 載入假日和請假資料（並行）
@@ -581,12 +587,18 @@ function renderWeekHeader() {
 
 function renderTable() {
   const tbody = document.getElementById('timesheetBody');
+  const prerenderedStatus = tbody ? tbody.dataset.prerendered : null;
   
-  // ⚡ 如果有预渲染内容且未使用，跳过渲染
-  if (tbody.dataset.prerendered === 'consumed') {
+  // 只有在 'consumed' 状态时才跳过渲染
+  if (prerenderedStatus === 'consumed') {
     console.log('[Timesheets] ⚡ 保留预渲染内容，跳过 renderTable');
     tbody.dataset.prerendered = 'used'; // 标记为已使用
     return;
+  }
+  
+  // 'updating' 状态：清空并重新渲染
+  if (prerenderedStatus === 'updating') {
+    console.log('[Timesheets] 🔄 后台更新：清空预渲染，重新渲染真实数据');
   }
   
   tbody.innerHTML = '';
@@ -1871,18 +1883,29 @@ async function init() {
   const hasPrerendered = tbody && tbody.children.length > 0 && tbody.dataset.prerendered === 'true';
   
   if (hasPrerendered) {
-    console.log('[Timesheets] ⚡ 检测到预渲染内容，跳过初始渲染');
-    // 标记为已使用，确保 loadWeek 也能识别
+    console.log('[Timesheets] ⚡ 检测到预渲染内容，先显示缓存，后台更新数据');
+    // 标记为已使用，确保 renderTable 能识别
     tbody.dataset.prerendered = 'consumed';
     
-    // 只加载基础数据到 state，不重新渲染
+    // 初始化基础数据
     initWorkTypes();
     state.currentWeekStart = getMonday(new Date());
-    state.ready = true;
     
-    // 后台静默加载数据（不渲染）
-    loadCurrentUser().catch(() => {});
-    loadClients().catch(() => {});
+    // 后台加载真实数据并静默更新预渲染
+    (async function backgroundUpdate() {
+      await loadCurrentUser();
+      await loadClients();
+      
+      // 临时清除预渲染标记，让 loadWeek 能正常加载和渲染
+      tbody.dataset.prerendered = 'updating';
+      await loadWeek(); // 这会加载数据并渲染（会触发保存事件）
+      
+      console.log('[Timesheets] ⚡ 后台数据更新完成，新缓存已保存');
+    })().catch(err => {
+      console.warn('[Timesheets] 后台更新失败:', err);
+      tbody.dataset.prerendered = 'expired';
+    });
+    
     return;
   }
   
