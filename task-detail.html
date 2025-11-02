@@ -395,7 +395,6 @@
         console.log('當前任務:', currentTask);
         
         // 更新頁面
-        document.getElementById('taskTitle').textContent = currentTask.task_name || '任務詳情';
         document.getElementById('taskName').value = currentTask.task_name || '';
         document.getElementById('taskStatus').value = currentTask.status || 'in_progress';
         document.getElementById('clientName').value = currentTask.client_name || '';

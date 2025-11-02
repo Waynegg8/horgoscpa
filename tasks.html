@@ -79,8 +79,7 @@
   <body>
     <main class="clients-content" style="padding:24px;">
       <section class="clients-card" style="background:#fff;border:1px solid rgba(15,23,42,0.08);border-radius:10px;padding:16px;">
-        <header style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <h1 style="margin:0;font-size:22px;font-weight:700;">任務</h1>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div class="toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
             <input id="q" type="search" placeholder="搜尋任務/客戶/統編…" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
             <select id="f_year" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
@@ -124,7 +123,7 @@
             <button id="btn-batch-assign" type="button" class="clients-btn btn-secondary" style="padding:8px 12px;display:none;">批量分配</button>
             <button id="btn-new-task" type="button" class="clients-btn" style="padding:8px 12px;">新增任務</button>
           </div>
-        </header>
+        </div>
 
         <p id="tasks-error" style="color:#c0392b;min-height:1.25rem;margin:8px 0 0 0;"></p>
 
