@@ -936,33 +936,22 @@
           
           console.log('[SOP Filter] Filtered SOPs count:', filteredSOPs.length);
           
-          // 按分类分组
-          const sopsByCategory = {};
-          filteredSOPs.forEach(sop => {
-            const cat = sop.category || '未分类';
-            if (!sopsByCategory[cat]) sopsByCategory[cat] = [];
-            sopsByCategory[cat].push(sop);
-          });
-          
-          // 渲染SOP列表
+          // 直接渲染SOP列表（不需要分类，因为已经在特定服务下了）
           let html = '';
-          Object.keys(sopsByCategory).sort().forEach(category => {
+          
+          // 按标题排序
+          const sortedSOPs = filteredSOPs.sort((a, b) => a.title.localeCompare(b.title));
+          
+          sortedSOPs.forEach(sop => {
+            const isSelected = quickAddContext.selectedSOPs.includes(sop.sop_id);
             html += `
-              <div style="margin-bottom:16px;">
-                <div style="font-weight:600;font-size:14px;color:#374151;margin-bottom:8px;padding:8px;background:#f3f4f6;border-radius:4px;">
-                  📁 ${category}
+              <div onclick="toggleQuickSOP(${sop.sop_id})" style="cursor:pointer;padding:12px;border:1px solid ${isSelected ? '#3b82f6' : '#e5e7eb'};border-radius:6px;margin-bottom:8px;background:${isSelected ? '#eff6ff' : 'white'};transition:all 0.2s;">
+                <div style="display:flex;align-items:center;">
+                  <span style="font-size:20px;margin-right:12px;">${isSelected ? '☑️' : '⬜'}</span>
+                  <span style="font-weight:500;color:#1f2937;font-size:14px;">${sop.title}</span>
                 </div>
+              </div>
             `;
-            sopsByCategory[category].forEach(sop => {
-              const isSelected = quickAddContext.selectedSOPs.includes(sop.sop_id);
-              html += `
-                <div onclick="toggleQuickSOP(${sop.sop_id})" style="cursor:pointer;padding:8px 12px;border:1px solid ${isSelected ? '#3b82f6' : '#e5e7eb'};border-radius:4px;margin-bottom:4px;background:${isSelected ? '#eff6ff' : 'white'};">
-                  <span style="font-size:18px;margin-right:8px;">${isSelected ? '☑️' : '⬜'}</span>
-                  <span style="font-weight:500;color:#1f2937;">${sop.title}</span>
-                </div>
-              `;
-            });
-            html += `</div>`;
           });
           
           if (html === '') {

@@ -770,47 +770,25 @@
         }
       });
       
-      // 按類別分組
-      const sopsByCategory = {};
-      filteredSOPs.forEach(sop => {
-        const cat = sop.category || '未分類';
-        if (!sopsByCategory[cat]) sopsByCategory[cat] = [];
-        sopsByCategory[cat].push(sop);
-      });
+      // 按標題排序（不需要分類，因為已經在特定服務下）
+      const sortedSOPs = filteredSOPs.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
       
-      // 渲染分組列表
-      let html = '';
-      Object.keys(sopsByCategory).sort().forEach(category => {
-        const categorySOPs = sopsByCategory[category];
-        const categoryId = 'cat_' + category.replace(/[^a-zA-Z0-9]/g, '_');
-        
-        html += `
-          <div style="margin-bottom: 16px;">
-            <div style="font-weight: 600; font-size: 14px; color: #475569; margin-bottom: 8px; padding: 8px 12px; background: #f1f5f9; border-radius: 6px; display: flex; align-items: center; cursor: pointer;" onclick="toggleCategory('${categoryId}')">
-              <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 8px;">folder</span>
-              ${category} (${categorySOPs.length})
-              <span class="material-symbols-outlined category-arrow" id="${categoryId}_arrow" style="margin-left: auto; font-size: 20px;">expand_more</span>
+      // 直接渲染SOP列表
+      const html = sortedSOPs.map(sop => {
+        const isChecked = taskSelectedSOPs.includes(sop.sop_id);
+        const searchText = (sop.title || '').toLowerCase();
+        return `
+          <label style="display: flex; align-items: center; padding: 12px; margin-bottom: 8px; background: ${isChecked ? '#eff6ff' : 'white'}; border: 1px solid ${isChecked ? '#3b82f6' : '#e5e7eb'}; border-radius: 6px; cursor: pointer; transition: all 0.2s;" class="sop-item" data-search="${searchText}" onmouseover="if(!this.querySelector('input').checked) this.style.background='#f8fafc'" onmouseout="if(!this.querySelector('input').checked) this.style.background='white'">
+            <input type="checkbox" value="${sop.sop_id}" ${isChecked ? 'checked' : ''} onchange="toggleSOPCheck(this)" style="margin-right: 12px; width: 18px; height: 18px; cursor: pointer;" />
+            <div style="flex: 1;">
+              <div style="font-weight: 500; font-size: 14px; color: #1e293b;">${sop.title || '未命名'}</div>
             </div>
-            <div id="${categoryId}" class="category-content" style="display: block; margin-left: 12px; padding-left: 12px; border-left: 2px solid #e2e8f0;">
-              ${categorySOPs.map(sop => {
-                const isChecked = taskSelectedSOPs.includes(sop.sop_id);
-                const searchText = (sop.title || '').toLowerCase() + ' ' + category.toLowerCase();
-                return `
-                  <label style="display: flex; align-items: center; padding: 10px; margin: 4px 0; background: ${isChecked ? '#eff6ff' : 'white'}; border: 1px solid ${isChecked ? '#3b82f6' : '#e5e7eb'}; border-radius: 6px; cursor: pointer; transition: all 0.2s;" class="sop-item" data-search="${searchText}" onmouseover="if(!this.querySelector('input').checked) this.style.background='#f8fafc'" onmouseout="if(!this.querySelector('input').checked) this.style.background='white'">
-                    <input type="checkbox" value="${sop.sop_id}" ${isChecked ? 'checked' : ''} onchange="toggleSOPCheck(this)" style="margin-right: 10px; width: 16px; height: 16px; cursor: pointer;" />
-                    <div style="flex: 1;">
-                      <div style="font-weight: 500; font-size: 13px; color: #1e293b;">${sop.title || '未命名'}</div>
-                    </div>
-                    ${isChecked ? '<span class="checkmark-icon" style="color: #3b82f6; font-size: 18px;">✓</span>' : ''}
-                  </label>
-                `;
-              }).join('')}
-            </div>
-          </div>
+            ${isChecked ? '<span class="checkmark-icon" style="color: #3b82f6; font-size: 20px;">✓</span>' : ''}
+          </label>
         `;
-      });
+      }).join('');
       
-      listContainer.innerHTML = html;
+      listContainer.innerHTML = html || '<div style="text-align:center;padding:24px;color:#9ca3af;">暫無適用的SOP文檔</div>';
     }
     
     function toggleCategory(categoryId) {
