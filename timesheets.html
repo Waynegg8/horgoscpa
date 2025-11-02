@@ -59,14 +59,31 @@
     } else {
       // 无缓存：正常加载，完成后保存
       console.log('[Timesheets] ℹ 无缓存，正常加载');
-      window.addEventListener('load', function() {
-        setTimeout(function() {
+      
+      // 监听数据加载完成事件
+      let saveTimer = null;
+      const checkAndSave = function() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(function() {
           const tbody = document.getElementById('timesheetBody');
-          if (tbody && tbody.innerHTML.length > 500) {
+          if (tbody && tbody.children.length > 0 && tbody.innerHTML.length > 500) {
             window.Prerender.save(pageKey, tbody.innerHTML);
-            console.log('[Timesheets] ✓ 预渲染已保存 (tbody)');
+            console.log('[Timesheets] ✓ 预渲染已保存 (tbody, ' + tbody.children.length + ' 行)');
           }
-        }, 5000); // 等待 5 秒确保数据完全渲染
+        }, 2000); // 用户停止操作 2 秒后保存
+      };
+      
+      // 监听表格内容变化
+      window.addEventListener('load', function() {
+        const tbody = document.getElementById('timesheetBody');
+        if (tbody) {
+          // 使用 MutationObserver 监听 tbody 变化
+          const observer = new MutationObserver(checkAndSave);
+          observer.observe(tbody, { childList: true, subtree: true });
+          
+          // 初始检查（3秒后第一次保存）
+          setTimeout(checkAndSave, 3000);
+        }
       });
     }
   })();

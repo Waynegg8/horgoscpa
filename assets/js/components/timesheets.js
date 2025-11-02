@@ -1848,10 +1848,13 @@ document.getElementById('btnSaveAll').addEventListener('click', saveAllChanges);
 async function init() {
   // ⚡ 检查是否有预渲染内容（跳过耗时的重新渲染）
   const tbody = document.getElementById('timesheetBody');
-  const hasPrerendered = tbody && tbody.children.length > 0;
+  const hasPrerendered = tbody && tbody.children.length > 0 && tbody.dataset.prerendered === 'true';
   
   if (hasPrerendered) {
     console.log('[Timesheets] ⚡ 检测到预渲染内容，跳过初始渲染');
+    // 标记为已使用，确保 loadWeek 也能识别
+    tbody.dataset.prerendered = 'consumed';
+    
     // 只加载基础数据到 state，不重新渲染
     initWorkTypes();
     state.currentWeekStart = getMonday(new Date());

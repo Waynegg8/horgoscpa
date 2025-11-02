@@ -762,6 +762,29 @@
 
         // 初始化：檢查用戶權限並載入員工列表
         async function init() {
+          // ⚡ 检查是否有预渲染内容
+          const mainContainer = document.querySelector('main');
+          const hasPrerendered = mainContainer && mainContainer.dataset.prerendered === 'true';
+          
+          if (hasPrerendered) {
+            console.log('[Leaves] ⚡ 检测到预渲染内容，跳过初始渲染');
+            mainContainer.dataset.prerendered = 'consumed';
+            
+            // 只加载用户信息，不渲染
+            try {
+              const meRes = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
+              if (meRes.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
+              const meJson = await meRes.json();
+              if (meJson.ok && meJson.data) {
+                state.isAdmin = meJson.data.isAdmin || false;
+              }
+            } catch (err) {
+              console.error('初始化失敗:', err);
+            }
+            return;
+          }
+          
+          // 无预渲染：正常初始化流程
           try {
             // 獲取當前用戶信息
             const meRes = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
@@ -821,24 +844,46 @@
       const pageKey = 'leaves';
       const cachedHTML = window.Prerender.load(pageKey);
       
-      if (cachedHTML && cachedHTML.length > 1000) {
-        // 有缓存：立即显示
-        console.log('[Leaves] ⚡ 使用预渲染 HTML');
-        document.body.innerHTML = cachedHTML;
-        
-        // 后台更新（可选）
-        // 这里不刷新，让用户看到缓存的内容即可
+      if (cachedHTML && cachedHTML.length > 500) {
+        // 有缓存：DOMContentLoaded 后立即显示
+        document.addEventListener('DOMContentLoaded', function() {
+          const mainContainer = document.querySelector('main');
+          if (mainContainer) {
+            console.log('[Leaves] ⚡ 使用预渲染 HTML');
+            mainContainer.innerHTML = cachedHTML;
+            mainContainer.dataset.prerendered = 'true';
+            console.log('[Leaves] ⚡ 预渲染内容已加载');
+          }
+        });
       } else {
         // 无缓存：正常加载，完成后保存
         console.log('[Leaves] ℹ 无缓存，正常加载');
-        window.addEventListener('load', function() {
-          setTimeout(function() {
-            const html = document.body.innerHTML;
-            if (html && html.length > 1000) {
-              window.Prerender.save(pageKey, html);
+        
+        let saveTimer = null;
+        const checkAndSave = function() {
+          clearTimeout(saveTimer);
+          saveTimer = setTimeout(function() {
+            const mainContainer = document.querySelector('main');
+            const tbody = document.getElementById('tbody');
+            const balances = document.getElementById('balances');
+            
+            if (mainContainer && tbody && tbody.children.length > 0 && balances && balances.children.length > 0) {
+              window.Prerender.save(pageKey, mainContainer.innerHTML);
               console.log('[Leaves] ✓ 预渲染已保存');
             }
-          }, 3000); // 等待 3 秒确保数据完全渲染
+          }, 2000);
+        };
+        
+        window.addEventListener('load', function() {
+          const mainContainer = document.querySelector('main');
+          if (mainContainer) {
+            // 使用 MutationObserver 监听内容变化
+            const observer = new MutationObserver(checkAndSave);
+            observer.observe(mainContainer, { childList: true, subtree: true });
+            
+            // 初始检查（3秒后）
+            setTimeout(checkAndSave, 3000);
+          }
         });
       }
     })();
