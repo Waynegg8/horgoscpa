@@ -1,10 +1,10 @@
 -- 增强收费明细表，支持一次性收费
 -- 2025-11-02
 
--- 添加新字段以支持一次性收费和按月收费的区分
-ALTER TABLE ServiceBillingSchedule ADD COLUMN billing_type TEXT DEFAULT 'monthly' CHECK(billing_type IN ('monthly', 'one-time'));
-ALTER TABLE ServiceBillingSchedule ADD COLUMN billing_date TEXT;
-ALTER TABLE ServiceBillingSchedule ADD COLUMN description TEXT;
+-- 注意：以下字段已存在于数据库中：
+-- - billing_type (已存在)
+-- - billing_date (已存在)
+-- - description (已存在)
 
 -- 创建索引
 CREATE INDEX IF NOT EXISTS idx_billing_schedule_type ON ServiceBillingSchedule(billing_type);
