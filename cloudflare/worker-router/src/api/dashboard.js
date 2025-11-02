@@ -242,28 +242,71 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       // - 已完成的任务：只显示指定月份的（避免无限累积）
       // - 未完成的任务：显示所有月份的（避免遗漏需要处理的任务）
       try {
-        const rows = await env.DATABASE.prepare(
+        // 先获取基本统计
+        const summaryRows = await env.DATABASE.prepare(
           `SELECT u.user_id, u.name, u.username,
-                  COUNT(CASE WHEN t.status = 'completed' AND t.service_month = ? THEN 1 END) AS completed,
-                  COUNT(CASE WHEN t.status = 'in_progress' THEN 1 END) AS inProgress,
-                  COUNT(CASE WHEN t.status NOT IN ('completed','cancelled') AND t.due_date < ? THEN 1 END) AS overdue,
-                  COUNT(CASE WHEN t.status = 'pending' THEN 1 END) AS pending
+                  COUNT(CASE WHEN t.status = 'completed' AND t.service_month = ? THEN 1 END) AS completed
            FROM Users u
            LEFT JOIN ActiveTasks t ON t.assignee_user_id = u.user_id AND t.is_deleted = 0
            WHERE u.is_deleted = 0
-           GROUP BY u.user_id, u.name, u.username
-           ORDER BY overdue DESC, inProgress DESC`
-        ).bind(targetYm, today).all();
+           GROUP BY u.user_id, u.name, u.username`
+        ).bind(targetYm).all();
         
-        res.employeeTasks = (rows?.results || []).map(r => ({
-          userId: r.user_id,
-          name: r.name || r.username,
-          completed: Number(r.completed || 0),
-          inProgress: Number(r.inProgress || 0),
-          overdue: Number(r.overdue || 0),
-          pending: Number(r.pending || 0)
-        }));
-      } catch (_) {}
+        // 获取未完成任务的月份分布详情
+        const detailRows = await env.DATABASE.prepare(
+          `SELECT u.user_id, 
+                  t.service_month,
+                  t.status,
+                  CASE WHEN t.status NOT IN ('completed','cancelled') AND t.due_date < ? THEN 1 ELSE 0 END as is_overdue,
+                  COUNT(*) as count
+           FROM Users u
+           LEFT JOIN ActiveTasks t ON t.assignee_user_id = u.user_id 
+                  AND t.is_deleted = 0 
+                  AND t.status NOT IN ('completed', 'cancelled')
+           WHERE u.is_deleted = 0 AND t.task_id IS NOT NULL
+           GROUP BY u.user_id, t.service_month, t.status, is_overdue`
+        ).bind(today).all();
+        
+        // 构建用户任务映射
+        const userTasksMap = {};
+        (summaryRows?.results || []).forEach(r => {
+          userTasksMap[r.user_id] = {
+            userId: r.user_id,
+            name: r.name || r.username,
+            completed: Number(r.completed || 0),
+            inProgress: {},
+            overdue: {},
+            pending: {}
+          };
+        });
+        
+        // 填充月份分布详情
+        (detailRows?.results || []).forEach(r => {
+          const user = userTasksMap[r.user_id];
+          if (!user) return;
+          
+          const month = r.service_month || '未知';
+          const count = Number(r.count || 0);
+          
+          if (r.is_overdue === 1) {
+            user.overdue[month] = (user.overdue[month] || 0) + count;
+          } else if (r.status === 'in_progress') {
+            user.inProgress[month] = (user.inProgress[month] || 0) + count;
+          } else if (r.status === 'pending') {
+            user.pending[month] = (user.pending[month] || 0) + count;
+          }
+        });
+        
+        res.employeeTasks = Object.values(userTasksMap).sort((a, b) => {
+          const aOverdue = Object.values(a.overdue).reduce((sum, n) => sum + n, 0);
+          const bOverdue = Object.values(b.overdue).reduce((sum, n) => sum + n, 0);
+          const aInProgress = Object.values(a.inProgress).reduce((sum, n) => sum + n, 0);
+          const bInProgress = Object.values(b.inProgress).reduce((sum, n) => sum + n, 0);
+          return (bOverdue - aOverdue) || (bInProgress - aInProgress);
+        });
+      } catch (err) {
+        console.error('[Dashboard] Employee tasks query error:', err);
+      }
 
       // Revenue trend (last 6 months)
       try {

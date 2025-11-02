@@ -273,16 +273,43 @@
           
           // 各员工任务状态 - 改为列表形式，可点击跳转
           const empTasks = Array.isArray(data?.admin?.employeeTasks) ? data.admin.employeeTasks : [];
+          
+          // 辅助函数：格式化月份详情
+          function formatMonthDetails(monthObj) {
+            if (!monthObj || Object.keys(monthObj).length === 0) return '';
+            const details = Object.entries(monthObj)
+              .sort((a, b) => b[0].localeCompare(a[0])) // 按月份倒序排列
+              .map(([month, count]) => {
+                const [y, m] = month.split('-');
+                return `${parseInt(m)}月${count}`;
+              })
+              .join('、');
+            return ` (${details})`;
+          }
+          
           const tasksHtml = empTasks.length ? empTasks.map(e => {
-            const total = e.completed + e.inProgress + e.overdue + e.pending;
-            const activeCount = e.inProgress + e.overdue + e.pending;
+            // 计算总数
+            const overdueTotal = Object.values(e.overdue || {}).reduce((sum, n) => sum + n, 0);
+            const inProgressTotal = Object.values(e.inProgress || {}).reduce((sum, n) => sum + n, 0);
+            const pendingTotal = Object.values(e.pending || {}).reduce((sum, n) => sum + n, 0);
             
-            // 构建状态摘要 - 使用更大的 badge 样式
+            // 构建状态摘要 - 使用更大的 badge 样式，并显示月份详情
             const badges = [];
-            if (e.overdue > 0) badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#fee2e2;color:#dc2626;font-size:13px;font-weight:500;">逾期 ${e.overdue}</span>`);
-            if (e.inProgress > 0) badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#dbeafe;color:#2563eb;font-size:13px;font-weight:500;">進行中 ${e.inProgress}</span>`);
-            if (e.pending > 0) badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#fef3c7;color:#d97706;font-size:13px;font-weight:500;">待辦 ${e.pending}</span>`);
-            if (e.completed > 0) badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#d1fae5;color:#059669;font-size:13px;font-weight:500;">已完成 ${e.completed}</span>`);
+            if (overdueTotal > 0) {
+              const details = formatMonthDetails(e.overdue);
+              badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#fee2e2;color:#dc2626;font-size:13px;font-weight:500;">逾期 ${overdueTotal}${details}</span>`);
+            }
+            if (inProgressTotal > 0) {
+              const details = formatMonthDetails(e.inProgress);
+              badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#dbeafe;color:#2563eb;font-size:13px;font-weight:500;">進行中 ${inProgressTotal}${details}</span>`);
+            }
+            if (pendingTotal > 0) {
+              const details = formatMonthDetails(e.pending);
+              badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#fef3c7;color:#d97706;font-size:13px;font-weight:500;">待辦 ${pendingTotal}${details}</span>`);
+            }
+            if (e.completed > 0) {
+              badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#d1fae5;color:#059669;font-size:13px;font-weight:500;">已完成 ${e.completed}</span>`);
+            }
             
             const summary = badges.length > 0 ? badges.join('') : '<span style="color:#9ca3af;">無任務</span>';
             
