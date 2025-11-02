@@ -210,13 +210,14 @@
       </div>
       
       <div style="margin-bottom: 16px;">
-        <label style="display:block;margin-bottom:6px;font-weight:500;">新狀態 <span style="color:#dc2626;">*</span></label>
-        <select id="modal_status" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
-          <option value="pending">待開始</option>
-          <option value="in_progress">進行中</option>
-          <option value="completed">已完成</option>
-          <option value="cancelled">已取消</option>
+        <label style="display:block;margin-bottom:6px;font-weight:500;">任務狀態 <span style="color:#dc2626;">*</span></label>
+        <select id="modal_status" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+          <option value="pending">⏸️ 待開始 - 任務已分配但尚未開工</option>
+          <option value="in_progress">▶️ 進行中 - 正在處理此任務</option>
+          <option value="completed">✅ 已完成 - 任務已經完成</option>
+          <option value="cancelled">❌ 已取消 - 不再執行此任務</option>
         </select>
+        <p style="font-size:12px;color:#6b7280;margin-top:6px;">💡 選擇任務的當前狀態</p>
       </div>
       
       <div style="margin-bottom: 16px;">
@@ -236,10 +237,45 @@
         <p style="font-size:12px;color:#6b7280;margin-top:4px;">💡 如果任務被外部因素阻塞，請在此說明</p>
       </div>
       
+      <!-- 正式到期日 -->
+      <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:16px;background:#fafafa;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-size:18px;">📅</span>
+          <h4 style="margin:0;font-size:15px;font-weight:600;color:#374151;">正式到期日</h4>
+        </div>
+        
+        <div style="margin-bottom: 12px;">
+          <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:500;color:#6b7280;">當前到期日</label>
+          <div style="padding:8px 12px;background:white;border:1px solid #d1d5db;border-radius:6px;font-weight:500;color:#1f2937;" id="current_due_date_display">-</div>
+        </div>
+        
+        <div style="margin-bottom: 12px;">
+          <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:500;">調整到期日 <span style="color:#9ca3af;font-weight:400;">(選填)</span></label>
+          <input type="date" id="modal_due_date" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
+          <p style="font-size:11px;color:#6b7280;margin-top:4px;">💡 這是正式承諾的完成期限</p>
+        </div>
+        
+        <div id="due_date_change_reason_section" style="display:none;">
+          <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:500;color:#dc2626;">調整原因 <span style="color:#dc2626;">*</span></label>
+          <textarea id="modal_due_date_reason" rows="2" style="width:100%;padding:10px;border:1px solid #dc2626;border-radius:6px;" placeholder="必須說明為何需要調整正式到期日..."></textarea>
+          <p style="font-size:11px;color:#991b1b;margin-top:4px;">⚠️ 檢測到到期日變更，此欄位為必填</p>
+        </div>
+      </div>
+      
+      <!-- 預計完成日期 -->
       <div style="margin-bottom: 16px;">
-        <label style="display:block;margin-bottom:6px;font-weight:500;">預計完成日期 <span style="color:#9ca3af;font-weight:400;">(選填)</span></label>
+        <label style="display:block;margin-bottom:6px;font-weight:500;">個人預計完成日期 <span style="color:#9ca3af;font-weight:400;">(選填)</span></label>
         <input type="date" id="modal_expected_date" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
-        <p style="font-size:12px;color:#6b7280;margin-top:4px;">💡 更新預期的完成時間，方便團隊掌握進度</p>
+        <div id="expected_date_current" style="font-size:12px;color:#6b7280;margin-top:4px;display:none;">
+          目前預計：<span id="current_expected_date_text"></span>
+        </div>
+        <p style="font-size:12px;color:#6b7280;margin-top:4px;">💡 你自己內部估計的完成時間（不影響正式到期日）</p>
+      </div>
+      
+      <div id="expected_date_change_reason_section" style="margin-bottom: 16px; display:none;">
+        <label style="display:block;margin-bottom:6px;font-weight:500;color:#d97706;">變更原因 <span style="color:#9ca3af;font-weight:400;">(建議填寫)</span></label>
+        <textarea id="modal_expected_date_reason" rows="2" style="width:100%;padding:10px;border:1px solid #f59e0b;border-radius:6px;" placeholder="說明為何調整預計完成日期..."></textarea>
+        <p style="font-size:12px;color:#92400e;margin-top:4px;">⚠️ 檢測到預計日期變更，建議說明原因</p>
       </div>
       
       <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -540,12 +576,63 @@
       document.getElementById('modal_progress_note').value = '';
       document.getElementById('modal_overdue_reason').value = '';
       document.getElementById('modal_blocker_reason').value = '';
-      document.getElementById('modal_expected_date').value = '';
+      document.getElementById('modal_expected_date_reason').value = '';
+      document.getElementById('modal_due_date_reason').value = '';
+      
+      // 設置當前到期日
+      const currentDueDate = document.getElementById('dueDate').value;
+      document.getElementById('current_due_date_display').textContent = currentDueDate || '未設定';
+      document.getElementById('modal_due_date').value = currentDueDate;
+      
+      // 隱藏到期日變更原因區塊
+      document.getElementById('due_date_change_reason_section').style.display = 'none';
+      
+      // 監聽到期日變更
+      const dueDateInput = document.getElementById('modal_due_date');
+      dueDateInput.onchange = function() {
+        const newDate = this.value;
+        const originalDate = currentDueDate;
+        
+        // 如果日期改變了，顯示變更原因欄位（必填）
+        if (newDate && newDate !== originalDate) {
+          document.getElementById('due_date_change_reason_section').style.display = 'block';
+        } else {
+          document.getElementById('due_date_change_reason_section').style.display = 'none';
+        }
+      };
+      
+      // 設置當前預計完成日期
+      const currentExpectedDate = currentTask?.expected_completion_date || '';
+      document.getElementById('modal_expected_date').value = currentExpectedDate;
+      
+      // 顯示當前預計日期
+      if (currentExpectedDate) {
+        document.getElementById('expected_date_current').style.display = 'block';
+        document.getElementById('current_expected_date_text').textContent = currentExpectedDate;
+      } else {
+        document.getElementById('expected_date_current').style.display = 'none';
+      }
+      
+      // 隱藏預計日期變更原因區塊
+      document.getElementById('expected_date_change_reason_section').style.display = 'none';
+      
+      // 監聽預計完成日期變更
+      const expectedDateInput = document.getElementById('modal_expected_date');
+      expectedDateInput.onchange = function() {
+        const newDate = this.value;
+        const originalDate = currentTask?.expected_completion_date || '';
+        
+        // 如果日期改變了，顯示變更原因欄位
+        if (newDate && newDate !== originalDate) {
+          document.getElementById('expected_date_change_reason_section').style.display = 'block';
+        } else {
+          document.getElementById('expected_date_change_reason_section').style.display = 'none';
+        }
+      };
       
       // 檢查是否逾期
-      const dueDate = document.getElementById('dueDate').value;
       const today = new Date().toISOString().split('T')[0];
-      const isOverdue = dueDate && dueDate < today && currentTask.status !== 'completed';
+      const isOverdue = currentDueDate && currentDueDate < today && currentTask.status !== 'completed';
       
       // 顯示/隱藏逾期相關區塊
       const overdueWarning = document.getElementById('overdue_warning');
@@ -554,7 +641,7 @@
       if (isOverdue) {
         overdueWarning.style.display = 'block';
         overdueSection.style.display = 'block';
-        document.getElementById('overdue_date_text').textContent = dueDate;
+        document.getElementById('overdue_date_text').textContent = currentDueDate;
       } else {
         overdueWarning.style.display = 'none';
         overdueSection.style.display = 'none';
@@ -569,18 +656,26 @@
     
     async function submitStatusUpdate() {
       const status = document.getElementById('modal_status').value;
-      const progress_note = document.getElementById('modal_progress_note').value.trim();
+      let progress_note = document.getElementById('modal_progress_note').value.trim();
       const overdue_reason = document.getElementById('modal_overdue_reason').value.trim();
       const blocker_reason = document.getElementById('modal_blocker_reason').value.trim();
       const expected_date = document.getElementById('modal_expected_date').value;
+      const expected_date_reason = document.getElementById('modal_expected_date_reason').value.trim();
       
-      console.log('[前端] 準備提交狀態更新:', { status, progress_note, overdue_reason, blocker_reason, expected_date });
+      // 到期日調整
+      const originalDueDate = document.getElementById('dueDate').value;
+      const new_due_date = document.getElementById('modal_due_date').value;
+      const due_date_reason = document.getElementById('modal_due_date_reason').value.trim();
+      const dueDateChanged = new_due_date && new_due_date !== originalDueDate;
+      
+      console.log('[前端] 準備提交狀態更新:', { 
+        status, progress_note, overdue_reason, blocker_reason, expected_date, expected_date_reason,
+        dueDateChanged, originalDueDate, new_due_date, due_date_reason
+      });
       
       // 檢查是否逾期且需要填寫原因
       const overdueSection = document.getElementById('overdue_reason_section');
       const isOverdueVisible = overdueSection.style.display !== 'none';
-      
-      console.log('[前端] 逾期檢查:', { isOverdueVisible, overdue_reason_length: overdue_reason.length });
       
       if (isOverdueVisible && !overdue_reason) {
         alert('⚠️ 此任務已逾期\n\n請在「逾期原因」欄位說明為何無法在期限內完成。');
@@ -588,17 +683,61 @@
         return;
       }
       
-      const data = {
-        status,
-        progress_note: progress_note || null,
-        overdue_reason: overdue_reason || null,
-        blocker_reason: blocker_reason || null,
-        expected_completion_date: expected_date || null
-      };
+      // 檢查到期日變更是否有填寫原因
+      if (dueDateChanged && !due_date_reason) {
+        alert('⚠️ 檢測到到期日變更\n\n請在「調整原因」欄位說明為何需要調整正式到期日。');
+        document.getElementById('modal_due_date_reason').focus();
+        return;
+      }
       
-      console.log('[前端] 發送數據:', data);
+      // 如果預計日期變更且有填寫原因，附加到進度說明中
+      const originalExpectedDate = currentTask?.expected_completion_date || '';
+      if (expected_date && expected_date !== originalExpectedDate && expected_date_reason) {
+        const dateChangeNote = `\n[預計完成日期調整: ${originalExpectedDate || '無'} → ${expected_date}，原因：${expected_date_reason}]`;
+        progress_note = (progress_note + dateChangeNote).trim();
+      }
       
       try {
+        // 1. 如果到期日有變更，先調整到期日
+        if (dueDateChanged) {
+          console.log('[前端] 先調整到期日...');
+          const adjustRes = await fetch(`${apiBase}/tasks/${currentTaskId}/adjust-due-date`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ new_due_date, reason: due_date_reason })
+          });
+          
+          if (adjustRes.status === 401) { 
+            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); 
+            return; 
+          }
+          
+          const adjustJson = await adjustRes.json();
+          console.log('[前端] 調整到期日回應:', adjustJson);
+          
+          if (!adjustJson.ok) {
+            let errorMsg = adjustJson.message || '調整到期日失敗';
+            if (adjustJson.errors && Array.isArray(adjustJson.errors)) {
+              const errorDetails = adjustJson.errors.map(e => `• ${e.field}: ${e.message}`).join('\n');
+              errorMsg = `${errorMsg}\n\n${errorDetails}`;
+            }
+            alert(errorMsg);
+            return;
+          }
+        }
+        
+        // 2. 更新狀態
+        const data = {
+          status,
+          progress_note: progress_note || null,
+          overdue_reason: overdue_reason || null,
+          blocker_reason: blocker_reason || null,
+          expected_completion_date: expected_date || null
+        };
+        
+        console.log('[前端] 發送狀態更新數據:', data);
+        
         const res = await fetch(`${apiBase}/tasks/${currentTaskId}/update-status`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -630,7 +769,11 @@
           return;
         }
         
-        alert('✅ 狀態已成功更新');
+        let successMsg = '✅ 狀態已成功更新';
+        if (dueDateChanged) {
+          successMsg += '\n📅 到期日已調整';
+        }
+        alert(successMsg);
         closeStatusModal();
         await loadTaskDetail();
         
