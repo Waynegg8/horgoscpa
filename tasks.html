@@ -919,11 +919,21 @@
           const currentService = allServices.find(s => s.service_id === quickAddContext.serviceId);
           const serviceCode = currentService?.service_code || '';
           
+          console.log('[SOP Filter] serviceId:', quickAddContext.serviceId);
+          console.log('[SOP Filter] currentService:', currentService);
+          console.log('[SOP Filter] serviceCode:', serviceCode);
+          console.log('[SOP Filter] allSOPs count:', allSOPs.length);
+          console.log('[SOP Filter] Sample SOP:', allSOPs[0]);
+          
           // 根据服务类型和scope过滤SOP（只显示任务层级且匹配服务类型的SOP）
-          const filteredSOPs = allSOPs.filter(s => 
-            s.scope === 'task' && 
-            (s.category === serviceCode || s.category === serviceCode.toLowerCase())
-          );
+          const filteredSOPs = allSOPs.filter(s => {
+            const scopeMatch = s.scope === 'task';
+            const categoryMatch = s.category === serviceCode || s.category === serviceCode.toLowerCase() || s.category === serviceCode.toUpperCase();
+            console.log(`[SOP Filter] ${s.title}: scope=${s.scope} (match:${scopeMatch}), category=${s.category} vs ${serviceCode} (match:${categoryMatch})`);
+            return scopeMatch && categoryMatch;
+          });
+          
+          console.log('[SOP Filter] Filtered SOPs count:', filteredSOPs.length);
           
           // 按分类分组
           const sopsByCategory = {};
