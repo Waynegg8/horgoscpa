@@ -604,20 +604,19 @@ async function loadWeek() {
   renderWeekHeader();
   if (token !== state.token) return;
   
-  // 3. 載入工時資料
-  await loadTimesheets();
+  // 3. 並行載入工時資料和月統計（优化加载速度）
+  await Promise.all([
+    loadTimesheets(),
+    loadMonthlySummary()
+  ]);
   if (token !== state.token) return;
   
-  // 4. 載入月統計
-  await loadMonthlySummary();
-  if (token !== state.token) return;
-  
-  // 5. 渲染表格
+  // 4. 渲染表格
   state.ready = true;
   renderTable();
   perfMonitor.mark('render_complete');
   
-  // 6. 延遲渲染表尾（避免阻塞）
+  // 5. 延遲渲染表尾（避免阻塞）
   requestAnimationFrame(() => {
     renderLeaveRow();
     renderCompleteness();
@@ -2163,8 +2162,12 @@ async function init() {
   initWorkTypes();
   state.currentWeekStart = getMonday(new Date());
   
-  await loadCurrentUser();
-  await loadClients();
+  // ⚡ 并行加载用户和客户信息
+  await Promise.all([
+    loadCurrentUser(),
+    loadClients()
+  ]);
+  
   await loadWeek();
   
   // ⚡ 预加载前4周数据

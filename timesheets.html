@@ -262,27 +262,30 @@
       // 1. 检查标题是否已更新（不是"载入中..."）
       var isLoadingDone = weekTitle && !weekTitle.textContent.includes('載入中');
       
-      // 2. 检查是否有内容
-      var hasContent = tbody && tbody.children.length >= 2; // 至少有"請假記錄"和"工時完整性"两行
-      
-      // 3. 检查 HTML 长度
+      // 2. 检查 HTML 长度（包含完整结构即可）
       var htmlLength = tbody ? tbody.innerHTML.length : 0;
+      var hasContent = htmlLength > 800; // 完整结构至少 800 字符
+      
+      // 3. 检查是否有基本元素
+      var hasBasicStructure = tbody && tbody.children.length > 0;
       
       console.log('[Timesheets] 尝试保存预渲染（来源：' + source + '）:', {
         isLoadingDone: isLoadingDone,
         hasContent: hasContent,
+        hasBasicStructure: hasBasicStructure,
         htmlLength: htmlLength,
         weekTitle: weekTitle ? weekTitle.textContent : 'N/A',
         children: tbody ? tbody.children.length : 0
       });
       
       // ⚡ 只在真正加载完成后才保存
-      if (isLoadingDone && hasContent && htmlLength > 500) {
+      if (isLoadingDone && hasContent && hasBasicStructure) {
         window.Prerender.save('timesheets', tbody.innerHTML);
         saved = true;
         
-        var dataRows = tbody.children.length - 2;
-        console.log('[Timesheets] ✅ 预渲染已保存（' + dataRows + ' 行数据, ' + htmlLength + ' 字符）');
+        var dataRows = Math.max(0, tbody.children.length - 2); // 减去固定的 2 行
+        var status = dataRows > 0 ? (dataRows + ' 行数据') : '空状态（含完整结构）';
+        console.log('[Timesheets] ✅ 预渲染已保存（' + status + ', ' + htmlLength + ' 字符）');
         
         // 清除后备超时
         if (saveTimeout) {
@@ -291,8 +294,10 @@
         }
       } else if (!isLoadingDone) {
         console.log('[Timesheets] ⏳ 等待数据加载完成（标题仍为"載入中..."）');
-      } else if (htmlLength <= 500) {
-        console.log('[Timesheets] ⏳ 内容不足，等待完整渲染（' + htmlLength + ' 字符）');
+      } else if (!hasContent) {
+        console.log('[Timesheets] ⏳ 内容不足，等待完整渲染（' + htmlLength + ' 字符，需要 >800）');
+      } else if (!hasBasicStructure) {
+        console.log('[Timesheets] ⏳ 无基本结构');
       }
     }
     

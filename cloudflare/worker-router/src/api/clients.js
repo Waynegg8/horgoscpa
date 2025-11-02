@@ -293,42 +293,37 @@ export async function handleClients(request, env, me, requestId, url) {
 				`SELECT COUNT(DISTINCT c.client_id) as total FROM Clients c ${whereSql}`
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
+			
+			// ⚡ 优化：一次查询获取所有数据（包括年度总额）
 			const rows = await env.DATABASE.prepare(
 				`SELECT c.client_id, c.company_name, c.tax_registration_number, c.contact_person_1, c.phone, c.email, c.created_at, 
 				        u.name as assignee_name,
-				        GROUP_CONCAT(t.tag_name, ',') as tags
+				        GROUP_CONCAT(DISTINCT t.tag_name, ',') as tags,
+				        COALESCE(SUM(sb.billing_amount), 0) as year_total
 				 FROM Clients c
 				 LEFT JOIN Users u ON u.user_id = c.assignee_user_id
 				 LEFT JOIN ClientTagAssignments a ON a.client_id = c.client_id
 				 LEFT JOIN CustomerTags t ON t.tag_id = a.tag_id
+				 LEFT JOIN ClientServices cs ON cs.client_id = c.client_id AND cs.is_deleted = 0
+				 LEFT JOIN ServiceBillingSchedule sb ON sb.client_service_id = cs.client_service_id
 				 ${whereSql}
 				 GROUP BY c.client_id
 				 ORDER BY c.created_at DESC
 				 LIMIT ? OFFSET ?`
 			).bind(...binds, perPage, offset).all();
 			
-			// 为每个客户计算全年收费总额
-			const data = await Promise.all((rows?.results || []).map(async (r) => {
-				// 查询该客户所有服务的收费总额
-				const billingRow = await env.DATABASE.prepare(
-					`SELECT SUM(sb.billing_amount) as year_total
-					 FROM ClientServices cs
-					 LEFT JOIN ServiceBillingSchedule sb ON sb.client_service_id = cs.client_service_id
-					 WHERE cs.client_id = ? AND cs.is_deleted = 0`
-				).bind(r.client_id).first();
-				
-				return {
-					clientId: r.client_id,
-					companyName: r.company_name,
-					taxId: r.tax_registration_number,
-					contact_person_1: r.contact_person_1 || "",
-					assigneeName: r.assignee_name || "",
-					tags: (r.tags ? String(r.tags).split(",").filter(Boolean) : []),
-					phone: r.phone || "",
-					email: r.email || "",
-					createdAt: r.created_at,
-					year_total: Number(billingRow?.year_total || 0)
-				};
+			// ⚡ 直接映射数据，无需额外查询
+			const data = (rows?.results || []).map(r => ({
+				clientId: r.client_id,
+				companyName: r.company_name,
+				taxId: r.tax_registration_number,
+				contact_person_1: r.contact_person_1 || "",
+				assigneeName: r.assignee_name || "",
+				tags: (r.tags ? String(r.tags).split(",").filter(Boolean) : []),
+				phone: r.phone || "",
+				email: r.email || "",
+				createdAt: r.created_at,
+				year_total: Number(r.year_total || 0)
 			}));
 			
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
