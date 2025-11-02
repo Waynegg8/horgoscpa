@@ -139,10 +139,10 @@
                 submitBtn.textContent = '✓ 預渲染中...';
                 submitBtn.style.background = '#4CAF50';
                 
-                // ⚡ 預渲染 Dashboard（重要！）
+                // ⚡ 用最新数据预渲染所有页面（重要！）
                 try {
-                  await prerenderDashboard();
-                  console.log('[Login] ✓ Dashboard 預渲染完成');
+                  await prerenderAfterLogin();
+                  console.log('[Login] ✓ 所有页面预渲染完成');
                 } catch (e) {
                   console.warn('[Login] ⚠ 預渲染失敗', e);
                 }
@@ -195,25 +195,34 @@
         (function pageLoadOptimization() {
           console.log('[Login] 🚀 立即啟動完整預加載系統');
           
-          // ℹ 策略：不在登入前預加載（因為所有 API 都需要認證）
-          // 改為：登入成功後立即加載核心數據（P0+P1），然後再跳轉
+          // ℹ 策略：
+          // 1. 登入前：用缓存数据预渲染（如果有）
+          // 2. 登入后：用最新数据预渲染
           console.log('[Login] ℹ️ 等待用戶登入後再加載數據（避免 401 錯誤）');
           
-          // ⚡ 預渲染 Dashboard（簡化版：只調用 API 觸發緩存）
-          async function prerenderDashboard() {
-            const onProdHost = location.hostname.endsWith('horgoscpa.com');
-            const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+          // ⚡ 尝试用缓存数据预渲染（登入前，如果有旧缓存）
+          if (window.Prerender) {
+            window.Prerender.prerenderAllPages(true).then(result => {
+              if (result.fromCache) {
+                console.log('[Login] ✓ 使用缓存数据预渲染完成');
+              }
+            });
+          }
+          
+          // ⚡ 登入后预渲染（使用最新数据）
+          async function prerenderAfterLogin() {
+            if (!window.Prerender) {
+              console.warn('[Login] ⚠ Prerender 未就绪');
+              return;
+            }
             
             try {
-              // 調用 dashboard API（會被 fetch 攔截器緩存）
-              const res = await fetch(apiBase + '/dashboard', { credentials: 'include' });
-              if (res.ok) {
-                const json = await res.json();
-                console.log('[Login] ✓ Dashboard 數據已加載並緩存');
-                return json;
-              }
+              // 用最新数据预渲染所有页面
+              const result = await window.Prerender.prerenderAllPages(false);
+              console.log(`[Login] ✓ 预渲染完成: ${result.success}/${result.total} 成功`);
+              return result;
             } catch (e) {
-              console.warn('[Login] ⚠ Dashboard 數據加載失敗', e);
+              console.warn('[Login] ⚠ 预渲染失败', e);
             }
           }
           

@@ -12,6 +12,7 @@
     <!-- ⚡ 預加載系統（必須在所有其他腳本之前加載） -->
     <script src="/assets/js/data-cache.js"></script>
     <script src="/assets/js/fetch-interceptor.js"></script>
+    <script src="/assets/js/prerender.js"></script>
     <script>
     // 立即啟動預加載（如果尚未啟動）
     if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
@@ -678,41 +679,18 @@
           grid.innerHTML = '<div class="card" style="padding:16px;">載入中…</div>';
         }
 
-        // ⚡ 预渲染支持
-        const PRERENDER_KEY = 'horgos_dashboard_prerender';
-        const PRERENDER_TTL = 5 * 60 * 1000; // 5分钟有效期
-        
-        // 加载预渲染的 HTML
+        // ⚡ 预渲染支持（使用统一的 Prerender 系统）
         function loadPrerenderedHTML() {
-          try {
-            const cached = localStorage.getItem(PRERENDER_KEY);
-            if (!cached) return null;
-            
-            const data = JSON.parse(cached);
-            const age = Date.now() - data.timestamp;
-            
-            if (age > PRERENDER_TTL) {
-              localStorage.removeItem(PRERENDER_KEY);
-              return null;
-            }
-            
-            console.log(`[Dashboard] ⚡ 使用预渲染 HTML（${Math.round(age / 1000)}秒前生成）`);
-            return data.html;
-          } catch (e) {
-            return null;
+          if (window.Prerender) {
+            return window.Prerender.load('dashboard');
           }
+          return null;
         }
         
         // 保存预渲染的 HTML
         function savePrerenderedHTML(html) {
-          try {
-            localStorage.setItem(PRERENDER_KEY, JSON.stringify({
-              html: html,
-              timestamp: Date.now()
-            }));
-            console.log('[Dashboard] ✓ 预渲染 HTML 已保存');
-          } catch (e) {
-            console.warn('[Dashboard] ⚠ 保存预渲染失败', e);
+          if (window.Prerender) {
+            window.Prerender.save('dashboard', html);
           }
         }
 

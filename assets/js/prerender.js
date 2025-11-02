@@ -149,25 +149,33 @@
   }
 
   /**
-   * 预渲染单个页面
+   * 预加载单个页面的数据
+   * 注意：这里只是确保数据已缓存
+   * 实际的 HTML 渲染会在各页面打开时完成并保存
    */
   async function prerenderPage(apiBase, key, endpoint) {
     try {
+      const startTime = Date.now();
       const res = await fetch(apiBase + endpoint, {
         method: 'GET',
         credentials: 'include'
       });
 
       if (!res.ok) {
+        if (res.status === 401) {
+          // 401 是正常的（未登入）
+          return false;
+        }
         console.warn(`[Prerender] ✗ ${key} 失败 (${res.status})`);
         return false;
       }
 
       const json = await res.json();
+      const duration = Date.now() - startTime;
       
-      // 注意：这里只是确保数据已缓存
-      // 实际的 HTML 渲染会在各页面中完成并保存
-      console.log(`[Prerender] ✓ ${key} 数据已缓存`);
+      // 数据会被 fetch 拦截器自动缓存
+      // 当用户打开相应页面时，会从缓存读取数据，渲染 HTML，然后保存 HTML
+      console.log(`[Prerender] ✓ ${key} 数据已缓存 (${duration}ms)`);
       return true;
     } catch (e) {
       console.warn(`[Prerender] ✗ ${key} 失败`, e);
