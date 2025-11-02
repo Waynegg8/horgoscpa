@@ -319,10 +319,14 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       } catch (_) {}
 
       // Recent Activities (任务调整、状态更新、假期申请、工时提醒)
+      console.log('========================================');
+      console.log('[仪表板] 开始处理 Recent Activities');
+      console.log('========================================');
       try {
         // 从查询参数获取筛选条件（默认30天）
         const days = parseInt(params.get('activity_days') || '30', 10);
         const filterUserId = params.get('activity_user_id');
+        console.log('[仪表板] 筛选参数 - days:', days, 'filterUserId:', filterUserId);
         
         // 不再使用 JavaScript 生成时间字符串，直接在 SQL 中使用 SQLite 的 datetime 函数
         // 这样可以避免时间格式不匹配的问题
