@@ -537,7 +537,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             const oldDate = act.old_due_date ? act.old_due_date.slice(5) : '';
             const newDate = act.new_due_date ? act.new_due_date.slice(5) : '';
             return {
-              type: 'due_date_adjustment',
+              activity_type: 'due_date_adjustment',
               text: `${act.user_name} 調整了任務期限`,
               taskName: act.task_name,
               clientName: act.client_name || '—',
@@ -560,7 +560,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             else if (act.progress_note) note = `💬 ${act.progress_note}`;
             
             return {
-              type: 'status_update',
+              activity_type: 'status_update',
               text: `${act.user_name} 更新了任務狀態`,
               taskName: act.task_name,
               clientName: act.client_name || '—',
@@ -592,7 +592,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             const leaveDays = act.leave_days || 0;
             
             return {
-              type: 'leave_application',
+              activity_type: 'leave_application',
               text: `${act.user_name} 申請${leaveType}`,
               leaveType: leaveType,
               leaveDays: leaveDays,
@@ -605,7 +605,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           } else if (act.activity_type === 'timesheet_reminder') {
             const missingDates = (act.missing_dates || []).map(d => d.slice(5)).join(', ');
             return {
-              type: 'timesheet_reminder',
+              activity_type: 'timesheet_reminder',
               text: `${act.user_name} 尚未填寫工時`,
               userName: act.user_name,
               missingCount: act.missing_count || 0,
