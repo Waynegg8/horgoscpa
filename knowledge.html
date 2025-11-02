@@ -528,18 +528,22 @@
         <input id="q" type="search" placeholder="搜尋標題/內容…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;" />
       </div>
       <div>
-        <label for="category" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">分類</label>
-        <select id="category" aria-label="分類" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:160px;">
+        <label for="category" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">服務類型</label>
+        <select id="category" aria-label="分類" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:180px;">
           <option value="all">全部</option>
-          <option value="accounting">記帳流程</option>
-          <option value="tax">稅務流程</option>
-          <option value="consulting">顧問諮詢</option>
-          <option value="business">工商登記</option>
-          <option value="hr">人事管理</option>
-          <option value="finance">財務管理</option>
-          <option value="contract">合同範本</option>
-          <option value="internal">內部流程</option>
-          <option value="other">其他</option>
+          <optgroup label="主要服務">
+            <option value="accounting">📊 記帳服務</option>
+            <option value="tax">📋 稅務申報</option>
+            <option value="consulting">💼 顧問諮詢</option>
+          </optgroup>
+          <optgroup label="其他分類">
+            <option value="business">🏢 工商登記</option>
+            <option value="hr">👥 人事管理</option>
+            <option value="finance">💰 財務管理</option>
+            <option value="contract">📄 合同範本</option>
+            <option value="internal">⚙️ 內部流程</option>
+            <option value="other">📦 其他</option>
+          </optgroup>
         </select>
       </div>
       <div style="flex:1;min-width:220px;">
@@ -686,18 +690,25 @@
           </div>
 
           <div class="form-group">
-            <label>分類 *</label>
+            <label>服務類型分類 *</label>
             <select id="sop-category-drawer" required>
               <option value="">請選擇</option>
-              <option value="accounting">記帳流程</option>
-              <option value="tax">稅務流程</option>
-              <option value="consulting">顧問諮詢</option>
-              <option value="business">工商登記</option>
-              <option value="hr">人事管理</option>
-              <option value="finance">財務管理</option>
-              <option value="internal">內部流程</option>
-              <option value="other">其他</option>
+              <optgroup label="🔹 主要服務類型">
+                <option value="accounting">📊 記帳流程（記帳服務）</option>
+                <option value="tax">📋 稅務流程（稅務申報）</option>
+                <option value="consulting">💼 顧問諮詢（顧問服務）</option>
+              </optgroup>
+              <optgroup label="🔸 其他業務分類">
+                <option value="business">🏢 工商登記</option>
+                <option value="hr">👥 人事管理</option>
+                <option value="finance">💰 財務管理</option>
+                <option value="internal">⚙️ 內部流程</option>
+                <option value="other">📦 其他</option>
+              </optgroup>
             </select>
+            <div style="margin-top:6px;font-size:11px;color:#64748b;line-height:1.4;">
+              💡 選擇對應的服務類型，創建任務時會自動篩選相關SOP
+            </div>
           </div>
           
           <div class="form-group">
@@ -871,17 +882,21 @@
           </div>
           
           <div class="form-group">
-            <label for="sop-category">分類</label>
+            <label for="sop-category">服務類型分類</label>
             <select id="sop-category">
               <option value="">請選擇</option>
-              <option value="accounting">記帳流程</option>
-              <option value="tax">稅務流程</option>
-              <option value="consulting">顧問諮詢</option>
-              <option value="business">工商登記</option>
-              <option value="hr">人事管理</option>
-              <option value="finance">財務管理</option>
-              <option value="internal">內部流程</option>
-              <option value="other">其他</option>
+              <optgroup label="主要服務類型">
+                <option value="accounting">📊 記帳流程（記帳服務）</option>
+                <option value="tax">📋 稅務流程（稅務申報）</option>
+                <option value="consulting">💼 顧問諮詢（顧問服務）</option>
+              </optgroup>
+              <optgroup label="其他業務分類">
+                <option value="business">🏢 工商登記</option>
+                <option value="hr">👥 人事管理</option>
+                <option value="finance">💰 財務管理</option>
+                <option value="internal">⚙️ 內部流程</option>
+                <option value="other">📦 其他</option>
+              </optgroup>
             </select>
           </div>
           
