@@ -238,28 +238,43 @@
   <!-- ⚡ 保存预渲染 -->
   <script>
   (function() {
+    console.log('[Timesheets] 检查预渲染保存条件:', {
+      needSave: window._needSaveTimesheetsPrerender,
+      hasPrerender: !!window.Prerender
+    });
+    
     if (window._needSaveTimesheetsPrerender && window.Prerender) {
-      var saveTimer = null;
-      var checkAndSave = function() {
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(function() {
-          var tbody = document.getElementById('timesheetBody');
-          if (tbody && tbody.children.length > 0 && tbody.innerHTML.length > 500) {
-            window.Prerender.save('timesheets', tbody.innerHTML);
-            console.log('[Timesheets] ✓ 预渲染已保存 (' + tbody.children.length + ' 行)');
-          }
-        }, 2000);
+      console.log('[Timesheets] 启动预渲染保存监听器');
+      var saveAttempts = 0;
+      var saved = false;
+      
+      var tryToSave = function() {
+        if (saved) return;
+        saveAttempts++;
+        
+        var tbody = document.getElementById('timesheetBody');
+        console.log('[Timesheets] 尝试保存 #' + saveAttempts + ':', {
+          tbody: !!tbody,
+          children: tbody ? tbody.children.length : 0,
+          htmlLength: tbody ? tbody.innerHTML.length : 0
+        });
+        
+        if (tbody && tbody.children.length > 0 && tbody.innerHTML.length > 100) {
+          window.Prerender.save('timesheets', tbody.innerHTML);
+          saved = true;
+          console.log('[Timesheets] ✅ 预渲染已保存 (' + tbody.children.length + ' 行, ' + tbody.innerHTML.length + ' 字符)');
+        } else if (saveAttempts < 20) {
+          // 每秒重试一次，最多 20 次
+          setTimeout(tryToSave, 1000);
+        } else {
+          console.warn('[Timesheets] ⚠ 预渲染保存失败（超时）');
+        }
       };
       
-      // 监听 tbody 变化
-      var tbody = document.getElementById('timesheetBody');
-      if (tbody) {
-        var observer = new MutationObserver(checkAndSave);
-        observer.observe(tbody, { childList: true, subtree: true });
-        
-        // 初始检查（3秒后）
-        setTimeout(checkAndSave, 3000);
-      }
+      // 首次尝试（1秒后）
+      setTimeout(tryToSave, 1000);
+    } else {
+      console.log('[Timesheets] 跳过预渲染保存（已有缓存或系统未就绪）');
     }
   })();
   </script>

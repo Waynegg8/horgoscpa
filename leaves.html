@@ -884,31 +884,49 @@
     <!-- ⚡ 保存预渲染 -->
     <script>
     (function() {
+      console.log('[Leaves] 检查预渲染保存条件:', {
+        needSave: window._needSaveLeavesPrerender,
+        hasPrerender: !!window.Prerender
+      });
+      
       if (window._needSaveLeavesPrerender && window.Prerender) {
-        var saveTimer = null;
-        var checkAndSave = function() {
-          clearTimeout(saveTimer);
-          saveTimer = setTimeout(function() {
-            var main = document.getElementById('leavesMain');
-            var tbody = document.getElementById('tbody');
-            var balances = document.getElementById('balances');
-            
-            if (main && tbody && tbody.children.length > 0 && balances && balances.children.length > 0) {
-              window.Prerender.save('leaves', main.innerHTML);
-              console.log('[Leaves] ✓ 预渲染已保存');
-            }
-          }, 2000);
+        console.log('[Leaves] 启动预渲染保存监听器');
+        var saveAttempts = 0;
+        var saved = false;
+        
+        var tryToSave = function() {
+          if (saved) return;
+          saveAttempts++;
+          
+          var main = document.getElementById('leavesMain');
+          var tbody = document.getElementById('tbody');
+          var balances = document.getElementById('balances');
+          
+          console.log('[Leaves] 尝试保存 #' + saveAttempts + ':', {
+            main: !!main,
+            tbody: !!tbody,
+            tbodyChildren: tbody ? tbody.children.length : 0,
+            balances: !!balances,
+            balancesChildren: balances ? balances.children.length : 0,
+            htmlLength: main ? main.innerHTML.length : 0
+          });
+          
+          if (main && tbody && tbody.children.length > 0 && balances && balances.children.length > 0) {
+            window.Prerender.save('leaves', main.innerHTML);
+            saved = true;
+            console.log('[Leaves] ✅ 预渲染已保存 (' + main.innerHTML.length + ' 字符)');
+          } else if (saveAttempts < 20) {
+            // 每秒重试一次，最多 20 次
+            setTimeout(tryToSave, 1000);
+          } else {
+            console.warn('[Leaves] ⚠ 预渲染保存失败（超时）');
+          }
         };
         
-        // 监听 main 变化
-        var main = document.getElementById('leavesMain');
-        if (main) {
-          var observer = new MutationObserver(checkAndSave);
-          observer.observe(main, { childList: true, subtree: true });
-          
-          // 初始检查（3秒后）
-          setTimeout(checkAndSave, 3000);
-        }
+        // 首次尝试（1秒后）
+        setTimeout(tryToSave, 1000);
+      } else {
+        console.log('[Leaves] 跳过预渲染保存（已有缓存或系统未就绪）');
       }
     })();
     </script>
