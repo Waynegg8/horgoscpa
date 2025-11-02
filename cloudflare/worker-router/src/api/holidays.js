@@ -1,4 +1,5 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+import { generateCacheKey, getCache, saveCache } from "../cache-helper.js";
 
 /**
  * GET /api/v1/holidays - 查詢假日資料
@@ -12,6 +13,20 @@ export async function handleHolidays(request, env, me, requestId, url) {
 			const params = url.searchParams;
 			const startDate = (params.get("start_date") || "").trim();
 			const endDate = (params.get("end_date") || "").trim();
+			
+			// ⚡ 尝试从缓存读取
+			const cacheKey = generateCacheKey('holidays_all', { start: startDate, end: endDate });
+			const cached = await getCache(env, cacheKey);
+			
+			if (cached && cached.data) {
+				return jsonResponse(200, { 
+					ok: true, 
+					code: "SUCCESS", 
+					message: "查詢成功（缓存）", 
+					data: cached.data, 
+					meta: { requestId, ...cached.meta } 
+				}, corsHeaders);
+			}
 			
 			const where = [];
 			const binds = [];
@@ -43,6 +58,11 @@ export async function handleHolidays(request, env, me, requestId, url) {
 			is_weekly_restday: Boolean(r.is_weekly_restday),
 			is_makeup_workday: Boolean(r.is_makeup_workday),
 		}));
+			
+			// ⚡ 保存到缓存（不等待完成）
+			saveCache(env, cacheKey, 'holidays_all', data, {
+				scopeParams: { start: startDate, end: endDate }
+			}).catch(err => console.error('[HOLIDAYS] 缓存保存失败:', err));
 			
 			return jsonResponse(200, { 
 				ok: true, 

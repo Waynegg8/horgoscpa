@@ -1,4 +1,5 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+import { generateCacheKey, getCache, saveCache, invalidateCacheByType } from "../cache-helper.js";
 
 /**
  * 工時類型定義（符合勞基法規定）
@@ -605,15 +606,19 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		
 		console.log('[TIMELOG] 保存成功:', { log_id, weighted_hours, comp_hours_generated });
 		
-		// ⚡ 失效该周的缓存（不等待完成，避免阻塞响应）
+		// ⚡ 失效该周的缓存和月度统计缓存（不等待完成，避免阻塞响应）
 		const workDateObj = new Date(work_date + 'T00:00:00');
 		const dayOfWeek = workDateObj.getDay();
 		const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // 周日是0，要往回6天到周一
 		const monday = new Date(workDateObj);
 		monday.setDate(monday.getDate() + mondayOffset);
 		const weekStart = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+		const workMonth = `${workDateObj.getFullYear()}-${String(workDateObj.getMonth() + 1).padStart(2, '0')}`;
 		
-		invalidateWeekCache(env, String(me.user_id), weekStart).catch(err => {
+		Promise.all([
+			invalidateWeekCache(env, String(me.user_id), weekStart),
+			invalidateCacheByType(env, 'monthly_summary', { userId: String(me.user_id) })
+		]).catch(err => {
 			console.error('[TIMELOG] 失效缓存失败（不影响保存）:', err);
 		});
 		
@@ -780,6 +785,20 @@ async function handleGetMonthlySummary(request, env, me, requestId, url) {
 		userId = parseInt(params.get("user_id"));
 	}
 		
+		// ⚡ 尝试从缓存读取
+		const cacheKey = generateCacheKey('monthly_summary', { userId, month });
+		const cached = await getCache(env, cacheKey);
+		
+		if (cached && cached.data) {
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "查詢成功（缓存）",
+				data: cached.data,
+				meta: { requestId, month, userId, ...cached.meta }
+			}, corsHeaders);
+		}
+		
 		// 查詢當月工時記錄
 		const timelogs = await env.DATABASE.prepare(
 			`SELECT work_type, hours
@@ -835,18 +854,26 @@ async function handleGetMonthlySummary(request, env, me, requestId, url) {
 		});
 	}
 		
+		const summaryData = {
+			month,
+			total_hours: Math.round(totalHours * 10) / 10,
+			overtime_hours: Math.round(overtimeHours * 10) / 10,
+			weighted_hours: Math.round(weightedHours * 10) / 10,
+			leave_hours: Math.round(leaveHours * 10) / 10
+		};
+		
+		// ⚡ 保存到缓存（不等待完成）
+		saveCache(env, cacheKey, 'monthly_summary', summaryData, {
+			userId: String(userId),
+			scopeParams: { userId, month }
+		}).catch(err => console.error('[TIMELOGS] 月度统计缓存保存失败:', err));
+		
 		// 回傳統計結果
 		return jsonResponse(200, {
 			ok: true,
 			code: "SUCCESS",
 			message: "查詢成功",
-			data: {
-				month,
-				total_hours: Math.round(totalHours * 10) / 10,
-				overtime_hours: Math.round(overtimeHours * 10) / 10,
-				weighted_hours: Math.round(weightedHours * 10) / 10,
-				leave_hours: Math.round(leaveHours * 10) / 10
-			},
+			data: summaryData,
 			meta: { requestId }
 		}, corsHeaders);
 		

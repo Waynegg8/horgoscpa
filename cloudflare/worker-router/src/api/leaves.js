@@ -1,4 +1,5 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+import { generateCacheKey, getCache, saveCache, invalidateCacheByType } from "../cache-helper.js";
 
 // 确保用户有基本假期余额记录
 async function ensureBasicLeaveBalances(env, userId, year) {
@@ -30,6 +31,20 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			let targetUserId = String(me.user_id);
 			if (queryUserId && me.is_admin) {
 				targetUserId = String(queryUserId);
+			}
+			
+			// ⚡ 尝试从缓存读取
+			const cacheKey = generateCacheKey('leaves_balances', { userId: targetUserId, year });
+			const cached = await getCache(env, cacheKey);
+			
+			if (cached && cached.data) {
+				return jsonResponse(200, { 
+					ok: true, 
+					code: "OK", 
+					message: "成功（缓存）", 
+					data: cached.data, 
+					meta: { requestId, year, userId: targetUserId, ...cached.meta } 
+				}, corsHeaders);
 			}
 			
 			// 确保用户有基本假期余额记录
@@ -72,6 +87,12 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				});
 			});
 			
+			// ⚡ 保存到缓存（不等待完成）
+			saveCache(env, cacheKey, 'leaves_balances', data, {
+				userId: targetUserId,
+				scopeParams: { userId: targetUserId, year }
+			}).catch(err => console.error('[LEAVES] 余额缓存保存失败:', err));
+			
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, year, userId: targetUserId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
@@ -92,6 +113,23 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				const dateFrom = (params.get("dateFrom") || "").trim();
 				const dateTo = (params.get("dateTo") || "").trim();
 				const queryUserId = params.get("user_id");
+				
+				// ⚡ 尝试从缓存读取
+				const cacheKey = generateCacheKey('leaves_list', { 
+					page, perPage, q, status, type, dateFrom, dateTo, userId: queryUserId || me.user_id 
+				});
+				const cached = await getCache(env, cacheKey);
+				
+				if (cached && cached.data) {
+					return jsonResponse(200, { 
+						ok: true, 
+						code: "OK", 
+						message: "成功（缓存）", 
+						data: cached.data.list, 
+						meta: { ...cached.data.meta, requestId, ...cached.meta } 
+					}, corsHeaders);
+				}
+				
 				const where = ["l.is_deleted = 0"];
 				const binds = [];
 				
@@ -132,6 +170,13 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 					submittedAt: r.submitted_at,
 				}));
 				const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
+				
+				// ⚡ 保存到缓存（不等待完成）
+				saveCache(env, cacheKey, 'leaves_list', { list: data, meta }, {
+					userId: queryUserId || String(me.user_id),
+					scopeParams: { page, perPage, q, status, type, dateFrom, dateTo }
+				}).catch(err => console.error('[LEAVES] 列表缓存保存失败:', err));
+				
 				return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta }, corsHeaders);
 			} catch (err) {
 				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
@@ -246,11 +291,17 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 							 WHERE grant_id = ?`
 						).bind(Number(newUsed) + deduct, newRemaining, newStatus, grant.grant_id).run();
 						
-						remaining -= deduct;
-					}
+					remaining -= deduct;
 				}
-				
-				return jsonResponse(201, { ok:true, code:"CREATED", message:"申請成功", data:{ leaveId }, meta:{ requestId } }, corsHeaders);
+			}
+			
+			// ⚡ 失效该用户的请假列表和余额缓存
+			Promise.all([
+				invalidateCacheByType(env, 'leaves_list', { userId: String(me.user_id) }),
+				invalidateCacheByType(env, 'leaves_balances', { userId: String(me.user_id) })
+			]).catch(err => console.error('[LEAVES] 失效缓存失败:', err));
+			
+			return jsonResponse(201, { ok:true, code:"CREATED", message:"申請成功", data:{ leaveId }, meta:{ requestId } }, corsHeaders);
 			} catch (err) {
 				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
