@@ -1871,7 +1871,30 @@
         }
         
         // Tab切换
-        function switchTab(tabName) {
+        // ⚡ Tab 缓存标记（避免重复加载）
+        const tabLoaded = {
+          sop: false,
+          faq: false,
+          resources: false
+        };
+        
+        // ⚡ 强制刷新指定 tab（用于创建/编辑/删除后）
+        function forceRefreshTab(tabName) {
+          tabLoaded[tabName] = false;
+          if (tabName === 'sop') loadSOPs();
+          else if (tabName === 'faq') loadFAQs();
+          else if (tabName === 'resources') loadResources();
+          tabLoaded[tabName] = true;
+        }
+        
+        function switchTab(tabName, forceRefresh = false) {
+          // ⚡ 如果点击当前已激活的 tab，强制刷新
+          const isCurrentTab = currentTab === tabName;
+          if (isCurrentTab && !forceRefresh) {
+            console.log(`[Knowledge] 🔄 点击当前 tab，强制刷新`);
+            forceRefresh = true;
+          }
+          
           currentTab = tabName;
           
           // 隱藏工具欄按鈕
@@ -1888,10 +1911,29 @@
           });
           document.getElementById(`${tabName}-content`).classList.add('active');
           
-          // 加载对应数据
-          if (tabName === 'sop') loadSOPs();
-          else if (tabName === 'faq') loadFAQs();
-          else if (tabName === 'resources') loadResources();
+          // ⚡ 加载数据逻辑（支持强制刷新）
+          if (tabName === 'sop') {
+            if (!tabLoaded.sop || forceRefresh) {
+              loadSOPs();
+              tabLoaded.sop = true;
+            } else {
+              console.log(`[Knowledge] ⚡ 使用 SOP 缓存内容`);
+            }
+          } else if (tabName === 'faq') {
+            if (!tabLoaded.faq || forceRefresh) {
+              loadFAQs();
+              tabLoaded.faq = true;
+            } else {
+              console.log(`[Knowledge] ⚡ 使用 FAQ 缓存内容`);
+            }
+          } else if (tabName === 'resources') {
+            if (!tabLoaded.resources || forceRefresh) {
+              loadResources();
+              tabLoaded.resources = true;
+            } else {
+              console.log(`[Knowledge] ⚡ 使用资源缓存内容`);
+            }
+          }
         }
 
         // SOP相关函数
@@ -2421,7 +2463,7 @@
             const json = await res.json();
             if (json.ok) {
               alert('刪除成功');
-              loadSOPs();
+              forceRefreshTab('sop');
             } else {
               alert('刪除失敗：' + (json.error || '未知錯誤'));
             }
@@ -2582,7 +2624,7 @@
             const json = await res.json();
             if (json.ok) {
               alert('刪除成功');
-              loadFAQs();
+              forceRefreshTab('faq');
             } else {
               alert('刪除失敗：' + (json.error || '未知錯誤'));
             }
@@ -3300,7 +3342,7 @@
             if (json.ok) {
               alert(sopId ? '更新成功' : '新增成功');
               closeSopDrawer();
-              loadSOPs();
+              forceRefreshTab('sop');
               // 如果是新增或已有預覽，自動預覽新內容
               if (json.data && json.data.sop_id) {
                 viewSOP(json.data.sop_id);

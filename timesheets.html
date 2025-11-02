@@ -52,7 +52,8 @@
         const tbody = document.getElementById('timesheetBody');
         if (tbody) {
           tbody.innerHTML = cachedHTML;
-          console.log('[Timesheets] ⚡ 预渲染内容已加载，跳过 init() 渲染');
+          tbody.dataset.prerendered = 'true'; // ⚡ 标记为预渲染内容
+          console.log('[Timesheets] ⚡ 预渲染内容已加载，跳过渲染');
         }
       });
     } else {

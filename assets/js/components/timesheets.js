@@ -463,6 +463,17 @@ async function loadWeek() {
   const token = ++state.token;
   state.ready = false;
   
+  // ⚡ 检查是否有预渲染内容（避免覆盖）
+  const tbody = document.getElementById('timesheetBody');
+  const hasPrerendered = tbody && tbody.children.length > 0 && tbody.dataset.prerendered !== 'consumed';
+  
+  if (hasPrerendered) {
+    console.log('[Timesheets] ⚡ 保留预渲染内容，跳过 loadWeek 渲染');
+    tbody.dataset.prerendered = 'consumed'; // 标记为已使用，下次切换周时正常加载
+    state.ready = true;
+    return;
+  }
+  
   // 1. 載入假日和請假資料（並行）
   await Promise.all([loadHolidays(), loadLeaves()]);
   if (token !== state.token) return;

@@ -8,6 +8,9 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/costs-page.css" />
+    
+    <!-- ⚡ Tab 缓存系统 -->
+    <script src="/assets/js/tab-cache.js"></script>
   </head>
   <body class="costs-page">
     <div style="padding:16px 20px;">
@@ -260,17 +263,36 @@
           document.querySelectorAll('.costs-toolbar .btn, .section-toolbar input, .section-toolbar select, .section-toolbar button').forEach(el=>{ el.disabled = !enabled; });
         }
 
+        // ⚡ Tab 缓存系统初始化
+        let currentCostsTab = 'items';
+        if (window.TabCache) {
+          window.TabCache.init(['items', 'employee', 'client']);
+        }
+
         tabs.forEach(btn => {
           btn.addEventListener('click', ()=>{
+            const key = btn.getAttribute('data-tab');
+            
+            // ⚡ 检查是否需要加载（使用缓存）
+            const shouldLoad = window.TabCache ? window.TabCache.shouldLoad(currentCostsTab, key) : true;
+            currentCostsTab = key;
+            
             tabs.forEach(b=>b.classList.remove('active'));
             btn.classList.add('active');
-            const key = btn.getAttribute('data-tab');
             Object.entries(panels).forEach(([k,el])=>{
               if (k === key) el.classList.add('show'); else el.classList.remove('show');
             });
-            // 載入對應資料
-            if (key === 'employee') loadEmployeeCosts();
-            if (key === 'client') loadClientCosts();
+            
+            // ⚡ 只在需要时载入对应资料
+            if (shouldLoad) {
+              if (key === 'employee') loadEmployeeCosts();
+              if (key === 'client') loadClientCosts();
+              
+              // ⚡ 标记为已加载
+              if (window.TabCache) {
+                window.TabCache.markLoaded(key);
+              }
+            }
           });
         });
 
