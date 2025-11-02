@@ -600,6 +600,9 @@ function renderTable() {
     return;
   }
 
+  // ⚡ 标记开始渲染真实数据
+  tbody.dataset.rendering = 'true';
+  
   state.rows.forEach((row, rowIndex) => {
     const tr = document.createElement('tr');
     tr.dataset.rowIndex = rowIndex;
@@ -1764,6 +1767,15 @@ function renderCompleteness() {
     
     cell.title = `工時 ${normalHours.toFixed(1)}h + 請假 ${leaveHours.toFixed(1)}h = ${total.toFixed(1)}h`;
   });
+  
+  // ⚡ 完整性判断完成，触发保存事件
+  const tbody = document.getElementById('timesheetBody');
+  if (tbody && tbody.dataset.rendering === 'true') {
+    tbody.dataset.rendering = 'complete';
+    window.dispatchEvent(new CustomEvent('timesheets-rendered', { 
+      detail: { rows: state.rows.length } 
+    }));
+  }
 }
 
 // ==================== 新增列 ====================

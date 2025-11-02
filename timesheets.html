@@ -244,35 +244,42 @@
     });
     
     if (window._needSaveTimesheetsPrerender && window.Prerender) {
-      console.log('[Timesheets] 启动预渲染保存监听器');
-      var saveAttempts = 0;
+      console.log('[Timesheets] 启动预渲染保存监听器（等待完整性判断完成）');
       var saved = false;
       
-      var tryToSave = function() {
+      // 监听完整性判断完成事件
+      window.addEventListener('timesheets-rendered', function(e) {
         if (saved) return;
-        saveAttempts++;
         
         var tbody = document.getElementById('timesheetBody');
-        console.log('[Timesheets] 尝试保存 #' + saveAttempts + ':', {
+        console.log('[Timesheets] 收到渲染完成事件:', {
+          rows: e.detail.rows,
           tbody: !!tbody,
           children: tbody ? tbody.children.length : 0,
           htmlLength: tbody ? tbody.innerHTML.length : 0
         });
         
         if (tbody && tbody.children.length > 0 && tbody.innerHTML.length > 50) {
-          window.Prerender.save('timesheets', tbody.innerHTML);
-          saved = true;
-          console.log('[Timesheets] ✅ 预渲染已保存 (' + tbody.children.length + ' 行, ' + tbody.innerHTML.length + ' 字符)');
-        } else if (saveAttempts < 20) {
-          // 每秒重试一次，最多 20 次
-          setTimeout(tryToSave, 1000);
-        } else {
-          console.warn('[Timesheets] ⚠ 预渲染保存失败（超时）');
+          // 延迟 500ms 保存，确保所有 DOM 更新完成
+          setTimeout(function() {
+            window.Prerender.save('timesheets', tbody.innerHTML);
+            saved = true;
+            console.log('[Timesheets] ✅ 预渲染已保存 (' + tbody.children.length + ' 行, ' + tbody.innerHTML.length + ' 字符)');
+          }, 500);
         }
-      };
+      }, { once: true });
       
-      // 首次尝试（1秒后）
-      setTimeout(tryToSave, 1000);
+      // 后备方案：5秒后如果还没保存，尝试保存当前状态
+      setTimeout(function() {
+        if (!saved) {
+          var tbody = document.getElementById('timesheetBody');
+          if (tbody && tbody.children.length > 0 && tbody.innerHTML.length > 50) {
+            window.Prerender.save('timesheets', tbody.innerHTML);
+            saved = true;
+            console.log('[Timesheets] ⚡ 预渲染已保存（后备）(' + tbody.children.length + ' 行)');
+          }
+        }
+      }, 5000);
     } else {
       console.log('[Timesheets] 跳过预渲染保存（已有缓存或系统未就绪）');
     }
