@@ -946,7 +946,7 @@
             // 确保类型匹配（转换为数字进行比较）
             const isSelected = quickAddContext.selectedSOPs.some(id => parseInt(id) === parseInt(sop.sop_id));
             html += `
-              <div onclick="toggleQuickSOP(${sop.sop_id})" style="cursor:pointer;padding:12px;border:1px solid ${isSelected ? '#3b82f6' : '#e5e7eb'};border-radius:6px;margin-bottom:8px;background:${isSelected ? '#eff6ff' : 'white'};transition:all 0.2s;">
+              <div data-sop-id="${sop.sop_id}" onclick="toggleQuickSOP(${sop.sop_id}, event)" style="cursor:pointer;padding:12px;border:1px solid ${isSelected ? '#3b82f6' : '#e5e7eb'};border-radius:6px;margin-bottom:8px;background:${isSelected ? '#eff6ff' : 'white'};transition:all 0.2s;">
                 <div style="display:flex;align-items:center;">
                   <span style="font-size:20px;margin-right:12px;">${isSelected ? '☑️' : '⬜'}</span>
                   <span style="font-weight:500;color:#1f2937;font-size:14px;">${sop.title}</span>
@@ -975,8 +975,13 @@
         };
         
         // 切换SOP选择
-        window.toggleQuickSOP = function(sopId) {
+        window.toggleQuickSOP = function(sopId, event) {
           if (!quickAddContext) return;
+          
+          // 阻止事件冒泡
+          if (event) {
+            event.stopPropagation();
+          }
           
           // 确保类型一致（转换为数字）
           const sopIdNum = parseInt(sopId);
@@ -993,8 +998,24 @@
           
           console.log('[toggleQuickSOP] After:', quickAddContext.selectedSOPs);
           
-          // 重新渲染SOP列表
-          openQuickSOPSelector();
+          // 只更新被点击的元素的样式，避免重新渲染整个列表
+          const sopElements = document.querySelectorAll('#quick-sop-list > div');
+          sopElements.forEach((el, index) => {
+            const elSopId = parseInt(el.getAttribute('data-sop-id'));
+            const isSelected = quickAddContext.selectedSOPs.some(id => parseInt(id) === elSopId);
+            
+            if (elSopId === sopIdNum) {
+              // 更新样式
+              el.style.borderColor = isSelected ? '#3b82f6' : '#e5e7eb';
+              el.style.background = isSelected ? '#eff6ff' : 'white';
+              
+              // 更新图标
+              const icon = el.querySelector('span:first-child');
+              if (icon) {
+                icon.textContent = isSelected ? '☑️' : '⬜';
+              }
+            }
+          });
         };
         
         // 确认SOP选择
