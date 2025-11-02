@@ -1755,7 +1755,7 @@
               const clientFilter = document.getElementById('client');
               if (clientFilter) {
                 const optionsHTML = clients.map(c => 
-                  `<option value="${c.client_id}">${c.client_name}</option>`
+                  `<option value="${c.clientId}">${c.companyName}</option>`
                 ).join('');
                 clientFilter.innerHTML = '<option value="all">全部客戶</option>' + optionsHTML;
               }
@@ -1764,7 +1764,7 @@
               const sopClientDrawer = document.getElementById('sop-client-drawer');
               if (sopClientDrawer) {
                 const optionsHTML = clients.map(c => 
-                  `<option value="${c.client_id}">${c.client_name}</option>`
+                  `<option value="${c.clientId}">${c.companyName}</option>`
                 ).join('');
                 sopClientDrawer.innerHTML = '<option value="">不指定（通用）</option>' + optionsHTML;
               }
@@ -1773,7 +1773,7 @@
               const faqClientDrawer = document.getElementById('faq-client-drawer');
               if (faqClientDrawer) {
                 const optionsHTML = clients.map(c => 
-                  `<option value="${c.client_id}">${c.client_name}</option>`
+                  `<option value="${c.clientId}">${c.companyName}</option>`
                 ).join('');
                 faqClientDrawer.innerHTML = '<option value="">不指定（通用）</option>' + optionsHTML;
               }
@@ -1782,7 +1782,7 @@
               const resourceClientModal = document.getElementById('resource-client-modal');
               if (resourceClientModal) {
                 const optionsHTML = clients.map(c => 
-                  `<option value="${c.client_id}">${c.client_name}</option>`
+                  `<option value="${c.clientId}">${c.companyName}</option>`
                 ).join('');
                 resourceClientModal.innerHTML = '<option value="">不指定（通用）</option>' + optionsHTML;
               }
