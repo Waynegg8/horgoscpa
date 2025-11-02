@@ -67,70 +67,81 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
     // 查询每个组件的多个服务层级SOP和任务配置
     const componentsWithDetails = await Promise.all(
       (components.results || []).map(async (c, index) => {
-        console.log(`[listServiceComponents] 处理组件 ${index + 1}/${components.results.length}, component_id:`, c.component_id);
-        
-        // 查询服务层级的多个SOP
-        const componentSOPs = await env.DATABASE.prepare(`
-          SELECT sop.sop_id, sop.title, sop.category, scs.sort_order
-          FROM ServiceComponentSOPs scs
-          JOIN SOPDocuments sop ON sop.sop_id = scs.sop_id
-          WHERE scs.component_id = ? AND sop.is_deleted = 0
-          ORDER BY scs.sort_order
-        `).bind(c.component_id).all();
-        
-        console.log(`[listServiceComponents] 组件 ${c.component_id} 的服务SOP数量:`, componentSOPs.results?.length || 0);
-        
-        // 查询任务配置及其关联的SOP
-        const tasks = await env.DATABASE.prepare(`
-          SELECT 
-            config_id, component_id, task_order, task_name, 
-            assignee_user_id, notes, due_rule, due_value, 
-            estimated_hours, advance_days, created_at
-          FROM ServiceComponentTasks
-          WHERE component_id = ?
-          ORDER BY task_order
-        `).bind(c.component_id).all();
-        
-        console.log(`[listServiceComponents] 组件 ${c.component_id} 的任务数量:`, tasks.results?.length || 0);
-        
-        const tasksWithSOPs = await Promise.all(
-          (tasks.results || []).map(async (task) => {
-            console.log(`[listServiceComponents] 查询任务SOP, task对象:`, JSON.stringify(task));
-            
-            // 检查config_id是否存在
-            if (!task.config_id && task.config_id !== 0) {
-              console.error(`[listServiceComponents] 警告：任务缺少config_id字段！task对象:`, task);
+        try {
+          console.log(`[listServiceComponents] 处理组件 ${index + 1}/${components.results.length}, component_id:`, c.component_id);
+          
+          // 检查component_id
+          if (!c.component_id && c.component_id !== 0) {
+            console.error('[listServiceComponents] 组件缺少component_id!', c);
+            throw new Error('组件缺少component_id');
+          }
+          
+          // 查询服务层级的多个SOP
+          const componentSOPs = await env.DATABASE.prepare(`
+            SELECT sop.sop_id, sop.title, sop.category, scs.sort_order
+            FROM ServiceComponentSOPs scs
+            JOIN SOPDocuments sop ON sop.sop_id = scs.sop_id
+            WHERE scs.component_id = ? AND sop.is_deleted = 0
+            ORDER BY scs.sort_order
+          `).bind(c.component_id).all();
+          
+          console.log(`[listServiceComponents] 组件 ${c.component_id} 的服务SOP数量:`, componentSOPs.results?.length || 0);
+          
+          // 查询任务配置及其关联的SOP
+          const tasks = await env.DATABASE.prepare(`
+            SELECT 
+              config_id, component_id, task_order, task_name, 
+              assignee_user_id, notes, due_rule, due_value, 
+              estimated_hours, advance_days, created_at
+            FROM ServiceComponentTasks
+            WHERE component_id = ?
+            ORDER BY task_order
+          `).bind(c.component_id).all();
+          
+          console.log(`[listServiceComponents] 组件 ${c.component_id} 的任务数量:`, tasks.results?.length || 0);
+          
+          const tasksWithSOPs = await Promise.all(
+            (tasks.results || []).map(async (task) => {
+              console.log(`[listServiceComponents] 查询任务SOP, task对象:`, JSON.stringify(task));
+              
+              // 检查config_id是否存在
+              if (!task.config_id && task.config_id !== 0) {
+                console.error(`[listServiceComponents] 警告：任务缺少config_id字段！task对象:`, task);
+                return {
+                  ...task,
+                  sops: []
+                };
+              }
+              
+              const taskSOPs = await env.DATABASE.prepare(`
+                SELECT sop.sop_id, sop.title, sop.category, scts.sort_order
+                FROM ServiceComponentTaskSOPs scts
+                JOIN SOPDocuments sop ON sop.sop_id = scts.sop_id
+                WHERE scts.task_config_id = ? AND sop.is_deleted = 0
+                ORDER BY scts.sort_order
+              `).bind(task.config_id).all();
+              
+              console.log(`[listServiceComponents] 任务 ${task.config_id} 的SOP数量:`, taskSOPs.results?.length || 0);
+              
               return {
                 ...task,
-                sops: []
+                sops: taskSOPs.results || []
               };
-            }
-            
-            const taskSOPs = await env.DATABASE.prepare(`
-              SELECT sop.sop_id, sop.title, sop.category, scts.sort_order
-              FROM ServiceComponentTaskSOPs scts
-              JOIN SOPDocuments sop ON sop.sop_id = scts.sop_id
-              WHERE scts.task_config_id = ? AND sop.is_deleted = 0
-              ORDER BY scts.sort_order
-            `).bind(task.config_id).all();
-            
-            console.log(`[listServiceComponents] 任务 ${task.config_id} 的SOP数量:`, taskSOPs.results?.length || 0);
-            
-            return {
-              ...task,
-              sops: taskSOPs.results || []
-            };
-          })
-        );
-        
-        console.log(`[listServiceComponents] 组件 ${c.component_id} 处理完成`);
-        
-        return {
-          ...c,
-          component_sops: componentSOPs.results || [],
-          tasks: tasksWithSOPs,
-          delivery_months: c.delivery_months ? JSON.parse(c.delivery_months) : null
-        };
+            })
+          );
+          
+          console.log(`[listServiceComponents] 组件 ${c.component_id} 处理完成`);
+          
+          return {
+            ...c,
+            component_sops: componentSOPs.results || [],
+            tasks: tasksWithSOPs,
+            delivery_months: c.delivery_months ? JSON.parse(c.delivery_months) : null
+          };
+        } catch (err) {
+          console.error(`[listServiceComponents] 处理组件 ${c.component_id} 时出错:`, err);
+          throw err;
+        }
       })
     );
     
