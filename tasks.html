@@ -878,7 +878,12 @@
             const res = await fetch(`${apiBase}/sop?perPage=500`, { credentials: 'include' });
             if (res.ok) {
               const json = await res.json();
-              allSOPs = json.data || [];
+              // API返回的字段名是id，需要重命名为sop_id以保持一致性
+              allSOPs = (json.data || []).map(sop => ({
+                ...sop,
+                sop_id: sop.id
+              }));
+              console.log('[loadAllSOPs] 已載入', allSOPs.length, '個SOP');
             }
           } catch (e) {
             console.error('載入SOP失敗', e);
