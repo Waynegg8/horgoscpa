@@ -661,13 +661,25 @@ export async function handleTasks(request, env, me, requestId, url) {
 	// GET /api/v1/tasks/:id/adjustment-history - 查询调整历史
 	if (method === "GET" && url.pathname.match(/\/tasks\/\d+\/adjustment-history$/)) {
 		const taskId = url.pathname.split("/")[url.pathname.split("/").length - 2];
+		console.log('[路由] 进入调整历史路由, taskId:', taskId, 'path:', url.pathname);
 		
 		try {
+			console.log('[路由] 开始调用 getAdjustmentHistory');
 			const history = await getAdjustmentHistory(env, taskId);
+			console.log('[路由] getAdjustmentHistory 返回成功, 记录数:', history?.length);
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data: history, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
-			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+			console.error('[路由] getAdjustmentHistory 失败');
+			console.error('[路由] 错误信息:', err.message);
+			console.error('[路由] 错误堆栈:', err.stack);
+			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err), stack: err.stack }));
+			const resBody = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") {
+				resBody.error = String(err);
+				resBody.errorMessage = err.message;
+				resBody.stack = err.stack;
+			}
+			return jsonResponse(500, resBody, corsHeaders);
 		}
 	}
 
