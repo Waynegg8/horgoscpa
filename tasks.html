@@ -628,6 +628,17 @@
             t.status !== 'cancelled'
           );
           
+          // 构建任务依赖关系图（用于检测后续任务）
+          const taskDependencyMap = new Map(); // taskId -> [依赖它的任务列表]
+          sameServiceTasks.forEach(task => {
+            if (task.prerequisiteTaskId) {
+              if (!taskDependencyMap.has(task.prerequisiteTaskId)) {
+                taskDependencyMap.set(task.prerequisiteTaskId, []);
+              }
+              taskDependencyMap.get(task.prerequisiteTaskId).push(task);
+            }
+          });
+          
           quickAddContext = { 
             clientId, 
             clientServiceId, 
@@ -635,7 +646,9 @@
             serviceName, 
             serviceMonth,
             sameServiceTasks,
-            selectedSOPs: []
+            taskDependencyMap,
+            selectedSOPs: [],
+            affectedTasks: []
           };
           
           // 设置标题
@@ -649,11 +662,34 @@
           document.getElementById('quick-prerequisite').value = '';
           document.getElementById('quick-notes').value = '';
           document.getElementById('quick-selected-sops').innerHTML = '';
+          document.getElementById('quick-affected-tasks').style.display = 'none';
+          
+          // 填充任务模板下拉框（根据服务类型过滤）
+          const serviceTemplates = allTaskTemplates.filter(t => 
+            !t.service_id || t.service_id === serviceId
+          );
+          
+          if (serviceTemplates.length > 0) {
+            document.getElementById('quick-task-name').innerHTML = '<option value="">請選擇任務名稱</option>' +
+              serviceTemplates.map(t => `<option value="${t.template_name}">${t.template_name}</option>`).join('') +
+              '<option value="__custom__">📝 自訂任務名稱...</option>';
+          } else {
+            // 如果没有模板，显示为文本输入
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = 'quick-task-name';
+            input.placeholder = '請輸入任務名稱';
+            input.style.cssText = 'width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;';
+            document.getElementById('quick-task-name').replaceWith(input);
+          }
           
           // 填充前置任务下拉框
           if (sameServiceTasks.length > 0) {
             document.getElementById('quick-prerequisite').innerHTML = '<option value="">無前置任務</option>' +
-              sameServiceTasks.map(t => `<option value="${t.taskId}">${t.taskName}</option>`).join('');
+              sameServiceTasks.map(t => {
+                const dueInfo = t.dueDate ? ` (到期：${t.dueDate})` : '';
+                return `<option value="${t.taskId}">${t.taskName}${dueInfo}</option>`;
+              }).join('');
             document.getElementById('quick-prerequisite-group').style.display = 'block';
           } else {
             document.getElementById('quick-prerequisite-group').style.display = 'none';
@@ -668,10 +704,90 @@
           quickAddContext = null;
         };
         
+        // 检查选择的前置任务是否有后续任务
+        window.checkAffectedTasks = function() {
+          if (!quickAddContext) return;
+          
+          const prerequisiteTaskId = document.getElementById('quick-prerequisite').value;
+          const newTaskDueDate = document.getElementById('quick-due-date').value;
+          
+          if (!prerequisiteTaskId || !newTaskDueDate) {
+            document.getElementById('quick-affected-tasks').style.display = 'none';
+            quickAddContext.affectedTasks = [];
+            return;
+          }
+          
+          // 找出所有依赖选中的前置任务的后续任务
+          const affectedTasks = quickAddContext.taskDependencyMap.get(prerequisiteTaskId) || [];
+          
+          // 检查哪些后续任务的到期日早于或等于新任务的到期日
+          const conflictTasks = affectedTasks.filter(t => {
+            if (!t.dueDate) return false;
+            return new Date(t.dueDate) <= new Date(newTaskDueDate);
+          });
+          
+          quickAddContext.affectedTasks = conflictTasks;
+          
+          if (conflictTasks.length > 0) {
+            // 显示受影响的任务列表
+            let html = `
+              <div style="padding:12px;background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;">
+                <div style="font-weight:600;color:#92400e;margin-bottom:8px;">
+                  ⚠️ 檢測到後續任務到期日衝突
+                </div>
+                <div style="font-size:13px;color:#78350f;margin-bottom:8px;">
+                  以下後續任務的到期日需要延後：
+                </div>
+            `;
+            
+            conflictTasks.forEach(t => {
+              html += `
+                <div style="padding:4px 8px;background:white;border-radius:4px;margin-bottom:4px;font-size:13px;">
+                  📌 ${t.taskName} <span style="color:#dc2626;">（當前：${t.dueDate}）</span>
+                </div>
+              `;
+            });
+            
+            html += `
+                <label style="display:block;margin-top:8px;cursor:pointer;">
+                  <input type="checkbox" id="quick-adjust-subsequent" checked style="margin-right:6px;" />
+                  <span style="font-size:13px;color:#78350f;">自動延後後續任務到期日</span>
+                </label>
+              </div>
+            `;
+            
+            document.getElementById('quick-affected-tasks').innerHTML = html;
+            document.getElementById('quick-affected-tasks').style.display = 'block';
+          } else if (affectedTasks.length > 0) {
+            // 有后续任务但没有冲突
+            document.getElementById('quick-affected-tasks').innerHTML = `
+              <div style="padding:12px;background:#dbeafe;border:1px solid #3b82f6;border-radius:6px;">
+                <div style="font-size:13px;color:#1e40af;">
+                  ℹ️ 此前置任務有 ${affectedTasks.length} 個後續任務，到期日無衝突
+                </div>
+              </div>
+            `;
+            document.getElementById('quick-affected-tasks').style.display = 'block';
+          } else {
+            document.getElementById('quick-affected-tasks').style.display = 'none';
+          }
+        };
+        
         window.submitQuickTask = async function() {
           if (!quickAddContext) return;
           
-          const taskName = document.getElementById('quick-task-name').value.trim();
+          let taskName = document.getElementById('quick-task-name').value.trim();
+          
+          // 如果选择了"自定义任务名称"
+          if (taskName === '__custom__') {
+            taskName = prompt('請輸入自訂任務名稱：');
+            if (!taskName || !taskName.trim()) {
+              alert('請輸入任務名稱');
+              return;
+            }
+            taskName = taskName.trim();
+          }
+          
           const assigneeUserId = document.getElementById('quick-assignee').value || null;
           const dueDate = document.getElementById('quick-due-date').value || null;
           const prerequisiteTaskId = document.getElementById('quick-prerequisite').value || null;
@@ -681,6 +797,9 @@
             alert('請輸入任務名稱');
             return;
           }
+          
+          // 检查是否需要调整后续任务
+          const adjustSubsequent = document.getElementById('quick-adjust-subsequent')?.checked;
           
           try {
             const payload = {
@@ -708,7 +827,34 @@
             const json = await res.json();
             
             if (json.ok) {
-              alert('✅ 任務新增成功');
+              // 如果需要调整后续任务的到期日
+              if (adjustSubsequent && quickAddContext.affectedTasks.length > 0 && dueDate) {
+                const newDueDate = new Date(dueDate);
+                newDueDate.setDate(newDueDate.getDate() + 1); // 后续任务至少要晚一天
+                const minNextDueDate = newDueDate.toISOString().split('T')[0];
+                
+                // 批量更新后续任务的到期日
+                const updatePromises = quickAddContext.affectedTasks.map(async (task) => {
+                  if (new Date(task.dueDate) <= new Date(dueDate)) {
+                    try {
+                      await fetch(`${apiBase}/tasks/${task.taskId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ due_date: minNextDueDate })
+                      });
+                    } catch (e) {
+                      console.error(`更新任務 ${task.taskId} 失敗:`, e);
+                    }
+                  }
+                });
+                
+                await Promise.all(updatePromises);
+                alert('✅ 任務新增成功，已自動調整後續任務到期日');
+              } else {
+                alert('✅ 任務新增成功');
+              }
+              
               closeQuickAddModal();
               loadAllTasks(); // 重新加载任务列表
             } else {
@@ -720,8 +866,9 @@
           }
         };
         
-        // SOP 相关功能
+        // SOP 和任务模板相关功能
         let allSOPs = [];
+        let allTaskTemplates = [];
         
         // 加载SOPs
         async function loadAllSOPs() {
@@ -733,6 +880,19 @@
             }
           } catch (e) {
             console.error('載入SOP失敗', e);
+          }
+        }
+        
+        // 加载任务模板
+        async function loadAllTaskTemplates() {
+          try {
+            const res = await fetch(`${apiBase}/task-templates?perPage=500`, { credentials: 'include' });
+            if (res.ok) {
+              const json = await res.json();
+              allTaskTemplates = json.data || [];
+            }
+          } catch (e) {
+            console.error('載入任務模板失敗', e);
           }
         }
         
@@ -832,6 +992,7 @@
         // 啟動
         init();
         loadAllSOPs(); // 加载SOPs
+        loadAllTaskTemplates(); // 加载任务模板
       })();
     </script>
     
@@ -842,8 +1003,9 @@
         
         <div style="margin-bottom:16px;">
           <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">任務名稱 <span style="color:#dc2626;">*</span></label>
-          <input type="text" id="quick-task-name" placeholder="例如：提交營業稅申報" 
-                 style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;" />
+          <select id="quick-task-name" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+            <option value="">請選擇任務名稱</option>
+          </select>
         </div>
         
         <div style="margin-bottom:16px;">
@@ -853,20 +1015,25 @@
           </select>
         </div>
         
-        <div style="margin-bottom:16px;">
-          <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">到期日</label>
-          <input type="date" id="quick-due-date" 
-                 style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;" />
-        </div>
-        
         <div id="quick-prerequisite-group" style="margin-bottom:16px;display:none;">
           <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">
             🔗 前置任務
             <span style="font-size:12px;color:#6b7280;font-weight:normal;">（此任務需要等待哪個任務完成？）</span>
           </label>
-          <select id="quick-prerequisite" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+          <select id="quick-prerequisite" onchange="checkAffectedTasks()" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
             <option value="">無前置任務</option>
           </select>
+        </div>
+        
+        <div style="margin-bottom:16px;">
+          <label style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">到期日</label>
+          <input type="date" id="quick-due-date" onchange="checkAffectedTasks()"
+                 style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;" />
+        </div>
+        
+        <!-- 后续任务冲突提示区域 -->
+        <div id="quick-affected-tasks" style="margin-bottom:16px;display:none;">
+          <!-- 动态填充 -->
         </div>
         
         <div style="margin-bottom:16px;">
