@@ -1978,36 +1978,39 @@
                     <!-- SOP列表 -->
                     <div id="task-sop-list-${idx}-${clientServiceId}" style="max-height: 150px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 4px; padding: 6px; background: white;">
                       ${allSOPs.length > 0 ? (() => {
-                        // 按分类分组
-                        const grouped = {};
-                        allSOPs.forEach(sop => {
-                          const cat = sop.category || 'other';
-                          if (!grouped[cat]) grouped[cat] = [];
-                          grouped[cat].push(sop);
-                        });
+                        // 获取当前服务的service_code
+                        const currentService = clientDetail.services.find(s => s.client_service_id === clientServiceId);
+                        const currentServiceType = allServices.find(st => st.service_id === currentService?.service_id);
+                        const serviceCode = currentServiceType?.service_code || '';
                         
-                        return Object.entries(grouped).map(([category, sops]) => {
-                          const catName = getCategoryText(category);
+                        // 筛选：只显示scope=task且category匹配的SOP
+                        const filteredSOPs = allSOPs.filter(sop => 
+                          sop.scope === 'task' && 
+                          serviceCode &&
+                          (sop.category === serviceCode || sop.category === serviceCode.toLowerCase() || sop.category === serviceCode.toUpperCase())
+                        );
+                        
+                        // 按标题排序（不需要分类）
+                        const sortedSOPs = filteredSOPs.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+                        
+                        if (sortedSOPs.length === 0) {
+                          return '<div style="color: #9ca3af; font-size: 12px; text-align: center; padding: 10px;">暫無適用於此服務的任務層級SOP</div>';
+                        }
+                        
+                        return sortedSOPs.map(sop => {
+                          // 确保类型匹配：将sop_ids数组中的值转换为数字进行比较
+                          const isChecked = task.sop_ids && task.sop_ids.map(id => parseInt(id)).includes(parseInt(sop.sop_id));
                           return `
-                            <div style="margin-bottom: 6px;">
-                              <div style="font-weight: 600; font-size: 11px; color: #6b7280; margin-bottom: 3px; padding: 2px 6px; background: #e5e7eb; border-radius: 3px;">${catName}</div>
-                              ${sops.map(sop => {
-                                // 确保类型匹配：将sop_ids数组中的值转换为数字进行比较
-                                const isChecked = task.sop_ids && task.sop_ids.map(id => parseInt(id)).includes(parseInt(sop.sop_id));
-                                return `
-                                  <label class="sop-option" data-sop-title="${sop.title.toLowerCase()}" data-sop-category="${category}"
-                                         style="display: flex; align-items: center; gap: 6px; padding: 3px 4px; cursor: pointer; font-size: 13px; margin-bottom: 2px; margin-left: 8px; border-radius: 3px;" 
-                                         onmouseover="this.style.background='#e5e7eb'" 
-                                         onmouseout="this.style.background='transparent'">
-                                    <input type="checkbox" value="${sop.sop_id}" 
-                                           ${isChecked ? 'checked' : ''}
-                                           onchange="updateTaskSOPs${clientServiceId}(${idx}, this)"
-                                           style="cursor: pointer; flex-shrink: 0;" />
-                                    <span style="color: #374151;">${sop.title}</span>
-                                  </label>
-                                `;
-                              }).join('')}
-                            </div>
+                            <label class="sop-option" data-sop-title="${sop.title.toLowerCase()}"
+                                   style="display: flex; align-items: center; gap: 8px; padding: 8px; cursor: pointer; font-size: 13px; margin-bottom: 4px; border-radius: 4px; border: 1px solid ${isChecked ? '#3b82f6' : '#e5e7eb'}; background: ${isChecked ? '#eff6ff' : 'white'};" 
+                                   onmouseover="if(!this.querySelector('input').checked) this.style.background='#f3f4f6'" 
+                                   onmouseout="if(!this.querySelector('input').checked) this.style.background='white'">
+                              <input type="checkbox" value="${sop.sop_id}" 
+                                     ${isChecked ? 'checked' : ''}
+                                     onchange="updateTaskSOPs${clientServiceId}(${idx}, this)"
+                                     style="cursor: pointer; flex-shrink: 0; width: 16px; height: 16px;" />
+                              <span style="color: #374151;">${sop.title}</span>
+                            </label>
                           `;
                         }).join('');
                       })() : '<div style="color: #9ca3af; font-size: 12px; text-align: center; padding: 10px;">暫無SOP</div>'}
@@ -2391,34 +2394,38 @@
       // 初始化任务配置区域（默认手动模式）
       window[`loadTemplateStages${clientServiceId}`]('');
       
-      // 渲染SOP列表
+      // 渲染SOP列表（服务层级SOP）
       const sopListContainer = document.getElementById(`new-comp-sop-list-${clientServiceId}`);
       if (sopListContainer && allSOPs && allSOPs.length > 0) {
-        // 按分类分组
-        const grouped = {};
-        allSOPs.forEach(sop => {
-          const cat = sop.category || 'other';
-          if (!grouped[cat]) grouped[cat] = [];
-          grouped[cat].push(sop);
-        });
+        // 获取当前服务的service_code
+        const currentService = clientDetail.services.find(s => s.client_service_id === clientServiceId);
+        const currentServiceType = allServices.find(st => st.service_id === currentService?.service_id);
+        const serviceCode = currentServiceType?.service_code || '';
+        
+        console.log('[Service SOP] clientServiceId:', clientServiceId, 'serviceCode:', serviceCode);
+        
+        // 筛选：只显示scope=service且category匹配的SOP
+        const filteredSOPs = allSOPs.filter(sop => 
+          sop.scope === 'service' && 
+          serviceCode &&
+          (sop.category === serviceCode || sop.category === serviceCode.toLowerCase() || sop.category === serviceCode.toUpperCase())
+        );
+        
+        // 按标题排序（不需要分类）
+        const sortedSOPs = filteredSOPs.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+        
+        console.log('[Service SOP] Filtered:', filteredSOPs.length, 'SOPs');
         
         let html = '';
-        Object.entries(grouped).forEach(([category, sops]) => {
-          const catName = getCategoryText(category);
-          html += '<div style="margin-bottom: 6px;">';
-          html += '<div style="font-weight: 600; font-size: 11px; color: #6b7280; margin-bottom: 3px; padding: 2px 6px; background: #e5e7eb; border-radius: 3px;">' + catName + '</div>';
-          
-          sops.forEach(sop => {
-            const sopTitle = sop.title || '未命名';
-            html += '<label class="comp-sop-option" data-sop-title="' + sopTitle.toLowerCase() + '" data-sop-category="' + category + '" style="display: flex; align-items: center; gap: 4px; padding: 3px 4px; cursor: pointer; font-size: 13px; margin-bottom: 2px; margin-left: 8px; border-radius: 3px;" onmouseover="this.style.background=\'#e5e7eb\'" onmouseout="this.style.background=\'transparent\'">';
-            html += '<input type="checkbox" class="comp-sop-checkbox" value="' + sop.sop_id + '" style="cursor: pointer; flex-shrink: 0; width: 13px; height: 13px; margin: 0; padding: 0;" onchange="updateCompSOPSelection' + clientServiceId + '(this)" />';
-            html += '<span style="color: #374151; line-height: 1.2;">' + sopTitle + '</span>';
-            html += '</label>';
-          });
-          
-          html += '</div>';
+        sortedSOPs.forEach(sop => {
+          const sopTitle = sop.title || '未命名';
+          html += '<label class="comp-sop-option" data-sop-title="' + sopTitle.toLowerCase() + '" style="display: flex; align-items: center; gap: 8px; padding: 8px; cursor: pointer; font-size: 13px; margin-bottom: 6px; border-radius: 4px; border: 1px solid #e5e7eb;" onmouseover="this.style.background=\'#f3f4f6\'" onmouseout="this.style.background=\'white\'">';
+          html += '<input type="checkbox" class="comp-sop-checkbox" value="' + sop.sop_id + '" style="cursor: pointer; flex-shrink: 0; width: 16px; height: 16px; margin: 0; padding: 0;" onchange="updateCompSOPSelection' + clientServiceId + '(this)" />';
+          html += '<span style="color: #374151; line-height: 1.3;">' + sopTitle + '</span>';
+          html += '</label>';
         });
-        sopListContainer.innerHTML = html;
+        
+        sopListContainer.innerHTML = html || '<div style="color: #9ca3af; text-align: center; padding: 20px;">暫無適用於此服務的服務層級SOP</div>';
       } else {
         sopListContainer.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">暫無SOP</div>';
       }
