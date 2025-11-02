@@ -326,8 +326,6 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         const days = parseInt(params.get('activity_days') || '30', 10);
         const filterUserId = params.get('activity_user_id');
         
-        console.log('[Dashboard] Recent Activities - Days:', days, 'FilterUserId:', filterUserId);
-        
         const daysAgo = new Date();
         daysAgo.setDate(daysAgo.getDate() - days);
         const daysAgoStr = daysAgo.toISOString();
@@ -507,21 +505,12 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         }
         
         // 合并并排序（添加 activity_type 标识）
-        console.log('[Dashboard] Activity counts:', {
-          adjustments: adjustments?.results?.length || 0,
-          statusUpdates: statusUpdates?.results?.length || 0,
-          leaveApplications: leaveApplications?.results?.length || 0,
-          timesheetReminders: timesheetReminders?.length || 0
-        });
-        
         const allActivities = [
           ...(adjustments?.results || []).map(a => ({...a, activity_type: 'due_date_adjustment'})),
           ...(statusUpdates?.results || []).map(s => ({...s, activity_type: 'status_update'})),
           ...(leaveApplications?.results || []).map(l => ({...l, activity_type: 'leave_application'})),
           ...timesheetReminders
         ].sort((a, b) => (b.activity_time || '').localeCompare(a.activity_time || ''));
-        
-        console.log('[Dashboard] Total activities before formatting:', allActivities.length);
         
         // 格式化活动记录
         res.recentActivities = allActivities.slice(0, 15).map(act => {
@@ -627,14 +616,8 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           }
           return null;
         }).filter(Boolean);
-        
-        console.log('[Dashboard] Final recentActivities count:', res.recentActivities.length);
-        if (res.recentActivities.length > 0) {
-          console.log('[Dashboard] Sample activity:', res.recentActivities[0]);
-        }
       } catch (err) {
         console.error('[仪表板] 获取最近动态失败:', err);
-        console.error('[仪表板] 错误详情:', err.message, err.stack);
         res.recentActivities = [];
       }
 

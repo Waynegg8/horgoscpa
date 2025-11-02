@@ -43,7 +43,7 @@
         let currentYm = null; // 当前查看的年月，格式：YYYY-MM
         let financeMode = 'month'; // 'month' 或 'ytd'（本年累计）
         let financeYm = null; // 财务查看的年月
-        let activityDays = 7; // 最近动态天数
+        let activityDays = 30; // 最近动态天数
         let activityUserId = ''; // 最近动态筛选的员工ID
 
         function formatLocalDate(d){
@@ -421,7 +421,7 @@
           let activitiesHtml = '';
           if (recentActivities.length > 0) {
             activitiesHtml = recentActivities.map(act => {
-              if (act.type === 'due_date_adjustment') {
+              if (act.activity_type === 'due_date_adjustment') {
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
                   <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
                     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
@@ -436,7 +436,7 @@
                     ${act.reason ? `<div style="font-size:13px;color:#6b7280;margin-top:6px;line-height:1.5;padding:8px;background:#fffbeb;border-radius:4px;">${act.reason}</div>` : ''}
                   </div>
                 </a>`;
-              } else if (act.type === 'status_update') {
+              } else if (act.activity_type === 'status_update') {
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
                   <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
                     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
@@ -451,7 +451,7 @@
                     ${act.note ? `<div style="font-size:13px;color:#4b5563;margin-top:6px;line-height:1.5;padding:8px;background:${act.note.startsWith('🚫') || act.note.startsWith('⏰') ? '#fef2f2' : '#f0fdf4'};border-radius:4px;">${act.note}</div>` : ''}
                   </div>
                 </a>`;
-              } else if (act.type === 'leave_application') {
+              } else if (act.activity_type === 'leave_application') {
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
                   <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
                     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
@@ -465,7 +465,7 @@
                     ${act.reason ? `<div style="font-size:13px;color:#6b7280;margin-top:6px;line-height:1.5;">${act.reason}</div>` : ''}
                   </div>
                 </a>`;
-              } else if (act.type === 'timesheet_reminder') {
+              } else if (act.activity_type === 'timesheet_reminder') {
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
                   <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;background:#fef2f2;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
                     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
