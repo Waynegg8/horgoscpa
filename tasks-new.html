@@ -101,56 +101,6 @@
       }
     }
     
-    .stages-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    
-    .stage-input-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .stage-input-wrapper input {
-      flex: 1;
-    }
-    
-    .btn-remove-stage {
-      padding: 6px;
-      background: #fee;
-      border: 1px solid #fcc;
-      border-radius: 6px;
-      cursor: pointer;
-      color: #c00;
-      transition: all 0.2s;
-    }
-    
-    .btn-remove-stage:hover {
-      background: #fcc;
-    }
-    
-    .btn-add-stage {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      background: white;
-      border: 1px dashed #cbd5e1;
-      border-radius: 8px;
-      color: #64748b;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 14px;
-    }
-    
-    .btn-add-stage:hover {
-      background: #f1f5f9;
-      border-color: var(--primary-color);
-      color: var(--primary-color);
-    }
     
     .content-card {
       border-radius: 8px;
@@ -287,36 +237,20 @@
           </div>
         </div>
 
-        <!-- 進階選項 -->
+        <!-- 備註 -->
         <div class="form-section">
           <div class="form-section-title">
-            <span class="material-symbols-outlined">tune</span>
-            進階選項
+            <span class="material-symbols-outlined">notes</span>
+            任務備註（可選）
           </div>
           
-          <div class="form-row-2col">
+          <div class="form-row-1col">
             <div class="form-field">
-              <label for="prerequisite_task_id">前置任務</label>
-              <select id="prerequisite_task_id">
-                <option value="">無前置任務</option>
-              </select>
+              <label for="task_notes">備註說明</label>
+              <textarea id="task_notes" rows="3" placeholder="輸入任何需要記錄的額外資訊，例如：特殊要求、注意事項等..."></textarea>
               <div class="field-hint">
                 <span class="material-symbols-outlined">help</span>
-                設定此任務必須等待另一個任務完成後才能開始
-              </div>
-            </div>
-            <div class="form-field">
-              <label>任務階段</label>
-              <div id="stages_container" class="stages-list">
-                <!-- 階段輸入框將動態添加 -->
-              </div>
-              <button type="button" onclick="addStage()" class="btn-add-stage">
-                <span class="material-symbols-outlined">add</span>
-                添加階段
-              </button>
-              <div class="field-hint" style="margin-top: 8px;">
-                <span class="material-symbols-outlined">help</span>
-                將任務拆分為多個階段，便於追蹤進度
+                記錄這個任務的特殊說明或注意事項
               </div>
             </div>
           </div>
@@ -347,17 +281,11 @@
       const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       document.getElementById('service_month').value = yearMonth;
       
-      // 添加第一個階段輸入框
-      addStage();
-      
       // 載入客戶服務列表
       await loadClientServices();
       
       // 載入用戶列表
       await loadUsers();
-      
-      // 載入前置任務選項
-      await loadPrerequisiteTasks();
       
       // 設定監聽器
       document.getElementById('due_date').addEventListener('change', checkDueDateChange);
@@ -365,22 +293,6 @@
       document.getElementById('service_month').addEventListener('change', calculateDefaultDueDate);
     }
     
-    async function loadPrerequisiteTasks() {
-      try {
-        // 載入未完成的任務作為前置任務選項
-        const res = await fetch(`${apiBase}/tasks?status=pending,in_progress&limit=100`, { credentials: 'include' });
-        if (res.status === 401) return;
-        const json = await res.json();
-        
-        const select = document.getElementById('prerequisite_task_id');
-        if (json.ok && Array.isArray(json.data)) {
-          select.innerHTML = '<option value="">無前置任務</option>' + 
-            json.data.map(t => `<option value="${t.taskId}">${t.taskName} (${t.dueDate || '未設定期限'})</option>`).join('');
-        }
-      } catch (err) {
-        console.error('載入前置任務失敗:', err);
-      }
-    }
     
     async function loadClientServices() {
       try {
@@ -451,49 +363,6 @@
       }
     }
     
-    function addStage() {
-      const container = document.getElementById('stages_container');
-      const stageCount = container.querySelectorAll('.stage_input').length + 1;
-      const isFirst = stageCount === 1;
-      
-      const wrapper = document.createElement('div');
-      wrapper.className = 'stage-input-wrapper';
-      
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'stage_input';
-      input.placeholder = isFirst ? '階段 1（可選）' : `階段 ${stageCount}`;
-      
-      wrapper.appendChild(input);
-      
-      // 第一個階段不顯示刪除按鈕
-      if (!isFirst) {
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'btn-remove-stage';
-        removeBtn.innerHTML = '✕';
-        removeBtn.title = '刪除此階段';
-        removeBtn.onclick = function() {
-          wrapper.remove();
-          updateStagePlaceholders();
-        };
-        wrapper.appendChild(removeBtn);
-      }
-      
-      container.appendChild(wrapper);
-    }
-    
-    function updateStagePlaceholders() {
-      const wrappers = document.querySelectorAll('.stage-input-wrapper');
-      wrappers.forEach((wrapper, index) => {
-        const input = wrapper.querySelector('.stage_input');
-        if (index === 0) {
-          input.placeholder = '階段 1（可選）';
-        } else {
-          input.placeholder = `階段 ${index + 1}`;
-        }
-      });
-    }
     
     async function submitTask(event) {
       event.preventDefault();
@@ -508,20 +377,13 @@
         return;
       }
       
-      // 收集階段名稱
-      const stageInputs = document.querySelectorAll('.stage_input');
-      const stageNames = Array.from(stageInputs)
-        .map(input => input.value.trim())
-        .filter(name => name.length > 0);
-      
       const data = {
         client_service_id: parseInt(document.getElementById('client_service_id').value),
         task_name: document.getElementById('task_name').value.trim(),
         service_month: document.getElementById('service_month').value,
         due_date: dueDate || null,
         assignee_user_id: document.getElementById('assignee_user_id').value ? parseInt(document.getElementById('assignee_user_id').value) : null,
-        prerequisite_task_id: document.getElementById('prerequisite_task_id').value ? parseInt(document.getElementById('prerequisite_task_id').value) : null,
-        stage_names: stageNames
+        notes: document.getElementById('task_notes').value.trim() || null
       };
       
       // 如果調整了期限，添加相關欄位
