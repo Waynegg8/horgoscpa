@@ -237,20 +237,20 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         };
       } catch (_) {}
 
-      // Employee tasks (各员工任务状态：已完成/进行中/逾期)
+      // Employee tasks (各员工任务状态：已完成/进行中/逾期) - 按指定月份查询
       try {
         const rows = await env.DATABASE.prepare(
           `SELECT u.user_id, u.name, u.username,
-                  COUNT(CASE WHEN t.status = 'completed' THEN 1 END) AS completed,
-                  COUNT(CASE WHEN t.status = 'in_progress' THEN 1 END) AS inProgress,
-                  COUNT(CASE WHEN t.status NOT IN ('completed','cancelled') AND t.due_date < ? THEN 1 END) AS overdue,
-                  COUNT(CASE WHEN t.status = 'pending' THEN 1 END) AS pending
+                  COUNT(CASE WHEN t.status = 'completed' AND t.service_month = ? THEN 1 END) AS completed,
+                  COUNT(CASE WHEN t.status = 'in_progress' AND t.service_month = ? THEN 1 END) AS inProgress,
+                  COUNT(CASE WHEN t.status NOT IN ('completed','cancelled') AND t.due_date < ? AND t.service_month = ? THEN 1 END) AS overdue,
+                  COUNT(CASE WHEN t.status = 'pending' AND t.service_month = ? THEN 1 END) AS pending
            FROM Users u
            LEFT JOIN ActiveTasks t ON t.assignee_user_id = u.user_id AND t.is_deleted = 0
            WHERE u.is_deleted = 0
            GROUP BY u.user_id, u.name, u.username
            ORDER BY overdue DESC, inProgress DESC`
-        ).bind(today).all();
+        ).bind(targetYm, targetYm, today, targetYm, targetYm).all();
         
         res.employeeTasks = (rows?.results || []).map(r => ({
           userId: r.user_id,

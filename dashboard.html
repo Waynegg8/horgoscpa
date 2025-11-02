@@ -448,22 +448,38 @@
           
           // === 右侧：从上到下 ===
           
-          // 1. 各员工任务状态（列表形式）
+          console.log('[Dashboard] Employee Tasks:', empTasks);
+          console.log('[Dashboard] Employee Hours:', empHours);
+          console.log('[Dashboard] Receipts Pending:', receiptsPending);
+          
+          // 1. 各员工任务状态（列表形式，带月份筛选）
           const tasksFrag = document.createElement('div');
-          tasksFrag.innerHTML = listCard('各員工任務狀態', tasksHtml);
-          rightColumn.appendChild(tasksFrag.firstElementChild);
+          tasksFrag.innerHTML = listCardWithMonthDropdown('各員工任務狀態', tasksHtml, currentYm);
+          const tasksCard = tasksFrag.firstElementChild;
+          rightColumn.appendChild(tasksCard);
+          
+          // 添加任务状态的月份筛选事件监听
+          if (tasksCard) {
+            const tasksDropdown = tasksCard.querySelector('.month-dropdown');
+            if (tasksDropdown) {
+              tasksDropdown.addEventListener('change', (e) => {
+                currentYm = e.target.value;
+                refresh();
+              });
+            }
+          }
           
           // 2. 各员工工时（带月份下拉选单）
           const hoursFrag = document.createElement('div');
           hoursFrag.innerHTML = listCardWithMonthDropdown('各員工工時', hoursHtml, currentYm);
-          rightColumn.appendChild(hoursFrag.firstElementChild);
+          const hoursCard = hoursFrag.firstElementChild;
+          rightColumn.appendChild(hoursCard);
           
-          // 添加月份下拉选单事件监听
-          const hoursCard = rightColumn.querySelector('.card.list');
+          // 添加工时的月份下拉选单事件监听
           if (hoursCard) {
-            const dropdown = hoursCard.querySelector('.month-dropdown');
-            if (dropdown) {
-              dropdown.addEventListener('change', (e) => {
+            const hoursDropdown = hoursCard.querySelector('.month-dropdown');
+            if (hoursDropdown) {
+              hoursDropdown.addEventListener('change', (e) => {
                 currentYm = e.target.value;
                 refresh();
               });
