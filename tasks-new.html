@@ -314,6 +314,26 @@
     </div>
   </div>
 
+  <!-- SOP選擇器彈窗 -->
+  <div id="sopModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+      <div style="padding: 20px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 600;">選擇SOP文檔</h3>
+        <button onclick="closeSOPModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">×</button>
+      </div>
+      <div style="padding: 16px; overflow-y: auto; flex: 1;">
+        <input type="text" id="sopSearchInput" placeholder="搜尋SOP標題..." style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 12px;" oninput="filterSOPs()" />
+        <div id="sopList" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- SOP列表將動態添加 -->
+        </div>
+      </div>
+      <div style="padding: 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 12px;">
+        <button onclick="closeSOPModal()" class="btn btn-secondary">取消</button>
+        <button onclick="confirmSOPSelection()" class="btn btn-primary">確定</button>
+      </div>
+    </div>
+  </div>
+
   <div id="footer-placeholder"></div>
 
   <script src="/assets/js/components/bootstrap.js?v=3"></script>
@@ -324,8 +344,11 @@
     let clients = [];
     let services = [];
     let users = [];
+    let sops = [];
     let taskCounter = 0;
     let currentClientServiceId = null;
+    let currentSOPTaskId = null;
+    let selectedSOPs = {}; // { taskId: [sopId1, sopId2] }
     
     async function init() {
       // 設定當前月份為默認值
@@ -341,6 +364,9 @@
       
       // 載入用戶列表
       await loadUsers();
+      
+      // 載入SOP列表
+      await loadSOPs();
       
       // 添加第一個任務
       addTask();
@@ -451,6 +477,20 @@
       }
     }
     
+    async function loadSOPs() {
+      try {
+        const res = await fetch(`${apiBase}/sop?perPage=200`, { credentials: 'include' });
+        if (res.status === 401) return;
+        const json = await res.json();
+        
+        if (json.ok && Array.isArray(json.data)) {
+          sops = json.data;
+        }
+      } catch (err) {
+        console.error('載入SOP列表失敗:', err);
+      }
+    }
+    
     function addTask() {
       taskCounter++;
       const container = document.getElementById('tasks_container');
@@ -494,7 +534,7 @@
           </div>
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-bottom: 12px;">
           <div class="form-field">
             <label style="font-size: 13px;">到期日</label>
             <input type="date" name="due_date" value="${defaultDueDate}" />
@@ -502,6 +542,18 @@
           <div class="form-field">
             <label style="font-size: 13px;">備註</label>
             <input type="text" name="notes" placeholder="選填" />
+          </div>
+        </div>
+        
+        <div class="form-field">
+          <label style="font-size: 13px;">關聯SOP文檔</label>
+          <button type="button" class="btn-select-sop" onclick="openSOPSelector('${taskId}')" style="width: 100%; text-align: left; padding: 8px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+            <span class="sop-selected-text" style="color: #64748b;">點擊選擇SOP文檔...</span>
+            <span class="material-symbols-outlined" style="font-size: 18px; color: #64748b;">chevron_right</span>
+          </button>
+          <input type="hidden" name="sop_ids" value="" />
+          <div class="field-hint" style="margin-top: 4px; font-size: 11px; color: #64748b;">
+            可選擇多個SOP作為任務參考文檔
           </div>
         </div>
       `;
@@ -555,6 +607,145 @@
         upBtn.style.opacity = index === 0 ? '0.3' : '1';
         downBtn.style.opacity = index === cards.length - 1 ? '0.3' : '1';
       });
+    }
+    
+    function openSOPSelector(taskId) {
+      currentSOPTaskId = taskId;
+      const modal = document.getElementById('sopModal');
+      modal.style.display = 'flex';
+      
+      // 渲染SOP列表
+      renderSOPList();
+    }
+    
+    function closeSOPModal() {
+      document.getElementById('sopModal').style.display = 'none';
+      currentSOPTaskId = null;
+    }
+    
+    function renderSOPList() {
+      const listContainer = document.getElementById('sopList');
+      const taskSelectedSOPs = selectedSOPs[currentSOPTaskId] || [];
+      
+      // 按類別分組
+      const sopsByCategory = {};
+      sops.forEach(sop => {
+        const cat = sop.category || '未分類';
+        if (!sopsByCategory[cat]) sopsByCategory[cat] = [];
+        sopsByCategory[cat].push(sop);
+      });
+      
+      // 渲染分組列表
+      let html = '';
+      Object.keys(sopsByCategory).sort().forEach(category => {
+        const categorySOPs = sopsByCategory[category];
+        const categoryId = 'cat_' + category.replace(/[^a-zA-Z0-9]/g, '_');
+        
+        html += `
+          <div style="margin-bottom: 16px;">
+            <div style="font-weight: 600; font-size: 14px; color: #475569; margin-bottom: 8px; padding: 8px 12px; background: #f1f5f9; border-radius: 6px; display: flex; align-items: center; cursor: pointer;" onclick="toggleCategory('${categoryId}')">
+              <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 8px;">folder</span>
+              ${category} (${categorySOPs.length})
+              <span class="material-symbols-outlined category-arrow" id="${categoryId}_arrow" style="margin-left: auto; font-size: 20px;">expand_more</span>
+            </div>
+            <div id="${categoryId}" class="category-content" style="display: block; margin-left: 12px; padding-left: 12px; border-left: 2px solid #e2e8f0;">
+              ${categorySOPs.map(sop => {
+                const isChecked = taskSelectedSOPs.includes(sop.sop_id);
+                const searchText = (sop.title || '').toLowerCase() + ' ' + category.toLowerCase();
+                return `
+                  <label style="display: flex; align-items: center; padding: 10px; margin: 4px 0; background: ${isChecked ? '#eff6ff' : 'white'}; border: 1px solid ${isChecked ? '#3b82f6' : '#e5e7eb'}; border-radius: 6px; cursor: pointer; transition: all 0.2s;" class="sop-item" data-search="${searchText}" onmouseover="if(!this.querySelector('input').checked) this.style.background='#f8fafc'" onmouseout="if(!this.querySelector('input').checked) this.style.background='white'">
+                    <input type="checkbox" value="${sop.sop_id}" ${isChecked ? 'checked' : ''} onchange="toggleSOPCheck(this)" style="margin-right: 10px; width: 16px; height: 16px; cursor: pointer;" />
+                    <div style="flex: 1;">
+                      <div style="font-weight: 500; font-size: 13px; color: #1e293b;">${sop.title || '未命名'}</div>
+                    </div>
+                    ${isChecked ? '<span style="color: #3b82f6; font-size: 18px;">✓</span>' : ''}
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      });
+      
+      listContainer.innerHTML = html;
+    }
+    
+    function toggleCategory(categoryId) {
+      const content = document.getElementById(categoryId);
+      const arrow = document.getElementById(categoryId + '_arrow');
+      
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        arrow.textContent = 'expand_more';
+      } else {
+        content.style.display = 'none';
+        arrow.textContent = 'chevron_right';
+      }
+    }
+    
+    function toggleSOPCheck(checkbox) {
+      const label = checkbox.closest('.sop-item');
+      if (checkbox.checked) {
+        label.style.background = '#eff6ff';
+        label.style.borderColor = '#3b82f6';
+        label.innerHTML = label.innerHTML.replace('</label>', '<span style="color: #3b82f6; font-size: 20px;">✓</span></label>');
+      } else {
+        label.style.background = '#f9fafb';
+        label.style.borderColor = '#e5e7eb';
+        const checkmark = label.querySelector('span');
+        if (checkmark) checkmark.remove();
+      }
+    }
+    
+    function filterSOPs() {
+      const searchText = document.getElementById('sopSearchInput').value.toLowerCase();
+      const items = document.querySelectorAll('.sop-item');
+      
+      items.forEach(item => {
+        const searchData = item.dataset.search || '';
+        if (searchData.includes(searchText)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+      
+      // 如果搜尋，展開所有類別
+      if (searchText) {
+        document.querySelectorAll('.category-content').forEach(cat => {
+          cat.style.display = 'block';
+        });
+        document.querySelectorAll('.category-arrow').forEach(arrow => {
+          arrow.textContent = 'expand_more';
+        });
+      }
+    }
+    
+    function confirmSOPSelection() {
+      const checkedBoxes = document.querySelectorAll('#sopList input[type="checkbox"]:checked');
+      const sopIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+      
+      selectedSOPs[currentSOPTaskId] = sopIds;
+      
+      // 更新任務卡片顯示
+      const taskCard = document.querySelector(`[data-task-id="${currentSOPTaskId}"]`);
+      if (taskCard) {
+        const textSpan = taskCard.querySelector('.sop-selected-text');
+        const hiddenInput = taskCard.querySelector('[name="sop_ids"]');
+        
+        if (sopIds.length > 0) {
+          const sopTitles = sops.filter(s => sopIds.includes(s.sop_id)).map(s => s.title).join(', ');
+          textSpan.textContent = `已選擇 ${sopIds.length} 個SOP: ${sopTitles.substring(0, 40)}${sopTitles.length > 40 ? '...' : ''}`;
+          textSpan.style.color = '#1e293b';
+          hiddenInput.value = sopIds.join(',');
+        } else {
+          textSpan.textContent = '點擊選擇SOP文檔...';
+          textSpan.style.color = '#64748b';
+          hiddenInput.value = '';
+        }
+      }
+      
+      closeSOPModal();
     }
     
     
