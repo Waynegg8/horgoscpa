@@ -116,12 +116,28 @@
       </div>
       <div class="form-row-1col">
         <div class="form-field">
-          <label for="taskNotes">備註</label>
-          <textarea id="taskNotes" rows="3"></textarea>
+          <label for="statusNote">💬 最新狀態說明</label>
+          <textarea id="statusNote" rows="3" readonly style="background:#f9fafb;cursor:default;"></textarea>
+          <p style="font-size:12px;color:#6b7280;margin-top:4px;">此內容透過「更新狀態說明」按鈕來更新</p>
         </div>
       </div>
+      
+      <div id="blockerReasonSection" class="form-row-1col" style="display:none;">
+        <div class="form-field">
+          <label for="blockerReason" style="color:#dc2626;">🚫 阻礙原因</label>
+          <textarea id="blockerReason" rows="2" readonly style="background:#fef2f2;cursor:default;border:1px solid #fecaca;"></textarea>
+        </div>
+      </div>
+      
+      <div id="overdueReasonSection" class="form-row-1col" style="display:none;">
+        <div class="form-field">
+          <label for="overdueReason" style="color:#dc2626;">⏰ 逾期原因</label>
+          <textarea id="overdueReason" rows="2" readonly style="background:#fef2f2;cursor:default;border:1px solid #fecaca;"></textarea>
+        </div>
+      </div>
+      
       <div class="form-actions">
-        <button type="button" class="btn btn-primary" onclick="saveTaskInfo()">儲存變更</button>
+        <button type="button" class="btn btn-secondary" onclick="showAdjustmentHistory()">📅 查看調整歷史</button>
       </div>
     </div>
 
@@ -387,7 +403,29 @@
         document.getElementById('assigneeUser').value = currentTask.assignee_user_id || '';
         document.getElementById('dueDate').value = currentTask.due_date || '';
         document.getElementById('originalDueDate').value = currentTask.original_due_date || currentTask.due_date || '';
-        document.getElementById('taskNotes').value = currentTask.notes || '';
+        
+        // 狀態說明
+        document.getElementById('statusNote').value = currentTask.status_note || '尚未填寫狀態說明';
+        
+        // 阻礙原因（如果有）
+        const blockerReasonSection = document.getElementById('blockerReasonSection');
+        const blockerReasonEl = document.getElementById('blockerReason');
+        if (currentTask.blocker_reason) {
+          blockerReasonEl.value = currentTask.blocker_reason;
+          blockerReasonSection.style.display = 'block';
+        } else {
+          blockerReasonSection.style.display = 'none';
+        }
+        
+        // 逾期原因（如果有）
+        const overdueReasonSection = document.getElementById('overdueReasonSection');
+        const overdueReasonEl = document.getElementById('overdueReason');
+        if (currentTask.overdue_reason) {
+          overdueReasonEl.value = currentTask.overdue_reason;
+          overdueReasonSection.style.display = 'block';
+        } else {
+          overdueReasonSection.style.display = 'none';
+        }
         
         // 前置任務
         if (currentTask.prerequisite_task_name) {
@@ -504,38 +542,6 @@
       }
     }
 
-    // 儲存任務信息
-    async function saveTaskInfo() {
-      const data = {
-        assignee_user_id: document.getElementById('assigneeUser').value ? parseInt(document.getElementById('assigneeUser').value) : null,
-        notes: document.getElementById('taskNotes').value.trim()
-      };
-
-      try {
-        const res = await fetch(`${apiBase}/tasks/${currentTaskId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(data)
-        });
-        
-        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
-        const json = await res.json();
-        
-        if (!json.ok) {
-          alert(json.message || '儲存失敗');
-          return;
-        }
-
-        alert('已儲存');
-        await loadTaskDetail();
-        
-      } catch (err) {
-        console.error('儲存任務信息失敗:', err);
-        alert('儲存失敗');
-      }
-    }
-    
     // 顯示更新狀態模態框
     function showUpdateStatusModal() {
       const modal = document.getElementById('statusModal');
