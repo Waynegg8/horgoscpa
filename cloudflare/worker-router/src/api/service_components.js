@@ -82,7 +82,11 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
         
         // 查询任务配置及其关联的SOP
         const tasks = await env.DATABASE.prepare(`
-          SELECT * FROM ServiceComponentTasks
+          SELECT 
+            config_id, component_id, task_order, task_name, 
+            assignee_user_id, notes, due_rule, due_value, 
+            estimated_hours, advance_days, created_at
+          FROM ServiceComponentTasks
           WHERE component_id = ?
           ORDER BY task_order
         `).bind(c.component_id).all();
@@ -91,7 +95,16 @@ async function listServiceComponents(env, corsHeaders, clientServiceId) {
         
         const tasksWithSOPs = await Promise.all(
           (tasks.results || []).map(async (task) => {
-            console.log(`[listServiceComponents] 查询任务 ${task.config_id} 的SOP, task.config_id:`, task.config_id);
+            console.log(`[listServiceComponents] 查询任务SOP, task对象:`, JSON.stringify(task));
+            
+            // 检查config_id是否存在
+            if (!task.config_id && task.config_id !== 0) {
+              console.error(`[listServiceComponents] 警告：任务缺少config_id字段！task对象:`, task);
+              return {
+                ...task,
+                sops: []
+              };
+            }
             
             const taskSOPs = await env.DATABASE.prepare(`
               SELECT sop.sop_id, sop.title, sop.category, scts.sort_order
