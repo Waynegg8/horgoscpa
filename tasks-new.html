@@ -107,6 +107,87 @@
       background: white;
     }
     
+    .task-card {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      position: relative;
+    }
+    
+    .task-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    
+    .task-number {
+      font-weight: 600;
+      color: var(--primary-color);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .task-card-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .btn-move-up, .btn-move-down, .btn-remove-task {
+      padding: 4px 8px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    
+    .btn-move-up:hover, .btn-move-down:hover {
+      background: #f1f5f9;
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+    
+    .btn-remove-task {
+      color: #dc2626;
+      border-color: #fecaca;
+    }
+    
+    .btn-remove-task:hover {
+      background: #fef2f2;
+      border-color: #dc2626;
+    }
+    
+    .btn-add-task {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: white;
+      border: 2px dashed #cbd5e1;
+      border-radius: 8px;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .btn-add-task:hover {
+      background: #f1f5f9;
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+    
+    .task-card input,
+    .task-card select {
+      font-size: 14px;
+    }
+    
     label {
       font-weight: 600;
       color: #334155;
@@ -151,7 +232,7 @@
         </div>
       </div>
 
-      <form id="taskForm" onsubmit="submitTask(event)">
+      <form id="taskForm" onsubmit="submitTasks(event)">
         <!-- 基本資訊 -->
         <div class="form-section">
           <div class="form-section-title">
@@ -159,7 +240,7 @@
             基本資訊
           </div>
           
-          <div class="form-row-2col">
+          <div class="form-row-1col">
             <div class="form-field">
               <label for="client_service_id">客戶服務 <span class="required-mark">*</span></label>
               <select id="client_service_id" required>
@@ -170,89 +251,47 @@
                 選擇要執行任務的客戶和服務類型
               </div>
             </div>
-            <div class="form-field">
-              <label for="assignee_user_id">負責人</label>
-              <select id="assignee_user_id">
-                <option value="">未分配</option>
-              </select>
-              <div class="field-hint">
-                <span class="material-symbols-outlined">help</span>
-                可稍後再指派負責人
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row-1col">
-            <div class="form-field">
-              <label for="task_name">任務名稱 <span class="required-mark">*</span></label>
-              <input type="text" id="task_name" required maxlength="200" placeholder="例如：11月份記帳服務" />
-              <div class="field-hint">
-                <span class="material-symbols-outlined">help</span>
-                清楚描述任務內容，最多200字
-              </div>
-            </div>
           </div>
         </div>
 
-        <!-- 時間設定 -->
+        <!-- 服務月份 -->
         <div class="form-section">
           <div class="form-section-title">
             <span class="material-symbols-outlined">schedule</span>
-            時間設定
+            服務月份
           </div>
           
-          <div class="form-row-2col">
+          <div class="form-row-1col">
             <div class="form-field">
               <label for="service_month">服務月份 <span class="required-mark">*</span></label>
               <input type="month" id="service_month" required />
               <div class="field-hint">
                 <span class="material-symbols-outlined">help</span>
-                此任務對應的服務月份
-              </div>
-            </div>
-            <div class="form-field">
-              <label for="due_date">到期日</label>
-              <input type="date" id="due_date" />
-              <input type="hidden" id="default_due_date" />
-              <div class="field-hint" id="due_date_hint">
-                <span class="material-symbols-outlined">help</span>
-                系統預設到期日將根據服務自動計算
+                所有任務都將使用此服務月份
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 調整原因區（條件顯示） -->
-        <div id="adjustment_reason_section" style="display:none;">
-          <div class="alert-warning">
-            <span class="material-symbols-outlined">warning</span>
-            <div class="alert-warning-content">
-              <div class="alert-warning-title">您修改了系統預設的到期日</div>
-              <div class="alert-warning-text">請說明調整原因，這有助於追蹤客戶的特殊需求或任務複雜度</div>
-            </div>
-          </div>
-          <div class="form-field">
-            <label for="adjustment_reason">調整原因 <span class="required-mark">*</span></label>
-            <textarea id="adjustment_reason" rows="3" placeholder="例如：該客戶帳務複雜需額外處理時間，或客戶要求提前完成..."></textarea>
-          </div>
-        </div>
-
-        <!-- 備註 -->
-        <div class="form-section">
+        <!-- 任務列表 -->
+        <div class="form-section" style="border-bottom: none;">
           <div class="form-section-title">
-            <span class="material-symbols-outlined">notes</span>
-            任務備註（可選）
+            <span class="material-symbols-outlined">list</span>
+            任務列表
           </div>
           
-          <div class="form-row-1col">
-            <div class="form-field">
-              <label for="task_notes">備註說明</label>
-              <textarea id="task_notes" rows="3" placeholder="輸入任何需要記錄的額外資訊，例如：特殊要求、注意事項等..."></textarea>
-              <div class="field-hint">
-                <span class="material-symbols-outlined">help</span>
-                記錄這個任務的特殊說明或注意事項
-              </div>
-            </div>
+          <div id="tasks_container" style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- 任務項目將動態添加 -->
+          </div>
+          
+          <button type="button" onclick="addTask()" class="btn-add-task" style="margin-top: 16px;">
+            <span class="material-symbols-outlined">add</span>
+            添加任務
+          </button>
+          
+          <div class="field-hint" style="margin-top: 12px;">
+            <span class="material-symbols-outlined">help</span>
+            任務將按照順序執行，每個任務完成後才能開始下一個
           </div>
         </div>
 
@@ -260,7 +299,7 @@
       
       <div class="form-actions">
         <button type="button" onclick="window.location.href='/internal/tasks'" class="btn btn-secondary">取消</button>
-        <button type="submit" form="taskForm" class="btn btn-primary">✓ 建立任務</button>
+        <button type="submit" form="taskForm" class="btn btn-primary">✓ 建立所有任務</button>
       </div>
     </div>
   </div>
@@ -273,7 +312,8 @@
     const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
     
     let clientServices = [];
-    let defaultDueDate = null;
+    let users = [];
+    let taskCounter = 0;
     
     async function init() {
       // 設定當前月份為默認值
@@ -287,10 +327,8 @@
       // 載入用戶列表
       await loadUsers();
       
-      // 設定監聽器
-      document.getElementById('due_date').addEventListener('change', checkDueDateChange);
-      document.getElementById('client_service_id').addEventListener('change', calculateDefaultDueDate);
-      document.getElementById('service_month').addEventListener('change', calculateDefaultDueDate);
+      // 添加第一個任務
+      addTask();
     }
     
     
@@ -317,103 +355,205 @@
         if (res.status === 401) return;
         const json = await res.json();
         
-        const select = document.getElementById('assignee_user_id');
         if (json.ok && Array.isArray(json.data)) {
-          select.innerHTML = '<option value="">未分配</option>' + 
-            json.data.map(u => `<option value="${u.user_id}">${u.name}</option>`).join('');
+          users = json.data;
         }
       } catch (err) {
         console.error('載入用戶失敗:', err);
       }
     }
     
-    function calculateDefaultDueDate() {
-      // 簡化實現：預設為當月最後一天
+    function addTask() {
+      taskCounter++;
+      const container = document.getElementById('tasks_container');
+      const taskId = `task_${taskCounter}`;
+      
+      // 計算預設到期日
       const serviceMonth = document.getElementById('service_month').value;
-      if (!serviceMonth) return;
+      let defaultDueDate = '';
+      if (serviceMonth) {
+        const [year, month] = serviceMonth.split('-').map(Number);
+        const lastDay = new Date(year, month, 0).getDate();
+        defaultDueDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      }
       
-      const [year, month] = serviceMonth.split('-').map(Number);
-      const lastDay = new Date(year, month, 0).getDate();
-      defaultDueDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      const userOptions = '<option value="">未分配</option>' + users.map(u => `<option value="${u.user_id}">${u.name}</option>`).join('');
       
-      document.getElementById('default_due_date').value = defaultDueDate;
-      const hintElement = document.getElementById('due_date_hint');
-      hintElement.innerHTML = `<span class="material-symbols-outlined">help</span> 系統預設：${defaultDueDate}`;
+      const taskCard = document.createElement('div');
+      taskCard.className = 'task-card';
+      taskCard.dataset.taskId = taskId;
+      taskCard.innerHTML = `
+        <div class="task-card-header">
+          <div class="task-number">
+            <span class="material-symbols-outlined" style="font-size: 18px;">task</span>
+            任務 <span class="task-order">1</span>
+          </div>
+          <div class="task-card-actions">
+            <button type="button" class="btn-move-up" onclick="moveTaskUp('${taskId}')" title="上移">↑</button>
+            <button type="button" class="btn-move-down" onclick="moveTaskDown('${taskId}')" title="下移">↓</button>
+            <button type="button" class="btn-remove-task" onclick="removeTask('${taskId}')" title="刪除">✕</button>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="form-field">
+            <label style="font-size: 13px;">任務名稱 <span class="required-mark">*</span></label>
+            <input type="text" name="task_name" required placeholder="例如：收集憑證" />
+          </div>
+          <div class="form-field">
+            <label style="font-size: 13px;">負責人</label>
+            <select name="assignee">${userOptions}</select>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+          <div class="form-field">
+            <label style="font-size: 13px;">到期日</label>
+            <input type="date" name="due_date" value="${defaultDueDate}" />
+          </div>
+          <div class="form-field">
+            <label style="font-size: 13px;">備註</label>
+            <input type="text" name="notes" placeholder="選填" />
+          </div>
+        </div>
+      `;
       
-      // 如果還沒設定到期日，自動填入
-      if (!document.getElementById('due_date').value) {
-        document.getElementById('due_date').value = defaultDueDate;
+      container.appendChild(taskCard);
+      updateTaskNumbers();
+    }
+    
+    function removeTask(taskId) {
+      const card = document.querySelector(`[data-task-id="${taskId}"]`);
+      if (card) {
+        const container = document.getElementById('tasks_container');
+        if (container.children.length <= 1) {
+          alert('至少需要一個任務');
+          return;
+        }
+        card.remove();
+        updateTaskNumbers();
       }
     }
     
-    function checkDueDateChange() {
-      const dueDate = document.getElementById('due_date').value;
-      const defaultDate = document.getElementById('default_due_date').value;
-      
-      const section = document.getElementById('adjustment_reason_section');
-      const reasonField = document.getElementById('adjustment_reason');
-      
-      // 如果修改了預設期限，顯示原因欄位並設為必填
-      if (defaultDate && dueDate && dueDate !== defaultDate) {
-        section.style.display = 'block';
-        reasonField.required = true;
-      } else {
-        section.style.display = 'none';
-        reasonField.required = false;
+    function moveTaskUp(taskId) {
+      const card = document.querySelector(`[data-task-id="${taskId}"]`);
+      if (card && card.previousElementSibling) {
+        card.parentNode.insertBefore(card, card.previousElementSibling);
+        updateTaskNumbers();
       }
     }
     
+    function moveTaskDown(taskId) {
+      const card = document.querySelector(`[data-task-id="${taskId}"]`);
+      if (card && card.nextElementSibling) {
+        card.parentNode.insertBefore(card.nextElementSibling, card);
+        updateTaskNumbers();
+      }
+    }
     
-    async function submitTask(event) {
+    function updateTaskNumbers() {
+      const cards = document.querySelectorAll('.task-card');
+      cards.forEach((card, index) => {
+        const orderSpan = card.querySelector('.task-order');
+        if (orderSpan) {
+          orderSpan.textContent = index + 1;
+        }
+        
+        // 更新按鈕狀態
+        const upBtn = card.querySelector('.btn-move-up');
+        const downBtn = card.querySelector('.btn-move-down');
+        upBtn.disabled = index === 0;
+        downBtn.disabled = index === cards.length - 1;
+        upBtn.style.opacity = index === 0 ? '0.3' : '1';
+        downBtn.style.opacity = index === cards.length - 1 ? '0.3' : '1';
+      });
+    }
+    
+    
+    async function submitTasks(event) {
       event.preventDefault();
       
-      const dueDate = document.getElementById('due_date').value;
-      const defaultDate = document.getElementById('default_due_date').value;
-      const adjustmentReason = document.getElementById('adjustment_reason').value.trim();
+      const clientServiceId = parseInt(document.getElementById('client_service_id').value);
+      const serviceMonth = document.getElementById('service_month').value;
       
-      // 檢查是否需要填寫原因
-      if (defaultDate && dueDate && dueDate !== defaultDate && !adjustmentReason) {
-        alert('您修改了預設期限，必須填寫調整原因');
-        return;
-      }
+      // 收集所有任務
+      const taskCards = document.querySelectorAll('.task-card');
+      const tasks = [];
+      let previousTaskId = null;
       
-      const data = {
-        client_service_id: parseInt(document.getElementById('client_service_id').value),
-        task_name: document.getElementById('task_name').value.trim(),
-        service_month: document.getElementById('service_month').value,
-        due_date: dueDate || null,
-        assignee_user_id: document.getElementById('assignee_user_id').value ? parseInt(document.getElementById('assignee_user_id').value) : null,
-        notes: document.getElementById('task_notes').value.trim() || null
-      };
-      
-      // 如果調整了期限，添加相關欄位
-      if (defaultDate && dueDate && dueDate !== defaultDate && adjustmentReason) {
-        data.default_due_date = defaultDate;
-        data.adjustment_reason = adjustmentReason;
-      }
-      
-      try {
-        const res = await fetch(`${apiBase}/tasks`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(data)
-        });
+      for (const card of taskCards) {
+        const taskName = card.querySelector('[name="task_name"]').value.trim();
+        const assigneeSelect = card.querySelector('[name="assignee"]');
+        const assigneeUserId = assigneeSelect.value ? parseInt(assigneeSelect.value) : null;
+        const dueDate = card.querySelector('[name="due_date"]').value || null;
+        const notes = card.querySelector('[name="notes"]').value.trim() || null;
         
-        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
-        const json = await res.json();
-        
-        if (!json.ok) {
-          alert(json.message || '建立失敗');
+        if (!taskName) {
+          alert('請填寫所有任務名稱');
           return;
         }
         
-        alert('任務已建立');
+        tasks.push({
+          task_name: taskName,
+          assignee_user_id: assigneeUserId,
+          due_date: dueDate,
+          notes: notes,
+          prerequisite_task_id: previousTaskId
+        });
+        
+        // 暫存當前任務ID的占位符，實際ID會在創建後獲得
+        previousTaskId = 'PREVIOUS';
+      }
+      
+      try {
+        // 按順序創建任務，並設置前置任務關係
+        let actualPreviousTaskId = null;
+        let createdCount = 0;
+        
+        for (const taskData of tasks) {
+          const data = {
+            client_service_id: clientServiceId,
+            service_month: serviceMonth,
+            task_name: taskData.task_name,
+            due_date: taskData.due_date,
+            assignee_user_id: taskData.assignee_user_id,
+            notes: taskData.notes,
+            prerequisite_task_id: actualPreviousTaskId
+          };
+          
+          const res = await fetch(`${apiBase}/tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data)
+          });
+          
+          if (res.status === 401) {
+            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+            return;
+          }
+          
+          const json = await res.json();
+          
+          if (!json.ok) {
+            alert(`建立第 ${createdCount + 1} 個任務失敗: ${json.message || '未知錯誤'}`);
+            if (createdCount > 0) {
+              alert(`已成功建立 ${createdCount} 個任務`);
+            }
+            return;
+          }
+          
+          // 保存剛創建的任務ID，作為下一個任務的前置任務
+          actualPreviousTaskId = json.data.taskId;
+          createdCount++;
+        }
+        
+        alert(`成功建立 ${createdCount} 個任務！`);
         window.location.href = '/internal/tasks';
         
       } catch (err) {
         console.error('建立任務失敗:', err);
-        alert('建立失敗');
+        alert('建立失敗：' + err.message);
       }
     }
     
