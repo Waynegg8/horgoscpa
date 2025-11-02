@@ -630,64 +630,63 @@ function renderTable() {
   const tbody = document.getElementById('timesheetBody');
   const prerenderedStatus = tbody ? tbody.dataset.prerendered : null;
   
-  // 只有在 'consumed' 状态时才跳过渲染
-  if (prerenderedStatus === 'consumed') {
-    console.log('[Timesheets] ⚡ 保留预渲染内容，跳过 renderTable');
-    tbody.dataset.prerendered = 'used'; // 标记为已使用
-    return;
+  // ⚡ 如果有预渲染内容，保留HTML但继续执行逻辑（更新统计、事件绑定）
+  const shouldPreserveHTML = prerenderedStatus === 'consumed';
+  
+  if (!shouldPreserveHTML) {
+    // 清空并重新渲染 HTML
+    tbody.innerHTML = '';
+    tbody.dataset.rendering = 'true';
+  } else {
+    console.log('[Timesheets] ⚡ 保留预渲染HTML，但继续执行事件绑定和统计更新');
+    tbody.dataset.prerendered = 'used';
   }
   
-  // 'updating' 状态：清空并重新渲染
-  if (prerenderedStatus === 'updating') {
-    console.log('[Timesheets] 🔄 后台更新：清空预渲染，重新渲染真实数据');
-  }
-  
-  tbody.innerHTML = '';
-  
-  // ⚡ 标记开始渲染（包括空状态）
-  tbody.dataset.rendering = 'true';
-  
-  if (state.rows.length === 0) {
-    const colspan = state.isAdmin ? 13 : 12;
-    tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state">尚無工時記錄，點擊右上角「新增列」開始填寫</td></tr>`;
-    updateWeeklySummary();
-    updateDailyNormalHours();
-    renderCompleteness(); // 会触发保存事件（即使是空状态）
-    return;
-  }
-  
-  state.rows.forEach((row, rowIndex) => {
-    const tr = document.createElement('tr');
-    tr.dataset.rowIndex = rowIndex;
-    
-    // 員工欄（僅管理員可見）
-    if (state.isAdmin) {
-      tr.appendChild(createEmployeeCell(row, rowIndex));
+  // ⚡ 只在非预渲染模式下才渲染 HTML
+  if (!shouldPreserveHTML) {
+    if (state.rows.length === 0) {
+      const colspan = state.isAdmin ? 13 : 12;
+      tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state">尚無工時記錄，點擊右上角「新增列」開始填寫</td></tr>`;
+      updateWeeklySummary();
+      updateDailyNormalHours();
+      renderCompleteness(); // 会触发保存事件（即使是空状态）
+      return;
     }
     
-    // 客戶欄
-    tr.appendChild(createClientCell(row, rowIndex));
-    
-    // 服務項目欄
-    tr.appendChild(createServiceCell(row, rowIndex));
-    
-    // 服務子項目欄
-    tr.appendChild(createServiceItemCell(row, rowIndex));
-    
-    // 工時類型欄
-    tr.appendChild(createWorkTypeCell(row, rowIndex));
-    
-    // 日期欄位（7天）
-    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      tr.appendChild(createHoursCell(row, rowIndex, dayIndex));
-    }
-    
-    // 操作欄
-    tr.appendChild(createActionCell(rowIndex));
-    
-    tbody.appendChild(tr);
-  });
+    state.rows.forEach((row, rowIndex) => {
+      const tr = document.createElement('tr');
+      tr.dataset.rowIndex = rowIndex;
+      
+      // 員工欄（僅管理員可見）
+      if (state.isAdmin) {
+        tr.appendChild(createEmployeeCell(row, rowIndex));
+      }
+      
+      // 客戶欄
+      tr.appendChild(createClientCell(row, rowIndex));
+      
+      // 服務項目欄
+      tr.appendChild(createServiceCell(row, rowIndex));
+      
+      // 服務子項目欄
+      tr.appendChild(createServiceItemCell(row, rowIndex));
+      
+      // 工時類型欄
+      tr.appendChild(createWorkTypeCell(row, rowIndex));
+      
+      // 日期欄位（7天）
+      for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+        tr.appendChild(createHoursCell(row, rowIndex, dayIndex));
+      }
+      
+      // 操作欄
+      tr.appendChild(createActionCell(rowIndex));
+      
+      tbody.appendChild(tr);
+    });
+  }
   
+  // 总是执行统计更新（无论是否使用预渲染）
   updateWeeklySummary();
   updateDailyNormalHours();
   renderCompleteness();
@@ -1949,26 +1948,21 @@ async function prefetchPreviousWeeks(weekCount = 4) {
     // 预加载工时数据
     const prefetchTask = (async () => {
       try {
-        const res = await fetch(`${apiBase}/timelogs?start_date=${from}&end_date=${to}`, {
-          credentials: 'include'
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.ok) {
-            // 存储到 localStorage 缓存
-            const cacheKey = `timesheet_week_${from}`;
-            try {
-              localStorage.setItem(cacheKey, JSON.stringify({
-                data: json.data || [],
-                timestamp: Date.now(),
-                weekStart: from,
-                weekEnd: to
-              }));
-              console.log(`[Timesheets] ✓ 预加载第 ${i} 周 (${from}) 完成: ${json.data?.length || 0} 条记录`);
-            } catch (e) {
-              console.warn(`[Timesheets] ⚠ 缓存第 ${i} 周数据失败:`, e);
-            }
-          }
+        const data = await apiCall(`/internal/api/v1/timelogs?start_date=${from}&end_date=${to}`);
+        const logs = data.data || [];
+        
+        // 存储到 localStorage 缓存
+        const cacheKey = `timesheet_week_${from}`;
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            data: logs,
+            timestamp: Date.now(),
+            weekStart: from,
+            weekEnd: to
+          }));
+          console.log(`[Timesheets] ✓ 预加载第 ${i} 周 (${from}) 完成: ${logs.length} 条记录`);
+        } catch (e) {
+          console.warn(`[Timesheets] ⚠ 缓存第 ${i} 周数据失败:`, e);
         }
       } catch (err) {
         console.warn(`[Timesheets] ⚠ 预加载第 ${i} 周失败:`, err);
@@ -2012,8 +2006,11 @@ async function init() {
           // 加载假日和请假数据到 state
           await Promise.all([loadHolidays(), loadLeaves()]);
           
-          // 建立周模型（不渲染表头）
+          // 建立周模型
           buildWeekDays();
+          
+          // ⚡ 更新周标题（解决"载入中..."问题）
+          renderWeekHeader();
           
           // 加载工时数据到 state
           await loadTimesheets();
