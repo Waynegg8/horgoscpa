@@ -1172,7 +1172,11 @@
         
         if (json.ok && json.data) {
           // 内部知识库不需要发布状态，所有SOP都可用
-          allSOPs = json.data.filter(sop => !sop.is_deleted);
+          // 重要：API返回的字段名是id，需要重命名为sop_id以保持一致性
+          allSOPs = json.data.filter(sop => !sop.is_deleted).map(sop => ({
+            ...sop,
+            sop_id: sop.id  // 将id重命名为sop_id
+          }));
           console.log('已載入SOP列表:', allSOPs.length, '篇');
         }
       } catch (err) {
@@ -1989,9 +1993,7 @@
                               <div style="font-weight: 600; font-size: 11px; color: #6b7280; margin-bottom: 3px; padding: 2px 6px; background: #e5e7eb; border-radius: 3px;">${catName}</div>
                               ${sops.map(sop => {
                                 // 确保类型匹配：将sop_ids数组中的值转换为数字进行比较
-                                console.log('[DEBUG] task.sop_ids:', task.sop_ids, 'sop.sop_id:', sop.sop_id);
                                 const isChecked = task.sop_ids && task.sop_ids.map(id => parseInt(id)).includes(parseInt(sop.sop_id));
-                                console.log('[DEBUG] isChecked:', isChecked, 'for sop:', sop.title);
                                 return `
                                   <label class="sop-option" data-sop-title="${sop.title.toLowerCase()}" data-sop-category="${category}"
                                          style="display: flex; align-items: center; gap: 6px; padding: 3px 4px; cursor: pointer; font-size: 13px; margin-bottom: 2px; margin-left: 8px; border-radius: 3px;" 
