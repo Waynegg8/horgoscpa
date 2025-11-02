@@ -710,6 +710,19 @@
               💡 選擇對應的服務類型，創建任務時會自動篩選相關SOP
             </div>
           </div>
+
+          <div class="form-group">
+            <label>SOP 適用層級 *</label>
+            <select id="sop-scope-drawer" required>
+              <option value="both">🔄 兩者皆可（通用）</option>
+              <option value="service">🏢 服務層級（整個服務的通用流程）</option>
+              <option value="task">📋 任務層級（特定任務的詳細步驟）</option>
+            </select>
+            <div style="margin-top:6px;font-size:11px;color:#64748b;line-height:1.4;">
+              <div style="margin-bottom:4px;">📌 <strong>服務層級：</strong>適用於整個服務的通用流程（如「記帳服務標準作業流程」）</div>
+              <div>📌 <strong>任務層級：</strong>適用於特定任務的詳細步驟（如「月結作業第3步驟」）</div>
+            </div>
+          </div>
           
           <div class="form-group">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
@@ -2559,6 +2572,7 @@
             document.getElementById('sop-id-drawer').value = '';
             document.getElementById('sop-title-drawer').value = '【請填寫標題】例如：月度記帳流程';
             document.getElementById('sop-category-drawer').value = '';
+            document.getElementById('sop-scope-drawer').value = 'both'; // 默認為兩者皆可
             
             if (window.sopDrawerEditor) {
               window.sopDrawerEditor.root.innerHTML = SOP_TEMPLATE;
@@ -2572,6 +2586,7 @@
             document.getElementById('sop-id-drawer').value = sopData.sop_id || '';
             document.getElementById('sop-title-drawer').value = sopData.title || '';
             document.getElementById('sop-category-drawer').value = sopData.category || '';
+            document.getElementById('sop-scope-drawer').value = sopData.scope || 'both';
             
             if (window.sopDrawerEditor) {
               window.sopDrawerEditor.root.innerHTML = sopData.content || '';
@@ -2742,6 +2757,7 @@
           const sopId = document.getElementById('sop-id-drawer').value;
           const title = document.getElementById('sop-title-drawer').value;
           const category = document.getElementById('sop-category-drawer').value;
+          const scope = document.getElementById('sop-scope-drawer').value;
           const tags = getCheckedTags('sop-tags-checkboxes');
           const content = window.sopDrawerEditor.root.innerHTML;
           
@@ -2758,7 +2774,7 @@
               method,
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ title, category, tags, content })
+              body: JSON.stringify({ title, category, scope, tags, content })
             });
             
             const json = await res.json();

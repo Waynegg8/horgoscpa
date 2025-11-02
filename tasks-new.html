@@ -698,9 +698,21 @@
         ? serviceLevelSOPIds 
         : (selectedSOPs[currentSOPTaskId] || []);
       
+      // 根據scope篩選SOP
+      const filteredSOPs = sops.filter(sop => {
+        const scope = sop.scope || 'both';
+        if (sopSelectorMode === 'service') {
+          // 服務層級：只顯示 service 或 both
+          return scope === 'service' || scope === 'both';
+        } else {
+          // 任務層級：只顯示 task 或 both
+          return scope === 'task' || scope === 'both';
+        }
+      });
+      
       // 按類別分組
       const sopsByCategory = {};
-      sops.forEach(sop => {
+      filteredSOPs.forEach(sop => {
         const cat = sop.category || '未分類';
         if (!sopsByCategory[cat]) sopsByCategory[cat] = [];
         sopsByCategory[cat].push(sop);
