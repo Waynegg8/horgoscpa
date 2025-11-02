@@ -275,8 +275,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             name: r.name || r.username,
             completed: Number(r.completed || 0),
             inProgress: {},
-            overdue: {},
-            pending: {}
+            overdue: {}
           };
         });
         
@@ -292,9 +291,8 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             user.overdue[month] = (user.overdue[month] || 0) + count;
           } else if (r.status === 'in_progress') {
             user.inProgress[month] = (user.inProgress[month] || 0) + count;
-          } else if (r.status === 'pending') {
-            user.pending[month] = (user.pending[month] || 0) + count;
           }
+          // 注意：已移除 pending 状态，所有任务默认为 in_progress
         });
         
         res.employeeTasks = Object.values(userTasksMap).sort((a, b) => {
@@ -326,9 +324,8 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         const days = parseInt(params.get('activity_days') || '30', 10);
         const filterUserId = params.get('activity_user_id');
         
-        const daysAgo = new Date();
-        daysAgo.setDate(daysAgo.getDate() - days);
-        const daysAgoStr = daysAgo.toISOString();
+        // 不再使用 JavaScript 生成时间字符串，直接在 SQL 中使用 SQLite 的 datetime 函数
+        // 这样可以避免时间格式不匹配的问题
         
         // 构建用户筛选条件
         const userFilter = filterUserId ? `AND adj.requested_by = ${filterUserId}` : '';
@@ -360,17 +357,17 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
           LEFT JOIN Clients c ON c.client_id = cs.client_id
           LEFT JOIN Services s ON s.service_id = cs.service_id
-          WHERE adj.requested_at >= ? 
+          WHERE adj.requested_at >= datetime('now', '-' || ? || ' days')
             AND adj.old_due_date IS NOT NULL 
             AND adj.new_due_date IS NOT NULL
             AND adj.adjustment_type IS NOT NULL
             ${userFilter}
           ORDER BY adj.requested_at DESC
           LIMIT 30
-        `).bind(daysAgoStr).all();
+        `).bind(days).all();
         
         // 查询任务状态更新
-        console.log('[仪表板] 查询状态更新，daysAgoStr:', daysAgoStr);
+        console.log('[仪表板] 查询状态更新，天数:', days);
         const statusUpdates = await env.DATABASE.prepare(`
           SELECT 
             su.update_id,
@@ -397,13 +394,13 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
           LEFT JOIN Clients c ON c.client_id = cs.client_id
           LEFT JOIN Services s ON s.service_id = cs.service_id
-          WHERE su.updated_at >= ?
+          WHERE su.updated_at >= datetime('now', '-' || ? || ' days')
             AND su.old_status IS NOT NULL
             AND su.new_status IS NOT NULL
             ${userFilter2}
           ORDER BY su.updated_at DESC
           LIMIT 30
-        `).bind(daysAgoStr).all();
+        `).bind(days).all();
         console.log('[仪表板] 状态更新查询结果:', statusUpdates?.results?.length || 0, '条');
         
         // 查询假期申请
@@ -421,11 +418,11 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             u.name as user_name
           FROM Leaves l
           LEFT JOIN Users u ON u.user_id = l.user_id
-          WHERE l.applied_at >= ?
+          WHERE l.applied_at >= datetime('now', '-' || ? || ' days')
             ${userFilter3}
           ORDER BY l.applied_at DESC
           LIMIT 30
-        `).bind(daysAgoStr).all();
+        `).bind(days).all();
         
         // 查询工时缺失提醒（最近7天未填写工时的员工）
         let timesheetReminders = [];
