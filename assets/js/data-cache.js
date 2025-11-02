@@ -8,30 +8,77 @@
   const CACHE_VERSION = '1.0.0';
   const CACHE_PREFIX = 'horgos_cache_';
   
-  // 緩存配置：每種數據的過期時間（毫秒）
+  // 緩存配置：統一設定為 1 小時（便於管理和循環預加載）
+  const ONE_HOUR = 60 * 60 * 1000; // 1小時
+  
   const CACHE_CONFIG = {
-    // 基礎數據
-    me: 5 * 60 * 1000,           // 當前用戶：5分鐘
-    users: 30 * 60 * 1000,       // 員工列表：30分鐘
-    clients: 10 * 60 * 1000,     // 客戶列表：10分鐘
-    tags: 60 * 60 * 1000,        // 標籤：1小時
-    settings: 60 * 60 * 1000,    // 系統設定：1小時
-    holidays: 24 * 60 * 60 * 1000, // 假期：24小時
-    services: 30 * 60 * 1000,    // 服務類型：30分鐘
+    // === 核心基礎數據 ===
+    me: ONE_HOUR,
+    users: ONE_HOUR,
+    clients_all: ONE_HOUR,
+    clients_page1: ONE_HOUR,
+    clients_page2: ONE_HOUR,
+    clients_page3: ONE_HOUR,
+    tags: ONE_HOUR,
+    settings: ONE_HOUR,
+    holidays: ONE_HOUR,
+    services_types: ONE_HOUR,
     
-    // 管理員專用數據
-    dashboard: 5 * 60 * 1000,    // 儀表板數據：5分鐘
-    tasks_summary: 10 * 60 * 1000, // 任務摘要：10分鐘
-    receipts_summary: 10 * 60 * 1000, // 收據摘要：10分鐘
-    timesheets_summary: 10 * 60 * 1000, // 工時摘要：10分鐘
-    leaves_summary: 10 * 60 * 1000, // 假期摘要：10分鐘
-    payroll_summary: 30 * 60 * 1000, // 薪資摘要：30分鐘
-    costs_summary: 30 * 60 * 1000, // 成本摘要：30分鐘
-    automation_rules: 60 * 60 * 1000, // 自動化規則：1小時
-    billing_schedules: 30 * 60 * 1000, // 計費排程：30分鐘
-    sop_list: 30 * 60 * 1000,    // SOP列表：30分鐘
-    faq_list: 30 * 60 * 1000,    // FAQ列表：30分鐘
-    documents_list: 30 * 60 * 1000, // 文檔列表：30分鐘
+    // === 儀表板相關 ===
+    dashboard: ONE_HOUR,
+    dashboard_stats: ONE_HOUR,
+    
+    // === 任務系統 ===
+    tasks_all: ONE_HOUR,
+    tasks_pending: ONE_HOUR,
+    tasks_in_progress: ONE_HOUR,
+    tasks_completed: ONE_HOUR,
+    task_templates: ONE_HOUR,
+    
+    // === 收據與應收款 ===
+    receipts_all: ONE_HOUR,
+    receipts_unpaid: ONE_HOUR,
+    receipts_statistics: ONE_HOUR,
+    receipts_aging: ONE_HOUR,
+    
+    // === 工時系統 ===
+    timesheets_recent: ONE_HOUR,
+    timesheets_thismonth: ONE_HOUR,
+    timesheets_summary: ONE_HOUR,
+    
+    // === 假期系統 ===
+    leaves_all: ONE_HOUR,
+    leaves_pending: ONE_HOUR,
+    leaves_balances: ONE_HOUR,
+    
+    // === 薪資系統 ===
+    payroll_latest: ONE_HOUR,
+    payroll_summary: ONE_HOUR,
+    
+    // === 成本分析 ===
+    costs_summary: ONE_HOUR,
+    costs_by_client: ONE_HOUR,
+    costs_by_employee: ONE_HOUR,
+    
+    // === 自動化與規則 ===
+    automation_rules: ONE_HOUR,
+    billing_schedules: ONE_HOUR,
+    
+    // === 知識庫 ===
+    sop_list: ONE_HOUR,
+    faq_list: ONE_HOUR,
+    documents_list: ONE_HOUR,
+    
+    // === 報表數據 ===
+    reports_overview: ONE_HOUR,
+    reports_financial: ONE_HOUR,
+    
+    // === CMS內容 ===
+    cms_posts: ONE_HOUR,
+    cms_resources: ONE_HOUR,
+    
+    // === 附件系統 ===
+    attachments_recent: ONE_HOUR,
   };
 
   const onProdHost = location.hostname.endsWith('horgoscpa.com');
@@ -42,8 +89,13 @@
     isPreloading: false,
     completed: [],
     failed: [],
-    total: 0
+    total: 0,
+    lastPreloadTime: null
   };
+  
+  // 循環預加載定時器
+  let cyclicPreloadTimer = null;
+  const PRELOAD_CYCLE_INTERVAL = 60 * 60 * 1000; // 每1小時重新預加載一次
 
   /**
    * 獲取緩存鍵名
@@ -208,41 +260,111 @@
     preloadStatus.completed = [];
     preloadStatus.failed = [];
     
-    // 基礎數據（所有用戶都需要）
-    const basicTasks = [
+    // === 第1波：核心基礎數據（立即需要）===
+    const wave1Tasks = [
       { key: 'me', endpoint: '/auth/me' },
       { key: 'users', endpoint: '/users' },
-      { key: 'clients', endpoint: '/clients?perPage=1000' },
       { key: 'tags', endpoint: '/tags' },
       { key: 'settings', endpoint: '/settings' },
       { key: 'holidays', endpoint: '/holidays' },
-      { key: 'services', endpoint: '/services' },
     ];
     
-    // 管理員專用數據（完整數據集）
-    const adminTasks = [
+    // === 第2波：客戶相關數據 ===
+    const wave2Tasks = [
+      { key: 'clients_all', endpoint: '/clients?perPage=2000' },
+      { key: 'clients_page1', endpoint: '/clients?page=1&perPage=50' },
+      { key: 'clients_page2', endpoint: '/clients?page=2&perPage=50' },
+      { key: 'clients_page3', endpoint: '/clients?page=3&perPage=50' },
+      { key: 'services_types', endpoint: '/services' },
+    ];
+    
+    // === 第3波：儀表板與統計 ===
+    const wave3Tasks = [
       { key: 'dashboard', endpoint: '/dashboard' },
-      { key: 'tasks_summary', endpoint: '/tasks?perPage=100&status=pending' },
-      { key: 'receipts_summary', endpoint: '/receipts?perPage=100' },
-      { key: 'timesheets_summary', endpoint: '/timesheets?limit=100' },
-      { key: 'leaves_summary', endpoint: '/leaves?perPage=100' },
-      { key: 'payroll_summary', endpoint: '/payroll?perPage=50' },
-      { key: 'costs_summary', endpoint: '/costs/summary' },
-      { key: 'automation_rules', endpoint: '/automation/rules' },
-      { key: 'billing_schedules', endpoint: '/billing/schedules?perPage=100' },
-      { key: 'sop_list', endpoint: '/knowledge/sops?perPage=100' },
-      { key: 'faq_list', endpoint: '/knowledge/faqs?perPage=100' },
-      { key: 'documents_list', endpoint: '/knowledge/documents?perPage=100' },
+      { key: 'dashboard_stats', endpoint: '/dashboard?stats=true' },
     ];
     
-    const tasks = adminMode ? [...basicTasks, ...adminTasks] : basicTasks;
+    // === 第4波：任務系統（高頻訪問）===
+    const wave4Tasks = [
+      { key: 'tasks_all', endpoint: '/tasks?perPage=200' },
+      { key: 'tasks_pending', endpoint: '/tasks?perPage=100&status=pending' },
+      { key: 'tasks_in_progress', endpoint: '/tasks?perPage=100&status=in_progress' },
+      { key: 'tasks_completed', endpoint: '/tasks?perPage=50&status=completed' },
+      { key: 'task_templates', endpoint: '/task-templates?perPage=100' },
+    ];
+    
+    // === 第5波：收據與財務（高頻訪問）===
+    const wave5Tasks = [
+      { key: 'receipts_all', endpoint: '/receipts?perPage=200' },
+      { key: 'receipts_unpaid', endpoint: '/receipts?perPage=100&status=unpaid' },
+      { key: 'receipts_statistics', endpoint: '/receipts/statistics' },
+      { key: 'receipts_aging', endpoint: '/receipts/aging-report' },
+    ];
+    
+    // === 第6波：工時與假期 ===
+    const wave6Tasks = [
+      { key: 'timesheets_recent', endpoint: '/timesheets?limit=200' },
+      { key: 'timesheets_summary', endpoint: '/timesheets/summary' },
+      { key: 'leaves_all', endpoint: '/leaves?perPage=200' },
+      { key: 'leaves_pending', endpoint: '/leaves?perPage=50&status=pending' },
+      { key: 'leaves_balances', endpoint: '/leaves/balances' },
+    ];
+    
+    // === 第7波：薪資與成本 ===
+    const wave7Tasks = [
+      { key: 'payroll_latest', endpoint: '/payroll?perPage=100' },
+      { key: 'payroll_summary', endpoint: '/payroll/summary' },
+      { key: 'costs_summary', endpoint: '/costs/summary' },
+      { key: 'costs_by_client', endpoint: '/costs/by-client' },
+      { key: 'costs_by_employee', endpoint: '/costs/by-employee' },
+    ];
+    
+    // === 第8波：知識庫與文檔 ===
+    const wave8Tasks = [
+      { key: 'sop_list', endpoint: '/knowledge/sops?perPage=200' },
+      { key: 'faq_list', endpoint: '/knowledge/faqs?perPage=200' },
+      { key: 'documents_list', endpoint: '/knowledge/documents?perPage=200' },
+    ];
+    
+    // === 第9波：自動化與報表 ===
+    const wave9Tasks = [
+      { key: 'automation_rules', endpoint: '/automation/rules' },
+      { key: 'billing_schedules', endpoint: '/billing/schedules?perPage=200' },
+      { key: 'reports_overview', endpoint: '/reports/overview' },
+    ];
+    
+    // === 第10波：CMS內容與附件 ===
+    const wave10Tasks = [
+      { key: 'cms_posts', endpoint: '/cms/posts?perPage=100' },
+      { key: 'cms_resources', endpoint: '/cms/resources?perPage=100' },
+      { key: 'attachments_recent', endpoint: '/attachments?perPage=100' },
+    ];
+    
+    // 組合所有任務
+    const allWaves = [
+      ...wave1Tasks,  // 核心（5項）
+      ...wave2Tasks,  // 客戶（5項）
+      ...wave3Tasks,  // 儀表板（2項）
+      ...wave4Tasks,  // 任務（5項）
+      ...wave5Tasks,  // 收據（4項）
+      ...wave6Tasks,  // 工時假期（5項）
+      ...wave7Tasks,  // 薪資成本（5項）
+      ...wave8Tasks,  // 知識庫（3項）
+      ...wave9Tasks,  // 自動化（3項）
+      ...wave10Tasks, // CMS附件（3項）
+    ];
+    
+    const basicTasks = [...wave1Tasks, ...wave2Tasks]; // 基礎模式：10項
+    const adminFullTasks = allWaves; // 管理員完整模式：40項
+    
+    const tasks = adminMode ? adminFullTasks : basicTasks;
     preloadStatus.total = tasks.length;
 
     // 並行加載所有數據
     const results = await Promise.allSettled(
       tasks.map(async task => {
         const startTime = Date.now();
-        const result = await fetchWithCache(task.endpoint, task.key);
+        const result = await fetchWithCache(task.endpoint, task.key, { forceRefresh: options.forceRefresh });
         const duration = Date.now() - startTime;
         
         if (result.error) {
@@ -258,6 +380,7 @@
     );
 
     preloadStatus.isPreloading = false;
+    preloadStatus.lastPreloadTime = Date.now();
     
     console.log(`[DataCache] 預加載完成: ${preloadStatus.completed.length}/${preloadStatus.total} 成功`);
     
@@ -269,6 +392,9 @@
         total: preloadStatus.total
       }
     }));
+    
+    // 啟動循環預加載（1小時後自動刷新）
+    startCyclicPreload(adminMode);
 
     return results;
   }
@@ -433,6 +559,60 @@
     return { ...preloadStatus };
   }
 
+  /**
+   * 啟動循環預加載
+   */
+  function startCyclicPreload(adminMode = true) {
+    // 清除現有定時器
+    if (cyclicPreloadTimer) {
+      clearInterval(cyclicPreloadTimer);
+    }
+    
+    console.log(`[DataCache] 啟動循環預加載，每 ${PRELOAD_CYCLE_INTERVAL / 60000} 分鐘刷新一次`);
+    
+    cyclicPreloadTimer = setInterval(() => {
+      const now = Date.now();
+      const timeSinceLastPreload = now - (preloadStatus.lastPreloadTime || 0);
+      
+      // 確保至少間隔 55 分鐘才重新預加載（避免太頻繁）
+      if (timeSinceLastPreload >= 55 * 60 * 1000) {
+        console.log('[DataCache] 🔄 循環預加載：開始刷新所有緩存數據');
+        
+        // 強制刷新所有數據
+        preloadAll({ adminMode, forceRefresh: true }).then(() => {
+          console.log('[DataCache] 🔄 循環預加載：刷新完成');
+        }).catch(err => {
+          console.warn('[DataCache] 🔄 循環預加載：刷新失敗', err);
+        });
+      }
+    }, PRELOAD_CYCLE_INTERVAL);
+    
+    // 監聽頁面可見性變化，在頁面重新可見時檢查是否需要刷新
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && preloadStatus.lastPreloadTime) {
+        const now = Date.now();
+        const timeSinceLastPreload = now - preloadStatus.lastPreloadTime;
+        
+        // 如果距離上次預加載超過 50 分鐘，立即刷新
+        if (timeSinceLastPreload >= 50 * 60 * 1000) {
+          console.log('[DataCache] 🔄 頁面重新可見，緩存可能過期，立即刷新');
+          preloadAll({ adminMode, forceRefresh: true });
+        }
+      }
+    });
+  }
+
+  /**
+   * 停止循環預加載
+   */
+  function stopCyclicPreload() {
+    if (cyclicPreloadTimer) {
+      clearInterval(cyclicPreloadTimer);
+      cyclicPreloadTimer = null;
+      console.log('[DataCache] 循環預加載已停止');
+    }
+  }
+
   // 初始化：清理舊版本緩存
   clearOldCache();
 
@@ -441,6 +621,8 @@
     // 預加載
     preloadAll,
     getPreloadStatus,
+    startCyclicPreload,
+    stopCyclicPreload,
     
     // 基礎數據獲取
     getMe,
@@ -470,6 +652,6 @@
     apiBase
   };
 
-  console.log('[DataCache] 數據緩存系統已就緒（支援管理員完整預加載）');
+  console.log('[DataCache] 數據緩存系統已就緒（支援管理員完整預加載 + 自動循環刷新）');
 })();
 

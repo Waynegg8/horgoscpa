@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/assets/css/login.css" />
     <!-- 數據預加載系統 -->
     <script src="/assets/js/data-cache.js"></script>
+    <script src="/assets/js/fetch-interceptor.js"></script>
   </head>
   <body>
     <main class="login">
@@ -241,14 +242,33 @@
             }
           }
           
-          // 3. 預加載關鍵靜態資源（CSS, JS）
+          // 3. 預加載關鍵靜態資源（CSS, JS）- 所有內部頁面需要的資源
           function preloadStaticResources() {
             const resources = [
+              // 核心系統樣式
               { href: '/assets/css/internal-system.css', as: 'style' },
               { href: '/assets/css/internal-components.css', as: 'style' },
+              { href: '/assets/css/navbar.css', as: 'style' },
+              { href: '/assets/css/footer.css', as: 'style' },
+              
+              // 各頁面樣式（最常訪問的）
               { href: '/assets/css/dashboard-page.css', as: 'style' },
-              { href: '/assets/js/components/bootstrap.js', as: 'script' },
-              { href: '/assets/js/data-helper.js', as: 'script' }
+              { href: '/assets/css/clients-page.css', as: 'style' },
+              { href: '/assets/css/tasks-page.css', as: 'style' },
+              { href: '/assets/css/receipts-page.css', as: 'style' },
+              { href: '/assets/css/timesheet-page.css', as: 'style' },
+              { href: '/assets/css/knowledge-page.css', as: 'style' },
+              { href: '/assets/css/payroll-page.css', as: 'style' },
+              { href: '/assets/css/costs-page.css', as: 'style' },
+              { href: '/assets/css/leaves-page.css', as: 'style' },
+              { href: '/assets/css/settings-page.css', as: 'style' },
+              { href: '/assets/css/reports-page.css', as: 'style' },
+              
+              // 核心 JavaScript（按優先級）
+              { href: '/assets/js/data-cache.js', as: 'script' },
+              { href: '/assets/js/fetch-interceptor.js', as: 'script' },
+              { href: '/assets/js/data-helper.js', as: 'script' },
+              { href: '/assets/js/components/bootstrap.js', as: 'script' }
             ];
             
             resources.forEach(res => {
@@ -259,7 +279,7 @@
               document.head.appendChild(link);
             });
             
-            console.log('[Login] 已預加載 5 個關鍵靜態資源');
+            console.log(`[Login] 已預加載 ${resources.length} 個關鍵靜態資源`);
           }
           
           // 4. DNS 預連接（加速 API 請求）
@@ -268,15 +288,78 @@
             link.rel = 'dns-prefetch';
             link.href = 'https://www.horgoscpa.com';
             document.head.appendChild(link);
+            
+            // 同時建立預連接（preconnect）以建立完整 TCP + TLS 連接
+            const preconnect = document.createElement('link');
+            preconnect.rel = 'preconnect';
+            preconnect.href = 'https://www.horgoscpa.com';
+            preconnect.crossOrigin = 'use-credentials';
+            document.head.appendChild(preconnect);
+            
+            console.log('[Login] 已建立 DNS 預連接和 API 預連接');
           }
           
-          // 執行優化步驟（延遲執行以不阻塞頁面渲染）
+          // 5. 預熱 API 連接（發送輕量級請求建立連接池）
+          function warmupAPIConnection() {
+            const onProdHost = location.hostname.endsWith('horgoscpa.com');
+            const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+            
+            // 發送一個輕量級 OPTIONS 請求來建立連接
+            // 即使失敗也沒關係，目的是建立 TCP/TLS 連接
+            fetch(apiBase + '/auth/me', {
+              method: 'HEAD',
+              credentials: 'include',
+              cache: 'no-store'
+            }).then(() => {
+              console.log('[Login] API 連接已預熱');
+            }).catch(() => {
+              console.log('[Login] API 連接預熱完成（建立連接）');
+            });
+          }
+          
+          // 6. 準備 localStorage 空間（清理過期緩存）
+          function prepareLocalStorage() {
+            try {
+              // 清理超過 7 天的舊緩存
+              const now = Date.now();
+              const keysToRemove = [];
+              
+              for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('horgos_cache_')) {
+                  try {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    if (data.timestamp && (now - data.timestamp) > 7 * 24 * 60 * 60 * 1000) {
+                      keysToRemove.push(key);
+                    }
+                  } catch (e) {
+                    keysToRemove.push(key);
+                  }
+                }
+              }
+              
+              keysToRemove.forEach(key => localStorage.removeItem(key));
+              
+              if (keysToRemove.length > 0) {
+                console.log(`[Login] 已清理 ${keysToRemove.length} 個過期緩存`);
+              }
+            } catch (e) {
+              console.warn('[Login] 清理緩存失敗', e);
+            }
+          }
+          
+          // 執行優化步驟（立即執行，不延遲）
+          // 無論用戶是否已登入，都積極準備
+          checkExistingSession();      // 檢查現有 session 並可能啟動預加載
+          checkCachedData();            // 檢查已有的緩存數據
+          preloadStaticResources();     // 立即預加載所有靜態資源
+          setupDNSPrefetch();           // 立即建立 DNS 和 API 連接
+          prepareLocalStorage();        // 清理舊緩存，準備空間
+          
+          // 稍後預熱 API 連接（不阻塞頁面）
           setTimeout(() => {
-            checkExistingSession();
-            checkCachedData();
-            preloadStaticResources();
-            setupDNSPrefetch();
-          }, 100);
+            warmupAPIConnection();
+          }, 50);
         })();
       })();
     </script>

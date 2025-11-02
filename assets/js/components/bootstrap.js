@@ -31,19 +31,24 @@
   ensureScript('/assets/js/data-cache.js', false).then(() => {
     console.log('[Bootstrap] 數據緩存系統已就緒');
     
+    // 加載 Fetch 攔截器（自動使用緩存）
+    return ensureScript('/assets/js/fetch-interceptor.js', false);
+  }).then(() => {
+    console.log('[Bootstrap] Fetch 攔截器已啟動');
+    
     // 如果預加載尚未開始，現在啟動（適用於直接訪問內部頁面的情況）
     if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
       const status = window.DataCache.getPreloadStatus();
-      // 如果沒有任何已完成的預加載，啟動管理員完整預加載
+      // 如果沒有任何已完成的預加載，啟動管理員完整預加載（40項數據）
       if (status.completed.length === 0) {
-        console.log('[Bootstrap] 啟動背景管理員完整預加載');
+        console.log('[Bootstrap] 啟動背景管理員完整預加載（40項數據）');
         window.DataCache.preloadAll({ adminMode: true });
       } else {
         console.log(`[Bootstrap] 預加載已完成 ${status.completed.length}/${status.total} 項`);
       }
     }
   }).catch(err => {
-    console.warn('[Bootstrap] 加載數據緩存系統失敗', err);
+    console.warn('[Bootstrap] 加載系統失敗', err);
   });
 
   const onProdHost = location.hostname.endsWith('horgoscpa.com');
