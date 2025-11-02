@@ -34,7 +34,44 @@ function calculateWeightedHours(workTypeId, hours) {
 }
 
 /**
- * GET /api/v1/timelogs - 查詢工時記錄
+ * ⚡ 检查并获取周缓存
+ */
+async function getWeekCache(env, userId, weekStart) {
+	try {
+		const cache = await env.DATABASE.prepare(
+			`SELECT rows_data, last_updated_at, rows_count, total_hours
+			 FROM WeeklyTimesheetCache
+			 WHERE user_id = ? AND week_start_date = ?`
+		).bind(userId, weekStart).first();
+		
+		if (!cache) return null;
+		
+		// 检查缓存是否过期（24小时）
+		const updatedAt = new Date(cache.last_updated_at);
+		const now = new Date();
+		const hoursSinceUpdate = (now - updatedAt) / (1000 * 60 * 60);
+		
+		if (hoursSinceUpdate > 24) {
+			return null; // 缓存过期
+		}
+		
+		return {
+			data: JSON.parse(cache.rows_data || '[]'),
+			meta: {
+				cached: true,
+				rows_count: cache.rows_count,
+				total_hours: cache.total_hours,
+				last_updated: cache.last_updated_at
+			}
+		};
+	} catch (err) {
+		console.error('[WeekCache] 读取缓存失败:', err);
+		return null;
+	}
+}
+
+/**
+ * GET /api/v1/timelogs - 查詢工時記錄（支持周缓存）
  */
 async function handleGetTimelogs(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -43,57 +80,81 @@ async function handleGetTimelogs(request, env, me, requestId, url) {
 		const params = url.searchParams;
 		const startDate = (params.get("start_date") || "").trim();
 		const endDate = (params.get("end_date") || "").trim();
+		const useCache = params.get("use_cache") !== 'false'; // 默认使用缓存
 		
-	const where = ["t.is_deleted = 0"];
-	const binds = [];
-	
-	// 權限控制：員工只能看自己的
-	if (!me.is_admin) {
-		where.push("t.user_id = ?");
-		binds.push(String(me.user_id));
-	}
-	
-	// 日期範圍篩選
-	if (startDate) {
-		where.push("t.work_date >= ?");
-		binds.push(startDate);
-	}
-	if (endDate) {
-		where.push("t.work_date <= ?");
-		binds.push(endDate);
-	}
-	
-const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
-	
-	const rows = await env.DATABASE.prepare(
-		`SELECT t.timesheet_id, t.user_id, t.work_date, t.client_id, t.service_id, t.service_item_id, t.service_name, t.work_type, t.hours, t.note,
-		        u.name as user_name, u.username
-		 FROM Timesheets t
-		 LEFT JOIN Users u ON t.user_id = u.user_id
-		 ${whereSql}
-		 ORDER BY t.work_date ASC, t.timesheet_id ASC`
-	).bind(...binds).all();
-	
-	const data = (rows?.results || []).map(r => ({
-		log_id: r.timesheet_id,
-		timesheet_id: r.timesheet_id, // 新增：同時返回 timesheet_id 欄位
-		user_id: r.user_id,
-		user_name: r.user_name || r.username || '未知',
-		work_date: r.work_date,
-		client_id: r.client_id || "",
-		service_id: parseInt(r.service_id) || parseInt(r.service_name) || 1, // 優先使用新欄位，向後相容
-		service_item_id: parseInt(r.service_item_id) || 1,
-		work_type_id: parseInt(r.work_type) || 1,
-		hours: Number(r.hours || 0),
-		notes: r.note || "",
-	}));
+		// ⚡ 尝试使用周缓存（仅当查询7天范围且非管理员时）
+		if (useCache && !me.is_admin && startDate && endDate) {
+			const start = new Date(startDate);
+			const end = new Date(endDate);
+			const daysDiff = (end - start) / (1000 * 60 * 60 * 24);
+			
+			// 检查是否是完整的一周（7天）
+			if (daysDiff === 6 && start.getDay() === 1) { // 周一开始
+				const weekCache = await getWeekCache(env, me.user_id, startDate);
+				if (weekCache) {
+					console.log('[WeekCache] ✓ 缓存命中', { userId: me.user_id, week: startDate });
+					return jsonResponse(200, { 
+						ok: true, 
+						code: "SUCCESS", 
+						message: "查詢成功（使用缓存）", 
+						data: weekCache.data, 
+						meta: { requestId, ...weekCache.meta } 
+					}, corsHeaders);
+				}
+			}
+		}
+		
+		// 正常查询流程（缓存未命中或不适用）
+		const where = ["t.is_deleted = 0"];
+		const binds = [];
+		
+		// 權限控制：員工只能看自己的
+		if (!me.is_admin) {
+			where.push("t.user_id = ?");
+			binds.push(String(me.user_id));
+		}
+		
+		// 日期範圍篩選
+		if (startDate) {
+			where.push("t.work_date >= ?");
+			binds.push(startDate);
+		}
+		if (endDate) {
+			where.push("t.work_date <= ?");
+			binds.push(endDate);
+		}
+		
+		const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+		
+		const rows = await env.DATABASE.prepare(
+			`SELECT t.timesheet_id, t.user_id, t.work_date, t.client_id, t.service_id, t.service_item_id, t.service_name, t.work_type, t.hours, t.note,
+			        u.name as user_name, u.username
+			 FROM Timesheets t
+			 LEFT JOIN Users u ON t.user_id = u.user_id
+			 ${whereSql}
+			 ORDER BY t.work_date ASC, t.timesheet_id ASC`
+		).bind(...binds).all();
+		
+		const data = (rows?.results || []).map(r => ({
+			log_id: r.timesheet_id,
+			timesheet_id: r.timesheet_id,
+			user_id: r.user_id,
+			user_name: r.user_name || r.username || '未知',
+			work_date: r.work_date,
+			client_id: r.client_id || "",
+			service_id: parseInt(r.service_id) || parseInt(r.service_name) || 1,
+			service_item_id: parseInt(r.service_item_id) || 1,
+			work_type_id: parseInt(r.work_type) || 1,
+			hours: Number(r.hours || 0),
+			notes: r.note || "",
+		}));
 		
 		return jsonResponse(200, { 
 			ok: true, 
 			code: "SUCCESS", 
 			message: "查詢成功", 
 			data, 
-			meta: { requestId } 
+			meta: { requestId, cached: false } 
 		}, corsHeaders);
 		
 	} catch (err) {
@@ -739,11 +800,103 @@ async function handleGetMonthlySummary(request, env, me, requestId, url) {
 }
 
 /**
+ * ⚡ POST /api/v1/timelogs/week-cache - 保存周缓存
+ */
+async function handleSaveWeekCache(request, env, me, requestId, url) {
+	const corsHeaders = getCorsHeadersForRequest(request, env);
+	
+	let body;
+	try {
+		body = await request.json();
+	} catch (_) {
+		return jsonResponse(400, {
+			ok: false,
+			code: "BAD_REQUEST",
+			message: "請求格式錯誤",
+			meta: { requestId }
+		}, corsHeaders);
+	}
+	
+	const weekStart = String(body?.week_start || "").trim();
+	const rowsData = body?.rows_data || [];
+	
+	// 验证
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) {
+		return jsonResponse(400, {
+			ok: false,
+			code: "INVALID_DATE",
+			message: "日期格式錯誤",
+			meta: { requestId }
+		}, corsHeaders);
+	}
+	
+	if (!Array.isArray(rowsData)) {
+		return jsonResponse(400, {
+			ok: false,
+			code: "INVALID_DATA",
+			message: "數據格式錯誤",
+			meta: { requestId }
+		}, corsHeaders);
+	}
+	
+	try {
+		const now = new Date().toISOString();
+		const rowsJson = JSON.stringify(rowsData);
+		const rowsCount = rowsData.length;
+		const totalHours = rowsData.reduce((sum, row) => {
+			const rowTotal = (row.hours || []).reduce((s, h) => s + (Number(h) || 0), 0);
+			return sum + rowTotal;
+		}, 0);
+		
+		// UPSERT：如果存在则更新，否则插入
+		await env.DATABASE.prepare(
+			`INSERT INTO WeeklyTimesheetCache (user_id, week_start_date, rows_data, rows_count, total_hours, last_updated_at, created_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?)
+			 ON CONFLICT(user_id, week_start_date) DO UPDATE SET
+			   rows_data = excluded.rows_data,
+			   rows_count = excluded.rows_count,
+			   total_hours = excluded.total_hours,
+			   last_updated_at = excluded.last_updated_at`
+		).bind(me.user_id, weekStart, rowsJson, rowsCount, totalHours, now, now).run();
+		
+		console.log('[WeekCache] ✓ 缓存已保存', {
+			userId: me.user_id,
+			week: weekStart,
+			rows: rowsCount,
+			hours: totalHours
+		});
+		
+		return jsonResponse(200, {
+			ok: true,
+			code: "SUCCESS",
+			message: "緩存已保存",
+			data: {
+				week_start: weekStart,
+				rows_count: rowsCount,
+				total_hours: totalHours
+			},
+			meta: { requestId }
+		}, corsHeaders);
+		
+	} catch (err) {
+		console.error('[WeekCache] 保存缓存失败:', err);
+		const body = { ok: false, code: "INTERNAL_ERROR", message: "保存緩存失敗", meta: { requestId } };
+		if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+		return jsonResponse(500, body, corsHeaders);
+	}
+}
+
+/**
  * 主路由處理
  */
 export async function handleTimesheets(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
+	
+	// POST /api/v1/timelogs/week-cache - 保存周缓存
+	if (method === "POST" && url.pathname.endsWith("/week-cache")) {
+		return handleSaveWeekCache(request, env, me, requestId, url);
+	}
 	
 	// GET /api/v1/timelogs/summary - 月統計
 	if (method === "GET" && url.pathname.endsWith("/summary")) {

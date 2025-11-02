@@ -481,13 +481,19 @@ async function loadTimesheets() {
       const data = await apiCall(`/internal/api/v1/timelogs?start_date=${start}&end_date=${end}`);
       logs = data.data || [];
       
-      // 保存到缓存
+      // 检查是否使用了服务器周缓存
+      if (data.meta && data.meta.cached) {
+        console.log(`[Timesheets] 🚀 使用服务器周缓存 (${start}, ${logs.length} 条记录, 上次更新: ${data.meta.last_updated})`);
+      }
+      
+      // 保存到 localStorage
       try {
         localStorage.setItem(cacheKey, JSON.stringify({
           data: logs,
           timestamp: Date.now(),
           weekStart: start,
-          weekEnd: end
+          weekEnd: end,
+          serverCached: data.meta?.cached || false
         }));
       } catch (e) {
         console.warn('[Timesheets] ⚠ 缓存保存失败:', e);
@@ -1574,6 +1580,47 @@ function getAllowedWorkTypesForDate(dateType) {
   return state.workTypes.filter(wt => isWorkTypeAllowed(wt, dateType));
 }
 
+// ==================== 週緩存保存 ====================
+
+/**
+ * ⚡ 保存周缓存到数据库
+ */
+async function saveWeekCache() {
+  try {
+    const weekStart = formatDate(state.currentWeekStart);
+    
+    // 准备缓存数据（只保存 rows，不包括引用对象）
+    const cacheData = state.rows.map(row => ({
+      client_id: row.client_id,
+      service_id: row.service_id,
+      service_item_id: row.service_item_id,
+      work_type_id: row.work_type_id,
+      hours: row.hours,
+      timesheetIds: row.timesheetIds,
+      user_name: row.user_name
+    }));
+    
+    const response = await apiCall('/internal/api/v1/timelogs/week-cache', {
+      method: 'POST',
+      body: JSON.stringify({
+        week_start: weekStart,
+        rows_data: cacheData
+      })
+    });
+    
+    if (response.ok) {
+      console.log('[WeekCache] ✓ 周缓存已保存', {
+        week: weekStart,
+        rows: response.data.rows_count,
+        hours: response.data.total_hours
+      });
+    }
+  } catch (err) {
+    console.error('[WeekCache] 保存失败:', err);
+    throw err;
+  }
+}
+
 // ==================== 儲存函數 ====================
 
 async function saveAllChanges() {
@@ -1710,6 +1757,11 @@ async function saveAllChanges() {
     if (window.DataInvalidation) {
       window.DataInvalidation.invalidate('timesheets');
     }
+    
+    // ⚡ 保存周缓存到数据库（异步，不阻塞界面）
+    saveWeekCache().catch(err => {
+      console.warn('[WeekCache] 保存缓存失败:', err);
+    });
     
   await loadWeek();
   } else {
