@@ -314,7 +314,7 @@
                 .sort((a, b) => b[0].localeCompare(a[0])) // 按月份倒序排列
                 .map(([month, count]) => {
                   const [y, m] = month.split('-');
-                  return `${parseInt(m)}月${count}`;
+                  return `${parseInt(m)}月:${count}件`;
                 })
                 .join('、');
               return ` (${details})`;
