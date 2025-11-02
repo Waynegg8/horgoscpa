@@ -259,7 +259,7 @@
           htmlLength: tbody ? tbody.innerHTML.length : 0
         });
         
-        if (tbody && tbody.children.length > 0 && tbody.innerHTML.length > 100) {
+        if (tbody && tbody.children.length > 0 && tbody.innerHTML.length > 50) {
           window.Prerender.save('timesheets', tbody.innerHTML);
           saved = true;
           console.log('[Timesheets] ✅ 预渲染已保存 (' + tbody.children.length + ' 行, ' + tbody.innerHTML.length + ' 字符)');
