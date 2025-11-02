@@ -248,7 +248,8 @@ export async function handleTasks(request, env, me, requestId, url) {
 		}
 	}
 
-	if (method === "POST") {
+	// POST /api/v1/tasks - 新增任务（必须精确匹配路径，避免匹配到子路径）
+	if (method === "POST" && url.pathname.match(/\/tasks$/)) {
 		let body;
 		try { body = await request.json(); } catch (_) {
 			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
