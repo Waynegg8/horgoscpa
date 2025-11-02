@@ -11,17 +11,23 @@ export async function handleTasks(request, env, me, requestId, url) {
 		try {
 		const task = await env.DATABASE.prepare(
 			`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes, t.client_service_id,
-			        t.completed_date, t.created_at, t.service_month,
+			        t.completed_date, t.created_at, t.service_month, t.component_id,
+			        t.prerequisite_task_id, t.original_due_date, t.due_date_adjusted, t.adjustment_reason,
+			        t.adjustment_count, t.last_adjustment_date, t.can_start_date, t.estimated_work_days,
+			        t.status_note, t.blocker_reason, t.overdue_reason, t.expected_completion_date,
+			        t.is_overdue, t.completed_at, t.last_status_update,
 			        c.company_name AS client_name, c.tax_registration_number AS client_tax_id, c.client_id,
 			        s.service_name,
 			        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id) AS total_stages,
 			        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id AND s.status = 'completed') AS completed_stages,
-			        u.name AS assignee_name
+			        u.name AS assignee_name,
+			        pt.task_name AS prerequisite_task_name
 			 FROM ActiveTasks t
 			 LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
 			 LEFT JOIN Clients c ON c.client_id = cs.client_id
 			 LEFT JOIN Services s ON s.service_id = cs.service_id
 			 LEFT JOIN Users u ON u.user_id = t.assignee_user_id
+			 LEFT JOIN ActiveTasks pt ON pt.task_id = t.prerequisite_task_id AND pt.is_deleted = 0
 			 WHERE t.task_id = ? AND t.is_deleted = 0`
 		).bind(taskId).first();
 			
@@ -40,12 +46,29 @@ export async function handleTasks(request, env, me, requestId, url) {
 				assignee_name: task.assignee_name || "",
 				assignee_user_id: task.assignee_user_id || null,
 				client_service_id: task.client_service_id || null,
+				component_id: task.component_id || null,
 				completed_stages: Number(task.completed_stages || 0),
 				total_stages: Number(task.total_stages || 0),
 				due_date: task.due_date || null,
+				original_due_date: task.original_due_date || null,
+				due_date_adjusted: Boolean(task.due_date_adjusted),
+				adjustment_reason: task.adjustment_reason || "",
+				adjustment_count: Number(task.adjustment_count || 0),
+				last_adjustment_date: task.last_adjustment_date || null,
+				can_start_date: task.can_start_date || null,
+				estimated_work_days: Number(task.estimated_work_days || 3),
+				prerequisite_task_id: task.prerequisite_task_id || null,
+				prerequisite_task_name: task.prerequisite_task_name || null,
 				status: task.status,
+				status_note: task.status_note || "",
+				blocker_reason: task.blocker_reason || "",
+				overdue_reason: task.overdue_reason || "",
+				expected_completion_date: task.expected_completion_date || null,
+				is_overdue: Boolean(task.is_overdue),
+				last_status_update: task.last_status_update || null,
 				notes: task.notes || "",
 				completed_date: task.completed_date || null,
+				completed_at: task.completed_at || null,
 				created_at: task.created_at || null
 			};
 			
@@ -172,18 +195,21 @@ export async function handleTasks(request, env, me, requestId, url) {
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
 			const rows = await env.DATABASE.prepare(
-				`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes, t.service_month,
+				`SELECT t.task_id, t.task_name, t.due_date, t.original_due_date, t.status, t.assignee_user_id, t.notes, t.service_month, t.component_id,
+				        t.prerequisite_task_id, t.is_overdue, t.due_date_adjusted, t.adjustment_count, t.overdue_reason,
 				        c.company_name AS client_name, c.tax_registration_number AS client_tax_id, c.client_id,
 				        s.service_name,
 				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id) AS total_stages,
 				        (SELECT COUNT(1) FROM ActiveTaskStages s WHERE s.task_id = t.task_id AND s.status = 'completed') AS completed_stages,
 				        (CASE WHEN t.related_sop_id IS NOT NULL OR t.client_specific_sop_id IS NOT NULL THEN 1 ELSE 0 END) AS has_sop,
-				        u.name AS assignee_name
+				        u.name AS assignee_name,
+				        pt.task_name AS prerequisite_task_name
 				 FROM ActiveTasks t
 				 LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
 				 LEFT JOIN Clients c ON c.client_id = cs.client_id
 				 LEFT JOIN Services s ON s.service_id = cs.service_id
 				 LEFT JOIN Users u ON u.user_id = t.assignee_user_id
+				 LEFT JOIN ActiveTasks pt ON pt.task_id = t.prerequisite_task_id AND pt.is_deleted = 0
 				 ${whereSql}
 				 ORDER BY c.company_name ASC, s.service_name ASC, t.service_month DESC, date(t.due_date) ASC NULLS LAST, t.task_id DESC
 				 LIMIT ? OFFSET ?`
@@ -196,10 +222,18 @@ export async function handleTasks(request, env, me, requestId, url) {
 				clientId: r.client_id || "",
 				serviceName: r.service_name || "",
 				serviceMonth: r.service_month || "",
+				componentId: r.component_id || null,
 				assigneeName: r.assignee_name || "",
 				assigneeUserId: r.assignee_user_id || null,
 				progress: { completed: Number(r.completed_stages || 0), total: Number(r.total_stages || 0) },
 				dueDate: r.due_date || null,
+				originalDueDate: r.original_due_date || null,
+				dueDateAdjusted: Boolean(r.due_date_adjusted),
+				adjustmentCount: Number(r.adjustment_count || 0),
+				prerequisiteTaskId: r.prerequisite_task_id || null,
+				prerequisiteTaskName: r.prerequisite_task_name || null,
+				isOverdue: Boolean(r.is_overdue),
+				overdueReason: r.overdue_reason || "",
 				status: r.status,
 				notes: r.notes || "",
 				hasSop: Number(r.has_sop || 0) === 1,

@@ -50,10 +50,9 @@ ALTER TABLE ActiveTasks ADD COLUMN completed_at TEXT;
 -- 完成时间（用于计算前置任务完成时间）
 
 ALTER TABLE ActiveTasks ADD COLUMN component_id INTEGER;
--- 关联到服务组成（如果已经没有的话）
+-- 关联到服务组成
 
-ALTER TABLE ActiveTasks ADD COLUMN service_month TEXT;
--- 服务月份（格式：YYYY-MM，如果已经没有的话）
+-- 注意：service_month 已在 2025-11-01T220000Z_add_service_month.sql 中添加
 
 -- 创建索引
 CREATE INDEX IF NOT EXISTS idx_active_tasks_prerequisite ON ActiveTasks(prerequisite_task_id);
@@ -61,5 +60,5 @@ CREATE INDEX IF NOT EXISTS idx_active_tasks_overdue ON ActiveTasks(is_overdue);
 CREATE INDEX IF NOT EXISTS idx_active_tasks_completed_at ON ActiveTasks(completed_at);
 CREATE INDEX IF NOT EXISTS idx_active_tasks_adjustment_date ON ActiveTasks(last_adjustment_date);
 CREATE INDEX IF NOT EXISTS idx_active_tasks_component ON ActiveTasks(component_id);
-CREATE INDEX IF NOT EXISTS idx_active_tasks_service_month ON ActiveTasks(service_month);
+-- 注意：idx_active_tasks_service_month 已在 2025-11-01T220000Z_add_service_month.sql 中创建
 

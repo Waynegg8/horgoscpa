@@ -84,10 +84,9 @@
       </div>
       <div class="form-row-2col">
         <div class="form-field">
-          <label for="dueDate">到期日</label>
-          <input type="date" id="dueDate" readonly style="background:#f3f4f6;cursor:pointer;" />
-          <button type="button" class="btn btn-sm btn-secondary" onclick="showAdjustDueDateModal()" style="margin-top:8px;">調整到期日</button>
-          <button type="button" class="btn btn-sm btn-link" onclick="showAdjustmentHistory()" style="margin-top:8px;margin-left:8px;">查看調整歷史</button>
+          <label for="prerequisiteTask">前置任務</label>
+          <input type="text" id="prerequisiteTask" readonly style="background:#f3f4f6;" placeholder="無前置任務" />
+          <p style="font-size:12px;color:#6b7280;margin-top:4px;">此任務依賴的前置任務</p>
         </div>
         <div class="form-field">
           <label>進度</label>
@@ -97,6 +96,23 @@
             </div>
             <span id="progressText" style="font-weight: 600; font-size: 14px; color: #1f2937;">0/0</span>
           </div>
+        </div>
+      </div>
+      <div class="form-row-2col">
+        <div class="form-field">
+          <label for="dueDate">到期日</label>
+          <input type="date" id="dueDate" readonly style="background:#f3f4f6;cursor:pointer;" />
+          <div id="dueDateAdjustmentInfo" style="font-size:12px;color:#6b7280;margin-top:4px;display:none;">
+            <span id="adjustmentBadge" style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:500;">已調整</span>
+            <span id="adjustmentText"></span>
+          </div>
+          <button type="button" class="btn btn-sm btn-secondary" onclick="showAdjustDueDateModal()" style="margin-top:8px;">調整到期日</button>
+          <button type="button" class="btn btn-sm btn-link" onclick="showAdjustmentHistory()" style="margin-top:8px;margin-left:8px;">查看調整歷史</button>
+        </div>
+        <div class="form-field">
+          <label for="originalDueDate">原始到期日</label>
+          <input type="date" id="originalDueDate" readonly style="background:#f3f4f6;" />
+          <p style="font-size:12px;color:#6b7280;margin-top:4px;">系統最初設定的到期日</p>
         </div>
       </div>
       <div class="form-row-1col">
@@ -349,7 +365,24 @@
         document.getElementById('clientName').value = currentTask.client_name || '';
         document.getElementById('assigneeUser').value = currentTask.assignee_user_id || '';
         document.getElementById('dueDate').value = currentTask.due_date || '';
+        document.getElementById('originalDueDate').value = currentTask.original_due_date || currentTask.due_date || '';
         document.getElementById('taskNotes').value = currentTask.notes || '';
+        
+        // 前置任務
+        if (currentTask.prerequisite_task_name) {
+          document.getElementById('prerequisiteTask').value = currentTask.prerequisite_task_name;
+        }
+        
+        // 到期日調整資訊
+        if (currentTask.due_date_adjusted) {
+          const infoDiv = document.getElementById('dueDateAdjustmentInfo');
+          const textSpan = document.getElementById('adjustmentText');
+          textSpan.textContent = `已調整 ${currentTask.adjustment_count || 1} 次`;
+          if (currentTask.last_adjustment_date) {
+            textSpan.textContent += ` • 最後調整：${currentTask.last_adjustment_date}`;
+          }
+          infoDiv.style.display = 'block';
+        }
         
         console.log('已填充表單字段');
         
