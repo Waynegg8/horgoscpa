@@ -466,19 +466,18 @@
             }
           }
           
-          // 3. 收据已开但任务未完成提醒（如果有）
-          if (receiptsPending.length > 0) {
-            const receiptsHtml = receiptsPending.map(r => {
-              return `<div style="padding:12px;border-bottom:1px solid #f3f4f6;">
-                <div style="font-size:14px;font-weight:500;color:#1f2937;margin-bottom:4px;">${r.client_name} - ${r.service_name}</div>
-                <div style="font-size:13px;color:#6b7280;margin-bottom:6px;">收據 #${r.receipt_number} | 到期：${r.receipt_due_date || '—'}</div>
-                <div style="font-size:14px;color:#d97706;font-weight:500;">待完成任務：${r.pending_tasks} / ${r.total_tasks}</div>
-              </div>`;
-            }).join('');
-            const receiptsFrag = document.createElement('div');
-            receiptsFrag.innerHTML = listCard('⚠️ 收據已開但任務未完成', receiptsHtml);
-            rightColumn.appendChild(receiptsFrag.firstElementChild);
-          }
+          // 3. 收据已开但任务未完成提醒（始终显示）
+          const receiptsHtml = receiptsPending.length > 0 ? receiptsPending.map(r => {
+            return `<div style="padding:12px;border-bottom:1px solid #f3f4f6;">
+              <div style="font-size:14px;font-weight:500;color:#1f2937;margin-bottom:4px;">${r.client_name} - ${r.service_name}</div>
+              <div style="font-size:13px;color:#6b7280;margin-bottom:6px;">收據 #${r.receipt_number} | 到期：${r.receipt_due_date || '—'}</div>
+              <div style="font-size:14px;color:#d97706;font-weight:500;">待完成任務：${r.pending_tasks} / ${r.total_tasks}</div>
+            </div>`;
+          }).join('') : '<div style="padding:16px;text-align:center;color:#9ca3af;">目前無待處理項目</div>';
+          
+          const receiptsFrag = document.createElement('div');
+          receiptsFrag.innerHTML = listCard('⚠️ 收據已開但任務未完成', receiptsHtml);
+          rightColumn.appendChild(receiptsFrag.firstElementChild);
           
           // 4. 财务状况
           const finFrag = document.createElement('div');
