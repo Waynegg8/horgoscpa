@@ -360,7 +360,7 @@
         if (json.ok && Array.isArray(json.data)) {
           clients = json.data;
           select.innerHTML = '<option value="">請選擇客戶</option>' + 
-            clients.map(c => `<option value="${c.client_id}">${c.company_name || c.client_id}</option>`).join('');
+            clients.map(c => `<option value="${c.clientId}">${c.companyName || c.clientId}</option>`).join('');
         }
       } catch (err) {
         console.error('載入客戶列表失敗:', err);
@@ -419,7 +419,7 @@
           
           if (json.ok && Array.isArray(json.data)) {
             const existing = json.data.find(cs => 
-              cs.client_id === clientId && cs.service_id == serviceId
+              (cs.client_id || cs.clientId) === clientId && cs.service_id == serviceId
             );
             
             if (existing) {
