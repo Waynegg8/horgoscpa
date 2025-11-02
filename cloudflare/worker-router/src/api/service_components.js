@@ -235,7 +235,13 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
     }, corsHeaders);
   } catch (err) {
     console.error('创建服务组成部分失败:', err);
-    return jsonResponse(500, { ok: false, message: '创建失败' }, corsHeaders);
+    console.error('错误详情:', err.message);
+    console.error('错误堆栈:', err.stack);
+    return jsonResponse(500, { 
+      ok: false, 
+      message: '创建失败：' + err.message,
+      debug: String(err)
+    }, corsHeaders);
   }
 }
 

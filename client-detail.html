@@ -1918,7 +1918,16 @@
         const tasks = window[`customTasks${clientServiceId}`] || [];
         
         if (tasks.length === 0) {
-          tasksList.innerHTML = '<p style="color: #9ca3af; font-size: 13px;">點擊上方「+ 新增任務」按鈕開始配置</p>';
+          tasksList.innerHTML = `
+            <div style="padding: 20px; text-align: center; background: #fef3c7; border-radius: 8px; border: 2px dashed #fbbf24;">
+              <p style="color: #92400e; font-size: 14px; margin: 0 0 10px 0; font-weight: 500;">
+                ⚠️ 尚未配置任何任務
+              </p>
+              <p style="color: #92400e; font-size: 13px; margin: 0;">
+                點擊上方「<strong>+ 新增任務</strong>」按鈕開始配置
+              </p>
+            </div>
+          `;
           return;
         }
         
@@ -2492,6 +2501,8 @@
         const form = document.getElementById(`add-component-form-${clientServiceId}`);
         const editId = form.getAttribute('data-edit-id');
         
+        console.log('準備提交數據:', data);
+        
         let res, successMsg;
         if (editId) {
           // 编辑模式：使用PUT
@@ -2512,8 +2523,10 @@
         }
 
         const json = await res.json();
+        console.log('服務器響應:', json);
 
         if (!json.ok) {
+          console.error('創建失敗詳情:', json);
           alert(json.message || (editId ? '更新失敗' : '新增失敗'));
           return;
         }

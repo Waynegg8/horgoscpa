@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS ServiceComponentTasks (
   task_name TEXT NOT NULL,
   assignee_user_id INTEGER,
   notes TEXT,
+  due_rule TEXT DEFAULT 'end_of_month',
+  due_value INTEGER,
+  estimated_hours REAL,
+  advance_days INTEGER DEFAULT 7,
   created_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (component_id) REFERENCES ServiceComponents(component_id) ON DELETE CASCADE,
   FOREIGN KEY (assignee_user_id) REFERENCES Users(user_id)

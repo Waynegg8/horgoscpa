@@ -668,25 +668,45 @@
             'system_auto': '系統自動',
             'overdue_adjust': '逾期調整'
           };
+          
+          // 格式化日期时间
+          const formatDateTime = (dt) => {
+            if (!dt) return '-';
+            try {
+              const d = new Date(dt);
+              return d.toLocaleString('zh-TW', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              });
+            } catch {
+              return dt;
+            }
+          };
+          
+          const daysChanged = Number(adj.days_changed || 0);
+          
           html += `
             <div style="border:1px solid #e5e7eb;border-radius:6px;padding:12px;margin-bottom:12px;">
               <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                <span style="font-weight:600;">${typeLabels[adj.adjustment_type] || adj.adjustment_type}</span>
-                <span style="color:#6b7280;font-size:13px;">${adj.requested_at}</span>
+                <span style="font-weight:600;">${typeLabels[adj.adjustment_type] || adj.adjustment_type || '未知'}</span>
+                <span style="color:#6b7280;font-size:13px;">${formatDateTime(adj.requested_at)}</span>
               </div>
               <div style="font-size:14px;margin-bottom:6px;">
-                <span style="color:#6b7280;">原到期日:</span> ${adj.old_due_date}
+                <span style="color:#6b7280;">原到期日:</span> ${adj.old_due_date || '-'}
                 <span style="margin:0 8px;">→</span>
-                <span style="color:#6b7280;">新到期日:</span> ${adj.new_due_date}
-                <span style="margin-left:12px;color:${adj.days_changed > 0 ? '#dc2626' : '#059669'};">
-                  ${adj.days_changed > 0 ? '+' : ''}${adj.days_changed} 天
+                <span style="color:#6b7280;">新到期日:</span> ${adj.new_due_date || '-'}
+                <span style="margin-left:12px;color:${daysChanged > 0 ? '#dc2626' : '#059669'};">
+                  ${daysChanged > 0 ? '+' : ''}${daysChanged} 天
                 </span>
               </div>
               <div style="font-size:14px;color:#4b5563;">
                 <strong>原因:</strong> ${adj.adjustment_reason || '無'}
               </div>
               <div style="font-size:13px;color:#6b7280;margin-top:4px;">
-                由 ${adj.requested_by_name} 調整
+                由 ${adj.requested_by_name || '系統'} 調整
               </div>
             </div>
           `;
