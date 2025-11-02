@@ -7,6 +7,176 @@
   <link rel="stylesheet" href="/assets/css/common.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-system.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-components.css?v=3">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <style>
+    .form-section {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .form-section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .form-section-title .material-symbols-outlined {
+      font-size: 22px;
+      color: var(--primary-color);
+    }
+    
+    .field-hint {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 6px;
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+      line-height: 1.5;
+    }
+    
+    .field-hint .material-symbols-outlined {
+      font-size: 16px;
+      margin-top: 1px;
+    }
+    
+    .alert-warning {
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    
+    .alert-warning .material-symbols-outlined {
+      color: #d97706;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    
+    .alert-warning-content {
+      flex: 1;
+    }
+    
+    .alert-warning-title {
+      font-weight: 600;
+      color: #92400e;
+      margin-bottom: 4px;
+    }
+    
+    .alert-warning-text {
+      font-size: 14px;
+      color: #78350f;
+    }
+    
+    #adjustment_reason_section {
+      margin-bottom: 24px;
+      animation: slideDown 0.3s ease-out;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .stages-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .stage-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .stage-input-wrapper input {
+      flex: 1;
+    }
+    
+    .btn-remove-stage {
+      padding: 6px;
+      background: #fee;
+      border: 1px solid #fcc;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #c00;
+      transition: all 0.2s;
+    }
+    
+    .btn-remove-stage:hover {
+      background: #fcc;
+    }
+    
+    .btn-add-stage {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: white;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    
+    .btn-add-stage:hover {
+      background: #f1f5f9;
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+    
+    .page-intro {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .page-intro h2 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    
+    .page-intro p {
+      font-size: 14px;
+      opacity: 0.95;
+      margin: 0;
+    }
+    
+    label {
+      font-weight: 600;
+      color: #334155;
+    }
+    
+    label .required-mark {
+      color: #dc2626;
+      margin-left: 2px;
+    }
+  </style>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
@@ -18,70 +188,135 @@
     </div>
 
     <div class="content-card">
+      <div class="page-intro">
+        <h2>📋 建立新任務</h2>
+        <p>填寫以下資訊來建立一個新的任務。系統將自動計算預設到期日，您也可以根據需要進行調整。</p>
+      </div>
+
       <form id="taskForm" onsubmit="submitTask(event)">
-        <div class="form-row-2col">
-          <div class="form-field">
-            <label for="client_service_id">客戶服務 *</label>
-            <select id="client_service_id" required>
-              <option value="">載入中...</option>
-            </select>
+        <!-- 基本資訊 -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <span class="material-symbols-outlined">info</span>
+            基本資訊
           </div>
-          <div class="form-field">
-            <label for="assignee_user_id">負責人</label>
-            <select id="assignee_user_id">
-              <option value="">未分配</option>
-            </select>
+          
+          <div class="form-row-2col">
+            <div class="form-field">
+              <label for="client_service_id">客戶服務 <span class="required-mark">*</span></label>
+              <select id="client_service_id" required>
+                <option value="">載入中...</option>
+              </select>
+              <div class="field-hint">
+                <span class="material-symbols-outlined">help</span>
+                選擇要執行任務的客戶和服務類型
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="assignee_user_id">負責人</label>
+              <select id="assignee_user_id">
+                <option value="">未分配</option>
+              </select>
+              <div class="field-hint">
+                <span class="material-symbols-outlined">help</span>
+                可稍後再指派負責人
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row-1col">
+            <div class="form-field">
+              <label for="task_name">任務名稱 <span class="required-mark">*</span></label>
+              <input type="text" id="task_name" required maxlength="200" placeholder="例如：11月份記帳服務" />
+              <div class="field-hint">
+                <span class="material-symbols-outlined">help</span>
+                清楚描述任務內容，最多200字
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="form-row-1col">
-          <div class="form-field">
-            <label for="task_name">任務名稱 *</label>
-            <input type="text" id="task_name" required maxlength="200" />
+        <!-- 時間設定 -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <span class="material-symbols-outlined">schedule</span>
+            時間設定
+          </div>
+          
+          <div class="form-row-2col">
+            <div class="form-field">
+              <label for="service_month">服務月份 <span class="required-mark">*</span></label>
+              <input type="month" id="service_month" required />
+              <div class="field-hint">
+                <span class="material-symbols-outlined">help</span>
+                此任務對應的服務月份
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="due_date">到期日</label>
+              <input type="date" id="due_date" />
+              <input type="hidden" id="default_due_date" />
+              <div class="field-hint" id="due_date_hint">
+                <span class="material-symbols-outlined">help</span>
+                系統預設到期日將根據服務自動計算
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="form-row-2col">
-          <div class="form-field">
-            <label for="service_month">服務月份 *</label>
-            <input type="month" id="service_month" required />
+        <!-- 調整原因區（條件顯示） -->
+        <div id="adjustment_reason_section" style="display:none;">
+          <div class="alert-warning">
+            <span class="material-symbols-outlined">warning</span>
+            <div class="alert-warning-content">
+              <div class="alert-warning-title">您修改了系統預設的到期日</div>
+              <div class="alert-warning-text">請說明調整原因，這有助於追蹤客戶的特殊需求或任務複雜度</div>
+            </div>
           </div>
           <div class="form-field">
-            <label for="due_date">到期日</label>
-            <input type="date" id="due_date" />
-            <input type="hidden" id="default_due_date" />
-            <p style="font-size:12px;color:#6b7280;margin-top:4px;" id="due_date_hint">系統預設到期日將根據服務自動計算</p>
-          </div>
-        </div>
-
-        <div id="adjustment_reason_section" style="margin-bottom:20px;display:none;">
-          <div class="form-field">
-            <label for="adjustment_reason" style="color:#dc2626;">調整原因 *（您修改了預設期限）</label>
-            <textarea id="adjustment_reason" rows="3" placeholder="請說明為何此任務的期限與系統預設不同，這有助於了解客戶的難度..." style="border-color:#dc2626;"></textarea>
-            <p style="font-size:12px;color:#6b7280;margin-top:4px;">提示：說明客戶的特殊需求或複雜度，例如「該客戶帳務複雜需額外處理時間」</p>
+            <label for="adjustment_reason">調整原因 <span class="required-mark">*</span></label>
+            <textarea id="adjustment_reason" rows="3" placeholder="例如：該客戶帳務複雜需額外處理時間，或客戶要求提前完成..."></textarea>
           </div>
         </div>
 
-        <div class="form-row-2col">
-          <div class="form-field">
-            <label for="prerequisite_task_id">前置任務（可選）</label>
-            <select id="prerequisite_task_id">
-              <option value="">無前置任務</option>
-            </select>
-            <p style="font-size:12px;color:#6b7280;margin-top:4px;">選擇必須先完成的任務</p>
+        <!-- 進階選項 -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <span class="material-symbols-outlined">tune</span>
+            進階選項
           </div>
-          <div class="form-field">
-            <label>任務階段（可選）</label>
-            <div id="stages_container">
-              <input type="text" class="stage_input" placeholder="階段 1" style="margin-bottom:8px;" />
-              <button type="button" onclick="addStage()" class="btn btn-sm btn-secondary">+ 添加階段</button>
+          
+          <div class="form-row-2col">
+            <div class="form-field">
+              <label for="prerequisite_task_id">前置任務</label>
+              <select id="prerequisite_task_id">
+                <option value="">無前置任務</option>
+              </select>
+              <div class="field-hint">
+                <span class="material-symbols-outlined">help</span>
+                設定此任務必須等待另一個任務完成後才能開始
+              </div>
+            </div>
+            <div class="form-field">
+              <label>任務階段</label>
+              <div id="stages_container" class="stages-list">
+                <!-- 階段輸入框將動態添加 -->
+              </div>
+              <button type="button" onclick="addStage()" class="btn-add-stage">
+                <span class="material-symbols-outlined">add</span>
+                添加階段
+              </button>
+              <div class="field-hint" style="margin-top: 8px;">
+                <span class="material-symbols-outlined">help</span>
+                將任務拆分為多個階段，便於追蹤進度
+              </div>
             </div>
           </div>
         </div>
 
         <div class="form-actions">
           <button type="button" onclick="window.location.href='/internal/tasks'" class="btn btn-secondary">取消</button>
-          <button type="submit" class="btn btn-primary">建立任務</button>
+          <button type="submit" class="btn btn-primary">✓ 建立任務</button>
         </div>
       </form>
     </div>
@@ -102,6 +337,9 @@
       const now = new Date();
       const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       document.getElementById('service_month').value = yearMonth;
+      
+      // 添加第一個階段輸入框
+      addStage();
       
       // 載入客戶服務列表
       await loadClientServices();
@@ -178,7 +416,8 @@
       defaultDueDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
       
       document.getElementById('default_due_date').value = defaultDueDate;
-      document.getElementById('due_date_hint').textContent = `系統預設：${defaultDueDate}`;
+      const hintElement = document.getElementById('due_date_hint');
+      hintElement.innerHTML = `<span class="material-symbols-outlined">help</span> 系統預設：${defaultDueDate}`;
       
       // 如果還沒設定到期日，自動填入
       if (!document.getElementById('due_date').value) {
@@ -206,12 +445,45 @@
     function addStage() {
       const container = document.getElementById('stages_container');
       const stageCount = container.querySelectorAll('.stage_input').length + 1;
+      const isFirst = stageCount === 1;
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = 'stage-input-wrapper';
+      
       const input = document.createElement('input');
       input.type = 'text';
       input.className = 'stage_input';
-      input.placeholder = `階段 ${stageCount}`;
-      input.style.marginBottom = '8px';
-      container.insertBefore(input, container.lastElementChild);
+      input.placeholder = isFirst ? '階段 1（可選）' : `階段 ${stageCount}`;
+      
+      wrapper.appendChild(input);
+      
+      // 第一個階段不顯示刪除按鈕
+      if (!isFirst) {
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn-remove-stage';
+        removeBtn.innerHTML = '✕';
+        removeBtn.title = '刪除此階段';
+        removeBtn.onclick = function() {
+          wrapper.remove();
+          updateStagePlaceholders();
+        };
+        wrapper.appendChild(removeBtn);
+      }
+      
+      container.appendChild(wrapper);
+    }
+    
+    function updateStagePlaceholders() {
+      const wrappers = document.querySelectorAll('.stage-input-wrapper');
+      wrappers.forEach((wrapper, index) => {
+        const input = wrapper.querySelector('.stage_input');
+        if (index === 0) {
+          input.placeholder = '階段 1（可選）';
+        } else {
+          input.placeholder = `階段 ${index + 1}`;
+        }
+      });
     }
     
     async function submitTask(event) {
