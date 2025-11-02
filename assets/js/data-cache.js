@@ -346,30 +346,29 @@
       return result;
     }
 
-    // 🔥 第1階段：P0 最高優先級（串行加載，確保最快響應）
-    console.log('[DataCache] 🔥 P0階段：加載儀表板、工時表、任務...');
-    for (const task of p0Tasks) {
-      await loadTask(task);
-    }
+    // 🔥 第1階段：P0 最高優先級（並行加載，全速前進）
+    console.log('[DataCache] 🔥 P0階段：並行加載儀表板、工時表、任務...');
+    await Promise.allSettled(p0Tasks.map(task => loadTask(task)));
     
     // ⚡ 第2階段：P1 高優先級（並行加載）
     if (adminMode || p1Tasks.length > 0) {
-      console.log('[DataCache] ⚡ P1階段：加載核心數據...');
+      console.log('[DataCache] ⚡ P1階段：並行加載核心數據...');
       await Promise.allSettled(p1Tasks.map(task => loadTask(task)));
     }
     
     // 📊 第3階段：P2 中優先級（並行加載）
     if (adminMode) {
-      console.log('[DataCache] 📊 P2階段：加載客戶與收據...');
+      console.log('[DataCache] 📊 P2階段：並行加載客戶與收據...');
       await Promise.allSettled(p2Tasks.map(task => loadTask(task)));
     }
     
-    // 📁 第4階段：P3 低優先級（並行加載，稍微延遲）
+    // 📁 第4階段：P3 低優先級（後台加載，不阻塞）
     if (adminMode) {
-      console.log('[DataCache] 📁 P3階段：加載其他數據...');
-      // 延遲100ms，讓高優先級的數據先完全處理
-      await new Promise(resolve => setTimeout(resolve, 100));
-      await Promise.allSettled(p3Tasks.map(task => loadTask(task)));
+      // P3 在後台加載，不等待完成
+      console.log('[DataCache] 📁 P3階段：後台加載其他數據...');
+      Promise.allSettled(p3Tasks.map(task => loadTask(task))).then(() => {
+        console.log('[DataCache] 📁 P3階段完成');
+      });
     }
 
     preloadStatus.isPreloading = false;
