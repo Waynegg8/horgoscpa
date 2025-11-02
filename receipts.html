@@ -9,6 +9,13 @@
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/internal-system.css" />
     <link rel="stylesheet" href="/assets/css/receipts-page.css" />
+    
+    <!-- ⚡ 预加载与缓存系统 -->
+    <script src="/assets/js/data-cache.js"></script>
+    <script src="/assets/js/fetch-interceptor.js"></script>
+    <script src="/assets/js/prerender.js"></script>
+    <script src="/assets/js/page-prerender.js"></script>
+    
     <style>
       /* 日期選擇器 - 整框可點擊 */
       input[type="date"] {
@@ -733,14 +740,24 @@
 
         btnCreate.addEventListener('click', createReceipt);
 
+        // ⚡ 预渲染初始化
+        if (window.PagePrerender) {
+          window.PagePrerender.init('.receipts-container');
+        }
+
         // 初始化
         loadReceiptReminders();
         loadClients();
-        load();
+        load().then(() => {
+          // ⚡ 自动保存预渲染
+          if (window.PagePrerender) {
+            setTimeout(() => window.PagePrerender.autoSave('.receipts-container', 2000), 1000);
+          }
+        });
       })();
     </script>
     <script src="/assets/js/components/bootstrap.js?v=3"></script>
   </body>
-</html>
+  </html>
 
 

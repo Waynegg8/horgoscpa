@@ -9,7 +9,11 @@
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/costs-page.css" />
     
-    <!-- ⚡ Tab 缓存系统 -->
+    <!-- ⚡ 预加载与缓存系统 -->
+    <script src="/assets/js/data-cache.js"></script>
+    <script src="/assets/js/fetch-interceptor.js"></script>
+    <script src="/assets/js/prerender.js"></script>
+    <script src="/assets/js/page-prerender.js"></script>
     <script src="/assets/js/tab-cache.js"></script>
   </head>
   <body class="costs-page">
@@ -624,8 +628,22 @@
         document.getElementById('btn-refresh-emp')?.addEventListener('click', loadEmployeeCosts);
         document.getElementById('btn-refresh-client')?.addEventListener('click', loadClientCosts);
 
+        // ⚡ 预渲染初始化
+        if (window.PagePrerender) {
+          window.PagePrerender.init('main');
+        }
+
         // 初始化
-        ensureAdmin().then(ok => { if (ok) { loadItems(); loadRecords(); } });
+        ensureAdmin().then(ok => { 
+          if (ok) { 
+            loadItems(); 
+            loadRecords(); 
+            // ⚡ 自动保存预渲染
+            if (window.PagePrerender) {
+              setTimeout(() => window.PagePrerender.autoSave('main', 2000), 1000);
+            }
+          } 
+        });
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
