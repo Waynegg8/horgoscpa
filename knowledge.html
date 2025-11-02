@@ -531,19 +531,7 @@
         <label for="category" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">服務類型</label>
         <select id="category" aria-label="分類" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:180px;">
           <option value="all">全部</option>
-          <optgroup label="主要服務">
-            <option value="accounting">📊 記帳服務</option>
-            <option value="tax">📋 稅務申報</option>
-            <option value="consulting">💼 顧問諮詢</option>
-          </optgroup>
-          <optgroup label="其他分類">
-            <option value="business">🏢 工商登記</option>
-            <option value="hr">👥 人事管理</option>
-            <option value="finance">💰 財務管理</option>
-            <option value="contract">📄 合同範本</option>
-            <option value="internal">⚙️ 內部流程</option>
-            <option value="other">📦 其他</option>
-          </optgroup>
+          <!-- 動態加載服務類型 -->
         </select>
       </div>
       <div style="flex:1;min-width:220px;">
@@ -692,19 +680,8 @@
           <div class="form-group">
             <label>服務類型分類 *</label>
             <select id="sop-category-drawer" required>
-              <option value="">請選擇</option>
-              <optgroup label="🔹 主要服務類型">
-                <option value="accounting">📊 記帳流程（記帳服務）</option>
-                <option value="tax">📋 稅務流程（稅務申報）</option>
-                <option value="consulting">💼 顧問諮詢（顧問服務）</option>
-              </optgroup>
-              <optgroup label="🔸 其他業務分類">
-                <option value="business">🏢 工商登記</option>
-                <option value="hr">👥 人事管理</option>
-                <option value="finance">💰 財務管理</option>
-                <option value="internal">⚙️ 內部流程</option>
-                <option value="other">📦 其他</option>
-              </optgroup>
+              <option value="">請選擇服務類型...</option>
+              <!-- 動態加載服務類型 -->
             </select>
             <div style="margin-top:6px;font-size:11px;color:#64748b;line-height:1.4;">
               💡 選擇對應的服務類型，創建任務時會自動篩選相關SOP
@@ -898,18 +875,7 @@
             <label for="sop-category">服務類型分類</label>
             <select id="sop-category">
               <option value="">請選擇</option>
-              <optgroup label="主要服務類型">
-                <option value="accounting">📊 記帳流程（記帳服務）</option>
-                <option value="tax">📋 稅務流程（稅務申報）</option>
-                <option value="consulting">💼 顧問諮詢（顧問服務）</option>
-              </optgroup>
-              <optgroup label="其他業務分類">
-                <option value="business">🏢 工商登記</option>
-                <option value="hr">👥 人事管理</option>
-                <option value="finance">💰 財務管理</option>
-                <option value="internal">⚙️ 內部流程</option>
-                <option value="other">📦 其他</option>
-              </optgroup>
+              <!-- 動態加載服務類型 -->
             </select>
           </div>
           
@@ -1127,8 +1093,15 @@
           };
         }
         
-        // 工具函數：取得分類名稱
+        // 工具函數：取得分類名稱（動態從服務類型中查找）
         function getCategoryName(category, type = 'sop') {
+          if (!category) return '未分類';
+          
+          // 從服務類型列表中查找
+          const service = serviceTypes.find(s => s.service_code === category);
+          if (service) return service.service_name;
+          
+          // 後備方案：使用靜態映射
           const categoryMap = {
             'accounting': '記帳流程',
             'tax': '稅務流程',
@@ -1140,12 +1113,13 @@
             'internal': '內部流程',
             'other': '其他'
           };
-          return categoryMap[category] || category || '未分類';
+          return categoryMap[category] || category;
         }
         
         let sopState = { page:1, perPage:12, total:0 };
         let faqState = { page:1, perPage:12, total:0 };
         let resourcesState = { page:1, perPage:12, total:0, q:'', category:'' };
+        let serviceTypes = []; // 存儲服務類型列表
 
         // 初始化富文本编辑器（頁面加載時初始化）
         function initSopEditor() {
@@ -1607,6 +1581,50 @@
             return true;
           } catch (_) {
             return false;
+          }
+        }
+        
+        // 載入服務類型列表
+        async function loadServices() {
+          try {
+            const res = await fetch(`${apiBase}/services`, { credentials: 'include' });
+            if (!res.ok) return;
+            const json = await res.json();
+            
+            if (json.ok && Array.isArray(json.data)) {
+              serviceTypes = json.data;
+              
+              // 填充篩選器下拉框
+              const categoryFilter = document.getElementById('category');
+              if (categoryFilter) {
+                const optionsHTML = serviceTypes.map(s => 
+                  `<option value="${s.service_code}">${s.service_name}</option>`
+                ).join('');
+                categoryFilter.innerHTML = '<option value="all">全部</option>' + optionsHTML;
+              }
+              
+              // 填充SOP抽屜的下拉框
+              const sopCategoryDrawer = document.getElementById('sop-category-drawer');
+              if (sopCategoryDrawer) {
+                const optionsHTML = serviceTypes.map(s => 
+                  `<option value="${s.service_code}">${s.service_name}</option>`
+                ).join('');
+                sopCategoryDrawer.innerHTML = '<option value="">請選擇服務類型...</option>' + optionsHTML;
+              }
+              
+              // 填充舊的SOP模態框（如果存在）
+              const sopCategory = document.getElementById('sop-category');
+              if (sopCategory) {
+                const optionsHTML = serviceTypes.map(s => 
+                  `<option value="${s.service_code}">${s.service_name}</option>`
+                ).join('');
+                sopCategory.innerHTML = '<option value="">請選擇</option>' + optionsHTML;
+              }
+              
+              console.log('✅ 服務類型已載入:', serviceTypes.length, '個');
+            }
+          } catch (err) {
+            console.error('載入服務類型失敗:', err);
           }
         }
 
@@ -2928,7 +2946,8 @@
               alert(errorMsg);
             }
             
-            // 載入標籤庫並初始化篩選下拉選單
+            // 載入服務類型和標籤庫
+            await loadServices();
             loadCustomTags();
             loadFilterTagOptions();
             
