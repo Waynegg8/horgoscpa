@@ -183,11 +183,14 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
 
     // 保存服务层级SOP关联（多个）
     if (component_sop_ids && Array.isArray(component_sop_ids) && component_sop_ids.length > 0) {
-      for (let i = 0; i < component_sop_ids.length; i++) {
+      // 过滤掉无效的ID
+      const validSopIds = component_sop_ids.filter(id => id && !isNaN(id) && id > 0);
+      
+      for (let i = 0; i < validSopIds.length; i++) {
         await env.DATABASE.prepare(`
           INSERT INTO ServiceComponentSOPs (component_id, sop_id, sort_order)
           VALUES (?, ?, ?)
-        `).bind(componentId, component_sop_ids[i], i).run();
+        `).bind(componentId, validSopIds[i], i).run();
       }
     }
 
@@ -218,11 +221,14 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
 
         // 插入任务的SOP关联
         if (task.sop_ids && Array.isArray(task.sop_ids) && task.sop_ids.length > 0) {
-          for (let j = 0; j < task.sop_ids.length; j++) {
+          // 过滤掉无效的ID
+          const validTaskSopIds = task.sop_ids.filter(id => id && !isNaN(id) && id > 0);
+          
+          for (let j = 0; j < validTaskSopIds.length; j++) {
             await env.DATABASE.prepare(`
               INSERT INTO ServiceComponentTaskSOPs (task_config_id, sop_id, sort_order)
               VALUES (?, ?, ?)
-            `).bind(taskConfigId, task.sop_ids[j], j).run();
+            `).bind(taskConfigId, validTaskSopIds[j], j).run();
           }
         }
       }
@@ -308,11 +314,14 @@ async function updateServiceComponent(request, env, corsHeaders, componentId) {
     ).bind(componentId).run();
     
     if (component_sop_ids && Array.isArray(component_sop_ids) && component_sop_ids.length > 0) {
-      for (let i = 0; i < component_sop_ids.length; i++) {
+      // 过滤掉无效的ID
+      const validSopIds = component_sop_ids.filter(id => id && !isNaN(id) && id > 0);
+      
+      for (let i = 0; i < validSopIds.length; i++) {
         await env.DATABASE.prepare(`
           INSERT INTO ServiceComponentSOPs (component_id, sop_id, sort_order)
           VALUES (?, ?, ?)
-        `).bind(componentId, component_sop_ids[i], i).run();
+        `).bind(componentId, validSopIds[i], i).run();
       }
     }
 
@@ -356,11 +365,14 @@ async function updateServiceComponent(request, env, corsHeaders, componentId) {
         const taskConfigId = taskResult.meta.last_row_id;
 
         if (task.sop_ids && Array.isArray(task.sop_ids) && task.sop_ids.length > 0) {
-          for (let j = 0; j < task.sop_ids.length; j++) {
+          // 过滤掉无效的ID
+          const validTaskSopIds = task.sop_ids.filter(id => id && !isNaN(id) && id > 0);
+          
+          for (let j = 0; j < validTaskSopIds.length; j++) {
             await env.DATABASE.prepare(`
               INSERT INTO ServiceComponentTaskSOPs (task_config_id, sop_id, sort_order)
               VALUES (?, ?, ?)
-            `).bind(taskConfigId, task.sop_ids[j], j).run();
+            `).bind(taskConfigId, validTaskSopIds[j], j).run();
           }
         }
       }

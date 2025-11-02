@@ -2464,7 +2464,9 @@
       
       // 收集选中的服务级别SOP（支持多选）
       const sopCheckboxes = document.querySelectorAll(`#new-comp-sop-list-${clientServiceId} .comp-sop-checkbox:checked`);
-      const component_sop_ids = Array.from(sopCheckboxes).map(cb => parseInt(cb.value));
+      const component_sop_ids = Array.from(sopCheckboxes)
+        .map(cb => parseInt(cb.value))
+        .filter(id => !isNaN(id) && id > 0);
 
       // 验证：至少要有任务配置
       if (tasks.length === 0) {
