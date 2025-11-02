@@ -62,7 +62,6 @@
         <div class="form-field">
           <label for="taskStatus">狀態</label>
           <select id="taskStatus" disabled style="background:#f3f4f6;cursor:not-allowed;">
-            <option value="pending">待開始</option>
             <option value="in_progress">進行中</option>
             <option value="completed">已完成</option>
             <option value="cancelled">已取消</option>
@@ -231,7 +230,6 @@
       <div style="margin-bottom: 16px;">
         <label style="display:block;margin-bottom:6px;font-weight:500;">任務狀態 <span style="color:#dc2626;">*</span></label>
         <select id="modal_status" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
-          <option value="pending">⏸️ 待開始 - 任務已分配但尚未開工</option>
           <option value="in_progress">▶️ 進行中 - 正在處理此任務</option>
           <option value="completed">✅ 已完成 - 任務已經完成</option>
           <option value="cancelled">❌ 已取消 - 不再執行此任務</option>
@@ -402,7 +400,7 @@
         // 更新頁面
         document.getElementById('taskTitle').textContent = currentTask.task_name || '任務詳情';
         document.getElementById('taskName').value = currentTask.task_name || '';
-        document.getElementById('taskStatus').value = currentTask.status || 'pending';
+        document.getElementById('taskStatus').value = currentTask.status || 'in_progress';
         document.getElementById('clientName').value = currentTask.client_name || '';
         document.getElementById('assigneeUser').value = currentTask.assignee_user_id || '';
         document.getElementById('dueDate').value = currentTask.due_date || '';
@@ -813,7 +811,6 @@
         
         // 状态标签
         const statusLabels = {
-          'pending': '待開始',
           'in_progress': '進行中',
           'completed': '已完成',
           'cancelled': '已取消'

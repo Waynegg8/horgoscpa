@@ -163,7 +163,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 				where.push("(t.task_name LIKE ? OR c.company_name LIKE ? OR c.tax_registration_number LIKE ?)");
 				binds.push(`%${q}%`, `%${q}%`, `%${q}%`);
 			}
-			if (status && ["pending","in_progress","completed","cancelled"].includes(status)) {
+			if (status && ["in_progress","completed","cancelled"].includes(status)) {
 				where.push("t.status = ?");
 				binds.push(status);
 			}
@@ -307,7 +307,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 				client_service_id, template_id, task_name, start_date, due_date, service_month, 
 				status, assignee_user_id, prerequisite_task_id, original_due_date, 
 				expected_completion_date, created_at
-			) VALUES (?, NULL, ?, NULL, ?, ?, 'pending', ?, ?, ?, ?, ?)
+			) VALUES (?, NULL, ?, NULL, ?, ?, 'in_progress', ?, ?, ?, ?, ?)
 		`).bind(clientServiceId, taskName, dueDate, serviceMonth, assigneeUserId, prerequisiteTaskId, originalDueDate, expectedCompletionDate, now).run();
 			
 			const idRow = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
@@ -369,7 +369,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 		}
 		if (body.hasOwnProperty('status')) {
 			const status = String(body.status || "").trim();
-			if (!["pending","in_progress","completed","cancelled"].includes(status)) errors.push({ field:"status", message:"狀態無效" });
+			if (!["in_progress","completed","cancelled"].includes(status)) errors.push({ field:"status", message:"狀態無效" });
 			else { 
 				updates.push("status = ?"); 
 				binds.push(status);
@@ -475,9 +475,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 				`UPDATE ActiveTaskStages SET status = 'in_progress', started_at = ? WHERE active_stage_id = ?`
 			).bind(new Date().toISOString(), stageId).run();
 			
-			await env.DATABASE.prepare(
-				`UPDATE ActiveTasks SET status = 'in_progress' WHERE task_id = ? AND status = 'pending'`
-			).bind(taskId).run();
+			// 注意：已移除 pending 状态，新任务默认为 in_progress
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"已開始", meta:{ requestId } }, corsHeaders);
 		} catch (err) {
@@ -520,7 +518,7 @@ export async function handleTasks(request, env, me, requestId, url) {
 		console.log('[任务状态更新] 收到数据:', { status, progress_note, overdue_reason, blocker_reason, expected_completion_date });
 		
 		const errors = [];
-		if (!['pending', 'in_progress', 'completed', 'cancelled'].includes(status)) {
+		if (!['in_progress', 'completed', 'cancelled'].includes(status)) {
 			errors.push({ field: 'status', message: '状态无效' });
 		}
 		

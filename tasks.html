@@ -109,7 +109,6 @@
             </select>
             <select id="f_status" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
               <option value="all">全部狀態</option>
-              <option value="pending">待開始</option>
               <option value="in_progress">進行中</option>
               <option value="completed">已完成</option>
             </select>
@@ -168,7 +167,7 @@
         let employeesList = [];
         let selectedTaskIds = new Set();
 
-        const zhStatus = { pending:'待開始', in_progress:'進行中', completed:'已完成', cancelled:'已取消' };
+        const zhStatus = { in_progress:'進行中', completed:'已完成', cancelled:'已取消' };
 
         // 初始化
         async function init() {
@@ -491,12 +490,11 @@
         // 狀態樣式
         function getStatusStyle(status) {
           const styles = {
-            'pending': 'background:#f3f4f6;color:#6b7280;',
             'in_progress': 'background:#fef3c7;color:#d97706;',
             'completed': 'background:#d1fae5;color:#059669;',
             'cancelled': 'background:#fee2e2;color:#dc2626;'
           };
-          return styles[status] || styles['pending'];
+          return styles[status] || styles['in_progress'];
         }
         
         // 切換客戶分組

@@ -325,7 +325,6 @@
             // 计算总数
             const overdueTotal = Object.values(e.overdue || {}).reduce((sum, n) => sum + n, 0);
             const inProgressTotal = Object.values(e.inProgress || {}).reduce((sum, n) => sum + n, 0);
-            const pendingTotal = Object.values(e.pending || {}).reduce((sum, n) => sum + n, 0);
             
             // 构建状态摘要 - 使用更大的 badge 样式，并显示月份详情
             const badges = [];
@@ -336,10 +335,6 @@
             if (inProgressTotal > 0) {
               const details = formatMonthDetails(e.inProgress);
               badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#dbeafe;color:#2563eb;font-size:13px;font-weight:500;">進行中 ${inProgressTotal}${details}</span>`);
-            }
-            if (pendingTotal > 0) {
-              const details = formatMonthDetails(e.pending);
-              badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#fef3c7;color:#d97706;font-size:13px;font-weight:500;">待辦 ${pendingTotal}${details}</span>`);
             }
             if (e.completed > 0) {
               badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#d1fae5;color:#059669;font-size:13px;font-weight:500;">已完成 ${e.completed}</span>`);
