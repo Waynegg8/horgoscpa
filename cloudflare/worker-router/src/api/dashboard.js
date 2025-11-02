@@ -119,7 +119,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
     }
 
     // Admin metrics
-    async function getAdminMetrics(targetYm, finYm, finMode) {
+    async function getAdminMetrics(targetYm, finYm, finMode, params) {
       const res = { employeeHours: [], employeeTasks: [], financialStatus: null, revenueTrend: [], recentActivities: [], teamMembers: [] };
       
       // Employee hours (各员工分别工时 - 按指定月份查询)
@@ -646,7 +646,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
 
     const data = { role: me.is_admin ? 'admin' : 'employee' };
     if (me.is_admin) {
-      data.admin = await getAdminMetrics(ym, financeYm, financeMode);
+      data.admin = await getAdminMetrics(ym, financeYm, financeMode, searchParams);
       data.admin.receiptsPendingTasks = await getReceiptsPendingTasks();
     } else {
       data.employee = await getEmployeeMetrics();
