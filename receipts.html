@@ -7,6 +7,7 @@
     <title>收據收款｜列表</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/internal-system.css" />
     <link rel="stylesheet" href="/assets/css/receipts-page.css" />
     <style>
       /* 日期選擇器 - 整框可點擊 */
@@ -91,88 +92,108 @@
       }
     </style>
   </head>
-  <body class="receipts-page">
-    <header class="receipts-header">
-      <h1 class="receipts-title">收據與收款</h1>
-      <div class="receipts-toolbar">
-        <input id="q" type="search" placeholder="搜尋客戶/收據號…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
-        <label>起</label><input id="dateFrom" type="date" />
-        <label>迄</label><input id="dateTo" type="date" />
-        <select id="status">
-          <option value="all">全部狀態</option>
-          <option value="unpaid">未收款</option>
-          <option value="paid">已收款</option>
-          <option value="overdue">逾期</option>
-        </select>
-        <button id="btn-new" class="clients-btn" type="button">新增收據</button>
+  <body>
+    <div id="navbar-placeholder"></div>
+    
+    <div class="page-container">
+      <div class="page-header">
+        <h1 class="page-title">收據與收款</h1>
+        <div class="page-actions">
+          <button id="btn-new" class="btn btn-primary" type="button">+ 新增收據</button>
+        </div>
       </div>
-    </header>
 
-    <main class="receipts-content">
+      <!-- 搜尋篩選工具列 -->
+      <div class="content-card" style="margin-bottom: 16px;">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+          <input id="q" type="search" placeholder="搜尋客戶/收據號…" aria-label="搜尋" style="padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;min-width:220px;flex:1;" />
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 14px; color: #6b7280;">起</label>
+            <input id="dateFrom" type="date" style="padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;" />
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 14px; color: #6b7280;">迄</label>
+            <input id="dateTo" type="date" style="padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;" />
+          </div>
+          <select id="status" style="padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;">
+            <option value="all">全部狀態</option>
+            <option value="unpaid">未收款</option>
+            <option value="paid">已收款</option>
+            <option value="overdue">逾期</option>
+          </select>
+        </div>
+      </div>
+
+      <main style="margin-bottom: 24px;">
       <!-- 開收據提醒 -->
       <div id="reminderBanner" style="display: none;"></div>
       
-      <section class="receipts-card">
-        <table class="receipts-table" aria-label="收據列表">
-          <thead>
-            <tr>
-              <th>收據號</th>
-              <th>客戶</th>
-              <th>金額</th>
-              <th>貨幣</th>
-              <th>開立日期</th>
-              <th>狀態</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-        <div class="clients-pagination" id="pager">
-          <button type="button" id="prev">上一頁</button>
-          <button type="button" id="next">下一頁</button>
+      <div class="content-card">
+        <div class="table-wrapper">
+          <table class="data-table" aria-label="收據列表">
+            <thead>
+              <tr>
+                <th>收據號</th>
+                <th>客戶</th>
+                <th>金額</th>
+                <th>貨幣</th>
+                <th>開立日期</th>
+                <th>狀態</th>
+                <th style="width: 100px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
         </div>
-      </section>
+        <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;" id="pager">
+          <button type="button" id="prev" class="btn btn-secondary">上一頁</button>
+          <button type="button" id="next" class="btn btn-secondary">下一頁</button>
+        </div>
+      </div>
     </main>
+    </div>
+    
+    <div id="footer-placeholder"></div>
 
     <!-- 新增收據 Modal -->
-    <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <div class="modal-header" id="modalTitle">新增收據</div>
-        <div class="modal-body">
+    <div id="modalOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;" aria-hidden="true">
+      <div style="background: white; border-radius: 8px; padding: 24px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="margin: 0;" id="modalTitle">新增收據</h3>
+          <button id="btn-modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
+        </div>
+        <div style="display: grid; gap: 16px;">
           <div id="formError" class="form-error" style="display:none;"></div>
           
-          <div class="modal-row">
-            <label for="receiptType">收據類型</label>
-            <select id="receiptType">
+          <div style="display: grid; gap: 6px;">
+            <label for="receiptType" style="font-weight: 500; font-size: 14px;">收據類型</label>
+            <select id="receiptType" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
               <option value="normal">正常收據</option>
               <option value="prepayment">預收款</option>
               <option value="deposit">訂金</option>
             </select>
           </div>
           
-          <div class="modal-row">
-            <label for="clientSelect">選擇客戶（必填）</label>
-            <select id="clientSelect">
+          <div style="display: grid; gap: 6px;">
+            <label for="clientSelect" style="font-weight: 500; font-size: 14px;">選擇客戶（必填）</label>
+            <select id="clientSelect" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
               <option value="">載入中...</option>
             </select>
           </div>
           
-          <div class="modal-row" style="display: none;">
-            <label for="clientId">客戶ID（自動填入）</label>
-            <input id="clientId" type="text" placeholder="例如 c_001" readonly />
-          </div>
+          <input id="clientId" type="hidden" />
           
-          <div class="modal-row" id="serviceRow" style="display:none;">
-            <label for="clientService">客戶服務（選填）</label>
-            <select id="clientService">
+          <div id="serviceRow" style="display:none;">
+            <label for="clientService" style="font-weight: 500; font-size: 14px; display: block; margin-bottom: 6px;">客戶服務（選填）</label>
+            <select id="clientService" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
               <option value="">請選擇服務</option>
             </select>
-            <small style="color:#666;margin-top:4px;display:block;">選擇服務後可自動帶入金額</small>
+            <small style="color:#6b7280;margin-top:4px;display:block;font-size:12px;">選擇服務後可自動帶入金額</small>
           </div>
           
-          <div class="modal-row" id="billingMonthRow" style="display:none;">
-            <label for="billingMonth">計費月份（選填）</label>
-            <select id="billingMonth">
+          <div id="billingMonthRow" style="display:none;">
+            <label for="billingMonth" style="font-weight: 500; font-size: 14px; display: block; margin-bottom: 6px;">計費月份（選填）</label>
+            <select id="billingMonth" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
               <option value="">請選擇月份</option>
               <option value="1">1月</option>
               <option value="2">2月</option>
@@ -187,32 +208,32 @@
               <option value="11">11月</option>
               <option value="12">12月</option>
             </select>
-            <small style="color:#666;margin-top:4px;display:block;">選擇月份後可自動建議金額</small>
+            <small style="color:#6b7280;margin-top:4px;display:block;font-size:12px;">選擇月份後可自動建議金額</small>
           </div>
           
-          <div class="modal-row">
-            <label for="receiptDate">開立日期</label>
-            <input id="receiptDate" type="date" />
+          <div style="display: grid; gap: 6px;">
+            <label for="receiptDate" style="font-weight: 500; font-size: 14px;">開立日期</label>
+            <input id="receiptDate" type="date" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
           </div>
           
-          <div class="modal-row">
-            <label for="dueDate">到期日（自動計算）</label>
-            <input id="dueDate" type="date" />
-            <small style="color:#666;margin-top:4px;display:block;">根據服務收費明細或預設30天</small>
+          <div style="display: grid; gap: 6px;">
+            <label for="dueDate" style="font-weight: 500; font-size: 14px;">到期日（自動計算）</label>
+            <input id="dueDate" type="date" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
+            <small style="color:#6b7280;margin-top:4px;display:block;font-size:12px;">根據服務收費明細或預設30天</small>
           </div>
           
-          <div class="modal-row">
-            <label for="amount">金額</label>
+          <div style="display: grid; gap: 6px;">
+            <label for="amount" style="font-weight: 500; font-size: 14px;">金額</label>
             <div style="display:flex;gap:8px;align-items:center;">
-              <input id="amount" type="number" min="1" step="1" placeholder="例如 10000" style="flex:1;" />
-              <button type="button" id="btn-suggest-amount" class="btn" style="display:none;">建議金額</button>
+              <input id="amount" type="number" min="1" step="1" placeholder="例如 10000" style="flex:1;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
+              <button type="button" id="btn-suggest-amount" class="btn btn-secondary" style="display:none;">建議金額</button>
             </div>
-            <div id="suggestedAmountInfo" style="color:#10b981;margin-top:4px;display:none;"></div>
+            <div id="suggestedAmountInfo" style="color:#10b981;margin-top:4px;display:none;font-size:12px;"></div>
           </div>
           
-          <div class="modal-row">
-            <label for="statusNew">狀態</label>
-            <select id="statusNew">
+          <div style="display: grid; gap: 6px;">
+            <label for="statusNew" style="font-weight: 500; font-size: 14px;">狀態</label>
+            <select id="statusNew" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
               <option value="unpaid">未收款</option>
               <option value="partial">部分收款</option>
               <option value="paid">已收款</option>
@@ -220,14 +241,14 @@
             </select>
           </div>
           
-          <div class="modal-row">
-            <label for="notes">備註</label>
-            <textarea id="notes" rows="3" placeholder="可留空"></textarea>
+          <div style="display: grid; gap: 6px;">
+            <label for="notes" style="font-weight: 500; font-size: 14px;">備註</label>
+            <textarea id="notes" rows="3" placeholder="可留空" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;"></textarea>
           </div>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn" id="btn-cancel">取消</button>
-          <button type="button" class="btn primary" id="btn-create">建立</button>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel">取消</button>
+          <button type="button" class="btn btn-primary" id="btn-create">建立</button>
         </div>
       </div>
     </div>
@@ -364,21 +385,28 @@
             const clientId = this.value;
             inputClientId.value = clientId;
             
+            console.log('客戶選擇變化:', clientId); // Debug
+            
             if (!clientId) {
               inputClientService.innerHTML = '<option value="">請選擇服務</option>';
               currentClientServices = [];
               serviceRow.style.display = 'none';
               billingMonthRow.style.display = 'none';
+              btnSuggestAmount.style.display = 'none';
+              suggestedAmountInfo.style.display = 'none';
               return;
             }
             
             // 如果是正常收據，加載客戶服務
             if (inputReceiptType.value === 'normal') {
               try {
-                const res = await fetch(`${apiBase}/clients/${clientId}`, { credentials: 'include' });
+                const res = await fetch(`${apiBase}/clients/${encodeURIComponent(clientId)}`, { credentials: 'include' });
                 if (!res.ok) {
+                  console.error('載入客戶服務失敗: HTTP', res.status);
                   inputClientService.innerHTML = '<option value="">請選擇服務</option>';
                   currentClientServices = [];
+                  serviceRow.style.display = 'block'; // 仍然顯示，但沒有服務選項
+                  billingMonthRow.style.display = 'block';
                   return;
                 }
                 
@@ -392,9 +420,16 @@
                     
                   serviceRow.style.display = 'block';
                   billingMonthRow.style.display = 'block';
+                } else {
+                  inputClientService.innerHTML = '<option value="">該客戶暫無啟用的服務</option>';
+                  serviceRow.style.display = 'block';
+                  billingMonthRow.style.display = 'block';
                 }
               } catch (err) {
                 console.error('載入客戶服務失敗:', err);
+                inputClientService.innerHTML = '<option value="">載入失敗</option>';
+                serviceRow.style.display = 'block';
+                billingMonthRow.style.display = 'block';
               }
             }
           });
@@ -402,19 +437,38 @@
 
         function render(rows){
           tbody.innerHTML = '';
+          if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6b7280;padding:24px;">暫無數據</td></tr>';
+            return;
+          }
           rows.forEach(r => {
             const tr = document.createElement('tr');
             const isOverdue = r.dueDate && (new Date(r.dueDate) < new Date()) && (r.status==='unpaid' || r.status==='partial');
-            const badgeCls = r.status==='paid' ? 'badge paid' : (isOverdue ? 'badge overdue' : 'badge unpaid');
-            const txt = r.status==='paid' ? '已收款' : (isOverdue ? '逾期' : (r.status==='partial' ? '部分收款' : '未收款'));
+            
+            let badgeStyle = '';
+            let txt = '';
+            if (r.status === 'paid') {
+              badgeStyle = 'background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;';
+              txt = '已收款';
+            } else if (isOverdue) {
+              badgeStyle = 'background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;';
+              txt = '逾期';
+            } else if (r.status === 'partial') {
+              badgeStyle = 'background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;';
+              txt = '部分收款';
+            } else {
+              badgeStyle = 'background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;';
+              txt = '未收款';
+            }
+            
             tr.innerHTML = `
               <td>${r.receiptId}</td>
               <td>${r.clientName||''}</td>
-              <td>${(r.totalAmount||0).toLocaleString()}</td>
+              <td style="text-align:right;">$${(r.totalAmount||0).toLocaleString()}</td>
               <td>TWD</td>
               <td>${r.receiptDate||''}</td>
-              <td><span class="${badgeCls}">${txt}</span></td>
-              <td><a href="/internal/receipt-detail?id=${encodeURIComponent(r.receiptId)}" style="color: #3b82f6; text-decoration: underline;">查看</a></td>
+              <td><span style="${badgeStyle}">${txt}</span></td>
+              <td><a href="/internal/receipt-detail?id=${encodeURIComponent(r.receiptId)}" class="btn-link">查看</a></td>
             `;
             tbody.appendChild(tr);
           });
@@ -478,6 +532,8 @@
           
           // 重置新字段
           inputReceiptType.value = 'normal';
+          const clientSelectEl = document.getElementById('clientSelect');
+          if (clientSelectEl) clientSelectEl.value = '';
           inputClientId.value = '';
           inputClientService.innerHTML = '<option value="">請選擇服務</option>';
           inputBillingMonth.value = '';
@@ -492,17 +548,24 @@
           btnSuggestAmount.style.display = 'none';
           suggestedAmountInfo.style.display = 'none';
           
-          modal.classList.add('show');
+          modal.style.display = 'flex';
           modal.setAttribute('aria-hidden', 'false');
         }
 
         function closeModal(){
-          modal.classList.remove('show');
+          modal.style.display = 'none';
           modal.setAttribute('aria-hidden', 'true');
         }
 
         btnNew.addEventListener('click', openModal);
         btnCancel.addEventListener('click', closeModal);
+        
+        // 添加关闭按钮事件
+        const btnModalClose = document.getElementById('btn-modal-close');
+        if (btnModalClose) {
+          btnModalClose.addEventListener('click', closeModal);
+        }
+        
         modal.addEventListener('click', (e)=>{ if (e.target === modal) closeModal(); });
 
         // 監聽收據類型變化
@@ -608,7 +671,11 @@
         async function createReceipt(){
           formError.style.display = 'none';
           formError.textContent = '';
-          const client_id = inputClientId.value.trim();
+          
+          // 從下拉選單獲取客戶ID
+          const clientSelectEl = document.getElementById('clientSelect');
+          const client_id = clientSelectEl ? clientSelectEl.value.trim() : inputClientId.value.trim();
+          
           const receipt_date = inputReceiptDate.value;
           const due_date = inputDueDate.value;
           const total_amount = Number(inputAmount.value);
@@ -620,9 +687,11 @@
           const client_service_id = inputClientService.value ? parseInt(inputClientService.value, 10) : null;
           const billing_month = inputBillingMonth.value ? parseInt(inputBillingMonth.value, 10) : null;
           
+          console.log('創建收據 - 客戶ID:', client_id); // Debug
+          
           const errors = [];
-          if (!client_id) errors.push('客戶ID必填');
-          if (!/^\d{4}-\d{2}-\d{2}$/.test(receipt_date)) errors.push('開立日期格式錯誤');
+          if (!client_id) errors.push('請選擇客戶');
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(receipt_date)) errors.push('請選擇開立日期');
           if (!Number.isFinite(total_amount) || total_amount <= 0) errors.push('金額需大於 0');
           if (errors.length){
             formError.textContent = errors.join('；');
@@ -645,17 +714,22 @@
             if (client_service_id) payload.client_service_id = client_service_id;
             if (billing_month) payload.billing_month = billing_month;
             
+            console.log('發送請求:', payload); // Debug
+            
             const res = await fetch(`${apiBase}/receipts`, {
               method:'POST', credentials:'include', headers:{ 'Content-Type':'application/json' },
               body: JSON.stringify(payload)
             });
             if (res.status === 401) { location.assign('/login?redirect=/internal/receipts'); return; }
             const json = await res.json();
+            console.log('回應:', json); // Debug
             if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '建立失敗');
             closeModal();
             state.page = 1;
             await load();
+            await loadReceiptReminders(); // 刷新提醒
           } catch (err) {
+            console.error('創建收據失敗:', err); // Debug
             formError.textContent = String(err?.message || '建立失敗');
             formError.style.display = 'block';
           } finally {
@@ -671,8 +745,8 @@
         load();
       })();
     </script>
-    <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
+    <script src="/assets/js/components/bootstrap.js?v=3"></script>
   </body>
-  </html>
+</html>
 
 
