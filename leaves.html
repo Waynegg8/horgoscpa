@@ -14,6 +14,19 @@
     <script src="/assets/js/fetch-interceptor.js"></script>
     <script src="/assets/js/prerender.js"></script>
     <script src="/assets/js/page-prerender.js"></script>
+    <script>
+    // ⚡ 预渲染：准备在 main 后立即执行
+    window._leavesPrerender = (function() {
+      if (!window.Prerender) return null;
+      const pageKey = 'leaves';
+      const cachedHTML = window.Prerender.load(pageKey);
+      if (cachedHTML && cachedHTML.length > 500) {
+        console.log('[Leaves] ⚡ 预渲染已就绪');
+        return cachedHTML;
+      }
+      return null;
+    })();
+    </script>
     
     <style>
       /* 统一表单控件样式 - 强制所有输入框相同高度 */
@@ -189,7 +202,24 @@
       </div>
     </div>
 
-    <main style="padding:24px; display:grid; gap:16px;">
+    <main style="padding:24px; display:grid; gap:16px;" id="leavesMain">
+      <script>
+      // ⚡ 立即插入预渲染内容（同步执行，无需等待）
+      (function() {
+        if (window._leavesPrerender) {
+          var main = document.getElementById('leavesMain');
+          if (main) {
+            main.innerHTML = window._leavesPrerender;
+            main.dataset.prerendered = 'true';
+            console.log('[Leaves] ⚡ 预渲染内容已同步插入');
+            delete window._leavesPrerender; // 清理
+          }
+        } else {
+          // 无缓存：稍后保存预渲染
+          window._needSaveLeavesPrerender = true;
+        }
+      })();
+      </script>
       <section class="leaves-card">
         <h2 style="margin:0 0 8px 0; font-size:16px;">餘額總覽</h2>
         <div class="balance-grid" id="balances">
@@ -836,55 +866,34 @@
       })();
     </script>
     
-    <!-- ⚡ 智能预渲染 -->
+    <!-- ⚡ 保存预渲染 -->
     <script>
     (function() {
-      if (!window.Prerender) return;
-      
-      const pageKey = 'leaves';
-      const cachedHTML = window.Prerender.load(pageKey);
-      
-      if (cachedHTML && cachedHTML.length > 500) {
-        // 有缓存：DOMContentLoaded 后立即显示
-        document.addEventListener('DOMContentLoaded', function() {
-          const mainContainer = document.querySelector('main');
-          if (mainContainer) {
-            console.log('[Leaves] ⚡ 使用预渲染 HTML');
-            mainContainer.innerHTML = cachedHTML;
-            mainContainer.dataset.prerendered = 'true';
-            console.log('[Leaves] ⚡ 预渲染内容已加载');
-          }
-        });
-      } else {
-        // 无缓存：正常加载，完成后保存
-        console.log('[Leaves] ℹ 无缓存，正常加载');
-        
-        let saveTimer = null;
-        const checkAndSave = function() {
+      if (window._needSaveLeavesPrerender && window.Prerender) {
+        var saveTimer = null;
+        var checkAndSave = function() {
           clearTimeout(saveTimer);
           saveTimer = setTimeout(function() {
-            const mainContainer = document.querySelector('main');
-            const tbody = document.getElementById('tbody');
-            const balances = document.getElementById('balances');
+            var main = document.getElementById('leavesMain');
+            var tbody = document.getElementById('tbody');
+            var balances = document.getElementById('balances');
             
-            if (mainContainer && tbody && tbody.children.length > 0 && balances && balances.children.length > 0) {
-              window.Prerender.save(pageKey, mainContainer.innerHTML);
+            if (main && tbody && tbody.children.length > 0 && balances && balances.children.length > 0) {
+              window.Prerender.save('leaves', main.innerHTML);
               console.log('[Leaves] ✓ 预渲染已保存');
             }
           }, 2000);
         };
         
-        window.addEventListener('load', function() {
-          const mainContainer = document.querySelector('main');
-          if (mainContainer) {
-            // 使用 MutationObserver 监听内容变化
-            const observer = new MutationObserver(checkAndSave);
-            observer.observe(mainContainer, { childList: true, subtree: true });
-            
-            // 初始检查（3秒后）
-            setTimeout(checkAndSave, 3000);
-          }
-        });
+        // 监听 main 变化
+        var main = document.getElementById('leavesMain');
+        if (main) {
+          var observer = new MutationObserver(checkAndSave);
+          observer.observe(main, { childList: true, subtree: true });
+          
+          // 初始检查（3秒后）
+          setTimeout(checkAndSave, 3000);
+        }
       }
     })();
     </script>
