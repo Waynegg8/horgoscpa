@@ -150,19 +150,138 @@
           console.log('[Login] 🚀 立即啟動完整預加載系統');
           
           // 🔥 立即啟動預加載（不等待 session 檢查）
+          // 🔄 並且持續循環刷新（確保數據始終最新）
+          let preloadInterval = null;
+          let lastPreloadTime = 0;
+          
           function startImmediatePreload() {
             if (window.DataCache && window.DataCache.preloadAll) {
-              console.log('[Login] 開始預加載所有內容（管理員模式）...');
+              console.log('[Login] 🚀 開始預加載所有內容（管理員模式）...');
+              lastPreloadTime = Date.now();
+              
               window.DataCache.preloadAll({ adminMode: true }).then(() => {
-                console.log('[Login] ✅ 預加載完成！現在登入將極速進入系統');
+                console.log('[Login] ✅ 預加載完成！數據已就緒');
               }).catch(err => {
                 console.warn('[Login] ⚠ 預加載部分失敗（正常，某些 API 需要登入）', err);
               });
+              
+              // 🔄 啟動循環預加載：每 10 分鐘自動刷新一次
+              if (!preloadInterval) {
+                preloadInterval = setInterval(() => {
+                  console.log('[Login] 🔄 循環刷新數據（保持最新）...');
+                  lastPreloadTime = Date.now();
+                  window.DataCache.preloadAll({ adminMode: true, force: true }).then(() => {
+                    console.log('[Login] ✅ 數據已刷新完成');
+                  });
+                }, 10 * 60 * 1000); // 10 分鐘
+                
+                console.log('[Login] 🔄 已啟動循環預加載（每 10 分鐘刷新）');
+              }
             } else {
               console.warn('[Login] ⚠ DataCache 尚未就緒，等待...');
               setTimeout(startImmediatePreload, 100);
             }
           }
+          
+          // 🎯 監聽頁面可見性變化：用戶回到頁面時立即刷新
+          document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && window.DataCache) {
+              const timeSinceLastPreload = Date.now() - lastPreloadTime;
+              
+              // 如果超過 3 分鐘沒刷新，立即刷新
+              if (timeSinceLastPreload > 3 * 60 * 1000) {
+                console.log('[Login] 👀 用戶回到頁面，立即刷新數據...');
+                lastPreloadTime = Date.now();
+                updateStatusIndicator('刷新中...', 'loading');
+                window.DataCache.preloadAll({ adminMode: true, force: true }).then(() => {
+                  console.log('[Login] ✅ 數據已刷新完成');
+                  updateStatusIndicator('已就緒', 'ready');
+                });
+              } else {
+                console.log('[Login] 👀 用戶回到頁面，數據仍然新鮮（' + 
+                  Math.round(timeSinceLastPreload / 1000) + '秒前加載）');
+              }
+            }
+          });
+          
+          // 📊 創建狀態指示器（右下角小圖標，不阻塞）
+          function createStatusIndicator() {
+            const indicator = document.createElement('div');
+            indicator.id = 'preload-indicator';
+            indicator.style.cssText = `
+              position: fixed;
+              bottom: 20px;
+              right: 20px;
+              background: rgba(74, 144, 226, 0.95);
+              color: white;
+              padding: 10px 16px;
+              border-radius: 8px;
+              font-size: 13px;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+              z-index: 9999;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              transition: all 0.3s ease;
+              cursor: help;
+            `;
+            
+            indicator.innerHTML = `
+              <span class="status-icon">⏳</span>
+              <span class="status-text">預加載中...</span>
+            `;
+            
+            indicator.title = '系統正在後台預加載數據，確保登入後極速響應';
+            document.body.appendChild(indicator);
+            
+            return indicator;
+          }
+          
+          function updateStatusIndicator(text, state) {
+            const indicator = document.getElementById('preload-indicator');
+            if (!indicator) return;
+            
+            const icon = indicator.querySelector('.status-icon');
+            const textEl = indicator.querySelector('.status-text');
+            
+            if (state === 'loading') {
+              icon.textContent = '⏳';
+              indicator.style.background = 'rgba(74, 144, 226, 0.95)';
+            } else if (state === 'ready') {
+              icon.textContent = '✓';
+              indicator.style.background = 'rgba(76, 175, 80, 0.95)';
+              textEl.textContent = '數據已就緒';
+              
+              // 5秒後淡出
+              setTimeout(() => {
+                indicator.style.opacity = '0.5';
+                indicator.style.transform = 'scale(0.9)';
+              }, 5000);
+            } else if (state === 'refresh') {
+              icon.textContent = '🔄';
+              indicator.style.background = 'rgba(255, 152, 0, 0.95)';
+              indicator.style.opacity = '1';
+              indicator.style.transform = 'scale(1)';
+            }
+            
+            textEl.textContent = text;
+          }
+          
+          // 創建狀態指示器
+          const statusIndicator = createStatusIndicator();
+          
+          // 監聽預加載進度（每2秒更新一次）
+          setInterval(() => {
+            if (window.DataCache) {
+              const status = window.DataCache.getPreloadStatus();
+              if (status.isPreloading) {
+                const progress = Math.round((status.completed.length / status.total) * 100);
+                updateStatusIndicator(`預加載中 ${progress}%`, 'loading');
+              } else if (status.completed.length > 0) {
+                updateStatusIndicator(`已加載 ${status.completed.length} 項`, 'ready');
+              }
+            }
+          }, 2000);
           
           // 1. 檢查是否已經有 session（用戶之前登入過且未過期）
           function checkExistingSession() {

@@ -256,8 +256,14 @@
     }
 
     const adminMode = options.adminMode !== false; // 默認啟用管理員模式
+    const forceRefresh = options.force === true; // 是否強制刷新
     
-    console.log(`[DataCache] 開始分波預加載${adminMode ? '（管理員完整模式）' : '（基礎模式）'}...`);
+    if (forceRefresh) {
+      console.log(`[DataCache] 🔄 開始強制刷新所有數據${adminMode ? '（管理員完整模式）' : '（基礎模式）'}...`);
+    } else {
+      console.log(`[DataCache] 開始分波預加載${adminMode ? '（管理員完整模式）' : '（基礎模式）'}...`);
+    }
+    
     preloadStatus.isPreloading = true;
     preloadStatus.completed = [];
     preloadStatus.failed = [];
@@ -348,7 +354,7 @@
     // 加載單個任務
     async function loadTask(task) {
       const startTime = Date.now();
-      const result = await fetchWithCache(task.endpoint, task.key, { forceRefresh: options.forceRefresh });
+      const result = await fetchWithCache(task.endpoint, task.key, { forceRefresh });
       const duration = Date.now() - startTime;
       
       if (result.error) {
@@ -356,7 +362,8 @@
         // 完全靜默失敗（不顯示任何錯誤）
       } else {
         preloadStatus.completed.push(task.key);
-        console.log(`[DataCache] ${task.priority} ✓ ${task.key} (${duration}ms)${result.fromCache ? ' [緩存]' : ''}`);
+        const cacheIndicator = result.fromCache ? ' [緩存]' : (forceRefresh ? ' [已刷新]' : ' [新加載]');
+        console.log(`[DataCache] ${task.priority} ✓ ${task.key} (${duration}ms)${cacheIndicator}`);
       }
       
       return result;
