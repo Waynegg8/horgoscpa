@@ -135,8 +135,8 @@ export async function handleTasks(request, env, me, requestId, url) {
 		}
 	}
 	
-	// GET /api/v1/tasks - 獲取任務列表
-	if (method === "GET") {
+	// GET /api/v1/tasks - 獲取任務列表（必须精确匹配，避免拦截子路径）
+	if (method === "GET" && url.pathname.match(/\/tasks$/)) {
 		try {
 			const params = url.searchParams;
 			const page = Math.max(1, parseInt(params.get("page") || "1", 10));

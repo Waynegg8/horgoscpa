@@ -343,6 +343,8 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           LEFT JOIN Clients c ON c.client_id = cs.client_id
           LEFT JOIN Services s ON s.service_id = cs.service_id
           WHERE su.updated_at >= ?
+            AND su.old_status IS NOT NULL
+            AND su.new_status IS NOT NULL
           ORDER BY su.updated_at DESC
           LIMIT 20
         `).bind(sevenDaysAgoStr).all();
