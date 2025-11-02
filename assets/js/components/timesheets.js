@@ -1889,27 +1889,22 @@ async function init() {
   const hasPrerendered = tbody && tbody.children.length > 0 && tbody.dataset.prerendered === 'true';
   
   if (hasPrerendered) {
-    console.log('[Timesheets] ⚡ 检测到预渲染内容，先显示缓存，后台更新数据');
-    // 标记为已使用，确保 renderTable 能识别
+    console.log('[Timesheets] ⚡ 使用预渲染内容，跳过重新加载');
+    // 标记为已使用
     tbody.dataset.prerendered = 'consumed';
     
     // 初始化基础数据
     initWorkTypes();
     state.currentWeekStart = getMonday(new Date());
+    state.ready = true;
     
-    // 后台加载真实数据并静默更新预渲染
-    (async function backgroundUpdate() {
+    // 后台加载基础信息（不渲染）
+    (async function loadMetadata() {
       await loadCurrentUser();
       await loadClients();
-      
-      // 临时清除预渲染标记，让 loadWeek 能正常加载和渲染
-      tbody.dataset.prerendered = 'updating';
-      await loadWeek(); // 这会加载数据并渲染（会触发保存事件）
-      
-      console.log('[Timesheets] ⚡ 后台数据更新完成，新缓存已保存');
+      console.log('[Timesheets] ⚡ 元数据已加载，预渲染内容保持显示');
     })().catch(err => {
-      console.warn('[Timesheets] 后台更新失败:', err);
-      tbody.dataset.prerendered = 'expired';
+      console.warn('[Timesheets] 元数据加载失败:', err);
     });
     
     return;

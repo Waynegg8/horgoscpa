@@ -812,7 +812,7 @@
           const hasPrerendered = mainContainer && mainContainer.dataset.prerendered === 'true';
           
           if (hasPrerendered) {
-            console.log('[Leaves] ⚡ 检测到预渲染内容，跳过初始渲染');
+            console.log('[Leaves] ⚡ 使用预渲染内容，跳过重新加载');
             mainContainer.dataset.prerendered = 'consumed';
             
             // 只加载用户信息，不渲染
@@ -823,6 +823,7 @@
               if (meJson.ok && meJson.data) {
                 state.isAdmin = meJson.data.isAdmin || false;
               }
+              console.log('[Leaves] ⚡ 用户信息已加载，预渲染内容保持显示');
             } catch (err) {
               console.error('初始化失敗:', err);
             }
