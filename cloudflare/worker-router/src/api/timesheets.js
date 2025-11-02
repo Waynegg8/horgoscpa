@@ -34,26 +34,42 @@ function calculateWeightedHours(workTypeId, hours) {
 }
 
 /**
- * ⚡ 检查并获取周缓存
+ * ⚡ 失效指定周的缓存
+ */
+async function invalidateWeekCache(env, userId, weekStart) {
+	try {
+		await env.DATABASE.prepare(
+			`UPDATE WeeklyTimesheetCache 
+			 SET invalidated = 1 
+			 WHERE user_id = ? AND week_start_date = ?`
+		).bind(userId, weekStart).run();
+		
+		console.log('[WeekCache] ✓ 缓存已失效', { userId, week: weekStart });
+	} catch (err) {
+		console.error('[WeekCache] 失效缓存失败:', err);
+	}
+}
+
+/**
+ * ⚡ 检查并获取周缓存（基于数据变动）
  */
 async function getWeekCache(env, userId, weekStart) {
 	try {
 		const cache = await env.DATABASE.prepare(
-			`SELECT rows_data, last_updated_at, rows_count, total_hours
+			`SELECT rows_data, last_updated_at, rows_count, total_hours, hit_count, data_version
 			 FROM WeeklyTimesheetCache
-			 WHERE user_id = ? AND week_start_date = ?`
+			 WHERE user_id = ? AND week_start_date = ? AND invalidated = 0`
 		).bind(userId, weekStart).first();
 		
 		if (!cache) return null;
 		
-		// 检查缓存是否过期（24小时）
-		const updatedAt = new Date(cache.last_updated_at);
-		const now = new Date();
-		const hoursSinceUpdate = (now - updatedAt) / (1000 * 60 * 60);
-		
-		if (hoursSinceUpdate > 24) {
-			return null; // 缓存过期
-		}
+		// 更新访问时间和命中次数
+		await env.DATABASE.prepare(
+			`UPDATE WeeklyTimesheetCache 
+			 SET last_accessed_at = datetime('now'), 
+			     hit_count = hit_count + 1 
+			 WHERE user_id = ? AND week_start_date = ?`
+		).bind(userId, weekStart).run();
 		
 		return {
 			data: JSON.parse(cache.rows_data || '[]'),
@@ -61,7 +77,9 @@ async function getWeekCache(env, userId, weekStart) {
 				cached: true,
 				rows_count: cache.rows_count,
 				total_hours: cache.total_hours,
-				last_updated: cache.last_updated_at
+				last_updated: cache.last_updated_at,
+				hit_count: (cache.hit_count || 0) + 1,
+				version: cache.data_version
 			}
 		};
 	} catch (err) {
@@ -587,6 +605,18 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		
 		console.log('[TIMELOG] 保存成功:', { log_id, weighted_hours, comp_hours_generated });
 		
+		// ⚡ 失效该周的缓存（不等待完成，避免阻塞响应）
+		const workDateObj = new Date(work_date + 'T00:00:00');
+		const dayOfWeek = workDateObj.getDay();
+		const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // 周日是0，要往回6天到周一
+		const monday = new Date(workDateObj);
+		monday.setDate(monday.getDate() + mondayOffset);
+		const weekStart = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+		
+		invalidateWeekCache(env, String(me.user_id), weekStart).catch(err => {
+			console.error('[TIMELOG] 失效缓存失败（不影响保存）:', err);
+		});
+		
 		return jsonResponse(200, { 
 			ok: true, 
 			code: "SUCCESS", 
@@ -672,6 +702,35 @@ async function handleDeleteTimelogsBatch(request, env, me, requestId, url) {
 		).run();
 		
 		const deleted_count = result.changes || 0;
+		
+		// ⚡ 失效该日期范围内所有周的缓存
+		if (deleted_count > 0) {
+			const startDateObj = new Date(start_date + 'T00:00:00');
+			const endDateObj = new Date(end_date + 'T00:00:00');
+			
+			// 计算需要失效的所有周（周一）
+			const weeksToInvalidate = new Set();
+			let currentDate = new Date(startDateObj);
+			
+			while (currentDate <= endDateObj) {
+				const dayOfWeek = currentDate.getDay();
+				const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+				const monday = new Date(currentDate);
+				monday.setDate(monday.getDate() + mondayOffset);
+				const weekStart = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+				weeksToInvalidate.add(weekStart);
+				
+				// 移动到下一周
+				currentDate.setDate(currentDate.getDate() + 7);
+			}
+			
+			// 并发失效所有周
+			Promise.all([...weeksToInvalidate].map(weekStart => 
+				invalidateWeekCache(env, String(me.user_id), weekStart)
+			)).catch(err => {
+				console.error('[TIMELOG] 批量失效缓存失败（不影响删除）:', err);
+			});
+		}
 		
 		return jsonResponse(200, { 
 			ok: true, 
@@ -848,14 +907,16 @@ async function handleSaveWeekCache(request, env, me, requestId, url) {
 			return sum + rowTotal;
 		}, 0);
 		
-		// UPSERT：如果存在则更新，否则插入
+		// UPSERT：如果存在则更新，否则插入（同时递增版本号并重置失效标记）
 		await env.DATABASE.prepare(
-			`INSERT INTO WeeklyTimesheetCache (user_id, week_start_date, rows_data, rows_count, total_hours, last_updated_at, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?)
+			`INSERT INTO WeeklyTimesheetCache (user_id, week_start_date, rows_data, rows_count, total_hours, data_version, invalidated, last_updated_at, created_at)
+			 VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?)
 			 ON CONFLICT(user_id, week_start_date) DO UPDATE SET
 			   rows_data = excluded.rows_data,
 			   rows_count = excluded.rows_count,
 			   total_hours = excluded.total_hours,
+			   data_version = data_version + 1,
+			   invalidated = 0,
 			   last_updated_at = excluded.last_updated_at`
 		).bind(me.user_id, weekStart, rowsJson, rowsCount, totalHours, now, now).run();
 		
