@@ -379,8 +379,49 @@ async function loadTimesheets() {
   const end = formatDate(endDate);
   
   try {
-    const data = await apiCall(`/internal/api/v1/timelogs?start_date=${start}&end_date=${end}`);
-    const logs = data.data || [];
+    let logs = [];
+    let usedCache = false;
+    
+    // ⚡ 优先从缓存读取
+    const cacheKey = `timesheet_week_${start}`;
+    const cached = localStorage.getItem(cacheKey);
+    
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached);
+        const age = Date.now() - cachedData.timestamp;
+        
+        // 缓存有效期：5分钟
+        if (age < 5 * 60 * 1000) {
+          logs = cachedData.data || [];
+          usedCache = true;
+          console.log(`[Timesheets] ⚡ 使用缓存数据 (${start}, ${logs.length} 条记录, ${(age / 1000).toFixed(1)}秒前)`);
+        } else {
+          console.log(`[Timesheets] ⚠ 缓存已过期，重新加载 (${start})`);
+          localStorage.removeItem(cacheKey);
+        }
+      } catch (e) {
+        console.warn('[Timesheets] ⚠ 缓存解析失败:', e);
+      }
+    }
+    
+    // 如果没有缓存，从服务器加载
+    if (!usedCache) {
+      const data = await apiCall(`/internal/api/v1/timelogs?start_date=${start}&end_date=${end}`);
+      logs = data.data || [];
+      
+      // 保存到缓存
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({
+          data: logs,
+          timestamp: Date.now(),
+          weekStart: start,
+          weekEnd: end
+        }));
+      } catch (e) {
+        console.warn('[Timesheets] ⚠ 缓存保存失败:', e);
+      }
+    }
     
     // 建立 rows 結構
   const rowMap = new Map();
@@ -1583,6 +1624,12 @@ async function saveAllChanges() {
     state.pending.clear();
     updatePendingCount();
     showToast(`✅ 已儲存所有變更（${successCount} 筆）`, 'success');
+    
+    // ⚡ 触发数据失效，自动清除缓存并预加载受影响的页面
+    if (window.DataInvalidation) {
+      window.DataInvalidation.invalidate('timesheets');
+    }
+    
   await loadWeek();
   } else {
     // 有失敗的
@@ -1881,6 +1928,60 @@ document.getElementById('btnNextWeek').addEventListener('click', async () => {
 document.getElementById('btnAddRow').addEventListener('click', addNewRow);
 document.getElementById('btnSaveAll').addEventListener('click', saveAllChanges);
 
+// ==================== 预加载前几周数据 ====================
+
+async function prefetchPreviousWeeks(weekCount = 4) {
+  console.log(`[Timesheets] 🔄 开始预加载前 ${weekCount} 周的数据...`);
+  
+  const today = new Date();
+  const prefetchPromises = [];
+  
+  for (let i = 1; i <= weekCount; i++) {
+    const weekStart = getMonday(today);
+    weekStart.setDate(weekStart.getDate() - (i * 7));
+    
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    
+    const from = weekStart.toISOString().split('T')[0];
+    const to = weekEnd.toISOString().split('T')[0];
+    
+    // 预加载工时数据
+    const prefetchTask = (async () => {
+      try {
+        const res = await fetch(`${apiBase}/timelogs?start_date=${from}&end_date=${to}`, {
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.ok) {
+            // 存储到 localStorage 缓存
+            const cacheKey = `timesheet_week_${from}`;
+            try {
+              localStorage.setItem(cacheKey, JSON.stringify({
+                data: json.data || [],
+                timestamp: Date.now(),
+                weekStart: from,
+                weekEnd: to
+              }));
+              console.log(`[Timesheets] ✓ 预加载第 ${i} 周 (${from}) 完成: ${json.data?.length || 0} 条记录`);
+            } catch (e) {
+              console.warn(`[Timesheets] ⚠ 缓存第 ${i} 周数据失败:`, e);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[Timesheets] ⚠ 预加载第 ${i} 周失败:`, err);
+      }
+    })();
+    
+    prefetchPromises.push(prefetchTask);
+  }
+  
+  await Promise.allSettled(prefetchPromises);
+  console.log(`[Timesheets] ✅ 前 ${weekCount} 周数据预加载完成`);
+}
+
 // ==================== 初始化 ====================
 
 async function init() {
@@ -1889,25 +1990,61 @@ async function init() {
   const hasPrerendered = tbody && tbody.children.length > 0 && tbody.dataset.prerendered === 'true';
   
   if (hasPrerendered) {
-    console.log('[Timesheets] ⚡ 使用预渲染内容，跳过重新加载');
-    // 标记为已使用
-    tbody.dataset.prerendered = 'consumed';
+    // ⚡ 检查预渲染质量（是否有完整结构）
+    const htmlLength = tbody.innerHTML.length;
+    const isValidPrerender = htmlLength > 200; // 只要有基本结构就使用（包括空状态）
     
-    // 初始化基础数据
-    initWorkTypes();
-    state.currentWeekStart = getMonday(new Date());
-    state.ready = true;
-    
-    // 后台加载基础信息（不渲染）
-    (async function loadMetadata() {
-      await loadCurrentUser();
-      await loadClients();
-      console.log('[Timesheets] ⚡ 元数据已加载，预渲染内容保持显示');
-    })().catch(err => {
-      console.warn('[Timesheets] 元数据加载失败:', err);
-    });
-    
-    return;
+    if (isValidPrerender) {
+      console.log('[Timesheets] ⚡ 使用预渲染内容，后台加载数据到 state (' + htmlLength + ' 字符)');
+      // 标记为已使用
+      tbody.dataset.prerendered = 'consumed';
+      
+      // 初始化基础数据
+      initWorkTypes();
+      state.currentWeekStart = getMonday(new Date());
+      
+      // ⚡ 后台加载所有必要数据到 state（但不重新渲染）
+      (async function loadStateData() {
+        try {
+          await loadCurrentUser();
+          await loadClients();
+          
+          // 加载假日和请假数据到 state
+          await Promise.all([loadHolidays(), loadLeaves()]);
+          
+          // 建立周模型（不渲染表头）
+          buildWeekDays();
+          
+          // 加载工时数据到 state
+          await loadTimesheets();
+          
+          // 加载月统计
+          await loadMonthlySummary();
+          
+          // 标记为就绪
+          state.ready = true;
+          
+          console.log('[Timesheets] ✅ 所有数据已加载到 state，预渲染内容保持显示，功能正常');
+          
+          // ⚡ 预加载前4周数据
+          setTimeout(() => {
+            prefetchPreviousWeeks(4);
+          }, 1000);
+        } catch (err) {
+          console.warn('[Timesheets] 数据加载失败，清除预渲染并重新加载:', err);
+          tbody.innerHTML = '';
+          tbody.dataset.prerendered = '';
+          location.reload();
+        }
+      })();
+      
+      return;
+    } else {
+      console.log('[Timesheets] ⚠ 预渲染无效（' + htmlLength + ' 字符），清除并重新加载');
+      tbody.innerHTML = '';
+      tbody.dataset.prerendered = '';
+      // 继续正常加载流程
+    }
   }
   
   // 无预渲染内容：正常初始化流程
@@ -1917,6 +2054,11 @@ async function init() {
   await loadCurrentUser();
   await loadClients();
   await loadWeek();
+  
+  // ⚡ 预加载前4周数据
+  setTimeout(() => {
+    prefetchPreviousWeeks(4);
+  }, 1000);
 }
 
 // 頁面載入完成後初始化

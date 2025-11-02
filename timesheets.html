@@ -24,6 +24,7 @@
   <script src="/assets/js/fetch-interceptor.js"></script>
   <script src="/assets/js/prerender.js"></script>
   <script src="/assets/js/page-prerender.js"></script>
+  <script src="/assets/js/data-invalidation.js"></script>
   <script>
   // 立即啟動預加載（如果尚未啟動）
   if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
@@ -249,52 +250,82 @@
       console.log('[Timesheets] 启动预渲染保存监听器（等待完整性判断完成）');
       var saved = false;
       
-      // 监听完整性判断完成事件
-      var eventReceived = false;
-      window.addEventListener('timesheets-rendered', function(e) {
-        eventReceived = true;
-        if (saved) {
-          console.log('[Timesheets] ⚠ 事件已触发但已保存，跳过');
-          return;
-        }
-        
-        var tbody = document.getElementById('timesheetBody');
-        console.log('[Timesheets] ✅ 收到渲染完成事件:', {
-          rows: e.detail.rows,
-          tbody: !!tbody,
-          children: tbody ? tbody.children.length : 0,
-          htmlLength: tbody ? tbody.innerHTML.length : 0
-        });
-        
-        if (tbody && tbody.children.length > 0 && tbody.innerHTML.length > 50) {
-          // 延迟 500ms 保存，确保所有 DOM 更新完成
-          setTimeout(function() {
-            if (!saved) {
-              window.Prerender.save('timesheets', tbody.innerHTML);
-              saved = true;
-              console.log('[Timesheets] ✅ 预渲染已保存（事件触发）(' + tbody.children.length + ' 行, ' + tbody.innerHTML.length + ' 字符)');
-            }
-          }, 500);
-        }
-      }, { once: true });
+              // ⚡ 监听完整性判断完成事件（但需要等待所有数据加载完成）
+              var eventReceived = false;
+              var checkCount = 0;
+              
+              window.addEventListener('timesheets-rendered', function(e) {
+                eventReceived = true;
+                if (saved) {
+                  console.log('[Timesheets] ⚠ 事件已触发但已保存，跳过');
+                  return;
+                }
+                
+                var tbody = document.getElementById('timesheetBody');
+                
+                console.log('[Timesheets] ✅ 收到渲染完成事件:', {
+                  rows: e.detail.rows,
+                  children: tbody ? tbody.children.length : 0,
+                  htmlLength: tbody ? tbody.innerHTML.length : 0
+                });
+                
+                // ⚡ 等待"載入中..."消失（表示数据完全加载）
+                function checkAndSave() {
+                  checkCount++;
+                  var tbody = document.getElementById('timesheetBody');
+                  var weekTitle = document.getElementById('weekTitle');
+                  var isLoadingDone = weekTitle && !weekTitle.textContent.includes('載入中');
+                  
+                  console.log('[Timesheets] 检查保存条件 #' + checkCount + ':', {
+                    loadingDone: isLoadingDone,
+                    weekTitle: weekTitle ? weekTitle.textContent : 'N/A',
+                    rows: e.detail.rows,
+                    htmlLength: tbody ? tbody.innerHTML.length : 0
+                  });
+                  
+                  // ⚡ 只要"載入中..."消失且有基本结构，就保存（包括空状态）
+                  if (isLoadingDone && tbody && tbody.children.length > 0 && tbody.innerHTML.length > 200) {
+                    if (!saved) {
+                      window.Prerender.save('timesheets', tbody.innerHTML);
+                      saved = true;
+                      var status = e.detail.rows > 0 ? (e.detail.rows + ' 行数据') : '空状态（含完整结构）';
+                      console.log('[Timesheets] ✅ 预渲染已保存（' + status + ', ' + tbody.innerHTML.length + ' 字符）');
+                    }
+                  } else if (checkCount < 20 && !saved) {
+                    // 每100ms检查一次，最多检查2秒
+                    setTimeout(checkAndSave, 100);
+                  } else if (!saved) {
+                    console.log('[Timesheets] ⚠ 保存超时或数据不足，放弃保存');
+                  }
+                }
+                
+                // 延迟200ms开始检查（给 fullyLoaded 标记时间）
+                setTimeout(checkAndSave, 200);
+              }, { once: true });
       
-      // 后备方案：10秒后如果还没保存，尝试保存当前状态
+      // 后备方案：10秒后如果还没保存，检查是否有完整数据
       setTimeout(function() {
         if (!saved) {
+          var tbody = document.getElementById('timesheetBody');
+          var weekTitle = document.getElementById('weekTitle');
+          var isLoadingDone = weekTitle && !weekTitle.textContent.includes('載入中');
+          
           console.log('[Timesheets] 🔍 后备检查:', {
             eventReceived: eventReceived,
-            saved: saved
+            saved: saved,
+            loadingDone: isLoadingDone,
+            weekTitle: weekTitle ? weekTitle.textContent : 'N/A',
+            children: tbody ? tbody.children.length : 0,
+            htmlLength: tbody ? tbody.innerHTML.length : 0
           });
-          var tbody = document.getElementById('timesheetBody');
-          if (tbody && tbody.children.length > 0 && tbody.innerHTML.length > 50) {
+          
+          // ⚡ 只要"載入中..."消失且有基本结构，就保存（包括空状态）
+          if (tbody && isLoadingDone && tbody.children.length > 0 && tbody.innerHTML.length > 200) {
             window.Prerender.save('timesheets', tbody.innerHTML);
             saved = true;
             console.log('[Timesheets] ⚡ 预渲染已保存（后备）(' + tbody.children.length + ' 行, ' + tbody.innerHTML.length + ' 字符)');
           } else {
-            console.warn('[Timesheets] ⚠ 后备保存失败：数据不足', {
-              children: tbody ? tbody.children.length : 0,
-              htmlLength: tbody ? tbody.innerHTML.length : 0
-            });
+            console.warn('[Timesheets] ⚠ 后备保存失败：数据未完全加载（"載入中..."未消失）');
           }
         }
       }, 10000);
