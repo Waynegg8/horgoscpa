@@ -120,7 +120,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
 
     // Admin metrics
     async function getAdminMetrics(targetYm, finYm, finMode) {
-      const res = { employeeHours: [], employeeTasks: [], financialStatus: null, revenueTrend: [] };
+      const res = { employeeHours: [], employeeTasks: [], financialStatus: null, revenueTrend: [], recentActivities: [], teamMembers: [] };
       
       // Employee hours (各员工分别工时 - 按指定月份查询)
       // work_type: 1=正常工时，2-11=各种加班类型
