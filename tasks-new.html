@@ -240,15 +240,25 @@
             基本資訊
           </div>
           
-          <div class="form-row-1col">
+          <div class="form-row-2col">
             <div class="form-field">
-              <label for="client_service_id">客戶服務 <span class="required-mark">*</span></label>
-              <select id="client_service_id" required>
-                <option value="">載入中...</option>
+              <label for="client_id">客戶 <span class="required-mark">*</span></label>
+              <select id="client_id" required onchange="loadClientService()">
+                <option value="">請選擇客戶</option>
               </select>
               <div class="field-hint">
                 <span class="material-symbols-outlined">help</span>
-                選擇要執行任務的客戶和服務類型
+                選擇要服務的客戶
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="service_id">服務類型 <span class="required-mark">*</span></label>
+              <select id="service_id" required disabled onchange="loadClientService()">
+                <option value="">請先選擇客戶</option>
+              </select>
+              <div class="field-hint">
+                <span class="material-symbols-outlined">help</span>
+                選擇服務類型（記帳、稅務等）
               </div>
             </div>
           </div>
@@ -311,9 +321,11 @@
     const onProdHost = location.hostname.endsWith('horgoscpa.com');
     const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
     
-    let clientServices = [];
+    let clients = [];
+    let services = [];
     let users = [];
     let taskCounter = 0;
+    let currentClientServiceId = null;
     
     async function init() {
       // 設定當前月份為默認值
@@ -321,8 +333,11 @@
       const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       document.getElementById('service_month').value = yearMonth;
       
-      // 載入客戶服務列表
-      await loadClientServices();
+      // 載入客戶列表
+      await loadClients();
+      
+      // 載入服務類型列表
+      await loadServices();
       
       // 載入用戶列表
       await loadUsers();
@@ -332,20 +347,93 @@
     }
     
     
-    async function loadClientServices() {
+    async function loadClients() {
       try {
-        const res = await fetch(`${apiBase}/client-services`, { credentials: 'include' });
-        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const res = await fetch(`${apiBase}/clients?perPage=100`, { credentials: 'include' });
+        if (res.status === 401) { 
+          window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); 
+          return; 
+        }
         const json = await res.json();
         
-        const select = document.getElementById('client_service_id');
+        const select = document.getElementById('client_id');
         if (json.ok && Array.isArray(json.data)) {
-          clientServices = json.data;
-          select.innerHTML = '<option value="">請選擇客戶服務</option>' + 
-            clientServices.map(cs => `<option value="${cs.client_service_id}">${cs.client_name} - ${cs.service_name || '未指定服務'}</option>`).join('');
+          clients = json.data;
+          select.innerHTML = '<option value="">請選擇客戶</option>' + 
+            clients.map(c => `<option value="${c.client_id}">${c.company_name || c.client_id}</option>`).join('');
         }
       } catch (err) {
-        console.error('載入客戶服務失敗:', err);
+        console.error('載入客戶列表失敗:', err);
+      }
+    }
+    
+    async function loadServices() {
+      try {
+        const res = await fetch(`${apiBase}/services`, { credentials: 'include' });
+        if (res.status === 401) return;
+        const json = await res.json();
+        
+        if (json.ok && Array.isArray(json.data)) {
+          services = json.data;
+        }
+      } catch (err) {
+        console.error('載入服務類型失敗:', err);
+      }
+    }
+    
+    async function loadClientService() {
+      const clientId = document.getElementById('client_id').value;
+      const serviceId = document.getElementById('service_id').value;
+      const serviceSelect = document.getElementById('service_id');
+      
+      // 當選擇客戶後，啟用服務選擇並載入該客戶的服務
+      if (clientId && !serviceId) {
+        serviceSelect.disabled = false;
+        
+        // 獲取該客戶已有的服務
+        try {
+          const res = await fetch(`${apiBase}/client-services?q=${encodeURIComponent(clientId)}`, { credentials: 'include' });
+          const json = await res.json();
+          
+          const existingServiceIds = json.ok ? json.data.map(cs => cs.service_id).filter(Boolean) : [];
+          
+          serviceSelect.innerHTML = '<option value="">請選擇服務類型</option>' + 
+            services.map(s => {
+              const exists = existingServiceIds.includes(s.service_id);
+              return `<option value="${s.service_id}"${exists ? ' data-exists="1"' : ''}>${s.service_name}${exists ? ' ✓' : ''}</option>`;
+            }).join('');
+        } catch (err) {
+          console.error('載入客戶服務失敗:', err);
+          serviceSelect.innerHTML = '<option value="">請選擇服務類型</option>' + 
+            services.map(s => `<option value="${s.service_id}">${s.service_name}</option>`).join('');
+        }
+        return;
+      }
+      
+      // 當客戶和服務都選擇後，查找或創建client_service_id
+      if (clientId && serviceId) {
+        try {
+          // 先查找是否已存在該client_service
+          const res = await fetch(`${apiBase}/client-services`, { credentials: 'include' });
+          const json = await res.json();
+          
+          if (json.ok && Array.isArray(json.data)) {
+            const existing = json.data.find(cs => 
+              cs.client_id === clientId && cs.service_id == serviceId
+            );
+            
+            if (existing) {
+              currentClientServiceId = existing.client_service_id;
+              console.log('使用現有的 client_service_id:', currentClientServiceId);
+            } else {
+              // 需要創建新的client_service（暫時先記錄，提交時再創建）
+              currentClientServiceId = null;
+              console.log('將創建新的客戶服務關係');
+            }
+          }
+        } catch (err) {
+          console.error('查找客戶服務失敗:', err);
+        }
       }
     }
     
@@ -473,8 +561,51 @@
     async function submitTasks(event) {
       event.preventDefault();
       
-      const clientServiceId = parseInt(document.getElementById('client_service_id').value);
+      const clientId = document.getElementById('client_id').value;
+      const serviceId = parseInt(document.getElementById('service_id').value);
       const serviceMonth = document.getElementById('service_month').value;
+      
+      if (!clientId || !serviceId) {
+        alert('請選擇客戶和服務類型');
+        return;
+      }
+      
+      // 查找或創建client_service_id
+      let clientServiceId = currentClientServiceId;
+      
+      if (!clientServiceId) {
+        // 創建新的客戶服務關係
+        try {
+          const createRes = await fetch(`${apiBase}/client-services`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              client_id: clientId,
+              service_id: serviceId,
+              status: 'active'
+            })
+          });
+          
+          if (createRes.status === 401) {
+            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+            return;
+          }
+          
+          const createJson = await createRes.json();
+          if (!createJson.ok) {
+            alert('創建客戶服務關係失敗: ' + (createJson.message || '未知錯誤'));
+            return;
+          }
+          
+          clientServiceId = createJson.data.client_service_id;
+          console.log('成功創建 client_service_id:', clientServiceId);
+        } catch (err) {
+          console.error('創建客戶服務失敗:', err);
+          alert('創建客戶服務失敗: ' + err.message);
+          return;
+        }
+      }
       
       // 收集所有任務
       const taskCards = document.querySelectorAll('.task-card');
