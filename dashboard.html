@@ -418,9 +418,12 @@
           
           // 2.7 最近动态 (任务调整和状态更新)
           const recentActivities = Array.isArray(data?.recentActivities) ? data.recentActivities : [];
+          console.log('[Dashboard] recentActivities 数量:', recentActivities.length);
+          console.log('[Dashboard] recentActivities 数据:', recentActivities);
           let activitiesHtml = '';
           if (recentActivities.length > 0) {
             activitiesHtml = recentActivities.map(act => {
+              console.log('[Dashboard] 处理活动:', act.activity_type, act);
               if (act.activity_type === 'due_date_adjustment') {
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
                   <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
@@ -479,8 +482,10 @@
                   </div>
                 </a>`;
               }
+              console.log('[Dashboard] 未识别的活动类型:', act.activity_type);
               return '';
-            }).join('');
+            }).filter(Boolean).join('');
+            console.log('[Dashboard] 生成的 HTML 长度:', activitiesHtml.length);
           } else {
             activitiesHtml = `<div class="muted">最近 ${activityDays} 天沒有動態記錄</div>`;
           }
