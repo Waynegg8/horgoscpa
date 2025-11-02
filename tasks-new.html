@@ -369,6 +369,7 @@
     let services = [];
     let users = [];
     let sops = [];
+    let serviceItems = []; // 服务子项目（任务类型）
     let taskCounter = 0;
     let currentClientServiceId = null;
     let serviceLevelSOPIds = []; // 服務層級SOP（會套用到所有任務）
@@ -387,6 +388,9 @@
       
       // 載入服務類型列表
       await loadServices();
+      
+      // 載入服務子項目（任務類型）
+      await loadServiceItems();
       
       // 載入用戶列表
       await loadUsers();
@@ -430,6 +434,21 @@
         }
       } catch (err) {
         console.error('載入服務類型失敗:', err);
+      }
+    }
+    
+    async function loadServiceItems() {
+      try {
+        const res = await fetch(`${apiBase}/services/items`, { credentials: 'include' });
+        if (res.status === 401) return;
+        const json = await res.json();
+        
+        if (json.ok && Array.isArray(json.data)) {
+          serviceItems = json.data;
+          console.log('[loadServiceItems] 載入服務子項目:', serviceItems.length, '項');
+        }
+      } catch (err) {
+        console.error('載入服務子項目失敗:', err);
       }
     }
     
@@ -483,6 +502,9 @@
               console.log('將創建新的客戶服務關係');
             }
         }
+        
+        // 更新任务类型下拉选单
+        updateTaskNameOptions();
       } catch (err) {
           console.error('查找客戶服務失敗:', err);
         }
@@ -555,8 +577,13 @@
         
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
           <div class="form-field">
-            <label style="font-size: 13px;">任務名稱 <span class="required-mark">*</span></label>
-            <input type="text" name="task_name" required placeholder="例如：收集憑證" />
+            <label style="font-size: 13px;">
+              任務類型 <span class="required-mark">*</span>
+              <span style="font-size: 11px; color: #6b7280; font-weight: normal;">（從服務項目選擇）</span>
+            </label>
+            <select name="task_name" required class="task-name-select">
+              <option value="">請選擇任務類型</option>
+            </select>
           </div>
           <div class="form-field">
             <label style="font-size: 13px;">負責人</label>
@@ -590,6 +617,39 @@
       
       container.appendChild(taskCard);
       updateTaskNumbers();
+      
+      // 填充任务类型下拉选单
+      updateTaskNameOptions();
+    }
+    
+    // 更新所有任务卡片的任务类型选项
+    function updateTaskNameOptions() {
+      const serviceId = parseInt(document.getElementById('service_id').value);
+      
+      // 获取当前服务的所有服务子项目
+      const currentServiceItems = serviceItems.filter(item => 
+        String(item.service_id) === String(serviceId) && item.is_active !== false
+      );
+      
+      console.log('[updateTaskNameOptions] serviceId:', serviceId, '匹配项目:', currentServiceItems.length);
+      
+      // 更新所有任务卡片的下拉选单
+      const taskSelects = document.querySelectorAll('.task-name-select');
+      taskSelects.forEach(select => {
+        const currentValue = select.value;
+        
+        if (currentServiceItems.length > 0) {
+          select.innerHTML = '<option value="">請選擇任務類型</option>' +
+            currentServiceItems.map(item => `<option value="${item.item_name}">${item.item_name}</option>`).join('');
+          
+          // 恢复之前的选择（如果还存在）
+          if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
+            select.value = currentValue;
+          }
+        } else {
+          select.innerHTML = '<option value="">請先在系統設定中為此服務新增任務類型</option>';
+        }
+      });
     }
     
     function removeTask(taskId) {
