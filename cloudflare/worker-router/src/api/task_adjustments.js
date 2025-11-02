@@ -229,87 +229,117 @@ export async function recordDueDateAdjustment(env, taskId, oldDueDate, newDueDat
  */
 export async function getAdjustmentHistory(env, taskId) {
   try {
+    console.log('[调整历史] 开始查询, taskId:', taskId);
+    
     // 获取到期日调整记录
-    const dueDateAdjustments = await env.DATABASE.prepare(`
-      SELECT 
-        adjustment_id as id,
-        old_due_date,
-        new_due_date,
-        days_changed,
-        adjustment_reason as reason,
-        adjustment_type,
-        is_overdue_adjustment,
-        is_initial_creation,
-        is_system_auto,
-        requested_at,
-        u.name as requested_by_name
-      FROM TaskDueDateAdjustments tda
-      LEFT JOIN Users u ON u.user_id = tda.requested_by
-      WHERE tda.task_id = ?
-        AND tda.old_due_date IS NOT NULL
-        AND tda.new_due_date IS NOT NULL
-        AND tda.adjustment_type IS NOT NULL
-      ORDER BY tda.requested_at DESC
-    `).bind(taskId).all();
+    let dueDateAdjustments;
+    try {
+      dueDateAdjustments = await env.DATABASE.prepare(`
+        SELECT 
+          adjustment_id as id,
+          old_due_date,
+          new_due_date,
+          days_changed,
+          adjustment_reason as reason,
+          adjustment_type,
+          is_overdue_adjustment,
+          is_initial_creation,
+          is_system_auto,
+          requested_at,
+          u.name as requested_by_name
+        FROM TaskDueDateAdjustments tda
+        LEFT JOIN Users u ON u.user_id = tda.requested_by
+        WHERE tda.task_id = ?
+          AND tda.old_due_date IS NOT NULL
+          AND tda.new_due_date IS NOT NULL
+          AND tda.adjustment_type IS NOT NULL
+        ORDER BY tda.requested_at DESC
+      `).bind(taskId).all();
+      console.log('[调整历史] 到期日调整查询成功, 记录数:', dueDateAdjustments?.results?.length || 0);
+    } catch (err) {
+      console.error('[调整历史] 到期日调整查询失败:', err.message);
+      throw new Error('查询到期日调整失败: ' + err.message);
+    }
     
     // 获取状态更新记录
-    const statusUpdates = await env.DATABASE.prepare(`
-      SELECT 
-        update_id as id,
-        old_status,
-        new_status,
-        progress_note,
-        blocker_reason,
-        overdue_reason,
-        updated_at as requested_at,
-        u.name as requested_by_name
-      FROM TaskStatusUpdates tsu
-      LEFT JOIN Users u ON u.user_id = tsu.updated_by
-      WHERE tsu.task_id = ?
-        AND tsu.old_status IS NOT NULL
-        AND tsu.new_status IS NOT NULL
-      ORDER BY tsu.updated_at DESC
-    `).bind(taskId).all();
+    let statusUpdates;
+    try {
+      statusUpdates = await env.DATABASE.prepare(`
+        SELECT 
+          update_id as id,
+          old_status,
+          new_status,
+          progress_note,
+          blocker_reason,
+          overdue_reason,
+          updated_at as requested_at,
+          u.name as requested_by_name
+        FROM TaskStatusUpdates tsu
+        LEFT JOIN Users u ON u.user_id = tsu.updated_by
+        WHERE tsu.task_id = ?
+          AND tsu.old_status IS NOT NULL
+          AND tsu.new_status IS NOT NULL
+        ORDER BY tsu.updated_at DESC
+      `).bind(taskId).all();
+      console.log('[调整历史] 状态更新查询成功, 记录数:', statusUpdates?.results?.length || 0);
+    } catch (err) {
+      console.error('[调整历史] 状态更新查询失败:', err.message);
+      throw new Error('查询状态更新失败: ' + err.message);
+    }
     
     // 合并两种记录
-    const allRecords = [
-      ...(dueDateAdjustments.results || []).map(adj => ({
-        record_type: 'due_date',
-        id: adj.id,
-        old_due_date: adj.old_due_date,
-        new_due_date: adj.new_due_date,
-        days_changed: adj.days_changed,
-        reason: adj.reason || '',
-        adjustment_type: adj.adjustment_type,
-        is_overdue_adjustment: adj.is_overdue_adjustment === 1,
-        is_initial_creation: adj.is_initial_creation === 1,
-        is_system_auto: adj.is_system_auto === 1,
-        requested_at: adj.requested_at,
-        requested_by_name: adj.requested_by_name || ''
-      })),
-      ...(statusUpdates.results || []).map(upd => ({
-        record_type: 'status_update',
-        id: upd.id,
-        old_status: upd.old_status,
-        new_status: upd.new_status,
-        progress_note: upd.progress_note || '',
-        blocker_reason: upd.blocker_reason || '',
-        overdue_reason: upd.overdue_reason || '',
-        requested_at: upd.requested_at,
-        requested_by_name: upd.requested_by_name || ''
-      }))
-    ];
+    let allRecords;
+    try {
+      allRecords = [
+        ...(dueDateAdjustments.results || []).map(adj => ({
+          record_type: 'due_date',
+          id: adj.id,
+          old_due_date: adj.old_due_date,
+          new_due_date: adj.new_due_date,
+          days_changed: adj.days_changed,
+          reason: adj.reason || '',
+          adjustment_type: adj.adjustment_type,
+          is_overdue_adjustment: adj.is_overdue_adjustment === 1,
+          is_initial_creation: adj.is_initial_creation === 1,
+          is_system_auto: adj.is_system_auto === 1,
+          requested_at: adj.requested_at,
+          requested_by_name: adj.requested_by_name || ''
+        })),
+        ...(statusUpdates.results || []).map(upd => ({
+          record_type: 'status_update',
+          id: upd.id,
+          old_status: upd.old_status,
+          new_status: upd.new_status,
+          progress_note: upd.progress_note || '',
+          blocker_reason: upd.blocker_reason || '',
+          overdue_reason: upd.overdue_reason || '',
+          requested_at: upd.requested_at,
+          requested_by_name: upd.requested_by_name || ''
+        }))
+      ];
+      console.log('[调整历史] 合并记录成功, 总数:', allRecords.length);
+    } catch (err) {
+      console.error('[调整历史] 合并记录失败:', err.message);
+      throw new Error('合并记录失败: ' + err.message);
+    }
     
     // 按时间排序（最新的在前）
-    allRecords.sort((a, b) => {
-      if (!a.requested_at) return 1;
-      if (!b.requested_at) return -1;
-      return (b.requested_at || '').localeCompare(a.requested_at || '');
-    });
+    try {
+      allRecords.sort((a, b) => {
+        if (!a.requested_at) return 1;
+        if (!b.requested_at) return -1;
+        return (b.requested_at || '').localeCompare(a.requested_at || '');
+      });
+      console.log('[调整历史] 排序成功, 返回', allRecords.length, '条记录');
+    } catch (err) {
+      console.error('[调整历史] 排序失败:', err.message);
+      throw new Error('排序失败: ' + err.message);
+    }
     
     return allRecords;
   } catch (err) {
     console.error('[任务调整] getAdjustmentHistory 失败:', err);
+    console.error('[任务调整] 错误堆栈:', err.stack);
     throw err;
   }
 }
