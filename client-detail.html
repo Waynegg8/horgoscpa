@@ -2488,12 +2488,24 @@
       const selectedOption = serviceItemSelect.options[serviceItemSelect.selectedIndex];
       const serviceId = selectedOption.getAttribute('data-service-id');
       
+      // 獲取當前客戶服務的 service_id
+      const currentService = clientDetail.services.find(s => s.client_service_id === clientServiceId);
+      const fallbackServiceId = currentService?.service_id;
+      
+      // 優先使用服務項目的service_id，否則用客戶服務的service_id
+      const finalServiceId = serviceId || fallbackServiceId;
+      
+      if (!finalServiceId) {
+        alert('無法獲取服務信息，請重新載入頁面');
+        return;
+      }
+      
       // 獲取自定義任務配置
       const tasks = window[`customTasks${clientServiceId}`] || [];
 
       const data = {
         component_name: name,
-        service_id: parseInt(serviceId),
+        service_id: parseInt(finalServiceId),
         service_item_id: parseInt(serviceItemId),
         delivery_frequency: frequency,
         task_template_id: templateId ? parseInt(templateId) : null,
