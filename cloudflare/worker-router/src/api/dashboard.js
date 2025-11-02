@@ -49,7 +49,8 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       // Tasks (pending/in_progress)
       try {
         const rows = await env.DATABASE.prepare(
-          `SELECT task_id, task_name, due_date, status, related_sop_id, client_specific_sop_id
+          `SELECT task_id, task_name, due_date, status, related_sop_id, client_specific_sop_id,
+                  status_note, blocker_reason, overdue_reason
            FROM ActiveTasks
            WHERE is_deleted = 0 AND assignee_user_id = ? AND status IN ('pending','in_progress')
            ORDER BY COALESCE(due_date, '9999-12-31') ASC LIMIT 10`
@@ -64,7 +65,19 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             if (delta < 0) { urgency = 'overdue'; daysOverdue = -delta; }
             else if (delta <= 3) urgency = 'urgent';
           }
-          return { id: r.task_id, name: r.task_name, dueDate: due, status: r.status, urgency, daysUntilDue, daysOverdue, hasSop: !!(r.related_sop_id || r.client_specific_sop_id) };
+          return { 
+            id: r.task_id, 
+            name: r.task_name, 
+            dueDate: due, 
+            status: r.status, 
+            urgency, 
+            daysUntilDue, 
+            daysOverdue, 
+            hasSop: !!(r.related_sop_id || r.client_specific_sop_id),
+            statusNote: r.status_note || null,
+            blockerReason: r.blocker_reason || null,
+            overdueReason: r.overdue_reason || null
+          };
         });
         const counts = { pending: 0, inProgress: 0, overdue: 0, dueSoon: 0 };
         for (const it of items) {
@@ -260,6 +273,154 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         const list = (rows?.results || []).map(r => ({ month: r.ym, revenue: Number(r.revenue || 0), paid: Number(r.paid || 0) }));
         res.revenueTrend = list.sort((a,b)=> a.month.localeCompare(b.month));
       } catch (_) {}
+
+      // Recent Activities (任务调整和状态更新) - 最近7天
+      try {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const sevenDaysAgoStr = sevenDaysAgo.toISOString();
+        
+        // 查询任务期限调整
+        const adjustments = await env.DATABASE.prepare(`
+          SELECT 
+            'due_date_adjustment' as activity_type,
+            adj.adjustment_id,
+            adj.adjusted_at as activity_time,
+            adj.old_due_date,
+            adj.new_due_date,
+            adj.reason,
+            adj.adjusted_by_user_id,
+            u.name as user_name,
+            t.task_name,
+            t.task_id,
+            t.status as current_status,
+            t.due_date as current_due_date,
+            t.assignee_user_id,
+            assignee.name as assignee_name,
+            c.company_name as client_name,
+            s.service_name
+          FROM TaskDueDateAdjustments adj
+          JOIN Users u ON u.user_id = adj.adjusted_by_user_id
+          JOIN ActiveTasks t ON t.task_id = adj.task_id
+          LEFT JOIN Users assignee ON assignee.user_id = t.assignee_user_id
+          LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
+          LEFT JOIN Clients c ON c.client_id = cs.client_id
+          LEFT JOIN Services s ON s.service_id = cs.service_id
+          WHERE adj.adjusted_at >= ? 
+            AND adj.old_due_date IS NOT NULL 
+            AND adj.new_due_date IS NOT NULL
+            AND adj.adjustment_type IS NOT NULL
+          ORDER BY adj.adjusted_at DESC
+          LIMIT 20
+        `).bind(sevenDaysAgoStr).all();
+        
+        // 查询任务状态更新
+        const statusUpdates = await env.DATABASE.prepare(`
+          SELECT 
+            'status_update' as activity_type,
+            su.update_id,
+            su.updated_at as activity_time,
+            su.old_status,
+            su.new_status,
+            su.progress_note,
+            su.blocker_reason,
+            su.overdue_reason,
+            su.updated_by_user_id,
+            u.name as user_name,
+            t.task_name,
+            t.task_id,
+            t.status as current_status,
+            t.due_date as current_due_date,
+            t.assignee_user_id,
+            assignee.name as assignee_name,
+            c.company_name as client_name,
+            s.service_name
+          FROM TaskStatusUpdates su
+          JOIN Users u ON u.user_id = su.updated_by_user_id
+          JOIN ActiveTasks t ON t.task_id = su.task_id
+          LEFT JOIN Users assignee ON assignee.user_id = t.assignee_user_id
+          LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
+          LEFT JOIN Clients c ON c.client_id = cs.client_id
+          LEFT JOIN Services s ON s.service_id = cs.service_id
+          WHERE su.updated_at >= ?
+          ORDER BY su.updated_at DESC
+          LIMIT 20
+        `).bind(sevenDaysAgoStr).all();
+        
+        // 合并并排序
+        const allActivities = [
+          ...(adjustments?.results || []),
+          ...(statusUpdates?.results || [])
+        ].sort((a, b) => (b.activity_time || '').localeCompare(a.activity_time || ''));
+        
+        // 格式化活动记录
+        res.recentActivities = allActivities.slice(0, 15).map(act => {
+          const time = act.activity_time ? new Date(act.activity_time).toLocaleString('zh-TW', { 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }) : '';
+          
+          const statusMap = {
+            'pending': '待開始',
+            'in_progress': '進行中',
+            'completed': '已完成',
+            'cancelled': '已取消'
+          };
+          
+          const currentStatus = statusMap[act.current_status] || act.current_status || '—';
+          const currentDueDate = act.current_due_date ? act.current_due_date.slice(5) : '—';
+          const assigneeName = act.assignee_name || '未分配';
+          const serviceName = act.service_name || '—';
+          
+          if (act.activity_type === 'due_date_adjustment') {
+            const oldDate = act.old_due_date ? act.old_due_date.slice(5) : '';
+            const newDate = act.new_due_date ? act.new_due_date.slice(5) : '';
+            return {
+              type: 'due_date_adjustment',
+              text: `${act.user_name} 調整了任務期限`,
+              taskName: act.task_name,
+              clientName: act.client_name || '—',
+              serviceName: serviceName,
+              change: `${oldDate} → ${newDate}`,
+              reason: act.reason || '',
+              currentStatus: currentStatus,
+              currentDueDate: currentDueDate,
+              assigneeName: assigneeName,
+              time: time,
+              link: `/internal/task-detail?id=${act.task_id}`
+            };
+          } else if (act.activity_type === 'status_update') {
+            const oldStatus = statusMap[act.old_status] || act.old_status;
+            const newStatus = statusMap[act.new_status] || act.new_status;
+            
+            let note = '';
+            if (act.blocker_reason) note = `🚫 ${act.blocker_reason}`;
+            else if (act.overdue_reason) note = `⏰ ${act.overdue_reason}`;
+            else if (act.progress_note) note = `💬 ${act.progress_note}`;
+            
+            return {
+              type: 'status_update',
+              text: `${act.user_name} 更新了任務狀態`,
+              taskName: act.task_name,
+              clientName: act.client_name || '—',
+              serviceName: serviceName,
+              change: `${oldStatus} → ${newStatus}`,
+              note: note,
+              currentStatus: currentStatus,
+              currentDueDate: currentDueDate,
+              assigneeName: assigneeName,
+              time: time,
+              link: `/internal/task-detail?id=${act.task_id}`
+            };
+          }
+          return null;
+        }).filter(Boolean);
+      } catch (err) {
+        console.error('[仪表板] 获取最近动态失败:', err);
+        res.recentActivities = [];
+      }
 
       return res;
     }
