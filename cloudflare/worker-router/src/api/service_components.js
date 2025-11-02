@@ -224,6 +224,133 @@ async function createServiceComponent(request, env, corsHeaders, clientServiceId
   }
 }
 
+async function updateServiceComponent(request, env, corsHeaders, componentId) {
+  try {
+    const body = await request.json();
+    const {
+      component_name,
+      delivery_frequency,
+      delivery_months,
+      task_template_id,
+      auto_generate_task = true,
+      advance_days = 7,
+      due_date_rule,
+      due_date_value,
+      due_date_offset_days = 0,
+      estimated_hours,
+      notes,
+      component_sop_ids = [],
+      tasks = []
+    } = body;
+
+    if (!component_name || !delivery_frequency) {
+      return jsonResponse(400, {
+        ok: false,
+        message: '缺少必填字段'
+      }, corsHeaders);
+    }
+
+    // 更新基本信息
+    await env.DATABASE.prepare(`
+      UPDATE ServiceComponents SET
+        component_name = ?,
+        delivery_frequency = ?,
+        delivery_months = ?,
+        task_template_id = ?,
+        auto_generate_task = ?,
+        advance_days = ?,
+        due_date_rule = ?,
+        due_date_value = ?,
+        due_date_offset_days = ?,
+        estimated_hours = ?,
+        notes = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE component_id = ?
+    `).bind(
+      component_name,
+      delivery_frequency,
+      delivery_months ? JSON.stringify(delivery_months) : null,
+      task_template_id || null,
+      auto_generate_task ? 1 : 0,
+      advance_days,
+      due_date_rule || null,
+      due_date_value || null,
+      due_date_offset_days,
+      estimated_hours || null,
+      notes || null,
+      componentId
+    ).run();
+
+    // 删除并重新插入服务层级SOP
+    await env.DATABASE.prepare(
+      'DELETE FROM ServiceComponentSOPs WHERE component_id = ?'
+    ).bind(componentId).run();
+    
+    if (component_sop_ids && Array.isArray(component_sop_ids) && component_sop_ids.length > 0) {
+      for (let i = 0; i < component_sop_ids.length; i++) {
+        await env.DATABASE.prepare(`
+          INSERT INTO ServiceComponentSOPs (component_id, sop_id, sort_order)
+          VALUES (?, ?, ?)
+        `).bind(componentId, component_sop_ids[i], i).run();
+      }
+    }
+
+    // 删除旧的任务配置及其SOP关联
+    const oldTasks = await env.DATABASE.prepare(
+      'SELECT task_config_id FROM ServiceComponentTasks WHERE component_id = ?'
+    ).bind(componentId).all();
+    
+    for (const oldTask of (oldTasks.results || [])) {
+      await env.DATABASE.prepare(
+        'DELETE FROM ServiceComponentTaskSOPs WHERE task_config_id = ?'
+      ).bind(oldTask.task_config_id).run();
+    }
+    
+    await env.DATABASE.prepare(
+      'DELETE FROM ServiceComponentTasks WHERE component_id = ?'
+    ).bind(componentId).run();
+
+    // 插入新的任务配置
+    if (tasks && Array.isArray(tasks) && tasks.length > 0) {
+      for (let i = 0; i < tasks.length; i++) {
+        const task = tasks[i];
+        
+        const taskResult = await env.DATABASE.prepare(`
+          INSERT INTO ServiceComponentTasks (
+            component_id, task_order, task_name, assignee_user_id, notes
+          ) VALUES (?, ?, ?, ?, ?)
+        `).bind(
+          componentId,
+          i,
+          task.task_name || '',
+          task.assignee_user_id || null,
+          task.notes || null
+        ).run();
+
+        const taskConfigId = taskResult.meta.last_row_id;
+
+        if (task.sop_ids && Array.isArray(task.sop_ids) && task.sop_ids.length > 0) {
+          for (let j = 0; j < task.sop_ids.length; j++) {
+            await env.DATABASE.prepare(`
+              INSERT INTO ServiceComponentTaskSOPs (task_config_id, sop_id, sort_order)
+              VALUES (?, ?, ?)
+            `).bind(taskConfigId, task.sop_ids[j], j).run();
+          }
+        }
+      }
+    }
+
+    return jsonResponse(200, {
+      ok: true,
+      message: '服务组成部分已更新',
+      data: { component_id: componentId }
+    }, corsHeaders);
+  } catch (err) {
+    console.error('更新服务组成部分失败:', err);
+    return jsonResponse(500, { ok: false, message: '更新失败', error: String(err) }, corsHeaders);
+  }
+}
+
 async function deleteServiceComponent(env, corsHeaders, componentId) {
   try {
     const tasks = await env.DATABASE.prepare(

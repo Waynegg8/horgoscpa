@@ -2465,6 +2465,11 @@
     function cancelAddComponent(clientServiceId) {
       const form = document.getElementById(`add-component-form-${clientServiceId}`);
       form.style.display = 'none';
+      
+      // 清除编辑模式标记
+      form.removeAttribute('data-edit-id');
+      form.querySelector('h5').textContent = '新增服務組成部分';
+      
       // 清空表單
       document.getElementById(`new-comp-name-${clientServiceId}`).value = '';
       document.getElementById(`new-comp-service-item-${clientServiceId}`).value = '';
@@ -2474,6 +2479,11 @@
       document.getElementById(`new-comp-due-rule-${clientServiceId}`).value = 'end_of_month';
       document.getElementById(`new-comp-due-value-${clientServiceId}`).value = '';
       document.getElementById(`new-comp-advance-${clientServiceId}`).value = '7';
+      
+      // 清空SOP选择
+      const sopCheckboxes = document.querySelectorAll(`#new-comp-sop-list-${clientServiceId} input[type="checkbox"]`);
+      sopCheckboxes.forEach(cb => cb.checked = false);
+      
       // 清空自定义任务
       window[`customTasks${clientServiceId}`] = [];
       if (document.getElementById(`tasks-list-${clientServiceId}`)) {
@@ -2550,20 +2560,37 @@
       };
 
       try {
-        const res = await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
+        // 检查是否为编辑模式
+        const form = document.getElementById(`add-component-form-${clientServiceId}`);
+        const editId = form.getAttribute('data-edit-id');
+        
+        let res, successMsg;
+        if (editId) {
+          // 编辑模式：使用PUT
+          res = await fetch(`/internal/api/v1/service-components/${editId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          successMsg = '服務組成部分已更新';
+        } else {
+          // 新增模式：使用POST
+          res = await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          successMsg = '服務組成部分已新增';
+        }
 
         const json = await res.json();
 
         if (!json.ok) {
-          alert(json.message || '新增失敗');
+          alert(json.message || (editId ? '更新失敗' : '新增失敗'));
           return;
         }
 
-        alert('服務組成部分已新增');
+        alert(successMsg);
         cancelAddComponent(clientServiceId);
         
         // 重新載入組成部分列表
@@ -2604,9 +2631,94 @@
       }
     }
 
-    // 編輯服務組成部分（簡化版，可以擴展）
-    function editComponent(componentId) {
-      alert('編輯功能開發中，請先刪除後重新新增');
+    // 編輯服務組成部分
+    async function editComponent(componentId) {
+      try {
+        // 找到对应的clientServiceId
+        let clientServiceId = null;
+        const allComponents = document.querySelectorAll('[id^="add-component-form-"]');
+        for (const form of allComponents) {
+          const id = form.id.match(/add-component-form-(\d+)/);
+          if (id) {
+            clientServiceId = parseInt(id[1]);
+            break;
+          }
+        }
+        
+        if (!clientServiceId) {
+          alert('無法定位服務');
+          return;
+        }
+        
+        // 获取组件完整数据
+        const res = await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`);
+        const json = await res.json();
+        
+        if (!json.ok) {
+          alert('加載數據失敗');
+          return;
+        }
+        
+        const component = json.data.find(c => c.component_id === componentId);
+        if (!component) {
+          alert('找不到該服務組成部分');
+          return;
+        }
+        
+        // 显示表单
+        const form = document.getElementById(`add-component-form-${clientServiceId}`);
+        form.style.display = 'block';
+        
+        // 填充基本字段
+        document.getElementById(`new-comp-name-${clientServiceId}`).value = component.component_name || '';
+        document.getElementById(`new-comp-service-item-${clientServiceId}`).value = component.service_item_id || '';
+        document.getElementById(`new-comp-freq-${clientServiceId}`).value = component.delivery_frequency || 'monthly';
+        document.getElementById(`new-comp-hours-${clientServiceId}`).value = component.estimated_hours || '';
+        document.getElementById(`new-comp-due-rule-${clientServiceId}`).value = component.due_date_rule || 'end_of_month';
+        document.getElementById(`new-comp-due-value-${clientServiceId}`).value = component.due_date_value || '';
+        document.getElementById(`new-comp-advance-${clientServiceId}`).value = component.advance_days || 7;
+        document.getElementById(`new-comp-template-${clientServiceId}`).value = component.task_template_id || '';
+        
+        // 标记为编辑模式
+        form.setAttribute('data-edit-id', componentId);
+        form.querySelector('h5').textContent = '編輯服務組成部分';
+        
+        // 填充服务层级SOP
+        if (component.component_sops && component.component_sops.length > 0) {
+          component.component_sops.forEach(sop => {
+            const checkbox = document.querySelector(`#new-comp-sop-list-${clientServiceId} input[value="${sop.sop_id}"]`);
+            if (checkbox) {
+              checkbox.checked = true;
+            }
+          });
+        }
+        
+        // 填充任务列表
+        if (component.tasks && component.tasks.length > 0) {
+          window[`customTasks${clientServiceId}`] = component.tasks.map(task => ({
+            name: task.task_name,
+            assignee_user_id: task.assignee_user_id,
+            estimated_hours: task.estimated_hours,
+            due_rule: task.due_rule || 'end_of_month',
+            due_value: task.due_value,
+            advance_days: task.advance_days || 7,
+            notes: task.notes || '',
+            sop_ids: task.sops ? task.sops.map(s => s.sop_id) : []
+          }));
+          
+          // 重新渲染任务列表
+          if (window[`renderTasksList${clientServiceId}`]) {
+            window[`renderTasksList${clientServiceId}`]();
+          }
+        }
+        
+        // 滚动到表单位置
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+      } catch (err) {
+        console.error('編輯失敗:', err);
+        alert('編輯失敗');
+      }
     }
 
     // 切換任務列表顯示
