@@ -529,11 +529,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           console.log('[仪表板] 第一条活动示例:', allActivities[0]);
         }
         
-        // 临时：先返回原始数据测试
-        res.recentActivities = allActivities.slice(0, 5);
-        console.log('[仪表板] 返回的activities数量:', res.recentActivities.length);
-        
-        /* 格式化活动记录（暂时注释掉）
+        // 格式化活动记录
         res.recentActivities = allActivities.slice(0, 15).map(act => {
           const time = act.activity_time ? new Date(act.activity_time).toLocaleString('zh-TW', { 
             month: '2-digit', 
@@ -637,7 +633,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           }
           return null;
         }).filter(Boolean);
-        */
+        
       } catch (err) {
         console.error('[仪表板] 获取最近动态失败:', err);
         console.error('[仪表板] 错误堆栈:', err.stack);
