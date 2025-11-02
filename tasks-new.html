@@ -238,8 +238,8 @@
           <div class="form-section-title">
             <span class="material-symbols-outlined">info</span>
             基本資訊
-          </div>
-          
+    </div>
+
         <div class="form-row-2col">
           <div class="form-field">
               <label for="client_id">客戶 <span class="required-mark">*</span></label>
@@ -303,7 +303,7 @@
                 <span class="material-symbols-outlined">help</span>
                 這些SOP會自動關聯到下方所有批量創建的任務中
               </div>
-            </div>
+          </div>
           </div>
         </div>
 
@@ -334,9 +334,9 @@
         <div class="form-actions">
           <button type="button" onclick="window.location.href='/internal/tasks'" class="btn btn-secondary">取消</button>
         <button type="submit" form="taskForm" class="btn btn-primary">✓ 建立所有任務</button>
-      </div>
-    </div>
-  </div>
+            </div>
+          </div>
+        </div>
 
   <!-- SOP選擇器彈窗 -->
   <div id="sopModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
@@ -354,7 +354,7 @@
       <div style="padding: 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 12px;">
         <button onclick="closeSOPModal()" class="btn btn-secondary">取消</button>
         <button onclick="confirmSOPSelection()" class="btn btn-primary">確定</button>
-      </div>
+        </div>
     </div>
   </div>
 
@@ -466,10 +466,10 @@
       if (clientId && serviceId) {
         try {
           // 先查找是否已存在該client_service
-          const res = await fetch(`${apiBase}/client-services`, { credentials: 'include' });
-          const json = await res.json();
-          
-          if (json.ok && Array.isArray(json.data)) {
+        const res = await fetch(`${apiBase}/client-services`, { credentials: 'include' });
+        const json = await res.json();
+        
+        if (json.ok && Array.isArray(json.data)) {
             const existing = json.data.find(cs => 
               (cs.client_id || cs.clientId) === clientId && cs.service_id == serviceId
             );
@@ -482,8 +482,8 @@
               currentClientServiceId = null;
               console.log('將創建新的客戶服務關係');
             }
-          }
-        } catch (err) {
+        }
+      } catch (err) {
           console.error('查找客戶服務失敗:', err);
         }
       }
@@ -503,9 +503,13 @@
       }
     }
     
-    async function loadSOPs() {
+    async function loadSOPs(category = null) {
       try {
-        const res = await fetch(`${apiBase}/sop?perPage=200`, { credentials: 'include' });
+        let url = `${apiBase}/sop?perPage=200`;
+        if (category) {
+          url += `&category=${encodeURIComponent(category)}`;
+        }
+        const res = await fetch(url, { credentials: 'include' });
         if (res.status === 401) return;
         const json = await res.json();
         
@@ -635,23 +639,49 @@
       });
     }
     
-    function openSOPSelector(taskId) {
+    async function openSOPSelector(taskId) {
+      const serviceId = document.getElementById('service_id').value;
+      if (!serviceId) {
+        alert('請先選擇服務類型');
+        return;
+      }
+      
+      // 根據服務類型獲取對應的category
+      const selectedService = services.find(s => s.service_id == serviceId);
+      const serviceCode = selectedService?.service_code || '';
+      
+      // 重新載入對應category的SOP
+      await loadSOPs(serviceCode);
+      
       sopSelectorMode = 'task';
       currentSOPTaskId = taskId;
       const modal = document.getElementById('sopModal');
       modal.style.display = 'flex';
-      document.querySelector('#sopModal h3').textContent = '選擇任務SOP';
+      document.querySelector('#sopModal h3').textContent = `選擇任務SOP（${selectedService?.service_name || '通用'}）`;
       
       // 渲染SOP列表
       renderSOPList();
     }
     
-    function openServiceSOPSelector() {
+    async function openServiceSOPSelector() {
+      const serviceId = document.getElementById('service_id').value;
+      if (!serviceId) {
+        alert('請先選擇服務類型');
+        return;
+      }
+      
+      // 根據服務類型獲取對應的category
+      const selectedService = services.find(s => s.service_id == serviceId);
+      const serviceCode = selectedService?.service_code || '';
+      
+      // 重新載入對應category的SOP
+      await loadSOPs(serviceCode);
+      
       sopSelectorMode = 'service';
       currentSOPTaskId = null;
       const modal = document.getElementById('sopModal');
       modal.style.display = 'flex';
-      document.querySelector('#sopModal h3').textContent = '選擇服務層級SOP（通用）';
+      document.querySelector('#sopModal h3').textContent = `選擇服務層級SOP（${selectedService?.service_name || '通用'}）`;
       
       // 渲染SOP列表
       renderSOPList();
@@ -699,7 +729,7 @@
                     <div style="flex: 1;">
                       <div style="font-weight: 500; font-size: 13px; color: #1e293b;">${sop.title || '未命名'}</div>
                     </div>
-                    ${isChecked ? '<span style="color: #3b82f6; font-size: 18px;">✓</span>' : ''}
+                    ${isChecked ? '<span class="checkmark-icon" style="color: #3b82f6; font-size: 18px;">✓</span>' : ''}
                   </label>
                 `;
               }).join('')}
@@ -726,15 +756,26 @@
     
     function toggleSOPCheck(checkbox) {
       const label = checkbox.closest('.sop-item');
+      
+      // 更新样式
       if (checkbox.checked) {
         label.style.background = '#eff6ff';
         label.style.borderColor = '#3b82f6';
-        label.innerHTML = label.innerHTML.replace('</label>', '<span style="color: #3b82f6; font-size: 20px;">✓</span></label>');
       } else {
-        label.style.background = '#f9fafb';
+        label.style.background = 'white';
         label.style.borderColor = '#e5e7eb';
-        const checkmark = label.querySelector('span');
-        if (checkmark) checkmark.remove();
+      }
+      
+      // 更新勾选标记（如果存在的话）
+      let checkmark = label.querySelector('.checkmark-icon');
+      if (checkbox.checked && !checkmark) {
+        checkmark = document.createElement('span');
+        checkmark.className = 'checkmark-icon';
+        checkmark.style.cssText = 'color: #3b82f6; font-size: 18px;';
+        checkmark.textContent = '✓';
+        label.appendChild(checkmark);
+      } else if (!checkbox.checked && checkmark) {
+        checkmark.remove();
       }
     }
     
@@ -785,7 +826,7 @@
             textSpan.textContent = `已選擇 ${sopIds.length} 個SOP: ${sopTitles.substring(0, 40)}${sopTitles.length > 40 ? '...' : ''}`;
             textSpan.style.color = '#1e293b';
             hiddenInput.value = sopIds.join(',');
-          } else {
+      } else {
             textSpan.textContent = '點擊選擇SOP文檔...';
             textSpan.style.color = '#64748b';
             hiddenInput.value = '';
@@ -865,9 +906,9 @@
           const createJson = await createRes.json();
           if (!createJson.ok) {
             alert('創建客戶服務關係失敗: ' + (createJson.message || '未知錯誤'));
-            return;
-          }
-          
+        return;
+      }
+      
           clientServiceId = createJson.data.client_service_id;
           console.log('成功創建 client_service_id:', clientServiceId);
         } catch (err) {
@@ -952,8 +993,8 @@
               alert(`已成功建立 ${createdCount} 個任務`);
             }
           return;
-          }
-          
+        }
+        
           // 保存剛創建的任務ID，作為下一個任務的前置任務
           const newTaskId = json.data.taskId;
           actualPreviousTaskId = newTaskId;
