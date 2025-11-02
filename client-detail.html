@@ -1652,15 +1652,6 @@
               <div class="component-item" style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #3b82f6;">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                   <div style="flex: 1;">
-                    <h5 style="margin: 0 0 10px 0; color: #1f2937;">${comp.component_name}</h5>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 14px; color: #6b7280;">
-                      <div>📋 <strong>服務類型：</strong>${comp.service_name || '-'}</div>
-                      <div>🔄 <strong>提供頻率：</strong>${getFrequencyText(comp.delivery_frequency)}</div>
-                      <div>📝 <strong>任務模板：</strong>${comp.template_name || '無'}</div>
-                      <div>⏰ <strong>預估工時：</strong>${comp.estimated_hours || '-'}小時</div>
-                      <div>📅 <strong>期限規則：</strong>${getDueRuleText(comp.due_date_rule)}</div>
-                      <div>⚡ <strong>提前生成：</strong>${comp.advance_days}天</div>
-                    </div>
                     ${comp.component_sops && comp.component_sops.length > 0 ? `
                       <div style="margin-top: 10px; padding: 8px 12px; background: #f0f9ff; border-radius: 4px; border-left: 3px solid #3b82f6;">
                         <div style="font-size: 12px; font-weight: 600; color: #1e40af; margin-bottom: 4px;">📖 服務層級SOP（${comp.component_sops.length}個）</div>
@@ -1672,7 +1663,6 @@
                         `).join('')}
                       </div>
                     ` : ''}
-                    ${comp.notes ? `<div style="margin-top: 8px; font-size: 13px; color: #9ca3af;">💡 ${comp.notes}</div>` : ''}
                     
                     <!-- 任务配置区域 -->
                     ${comp.tasks && comp.tasks.length > 0 ? `
@@ -2417,7 +2407,7 @@
       
       // 清除编辑模式标记
       form.removeAttribute('data-edit-id');
-      form.querySelector('h5').textContent = '新增服務組成部分';
+      form.querySelector('h5').textContent = '配置服務任務';
       
       // 清空表單
       document.getElementById(`new-comp-name-${clientServiceId}`).value = '';
@@ -2442,58 +2432,38 @@
 
     // 儲存新服務組成部分
     async function saveNewComponent(clientServiceId) {
-      const name = document.getElementById(`new-comp-name-${clientServiceId}`).value.trim();
-      const serviceItemId = document.getElementById(`new-comp-service-item-${clientServiceId}`).value;
-      const frequency = document.getElementById(`new-comp-freq-${clientServiceId}`).value;
-      const templateId = document.getElementById(`new-comp-template-${clientServiceId}`).value;
-      const dueRule = document.getElementById(`new-comp-due-rule-${clientServiceId}`).value;
-      const dueValue = document.getElementById(`new-comp-due-value-${clientServiceId}`).value;
-      const hours = document.getElementById(`new-comp-hours-${clientServiceId}`).value;
-      const advance = document.getElementById(`new-comp-advance-${clientServiceId}`).value;
-      
-      // 收集选中的SOP（支持多选）
-      const sopCheckboxes = document.querySelectorAll(`#new-comp-sop-list-${clientServiceId} .comp-sop-checkbox:checked`);
-      const component_sop_ids = Array.from(sopCheckboxes).map(cb => parseInt(cb.value));
-
-      if (!name) {
-        alert('請輸入服務名稱');
-        return;
-      }
-      if (!serviceItemId) {
-        alert('請選擇服務項目');
-        return;
-      }
-      
-      // 獲取選中服務項的 service_id
-      const serviceItemSelect = document.getElementById(`new-comp-service-item-${clientServiceId}`);
-      const selectedOption = serviceItemSelect.options[serviceItemSelect.selectedIndex];
-      const serviceId = selectedOption.getAttribute('data-service-id');
-      
-      // 獲取當前客戶服務的 service_id
+      // 獲取當前客戶服務的 service_id（自动填充）
       const currentService = clientDetail.services.find(s => s.client_service_id === clientServiceId);
-      const fallbackServiceId = currentService?.service_id;
+      const serviceId = currentService?.service_id;
       
-      // 優先使用服務項目的service_id，否則用客戶服務的service_id
-      const finalServiceId = serviceId || fallbackServiceId;
-      
-      if (!finalServiceId) {
+      if (!serviceId) {
         alert('無法獲取服務信息，請重新載入頁面');
         return;
       }
       
       // 獲取自定義任務配置
       const tasks = window[`customTasks${clientServiceId}`] || [];
+      
+      // 收集选中的服务级别SOP（支持多选）
+      const sopCheckboxes = document.querySelectorAll(`#new-comp-sop-list-${clientServiceId} .comp-sop-checkbox:checked`);
+      const component_sop_ids = Array.from(sopCheckboxes).map(cb => parseInt(cb.value));
+
+      // 验证：至少要有任务配置
+      if (tasks.length === 0) {
+        alert('請至少新增一個任務');
+        return;
+      }
 
       const data = {
-        component_name: name,
-        service_id: parseInt(finalServiceId),
-        service_item_id: parseInt(serviceItemId),
-        delivery_frequency: frequency,
-        task_template_id: templateId ? parseInt(templateId) : null,
-        due_date_rule: dueRule,
-        due_date_value: dueValue ? parseInt(dueValue) : null,
-        estimated_hours: hours ? parseFloat(hours) : null,
-        advance_days: advance ? parseInt(advance) : 7,
+        component_name: '任務配置',  // 固定名称
+        service_id: parseInt(serviceId),
+        service_item_id: null,  // 不需要服务项目
+        delivery_frequency: 'monthly',  // 默认每月
+        task_template_id: null,
+        due_date_rule: 'end_of_month',  // 默认月底
+        due_date_value: null,
+        estimated_hours: null,
+        advance_days: 7,
         component_sop_ids: component_sop_ids,  // 服务层级SOP（多选）
         auto_generate_task: true,
         tasks: tasks.map(task => ({
@@ -2521,7 +2491,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
           });
-          successMsg = '服務組成部分已更新';
+          successMsg = '任務配置已更新';
         } else {
           // 新增模式：使用POST
           res = await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`, {
@@ -2529,7 +2499,7 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
           });
-          successMsg = '服務組成部分已新增';
+          successMsg = '任務配置已儲存';
         }
 
         const json = await res.json();
@@ -2555,9 +2525,9 @@
       }
     }
 
-    // 刪除服務組成部分
+    // 刪除任務配置
     async function deleteComponent(componentId, componentName) {
-      if (!confirm(`確定要刪除服務組成部分「${componentName}」嗎？`)) return;
+      if (!confirm(`確定要刪除此任務配置嗎？\n\n這將刪除所有相關的任務設定。`)) return;
 
       try {
         const res = await fetch(`/internal/api/v1/service-components/${componentId}`, {
@@ -2571,7 +2541,7 @@
           return;
         }
 
-        alert('服務組成部分已刪除');
+        alert('任務配置已刪除');
         await loadClientDetail();
 
       } catch (err) {
@@ -2618,19 +2588,9 @@
         const form = document.getElementById(`add-component-form-${clientServiceId}`);
         form.style.display = 'block';
         
-        // 填充基本字段
-        document.getElementById(`new-comp-name-${clientServiceId}`).value = component.component_name || '';
-        document.getElementById(`new-comp-service-item-${clientServiceId}`).value = component.service_item_id || '';
-        document.getElementById(`new-comp-freq-${clientServiceId}`).value = component.delivery_frequency || 'monthly';
-        document.getElementById(`new-comp-hours-${clientServiceId}`).value = component.estimated_hours || '';
-        document.getElementById(`new-comp-due-rule-${clientServiceId}`).value = component.due_date_rule || 'end_of_month';
-        document.getElementById(`new-comp-due-value-${clientServiceId}`).value = component.due_date_value || '';
-        document.getElementById(`new-comp-advance-${clientServiceId}`).value = component.advance_days || 7;
-        document.getElementById(`new-comp-template-${clientServiceId}`).value = component.task_template_id || '';
-        
         // 标记为编辑模式
         form.setAttribute('data-edit-id', componentId);
-        form.querySelector('h5').textContent = '編輯服務組成部分';
+        form.querySelector('h5').textContent = '編輯任務配置';
         
         // 填充服务层级SOP
         if (component.component_sops && component.component_sops.length > 0) {
