@@ -230,7 +230,7 @@
           <div style="width: 1px; height: 20px; background: #e5e7eb;"></div>
           <h1 style="margin: 0; font-size: 20px; font-weight: 600; color: #1e293b;">新增任務</h1>
         </div>
-      </div>
+    </div>
 
       <form id="taskForm" onsubmit="submitTasks(event)">
         <!-- 基本資訊 -->
@@ -240,22 +240,22 @@
             基本資訊
           </div>
           
-          <div class="form-row-2col">
-            <div class="form-field">
+        <div class="form-row-2col">
+          <div class="form-field">
               <label for="client_id">客戶 <span class="required-mark">*</span></label>
               <select id="client_id" required onchange="loadClientService()">
                 <option value="">請選擇客戶</option>
-              </select>
+            </select>
               <div class="field-hint">
                 <span class="material-symbols-outlined">help</span>
                 選擇要服務的客戶
               </div>
-            </div>
-            <div class="form-field">
+          </div>
+          <div class="form-field">
               <label for="service_id">服務類型 <span class="required-mark">*</span></label>
               <select id="service_id" required disabled onchange="loadClientService()">
                 <option value="">請先選擇客戶</option>
-              </select>
+            </select>
               <div class="field-hint">
                 <span class="material-symbols-outlined">help</span>
                 選擇服務類型（記帳、稅務等）
@@ -269,10 +269,10 @@
           <div class="form-section-title">
             <span class="material-symbols-outlined">schedule</span>
             服務月份
-          </div>
-          
-          <div class="form-row-1col">
-            <div class="form-field">
+        </div>
+
+        <div class="form-row-1col">
+          <div class="form-field">
               <label for="service_month">服務月份 <span class="required-mark">*</span></label>
               <input type="month" id="service_month" required />
               <div class="field-hint">
@@ -283,13 +283,37 @@
           </div>
         </div>
 
+        <!-- 服務層級SOP -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <span class="material-symbols-outlined">folder_special</span>
+            服務層級SOP（通用）
+          </div>
+          
+          <div class="form-row-1col">
+          <div class="form-field">
+              <button type="button" onclick="openServiceSOPSelector()" class="btn-sop" style="width: 100%; padding: 12px; border: 2px dashed #cbd5e1; background: white; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; color: #475569; transition: all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#f0f9ff'" onmouseout="this.style.borderColor='#cbd5e1'; this.style.background='white'">
+                <span class="material-symbols-outlined">folder_open</span>
+                <span id="serviceSopButtonText">選擇服務通用SOP</span>
+              </button>
+              <div id="serviceSopTags" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+                <!-- 已選SOP標籤將顯示在這裡 -->
+              </div>
+              <div class="field-hint" style="margin-top: 8px;">
+                <span class="material-symbols-outlined">help</span>
+                這些SOP會自動關聯到下方所有批量創建的任務中
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 任務列表 -->
         <div class="form-section" style="border-bottom: none;">
           <div class="form-section-title">
             <span class="material-symbols-outlined">list</span>
             任務列表
-          </div>
-          
+        </div>
+
           <div id="tasks_container" style="display: flex; flex-direction: column; gap: 16px;">
             <!-- 任務項目將動態添加 -->
           </div>
@@ -306,9 +330,9 @@
         </div>
 
       </form>
-      
-      <div class="form-actions">
-        <button type="button" onclick="window.location.href='/internal/tasks'" class="btn btn-secondary">取消</button>
+
+        <div class="form-actions">
+          <button type="button" onclick="window.location.href='/internal/tasks'" class="btn btn-secondary">取消</button>
         <button type="submit" form="taskForm" class="btn btn-primary">✓ 建立所有任務</button>
       </div>
     </div>
@@ -347,8 +371,10 @@
     let sops = [];
     let taskCounter = 0;
     let currentClientServiceId = null;
+    let serviceLevelSOPIds = []; // 服務層級SOP（會套用到所有任務）
     let currentSOPTaskId = null;
     let selectedSOPs = {}; // { taskId: [sopId1, sopId2] }
+    let sopSelectorMode = 'task'; // 'service' or 'task'
     
     async function init() {
       // 設定當前月份為默認值
@@ -428,8 +454,8 @@
               const exists = existingServiceIds.includes(s.service_id);
               return `<option value="${s.service_id}"${exists ? ' data-exists="1"' : ''}>${s.service_name}${exists ? ' ✓' : ''}</option>`;
             }).join('');
-        } catch (err) {
-          console.error('載入客戶服務失敗:', err);
+      } catch (err) {
+        console.error('載入客戶服務失敗:', err);
           serviceSelect.innerHTML = '<option value="">請選擇服務類型</option>' + 
             services.map(s => `<option value="${s.service_id}">${s.service_name}</option>`).join('');
         }
@@ -500,9 +526,9 @@
       const serviceMonth = document.getElementById('service_month').value;
       let defaultDueDate = '';
       if (serviceMonth) {
-        const [year, month] = serviceMonth.split('-').map(Number);
-        const lastDay = new Date(year, month, 0).getDate();
-        defaultDueDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      const [year, month] = serviceMonth.split('-').map(Number);
+      const lastDay = new Date(year, month, 0).getDate();
+      defaultDueDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
       }
       
       const userOptions = '<option value="">未分配</option>' + users.map(u => `<option value="${u.user_id}">${u.name}</option>`).join('');
@@ -610,9 +636,22 @@
     }
     
     function openSOPSelector(taskId) {
+      sopSelectorMode = 'task';
       currentSOPTaskId = taskId;
       const modal = document.getElementById('sopModal');
       modal.style.display = 'flex';
+      document.querySelector('#sopModal h3').textContent = '選擇任務SOP';
+      
+      // 渲染SOP列表
+      renderSOPList();
+    }
+    
+    function openServiceSOPSelector() {
+      sopSelectorMode = 'service';
+      currentSOPTaskId = null;
+      const modal = document.getElementById('sopModal');
+      modal.style.display = 'flex';
+      document.querySelector('#sopModal h3').textContent = '選擇服務層級SOP（通用）';
       
       // 渲染SOP列表
       renderSOPList();
@@ -625,7 +664,9 @@
     
     function renderSOPList() {
       const listContainer = document.getElementById('sopList');
-      const taskSelectedSOPs = selectedSOPs[currentSOPTaskId] || [];
+      const taskSelectedSOPs = sopSelectorMode === 'service' 
+        ? serviceLevelSOPIds 
+        : (selectedSOPs[currentSOPTaskId] || []);
       
       // 按類別分組
       const sopsByCategory = {};
@@ -725,27 +766,65 @@
       const checkedBoxes = document.querySelectorAll('#sopList input[type="checkbox"]:checked');
       const sopIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
       
-      selectedSOPs[currentSOPTaskId] = sopIds;
-      
-      // 更新任務卡片顯示
-      const taskCard = document.querySelector(`[data-task-id="${currentSOPTaskId}"]`);
-      if (taskCard) {
-        const textSpan = taskCard.querySelector('.sop-selected-text');
-        const hiddenInput = taskCard.querySelector('[name="sop_ids"]');
+      if (sopSelectorMode === 'service') {
+        // 服務層級SOP
+        serviceLevelSOPIds = sopIds;
+        renderServiceSOPTags();
+      } else {
+        // 任務層級SOP
+        selectedSOPs[currentSOPTaskId] = sopIds;
         
-        if (sopIds.length > 0) {
-          const sopTitles = sops.filter(s => sopIds.includes(s.sop_id)).map(s => s.title).join(', ');
-          textSpan.textContent = `已選擇 ${sopIds.length} 個SOP: ${sopTitles.substring(0, 40)}${sopTitles.length > 40 ? '...' : ''}`;
-          textSpan.style.color = '#1e293b';
-          hiddenInput.value = sopIds.join(',');
-        } else {
-          textSpan.textContent = '點擊選擇SOP文檔...';
-          textSpan.style.color = '#64748b';
-          hiddenInput.value = '';
+        // 更新任務卡片顯示
+        const taskCard = document.querySelector(`[data-task-id="${currentSOPTaskId}"]`);
+        if (taskCard) {
+          const textSpan = taskCard.querySelector('.sop-selected-text');
+          const hiddenInput = taskCard.querySelector('[name="sop_ids"]');
+          
+          if (sopIds.length > 0) {
+            const sopTitles = sops.filter(s => sopIds.includes(s.sop_id)).map(s => s.title).join(', ');
+            textSpan.textContent = `已選擇 ${sopIds.length} 個SOP: ${sopTitles.substring(0, 40)}${sopTitles.length > 40 ? '...' : ''}`;
+            textSpan.style.color = '#1e293b';
+            hiddenInput.value = sopIds.join(',');
+          } else {
+            textSpan.textContent = '點擊選擇SOP文檔...';
+            textSpan.style.color = '#64748b';
+            hiddenInput.value = '';
+          }
         }
       }
       
       closeSOPModal();
+    }
+    
+    function renderServiceSOPTags() {
+      const container = document.getElementById('serviceSopTags');
+      const buttonText = document.getElementById('serviceSopButtonText');
+      
+      if (serviceLevelSOPIds.length === 0) {
+        container.innerHTML = '';
+        buttonText.textContent = '選擇服務通用SOP';
+        return;
+      }
+      
+      buttonText.textContent = `已選 ${serviceLevelSOPIds.length} 個SOP`;
+      
+      container.innerHTML = serviceLevelSOPIds.map(sopId => {
+        const sop = sops.find(s => s.sop_id === sopId);
+        if (!sop) return '';
+        
+        return `
+          <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #eff6ff; border: 1px solid #3b82f6; border-radius: 6px; font-size: 13px; color: #1e40af;">
+            <span class="material-symbols-outlined" style="font-size: 16px;">description</span>
+            ${sop.title}
+            <button type="button" onclick="removeServiceSOP(${sopId})" style="background: none; border: none; color: #3b82f6; cursor: pointer; padding: 0; margin-left: 4px; font-size: 18px; line-height: 1; display: flex; align-items: center;" onmouseover="this.style.color='#1e40af'" onmouseout="this.style.color='#3b82f6'">×</button>
+          </span>
+        `;
+      }).join('');
+    }
+    
+    function removeServiceSOP(sopId) {
+      serviceLevelSOPIds = serviceLevelSOPIds.filter(id => id !== sopId);
+      renderServiceSOPTags();
     }
     
     
@@ -810,6 +889,15 @@
         const dueDate = card.querySelector('[name="due_date"]').value || null;
         const notes = card.querySelector('[name="notes"]').value.trim() || null;
         
+        // 獲取任務層級的SOP IDs
+        const taskSopInput = card.querySelector('[name="sop_ids"]');
+        const taskSopIds = taskSopInput && taskSopInput.value 
+          ? taskSopInput.value.split(',').map(id => parseInt(id)).filter(id => !isNaN(id))
+          : [];
+        
+        // 合併服務層級SOP和任務層級SOP
+        const allSopIds = [...new Set([...serviceLevelSOPIds, ...taskSopIds])];
+        
         if (!taskName) {
           alert('請填寫所有任務名稱');
           return;
@@ -820,7 +908,8 @@
           assignee_user_id: assigneeUserId,
           due_date: dueDate,
           notes: notes,
-          prerequisite_task_id: previousTaskId
+          prerequisite_task_id: previousTaskId,
+          sop_ids: allSopIds
         });
         
         // 暫存當前任務ID的占位符，實際ID會在創建後獲得
@@ -843,30 +932,50 @@
             prerequisite_task_id: actualPreviousTaskId
           };
           
-          const res = await fetch(`${apiBase}/tasks`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(data)
-          });
-          
+        const res = await fetch(`${apiBase}/tasks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+        
           if (res.status === 401) {
             window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
             return;
           }
           
-          const json = await res.json();
-          
-          if (!json.ok) {
+        const json = await res.json();
+        
+        if (!json.ok) {
             alert(`建立第 ${createdCount + 1} 個任務失敗: ${json.message || '未知錯誤'}`);
             if (createdCount > 0) {
               alert(`已成功建立 ${createdCount} 個任務`);
             }
-            return;
+          return;
           }
           
           // 保存剛創建的任務ID，作為下一個任務的前置任務
-          actualPreviousTaskId = json.data.taskId;
+          const newTaskId = json.data.taskId;
+          actualPreviousTaskId = newTaskId;
+          
+          // 關聯SOP（服務層級 + 任務層級）
+          if (taskData.sop_ids && taskData.sop_ids.length > 0) {
+            try {
+              const sopRes = await fetch(`${apiBase}/tasks/${newTaskId}/sops`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ sop_ids: taskData.sop_ids })
+              });
+              
+              if (!sopRes.ok) {
+                console.warn(`關聯SOP到任務 ${newTaskId} 失敗，但任務已創建`);
+              }
+            } catch (sopErr) {
+              console.error('關聯SOP失敗:', sopErr);
+            }
+          }
+          
           createdCount++;
         }
         
