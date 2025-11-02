@@ -59,6 +59,7 @@ async function getDocumentsList(request, env, me, corsHeaders) {
     const perPage = parseInt(url.searchParams.get('perPage')) || 20;
     const q = url.searchParams.get('q') || '';
     const category = url.searchParams.get('category') || '';
+    const scope = url.searchParams.get('scope') || '';
     const tags = url.searchParams.get('tags') || '';
     
     const offset = (page - 1) * perPage;
@@ -75,6 +76,11 @@ async function getDocumentsList(request, env, me, corsHeaders) {
     if (category && category !== 'all') {
       whereClauses.push('d.category = ?');
       params.push(category);
+    }
+    
+    if (scope && (scope === 'service' || scope === 'task')) {
+      whereClauses.push('d.scope = ?');
+      params.push(scope);
     }
     
     if (tags) {
@@ -103,6 +109,7 @@ async function getDocumentsList(request, env, me, corsHeaders) {
         d.file_size,
         d.file_type,
         d.category,
+        d.scope,
         d.tags,
         d.uploaded_by,
         d.created_at,
@@ -128,6 +135,7 @@ async function getDocumentsList(request, env, me, corsHeaders) {
       fileSize: row.file_size,
       fileType: row.file_type,
       category: row.category,
+      scope: row.scope || null,
       tags: row.tags ? row.tags.split(',').map(t => t.trim()) : [],
       uploadedBy: row.uploaded_by,
       uploaderName: row.uploader_name,
@@ -303,6 +311,7 @@ async function uploadDocument(request, env, me, corsHeaders) {
     const title = formData.get('title');
     const description = formData.get('description') || '';
     const category = formData.get('category') || '';
+    const scope = formData.get('scope') || '';
     const tags = formData.get('tags') || '';
     
     // 验证必填字段
@@ -310,6 +319,16 @@ async function uploadDocument(request, env, me, corsHeaders) {
       return new Response(JSON.stringify({
         ok: false,
         error: '文件和标题为必填项'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+    
+    if (!scope || (scope !== 'service' && scope !== 'task')) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: '必須指定資源適用層級（service或task）'
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -368,12 +387,13 @@ async function uploadDocument(request, env, me, corsHeaders) {
         file_size,
         file_type,
         category,
+        scope,
         tags,
         uploaded_by,
         created_at,
         updated_at,
         is_deleted
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).bind(
       title,
       description || null,
@@ -382,6 +402,7 @@ async function uploadDocument(request, env, me, corsHeaders) {
       file.size,
       file.type,
       category || null,
+      scope,
       tagsStr,
       me?.user_id || null,
       nowISO,
@@ -399,6 +420,7 @@ async function uploadDocument(request, env, me, corsHeaders) {
         fileSize: file.size,
         fileType: file.type,
         category,
+        scope,
         tags: tagsStr ? tagsStr.split(',').map(t => t.trim()) : [],
         uploadedBy: me?.user_id,
         createdAt: nowISO,
@@ -426,13 +448,23 @@ async function uploadDocument(request, env, me, corsHeaders) {
 async function createDocument(request, env, me, corsHeaders) {
   try {
     const body = await request.json();
-    const { title, description, file_name, file_url, file_size, file_type, category, tags } = body;
+    const { title, description, file_name, file_url, file_size, file_type, category, scope, tags } = body;
     
     // 验证必填字段
     if (!title || !file_name || !file_url) {
       return new Response(JSON.stringify({
         ok: false,
         error: '标题、文件名和文件URL为必填项'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+    
+    if (!scope || (scope !== 'service' && scope !== 'task')) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: '必須指定資源適用層級（service或task）'
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -451,12 +483,13 @@ async function createDocument(request, env, me, corsHeaders) {
         file_size,
         file_type,
         category,
+        scope,
         tags,
         uploaded_by,
         created_at,
         updated_at,
         is_deleted
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).bind(
       title,
       description || null,
@@ -465,6 +498,7 @@ async function createDocument(request, env, me, corsHeaders) {
       file_size || null,
       file_type || null,
       category || null,
+      scope,
       tagsStr,
       me?.user_id || null,
       now,
@@ -482,6 +516,7 @@ async function createDocument(request, env, me, corsHeaders) {
         fileSize: file_size,
         fileType: file_type,
         category,
+        scope,
         tags: tagsStr ? tagsStr.split(',').map(t => t.trim()) : [],
         uploadedBy: me?.user_id,
         createdAt: now,
@@ -508,7 +543,7 @@ async function createDocument(request, env, me, corsHeaders) {
 async function updateDocument(request, env, docId, me, corsHeaders) {
   try {
     const body = await request.json();
-    const { title, description, category, tags } = body;
+    const { title, description, category, scope, tags } = body;
     
     // 验证文档是否存在
     const existing = await env.DATABASE.prepare(
@@ -536,6 +571,16 @@ async function updateDocument(request, env, docId, me, corsHeaders) {
       });
     }
     
+    if (!scope || (scope !== 'service' && scope !== 'task')) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: '必須指定資源適用層級（service或task）'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+    
     const tagsStr = Array.isArray(tags) ? tags.join(',') : (tags || '');
     const now = new Date().toISOString();
     
@@ -545,6 +590,7 @@ async function updateDocument(request, env, docId, me, corsHeaders) {
         title = ?,
         description = ?,
         category = ?,
+        scope = ?,
         tags = ?,
         updated_at = ?
       WHERE document_id = ? AND is_deleted = 0
@@ -552,6 +598,7 @@ async function updateDocument(request, env, docId, me, corsHeaders) {
       title,
       description || null,
       category || null,
+      scope,
       tagsStr,
       now,
       docId
@@ -564,6 +611,7 @@ async function updateDocument(request, env, docId, me, corsHeaders) {
         title,
         description,
         category,
+        scope,
         tags: tagsStr ? tagsStr.split(',').map(t => t.trim()) : [],
         updatedAt: now
       }

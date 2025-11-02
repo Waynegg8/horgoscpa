@@ -130,17 +130,26 @@ export async function autoAdjustDependentTasks(env, taskId, userId) {
 /**
  * 记录任务状态更新
  */
-export async function recordStatusUpdate(env, taskId, status, userId, notes = {}) {
+export async function recordStatusUpdate(env, taskId, newStatus, userId, notes = {}) {
   try {
+    // 先获取当前状态
+    const task = await env.DATABASE.prepare(`
+      SELECT status FROM ActiveTasks WHERE task_id = ?
+    `).bind(taskId).first();
+    
+    const oldStatus = task?.status || 'pending';
+    
     await env.DATABASE.prepare(`
       INSERT INTO TaskStatusUpdates (
-        task_id, status, updated_by,
+        task_id, old_status, new_status, status, updated_by,
         progress_note, blocker_reason, overdue_reason,
         expected_completion_date
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       taskId,
-      status,
+      oldStatus,
+      newStatus,
+      newStatus, // 保持兼容性
       userId,
       notes.progress_note || null,
       notes.blocker_reason || null,

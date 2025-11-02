@@ -786,15 +786,27 @@
           </div>
 
           <div class="form-group">
-            <label>分類 *</label>
+            <label>服務類型分類 *</label>
             <select id="faq-category-drawer" required>
-              <option value="">請選擇</option>
-              <option value="accounting">記帳相關</option>
-              <option value="tax">稅務相關</option>
-              <option value="hr">人事相關</option>
-              <option value="system">系統操作</option>
-              <option value="other">其他</option>
+              <option value="">請選擇服務類型...</option>
+              <!-- 動態加載服務類型 -->
             </select>
+            <div style="font-size:12px;color:#6b7280;margin-top:6px;">
+              💡 選擇此FAQ所屬的服務類型，方便按服務分類管理
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>FAQ 適用層級 *</label>
+            <select id="faq-scope-drawer" required style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+              <option value="">請選擇適用層級...</option>
+              <option value="service">🔷 服務層級（適用於整個服務的通用FAQ）</option>
+              <option value="task">📋 任務層級（適用於特定任務的FAQ）</option>
+            </select>
+            <div style="font-size:12px;color:#6b7280;margin-top:6px;line-height:1.5;">
+              💡 <strong>服務層級：</strong>選擇某服務時，該服務所有任務都可查看此FAQ<br>
+              💡 <strong>任務層級：</strong>僅特定任務可關聯此FAQ
+            </div>
           </div>
           
           <div class="form-group">
@@ -837,21 +849,26 @@
       <div style="padding:24px;">
           
           <form id="resourceFormModal">
+            <div class="form-group" style="margin:0 0 16px 0;">
+              <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">文檔標題 *</label>
+              <input type="text" id="resource-title-modal" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="請輸入文檔標題" />
+            </div>
+            
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
               <div class="form-group" style="margin:0;">
-                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">文檔標題 *</label>
-                <input type="text" id="resource-title-modal" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" placeholder="請輸入文檔標題" />
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">服務類型分類 *</label>
+                <select id="resource-category-modal" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+                  <option value="">請選擇服務類型...</option>
+                  <!-- 動態加載服務類型 -->
+                </select>
               </div>
               
               <div class="form-group" style="margin:0;">
-                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">分類</label>
-                <select id="resource-category-modal" style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
-                  <option value="">請選擇</option>
-                  <option value="contract">合同範本</option>
-                  <option value="finance">財務表格</option>
-                  <option value="hr">人事文檔</option>
-                  <option value="tax">稅務參考</option>
-                  <option value="other">其他</option>
+                <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-secondary);">資源適用層級 *</label>
+                <select id="resource-scope-modal" required style="width:100%;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+                  <option value="">請選擇適用層級...</option>
+                  <option value="service">🔷 服務層級</option>
+                  <option value="task">📋 任務層級</option>
                 </select>
               </div>
             </div>
@@ -1657,6 +1674,24 @@
                   `<option value="${s.service_code}">${s.service_name}</option>`
                 ).join('');
                 sopCategory.innerHTML = '<option value="">請選擇</option>' + optionsHTML;
+              }
+              
+              // 填充FAQ抽屜的下拉框
+              const faqCategoryDrawer = document.getElementById('faq-category-drawer');
+              if (faqCategoryDrawer) {
+                const optionsHTML = serviceTypes.map(s => 
+                  `<option value="${s.service_code}">${s.service_name}</option>`
+                ).join('');
+                faqCategoryDrawer.innerHTML = '<option value="">請選擇服務類型...</option>' + optionsHTML;
+              }
+              
+              // 填充資源上傳的下拉框
+              const resourceCategoryModal = document.getElementById('resource-category-modal');
+              if (resourceCategoryModal) {
+                const optionsHTML = serviceTypes.map(s => 
+                  `<option value="${s.service_code}">${s.service_name}</option>`
+                ).join('');
+                resourceCategoryModal.innerHTML = '<option value="">請選擇服務類型...</option>' + optionsHTML;
               }
               
               console.log('✅ 服務類型已載入:', serviceTypes.length, '個');
@@ -2865,6 +2900,7 @@
             document.getElementById('faq-id-drawer').value = '';
             document.getElementById('faq-question-drawer').value = '【請填寫問題】例如：如何處理跨月份的發票？';
             document.getElementById('faq-category-drawer').value = '';
+            document.getElementById('faq-scope-drawer').value = '';
             
             if (window.faqDrawerEditor) {
               window.faqDrawerEditor.root.innerHTML = FAQ_TEMPLATE;
@@ -2878,6 +2914,7 @@
             document.getElementById('faq-id-drawer').value = faqData.faq_id || '';
             document.getElementById('faq-question-drawer').value = faqData.question || '';
             document.getElementById('faq-category-drawer').value = faqData.category || '';
+            document.getElementById('faq-scope-drawer').value = faqData.scope || '';
             
             if (window.faqDrawerEditor) {
               window.faqDrawerEditor.root.innerHTML = faqData.answer || '';
@@ -3015,8 +3052,14 @@
           const faqId = document.getElementById('faq-id-drawer').value;
           const question = document.getElementById('faq-question-drawer').value;
           const category = document.getElementById('faq-category-drawer').value;
+          const scope = document.getElementById('faq-scope-drawer').value;
           const tags = getCheckedTags('faq-tags-checkboxes');
           const answer = window.faqDrawerEditor.root.innerHTML;
+          
+          if (!scope) {
+            alert('請選擇FAQ適用層級');
+            return;
+          }
           
           const submitBtn = e.target.querySelector('button[type="submit"]');
           const originalText = submitBtn.innerHTML;
@@ -3031,7 +3074,7 @@
               method,
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ question, category, tags, answer })
+              body: JSON.stringify({ question, category, scope, tags, answer })
             });
             
             const json = await res.json();
@@ -3070,6 +3113,14 @@
           
           const title = document.getElementById('resource-title-modal').value;
           const category = document.getElementById('resource-category-modal').value;
+          const scope = document.getElementById('resource-scope-modal').value;
+          
+          if (!scope) {
+            alert('請選擇資源適用層級');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>📤 上傳文檔</span>';
+            return;
+          }
           
           // 從複選框獲取選中的標籤
           const selectedTags = getCheckedTags('resource-tags-checkboxes');
@@ -3081,6 +3132,7 @@
             formData.append('file', selectedFile);
             formData.append('title', title);
             formData.append('category', category);
+            formData.append('scope', scope);
             formData.append('tags', tags);
             
             const uploadRes = await fetch(`${apiBase}/documents/upload`, {

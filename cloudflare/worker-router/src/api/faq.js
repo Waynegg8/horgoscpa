@@ -45,6 +45,7 @@ async function getFAQList(request, env, me) {
     const perPage = parseInt(url.searchParams.get('perPage')) || 20;
     const q = url.searchParams.get('q') || '';
     const category = url.searchParams.get('category') || '';
+    const scope = url.searchParams.get('scope') || '';
     const tags = url.searchParams.get('tags') || '';
     
     const offset = (page - 1) * perPage;
@@ -61,6 +62,11 @@ async function getFAQList(request, env, me) {
     if (category && category !== 'all') {
       whereClauses.push('category = ?');
       params.push(category);
+    }
+    
+    if (scope && (scope === 'service' || scope === 'task')) {
+      whereClauses.push('scope = ?');
+      params.push(scope);
     }
     
     if (tags) {
@@ -85,6 +91,7 @@ async function getFAQList(request, env, me) {
         question, 
         answer, 
         category, 
+        scope,
         tags, 
         created_by, 
         created_at, 
@@ -104,6 +111,7 @@ async function getFAQList(request, env, me) {
       question: row.question,
       answer: row.answer,
       category: row.category,
+      scope: row.scope || null,
       tags: row.tags ? row.tags.split(',').map(t => t.trim()) : [],
       createdBy: row.created_by,
       createdAt: row.created_at,
@@ -139,6 +147,7 @@ async function getFAQById(env, faqId, me) {
         question, 
         answer, 
         category, 
+        scope,
         tags, 
         created_by, 
         created_at, 
@@ -162,6 +171,7 @@ async function getFAQById(env, faqId, me) {
       question: result.question,
       answer: result.answer,
       category: result.category,
+      scope: result.scope || null,
       tags: result.tags ? result.tags.split(',').map(t => t.trim()) : [],
       createdBy: result.created_by,
       createdAt: result.created_at,
@@ -191,13 +201,23 @@ async function getFAQById(env, faqId, me) {
 async function createFAQ(request, env, me) {
   try {
     const body = await request.json();
-    const { question, answer, category, tags } = body;
+    const { question, answer, category, scope, tags } = body;
     
     // 验证必填字段
     if (!question || !answer) {
       return new Response(JSON.stringify({
         ok: false,
         error: '问题和答案为必填项'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (!scope || (scope !== 'service' && scope !== 'task')) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: '必須指定FAQ適用層級（service或task）'
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -212,16 +232,18 @@ async function createFAQ(request, env, me) {
         question, 
         answer, 
         category, 
+        scope,
         tags, 
         created_by, 
         created_at, 
         updated_at,
         is_deleted
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).bind(
       question,
       answer,
       category || null,
+      scope,
       tagsStr,
       me?.user_id || null,
       now,
@@ -235,6 +257,7 @@ async function createFAQ(request, env, me) {
         question,
         answer,
         category,
+        scope,
         tags: tagsStr ? tagsStr.split(',').map(t => t.trim()) : [],
         createdBy: me?.user_id,
         createdAt: now,
@@ -261,7 +284,7 @@ async function createFAQ(request, env, me) {
 async function updateFAQ(request, env, faqId, me) {
   try {
     const body = await request.json();
-    const { question, answer, category, tags } = body;
+    const { question, answer, category, scope, tags } = body;
     
     // 验证FAQ是否存在
     const existing = await env.DATABASE.prepare(
@@ -289,6 +312,16 @@ async function updateFAQ(request, env, faqId, me) {
       });
     }
     
+    if (!scope || (scope !== 'service' && scope !== 'task')) {
+      return new Response(JSON.stringify({
+        ok: false,
+        error: '必須指定FAQ適用層級（service或task）'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
     const tagsStr = Array.isArray(tags) ? tags.join(',') : (tags || '');
     const now = new Date().toISOString();
     
@@ -298,6 +331,7 @@ async function updateFAQ(request, env, faqId, me) {
         question = ?,
         answer = ?,
         category = ?,
+        scope = ?,
         tags = ?,
         updated_at = ?
       WHERE faq_id = ? AND is_deleted = 0
@@ -305,6 +339,7 @@ async function updateFAQ(request, env, faqId, me) {
       question,
       answer,
       category || null,
+      scope,
       tagsStr,
       now,
       faqId
@@ -317,6 +352,7 @@ async function updateFAQ(request, env, faqId, me) {
         question,
         answer,
         category,
+        scope,
         tags: tagsStr ? tagsStr.split(',').map(t => t.trim()) : [],
         updatedAt: now
       }
