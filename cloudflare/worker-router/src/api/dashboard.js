@@ -274,11 +274,20 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         res.revenueTrend = list.sort((a,b)=> a.month.localeCompare(b.month));
       } catch (_) {}
 
-      // Recent Activities (任务调整和状态更新) - 最近7天
+      // Recent Activities (任务调整、状态更新、假期申请、工时提醒)
       try {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const sevenDaysAgoStr = sevenDaysAgo.toISOString();
+        // 从查询参数获取筛选条件
+        const days = parseInt(params.get('activity_days') || '7', 10);
+        const filterUserId = params.get('activity_user_id');
+        
+        const daysAgo = new Date();
+        daysAgo.setDate(daysAgo.getDate() - days);
+        const daysAgoStr = daysAgo.toISOString();
+        
+        // 构建用户筛选条件
+        const userFilter = filterUserId ? `AND adj.requested_by = ${filterUserId}` : '';
+        const userFilter2 = filterUserId ? `AND su.updated_by = ${filterUserId}` : '';
+        const userFilter3 = filterUserId ? `AND l.user_id = ${filterUserId}` : '';
         
         // 查询任务期限调整
         const adjustments = await env.DATABASE.prepare(`
@@ -309,9 +318,10 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             AND adj.old_due_date IS NOT NULL 
             AND adj.new_due_date IS NOT NULL
             AND adj.adjustment_type IS NOT NULL
+            ${userFilter}
           ORDER BY adj.requested_at DESC
-          LIMIT 20
-        `).bind(sevenDaysAgoStr).all();
+          LIMIT 30
+        `).bind(daysAgoStr).all();
         
         // 查询任务状态更新
         const statusUpdates = await env.DATABASE.prepare(`
@@ -343,14 +353,104 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           WHERE su.updated_at >= ?
             AND su.old_status IS NOT NULL
             AND su.new_status IS NOT NULL
+            ${userFilter2}
           ORDER BY su.updated_at DESC
-          LIMIT 20
-        `).bind(sevenDaysAgoStr).all();
+          LIMIT 30
+        `).bind(daysAgoStr).all();
+        
+        // 查询假期申请
+        const leaveApplications = await env.DATABASE.prepare(`
+          SELECT 
+            l.leave_id,
+            l.applied_at as activity_time,
+            l.leave_type,
+            l.start_date,
+            l.end_date,
+            l.days as leave_days,
+            l.status as leave_status,
+            l.reason,
+            l.user_id,
+            u.name as user_name
+          FROM Leaves l
+          LEFT JOIN Users u ON u.user_id = l.user_id
+          WHERE l.applied_at >= ?
+            ${userFilter3}
+          ORDER BY l.applied_at DESC
+          LIMIT 30
+        `).bind(daysAgoStr).all();
+        
+        // 查询工时缺失提醒（最近7天未填写工时的员工）
+        let timesheetReminders = [];
+        try {
+          // 获取最近7天的日期列表（排除周末）
+          const today = new Date();
+          const dates = [];
+          for (let i = 1; i <= 7; i++) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const dayOfWeek = d.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 排除周末
+              dates.push(d.toISOString().slice(0, 10));
+            }
+          }
+          
+          // 查询每个用户的工时填写情况
+          if (dates.length > 0) {
+            const datesList = dates.map(d => `'${d}'`).join(',');
+            const userFilterForTimesheet = filterUserId ? `AND u.user_id = ${filterUserId}` : '';
+            
+            const missingTimesheets = await env.DATABASE.prepare(`
+              WITH AllUserDates AS (
+                SELECT u.user_id, u.name, dates.work_date
+                FROM Users u
+                CROSS JOIN (${dates.map(d => `SELECT '${d}' as work_date`).join(' UNION ALL ')}) dates
+                WHERE u.is_active = 1 ${userFilterForTimesheet}
+              )
+              SELECT 
+                aud.user_id,
+                aud.name as user_name,
+                aud.work_date,
+                CASE WHEN t.timesheet_id IS NULL THEN 1 ELSE 0 END as is_missing
+              FROM AllUserDates aud
+              LEFT JOIN Timesheets t ON t.user_id = aud.user_id AND t.work_date = aud.work_date
+              WHERE t.timesheet_id IS NULL
+              ORDER BY aud.work_date DESC, aud.name ASC
+              LIMIT 30
+            `).all();
+            
+            // 按用户分组，生成提醒记录
+            const groupedByUser = {};
+            (missingTimesheets?.results || []).forEach(r => {
+              if (!groupedByUser[r.user_id]) {
+                groupedByUser[r.user_id] = {
+                  user_id: r.user_id,
+                  user_name: r.user_name,
+                  missing_dates: []
+                };
+              }
+              groupedByUser[r.user_id].missing_dates.push(r.work_date);
+            });
+            
+            // 转换为活动记录格式
+            timesheetReminders = Object.values(groupedByUser).map(item => ({
+              activity_type: 'timesheet_reminder',
+              user_id: item.user_id,
+              user_name: item.user_name,
+              missing_dates: item.missing_dates,
+              missing_count: item.missing_dates.length,
+              activity_time: today.toISOString() // 使用当前时间作为活动时间
+            }));
+          }
+        } catch (err) {
+          console.error('[仪表板] 获取工时提醒失败:', err);
+        }
         
         // 合并并排序（添加 activity_type 标识）
         const allActivities = [
           ...(adjustments?.results || []).map(a => ({...a, activity_type: 'due_date_adjustment'})),
-          ...(statusUpdates?.results || []).map(s => ({...s, activity_type: 'status_update'}))
+          ...(statusUpdates?.results || []).map(s => ({...s, activity_type: 'status_update'})),
+          ...(leaveApplications?.results || []).map(l => ({...l, activity_type: 'leave_application'})),
+          ...timesheetReminders
         ].sort((a, b) => (b.activity_time || '').localeCompare(a.activity_time || ''));
         
         // 格式化活动记录
@@ -414,12 +514,79 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
               time: time,
               link: `/internal/task-detail?id=${act.task_id}`
             };
+          } else if (act.activity_type === 'leave_application') {
+            const leaveTypeMap = {
+              'annual': '特休',
+              'sick': '病假',
+              'personal': '事假',
+              'comp': '補休',
+              'maternity': '產假',
+              'paternity': '陪產假',
+              'marriage': '婚假',
+              'bereavement': '喪假',
+              'unpaid': '無薪假'
+            };
+            const leaveType = leaveTypeMap[act.leave_type] || act.leave_type;
+            
+            const statusMap2 = {
+              'pending': '待審核',
+              'approved': '已核准',
+              'rejected': '已拒絕',
+              'cancelled': '已取消'
+            };
+            const leaveStatus = statusMap2[act.leave_status] || act.leave_status;
+            
+            const startDate = act.start_date ? act.start_date.slice(5) : '';
+            const endDate = act.end_date ? act.end_date.slice(5) : '';
+            const leaveDays = act.leave_days || 0;
+            
+            return {
+              type: 'leave_application',
+              text: `${act.user_name} 申請${leaveType}`,
+              leaveType: leaveType,
+              leaveStatus: leaveStatus,
+              leaveDays: leaveDays,
+              period: `${startDate} ~ ${endDate}`,
+              reason: act.reason || '',
+              userName: act.user_name,
+              time: time,
+              link: `/internal/leaves`
+            };
+          } else if (act.activity_type === 'timesheet_reminder') {
+            const missingDates = (act.missing_dates || []).map(d => d.slice(5)).join(', ');
+            return {
+              type: 'timesheet_reminder',
+              text: `${act.user_name} 尚未填寫工時`,
+              userName: act.user_name,
+              missingCount: act.missing_count || 0,
+              missingDates: missingDates,
+              time: time,
+              link: `/internal/timesheets`
+            };
           }
           return null;
         }).filter(Boolean);
       } catch (err) {
         console.error('[仪表板] 获取最近动态失败:', err);
         res.recentActivities = [];
+      }
+
+      // Team Members (所有用户列表，用于筛选)
+      try {
+        const usersResult = await env.DATABASE.prepare(`
+          SELECT user_id, name, email
+          FROM Users
+          WHERE is_active = 1
+          ORDER BY name ASC
+        `).all();
+        res.teamMembers = (usersResult?.results || []).map(u => ({
+          userId: u.user_id,
+          name: u.name,
+          email: u.email
+        }));
+      } catch (err) {
+        console.error('[仪表板] 获取团队成员失败:', err);
+        res.teamMembers = [];
       }
 
       return res;

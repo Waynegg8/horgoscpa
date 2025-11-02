@@ -43,6 +43,8 @@
         let currentYm = null; // 当前查看的年月，格式：YYYY-MM
         let financeMode = 'month'; // 'month' 或 'ytd'（本年累计）
         let financeYm = null; // 财务查看的年月
+        let activityDays = 7; // 最近动态天数
+        let activityUserId = ''; // 最近动态筛选的员工ID
 
         function formatLocalDate(d){
           try { return new Intl.DateTimeFormat('zh-TW', { dateStyle:'full', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }).format(d); } catch(_) { return d.toISOString().slice(0,10); }
@@ -88,6 +90,31 @@
 
         function listCard(title, rowsHtml){
           return `<div class="card list"><div class="card-title">${title}</div><div class="list-body">${rowsHtml||'<div class=\"muted\">尚無資料</div>'}</div></div>`;
+        }
+        
+        function listCardWithActivityFilter(title, rowsHtml, users){
+          const userOptions = [
+            '<option value="">全部員工</option>',
+            ...users.map(u => `<option value="${u.userId}" ${activityUserId == u.userId ? 'selected' : ''}>${u.name}</option>`)
+          ].join('');
+          
+          return `<div class="card list">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div class="card-title">${title}</div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <select id="activityUserFilter" style="padding:4px 8px;font-size:13px;border:1px solid #e5e7eb;border-radius:4px;background:#fff;">
+                  ${userOptions}
+                </select>
+                <select id="activityDaysFilter" style="padding:4px 8px;font-size:13px;border:1px solid #e5e7eb;border-radius:4px;background:#fff;">
+                  <option value="3" ${activityDays == 3 ? 'selected' : ''}>3天內</option>
+                  <option value="7" ${activityDays == 7 ? 'selected' : ''}>7天內</option>
+                  <option value="14" ${activityDays == 14 ? 'selected' : ''}>14天內</option>
+                  <option value="30" ${activityDays == 30 ? 'selected' : ''}>30天內</option>
+                </select>
+              </div>
+            </div>
+            <div class="list-body" style="max-height:600px;overflow-y:auto;">${rowsHtml||'<div class=\"muted\">尚無資料</div>'}</div>
+          </div>`;
         }
 
         function generateMonthOptions(selectedYm) {
@@ -356,15 +383,69 @@
                     ${act.note ? `<div style="font-size:12px;color:#4b5563;margin-top:4px;line-height:1.4;padding:6px;background:${act.note.startsWith('🚫') || act.note.startsWith('⏰') ? '#fef2f2' : '#f0fdf4'};border-radius:4px;">${act.note}</div>` : ''}
                   </div>
                 </a>`;
+              } else if (act.type === 'leave_application') {
+                const statusColor = act.leaveStatus === '已核准' ? '#10b981' : act.leaveStatus === '已拒絕' ? '#ef4444' : '#f59e0b';
+                return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
+                  <div style="padding:10px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">
+                      <div style="font-size:13px;font-weight:600;color:#1f2937;">🏖️ ${act.text}</div>
+                      <div style="font-size:11px;color:#9ca3af;">${act.time}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px;">
+                      <span style="color:#6b7280;">${act.period}</span>
+                      <span style="padding:2px 6px;border-radius:3px;background:#f3f4f6;color:#1f2937;font-weight:500;">${act.leaveDays}天</span>
+                      <span style="padding:2px 6px;border-radius:3px;color:${statusColor};font-weight:500;">${act.leaveStatus}</span>
+                    </div>
+                    ${act.reason ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;line-height:1.4;">${act.reason}</div>` : ''}
+                  </div>
+                </a>`;
+              } else if (act.type === 'timesheet_reminder') {
+                return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
+                  <div style="padding:10px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;background:#fef2f2;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">
+                      <div style="font-size:13px;font-weight:600;color:#dc2626;">⚠️ ${act.text}</div>
+                      <div style="font-size:11px;color:#9ca3af;">${act.time}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+                      <span style="padding:2px 6px;border-radius:3px;background:#fee2e2;color:#dc2626;font-weight:500;">${act.missingCount}天未填</span>
+                      <span style="color:#6b7280;font-size:11px;">${act.missingDates}</span>
+                    </div>
+                  </div>
+                </a>`;
               }
               return '';
             }).join('');
           } else {
-            activitiesHtml = '<div class="muted">最近 7 天沒有任務更新</div>';
+            activitiesHtml = `<div class="muted">最近 ${activityDays} 天沒有動態記錄</div>`;
           }
+          
+          // 获取所有用户列表用于筛选
+          const allUsers = Array.isArray(data?.teamMembers) ? data.teamMembers : [];
+          
           const activitiesFrag = document.createElement('div');
-          activitiesFrag.innerHTML = listCard('📋 最近動態（任務更新）', activitiesHtml);
-          grid.appendChild(activitiesFrag.firstElementChild);
+          activitiesFrag.innerHTML = listCardWithActivityFilter('📋 最近動態（任務·假期·工時）', activitiesHtml, allUsers);
+          const activitiesCard = activitiesFrag.firstElementChild;
+          grid.appendChild(activitiesCard);
+          
+          // 添加筛选事件监听
+          if (activitiesCard) {
+            const userFilter = activitiesCard.querySelector('#activityUserFilter');
+            const daysFilter = activitiesCard.querySelector('#activityDaysFilter');
+            
+            if (userFilter) {
+              userFilter.addEventListener('change', (e) => {
+                activityUserId = e.target.value;
+                refresh();
+              });
+            }
+            
+            if (daysFilter) {
+              daysFilter.addEventListener('change', (e) => {
+                activityDays = parseInt(e.target.value, 10);
+                refresh();
+              });
+            }
+          }
           
           // 3. 最后渲染财务状况（独占一行，在最下面）
           const finFrag = document.createElement('div');
@@ -443,6 +524,13 @@
               }
               if (financeMode) {
                 params.set('financeMode', financeMode);
+              }
+              // 为最近动态传递筛选参数
+              if (activityDays) {
+                params.set('activity_days', activityDays);
+              }
+              if (activityUserId) {
+                params.set('activity_user_id', activityUserId);
               }
             }
             
