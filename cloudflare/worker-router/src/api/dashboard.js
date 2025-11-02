@@ -382,15 +382,28 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         // 查询工时缺失提醒（最近7天未填写工时的员工）
         let timesheetReminders = [];
         try {
-          // 获取最近7天的日期列表（排除周末）
+          // 获取最近7天的日期列表（排除周末和国定假日）
           const today = new Date();
           const dates = [];
+          
+          // 先获取国定假日列表
+          const holidaysResult = await env.DATABASE.prepare(`
+            SELECT holiday_date 
+            FROM Holidays 
+            WHERE holiday_date >= date('now', '-7 days') 
+              AND holiday_date <= date('now')
+          `).all();
+          const holidays = new Set((holidaysResult?.results || []).map(h => h.holiday_date));
+          
           for (let i = 1; i <= 7; i++) {
             const d = new Date(today);
             d.setDate(d.getDate() - i);
             const dayOfWeek = d.getDay();
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 排除周末
-              dates.push(d.toISOString().slice(0, 10));
+            const dateStr = d.toISOString().slice(0, 10);
+            
+            // 排除周末和国定假日
+            if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.has(dateStr)) {
+              dates.push(dateStr);
             }
           }
           
@@ -528,14 +541,6 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             };
             const leaveType = leaveTypeMap[act.leave_type] || act.leave_type;
             
-            const statusMap2 = {
-              'pending': '待審核',
-              'approved': '已核准',
-              'rejected': '已拒絕',
-              'cancelled': '已取消'
-            };
-            const leaveStatus = statusMap2[act.leave_status] || act.leave_status;
-            
             const startDate = act.start_date ? act.start_date.slice(5) : '';
             const endDate = act.end_date ? act.end_date.slice(5) : '';
             const leaveDays = act.leave_days || 0;
@@ -544,7 +549,6 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
               type: 'leave_application',
               text: `${act.user_name} 申請${leaveType}`,
               leaveType: leaveType,
-              leaveStatus: leaveStatus,
               leaveDays: leaveDays,
               period: `${startDate} ~ ${endDate}`,
               reason: act.reason || '',

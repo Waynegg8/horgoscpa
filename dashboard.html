@@ -238,7 +238,16 @@
         }
 
         function renderAdminDashboard(data){
-          grid.innerHTML = '';
+          // 创建两列布局
+          grid.innerHTML = `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+              <div id="leftColumn" style="display:flex;flex-direction:column;gap:20px;"></div>
+              <div id="rightColumn" style="display:flex;flex-direction:column;gap:20px;"></div>
+            </div>
+          `;
+          
+          const leftColumn = document.getElementById('leftColumn');
+          const rightColumn = document.getElementById('rightColumn');
           
           // 各员工工时
           const empHours = Array.isArray(data?.employeeHours) ? data.employeeHours : [];
@@ -248,18 +257,18 @@
               const totalStr = fmtNum(e.total || 0);
               const meta = (e.total && e.total > 0) ? `正常 ${fmtNum(e.normal)} ｜ 加班 ${fmtNum(e.overtime)}` : '';
               return `<div class="emp-row">
-                <span class="name">${e.name || '未命名'}</span>
-                <div style="display:flex;align-items:center;gap:16px;">
-                  ${meta ? `<div class="muted" style="font-size:12px;">${meta}</div>` : ''}
-                  <div class="hours-display">
-                    <span class="hours-value">${totalStr}</span>
-                    <span class="hours-unit">小時</span>
+                <span style="font-size:14px;font-weight:500;color:#1f2937;">${e.name || '未命名'}</span>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  ${meta ? `<div style="font-size:13px;color:#6b7280;">${meta}</div>` : ''}
+                  <div style="display:flex;align-items:baseline;gap:4px;">
+                    <span style="font-size:20px;font-weight:600;color:#2563eb;">${totalStr}</span>
+                    <span style="font-size:13px;color:#6b7280;">小時</span>
                   </div>
                 </div>
               </div>`;
             }).join('');
           } else {
-            hoursHtml = '<div class="muted">尚無員工資料</div>';
+            hoursHtml = '<div style="padding:16px;text-align:center;color:#9ca3af;">尚無員工資料</div>';
           }
           
           // 各员工任务状态 - 改为列表形式，可点击跳转
@@ -268,20 +277,20 @@
             const total = e.completed + e.inProgress + e.overdue + e.pending;
             const activeCount = e.inProgress + e.overdue + e.pending;
             
-            // 构建状态摘要 - 使用 badge 样式
+            // 构建状态摘要 - 使用更大的 badge 样式
             const badges = [];
-            if (e.overdue > 0) badges.push(`<span class="task-badge task-badge-overdue">逾期 ${e.overdue}</span>`);
-            if (e.inProgress > 0) badges.push(`<span class="task-badge task-badge-progress">進行中 ${e.inProgress}</span>`);
-            if (e.pending > 0) badges.push(`<span class="task-badge task-badge-pending">待辦 ${e.pending}</span>`);
-            if (e.completed > 0) badges.push(`<span class="task-badge task-badge-completed">已完成 ${e.completed}</span>`);
+            if (e.overdue > 0) badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#fee2e2;color:#dc2626;font-size:13px;font-weight:500;">逾期 ${e.overdue}</span>`);
+            if (e.inProgress > 0) badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#dbeafe;color:#2563eb;font-size:13px;font-weight:500;">進行中 ${e.inProgress}</span>`);
+            if (e.pending > 0) badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#fef3c7;color:#d97706;font-size:13px;font-weight:500;">待辦 ${e.pending}</span>`);
+            if (e.completed > 0) badges.push(`<span style="padding:4px 8px;border-radius:4px;background:#d1fae5;color:#059669;font-size:13px;font-weight:500;">已完成 ${e.completed}</span>`);
             
-            const summary = badges.length > 0 ? badges.join('') : '<span class="muted">無任務</span>';
+            const summary = badges.length > 0 ? badges.join('') : '<span style="color:#9ca3af;">無任務</span>';
             
-            return `<a href="/internal/tasks?assignee=${e.userId}" class="emp-task-row">
-              <span class="emp-task-name">${e.name || '未命名'}</span>
-              <div class="emp-task-badges">${summary}</div>
+            return `<a href="/internal/tasks?assignee=${e.userId}" style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid #f3f4f6;text-decoration:none;color:inherit;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+              <span style="font-size:14px;font-weight:500;color:#1f2937;">${e.name || '未命名'}</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">${summary}</div>
             </a>`;
-          }).join('') : '<div class="muted">尚無任務</div>';
+          }).join('') : '<div style="padding:16px;text-align:center;color:#9ca3af;">尚無任務</div>';
           
           // 财务状况 - 根据模式显示月度或年度累计
           const fs = data?.financialStatus || {};
@@ -291,62 +300,50 @@
           const currentFinData = (financeMode === 'ytd' ? fs.ytd : fs.month) || emptyData;
           
           const finHtml = `
-            <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;flex-direction:column;gap:12px;">
               <!-- 帐面数据：营收、成本、毛利、毛利率 -->
-              <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
-                <div class="fin-metric" data-type="revenue"><div class="fin-metric-label">營收</div><div class="fin-metric-value">${fmtTwd(currentFinData.revenue)}</div></div>
-                <div class="fin-metric" data-type="cost"><div class="fin-metric-label">成本</div><div class="fin-metric-value">${fmtTwd(currentFinData.cost)}</div></div>
-                <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利</div><div class="fin-metric-value">${fmtTwd(currentFinData.profit)}</div></div>
-                <div class="fin-metric" data-type="profit"><div class="fin-metric-label">毛利率</div><div class="fin-metric-value">${fmtPct(currentFinData.margin)}</div></div>
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+                <div style="padding:12px;background:#f9fafb;border-radius:6px;">
+                  <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">營收</div>
+                  <div style="font-size:18px;font-weight:600;color:#1f2937;">${fmtTwd(currentFinData.revenue)}</div>
+                </div>
+                <div style="padding:12px;background:#f9fafb;border-radius:6px;">
+                  <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">成本</div>
+                  <div style="font-size:18px;font-weight:600;color:#1f2937;">${fmtTwd(currentFinData.cost)}</div>
+                </div>
+                <div style="padding:12px;background:#f0fdf4;border-radius:6px;">
+                  <div style="font-size:12px;color:#059669;margin-bottom:4px;">毛利</div>
+                  <div style="font-size:18px;font-weight:600;color:#059669;">${fmtTwd(currentFinData.profit)}</div>
+                </div>
+                <div style="padding:12px;background:#f0fdf4;border-radius:6px;">
+                  <div style="font-size:12px;color:#059669;margin-bottom:4px;">毛利率</div>
+                  <div style="font-size:18px;font-weight:600;color:#059669;">${fmtPct(currentFinData.margin)}</div>
+                </div>
               </div>
               
               <!-- 现金流数据：应收、收款、逾期、收款率 -->
-              <div class="fin-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
-                <div class="fin-metric" data-type="ar"><div class="fin-metric-label">應收</div><div class="fin-metric-value">${fmtTwd(currentFinData.ar)}</div></div>
-                <div class="fin-metric" data-type="paid"><div class="fin-metric-label">收款</div><div class="fin-metric-value">${fmtTwd(currentFinData.paid)}</div></div>
-                <div class="fin-metric" data-type="overdue"><div class="fin-metric-label">逾期</div><div class="fin-metric-value">${fmtTwd(currentFinData.overdue)}</div></div>
-                <div class="fin-metric" data-type="rate"><div class="fin-metric-label">收款率</div><div class="fin-metric-value">${fmtPct(currentFinData.collectionRate)}</div></div>
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+                <div style="padding:12px;background:#fefce8;border-radius:6px;">
+                  <div style="font-size:12px;color:#ca8a04;margin-bottom:4px;">應收</div>
+                  <div style="font-size:18px;font-weight:600;color:#ca8a04;">${fmtTwd(currentFinData.ar)}</div>
+                </div>
+                <div style="padding:12px;background:#dbeafe;border-radius:6px;">
+                  <div style="font-size:12px;color:#2563eb;margin-bottom:4px;">收款</div>
+                  <div style="font-size:18px;font-weight:600;color:#2563eb;">${fmtTwd(currentFinData.paid)}</div>
+                </div>
+                <div style="padding:12px;background:#fee2e2;border-radius:6px;">
+                  <div style="font-size:12px;color:#dc2626;margin-bottom:4px;">逾期</div>
+                  <div style="font-size:18px;font-weight:600;color:#dc2626;">${fmtTwd(currentFinData.overdue)}</div>
+                </div>
+                <div style="padding:12px;background:#f3f4f6;border-radius:6px;">
+                  <div style="font-size:12px;color:#4b5563;margin-bottom:4px;">收款率</div>
+                  <div style="font-size:18px;font-weight:600;color:#4b5563;">${fmtPct(currentFinData.collectionRate)}</div>
+                </div>
               </div>
             </div>`;
           
-          // 1. 渲染各员工工时（带月份下拉选单）
-          const hoursFrag = document.createElement('div');
-          hoursFrag.innerHTML = listCardWithMonthDropdown('各員工工時', hoursHtml, currentYm);
-          grid.appendChild(hoursFrag.firstElementChild);
-          
-          // 添加月份下拉选单事件监听
-          const hoursCard = Array.from(grid.querySelectorAll('.card.list')).find(c => c.textContent.includes('各員工工時'));
-          if (hoursCard) {
-            const dropdown = hoursCard.querySelector('.month-dropdown');
-            if (dropdown) {
-              dropdown.addEventListener('change', (e) => {
-                currentYm = e.target.value;
-                refresh();
-              });
-            }
-          }
-          
-          // 2. 渲染各员工任务状态（列表形式）
-          const tasksFrag = document.createElement('div');
-          tasksFrag.innerHTML = listCard('各員工任務狀態', tasksHtml);
-          grid.appendChild(tasksFrag.firstElementChild);
-          
-          // 2.5 收据已开但任务未完成提醒
+          // 收据已开但任务未完成提醒
           const receiptsPending = Array.isArray(data?.receiptsPendingTasks) ? data.receiptsPendingTasks : [];
-          if (receiptsPending.length > 0) {
-            const receiptsHtml = receiptsPending.map(r => {
-              return `<div class="task-row warn">
-                <div style="display:flex;flex-direction:column;gap:4px;">
-                  <span class="name">${r.client_name} - ${r.service_name}</span>
-                  <div class="muted" style="font-size:12px;">收據 #${r.receipt_number} | 到期：${r.receipt_due_date || '—'}</div>
-                  <div style="font-size:13px;color:#d97706;">待完成任務：${r.pending_tasks} / ${r.total_tasks}</div>
-                </div>
-              </div>`;
-            }).join('');
-            const receiptsFrag = document.createElement('div');
-            receiptsFrag.innerHTML = listCard('⚠️ 收據已開但任務未完成', receiptsHtml);
-            grid.appendChild(receiptsFrag.firstElementChild);
-          }
           
           // 2.7 最近动态 (任务调整和状态更新)
           const recentActivities = Array.isArray(data?.recentActivities) ? data.recentActivities : [];
@@ -355,60 +352,58 @@
             activitiesHtml = recentActivities.map(act => {
               if (act.type === 'due_date_adjustment') {
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
-                  <div style="padding:10px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
-                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">
-                      <div style="font-size:13px;font-weight:600;color:#1f2937;">📅 ${act.taskName}</div>
-                      <div style="font-size:11px;color:#9ca3af;">${act.time}</div>
+                  <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
+                      <div style="font-size:15px;font-weight:600;color:#1f2937;">📅 ${act.taskName}</div>
+                      <div style="font-size:12px;color:#9ca3af;">${act.time}</div>
                     </div>
-                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">${act.clientName} · ${act.serviceName}</div>
-                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+                    <div style="font-size:14px;color:#6b7280;margin-bottom:6px;">${act.clientName} · ${act.serviceName}</div>
+                    <div style="display:flex;align-items:center;gap:10px;font-size:14px;">
                       <span style="color:#3b82f6;font-weight:500;">${act.change}</span>
                       <span style="color:#6b7280;">${act.assigneeName}</span>
                     </div>
-                    ${act.reason ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;line-height:1.4;padding:6px;background:#fffbeb;border-radius:4px;">${act.reason}</div>` : ''}
+                    ${act.reason ? `<div style="font-size:13px;color:#6b7280;margin-top:6px;line-height:1.5;padding:8px;background:#fffbeb;border-radius:4px;">${act.reason}</div>` : ''}
                   </div>
                 </a>`;
               } else if (act.type === 'status_update') {
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
-                  <div style="padding:10px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
-                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">
-                      <div style="font-size:13px;font-weight:600;color:#1f2937;">📝 ${act.taskName}</div>
-                      <div style="font-size:11px;color:#9ca3af;">${act.time}</div>
+                  <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
+                      <div style="font-size:15px;font-weight:600;color:#1f2937;">📝 ${act.taskName}</div>
+                      <div style="font-size:12px;color:#9ca3af;">${act.time}</div>
                     </div>
-                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">${act.clientName} · ${act.serviceName}</div>
-                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+                    <div style="font-size:14px;color:#6b7280;margin-bottom:6px;">${act.clientName} · ${act.serviceName}</div>
+                    <div style="display:flex;align-items:center;gap:10px;font-size:14px;">
                       <span style="color:#10b981;font-weight:500;">${act.change}</span>
                       <span style="color:#6b7280;">${act.assigneeName}</span>
                     </div>
-                    ${act.note ? `<div style="font-size:12px;color:#4b5563;margin-top:4px;line-height:1.4;padding:6px;background:${act.note.startsWith('🚫') || act.note.startsWith('⏰') ? '#fef2f2' : '#f0fdf4'};border-radius:4px;">${act.note}</div>` : ''}
+                    ${act.note ? `<div style="font-size:13px;color:#4b5563;margin-top:6px;line-height:1.5;padding:8px;background:${act.note.startsWith('🚫') || act.note.startsWith('⏰') ? '#fef2f2' : '#f0fdf4'};border-radius:4px;">${act.note}</div>` : ''}
                   </div>
                 </a>`;
               } else if (act.type === 'leave_application') {
-                const statusColor = act.leaveStatus === '已核准' ? '#10b981' : act.leaveStatus === '已拒絕' ? '#ef4444' : '#f59e0b';
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
-                  <div style="padding:10px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
-                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">
-                      <div style="font-size:13px;font-weight:600;color:#1f2937;">🏖️ ${act.text}</div>
-                      <div style="font-size:11px;color:#9ca3af;">${act.time}</div>
+                  <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
+                      <div style="font-size:15px;font-weight:600;color:#1f2937;">🏖️ ${act.text}</div>
+                      <div style="font-size:12px;color:#9ca3af;">${act.time}</div>
                     </div>
-                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px;">
+                    <div style="display:flex;align-items:center;gap:10px;font-size:14px;">
                       <span style="color:#6b7280;">${act.period}</span>
-                      <span style="padding:2px 6px;border-radius:3px;background:#f3f4f6;color:#1f2937;font-weight:500;">${act.leaveDays}天</span>
-                      <span style="padding:2px 6px;border-radius:3px;color:${statusColor};font-weight:500;">${act.leaveStatus}</span>
+                      <span style="padding:4px 8px;border-radius:4px;background:#dbeafe;color:#2563eb;font-weight:500;">${act.leaveDays}天</span>
                     </div>
-                    ${act.reason ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;line-height:1.4;">${act.reason}</div>` : ''}
+                    ${act.reason ? `<div style="font-size:13px;color:#6b7280;margin-top:6px;line-height:1.5;">${act.reason}</div>` : ''}
                   </div>
                 </a>`;
               } else if (act.type === 'timesheet_reminder') {
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
-                  <div style="padding:10px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;background:#fef2f2;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
-                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px;">
-                      <div style="font-size:13px;font-weight:600;color:#dc2626;">⚠️ ${act.text}</div>
-                      <div style="font-size:11px;color:#9ca3af;">${act.time}</div>
+                  <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;background:#fef2f2;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
+                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
+                      <div style="font-size:15px;font-weight:600;color:#dc2626;">⚠️ ${act.text}</div>
+                      <div style="font-size:12px;color:#9ca3af;">${act.time}</div>
                     </div>
-                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
-                      <span style="padding:2px 6px;border-radius:3px;background:#fee2e2;color:#dc2626;font-weight:500;">${act.missingCount}天未填</span>
-                      <span style="color:#6b7280;font-size:11px;">${act.missingDates}</span>
+                    <div style="display:flex;align-items:center;gap:10px;font-size:14px;">
+                      <span style="padding:4px 8px;border-radius:4px;background:#fee2e2;color:#dc2626;font-weight:500;">${act.missingCount}天未填</span>
+                      <span style="color:#6b7280;">${act.missingDates}</span>
                     </div>
                   </div>
                 </a>`;
@@ -419,13 +414,13 @@
             activitiesHtml = `<div class="muted">最近 ${activityDays} 天沒有動態記錄</div>`;
           }
           
-          // 获取所有用户列表用于筛选
+          // === 左侧：最近动态 ===
           const allUsers = Array.isArray(data?.teamMembers) ? data.teamMembers : [];
           
           const activitiesFrag = document.createElement('div');
           activitiesFrag.innerHTML = listCardWithActivityFilter('📋 最近動態（任務·假期·工時）', activitiesHtml, allUsers);
           const activitiesCard = activitiesFrag.firstElementChild;
-          grid.appendChild(activitiesCard);
+          leftColumn.appendChild(activitiesCard);
           
           // 添加筛选事件监听
           if (activitiesCard) {
@@ -447,12 +442,49 @@
             }
           }
           
-          // 3. 最后渲染财务状况（独占一行，在最下面）
+          // === 右侧：从上到下 ===
+          
+          // 1. 各员工任务状态（列表形式）
+          const tasksFrag = document.createElement('div');
+          tasksFrag.innerHTML = listCard('各員工任務狀態', tasksHtml);
+          rightColumn.appendChild(tasksFrag.firstElementChild);
+          
+          // 2. 各员工工时（带月份下拉选单）
+          const hoursFrag = document.createElement('div');
+          hoursFrag.innerHTML = listCardWithMonthDropdown('各員工工時', hoursHtml, currentYm);
+          rightColumn.appendChild(hoursFrag.firstElementChild);
+          
+          // 添加月份下拉选单事件监听
+          const hoursCard = rightColumn.querySelector('.card.list');
+          if (hoursCard) {
+            const dropdown = hoursCard.querySelector('.month-dropdown');
+            if (dropdown) {
+              dropdown.addEventListener('change', (e) => {
+                currentYm = e.target.value;
+                refresh();
+              });
+            }
+          }
+          
+          // 3. 收据已开但任务未完成提醒（如果有）
+          if (receiptsPending.length > 0) {
+            const receiptsHtml = receiptsPending.map(r => {
+              return `<div style="padding:12px;border-bottom:1px solid #f3f4f6;">
+                <div style="font-size:14px;font-weight:500;color:#1f2937;margin-bottom:4px;">${r.client_name} - ${r.service_name}</div>
+                <div style="font-size:13px;color:#6b7280;margin-bottom:6px;">收據 #${r.receipt_number} | 到期：${r.receipt_due_date || '—'}</div>
+                <div style="font-size:14px;color:#d97706;font-weight:500;">待完成任務：${r.pending_tasks} / ${r.total_tasks}</div>
+              </div>`;
+            }).join('');
+            const receiptsFrag = document.createElement('div');
+            receiptsFrag.innerHTML = listCard('⚠️ 收據已開但任務未完成', receiptsHtml);
+            rightColumn.appendChild(receiptsFrag.firstElementChild);
+          }
+          
+          // 4. 财务状况
           const finFrag = document.createElement('div');
           finFrag.innerHTML = listCardWithFinanceDropdown('財務狀況', finHtml, financeYm, financeMode);
           const finCard = finFrag.firstElementChild;
-          finCard.classList.add('finance-card'); // 添加类以确保全宽
-          grid.appendChild(finCard);
+          rightColumn.appendChild(finCard);
           
           // 添加财务月份下拉选单和按钮事件监听
           if (finCard) {
