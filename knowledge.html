@@ -534,6 +534,14 @@
           <!-- 動態加載服務類型 -->
         </select>
       </div>
+      <div>
+        <label for="scope" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">服務層級</label>
+        <select id="scope" aria-label="服務層級" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:150px;">
+          <option value="">全部層級</option>
+          <option value="service">🔷 服務層級</option>
+          <option value="task">📋 任務層級</option>
+        </select>
+      </div>
       <div style="flex:1;min-width:220px;">
         <label for="tags" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">篩選標籤</label>
         <select id="tags" aria-label="標籤" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;">
@@ -1988,6 +1996,9 @@
           const cat = document.getElementById('category').value;
           if (cat && cat !== 'all') params.set('category', cat);
           
+          const scope = document.getElementById('scope').value;
+          if (scope) params.set('scope', scope);
+          
           const t = document.getElementById('tags').value.split(',').map(s=>s.trim()).filter(Boolean).join(',');
           if (t) params.set('tags', t);
           
@@ -2374,6 +2385,13 @@
           if (currentTab === 'sop') loadSOPs();
           else if (currentTab === 'faq') loadFAQs();
           else if (currentTab === 'resources') loadResources();
+        });
+        
+        document.getElementById('scope').addEventListener('change', ()=>{ 
+          sopState.page=1; 
+          faqState.page=1; 
+          if (currentTab === 'sop') loadSOPs();
+          else if (currentTab === 'faq') loadFAQs();
         });
         
         document.getElementById('tags').addEventListener('change', ()=>{ 

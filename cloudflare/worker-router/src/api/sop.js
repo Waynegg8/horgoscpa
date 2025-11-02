@@ -46,6 +46,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			const offset = (page - 1) * perPage;
 			const q = (p.get("q") || "").trim();
 			const category = (p.get("category") || "").trim();
+			const scope = (p.get("scope") || "").trim();
 			const tagsCsv = (p.get("tags") || "").trim();
 			const published = (p.get("published") || "all").trim().toLowerCase();
 
@@ -53,6 +54,7 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			const binds = [];
 			if (q) { where.push("(title LIKE ? OR tags LIKE ?)"); binds.push(`%${q}%`, `%${q}%`); }
 			if (category && category !== "all") { where.push("category = ?"); binds.push(category); }
+			if (scope && (scope === "service" || scope === "task")) { where.push("scope = ?"); binds.push(scope); }
 			if (published !== "all") {
 				if (["1","true","published"].includes(published)) { where.push("is_published = 1"); }
 				else if (["0","false","draft"].includes(published)) { where.push("is_published = 0"); }
