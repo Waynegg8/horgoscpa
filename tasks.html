@@ -443,8 +443,8 @@
                 const monthText = group.serviceMonth ? ` - ${group.serviceMonth.slice(0, 4)}年${parseInt(group.serviceMonth.slice(5))}月` : '';
                 const serviceTitle = `${group.serviceName}${monthText}`;
                 
-                // 生成唯一ID：客户ID + 服务组键
-                const groupIdSafe = `${clientIdSafe}_${groupKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                // 生成唯一ID：使用Base64编码确保ID唯一且有效
+                const groupIdSafe = `${clientIdSafe}_${btoa(encodeURIComponent(groupKey)).replace(/[^a-zA-Z0-9]/g, '_')}`;
                 
                 html += `
                   <div class="service-group">
@@ -943,7 +943,8 @@
           const sortedSOPs = filteredSOPs.sort((a, b) => a.title.localeCompare(b.title));
           
           sortedSOPs.forEach(sop => {
-            const isSelected = quickAddContext.selectedSOPs.includes(sop.sop_id);
+            // 确保类型匹配（转换为数字进行比较）
+            const isSelected = quickAddContext.selectedSOPs.some(id => parseInt(id) === parseInt(sop.sop_id));
             html += `
               <div onclick="toggleQuickSOP(${sop.sop_id})" style="cursor:pointer;padding:12px;border:1px solid ${isSelected ? '#3b82f6' : '#e5e7eb'};border-radius:6px;margin-bottom:8px;background:${isSelected ? '#eff6ff' : 'white'};transition:all 0.2s;">
                 <div style="display:flex;align-items:center;">
@@ -977,12 +978,20 @@
         window.toggleQuickSOP = function(sopId) {
           if (!quickAddContext) return;
           
-          const idx = quickAddContext.selectedSOPs.indexOf(sopId);
+          // 确保类型一致（转换为数字）
+          const sopIdNum = parseInt(sopId);
+          const idx = quickAddContext.selectedSOPs.findIndex(id => parseInt(id) === sopIdNum);
+          
+          console.log('[toggleQuickSOP] sopId:', sopId, 'type:', typeof sopId, 'idx:', idx);
+          console.log('[toggleQuickSOP] Before:', quickAddContext.selectedSOPs);
+          
           if (idx > -1) {
             quickAddContext.selectedSOPs.splice(idx, 1);
           } else {
-            quickAddContext.selectedSOPs.push(sopId);
+            quickAddContext.selectedSOPs.push(sopIdNum);
           }
+          
+          console.log('[toggleQuickSOP] After:', quickAddContext.selectedSOPs);
           
           // 重新渲染SOP列表
           openQuickSOPSelector();
@@ -992,7 +1001,9 @@
         window.confirmQuickSOPSelection = function() {
           // 显示已选择的SOP
           if (quickAddContext.selectedSOPs.length > 0) {
-            const selectedSOPObjects = allSOPs.filter(s => quickAddContext.selectedSOPs.includes(s.sop_id));
+            const selectedSOPObjects = allSOPs.filter(s => 
+              quickAddContext.selectedSOPs.some(id => parseInt(id) === parseInt(s.sop_id))
+            );
             const html = selectedSOPObjects.map(s => `
               <span style="display:inline-block;padding:4px 10px;background:#eff6ff;color:#3b82f6;border-radius:12px;font-size:12px;margin:2px;">
                 📄 ${s.title}
@@ -1010,7 +1021,8 @@
         // 移除SOP
         window.removeQuickSOP = function(sopId) {
           if (!quickAddContext) return;
-          const idx = quickAddContext.selectedSOPs.indexOf(sopId);
+          const sopIdNum = parseInt(sopId);
+          const idx = quickAddContext.selectedSOPs.findIndex(id => parseInt(id) === sopIdNum);
           if (idx > -1) {
             quickAddContext.selectedSOPs.splice(idx, 1);
           }
