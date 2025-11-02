@@ -47,8 +47,10 @@
     '/receipts?perPage=200': 'receipts_all',
     '/receipts?perPage=100&status=unpaid': 'receipts_unpaid',
     '/timesheets?limit=200': 'timesheets_recent',
+    '/timesheets?limit=30': 'timesheets_recent', // 工时表首屏（P1）
     '/leaves?perPage=200': 'leaves_all',
     '/leaves?perPage=50&status=pending': 'leaves_pending',
+    '/leaves?perPage=30': 'leaves_recent', // 假期首屏（P1）
     '/payroll?perPage=100': 'payroll_latest',
     '/billing/schedules?perPage=200': 'billing_schedules',
     '/knowledge/sops?perPage=200': 'sop_list',

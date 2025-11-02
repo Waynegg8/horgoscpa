@@ -813,21 +813,35 @@
       })();
     </script>
     
-    <!-- ⚡ 预渲染初始化 -->
+    <!-- ⚡ 智能预渲染 -->
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      if (window.PagePrerender) {
-        // 尝试加载预渲染 HTML
-        window.PagePrerender.init('main.internal-container', function(isBackgroundUpdate) {
-          if (isBackgroundUpdate) {
-            console.log('[Leaves] 🔄 后台更新数据');
-          }
-        });
+    (function() {
+      if (!window.Prerender) return;
+      
+      const pageKey = 'leaves';
+      const cachedHTML = window.Prerender.load(pageKey);
+      
+      if (cachedHTML && cachedHTML.length > 1000) {
+        // 有缓存：立即显示
+        console.log('[Leaves] ⚡ 使用预渲染 HTML');
+        document.body.innerHTML = cachedHTML;
         
-        // 启用自动保存
-        window.PagePrerender.autoSave('main.internal-container');
+        // 后台更新（可选）
+        // 这里不刷新，让用户看到缓存的内容即可
+      } else {
+        // 无缓存：正常加载，完成后保存
+        console.log('[Leaves] ℹ 无缓存，正常加载');
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            const html = document.body.innerHTML;
+            if (html && html.length > 1000) {
+              window.Prerender.save(pageKey, html);
+              console.log('[Leaves] ✓ 预渲染已保存');
+            }
+          }, 3000); // 等待 3 秒确保数据完全渲染
+        });
       }
-    });
+    })();
     </script>
     
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>

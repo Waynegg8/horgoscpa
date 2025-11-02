@@ -27,20 +27,21 @@
 
   /**
    * 初始化页面预渲染
-   * @param {string} containerSelector - 内容容器选择器
+   * @param {string} containerSelector - 内容容器选择器（可选）
    * @param {Function} renderCallback - 渲染完成后的回调（用于保存HTML）
    */
   function initPagePrerender(containerSelector, renderCallback) {
     const pageKey = getPageKey();
     if (!pageKey) {
       console.log('[PagePrerender] 当前页面不支持预渲染');
-      return;
+      return { loaded: false, reason: 'unsupported_page' };
     }
 
-    const container = document.querySelector(containerSelector);
+    // 如果没有指定容器，使用整个 body
+    const container = containerSelector ? document.querySelector(containerSelector) : document.body;
     if (!container) {
       console.warn(`[PagePrerender] 找不到容器: ${containerSelector}`);
-      return;
+      return { loaded: false, reason: 'container_not_found' };
     }
 
     // 尝试加载预渲染 HTML
@@ -48,7 +49,9 @@
       const prerenderedHTML = window.Prerender.load(pageKey);
       
       if (prerenderedHTML) {
-        console.log(`[PagePrerender] ⚡ ${pageKey} 使用预渲染 HTML`);
+        const htmlSize = Math.round(prerenderedHTML.length / 1024);
+        console.log(`[PagePrerender] ⚡ ${pageKey} 使用预渲染 HTML (${htmlSize}KB)`);
+        
         container.innerHTML = prerenderedHTML;
         
         // 标记为已使用预渲染
@@ -62,12 +65,15 @@
           }, 100);
         }
         
-        return true;
+        return { loaded: true, size: htmlSize };
+      } else {
+        console.log(`[PagePrerender] ℹ ${pageKey} 无预渲染缓存，正常加载`);
       }
+    } else {
+      console.warn('[PagePrerender] ⚠ Prerender 系统未就绪');
     }
 
-    console.log(`[PagePrerender] ${pageKey} 无预渲染，正常加载`);
-    return false;
+    return { loaded: false, reason: 'no_cache' };
   }
 
   /**

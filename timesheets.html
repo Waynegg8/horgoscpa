@@ -36,21 +36,38 @@
     }
   }
   
-  // ⚡ 页面加载完成后初始化预渲染
-  document.addEventListener('DOMContentLoaded', function() {
-    if (window.PagePrerender) {
-      // 尝试加载预渲染 HTML
-      const loaded = window.PagePrerender.init('.timesheet-wrapper', function(isBackgroundUpdate) {
-        // 如果是后台更新，静默刷新
-        if (isBackgroundUpdate) {
-          console.log('[Timesheets] 🔄 后台更新数据');
+  // ⚡ 智能预渲染（页面脚本之前执行）
+  </script>
+  <script>
+  (function() {
+    if (!window.Prerender) return;
+    
+    const pageKey = 'timesheets';
+    const cachedHTML = window.Prerender.load(pageKey);
+    
+    if (cachedHTML && cachedHTML.length > 1000) {
+      // 有缓存：DOMContentLoaded 后立即显示
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('[Timesheets] ⚡ 使用预渲染 HTML');
+        const wrapper = document.querySelector('.timesheet-wrapper');
+        if (wrapper) {
+          wrapper.innerHTML = cachedHTML;
         }
       });
-      
-      // 启用自动保存
-      window.PagePrerender.autoSave('.timesheet-wrapper');
+    } else {
+      // 无缓存：正常加载，完成后保存
+      console.log('[Timesheets] ℹ 无缓存，正常加载');
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          const wrapper = document.querySelector('.timesheet-wrapper');
+          if (wrapper && wrapper.innerHTML.length > 1000) {
+            window.Prerender.save(pageKey, wrapper.innerHTML);
+            console.log('[Timesheets] ✓ 预渲染已保存');
+          }
+        }, 3000); // 等待 3 秒确保数据完全渲染
+      });
     }
-  });
+  })();
   </script>
 </head>
 <body>

@@ -342,9 +342,10 @@
     
     // ⚡ P1: 高優先級（頁面關鍵數據，2-3秒完成）
     const p1Tasks = [
-      { key: 'timesheets_recent', endpoint: '/timesheets?limit=10', priority: 'P1' }, // 工時表首屏
+      { key: 'timesheets_recent', endpoint: '/timesheets?limit=30', priority: 'P1' }, // 工時表（足够一周数据）
       { key: 'tasks_pending', endpoint: '/tasks?perPage=10&status=pending', priority: 'P1' }, // 任務首屏
       { key: 'clients_page1', endpoint: '/clients?page=1&perPage=10', priority: 'P1' }, // 客戶首屏
+      { key: 'leaves_recent', endpoint: '/leaves?perPage=30', priority: 'P1' }, // 假期（最近30条）
       { key: 'tags', endpoint: '/tags', priority: 'P1' }, // 標籤（小數據）
     ];
     
@@ -352,6 +353,7 @@
     const p2Tasks = [
       { key: 'tasks_in_progress', endpoint: '/tasks?perPage=20&status=in_progress', priority: 'P2' },
       { key: 'clients_page2', endpoint: '/clients?page=2&perPage=15', priority: 'P2' },
+      { key: 'leaves_balances', endpoint: '/leaves/balances', priority: 'P2' }, // 假期余额（重要）
       { key: 'receipts_statistics', endpoint: '/receipts/statistics', priority: 'P2' },
       { key: 'receipts_unpaid', endpoint: '/receipts?perPage=20&status=unpaid', priority: 'P2' },
       { key: 'settings', endpoint: '/settings', priority: 'P2' },
@@ -381,11 +383,10 @@
       { key: 'holidays', endpoint: '/holidays', priority: 'P3' },
       { key: 'services_types', endpoint: '/services', priority: 'P3' },
       
-      // 假期數據
+      // 假期數據（更多）
       { key: 'leaves_all', endpoint: '/leaves?perPage=100', priority: 'P3' },
       { key: 'leaves_pending', endpoint: '/leaves?perPage=50&status=pending', priority: 'P3' },
       { key: 'leaves_approved', endpoint: '/leaves?perPage=50&status=approved', priority: 'P3' },
-      { key: 'leaves_balances', endpoint: '/leaves/balances', priority: 'P3' },
       
       // 知識庫
       { key: 'sop_list', endpoint: '/knowledge/sops?perPage=100', priority: 'P3' },
