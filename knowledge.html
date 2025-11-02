@@ -8,6 +8,13 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/knowledge-page.css" />
+    
+    <!-- ⚡ 預加載系統（必須在所有其他腳本之前加載） -->
+    <script src="/assets/js/data-cache.js"></script>
+    <script src="/assets/js/fetch-interceptor.js"></script>
+    <script src="/assets/js/prerender.js"></script>
+    <script src="/assets/js/page-prerender.js"></script>
+    
     <!-- Google Material Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!-- Quill 2.0 富文本编辑器 + Better Table 插件 -->
@@ -3475,5 +3482,22 @@
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
+    
+    <!-- ⚡ 预渲染初始化 -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.PagePrerender) {
+        // 尝试加载预渲染 HTML
+        window.PagePrerender.init('main.internal-container', function(isBackgroundUpdate) {
+          if (isBackgroundUpdate) {
+            console.log('[Knowledge] 🔄 后台更新数据');
+          }
+        });
+        
+        // 启用自动保存
+        window.PagePrerender.autoSave('main.internal-container');
+      }
+    });
+    </script>
   </body>
   </html>

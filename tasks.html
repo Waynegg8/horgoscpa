@@ -8,6 +8,13 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/tasks-page.css" />
+    
+    <!-- ⚡ 預加載系統（必須在所有其他腳本之前加載） -->
+    <script src="/assets/js/data-cache.js"></script>
+    <script src="/assets/js/fetch-interceptor.js"></script>
+    <script src="/assets/js/prerender.js"></script>
+    <script src="/assets/js/page-prerender.js"></script>
+    
     <style>
       /* 日期選擇器 - 整框可點擊 */
       input[type="date"] {
@@ -1164,6 +1171,23 @@
         </div>
       </div>
     </div>
+    
+    <!-- ⚡ 预渲染初始化 -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.PagePrerender) {
+        // 尝试加载预渲染 HTML
+        window.PagePrerender.init('main.task-container', function(isBackgroundUpdate) {
+          if (isBackgroundUpdate) {
+            console.log('[Tasks] 🔄 后台更新数据');
+          }
+        });
+        
+        // 启用自动保存
+        window.PagePrerender.autoSave('main.task-container');
+      }
+    });
+    </script>
   </body>
   </html>
 
