@@ -232,7 +232,6 @@ export async function getAdjustmentHistory(env, taskId) {
     // 获取到期日调整记录
     const dueDateAdjustments = await env.DATABASE.prepare(`
       SELECT 
-        'due_date' as record_type,
         adjustment_id as id,
         old_due_date,
         new_due_date,
@@ -256,7 +255,6 @@ export async function getAdjustmentHistory(env, taskId) {
     // 获取状态更新记录
     const statusUpdates = await env.DATABASE.prepare(`
       SELECT 
-        'status_update' as record_type,
         update_id as id,
         old_status,
         new_status,
@@ -304,9 +302,9 @@ export async function getAdjustmentHistory(env, taskId) {
     
     // 按时间排序（最新的在前）
     allRecords.sort((a, b) => {
-      const timeA = new Date(a.requested_at).getTime();
-      const timeB = new Date(b.requested_at).getTime();
-      return timeB - timeA;
+      if (!a.requested_at) return 1;
+      if (!b.requested_at) return -1;
+      return (b.requested_at || '').localeCompare(a.requested_at || '');
     });
     
     return allRecords;

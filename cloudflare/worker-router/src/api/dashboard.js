@@ -283,13 +283,12 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         // 查询任务期限调整
         const adjustments = await env.DATABASE.prepare(`
           SELECT 
-            'due_date_adjustment' as activity_type,
             adj.adjustment_id,
-            adj.adjusted_at as activity_time,
+            adj.requested_at as activity_time,
             adj.old_due_date,
             adj.new_due_date,
-            adj.reason,
-            adj.adjusted_by_user_id,
+            adj.adjustment_reason as reason,
+            adj.requested_by,
             u.name as user_name,
             t.task_name,
             t.task_id,
@@ -300,24 +299,23 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             c.company_name as client_name,
             s.service_name
           FROM TaskDueDateAdjustments adj
-          JOIN Users u ON u.user_id = adj.adjusted_by_user_id
+          JOIN Users u ON u.user_id = adj.requested_by
           JOIN ActiveTasks t ON t.task_id = adj.task_id
           LEFT JOIN Users assignee ON assignee.user_id = t.assignee_user_id
           LEFT JOIN ClientServices cs ON cs.client_service_id = t.client_service_id
           LEFT JOIN Clients c ON c.client_id = cs.client_id
           LEFT JOIN Services s ON s.service_id = cs.service_id
-          WHERE adj.adjusted_at >= ? 
+          WHERE adj.requested_at >= ? 
             AND adj.old_due_date IS NOT NULL 
             AND adj.new_due_date IS NOT NULL
             AND adj.adjustment_type IS NOT NULL
-          ORDER BY adj.adjusted_at DESC
+          ORDER BY adj.requested_at DESC
           LIMIT 20
         `).bind(sevenDaysAgoStr).all();
         
         // 查询任务状态更新
         const statusUpdates = await env.DATABASE.prepare(`
           SELECT 
-            'status_update' as activity_type,
             su.update_id,
             su.updated_at as activity_time,
             su.old_status,
@@ -349,10 +347,10 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           LIMIT 20
         `).bind(sevenDaysAgoStr).all();
         
-        // 合并并排序
+        // 合并并排序（添加 activity_type 标识）
         const allActivities = [
-          ...(adjustments?.results || []),
-          ...(statusUpdates?.results || [])
+          ...(adjustments?.results || []).map(a => ({...a, activity_type: 'due_date_adjustment'})),
+          ...(statusUpdates?.results || []).map(s => ({...s, activity_type: 'status_update'}))
         ].sort((a, b) => (b.activity_time || '').localeCompare(a.activity_time || ''));
         
         // 格式化活动记录
