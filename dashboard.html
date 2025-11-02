@@ -217,7 +217,7 @@
               <div class="kv"><span>病假剩餘</span><b>${fmtNum(lv.balances?.sick||0)} 天</b></div>
               <div class="kv"><span>補休</span><b>${fmtNum(lv.balances?.compHours||0)} 小時</b></div>`;
           // 收据已开但任务未完成提醒
-          const receiptsPending = Array.isArray(data?.receiptsPendingTasks) ? data.receiptsPendingTasks : [];
+          const receiptsPending = Array.isArray(data?.employee?.receiptsPendingTasks) ? data.employee.receiptsPendingTasks : [];
           const receiptsHtml = receiptsPending.length ? receiptsPending.map(r => {
             return `<div class="task-row warn">
               <div style="display:flex;flex-direction:column;gap:4px;">
@@ -250,7 +250,7 @@
           const rightColumn = document.getElementById('rightColumn');
           
           // 各员工工时
-          const empHours = Array.isArray(data?.employeeHours) ? data.employeeHours : [];
+          const empHours = Array.isArray(data?.admin?.employeeHours) ? data.admin.employeeHours : [];
           let hoursHtml = '';
           if (empHours.length > 0) {
             hoursHtml = empHours.map(e => {
@@ -272,7 +272,7 @@
           }
           
           // 各员工任务状态 - 改为列表形式，可点击跳转
-          const empTasks = Array.isArray(data?.employeeTasks) ? data.employeeTasks : [];
+          const empTasks = Array.isArray(data?.admin?.employeeTasks) ? data.admin.employeeTasks : [];
           const tasksHtml = empTasks.length ? empTasks.map(e => {
             const total = e.completed + e.inProgress + e.overdue + e.pending;
             const activeCount = e.inProgress + e.overdue + e.pending;
@@ -293,7 +293,7 @@
           }).join('') : '<div style="padding:16px;text-align:center;color:#9ca3af;">尚無任務</div>';
           
           // 财务状况 - 根据模式显示月度或年度累计
-          const fs = data?.financialStatus || {};
+          const fs = data?.admin?.financialStatus || {};
           const emptyData = { period:'', revenue:0, cost:0, profit:0, margin:0, ar:0, paid:0, overdue:0, collectionRate:0 };
           
           // 后端只返回当前模式对应的数据
@@ -343,10 +343,10 @@
             </div>`;
           
           // 收据已开但任务未完成提醒
-          const receiptsPending = Array.isArray(data?.receiptsPendingTasks) ? data.receiptsPendingTasks : [];
+          const receiptsPending = Array.isArray(data?.admin?.receiptsPendingTasks) ? data.admin.receiptsPendingTasks : [];
           
           // 2.7 最近动态 (任务调整和状态更新)
-          const recentActivities = Array.isArray(data?.recentActivities) ? data.recentActivities : [];
+          const recentActivities = Array.isArray(data?.admin?.recentActivities) ? data.admin.recentActivities : [];
           let activitiesHtml = '';
           if (recentActivities.length > 0) {
             activitiesHtml = recentActivities.map(act => {
@@ -415,7 +415,7 @@
           }
           
           // === 左侧：最近动态 ===
-          const allUsers = Array.isArray(data?.teamMembers) ? data.teamMembers : [];
+          const allUsers = Array.isArray(data?.admin?.teamMembers) ? data.admin.teamMembers : [];
           
           const activitiesFrag = document.createElement('div');
           activitiesFrag.innerHTML = listCardWithActivityFilter('📋 最近動態（任務·假期·工時）', activitiesHtml, allUsers);
