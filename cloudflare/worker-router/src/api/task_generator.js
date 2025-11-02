@@ -301,11 +301,12 @@ export async function generateTasksForComponents(env, targetDate = null) {
               task_name,
               start_date,
               due_date,
+              original_due_date,
               service_month,
               status,
               assignee_user_id,
               notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
           `).bind(
             component.client_service_id,
             component.component_id,
@@ -313,6 +314,7 @@ export async function generateTasksForComponents(env, targetDate = null) {
             taskName,
             startDateStr,
             dueDateStr,
+            dueDateStr, // 自动生成时，original_due_date 与 due_date 相同
             serviceMonth,
             component.assignee_user_id || null,
             `由系統於 ${startDateStr} 自動生成`
@@ -343,11 +345,12 @@ export async function generateTasksForComponents(env, targetDate = null) {
                 task_name,
                 start_date,
                 due_date,
+                original_due_date,
                 service_month,
                 status,
                 assignee_user_id,
                 notes
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
             `).bind(
               component.client_service_id,
               component.component_id,
@@ -355,6 +358,7 @@ export async function generateTasksForComponents(env, targetDate = null) {
               taskName,
               startDateStr,
               dueDateStr,
+              dueDateStr, // 自动生成时，original_due_date 与 due_date 相同
               serviceMonth,
               taskConfig.assignee_user_id || component.assignee_user_id || null,
               taskConfig.notes || `由系統於 ${startDateStr} 自動生成`

@@ -109,10 +109,30 @@
       // 載入用戶列表
       await loadUsers();
       
+      // 載入前置任務選項
+      await loadPrerequisiteTasks();
+      
       // 設定監聽器
       document.getElementById('due_date').addEventListener('change', checkDueDateChange);
       document.getElementById('client_service_id').addEventListener('change', calculateDefaultDueDate);
       document.getElementById('service_month').addEventListener('change', calculateDefaultDueDate);
+    }
+    
+    async function loadPrerequisiteTasks() {
+      try {
+        // 載入未完成的任務作為前置任務選項
+        const res = await fetch(`${apiBase}/tasks?status=pending,in_progress&limit=100`, { credentials: 'include' });
+        if (res.status === 401) return;
+        const json = await res.json();
+        
+        const select = document.getElementById('prerequisite_task_id');
+        if (json.ok && Array.isArray(json.data)) {
+          select.innerHTML = '<option value="">無前置任務</option>' + 
+            json.data.map(t => `<option value="${t.taskId}">${t.taskName} (${t.dueDate || '未設定期限'})</option>`).join('');
+        }
+      } catch (err) {
+        console.error('載入前置任務失敗:', err);
+      }
     }
     
     async function loadClientServices() {

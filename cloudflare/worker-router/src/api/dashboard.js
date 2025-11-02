@@ -270,7 +270,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         const receipts = await env.DATABASE.prepare(`
           SELECT 
             r.receipt_id,
-            r.receipt_number,
+            r.receipt_id as receipt_number,
             r.due_date as receipt_due_date,
             r.status as receipt_status,
             c.client_id,

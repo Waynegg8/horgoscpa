@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS TaskStatusUpdates (
   -- 预计完成
   expected_completion_date TEXT,
   
-  FOREIGN KEY (task_id) REFERENCES Tasks(task_id) ON DELETE CASCADE,
+  FOREIGN KEY (task_id) REFERENCES ActiveTasks(task_id) ON DELETE CASCADE,
   FOREIGN KEY (updated_by) REFERENCES Users(user_id)
 );
 
