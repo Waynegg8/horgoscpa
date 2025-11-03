@@ -1014,6 +1014,10 @@
       const COMPANY_INFO = {
         name: '霍爾果斯會計師事務所',          // 公司中文名称
         nameEn: 'Hergs CPA Firm',            // 公司英文名称
+        address: '臺中市西區英國路21號',      // 公司地址
+        addressLine2: '3樓之1',              // 地址第二行
+        phone: '04-22205606',                // 电话
+        taxId: '92254178',                   // 统一编号
         bank: '永豐銀行台中分行',             // 银行名称
         bankCode: '807',                     // 银行代号
         accountNumber: '003-018-0019011-7'   // 银行账号
@@ -1197,106 +1201,141 @@
           // 设置中文字体
           doc.setFont("NotoSansCJKtc-Regular", "normal");
           
-          // 页面宽度
+          // 页面宽度和高度
           const pageWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
           
-          // === 顶部：公司名称 ===
-          doc.setFontSize(22);
-          doc.setTextColor(139, 117, 66); // 金色
-          doc.text(COMPANY_INFO.name, pageWidth / 2, 30, { align: 'center' });
+          // 绘制两联收据（上下各一联）
+          const copyTypes = [
+            { label: '收稅聯', yOffset: 0 },
+            { label: '存查聯', yOffset: pageHeight / 2 }
+          ];
           
-          // === 标题：收據 ===
-          doc.setFontSize(24);
-          doc.setTextColor(0, 0, 0);
-          doc.text('收    據', pageWidth / 2, 55, { align: 'center' });
-          
-          let yPos = 75;
-          
-          // === 收据编号 ===
-          doc.setFontSize(12);
-          doc.text(`收據編號：${receiptId}`, pageWidth - 20, yPos, { align: 'right' });
-          
-          yPos += 20;
-          
-          // === 今收到 ===
-          doc.setFontSize(14);
-          doc.text('今收到', 20, yPos);
-          doc.setTextColor(0, 0, 139); // 深蓝色
-          doc.text(`  ${receipt.clientName}  `, 40, yPos);
-          doc.setTextColor(0, 0, 0);
-          
-          yPos += 15;
-          
-          // === 款项/事由 ===
-          doc.setFontSize(12);
-          
-          if (receipt.items && receipt.items.length > 0) {
-            // 如果有明细项目
-            doc.text('款項如下：', 20, yPos);
-            yPos += 12;
+          copyTypes.forEach((copy, copyIndex) => {
+            const startY = copy.yOffset;
             
-            receipt.items.forEach((item, index) => {
-              const itemText = `${index + 1}. ${item.serviceName}`;
-              const lines = doc.splitTextToSize(itemText, 160);
-              lines.forEach(line => {
-                doc.text(line, 25, yPos);
-                yPos += 8;
+            // === 顶部信息栏 ===
+            doc.setFontSize(16);
+            doc.setTextColor(0, 0, 0);
+            doc.text(COMPANY_INFO.name, pageWidth / 2, startY + 15, { align: 'center' });
+            
+            // 右上角信息
+            doc.setFontSize(9);
+            doc.text(COMPANY_INFO.address, pageWidth - 15, startY + 10, { align: 'right' });
+            doc.text(COMPANY_INFO.addressLine2, pageWidth - 15, startY + 14, { align: 'right' });
+            doc.text(`電    話：${COMPANY_INFO.phone}`, pageWidth - 15, startY + 18, { align: 'right' });
+            doc.text(`統一編號：${COMPANY_INFO.taxId}`, pageWidth - 15, startY + 22, { align: 'right' });
+            doc.text(`收據編號：${receiptId}`, pageWidth - 15, startY + 26, { align: 'right' });
+            
+            // === 标题：收據 ===
+            doc.setFontSize(20);
+            doc.text('收    據', pageWidth / 2, startY + 35, { align: 'center' });
+            
+            // === 日期 ===
+            const rocDate = convertToROCDate(receipt.receiptDate);
+            doc.setFontSize(11);
+            doc.text(rocDate, pageWidth / 2, startY + 43, { align: 'center' });
+            
+            // === 兹收到 ===
+            doc.setFontSize(12);
+            doc.text('茲收到', 15, startY + 53);
+            doc.text(receipt.clientName, 35, startY + 53);
+            
+            // === 表格 ===
+            const tableStartY = startY + 58;
+            const tableData = [];
+            
+            if (receipt.items && receipt.items.length > 0) {
+              receipt.items.forEach(item => {
+                tableData.push([
+                  item.serviceName,
+                  item.unitPrice.toLocaleString(),
+                  '',
+                  item.notes || ''
+                ]);
               });
-              
-              if (item.notes) {
-                doc.setFontSize(11);
-                doc.setTextColor(100, 100, 100);
-                doc.text(`   備註：${item.notes}`, 25, yPos);
-                doc.setTextColor(0, 0, 0);
-                doc.setFontSize(12);
-                yPos += 8;
+            } else {
+              tableData.push([
+                receipt.notes || '服務費用',
+                receipt.totalAmount.toLocaleString(),
+                '',
+                ''
+              ]);
+            }
+            
+            // 添加空白行（至少3行）
+            const emptyRows = 3 - tableData.length;
+            for (let i = 0; i < Math.max(emptyRows, 0); i++) {
+              tableData.push(['', '', '', '']);
+            }
+            
+            // 合计行
+            const amountChinese = convertAmountToChinese(receipt.totalAmount);
+            tableData.push([
+              `合計金額(大寫)新台幣：${amountChinese}元整`,
+              '',
+              '',
+              ''
+            ]);
+            
+            doc.autoTable({
+              startY: tableStartY,
+              head: [['項    目', '金    額', '支票號碼', '備    註']],
+              body: tableData,
+              theme: 'grid',
+              headStyles: {
+                fillColor: [255, 255, 255],
+                textColor: [0, 0, 0],
+                lineWidth: 0.5,
+                lineColor: [0, 0, 0],
+                halign: 'center',
+                fontStyle: 'bold',
+                fontSize: 11
+              },
+              bodyStyles: {
+                textColor: [0, 0, 0],
+                lineWidth: 0.5,
+                lineColor: [0, 0, 0],
+                fontSize: 10
+              },
+              columnStyles: {
+                0: { cellWidth: 90, halign: 'left' },
+                1: { cellWidth: 30, halign: 'right' },
+                2: { cellWidth: 35, halign: 'center' },
+                3: { cellWidth: 30, halign: 'left' }
+              },
+              margin: { left: 15, right: 15 },
+              styles: {
+                font: "NotoSansCJKtc-Regular",
+                cellPadding: 3
+              },
+              didParseCell: function(data) {
+                // 合计行样式
+                if (data.row.index === tableData.length - 1) {
+                  data.cell.styles.fontStyle = 'bold';
+                  data.cell.styles.fillColor = [255, 255, 255];
+                }
               }
-              yPos += 2;
             });
-          } else {
-            // 没有明细，显示备注或默认文字
-            const purpose = receipt.notes || '服務費用';
-            doc.text(`款項：${purpose}`, 20, yPos);
-            yPos += 12;
-          }
-          
-          yPos += 10;
-          
-          // === 金额（大写） ===
-          const amountChinese = convertAmountToChinese(receipt.totalAmount);
-          doc.setFontSize(14);
-          doc.text(`金額：${amountChinese}元整`, 20, yPos);
-          
-          yPos += 15;
-          
-          // === 小写金额 ===
-          doc.setFontSize(13);
-          doc.text(`（新台幣 $${receipt.totalAmount.toLocaleString()} 元）`, 20, yPos);
-          
-          yPos += 25;
-          
-          // === 此据 ===
-          doc.setFontSize(14);
-          doc.text('此    據', 20, yPos);
-          
-          // === 右侧：公司名称和日期 ===
-          const rightX = pageWidth - 20;
-          doc.setFontSize(13);
-          doc.text(`收款人：${COMPANY_INFO.name}`, rightX, yPos - 20, { align: 'right' });
-          
-          const rocDate = convertToROCDate(receipt.receiptDate);
-          doc.setFontSize(12);
-          doc.text(rocDate, rightX, yPos, { align: 'right' });
-          
-          // === 底部：银行信息（小字） ===
-          yPos = 250;
-          doc.setFontSize(10);
-          doc.setTextColor(100, 100, 100);
-          doc.text('匯款資訊：', 20, yPos);
-          yPos += 6;
-          doc.text(`戶名：${COMPANY_INFO.name}`, 20, yPos);
-          yPos += 6;
-          doc.text(`${COMPANY_INFO.bank}  代號：${COMPANY_INFO.bankCode}  帳號：${COMPANY_INFO.accountNumber}`, 20, yPos);
+            
+            // === 底部签名栏 ===
+            const bottomY = doc.lastAutoTable.finalY + 8;
+            doc.setFontSize(11);
+            doc.text('會計師：_______________', 15, bottomY);
+            doc.text('經收人：_______________', pageWidth / 2 + 10, bottomY);
+            
+            // === 右侧垂直文字（联别） ===
+            doc.setFontSize(14);
+            doc.text(copy.label, pageWidth - 8, startY + 80, { angle: 90 });
+            
+            // === 分隔虚线（仅在第一联底部） ===
+            if (copyIndex === 0) {
+              doc.setLineDash([3, 3]);
+              doc.setDrawColor(150, 150, 150);
+              doc.line(10, pageHeight / 2 - 3, pageWidth - 10, pageHeight / 2 - 3);
+              doc.setLineDash([]);
+            }
+          });
           
           // 保存PDF
           doc.save(`收據_${receipt.clientName}_${receiptId}.pdf`);
