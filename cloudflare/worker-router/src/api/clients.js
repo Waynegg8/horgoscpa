@@ -1,5 +1,6 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 import { generateCacheKey, getCache, saveCache, invalidateCache, invalidateCacheByType } from "../cache-helper.js";
+import { getKVCache, saveKVCache, deleteKVCacheByPrefix } from "../kv-cache-helper.js";
 
 export async function handleClients(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -299,17 +300,35 @@ export async function handleClients(request, env, me, requestId, url) {
 		const searchQuery = (params.get("q") || "").trim();
 		const tagId = params.get("tag_id") || "";
 		
-		// ⚡ 尝试从缓存读取
+		// ⚡ 优先尝试从KV缓存读取（极快<50ms）
 		const cacheKey = generateCacheKey('clients_list', { page, perPage, q: searchQuery, tag_id: tagId });
-		const cached = await getCache(env, cacheKey);
+		const kvCached = await getKVCache(env, cacheKey);
 		
-		if (cached && cached.data) {
+		if (kvCached && kvCached.data) {
 			return jsonResponse(200, { 
 				ok: true, 
 				code: "OK", 
-				message: "成功（缓存）", 
-				data: cached.data.list, 
-				meta: { ...cached.data.meta, requestId, ...cached.meta } 
+				message: "成功（KV缓存）⚡", 
+				data: kvCached.data.list, 
+				meta: { ...kvCached.data.meta, requestId, ...kvCached.meta, cache_source: 'kv' } 
+			}, corsHeaders);
+		}
+		
+		// ⚡ KV未命中，尝试D1缓存（备份）
+		const d1Cached = await getCache(env, cacheKey);
+		if (d1Cached && d1Cached.data) {
+			// 异步同步到KV
+			saveKVCache(env, cacheKey, 'clients_list', d1Cached.data, {
+				scopeParams: { page, perPage, q: searchQuery, tag_id: tagId },
+				ttl: 3600
+			}).catch(err => console.error('[CLIENTS] KV同步失败:', err));
+			
+			return jsonResponse(200, { 
+				ok: true, 
+				code: "OK", 
+				message: "成功（D1缓存）", 
+				data: d1Cached.data.list, 
+				meta: { ...d1Cached.data.meta, requestId, ...d1Cached.meta, cache_source: 'd1' } 
 			}, corsHeaders);
 		}
 		
@@ -360,13 +379,20 @@ export async function handleClients(request, env, me, requestId, url) {
 			}));
 			
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
+			const cacheData = { list: data, meta };
 			
-			// ⚡ 保存到缓存（同步等待以确保保存成功）
+			// ⚡ 并行保存到KV（极快）和D1（备份）
 			try {
-				await saveCache(env, cacheKey, 'clients_list', { list: data, meta }, {
-					scopeParams: { page, perPage, q: searchQuery, tag_id: tagId }
-				});
-				console.log('[CLIENTS] ✓ 客户列表缓存已保存');
+				await Promise.all([
+					saveKVCache(env, cacheKey, 'clients_list', cacheData, {
+						scopeParams: { page, perPage, q: searchQuery, tag_id: tagId },
+						ttl: 3600 // 1小时
+					}),
+					saveCache(env, cacheKey, 'clients_list', cacheData, {
+						scopeParams: { page, perPage, q: searchQuery, tag_id: tagId }
+					})
+				]);
+				console.log('[CLIENTS] ✓ 客户列表缓存已保存（KV+D1）');
 			} catch (err) {
 				console.error('[CLIENTS] ✗ 缓存保存失败:', err);
 			}
@@ -436,10 +462,11 @@ export async function handleClients(request, env, me, requestId, url) {
 			}
 			const data = { clientId, companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, tags: tagIds };
 			
-			// ⚡ 失效客户列表缓存
-			invalidateCacheByType(env, 'clients_list').catch(err => 
-				console.error('[CLIENTS] 失效缓存失败:', err)
-			);
+			// ⚡ 失效客户列表缓存（KV+D1）
+			Promise.all([
+				deleteKVCacheByPrefix(env, 'clients_list'),
+				invalidateCacheByType(env, 'clients_list')
+			]).catch(err => console.error('[CLIENTS] 失效缓存失败:', err));
 			
 			return jsonResponse(201, { ok: true, code: "CREATED", message: "已建立", data, meta: { requestId } }, corsHeaders);
 		} catch (err) {

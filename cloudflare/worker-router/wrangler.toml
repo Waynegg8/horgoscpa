@@ -31,6 +31,11 @@ migrations_dir = "migrations"
 binding = "R2_BUCKET"
 bucket_name = "horgoscpa-documents"
 
+# KV Storage（快速缓存）
+[[kv_namespaces]]
+binding = "CACHE"
+id = "0b5186bacfc24815a04a9240d6e7ba45"
+
 # Cron Triggers（定時任務）
 [triggers]
 crons = [
