@@ -1064,7 +1064,7 @@
           
           // === 客户名称 ===
           doc.setFontSize(12);
-          doc.text(\`客户名稱：\${receipt.clientName}\`, 20, 65);
+          doc.text(`客户名稱：${receipt.clientName}`, 20, 65);
           
           // === 表格数据 ===
           const tableData = [];
@@ -1074,7 +1074,7 @@
             receipt.items.forEach(item => {
               tableData.push([
                 item.serviceName,
-                \`$\${item.unitPrice.toLocaleString()}\`,
+                `$${item.unitPrice.toLocaleString()}`,
                 '$-',
                 '$-'
               ]);
@@ -1083,7 +1083,7 @@
             // 没有明细，显示总金额
             tableData.push([
               '服務費用',
-              \`$\${receipt.totalAmount.toLocaleString()}\`,
+              `$${receipt.totalAmount.toLocaleString()}`,
               '$-',
               '$-'
             ]);
@@ -1092,7 +1092,7 @@
           // 添加合计行
           const totalRow = [
             '合計',
-            \`$\${receipt.totalAmount.toLocaleString()}\`,
+            `$${receipt.totalAmount.toLocaleString()}`,
             '$-',
             '$-'
           ];
@@ -1135,7 +1135,7 @@
           // === 費用總計 ===
           doc.setFontSize(14);
           doc.setTextColor(0, 0, 0); // 黑色
-          doc.text(\`費用總計：\${receipt.totalAmount.toLocaleString()} 元\`, 20, yPos);
+          doc.text(`費用總計：${receipt.totalAmount.toLocaleString()} 元`, 20, yPos);
           
           yPos += 10;
           
