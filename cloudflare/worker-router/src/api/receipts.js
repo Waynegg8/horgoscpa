@@ -4,6 +4,11 @@ export async function handleReceipts(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
 	const path = url.pathname;
+	
+	// 健康检查端点
+	if (method === "GET" && path === "/internal/api/v1/receipts/health") {
+		return jsonResponse(200, { ok: true, message: "Receipts API is healthy", timestamp: new Date().toISOString() }, corsHeaders);
+	}
 
 	// GET /internal/api/v1/receipts/reminders - 获取应开收据提醒（任务完成后才提醒）
 	if (method === "GET" && path === "/internal/api/v1/receipts/reminders") {
@@ -212,7 +217,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta }, corsHeaders);
 		} catch (err) {
-			console.error(JSON.stringify({ 
+			const errorDetail = {
 				level:"error", 
 				requestId, 
 				path: url.pathname, 
@@ -227,8 +232,22 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				},
 				err:String(err),
 				stack: err.stack || '',
-				message: err.message || ''
-			}));
+				message: err.message || '',
+				name: err.name || ''
+			};
+			console.error(JSON.stringify(errorDetail));
+			
+			// 临时：在开发环境返回详细错误（方便调试）
+			if (env.APP_ENV === "dev") {
+				return jsonResponse(500, { 
+					ok:false, 
+					code:"INTERNAL_ERROR", 
+					message:"伺服器錯誤", 
+					debug: errorDetail,
+					meta:{ requestId } 
+				}, getCorsHeadersForRequest(request, env));
+			}
+			
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 		}
 	}
