@@ -266,18 +266,17 @@
           </div>
           
           <div style="display: grid; gap: 6px;">
-            <label for="statusNew" style="font-weight: 500; font-size: 14px;">狀態</label>
-            <select id="statusNew" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
-              <option value="unpaid">未收款</option>
-              <option value="partial">部分收款</option>
-              <option value="paid">已收款</option>
-              <option value="cancelled">作廢</option>
-            </select>
-          </div>
-          
-          <div style="display: grid; gap: 6px;">
             <label for="notes" style="font-weight: 500; font-size: 14px;">備註</label>
             <textarea id="notes" rows="3" placeholder="可留空" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;"></textarea>
+          </div>
+          
+          <div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:8px;padding:12px;margin-top:8px;">
+            <div style="display:flex;align-items:start;gap:8px;">
+              <span style="font-size:16px;">ℹ️</span>
+              <div style="flex:1;font-size:13px;color:#1e40af;">
+                <strong>收款流程：</strong>創建收據後，請到收據詳情頁點擊「新增收款」記錄實際收款，系統會自動更新狀態。
+              </div>
+            </div>
           </div>
         </div>
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
@@ -307,7 +306,6 @@
         const inputReceiptDate = document.getElementById('receiptDate');
         const inputDueDate = document.getElementById('dueDate');
         const inputAmount = document.getElementById('amount');
-        const inputStatusNew = document.getElementById('statusNew');
         const inputNotes = document.getElementById('notes');
         const formError = document.getElementById('formError');
         const serviceRow = document.getElementById('serviceRow');
@@ -757,13 +755,15 @@
           const receipt_date = inputReceiptDate.value;
           const due_date = inputDueDate.value;
           const total_amount = Number(inputAmount.value);
-          const status = inputStatusNew.value;
           const notes = inputNotes.value.trim();
           
           // 新字段
           const receipt_type = inputReceiptType.value;
           const client_service_id = inputClientService.value ? parseInt(inputClientService.value, 10) : null;
           const billing_month = inputBillingMonth.value ? parseInt(inputBillingMonth.value, 10) : null;
+          
+          // 所有收據創建時統一為"未收款"，後續透過收款記錄來更新狀態
+          const status = 'unpaid';
           
           console.log('創建收據 - 客戶ID:', client_id); // Debug
           
