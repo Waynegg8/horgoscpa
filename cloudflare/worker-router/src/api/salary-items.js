@@ -20,23 +20,23 @@ export async function handleSalaryItemTypes(request, env, me, requestId, url, pa
 
 	try {
 		// GET /admin/salary-item-types - 获取所有薪资项目类型
-		if (method === "GET" && path === "/admin/salary-item-types") {
+		if (method === "GET" && path === "/internal/api/v1/admin/salary-item-types") {
 			return await getSalaryItemTypes(env, requestId, corsHeaders, url);
 		}
 
 		// POST /admin/salary-item-types - 新增薪资项目类型
-		if (method === "POST" && path === "/admin/salary-item-types") {
+		if (method === "POST" && path === "/internal/api/v1/admin/salary-item-types") {
 			return await createSalaryItemType(request, env, me, requestId, corsHeaders);
 		}
 
 		// PUT /admin/salary-item-types/:id - 更新薪资项目类型
-		if (method === "PUT" && path.match(/^\/admin\/salary-item-types\/\d+$/)) {
+		if (method === "PUT" && path.match(/^\/internal\/api\/v1\/admin\/salary-item-types\/\d+$/)) {
 			const itemTypeId = parseInt(path.split("/").pop());
 			return await updateSalaryItemType(request, env, me, requestId, corsHeaders, itemTypeId);
 		}
 
 		// DELETE /admin/salary-item-types/:id - 删除（停用）薪资项目类型
-		if (method === "DELETE" && path.match(/^\/admin\/salary-item-types\/\d+$/)) {
+		if (method === "DELETE" && path.match(/^\/internal\/api\/v1\/admin\/salary-item-types\/\d+$/)) {
 			const itemTypeId = parseInt(path.split("/").pop());
 			return await deleteSalaryItemType(env, me, requestId, corsHeaders, itemTypeId);
 		}
