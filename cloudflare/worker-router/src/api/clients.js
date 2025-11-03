@@ -314,13 +314,13 @@ export async function handleClients(request, env, me, requestId, url) {
 			
 			// 搜索：支持公司名称和统编
 			if (searchQuery) {
-				where.push("(c.company_name LIKE ? OR c.tax_registration_number LIKE ?)");
+				where.push("(company_name LIKE ? OR tax_registration_number LIKE ?)");
 				binds.push(`%${searchQuery}%`, `%${searchQuery}%`);
 			}
 			
 			// 标签筛选
 			if (tagId) {
-				where.push("EXISTS (SELECT 1 FROM ClientTagAssignments cta WHERE cta.client_id = c.client_id AND cta.tag_id = ?)");
+				where.push("EXISTS (SELECT 1 FROM ClientTagAssignments cta WHERE cta.client_id = Clients.client_id AND cta.tag_id = ?)");
 				binds.push(tagId);
 			}
 			
