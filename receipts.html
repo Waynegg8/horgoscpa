@@ -576,6 +576,10 @@
             const json = await res.json();
             if (json.ok) {
               allReceipts = json.data || [];
+              console.log('[收據列表] 載入', allReceipts.length, '筆收據');
+              if (allReceipts.length > 0) {
+                console.log('[收據範例]', allReceipts[0]);
+              }
               render();
             }
           } catch (err) {
