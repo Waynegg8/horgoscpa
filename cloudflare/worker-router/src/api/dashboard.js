@@ -1,4 +1,5 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+import { getKVCache, saveKVCache } from "../kv-cache-helper.js";
 
 function ymToday() {
   const d = new Date();
@@ -28,6 +29,22 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
     const financeMode = searchParams.get('financeMode') || 'month'; // 'month' 或 'ytd'
     
     const today = todayYmd();
+    
+    // ⚡⚡⚡ 添加KV缓存（仪表板数据变化不频繁，缓存5分钟）
+    const cacheKey = `dashboard:userId=${me.user_id}&ym=${ym}&financeYm=${financeYm}&financeMode=${financeMode}&role=${me.is_admin ? 'admin' : 'employee'}`;
+    
+    // 1. 尝试从KV缓存读取
+    const kvCached = await getKVCache(env, cacheKey);
+    if (kvCached && kvCached.data) {
+      console.log('[Dashboard] ✓ KV缓存命中');
+      return jsonResponse(200, {
+        ok: true,
+        code: "SUCCESS",
+        message: "查詢成功（KV缓存）⚡",
+        data: kvCached.data,
+        meta: { requestId, month: ym, financeYm, financeMode, today, ...kvCached.meta, cache_source: 'kv' }
+      }, corsHeaders);
+    }
 
     // Employee metrics
     async function getEmployeeMetrics() {
@@ -437,6 +454,9 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         // 查询工时缺失提醒（根据用户选择的天数检查未填写工时的员工）
         let timesheetReminders = [];
         try {
+          // ⚡ 限制天数为最多7天（避免SQL太复杂）
+          const checkDays = Math.min(days, 7);
+          
           // 获取指定天数内的日期列表（排除周末和国定假日）
           const today = new Date();
           const dates = [];
@@ -445,12 +465,12 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
           const holidaysResult = await env.DATABASE.prepare(`
             SELECT holiday_date 
             FROM Holidays 
-            WHERE holiday_date >= date('now', '-${days} days') 
+            WHERE holiday_date >= date('now', '-${checkDays} days') 
               AND holiday_date <= date('now')
           `).all();
           const holidays = new Set((holidaysResult?.results || []).map(h => h.holiday_date));
           
-          for (let i = 1; i <= days; i++) {
+          for (let i = 1; i <= checkDays; i++) {
             const d = new Date(today);
             d.setDate(d.getDate() - i);
             const dayOfWeek = d.getDay();
@@ -462,28 +482,24 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             }
           }
           
-          // 查询每个用户的工时填写情况
+          // ⚡ 优化：直接在SQL中检查每个用户，避免UNION ALL
           if (dates.length > 0) {
             const datesList = dates.map(d => `'${d}'`).join(',');
             const userFilterForTimesheet = filterUserId ? `AND u.user_id = ${filterUserId}` : '';
             
             const missingTimesheets = await env.DATABASE.prepare(`
-              WITH AllUserDates AS (
-                SELECT u.user_id, u.name, u.start_date, dates.work_date
-                FROM Users u
-                CROSS JOIN (${dates.map(d => `SELECT '${d}' as work_date`).join(' UNION ALL ')}) dates
-                WHERE u.is_deleted = 0 ${userFilterForTimesheet}
-              )
               SELECT 
-                aud.user_id,
-                aud.name as user_name,
-                aud.work_date,
-                CASE WHEN t.timesheet_id IS NULL THEN 1 ELSE 0 END as is_missing
-              FROM AllUserDates aud
-              LEFT JOIN Timesheets t ON t.user_id = aud.user_id AND t.work_date = aud.work_date
-              WHERE t.timesheet_id IS NULL
-                AND aud.work_date >= aud.start_date
-              ORDER BY aud.work_date DESC, aud.name ASC
+                u.user_id,
+                u.name as user_name,
+                d.work_date
+              FROM Users u
+              JOIN (${dates.map(d => `SELECT '${d}' as work_date`).join(' UNION ALL ')}) d
+              LEFT JOIN Timesheets t ON t.user_id = u.user_id AND t.work_date = d.work_date AND t.is_deleted = 0
+              WHERE u.is_deleted = 0 
+                AND d.work_date >= u.start_date
+                AND t.timesheet_id IS NULL
+                ${userFilterForTimesheet}
+              ORDER BY d.work_date DESC, u.name ASC
               LIMIT 30
             `).all();
             
@@ -746,6 +762,12 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       data.employee = await getEmployeeMetrics();
       data.employee.receiptsPendingTasks = await getReceiptsPendingTasks();
     }
+    
+    // ⚡ 保存到KV缓存（5分钟TTL）
+    await saveKVCache(env, cacheKey, 'dashboard', data, {
+      userId: String(me.user_id),
+      ttl: 300 // 5分钟
+    }).catch(err => console.error('[Dashboard] KV缓存保存失败:', err));
 
     return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, month: ym, financeYm, financeMode, today } }, corsHeaders);
   } catch (err) {
