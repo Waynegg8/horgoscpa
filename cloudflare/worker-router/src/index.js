@@ -6,6 +6,9 @@ import { handleTimesheets } from "./api/timesheets.js";
 import { handleReceipts } from "./api/receipts.js";
 import { handlePayroll } from "./api/payroll.js";
 import { handleSalaryItemTypes } from "./api/salary-items.js";
+import { handleEmployeeSalary } from "./api/employee-salary.js";
+import { handleBonus } from "./api/bonus.js";
+import { handleYearEnd } from "./api/yearend.js";
 import { handleLeaves } from "./api/leaves.js";
 import { handleTrips } from "./api/trips.js";
 import { handleMealAllowance } from "./api/meal-allowance.js";
@@ -463,6 +466,24 @@ export default {
 		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 		if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 		return handleSalaryItemTypes(request, env, me, requestId, url, path);
+	}
+	if (path.startsWith("/internal/api/v1/admin/users")) {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		return handleEmployeeSalary(request, env, me, requestId, url, path);
+	}
+	if (path.startsWith("/internal/api/v1/admin/bonus")) {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		return handleBonus(request, env, me, requestId, url, path);
+	}
+	if (path.startsWith("/internal/api/v1/admin/yearend")) {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		return handleYearEnd(request, env, me, requestId, url, path);
 	}
 	if (path.startsWith("/internal/api/v1/admin/payroll")) {
 		const me = await getSessionUser(request, env);

@@ -48,22 +48,30 @@
               <option value="pending">未完成</option>
             </select>
           </div>
-          <table class="table" aria-label="薪資計算列表">
+          <table class="table" aria-label="薪資計算列表" style="font-size: 0.875rem;">
             <thead>
               <tr>
-                <th>姓名</th>
-                <th>底薪</th>
-                <th>津貼合計</th>
-                <th>獎金合計</th>
-                <th>加班費</th>
-                <th>應發薪資</th>
-                <th>扣款合計</th>
-                <th>實發薪資</th>
-                <th>全勤</th>
+                <th rowspan="2">姓名</th>
+                <th rowspan="2">底薪</th>
+                <th colspan="6" style="background: #f0fdf4; text-align: center;">收入明細</th>
+                <th colspan="2" style="background: #fef2f2; text-align: center;">扣款明細</th>
+                <th rowspan="2" style="background: #f0f9ff;">應發</th>
+                <th rowspan="2" style="background: #dbeafe;">實發</th>
+                <th rowspan="2">全勤</th>
+              </tr>
+              <tr>
+                <th style="background: #f0fdf4;">津貼</th>
+                <th style="background: #f0fdf4;">獎金</th>
+                <th style="background: #f0fdf4;">加班費</th>
+                <th style="background: #f0fdf4;">誤餐費</th>
+                <th style="background: #f0fdf4;">交通</th>
+                <th style="background: #f0fdf4;">績效</th>
+                <th style="background: #fef2f2;">固定</th>
+                <th style="background: #fef2f2;">請假</th>
               </tr>
             </thead>
             <tbody id="tbodyCalc">
-              <tr><td colspan="9" class="muted">尚無資料</td></tr>
+              <tr><td colspan="13" class="muted">尚無資料</td></tr>
             </tbody>
           </table>
           <div class="pagination">
@@ -186,22 +194,41 @@
             <div class="section-toolbar">
               <input id="empSearch" type="search" placeholder="搜尋員工…" />
             </div>
-            <ul class="list" aria-label="員工清單">
-              <li class="muted">尚無資料</li>
+            <ul id="empList" class="list" aria-label="員工清單">
+              <li class="muted">載入中...</li>
             </ul>
           </div>
           <div class="col">
-            <div class="form">
-              <div class="row"><label>底薪</label><input type="number" min="0" step="1" placeholder="例如 40000" disabled /></div>
-              <div class="row"><label>生效日期</label><input type="date" disabled /></div>
-              <div class="row"><label>薪資項目</label><button class="btn" disabled>新增</button></div>
-              <div class="row">
-                <small class="muted">提示：勾選「經常性給與」將計入時薪，影響加班費與成本分析。</small>
+            <div id="empFormContainer" style="display: none;">
+              <h3 id="empFormTitle">請選擇員工</h3>
+              <div class="form">
+                <div class="row">
+                  <label>底薪</label>
+                  <input id="empBaseSalary" type="number" min="0" step="1" placeholder="例如 40000" />
+                </div>
+                <div class="row">
+                  <label>備註</label>
+                  <textarea id="empSalaryNotes" rows="2" placeholder="薪資備註"></textarea>
+                </div>
+                <hr />
+                <div class="row">
+                  <label>薪資項目</label>
+                  <button id="btnAddEmpItem" class="btn btn-sm" type="button">➕ 新增項目</button>
+                </div>
+                <div id="empItemsList">
+                  <small class="muted">尚無薪資項目</small>
+                </div>
+                <div class="row">
+                  <small class="muted">💡 提示：勾選「經常性給與」將計入時薪，影響加班費與成本分析。</small>
+                </div>
+                <div class="actions">
+                  <button id="btnCancelEmp" class="btn" type="button">取消</button>
+                  <button id="btnSaveEmp" class="btn primary" type="button">💾 儲存</button>
+                </div>
               </div>
-              <div class="actions">
-                <button class="btn" disabled>取消</button>
-                <button class="btn primary" disabled>儲存</button>
-              </div>
+            </div>
+            <div id="empEmptyState" style="text-align: center; padding: 2rem; color: #999;">
+              👈 請從左側選擇員工
             </div>
           </div>
         </div>
@@ -214,23 +241,24 @@
             <label for="monthBonus">月份</label>
             <input id="monthBonus" type="month" />
             <div class="toolbar-spacer"></div>
-            <button class="btn" disabled>全部恢復預設</button>
-            <button class="btn primary" disabled>儲存所有調整</button>
+            <button id="btnResetBonus" class="btn">🔄 全部恢復預設</button>
+            <button id="btnSaveBonus" class="btn primary">💾 儲存所有調整</button>
           </div>
           <table class="table" aria-label="績效獎金調整">
             <thead>
               <tr>
                 <th>姓名</th>
+                <th>底薪</th>
                 <th>預設績效</th>
-                <th>調整後</th>
-                <th>時薪影響</th>
+                <th>本月調整</th>
+                <th>備註</th>
               </tr>
             </thead>
-            <tbody>
-              <tr><td colspan="4" class="muted">尚無資料</td></tr>
+            <tbody id="tbodyBonus">
+              <tr><td colspan="5" class="muted">載入中...</td></tr>
             </tbody>
           </table>
-          <div class="summary muted">已調整人數 0、人均影響 0 元/時</div>
+          <div id="bonusSummary" class="summary muted">已調整人數 0</div>
         </div>
       </section>
 
@@ -238,24 +266,26 @@
       <section id="panel-yearend" class="panel" role="tabpanel" aria-labelledby="tab-yearend">
         <div class="card">
           <div class="section-toolbar">
-            <label for="year">年度</label>
-            <input id="year" type="number" min="2000" max="2100" step="1" />
+            <label for="yearInput">年度</label>
+            <input id="yearInput" type="number" min="2000" max="2100" step="1" />
             <div class="toolbar-spacer"></div>
-            <div class="stats">
+            <div id="yearendStats" class="stats">
               <span>總額：—</span><span>人數：—</span><span>平均：—</span>
             </div>
+            <button id="btnSaveYearend" class="btn primary">💾 儲存</button>
           </div>
           <table class="table" aria-label="年終獎金">
             <thead>
               <tr>
                 <th>姓名</th>
+                <th>底薪</th>
                 <th>年終金額</th>
                 <th>發放日期</th>
-                <th>狀態</th>
+                <th>備註</th>
               </tr>
             </thead>
-            <tbody>
-              <tr><td colspan="4" class="muted">尚無資料</td></tr>
+            <tbody id="tbodyYearend">
+              <tr><td colspan="5" class="muted">載入中...</td></tr>
             </tbody>
           </table>
         </div>
@@ -290,6 +320,28 @@
 
         // 薪資項目狀態
         const itemsState = { all: [], filtered: [] };
+
+        // 員工薪資設定相關 DOM
+        const empList = document.getElementById('empList');
+        const empSearch = document.getElementById('empSearch');
+        const empFormContainer = document.getElementById('empFormContainer');
+        const empEmptyState = document.getElementById('empEmptyState');
+        const empFormTitle = document.getElementById('empFormTitle');
+        const empBaseSalary = document.getElementById('empBaseSalary');
+        const empSalaryNotes = document.getElementById('empSalaryNotes');
+        const empItemsList = document.getElementById('empItemsList');
+        const btnAddEmpItem = document.getElementById('btnAddEmpItem');
+        const btnCancelEmp = document.getElementById('btnCancelEmp');
+        const btnSaveEmp = document.getElementById('btnSaveEmp');
+
+        // 員工薪資狀態
+        const empState = { 
+          allUsers: [], 
+          filteredUsers: [],
+          selectedUserId: null,
+          currentUserData: null,
+          userSalaryItems: [] 
+        };
 
         // 計算分頁 DOM
         const tbodyCalc = document.getElementById('tbodyCalc');
@@ -463,21 +515,26 @@
           tbodyCalc.innerHTML = '';
           if (pageRows.length === 0){
             const tr = document.createElement('tr');
-            tr.innerHTML = '<td colspan="9" class="muted">沒有符合條件的資料</td>';
+            tr.innerHTML = '<td colspan="13" class="muted">沒有符合條件的資料</td>';
             tbodyCalc.appendChild(tr);
           } else {
             pageRows.forEach(r => {
               const tr = document.createElement('tr');
+              const totalDeduction = (r.totalDeductionCents || r.deductionCents) || 0;
               tr.innerHTML = `
                 <td>${r.name || ''}</td>
                 <td>${centsToTwd(r.baseSalaryCents)}</td>
-                <td>${centsToTwd(r.regularAllowanceCents)}</td>
-                <td>${centsToTwd(r.bonusCents)}</td>
-                <td>${centsToTwd(r.overtimeCents)}</td>
-                <td style="font-weight:600;">${centsToTwd(r.grossSalaryCents)}</td>
-                <td style="color:#dc2626;">${r.deductionCents > 0 ? '-' : ''}${centsToTwd(r.deductionCents)}</td>
-                <td style="font-weight:600;color:#16a34a;">${centsToTwd(r.netSalaryCents)}</td>
-                <td>${r.isFullAttendance ? '✓ 是' : '否'}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(r.regularAllowanceCents)}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(r.bonusCents)}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(r.overtimeCents)}${r.overtimeHours ? `<br><small>${r.overtimeHours.toFixed(1)}h</small>` : ''}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(r.mealAllowanceCents || 0)}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(r.transportCents || 0)}${r.totalKm ? `<br><small>${r.totalKm}km</small>` : ''}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(r.performanceBonusCents || 0)}</td>
+                <td style="background: #fef2f2;color:#dc2626;">${r.deductionCents > 0 ? '-' + centsToTwd(r.deductionCents) : '0'}</td>
+                <td style="background: #fef2f2;color:#dc2626;">${r.leaveDeductionCents > 0 ? '-' + centsToTwd(r.leaveDeductionCents) : '0'}${r.sickDays || r.personalDays ? `<br><small>病${r.sickDays || 0}事${r.personalDays || 0}</small>` : ''}</td>
+                <td style="font-weight:600;background:#f0f9ff;">${centsToTwd(r.grossSalaryCents)}</td>
+                <td style="font-weight:600;color:#16a34a;background:#dbeafe;">${centsToTwd(r.netSalaryCents)}</td>
+                <td>${r.isFullAttendance ? '✓' : '✗'}</td>
               `;
               tbodyCalc.appendChild(tr);
             });
@@ -700,6 +757,188 @@
 
         window.toggleItemStatus = toggleItemStatus;
 
+        // ==================== 員工薪資設定功能 ====================
+
+        // 加載所有員工
+        async function loadUsers() {
+          try {
+            const res = await fetch(`${apiBase}/admin/users`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            empState.allUsers = json.data?.users || [];
+            empState.filteredUsers = [...empState.allUsers];
+            renderUserList();
+          } catch (err) {
+            console.error('loadUsers error:', err);
+            empList.innerHTML = '<li class="muted">載入失敗</li>';
+          }
+        }
+
+        // 渲染員工列表
+        function renderUserList() {
+          if (empState.filteredUsers.length === 0) {
+            empList.innerHTML = '<li class="muted">無符合條件的員工</li>';
+            return;
+          }
+          empList.innerHTML = empState.filteredUsers.map(u => `
+            <li class="${empState.selectedUserId === u.userId ? 'active' : ''}" 
+                onclick="selectUser(${u.userId})" 
+                style="cursor: pointer; padding: 0.75rem;">
+              <div style="font-weight: 500;">${u.name || u.username}</div>
+              <div style="font-size: 0.875rem; color: #666;">底薪: ${u.baseSalary.toLocaleString()} 元</div>
+            </li>
+          `).join('');
+        }
+
+        // 搜尋員工
+        function applyUserFilters() {
+          const keyword = empSearch.value.toLowerCase().trim();
+          if (!keyword) {
+            empState.filteredUsers = [...empState.allUsers];
+          } else {
+            empState.filteredUsers = empState.allUsers.filter(u => 
+              (u.name || '').toLowerCase().includes(keyword) ||
+              (u.username || '').toLowerCase().includes(keyword)
+            );
+          }
+          renderUserList();
+        }
+
+        // 選擇員工
+        window.selectUser = async function(userId) {
+          empState.selectedUserId = userId;
+          renderUserList();
+          await loadUserSalary(userId);
+        };
+
+        // 加載員工薪資設定
+        async function loadUserSalary(userId) {
+          try {
+            const res = await fetch(`${apiBase}/admin/users/${userId}/salary`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            empState.currentUserData = json.data;
+            empState.userSalaryItems = json.data.salaryItems || [];
+            renderUserSalaryForm();
+          } catch (err) {
+            console.error('loadUserSalary error:', err);
+            alert('載入員工薪資失敗');
+          }
+        }
+
+        // 渲染員工薪資表單
+        function renderUserSalaryForm() {
+          const data = empState.currentUserData;
+          if (!data) {
+            empFormContainer.style.display = 'none';
+            empEmptyState.style.display = 'block';
+            return;
+          }
+
+          empFormContainer.style.display = 'block';
+          empEmptyState.style.display = 'none';
+          empFormTitle.textContent = `${data.name} 的薪資設定`;
+          empBaseSalary.value = data.baseSalary || 0;
+          empSalaryNotes.value = data.salaryNotes || '';
+          
+          renderUserSalaryItems();
+        }
+
+        // 渲染員工薪資項目列表
+        function renderUserSalaryItems() {
+          if (empState.userSalaryItems.length === 0) {
+            empItemsList.innerHTML = '<small class="muted">尚無薪資項目</small>';
+            return;
+          }
+
+          empItemsList.innerHTML = empState.userSalaryItems.map((item, index) => `
+            <div class="salary-item-row" style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid #e0e0e0; border-radius: 4px;">
+              <select class="item-type-select" data-index="${index}" style="flex: 2;">
+                ${renderItemTypeOptions(item.itemTypeId)}
+              </select>
+              <input type="number" class="item-amount" data-index="${index}" value="${item.amountCents / 100}" 
+                     placeholder="金額" min="0" step="0.01" style="flex: 1;" />
+              <button type="button" class="btn btn-sm" onclick="removeUserSalaryItem(${index})">❌</button>
+            </div>
+          `).join('');
+        }
+
+        // 渲染薪資項目類型選項
+        function renderItemTypeOptions(selectedId) {
+          return itemsState.all
+            .filter(t => t.isActive)
+            .map(t => `<option value="${t.itemTypeId}" ${t.itemTypeId === selectedId ? 'selected' : ''}>
+              ${t.itemName} (${t.category === 'allowance' ? '津貼' : t.category === 'bonus' ? '獎金' : '扣款'})
+            </option>`)
+            .join('');
+        }
+
+        // 新增員工薪資項目
+        window.addUserSalaryItem = function() {
+          if (itemsState.all.filter(t => t.isActive).length === 0) {
+            alert('請先在「薪資項目設定」中新增可用的薪資項目');
+            return;
+          }
+          empState.userSalaryItems.push({
+            itemTypeId: itemsState.all.filter(t => t.isActive)[0]?.itemTypeId || null,
+            amountCents: 0
+          });
+          renderUserSalaryItems();
+        };
+
+        // 移除員工薪資項目
+        window.removeUserSalaryItem = function(index) {
+          empState.userSalaryItems.splice(index, 1);
+          renderUserSalaryItems();
+        };
+
+        // 儲存員工薪資設定
+        async function saveUserSalary() {
+          if (!empState.selectedUserId) return;
+
+          const baseSalary = parseFloat(empBaseSalary.value) || 0;
+          const salaryNotes = empSalaryNotes.value.trim();
+
+          // 收集薪資項目
+          const salaryItems = [];
+          const itemRows = empItemsList.querySelectorAll('.salary-item-row');
+          itemRows.forEach((row, index) => {
+            const typeSelect = row.querySelector('.item-type-select');
+            const amountInput = row.querySelector('.item-amount');
+            const itemTypeId = parseInt(typeSelect.value);
+            const amount = parseFloat(amountInput.value) || 0;
+            
+            if (itemTypeId && amount > 0) {
+              salaryItems.push({
+                itemTypeId,
+                amountCents: Math.round(amount * 100),
+                effectiveDate: new Date().toISOString().split('T')[0]
+              });
+            }
+          });
+
+          try {
+            const res = await fetch(`${apiBase}/admin/users/${empState.selectedUserId}/salary`, {
+              method: 'PUT',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ baseSalary, salaryNotes, salaryItems })
+            });
+
+            const json = await res.json();
+            if (res.ok && json.ok) {
+              alert('✅ 儲存成功');
+              await loadUsers(); // 重新加載員工列表
+              await loadUserSalary(empState.selectedUserId); // 重新加載當前員工
+            } else {
+              alert(json.message || '儲存失敗');
+            }
+          } catch (err) {
+            console.error('saveUserSalary error:', err);
+            alert('儲存失敗');
+          }
+        }
+
         // 綁定薪資項目事件
         let searchTimer = null;
         itemSearch.addEventListener('input', () => {
@@ -710,11 +949,293 @@
         btnCancelItem.addEventListener('click', () => itemDialog.close());
         itemForm.addEventListener('submit', saveItem);
 
+        // 綁定員工薪資設定事件
+        let empSearchTimer = null;
+        empSearch.addEventListener('input', () => {
+          clearTimeout(empSearchTimer);
+          empSearchTimer = setTimeout(applyUserFilters, 300);
+        });
+        btnAddEmpItem.addEventListener('click', addUserSalaryItem);
+        btnCancelEmp.addEventListener('click', () => {
+          empState.selectedUserId = null;
+          empFormContainer.style.display = 'none';
+          empEmptyState.style.display = 'block';
+          renderUserList();
+        });
+        btnSaveEmp.addEventListener('click', saveUserSalary);
+
+        // ==================== 績效獎金調整功能 ====================
+
+        const tbodyBonus = document.getElementById('tbodyBonus');
+        const bonusSummary = document.getElementById('bonusSummary');
+        const btnResetBonus = document.getElementById('btnResetBonus');
+        const btnSaveBonus = document.getElementById('btnSaveBonus');
+
+        let bonusState = { employees: [] };
+
+        // 加載月度績效數據
+        async function loadMonthlyBonus() {
+          const month = document.getElementById('monthBonus').value;
+          if (!month) return;
+
+          try {
+            const res = await fetch(`${apiBase}/admin/bonus/month/${month}`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            bonusState.employees = json.data?.employees || [];
+            renderBonusTable();
+          } catch (err) {
+            console.error('loadMonthlyBonus error:', err);
+            tbodyBonus.innerHTML = '<tr><td colspan="5" class="muted">載入失敗</td></tr>';
+          }
+        }
+
+        // 渲染績效表格
+        function renderBonusTable() {
+          if (bonusState.employees.length === 0) {
+            tbodyBonus.innerHTML = '<tr><td colspan="5" class="muted">無員工資料</td></tr>';
+            return;
+          }
+
+          tbodyBonus.innerHTML = bonusState.employees.map((emp, index) => {
+            const defaultAmount = (emp.defaultBonusCents / 100).toFixed(2);
+            const adjustedAmount = emp.adjustedBonusCents !== null ? (emp.adjustedBonusCents / 100).toFixed(2) : '';
+            
+            return `
+              <tr>
+                <td>${emp.name || emp.username}</td>
+                <td>${emp.baseSalary.toLocaleString()}</td>
+                <td>${defaultAmount}</td>
+                <td>
+                  <input type="number" class="bonus-input" data-index="${index}" 
+                         value="${adjustedAmount}" 
+                         placeholder="${defaultAmount}" 
+                         min="0" step="0.01" 
+                         style="width: 120px;" />
+                </td>
+                <td>
+                  <input type="text" class="bonus-notes" data-index="${index}" 
+                         value="${emp.notes || ''}" 
+                         placeholder="備註" 
+                         style="width: 200px;" />
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          updateBonusSummary();
+        }
+
+        // 更新統計摘要
+        function updateBonusSummary() {
+          const adjustedCount = bonusState.employees.filter(e => e.adjustedBonusCents !== null).length;
+          bonusSummary.textContent = `已調整人數 ${adjustedCount}`;
+        }
+
+        // 恢復預設
+        function resetAllBonus() {
+          if (!confirm('確定要將所有調整恢復為預設值嗎？')) return;
+          
+          bonusState.employees.forEach(emp => {
+            emp.adjustedBonusCents = null;
+            emp.notes = '';
+          });
+          renderBonusTable();
+        }
+
+        // 儲存績效調整
+        async function saveMonthlyBonus() {
+          const month = document.getElementById('monthBonus').value;
+          if (!month) return;
+
+          // 收集調整數據
+          const adjustments = [];
+          const inputs = tbodyBonus.querySelectorAll('.bonus-input');
+          const notesInputs = tbodyBonus.querySelectorAll('.bonus-notes');
+
+          inputs.forEach((input, index) => {
+            const emp = bonusState.employees[index];
+            if (!emp) return;
+
+            const value = input.value.trim();
+            const notes = notesInputs[index].value.trim();
+
+            if (value !== '') {
+              adjustments.push({
+                userId: emp.userId,
+                bonusAmountCents: Math.round(parseFloat(value) * 100),
+                notes: notes || null
+              });
+            }
+          });
+
+          try {
+            const res = await fetch(`${apiBase}/admin/bonus/month/${month}`, {
+              method: 'PUT',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ adjustments })
+            });
+
+            const json = await res.json();
+            if (res.ok && json.ok) {
+              alert('✅ 儲存成功');
+              await loadMonthlyBonus();
+            } else {
+              alert(json.message || '儲存失敗');
+            }
+          } catch (err) {
+            console.error('saveMonthlyBonus error:', err);
+            alert('儲存失敗');
+          }
+        }
+
+        // 綁定績效獎金事件
+        document.getElementById('monthBonus').addEventListener('change', loadMonthlyBonus);
+        btnResetBonus.addEventListener('click', resetAllBonus);
+        btnSaveBonus.addEventListener('click', saveMonthlyBonus);
+
+        // ==================== 年終獎金管理功能 ====================
+
+        const tbodyYearend = document.getElementById('tbodyYearend');
+        const yearendStats = document.getElementById('yearendStats');
+        const yearInput = document.getElementById('yearInput');
+        const btnSaveYearend = document.getElementById('btnSaveYearend');
+
+        let yearendState = { employees: [], summary: { totalCents: 0, count: 0, averageCents: 0 } };
+
+        // 加載年度年終獎金數據
+        async function loadYearEndBonus() {
+          const year = yearInput.value;
+          if (!year) return;
+
+          try {
+            const res = await fetch(`${apiBase}/admin/yearend/${year}`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            yearendState.employees = json.data?.employees || [];
+            yearendState.summary = json.data?.summary || { totalCents: 0, count: 0, averageCents: 0 };
+            renderYearendTable();
+          } catch (err) {
+            console.error('loadYearEndBonus error:', err);
+            tbodyYearend.innerHTML = '<tr><td colspan="5" class="muted">載入失敗</td></tr>';
+          }
+        }
+
+        // 渲染年終獎金表格
+        function renderYearendTable() {
+          if (yearendState.employees.length === 0) {
+            tbodyYearend.innerHTML = '<tr><td colspan="5" class="muted">無員工資料</td></tr>';
+            return;
+          }
+
+          tbodyYearend.innerHTML = yearendState.employees.map((emp, index) => {
+            const amount = (emp.amountCents / 100).toFixed(2);
+            
+            return `
+              <tr>
+                <td>${emp.name || emp.username}</td>
+                <td>${emp.baseSalary.toLocaleString()}</td>
+                <td>
+                  <input type="number" class="yearend-amount" data-index="${index}" 
+                         value="${amount > 0 ? amount : ''}" 
+                         placeholder="0.00" 
+                         min="0" step="0.01" 
+                         style="width: 120px;" />
+                </td>
+                <td>
+                  <input type="date" class="yearend-date" data-index="${index}" 
+                         value="${emp.paymentDate || ''}" 
+                         style="width: 150px;" />
+                </td>
+                <td>
+                  <input type="text" class="yearend-notes" data-index="${index}" 
+                         value="${emp.notes || ''}" 
+                         placeholder="備註" 
+                         style="width: 200px;" />
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          updateYearendStats();
+        }
+
+        // 更新統計資訊
+        function updateYearendStats() {
+          const total = (yearendState.summary.totalCents / 100).toLocaleString();
+          const count = yearendState.summary.count;
+          const average = (yearendState.summary.averageCents / 100).toLocaleString();
+          
+          yearendStats.innerHTML = `
+            <span>總額：${total} 元</span>
+            <span>人數：${count}</span>
+            <span>平均：${average} 元</span>
+          `;
+        }
+
+        // 儲存年終獎金
+        async function saveYearEndBonus() {
+          const year = yearInput.value;
+          if (!year) return;
+
+          // 收集獎金數據
+          const bonuses = [];
+          const amountInputs = tbodyYearend.querySelectorAll('.yearend-amount');
+          const dateInputs = tbodyYearend.querySelectorAll('.yearend-date');
+          const notesInputs = tbodyYearend.querySelectorAll('.yearend-notes');
+
+          amountInputs.forEach((input, index) => {
+            const emp = yearendState.employees[index];
+            if (!emp) return;
+
+            const amount = parseFloat(input.value) || 0;
+            const paymentDate = dateInputs[index].value || null;
+            const notes = notesInputs[index].value.trim() || null;
+
+            if (amount > 0) {
+              bonuses.push({
+                userId: emp.userId,
+                amountCents: Math.round(amount * 100),
+                paymentDate,
+                notes
+              });
+            }
+          });
+
+          try {
+            const res = await fetch(`${apiBase}/admin/yearend/${year}`, {
+              method: 'PUT',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ bonuses })
+            });
+
+            const json = await res.json();
+            if (res.ok && json.ok) {
+              alert('✅ 儲存成功');
+              await loadYearEndBonus();
+            } else {
+              alert(json.message || '儲存失敗');
+            }
+          } catch (err) {
+            console.error('saveYearEndBonus error:', err);
+            alert('儲存失敗');
+          }
+        }
+
+        // 綁定年終獎金事件
+        yearInput.addEventListener('change', loadYearEndBonus);
+        btnSaveYearend.addEventListener('click', saveYearEndBonus);
+
         // 預設月份為本月
         const now = new Date();
         monthInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
         const monthBonus = document.getElementById('monthBonus');
         if (monthBonus) monthBonus.value = monthInput.value;
+        
+        // 預設年份為今年
+        yearInput.value = now.getFullYear();
 
         // 綁定事件
         let timer = null;
@@ -735,6 +1256,9 @@
             loadPreview(); 
             checkFinalized();
             loadItems(); // 載入薪資項目
+            loadUsers(); // 載入員工列表
+            loadMonthlyBonus(); // 載入績效獎金
+            loadYearEndBonus(); // 載入年終獎金
             // ⚡ 自动保存预渲染
             if (window.PagePrerender) {
               setTimeout(() => window.PagePrerender.autoSave('main', 2000), 1000);
