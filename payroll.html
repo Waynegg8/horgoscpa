@@ -477,16 +477,7 @@
             return;
           }
           
-          // 第一步：先隐藏所有面板
-          Object.entries(panels).forEach(([k, el]) => {
-            if (el) {
-              el.classList.remove('show');
-              el.style.cssText = 'display: none !important;';
-              el.setAttribute('hidden', '');
-            }
-          });
-          
-          // 第二步：更新所有TAB按钮状态
+          // 第一步：更新所有TAB按钮状态
           tabs.forEach(b => {
             const key = b.getAttribute('data-tab');
             if (key === targetKey) {
@@ -498,15 +489,22 @@
             }
           });
           
-          // 第三步：显示目标面板
-          targetPanel.classList.add('show');
-          targetPanel.style.cssText = 'display: block !important;';
-          targetPanel.removeAttribute('hidden');
+          // 第二步：更新面板显示（使用classList，配合CSS）
+          Object.entries(panels).forEach(([k, el]) => {
+            if (!el) return;
+            
+            if (k === targetKey) {
+              // 显示目标面板
+              el.classList.add('show');
+              el.removeAttribute('hidden');
+            } else {
+              // 隐藏其他面板
+              el.classList.remove('show');
+              el.setAttribute('hidden', '');
+            }
+          });
           
-          // 强制重绘
-          void targetPanel.offsetHeight;
-          
-          console.log('[TAB] ✓ 已切换到:', targetKey, '显示状态:', window.getComputedStyle(targetPanel).display);
+          console.log('[TAB] ✓ 已切换到:', targetKey);
         }
         
         // 绑定TAB点击事件
@@ -880,7 +878,7 @@
 
         async function loadPreview(){
           const m = monthInput.value;
-          tbodyCalc.innerHTML = '<tr><td colspan="7" class="muted">載入中…</td></tr>';
+          tbodyCalc.innerHTML = '<tr><td colspan="13" class="muted">載入中…</td></tr>';
           try {
             const res = await fetch(`${apiBase}/admin/payroll/preview?month=${encodeURIComponent(m)}`, { credentials: 'include' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/payroll'); return; }
@@ -888,10 +886,12 @@
             const json = await res.json();
             if (!json || json.ok !== true) throw new Error('載入失敗');
             const users = (json.data && json.data.users) || [];
+            console.log('[薪资计算] 加载preview数据:', users.length, '条记录');
             calcState.all = users;
             applyCalcFilters();
-          } catch (_) {
-            tbodyCalc.innerHTML = '<tr><td colspan="7" class="muted" style="color:#c0392b;">載入失敗</td></tr>';
+          } catch (err) {
+            console.error('[薪资计算] 加载失败:', err);
+            tbodyCalc.innerHTML = '<tr><td colspan="13" class="muted" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
 
