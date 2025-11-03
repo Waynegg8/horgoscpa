@@ -243,27 +243,45 @@
       <section id="panel-bonus" class="panel" role="tabpanel" aria-labelledby="tab-bonus">
         <div class="card">
           <div class="section-toolbar">
-            <label for="monthBonus">月份</label>
-            <input id="monthBonus" type="month" />
+            <label for="yearBonus">年度</label>
+            <input id="yearBonus" type="number" min="2020" max="2100" step="1" style="width: 100px;" />
             <div class="toolbar-spacer"></div>
-            <button id="btnResetBonus" class="btn">🔄 全部恢復預設</button>
-            <button id="btnSaveBonus" class="btn primary">💾 儲存所有調整</button>
+            <div id="bonusSummary" class="stats">
+              <span>總調整：<strong id="bonusAdjustedCount">0</strong> 人次</span>
+            </div>
+            <button id="btnSaveBonus" class="btn primary">💾 儲存全年調整</button>
           </div>
-          <table class="table" aria-label="績效獎金調整">
-            <thead>
-              <tr>
-                <th>姓名</th>
-                <th>底薪</th>
-                <th>預設績效</th>
-                <th>本月調整</th>
-                <th>備註</th>
-              </tr>
-            </thead>
-            <tbody id="tbodyBonus">
-              <tr><td colspan="5" class="muted">載入中...</td></tr>
-            </tbody>
-          </table>
-          <div id="bonusSummary" class="summary muted">已調整人數 0</div>
+          <div style="overflow-x: auto;">
+            <table class="table" aria-label="績效獎金調整" style="min-width: 1400px;">
+              <thead>
+                <tr>
+                  <th rowspan="2" style="position: sticky; left: 0; background: white; z-index: 2; min-width: 100px;">姓名</th>
+                  <th rowspan="2" style="min-width: 80px;">預設績效</th>
+                  <th colspan="12" style="text-align: center; background: #f0f9ff;">各月份調整金額（元）</th>
+                </tr>
+                <tr>
+                  <th style="background: #f0f9ff; min-width: 80px;">1月</th>
+                  <th style="background: #f0f9ff; min-width: 80px;">2月</th>
+                  <th style="background: #f0f9ff; min-width: 80px;">3月</th>
+                  <th style="background: #f0f9ff; min-width: 80px;">4月</th>
+                  <th style="background: #f0f9ff; min-width: 80px;">5月</th>
+                  <th style="background: #f0f9ff; min-width: 80px;">6月</th>
+                  <th style="background: #f0f9ff; min-width: 80px;">7月</th>
+                  <th style="background: #f0f9ff; min-width: 80px;">8月</th>
+                  <th style="background: #f0f9ff; min-width: 80px;">9月</th>
+                  <th style="background: #f0f9ff; min-width: 80px;">10月</th>
+                  <th style="background: #f0f9ff; min-width: 80px;">11月</th>
+                  <th style="background: #f0f9ff; min-width: 80px;">12月</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyBonus">
+                <tr><td colspan="14" class="muted">載入中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="muted" style="margin-top: 10px; font-size: 0.875rem;">
+            💡 提示：留空表示使用預設績效；輸入金額表示該月使用調整後的金額
+          </div>
         </div>
       </section>
 
@@ -1418,58 +1436,68 @@
         // ==================== 績效獎金調整功能 ====================
 
         const tbodyBonus = document.getElementById('tbodyBonus');
-        const bonusSummary = document.getElementById('bonusSummary');
-        const btnResetBonus = document.getElementById('btnResetBonus');
+        const bonusAdjustedCount = document.getElementById('bonusAdjustedCount');
+        const yearBonusInput = document.getElementById('yearBonus');
         const btnSaveBonus = document.getElementById('btnSaveBonus');
 
+        // 狀態：存儲所有員工的全年12個月數據
         let bonusState = { employees: [] };
 
-        // 加載月度績效數據
-        async function loadMonthlyBonus() {
-          const month = document.getElementById('monthBonus').value;
-          if (!month) return;
+        // 加載年度績效數據（12個月）
+        async function loadYearlyBonus() {
+          const year = yearBonusInput.value;
+          if (!year) return;
 
           try {
-            const res = await fetch(`${apiBase}/admin/bonus/month/${month}`, { credentials: 'include' });
+            const res = await fetch(`${apiBase}/admin/bonus/year/${year}`, { credentials: 'include' });
             if (!res.ok) throw new Error('載入失敗');
             const json = await res.json();
             bonusState.employees = json.data?.employees || [];
             renderBonusTable();
           } catch (err) {
-            console.error('loadMonthlyBonus error:', err);
-            tbodyBonus.innerHTML = '<tr><td colspan="5" class="muted">載入失敗</td></tr>';
+            console.error('loadYearlyBonus error:', err);
+            tbodyBonus.innerHTML = '<tr><td colspan="14" class="muted">載入失敗</td></tr>';
           }
         }
 
-        // 渲染績效表格
+        // 渲染全年績效表格
         function renderBonusTable() {
           if (bonusState.employees.length === 0) {
-            tbodyBonus.innerHTML = '<tr><td colspan="5" class="muted">無員工資料</td></tr>';
+            tbodyBonus.innerHTML = '<tr><td colspan="14" class="muted">無員工資料</td></tr>';
             return;
           }
 
-          tbodyBonus.innerHTML = bonusState.employees.map((emp, index) => {
-            const defaultAmount = (emp.defaultBonusCents / 100).toFixed(2);
-            const adjustedAmount = emp.adjustedBonusCents !== null ? (emp.adjustedBonusCents / 100).toFixed(2) : '';
+          tbodyBonus.innerHTML = bonusState.employees.map((emp, empIndex) => {
+            const defaultAmount = (emp.defaultBonusCents / 100).toFixed(0);
+            
+            // 生成12個月的輸入框
+            const monthInputs = [];
+            for (let month = 1; month <= 12; month++) {
+              const monthData = emp.monthlyAdjustments?.[month] || null;
+              const value = monthData ? (monthData.bonusAmountCents / 100).toFixed(0) : '';
+              
+              monthInputs.push(`
+                <td>
+                  <input type="number" 
+                         class="bonus-input" 
+                         data-emp-index="${empIndex}" 
+                         data-month="${month}" 
+                         value="${value}" 
+                         placeholder="${defaultAmount}" 
+                         min="0" 
+                         step="1" 
+                         style="width: 70px; text-align: right;" />
+                </td>
+              `);
+            }
             
             return `
               <tr>
-                <td>${emp.name || emp.username}</td>
-                <td>${emp.baseSalary.toLocaleString()}</td>
-                <td>${defaultAmount}</td>
-                <td>
-                  <input type="number" class="bonus-input" data-index="${index}" 
-                         value="${adjustedAmount}" 
-                         placeholder="${defaultAmount}" 
-                         min="0" step="0.01" 
-                         style="width: 120px;" />
+                <td style="position: sticky; left: 0; background: white; font-weight: 500;">
+                  ${emp.name || emp.username}
                 </td>
-                <td>
-                  <input type="text" class="bonus-notes" data-index="${index}" 
-                         value="${emp.notes || ''}" 
-                         placeholder="備註" 
-                         style="width: 200px;" />
-                </td>
+                <td style="text-align: right;">${defaultAmount}</td>
+                ${monthInputs.join('')}
               </tr>
             `;
           }).join('');
@@ -1479,75 +1507,75 @@
 
         // 更新統計摘要
         function updateBonusSummary() {
-          const adjustedCount = bonusState.employees.filter(e => e.adjustedBonusCents !== null).length;
-          bonusSummary.textContent = `已調整人數 ${adjustedCount}`;
-        }
-
-        // 恢復預設
-        function resetAllBonus() {
-          if (!confirm('確定要將所有調整恢復為預設值嗎？')) return;
-          
+          let totalAdjustments = 0;
           bonusState.employees.forEach(emp => {
-            emp.adjustedBonusCents = null;
-            emp.notes = '';
+            if (emp.monthlyAdjustments) {
+              totalAdjustments += Object.keys(emp.monthlyAdjustments).length;
+            }
           });
-          renderBonusTable();
+          bonusAdjustedCount.textContent = totalAdjustments;
         }
 
-        // 儲存績效調整
-        async function saveMonthlyBonus() {
-          const month = document.getElementById('monthBonus').value;
-          if (!month) return;
+        // 儲存全年績效調整
+        async function saveYearlyBonus() {
+          const year = yearBonusInput.value;
+          if (!year) {
+            alert('請選擇年度');
+            return;
+          }
 
-          // 收集調整數據
-          const adjustments = [];
+          // 收集所有月份的調整數據
+          const allAdjustments = [];
           const inputs = tbodyBonus.querySelectorAll('.bonus-input');
-          const notesInputs = tbodyBonus.querySelectorAll('.bonus-notes');
 
-          inputs.forEach((input, index) => {
-            const emp = bonusState.employees[index];
+          inputs.forEach(input => {
+            const empIndex = parseInt(input.dataset.empIndex);
+            const month = parseInt(input.dataset.month);
+            const emp = bonusState.employees[empIndex];
+            
             if (!emp) return;
 
             const value = input.value.trim();
-            const notes = notesInputs[index].value.trim();
-
+            
+            // 只保存有填寫金額的項目
             if (value !== '') {
-              adjustments.push({
+              const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+              allAdjustments.push({
                 userId: emp.userId,
+                month: monthStr,
                 bonusAmountCents: Math.round(parseFloat(value) * 100),
-                notes: notes || null
+                notes: null
               });
             }
           });
 
           try {
-            const res = await fetch(`${apiBase}/admin/bonus/month/${month}`, {
+            const res = await fetch(`${apiBase}/admin/bonus/year/${year}`, {
               method: 'PUT',
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ adjustments })
+              body: JSON.stringify({ adjustments: allAdjustments })
             });
 
             const json = await res.json();
             if (res.ok && json.ok) {
-              alert('✅ 儲存成功');
-              // 清除薪资预览缓存，强制重新计算
-              console.log('[绩效奖金] 清除薪资预览缓存');
+              alert('✅ 全年績效調整已儲存');
+              // 清除薪资预览缓存
+              console.log('[全年绩效奖金] 清除薪资预览缓存');
               payrollCache.clear();
-              await loadMonthlyBonus();
+              await loadYearlyBonus();
             } else {
               alert(json.message || '儲存失敗');
             }
           } catch (err) {
-            console.error('saveMonthlyBonus error:', err);
+            console.error('saveYearlyBonus error:', err);
             alert('儲存失敗');
           }
         }
 
         // 綁定績效獎金事件
-        document.getElementById('monthBonus').addEventListener('change', loadMonthlyBonus);
-        btnResetBonus.addEventListener('click', resetAllBonus);
-        btnSaveBonus.addEventListener('click', saveMonthlyBonus);
+        yearBonusInput.addEventListener('change', loadYearlyBonus);
+        btnSaveBonus.addEventListener('click', saveYearlyBonus);
 
         // ==================== 年終獎金管理功能 ====================
 
@@ -1794,7 +1822,12 @@
             checkFinalized();
             loadItems(); // 載入薪資項目
             loadUsers(); // 載入員工列表
-            loadMonthlyBonus(); // 載入績效獎金
+            
+            // 設置績效獎金預設年份並載入
+            const currentYear = new Date().getFullYear();
+            yearBonusInput.value = currentYear;
+            loadYearlyBonus(); // 載入全年績效獎金
+            
             loadYearEndBonus(); // 載入年終獎金
             loadSystemSettings(); // 載入系統設定
             // ⚡ 自动保存预渲染
