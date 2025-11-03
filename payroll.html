@@ -117,7 +117,18 @@
         </div>
         <form id="itemForm" style="padding:24px;">
           <input type="hidden" id="itemTypeId" />
-          <input type="hidden" id="itemCode" />
+          
+          <div style="margin-bottom:20px;">
+            <label for="itemCode" style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">
+              項目代碼 <span style="color:#dc2626;">*</span>
+            </label>
+            <input id="itemCode" type="text" required maxlength="20" placeholder="例如：PERFORMANCE" 
+              style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;text-transform:uppercase;" />
+            <small style="color:#6b7280;display:block;margin-top:4px;">
+              ⚠️ <strong>重要：</strong>績效獎金請使用代碼 <code style="background:#f3f4f6;padding:2px 6px;border-radius:3px;">PERFORMANCE</code><br>
+              💡 其他項目建議使用英文大寫，例如：MEAL（伙食）、TRANSPORT（交通）、ATTENDANCE（全勤）
+            </small>
+          </div>
           
           <div style="margin-bottom:20px;">
             <label for="itemName" style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">
