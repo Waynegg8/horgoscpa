@@ -97,7 +97,6 @@
         <table class="services-table" id="servicesTable">
           <thead>
             <tr>
-              <th style="width: 30px;"></th>
               <th>服務名稱</th>
               <th>狀態</th>
               <th>年度總額</th>
@@ -107,7 +106,7 @@
           </thead>
           <tbody id="servicesList">
             <tr>
-              <td colspan="7" class="loading-text">載入中...</td>
+              <td colspan="5" class="loading-text">載入中...</td>
             </tr>
           </tbody>
         </table>
@@ -468,7 +467,6 @@
       
       const addServiceRowHtml = `
         <tr id="add-service-row" style="display: none;">
-          <td></td>
           <td>
             <select id="new-service-id" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
               <option value="">請選擇服務</option>
@@ -495,7 +493,7 @@
       `;
       
       if (!services || services.length === 0) {
-        tbody.innerHTML = addServiceRowHtml + '<tr><td colspan="6" class="no-data">暫無服務</td></tr>';
+        tbody.innerHTML = addServiceRowHtml + '<tr><td colspan="5" class="no-data">暫無服務</td></tr>';
         return;
       }
 
@@ -516,11 +514,6 @@
 
         return `
           <tr class="service-main-row">
-            <td class="expand-cell">
-              <button class="expand-btn" onclick="toggleBilling(${index}, ${svc.client_service_id})">
-                <span class="expand-icon" id="expand-icon-${index}">▶</span>
-              </button>
-            </td>
             <td><strong>${svc.service_name || '-'}</strong></td>
             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
             <td class="amount">$${(svc.year_total || 0).toLocaleString('zh-TW')}</td>
@@ -532,7 +525,7 @@
             </td>
           </tr>
           <tr class="component-detail-row" id="component-row-${index}" style="display: none;">
-            <td colspan="6" class="component-detail-cell">
+            <td colspan="5" class="component-detail-cell">
               <div class="component-content" id="component-content-${index}">
                 <p class="loading-text">載入中...</p>
               </div>

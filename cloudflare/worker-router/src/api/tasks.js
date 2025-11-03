@@ -1,5 +1,7 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 import { autoAdjustDependentTasks, recordStatusUpdate, recordDueDateAdjustment, getAdjustmentHistory } from "./task_adjustments.js";
+import { getKVCache, saveKVCache, deleteKVCacheByPrefix } from "../kv-cache-helper.js";
+import { generateCacheKey } from "../kv-cache-helper.js";
 
 export async function handleTasks(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -9,6 +11,20 @@ export async function handleTasks(request, env, me, requestId, url) {
 	if (method === "GET" && url.pathname.match(/\/tasks\/\d+$/)) {
 		const taskId = url.pathname.split("/").pop();
 		try {
+		// ⚡ KV 缓存逻辑
+		const cacheKey = generateCacheKey('task_detail', { taskId });
+		
+		// 1️⃣ 优先从 KV 获取
+		const kvCached = await getKVCache(env, cacheKey);
+		if (kvCached) {
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "查詢成功（KV缓存）⚡",
+				data: kvCached.data,
+				meta: { requestId, cache_source: 'kv' }
+			}, corsHeaders);
+		}
 		const task = await env.DATABASE.prepare(
 			`SELECT t.task_id, t.task_name, t.due_date, t.status, t.assignee_user_id, t.notes, t.client_service_id,
 			        t.completed_date, t.created_at, t.service_month, t.component_id,
@@ -66,13 +82,16 @@ export async function handleTasks(request, env, me, requestId, url) {
 				expected_completion_date: task.expected_completion_date || null,
 				is_overdue: Boolean(task.is_overdue),
 				last_status_update: task.last_status_update || null,
-				notes: task.notes || "",
-				completed_date: task.completed_date || null,
-				completed_at: task.completed_at || null,
-				created_at: task.created_at || null
-			};
-			
-			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+			notes: task.notes || "",
+			completed_date: task.completed_date || null,
+			completed_at: task.completed_at || null,
+			created_at: task.created_at || null
+		};
+		
+		// ⚡ 保存到 KV 缓存
+		await saveKVCache(env, cacheKey, 'task_detail', data, { ttl: 1800 }); // 30分钟过期
+		
+		return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
 			const body = { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } };
@@ -149,6 +168,25 @@ export async function handleTasks(request, env, me, requestId, url) {
 			const serviceYear = (params.get("service_year") || "").trim();
 			const serviceMonth = (params.get("service_month") || "").trim();
 			const hideCompleted = params.get("hide_completed") === "1";
+			
+			// ⚡ KV 缓存逻辑
+			const cacheKey = generateCacheKey('tasks_list', {
+				page, perPage, q, status, due, componentId, serviceYear, serviceMonth, 
+				hideCompleted: hideCompleted ? '1' : '0',
+				userId: me.is_admin ? 'all' : String(me.user_id)
+			});
+			
+			// 1️⃣ 优先从 KV 获取
+			const kvCached = await getKVCache(env, cacheKey);
+			if (kvCached) {
+				return jsonResponse(200, {
+					ok: true,
+					code: "SUCCESS",
+					message: "查詢成功（KV缓存）⚡",
+					data: kvCached.data.list,
+					meta: { ...kvCached.data.meta, requestId, cache_source: 'kv' }
+				}, corsHeaders);
+			}
 			const where = ["t.is_deleted = 0"];
 			const binds = [];
 			if (!me.is_admin && !componentId) {
@@ -238,11 +276,16 @@ export async function handleTasks(request, env, me, requestId, url) {
 				isOverdue: Boolean(r.is_overdue),
 				overdueReason: r.overdue_reason || "",
 				status: r.status,
-				notes: r.notes || "",
-				hasSop: Number(r.has_sop || 0) === 1,
-			}));
-			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
-			return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta }, corsHeaders);
+			notes: r.notes || "",
+			hasSop: Number(r.has_sop || 0) === 1,
+		}));
+		const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
+		
+		// ⚡ 保存到 KV 缓存
+		const cacheData = { list: data, meta: { page, perPage, total, hasNext: offset + perPage < total } };
+		await saveKVCache(env, cacheKey, 'tasks_list', cacheData, { ttl: 1800 }); // 30分钟过期
+		
+		return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
 			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };

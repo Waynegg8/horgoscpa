@@ -214,6 +214,20 @@ export async function handleClients(request, env, me, requestId, url) {
 	if (method === "GET" && matchSingle) {
 		const clientId = url.pathname.split("/").pop();
 		try {
+			// ⚡ KV 缓存逻辑
+			const cacheKey = generateCacheKey('client_detail', { clientId });
+			
+			// 1️⃣ 优先从 KV 获取
+			const kvCached = await getKVCache(env, cacheKey);
+			if (kvCached) {
+				return jsonResponse(200, {
+					ok: true,
+					code: "SUCCESS",
+					message: "查詢成功（KV缓存）⚡",
+					data: kvCached.data,
+					meta: { requestId, cache_source: 'kv' }
+				}, corsHeaders);
+			}
 			const row = await env.DATABASE.prepare(
 				`SELECT c.client_id, c.company_name, c.tax_registration_number, c.contact_person_1, c.contact_person_2, c.phone, c.email, 
 				        c.client_notes, c.payment_notes, c.created_at, c.updated_at,
@@ -299,31 +313,34 @@ export async function handleClients(request, env, me, requestId, url) {
 				};
 			}));
 			
-			const data = {
-				clientId: row.client_id,
-				companyName: row.company_name,
-				taxId: row.tax_registration_number,
-				contact_person_1: row.contact_person_1 || "",
-				contact_person_2: row.contact_person_2 || "",
-				assigneeUserId: row.assignee_id,
-				assigneeName: row.assignee_name || "",
-				phone: row.phone || "",
-				email: row.email || "",
-				clientNotes: row.client_notes || "",
-				paymentNotes: row.payment_notes || "",
-				tags: tags,
-				services: services,
-				createdAt: row.created_at,
-				updatedAt: row.updated_at
-			};
-			
-			return jsonResponse(200, { 
-				ok: true, 
-				code: "SUCCESS", 
-				message: "查詢成功", 
-				data, 
-				meta: { requestId } 
-			}, corsHeaders);
+		const data = {
+			clientId: row.client_id,
+			companyName: row.company_name,
+			taxId: row.tax_registration_number,
+			contact_person_1: row.contact_person_1 || "",
+			contact_person_2: row.contact_person_2 || "",
+			assigneeUserId: row.assignee_id,
+			assigneeName: row.assignee_name || "",
+			phone: row.phone || "",
+			email: row.email || "",
+			clientNotes: row.client_notes || "",
+			paymentNotes: row.payment_notes || "",
+			tags: tags,
+			services: services,
+			createdAt: row.created_at,
+			updatedAt: row.updated_at
+		};
+		
+		// ⚡ 保存到 KV 缓存
+		await saveKVCache(env, cacheKey, 'client_detail', data, { ttl: 3600 });
+		
+		return jsonResponse(200, { 
+			ok: true, 
+			code: "SUCCESS", 
+			message: "查詢成功", 
+			data, 
+			meta: { requestId } 
+		}, corsHeaders);
 			
 		} catch (err) {
 			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
