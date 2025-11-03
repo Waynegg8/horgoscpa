@@ -790,12 +790,18 @@
           const start = (calcState.page - 1) * calcState.perPage;
           const end = start + calcState.perPage;
           const pageRows = calcState.filtered.slice(start, end);
+          console.log('[渲染] calcState.filtered长度:', calcState.filtered.length);
+          console.log('[渲染] 当前页:', calcState.page, '每页:', calcState.perPage);
+          console.log('[渲染] pageRows长度:', pageRows.length);
           tbodyCalc.innerHTML = '';
           if (pageRows.length === 0){
+            console.warn('[渲染] ⚠ pageRows为空，显示"没有数据"');
             const tr = document.createElement('tr');
             tr.innerHTML = '<td colspan="13" class="muted">沒有符合條件的資料</td>';
             tbodyCalc.appendChild(tr);
           } else {
+            console.log('[渲染] ✓ 开始渲染', pageRows.length, '条记录');
+
             pageRows.forEach((r, idx) => {
               const tr = document.createElement('tr');
               const rowId = `payroll-row-${idx}`;
@@ -864,9 +870,12 @@
           const kw = (empSearchCalc.value || '').trim().toLowerCase();
           const st = statusCalc.value;
           let rows = calcState.all.slice();
+          console.log('[筛选] 原始数据:', rows.length, '条');
+          console.log('[筛选] 关键词:', kw, '状态:', st);
           if (kw) rows = rows.filter(r => (r.name || '').toLowerCase().includes(kw));
           if (st === 'complete') rows = rows.filter(r => r.isFullAttendance === true);
           if (st === 'pending') rows = rows.filter(r => r.isFullAttendance === false);
+          console.log('[筛选] 筛选后数据:', rows.length, '条');
           calcState.filtered = rows;
           calcState.page = 1;
           renderCalc();

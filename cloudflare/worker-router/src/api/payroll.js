@@ -150,7 +150,7 @@ async function getOvertimeDetails(env, userId, month) {
 
 	// 查询当月国定假日
 	const holidays = await env.DATABASE.prepare(`
-		SELECT holiday_date, holiday_name
+		SELECT holiday_date, name
 		FROM Holidays
 		WHERE holiday_date >= ?
 		  AND holiday_date <= ?
@@ -158,7 +158,7 @@ async function getOvertimeDetails(env, userId, month) {
 	
 	const holidayMap = {};
 	for (const h of (holidays.results || [])) {
-		holidayMap[h.holiday_date] = h.holiday_name;
+		holidayMap[h.holiday_date] = h.name;
 	}
 
 	// 工时类型定义
@@ -727,12 +727,12 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const detailResult = await getOvertimeDetails(env, userId, month);
 	const dailyOvertime = detailResult.dailyOvertime || [];
 	const totalCompHoursUsed = detailResult.totalCompHoursUsed || 0;
-	const effectiveTotalWeightedHours = detailResult.effectiveTotalWeightedHours || 0;
+	const effectiveWeightedHours = detailResult.effectiveTotalWeightedHours || 0;
 	const expiredCompHours = detailResult.expiredCompHours || 0;
 	const expiredCompPayCents = detailResult.expiredCompPayCents || 0;
 	
 	// 加班费 = 有效加权工时（已按FIFO扣除补休）× 时薪 + 到期补休转加班费
-	const overtimeCents = Math.round(effectiveTotalWeightedHours * hourlyRateCents) + expiredCompPayCents;
+	const overtimeCents = Math.round(effectiveWeightedHours * hourlyRateCents) + expiredCompPayCents;
 
 	// 8. 计算交通补贴
 	const transportResult = await calculateTransportAllowance(env, userId, month);
