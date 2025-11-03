@@ -56,9 +56,9 @@
                 <th>津貼合計</th>
                 <th>獎金合計</th>
                 <th>加班費</th>
-                <th>交通補貼</th>
-                <th>誤餐費</th>
-                <th>總薪資</th>
+                <th>應發薪資</th>
+                <th>扣款合計</th>
+                <th>實發薪資</th>
                 <th>全勤</th>
               </tr>
             </thead>
@@ -474,10 +474,10 @@
                 <td>${centsToTwd(r.regularAllowanceCents)}</td>
                 <td>${centsToTwd(r.bonusCents)}</td>
                 <td>${centsToTwd(r.overtimeCents)}</td>
-                <td>${centsToTwd(r.transportSubsidyCents || 0)}</td>
-                <td>${centsToTwd(r.mealAllowanceCents || 0)}</td>
-                <td>${centsToTwd(r.totalCents)}</td>
-                <td>${r.isFullAttendance ? '是' : '否'}</td>
+                <td style="font-weight:600;">${centsToTwd(r.grossSalaryCents)}</td>
+                <td style="color:#dc2626;">${r.deductionCents > 0 ? '-' : ''}${centsToTwd(r.deductionCents)}</td>
+                <td style="font-weight:600;color:#16a34a;">${centsToTwd(r.netSalaryCents)}</td>
+                <td>${r.isFullAttendance ? '✓ 是' : '否'}</td>
               `;
               tbodyCalc.appendChild(tr);
             });
