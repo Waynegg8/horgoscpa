@@ -579,6 +579,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 		const receipt_date = String(body?.receipt_date || "").trim();
 		const due_date_raw = String(body?.due_date || "").trim();
 		const total_amount = Number(body?.total_amount);
+		const withholding_amount = Number(body?.withholding_amount || 0);
 		let statusVal = String(body?.status || "unpaid").trim();
 		const notes = (body?.notes || "").trim();
 		const items = Array.isArray(body?.items) ? body.items : [];
@@ -677,12 +678,12 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			
 			// 插入收据
 			await env.DATABASE.prepare(
-				`INSERT INTO Receipts (receipt_id, client_id, receipt_date, due_date, total_amount, paid_amount, status, 
+				`INSERT INTO Receipts (receipt_id, client_id, receipt_date, due_date, total_amount, withholding_amount, paid_amount, status, 
 				 receipt_type, related_task_id, client_service_id, billing_month, service_month,
 				 is_auto_generated, notes, created_by, created_at, updated_at) 
-				 VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
+				 VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
 			).bind(
-				receipt_id, client_id, receipt_date, due_date, total_amount, statusVal, 
+				receipt_id, client_id, receipt_date, due_date, total_amount, withholding_amount, statusVal, 
 				receiptType, relatedTaskId, clientServiceId, billingMonth, serviceMonth,
 				notes, String(me.user_id), new Date().toISOString(), new Date().toISOString()
 			).run();

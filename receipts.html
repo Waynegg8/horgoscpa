@@ -335,6 +335,12 @@
           </div>
           
           <div style="display: grid; gap: 6px;">
+            <label for="withholdingAmount" style="font-weight: 500; font-size: 14px;">扣繳金額（選填）</label>
+            <input id="withholdingAmount" type="number" min="0" step="1" value="0" placeholder="預設為 0" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
+            <small style="color:#6b7280;margin-top:4px;display:block;font-size:12px;">💡 如有扣繳稅額請填寫，否則保持為 0</small>
+          </div>
+          
+          <div style="display: grid; gap: 6px;">
             <label for="notes" style="font-weight: 500; font-size: 14px;">備註</label>
             <textarea id="notes" rows="3" placeholder="可留空" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:6px;"></textarea>
           </div>
@@ -375,6 +381,7 @@
         const inputReceiptDate = document.getElementById('receiptDate');
         const inputDueDate = document.getElementById('dueDate');
         const inputAmount = document.getElementById('amount');
+        const inputWithholdingAmount = document.getElementById('withholdingAmount');
         const inputNotes = document.getElementById('notes');
         const formError = document.getElementById('formError');
         const serviceRow = document.getElementById('serviceRow');
@@ -956,6 +963,7 @@
           const receipt_date = inputReceiptDate.value;
           const due_date = inputDueDate.value;
           const total_amount = Number(inputAmount.value);
+          const withholding_amount = Number(inputWithholdingAmount.value) || 0;
           const notes = inputNotes.value.trim();
           
           // 新字段
@@ -984,6 +992,7 @@
               receipt_date,
               due_date,
               total_amount,
+              withholding_amount,
               status,
               notes,
               receipt_type
@@ -1137,7 +1146,7 @@
           .total-amount { 
             font-size: 13pt;
             font-weight: bold;
-            color: #DC143C;
+            color: #000;
             margin: 8mm 0 3mm 0;
           }
           .withholding { 
@@ -1205,13 +1214,28 @@
             const numberToChinese = (num) => {
               const digits = ['○', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
               if (num < 10) return digits[num];
-              if (num < 20) return '一' + digits[num - 10];
+              if (num === 10) return '十';
+              if (num < 20) return '十' + digits[num - 10];
               const tens = Math.floor(num / 10);
               const ones = num % 10;
-              return digits[tens] + (ones > 0 ? digits[ones] : '');
+              if (tens === 0) return digits[ones];
+              if (ones === 0) return digits[tens] + '十';
+              return digits[tens] + '十' + digits[ones];
             };
             
-            return `中　華　民　國　${numberToChinese(rocYear)}　年　${numberToChinese(month)}　月　${numberToChinese(day)}　日`;
+            // 转换三位数（如114年）
+            const convertYear = (year) => {
+              if (year < 10) return digits[year];
+              if (year < 100) return numberToChinese(year);
+              const hundreds = Math.floor(year / 100);
+              const remainder = year % 100;
+              const digits = ['○', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+              if (remainder === 0) return digits[hundreds] + '百';
+              if (remainder < 10) return digits[hundreds] + '百○' + digits[remainder];
+              return digits[hundreds] + '百' + numberToChinese(remainder);
+            };
+            
+            return `中　華　民　國　${convertYear(rocYear)}　年　${numberToChinese(month)}　月　${numberToChinese(day)}　日`;
           };
           
           let totalServiceFee = 0;
@@ -1283,7 +1307,7 @@
             
             <div class="total-amount">費用總計：${receipt.totalAmount.toLocaleString()} 元</div>
             
-            <div class="withholding">（本次扣繳金額：0 元）</div>
+            <div class="withholding">（本次扣繳金額：${receipt.withholdingAmount || 0} 元）</div>
             
             <div class="bank-section">款項請匯入下列帳戶，謝謝！</div>
             
@@ -1318,22 +1342,23 @@
           @page { size: A4; margin: 15mm 20mm; }
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
-            font-family: "Microsoft JhengHei", "PingFang TC", "SimSun", sans-serif; 
+            font-family: "DFKai-SB", "標楷體", "BiauKai", serif; 
             font-size: 11pt;
             padding: 0;
           }
           .receipt-page { page-break-after: auto; }
           .receipt-copy { 
             position: relative;
-            border: 1.5px solid #000; 
-            padding: 10mm 12mm;
+            border: 2px solid #000; 
+            padding: 10mm 12mm 10mm 10mm;
+            padding-right: 15mm;
             margin-bottom: 10mm;
             min-height: 115mm;
           }
           .receipt-copy:last-child { margin-bottom: 0; }
           .copy-label { 
             position: absolute; 
-            right: 5mm; 
+            right: 3mm; 
             top: 50%; 
             transform: translateY(-50%); 
             writing-mode: vertical-rl;
@@ -1341,11 +1366,19 @@
             font-weight: bold;
             letter-spacing: 8pt;
           }
-          .company-name { font-size: 16pt; font-weight: bold; text-align: center; margin-bottom: 8mm; }
+          .company-name { 
+            font-size: 18pt; 
+            font-weight: bold; 
+            text-align: center; 
+            margin-bottom: 2mm;
+            padding-bottom: 2mm;
+            border-bottom: 2px solid #000;
+          }
           .company-info { 
             font-size: 10pt; 
             text-align: right; 
             margin-bottom: 5mm;
+            margin-top: 3mm;
             line-height: 1.5;
           }
           .title { 
@@ -1353,12 +1386,14 @@
             font-weight: bold; 
             text-align: center; 
             letter-spacing: 18pt; 
-            margin: 5mm 0 8mm 0;
+            margin: 5mm 0 3mm 0;
+            padding-bottom: 3mm;
+            border-bottom: 2px solid #000;
           }
           .date { text-align: center; font-size: 11pt; margin-bottom: 5mm; }
           .received-from { font-size: 12pt; margin: 5mm 0; }
-          table { width: 100%; border-collapse: collapse; margin: 5mm 0; }
-          th, td { border: 1px solid #000; padding: 6pt 8pt; }
+          table { width: 100%; border-collapse: collapse; margin: 5mm 0; border: 2px solid #000; }
+          th, td { border: 1.5px solid #000; padding: 6pt 8pt; }
           th { text-align: center; font-weight: normal; font-size: 11pt; }
           td { font-size: 11pt; }
           .amount-chinese { font-weight: bold; padding: 8pt; font-size: 12pt; }
@@ -1367,12 +1402,6 @@
             justify-content: space-around; 
             margin: 8mm 0 5mm 0; 
             font-size: 12pt; 
-          }
-          .signature-line {
-            border-bottom: 1px solid #000;
-            width: 120pt;
-            display: inline-block;
-            margin-left: 8pt;
           }
           .bank-info { 
             font-size: 10pt; 
@@ -1525,8 +1554,8 @@
                 </table>
                 
                 <div class="signature">
-                  <div>會計師：<span class="signature-line"></span></div>
-                  <div>經收人：<span class="signature-line"></span></div>
+                  <div>會計師：　　　　　　　　　　　</div>
+                  <div>經收人：　　　　　　　　　　　</div>
                 </div>
                 
                 <div class="bank-info">
