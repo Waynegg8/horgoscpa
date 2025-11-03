@@ -76,7 +76,7 @@
         <div class="card">
           <div class="section-toolbar">
             <input id="itemSearch" type="search" placeholder="搜尋項目代碼/名稱…" />
-            <button type="button" class="btn primary" disabled>新增項目</button>
+            <button type="button" id="btnAddItem" class="btn primary">新增項目</button>
           </div>
           <table class="table" aria-label="薪資項目列表">
             <thead>
@@ -87,14 +87,73 @@
                 <th>經常性給與</th>
                 <th>金額固定</th>
                 <th>狀態</th>
+                <th>操作</th>
               </tr>
             </thead>
-            <tbody>
-              <tr><td colspan="6" class="muted">尚無資料</td></tr>
+            <tbody id="tbodyItems">
+              <tr><td colspan="7" class="muted">載入中…</td></tr>
             </tbody>
           </table>
         </div>
       </section>
+
+      <!-- 新增/編輯薪資項目對話框 -->
+      <dialog id="itemDialog" style="border-radius:8px;border:1px solid #e5e7eb;padding:0;max-width:500px;">
+        <div style="padding:20px;border-bottom:1px solid #e5e7eb;">
+          <h3 id="itemDialogTitle" style="margin:0;font-size:18px;">新增薪資項目</h3>
+        </div>
+        <form id="itemForm" style="padding:20px;">
+          <input type="hidden" id="itemTypeId" />
+          <div style="margin-bottom:16px;">
+            <label for="itemCode" style="display:block;margin-bottom:4px;font-weight:500;">項目代碼 *</label>
+            <input id="itemCode" type="text" required pattern="[A-Z0-9_]{1,20}" placeholder="例如 MEAL_ALLOWANCE" 
+              style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;" />
+            <small style="color:#6b7280;">僅支持大寫字母、數字和下劃線，最長20字符</small>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label for="itemName" style="display:block;margin-bottom:4px;font-weight:500;">項目名稱 *</label>
+            <input id="itemName" type="text" required maxlength="50" placeholder="例如 伙食津貼" 
+              style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;" />
+          </div>
+          <div style="margin-bottom:16px;">
+            <label for="itemCategory" style="display:block;margin-bottom:4px;font-weight:500;">類別 *</label>
+            <select id="itemCategory" required style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;">
+              <option value="">請選擇</option>
+              <option value="allowance">津貼</option>
+              <option value="bonus">獎金</option>
+              <option value="deduction">扣款</option>
+            </select>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:flex;align-items:center;cursor:pointer;">
+              <input type="checkbox" id="itemIsRegular" style="margin-right:8px;" />
+              <span>經常性給與（計入時薪基準）</span>
+            </label>
+            <small style="color:#6b7280;display:block;margin-top:4px;">勾選後將影響加班費和成本分析計算</small>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:flex;align-items:center;cursor:pointer;">
+              <input type="checkbox" id="itemIsFixed" style="margin-right:8px;" />
+              <span>金額固定</span>
+            </label>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label for="itemDescription" style="display:block;margin-bottom:4px;font-weight:500;">說明</label>
+            <textarea id="itemDescription" rows="3" maxlength="200" placeholder="選填" 
+              style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;"></textarea>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label for="itemDisplayOrder" style="display:block;margin-bottom:4px;font-weight:500;">顯示順序</label>
+            <input id="itemDisplayOrder" type="number" min="0" value="0" 
+              style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;" />
+          </div>
+          <div id="itemErrorMsg" style="color:#dc2626;margin-bottom:16px;display:none;"></div>
+          <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:16px;border-top:1px solid #e5e7eb;">
+            <button type="button" id="btnCancelItem" class="btn">取消</button>
+            <button type="submit" class="btn primary">儲存</button>
+          </div>
+        </form>
+      </dialog>
 
       <!-- 員工薪資設定 -->
       <section id="panel-emp" class="panel" role="tabpanel" aria-labelledby="tab-emp">
@@ -194,6 +253,19 @@
           bonus: document.getElementById('panel-bonus'),
           yearend: document.getElementById('panel-yearend'),
         };
+
+        // 薪資項目設定相關 DOM
+        const tbodyItems = document.getElementById('tbodyItems');
+        const itemSearch = document.getElementById('itemSearch');
+        const btnAddItem = document.getElementById('btnAddItem');
+        const itemDialog = document.getElementById('itemDialog');
+        const itemDialogTitle = document.getElementById('itemDialogTitle');
+        const itemForm = document.getElementById('itemForm');
+        const btnCancelItem = document.getElementById('btnCancelItem');
+        const itemErrorMsg = document.getElementById('itemErrorMsg');
+
+        // 薪資項目狀態
+        const itemsState = { all: [], filtered: [] };
 
         // 計算分頁 DOM
         const tbodyCalc = document.getElementById('tbodyCalc');
@@ -383,6 +455,187 @@
           }
         }
 
+        // ==================== 薪資項目設定功能 ====================
+
+        function getCategoryLabel(cat) {
+          const labels = { 'allowance': '津貼', 'bonus': '獎金', 'deduction': '扣款' };
+          return labels[cat] || cat;
+        }
+
+        function renderItems() {
+          tbodyItems.innerHTML = '';
+          if (itemsState.filtered.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = '<td colspan="7" class="muted">沒有符合條件的資料</td>';
+            tbodyItems.appendChild(tr);
+            return;
+          }
+
+          itemsState.filtered.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td><code>${item.itemCode}</code></td>
+              <td>${item.itemName}</td>
+              <td>${getCategoryLabel(item.category)}</td>
+              <td>${item.isRegularPayment ? '✓ 是' : '否'}</td>
+              <td>${item.isFixed ? '是' : '否'}</td>
+              <td>${item.isActive ? '<span style="color:#16a34a;">啟用</span>' : '<span style="color:#9ca3af;">停用</span>'}</td>
+              <td>
+                <button class="btn btn-sm" onclick="window.editItem(${item.itemTypeId})">編輯</button>
+                ${item.isActive ? 
+                  `<button class="btn btn-sm" onclick="window.toggleItemStatus(${item.itemTypeId}, false)">停用</button>` :
+                  `<button class="btn btn-sm" onclick="window.toggleItemStatus(${item.itemTypeId}, true)">啟用</button>`
+                }
+              </td>
+            `;
+            tbodyItems.appendChild(tr);
+          });
+        }
+
+        async function loadItems() {
+          tbodyItems.innerHTML = '<tr><td colspan="7" class="muted">載入中…</td></tr>';
+          try {
+            const res = await fetch(`${apiBase}/admin/salary-item-types`, { credentials: 'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/payroll'); return; }
+            if (res.status === 403) { infoBar.style.display = 'block'; return; }
+            const json = await res.json();
+            if (!json || json.ok !== true) throw new Error('載入失敗');
+            itemsState.all = json.data.items || [];
+            applyItemFilters();
+          } catch (err) {
+            console.error('loadItems error:', err);
+            tbodyItems.innerHTML = '<tr><td colspan="7" class="muted" style="color:#c0392b;">載入失敗</td></tr>';
+          }
+        }
+
+        function applyItemFilters() {
+          const kw = (itemSearch.value || '').trim().toLowerCase();
+          let items = itemsState.all.slice();
+          if (kw) {
+            items = items.filter(item => 
+              item.itemCode.toLowerCase().includes(kw) || 
+              item.itemName.toLowerCase().includes(kw)
+            );
+          }
+          itemsState.filtered = items;
+          renderItems();
+        }
+
+        function openItemDialog(item = null) {
+          itemErrorMsg.style.display = 'none';
+          itemErrorMsg.textContent = '';
+          
+          if (item) {
+            // 編輯模式
+            itemDialogTitle.textContent = '編輯薪資項目';
+            document.getElementById('itemTypeId').value = item.itemTypeId;
+            document.getElementById('itemCode').value = item.itemCode;
+            document.getElementById('itemCode').disabled = true; // 編輯時不允許修改代碼
+            document.getElementById('itemName').value = item.itemName;
+            document.getElementById('itemCategory').value = item.category;
+            document.getElementById('itemIsRegular').checked = item.isRegularPayment;
+            document.getElementById('itemIsFixed').checked = item.isFixed;
+            document.getElementById('itemDescription').value = item.description || '';
+            document.getElementById('itemDisplayOrder').value = item.displayOrder || 0;
+          } else {
+            // 新增模式
+            itemDialogTitle.textContent = '新增薪資項目';
+            itemForm.reset();
+            document.getElementById('itemTypeId').value = '';
+            document.getElementById('itemCode').disabled = false;
+          }
+          
+          itemDialog.showModal();
+        }
+
+        async function saveItem(e) {
+          e.preventDefault();
+          itemErrorMsg.style.display = 'none';
+
+          const itemTypeId = document.getElementById('itemTypeId').value;
+          const isEdit = !!itemTypeId;
+
+          const data = {
+            itemCode: document.getElementById('itemCode').value.trim(),
+            itemName: document.getElementById('itemName').value.trim(),
+            category: document.getElementById('itemCategory').value,
+            isRegularPayment: document.getElementById('itemIsRegular').checked,
+            isFixed: document.getElementById('itemIsFixed').checked,
+            description: document.getElementById('itemDescription').value.trim(),
+            displayOrder: parseInt(document.getElementById('itemDisplayOrder').value) || 0
+          };
+
+          try {
+            const url = isEdit 
+              ? `${apiBase}/admin/salary-item-types/${itemTypeId}`
+              : `${apiBase}/admin/salary-item-types`;
+            const method = isEdit ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+              method,
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data)
+            });
+
+            const json = await res.json();
+
+            if (res.ok && json.ok) {
+              itemDialog.close();
+              await loadItems();
+              alert(isEdit ? '更新成功！' : '新增成功！');
+            } else {
+              itemErrorMsg.textContent = json.message || '操作失敗';
+              itemErrorMsg.style.display = 'block';
+            }
+          } catch (err) {
+            console.error('saveItem error:', err);
+            itemErrorMsg.textContent = '操作失敗，請稍後再試';
+            itemErrorMsg.style.display = 'block';
+          }
+        }
+
+        async function toggleItemStatus(itemTypeId, newStatus) {
+          if (!confirm(`確定要${newStatus ? '啟用' : '停用'}此項目？`)) return;
+
+          try {
+            const res = await fetch(`${apiBase}/admin/salary-item-types/${itemTypeId}`, {
+              method: 'PUT',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ isActive: newStatus })
+            });
+
+            const json = await res.json();
+            if (res.ok && json.ok) {
+              await loadItems();
+            } else {
+              alert(json.message || '操作失敗');
+            }
+          } catch (err) {
+            console.error('toggleItemStatus error:', err);
+            alert('操作失敗');
+          }
+        }
+
+        // 全局函數供 onclick 使用
+        window.editItem = function(itemTypeId) {
+          const item = itemsState.all.find(i => i.itemTypeId === itemTypeId);
+          if (item) openItemDialog(item);
+        };
+
+        window.toggleItemStatus = toggleItemStatus;
+
+        // 綁定薪資項目事件
+        let searchTimer = null;
+        itemSearch.addEventListener('input', () => {
+          clearTimeout(searchTimer);
+          searchTimer = setTimeout(applyItemFilters, 300);
+        });
+        btnAddItem.addEventListener('click', () => openItemDialog());
+        btnCancelItem.addEventListener('click', () => itemDialog.close());
+        itemForm.addEventListener('submit', saveItem);
+
         // 預設月份為本月
         const now = new Date();
         monthInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -406,7 +659,8 @@
         ensureAdmin().then(isAdmin => { 
           if (isAdmin) { 
             loadPreview(); 
-            checkFinalized(); 
+            checkFinalized();
+            loadItems(); // 載入薪資項目
             // ⚡ 自动保存预渲染
             if (window.PagePrerender) {
               setTimeout(() => window.PagePrerender.autoSave('main', 2000), 1000);

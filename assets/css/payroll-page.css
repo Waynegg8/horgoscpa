@@ -8,9 +8,10 @@
 
 .payroll-toolbar { margin-top:12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
 .toolbar-spacer { flex:1; }
-.btn { padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer; }
+.btn { padding:8px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer; font-size:14px; }
 .btn.primary { background:#0ea5e9; border-color:#0ea5e9; color:#fff; }
 .btn:disabled { opacity:0.6; cursor:not-allowed; }
+.btn.btn-sm { padding:4px 8px; font-size:12px; }
 
 .payroll-tabs { margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; }
 .tab { padding:8px 12px; border:1px solid #e5e7eb; background:#fff; border-radius:999px; cursor:pointer; }
