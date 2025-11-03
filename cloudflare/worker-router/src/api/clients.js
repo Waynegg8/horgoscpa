@@ -137,10 +137,15 @@ export async function handleClients(request, env, me, requestId, url) {
 			
 			console.log('[API DEBUG] 最終返回服務列表:', data);
 			
-			// ⚡ 保存到缓存（不等待完成）
-			saveCache(env, cacheKey, 'client_services', data, {
-				scopeParams: { clientId }
-			}).catch(err => console.error('[CLIENTS] 服务项目缓存保存失败:', err));
+			// ⚡ 保存到缓存（同步等待）
+			try {
+				await saveCache(env, cacheKey, 'client_services', data, {
+					scopeParams: { clientId }
+				});
+				console.log('[CLIENTS] ✓ 客户服务项目缓存已保存');
+			} catch (err) {
+				console.error('[CLIENTS] ✗ 服务项目缓存保存失败:', err);
+			}
 			
 			return jsonResponse(200, {
 				ok: true,
