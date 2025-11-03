@@ -7,7 +7,7 @@ export async function handleSalaryItemTypes(request, env, me, requestId, url, pa
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 
 	// 检查管理员权限
-	if (!me || !me.isAdmin) {
+	if (!me || !me.is_admin) {
 		return jsonResponse(403, {
 			ok: false,
 			code: "FORBIDDEN",
