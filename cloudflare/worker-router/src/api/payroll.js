@@ -1,12 +1,14 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+import { getSettingValue } from "./payroll-settings.js";
 
 /**
  * 计算员工的时薪基准
- * 时薪基准 = (底薪 + 经常性给与) ÷ 240
+ * 时薪基准 = (底薪 + 经常性给与) ÷ 时薪除数（从系统设定读取，默认240）
  */
-function calculateHourlyRate(baseSalaryCents, regularPaymentCents) {
+async function calculateHourlyRate(env, baseSalaryCents, regularPaymentCents) {
+	const divisor = await getSettingValue(env, 'hourly_rate_divisor', 240);
 	const totalCents = baseSalaryCents + regularPaymentCents;
-	return Math.round(totalCents / 240); // 四舍五入到整数（分）
+	return Math.round(totalCents / divisor); // 四舍五入到整数（分）
 }
 
 /**
@@ -35,32 +37,40 @@ async function calculateOvertimeAndMeal(env, userId, month, hourlyRateCents) {
 		  AND work_date <= ?
 	`).bind(userId, firstDay, lastDayStr).all();
 
+	// 从系统设定读取倍率
+	const multiplier_1_5x = await getSettingValue(env, 'overtime_1_5x_multiplier', 1.5);
+	const multiplier_2x = await getSettingValue(env, 'overtime_2x_multiplier', 2.0);
+	const multiplier_3x = await getSettingValue(env, 'overtime_3x_multiplier', 3.0);
+
 	let totalOvertimeCents = 0;
 	let totalOvertimeHours = 0;
 	let mealAllowanceCount = 0;
+
+	// 从系统设定读取误餐费条件
+	const minOvertimeHours = await getSettingValue(env, 'meal_allowance_min_overtime_hours', 1.5);
 
 	for (const ts of (timesheets.results || [])) {
 		const ot_1_5 = ts.overtime_1_5x || 0;
 		const ot_2 = ts.overtime_2x || 0;
 		const ot_3 = ts.overtime_3x || 0;
 
-		// 计算加班费
-		totalOvertimeCents += Math.round(ot_1_5 * hourlyRateCents * 1.5);
-		totalOvertimeCents += Math.round(ot_2 * hourlyRateCents * 2);
-		totalOvertimeCents += Math.round(ot_3 * hourlyRateCents * 3);
+		// 计算加班费（使用系统设定的倍率）
+		totalOvertimeCents += Math.round(ot_1_5 * hourlyRateCents * multiplier_1_5x);
+		totalOvertimeCents += Math.round(ot_2 * hourlyRateCents * multiplier_2x);
+		totalOvertimeCents += Math.round(ot_3 * hourlyRateCents * multiplier_3x);
 
 		const totalOvertimeThisDay = ot_1_5 + ot_2 + ot_3;
 		totalOvertimeHours += totalOvertimeThisDay;
 
-		// 误餐费判定：平日加班满 1.5 小时
-		if (totalOvertimeThisDay >= 1.5) {
+		// 误餐费判定：加班满指定时数
+		if (totalOvertimeThisDay >= minOvertimeHours) {
 			mealAllowanceCount += 1;
 		}
 	}
 
-	// 读取误餐费设定（从系统设定或默认 100 元/次）
-	const mealAllowancePerTime = 100 * 100; // 100 元 = 10000 分
-	const mealAllowanceCents = mealAllowanceCount * mealAllowancePerTime;
+	// 从系统设定读取误餐费单价
+	const mealAllowancePerTime = await getSettingValue(env, 'meal_allowance_per_time', 100);
+	const mealAllowanceCents = mealAllowanceCount * (mealAllowancePerTime * 100); // 元转分
 
 	return {
 		overtimeCents: totalOvertimeCents,
@@ -91,9 +101,9 @@ async function calculateTransportAllowance(env, userId, month) {
 
 	const totalKm = trips?.total_km || 0;
 	
-	// 读取交通补贴单价（从系统设定或默认 5 元/公里）
-	const ratePerKm = 5 * 100; // 5 元 = 500 分
-	const transportCents = Math.round(totalKm * ratePerKm);
+	// 从系统设定读取交通补贴单价
+	const ratePerKm = await getSettingValue(env, 'transport_rate_per_km', 5);
+	const transportCents = Math.round(totalKm * ratePerKm * 100); // 元转分
 
 	return {
 		transportCents,
@@ -136,14 +146,19 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents) {
 		}
 	}
 
-	// 日薪 = 底薪 / 30
-	const dailySalaryCents = Math.round(baseSalaryCents / 30);
+	// 从系统设定读取日薪计算除数和扣款比例
+	const dailySalaryDivisor = await getSettingValue(env, 'leave_daily_salary_divisor', 30);
+	const sickLeaveRate = await getSettingValue(env, 'sick_leave_deduction_rate', 1.0);
+	const personalLeaveRate = await getSettingValue(env, 'personal_leave_deduction_rate', 1.0);
+
+	// 日薪 = 底薪 / 除数
+	const dailySalaryCents = Math.round(baseSalaryCents / dailySalaryDivisor);
 	
-	// 病假扣款（通常全额扣除）
-	const sickDeductionCents = Math.round(sickDays * dailySalaryCents);
+	// 病假扣款（按比例扣除）
+	const sickDeductionCents = Math.round(sickDays * dailySalaryCents * sickLeaveRate);
 	
-	// 事假扣款（全额扣除）
-	const personalDeductionCents = Math.round(personalDays * dailySalaryCents);
+	// 事假扣款（按比例扣除）
+	const personalDeductionCents = Math.round(personalDays * dailySalaryCents * personalLeaveRate);
 
 	return {
 		leaveDeductionCents: sickDeductionCents + personalDeductionCents,
@@ -245,7 +260,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 	}
 
 	// 4. 计算时薪基准（用于加班费计算）
-	const hourlyRateCents = calculateHourlyRate(baseSalaryCents, regularAllowanceCents);
+	const hourlyRateCents = await calculateHourlyRate(env, baseSalaryCents, regularAllowanceCents);
 
 	// 5. 判定全勤
 	const isFullAttendance = await checkFullAttendance(env, userId, month);
@@ -546,7 +561,7 @@ async function getPayrollRun(env, requestId, corsHeaders, url) {
 
 	if (!run) {
 		return jsonResponse(404, {
-			ok: false,
+		ok: false, 
 			code: "NOT_FOUND",
 			message: "该月份尚未产制",
 			meta: { requestId }
@@ -560,7 +575,7 @@ async function getPayrollRun(env, requestId, corsHeaders, url) {
 			month: run.month,
 			createdAt: run.created_at
 		},
-		meta: { requestId }
+		meta: { requestId } 
 	}, corsHeaders);
 }
 

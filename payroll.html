@@ -33,6 +33,7 @@
         <button class="tab" role="tab" aria-selected="false" data-tab="emp">員工薪資設定</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="bonus">績效獎金調整</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="yearend">年終獎金</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="settings">⚙️ 系統設定</button>
       </nav>
     </div>
 
@@ -290,6 +291,126 @@
           </table>
         </div>
       </section>
+
+      <!-- 系統設定 -->
+      <section id="panel-settings" class="panel" role="tabpanel" aria-labelledby="tab-settings">
+        <div class="card" style="max-width: 1000px; margin: 0 auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div>
+              <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600;">⚙️ 薪資計算系統設定</h2>
+              <p style="margin: 0.5rem 0 0; color: #666; font-size: 0.875rem;">調整薪資計算的核心參數</p>
+            </div>
+            <button id="btnSaveSettings" class="btn primary">💾 儲存所有設定</button>
+          </div>
+
+          <!-- 誤餐費設定 -->
+          <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 1rem; font-size: 1.125rem; font-weight: 600; color: #166534;">🍱 誤餐費設定</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">誤餐費單價（元/次）</label>
+                <input id="setting_meal_allowance_per_time" type="number" min="0" step="1" 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+                <small style="color: #666; display: block; margin-top: 0.25rem;">平日加班滿條件時發放的誤餐費金額</small>
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">最低加班時數（小時）</label>
+                <input id="setting_meal_allowance_min_overtime_hours" type="number" min="0" step="0.5" 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+                <small style="color: #666; display: block; margin-top: 0.25rem;">達到此加班時數才發放誤餐費</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- 交通補貼設定 -->
+          <div style="background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 1rem; font-size: 1.125rem; font-weight: 600; color: #1e40af;">🚗 交通補貼設定</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">交通補貼單價（元/公里）</label>
+                <input id="setting_transport_rate_per_km" type="number" min="0" step="0.1" 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+                <small style="color: #666; display: block; margin-top: 0.25rem;">外出公務時按公里數計算的補貼</small>
+              </div>
+              <div style="display: flex; align-items: center; color: #666;">
+                <p style="margin: 0;">💡 外出記錄需在「外出申請」中登記，並經核准後計入交通補貼</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 請假扣款設定 -->
+          <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 1rem; font-size: 1.125rem; font-weight: 600; color: #991b1b;">📅 請假扣款設定</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">病假扣款比例</label>
+                <input id="setting_sick_leave_deduction_rate" type="number" min="0" max="1" step="0.1" 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+                <small style="color: #666; display: block; margin-top: 0.25rem;">1.0 = 全額扣除，0.5 = 扣除50%</small>
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">事假扣款比例</label>
+                <input id="setting_personal_leave_deduction_rate" type="number" min="0" max="1" step="0.1" 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+                <small style="color: #666; display: block; margin-top: 0.25rem;">通常為 1.0（全額扣除）</small>
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">日薪計算除數</label>
+                <input id="setting_leave_daily_salary_divisor" type="number" min="1" step="1" 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+                <small style="color: #666; display: block; margin-top: 0.25rem;">日薪 = 底薪 ÷ 此數字（通常為30）</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- 加班費設定 -->
+          <div style="background: #fefce8; border: 1px solid #fde047; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 1rem; font-size: 1.125rem; font-weight: 600; color: #854d0e;">⏰ 加班費倍率設定</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">平日加班費倍率</label>
+                <input id="setting_overtime_1_5x_multiplier" type="number" min="0" step="0.1" 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+                <small style="color: #666; display: block; margin-top: 0.25rem;">平日延長工時（通常為1.5倍）</small>
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">休息日加班費倍率</label>
+                <input id="setting_overtime_2x_multiplier" type="number" min="0" step="0.1" 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+                <small style="color: #666; display: block; margin-top: 0.25rem;">休息日工作（通常為2倍）</small>
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">國定假日加班費倍率</label>
+                <input id="setting_overtime_3x_multiplier" type="number" min="0" step="0.1" 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+                <small style="color: #666; display: block; margin-top: 0.25rem;">國定假日工作（通常為3倍）</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- 時薪計算設定 -->
+          <div style="background: #f5f3ff; border: 1px solid #c4b5fd; border-radius: 8px; padding: 1.5rem;">
+            <h3 style="margin: 0 0 1rem; font-size: 1.125rem; font-weight: 600; color: #5b21b6;">🧮 時薪計算設定</h3>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">時薪計算除數</label>
+                <input id="setting_hourly_rate_divisor" type="number" min="1" step="1" 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+                <small style="color: #666; display: block; margin-top: 0.25rem;">依勞基法為 240 小時/月</small>
+              </div>
+              <div style="display: flex; align-items: center; color: #666;">
+                <p style="margin: 0;">📌 時薪 = (底薪 + 經常性給與) ÷ 除數，用於計算加班費基準</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem; padding: 1rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+            <p style="margin: 0; color: #92400e; font-size: 0.875rem;">
+              ⚠️ <strong>重要提示：</strong>修改這些設定會影響所有未來的薪資計算。建議在月初或測試環境中調整，確認無誤後再套用。
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
 
     <script>
@@ -306,6 +427,7 @@
           emp: document.getElementById('panel-emp'),
           bonus: document.getElementById('panel-bonus'),
           yearend: document.getElementById('panel-yearend'),
+          settings: document.getElementById('panel-settings'),
         };
 
         // 薪資項目設定相關 DOM
@@ -1228,6 +1350,76 @@
         yearInput.addEventListener('change', loadYearEndBonus);
         btnSaveYearend.addEventListener('click', saveYearEndBonus);
 
+        // ==================== 系統設定功能 ====================
+
+        const btnSaveSettings = document.getElementById('btnSaveSettings');
+        let systemSettings = [];
+
+        // 加載系統設定
+        async function loadSystemSettings() {
+          try {
+            const res = await fetch(`${apiBase}/admin/payroll-settings`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            systemSettings = json.data?.settings || [];
+            renderSystemSettings();
+          } catch (err) {
+            console.error('loadSystemSettings error:', err);
+            alert('載入系統設定失敗');
+          }
+        }
+
+        // 渲染系統設定
+        function renderSystemSettings() {
+          systemSettings.forEach(setting => {
+            const inputId = `setting_${setting.settingKey}`;
+            const input = document.getElementById(inputId);
+            if (input) {
+              input.value = setting.settingValue;
+            }
+          });
+        }
+
+        // 儲存系統設定
+        async function saveSystemSettings() {
+          if (!confirm('確定要更新系統設定嗎？\n\n這會影響未來所有的薪資計算。')) return;
+
+          const settings = [];
+          systemSettings.forEach(setting => {
+            const inputId = `setting_${setting.settingKey}`;
+            const input = document.getElementById(inputId);
+            if (input) {
+              settings.push({
+                settingKey: setting.settingKey,
+                settingValue: input.value
+              });
+            }
+          });
+
+          try {
+            const res = await fetch(`${apiBase}/admin/payroll-settings`, {
+              method: 'PUT',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ settings })
+            });
+
+            const json = await res.json();
+            if (res.ok && json.ok) {
+              alert('✅ 設定已更新');
+              await loadSystemSettings();
+            } else {
+              alert(json.message || '更新失敗');
+            }
+          } catch (err) {
+            console.error('saveSystemSettings error:', err);
+            alert('更新失敗');
+          }
+        }
+
+        // 綁定系統設定事件
+        btnSaveSettings.addEventListener('click', saveSystemSettings);
+
         // 預設月份為本月
         const now = new Date();
         monthInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -1259,6 +1451,7 @@
             loadUsers(); // 載入員工列表
             loadMonthlyBonus(); // 載入績效獎金
             loadYearEndBonus(); // 載入年終獎金
+            loadSystemSettings(); // 載入系統設定
             // ⚡ 自动保存预渲染
             if (window.PagePrerender) {
               setTimeout(() => window.PagePrerender.autoSave('main', 2000), 1000);
