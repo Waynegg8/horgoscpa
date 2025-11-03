@@ -463,14 +463,46 @@
           document.querySelectorAll('.payroll-toolbar .btn, .section-toolbar input, .section-toolbar select, .section-toolbar button').forEach(el=>{ el.disabled = !enabled; });
         }
 
+        // TAB切换逻辑（防止重复绑定）
+        function switchTab(targetKey) {
+          if (!targetKey || !panels[targetKey]) {
+            console.error('[TAB] 无效的TAB:', targetKey);
+            return;
+          }
+          
+          // 更新TAB按钮状态
+          tabs.forEach(b => {
+            const key = b.getAttribute('data-tab');
+            if (key === targetKey) {
+              b.classList.add('active');
+              b.setAttribute('aria-selected', 'true');
+            } else {
+              b.classList.remove('active');
+              b.setAttribute('aria-selected', 'false');
+            }
+          });
+          
+          // 更新面板显示
+          Object.entries(panels).forEach(([k, el]) => {
+            if (k === targetKey) {
+              el.classList.add('show');
+              el.style.display = 'block';
+            } else {
+              el.classList.remove('show');
+              el.style.display = 'none';
+            }
+          });
+          
+          console.log('[TAB] 已切换到:', targetKey);
+        }
+        
+        // 绑定TAB点击事件
         tabs.forEach(btn => {
-          btn.addEventListener('click', ()=>{
-            tabs.forEach(b=>b.classList.remove('active'));
-            btn.classList.add('active');
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const key = btn.getAttribute('data-tab');
-            Object.entries(panels).forEach(([k,el])=>{
-              if (k === key) el.classList.add('show'); else el.classList.remove('show');
-            });
+            switchTab(key);
           });
         });
 
