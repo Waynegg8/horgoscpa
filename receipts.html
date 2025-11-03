@@ -16,7 +16,35 @@
     <script src="/assets/js/prerender.js"></script>
     <script src="/assets/js/page-prerender.js"></script>
     
+    <!-- PDF 生成库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
+    <!-- 中文字体支持 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/fonts/NotoSansCJKtc-Regular-normal.js"></script>
+    
     <style>
+      /* Sticky Footer */
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      
+      body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+      
+      .clients-content {
+        flex: 1 0 auto;
+      }
+      
+      #navbar-placeholder,
+      footer,
+      #footer-placeholder {
+        flex-shrink: 0;
+      }
+      
       /* 日期選擇器 - 整框可點擊 */
       input[type="date"] {
         -webkit-appearance: none !important;
@@ -141,25 +169,23 @@
     <main class="clients-content" style="padding:24px;">
       <section class="clients-card" style="background:#fff;border:1px solid rgba(15,23,42,0.08);border-radius:10px;padding:16px;">
         <!-- 搜尋篩選工具列 -->
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <div class="toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-            <input id="q" type="search" placeholder="搜尋客戶/統編/收據號…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:240px;" />
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <label style="font-size: 14px; color: #6b7280;">起</label>
-              <input id="dateFrom" type="date" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" />
-            </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <label style="font-size: 14px; color: #6b7280;">迄</label>
-              <input id="dateTo" type="date" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" />
-            </div>
-            <select id="status" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
-              <option value="all">全部狀態</option>
-              <option value="unpaid">未收款</option>
-              <option value="paid">已收款</option>
-              <option value="overdue">逾期</option>
-            </select>
-            <button id="btn-new" class="clients-btn" style="padding:8px 12px;" type="button">+ 新增收據</button>
+        <div class="toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <input id="q" type="search" placeholder="搜尋客戶/統編/收據號…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:240px;" />
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 14px; color: #6b7280;">起</label>
+            <input id="dateFrom" type="date" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" />
           </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 14px; color: #6b7280;">迄</label>
+            <input id="dateTo" type="date" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" />
+          </div>
+          <select id="status" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+            <option value="all">全部狀態</option>
+            <option value="unpaid">未收款</option>
+            <option value="paid">已收款</option>
+            <option value="overdue">逾期</option>
+          </select>
+          <button id="btn-new" class="clients-btn" style="padding:8px 12px;" type="button">+ 新增收據</button>
         </div>
 
         <!-- 開收據提醒 -->
@@ -552,7 +578,13 @@
               <td style="padding:12px;font-size:14px;color:#6b7280;">${r.receiptDate || '—'}</td>
               <td style="padding:12px;font-size:14px;color:#6b7280;">${r.dueDate || '—'}</td>
               <td style="padding:12px;text-align:center;"><span style="${badgeStyle}">${txt}</span></td>
-              <td style="padding:12px;text-align:center;"><a href="/internal/receipt-detail?id=${encodeURIComponent(r.receiptId)}" style="color:#3b82f6;text-decoration:none;font-size:14px;">查看詳情</a></td>
+              <td style="padding:12px;text-align:center;">
+                <div style="display:flex;gap:8px;justify-content:center;align-items:center;">
+                  <a href="/internal/receipt-detail?id=${encodeURIComponent(r.receiptId)}" style="color:#3b82f6;text-decoration:none;font-size:14px;">查看</a>
+                  <span style="color:#d1d5db;">|</span>
+                  <button onclick="generateReceiptPDF('${r.receiptId}')" style="background:none;border:none;color:#10b981;cursor:pointer;font-size:14px;padding:0;">下載PDF</button>
+                </div>
+              </td>
             `;
             
             // hover效果
@@ -848,6 +880,205 @@
         
         init();
       })();
+      
+      // === PDF 生成功能 ===
+      async function generateReceiptPDF(receiptId) {
+        try {
+          // 获取收据详情
+          const response = await fetch(`/internal/api/v1/receipts/${receiptId}`);
+          const result = await response.json();
+          
+          if (!result.ok || !result.data) {
+            alert('無法載入收據資料');
+            return;
+          }
+          
+          const receipt = result.data;
+          
+          // 初始化 jsPDF
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          
+          // 设置中文字体
+          doc.setFont("NotoSansCJKtc-Regular", "normal");
+          
+          // 页面宽度
+          const pageWidth = doc.internal.pageSize.getWidth();
+          
+          // === 顶部：公司名称 ===
+          doc.setFontSize(20);
+          doc.setTextColor(139, 117, 66); // 金色
+          doc.text('霍爾果斯會計師事務所', pageWidth / 2, 25, { align: 'center' });
+          
+          // 下划线
+          doc.setDrawColor(139, 117, 66);
+          doc.setLineWidth(0.5);
+          doc.line(60, 27, 150, 27);
+          
+          doc.setFontSize(11);
+          doc.setTextColor(100, 100, 100);
+          doc.text('Hergs CPA Firm', pageWidth / 2, 33, { align: 'center' });
+          
+          // === 标题：請款單 ===
+          doc.setFontSize(18);
+          doc.setTextColor(0, 0, 0);
+          doc.text('請款單', pageWidth / 2, 50, { align: 'center' });
+          
+          // === 客户名称 ===
+          doc.setFontSize(12);
+          doc.text(\`客户名稱：\${receipt.clientName}\`, 20, 65);
+          
+          // === 表格数据 ===
+          const tableData = [];
+          
+          if (receipt.items && receipt.items.length > 0) {
+            // 如果有明细项目
+            receipt.items.forEach(item => {
+              tableData.push([
+                item.serviceName,
+                \`$\${item.unitPrice.toLocaleString()}\`,
+                '$-',
+                '$-'
+              ]);
+            });
+          } else {
+            // 没有明细，显示总金额
+            tableData.push([
+              '服務費用',
+              \`$\${receipt.totalAmount.toLocaleString()}\`,
+              '$-',
+              '$-'
+            ]);
+          }
+          
+          // 添加合计行
+          const totalRow = [
+            '合計',
+            \`$\${receipt.totalAmount.toLocaleString()}\`,
+            '$-',
+            '$-'
+          ];
+          
+          // 生成表格
+          doc.autoTable({
+            startY: 75,
+            head: [['項目', '代辦費\\n(新台幣)', '規費\\n(新台幣)', '雜費\\n(新台幣)']],
+            body: [...tableData, totalRow],
+            theme: 'grid',
+            headStyles: {
+              fillColor: [255, 255, 255],
+              textColor: [0, 0, 0],
+              lineWidth: 0.5,
+              lineColor: [0, 0, 0],
+              halign: 'center',
+              fontStyle: 'normal'
+            },
+            bodyStyles: {
+              textColor: [0, 0, 0],
+              lineWidth: 0.5,
+              lineColor: [0, 0, 0]
+            },
+            columnStyles: {
+              0: { cellWidth: 80, halign: 'left' },
+              1: { cellWidth: 35, halign: 'right' },
+              2: { cellWidth: 35, halign: 'right' },
+              3: { cellWidth: 35, halign: 'right' }
+            },
+            margin: { left: 20, right: 20 },
+            styles: {
+              font: "NotoSansCJKtc-Regular",
+              fontSize: 11
+            }
+          });
+          
+          // 获取表格结束位置
+          let yPos = doc.lastAutoTable.finalY + 10;
+          
+          // === 費用總計 ===
+          doc.setFontSize(14);
+          doc.setTextColor(0, 0, 0); // 黑色
+          doc.text(\`費用總計：\${receipt.totalAmount.toLocaleString()} 元\`, 20, yPos);
+          
+          yPos += 10;
+          
+          // === 扣繳金額 ===
+          doc.setFontSize(11);
+          doc.setTextColor(0, 0, 0);
+          doc.text('(本次扣繳金額：0 元)', 20, yPos);
+          
+          yPos += 10;
+          
+          // === 謝謝 ===
+          doc.text('款項請匯入下列帳戶，謝謝！', 20, yPos);
+          
+          yPos += 15;
+          
+          // === 银行信息 ===
+          doc.setFontSize(11);
+          doc.text('戶名：霍爾果斯會計師事務所', 20, yPos);
+          yPos += 8;
+          doc.text('銀行：永豐銀行台中分行', 20, yPos);
+          yPos += 8;
+          doc.text('銀行代號：807', 20, yPos);
+          yPos += 8;
+          doc.text('帳號：003-018-0019011-7', 20, yPos);
+          
+          // === 日期 ===
+          yPos = 270; // 固定在页面底部
+          const rocDate = convertToROCDate(receipt.receiptDate);
+          doc.setFontSize(11);
+          doc.text(rocDate, pageWidth / 2, yPos, { align: 'center' });
+          
+          // 保存PDF
+          doc.save(\`請款單_\${receipt.clientName}_\${receiptId}.pdf\`);
+          
+        } catch (error) {
+          console.error('生成PDF失敗:', error);
+          alert('生成PDF失敗，請稍後再試');
+        }
+      }
+      
+      // 转换为民国纪年
+      function convertToROCDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        const rocYear = date.getFullYear() - 1911;
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        
+        const monthChinese = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
+        const dayChinese = convertNumberToChinese(day);
+        
+        return \`中華民國\${convertNumberToChinese(rocYear)}年\${monthChinese[month]}月\${dayChinese}日\`;
+      }
+      
+      // 数字转中文
+      function convertNumberToChinese(num) {
+        const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+        const units = ['', '十', '百'];
+        
+        if (num < 10) return digits[num];
+        if (num < 20) return '十' + (num === 10 ? '' : digits[num % 10]);
+        if (num < 100) {
+          const tens = Math.floor(num / 10);
+          const ones = num % 10;
+          return digits[tens] + '十' + (ones === 0 ? '' : digits[ones]);
+        }
+        if (num < 1000) {
+          const hundreds = Math.floor(num / 100);
+          const remainder = num % 100;
+          let result = digits[hundreds] + '百';
+          if (remainder > 0) {
+            if (remainder < 10) result += '零';
+            result += convertNumberToChinese(remainder);
+          }
+          return result;
+        }
+        return num.toString();
+      }
+      
+      // 将函数暴露到全局作用域
+      window.generateReceiptPDF = generateReceiptPDF;
     </script>
     <script src="/assets/js/components/bootstrap.js?v=3"></script>
   </body>
