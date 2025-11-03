@@ -283,12 +283,24 @@
           </div>
           
           <div style="display: grid; gap: 6px;">
-            <label for="amount" style="font-weight: 500; font-size: 14px;">金額</label>
+            <label style="font-weight: 500; font-size: 14px;">收據明細（選填）</label>
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;">
+              <div id="receiptItems" style="display:grid;gap:12px;margin-bottom:12px;">
+                <!-- 明细项目将动态添加在这里 -->
+              </div>
+              <button type="button" id="btn-add-item" style="width:100%;padding:8px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;">+ 新增明細項目</button>
+              <small style="color:#6b7280;margin-top:8px;display:block;font-size:12px;">如不填寫明細，將使用下方總金額</small>
+            </div>
+          </div>
+          
+          <div style="display: grid; gap: 6px;">
+            <label for="amount" style="font-weight: 500; font-size: 14px;">總金額（必填）</label>
             <div style="display:flex;gap:8px;align-items:center;">
               <input id="amount" type="number" min="1" step="1" placeholder="例如 10000" style="flex:1;padding:10px;border:1px solid #d1d5db;border-radius:6px;" />
               <button type="button" id="btn-suggest-amount" class="btn btn-secondary" style="display:none;">建議金額</button>
             </div>
             <div id="suggestedAmountInfo" style="color:#10b981;margin-top:4px;display:none;font-size:12px;"></div>
+            <div id="itemsTotalInfo" style="color:#6b7280;margin-top:4px;display:none;font-size:12px;"></div>
           </div>
           
           <div style="display: grid; gap: 6px;">
@@ -342,7 +354,11 @@
         let allReceipts = [];
         let allClients = [];
         let currentClientServices = [];
+        let receiptItems = []; // 收据明细项目
         const tbody = document.getElementById('tbody');
+        const receiptItemsContainer = document.getElementById('receiptItems');
+        const btnAddItem = document.getElementById('btn-add-item');
+        const itemsTotalInfo = document.getElementById('itemsTotalInfo');
 
         // 載入應開收據提醒
         async function loadReceiptReminders() {
@@ -579,10 +595,12 @@
               <td style="padding:12px;font-size:14px;color:#6b7280;">${r.dueDate || '—'}</td>
               <td style="padding:12px;text-align:center;"><span style="${badgeStyle}">${txt}</span></td>
               <td style="padding:12px;text-align:center;">
-                <div style="display:flex;gap:8px;justify-content:center;align-items:center;">
+                <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;">
                   <a href="/internal/receipt-detail?id=${encodeURIComponent(r.receiptId)}" style="color:#3b82f6;text-decoration:none;font-size:14px;">查看</a>
                   <span style="color:#d1d5db;">|</span>
-                  <button onclick="generateReceiptPDF('${r.receiptId}')" style="background:none;border:none;color:#10b981;cursor:pointer;font-size:14px;padding:0;">下載PDF</button>
+                  <button onclick="generateInvoicePDF('${r.receiptId}')" style="background:none;border:none;color:#10b981;cursor:pointer;font-size:14px;padding:0;">請款單</button>
+                  <span style="color:#d1d5db;">|</span>
+                  <button onclick="generateReceiptPDF('${r.receiptId}')" style="background:none;border:none;color:#ea580c;cursor:pointer;font-size:14px;padding:0;">收據</button>
                 </div>
               </td>
             `;
@@ -627,6 +645,96 @@
         dateFrom.addEventListener('change', render);
         dateTo.addEventListener('change', render);
 
+        // === 明细项目管理 ===
+        function addReceiptItem() {
+          const item = {
+            id: Date.now(),
+            serviceName: '',
+            quantity: 1,
+            unitPrice: 0,
+            notes: ''
+          };
+          receiptItems.push(item);
+          renderReceiptItems();
+          updateItemsTotal();
+        }
+        
+        function removeReceiptItem(id) {
+          receiptItems = receiptItems.filter(item => item.id !== id);
+          renderReceiptItems();
+          updateItemsTotal();
+        }
+        
+        function renderReceiptItems() {
+          if (receiptItems.length === 0) {
+            receiptItemsContainer.innerHTML = '';
+            return;
+          }
+          
+          receiptItemsContainer.innerHTML = receiptItems.map((item, index) => `
+            <div style="background:white;border:1px solid #e5e7eb;border-radius:6px;padding:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-weight:600;font-size:13px;color:#374151;">項目 ${index + 1}</span>
+                <button type="button" onclick="removeReceiptItem(${item.id})" style="background:#ef4444;color:white;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;">刪除</button>
+              </div>
+              <div style="display:grid;gap:8px;">
+                <input type="text" placeholder="服務名稱（必填）" value="${item.serviceName || ''}" 
+                  onchange="updateReceiptItem(${item.id}, 'serviceName', this.value)"
+                  style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                  <input type="number" placeholder="數量" value="${item.quantity || 1}" min="1" step="1"
+                    onchange="updateReceiptItem(${item.id}, 'quantity', parseFloat(this.value) || 1)"
+                    style="padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
+                  <input type="number" placeholder="單價" value="${item.unitPrice || 0}" min="0" step="1"
+                    onchange="updateReceiptItem(${item.id}, 'unitPrice', parseFloat(this.value) || 0)"
+                    style="padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
+                </div>
+                <input type="text" placeholder="備註（選填）" value="${item.notes || ''}"
+                  onchange="updateReceiptItem(${item.id}, 'notes', this.value)"
+                  style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
+                <div style="text-align:right;color:#6b7280;font-size:13px;padding-top:4px;">
+                  小計：$<span style="font-weight:600;color:#1f2937;">${((item.quantity || 1) * (item.unitPrice || 0)).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        }
+        
+        function updateReceiptItem(id, field, value) {
+          const item = receiptItems.find(i => i.id === id);
+          if (item) {
+            item[field] = value;
+            renderReceiptItems();
+            updateItemsTotal();
+          }
+        }
+        
+        function updateItemsTotal() {
+          if (receiptItems.length === 0) {
+            itemsTotalInfo.style.display = 'none';
+            return;
+          }
+          
+          const total = receiptItems.reduce((sum, item) => {
+            return sum + ((item.quantity || 1) * (item.unitPrice || 0));
+          }, 0);
+          
+          if (total > 0) {
+            itemsTotalInfo.textContent = `明細項目總計：$${total.toLocaleString()} （總金額將使用此數值）`;
+            itemsTotalInfo.style.display = 'block';
+            inputAmount.value = total;
+          } else {
+            itemsTotalInfo.style.display = 'none';
+          }
+        }
+        
+        // 绑定添加明细按钮
+        btnAddItem.addEventListener('click', addReceiptItem);
+        
+        // 将函数暴露到全局作用域（供inline事件使用）
+        window.updateReceiptItem = updateReceiptItem;
+        window.removeReceiptItem = removeReceiptItem;
+        
         function openModal(){
           formError.style.display = 'none';
           formError.textContent = '';
@@ -652,6 +760,11 @@
           inputAmount.value = '';
           inputNotes.value = '';
           currentClientServices = [];
+          
+          // 重置明细项目
+          receiptItems = [];
+          renderReceiptItems();
+          updateItemsTotal();
           
           // 隱藏服務和月份選擇
           serviceRow.style.display = 'none';
@@ -827,6 +940,20 @@
             if (client_service_id) payload.client_service_id = client_service_id;
             if (billing_month) payload.billing_month = billing_month;
             
+            // 添加明细项目（如果有）
+            if (receiptItems.length > 0) {
+              // 验证明细项目
+              const validItems = receiptItems.filter(item => item.serviceName && item.serviceName.trim());
+              if (validItems.length > 0) {
+                payload.items = validItems.map(item => ({
+                  service_name: item.serviceName.trim(),
+                  quantity: item.quantity || 1,
+                  unit_price: item.unitPrice || 0,
+                  notes: item.notes ? item.notes.trim() : ''
+                }));
+              }
+            }
+            
             console.log('發送請求:', payload); // Debug
             
             const res = await fetch(`${apiBase}/receipts`, {
@@ -881,8 +1008,19 @@
         init();
       })();
       
-      // === PDF 生成功能 ===
-      async function generateReceiptPDF(receiptId) {
+      // === 公司信息配置 ===
+      // 如需修改公司名称和收款资讯，请在此处更新
+      // TODO: 未来可移至系统设定页面进行管理
+      const COMPANY_INFO = {
+        name: '霍爾果斯會計師事務所',          // 公司中文名称
+        nameEn: 'Hergs CPA Firm',            // 公司英文名称
+        bank: '永豐銀行台中分行',             // 银行名称
+        bankCode: '807',                     // 银行代号
+        accountNumber: '003-018-0019011-7'   // 银行账号
+      };
+      
+      // === PDF 生成功能 - 请款单 ===
+      async function generateInvoicePDF(receiptId) {
         try {
           // 获取收据详情
           const response = await fetch(`/internal/api/v1/receipts/${receiptId}`);
@@ -908,7 +1046,7 @@
           // === 顶部：公司名称 ===
           doc.setFontSize(20);
           doc.setTextColor(139, 117, 66); // 金色
-          doc.text('霍爾果斯會計師事務所', pageWidth / 2, 25, { align: 'center' });
+          doc.text(COMPANY_INFO.name, pageWidth / 2, 25, { align: 'center' });
           
           // 下划线
           doc.setDrawColor(139, 117, 66);
@@ -917,7 +1055,7 @@
           
           doc.setFontSize(11);
           doc.setTextColor(100, 100, 100);
-          doc.text('Hergs CPA Firm', pageWidth / 2, 33, { align: 'center' });
+          doc.text(COMPANY_INFO.nameEn, pageWidth / 2, 33, { align: 'center' });
           
           // === 标题：請款單 ===
           doc.setFontSize(18);
@@ -1015,13 +1153,13 @@
           
           // === 银行信息 ===
           doc.setFontSize(11);
-          doc.text('戶名：霍爾果斯會計師事務所', 20, yPos);
+          doc.text(`戶名：${COMPANY_INFO.name}`, 20, yPos);
           yPos += 8;
-          doc.text('銀行：永豐銀行台中分行', 20, yPos);
+          doc.text(`銀行：${COMPANY_INFO.bank}`, 20, yPos);
           yPos += 8;
-          doc.text('銀行代號：807', 20, yPos);
+          doc.text(`銀行代號：${COMPANY_INFO.bankCode}`, 20, yPos);
           yPos += 8;
-          doc.text('帳號：003-018-0019011-7', 20, yPos);
+          doc.text(`帳號：${COMPANY_INFO.accountNumber}`, 20, yPos);
           
           // === 日期 ===
           yPos = 270; // 固定在页面底部
@@ -1030,12 +1168,173 @@
           doc.text(rocDate, pageWidth / 2, yPos, { align: 'center' });
           
           // 保存PDF
-          doc.save(\`請款單_\${receipt.clientName}_\${receiptId}.pdf\`);
+          doc.save(`請款單_${receipt.clientName}_${receiptId}.pdf`);
           
         } catch (error) {
-          console.error('生成PDF失敗:', error);
-          alert('生成PDF失敗，請稍後再試');
+          console.error('生成請款單失敗:', error);
+          alert('生成請款單失敗，請稍後再試');
         }
+      }
+      
+      // === PDF 生成功能 - 收据 ===
+      async function generateReceiptPDF(receiptId) {
+        try {
+          // 获取收据详情
+          const response = await fetch(`/internal/api/v1/receipts/${receiptId}`);
+          const result = await response.json();
+          
+          if (!result.ok || !result.data) {
+            alert('無法載入收據資料');
+            return;
+          }
+          
+          const receipt = result.data;
+          
+          // 初始化 jsPDF
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          
+          // 设置中文字体
+          doc.setFont("NotoSansCJKtc-Regular", "normal");
+          
+          // 页面宽度
+          const pageWidth = doc.internal.pageSize.getWidth();
+          
+          // === 顶部：公司名称 ===
+          doc.setFontSize(22);
+          doc.setTextColor(139, 117, 66); // 金色
+          doc.text(COMPANY_INFO.name, pageWidth / 2, 30, { align: 'center' });
+          
+          // === 标题：收據 ===
+          doc.setFontSize(24);
+          doc.setTextColor(0, 0, 0);
+          doc.text('收    據', pageWidth / 2, 55, { align: 'center' });
+          
+          let yPos = 75;
+          
+          // === 收据编号 ===
+          doc.setFontSize(12);
+          doc.text(`收據編號：${receiptId}`, pageWidth - 20, yPos, { align: 'right' });
+          
+          yPos += 20;
+          
+          // === 今收到 ===
+          doc.setFontSize(14);
+          doc.text('今收到', 20, yPos);
+          doc.setTextColor(0, 0, 139); // 深蓝色
+          doc.text(`  ${receipt.clientName}  `, 40, yPos);
+          doc.setTextColor(0, 0, 0);
+          
+          yPos += 15;
+          
+          // === 款项/事由 ===
+          doc.setFontSize(12);
+          
+          if (receipt.items && receipt.items.length > 0) {
+            // 如果有明细项目
+            doc.text('款項如下：', 20, yPos);
+            yPos += 12;
+            
+            receipt.items.forEach((item, index) => {
+              const itemText = `${index + 1}. ${item.serviceName}`;
+              const lines = doc.splitTextToSize(itemText, 160);
+              lines.forEach(line => {
+                doc.text(line, 25, yPos);
+                yPos += 8;
+              });
+              
+              if (item.notes) {
+                doc.setFontSize(11);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`   備註：${item.notes}`, 25, yPos);
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(12);
+                yPos += 8;
+              }
+              yPos += 2;
+            });
+          } else {
+            // 没有明细，显示备注或默认文字
+            const purpose = receipt.notes || '服務費用';
+            doc.text(`款項：${purpose}`, 20, yPos);
+            yPos += 12;
+          }
+          
+          yPos += 10;
+          
+          // === 金额（大写） ===
+          const amountChinese = convertAmountToChinese(receipt.totalAmount);
+          doc.setFontSize(14);
+          doc.text(`金額：${amountChinese}元整`, 20, yPos);
+          
+          yPos += 15;
+          
+          // === 小写金额 ===
+          doc.setFontSize(13);
+          doc.text(`（新台幣 $${receipt.totalAmount.toLocaleString()} 元）`, 20, yPos);
+          
+          yPos += 25;
+          
+          // === 此据 ===
+          doc.setFontSize(14);
+          doc.text('此    據', 20, yPos);
+          
+          // === 右侧：公司名称和日期 ===
+          const rightX = pageWidth - 20;
+          doc.setFontSize(13);
+          doc.text(`收款人：${COMPANY_INFO.name}`, rightX, yPos - 20, { align: 'right' });
+          
+          const rocDate = convertToROCDate(receipt.receiptDate);
+          doc.setFontSize(12);
+          doc.text(rocDate, rightX, yPos, { align: 'right' });
+          
+          // === 底部：银行信息（小字） ===
+          yPos = 250;
+          doc.setFontSize(10);
+          doc.setTextColor(100, 100, 100);
+          doc.text('匯款資訊：', 20, yPos);
+          yPos += 6;
+          doc.text(`戶名：${COMPANY_INFO.name}`, 20, yPos);
+          yPos += 6;
+          doc.text(`${COMPANY_INFO.bank}  代號：${COMPANY_INFO.bankCode}  帳號：${COMPANY_INFO.accountNumber}`, 20, yPos);
+          
+          // 保存PDF
+          doc.save(`收據_${receipt.clientName}_${receiptId}.pdf`);
+          
+        } catch (error) {
+          console.error('生成收據失敗:', error);
+          alert('生成收據失敗，請稍後再試');
+        }
+      }
+      
+      // 金额转中文大写
+      function convertAmountToChinese(amount) {
+        const digits = ['零', '壹', '貳', '參', '肆', '伍', '陸', '柒', '捌', '玖'];
+        const units = ['', '拾', '佰', '仟', '萬', '拾萬', '佰萬', '仟萬', '億'];
+        
+        if (amount === 0) return '零';
+        
+        const amountStr = Math.floor(amount).toString();
+        const len = amountStr.length;
+        let result = '';
+        let zeroCount = 0;
+        
+        for (let i = 0; i < len; i++) {
+          const digit = parseInt(amountStr[i]);
+          const unitIndex = len - i - 1;
+          
+          if (digit === 0) {
+            zeroCount++;
+          } else {
+            if (zeroCount > 0) {
+              result += '零';
+            }
+            result += digits[digit] + units[unitIndex];
+            zeroCount = 0;
+          }
+        }
+        
+        return result;
       }
       
       // 转换为民国纪年
@@ -1078,6 +1377,7 @@
       }
       
       // 将函数暴露到全局作用域
+      window.generateInvoicePDF = generateInvoicePDF;
       window.generateReceiptPDF = generateReceiptPDF;
     </script>
     <script src="/assets/js/components/bootstrap.js?v=3"></script>
