@@ -47,6 +47,38 @@ export default {
 			return corsPreflightResponse(request, env);
 		}
 
+	// ⚡ Cache Test Endpoint (for debugging)
+	if (path === "/internal/api/v1/cache-test") {
+		const { generateCacheKey, getCache, saveCache } = await import("./cache-helper.js");
+		const corsHeaders = getCorsHeadersForRequest(request, env);
+		
+		try {
+			const testKey = 'test_cache_key';
+			const testData = { message: 'Hello Cache!', timestamp: new Date().toISOString() };
+			
+			// 尝试保存
+			await saveCache(env, testKey, 'test', testData, {});
+			
+			// 尝试读取
+			const cached = await getCache(env, testKey);
+			
+			return jsonResponse(200, {
+				ok: true,
+				message: '缓存测试成功',
+				saved: testData,
+				retrieved: cached,
+				test_passed: cached && cached.data && cached.data.message === testData.message
+			}, corsHeaders);
+		} catch (err) {
+			return jsonResponse(500, {
+				ok: false,
+				message: '缓存测试失败',
+				error: String(err),
+				stack: err.stack
+			}, corsHeaders);
+		}
+	}
+	
 	// Auth routes
 	if (path === "/internal/api/v1/auth/login") {
 		return handleLogin(request, env, requestId);

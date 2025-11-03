@@ -82,7 +82,7 @@ export async function saveCache(env, cacheKey, cacheType, data, options = {}) {
 	try {
 		const now = new Date().toISOString();
 		const cachedData = JSON.stringify(data);
-		const dataSize = new Blob([cachedData]).size;
+		const dataSize = new TextEncoder().encode(cachedData).length;
 		const userId = options.userId || null;
 		const scopeParams = options.scopeParams ? JSON.stringify(options.scopeParams) : null;
 		
