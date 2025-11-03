@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/payroll-page.css" />
     
-    <!-- ⚡ 预加载与缓存系统 -->
+    <!-- ⚡ 預載入與快取系統 -->
     <script src="/assets/js/data-cache.js"></script>
     <script src="/assets/js/fetch-interceptor.js"></script>
     <script src="/assets/js/prerender.js"></script>
@@ -608,7 +608,7 @@
             }
           });
           
-          console.log('[TAB] ✓ 已切换到:', targetKey);
+          console.log('[TAB] ✓ 已切換到:', targetKey);
         }
         
         // 绑定TAB点击事件
@@ -980,24 +980,24 @@
           renderCalc();
         }
 
-        // 薪资预览缓存（按月份）
+        // 薪資預覽快取（按月份）
         const payrollCache = new Map(); // key: month, value: { data, timestamp }
-        const CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
+        const CACHE_DURATION = 5 * 60 * 1000; // 5分鐘快取
         
         async function loadPreview(forceRefresh = false){
           const m = monthInput.value;
           
-          // 检查缓存
+          // 檢查快取
           if (!forceRefresh && payrollCache.has(m)) {
             const cached = payrollCache.get(m);
             const now = Date.now();
             if (now - cached.timestamp < CACHE_DURATION) {
-              console.log(`[薪资计算] ⚡ 使用缓存数据 (${m})`);
+              console.log(`[薪資計算] ⚡ 使用快取資料 (${m})`);
               calcState.all = cached.data;
               applyCalcFilters();
               return;
             } else {
-              console.log(`[薪资计算] 缓存已过期 (${m})`);
+              console.log(`[薪資計算] 快取已過期 (${m})`);
               payrollCache.delete(m);
             }
           }
@@ -1010,9 +1010,9 @@
             const json = await res.json();
             if (!json || json.ok !== true) throw new Error('載入失敗');
             const users = (json.data && json.data.users) || [];
-            console.log('[薪资计算] 🔄 从服务器加载数据:', users.length, '条记录');
+            console.log('[薪資計算] 🔄 從伺服器載入資料:', users.length, '筆記錄');
             
-            // 存入缓存
+            // 存入快取
             payrollCache.set(m, {
               data: users,
               timestamp: Date.now()
@@ -1021,7 +1021,7 @@
             calcState.all = users;
             applyCalcFilters();
           } catch (err) {
-            console.error('[薪资计算] 加载失败:', err);
+            console.error('[薪資計算] 載入失敗:', err);
             tbodyCalc.innerHTML = '<tr><td colspan="13" class="muted" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
@@ -1472,8 +1472,8 @@
             const json = await res.json();
             if (res.ok && json.ok) {
               alert('✅ 儲存成功');
-              // 清除薪资预览缓存，强制重新计算
-              console.log('[员工薪资] 清除薪资预览缓存');
+              // 清除薪資預覽快取，強制重新計算
+              console.log('[員工薪資] 清除薪資預覽快取');
               payrollCache.clear();
               await loadUsers(); // 重新加載員工列表
               await loadUserSalary(empState.selectedUserId); // 重新加載當前員工
@@ -1549,15 +1549,15 @@
             // 生成12個月的輸入框
             const monthInputs = [];
             for (let month = 1; month <= 12; month++) {
-              // 获取该月的预设绩效（考虑生效日期）
+              // 獲取該月的預設績效（考慮生效日期）
               const monthDefault = emp.monthlyDefaults?.[month] || 0;
               const defaultAmount = (monthDefault / 100).toFixed(0);
               
-              // 获取该月的调整金额
+              // 獲取該月的調整金額
               const monthData = emp.monthlyAdjustments?.[month] || null;
               const value = monthData ? (monthData.bonusAmountCents / 100).toFixed(0) : '';
               
-              // 如果有调整金额，显示调整后的金额；否则显示预设金额作为placeholder
+              // 如果有調整金額，顯示調整後的金額；否則顯示預設金額作為placeholder
               monthInputs.push(`
                 <td style="padding: 4px 6px;">
                   <input type="number" 
@@ -1642,8 +1642,8 @@
             const json = await res.json();
             if (res.ok && json.ok) {
               alert('✅ 全年績效調整已儲存');
-              // 清除薪资预览缓存
-              console.log('[全年绩效奖金] 清除薪资预览缓存');
+              // 清除薪資預覽快取
+              console.log('[全年績效獎金] 清除薪資預覽快取');
               payrollCache.clear();
               await loadYearlyBonus();
             } else {
@@ -2161,13 +2161,13 @@
         monthInput.addEventListener('change', ()=>{ loadPreview(); checkFinalized(); });
         btnFinalize.addEventListener('click', finalizeMonth);
         
-        // 刷新按钮：强制重新加载数据
+        // 刷新按鈕：強制重新載入資料
         document.getElementById('btnRefreshCalc').addEventListener('click', () => {
-          console.log('[薪资计算] 强制刷新数据');
+          console.log('[薪資計算] 強制刷新資料');
           loadPreview(true); // forceRefresh = true
         });
 
-        // ⚡ 预渲染初始化
+        // ⚡ 預渲染初始化
         if (window.PagePrerender) {
           window.PagePrerender.init('main');
         }
