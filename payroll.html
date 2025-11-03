@@ -97,13 +97,12 @@
                 <th>項目名稱</th>
                 <th>類別</th>
                 <th>經常性給與</th>
-                <th>金額固定</th>
                 <th>狀態</th>
                 <th>操作</th>
               </tr>
             </thead>
             <tbody id="tbodyItems">
-              <tr><td colspan="7" class="muted">載入中…</td></tr>
+              <tr><td colspan="6" class="muted">載入中…</td></tr>
             </tbody>
           </table>
         </div>
@@ -168,16 +167,6 @@
             </label>
           </div>
 
-          <div style="margin-bottom:20px;">
-            <label style="display:flex;align-items:center;cursor:pointer;">
-              <input type="checkbox" id="itemIsFixed" style="margin-right:10px;width:18px;height:18px;" />
-              <span style="font-weight:500;color:#374151;">金額固定</span>
-            </label>
-            <small style="color:#6b7280;display:block;margin-top:6px;margin-left:28px;">
-              勾選表示每個月金額固定（如固定 2,400 元伙食津貼）<br>
-              不勾選表示金額可能變動（如依表現調整的績效獎金）
-            </small>
-          </div>
 
           <div style="margin-bottom:20px;">
             <label for="itemDescription" style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">說明（選填）</label>
@@ -1062,7 +1051,6 @@
               <td>${item.itemName}</td>
               <td>${getCategoryLabel(item.category)}</td>
               <td>${item.isRegularPayment ? '✓ 是' : '否'}</td>
-              <td>${item.isFixed ? '是' : '否'}</td>
               <td>${item.isActive ? '<span style="color:#16a34a;">啟用</span>' : '<span style="color:#9ca3af;">停用</span>'}</td>
               <td>
                 <button class="btn btn-sm" onclick="window.editItem(${item.itemTypeId})">編輯</button>
@@ -1131,7 +1119,6 @@
             document.getElementById('itemCategory').value = item.category;
             document.getElementById('itemIsRegular').checked = item.isRegularPayment;
             document.getElementById('itemIsPerformance').checked = (item.itemCode === 'PERFORMANCE');
-            document.getElementById('itemIsFixed').checked = item.isFixed;
             document.getElementById('itemDescription').value = item.description || '';
             document.getElementById('itemDisplayOrder').value = item.displayOrder || 0;
           } else {
@@ -1169,7 +1156,6 @@
             itemName: document.getElementById('itemName').value.trim(),
             category: document.getElementById('itemCategory').value,
             isRegularPayment: document.getElementById('itemIsRegular').checked,
-            isFixed: document.getElementById('itemIsFixed').checked,
             description: document.getElementById('itemDescription').value.trim(),
             displayOrder: parseInt(document.getElementById('itemDisplayOrder').value) || 0
           };

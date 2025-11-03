@@ -118,7 +118,6 @@ async function getSalaryItemTypes(env, requestId, corsHeaders, url) {
 		itemName: row.item_name,
 		category: row.category,
 		isRegularPayment: !!row.is_regular_payment,
-		isFixed: !!row.is_fixed,
 		description: row.description || "",
 		isActive: !!row.is_active,
 		displayOrder: row.display_order,
@@ -149,7 +148,7 @@ async function createSalaryItemType(request, env, me, requestId, corsHeaders) {
 		}, corsHeaders);
 	}
 
-	const { itemCode, itemName, category, isRegularPayment, isFixed, description, displayOrder } = body;
+	const { itemCode, itemName, category, isRegularPayment, description, displayOrder } = body;
 
 	// 验证必填字段
 	if (!itemCode || !itemName || !category) {
@@ -209,14 +208,13 @@ async function createSalaryItemType(request, env, me, requestId, corsHeaders) {
 		// 插入新项目
 		const result = await env.DATABASE.prepare(`
 			INSERT INTO SalaryItemTypes 
-			(item_code, item_name, category, is_regular_payment, is_fixed, description, display_order, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+			(item_code, item_name, category, is_regular_payment, description, display_order, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
 		`).bind(
 			itemCode,
 			itemName,
 			category,
 			isRegularPayment ? 1 : 0,
-			isFixed ? 1 : 0,
 			description || null,
 			displayOrder || 0
 		).run();
@@ -238,7 +236,6 @@ async function createSalaryItemType(request, env, me, requestId, corsHeaders) {
 				itemName: newItem.item_name,
 				category: newItem.category,
 				isRegularPayment: !!newItem.is_regular_payment,
-				isFixed: !!newItem.is_fixed,
 				description: newItem.description || "",
 				isActive: !!newItem.is_active,
 				displayOrder: newItem.display_order,
@@ -289,7 +286,7 @@ async function updateSalaryItemType(request, env, me, requestId, corsHeaders, it
 		}, corsHeaders);
 	}
 
-	const { itemCode, itemName, category, isRegularPayment, isFixed, description, displayOrder, isActive } = body;
+	const { itemCode, itemName, category, isRegularPayment, description, displayOrder, isActive } = body;
 
 	// 验证项目代码格式（如果有更新）
 	if (itemCode && !/^[A-Z0-9_]{1,20}$/.test(itemCode)) {
@@ -358,10 +355,6 @@ async function updateSalaryItemType(request, env, me, requestId, corsHeaders, it
 			updates.push("is_regular_payment = ?");
 			params.push(isRegularPayment ? 1 : 0);
 		}
-		if (isFixed !== undefined) {
-			updates.push("is_fixed = ?");
-			params.push(isFixed ? 1 : 0);
-		}
 		if (description !== undefined) {
 			updates.push("description = ?");
 			params.push(description);
@@ -403,7 +396,6 @@ async function updateSalaryItemType(request, env, me, requestId, corsHeaders, it
 				itemName: updated.item_name,
 				category: updated.category,
 				isRegularPayment: !!updated.is_regular_payment,
-				isFixed: !!updated.is_fixed,
 				description: updated.description || "",
 				isActive: !!updated.is_active,
 				displayOrder: updated.display_order,
