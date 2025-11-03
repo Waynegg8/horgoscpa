@@ -598,18 +598,20 @@
             }
           });
           
-          // 第二步：隐藏所有面板（使用内联样式强制优先级）
+          // 第二步：隐藏所有面板
           Object.entries(panels).forEach(([k, el]) => {
             if (!el) return;
             if (k !== targetKey) {
               el.classList.remove('show');
-              el.style.cssText = 'display: none !important;';
+              el.style.setProperty('display', 'none', 'important');
+              el.removeAttribute('hidden');
             }
           });
           
-          // 第三步：显示目标面板（使用内联样式和强制reflow）
+          // 第三步：显示目标面板
           targetPanel.classList.add('show');
-          targetPanel.style.cssText = 'display: block !important;';
+          targetPanel.style.setProperty('display', 'block', 'important');
+          targetPanel.removeAttribute('hidden');
           void targetPanel.offsetHeight; // 强制浏览器重排
           
           console.log('[TAB] ✓ 已切换到:', targetKey);
