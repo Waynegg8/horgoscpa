@@ -1,4 +1,6 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+import { getKVCache, saveKVCache, deleteKVCacheByPrefix } from "../kv-cache-helper.js";
+import { generateCacheKey } from "../kv-cache-helper.js";
 
 export async function handleSOP(request, env, me, requestId, url, path) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);

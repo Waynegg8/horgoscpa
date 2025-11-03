@@ -17,6 +17,21 @@ export async function handleClients(request, env, me, requestId, url) {
 		const serviceId = parseInt(matchItems[2]);
 		
 		try {
+			// ⚡⚡⚡ 优先尝试从KV缓存读取
+			const cacheKey = generateCacheKey('service_items', { serviceId });
+			const kvCached = await getKVCache(env, cacheKey);
+			
+			if (kvCached && kvCached.data) {
+				return jsonResponse(200, {
+					ok: true,
+					code: "SUCCESS",
+					message: "查詢成功（KV缓存）⚡",
+					data: kvCached.data,
+					meta: { requestId, ...kvCached.meta, cache_source: 'kv' }
+				}, corsHeaders);
+			}
+			
+			// KV未命中，从数据库查询
 			const client = await env.DATABASE.prepare(
 				`SELECT client_id FROM Clients WHERE client_id = ? AND is_deleted = 0`
 			).bind(clientId).first();
@@ -43,6 +58,10 @@ export async function handleClients(request, env, me, requestId, url) {
 				item_code: item.item_code,
 				description: item.description || ""
 			}));
+			
+			// ⚡ 保存到KV缓存
+			await saveKVCache(env, cacheKey, 'service_items', data, { ttl: 3600 })
+				.catch(err => console.error('[Service Items] KV缓存保存失败:', err));
 			
 			return jsonResponse(200, {
 				ok: true,
