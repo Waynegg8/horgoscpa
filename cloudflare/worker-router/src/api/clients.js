@@ -309,7 +309,7 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 		
 		try {
-			const where = ["c.is_deleted = 0"];
+			const where = ["is_deleted = 0"];
 			const binds = [];
 			
 			// 搜索：支持公司名称和统编
