@@ -28,12 +28,13 @@
       </div>
       <div id="finalizeMsg" class="info-bar" style="display:none;"></div>
       <nav class="payroll-tabs" role="tablist" aria-label="薪資管理分頁" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
-        <button class="tab active" role="tab" aria-selected="true" data-tab="calc">薪資計算</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="items">薪資項目設定</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="emp">員工薪資設定</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="bonus">績效獎金調整</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="yearend">年終獎金</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="settings">⚙️ 系統設定</button>
+        <button class="tab active" role="tab" aria-selected="true" data-tab="calc" data-admin-only="true">薪資計算</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="items" data-admin-only="true">薪資項目設定</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="emp" data-admin-only="true">員工薪資設定</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="bonus" data-admin-only="true">績效獎金調整</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="yearend" data-admin-only="true">年終獎金</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="settings" data-admin-only="true">⚙️ 系統設定</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="punch">📁 打卡記錄上傳</button>
       </nav>
     </div>
 
@@ -206,8 +207,8 @@
           <div class="col">
             <div id="empFormContainer" style="display: none;">
               <h3 id="empFormTitle">請選擇員工</h3>
-              <div class="form">
-                <div class="row">
+            <div class="form">
+              <div class="row">
                   <label>底薪</label>
                   <input id="empBaseSalary" type="number" min="0" step="1" placeholder="例如 40000" />
                 </div>
@@ -225,11 +226,11 @@
                 </div>
                 <div class="row">
                   <small class="muted">💡 提示：勾選「經常性給與」將計入時薪，影響加班費與成本分析。</small>
-                </div>
-                <div class="actions">
+              </div>
+              <div class="actions">
                   <button id="btnCancelEmp" class="btn" type="button">取消</button>
                   <button id="btnSaveEmp" class="btn primary" type="button">💾 儲存</button>
-                </div>
+              </div>
               </div>
             </div>
             <div id="empEmptyState" style="text-align: center; padding: 2rem; color: #999;">
@@ -248,13 +249,13 @@
             <div class="toolbar-spacer"></div>
             <div id="bonusSummary" class="stats">
               <span>總調整：<strong id="bonusAdjustedCount">0</strong> 人次</span>
-            </div>
+          </div>
             <button id="btnSaveBonus" class="btn primary">💾 儲存全年調整</button>
           </div>
           <div style="overflow-x: auto;">
             <table class="table" aria-label="績效獎金調整" style="min-width: 1400px;">
-              <thead>
-                <tr>
+            <thead>
+              <tr>
                   <th rowspan="2" style="position: sticky; left: 0; background: white; z-index: 2; min-width: 100px;">姓名</th>
                   <th rowspan="2" style="min-width: 80px;">預設績效</th>
                   <th colspan="12" style="text-align: center; background: #f0f9ff;">各月份調整金額（元）</th>
@@ -272,12 +273,12 @@
                   <th style="background: #f0f9ff; min-width: 80px;">10月</th>
                   <th style="background: #f0f9ff; min-width: 80px;">11月</th>
                   <th style="background: #f0f9ff; min-width: 80px;">12月</th>
-                </tr>
-              </thead>
+              </tr>
+            </thead>
               <tbody id="tbodyBonus">
                 <tr><td colspan="14" class="muted">載入中...</td></tr>
-              </tbody>
-            </table>
+            </tbody>
+          </table>
           </div>
           <div class="muted" style="margin-top: 10px; font-size: 0.875rem;">
             💡 提示：留空表示使用預設績效；輸入金額表示該月使用調整後的金額
@@ -414,6 +415,86 @@
           </div>
         </div>
       </section>
+
+      <!-- 打卡記錄上傳 -->
+      <section id="panel-punch" class="panel" role="tabpanel" aria-labelledby="tab-punch">
+        <div class="card">
+          <div style="margin-bottom: 1.5rem;">
+            <h2 style="margin: 0 0 0.5rem; font-size: 1.5rem; font-weight: 600;">📁 打卡記錄上傳</h2>
+            <p style="margin: 0; color: #666; font-size: 0.875rem;">上傳您的每月打卡記錄檔案（支援 PDF、Excel、圖片等格式）</p>
+          </div>
+
+          <!-- 上傳區域 -->
+          <div style="background: #f0f9ff; border: 2px dashed #3b82f6; border-radius: 8px; padding: 2rem; margin-bottom: 1.5rem; text-align: center;">
+            <div style="margin-bottom: 1rem;">
+              <svg style="width: 48px; height: 48px; margin: 0 auto; color: #3b82f6;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+              </svg>
+            </div>
+            <input type="file" id="punchFileInput" style="display: none;" accept=".pdf,.xlsx,.xls,.jpg,.jpeg,.png,.zip" />
+            <button id="btnSelectFile" class="btn primary" style="font-size: 1rem; padding: 0.75rem 2rem;">
+              📎 選擇檔案
+            </button>
+            <p style="margin: 1rem 0 0; color: #666; font-size: 0.875rem;">
+              支援格式：PDF、Excel、圖片（JPG/PNG）、壓縮檔（ZIP），單檔最大 10MB
+            </p>
+          </div>
+
+          <!-- 上傳表單 -->
+          <div id="uploadForm" style="display: none; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="margin-bottom: 1rem;">
+              <strong>已選擇檔案：</strong> <span id="selectedFileName"></span>
+            </div>
+            <div style="margin-bottom: 1rem;">
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">所屬月份 <span style="color: red;">*</span></label>
+              <input type="month" id="punchMonth" required style="width: 200px; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+            </div>
+            <div style="margin-bottom: 1rem;">
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">備註</label>
+              <input type="text" id="punchNotes" placeholder="例如：補傳10月缺失資料" style="width: 100%; max-width: 500px; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+            </div>
+            <div style="display: flex; gap: 1rem;">
+              <button id="btnUploadFile" class="btn primary">
+                ⬆️ 開始上傳
+              </button>
+              <button id="btnCancelUpload" class="btn">
+                取消
+              </button>
+            </div>
+            <div id="uploadProgress" style="display: none; margin-top: 1rem;">
+              <div style="background: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden;">
+                <div id="uploadProgressBar" style="background: #3b82f6; height: 100%; width: 0%; transition: width 0.3s;"></div>
+              </div>
+              <p style="margin: 0.5rem 0 0; color: #666; font-size: 0.875rem;" id="uploadStatus">上傳中...</p>
+            </div>
+          </div>
+
+          <!-- 已上傳檔案列表 -->
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600;">📋 已上傳記錄</h3>
+              <button id="btnRefreshFiles" class="btn">
+                🔄 刷新
+              </button>
+            </div>
+            <table class="table" aria-label="打卡記錄列表">
+              <thead>
+                <tr>
+                  <th>月份</th>
+                  <th>檔案名稱</th>
+                  <th>檔案大小</th>
+                  <th>上傳時間</th>
+                  <th>備註</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="punchFilesList">
+                <tr><td colspan="6" class="muted">載入中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </main>
 
     <script>
@@ -431,6 +512,7 @@
           bonus: document.getElementById('panel-bonus'),
           yearend: document.getElementById('panel-yearend'),
           settings: document.getElementById('panel-settings'),
+          punch: document.getElementById('panel-punch'),
         };
 
         // 薪資項目設定相關 DOM
@@ -543,51 +625,55 @@
             if (res.status === 401) { 
               console.log('[權限檢查] 未登入，重定向到登入頁');
               location.assign('/login?redirect=/internal/payroll'); 
-              return false; 
+              return { isAdmin: false, userData: null }; 
             }
             const json = await res.json();
             console.log('[權限檢查] API 回應:', json);
             
-            if (!json || !json.ok) {
+            if (!json || !json.ok || !json.data) {
               console.error('[權限檢查] API 回應失敗:', json);
               infoBar.textContent = 'API 回應失敗：' + (json?.message || '未知錯誤');
               infoBar.style.display = 'block';
               setTabsEnabled(false);
-              return false;
+              return { isAdmin: false, userData: null };
             }
             
-            if (!json.data) {
-              console.error('[權限檢查] 沒有 data 欄位');
-              infoBar.textContent = '權限資料異常（缺少 data）';
-              infoBar.style.display = 'block';
-              setTabsEnabled(false);
-              return false;
-            }
+            const userData = json.data;
+            const isAdmin = userData.isAdmin === true;
             
             console.log('[權限檢查] 用戶資料:', {
-              username: json.data.username,
-              name: json.data.name,
-              isAdmin: json.data.isAdmin
+              username: userData.username,
+              name: userData.name,
+              isAdmin: isAdmin
             });
             
-            const isAdmin = json.data.isAdmin === true;
-            if (!isAdmin) {
-              console.warn('[權限檢查] 用戶不是管理員');
-              infoBar.innerHTML = `您沒有權限存取此模組<br><small>當前用戶：${json.data.name || json.data.username}（is_admin = ${json.data.isAdmin}）</small>`;
-              infoBar.style.display = 'block';
-              setTabsEnabled(false);
-              return false;
-            }
+            // 根據權限控制TAB顯示
+            tabs.forEach(tab => {
+              const adminOnly = tab.getAttribute('data-admin-only') === 'true';
+              if (adminOnly && !isAdmin) {
+                tab.style.display = 'none'; // 隱藏管理員專用TAB
+              } else {
+                tab.style.display = ''; // 顯示TAB
+              }
+            });
             
-            console.log('[權限檢查] ✅ 管理員驗證通過');
+            if (isAdmin) {
+              console.log('[權限檢查] ✅ 管理員驗證通過');
             setTabsEnabled(true);
-            return true;
+              return { isAdmin: true, userData };
+            } else {
+              console.log('[權限檢查] 👤 普通員工，只能存取打卡記錄上傳');
+              // 普通員工：切換到打卡記錄TAB
+              switchTab('punch');
+              setTabsEnabled(true);
+              return { isAdmin: false, userData };
+            }
           } catch (err) {
             console.error('[權限檢查] 異常:', err);
             infoBar.textContent = '載入失敗：' + err.message;
             infoBar.style.display = 'block';
             setTabsEnabled(false);
-            return false;
+            return { isAdmin: false, userData: null };
           }
         }
         function setFinalizeUIDisabled(disabled){
@@ -809,7 +895,7 @@
             </tr>
           `;
         }
-        
+
         function renderCalc(){
           const start = (calcState.page - 1) * calcState.perPage;
           const end = start + calcState.perPage;
@@ -1787,6 +1873,207 @@
         // 綁定系統設定事件
         btnSaveSettings.addEventListener('click', saveSystemSettings);
 
+        // ==================== 打卡記錄上傳功能 ====================
+
+        const punchFileInput = document.getElementById('punchFileInput');
+        const btnSelectFile = document.getElementById('btnSelectFile');
+        const uploadForm = document.getElementById('uploadForm');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const punchMonth = document.getElementById('punchMonth');
+        const punchNotes = document.getElementById('punchNotes');
+        const btnUploadFile = document.getElementById('btnUploadFile');
+        const btnCancelUpload = document.getElementById('btnCancelUpload');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const uploadProgressBar = document.getElementById('uploadProgressBar');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const punchFilesList = document.getElementById('punchFilesList');
+        const btnRefreshFiles = document.getElementById('btnRefreshFiles');
+
+        let selectedFile = null;
+        let currentUserId = null;
+
+        // 選擇檔案
+        btnSelectFile.addEventListener('click', () => {
+          punchFileInput.click();
+        });
+
+        punchFileInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          // 檢查檔案大小（10MB）
+          if (file.size > 10 * 1024 * 1024) {
+            alert('檔案大小不能超過 10MB');
+            punchFileInput.value = '';
+            return;
+          }
+
+          selectedFile = file;
+          selectedFileName.textContent = file.name;
+          uploadForm.style.display = 'block';
+          
+          // 自動設定月份為當前月份
+          if (!punchMonth.value) {
+            const now = new Date();
+            punchMonth.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+          }
+        });
+
+        // 取消上傳
+        btnCancelUpload.addEventListener('click', () => {
+          selectedFile = null;
+          punchFileInput.value = '';
+          uploadForm.style.display = 'none';
+          uploadProgress.style.display = 'none';
+        });
+
+        // 開始上傳
+        btnUploadFile.addEventListener('click', async () => {
+          if (!selectedFile) {
+            alert('請先選擇檔案');
+            return;
+          }
+
+          if (!punchMonth.value) {
+            alert('請選擇所屬月份');
+            return;
+          }
+
+          try {
+            btnUploadFile.disabled = true;
+            btnCancelUpload.disabled = true;
+            uploadProgress.style.display = 'block';
+            uploadProgressBar.style.width = '50%';
+            uploadStatus.textContent = '正在上傳檔案...';
+
+            // 使用FormData上傳
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('month', punchMonth.value);
+            if (punchNotes.value) {
+              formData.append('notes', punchNotes.value);
+            }
+
+            const uploadRes = await fetch(`${apiBase}/punch-records/upload`, {
+              method: 'POST',
+              credentials: 'include',
+              body: formData
+            });
+
+            if (!uploadRes.ok) throw new Error('檔案上傳失敗');
+            const json = await uploadRes.json();
+
+            uploadProgressBar.style.width = '100%';
+            uploadStatus.textContent = '✅ 上傳完成！';
+
+            // 重置表單
+            setTimeout(() => {
+              selectedFile = null;
+              punchFileInput.value = '';
+              punchNotes.value = '';
+              uploadForm.style.display = 'none';
+              uploadProgress.style.display = 'none';
+              uploadProgressBar.style.width = '0%';
+              btnUploadFile.disabled = false;
+              btnCancelUpload.disabled = false;
+              
+              // 重新載入列表
+              loadPunchRecords(currentUserId);
+            }, 1500);
+
+          } catch (err) {
+            console.error('上傳失敗:', err);
+            alert('上傳失敗：' + err.message);
+            uploadProgress.style.display = 'none';
+            btnUploadFile.disabled = false;
+            btnCancelUpload.disabled = false;
+          }
+        });
+
+        // 載入打卡記錄列表
+        async function loadPunchRecords(userId) {
+          currentUserId = userId;
+          
+          try {
+            const res = await fetch(`${apiBase}/punch-records`, { credentials: 'include' });
+            if (!res.ok) throw new Error('載入失敗');
+            const json = await res.json();
+            const records = json.data?.records || [];
+            renderPunchRecords(records);
+          } catch (err) {
+            console.error('載入打卡記錄失敗:', err);
+            punchFilesList.innerHTML = '<tr><td colspan="6" class="muted">載入失敗</td></tr>';
+          }
+        }
+
+        // 渲染打卡記錄列表
+        function renderPunchRecords(records) {
+          if (records.length === 0) {
+            punchFilesList.innerHTML = '<tr><td colspan="6" class="muted">尚無上傳記錄</td></tr>';
+            return;
+          }
+
+          punchFilesList.innerHTML = records.map(record => {
+            const uploadDate = new Date(record.uploadedAt).toLocaleDateString('zh-TW', {
+              year: 'numeric', month: '2-digit', day: '2-digit',
+              hour: '2-digit', minute: '2-digit'
+            });
+            const fileSize = (record.fileSizeBytes / 1024).toFixed(1) + ' KB';
+
+            return `
+              <tr>
+                <td>${record.month}</td>
+                <td>${record.fileName}</td>
+                <td>${fileSize}</td>
+                <td>${uploadDate}</td>
+                <td>${record.notes || '-'}</td>
+                <td>
+                  <button class="btn" onclick="downloadPunchRecord('${record.recordId}', '${record.fileName}')" style="font-size: 0.875rem; padding: 0.25rem 0.75rem;">
+                    ⬇️ 下載
+                  </button>
+                  <button class="btn" onclick="deletePunchRecord('${record.recordId}')" style="font-size: 0.875rem; padding: 0.25rem 0.75rem; color: #dc2626;">
+                    🗑️ 刪除
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // 下載打卡記錄
+        window.downloadPunchRecord = function(recordId, fileName) {
+          // 直接打開下載連結
+          const downloadUrl = `${apiBase}/punch-records/${recordId}/download`;
+          window.open(downloadUrl, '_blank');
+        };
+
+        // 刪除打卡記錄
+        window.deletePunchRecord = async function(recordId) {
+          if (!confirm('確定要刪除此檔案嗎？')) return;
+
+          try {
+            const res = await fetch(`${apiBase}/punch-records/${recordId}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+
+            if (!res.ok) throw new Error('刪除失敗');
+
+            alert('✅ 刪除成功');
+            loadPunchRecords(currentUserId);
+          } catch (err) {
+            console.error('刪除失敗:', err);
+            alert('刪除失敗：' + err.message);
+          }
+        };
+
+        // 刷新列表
+        btnRefreshFiles.addEventListener('click', () => {
+          if (currentUserId) {
+            loadPunchRecords(currentUserId);
+          }
+        });
+
         // 預設月份為本月
         const now = new Date();
         monthInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -1816,13 +2103,14 @@
           window.PagePrerender.init('main');
         }
 
-        // 初始化：显示第一个TAB
+        // 初始化：默认显示第一个TAB（管理员会覆盖，员工会自动切换到punch）
         switchTab('calc');
         
-        ensureAdmin().then(isAdmin => { 
-          if (isAdmin) { 
+        ensureAdmin().then(result => { 
+          if (result.isAdmin) {
+            // 管理員：載入所有管理功能
             loadPreview(); 
-            checkFinalized();
+            checkFinalized(); 
             loadItems(); // 載入薪資項目
             loadUsers(); // 載入員工列表
             
@@ -1837,6 +2125,10 @@
             if (window.PagePrerender) {
               setTimeout(() => window.PagePrerender.autoSave('main', 2000), 1000);
             }
+          } else if (result.userData) {
+            // 普通員工：只載入打卡記錄
+            console.log('[初始化] 載入員工打卡記錄');
+            loadPunchRecords(result.userData.user_id);
           } 
         });
       })();
