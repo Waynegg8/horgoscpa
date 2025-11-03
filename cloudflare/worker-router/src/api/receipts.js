@@ -179,7 +179,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			console.log(`[收据列表] 总记录数:`, total);
 			
 			const rows = await env.DATABASE.prepare(
-				`SELECT r.receipt_id, r.client_id, c.company_name AS client_name, c.tax_id AS client_tax_id, 
+				`SELECT r.receipt_id, r.client_id, c.company_name AS client_name, c.tax_registration_number AS client_tax_id, 
 				        r.total_amount, r.receipt_date, r.due_date, r.status, r.receipt_type
 				 FROM Receipts r LEFT JOIN Clients c ON c.client_id = r.client_id
 				 ${whereSql}
@@ -367,18 +367,23 @@ export async function handleReceipts(request, env, me, requestId, url) {
 		const receiptId = decodeURIComponent(getDetailMatch[1]);
 		
 		try {
+			console.log(`[收据详情] 查询收据ID: ${receiptId}`);
+			
 			// 获取收据基本信息
 			const receipt = await env.DATABASE.prepare(
 				`SELECT r.receipt_id, r.client_id, r.receipt_date, r.due_date, r.total_amount, 
 				        r.paid_amount, r.status, r.receipt_type, r.related_task_id, 
 				        r.client_service_id, r.billing_month, r.service_month, r.notes, 
 				        r.created_at, r.created_by,
-				        c.company_name as client_name, u.full_name as created_by_name
+				        c.company_name as client_name, c.tax_registration_number as client_tax_id,
+				        u.name as created_by_name
 				 FROM Receipts r
 				 LEFT JOIN Clients c ON c.client_id = r.client_id
 				 LEFT JOIN Users u ON u.user_id = r.created_by
 				 WHERE r.receipt_id = ? AND r.is_deleted = 0`
 			).bind(receiptId).first();
+			
+			console.log(`[收据详情] 查询结果: ${receipt ? '找到' : '未找到'}`);
 			
 			if (!receipt) {
 				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "收據不存在", meta: { requestId } }, corsHeaders);
@@ -395,7 +400,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			// 获取收款记录
 			const payments = await env.DATABASE.prepare(
 				`SELECT p.payment_id, p.payment_date, p.payment_amount, p.payment_method,
-				        p.reference_number, p.notes, p.created_at, u.full_name as created_by_name
+				        p.reference_number, p.notes, p.created_at, u.name as created_by_name
 				 FROM Payments p
 				 LEFT JOIN Users u ON u.user_id = p.created_by
 				 WHERE p.receipt_id = ? AND p.is_deleted = 0
@@ -406,6 +411,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				receiptId: receipt.receipt_id,
 				clientId: receipt.client_id,
 				clientName: receipt.client_name || "",
+				clientTaxId: receipt.client_tax_id || "",
 				receiptDate: receipt.receipt_date,
 				dueDate: receipt.due_date,
 				totalAmount: Number(receipt.total_amount || 0),
@@ -439,17 +445,32 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				}))
 			};
 			
+			console.log(`[收据详情] 成功返回数据`);
 			return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta: { requestId } }, corsHeaders);
 		} catch (err) {
-			console.error(JSON.stringify({ 
+			const errorDetail = {
 				level: "error", 
 				requestId, 
 				path, 
 				receiptId,
 				err: String(err),
 				stack: err.stack || '',
-				message: err.message || ''
-			}));
+				message: err.message || '',
+				name: err.name || ''
+			};
+			console.error(JSON.stringify(errorDetail));
+			
+			// 临时：在开发环境返回详细错误
+			if (env.APP_ENV === "dev") {
+				return jsonResponse(500, { 
+					ok: false, 
+					code: "INTERNAL_ERROR", 
+					message: "伺服器錯誤", 
+					debug: errorDetail,
+					meta: { requestId } 
+				}, corsHeaders);
+			}
+			
 			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
 		}
 	}
