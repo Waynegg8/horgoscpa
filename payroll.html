@@ -324,16 +324,22 @@
 
           <!-- 交通補貼設定 -->
           <div style="background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 1rem; font-size: 1.125rem; font-weight: 600; color: #1e40af;">🚗 交通補貼設定</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <h3 style="margin: 0 0 1rem; font-size: 1.125rem; font-weight: 600; color: #1e40af;">🚗 交通補貼設定（區間制）</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
               <div>
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">交通補貼單價（元/公里）</label>
-                <input id="setting_transport_rate_per_km" type="number" min="0" step="0.1" 
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">每個區間公里數</label>
+                <input id="setting_transport_km_per_interval" type="number" min="1" step="1" 
                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
-                <small style="color: #666; display: block; margin-top: 0.25rem;">外出公務時按公里數計算的補貼</small>
+                <small style="color: #666; display: block; margin-top: 0.25rem;">例如：5 公里為 1 個區間</small>
+              </div>
+              <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">每個區間金額（元）</label>
+                <input id="setting_transport_amount_per_interval" type="number" min="0" step="1" 
+                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
+                <small style="color: #666; display: block; margin-top: 0.25rem;">例如：每區間 60 元</small>
               </div>
               <div style="display: flex; align-items: center; color: #666;">
-                <p style="margin: 0;">💡 外出記錄需在「外出申請」中登記，並經核准後計入交通補貼</p>
+                <p style="margin: 0;">💡 範例：6-10公里 = 2個區間 = 120元</p>
               </div>
             </div>
           </div>
@@ -359,31 +365,6 @@
                 <input id="setting_leave_daily_salary_divisor" type="number" min="1" step="1" 
                        style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
                 <small style="color: #666; display: block; margin-top: 0.25rem;">日薪 = 底薪 ÷ 此數字（通常為30）</small>
-              </div>
-            </div>
-          </div>
-
-          <!-- 加班費設定 -->
-          <div style="background: #fefce8; border: 1px solid #fde047; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 1rem; font-size: 1.125rem; font-weight: 600; color: #854d0e;">⏰ 加班費倍率設定</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-              <div>
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">平日加班費倍率</label>
-                <input id="setting_overtime_1_5x_multiplier" type="number" min="0" step="0.1" 
-                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
-                <small style="color: #666; display: block; margin-top: 0.25rem;">平日延長工時（通常為1.5倍）</small>
-              </div>
-              <div>
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">休息日加班費倍率</label>
-                <input id="setting_overtime_2x_multiplier" type="number" min="0" step="0.1" 
-                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
-                <small style="color: #666; display: block; margin-top: 0.25rem;">休息日工作（通常為2倍）</small>
-              </div>
-              <div>
-                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">國定假日加班費倍率</label>
-                <input id="setting_overtime_3x_multiplier" type="number" min="0" step="0.1" 
-                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;" />
-                <small style="color: #666; display: block; margin-top: 0.25rem;">國定假日工作（通常為3倍）</small>
               </div>
             </div>
           </div>

@@ -37,33 +37,30 @@ async function calculateOvertimeAndMeal(env, userId, month, hourlyRateCents) {
 		  AND work_date <= ?
 	`).bind(userId, firstDay, lastDayStr).all();
 
-	// 从系统设定读取倍率
-	const multiplier_1_5x = await getSettingValue(env, 'overtime_1_5x_multiplier', 1.5);
-	const multiplier_2x = await getSettingValue(env, 'overtime_2x_multiplier', 2.0);
-	const multiplier_3x = await getSettingValue(env, 'overtime_3x_multiplier', 3.0);
-
 	let totalOvertimeCents = 0;
 	let totalOvertimeHours = 0;
+	let totalWeightedHours = 0; // 加权工时总计
 	let mealAllowanceCount = 0;
 
 	// 从系统设定读取误餐费条件
 	const minOvertimeHours = await getSettingValue(env, 'meal_allowance_min_overtime_hours', 1.5);
 
 	for (const ts of (timesheets.results || [])) {
-		const ot_1_5 = ts.overtime_1_5x || 0;
-		const ot_2 = ts.overtime_2x || 0;
-		const ot_3 = ts.overtime_3x || 0;
+		const ot_1_5 = ts.overtime_1_5x || 0; // 已加权（实际小时 × 1.5）
+		const ot_2 = ts.overtime_2x || 0;     // 已加权（实际小时 × 2.0）
+		const ot_3 = ts.overtime_3x || 0;     // 已加权（实际小时 × 3.0）
 
-		// 计算加班费（使用系统设定的倍率）
-		totalOvertimeCents += Math.round(ot_1_5 * hourlyRateCents * multiplier_1_5x);
-		totalOvertimeCents += Math.round(ot_2 * hourlyRateCents * multiplier_2x);
-		totalOvertimeCents += Math.round(ot_3 * hourlyRateCents * multiplier_3x);
+		// 计算加班费（工时表中已是加权工时，直接乘以时薪即可）
+		const weightedHoursThisDay = ot_1_5 + ot_2 + ot_3;
+		totalOvertimeCents += Math.round(weightedHoursThisDay * hourlyRateCents);
+		totalWeightedHours += weightedHoursThisDay;
 
-		const totalOvertimeThisDay = ot_1_5 + ot_2 + ot_3;
-		totalOvertimeHours += totalOvertimeThisDay;
+		// 实际加班时数（用于误餐费判定）
+		const actualOvertimeHours = ts.overtime_hours || 0;
+		totalOvertimeHours += actualOvertimeHours;
 
 		// 误餐费判定：加班满指定时数
-		if (totalOvertimeThisDay >= minOvertimeHours) {
+		if (actualOvertimeHours >= minOvertimeHours) {
 			mealAllowanceCount += 1;
 		}
 	}
@@ -101,13 +98,18 @@ async function calculateTransportAllowance(env, userId, month) {
 
 	const totalKm = trips?.total_km || 0;
 	
-	// 从系统设定读取交通补贴单价
-	const ratePerKm = await getSettingValue(env, 'transport_rate_per_km', 5);
-	const transportCents = Math.round(totalKm * ratePerKm * 100); // 元转分
+	// 从系统设定读取交通补贴区间设定
+	const amountPerInterval = await getSettingValue(env, 'transport_amount_per_interval', 60); // 每区间60元
+	const kmPerInterval = await getSettingValue(env, 'transport_km_per_interval', 5); // 每5公里1个区间
+	
+	// 计算区间数（向上取整）
+	const intervals = totalKm > 0 ? Math.ceil(totalKm / kmPerInterval) : 0;
+	const transportCents = intervals * amountPerInterval * 100; // 元转分
 
 	return {
 		transportCents,
-		totalKm
+		totalKm,
+		intervals
 	};
 }
 
@@ -275,6 +277,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const transportResult = await calculateTransportAllowance(env, userId, month);
 	const transportCents = transportResult.transportCents;
 	const totalKm = transportResult.totalKm;
+	const transportIntervals = transportResult.intervals || 0;
 
 	// 8. 计算请假扣款
 	const leaveResult = await calculateLeaveDeductions(env, userId, month, baseSalaryCents);
@@ -333,6 +336,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 		// 附加信息
 		overtimeHours,
 		totalKm,
+		transportIntervals,
 		sickDays,
 		personalDays,
 	};
