@@ -862,11 +862,16 @@ async function handleGetMonthlySummary(request, env, me, requestId, url) {
 			leave_hours: Math.round(leaveHours * 10) / 10
 		};
 		
-		// ⚡ 保存到缓存（不等待完成）
-		saveCache(env, cacheKey, 'monthly_summary', summaryData, {
-			userId: String(userId),
-			scopeParams: { userId, month }
-		}).catch(err => console.error('[TIMELOGS] 月度统计缓存保存失败:', err));
+		// ⚡ 保存到缓存（同步等待）
+		try {
+			await saveCache(env, cacheKey, 'monthly_summary', summaryData, {
+				userId: String(userId),
+				scopeParams: { userId, month }
+			});
+			console.log('[TIMELOGS] ✓ 月度统计缓存已保存');
+		} catch (err) {
+			console.error('[TIMELOGS] ✗ 月度统计缓存保存失败:', err);
+		}
 		
 		// 回傳統計結果
 		return jsonResponse(200, {
