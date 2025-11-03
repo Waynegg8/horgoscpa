@@ -16,11 +16,6 @@
     <script src="/assets/js/prerender.js"></script>
     <script src="/assets/js/page-prerender.js"></script>
     
-    <!-- PDF 生成库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
-    <!-- 中文字体支持 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/fonts/NotoSansCJKtc-Regular-normal.js"></script>
     
     <style>
       /* Sticky Footer */
@@ -598,9 +593,9 @@
                 <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;">
                   <a href="/internal/receipt-detail?id=${encodeURIComponent(r.receiptId)}" style="color:#3b82f6;text-decoration:none;font-size:14px;">查看</a>
                   <span style="color:#d1d5db;">|</span>
-                  <button onclick="generateInvoicePDF('${r.receiptId}')" style="background:none;border:none;color:#10b981;cursor:pointer;font-size:14px;padding:0;">請款單</button>
+                  <button onclick="printInvoice('${r.receiptId}')" style="background:none;border:none;color:#10b981;cursor:pointer;font-size:14px;padding:0;">列印請款單</button>
                   <span style="color:#d1d5db;">|</span>
-                  <button onclick="generateReceiptPDF('${r.receiptId}')" style="background:none;border:none;color:#ea580c;cursor:pointer;font-size:14px;padding:0;">收據</button>
+                  <button onclick="printReceipt('${r.receiptId}')" style="background:none;border:none;color:#ea580c;cursor:pointer;font-size:14px;padding:0;">列印收據</button>
                 </div>
               </td>
             `;
@@ -1009,57 +1004,89 @@
       })();
       
       // === 公司信息配置 ===
-      // 如需修改公司名称和收款资讯，请在此处更新
-      // TODO: 未来可移至系统设定页面进行管理
       const COMPANY_INFO = {
-        name: '霍爾果斯會計師事務所',          // 公司中文名称
-        nameEn: 'Hergs CPA Firm',            // 公司英文名称
-        address: '臺中市西區英國路21號',      // 公司地址
-        addressLine2: '3樓之1',              // 地址第二行
-        phone: '04-22205606',                // 电话
-        taxId: '92254178',                   // 统一编号
-        bank: '永豐銀行台中分行',             // 银行名称
-        bankCode: '807',                     // 银行代号
-        accountNumber: '003-018-0019011-7'   // 银行账号
+        name: '霍爾果斯會計師事務所',
+        nameEn: 'Hergs CPA Firm',
+        address: '臺中市西區英國路21號',
+        addressLine2: '3樓之1',
+        phone: '04-22205606',
+        taxId: '92254178',
+        bank: '永豐銀行台中分行',
+        bankCode: '807',
+        accountNumber: '003-018-0019011-7'
       };
       
-      // === PDF 生成功能 - 请款单 ===
-      async function generateInvoicePDF(receiptId) {
+      // === 打印功能 ===
+      async function printInvoice(receiptId) {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>列印請款單</title>');
+        printWindow.document.write('<meta charset="utf-8">');
+        printWindow.document.write(`<style>
+          @page { margin: 20mm; }
+          body { font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; padding: 20px; }
+          h1 { text-align: center; color: #8b7542; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th, td { border: 1px solid #000; padding: 10px; }
+          th { background: #f0f0f0; text-align: center; }
+          @media print { button { display: none; } }
+        </style>`);
+        printWindow.document.write('</head><body>');
+        printWindow.document.write('<button onclick="window.print()" style="margin-bottom:10px;padding:10px 20px;">列印</button>');
+        printWindow.document.write('<h1>霍爾果斯會計師事務所<br/>請款單</h1>');
+        
         try {
-          // 获取收据详情
           const response = await fetch(`/internal/api/v1/receipts/${receiptId}`);
           const result = await response.json();
           
           if (!result.ok || !result.data) {
+            printWindow.close();
             alert('無法載入收據資料');
             return;
           }
           
           const receipt = result.data;
           
-          // 初始化 jsPDF
-          const { jsPDF } = window.jspdf;
-          const doc = new jsPDF();
+          // 添加客户和收据信息
+          printWindow.document.write(`<p><strong>客戶名稱：</strong>${receipt.clientName}</p>`);
+          printWindow.document.write(`<p><strong>收據編號：</strong>${receiptId}</p>`);
+          printWindow.document.write(`<p><strong>開立日期：</strong>${receipt.receiptDate}</p>`);
           
-          // 设置中文字体
-          doc.setFont("NotoSansCJKtc-Regular", "normal");
+          // 添加表格
+          let tableHTML = '<table><thead><tr><th>項目</th><th>代辦費(新台幣)</th><th>規費(新台幣)</th><th>雜費(新台幣)</th></tr></thead><tbody>';
           
-          // 页面宽度
-          const pageWidth = doc.internal.pageSize.getWidth();
+          // 添加明细或总金额
+          if (receipt.items && receipt.items.length > 0) {
+            receipt.items.forEach(item => {
+              tableHTML += `<tr><td>${item.serviceName}</td><td style="text-align:right">$${item.unitPrice.toLocaleString()}</td><td style="text-align:right">$-</td><td style="text-align:right">$-</td></tr>`;
+            });
+          } else {
+            tableHTML += `<tr><td>${receipt.notes || '服務費用'}</td><td style="text-align:right">$${receipt.totalAmount.toLocaleString()}</td><td style="text-align:right">$-</td><td style="text-align:right">$-</td></tr>`;
+          }
           
-          // === 顶部：公司名称 ===
-          doc.setFontSize(20);
-          doc.setTextColor(139, 117, 66); // 金色
-          doc.text(COMPANY_INFO.name, pageWidth / 2, 25, { align: 'center' });
+          // 合计行
+          tableHTML += `<tr><td><strong>合計</strong></td><td style="text-align:right"><strong>$${receipt.totalAmount.toLocaleString()}</strong></td><td style="text-align:right"><strong>$-</strong></td><td style="text-align:right"><strong>$-</strong></td></tr>`;
+          tableHTML += '</tbody></table>';
           
-          // 下划线
-          doc.setDrawColor(139, 117, 66);
-          doc.setLineWidth(0.5);
-          doc.line(60, 27, 150, 27);
+          printWindow.document.write(tableHTML);
+          printWindow.document.write(`<p><strong>費用總計：${receipt.totalAmount.toLocaleString()} 元</strong></p>`);
+          printWindow.document.write('<p>(本次扣繳金額：0 元)</p>');
+          printWindow.document.write('<p>款項請匯入下列帳戶，謝謝！</p>');
+          printWindow.document.write(`<p>戶名：${COMPANY_INFO.name}<br>`);
+          printWindow.document.write(`銀行：${COMPANY_INFO.bank}<br>`);
+          printWindow.document.write(`銀行代號：${COMPANY_INFO.bankCode}<br>`);
+          printWindow.document.write(`帳號：${COMPANY_INFO.accountNumber}</p>`);
           
-          doc.setFontSize(11);
-          doc.setTextColor(100, 100, 100);
-          doc.text(COMPANY_INFO.nameEn, pageWidth / 2, 33, { align: 'center' });
+          printWindow.document.write('</body></html>');
+          printWindow.document.close();
+        } catch (error) {
+          console.error('列印請款單失敗:', error);
+          alert('列印請款單失敗，請稍後再試');
+        }
+      }
+      
+      async function printReceipt(receiptId) {
+        window.open(`/internal/print-receipt?id=${receiptId}`, '_blank');
+      }
           
           // === 标题：請款單 ===
           doc.setFontSize(18);
@@ -1341,21 +1368,21 @@
           doc.save(`收據_${receipt.clientName}_${receiptId}.pdf`);
           
         } catch (error) {
-          console.error('生成收據失敗:', error);
-          alert('生成收據失敗，請稍後再試');
+          console.error("生成收據失敗:", error);
+          alert("生成收據失敗，請稍後再試");
         }
       }
       
       // 金额转中文大写
       function convertAmountToChinese(amount) {
-        const digits = ['零', '壹', '貳', '參', '肆', '伍', '陸', '柒', '捌', '玖'];
-        const units = ['', '拾', '佰', '仟', '萬', '拾萬', '佰萬', '仟萬', '億'];
+        const digits = ["零", "壹", "貳", "參", "肆", "伍", "陸", "柒", "捌", "玖"];
+        const units = ["", "拾", "佰", "仟", "萬", "拾萬", "佰萬", "仟萬", "億"];
         
-        if (amount === 0) return '零';
+        if (amount === 0) return "零";
         
         const amountStr = Math.floor(amount).toString();
         const len = amountStr.length;
-        let result = '';
+        let result = "";
         let zeroCount = 0;
         
         for (let i = 0; i < len; i++) {
@@ -1366,7 +1393,7 @@
             zeroCount++;
           } else {
             if (zeroCount > 0) {
-              result += '零';
+              result += "零";
             }
             result += digits[digit] + units[unitIndex];
             zeroCount = 0;
@@ -1384,30 +1411,30 @@
         const month = date.getMonth() + 1;
         const day = date.getDate();
         
-        const monthChinese = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
+        const monthChinese = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
         const dayChinese = convertNumberToChinese(day);
         
-        return \`中華民國\${convertNumberToChinese(rocYear)}年\${monthChinese[month]}月\${dayChinese}日\`;
+        return `中華民國${convertNumberToChinese(rocYear)}年${monthChinese[month]}月${dayChinese}日`;
       }
       
       // 数字转中文
       function convertNumberToChinese(num) {
-        const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
-        const units = ['', '十', '百'];
+        const digits = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+        const units = ["", "十", "百"];
         
         if (num < 10) return digits[num];
-        if (num < 20) return '十' + (num === 10 ? '' : digits[num % 10]);
+        if (num < 20) return "十" + (num === 10 ? "" : digits[num % 10]);
         if (num < 100) {
           const tens = Math.floor(num / 10);
           const ones = num % 10;
-          return digits[tens] + '十' + (ones === 0 ? '' : digits[ones]);
+          return digits[tens] + "十" + (ones === 0 ? "" : digits[ones]);
         }
         if (num < 1000) {
           const hundreds = Math.floor(num / 100);
           const remainder = num % 100;
-          let result = digits[hundreds] + '百';
+          let result = digits[hundreds] + "百";
           if (remainder > 0) {
-            if (remainder < 10) result += '零';
+            if (remainder < 10) result += "零";
             result += convertNumberToChinese(remainder);
           }
           return result;
@@ -1416,8 +1443,8 @@
       }
       
       // 将函数暴露到全局作用域
-      window.generateInvoicePDF = generateInvoicePDF;
-      window.generateReceiptPDF = generateReceiptPDF;
+      window.printInvoice = printInvoice;
+      window.printReceipt = printReceipt;
     </script>
     <script src="/assets/js/components/bootstrap.js?v=3"></script>
   </body>
