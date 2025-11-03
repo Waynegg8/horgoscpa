@@ -1,5 +1,5 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
-import { generateCacheKey, getCache, saveCache, invalidateCacheByType } from "../cache-helper.js";
+import { generateCacheKey, getCache, saveCache, invalidateCache, invalidateCacheByType } from "../cache-helper.js";
 
 export async function handleClients(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -67,6 +67,21 @@ export async function handleClients(request, env, me, requestId, url) {
 		
 		console.log('[API DEBUG] 服務項目路由匹配！clientId:', clientId);
 		
+		// ⚡ 尝试从缓存读取
+		const cacheKey = generateCacheKey('client_services', { clientId });
+		const cached = await getCache(env, cacheKey);
+		
+		if (cached && cached.data) {
+			console.log('[API DEBUG] ✓ 使用缓存的服务项目');
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "查詢成功（缓存）",
+				data: cached.data,
+				meta: { requestId, ...cached.meta }
+			}, corsHeaders);
+		}
+		
 		try {
 			const client = await env.DATABASE.prepare(
 				`SELECT client_id FROM Clients WHERE client_id = ? AND is_deleted = 0`
@@ -121,6 +136,11 @@ export async function handleClients(request, env, me, requestId, url) {
 			}));
 			
 			console.log('[API DEBUG] 最終返回服務列表:', data);
+			
+			// ⚡ 保存到缓存（不等待完成）
+			saveCache(env, cacheKey, 'client_services', data, {
+				scopeParams: { clientId }
+			}).catch(err => console.error('[CLIENTS] 服务项目缓存保存失败:', err));
 			
 			return jsonResponse(200, {
 				ok: true,
@@ -707,6 +727,12 @@ export async function handleClients(request, env, me, requestId, url) {
 			console.log('[CLIENTS.JS] 新增服務 - 插入成功 client_service_id =', result?.meta?.last_row_id);
 			
 			const clientServiceId = result?.meta?.last_row_id;
+			
+			// ⚡ 失效该客户的服务项目缓存
+			const invalidateCacheKey = generateCacheKey('client_services', { clientId });
+			invalidateCache(env, invalidateCacheKey).catch(err => 
+				console.error('[CLIENTS] 失效服务项目缓存失败:', err)
+			);
 			
 			return jsonResponse(201, {
 				ok: true,
