@@ -1081,27 +1081,98 @@
         printWindow.document.write('<html><head><title>列印請款單</title>');
         printWindow.document.write('<meta charset="utf-8">');
         printWindow.document.write(`<style>
-          @page { size: A4; margin: 15mm 20mm; }
+          @page { size: A4; margin: 20mm 25mm; }
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
-            font-family: "Microsoft JhengHei", "PingFang TC", "SimSun", sans-serif; 
+            font-family: "DFKai-SB", "標楷體", "Microsoft JhengHei", "PingFang TC", serif; 
             font-size: 12pt;
-            line-height: 1.6;
-            padding: 10mm;
+            line-height: 1.8;
+            padding: 0;
           }
-          .header { text-align: center; margin-bottom: 8mm; }
-          .company-name { font-size: 18pt; font-weight: bold; margin-bottom: 3mm; }
-          .doc-title { font-size: 20pt; font-weight: bold; letter-spacing: 4pt; margin-bottom: 8mm; }
-          .info-section { margin-bottom: 5mm; font-size: 11pt; }
-          .info-row { margin-bottom: 2mm; }
-          table { width: 100%; border-collapse: collapse; margin: 5mm 0; }
-          th, td { border: 1px solid #000; padding: 6pt 8pt; text-align: left; }
-          th { background: #f5f5f5; text-align: center; font-weight: bold; font-size: 11pt; }
-          td { font-size: 11pt; }
+          .company-name-zh { 
+            font-size: 20pt; 
+            font-weight: bold; 
+            color: #8B6914;
+            letter-spacing: 2pt;
+            margin-bottom: 3mm;
+          }
+          .company-name-en { 
+            font-size: 13pt; 
+            font-weight: bold; 
+            color: #000;
+            margin-bottom: 10mm;
+          }
+          .doc-title { 
+            font-size: 18pt; 
+            font-weight: bold; 
+            text-align: center;
+            letter-spacing: 8pt;
+            border-bottom: 2px solid #000;
+            padding-bottom: 3mm;
+            margin-bottom: 8mm;
+          }
+          .customer-name { 
+            font-size: 12pt;
+            margin-bottom: 8mm;
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 8mm 0;
+          }
+          th, td { 
+            border: 1px solid #000; 
+            padding: 8pt;
+            font-size: 12pt;
+          }
+          th { 
+            text-align: center; 
+            font-weight: normal;
+          }
+          td { 
+            text-align: left;
+          }
           .text-right { text-align: right !important; }
           .text-center { text-align: center !important; }
-          .summary { margin: 5mm 0; font-size: 11pt; }
-          .bank-info { margin-top: 8mm; font-size: 10pt; line-height: 1.8; }
+          .total-amount { 
+            font-size: 13pt;
+            font-weight: bold;
+            color: #DC143C;
+            margin: 8mm 0 3mm 0;
+          }
+          .withholding { 
+            font-size: 12pt;
+            margin-bottom: 8mm;
+          }
+          .bank-section { 
+            font-size: 12pt;
+            margin-bottom: 8mm;
+          }
+          .bank-info { 
+            font-size: 12pt;
+            line-height: 2;
+            display: inline-block;
+            vertical-align: top;
+          }
+          .stamp-area {
+            display: inline-block;
+            width: 80pt;
+            height: 80pt;
+            margin-left: 30pt;
+            vertical-align: top;
+          }
+          .date-row {
+            font-size: 12pt;
+            text-align: center;
+            letter-spacing: 12pt;
+            margin: 15mm 0 10mm 0;
+          }
+          .page-end {
+            text-align: center;
+            font-size: 11pt;
+            margin-top: 15mm;
+            color: #666;
+          }
           @media print { 
             button { display: none !important; }
             body { padding: 0; }
@@ -1122,29 +1193,46 @@
           
           const receipt = result.data;
           
+          // 民国纪年转换
+          const convertToROCDateInvoice = (dateStr) => {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const rocYear = date.getFullYear() - 1911;
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            // 转换为中文数字
+            const numberToChinese = (num) => {
+              const digits = ['○', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+              if (num < 10) return digits[num];
+              if (num < 20) return '一' + digits[num - 10];
+              const tens = Math.floor(num / 10);
+              const ones = num % 10;
+              return digits[tens] + (ones > 0 ? digits[ones] : '');
+            };
+            
+            return `中　華　民　國　${numberToChinese(rocYear)}　年　${numberToChinese(month)}　月　${numberToChinese(day)}　日`;
+          };
+          
           let totalServiceFee = 0;
           let totalGovFee = 0;
           let totalMiscFee = 0;
           
           printWindow.document.write(`
-            <div class="header">
-              <div class="company-name">${COMPANY_INFO.name}</div>
-              <div class="doc-title">請 款 單</div>
-            </div>
+            <div class="company-name-zh">${COMPANY_INFO.name}</div>
+            <div class="company-name-en">${COMPANY_INFO.nameEn}</div>
             
-            <div class="info-section">
-              <div class="info-row"><strong>客戶名稱：</strong>${receipt.clientName}</div>
-              <div class="info-row"><strong>收據編號：</strong>${receiptId}</div>
-              <div class="info-row"><strong>開立日期：</strong>${receipt.receiptDate}</div>
-            </div>
+            <div class="doc-title">請款單</div>
+            
+            <div class="customer-name"><strong>客戶名稱：</strong>${receipt.clientName}</div>
             
             <table>
               <thead>
                 <tr>
-                  <th style="width:40%">項　　目</th>
-                  <th style="width:20%">代辦費（新台幣）</th>
-                  <th style="width:20%">規　費（新台幣）</th>
-                  <th style="width:20%">雜　費（新台幣）</th>
+                  <th style="width:40%">項目</th>
+                  <th style="width:20%">代辦費<br>（新台幣）</th>
+                  <th style="width:20%">規費<br>（新台幣）</th>
+                  <th style="width:20%">雜費<br>（新台幣）</th>
                 </tr>
               </thead>
               <tbody>
@@ -1163,10 +1251,10 @@
               
               printWindow.document.write(`
                 <tr>
-                  <td>${item.serviceName}${item.notes ? '<br><small style="color:#666;">'+item.notes+'</small>' : ''}</td>
-                  <td class="text-right">${serviceFee > 0 ? '$' + serviceFee.toLocaleString() : '-'}</td>
-                  <td class="text-right">${govFee > 0 ? '$' + govFee.toLocaleString() : '-'}</td>
-                  <td class="text-right">${miscFee > 0 ? '$' + miscFee.toLocaleString() : '-'}</td>
+                  <td>${item.serviceName}${item.notes ? '，' + item.notes : ''}</td>
+                  <td class="text-right">${serviceFee > 0 ? '$' + serviceFee.toLocaleString() : '$-'}</td>
+                  <td class="text-right">${govFee > 0 ? '$' + govFee.toLocaleString() : '$-'}</td>
+                  <td class="text-right">${miscFee > 0 ? '$' + miscFee.toLocaleString() : '$-'}</td>
                 </tr>
               `);
             });
@@ -1176,35 +1264,42 @@
               <tr>
                 <td>${receipt.notes || '服務費用'}</td>
                 <td class="text-right">$${receipt.totalAmount.toLocaleString()}</td>
-                <td class="text-right">-</td>
-                <td class="text-right">-</td>
+                <td class="text-right">$-</td>
+                <td class="text-right">$-</td>
               </tr>
             `);
           }
           
           // 合计行
           printWindow.document.write(`
-                <tr style="font-weight:bold;">
-                  <td class="text-center">合　　計</td>
-                  <td class="text-right">${totalServiceFee > 0 ? '$' + totalServiceFee.toLocaleString() : '-'}</td>
-                  <td class="text-right">${totalGovFee > 0 ? '$' + totalGovFee.toLocaleString() : '-'}</td>
-                  <td class="text-right">${totalMiscFee > 0 ? '$' + totalMiscFee.toLocaleString() : '-'}</td>
+                <tr>
+                  <td class="text-center">合計</td>
+                  <td class="text-right">$${totalServiceFee.toLocaleString()}</td>
+                  <td class="text-right">$${totalGovFee > 0 ? totalGovFee.toLocaleString() : '-'}</td>
+                  <td class="text-right">$${totalMiscFee > 0 ? totalMiscFee.toLocaleString() : '-'}</td>
                 </tr>
               </tbody>
             </table>
             
-            <div class="summary">
-              <div><strong>費用總計：新台幣 ${receipt.totalAmount.toLocaleString()} 元</strong></div>
-              <div style="margin-top:2mm;">（本次扣繳金額：0 元）</div>
-            </div>
+            <div class="total-amount">費用總計：${receipt.totalAmount.toLocaleString()} 元</div>
+            
+            <div class="withholding">（本次扣繳金額：0 元）</div>
+            
+            <div class="bank-section">款項請匯入下列帳戶，謝謝！</div>
             
             <div class="bank-info">
-              <div style="margin-bottom:3mm;"><strong>款項請匯入下列帳戶，謝謝！</strong></div>
-              <div>戶　　名：${COMPANY_INFO.name}</div>
-              <div>銀　　行：${COMPANY_INFO.bank}</div>
-              <div>銀行代號：${COMPANY_INFO.bankCode}</div>
-              <div>帳　　號：${COMPANY_INFO.accountNumber}</div>
+              戶名：${COMPANY_INFO.name}<br>
+              銀行：${COMPANY_INFO.bank}<br>
+              銀行代號：${COMPANY_INFO.bankCode}<br>
+              帳號：${COMPANY_INFO.accountNumber}
             </div>
+            <div class="stamp-area">
+              <!-- 印章区域 -->
+            </div>
+            
+            <div class="date-row">${convertToROCDateInvoice(receipt.receiptDate)}</div>
+            
+            <div class="page-end">——————————————本頁完——————————————</div>
           `);
           
           printWindow.document.write('</body></html>');
