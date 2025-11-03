@@ -956,7 +956,14 @@
 
           empItemsList.innerHTML = empState.userSalaryItems.map((item, index) => {
             const recurringType = item.recurringType || 'monthly';
-            const recurringMonths = item.recurringMonths ? JSON.parse(item.recurringMonths) : [];
+            let recurringMonths = [];
+            if (item.recurringMonths) {
+              try {
+                recurringMonths = JSON.parse(item.recurringMonths);
+              } catch (e) {
+                console.error('Failed to parse recurring_months:', item.recurringMonths);
+              }
+            }
             const showMonthSelector = recurringType === 'yearly';
             
             return `

@@ -288,18 +288,23 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const items = salaryItems.results || [];
 	
 	for (const item of items) {
-		// 判断是否应该在当月发放
-		const recurringType = item.recurring_type || 'monthly';
-		const shouldPay = shouldPayInMonth(
-			recurringType,
-			item.recurring_months,
-			item.effective_date,
-			item.expiry_date,
-			month
-		);
-		
-		if (!shouldPay) {
-			continue; // 不在发放月份，跳过
+		try {
+			// 判断是否应该在当月发放
+			const recurringType = item.recurring_type || 'monthly';
+			const shouldPay = shouldPayInMonth(
+				recurringType,
+				item.recurring_months,
+				item.effective_date,
+				item.expiry_date,
+				month
+			);
+			
+			if (!shouldPay) {
+				continue; // 不在发放月份，跳过
+			}
+		} catch (error) {
+			console.error('[calculateEmployeePayroll] Error checking recurring:', error, item);
+			// 如果判断失败，默认发放（向下兼容）
 		}
 		
 		const amount = item.amount_cents || 0;
