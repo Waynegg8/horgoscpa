@@ -32,7 +32,13 @@ export async function handlePunchRecords(request, env, me, requestId, url, path)
 		// GET /punch-records/:recordId/download - 直接下载文件
 		if (method === "GET" && path.match(/^\/internal\/api\/v1\/punch-records\/\d+\/download$/)) {
 			const recordId = parseInt(path.split("/")[6]);
-			return await downloadFile(env, me, requestId, corsHeaders, recordId);
+			return await downloadFile(env, me, requestId, corsHeaders, recordId, false);
+		}
+
+		// GET /punch-records/:recordId/preview - 预览文件
+		if (method === "GET" && path.match(/^\/internal\/api\/v1\/punch-records\/\d+\/preview$/)) {
+			const recordId = parseInt(path.split("/")[6]);
+			return await downloadFile(env, me, requestId, corsHeaders, recordId, true);
 		}
 
 		// DELETE /punch-records/:recordId - 删除记录
@@ -92,7 +98,7 @@ async function getPunchRecords(env, requestId, corsHeaders, me) {
 				month: r.month,
 				fileName: r.file_name,
 				fileSizeBytes: r.file_size_bytes,
-				fileType: r.file_type,
+				fileType: r.file_type || 'application/octet-stream',
 				notes: r.notes,
 				uploadedAt: r.confirmed_at || r.uploaded_at
 			}))
@@ -182,9 +188,9 @@ async function uploadFile(request, env, me, requestId, corsHeaders) {
 }
 
 /**
- * 直接下载文件
+ * 下载或预览文件
  */
-async function downloadFile(env, me, requestId, corsHeaders, recordId) {
+async function downloadFile(env, me, requestId, corsHeaders, recordId, isPreview = false) {
 	try {
 		// 检查记录是否存在且属于当前用户
 		const record = await env.DATABASE.prepare(`
@@ -231,10 +237,11 @@ async function downloadFile(env, me, requestId, corsHeaders, recordId) {
 			}, corsHeaders);
 		}
 
-		// 返回文件
+		// 根据是否预览设置Content-Disposition
+		const disposition = isPreview ? 'inline' : 'attachment';
 		const headers = {
 			'Content-Type': record.file_type || 'application/octet-stream',
-			'Content-Disposition': `attachment; filename="${encodeURIComponent(record.file_name)}"`,
+			'Content-Disposition': `${disposition}; filename="${encodeURIComponent(record.file_name)}"`,
 			...corsHeaders
 		};
 
@@ -248,7 +255,7 @@ async function downloadFile(env, me, requestId, corsHeaders, recordId) {
 		return jsonResponse(500, {
 			ok: false,
 			code: "DOWNLOAD_ERROR",
-			message: "下载失败",
+			message: isPreview ? "预览失败" : "下载失败",
 			meta: { requestId }
 		}, corsHeaders);
 	}

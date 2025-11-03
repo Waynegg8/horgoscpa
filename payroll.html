@@ -2019,6 +2019,17 @@
               hour: '2-digit', minute: '2-digit'
             });
             const fileSize = (record.fileSizeBytes / 1024).toFixed(1) + ' KB';
+            
+            // 判断文件类型是否可预览
+            const fileType = record.fileType || '';
+            const canPreview = fileType.includes('pdf') || 
+                             fileType.includes('image') || 
+                             fileType.startsWith('image/');
+            
+            const previewButton = canPreview ? 
+              `<button class="btn" onclick="previewPunchRecord('${record.recordId}', '${record.fileName}')" style="font-size: 0.875rem; padding: 0.25rem 0.75rem;">
+                👁️ 預覽
+              </button>` : '';
 
             return `
               <tr>
@@ -2027,7 +2038,8 @@
                 <td>${fileSize}</td>
                 <td>${uploadDate}</td>
                 <td>${record.notes || '-'}</td>
-                <td>
+                <td style="white-space: nowrap;">
+                  ${previewButton}
                   <button class="btn" onclick="downloadPunchRecord('${record.recordId}', '${record.fileName}')" style="font-size: 0.875rem; padding: 0.25rem 0.75rem;">
                     ⬇️ 下載
                   </button>
@@ -2039,6 +2051,13 @@
             `;
           }).join('');
         }
+
+        // 預覽打卡記錄
+        window.previewPunchRecord = function(recordId, fileName) {
+          // 在新窗口中打開預覽
+          const previewUrl = `${apiBase}/punch-records/${recordId}/preview`;
+          window.open(previewUrl, '_blank');
+        };
 
         // 下載打卡記錄
         window.downloadPunchRecord = function(recordId, fileName) {

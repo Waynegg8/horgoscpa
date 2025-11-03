@@ -481,6 +481,9 @@ async function uploadDocument(request, env, me, corsHeaders) {
       nowISO
     ).run();
     
+    // ⚡ 清除文档列表的 KV 缓存
+    await deleteKVCacheByPrefix(env, 'documents_list');
+    
     return new Response(JSON.stringify({
       ok: true,
       data: {
@@ -700,6 +703,9 @@ async function updateDocument(request, env, docId, me, corsHeaders) {
       docId
     ).run();
     
+    // ⚡ 清除文档列表的 KV 缓存
+    await deleteKVCacheByPrefix(env, 'documents_list');
+    
     return new Response(JSON.stringify({
       ok: true,
       data: {
@@ -755,6 +761,9 @@ async function deleteDocument(env, docId, me, corsHeaders) {
       SET is_deleted = 1, updated_at = ?
       WHERE document_id = ?
     `).bind(new Date().toISOString(), docId).run();
+    
+    // ⚡ 清除文档列表的 KV 缓存
+    await deleteKVCacheByPrefix(env, 'documents_list');
     
     // TODO: 可选：从R2删除实际文件
     // if (existing.file_url && env.R2_BUCKET) {
