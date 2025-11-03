@@ -614,7 +614,6 @@
           inputClientService.innerHTML = '<option value="">請選擇服務</option>';
           inputBillingMonth.value = '';
           inputAmount.value = '';
-          inputStatusNew.value = 'unpaid';
           inputNotes.value = '';
           currentClientServices = [];
           
@@ -826,7 +825,7 @@
 
         // ⚡ 预渲染初始化
         if (window.PagePrerender) {
-          window.PagePrerender.init('.receipts-container');
+          window.PagePrerender.init('.clients-content');
         }
 
         // 初始化
@@ -839,7 +838,7 @@
           
           // ⚡ 自动保存预渲染
           if (window.PagePrerender) {
-            setTimeout(() => window.PagePrerender.autoSave('.receipts-container', 2000), 1000);
+            setTimeout(() => window.PagePrerender.autoSave('.clients-content', 2000), 1000);
           }
         }
         
