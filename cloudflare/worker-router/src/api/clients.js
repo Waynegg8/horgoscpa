@@ -68,18 +68,37 @@ export async function handleClients(request, env, me, requestId, url) {
 		
 		console.log('[API DEBUG] 服務項目路由匹配！clientId:', clientId);
 		
-		// ⚡ 尝试从缓存读取
+		// ⚡ 优先尝试从KV缓存读取（极快<50ms）
 		const cacheKey = generateCacheKey('client_services', { clientId });
-		const cached = await getCache(env, cacheKey);
+		const kvCached = await getKVCache(env, cacheKey);
 		
-		if (cached && cached.data) {
-			console.log('[API DEBUG] ✓ 使用缓存的服务项目');
+		if (kvCached && kvCached.data) {
+			console.log('[API DEBUG] ✓ 使用KV缓存的服务项目');
 			return jsonResponse(200, {
 				ok: true,
 				code: "SUCCESS",
-				message: "查詢成功（缓存）",
-				data: cached.data,
-				meta: { requestId, ...cached.meta }
+				message: "查詢成功（KV缓存）⚡",
+				data: kvCached.data,
+				meta: { requestId, ...kvCached.meta, cache_source: 'kv' }
+			}, corsHeaders);
+		}
+		
+		// ⚡ KV未命中，尝试D1缓存（备份）
+		const d1Cached = await getCache(env, cacheKey);
+		if (d1Cached && d1Cached.data) {
+			// 异步同步到KV
+			saveKVCache(env, cacheKey, 'client_services', d1Cached.data, {
+				scopeParams: { clientId },
+				ttl: 3600
+			}).catch(err => console.error('[CLIENTS] KV同步失败:', err));
+			
+			console.log('[API DEBUG] ✓ 使用D1缓存的服务项目');
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "查詢成功（D1缓存）",
+				data: d1Cached.data,
+				meta: { requestId, ...d1Cached.meta, cache_source: 'd1' }
 			}, corsHeaders);
 		}
 		
@@ -138,12 +157,18 @@ export async function handleClients(request, env, me, requestId, url) {
 			
 			console.log('[API DEBUG] 最終返回服務列表:', data);
 			
-			// ⚡ 保存到缓存（同步等待）
+			// ⚡ 并行保存到KV（极快）和D1（备份）
 			try {
-				await saveCache(env, cacheKey, 'client_services', data, {
-					scopeParams: { clientId }
-				});
-				console.log('[CLIENTS] ✓ 客户服务项目缓存已保存');
+				await Promise.all([
+					saveKVCache(env, cacheKey, 'client_services', data, {
+						scopeParams: { clientId },
+						ttl: 3600 // 1小时
+					}),
+					saveCache(env, cacheKey, 'client_services', data, {
+						scopeParams: { clientId }
+					})
+				]);
+				console.log('[CLIENTS] ✓ 客户服务项目缓存已保存（KV+D1）');
 			} catch (err) {
 				console.error('[CLIENTS] ✗ 服务项目缓存保存失败:', err);
 			}
