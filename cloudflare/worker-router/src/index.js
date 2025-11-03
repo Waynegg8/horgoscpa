@@ -130,6 +130,90 @@ export default {
 		}
 	}
 	
+	// ⚡ KV缓存预热端点（手动触发KV写入）
+	if (path === "/internal/api/v1/kv-warmup" && method === "POST") {
+		const corsHeaders = getCorsHeadersForRequest(request, env);
+		const { saveKVCache } = await import("./kv-cache-helper.js");
+		
+		try {
+			const me = await getSessionUser(request, env);
+			if (!me || !me.is_admin) {
+				return jsonResponse(403, {
+					ok: false,
+					message: '需要管理员权限'
+				}, corsHeaders);
+			}
+			
+			const warmupResults = [];
+			
+			// 1. 预热客户列表
+			const clientsRows = await env.DATABASE.prepare(
+				`SELECT client_id, company_name, tax_registration_number, contact_person_1, 
+				        phone, email, created_at, assignee_user_id
+				 FROM Clients
+				 WHERE is_deleted = 0
+				 ORDER BY created_at DESC
+				 LIMIT 50`
+			).all();
+			
+			const clientsData = {
+				list: (clientsRows?.results || []).map(r => ({
+					clientId: r.client_id,
+					companyName: r.company_name,
+					taxId: r.tax_registration_number,
+					contact_person_1: r.contact_person_1 || "",
+					assigneeName: "",
+					tags: [],
+					phone: r.phone || "",
+					email: r.email || "",
+					createdAt: r.created_at,
+					year_total: 0
+				})),
+				meta: { page: 1, perPage: 50, total: clientsRows?.results?.length || 0 }
+			};
+			
+			const { generateCacheKey } = await import("./kv-cache-helper.js");
+			const clientsCacheKey = generateCacheKey('clients_list', { page: 1, perPage: 50, q: '', tag_id: '' });
+			await saveKVCache(env, clientsCacheKey, 'clients_list', clientsData, { ttl: 3600 });
+			warmupResults.push({ type: 'clients_list', key: clientsCacheKey, count: clientsData.list.length });
+			
+			// 2. 预热假日数据
+			const holidaysRows = await env.DATABASE.prepare(
+				`SELECT holiday_date, name, is_national_holiday, is_weekly_restday, is_makeup_workday
+				 FROM Holidays
+				 WHERE holiday_date >= date('now', '-1 year')
+				 ORDER BY holiday_date ASC`
+			).all();
+			
+			const holidaysData = (holidaysRows?.results || []).map(r => ({
+				holiday_date: r.holiday_date,
+				date: r.holiday_date,
+				name: r.name || "",
+				is_national_holiday: Boolean(r.is_national_holiday),
+				is_weekly_restday: Boolean(r.is_weekly_restday),
+				is_makeup_workday: Boolean(r.is_makeup_workday),
+			}));
+			
+			const holidaysCacheKey = generateCacheKey('holidays_all', { start: '', end: '' });
+			await saveKVCache(env, holidaysCacheKey, 'holidays_all', holidaysData, { ttl: 3600 });
+			warmupResults.push({ type: 'holidays_all', key: holidaysCacheKey, count: holidaysData.length });
+			
+			return jsonResponse(200, {
+				ok: true,
+				message: '✅ KV缓存预热完成（需要60秒全球同步）',
+				warmup: warmupResults,
+				note: '请等待60秒后刷新页面测试'
+			}, corsHeaders);
+		} catch (err) {
+			console.error('[KV Warmup] 失败:', err);
+			return jsonResponse(500, {
+				ok: false,
+				message: 'KV预热失败',
+				error: String(err)
+			}, corsHeaders);
+		}
+	}
+	
 	// Auth routes
 	if (path === "/internal/api/v1/auth/login") {
 		return handleLogin(request, env, requestId);
