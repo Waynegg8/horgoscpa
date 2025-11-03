@@ -243,24 +243,31 @@ async function getYearlyBonus(env, requestId, corsHeaders, year) {
 		};
 	});
 
-	// 获取每个员工的默认绩效金额
+	// 获取每个员工每月的默认绩效金额（考虑生效日期）
 	const employeeData = [];
 	for (const user of (users.results || [])) {
-		// 查询员工的绩效奖金项目（使用年中某个日期作为参考）
-		const refDate = `${year}-06-01`;
-		const perfItem = await env.DATABASE.prepare(`
-			SELECT esi.amount_cents
-			FROM EmployeeSalaryItems esi
-			JOIN SalaryItemTypes sit ON sit.item_type_id = esi.item_type_id
-			WHERE esi.user_id = ?
-			  AND sit.item_code = 'PERFORMANCE'
-			  AND esi.is_active = 1
-			  AND esi.effective_date <= ?
-			  AND (esi.expiry_date IS NULL OR esi.expiry_date >= ?)
-			LIMIT 1
-		`).bind(user.user_id, refDate, refDate).first();
+		// 为每个月份分别查询对应生效期间的绩效奖金
+		const monthlyDefaults = {};
+		for (let month = 1; month <= 12; month++) {
+			const monthStr = month.toString().padStart(2, '0');
+			const checkDate = `${year}-${monthStr}-01`;
+			
+			const perfItem = await env.DATABASE.prepare(`
+				SELECT esi.amount_cents, esi.effective_date, esi.expiry_date
+				FROM EmployeeSalaryItems esi
+				JOIN SalaryItemTypes sit ON sit.item_type_id = esi.item_type_id
+				WHERE esi.user_id = ?
+				  AND sit.item_code = 'PERFORMANCE'
+				  AND esi.is_active = 1
+				  AND esi.effective_date <= ?
+				  AND (esi.expiry_date IS NULL OR esi.expiry_date >= ?)
+				ORDER BY esi.effective_date DESC
+				LIMIT 1
+			`).bind(user.user_id, checkDate, checkDate).first();
 
-		const defaultBonusCents = perfItem?.amount_cents || 0;
+			monthlyDefaults[month] = perfItem?.amount_cents || 0;
+		}
+
 		const monthlyAdjustments = bonusMap[user.user_id] || {};
 
 		employeeData.push({
@@ -268,7 +275,7 @@ async function getYearlyBonus(env, requestId, corsHeaders, year) {
 			username: user.username,
 			name: user.name,
 			baseSalary: user.base_salary || 0,
-			defaultBonusCents,
+			monthlyDefaults, // { 1: 300000, 2: 300000, 3: 500000, ... } (單位：分)
 			monthlyAdjustments // { 1: { bonusAmountCents, notes }, 2: {...}, ... }
 		});
 	}

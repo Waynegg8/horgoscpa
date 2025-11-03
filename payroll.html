@@ -253,26 +253,25 @@
             <thead>
               <tr>
                   <th rowspan="2" style="position: sticky; left: 0; background: white; z-index: 2; width: 80px; padding: 6px 8px;">姓名</th>
-                  <th rowspan="2" style="width: 70px; padding: 6px 8px;">預設</th>
-                  <th colspan="12" style="text-align: center; background: #f0f9ff; padding: 6px 8px;">各月份調整（元）</th>
+                  <th colspan="12" style="text-align: center; background: #f0f9ff; padding: 6px 8px;">各月份績效（元）</th>
                 </tr>
                 <tr>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">1月</th>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">2月</th>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">3月</th>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">4月</th>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">5月</th>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">6月</th>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">7月</th>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">8月</th>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">9月</th>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">10月</th>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">11月</th>
-                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">12月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">1月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">2月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">3月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">4月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">5月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">6月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">7月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">8月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">9月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">10月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">11月</th>
+                  <th style="background: #f0f9ff; width: 80px; padding: 6px 8px; font-size: 12px;">12月</th>
               </tr>
             </thead>
               <tbody id="tbodyBonus">
-                <tr><td colspan="14" class="muted" style="padding: 2rem; text-align: center;">載入中...</td></tr>
+                <tr><td colspan="13" class="muted" style="padding: 2rem; text-align: center;">載入中...</td></tr>
             </tbody>
           </table>
           </div>
@@ -1539,26 +1538,30 @@
             renderBonusTable();
           } catch (err) {
             console.error('loadYearlyBonus error:', err);
-            tbodyBonus.innerHTML = '<tr><td colspan="14" class="muted">載入失敗</td></tr>';
+            tbodyBonus.innerHTML = '<tr><td colspan="13" class="muted">載入失敗</td></tr>';
           }
         }
 
         // 渲染全年績效表格
         function renderBonusTable() {
           if (bonusState.employees.length === 0) {
-            tbodyBonus.innerHTML = '<tr><td colspan="14" class="muted">無員工資料</td></tr>';
+            tbodyBonus.innerHTML = '<tr><td colspan="13" class="muted">無員工資料</td></tr>';
             return;
           }
 
           tbodyBonus.innerHTML = bonusState.employees.map((emp, empIndex) => {
-            const defaultAmount = (emp.defaultBonusCents / 100).toFixed(0);
-            
             // 生成12個月的輸入框
             const monthInputs = [];
             for (let month = 1; month <= 12; month++) {
+              // 获取该月的预设绩效（考虑生效日期）
+              const monthDefault = emp.monthlyDefaults?.[month] || 0;
+              const defaultAmount = (monthDefault / 100).toFixed(0);
+              
+              // 获取该月的调整金额
               const monthData = emp.monthlyAdjustments?.[month] || null;
               const value = monthData ? (monthData.bonusAmountCents / 100).toFixed(0) : '';
               
+              // 如果有调整金额，显示调整后的金额；否则显示预设金额作为placeholder
               monthInputs.push(`
                 <td style="padding: 4px 6px;">
                   <input type="number" 
@@ -1569,7 +1572,8 @@
                          placeholder="${defaultAmount}" 
                          min="0" 
                          step="1" 
-                         style="width: 65px; padding: 4px 6px; text-align: right; font-size: 13px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                         title="預設: ${defaultAmount} 元"
+                         style="width: 75px; padding: 4px 6px; text-align: right; font-size: 13px; border: 1px solid #d1d5db; border-radius: 4px;" />
                 </td>
               `);
             }
@@ -1579,7 +1583,6 @@
                 <td style="position: sticky; left: 0; background: white; font-weight: 500; padding: 6px 8px; font-size: 13px;">
                   ${emp.name || emp.username}
                 </td>
-                <td style="text-align: right; padding: 6px 8px; font-size: 13px; color: #6b7280;">${defaultAmount}</td>
                 ${monthInputs.join('')}
               </tr>
             `;
