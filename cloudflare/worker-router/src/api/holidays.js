@@ -1,5 +1,6 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 import { generateCacheKey, getCache, saveCache } from "../cache-helper.js";
+import { getKVCache, saveKVCache } from "../kv-cache-helper.js";
 
 /**
  * GET /api/v1/holidays - 查詢假日資料
@@ -14,17 +15,35 @@ export async function handleHolidays(request, env, me, requestId, url) {
 			const startDate = (params.get("start_date") || "").trim();
 			const endDate = (params.get("end_date") || "").trim();
 			
-			// ⚡ 尝试从缓存读取
+			// ⚡ 优先尝试从KV缓存读取（极快<50ms）
 			const cacheKey = generateCacheKey('holidays_all', { start: startDate, end: endDate });
-			const cached = await getCache(env, cacheKey);
+			const kvCached = await getKVCache(env, cacheKey);
 			
-			if (cached && cached.data) {
+			if (kvCached && kvCached.data) {
 				return jsonResponse(200, { 
 					ok: true, 
 					code: "SUCCESS", 
-					message: "查詢成功（缓存）", 
-					data: cached.data, 
-					meta: { requestId, ...cached.meta } 
+					message: "查詢成功（KV缓存）⚡", 
+					data: kvCached.data, 
+					meta: { requestId, ...kvCached.meta, cache_source: 'kv' } 
+				}, corsHeaders);
+			}
+			
+			// ⚡ KV未命中，尝试D1缓存（备份）
+			const d1Cached = await getCache(env, cacheKey);
+			if (d1Cached && d1Cached.data) {
+				// 异步同步到KV
+				saveKVCache(env, cacheKey, 'holidays_all', d1Cached.data, {
+					scopeParams: { start: startDate, end: endDate },
+					ttl: 3600
+				}).catch(err => console.error('[HOLIDAYS] KV同步失败:', err));
+				
+				return jsonResponse(200, { 
+					ok: true, 
+					code: "SUCCESS", 
+					message: "查詢成功（D1缓存）", 
+					data: d1Cached.data, 
+					meta: { requestId, ...d1Cached.meta, cache_source: 'd1' } 
 				}, corsHeaders);
 			}
 			
@@ -59,12 +78,18 @@ export async function handleHolidays(request, env, me, requestId, url) {
 			is_makeup_workday: Boolean(r.is_makeup_workday),
 		}));
 			
-			// ⚡ 保存到缓存（同步等待）
+			// ⚡ 并行保存到KV（极快）和D1（备份）
 			try {
-				await saveCache(env, cacheKey, 'holidays_all', data, {
-					scopeParams: { start: startDate, end: endDate }
-				});
-				console.log('[HOLIDAYS] ✓ 假日数据缓存已保存');
+				await Promise.all([
+					saveKVCache(env, cacheKey, 'holidays_all', data, {
+						scopeParams: { start: startDate, end: endDate },
+						ttl: 3600 // 1小时
+					}),
+					saveCache(env, cacheKey, 'holidays_all', data, {
+						scopeParams: { start: startDate, end: endDate }
+					})
+				]);
+				console.log('[HOLIDAYS] ✓ 假日数据缓存已保存（KV+D1）');
 			} catch (err) {
 				console.error('[HOLIDAYS] ✗ 缓存保存失败:', err);
 			}

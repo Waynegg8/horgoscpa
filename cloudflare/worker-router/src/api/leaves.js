@@ -1,5 +1,6 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 import { generateCacheKey, getCache, saveCache, invalidateCacheByType } from "../cache-helper.js";
+import { getKVCache, saveKVCache, deleteKVCacheByPrefix } from "../kv-cache-helper.js";
 
 // 确保用户有基本假期余额记录
 async function ensureBasicLeaveBalances(env, userId, year) {
@@ -33,17 +34,36 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				targetUserId = String(queryUserId);
 			}
 			
-			// ⚡ 尝试从缓存读取
+			// ⚡ 优先尝试从KV缓存读取（极快<50ms）
 			const cacheKey = generateCacheKey('leaves_balances', { userId: targetUserId, year });
-			const cached = await getCache(env, cacheKey);
+			const kvCached = await getKVCache(env, cacheKey);
 			
-			if (cached && cached.data) {
+			if (kvCached && kvCached.data) {
 				return jsonResponse(200, { 
 					ok: true, 
 					code: "OK", 
-					message: "成功（缓存）", 
-					data: cached.data, 
-					meta: { requestId, year, userId: targetUserId, ...cached.meta } 
+					message: "成功（KV缓存）⚡", 
+					data: kvCached.data, 
+					meta: { requestId, year, userId: targetUserId, ...kvCached.meta, cache_source: 'kv' } 
+				}, corsHeaders);
+			}
+			
+			// ⚡ KV未命中，尝试D1缓存（备份）
+			const d1Cached = await getCache(env, cacheKey);
+			if (d1Cached && d1Cached.data) {
+				// 异步同步到KV
+				saveKVCache(env, cacheKey, 'leaves_balances', d1Cached.data, {
+					userId: targetUserId,
+					scopeParams: { userId: targetUserId, year },
+					ttl: 3600
+				}).catch(err => console.error('[LEAVES] KV同步失败:', err));
+				
+				return jsonResponse(200, { 
+					ok: true, 
+					code: "OK", 
+					message: "成功（D1缓存）", 
+					data: d1Cached.data, 
+					meta: { requestId, year, userId: targetUserId, ...d1Cached.meta, cache_source: 'd1' } 
 				}, corsHeaders);
 			}
 			
@@ -87,13 +107,20 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				});
 			});
 			
-			// ⚡ 保存到缓存（同步等待）
+			// ⚡ 并行保存到KV（极快）和D1（备份）
 			try {
-				await saveCache(env, cacheKey, 'leaves_balances', data, {
-					userId: targetUserId,
-					scopeParams: { userId: targetUserId, year }
-				});
-				console.log('[LEAVES] ✓ 假期余额缓存已保存');
+				await Promise.all([
+					saveKVCache(env, cacheKey, 'leaves_balances', data, {
+						userId: targetUserId,
+						scopeParams: { userId: targetUserId, year },
+						ttl: 3600 // 1小时
+					}),
+					saveCache(env, cacheKey, 'leaves_balances', data, {
+						userId: targetUserId,
+						scopeParams: { userId: targetUserId, year }
+					})
+				]);
+				console.log('[LEAVES] ✓ 假期余额缓存已保存（KV+D1）');
 			} catch (err) {
 				console.error('[LEAVES] ✗ 余额缓存保存失败:', err);
 			}
