@@ -87,11 +87,16 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				});
 			});
 			
-			// ⚡ 保存到缓存（不等待完成）
-			saveCache(env, cacheKey, 'leaves_balances', data, {
-				userId: targetUserId,
-				scopeParams: { userId: targetUserId, year }
-			}).catch(err => console.error('[LEAVES] 余额缓存保存失败:', err));
+			// ⚡ 保存到缓存（同步等待）
+			try {
+				await saveCache(env, cacheKey, 'leaves_balances', data, {
+					userId: targetUserId,
+					scopeParams: { userId: targetUserId, year }
+				});
+				console.log('[LEAVES] ✓ 假期余额缓存已保存');
+			} catch (err) {
+				console.error('[LEAVES] ✗ 余额缓存保存失败:', err);
+			}
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, year, userId: targetUserId } }, corsHeaders);
 		} catch (err) {
