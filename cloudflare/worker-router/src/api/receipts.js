@@ -389,14 +389,29 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "收據不存在", meta: { requestId } }, corsHeaders);
 			}
 			
-			// 获取收据明细
-			const items = await env.DATABASE.prepare(
-				`SELECT item_id, service_name, quantity, unit_price, subtotal, notes, 
-				        service_fee, government_fee, miscellaneous_fee
-				 FROM ReceiptItems
-				 WHERE receipt_id = ?
-				 ORDER BY item_id`
-			).bind(receiptId).all();
+			// 获取收据明细（兼容新旧数据库结构）
+			let items;
+			try {
+				// 尝试查询新格式（包含三个费用字段）
+				items = await env.DATABASE.prepare(
+					`SELECT item_id, service_name, quantity, unit_price, subtotal, notes, 
+					        COALESCE(service_fee, 0) as service_fee, 
+					        COALESCE(government_fee, 0) as government_fee, 
+					        COALESCE(miscellaneous_fee, 0) as miscellaneous_fee
+					 FROM ReceiptItems
+					 WHERE receipt_id = ?
+					 ORDER BY item_id`
+				).bind(receiptId).all();
+			} catch (err) {
+				// 如果新字段不存在，回退到旧格式
+				console.log('[ReceiptItems] 使用旧格式查询（新字段可能不存在）:', err.message);
+				items = await env.DATABASE.prepare(
+					`SELECT item_id, service_name, quantity, unit_price, subtotal, notes
+					 FROM ReceiptItems
+					 WHERE receipt_id = ?
+					 ORDER BY item_id`
+				).bind(receiptId).all();
+			}
 			
 			// 获取收款记录
 			const payments = await env.DATABASE.prepare(
@@ -682,14 +697,24 @@ export async function handleReceipts(request, env, me, requestId, url) {
 					const subtotal = service_fee + government_fee + miscellaneous_fee;
 					const item_notes = String(item.notes || "").trim();
 					
-					// 为了向后兼容，保留quantity和unit_price字段（但设为默认值）
+					// 为了向后兼容，保留quantity和unit_price字段
 					const quantity = Number(item.quantity || 1);
-					const unit_price = Number(item.unit_price || 0);
+					const unit_price = Number(item.unit_price || subtotal);
 					
-					await env.DATABASE.prepare(
-						`INSERT INTO ReceiptItems (receipt_id, service_name, quantity, unit_price, subtotal, notes, service_fee, government_fee, miscellaneous_fee, created_at)
-						 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-					).bind(receipt_id, service_name, quantity, unit_price, subtotal, item_notes, service_fee, government_fee, miscellaneous_fee, new Date().toISOString()).run();
+					try {
+						// 尝试插入新格式（包含三个费用字段）
+						await env.DATABASE.prepare(
+							`INSERT INTO ReceiptItems (receipt_id, service_name, quantity, unit_price, subtotal, notes, service_fee, government_fee, miscellaneous_fee, created_at)
+							 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+						).bind(receipt_id, service_name, quantity, unit_price, subtotal, item_notes, service_fee, government_fee, miscellaneous_fee, new Date().toISOString()).run();
+					} catch (err) {
+						// 如果新字段不存在，回退到旧格式
+						console.log('[ReceiptItems] 使用旧格式插入（新字段可能不存在）:', err.message);
+						await env.DATABASE.prepare(
+							`INSERT INTO ReceiptItems (receipt_id, service_name, quantity, unit_price, subtotal, notes, created_at)
+							 VALUES (?, ?, ?, ?, ?, ?, ?)`
+						).bind(receipt_id, service_name, quantity, unit_price, subtotal, item_notes, new Date().toISOString()).run();
+					}
 				}
 			}
 			
