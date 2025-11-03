@@ -1085,7 +1085,188 @@
       }
       
       async function printReceipt(receiptId) {
-        window.open(`/internal/print-receipt?id=${receiptId}`, '_blank');
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>列印收據</title>');
+        printWindow.document.write('<meta charset="utf-8">');
+        printWindow.document.write(`<style>
+          @page { margin: 15mm; }
+          body { font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; padding: 0; margin: 0; }
+          .receipt-copy { page-break-after: always; padding: 20px; border: 2px solid #000; margin-bottom: 20px; }
+          .receipt-copy:last-child { page-break-after: auto; }
+          .header { text-align: center; margin-bottom: 10px; }
+          .company-name { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+          .company-info { font-size: 11px; text-align: right; margin-bottom: 10px; }
+          .title { font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 8px; margin: 15px 0; }
+          .date { text-align: center; font-size: 13px; margin-bottom: 10px; }
+          .received-from { font-size: 14px; margin: 15px 0; }
+          table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+          th, td { border: 1px solid #000; padding: 8px; }
+          th { background: #f5f5f5; text-align: center; font-size: 13px; }
+          td { font-size: 13px; }
+          .amount-chinese { font-weight: bold; padding: 10px; }
+          .signature { display: flex; justify-content: space-around; margin: 20px 0; font-size: 14px; }
+          .bank-info { font-size: 12px; margin-top: 15px; line-height: 1.8; }
+          .copy-label { position: absolute; right: 10px; top: 50%; transform: translateY(-50%) rotate(90deg); font-size: 16px; font-weight: bold; }
+          @media print { button { display: none; } .receipt-copy { page-break-after: always; } }
+        </style>`);
+        printWindow.document.write('</head><body>');
+        printWindow.document.write('<button onclick="window.print()" style="margin:10px;padding:10px 20px;position:fixed;top:0;left:0;z-index:1000;">列印</button>');
+        
+        try {
+          const response = await fetch(`/internal/api/v1/receipts/${receiptId}`);
+          const result = await response.json();
+          
+          if (!result.ok || !result.data) {
+            printWindow.close();
+            alert('無法載入收據資料');
+            return;
+          }
+          
+          const receipt = result.data;
+          
+          // 民国纪年转换
+          const convertToROCDate = (dateStr) => {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const rocYear = date.getFullYear() - 1911;
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            return `中華民國${rocYear}年${month}月${day}日`;
+          };
+          
+          // 数字转中文大写
+          const convertAmountToChinese = (amount) => {
+            const digits = ['零', '壹', '貳', '參', '肆', '伍', '陸', '柒', '捌', '玖'];
+            const units = ['', '拾', '佰', '仟', '萬', '拾萬', '佰萬', '仟萬', '億'];
+            
+            if (amount === 0) return '零';
+            
+            const amountStr = Math.floor(amount).toString();
+            const len = amountStr.length;
+            let result = '';
+            let zeroCount = 0;
+            
+            for (let i = 0; i < len; i++) {
+              const digit = parseInt(amountStr[i]);
+              const unitIndex = len - i - 1;
+              
+              if (digit === 0) {
+                zeroCount++;
+              } else {
+                if (zeroCount > 0) {
+                  result += '零';
+                }
+                result += digits[digit] + units[unitIndex];
+                zeroCount = 0;
+              }
+            }
+            
+            return result;
+          };
+          
+          const rocDate = convertToROCDate(receipt.receiptDate);
+          const amountChinese = convertAmountToChinese(receipt.totalAmount);
+          
+          // 生成两联收据（收税联和存查联）
+          const copies = ['收稅聯', '存查聯'];
+          
+          copies.forEach(copyLabel => {
+            printWindow.document.write(`
+              <div class="receipt-copy" style="position:relative;">
+                <div class="copy-label">${copyLabel}</div>
+                
+                <div class="header">
+                  <div class="company-name">${COMPANY_INFO.name}</div>
+                </div>
+                
+                <div class="company-info">
+                  ${COMPANY_INFO.address} ${COMPANY_INFO.addressLine2}<br>
+                  電話：${COMPANY_INFO.phone}<br>
+                  統一編號：${COMPANY_INFO.taxId}<br>
+                  收據編號：${receiptId}
+                </div>
+                
+                <div class="title">收    據</div>
+                
+                <div class="date">${rocDate}</div>
+                
+                <div class="received-from">
+                  茲收到　<strong>${receipt.clientName}</strong>
+                </div>
+                
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:50%">項    目</th>
+                      <th style="width:20%">金    額</th>
+                      <th style="width:15%">支票號碼</th>
+                      <th style="width:15%">備    註</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+            `);
+            
+            // 添加明细或总金额
+            if (receipt.items && receipt.items.length > 0) {
+              receipt.items.forEach(item => {
+                printWindow.document.write(`
+                  <tr>
+                    <td>${item.serviceName}</td>
+                    <td style="text-align:right">${item.unitPrice.toLocaleString()}</td>
+                    <td style="text-align:center"></td>
+                    <td>${item.notes || ''}</td>
+                  </tr>
+                `);
+              });
+            } else {
+              printWindow.document.write(`
+                <tr>
+                  <td>${receipt.notes || '服務費用'}</td>
+                  <td style="text-align:right">${receipt.totalAmount.toLocaleString()}</td>
+                  <td style="text-align:center"></td>
+                  <td></td>
+                </tr>
+              `);
+            }
+            
+            // 添加空白行（至少3行）
+            const itemCount = receipt.items ? receipt.items.length : 1;
+            const emptyRows = Math.max(3 - itemCount, 0);
+            for (let i = 0; i < emptyRows; i++) {
+              printWindow.document.write('<tr><td>&nbsp;</td><td></td><td></td><td></td></tr>');
+            }
+            
+            // 合计行
+            printWindow.document.write(`
+                    <tr>
+                      <td colspan="4" class="amount-chinese">
+                        合計金額(大寫)新台幣：${amountChinese}元整
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                
+                <div class="signature">
+                  <div>會計師：_______________</div>
+                  <div>經收人：_______________</div>
+                </div>
+                
+                <div class="bank-info">
+                  戶名：${COMPANY_INFO.name}<br>
+                  銀行：${COMPANY_INFO.bank}<br>
+                  銀行代號：${COMPANY_INFO.bankCode}<br>
+                  帳號：${COMPANY_INFO.accountNumber}
+                </div>
+              </div>
+            `);
+          });
+          
+          printWindow.document.write('</body></html>');
+          printWindow.document.close();
+        } catch (error) {
+          console.error('列印收據失敗:', error);
+          alert('列印收據失敗，請稍後再試');
+        }
       }
       
       
