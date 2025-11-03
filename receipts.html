@@ -329,11 +329,15 @@
             const banner = document.getElementById('reminderBanner');
             
             if (!json.ok || !json.data || json.data.length === 0) {
+              banner.innerHTML = '';
               banner.style.display = 'none';
+              console.log('[提醒] 無待開收據，隱藏橫幅');
               return;
             }
             
             const reminders = json.data;
+            console.log('[提醒] 載入', reminders.length, '個待開收據');
+            
             banner.innerHTML = `
               <div class="reminder-banner">
                 <div class="reminder-banner-icon">⚠️</div>
@@ -355,11 +359,14 @@
             
           } catch (err) {
             console.error('載入提醒失敗:', err);
+            const banner = document.getElementById('reminderBanner');
+            banner.innerHTML = '';
+            banner.style.display = 'none';
           }
         }
 
         // 從提醒快速創建收據
-        window.createReceiptFromReminder = function(clientId, clientServiceId, billingMonth, amount) {
+        window.createReceiptFromReminder = async function(clientId, clientServiceId, billingMonth, amount) {
           // 打開彈窗
           openModal();
           
@@ -788,9 +795,17 @@
             const json = await res.json();
             console.log('回應:', json); // Debug
             if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '建立失敗');
+            
+            // 顯示成功提示
+            alert('✅ 收據建立成功');
+            
             closeModal();
-            await loadAllReceipts();
-            await loadReceiptReminders(); // 刷新提醒
+            
+            // 刷新列表和提醒
+            await Promise.all([
+              loadAllReceipts(),
+              loadReceiptReminders()
+            ]);
           } catch (err) {
             console.error('創建收據失敗:', err); // Debug
             formError.textContent = String(err?.message || '建立失敗');
