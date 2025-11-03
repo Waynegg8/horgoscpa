@@ -28,7 +28,7 @@ import { handleManualGeneration } from "./api/task_generator.js";
 import { handleTimesheetStats } from "./api/timesheet_stats.js";
 
 export default {
-	async fetch(request, env) {
+	async fetch(request, env, ctx) {
 		const url = new URL(request.url);
 		const path = url.pathname;
 		const method = request.method.toUpperCase();
