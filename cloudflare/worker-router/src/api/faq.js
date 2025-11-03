@@ -291,6 +291,9 @@ async function createFAQ(request, env, me) {
       now
     ).run();
     
+    // ⚡ 清除 FAQ 列表的 KV 缓存
+    await deleteKVCacheByPrefix(env, 'faq_list');
+    
     return new Response(JSON.stringify({
       ok: true,
       data: { 
@@ -389,6 +392,9 @@ async function updateFAQ(request, env, faqId, me) {
       faqId
     ).run();
     
+    // ⚡ 清除 FAQ 列表的 KV 缓存
+    await deleteKVCacheByPrefix(env, 'faq_list');
+    
     return new Response(JSON.stringify({
       ok: true,
       data: {
@@ -441,6 +447,9 @@ async function deleteFAQ(env, faqId, me) {
       SET is_deleted = 1, updated_at = ?
       WHERE faq_id = ?
     `).bind(new Date().toISOString(), faqId).run();
+    
+    // ⚡ 清除 FAQ 列表的 KV 缓存
+    await deleteKVCacheByPrefix(env, 'faq_list');
     
     return new Response(JSON.stringify({
       ok: true,

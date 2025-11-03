@@ -353,11 +353,14 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				}
 			}
 			
-			// ⚡ 失效该用户的请假列表和余额缓存
+			// ⚡ 失效该用户的请假列表和余额缓存（D1缓存）
 			Promise.all([
 				invalidateCacheByType(env, 'leaves_list', { userId: String(me.user_id) }),
 				invalidateCacheByType(env, 'leaves_balances', { userId: String(me.user_id) })
 			]).catch(err => console.error('[LEAVES] 失效缓存失败:', err));
+			
+			// ⚡ 清除KV缓存
+			await deleteKVCacheByPrefix(env, 'leaves_');
 			
 			return jsonResponse(201, { ok:true, code:"CREATED", message:"申請成功", data:{ leaveId }, meta:{ requestId } }, corsHeaders);
 			} catch (err) {
@@ -610,6 +613,9 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			
 			const idRow = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
 			const grantId = String(idRow?.id);
+			
+			// ⚡ 清除KV缓存
+			await deleteKVCacheByPrefix(env, 'leaves_');
 			
 			return jsonResponse(201, { 
 				ok:true, 

@@ -147,6 +147,9 @@ export async function handleTasks(request, env, me, requestId, url) {
 				).bind(taskId, sopIds[i], i).run();
 			}
 			
+			// ⚡ 清除任务缓存
+			await deleteKVCacheByPrefix(env, 'task_detail');
+			
 			return jsonResponse(200, { ok:true, code:"OK", message:"已更新", meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
@@ -381,6 +384,9 @@ export async function handleTasks(request, env, me, requestId, url) {
 				}
 			}
 			
+			// ⚡ 清除任务缓存
+			await deleteKVCacheByPrefix(env, 'task_detail');
+			
 			return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data:{ taskId, taskName, clientServiceId, dueDate, serviceMonth, assigneeUserId }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
@@ -475,6 +481,9 @@ export async function handleTasks(request, env, me, requestId, url) {
 			const sql = `UPDATE ActiveTasks SET ${updates.join(", ")} WHERE task_id = ?`;
 			await env.DATABASE.prepare(sql).bind(...binds, taskId).run();
 
+			// ⚡ 清除任务缓存
+			await deleteKVCacheByPrefix(env, 'task_detail');
+
 			return jsonResponse(200, { ok:true, code:"OK", message:"已更新", data:{ taskId }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
@@ -523,6 +532,9 @@ export async function handleTasks(request, env, me, requestId, url) {
 			
 			// 注意：已移除 pending 状态，新任务默认为 in_progress
 			
+			// ⚡ 清除任务缓存
+			await deleteKVCacheByPrefix(env, 'task_detail');
+			
 			return jsonResponse(200, { ok:true, code:"OK", message:"已開始", meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
@@ -539,6 +551,9 @@ export async function handleTasks(request, env, me, requestId, url) {
 			await env.DATABASE.prepare(
 				`UPDATE ActiveTaskStages SET status = 'completed', completed_at = ? WHERE active_stage_id = ?`
 			).bind(new Date().toISOString(), stageId).run();
+			
+			// ⚡ 清除任务缓存
+			await deleteKVCacheByPrefix(env, 'task_detail');
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"已完成", meta:{ requestId } }, corsHeaders);
 		} catch (err) {
@@ -629,6 +644,9 @@ export async function handleTasks(request, env, me, requestId, url) {
 				}
 			}
 			
+			// ⚡ 清除任务缓存
+			await deleteKVCacheByPrefix(env, 'task_detail');
+			
 			return jsonResponse(200, { ok:true, code:"OK", message:"已更新狀態", meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
@@ -692,6 +710,9 @@ export async function handleTasks(request, env, me, requestId, url) {
 				isOverdue,
 				false
 			);
+			
+			// ⚡ 清除任务缓存
+			await deleteKVCacheByPrefix(env, 'task_detail');
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"已調整到期日", meta:{ requestId } }, corsHeaders);
 		} catch (err) {

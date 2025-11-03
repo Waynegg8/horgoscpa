@@ -24,14 +24,17 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			const tagsJson = JSON.stringify(Array.isArray(tags) ? tags : []);
 			const now = new Date().toISOString();
 			
-			const result = await env.DATABASE.prepare(
-				`INSERT INTO SOPDocuments (title, content, category, tags, scope, client_id, version, is_published, created_by, created_at, updated_at, is_deleted)
-				 VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?, ?, ?, 0)`
-			).bind(title, content, category || '', tagsJson, scope, client_id || null, String(me.user_id), now, now).run();
-			
-			const sopId = result.meta.last_row_id;
-			
-			return jsonResponse(201, { ok:true, code:"CREATED", message:"創建成功", data:{ sop_id: sopId }, meta:{ requestId } }, corsHeaders);
+		const result = await env.DATABASE.prepare(
+			`INSERT INTO SOPDocuments (title, content, category, tags, scope, client_id, version, is_published, created_by, created_at, updated_at, is_deleted)
+			 VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?, ?, ?, 0)`
+		).bind(title, content, category || '', tagsJson, scope, client_id || null, String(me.user_id), now, now).run();
+		
+		const sopId = result.meta.last_row_id;
+		
+		// ⚡ 清除 SOP 列表的 KV 缓存
+		await deleteKVCacheByPrefix(env, 'sop_list');
+		
+		return jsonResponse(201, { ok:true, code:"CREATED", message:"創建成功", data:{ sop_id: sopId }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
@@ -187,13 +190,16 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			
 			const now = new Date().toISOString();
 			
-			await env.DATABASE.prepare(
-				`UPDATE SOPDocuments 
-				 SET title = ?, content = ?, category = ?, tags = ?, scope = ?, client_id = ?, updated_at = ?, version = version + 1
-				 WHERE sop_id = ? AND is_deleted = 0`
-			).bind(title, content, category || '', tagsJson, scope, client_id || null, now, sopId).run();
-			
-			return jsonResponse(200, { ok:true, code:"OK", message:"更新成功", data:{ sop_id: sopId }, meta:{ requestId } }, corsHeaders);
+		await env.DATABASE.prepare(
+			`UPDATE SOPDocuments 
+			 SET title = ?, content = ?, category = ?, tags = ?, scope = ?, client_id = ?, updated_at = ?, version = version + 1
+			 WHERE sop_id = ? AND is_deleted = 0`
+		).bind(title, content, category || '', tagsJson, scope, client_id || null, now, sopId).run();
+		
+		// ⚡ 清除 SOP 列表的 KV 缓存
+		await deleteKVCacheByPrefix(env, 'sop_list');
+		
+		return jsonResponse(200, { ok:true, code:"OK", message:"更新成功", data:{ sop_id: sopId }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
@@ -208,6 +214,9 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			await env.DATABASE.prepare(
 				`UPDATE SOPDocuments SET is_deleted = 1, updated_at = ? WHERE sop_id = ?`
 			).bind(new Date().toISOString(), sopId).run();
+			
+			// ⚡ 清除 SOP 列表的 KV 缓存
+			await deleteKVCacheByPrefix(env, 'sop_list');
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"刪除成功", meta:{ requestId } }, corsHeaders);
 		} catch (err) {
