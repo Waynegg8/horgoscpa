@@ -143,16 +143,19 @@ export async function handleReceipts(request, env, me, requestId, url) {
 
 	// GET /internal/api/v1/receipts - 收据列表
 	if (method === "GET" && path === "/internal/api/v1/receipts") {
+		const params = url.searchParams;
+		const page = Math.max(1, parseInt(params.get("page") || "1", 10));
+		const perPage = Math.min(100, Math.max(1, parseInt(params.get("perPage") || "20", 10)));
+		const offset = (page - 1) * perPage;
+		const q = (params.get("q") || "").trim();
+		const status = (params.get("status") || "").trim();
+		const receiptType = (params.get("receipt_type") || "").trim();
+		const dateFrom = (params.get("dateFrom") || "").trim();
+		const dateTo = (params.get("dateTo") || "").trim();
+		
 		try {
-			const params = url.searchParams;
-			const page = Math.max(1, parseInt(params.get("page") || "1", 10));
-			const perPage = Math.min(100, Math.max(1, parseInt(params.get("perPage") || "20", 10)));
-			const offset = (page - 1) * perPage;
-			const q = (params.get("q") || "").trim();
-			const status = (params.get("status") || "").trim();
-			const receiptType = (params.get("receipt_type") || "").trim();
-			const dateFrom = (params.get("dateFrom") || "").trim();
-			const dateTo = (params.get("dateTo") || "").trim();
+			console.log(`[收据列表] 查询参数:`, { page, perPage, status, q, dateFrom, dateTo });
+			
 			const where = ["r.is_deleted = 0"];
 			const binds = [];
 			if (q) { where.push("(r.receipt_id LIKE ? OR c.company_name LIKE ?)"); binds.push(`%${q}%`, `%${q}%`); }
@@ -161,10 +164,15 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			if (dateFrom) { where.push("r.receipt_date >= ?"); binds.push(dateFrom); }
 			if (dateTo) { where.push("r.receipt_date <= ?"); binds.push(dateTo); }
 			const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+			
+			console.log(`[收据列表] SQL WHERE:`, whereSql, `绑定参数:`, binds.length);
+			
 			const countRow = await env.DATABASE.prepare(
 				`SELECT COUNT(1) AS total FROM Receipts r LEFT JOIN Clients c ON c.client_id = r.client_id ${whereSql}`
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
+			console.log(`[收据列表] 总记录数:`, total);
+			
 			const rows = await env.DATABASE.prepare(
 				`SELECT r.receipt_id, r.client_id, c.company_name AS client_name, c.tax_id AS client_tax_id, 
 				        r.total_amount, r.receipt_date, r.due_date, r.status, r.receipt_type
@@ -173,21 +181,54 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				 ORDER BY r.receipt_date DESC, r.receipt_id DESC
 				 LIMIT ? OFFSET ?`
 			).bind(...binds, perPage, offset).all();
-			const data = (rows?.results || []).map(r => ({
-				receiptId: r.receipt_id,
-				clientId: r.client_id,
-				clientName: r.client_name || "",
-				clientTaxId: r.client_tax_id || "",
-				totalAmount: Number(r.total_amount || 0),
-				receiptDate: r.receipt_date,
-				dueDate: r.due_date || null,
-				status: r.status,
-				receiptType: r.receipt_type || "normal",
-			}));
+			
+			console.log(`[收据列表] 查询到 ${rows?.results?.length || 0} 条记录`);
+			
+			const data = (rows?.results || []).map((r, index) => {
+				try {
+					return {
+						receiptId: r.receipt_id,
+						clientId: r.client_id,
+						clientName: r.client_name || "",
+						clientTaxId: r.client_tax_id || "",
+						totalAmount: Number(r.total_amount || 0),
+						receiptDate: r.receipt_date,
+						dueDate: r.due_date || null,
+						status: r.status,
+						receiptType: r.receipt_type || "normal",
+					};
+				} catch (mapErr) {
+					console.error(`[收据列表] 映射第${index}条记录失败:`, JSON.stringify({ 
+						receipt_id: r.receipt_id, 
+						error: String(mapErr),
+						raw: r 
+					}));
+					return null;
+				}
+			}).filter(r => r !== null);
+			
+			console.log(`[收据列表] 成功返回 ${data.length} 条记录`);
+			
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta }, corsHeaders);
 		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
+			console.error(JSON.stringify({ 
+				level:"error", 
+				requestId, 
+				path: url.pathname, 
+				method: "GET /receipts",
+				params: {
+					page,
+					perPage,
+					status,
+					q,
+					dateFrom,
+					dateTo
+				},
+				err:String(err),
+				stack: err.stack || '',
+				message: err.message || ''
+			}));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 		}
 	}
