@@ -406,60 +406,6 @@
           }
         }
 
-        async function loadBalances(){
-          // ⚡ 如果有预渲染内容，跳过清空
-          const main = document.getElementById('leavesMain');
-          if (main && main.dataset.prerendered === 'consumed') {
-            console.log('[Leaves] ⚡ 保留预渲染内容，跳过 loadBalances');
-            return;
-          }
-          
-          balanceEl.innerHTML = '';
-          const year = new Date().getFullYear();
-          try {
-            const params = new URLSearchParams();
-            params.set('year', year);
-            if (state.isAdmin && state.selectedUserId) {
-              params.set('user_id', state.selectedUserId);
-            }
-            const res = await fetch(`${apiBase}/leaves/balances?${params.toString()}`, { credentials:'include' });
-            if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
-            const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error();
-            const data = json.data || [];
-            if (data.length === 0) {
-              balanceEl.innerHTML = '<p style="color:rgba(15,23,42,0.7);">無餘額資料</p>';
-              return;
-            }
-            // 去重：如果有重複的假期類型，只保留第一個
-            const seen = new Set();
-            data.forEach(b => {
-              if (seen.has(b.type)) return; // 跳過重複的
-              seen.add(b.type);
-              
-              const el = document.createElement('div');
-              el.className = 'balance-card';
-              const label = zhType[b.type] || b.type;
-              const unit = b.type === 'comp' ? '小時' : '天';
-              
-              // 補休顯示不同的說明文字（當月有效，次月轉加班費）
-              if (b.type === 'comp') {
-                el.innerHTML = `<h4>${label}</h4><p>當月剩餘 ${b.remain} 小時<br><small style="color:rgba(15,23,42,0.6);">次月轉加班費</small></p>`;
-              } else {
-                el.innerHTML = `<h4>${label}</h4><p>剩餘 ${b.remain} / 額度 ${b.total} 天</p>`;
-              }
-              
-              balanceEl.appendChild(el);
-            });
-          } catch (_) {
-            balanceEl.innerHTML = '<p style="color:#c0392b;">餘額載入失敗</p>';
-          }
-        }
-
-        function renderPager(){
-          prevBtn.disabled = state.page <= 1;
-          nextBtn.disabled = state.page * state.perPage >= state.total;
-        }
 
         function renderRows(rows){
           // ⚡ 如果有预渲染内容，跳过清空和渲染
@@ -483,8 +429,8 @@
 
         async function loadLeaves(){
           const params = new URLSearchParams();
-          params.set('page', String(state.page));
-          params.set('perPage', String(state.perPage));
+          params.set('page', '1');
+          params.set('perPage', '1000'); // 獲取所有記錄，前端篩選
           const selectedType = leaveTypeFilterEl.value.trim();
           if (selectedType) params.set('type', selectedType);
           if (state.isAdmin && state.selectedUserId) {
@@ -495,12 +441,29 @@
             if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
             const json = await res.json();
             if (!res.ok || !json || json.ok !== true) throw new Error();
-            state.total = (json.meta && json.meta.total) || 0;
-            renderRows(json.data || []);
-            renderPager();
+            
+            // 前端篩選年月
+            let filteredData = json.data || [];
+            
+            if (state.selectedYear) {
+              filteredData = filteredData.filter(row => {
+                if (!row.start) return false;
+                const rowYear = new Date(row.start).getFullYear();
+                return rowYear === parseInt(state.selectedYear);
+              });
+            }
+            
+            if (state.selectedMonth) {
+              filteredData = filteredData.filter(row => {
+                if (!row.start) return false;
+                const rowMonth = new Date(row.start).getMonth() + 1;
+                return rowMonth === parseInt(state.selectedMonth);
+              });
+            }
+            
+            renderRows(filteredData);
           } catch (_) {
             tbody.innerHTML = '<tr><td colspan="4" style="color:#c0392b;">載入失敗</td></tr>';
-            renderPager();
           }
         }
 
@@ -541,7 +504,6 @@
             }
             alert(json.message || '登記成功');
             closeEventModal();
-            await loadBalances();
             // 重新載入可用假期選項
             const meRes = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
             if (meRes.ok) {
@@ -728,7 +690,7 @@
             }
             alert('申請成功');
             closeModal();
-            state.page = 1; await loadBalances(); await loadLeaves();
+            await loadLeaves();
           } catch (_) {
             alert('送出失敗，請稍後再試');
           } finally {
@@ -736,16 +698,20 @@
           }
         });
 
-        // 假別篩選
-        leaveTypeFilterEl.addEventListener('change', ()=>{ state.page=1; loadLeaves(); });
-        prevBtn.addEventListener('click', ()=>{ if (state.page>1) { state.page--; loadLeaves(); } });
-        nextBtn.addEventListener('click', ()=>{ state.page++; loadLeaves(); });
+        // 篩選器變更
+        leaveTypeFilterEl.addEventListener('change', () => loadLeaves());
+        yearFilterEl.addEventListener('change', function() {
+          state.selectedYear = this.value || null;
+          loadLeaves();
+        });
+        monthFilterEl.addEventListener('change', function() {
+          state.selectedMonth = this.value || null;
+          loadLeaves();
+        });
         
         // 員工選擇器變更
         userSelectEl.addEventListener('change', function() {
           state.selectedUserId = this.value || null;
-          state.page = 1;
-          loadBalances();
           loadLeaves();
         });
 
@@ -827,6 +793,9 @@
 
         // 初始化：檢查用戶權限並載入員工列表
         async function init() {
+          // 初始化年份選項
+          initYearOptions();
+          
           // ⚡ 检查是否有预渲染内容
           const mainContainer = document.querySelector('main');
           const hasPrerendered = mainContainer && mainContainer.dataset.prerendered === 'true';
@@ -842,6 +811,35 @@
               const meJson = await meRes.json();
               if (meJson.ok && meJson.data) {
                 state.isAdmin = meJson.data.isAdmin || false;
+                const userGender = meJson.data.gender || null;
+                
+                // 根據性別過濾假期選項
+                if (userGender) {
+                  filterLeaveTypesByGender(userGender);
+                  filterEventTypesByGender(userGender);
+                  await showAvailableLifeEventLeaves(userGender);
+                } else {
+                  await showAvailableLifeEventLeaves(null);
+                }
+                
+                // 如果是管理員，顯示員工選擇器並載入員工列表
+                if (state.isAdmin) {
+                  userSelectEl.style.display = 'block';
+                  
+                  // 載入員工列表
+                  const usersRes = await fetch(`${apiBase}/users`, { credentials:'include' });
+                  if (usersRes.ok) {
+                    const usersJson = await usersRes.json();
+                    if (usersJson.ok && usersJson.data) {
+                      usersJson.data.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.user_id;
+                        option.textContent = user.name;
+                        userSelectEl.appendChild(option);
+                      });
+                    }
+                  }
+                }
               }
               console.log('[Leaves] ⚡ 用户信息已加载，预渲染内容保持显示');
             } catch (err) {
@@ -894,7 +892,6 @@
           }
           
           // 載入數據
-          loadBalances();
           loadLeaves();
         }
         
@@ -921,18 +918,15 @@
           
           var main = document.getElementById('leavesMain');
           var tbody = document.getElementById('tbody');
-          var balances = document.getElementById('balances');
           
           console.log('[Leaves] 尝试保存 #' + saveAttempts + ':', {
             main: !!main,
             tbody: !!tbody,
             tbodyChildren: tbody ? tbody.children.length : 0,
-            balances: !!balances,
-            balancesChildren: balances ? balances.children.length : 0,
             htmlLength: main ? main.innerHTML.length : 0
           });
           
-          if (main && tbody && tbody.children.length > 0 && balances && balances.children.length > 0) {
+          if (main && tbody && tbody.children.length > 0) {
             window.Prerender.save('leaves', main.innerHTML);
             saved = true;
             console.log('[Leaves] ✅ 预渲染已保存 (' + main.innerHTML.length + ' 字符)');
