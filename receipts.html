@@ -1072,17 +1072,17 @@
       })();
       
       // === 公司信息配置 ===
-      const COMPANY_INFO = {
-        name: '霍爾果斯會計師事務所',
-        nameEn: 'Hergs CPA Firm',
-        address: '臺中市西區建國路21號',
-        addressLine2: '3樓之1',
-        phone: '04-22205606',
-        taxId: '92254178',
-        bank: '永豐銀行台中分行',
-        bankCode: '807',
-        accountNumber: '003-018-0019011-7'
-      };
+        const COMPANY_INFO = {
+          name: '霍爾果斯會計師事務所',
+          nameEn: 'HorgosCPA',
+          address: '臺中市西區建國路21號',
+          addressLine2: '3樓之1',
+          phone: '04-22205606',
+          taxId: '92254178',
+          bank: '永豐銀行台中分行',
+          bankCode: '807',
+          accountNumber: '003-018-0019011-7'
+        };
       
       // === 打印功能 ===
       async function printInvoice(receiptId) {
@@ -1098,18 +1098,27 @@
             line-height: 1.8;
             padding: 0;
           }
+          .company-header {
+            border: 3px solid #DC143C;
+            padding: 8pt 15pt;
+            display: inline-block;
+            margin-bottom: 10mm;
+          }
           .company-name-zh { 
             font-size: 20pt; 
             font-weight: bold; 
             color: #8B6914;
             letter-spacing: 2pt;
-            margin-bottom: 3mm;
+            border-bottom: 1.5px solid #8B6914;
+            padding-bottom: 3pt;
+            margin-bottom: 6pt;
           }
           .company-name-en { 
             font-size: 13pt; 
             font-weight: bold; 
             color: #000;
-            margin-bottom: 10mm;
+            border-bottom: 1.5px solid #000;
+            padding-bottom: 2pt;
           }
           .doc-title { 
             font-size: 18pt; 
@@ -1242,8 +1251,10 @@
           let totalMiscFee = 0;
           
           printWindow.document.write(`
-            <div class="company-name-zh">${COMPANY_INFO.name}</div>
-            <div class="company-name-en">${COMPANY_INFO.nameEn}</div>
+            <div class="company-header">
+              <div class="company-name-zh">${COMPANY_INFO.name}</div>
+              <div class="company-name-en">${COMPANY_INFO.nameEn}</div>
+            </div>
             
             <div class="doc-title">請款單</div>
             
@@ -1386,12 +1397,15 @@
             font-size: 20pt; 
             font-weight: bold; 
             text-align: center; 
-            letter-spacing: 16pt; 
             margin: 2mm 0 2mm 0;
           }
           .title span {
             border-bottom: 2px solid #000;
             padding-bottom: 2pt;
+            letter-spacing: 16pt;
+            display: inline-block;
+            padding-right: 16pt;
+            margin-right: -16pt;
           }
           .date { text-align: center; font-size: 10pt; margin-bottom: 3mm; }
           .received-from { font-size: 11pt; margin: 3mm 0; }
@@ -1482,7 +1496,7 @@
                 <div class="company-name"><span>${COMPANY_INFO.name}</span></div>
                 
                 <div class="company-info">
-                  ${COMPANY_INFO.address} ${COMPANY_INFO.addressLine2}<br>
+                  ${COMPANY_INFO.address}${COMPANY_INFO.addressLine2}<br>
                   電話：${COMPANY_INFO.phone}<br>
                   統一編號：${COMPANY_INFO.taxId}<br>
                   收據編號：${receiptId}
