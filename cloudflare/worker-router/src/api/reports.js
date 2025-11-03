@@ -368,37 +368,41 @@ export async function handleReports(request, env, me, requestId, url, path) {
 				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢月份", meta:{ requestId } }, corsHeaders);
 			}
 			const ym = `${y}-${String(m).padStart(2,'0')}`;
-			const run = await env.DATABASE.prepare("SELECT run_id FROM PayrollRuns WHERE month = ? LIMIT 1").bind(ym).first();
-			if (!run) {
-				return jsonResponse(200, { ok:true, code:"OK", message:"成功", data:{ summary:{ total_base_salary:0, total_allowances:0, total_bonuses:0, total_overtime_pay:0, total_gross_salary:0, total_net_salary:0 }, by_employee:[] }, meta:{ requestId, month:ym } }, corsHeaders);
-			}
-			let q = "SELECT mp.user_id, u.username, mp.base_salary_cents, mp.regular_allowance_cents, mp.bonus_cents, mp.overtime_cents, mp.total_cents, mp.is_full_attendance FROM MonthlyPayroll mp JOIN Users u ON u.user_id = mp.user_id WHERE mp.run_id = ?";
-			const binds = [run.run_id];
-			if (userId) { q += " AND mp.user_id = ?"; binds.push(String(parseInt(userId,10))); }
-			const rows = await env.DATABASE.prepare(q).bind(...binds).all();
-			const list = rows?.results || [];
-			const cents = (v)=> Number(v||0);
-			const toAmt = (c)=> Math.round(c/100);
-			const byEmployee = list.map(r => ({
-				user_id: r.user_id,
-				username: r.username,
-				base_salary: toAmt(cents(r.base_salary_cents)),
-				total_allowances: toAmt(cents(r.regular_allowance_cents)),
-				total_bonuses: toAmt(cents(r.bonus_cents)),
-				overtime_pay: toAmt(cents(r.overtime_cents)),
-				gross_salary: toAmt(cents(r.total_cents)),
-				net_salary: toAmt(cents(r.total_cents)),
-				has_full_attendance: r.is_full_attendance === 1,
-			}));
-			const sum = (k)=> byEmployee.reduce((s,x)=> s + Number(x[k]||0), 0);
-			const summary = {
-				total_base_salary: sum('base_salary'),
-				total_allowances: sum('total_allowances'),
-				total_bonuses: sum('total_bonuses'),
-				total_overtime_pay: sum('overtime_pay'),
-				total_gross_salary: sum('gross_salary'),
-				total_net_salary: sum('net_salary'),
-			};
+		const run = await env.DATABASE.prepare("SELECT run_id FROM PayrollRuns WHERE month = ? LIMIT 1").bind(ym).first();
+		if (!run) {
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data:{ summary:{ total_base_salary:0, total_allowances:0, total_bonuses:0, total_overtime_pay:0, total_transport_subsidy:0, total_meal_allowance:0, total_gross_salary:0, total_net_salary:0 }, by_employee:[] }, meta:{ requestId, month:ym } }, corsHeaders);
+		}
+		let q = "SELECT mp.user_id, u.username, mp.base_salary_cents, mp.regular_allowance_cents, mp.bonus_cents, mp.overtime_cents, mp.transport_subsidy_cents, mp.meal_allowance_cents, mp.total_cents, mp.is_full_attendance FROM MonthlyPayroll mp JOIN Users u ON u.user_id = mp.user_id WHERE mp.run_id = ?";
+		const binds = [run.run_id];
+		if (userId) { q += " AND mp.user_id = ?"; binds.push(String(parseInt(userId,10))); }
+		const rows = await env.DATABASE.prepare(q).bind(...binds).all();
+		const list = rows?.results || [];
+		const cents = (v)=> Number(v||0);
+		const toAmt = (c)=> Math.round(c/100);
+		const byEmployee = list.map(r => ({
+			user_id: r.user_id,
+			username: r.username,
+			base_salary: toAmt(cents(r.base_salary_cents)),
+			total_allowances: toAmt(cents(r.regular_allowance_cents)),
+			total_bonuses: toAmt(cents(r.bonus_cents)),
+			overtime_pay: toAmt(cents(r.overtime_cents)),
+			transport_subsidy: toAmt(cents(r.transport_subsidy_cents)),
+			meal_allowance: toAmt(cents(r.meal_allowance_cents)),
+			gross_salary: toAmt(cents(r.total_cents)),
+			net_salary: toAmt(cents(r.total_cents)),
+			has_full_attendance: r.is_full_attendance === 1,
+		}));
+		const sum = (k)=> byEmployee.reduce((s,x)=> s + Number(x[k]||0), 0);
+		const summary = {
+			total_base_salary: sum('base_salary'),
+			total_allowances: sum('total_allowances'),
+			total_bonuses: sum('total_bonuses'),
+			total_overtime_pay: sum('overtime_pay'),
+			total_transport_subsidy: sum('transport_subsidy'),
+			total_meal_allowance: sum('meal_allowance'),
+			total_gross_salary: sum('gross_salary'),
+			total_net_salary: sum('net_salary'),
+		};
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data:{ summary, by_employee: byEmployee }, meta:{ requestId, month:ym } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));

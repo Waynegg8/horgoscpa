@@ -56,12 +56,14 @@
                 <th>津貼合計</th>
                 <th>獎金合計</th>
                 <th>加班費</th>
+                <th>交通補貼</th>
+                <th>誤餐費</th>
                 <th>總薪資</th>
                 <th>全勤</th>
               </tr>
             </thead>
             <tbody id="tbodyCalc">
-              <tr><td colspan="7" class="muted">尚無資料</td></tr>
+              <tr><td colspan="9" class="muted">尚無資料</td></tr>
             </tbody>
           </table>
           <div class="pagination">
@@ -428,7 +430,7 @@
           tbodyCalc.innerHTML = '';
           if (pageRows.length === 0){
             const tr = document.createElement('tr');
-            tr.innerHTML = '<td colspan="7" class="muted">沒有符合條件的資料</td>';
+            tr.innerHTML = '<td colspan="9" class="muted">沒有符合條件的資料</td>';
             tbodyCalc.appendChild(tr);
           } else {
             pageRows.forEach(r => {
@@ -439,6 +441,8 @@
                 <td>${centsToTwd(r.regularAllowanceCents)}</td>
                 <td>${centsToTwd(r.bonusCents)}</td>
                 <td>${centsToTwd(r.overtimeCents)}</td>
+                <td>${centsToTwd(r.transportSubsidyCents || 0)}</td>
+                <td>${centsToTwd(r.mealAllowanceCents || 0)}</td>
                 <td>${centsToTwd(r.totalCents)}</td>
                 <td>${r.isFullAttendance ? '是' : '否'}</td>
               `;

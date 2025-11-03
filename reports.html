@@ -221,13 +221,15 @@
                   <th class="text-right">津貼</th>
                   <th class="text-right">獎金</th>
                   <th class="text-right">加班費</th>
+                  <th class="text-right">交通補貼</th>
+                  <th class="text-right">誤餐費</th>
                   <th class="text-right">應發</th>
                   <th class="text-right">淨發</th>
                   <th>全勤</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td colspan="8" class="muted">尚無資料</td></tr>
+                <tr><td colspan="10" class="muted">尚無資料</td></tr>
               </tbody>
             </table>
           </div>
@@ -691,7 +693,7 @@
           const totalSalaryEl = document.getElementById('pr-total-salary');
           const tbody = panel.querySelector('.report-table tbody');
           try {
-            tbody.innerHTML = '<tr><td colspan="8" class="muted">載入中…</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/reports/payroll-summary?${params.toString()}`, { credentials:'include' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
             const json = await res.json();
@@ -701,7 +703,7 @@
             totalSalaryEl.textContent = formatNumber(data.summary?.total_gross_salary || 0);
             tbody.innerHTML = '';
             if (!byEmp.length) {
-              tbody.innerHTML = '<tr><td colspan="8" class="muted">尚無資料</td></tr>';
+              tbody.innerHTML = '<tr><td colspan="10" class="muted">尚無資料</td></tr>';
             } else {
               byEmp.forEach(r => {
                 const tr = document.createElement('tr');
@@ -711,6 +713,8 @@
                   <td class="text-right">${formatNumber(r.total_allowances)}</td>
                   <td class="text-right">${formatNumber(r.total_bonuses)}</td>
                   <td class="text-right">${formatNumber(r.overtime_pay)}</td>
+                  <td class="text-right">${formatNumber(r.transport_subsidy || 0)}</td>
+                  <td class="text-right">${formatNumber(r.meal_allowance || 0)}</td>
                   <td class="text-right">${formatNumber(r.gross_salary)}</td>
                   <td class="text-right">${formatNumber(r.net_salary)}</td>
                   <td>${r.has_full_attendance ? '是' : '否'}</td>

@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="外出登記｜交通補貼管理" />
+    <title>外出登記｜交通補貼管理</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/internal-components.css" />
+    <link rel="stylesheet" href="/assets/css/trips-page.css" />
+  </head>
+  <body>
+    <div id="internal-navbar"></div>
+
+    <div class="container" style="max-width: 1400px; margin: 0 auto; padding: 32px 20px;">
+      <!-- 頁面標題 -->
+      <div class="trips-header">
+        <h1>外出登記</h1>
+        <div class="trips-controls">
+          <input 
+            type="month" 
+            id="monthFilter" 
+            class="form-control" 
+            style="width: 160px;"
+          />
+          <button class="btn btn-primary" id="btnNewTrip">
+            <svg width="16" height="16" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
+              <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            新增外出
+          </button>
+        </div>
+      </div>
+
+      <!-- 統計摘要 -->
+      <div class="trips-summary-bar" id="summaryBar" style="display: none;">
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="summary-label">本月外出次數</div>
+            <div class="summary-value" id="summaryTripCount">0</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">總距離</div>
+            <div class="summary-value">
+              <span id="summaryTotalDistance">0</span>
+              <span class="summary-unit">公里</span>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">已核准補貼</div>
+            <div class="summary-value">
+              NT$ <span id="summaryApprovedSubsidy">0</span>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">待審核補貼</div>
+            <div class="summary-value">
+              NT$ <span id="summaryPendingSubsidy">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 篩選器 -->
+      <div class="trips-filters">
+        <div class="filter-row">
+          <div class="filter-field">
+            <label>狀態</label>
+            <select id="statusFilter">
+              <option value="">全部狀態</option>
+              <option value="pending">待審核</option>
+              <option value="approved">已核准</option>
+              <option value="rejected">已拒絕</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <label>客戶</label>
+            <select id="clientFilter">
+              <option value="">全部客戶</option>
+            </select>
+          </div>
+          <div class="filter-field" id="userFilterField" style="display: none;">
+            <label>員工</label>
+            <select id="userFilter">
+              <option value="">全部員工</option>
+            </select>
+          </div>
+          <div class="filter-field" style="display: flex; align-items: flex-end;">
+            <button class="btn btn-secondary" id="btnResetFilters">重置篩選</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 外出登記列表 -->
+      <div class="trips-table-wrapper">
+        <table class="trips-table">
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>員工</th>
+              <th>客戶</th>
+              <th>目的地</th>
+              <th>距離</th>
+              <th>交通補貼</th>
+              <th>狀態</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="tripsTableBody">
+            <tr>
+              <td colspan="8" class="loading">
+                <div class="spinner"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <!-- 分頁 -->
+        <div class="pagination" id="pagination" style="display: none;">
+          <button id="btnPrevPage" disabled>上一頁</button>
+          <div class="page-info">
+            第 <span id="currentPage">1</span> / <span id="totalPages">1</span> 頁
+          </div>
+          <button id="btnNextPage" disabled>下一頁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新增/編輯外出登記模態框 -->
+    <div class="modal" id="tripModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modalTitle">新增外出登記</h2>
+        </div>
+        <form id="tripForm">
+          <div class="modal-body">
+            <div class="form-grid">
+              <div class="form-field">
+                <label>外出日期 <span class="required">*</span></label>
+                <input type="date" id="tripDate" required />
+              </div>
+
+              <div class="form-field">
+                <label>目的地 <span class="required">*</span></label>
+                <input type="text" id="destination" placeholder="例：臺北市信義區" required />
+              </div>
+
+              <div class="form-field">
+                <label>距離（公里） <span class="required">*</span></label>
+                <input type="number" id="distanceKm" placeholder="例：10" step="0.1" min="0.1" required />
+                <div class="hint">每5公里補貼60元</div>
+              </div>
+
+              <!-- 交通補貼預覽 -->
+              <div class="subsidy-preview" id="subsidyPreview" style="display: none;">
+                <div class="subsidy-preview-label">預計交通補貼</div>
+                <div class="subsidy-preview-amount">NT$ <span id="subsidyAmount">0</span></div>
+              </div>
+
+              <div class="form-field">
+                <label>客戶</label>
+                <select id="clientId">
+                  <option value="">無關聯客戶</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label>外出目的</label>
+                <textarea id="purpose" placeholder="例：拜訪客戶、送件、稽核等"></textarea>
+              </div>
+
+              <div class="form-field">
+                <label>備註</label>
+                <textarea id="notes" placeholder="其他說明"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="btnCancelTrip">取消</button>
+            <button type="submit" class="btn btn-primary" id="btnSaveTrip">儲存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="internal-footer"></div>
+
+    <script>
+      (function() {
+        const onProdHost = location.hostname.endsWith('horgoscpa.com');
+        const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+
+        // DOM 元素
+        const monthFilter = document.getElementById('monthFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const clientFilter = document.getElementById('clientFilter');
+        const userFilter = document.getElementById('userFilter');
+        const userFilterField = document.getElementById('userFilterField');
+        const btnNewTrip = document.getElementById('btnNewTrip');
+        const btnResetFilters = document.getElementById('btnResetFilters');
+        const tripsTableBody = document.getElementById('tripsTableBody');
+        const pagination = document.getElementById('pagination');
+        const btnPrevPage = document.getElementById('btnPrevPage');
+        const btnNextPage = document.getElementById('btnNextPage');
+        const currentPageSpan = document.getElementById('currentPage');
+        const totalPagesSpan = document.getElementById('totalPages');
+
+        // 統計摘要
+        const summaryBar = document.getElementById('summaryBar');
+        const summaryTripCount = document.getElementById('summaryTripCount');
+        const summaryTotalDistance = document.getElementById('summaryTotalDistance');
+        const summaryApprovedSubsidy = document.getElementById('summaryApprovedSubsidy');
+        const summaryPendingSubsidy = document.getElementById('summaryPendingSubsidy');
+
+        // 模態框
+        const tripModal = document.getElementById('tripModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const tripForm = document.getElementById('tripForm');
+        const btnCancelTrip = document.getElementById('btnCancelTrip');
+        const tripDateInput = document.getElementById('tripDate');
+        const destinationInput = document.getElementById('destination');
+        const distanceKmInput = document.getElementById('distanceKm');
+        const clientIdInput = document.getElementById('clientId');
+        const purposeInput = document.getElementById('purpose');
+        const notesInput = document.getElementById('notes');
+        const subsidyPreview = document.getElementById('subsidyPreview');
+        const subsidyAmount = document.getElementById('subsidyAmount');
+
+        // 狀態
+        let currentUser = null;
+        let allTrips = [];
+        let filteredTrips = [];
+        let currentPage = 1;
+        let perPage = 20;
+        let editingTripId = null;
+
+        // 初始化
+        async function init() {
+          try {
+            // 獲取當前用戶
+            const userRes = await fetch(`${apiBase}/auth/me`, { credentials: 'include' });
+            if (userRes.status === 401) {
+              location.assign('/login?redirect=/internal/trips');
+              return;
+            }
+            const userData = await userRes.json();
+            currentUser = userData.data;
+
+            // 顯示用戶篩選器（僅管理員）
+            if (currentUser.is_admin) {
+              userFilterField.style.display = 'block';
+              await loadUsers();
+            }
+
+            // 設定當前月份
+            const today = new Date();
+            monthFilter.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+            // 載入客戶列表
+            await loadClients();
+
+            // 載入外出登記
+            await loadTrips();
+            await loadSummary();
+
+            // 綁定事件
+            bindEvents();
+          } catch (err) {
+            console.error('初始化失敗:', err);
+            showError('載入失敗，請重新整理頁面');
+          }
+        }
+
+        // 載入用戶列表（管理員）
+        async function loadUsers() {
+          try {
+            const res = await fetch(`${apiBase}/users`, { credentials: 'include' });
+            if (!res.ok) return;
+            const json = await res.json();
+            const users = json.data || [];
+            
+            userFilter.innerHTML = '<option value="">全部員工</option>';
+            users.forEach(user => {
+              const option = document.createElement('option');
+              option.value = user.user_id;
+              option.textContent = user.name || user.username;
+              userFilter.appendChild(option);
+            });
+          } catch (err) {
+            console.error('載入用戶失敗:', err);
+          }
+        }
+
+        // 載入客戶列表
+        async function loadClients() {
+          try {
+            const res = await fetch(`${apiBase}/clients`, { credentials: 'include' });
+            if (!res.ok) return;
+            const json = await res.json();
+            const clients = json.data || [];
+            
+            const options = clients.map(c => 
+              `<option value="${c.client_id}">${c.name}</option>`
+            ).join('');
+            
+            clientFilter.innerHTML = '<option value="">全部客戶</option>' + options;
+            clientIdInput.innerHTML = '<option value="">無關聯客戶</option>' + options;
+          } catch (err) {
+            console.error('載入客戶失敗:', err);
+          }
+        }
+
+        // 載入外出登記列表
+        async function loadTrips() {
+          try {
+            const params = new URLSearchParams();
+            
+            if (monthFilter.value) {
+              params.set('month', monthFilter.value);
+            }
+            if (statusFilter.value) {
+              params.set('status', statusFilter.value);
+            }
+            if (clientFilter.value) {
+              params.set('client_id', clientFilter.value);
+            }
+            if (currentUser.is_admin && userFilter.value) {
+              params.set('user_id', userFilter.value);
+            }
+
+            const res = await fetch(`${apiBase}/trips?${params.toString()}`, { 
+              credentials: 'include' 
+            });
+
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/trips');
+              return;
+            }
+
+            const json = await res.json();
+            allTrips = json.data || [];
+            filteredTrips = allTrips;
+            currentPage = 1;
+            
+            renderTripsTable();
+          } catch (err) {
+            console.error('載入外出登記失敗:', err);
+            showError('載入外出登記失敗');
+          }
+        }
+
+        // 載入統計摘要
+        async function loadSummary() {
+          if (!monthFilter.value) return;
+
+          try {
+            const params = new URLSearchParams();
+            params.set('month', monthFilter.value);
+            
+            if (currentUser.is_admin && userFilter.value) {
+              params.set('user_id', userFilter.value);
+            }
+
+            const res = await fetch(`${apiBase}/trips/summary?${params.toString()}`, { 
+              credentials: 'include' 
+            });
+
+            if (!res.ok) return;
+
+            const json = await res.json();
+            const data = json.data;
+
+            summaryTripCount.textContent = data.trip_count || 0;
+            summaryTotalDistance.textContent = (data.total_distance_km || 0).toFixed(1);
+            summaryApprovedSubsidy.textContent = (data.approved_subsidy_twd || 0).toLocaleString();
+            summaryPendingSubsidy.textContent = (data.pending_subsidy_twd || 0).toLocaleString();
+            
+            summaryBar.style.display = 'block';
+          } catch (err) {
+            console.error('載入統計失敗:', err);
+          }
+        }
+
+        // 渲染外出登記表格
+        function renderTripsTable() {
+          const start = (currentPage - 1) * perPage;
+          const end = start + perPage;
+          const pageTrips = filteredTrips.slice(start, end);
+
+          if (pageTrips.length === 0) {
+            tripsTableBody.innerHTML = `
+              <tr>
+                <td colspan="8" class="empty-state">
+                  <p>尚無外出登記記錄</p>
+                </td>
+              </tr>
+            `;
+            pagination.style.display = 'none';
+            return;
+          }
+
+          tripsTableBody.innerHTML = pageTrips.map(trip => {
+            const statusClass = `status-${trip.status}`;
+            const statusText = {
+              pending: '待審核',
+              approved: '已核准',
+              rejected: '已拒絕'
+            }[trip.status] || trip.status;
+
+            const canEdit = trip.status === 'pending' && trip.user_id === currentUser.user_id;
+            const canReview = currentUser.is_admin && trip.status === 'pending';
+
+            return `
+              <tr>
+                <td>${trip.trip_date}</td>
+                <td>${trip.user_name || '-'}</td>
+                <td>${trip.client_name || '-'}</td>
+                <td>
+                  <div style="font-weight: 500;">${trip.destination}</div>
+                  ${trip.purpose ? `<div style="font-size: 12px; color: rgba(15,23,42,0.5); margin-top: 2px;">${trip.purpose}</div>` : ''}
+                </td>
+                <td><span class="distance-badge">${trip.distance_km} km</span></td>
+                <td><span class="subsidy-amount">NT$ ${trip.transport_subsidy_twd.toLocaleString()}</span></td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>
+                  <div class="trip-actions">
+                    ${canEdit ? `
+                      <button class="btn-icon btn-edit" onclick="editTrip(${trip.trip_id})" title="編輯">
+                        ✏️
+                      </button>
+                      <button class="btn-icon btn-delete" onclick="deleteTrip(${trip.trip_id})" title="刪除">
+                        🗑️
+                      </button>
+                    ` : ''}
+                    ${canReview ? `
+                      <button class="btn-icon btn-approve" onclick="reviewTrip(${trip.trip_id}, 'approved')" title="核准">
+                        ✓
+                      </button>
+                      <button class="btn-icon btn-reject" onclick="reviewTrip(${trip.trip_id}, 'rejected')" title="拒絕">
+                        ✗
+                      </button>
+                    ` : ''}
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+
+          // 更新分頁
+          const totalPages = Math.ceil(filteredTrips.length / perPage);
+          currentPageSpan.textContent = currentPage;
+          totalPagesSpan.textContent = totalPages;
+          btnPrevPage.disabled = currentPage === 1;
+          btnNextPage.disabled = currentPage === totalPages || totalPages === 0;
+          pagination.style.display = totalPages > 1 ? 'flex' : 'none';
+        }
+
+        // 計算交通補貼
+        function calculateSubsidy(distanceKm) {
+          if (!distanceKm || distanceKm <= 0) return 0;
+          return Math.floor(distanceKm / 5) * 60;
+        }
+
+        // 綁定事件
+        function bindEvents() {
+          // 篩選器
+          monthFilter.addEventListener('change', () => {
+            loadTrips();
+            loadSummary();
+          });
+          statusFilter.addEventListener('change', loadTrips);
+          clientFilter.addEventListener('change', loadTrips);
+          userFilter.addEventListener('change', () => {
+            loadTrips();
+            loadSummary();
+          });
+          btnResetFilters.addEventListener('click', () => {
+            statusFilter.value = '';
+            clientFilter.value = '';
+            userFilter.value = '';
+            loadTrips();
+          });
+
+          // 分頁
+          btnPrevPage.addEventListener('click', () => {
+            if (currentPage > 1) {
+              currentPage--;
+              renderTripsTable();
+            }
+          });
+          btnNextPage.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredTrips.length / perPage);
+            if (currentPage < totalPages) {
+              currentPage++;
+              renderTripsTable();
+            }
+          });
+
+          // 新增外出
+          btnNewTrip.addEventListener('click', openNewTripModal);
+          btnCancelTrip.addEventListener('click', closeTripModal);
+          
+          // 關閉模態框（點擊背景）
+          tripModal.addEventListener('click', (e) => {
+            if (e.target === tripModal) closeTripModal();
+          });
+
+          // 表單提交
+          tripForm.addEventListener('submit', handleTripSubmit);
+
+          // 距離輸入變化時更新補貼預覽
+          distanceKmInput.addEventListener('input', updateSubsidyPreview);
+        }
+
+        // 更新補貼預覽
+        function updateSubsidyPreview() {
+          const distance = parseFloat(distanceKmInput.value);
+          if (distance > 0) {
+            const subsidy = calculateSubsidy(distance);
+            subsidyAmount.textContent = subsidy.toLocaleString();
+            subsidyPreview.style.display = 'block';
+          } else {
+            subsidyPreview.style.display = 'none';
+          }
+        }
+
+        // 開啟新增模態框
+        function openNewTripModal() {
+          editingTripId = null;
+          modalTitle.textContent = '新增外出登記';
+          tripForm.reset();
+          
+          // 設定預設日期為今天
+          const today = new Date().toISOString().split('T')[0];
+          tripDateInput.value = today;
+          
+          subsidyPreview.style.display = 'none';
+          tripModal.classList.add('show');
+        }
+
+        // 編輯外出登記
+        window.editTrip = function(tripId) {
+          const trip = allTrips.find(t => t.trip_id === tripId);
+          if (!trip) return;
+
+          editingTripId = tripId;
+          modalTitle.textContent = '編輯外出登記';
+          
+          tripDateInput.value = trip.trip_date;
+          destinationInput.value = trip.destination;
+          distanceKmInput.value = trip.distance_km;
+          clientIdInput.value = trip.client_id || '';
+          purposeInput.value = trip.purpose || '';
+          notesInput.value = trip.notes || '';
+          
+          updateSubsidyPreview();
+          tripModal.classList.add('show');
+        };
+
+        // 關閉模態框
+        function closeTripModal() {
+          tripModal.classList.remove('show');
+          tripForm.reset();
+          editingTripId = null;
+        }
+
+        // 處理表單提交
+        async function handleTripSubmit(e) {
+          e.preventDefault();
+
+          const data = {
+            trip_date: tripDateInput.value,
+            destination: destinationInput.value,
+            distance_km: parseFloat(distanceKmInput.value),
+            client_id: clientIdInput.value ? parseInt(clientIdInput.value) : null,
+            purpose: purposeInput.value || null,
+            notes: notesInput.value || null
+          };
+
+          try {
+            const url = editingTripId 
+              ? `${apiBase}/trips/${editingTripId}` 
+              : `${apiBase}/trips`;
+            const method = editingTripId ? 'PATCH' : 'POST';
+
+            const res = await fetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify(data)
+            });
+
+            const json = await res.json();
+
+            if (!res.ok) {
+              showError(json.message || '操作失敗');
+              return;
+            }
+
+            showSuccess(editingTripId ? '外出登記已更新' : '外出登記已新增');
+            closeTripModal();
+            await loadTrips();
+            await loadSummary();
+          } catch (err) {
+            console.error('提交失敗:', err);
+            showError('操作失敗，請稍後再試');
+          }
+        }
+
+        // 刪除外出登記
+        window.deleteTrip = async function(tripId) {
+          if (!confirm('確定要刪除這筆外出登記嗎？')) return;
+
+          try {
+            const res = await fetch(`${apiBase}/trips/${tripId}`, {
+              method: 'DELETE',
+              credentials: 'include'
+            });
+
+            const json = await res.json();
+
+            if (!res.ok) {
+              showError(json.message || '刪除失敗');
+              return;
+            }
+
+            showSuccess('外出登記已刪除');
+            await loadTrips();
+            await loadSummary();
+          } catch (err) {
+            console.error('刪除失敗:', err);
+            showError('刪除失敗，請稍後再試');
+          }
+        };
+
+        // 審核外出登記
+        window.reviewTrip = async function(tripId, status) {
+          const action = status === 'approved' ? '核准' : '拒絕';
+          if (!confirm(`確定要${action}這筆外出登記嗎？`)) return;
+
+          try {
+            const res = await fetch(`${apiBase}/trips/${tripId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ status })
+            });
+
+            const json = await res.json();
+
+            if (!res.ok) {
+              showError(json.message || `${action}失敗`);
+              return;
+            }
+
+            showSuccess(`已${action}外出登記`);
+            await loadTrips();
+            await loadSummary();
+          } catch (err) {
+            console.error('審核失敗:', err);
+            showError('審核失敗，請稍後再試');
+          }
+        };
+
+        // 顯示成功訊息
+        function showSuccess(message) {
+          alert(message); // 可以改用更好的通知組件
+        }
+
+        // 顯示錯誤訊息
+        function showError(message) {
+          alert(message); // 可以改用更好的通知組件
+        }
+
+        // 載入導航欄和頁腳
+        async function loadNavbarFooter() {
+          try {
+            const [navbarRes, footerRes] = await Promise.all([
+              fetch('/templates/partials/internal-navbar.html'),
+              fetch('/templates/partials/internal-footer.html')
+            ]);
+
+            if (navbarRes.ok) {
+              document.getElementById('internal-navbar').innerHTML = await navbarRes.text();
+            }
+            if (footerRes.ok) {
+              document.getElementById('internal-footer').innerHTML = await footerRes.text();
+            }
+          } catch (err) {
+            console.error('載入導航欄/頁腳失敗:', err);
+          }
+        }
+
+        // 啟動
+        loadNavbarFooter().then(init);
+      })();
+    </script>
+  </body>
+</html>
+

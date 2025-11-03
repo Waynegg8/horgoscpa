@@ -7,6 +7,8 @@ import { handleReceipts } from "./api/receipts.js";
 import { handlePayroll } from "./api/payroll.js";
 import { handleSalaryItemTypes } from "./api/salary-items.js";
 import { handleLeaves } from "./api/leaves.js";
+import { handleTrips } from "./api/trips.js";
+import { handleMealAllowance } from "./api/meal-allowance.js";
 import { handleDevSeeding } from "./api/dev.js";
 import { handleOverhead } from "./api/overhead.js";
 import { handleReports } from "./api/reports.js";
@@ -436,16 +438,26 @@ export default {
 		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 		return handleAttachments(request, env, me, requestId, url, path);
 	}
-		if (path === "/internal/api/v1/leaves" || path === "/internal/api/v1/leaves/balances" || path === "/internal/api/v1/leaves/life-events" || path === "/internal/api/v1/admin/cron/execute" || path === "/internal/api/v1/admin/cron/history") {
-			const me = await getSessionUser(request, env);
-			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
-			return handleLeaves(request, env, me, requestId, url, path);
-		}
-		if (path === "/internal/api/v1/holidays") {
-			const me = await getSessionUser(request, env);
-			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
-			return handleHolidays(request, env, me, requestId, url);
-		}
+	if (path === "/internal/api/v1/leaves" || path === "/internal/api/v1/leaves/balances" || path === "/internal/api/v1/leaves/life-events" || path === "/internal/api/v1/admin/cron/execute" || path === "/internal/api/v1/admin/cron/history") {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		return handleLeaves(request, env, me, requestId, url, path);
+	}
+	if (path === "/internal/api/v1/trips" || path === "/internal/api/v1/trips/summary" || path.match(/^\/internal\/api\/v1\/trips\/\d+$/)) {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		return handleTrips(request, env, me, requestId, url, path);
+	}
+	if (path === "/internal/api/v1/meal-allowance/summary" || path === "/internal/api/v1/meal-allowance/details") {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		return handleMealAllowance(request, env, me, requestId, url, path);
+	}
+	if (path === "/internal/api/v1/holidays") {
+		const me = await getSessionUser(request, env);
+		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+		return handleHolidays(request, env, me, requestId, url);
+	}
 	if (path.startsWith("/internal/api/v1/admin/salary-item-types")) {
 		const me = await getSessionUser(request, env);
 		if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
