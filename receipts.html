@@ -218,6 +218,23 @@
           <h3 style="margin: 0;" id="modalTitle">新增收據</h3>
           <button id="btn-modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
         </div>
+        
+        <!-- 使用说明 -->
+        <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:14px;margin-bottom:16px;border-radius:6px;">
+          <div style="display:flex;align-items:start;gap:10px;">
+            <span style="font-size:20px;">📖</span>
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:14px;color:#92400e;margin-bottom:6px;">💼 收據與請款單使用說明</div>
+              <div style="font-size:12px;color:#78350f;line-height:1.7;">
+                <strong>1️⃣ 創建收據</strong>：選擇客戶、填寫日期和金額（必填），明細項目為選填<br>
+                <strong>2️⃣ 列印請款單</strong>：向客戶請款時使用，會顯示「代辦費、規費、雜費」三欄明細<br>
+                <strong>3️⃣ 列印收據</strong>：收到款項後使用，顯示總金額（兩聯：收稅聯、存查聯）<br>
+                <strong>4️⃣ 記錄收款</strong>：到收據詳情頁點擊「新增收款」登記實際收款
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <div style="display: grid; gap: 16px;">
           <div id="formError" class="form-error" style="display:none;"></div>
           
@@ -279,12 +296,31 @@
           
           <div style="display: grid; gap: 6px;">
             <label style="font-weight: 500; font-size: 14px;">收據明細（選填）</label>
+            
+            <!-- 说明区域 -->
+            <div style="background:#eff6ff;border:1px solid #3b82f6;border-radius:6px;padding:12px;margin-bottom:8px;">
+              <div style="font-size:13px;color:#1e40af;">
+                <strong>📝 填寫說明：</strong>
+                <ul style="margin:8px 0 0 20px;line-height:1.8;">
+                  <li><strong>項目名稱</strong>：服務項目或費用名稱（例如：公司登記、稅務申報）</li>
+                  <li><strong>代辦費</strong>：會計師或事務所的服務費用</li>
+                  <li><strong>規費</strong>：需繳交給政府機關的費用（例如：登記規費）</li>
+                  <li><strong>雜費</strong>：其他相關費用（例如：文件複印費、郵資）</li>
+                </ul>
+                <div style="margin-top:8px;padding-top:8px;border-top:1px solid #93c5fd;">
+                  <strong>💡 請款單 vs 收據：</strong><br>
+                  • <strong>請款單</strong>：向客戶請款時使用，會顯示三欄明細（代辦費、規費、雜費）<br>
+                  • <strong>收據</strong>：收到款項後使用，僅顯示項目和總金額
+                </div>
+              </div>
+            </div>
+            
             <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;">
               <div id="receiptItems" style="display:grid;gap:12px;margin-bottom:12px;">
                 <!-- 明细项目将动态添加在这里 -->
               </div>
               <button type="button" id="btn-add-item" style="width:100%;padding:8px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px;">+ 新增明細項目</button>
-              <small style="color:#6b7280;margin-top:8px;display:block;font-size:12px;">如不填寫明細，將使用下方總金額</small>
+              <small style="color:#6b7280;margin-top:8px;display:block;font-size:12px;">💡 如不填寫明細，將使用下方總金額（所有金額會顯示在「代辦費」欄位）</small>
             </div>
           </div>
           
@@ -669,30 +705,48 @@
           
           receiptItemsContainer.innerHTML = receiptItems.map((item, index) => `
             <div style="background:white;border:1px solid #e5e7eb;border-radius:6px;padding:12px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <span style="font-weight:600;font-size:13px;color:#374151;">項目 ${index + 1}</span>
-                <button type="button" onclick="removeReceiptItem(${item.id})" style="background:#ef4444;color:white;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;">刪除</button>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span style="font-weight:600;font-size:14px;color:#374151;">📋 項目 ${index + 1}</span>
+                <button type="button" onclick="removeReceiptItem(${item.id})" style="background:#ef4444;color:white;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px;">刪除</button>
               </div>
-              <div style="display:grid;gap:8px;">
-                <input type="text" placeholder="項目名稱（必填）" value="${item.serviceName || ''}" 
-                  onchange="updateReceiptItem(${item.id}, 'serviceName', this.value)"
-                  style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-                  <input type="number" placeholder="代辦費" value="${item.serviceFee || 0}" min="0" step="1"
-                    onchange="updateReceiptItem(${item.id}, 'serviceFee', parseFloat(this.value) || 0)"
-                    style="padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
-                  <input type="number" placeholder="規費" value="${item.governmentFee || 0}" min="0" step="1"
-                    onchange="updateReceiptItem(${item.id}, 'governmentFee', parseFloat(this.value) || 0)"
-                    style="padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
-                  <input type="number" placeholder="雜費" value="${item.miscellaneousFee || 0}" min="0" step="1"
-                    onchange="updateReceiptItem(${item.id}, 'miscellaneousFee', parseFloat(this.value) || 0)"
-                    style="padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
+              <div style="display:grid;gap:10px;">
+                <div>
+                  <label style="display:block;font-size:12px;font-weight:500;color:#374151;margin-bottom:4px;">項目名稱 <span style="color:#ef4444;">*</span></label>
+                  <input type="text" placeholder="例如：公司登記、營業稅申報" value="${item.serviceName || ''}" 
+                    onchange="updateReceiptItem(${item.id}, 'serviceName', this.value)"
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
                 </div>
-                <input type="text" placeholder="備註（選填）" value="${item.notes || ''}"
-                  onchange="updateReceiptItem(${item.id}, 'notes', this.value)"
-                  style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
-                <div style="text-align:right;color:#6b7280;font-size:13px;padding-top:4px;">
-                  小計：$<span style="font-weight:600;color:#1f2937;">${((item.serviceFee || 0) + (item.governmentFee || 0) + (item.miscellaneousFee || 0)).toLocaleString()}</span>
+                <div>
+                  <label style="display:block;font-size:12px;font-weight:500;color:#374151;margin-bottom:4px;">費用明細</label>
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                    <div>
+                      <label style="display:block;font-size:11px;color:#6b7280;margin-bottom:2px;">代辦費 (NT$)</label>
+                      <input type="number" placeholder="0" value="${item.serviceFee || 0}" min="0" step="1"
+                        onchange="updateReceiptItem(${item.id}, 'serviceFee', parseFloat(this.value) || 0)"
+                        style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
+                    </div>
+                    <div>
+                      <label style="display:block;font-size:11px;color:#6b7280;margin-bottom:2px;">規費 (NT$)</label>
+                      <input type="number" placeholder="0" value="${item.governmentFee || 0}" min="0" step="1"
+                        onchange="updateReceiptItem(${item.id}, 'governmentFee', parseFloat(this.value) || 0)"
+                        style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
+                    </div>
+                    <div>
+                      <label style="display:block;font-size:11px;color:#6b7280;margin-bottom:2px;">雜費 (NT$)</label>
+                      <input type="number" placeholder="0" value="${item.miscellaneousFee || 0}" min="0" step="1"
+                        onchange="updateReceiptItem(${item.id}, 'miscellaneousFee', parseFloat(this.value) || 0)"
+                        style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label style="display:block;font-size:12px;font-weight:500;color:#374151;margin-bottom:4px;">備註</label>
+                  <input type="text" placeholder="選填，例如：含證書費用" value="${item.notes || ''}"
+                    onchange="updateReceiptItem(${item.id}, 'notes', this.value)"
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
+                </div>
+                <div style="text-align:right;color:#10b981;font-size:14px;padding:8px;background:#f0fdf4;border-radius:4px;">
+                  小計：<span style="font-weight:700;">NT$ ${((item.serviceFee || 0) + (item.governmentFee || 0) + (item.miscellaneousFee || 0)).toLocaleString()}</span>
                 </div>
               </div>
             </div>
