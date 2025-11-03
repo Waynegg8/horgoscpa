@@ -53,6 +53,30 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 			const tagsCsv = (p.get("tags") || "").trim();
 			const published = (p.get("published") || "all").trim().toLowerCase();
 
+			// ⚡ KV 缓存逻辑
+			const cacheKey = generateCacheKey('sop_list', {
+				page,
+				perPage,
+				q,
+				category,
+				scope,
+				client_id: clientId,
+				tags: tagsCsv,
+				published
+			});
+
+			// 1️⃣ 优先从 KV 获取
+			const kvCached = await getKVCache(env, cacheKey);
+			if (kvCached) {
+				return jsonResponse(200, {
+					ok: true,
+					code: "SUCCESS",
+					message: "查詢成功（KV缓存）⚡",
+					data: kvCached.data.items,
+					meta: { ...kvCached.data.meta, requestId, cache_source: 'kv' }
+				}, corsHeaders);
+			}
+
 			const where = ["is_deleted = 0"];
 			const binds = [];
 			if (q) { where.push("(title LIKE ? OR tags LIKE ?)"); binds.push(`%${q}%`, `%${q}%`); }
@@ -90,6 +114,14 @@ export async function handleSOP(request, env, me, requestId, url, path) {
 				createdAt: r.created_at,
 				updatedAt: r.updated_at,
 			}));
+
+			// ⚡ 保存到 KV 缓存
+			const cacheData = {
+				items,
+				meta: { page, perPage, total }
+			};
+			await saveKVCache(env, cacheKey, 'sop_list', cacheData, { ttl: 3600 });
+
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data: items, meta:{ requestId, page, perPage, total } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));

@@ -146,21 +146,38 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				const dateTo = (params.get("dateTo") || "").trim();
 				const queryUserId = params.get("user_id");
 				
-				// ⚡ 尝试从缓存读取
-				const cacheKey = generateCacheKey('leaves_list', { 
-					page, perPage, q, status, type, dateFrom, dateTo, userId: queryUserId || me.user_id 
-				});
-				const cached = await getCache(env, cacheKey);
+			// ⚡ 优先尝试从KV缓存读取（极快<50ms）
+			const cacheKey = generateCacheKey('leaves_list', { 
+				page, perPage, q, status, type, dateFrom, dateTo, userId: queryUserId || me.user_id 
+			});
+			
+			// 1️⃣ 先尝试 KV 缓存
+			const kvCached = await getKVCache(env, cacheKey);
+			if (kvCached && kvCached.data) {
+				return jsonResponse(200, { 
+					ok: true, 
+					code: "SUCCESS", 
+					message: "查詢成功（KV缓存）⚡", 
+					data: kvCached.data.list, 
+					meta: { ...kvCached.data.meta, requestId, cache_source: 'kv' } 
+				}, corsHeaders);
+			}
+			
+			// 2️⃣ KV 未命中，尝试 D1 缓存
+			const cached = await getCache(env, cacheKey);
+			if (cached && cached.data) {
+				// 异步同步回 KV
+				saveKVCache(env, cacheKey, 'leaves_list', cached.data, { ttl: 3600 })
+					.catch(err => console.error('[LEAVES] KV同步失败:', err));
 				
-				if (cached && cached.data) {
-					return jsonResponse(200, { 
-						ok: true, 
-						code: "OK", 
-						message: "成功（缓存）", 
-						data: cached.data.list, 
-						meta: { ...cached.data.meta, requestId, ...cached.meta } 
-					}, corsHeaders);
-				}
+				return jsonResponse(200, { 
+					ok: true, 
+					code: "OK", 
+					message: "成功（D1缓存）", 
+					data: cached.data.list, 
+					meta: { ...cached.data.meta, requestId, cache_source: 'd1' } 
+				}, corsHeaders);
+			}
 				
 				const where = ["l.is_deleted = 0"];
 				const binds = [];
@@ -203,15 +220,19 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				}));
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
 			
-			// ⚡ 保存到缓存（同步等待）
+			// ⚡ 同时保存到 KV 和 D1 缓存
+			const cacheData = { list: data, meta: { page, perPage, total, hasNext: offset + perPage < total } };
 			try {
-				await saveCache(env, cacheKey, 'leaves_list', { list: data, meta }, {
-					userId: queryUserId || String(me.user_id),
-					scopeParams: { page, perPage, q, status, type, dateFrom, dateTo }
-				});
-				console.log('[LEAVES] ✓ 假期列表缓存已保存');
+				await Promise.all([
+					saveKVCache(env, cacheKey, 'leaves_list', cacheData, { ttl: 3600 }),
+					saveCache(env, cacheKey, 'leaves_list', cacheData, {
+						userId: queryUserId || String(me.user_id),
+						scopeParams: { page, perPage, q, status, type, dateFrom, dateTo }
+					})
+				]);
+				console.log('[LEAVES] ✓ 假期列表已保存到 KV+D1 缓存');
 			} catch (err) {
-				console.error('[LEAVES] ✗ 列表缓存保存失败:', err);
+				console.error('[LEAVES] ✗ 缓存保存失败:', err);
 			}
 				
 				return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta }, corsHeaders);
