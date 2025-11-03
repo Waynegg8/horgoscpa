@@ -5,33 +5,60 @@ export async function handleReceipts(request, env, me, requestId, url) {
 	const method = request.method.toUpperCase();
 	const path = url.pathname;
 
-	// GET /internal/api/v1/receipts/reminders - 获取应开收据提醒
+	// GET /internal/api/v1/receipts/reminders - 获取应开收据提醒（任务完成后才提醒）
 	if (method === "GET" && path === "/internal/api/v1/receipts/reminders") {
 		try {
-			// 查询已完成的服务任务，但还没开收据的
+			// 查询任务已全部完成、但还没开收据的服务
 			const now = new Date();
 			const currentMonth = now.getMonth() + 1;
+			const currentYear = now.getFullYear();
+			const serviceMonth = `${currentYear}-${String(currentMonth).padStart(2, '0')}`; // YYYY-MM格式
 			
 			const reminders = await env.DATABASE.prepare(
 				`SELECT DISTINCT
 				   c.client_id, c.company_name AS client_name,
 				   cs.client_service_id, s.service_name,
-				   sbs.billing_month, sbs.billing_amount AS amount
+				   sbs.billing_month, sbs.billing_amount AS amount,
+				   (SELECT COUNT(*) FROM ActiveTasks t 
+				    WHERE t.client_service_id = cs.client_service_id 
+				      AND t.service_month = ?
+				      AND t.is_deleted = 0) as total_tasks,
+				   (SELECT COUNT(*) FROM ActiveTasks t 
+				    WHERE t.client_service_id = cs.client_service_id 
+				      AND t.service_month = ?
+				      AND t.is_deleted = 0
+				      AND t.status = 'completed') as completed_tasks
 				 FROM ClientServices cs
 				 JOIN Clients c ON c.client_id = cs.client_id
 				 JOIN Services s ON s.service_id = cs.service_id
 				 JOIN ServiceBillingSchedule sbs ON sbs.client_service_id = cs.client_service_id
 				 WHERE cs.status = 'active'
 				   AND sbs.billing_month = ?
+				   -- 该月份还没开收据
 				   AND NOT EXISTS (
 				     SELECT 1 FROM Receipts r 
 				     WHERE r.client_service_id = cs.client_service_id 
 				       AND r.billing_month = sbs.billing_month
 				       AND r.is_deleted = 0
 				   )
+				   -- 该服务该月有任务
+				   AND EXISTS (
+				     SELECT 1 FROM ActiveTasks t
+				     WHERE t.client_service_id = cs.client_service_id
+				       AND t.service_month = ?
+				       AND t.is_deleted = 0
+				   )
+				   -- 该服务该月的任务全部完成（没有未完成的任务）
+				   AND NOT EXISTS (
+				     SELECT 1 FROM ActiveTasks t
+				     WHERE t.client_service_id = cs.client_service_id
+				       AND t.service_month = ?
+				       AND t.is_deleted = 0
+				       AND t.status != 'completed'
+				   )
 				 ORDER BY c.company_name, s.service_name
 				 LIMIT 20`
-			).bind(currentMonth).all();
+			).bind(serviceMonth, serviceMonth, currentMonth, serviceMonth, serviceMonth).all();
 			
 			const data = (reminders?.results || []).map(r => ({
 				client_id: r.client_id,
@@ -39,8 +66,12 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				client_service_id: r.client_service_id,
 				service_name: r.service_name,
 				billing_month: r.billing_month,
-				amount: Number(r.amount || 0)
+				amount: Number(r.amount || 0),
+				total_tasks: Number(r.total_tasks || 0),
+				completed_tasks: Number(r.completed_tasks || 0)
 			}));
+			
+			console.log(`[收据提醒] 当前月份: ${serviceMonth}, 找到 ${data.length} 个待开收据（任务已完成）`);
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
 		} catch (err) {

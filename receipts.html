@@ -49,10 +49,10 @@
         line-height: 1 !important;
       }
       
-      /* 提醒通知樣式 */
+      /* 提醒通知樣式 - 绿色系（任务完成） */
       .reminder-banner {
-        background: #fef3c7;
-        border: 1px solid #fbbf24;
+        background: #d1fae5;
+        border: 1px solid #10b981;
         border-radius: 8px;
         padding: 16px;
         margin-bottom: 16px;
@@ -72,7 +72,7 @@
       
       .reminder-banner-title {
         font-weight: 600;
-        color: #92400e;
+        color: #065f46;
         margin-bottom: 8px;
       }
       
@@ -84,18 +84,19 @@
       
       .reminder-banner-item {
         padding: 6px 0;
-        color: #78350f;
+        color: #047857;
         font-size: 14px;
       }
       
       .reminder-banner-item a {
-        color: #d97706;
+        color: #059669;
         text-decoration: underline;
         cursor: pointer;
+        font-weight: 500;
       }
       
       .reminder-banner-item a:hover {
-        color: #b45309;
+        color: #047857;
       }
       
       /* 客户分组样式 - 与任务页面一致 */
@@ -339,14 +340,14 @@
             
             banner.innerHTML = `
               <div class="reminder-banner">
-                <div class="reminder-banner-icon">⚠️</div>
+                <div class="reminder-banner-icon">✅</div>
                 <div class="reminder-banner-content">
-                  <div class="reminder-banner-title">待開收據提醒（${reminders.length} 項）</div>
+                  <div class="reminder-banner-title">服務已完成，待開收據（${reminders.length} 項）</div>
                   <ul class="reminder-banner-list">
                     ${reminders.map(r => `
                       <li class="reminder-banner-item">
                         <strong>${r.client_name}</strong> - ${r.service_name}
-                        （${r.billing_month}月，金額：$${(r.amount || 0).toLocaleString()}）
+                        （${r.billing_month}月，金額：$${(r.amount || 0).toLocaleString()}${r.total_tasks ? `，${r.completed_tasks}/${r.total_tasks} 任務已完成` : ''}）
                         <a onclick="createReceiptFromReminder('${r.client_id}', ${r.client_service_id}, ${r.billing_month}, ${r.amount})">立即開收據</a>
                       </li>
                     `).join('')}
