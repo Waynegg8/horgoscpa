@@ -356,10 +356,15 @@ export async function handleClients(request, env, me, requestId, url) {
 			
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
 			
-			// ⚡ 保存到缓存（不等待完成）
-			saveCache(env, cacheKey, 'clients_list', { list: data, meta }, {
-				scopeParams: { page, perPage, q: searchQuery, tag_id: tagId }
-			}).catch(err => console.error('[CLIENTS] 缓存保存失败:', err));
+			// ⚡ 保存到缓存（同步等待以确保保存成功）
+			try {
+				await saveCache(env, cacheKey, 'clients_list', { list: data, meta }, {
+					scopeParams: { page, perPage, q: searchQuery, tag_id: tagId }
+				});
+				console.log('[CLIENTS] ✓ 客户列表缓存已保存');
+			} catch (err) {
+				console.error('[CLIENTS] ✗ 缓存保存失败:', err);
+			}
 			
 			return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta }, corsHeaders);
 		} catch (err) {
