@@ -97,62 +97,94 @@
       .reminder-banner-item a:hover {
         color: #b45309;
       }
+      
+      /* 客户分组样式 - 与任务页面一致 */
+      .client-group {
+        margin-bottom: 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      
+      .client-header {
+        background: #f9fafb;
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      
+      .client-header:hover {
+        background: #f3f4f6;
+      }
+      
+      .receipt-row {
+        display: grid;
+        grid-template-columns: 2fr 1.5fr 120px 120px 120px 100px 100px;
+        gap: 12px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #f9fafb;
+        align-items: center;
+      }
+      
+      .receipt-row:hover {
+        background: #f9fafb;
+      }
     </style>
   </head>
   <body>
     <div id="navbar-placeholder"></div>
     
-    <div class="page-container">
-      <!-- 搜尋篩選工具列 -->
-      <div class="content-card" style="margin-bottom: 16px;">
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-          <input id="q" type="search" placeholder="搜尋客戶/收據號…" aria-label="搜尋" style="padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;min-width:220px;flex:1;" />
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <label style="font-size: 14px; color: #6b7280;">起</label>
-            <input id="dateFrom" type="date" style="padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;" />
+    <main class="clients-content" style="padding:24px;">
+      <section class="clients-card" style="background:#fff;border:1px solid rgba(15,23,42,0.08);border-radius:10px;padding:16px;">
+        <!-- 搜尋篩選工具列 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div class="toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <input id="q" type="search" placeholder="搜尋客戶/收據號…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <label style="font-size: 14px; color: #6b7280;">起</label>
+              <input id="dateFrom" type="date" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" />
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <label style="font-size: 14px; color: #6b7280;">迄</label>
+              <input id="dateTo" type="date" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" />
+            </div>
+            <select id="status" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;">
+              <option value="all">全部狀態</option>
+              <option value="unpaid">未收款</option>
+              <option value="paid">已收款</option>
+              <option value="overdue">逾期</option>
+            </select>
+            <button id="btn-new" class="clients-btn" style="padding:8px 12px;" type="button">+ 新增收據</button>
           </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <label style="font-size: 14px; color: #6b7280;">迄</label>
-            <input id="dateTo" type="date" style="padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;" />
-          </div>
-          <select id="status" style="padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;">
-            <option value="all">全部狀態</option>
-            <option value="unpaid">未收款</option>
-            <option value="paid">已收款</option>
-            <option value="overdue">逾期</option>
-          </select>
-          <button id="btn-new" class="btn btn-primary" type="button">+ 新增收據</button>
         </div>
-      </div>
 
-      <main style="margin-bottom: 24px;">
-      <!-- 開收據提醒 -->
-      <div id="reminderBanner" style="display: none;"></div>
-      
-      <div class="content-card">
-        <div class="table-wrapper">
-          <table class="data-table" aria-label="收據列表">
+        <!-- 開收據提醒 -->
+        <div id="reminderBanner" style="display: none; margin-top: 16px;"></div>
+
+        <p id="receipts-error" style="color:#c0392b;min-height:1.25rem;margin:8px 0 0 0;"></p>
+
+        <!-- 收據列表 -->
+        <div id="receipts-list" style="margin-top:16px;">
+          <table style="width:100%;border-collapse:collapse;">
             <thead>
-              <tr>
-                <th>收據號</th>
-                <th>客戶</th>
-                <th>金額</th>
-                <th>貨幣</th>
-                <th>開立日期</th>
-                <th>狀態</th>
-                <th style="width: 100px;">操作</th>
+              <tr style="border-bottom:2px solid #e5e7eb;">
+                <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">收據號</th>
+                <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">客戶</th>
+                <th style="padding:12px;text-align:right;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">金額</th>
+                <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">開立日期</th>
+                <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">到期日</th>
+                <th style="padding:12px;text-align:center;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">狀態</th>
+                <th style="padding:12px;text-align:center;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;width:100px;">操作</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
           </table>
         </div>
-        <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;" id="pager">
-          <button type="button" id="prev" class="btn btn-secondary">上一頁</button>
-          <button type="button" id="next" class="btn btn-secondary">下一頁</button>
-        </div>
-      </div>
+      </section>
     </main>
-    </div>
     
     <div id="footer-placeholder"></div>
 
@@ -259,13 +291,10 @@
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
         const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
 
-        const tbody = document.getElementById('tbody');
         const q = document.getElementById('q');
         const dateFrom = document.getElementById('dateFrom');
         const dateTo = document.getElementById('dateTo');
         const statusEl = document.getElementById('status');
-        const prevBtn = document.getElementById('prev');
-        const nextBtn = document.getElementById('next');
         const btnNew = document.getElementById('btn-new');
         const modal = document.getElementById('modalOverlay');
         const btnCancel = document.getElementById('btn-cancel');
@@ -285,9 +314,10 @@
         const btnSuggestAmount = document.getElementById('btn-suggest-amount');
         const suggestedAmountInfo = document.getElementById('suggestedAmountInfo');
 
-        let state = { page:1, perPage:20, total:0 };
-        let currentClientServices = [];
+        let allReceipts = [];
         let allClients = [];
+        let currentClientServices = [];
+        const tbody = document.getElementById('tbody');
 
         // 載入應開收據提醒
         async function loadReceiptReminders() {
@@ -436,15 +466,53 @@
           });
         }
 
-        function render(rows){
+        // 篩選收據
+        function filterReceipts() {
+          const query = q.value.toLowerCase();
+          const st = statusEl.value;
+          const from = dateFrom.value;
+          const to = dateTo.value;
+          const today = new Date();
+          
+          return allReceipts.filter(r => {
+            // 搜索
+            if (query && !r.clientName.toLowerCase().includes(query) && 
+                !(r.receiptId && r.receiptId.toLowerCase().includes(query))) {
+              return false;
+            }
+            
+            // 狀態篩選
+            const isOverdue = r.dueDate && (new Date(r.dueDate) < today) && (r.status==='unpaid' || r.status==='partial');
+            if (st === 'overdue') {
+              if (!isOverdue) return false;
+            } else if (st !== 'all') {
+              if (r.status !== st) return false;
+            }
+            
+            // 日期篩選
+            if (from && r.receiptDate < from) return false;
+            if (to && r.receiptDate > to) return false;
+            
+            return true;
+          });
+        }
+        
+        // 渲染收據列表
+        function render() {
+          const filtered = filterReceipts();
           tbody.innerHTML = '';
-          if (rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6b7280;padding:24px;">暫無數據</td></tr>';
+          
+          if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:48px;font-size:14px;">沒有符合條件的收據</td></tr>';
             return;
           }
-          rows.forEach(r => {
+          
+          const today = new Date();
+          filtered.forEach(r => {
             const tr = document.createElement('tr');
-            const isOverdue = r.dueDate && (new Date(r.dueDate) < new Date()) && (r.status==='unpaid' || r.status==='partial');
+            tr.style.borderBottom = '1px solid #f3f4f6';
+            
+            const isOverdue = r.dueDate && (new Date(r.dueDate) < today) && (r.status==='unpaid' || r.status==='partial');
             
             let badgeStyle = '';
             let txt = '';
@@ -457,64 +525,59 @@
             } else if (r.status === 'partial') {
               badgeStyle = 'background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;';
               txt = '部分收款';
+            } else if (r.status === 'cancelled') {
+              badgeStyle = 'background:#f3f4f6;color:#6b7280;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;';
+              txt = '作廢';
             } else {
               badgeStyle = 'background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;';
               txt = '未收款';
             }
             
             tr.innerHTML = `
-              <td>${r.receiptId}</td>
-              <td>${r.clientName||''}</td>
-              <td style="text-align:right;">$${(r.totalAmount||0).toLocaleString()}</td>
-              <td>TWD</td>
-              <td>${r.receiptDate||''}</td>
-              <td><span style="${badgeStyle}">${txt}</span></td>
-              <td><a href="/internal/receipt-detail?id=${encodeURIComponent(r.receiptId)}" class="btn-link">查看</a></td>
+              <td style="padding:12px;font-size:14px;color:#1f2937;">${r.receiptId || '—'}</td>
+              <td style="padding:12px;font-size:14px;color:#1f2937;">${r.clientName || '—'}</td>
+              <td style="padding:12px;text-align:right;font-size:14px;font-weight:600;color:#1f2937;">$${(r.totalAmount||0).toLocaleString()}</td>
+              <td style="padding:12px;font-size:14px;color:#6b7280;">${r.receiptDate || '—'}</td>
+              <td style="padding:12px;font-size:14px;color:#6b7280;">${r.dueDate || '—'}</td>
+              <td style="padding:12px;text-align:center;"><span style="${badgeStyle}">${txt}</span></td>
+              <td style="padding:12px;text-align:center;"><a href="/internal/receipt-detail?id=${encodeURIComponent(r.receiptId)}" style="color:#3b82f6;text-decoration:none;font-size:14px;">查看詳情</a></td>
             `;
+            
+            // hover效果
+            tr.addEventListener('mouseenter', () => {
+              tr.style.background = '#f9fafb';
+            });
+            tr.addEventListener('mouseleave', () => {
+              tr.style.background = '';
+            });
+            
             tbody.appendChild(tr);
           });
         }
 
-        function renderPager(){
-          prevBtn.disabled = state.page <= 1;
-          nextBtn.disabled = state.page * state.perPage >= state.total;
-        }
-
-        async function load(){
-          const params = new URLSearchParams();
-          params.set('page', String(state.page));
-          params.set('perPage', String(state.perPage));
-          if (q.value.trim()) params.set('q', q.value.trim());
-          const st = statusEl.value;
-          if (st !== 'all' && st !== 'overdue') params.set('status', st);
-          if (dateFrom.value) params.set('dateFrom', dateFrom.value);
-          if (dateTo.value) params.set('dateTo', dateTo.value);
+        // 加載所有收據
+        async function loadAllReceipts() {
           try {
-            const res = await fetch(`${apiBase}/receipts?${params.toString()}`, { credentials:'include' });
+            const params = new URLSearchParams({ perPage: '1000' });
+            const res = await fetch(`${apiBase}/receipts?${params}`, { credentials:'include' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/receipts'); return; }
             const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error();
-            let rows = json.data || [];
-            if (st === 'overdue') {
-              const today = new Date();
-              rows = rows.filter(r => r.dueDate && new Date(r.dueDate) < today && (r.status==='unpaid' || r.status==='partial'));
+            if (json.ok) {
+              allReceipts = json.data || [];
+              render();
             }
-            state.total = (json.meta && json.meta.total) || rows.length;
-            render(rows);
-            renderPager();
-          } catch (_) {
-            tbody.innerHTML = '<tr><td colspan="7" style="color:#c0392b;">載入失敗</td></tr>';
-            renderPager();
+          } catch (err) {
+            console.error('載入收據失敗', err);
+            document.getElementById('receipts-error').textContent = '載入失敗';
           }
         }
 
+        // 篩選事件
         let timer = null;
-        q.addEventListener('input', ()=>{ clearTimeout(timer); timer = setTimeout(()=>{ state.page=1; load(); }, 300); });
-        statusEl.addEventListener('change', ()=>{ state.page=1; load(); });
-        dateFrom.addEventListener('change', ()=>{ state.page=1; load(); });
-        dateTo.addEventListener('change', ()=>{ state.page=1; load(); });
-        prevBtn.addEventListener('click', ()=>{ if (state.page>1) { state.page--; load(); } });
-        nextBtn.addEventListener('click', ()=>{ state.page++; load(); });
+        q.addEventListener('input', ()=>{ clearTimeout(timer); timer = setTimeout(render, 300); });
+        statusEl.addEventListener('change', render);
+        dateFrom.addEventListener('change', render);
+        dateTo.addEventListener('change', render);
 
         function openModal(){
           formError.style.display = 'none';
@@ -726,8 +789,7 @@
             console.log('回應:', json); // Debug
             if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '建立失敗');
             closeModal();
-            state.page = 1;
-            await load();
+            await loadAllReceipts();
             await loadReceiptReminders(); // 刷新提醒
           } catch (err) {
             console.error('創建收據失敗:', err); // Debug
@@ -746,14 +808,20 @@
         }
 
         // 初始化
-        loadReceiptReminders();
-        loadClients();
-        load().then(() => {
+        async function init() {
+          await Promise.all([
+            loadReceiptReminders(),
+            loadClients(),
+            loadAllReceipts()
+          ]);
+          
           // ⚡ 自动保存预渲染
           if (window.PagePrerender) {
             setTimeout(() => window.PagePrerender.autoSave('.receipts-container', 2000), 1000);
           }
-        });
+        }
+        
+        init();
       })();
     </script>
     <script src="/assets/js/components/bootstrap.js?v=3"></script>

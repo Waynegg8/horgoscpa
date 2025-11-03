@@ -183,6 +183,24 @@
         <select id="user-select" aria-label="選擇員工" style="display:none;padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:180px;">
           <option value="">全部員工</option>
         </select>
+        <select id="year-filter" aria-label="篩選年份" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:150px;">
+          <option value="">請選擇年份</option>
+        </select>
+        <select id="month-filter" aria-label="篩選月份" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:150px;">
+          <option value="">全年</option>
+          <option value="1">1月</option>
+          <option value="2">2月</option>
+          <option value="3">3月</option>
+          <option value="4">4月</option>
+          <option value="5">5月</option>
+          <option value="6">6月</option>
+          <option value="7">7月</option>
+          <option value="8">8月</option>
+          <option value="9">9月</option>
+          <option value="10">10月</option>
+          <option value="11">11月</option>
+          <option value="12">12月</option>
+        </select>
         <select id="leave-type-filter" aria-label="篩選假別" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:180px;">
           <option value="">全部假別</option>
           <option value="annual">特休</option>
@@ -202,7 +220,7 @@
       </div>
     </div>
 
-    <main style="padding:24px; display:grid; gap:16px;" id="leavesMain">
+    <main style="padding:24px;" id="leavesMain">
       <script>
       // ⚡ 立即插入预渲染内容（同步执行，无需等待）
       (function() {
@@ -221,15 +239,7 @@
       })();
       </script>
       <section class="leaves-card">
-        <h2 style="margin:0 0 8px 0; font-size:16px;">餘額總覽</h2>
-        <div class="balance-grid" id="balances">
-          <!-- 骨架：餘額卡 -->
-        </div>
-      </section>
-
-      <section class="leaves-card">
-        <h2 style="margin:0 0 8px 0; font-size:16px;">我的申請</h2>
-        <table class="leaves-table" aria-label="申請列表">
+        <table class="leaves-table" aria-label="假期記錄">
           <thead>
             <tr>
               <th>假別</th>
@@ -240,10 +250,6 @@
           </thead>
           <tbody id="tbody"></tbody>
         </table>
-        <div class="clients-pagination" id="pager" style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
-          <button type="button" id="prev">上一頁</button>
-          <button type="button" id="next">下一頁</button>
-        </div>
       </section>
     </main>
 
@@ -362,11 +368,10 @@
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
         const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
 
-        const balanceEl = document.getElementById('balances');
         const tbody = document.getElementById('tbody');
         const leaveTypeFilterEl = document.getElementById('leave-type-filter');
-        const prevBtn = document.getElementById('prev');
-        const nextBtn = document.getElementById('next');
+        const yearFilterEl = document.getElementById('year-filter');
+        const monthFilterEl = document.getElementById('month-filter');
         const userSelectEl = document.getElementById('user-select');
 
         const zhType = { 
@@ -384,7 +389,22 @@
         };
         const zhStatus = { pending:'待審', approved:'已核准', rejected:'已駁回' };
 
-        let state = { page:1, perPage:20, total:0, isAdmin: false, selectedUserId: null };
+        let state = { isAdmin: false, selectedUserId: null, selectedYear: null, selectedMonth: null };
+        
+        // 初始化年份選項（2020-2030）
+        function initYearOptions() {
+          const currentYear = new Date().getFullYear();
+          for (let year = 2020; year <= 2030; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year + '年';
+            if (year === currentYear) {
+              option.selected = true;
+              state.selectedYear = year;
+            }
+            yearFilterEl.appendChild(option);
+          }
+        }
 
         async function loadBalances(){
           // ⚡ 如果有预渲染内容，跳过清空
