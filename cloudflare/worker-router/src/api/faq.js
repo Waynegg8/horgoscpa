@@ -3,6 +3,9 @@
  * 提供FAQ的CRUD操作
  */
 
+import { getKVCache, saveKVCache, deleteKVCacheByPrefix } from "../kv-cache-helper.js";
+import { generateCacheKey } from "../kv-cache-helper.js";
+
 export async function handleFAQRequest(request, env, ctx, pathname, me) {
   const method = request.method;
   
@@ -48,6 +51,25 @@ async function getFAQList(request, env, me) {
     const scope = url.searchParams.get('scope') || '';
     const clientId = url.searchParams.get('client_id') || '';
     const tags = url.searchParams.get('tags') || '';
+    
+    // ⚡ KV 缓存逻辑
+    const cacheKey = generateCacheKey('faq_list', {
+      page, perPage, q, category, scope, client_id: clientId, tags
+    });
+    
+    // 1️⃣ 优先从 KV 获取
+    const kvCached = await getKVCache(env, cacheKey);
+    if (kvCached) {
+      return new Response(JSON.stringify({
+        ok: true,
+        code: "SUCCESS",
+        message: "查詢成功（KV缓存）⚡",
+        data: kvCached.data.items,
+        meta: { ...kvCached.data.meta, cache_source: 'kv' }
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
     
     const offset = (page - 1) * perPage;
     
@@ -125,6 +147,13 @@ async function getFAQList(request, env, me) {
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
+    
+    // ⚡ 保存到 KV 缓存
+    const cacheData = {
+      items: faqs,
+      meta: { total, page, perPage }
+    };
+    await saveKVCache(env, cacheKey, 'faq_list', cacheData, { ttl: 3600 });
     
     return new Response(JSON.stringify({
       ok: true,

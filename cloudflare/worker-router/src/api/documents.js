@@ -4,6 +4,8 @@
  */
 
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+import { getKVCache, saveKVCache, deleteKVCacheByPrefix } from "../kv-cache-helper.js";
+import { generateCacheKey } from "../kv-cache-helper.js";
 
 export async function handleDocumentsRequest(request, env, ctx, pathname, me) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -64,6 +66,23 @@ async function getDocumentsList(request, env, me, corsHeaders) {
     const year = url.searchParams.get('year') || '';
     const month = url.searchParams.get('month') || '';
     const tags = url.searchParams.get('tags') || '';
+    
+    // ⚡ KV 缓存逻辑
+    const cacheKey = generateCacheKey('documents_list', {
+      page, perPage, q, category, scope, client_id: clientId, year, month, tags
+    });
+    
+    // 1️⃣ 优先从 KV 获取
+    const kvCached = await getKVCache(env, cacheKey);
+    if (kvCached) {
+      return jsonResponse(200, {
+        ok: true,
+        code: "SUCCESS",
+        message: "查詢成功（KV缓存）⚡",
+        data: kvCached.data.items,
+        meta: { ...kvCached.data.meta, cache_source: 'kv' }
+      }, corsHeaders);
+    }
     
     const offset = (page - 1) * perPage;
     
@@ -168,6 +187,13 @@ async function getDocumentsList(request, env, me, corsHeaders) {
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
+    
+    // ⚡ 保存到 KV 缓存
+    const cacheData = {
+      items: documents,
+      meta: { total, page, perPage, requestId: 'doc-list' }
+    };
+    await saveKVCache(env, cacheKey, 'documents_list', cacheData, { ttl: 3600 });
     
     return new Response(JSON.stringify({
       ok: true,

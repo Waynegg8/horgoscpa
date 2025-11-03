@@ -53,17 +53,17 @@
         display: block;
       }
       
-      /* 左右佈局優化 */
+      /* 左右佈局優化 - 縮小左側欄，讓預覽區域更大 */
       .kb-layout {
         display: grid;
-        grid-template-columns: 240px 1fr;
-        gap: 24px;
+        grid-template-columns: 200px 1fr;
+        gap: 16px;
         transition: all 0.3s ease;
         position: relative;
       }
       /* FAQ 列表欄加倍寬度 */
       #faq-layout {
-        grid-template-columns: 480px 1fr;
+        grid-template-columns: 360px 1fr;
       }
       #faq-layout.collapsed {
         grid-template-columns: 0 1fr;
@@ -445,20 +445,19 @@
         display: block;
       }
       
-      /* 資源預覽卡片樣式 */
+      /* 資源預覽卡片樣式 - 移除边框，全屏显示 */
       .resource-preview-card {
         background: white;
-        border: 1px solid rgba(15,23,42,0.08);
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
         overflow: hidden;
-        position: sticky;
-        top: 20px;
+        height: 100%;
         transition: all 0.3s ease;
       }
       
       .resource-preview-card:hover {
-        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        box-shadow: none;
       }
       
       .resource-preview-header {
@@ -478,8 +477,8 @@
       }
       
       .resource-preview-content {
-        padding: 32px 24px;
-        min-height: 400px;
+        padding: 0;
+        min-height: 90vh;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -2242,32 +2241,23 @@
               metaItems.push(`<div style="padding:6px 0;"><span style="color:#9ca3af;font-size:12px;">說明：</span><span style="color:#6b7280;font-size:11px;line-height:1.5;">${doc.description}</span></div>`);
             }
             
-            const metaCard = metaItems.length > 0 ? `
-              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:12px;">
-                <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px;">📋 文檔資訊</div>
-                ${metaItems.join('')}
-              </div>
-            ` : '';
-            
+            // ⚡ 移除文档资讯框，让预览区域占满全屏
             if (fileType.includes('pdf') || fileName.match(/\.pdf$/i)) {
-              // PDF預覽 - 使用 iframe 原生控制
+              // PDF預覽 - 全屏显示，无框
               previewArea.innerHTML = `
-                ${metaCard}
-                <iframe src="${blobUrl}#view=FitH" style="width:100%;height:calc(85vh - ${metaCard ? '200px' : '0px'});border:1px solid #e5e7eb;border-radius:8px;background:white;"></iframe>
+                <iframe src="${blobUrl}#view=FitH" style="width:100%;height:90vh;border:none;background:white;"></iframe>
               `;
             } else if (fileType.includes('image') || fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-              // 圖片預覽 - 直接顯示，使用原生右鍵功能
+              // 圖片預覽 - 全屏显示，无框
               previewArea.innerHTML = `
-                ${metaCard}
-                <div style="width:100%;height:calc(85vh - ${metaCard ? '200px' : '0px'});display:flex;align-items:center;justify-content:center;background:#f5f5f5;border:1px solid #e5e7eb;border-radius:8px;">
+                <div style="width:100%;height:90vh;display:flex;align-items:center;justify-content:center;background:#f5f5f5;">
                   <img src="${blobUrl}" style="max-width:100%;max-height:100%;object-fit:contain;" />
                 </div>
               `;
             } else {
               // 其他文件類型，顯示下載提示
               previewArea.innerHTML = `
-                ${metaCard}
-                <div style="text-align:center;padding:60px 20px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;">
+                <div style="text-align:center;padding:60px 20px;height:90vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f9fafb;">
                   <div style="font-size:64px;margin-bottom:20px;">📄</div>
                   <h3 style="margin-bottom:12px;color:#374151;font-size:18px;">${doc.title}</h3>
                   <p style="color:#6b7280;margin-bottom:8px;font-size:13px;">${doc.fileName || ''}</p>
