@@ -127,6 +127,8 @@ async function getUserSalary(env, requestId, corsHeaders, userId) {
 			esi.expiry_date,
 			esi.notes,
 			esi.is_active,
+			esi.recurring_type,
+			esi.recurring_months,
 			sit.item_code,
 			sit.item_name,
 			sit.category,
@@ -150,7 +152,9 @@ async function getUserSalary(env, requestId, corsHeaders, userId) {
 		effectiveDate: item.effective_date,
 		expiryDate: item.expiry_date,
 		notes: item.notes || "",
-		isActive: !!item.is_active
+		isActive: !!item.is_active,
+		recurringType: item.recurring_type || 'monthly',
+		recurringMonths: item.recurring_months || null
 	}));
 
 	return jsonResponse(200, {
@@ -230,8 +234,8 @@ async function updateUserSalary(request, env, me, requestId, corsHeaders, userId
 
 				await env.DATABASE.prepare(`
 					INSERT INTO EmployeeSalaryItems 
-					(user_id, item_type_id, amount_cents, effective_date, expiry_date, notes, created_by, is_active)
-					VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+					(user_id, item_type_id, amount_cents, effective_date, expiry_date, notes, created_by, is_active, recurring_type, recurring_months)
+					VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
 				`).bind(
 					userId,
 					item.itemTypeId,
@@ -239,7 +243,9 @@ async function updateUserSalary(request, env, me, requestId, corsHeaders, userId
 					item.effectiveDate || new Date().toISOString().split('T')[0],
 					item.expiryDate || null,
 					item.notes || null,
-					me.user_id
+					me.user_id,
+					item.recurringType || 'monthly',
+					item.recurringMonths || null
 				).run();
 			}
 		}

@@ -2,6 +2,53 @@ import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 import { getSettingValue } from "./payroll-settings.js";
 
 /**
+ * 判断薪资项目是否应该在指定月份发放
+ * @param {string} recurringType - 循环类型：'monthly', 'yearly', 'once'
+ * @param {string|null} recurringMonths - 发放月份JSON数组，例如 "[6,9,12]"
+ * @param {string} effectiveDate - 生效日期 YYYY-MM-DD
+ * @param {string|null} expiryDate - 到期日期 YYYY-MM-DD
+ * @param {string} targetMonth - 目标月份 YYYY-MM
+ * @returns {boolean}
+ */
+function shouldPayInMonth(recurringType, recurringMonths, effectiveDate, expiryDate, targetMonth) {
+	const [targetYear, targetMonthNum] = targetMonth.split('-');
+	const currentMonthInt = parseInt(targetMonthNum);
+	
+	// 检查是否在有效期内
+	const firstDay = `${targetYear}-${targetMonthNum}-01`;
+	const lastDay = new Date(parseInt(targetYear), parseInt(targetMonthNum), 0).getDate();
+	const lastDayStr = `${targetYear}-${targetMonthNum}-${String(lastDay).padStart(2, '0')}`;
+	
+	if (effectiveDate > lastDayStr) return false; // 还未生效
+	if (expiryDate && expiryDate < firstDay) return false; // 已过期
+	
+	// 根据循环类型判断
+	if (recurringType === 'monthly') {
+		return true; // 每月都发放
+	}
+	
+	if (recurringType === 'once') {
+		// 仅一次：只在生效月份发放
+		const [effYear, effMonth] = effectiveDate.split('-');
+		return effYear === targetYear && effMonth === targetMonthNum;
+	}
+	
+	if (recurringType === 'yearly') {
+		// 每年指定月份：检查当前月份是否在列表中
+		if (!recurringMonths) return false;
+		try {
+			const months = JSON.parse(recurringMonths);
+			return Array.isArray(months) && months.includes(currentMonthInt);
+		} catch (e) {
+			console.error('Invalid recurring_months JSON:', recurringMonths);
+			return false;
+		}
+	}
+	
+	return false;
+}
+
+/**
  * 计算员工的时薪基准
  * 时薪基准 = (底薪 + 经常性给与) ÷ 时薪除数（从系统设定读取，默认240）
  */
@@ -217,6 +264,10 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const salaryItems = await env.DATABASE.prepare(`
 		SELECT 
 			esi.amount_cents,
+			esi.recurring_type,
+			esi.recurring_months,
+			esi.effective_date,
+			esi.expiry_date,
 			sit.category,
 			sit.item_name,
 			sit.is_regular_payment
@@ -229,7 +280,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 		  AND (esi.expiry_date IS NULL OR esi.expiry_date >= ?)
 	`).bind(userId, lastDayStr, firstDay).all();
 
-	// 3. 分类统计薪资项目
+	// 3. 分类统计薪资项目（根据循环类型过滤）
 	let regularAllowanceCents = 0;  // 经常性津贴（计入时薪）
 	let bonusCents = 0;              // 奖金
 	let deductionCents = 0;          // 扣款
@@ -237,6 +288,20 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const items = salaryItems.results || [];
 	
 	for (const item of items) {
+		// 判断是否应该在当月发放
+		const recurringType = item.recurring_type || 'monthly';
+		const shouldPay = shouldPayInMonth(
+			recurringType,
+			item.recurring_months,
+			item.effective_date,
+			item.expiry_date,
+			month
+		);
+		
+		if (!shouldPay) {
+			continue; // 不在发放月份，跳过
+		}
+		
 		const amount = item.amount_cents || 0;
 		
 		if (item.category === 'deduction') {

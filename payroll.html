@@ -954,16 +954,51 @@
             return;
           }
 
-          empItemsList.innerHTML = empState.userSalaryItems.map((item, index) => `
-            <div class="salary-item-row" style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid #e0e0e0; border-radius: 4px;">
-              <select class="item-type-select" data-index="${index}" style="flex: 2;">
-                ${renderItemTypeOptions(item.itemTypeId)}
-              </select>
-              <input type="number" class="item-amount" data-index="${index}" value="${item.amountCents / 100}" 
-                     placeholder="金額" min="0" step="0.01" style="flex: 1;" />
-              <button type="button" class="btn btn-sm" onclick="removeUserSalaryItem(${index})">❌</button>
+          empItemsList.innerHTML = empState.userSalaryItems.map((item, index) => {
+            const recurringType = item.recurringType || 'monthly';
+            const recurringMonths = item.recurringMonths ? JSON.parse(item.recurringMonths) : [];
+            const showMonthSelector = recurringType === 'yearly';
+            
+            return `
+            <div class="salary-item-row" style="background: #f9fafb; border: 1px solid #e0e0e0; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.75rem;">
+              <div style="display: grid; grid-template-columns: 2fr 1fr 1.5fr auto; gap: 0.5rem; align-items: start; margin-bottom: 0.5rem;">
+                <div>
+                  <label style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 0.25rem;">項目</label>
+                  <select class="item-type-select" data-index="${index}" style="width: 100%; padding: 0.375rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                    ${renderItemTypeOptions(item.itemTypeId)}
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 0.25rem;">金額（元）</label>
+                  <input type="number" class="item-amount" data-index="${index}" value="${item.amountCents / 100}" 
+                         placeholder="0.00" min="0" step="0.01" style="width: 100%; padding: 0.375rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                </div>
+                <div>
+                  <label style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 0.25rem;">發放週期</label>
+                  <select class="item-recurring-type" data-index="${index}" onchange="toggleMonthSelector(${index})" style="width: 100%; padding: 0.375rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                    <option value="monthly" ${recurringType === 'monthly' ? 'selected' : ''}>每月發放</option>
+                    <option value="yearly" ${recurringType === 'yearly' ? 'selected' : ''}>每年指定月份</option>
+                    <option value="once" ${recurringType === 'once' ? 'selected' : ''}>僅發放一次</option>
+                  </select>
+                </div>
+                <div style="padding-top: 1.25rem;">
+                  <button type="button" class="btn btn-sm" onclick="removeUserSalaryItem(${index})" style="padding: 0.375rem 0.75rem;">❌</button>
+                </div>
+              </div>
+              <div class="month-selector-${index}" style="display: ${showMonthSelector ? 'block' : 'none'};">
+                <label style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 0.5rem;">📅 發放月份（可多選）</label>
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.25rem;">
+                  ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m => `
+                    <label style="display: flex; align-items: center; padding: 0.25rem; font-size: 0.875rem;">
+                      <input type="checkbox" class="month-checkbox-${index}" value="${m}" ${recurringMonths.includes(m) ? 'checked' : ''} style="margin-right: 0.25rem;" />
+                      ${m}月
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
             </div>
-          `).join('');
+          `;
+          }).join('');
         }
 
         // 渲染薪資項目類型選項
@@ -976,6 +1011,15 @@
             .join('');
         }
 
+        // 切換月份選擇器顯示
+        window.toggleMonthSelector = function(index) {
+          const selector = document.querySelector(`.month-selector-${index}`);
+          const recurringTypeSelect = document.querySelector(`.item-recurring-type[data-index="${index}"]`);
+          if (selector && recurringTypeSelect) {
+            selector.style.display = recurringTypeSelect.value === 'yearly' ? 'block' : 'none';
+          }
+        };
+
         // 新增員工薪資項目
         window.addUserSalaryItem = function() {
           if (itemsState.all.filter(t => t.isActive).length === 0) {
@@ -984,7 +1028,9 @@
           }
           empState.userSalaryItems.push({
             itemTypeId: itemsState.all.filter(t => t.isActive)[0]?.itemTypeId || null,
-            amountCents: 0
+            amountCents: 0,
+            recurringType: 'monthly',
+            recurringMonths: null
           });
           renderUserSalaryItems();
         };
@@ -1008,14 +1054,29 @@
           itemRows.forEach((row, index) => {
             const typeSelect = row.querySelector('.item-type-select');
             const amountInput = row.querySelector('.item-amount');
+            const recurringTypeSelect = row.querySelector('.item-recurring-type');
+            
             const itemTypeId = parseInt(typeSelect.value);
             const amount = parseFloat(amountInput.value) || 0;
+            const recurringType = recurringTypeSelect.value;
+            
+            // 收集選中的月份
+            let recurringMonths = null;
+            if (recurringType === 'yearly') {
+              const monthCheckboxes = row.querySelectorAll(`.month-checkbox-${index}:checked`);
+              const selectedMonths = Array.from(monthCheckboxes).map(cb => parseInt(cb.value));
+              if (selectedMonths.length > 0) {
+                recurringMonths = JSON.stringify(selectedMonths);
+              }
+            }
             
             if (itemTypeId && amount > 0) {
               salaryItems.push({
                 itemTypeId,
                 amountCents: Math.round(amount * 100),
-                effectiveDate: new Date().toISOString().split('T')[0]
+                effectiveDate: new Date().toISOString().split('T')[0],
+                recurringType,
+                recurringMonths
               });
             }
           });
