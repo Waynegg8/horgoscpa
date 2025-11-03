@@ -1,5 +1,6 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 import { generateCacheKey, getCache, saveCache, invalidateCacheByType } from "../cache-helper.js";
+import { getKVCache, saveKVCache, deleteKVCacheByPrefix } from "../kv-cache-helper.js";
 
 /**
  * 工時類型定義（符合勞基法規定）
@@ -785,17 +786,36 @@ async function handleGetMonthlySummary(request, env, me, requestId, url) {
 		userId = parseInt(params.get("user_id"));
 	}
 		
-		// ⚡ 尝试从缓存读取
+		// ⚡ 优先尝试从KV缓存读取（极快<50ms）
 		const cacheKey = generateCacheKey('monthly_summary', { userId, month });
-		const cached = await getCache(env, cacheKey);
+		const kvCached = await getKVCache(env, cacheKey);
 		
-		if (cached && cached.data) {
+		if (kvCached && kvCached.data) {
 			return jsonResponse(200, {
 				ok: true,
 				code: "SUCCESS",
-				message: "查詢成功（缓存）",
-				data: cached.data,
-				meta: { requestId, month, userId, ...cached.meta }
+				message: "查詢成功（KV缓存）⚡",
+				data: kvCached.data,
+				meta: { requestId, month, userId, ...kvCached.meta, cache_source: 'kv' }
+			}, corsHeaders);
+		}
+		
+		// ⚡ KV未命中，尝试D1缓存（备份）
+		const d1Cached = await getCache(env, cacheKey);
+		if (d1Cached && d1Cached.data) {
+			// 异步同步到KV
+			saveKVCache(env, cacheKey, 'monthly_summary', d1Cached.data, {
+				userId: String(userId),
+				scopeParams: { userId, month },
+				ttl: 3600
+			}).catch(err => console.error('[TIMELOGS] KV同步失败:', err));
+			
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "查詢成功（D1缓存）",
+				data: d1Cached.data,
+				meta: { requestId, month, userId, ...d1Cached.meta, cache_source: 'd1' }
 			}, corsHeaders);
 		}
 		
@@ -862,13 +882,20 @@ async function handleGetMonthlySummary(request, env, me, requestId, url) {
 			leave_hours: Math.round(leaveHours * 10) / 10
 		};
 		
-		// ⚡ 保存到缓存（同步等待）
+		// ⚡ 并行保存到KV（极快）和D1（备份）
 		try {
-			await saveCache(env, cacheKey, 'monthly_summary', summaryData, {
-				userId: String(userId),
-				scopeParams: { userId, month }
-			});
-			console.log('[TIMELOGS] ✓ 月度统计缓存已保存');
+			await Promise.all([
+				saveKVCache(env, cacheKey, 'monthly_summary', summaryData, {
+					userId: String(userId),
+					scopeParams: { userId, month },
+					ttl: 3600 // 1小时
+				}),
+				saveCache(env, cacheKey, 'monthly_summary', summaryData, {
+					userId: String(userId),
+					scopeParams: { userId, month }
+				})
+			]);
+			console.log('[TIMELOGS] ✓ 月度统计缓存已保存（KV+D1）');
 		} catch (err) {
 			console.error('[TIMELOGS] ✗ 月度统计缓存保存失败:', err);
 		}

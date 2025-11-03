@@ -221,6 +221,57 @@ export default {
 				}
 			}
 			
+			// 3. 预热请假余额（当前用户，当前年份）
+			const currentYear = new Date().getFullYear();
+			const leaveBalancesRows = await env.DATABASE.prepare(
+				"SELECT leave_type, year, total, used, remain FROM LeaveBalances WHERE user_id = ? AND year = ? AND leave_type != 'comp'"
+			).bind(String(me.user_id), currentYear).all();
+			
+			const leaveBalancesData = (leaveBalancesRows?.results || []).map(r => ({
+				type: r.leave_type,
+				year: Number(r.year),
+				total: Number(r.total),
+				used: Number(r.used),
+				remain: Number(r.remain)
+			}));
+			
+			const leaveBalancesCacheKey = generateCacheKey('leaves_balances', { userId: String(me.user_id), year: currentYear });
+			await saveKVCache(env, leaveBalancesCacheKey, 'leaves_balances', leaveBalancesData, { ttl: 3600 });
+			warmupResults.push({ type: 'leaves_balances', key: leaveBalancesCacheKey, count: leaveBalancesData.length });
+			
+			// 4. 预热月度统计（当前用户，当前月份）
+			const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
+			const [year, monthNum] = currentMonth.split('-');
+			const startDate = `${year}-${monthNum}-01`;
+			const nextMonth = parseInt(monthNum) === 12 ? `${parseInt(year) + 1}-01` : `${year}-${String(parseInt(monthNum) + 1).padStart(2, '0')}`;
+			const endDate = `${nextMonth}-01`;
+			
+			const monthlyTimelogsRows = await env.DATABASE.prepare(
+				`SELECT work_type, hours FROM Timesheets
+				 WHERE user_id = ? AND work_date >= ? AND work_date < ? AND is_deleted = 0`
+			).bind(me.user_id, startDate, endDate).all();
+			
+			let totalHours = 0, overtimeHours = 0;
+			(monthlyTimelogsRows?.results || []).forEach(log => {
+				const hours = parseFloat(log.hours) || 0;
+				totalHours += hours;
+				if (log.work_type && log.work_type > 1) { // 加班类型
+					overtimeHours += hours;
+				}
+			});
+			
+			const monthlySummaryData = {
+				month: currentMonth,
+				total_hours: Math.round(totalHours * 10) / 10,
+				overtime_hours: Math.round(overtimeHours * 10) / 10,
+				weighted_hours: Math.round(totalHours * 10) / 10,
+				leave_hours: 0
+			};
+			
+			const monthlySummaryCacheKey = generateCacheKey('monthly_summary', { userId: me.user_id, month: currentMonth });
+			await saveKVCache(env, monthlySummaryCacheKey, 'monthly_summary', monthlySummaryData, { ttl: 3600 });
+			warmupResults.push({ type: 'monthly_summary', key: monthlySummaryCacheKey, month: currentMonth });
+			
 			return jsonResponse(200, {
 				ok: true,
 				message: '✅ KV缓存预热完成（需要60秒全球同步）',
