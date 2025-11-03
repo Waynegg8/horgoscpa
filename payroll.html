@@ -322,18 +322,51 @@
         async function ensureAdmin(){
           try {
             const res = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
-            if (res.status === 401) { location.assign('/login?redirect=/internal/payroll'); return false; }
+            if (res.status === 401) { 
+              console.log('[權限檢查] 未登入，重定向到登入頁');
+              location.assign('/login?redirect=/internal/payroll'); 
+              return false; 
+            }
             const json = await res.json();
-            const isAdmin = !!(json && json.ok && json.data && json.data.isAdmin);
-            if (!isAdmin) {
+            console.log('[權限檢查] API 回應:', json);
+            
+            if (!json || !json.ok) {
+              console.error('[權限檢查] API 回應失敗:', json);
+              infoBar.textContent = 'API 回應失敗：' + (json?.message || '未知錯誤');
               infoBar.style.display = 'block';
               setTabsEnabled(false);
               return false;
             }
+            
+            if (!json.data) {
+              console.error('[權限檢查] 沒有 data 欄位');
+              infoBar.textContent = '權限資料異常（缺少 data）';
+              infoBar.style.display = 'block';
+              setTabsEnabled(false);
+              return false;
+            }
+            
+            console.log('[權限檢查] 用戶資料:', {
+              username: json.data.username,
+              name: json.data.name,
+              isAdmin: json.data.isAdmin
+            });
+            
+            const isAdmin = json.data.isAdmin === true;
+            if (!isAdmin) {
+              console.warn('[權限檢查] 用戶不是管理員');
+              infoBar.innerHTML = `您沒有權限存取此模組<br><small>當前用戶：${json.data.name || json.data.username}（is_admin = ${json.data.isAdmin}）</small>`;
+              infoBar.style.display = 'block';
+              setTabsEnabled(false);
+              return false;
+            }
+            
+            console.log('[權限檢查] ✅ 管理員驗證通過');
             setTabsEnabled(true);
             return true;
-          } catch (_) {
-            infoBar.textContent = '載入失敗，請稍後再試';
+          } catch (err) {
+            console.error('[權限檢查] 異常:', err);
+            infoBar.textContent = '載入失敗：' + err.message;
             infoBar.style.display = 'block';
             setTabsEnabled(false);
             return false;
