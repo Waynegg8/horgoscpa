@@ -8,13 +8,13 @@
 
 .payroll-toolbar { margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .toolbar-spacer { flex:1; }
-.btn { padding:6px 12px; border:1px solid #d1d5db; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; user-select:none; }
+.btn { padding:6px 12px; border:1px solid #d1d5db; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; user-select:none; -webkit-user-select:none; -moz-user-select:none; -ms-user-select:none; }
 .btn.primary { background:#0ea5e9; border-color:#0ea5e9; color:#fff; }
 .btn:disabled { opacity:0.5; cursor:not-allowed; }
 .btn.btn-sm { padding:4px 8px; font-size:12px; }
 
 .payroll-tabs { margin-top:12px; display:flex; gap:6px; flex-wrap:wrap; }
-.tab { padding:7px 14px; border:1px solid #e5e7eb; background:#fff; border-radius:6px; cursor:pointer; font-size:14px; user-select:none; }
+.tab { padding:7px 14px; border:1px solid #e5e7eb; background:#fff; border-radius:6px; cursor:pointer; font-size:14px; user-select:none; -webkit-user-select:none; -moz-user-select:none; -ms-user-select:none; }
 .tab.active { background:#0ea5e9; border-color:#0ea5e9; color:#fff; }
 
 .payroll-content { padding:20px; }
