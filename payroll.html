@@ -48,6 +48,9 @@
               <option value="complete">已完成</option>
               <option value="pending">未完成</option>
             </select>
+            <button id="btnRefreshCalc" class="btn btn-sm" style="margin-left: 10px;">
+              🔄 刷新數據
+            </button>
           </div>
           <table class="table" aria-label="薪資計算列表" style="font-size: 0.875rem;">
             <thead>
@@ -881,8 +884,28 @@
           renderCalc();
         }
 
-        async function loadPreview(){
+        // 薪资预览缓存（按月份）
+        const payrollCache = new Map(); // key: month, value: { data, timestamp }
+        const CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
+        
+        async function loadPreview(forceRefresh = false){
           const m = monthInput.value;
+          
+          // 检查缓存
+          if (!forceRefresh && payrollCache.has(m)) {
+            const cached = payrollCache.get(m);
+            const now = Date.now();
+            if (now - cached.timestamp < CACHE_DURATION) {
+              console.log(`[薪资计算] ⚡ 使用缓存数据 (${m})`);
+              calcState.all = cached.data;
+              applyCalcFilters();
+              return;
+            } else {
+              console.log(`[薪资计算] 缓存已过期 (${m})`);
+              payrollCache.delete(m);
+            }
+          }
+          
           tbodyCalc.innerHTML = '<tr><td colspan="13" class="muted">載入中…</td></tr>';
           try {
             const res = await fetch(`${apiBase}/admin/payroll/preview?month=${encodeURIComponent(m)}`, { credentials: 'include' });
@@ -891,7 +914,14 @@
             const json = await res.json();
             if (!json || json.ok !== true) throw new Error('載入失敗');
             const users = (json.data && json.data.users) || [];
-            console.log('[薪资计算] 加载preview数据:', users.length, '条记录');
+            console.log('[薪资计算] 🔄 从服务器加载数据:', users.length, '条记录');
+            
+            // 存入缓存
+            payrollCache.set(m, {
+              data: users,
+              timestamp: Date.now()
+            });
+            
             calcState.all = users;
             applyCalcFilters();
           } catch (err) {
@@ -1325,6 +1355,9 @@
             const json = await res.json();
             if (res.ok && json.ok) {
               alert('✅ 儲存成功');
+              // 清除薪资预览缓存，强制重新计算
+              console.log('[员工薪资] 清除薪资预览缓存');
+              payrollCache.clear();
               await loadUsers(); // 重新加載員工列表
               await loadUserSalary(empState.selectedUserId); // 重新加載當前員工
             } else {
@@ -1477,6 +1510,9 @@
             const json = await res.json();
             if (res.ok && json.ok) {
               alert('✅ 儲存成功');
+              // 清除薪资预览缓存，强制重新计算
+              console.log('[绩效奖金] 清除薪资预览缓存');
+              payrollCache.clear();
               await loadMonthlyBonus();
             } else {
               alert(json.message || '儲存失敗');
@@ -1611,6 +1647,9 @@
             const json = await res.json();
             if (res.ok && json.ok) {
               alert('✅ 儲存成功');
+              // 清除薪资预览缓存，强制重新计算
+              console.log('[年终奖金] 清除薪资预览缓存');
+              payrollCache.clear();
               await loadYearEndBonus();
             } else {
               alert(json.message || '儲存失敗');
@@ -1712,6 +1751,12 @@
         prevCalc.addEventListener('click', ()=>{ if (calcState.page>1){ calcState.page--; renderCalc(); } });
         nextCalc.addEventListener('click', ()=>{ calcState.page++; renderCalc(); });
         btnFinalize.addEventListener('click', finalizeMonth);
+        
+        // 刷新按钮：强制重新加载数据
+        document.getElementById('btnRefreshCalc').addEventListener('click', () => {
+          console.log('[薪资计算] 强制刷新数据');
+          loadPreview(true); // forceRefresh = true
+        });
 
         // ⚡ 预渲染初始化
         if (window.PagePrerender) {
