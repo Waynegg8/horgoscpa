@@ -174,13 +174,18 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 					status: r.status,
 					submittedAt: r.submitted_at,
 				}));
-				const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
-				
-				// ⚡ 保存到缓存（不等待完成）
-				saveCache(env, cacheKey, 'leaves_list', { list: data, meta }, {
+			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
+			
+			// ⚡ 保存到缓存（同步等待）
+			try {
+				await saveCache(env, cacheKey, 'leaves_list', { list: data, meta }, {
 					userId: queryUserId || String(me.user_id),
 					scopeParams: { page, perPage, q, status, type, dateFrom, dateTo }
-				}).catch(err => console.error('[LEAVES] 列表缓存保存失败:', err));
+				});
+				console.log('[LEAVES] ✓ 假期列表缓存已保存');
+			} catch (err) {
+				console.error('[LEAVES] ✗ 列表缓存保存失败:', err);
+			}
 				
 				return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta }, corsHeaders);
 			} catch (err) {
