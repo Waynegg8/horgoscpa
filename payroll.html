@@ -54,25 +54,25 @@
               <tr>
                 <th rowspan="2">姓名</th>
                 <th rowspan="2">底薪</th>
-                <th colspan="6" style="background: #f0fdf4; text-align: center;">收入明細</th>
+                <th colspan="7" style="background: #f0fdf4; text-align: center;">收入明細</th>
                 <th colspan="2" style="background: #fef2f2; text-align: center;">扣款明細</th>
                 <th rowspan="2" style="background: #f0f9ff;">應發</th>
                 <th rowspan="2" style="background: #dbeafe;">實發</th>
-                <th rowspan="2">全勤</th>
               </tr>
               <tr>
                 <th style="background: #f0fdf4;">津貼</th>
                 <th style="background: #f0fdf4;">獎金</th>
-                <th style="background: #f0fdf4;">加班費</th>
-                <th style="background: #f0fdf4;">誤餐費</th>
-                <th style="background: #f0fdf4;">交通</th>
+                <th style="background: #f0fdf4;">全勤</th>
+                <th style="background: #f0fdf4;">加班費<br><small style="font-weight:normal;font-size:0.75rem;">工時×時薪</small></th>
+                <th style="background: #f0fdf4;">誤餐費<br><small style="font-weight:normal;font-size:0.75rem;">天數×單價</small></th>
+                <th style="background: #f0fdf4;">交通<br><small style="font-weight:normal;font-size:0.75rem;">里程</small></th>
                 <th style="background: #f0fdf4;">績效</th>
-                <th style="background: #fef2f2;">固定</th>
-                <th style="background: #fef2f2;">請假</th>
+                <th style="background: #fef2f2;">固定<br><small style="font-weight:normal;font-size:0.75rem;">勞健保等</small></th>
+                <th style="background: #fef2f2;">請假<br><small style="font-weight:normal;font-size:0.75rem;">病/事假</small></th>
               </tr>
             </thead>
             <tbody id="tbodyCalc">
-              <tr><td colspan="13" class="muted">尚無資料</td></tr>
+              <tr><td colspan="12" class="muted">尚無資料</td></tr>
             </tbody>
           </table>
           <div class="pagination">
@@ -618,26 +618,45 @@
           tbodyCalc.innerHTML = '';
           if (pageRows.length === 0){
             const tr = document.createElement('tr');
-            tr.innerHTML = '<td colspan="13" class="muted">沒有符合條件的資料</td>';
+            tr.innerHTML = '<td colspan="12" class="muted">沒有符合條件的資料</td>';
             tbodyCalc.appendChild(tr);
           } else {
             pageRows.forEach(r => {
               const tr = document.createElement('tr');
-              const totalDeduction = (r.totalDeductionCents || r.deductionCents) || 0;
+              
+              // 计算时薪显示
+              const hourlyRate = centsToTwd(r.hourlyRateCents || 0).replace('NT$ ', '');
+              const weightedHours = r.weightedHours || 0; // 加权工时
+              const overtimeDetail = r.overtimeCents > 0 ? `<br><small style="color:#059669;">${weightedHours.toFixed(1)}h × $${hourlyRate}</small>` : '';
+              
+              // 误餐费明细
+              const mealDays = r.overtimeDays || 0; // 满足误餐费条件的天数
+              const mealRate = r.mealAllowanceCents > 0 && mealDays > 0 ? Math.round((r.mealAllowanceCents / 100) / mealDays) : 0;
+              const mealDetail = r.mealAllowanceCents > 0 ? `<br><small style="color:#059669;">${mealDays}天 × $${mealRate}</small>` : '';
+              
+              // 交通费明细
+              const transportDetail = r.totalKm > 0 ? `<br><small style="color:#059669;">${r.totalKm}km (${r.transportIntervals || 0}区间)</small>` : '';
+              
+              // 请假扣款明细
+              const leaveDetail = (r.sickDays || r.personalDays) ? `<br><small style="color:#dc2626;">病${r.sickDays || 0}天 事${r.personalDays || 0}天</small>` : '';
+              
+              // 全勤奖金（从bonusCents中分离，这里暂时显示在bonusCents中）
+              const fullAttendanceBonus = r.isFullAttendance ? (r.bonusCents > 0 ? '含全勤' : '') : '';
+              
               tr.innerHTML = `
-                <td>${r.name || ''}</td>
+                <td><strong>${r.name || ''}</strong></td>
                 <td>${centsToTwd(r.baseSalaryCents)}</td>
                 <td style="background: #f0fdf4;">${centsToTwd(r.regularAllowanceCents)}</td>
-                <td style="background: #f0fdf4;">${centsToTwd(r.bonusCents)}</td>
-                <td style="background: #f0fdf4;">${centsToTwd(r.overtimeCents)}${r.overtimeHours ? `<br><small>${r.overtimeHours.toFixed(1)}h</small>` : ''}</td>
-                <td style="background: #f0fdf4;">${centsToTwd(r.mealAllowanceCents || 0)}</td>
-                <td style="background: #f0fdf4;">${centsToTwd(r.transportCents || 0)}${r.totalKm ? `<br><small>${r.totalKm}km</small>` : ''}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(r.bonusCents)}${fullAttendanceBonus ? `<br><small style="color:#059669;">${fullAttendanceBonus}</small>` : ''}</td>
+                <td style="background: #f0fdf4;text-align:center;">${r.isFullAttendance ? '<span style="color:#16a34a;font-size:1.2em;">✓</span>' : '<span style="color:#dc2626;">✗</span>'}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(r.overtimeCents)}${overtimeDetail}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(r.mealAllowanceCents || 0)}${mealDetail}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(r.transportCents || 0)}${transportDetail}</td>
                 <td style="background: #f0fdf4;">${centsToTwd(r.performanceBonusCents || 0)}</td>
                 <td style="background: #fef2f2;color:#dc2626;">${r.deductionCents > 0 ? '-' + centsToTwd(r.deductionCents) : '0'}</td>
-                <td style="background: #fef2f2;color:#dc2626;">${r.leaveDeductionCents > 0 ? '-' + centsToTwd(r.leaveDeductionCents) : '0'}${r.sickDays || r.personalDays ? `<br><small>病${r.sickDays || 0}事${r.personalDays || 0}</small>` : ''}</td>
+                <td style="background: #fef2f2;color:#dc2626;">${r.leaveDeductionCents > 0 ? '-' + centsToTwd(r.leaveDeductionCents) : '0'}${leaveDetail}</td>
                 <td style="font-weight:600;background:#f0f9ff;">${centsToTwd(r.grossSalaryCents)}</td>
-                <td style="font-weight:600;color:#16a34a;background:#dbeafe;">${centsToTwd(r.netSalaryCents)}</td>
-                <td>${r.isFullAttendance ? '✓' : '✗'}</td>
+                <td style="font-weight:600;color:#16a34a;background:#dbeafe;font-size:1.05em;">${centsToTwd(r.netSalaryCents)}</td>
               `;
               tbodyCalc.appendChild(tr);
             });

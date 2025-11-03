@@ -188,7 +188,7 @@ async function calculateMealAllowance(env, userId, month) {
 
 /**
  * 计算交通补贴
- * 从 Trips 读取外出记录并按公里数计算
+ * 从 BusinessTrips 读取外出记录并按公里数计算
  */
 async function calculateTransportAllowance(env, userId, month) {
 	const [year, monthNum] = month.split('-');
@@ -199,11 +199,12 @@ async function calculateTransportAllowance(env, userId, month) {
 	// 读取该月的外出记录
 	const trips = await env.DATABASE.prepare(`
 		SELECT SUM(distance_km) as total_km
-		FROM Trips
+		FROM BusinessTrips
 		WHERE user_id = ?
 		  AND trip_date >= ?
 		  AND trip_date <= ?
 		  AND status = 'approved'
+		  AND is_deleted = 0
 	`).bind(userId, firstDay, lastDayStr).first();
 
 	const totalKm = trips?.total_km || 0;
@@ -476,6 +477,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 		hourlyRateCents,
 		// 附加信息
 		overtimeDays,             // 满足误餐费条件的天数
+		weightedHours,            // 加权工时（用于计算加班费）
 		totalKm,
 		transportIntervals,
 		sickDays,
@@ -564,11 +566,20 @@ async function previewPayroll(env, requestId, corsHeaders, url) {
 
 	const results = [];
 	for (const user of (users.results || [])) {
-		const payroll = await calculateEmployeePayroll(env, user.user_id, month);
-		if (payroll) {
-			results.push(payroll);
+		try {
+			console.log(`[Payroll] 计算员工 ${user.user_id} 的薪资`);
+			const payroll = await calculateEmployeePayroll(env, user.user_id, month);
+			if (payroll) {
+				results.push(payroll);
+				console.log(`[Payroll] ✓ 员工 ${user.user_id} 计算成功`);
+			}
+		} catch (err) {
+			console.error(`[Payroll] ✗ 员工 ${user.user_id} 计算失败:`, err.message);
+			// 继续处理其他员工
 		}
 	}
+
+	console.log(`[Payroll] 预览完成，共 ${results.length} 名员工`);
 
 	return jsonResponse(200, {
 		ok: true,
