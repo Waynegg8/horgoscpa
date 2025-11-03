@@ -144,7 +144,7 @@ async function uploadFile(request, env, me, requestId, corsHeaders) {
 		const fileKey = `punch-records/${me.user_id}/${month}/${timestamp}-${fileName}`;
 
 		// 上传到R2
-		await env.FILE_STORAGE.put(fileKey, file, {
+		await env.R2_BUCKET.put(fileKey, file, {
 			httpMetadata: {
 				contentType: file.type || 'application/octet-stream'
 			}
@@ -227,7 +227,7 @@ async function downloadFile(env, me, requestId, corsHeaders, recordId, isPreview
 		}
 
 		// 从R2获取文件
-		const object = await env.FILE_STORAGE.get(record.file_key);
+		const object = await env.R2_BUCKET.get(record.file_key);
 		if (!object) {
 			return jsonResponse(404, {
 				ok: false,
@@ -292,7 +292,7 @@ async function deletePunchRecord(env, me, requestId, corsHeaders, recordId) {
 		}
 
 		// 从R2删除文件
-		await env.FILE_STORAGE.delete(record.file_key);
+		await env.R2_BUCKET.delete(record.file_key);
 
 		// 软删除数据库记录
 		await env.DATABASE.prepare(`
