@@ -41,6 +41,11 @@ export async function handleSalaryItemTypes(request, env, me, requestId, url, pa
 			return await deleteSalaryItemType(env, me, requestId, corsHeaders, itemTypeId);
 		}
 
+		// POST /admin/salary-item-types/init-defaults - 初始化预设项目
+		if (method === "POST" && path === "/internal/api/v1/admin/salary-item-types/init-defaults") {
+			return await initDefaultItems(env, me, requestId, corsHeaders);
+		}
+
 		return jsonResponse(404, {
 			ok: false,
 			code: "NOT_FOUND",

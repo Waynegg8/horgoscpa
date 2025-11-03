@@ -118,17 +118,7 @@
         <form id="itemForm" style="padding:24px;">
           <input type="hidden" id="itemTypeId" />
           
-          <div style="margin-bottom:20px;">
-            <label for="itemCode" style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">
-              項目代碼 <span style="color:#dc2626;">*</span>
-            </label>
-            <input id="itemCode" type="text" required maxlength="20" placeholder="例如：PERFORMANCE" 
-              style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;text-transform:uppercase;" />
-            <small style="color:#6b7280;display:block;margin-top:4px;">
-              ⚠️ <strong>重要：</strong>績效獎金請使用代碼 <code style="background:#f3f4f6;padding:2px 6px;border-radius:3px;">PERFORMANCE</code><br>
-              💡 其他項目建議使用英文大寫，例如：MEAL（伙食）、TRANSPORT（交通）、ATTENDANCE（全勤）
-            </small>
-          </div>
+          <input type="hidden" id="itemCode" />
           
           <div style="margin-bottom:20px;">
             <label for="itemName" style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">
@@ -153,14 +143,26 @@
           </div>
 
           <div style="margin-bottom:20px;background:#f0f9ff;padding:16px;border-radius:8px;border:1px solid #bfdbfe;">
-            <label style="display:flex;align-items:flex-start;cursor:pointer;">
+            <label style="display:flex;align-items:flex-start;cursor:pointer;margin-bottom:12px;">
               <input type="checkbox" id="itemIsRegular" style="margin-top:2px;margin-right:10px;width:18px;height:18px;" />
               <div>
                 <span style="font-weight:500;color:#1e40af;">經常性給與（計入時薪基準）</span>
                 <small style="color:#1e40af;display:block;margin-top:4px;line-height:1.5;">
                   ⚠️ <strong>重要：</strong>勾選後會計入時薪計算，影響加班費金額和成本分析<br>
-                  ✓ 應勾選：固定津貼（伙食、交通）、全勤獎金、每月固定績效<br>
-                  ✗ 不勾選：年終獎金、三節獎金、臨時性獎金
+                  ✓ 應勾選：固定津貼（伙食、交通）、全勤獎金<br>
+                  ✗ 不勾選：績效獎金、年終獎金、三節獎金
+                </small>
+              </div>
+            </label>
+            
+            <label style="display:flex;align-items:flex-start;cursor:pointer;padding-top:12px;border-top:1px solid #bfdbfe;">
+              <input type="checkbox" id="itemIsPerformance" style="margin-top:2px;margin-right:10px;width:18px;height:18px;" />
+              <div>
+                <span style="font-weight:500;color:#1e40af;">用於績效獎金調整功能</span>
+                <small style="color:#1e40af;display:block;margin-top:4px;line-height:1.5;">
+                  📊 <strong>說明：</strong>勾選後，此項目會在「績效獎金調整」頁面顯示為預設值<br>
+                  ✓ 建議用途：每月變動的績效獎金<br>
+                  💡 只能有一個項目勾選此選項
                 </small>
               </div>
             </label>
@@ -1128,6 +1130,7 @@
             document.getElementById('itemName').value = item.itemName;
             document.getElementById('itemCategory').value = item.category;
             document.getElementById('itemIsRegular').checked = item.isRegularPayment;
+            document.getElementById('itemIsPerformance').checked = (item.itemCode === 'PERFORMANCE');
             document.getElementById('itemIsFixed').checked = item.isFixed;
             document.getElementById('itemDescription').value = item.description || '';
             document.getElementById('itemDisplayOrder').value = item.displayOrder || 0;
@@ -1137,8 +1140,7 @@
             document.getElementById('itemDialogTitle').nextElementSibling.textContent = '設定薪資項目的基本資訊';
             itemForm.reset();
             document.getElementById('itemTypeId').value = '';
-            // 自動生成項目代碼
-            document.getElementById('itemCode').value = generateItemCode();
+            document.getElementById('itemCode').value = '';
             document.getElementById('itemDisplayOrder').value = 99;
           }
           
@@ -1151,9 +1153,19 @@
 
           const itemTypeId = document.getElementById('itemTypeId').value;
           const isEdit = !!itemTypeId;
+          const isPerformance = document.getElementById('itemIsPerformance').checked;
+
+          // 自動設置項目代碼
+          let itemCode = document.getElementById('itemCode').value.trim();
+          if (isPerformance) {
+            itemCode = 'PERFORMANCE';
+          } else if (!itemCode || itemCode === 'PERFORMANCE') {
+            // 如果沒有代碼，或原本是 PERFORMANCE 但現在取消勾選，則自動生成
+            itemCode = generateItemCode();
+          }
 
           const data = {
-            itemCode: document.getElementById('itemCode').value.trim(),
+            itemCode: itemCode,
             itemName: document.getElementById('itemName').value.trim(),
             category: document.getElementById('itemCategory').value,
             isRegularPayment: document.getElementById('itemIsRegular').checked,
