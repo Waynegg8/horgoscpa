@@ -59,10 +59,15 @@ export async function handleHolidays(request, env, me, requestId, url) {
 			is_makeup_workday: Boolean(r.is_makeup_workday),
 		}));
 			
-			// ⚡ 保存到缓存（不等待完成）
-			saveCache(env, cacheKey, 'holidays_all', data, {
-				scopeParams: { start: startDate, end: endDate }
-			}).catch(err => console.error('[HOLIDAYS] 缓存保存失败:', err));
+			// ⚡ 保存到缓存（同步等待）
+			try {
+				await saveCache(env, cacheKey, 'holidays_all', data, {
+					scopeParams: { start: startDate, end: endDate }
+				});
+				console.log('[HOLIDAYS] ✓ 假日数据缓存已保存');
+			} catch (err) {
+				console.error('[HOLIDAYS] ✗ 缓存保存失败:', err);
+			}
 			
 			return jsonResponse(200, { 
 				ok: true, 
