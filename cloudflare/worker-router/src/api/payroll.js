@@ -652,8 +652,11 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const hourlyRateBaseItems = [];  // 记录计入时薪的项目
 
 	const items = salaryItems.results || [];
+	console.log(`[Payroll] 员工 ${userId} 查询到 ${items.length} 个薪资项目`);
 	
 	for (const item of items) {
+		console.log(`[Payroll] 项目: ${item.item_name}, 类型: ${item.recurring_type}, 金额: ${item.amount_cents}`);
+		
 		try {
 			// 判断是否应该在当月发放
 			const recurringType = item.recurring_type || 'monthly';
@@ -665,7 +668,10 @@ async function calculateEmployeePayroll(env, userId, month) {
 				month
 			);
 			
+			console.log(`[Payroll] ${item.item_name} shouldPay=${shouldPay}, recurringType=${recurringType}`);
+			
 			if (!shouldPay) {
+				console.log(`[Payroll] ✗ 跳过 ${item.item_name}（不在发放月份）`);
 				continue; // 不在发放月份，跳过
 			}
 		} catch (error) {

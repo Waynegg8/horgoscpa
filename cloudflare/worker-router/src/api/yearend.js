@@ -70,7 +70,7 @@ async function getYearEndBonus(env, requestId, corsHeaders, year) {
 		SELECT 
 			user_id,
 			amount_cents,
-			payment_date,
+			payment_month,
 			notes
 		FROM YearEndBonus
 		WHERE year = ?
@@ -80,7 +80,7 @@ async function getYearEndBonus(env, requestId, corsHeaders, year) {
 	(bonuses.results || []).forEach(b => {
 		bonusMap[b.user_id] = {
 			amountCents: b.amount_cents,
-			paymentDate: b.payment_date,
+			paymentMonth: b.payment_month,
 			notes: b.notes || ""
 		};
 	});
@@ -93,7 +93,7 @@ async function getYearEndBonus(env, requestId, corsHeaders, year) {
 			name: user.name,
 			baseSalary: user.base_salary || 0,
 			amountCents: bonus?.amountCents || 0,
-			paymentDate: bonus?.paymentDate || null,
+			paymentMonth: bonus?.paymentMonth || null,
 			notes: bonus?.notes || ""
 		};
 	});
@@ -134,7 +134,7 @@ async function saveYearEndBonus(request, env, me, requestId, corsHeaders, year) 
 		}, corsHeaders);
 	}
 
-	const { bonuses } = body; // bonuses: [{ userId, amountCents, paymentDate, notes }]
+	const { bonuses } = body; // bonuses: [{ userId, amountCents, paymentMonth, notes }]
 
 	if (!Array.isArray(bonuses)) {
 		return jsonResponse(400, {
@@ -157,13 +157,13 @@ async function saveYearEndBonus(request, env, me, requestId, corsHeaders, year) 
 
 			await env.DATABASE.prepare(`
 				INSERT INTO YearEndBonus 
-				(user_id, year, amount_cents, payment_date, notes, created_by)
+				(user_id, year, amount_cents, payment_month, notes, created_by)
 				VALUES (?, ?, ?, ?, ?, ?)
 			`).bind(
 				bonus.userId,
 				year,
 				bonus.amountCents,
-				bonus.paymentDate || null,
+				bonus.paymentMonth || null,
 				bonus.notes || null,
 				me.user_id
 			).run();

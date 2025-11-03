@@ -285,7 +285,7 @@
                 <th>姓名</th>
                 <th>底薪</th>
                 <th>年終金額</th>
-                <th>發放日期</th>
+                <th>發放月份</th>
                 <th>備註</th>
               </tr>
             </thead>
@@ -1248,6 +1248,19 @@
                   <button type="button" class="btn btn-sm" onclick="removeUserSalaryItem(${index})" style="padding: 0.375rem 0.75rem;">❌</button>
                 </div>
               </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <div>
+                  <label style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 0.25rem;">📅 生效日期</label>
+                  <input type="date" class="item-effective-date" data-index="${index}" value="${item.effectiveDate || ''}" 
+                         style="width: 100%; padding: 0.375rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                </div>
+                <div>
+                  <label style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 0.25rem;">📅 失效日期（選填）</label>
+                  <input type="date" class="item-expiry-date" data-index="${index}" value="${item.expiryDate || ''}" 
+                         placeholder="留空表示永久有效"
+                         style="width: 100%; padding: 0.375rem; border: 1px solid #d1d5db; border-radius: 4px;" />
+                </div>
+              </div>
               <div class="month-selector-${index}" style="display: ${showMonthSelector ? 'block' : 'none'};">
                 <label style="font-size: 0.75rem; color: #666; display: block; margin-bottom: 0.5rem;">📅 發放月份（可多選）</label>
                 <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.25rem;">
@@ -1289,11 +1302,14 @@
             alert('請先在「薪資項目設定」中新增可用的薪資項目');
             return;
           }
+          const today = new Date().toISOString().split('T')[0];
           empState.userSalaryItems.push({
             itemTypeId: itemsState.all.filter(t => t.isActive)[0]?.itemTypeId || null,
             amountCents: 0,
             recurringType: 'monthly',
-            recurringMonths: null
+            recurringMonths: null,
+            effectiveDate: today,
+            expiryDate: null
           });
           renderUserSalaryItems();
         };
@@ -1318,10 +1334,14 @@
             const typeSelect = row.querySelector('.item-type-select');
             const amountInput = row.querySelector('.item-amount');
             const recurringTypeSelect = row.querySelector('.item-recurring-type');
+            const effectiveDateInput = row.querySelector('.item-effective-date');
+            const expiryDateInput = row.querySelector('.item-expiry-date');
             
             const itemTypeId = parseInt(typeSelect.value);
             const amount = parseFloat(amountInput.value) || 0;
             const recurringType = recurringTypeSelect.value;
+            const effectiveDate = effectiveDateInput.value || new Date().toISOString().split('T')[0];
+            const expiryDate = expiryDateInput.value || null;
             
             // 收集選中的月份
             let recurringMonths = null;
@@ -1337,7 +1357,8 @@
               salaryItems.push({
                 itemTypeId,
                 amountCents: Math.round(amount * 100),
-                effectiveDate: new Date().toISOString().split('T')[0],
+                effectiveDate,
+                expiryDate,
                 recurringType,
                 recurringMonths
               });
@@ -1577,8 +1598,9 @@
                          style="width: 120px;" />
                 </td>
                 <td>
-                  <input type="date" class="yearend-date" data-index="${index}" 
-                         value="${emp.paymentDate || ''}" 
+                  <input type="month" class="yearend-month" data-index="${index}" 
+                         value="${emp.paymentMonth || ''}" 
+                         placeholder="YYYY-MM"
                          style="width: 150px;" />
                 </td>
                 <td>
@@ -1615,7 +1637,7 @@
           // 收集獎金數據
           const bonuses = [];
           const amountInputs = tbodyYearend.querySelectorAll('.yearend-amount');
-          const dateInputs = tbodyYearend.querySelectorAll('.yearend-date');
+          const monthInputs = tbodyYearend.querySelectorAll('.yearend-month');
           const notesInputs = tbodyYearend.querySelectorAll('.yearend-notes');
 
           amountInputs.forEach((input, index) => {
@@ -1623,14 +1645,14 @@
             if (!emp) return;
 
             const amount = parseFloat(input.value) || 0;
-            const paymentDate = dateInputs[index].value || null;
+            const paymentMonth = monthInputs[index].value || null;
             const notes = notesInputs[index].value.trim() || null;
 
             if (amount > 0) {
               bonuses.push({
                 userId: emp.userId,
                 amountCents: Math.round(amount * 100),
-                paymentDate,
+                paymentMonth,
                 notes
               });
             }
