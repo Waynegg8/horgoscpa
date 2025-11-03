@@ -600,9 +600,13 @@ async function loadWeek() {
     console.log('[Timesheets] 🔄 后台更新中，正常加载和渲染');
   }
   
-  // 1. 載入假日和請假資料（並行）
-  await Promise.all([loadHolidays(), loadLeaves()]);
-  perfMonitor.mark('holidays_leaves_loaded');
+  // ⚡⚡⚡ 1. 并行加载所有基础数据（假日、请假、月统计）
+  await Promise.all([
+    loadHolidays(),
+    loadLeaves(),
+    loadMonthlySummary()
+  ]);
+  perfMonitor.mark('base_data_loaded');
   if (token !== state.token) return;
   
   // 2. 建立週模型和更新週標題
@@ -610,11 +614,8 @@ async function loadWeek() {
   renderWeekHeader();
   if (token !== state.token) return;
   
-  // 3. 並行載入工時資料和月統計（优化加载速度）
-  await Promise.all([
-    loadTimesheets(),
-    loadMonthlySummary()
-  ]);
+  // 3. 載入工時資料（依赖周日期）
+  await loadTimesheets();
   if (token !== state.token) return;
   
   // 4. 渲染表格
@@ -2148,12 +2149,16 @@ async function init() {
       // ⚡ 后台加载所有必要数据到 state（但不重新渲染）
       (async function loadStateData() {
         try {
-          await loadCurrentUser();
-          await loadClients();
+          // ⚡⚡⚡ 真正的并行加载：所有API同时发起！
+          const [user, clients, holidays, leaves, monthlySummary] = await Promise.all([
+            loadCurrentUser(),
+            loadClients(),
+            loadHolidays(),
+            loadLeaves(),
+            loadMonthlySummary()
+          ]);
           
-          // 加载假日和请假数据到 state
-          await Promise.all([loadHolidays(), loadLeaves()]);
-          perfMonitor.mark('holidays_leaves_loaded');
+          perfMonitor.mark('all_data_loaded');
           
           // 建立周模型
           buildWeekDays();
@@ -2161,11 +2166,8 @@ async function init() {
           // ⚡ 更新周标题（解决"载入中..."问题）
           renderWeekHeader();
           
-          // 加载工时数据到 state
+          // 加载工时数据（依赖周日期，必须在buildWeekDays之后）
           await loadTimesheets();
-          
-          // 加载月统计
-          await loadMonthlySummary();
           
           // 标记为就绪
           state.ready = true;

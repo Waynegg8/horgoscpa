@@ -1019,8 +1019,8 @@ export async function handleTimesheets(request, env, me, requestId, url) {
 		return handleSaveWeekCache(request, env, me, requestId, url);
 	}
 	
-	// GET /api/v1/timelogs/summary - 月統計
-	if (method === "GET" && url.pathname.endsWith("/summary")) {
+	// GET /api/v1/timelogs/monthly-summary 或 /summary - 月統計
+	if (method === "GET" && (url.pathname.endsWith("/monthly-summary") || url.pathname.endsWith("/summary"))) {
 		return handleGetMonthlySummary(request, env, me, requestId, url);
 	}
 	
