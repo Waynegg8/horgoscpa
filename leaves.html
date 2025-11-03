@@ -415,6 +415,54 @@
           }
         }
 
+        async function loadBalances(){
+          // ⚡ 如果有预渲染内容，跳过清空
+          const main = document.getElementById('leavesMain');
+          if (main && main.dataset.prerendered === 'consumed') {
+            console.log('[Leaves] ⚡ 保留预渲染内容，跳过 loadBalances');
+            return;
+          }
+          
+          balanceEl.innerHTML = '';
+          const year = state.selectedYear || new Date().getFullYear();
+          try {
+            const params = new URLSearchParams();
+            params.set('year', year);
+            if (state.isAdmin && state.selectedUserId) {
+              params.set('user_id', state.selectedUserId);
+            }
+            const res = await fetch(`${apiBase}/leaves/balances?${params.toString()}`, { credentials:'include' });
+            if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
+            const json = await res.json();
+            if (!res.ok || !json || json.ok !== true) throw new Error();
+            const data = json.data || [];
+            if (data.length === 0) {
+              balanceEl.innerHTML = '<p style="color:rgba(15,23,42,0.7);">無餘額資料</p>';
+              return;
+            }
+            // 去重：如果有重複的假期類型，只保留第一個
+            const seen = new Set();
+            data.forEach(b => {
+              if (seen.has(b.type)) return; // 跳過重複的
+              seen.add(b.type);
+              
+              const el = document.createElement('div');
+              el.className = 'balance-card';
+              const label = zhType[b.type] || b.type;
+              
+              // 補休顯示不同的說明文字（當月有效，次月轉加班費）
+              if (b.type === 'comp') {
+                el.innerHTML = `<h4>${label}</h4><p>當月剩餘 ${b.remain} 小時<br><small style="color:rgba(15,23,42,0.6);">次月轉加班費</small></p>`;
+              } else {
+                el.innerHTML = `<h4>${label}</h4><p>剩餘 ${b.remain} / 額度 ${b.total} 天</p>`;
+              }
+              
+              balanceEl.appendChild(el);
+            });
+          } catch (_) {
+            balanceEl.innerHTML = '<p style="color:#c0392b;">餘額載入失敗</p>';
+          }
+        }
 
         function renderRows(rows){
           // ⚡ 如果有预渲染内容，跳过清空和渲染
@@ -513,6 +561,7 @@
             }
             alert(json.message || '登記成功');
             closeEventModal();
+            await loadBalances();
             // 重新載入可用假期選項
             const meRes = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
             if (meRes.ok) {
@@ -699,6 +748,7 @@
             }
             alert('申請成功');
             closeModal();
+            await loadBalances();
             await loadLeaves();
           } catch (_) {
             alert('送出失敗，請稍後再試');
@@ -711,6 +761,7 @@
         leaveTypeFilterEl.addEventListener('change', () => loadLeaves());
         yearFilterEl.addEventListener('change', function() {
           state.selectedYear = this.value || null;
+          loadBalances();
           loadLeaves();
         });
         monthFilterEl.addEventListener('change', function() {
@@ -721,6 +772,7 @@
         // 員工選擇器變更
         userSelectEl.addEventListener('change', function() {
           state.selectedUserId = this.value || null;
+          loadBalances();
           loadLeaves();
         });
 
@@ -901,6 +953,7 @@
           }
           
           // 載入數據
+          loadBalances();
           loadLeaves();
         }
         
@@ -927,15 +980,18 @@
           
           var main = document.getElementById('leavesMain');
           var tbody = document.getElementById('tbody');
+          var balances = document.getElementById('balances');
           
           console.log('[Leaves] 尝试保存 #' + saveAttempts + ':', {
             main: !!main,
             tbody: !!tbody,
             tbodyChildren: tbody ? tbody.children.length : 0,
+            balances: !!balances,
+            balancesChildren: balances ? balances.children.length : 0,
             htmlLength: main ? main.innerHTML.length : 0
           });
           
-          if (main && tbody && tbody.children.length > 0) {
+          if (main && tbody && tbody.children.length > 0 && balances && balances.children.length > 0) {
             window.Prerender.save('leaves', main.innerHTML);
             saved = true;
             console.log('[Leaves] ✅ 预渲染已保存 (' + main.innerHTML.length + ' 字符)');
