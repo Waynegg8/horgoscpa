@@ -80,10 +80,6 @@
               <tr><td colspan="13" class="muted">尚無資料</td></tr>
             </tbody>
           </table>
-          <div class="pagination">
-            <button type="button" id="prevCalc">上一頁</button>
-            <button type="button" id="nextCalc">下一頁</button>
-          </div>
         </div>
       </section>
 
@@ -242,46 +238,46 @@
 
       <!-- 績效獎金調整 -->
       <section id="panel-bonus" class="panel" role="tabpanel" aria-labelledby="tab-bonus">
-        <div class="card">
-          <div class="section-toolbar">
-            <label for="yearBonus">年度</label>
-            <input id="yearBonus" type="number" min="2020" max="2100" step="1" style="width: 100px;" />
+        <div class="card" style="padding: 12px;">
+          <div class="section-toolbar" style="margin-bottom: 10px;">
+            <label for="yearBonus" style="font-size: 14px;">年度</label>
+            <input id="yearBonus" type="number" min="2020" max="2100" step="1" style="width: 90px; padding: 4px 8px; font-size: 14px;" />
             <div class="toolbar-spacer"></div>
-            <div id="bonusSummary" class="stats">
-              <span>總調整：<strong id="bonusAdjustedCount">0</strong> 人次</span>
+            <div id="bonusSummary" class="stats" style="font-size: 13px;">
+              <span>調整：<strong id="bonusAdjustedCount">0</strong> 人次</span>
           </div>
-            <button id="btnSaveBonus" class="btn primary">💾 儲存全年調整</button>
+            <button id="btnSaveBonus" class="btn primary" style="font-size: 13px; padding: 5px 12px;">💾 儲存</button>
           </div>
-          <div style="overflow-x: auto;">
-            <table class="table" aria-label="績效獎金調整" style="min-width: 1400px;">
+          <div style="overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 6px;">
+            <table class="table" aria-label="績效獎金調整" style="margin: 0; font-size: 13px; width: 100%;">
             <thead>
               <tr>
-                  <th rowspan="2" style="position: sticky; left: 0; background: white; z-index: 2; min-width: 100px;">姓名</th>
-                  <th rowspan="2" style="min-width: 80px;">預設績效</th>
-                  <th colspan="12" style="text-align: center; background: #f0f9ff;">各月份調整金額（元）</th>
+                  <th rowspan="2" style="position: sticky; left: 0; background: white; z-index: 2; width: 80px; padding: 6px 8px;">姓名</th>
+                  <th rowspan="2" style="width: 70px; padding: 6px 8px;">預設</th>
+                  <th colspan="12" style="text-align: center; background: #f0f9ff; padding: 6px 8px;">各月份調整（元）</th>
                 </tr>
                 <tr>
-                  <th style="background: #f0f9ff; min-width: 80px;">1月</th>
-                  <th style="background: #f0f9ff; min-width: 80px;">2月</th>
-                  <th style="background: #f0f9ff; min-width: 80px;">3月</th>
-                  <th style="background: #f0f9ff; min-width: 80px;">4月</th>
-                  <th style="background: #f0f9ff; min-width: 80px;">5月</th>
-                  <th style="background: #f0f9ff; min-width: 80px;">6月</th>
-                  <th style="background: #f0f9ff; min-width: 80px;">7月</th>
-                  <th style="background: #f0f9ff; min-width: 80px;">8月</th>
-                  <th style="background: #f0f9ff; min-width: 80px;">9月</th>
-                  <th style="background: #f0f9ff; min-width: 80px;">10月</th>
-                  <th style="background: #f0f9ff; min-width: 80px;">11月</th>
-                  <th style="background: #f0f9ff; min-width: 80px;">12月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">1月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">2月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">3月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">4月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">5月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">6月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">7月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">8月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">9月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">10月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">11月</th>
+                  <th style="background: #f0f9ff; width: 70px; padding: 6px 8px;">12月</th>
               </tr>
             </thead>
               <tbody id="tbodyBonus">
-                <tr><td colspan="14" class="muted">載入中...</td></tr>
+                <tr><td colspan="14" class="muted" style="padding: 2rem; text-align: center;">載入中...</td></tr>
             </tbody>
           </table>
           </div>
-          <div class="muted" style="margin-top: 10px; font-size: 0.875rem;">
-            💡 提示：留空表示使用預設績效；輸入金額表示該月使用調整後的金額
+          <div class="muted" style="margin-top: 8px; font-size: 12px;">
+            💡 留空使用預設績效；輸入金額則使用調整後的金額
           </div>
         </div>
       </section>
@@ -563,17 +559,15 @@
           userSalaryItems: [] 
         };
 
-        // 計算分頁 DOM
+        // 計算相關 DOM
         const tbodyCalc = document.getElementById('tbodyCalc');
         const empSearchCalc = document.getElementById('empSearchCalc');
         const statusCalc = document.getElementById('statusCalc');
-        const prevCalc = document.getElementById('prevCalc');
-        const nextCalc = document.getElementById('nextCalc');
         const monthInput = document.getElementById('month');
         const btnFinalize = document.getElementById('btn-finalize');
 
-        // 計算分頁狀態
-        const calcState = { all: [], filtered: [], page: 1, perPage: 20 };
+        // 計算狀態（移除分頁）
+        const calcState = { all: [], filtered: [] };
 
         function setTabsEnabled(enabled){
           tabs.forEach(b=>{ b.disabled = !enabled; });
@@ -767,12 +761,6 @@
           return 'NT$ ' + v.toLocaleString();
         }
 
-        function renderCalcPager(){
-          const total = calcState.filtered.length;
-          prevCalc.disabled = calcState.page <= 1;
-          nextCalc.disabled = calcState.page * calcState.perPage >= total;
-        }
-
         // 生成详细明细HTML
         function generateDetailRow(r, rowId) {
           const hourlyRate = centsToTwd(r.hourlyRateCents || 0).replace('NT$ ', '');
@@ -910,22 +898,16 @@
         }
 
         function renderCalc(){
-          const start = (calcState.page - 1) * calcState.perPage;
-          const end = start + calcState.perPage;
-          const pageRows = calcState.filtered.slice(start, end);
-          console.log('[渲染] calcState.filtered长度:', calcState.filtered.length);
-          console.log('[渲染] 当前页:', calcState.page, '每页:', calcState.perPage);
-          console.log('[渲染] pageRows长度:', pageRows.length);
+          // 移除分頁，直接顯示所有篩選後的資料
+          const rows = calcState.filtered;
+          console.log('[渲染] 显示', rows.length, '条记录');
           tbodyCalc.innerHTML = '';
-          if (pageRows.length === 0){
-            console.warn('[渲染] ⚠ pageRows为空，显示"没有数据"');
+          if (rows.length === 0){
             const tr = document.createElement('tr');
             tr.innerHTML = '<td colspan="13" class="muted">沒有符合條件的資料</td>';
             tbodyCalc.appendChild(tr);
           } else {
-            console.log('[渲染] ✓ 开始渲染', pageRows.length, '条记录');
-
-            pageRows.forEach((r, idx) => {
+            rows.forEach((r, idx) => {
               const tr = document.createElement('tr');
               const rowId = `payroll-row-${idx}`;
               tr.id = rowId;
@@ -973,7 +955,6 @@
               tbodyCalc.insertAdjacentHTML('beforeend', generateDetailRow(r, rowId));
             });
           }
-          renderCalcPager();
         }
         
         // 切换详细明细显示
@@ -1579,7 +1560,7 @@
               const value = monthData ? (monthData.bonusAmountCents / 100).toFixed(0) : '';
               
               monthInputs.push(`
-                <td>
+                <td style="padding: 4px 6px;">
                   <input type="number" 
                          class="bonus-input" 
                          data-emp-index="${empIndex}" 
@@ -1588,17 +1569,17 @@
                          placeholder="${defaultAmount}" 
                          min="0" 
                          step="1" 
-                         style="width: 70px; text-align: right;" />
+                         style="width: 65px; padding: 4px 6px; text-align: right; font-size: 13px; border: 1px solid #d1d5db; border-radius: 4px;" />
                 </td>
               `);
             }
             
             return `
               <tr>
-                <td style="position: sticky; left: 0; background: white; font-weight: 500;">
+                <td style="position: sticky; left: 0; background: white; font-weight: 500; padding: 6px 8px; font-size: 13px;">
                   ${emp.name || emp.username}
                 </td>
-                <td style="text-align: right;">${defaultAmount}</td>
+                <td style="text-align: right; padding: 6px 8px; font-size: 13px; color: #6b7280;">${defaultAmount}</td>
                 ${monthInputs.join('')}
               </tr>
             `;
@@ -2178,9 +2159,7 @@
         let timer = null;
         empSearchCalc.addEventListener('input', ()=>{ clearTimeout(timer); timer = setTimeout(applyCalcFilters, 300); });
         statusCalc.addEventListener('change', applyCalcFilters);
-        monthInput.addEventListener('change', ()=>{ calcState.page = 1; loadPreview(); checkFinalized(); });
-        prevCalc.addEventListener('click', ()=>{ if (calcState.page>1){ calcState.page--; renderCalc(); } });
-        nextCalc.addEventListener('click', ()=>{ calcState.page++; renderCalc(); });
+        monthInput.addEventListener('change', ()=>{ loadPreview(); checkFinalized(); });
         btnFinalize.addEventListener('click', finalizeMonth);
         
         // 刷新按钮：强制重新加载数据
