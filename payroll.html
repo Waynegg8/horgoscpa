@@ -98,59 +98,81 @@
       </section>
 
       <!-- 新增/編輯薪資項目對話框 -->
-      <dialog id="itemDialog" style="border-radius:8px;border:1px solid #e5e7eb;padding:0;max-width:500px;">
-        <div style="padding:20px;border-bottom:1px solid #e5e7eb;">
-          <h3 id="itemDialogTitle" style="margin:0;font-size:18px;">新增薪資項目</h3>
+      <dialog id="itemDialog" style="border-radius:12px;border:1px solid #e5e7eb;padding:0;width:90%;max-width:520px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);">
+        <div style="padding:24px;border-bottom:1px solid #e5e7eb;background:#f9fafb;">
+          <h3 id="itemDialogTitle" style="margin:0;font-size:20px;font-weight:600;color:#111827;">新增薪資項目</h3>
+          <p style="margin:8px 0 0;font-size:14px;color:#6b7280;">設定薪資項目的基本資訊</p>
         </div>
-        <form id="itemForm" style="padding:20px;">
+        <form id="itemForm" style="padding:24px;">
           <input type="hidden" id="itemTypeId" />
-          <div style="margin-bottom:16px;">
-            <label for="itemCode" style="display:block;margin-bottom:4px;font-weight:500;">項目代碼 *</label>
-            <input id="itemCode" type="text" required pattern="[A-Z0-9_]{1,20}" placeholder="例如 MEAL_ALLOWANCE" 
-              style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;" />
-            <small style="color:#6b7280;">僅支持大寫字母、數字和下劃線，最長20字符</small>
+          <input type="hidden" id="itemCode" />
+          
+          <div style="margin-bottom:20px;">
+            <label for="itemName" style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">
+              項目名稱 <span style="color:#dc2626;">*</span>
+            </label>
+            <input id="itemName" type="text" required maxlength="50" placeholder="例如：伙食津貼、全勤獎金" 
+              style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;" />
+            <small style="color:#6b7280;display:block;margin-top:4px;">💡 輸入清楚易懂的名稱，方便員工識別</small>
           </div>
-          <div style="margin-bottom:16px;">
-            <label for="itemName" style="display:block;margin-bottom:4px;font-weight:500;">項目名稱 *</label>
-            <input id="itemName" type="text" required maxlength="50" placeholder="例如 伙食津貼" 
-              style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;" />
-          </div>
-          <div style="margin-bottom:16px;">
-            <label for="itemCategory" style="display:block;margin-bottom:4px;font-weight:500;">類別 *</label>
-            <select id="itemCategory" required style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;">
-              <option value="">請選擇</option>
-              <option value="allowance">津貼</option>
-              <option value="bonus">獎金</option>
-              <option value="deduction">扣款</option>
+
+          <div style="margin-bottom:20px;">
+            <label for="itemCategory" style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">
+              類別 <span style="color:#dc2626;">*</span>
+            </label>
+            <select id="itemCategory" required style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+              <option value="">-- 請選擇類別 --</option>
+              <option value="allowance">💰 津貼（如：交通、伙食、電話）</option>
+              <option value="bonus">🎁 獎金（如：全勤、績效、年終）</option>
+              <option value="deduction">➖ 扣款（如：保費、遲到）</option>
             </select>
+            <small style="color:#6b7280;display:block;margin-top:4px;">📋 依據項目性質選擇對應類別</small>
           </div>
-          <div style="margin-bottom:16px;">
-            <label style="display:flex;align-items:center;cursor:pointer;">
-              <input type="checkbox" id="itemIsRegular" style="margin-right:8px;" />
-              <span>經常性給與（計入時薪基準）</span>
+
+          <div style="margin-bottom:20px;background:#f0f9ff;padding:16px;border-radius:8px;border:1px solid #bfdbfe;">
+            <label style="display:flex;align-items:flex-start;cursor:pointer;">
+              <input type="checkbox" id="itemIsRegular" style="margin-top:2px;margin-right:10px;width:18px;height:18px;" />
+              <div>
+                <span style="font-weight:500;color:#1e40af;">經常性給與（計入時薪基準）</span>
+                <small style="color:#1e40af;display:block;margin-top:4px;line-height:1.5;">
+                  ⚠️ <strong>重要：</strong>勾選後會計入時薪計算，影響加班費金額和成本分析<br>
+                  ✓ 應勾選：固定津貼（伙食、交通）、全勤獎金、每月固定績效<br>
+                  ✗ 不勾選：年終獎金、三節獎金、臨時性獎金
+                </small>
+              </div>
             </label>
-            <small style="color:#6b7280;display:block;margin-top:4px;">勾選後將影響加班費和成本分析計算</small>
           </div>
-          <div style="margin-bottom:16px;">
+
+          <div style="margin-bottom:20px;">
             <label style="display:flex;align-items:center;cursor:pointer;">
-              <input type="checkbox" id="itemIsFixed" style="margin-right:8px;" />
-              <span>金額固定</span>
+              <input type="checkbox" id="itemIsFixed" style="margin-right:10px;width:18px;height:18px;" />
+              <span style="font-weight:500;color:#374151;">金額固定</span>
             </label>
+            <small style="color:#6b7280;display:block;margin-top:6px;margin-left:28px;">
+              勾選表示每個月金額固定（如固定 2,400 元伙食津貼）<br>
+              不勾選表示金額可能變動（如依表現調整的績效獎金）
+            </small>
           </div>
-          <div style="margin-bottom:16px;">
-            <label for="itemDescription" style="display:block;margin-bottom:4px;font-weight:500;">說明</label>
-            <textarea id="itemDescription" rows="3" maxlength="200" placeholder="選填" 
-              style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;"></textarea>
+
+          <div style="margin-bottom:20px;">
+            <label for="itemDescription" style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">說明（選填）</label>
+            <textarea id="itemDescription" rows="3" maxlength="200" placeholder="例如：每月固定發放，用於補助員工伙食費用" 
+              style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;resize:vertical;"></textarea>
+            <small style="color:#6b7280;display:block;margin-top:4px;">可說明發放條件、計算方式等</small>
           </div>
-          <div style="margin-bottom:16px;">
-            <label for="itemDisplayOrder" style="display:block;margin-bottom:4px;font-weight:500;">顯示順序</label>
-            <input id="itemDisplayOrder" type="number" min="0" value="0" 
-              style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;" />
+
+          <div style="margin-bottom:20px;">
+            <label for="itemDisplayOrder" style="display:block;margin-bottom:6px;font-weight:500;color:#374151;">顯示順序</label>
+            <input id="itemDisplayOrder" type="number" min="0" value="99" 
+              style="width:120px;padding:10px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;" />
+            <small style="color:#6b7280;display:block;margin-top:4px;">數字越小越靠前顯示，預設為 99</small>
           </div>
-          <div id="itemErrorMsg" style="color:#dc2626;margin-bottom:16px;display:none;"></div>
-          <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:16px;border-top:1px solid #e5e7eb;">
-            <button type="button" id="btnCancelItem" class="btn">取消</button>
-            <button type="submit" class="btn primary">儲存</button>
+
+          <div id="itemErrorMsg" style="color:#dc2626;margin-bottom:16px;display:none;padding:12px;background:#fee;border-radius:6px;border:1px solid #fecaca;"></div>
+          
+          <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:20px;border-top:1px solid #e5e7eb;">
+            <button type="button" id="btnCancelItem" class="btn" style="min-width:100px;">取消</button>
+            <button type="submit" class="btn primary" style="min-width:100px;">💾 儲存</button>
           </div>
         </form>
       </dialog>
@@ -521,16 +543,28 @@
           renderItems();
         }
 
+        function generateItemCode() {
+          // 自動生成項目代碼：ITEM_YYYYMMDDHHMMSS
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          const day = String(now.getDate()).padStart(2, '0');
+          const hour = String(now.getHours()).padStart(2, '0');
+          const minute = String(now.getMinutes()).padStart(2, '0');
+          const second = String(now.getSeconds()).padStart(2, '0');
+          return `ITEM_${year}${month}${day}${hour}${minute}${second}`;
+        }
+
         function openItemDialog(item = null) {
           itemErrorMsg.style.display = 'none';
           itemErrorMsg.textContent = '';
           
           if (item) {
             // 編輯模式
-            itemDialogTitle.textContent = '編輯薪資項目';
+            itemDialogTitle.innerHTML = '編輯薪資項目';
+            document.getElementById('itemDialogTitle').nextElementSibling.textContent = '修改薪資項目的設定';
             document.getElementById('itemTypeId').value = item.itemTypeId;
             document.getElementById('itemCode').value = item.itemCode;
-            document.getElementById('itemCode').disabled = true; // 編輯時不允許修改代碼
             document.getElementById('itemName').value = item.itemName;
             document.getElementById('itemCategory').value = item.category;
             document.getElementById('itemIsRegular').checked = item.isRegularPayment;
@@ -539,10 +573,13 @@
             document.getElementById('itemDisplayOrder').value = item.displayOrder || 0;
           } else {
             // 新增模式
-            itemDialogTitle.textContent = '新增薪資項目';
+            itemDialogTitle.innerHTML = '新增薪資項目';
+            document.getElementById('itemDialogTitle').nextElementSibling.textContent = '設定薪資項目的基本資訊';
             itemForm.reset();
             document.getElementById('itemTypeId').value = '';
-            document.getElementById('itemCode').disabled = false;
+            // 自動生成項目代碼
+            document.getElementById('itemCode').value = generateItemCode();
+            document.getElementById('itemDisplayOrder').value = 99;
           }
           
           itemDialog.showModal();
