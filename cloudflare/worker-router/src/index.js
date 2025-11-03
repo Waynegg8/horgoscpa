@@ -79,6 +79,57 @@ export default {
 		}
 	}
 	
+	// ⚡ Clients Cache Debug Endpoint
+	if (path === "/internal/api/v1/cache-debug-clients") {
+		const { generateCacheKey, getCache, saveCache } = await import("./cache-helper.js");
+		const corsHeaders = getCorsHeadersForRequest(request, env);
+		
+		try {
+			const cacheKey = generateCacheKey('clients_list', { page: 1, perPage: 50, q: '', tag_id: '' });
+			
+			// 1. 检查缓存是否存在
+			const cached = await getCache(env, cacheKey);
+			
+			// 2. 如果不存在，创建一个测试数据并保存
+			if (!cached) {
+				const testData = {
+					list: [{ clientId: 'test_001', companyName: 'Test Company' }],
+					meta: { page: 1, perPage: 50, total: 1 }
+				};
+				
+				await saveCache(env, cacheKey, 'clients_list', testData, {
+					scopeParams: { page: 1, perPage: 50, q: '', tag_id: '' }
+				});
+				
+				// 再次读取
+				const recached = await getCache(env, cacheKey);
+				
+				return jsonResponse(200, {
+					ok: true,
+					message: '缓存调试：已创建测试数据',
+					cacheKey,
+					saved: testData,
+					retrieved_after_save: recached
+				}, corsHeaders);
+			}
+			
+			// 3. 如果存在，返回缓存内容
+			return jsonResponse(200, {
+				ok: true,
+				message: '缓存调试：缓存已存在',
+				cacheKey,
+				cached: cached
+			}, corsHeaders);
+		} catch (err) {
+			return jsonResponse(500, {
+				ok: false,
+				message: '缓存调试失败',
+				error: String(err),
+				stack: err.stack
+			}, corsHeaders);
+		}
+	}
+	
 	// Auth routes
 	if (path === "/internal/api/v1/auth/login") {
 		return handleLogin(request, env, requestId);
