@@ -619,7 +619,7 @@ async function loadWeek() {
   
   // 4. 渲染表格
   state.ready = true;
-  renderTable();
+  await renderTable();
   perfMonitor.mark('render_complete');
   
   // 5. 延遲渲染表尾（避免阻塞）
@@ -714,7 +714,7 @@ function renderWeekHeader() {
   });
 }
 
-function renderTable() {
+async function renderTable() {
   const tbody = document.getElementById('timesheetBody');
   const prerenderedStatus = tbody ? tbody.dataset.prerendered : null;
   
@@ -728,6 +728,17 @@ function renderTable() {
   } else {
     console.log('[Timesheets] ⚡ 保留预渲染HTML，但继续执行事件绑定和统计更新');
     tbody.dataset.prerendered = 'used';
+  }
+  
+  // ⚡ 预加载所有需要的客户服务项目（避免N+1查询）
+  if (!shouldPreserveHTML && state.rows.length > 0) {
+    const uniqueClientIds = [...new Set(state.rows.map(r => r.client_id).filter(Boolean))];
+    if (uniqueClientIds.length > 0) {
+      const perfStart = performance.now();
+      await Promise.all(uniqueClientIds.map(clientId => loadClientServices(clientId)));
+      const perfEnd = performance.now();
+      console.log(`[Timesheets] ⚡ 预加载 ${uniqueClientIds.length} 个客户的服务项目耗时: ${Math.round(perfEnd - perfStart)}ms`);
+    }
   }
   
   // ⚡ 只在非预渲染模式下才渲染 HTML
@@ -1068,7 +1079,7 @@ function handleServiceItemChange(rowIndex, serviceItemId) {
   updatePendingCount();
 }
 
-function handleWorkTypeChange(rowIndex, workTypeId) {
+async function handleWorkTypeChange(rowIndex, workTypeId) {
   const row = state.rows[rowIndex];
   row.work_type_id = parseInt(workTypeId);
   
@@ -1107,7 +1118,7 @@ function handleWorkTypeChange(rowIndex, workTypeId) {
   });
   
   // 重新渲染表格，確保 UI 與 state 同步
-  renderTable();
+  await renderTable();
   updatePendingCount();
   updateWeeklySummary();
   
@@ -1553,7 +1564,7 @@ async function handleDeleteRow(rowIndex) {
   }
   
   // 重新渲染
-  renderTable();
+  await renderTable();
   updatePendingCount();
 }
 
@@ -1978,7 +1989,7 @@ function renderCompleteness() {
 
 // ==================== 新增列 ====================
 
-function addNewRow() {
+async function addNewRow() {
   state.rows.push({
     client_id: null,
     service_id: null,
@@ -1988,7 +1999,7 @@ function addNewRow() {
     timesheetIds: [null, null, null, null, null, null, null]
   });
   
-  renderTable();
+  await renderTable();
 }
 
 // ==================== 待儲存計數 ====================
@@ -2168,14 +2179,14 @@ async function init() {
             console.log('[Timesheets] ⚠ 预渲染内容过期（空状态 vs ' + actualRows + ' 行数据），重新渲染');
             tbody.dataset.prerendered = ''; // 清除标记
             tbody.dataset.rendering = ''; // 重置渲染标记
-            renderTable(); // 渲染真实数据（会设置 rendering='true' 并触发事件）
+            await renderTable(); // 渲染真实数据（会设置 rendering='true' 并触发事件）
             perfMonitor.mark('render_complete');
           } else if (Math.abs(prerenderedRows - actualRows) > 0) {
             // 行数不匹配 -> 重新渲染
             console.log('[Timesheets] ⚠ 预渲染内容不匹配（' + prerenderedRows + ' vs ' + actualRows + ' 行），重新渲染');
             tbody.dataset.prerendered = ''; // 清除标记
             tbody.dataset.rendering = ''; // 重置渲染标记
-            renderTable(); // 渲染真实数据（会设置 rendering='true' 并触发事件）
+            await renderTable(); // 渲染真实数据（会设置 rendering='true' 并触发事件）
             perfMonitor.mark('render_complete');
           } else {
             console.log('[Timesheets] ✅ 预渲染内容匹配，保持显示（不更新缓存）');
