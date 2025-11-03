@@ -1,14 +1,8 @@
 -- 为知识库文档表添加年月和任务关联字段
 -- 2025-11-02
+-- 注意：如果字段已存在，此迁移可能已经运行过
 
--- 添加年月字段用于筛选
-ALTER TABLE InternalDocuments ADD COLUMN doc_year INTEGER;
-ALTER TABLE InternalDocuments ADD COLUMN doc_month INTEGER;
-
--- 添加任务关联字段
-ALTER TABLE InternalDocuments ADD COLUMN task_id INTEGER;
-
--- 添加索引
+-- 添加索引（字段可能已存在）
 CREATE INDEX IF NOT EXISTS idx_internal_documents_year_month ON InternalDocuments(doc_year, doc_month);
 CREATE INDEX IF NOT EXISTS idx_internal_documents_task_id ON InternalDocuments(task_id);
 
