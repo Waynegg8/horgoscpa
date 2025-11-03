@@ -174,8 +174,8 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents) {
 	const leaves = await env.DATABASE.prepare(`
 		SELECT 
 			leave_type,
-			SUM(days) as total_days
-		FROM Leaves
+			SUM(amount) as total_days
+		FROM LeaveRequests
 		WHERE user_id = ?
 		  AND start_date <= ?
 		  AND end_date >= ?
@@ -229,7 +229,7 @@ async function checkFullAttendance(env, userId, month) {
 	// 检查是否有病假或事假
 	const leaves = await env.DATABASE.prepare(`
 		SELECT COUNT(*) as count
-		FROM Leaves
+		FROM LeaveRequests
 		WHERE user_id = ?
 		  AND start_date <= ?
 		  AND end_date >= ?
