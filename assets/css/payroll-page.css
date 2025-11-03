@@ -37,8 +37,12 @@
 .list { list-style:none; padding:0; margin:0; display:grid; gap:8px; }
 .list li { padding:8px 10px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; }
 
-.panel { display:none; }
-.panel.show { display:block; }
+.panel:not(.show) { 
+  display: none !important; 
+}
+.panel.show { 
+  display: block !important; 
+}
 
 /* 對話框樣式 */
 dialog {
