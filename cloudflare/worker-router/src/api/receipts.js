@@ -381,7 +381,15 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			
 			return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta: { requestId } }, corsHeaders);
 		} catch (err) {
-			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+			console.error(JSON.stringify({ 
+				level: "error", 
+				requestId, 
+				path, 
+				receiptId,
+				err: String(err),
+				stack: err.stack || '',
+				message: err.message || ''
+			}));
 			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
 		}
 	}

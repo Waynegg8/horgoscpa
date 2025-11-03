@@ -9,105 +9,129 @@
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/receipts-page.css" />
     <style>
+      body {
+        background: #f8fafc;
+        min-height: 100vh;
+      }
+      
       .receipt-detail-container {
-        max-width: 1400px;
+        max-width: 1600px;
         margin: 0 auto;
-        padding: 24px;
+        padding: 32px 40px;
       }
       
       .receipt-header-section {
         background: white;
-        border: 1px solid rgba(15,23,42,0.08);
-        border-radius: 10px;
-        padding: 32px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 40px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
       }
       
       .receipt-header-top {
         display: flex;
         justify-content: space-between;
-        align-items: start;
-        margin-bottom: 24px;
+        align-items: center;
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+        border-bottom: 2px solid #f1f5f9;
       }
       
       .receipt-id-title {
-        font-size: 24px;
-        font-weight: 600;
+        font-size: 28px;
+        font-weight: 700;
         color: #0f172a;
+        letter-spacing: -0.02em;
       }
       
       .receipt-status-badge {
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 14px;
-        font-weight: 500;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
       }
       
-      .receipt-status-badge.unpaid { background: #fee; color: #c00; }
-      .receipt-status-badge.partial { background: #ffc; color: #d97706; }
-      .receipt-status-badge.paid { background: #d4edda; color: #28a745; }
-      .receipt-status-badge.cancelled { background: #e2e8f0; color: #64748b; }
-      .receipt-status-badge.overdue { background: #dc3545; color: white; }
+      .receipt-status-badge.unpaid { background: #fef2f2; color: #dc2626; }
+      .receipt-status-badge.partial { background: #fef3c7; color: #d97706; }
+      .receipt-status-badge.paid { background: #d1fae5; color: #065f46; }
+      .receipt-status-badge.cancelled { background: #f1f5f9; color: #64748b; }
+      .receipt-status-badge.overdue { background: #dc2626; color: white; }
       
       .receipt-info-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 24px 32px;
+        gap: 32px 40px;
       }
       
       .receipt-info-item {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 10px;
       }
       
       .receipt-info-label {
-        font-size: 12px;
-        color: #6b7280;
+        font-size: 13px;
+        color: #64748b;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
       }
       
       .receipt-info-value {
-        font-size: 15px;
-        color: #1f2937;
-        font-weight: 500;
+        font-size: 16px;
+        color: #0f172a;
+        font-weight: 600;
+        line-height: 1.5;
       }
       
       .receipt-amount-highlight {
-        font-size: 24px;
+        font-size: 32px;
         font-weight: 700;
         color: #0f172a;
+        letter-spacing: -0.02em;
       }
       
       .receipt-section {
         background: white;
-        border: 1px solid rgba(15,23,42,0.08);
-        border-radius: 10px;
-        padding: 24px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 32px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
       }
       
-      @media (max-width: 1024px) {
+      @media (max-width: 1200px) {
         .receipt-info-grid {
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns: repeat(3, 1fr);
         }
       }
       
-      @media (max-width: 640px) {
+      @media (max-width: 768px) {
+        .receipt-info-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .receipt-detail-container {
+          padding: 20px;
+        }
+        .receipt-header-section,
+        .receipt-section {
+          padding: 24px;
+        }
+      }
+      
+      @media (max-width: 480px) {
         .receipt-info-grid {
           grid-template-columns: 1fr;
         }
       }
       
       .receipt-section-title {
-        font-size: 18px;
-        font-weight: 600;
+        font-size: 20px;
+        font-weight: 700;
         color: #0f172a;
-        margin-bottom: 16px;
+        margin-bottom: 20px;
+        letter-spacing: -0.01em;
       }
       
       .receipt-table {
@@ -116,55 +140,69 @@
       }
       
       .receipt-table thead {
-        background: #f9fafb;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
       }
       
       .receipt-table th {
-        padding: 14px 16px;
+        padding: 16px 20px;
         text-align: left;
-        font-size: 12px;
-        font-weight: 600;
-        color: #6b7280;
+        font-size: 13px;
+        font-weight: 700;
+        color: #475569;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border-bottom: 2px solid #e5e7eb;
+        letter-spacing: 0.08em;
+        border-bottom: 2px solid #e2e8f0;
       }
       
       .receipt-table tbody tr {
-        transition: background 0.2s;
+        transition: background 0.15s;
+        border-bottom: 1px solid #f1f5f9;
       }
       
       .receipt-table tbody tr:hover {
-        background: #f9fafb;
+        background: #f8fafc;
       }
       
       .receipt-table td {
-        padding: 14px 16px;
-        border-bottom: 1px solid #f3f4f6;
-        font-size: 14px;
-        color: #1f2937;
+        padding: 18px 20px;
+        font-size: 15px;
+        color: #0f172a;
+        line-height: 1.6;
       }
       
       .receipt-actions {
         display: flex;
-        gap: 12px;
+        gap: 16px;
         margin-top: 24px;
+        padding: 24px;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
       }
       
       .btn {
-        padding: 10px 20px;
+        padding: 12px 24px;
         border-radius: 8px;
         border: 1px solid #cbd5e1;
         background: white;
         color: #0f172a;
-        font-size: 14px;
-        font-weight: 500;
+        font-size: 15px;
+        font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
       }
       
-      .btn:hover {
-        background: #f8fafc;
+      .btn:hover:not(:disabled) {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
       
       .btn-primary {
@@ -173,8 +211,9 @@
         border-color: #3b82f6;
       }
       
-      .btn-primary:hover {
+      .btn-primary:hover:not(:disabled) {
         background: #2563eb;
+        border-color: #2563eb;
       }
       
       .btn-danger {
@@ -183,8 +222,9 @@
         border-color: #ef4444;
       }
       
-      .btn-danger:hover {
+      .btn-danger:hover:not(:disabled) {
         background: #dc2626;
+        border-color: #dc2626;
       }
       
       .modal-overlay {
@@ -194,10 +234,11 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0,0,0,0.5);
+        background: rgba(0,0,0,0.6);
         z-index: 1000;
         align-items: center;
         justify-content: center;
+        backdrop-filter: blur(4px);
       }
       
       .modal-overlay.show {
@@ -207,63 +248,83 @@
       .modal {
         background: white;
         border-radius: 12px;
-        padding: 24px;
-        max-width: 500px;
+        padding: 32px;
+        max-width: 560px;
         width: 90%;
         max-height: 90vh;
         overflow-y: auto;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
       }
       
       .modal-header {
-        font-size: 20px;
-        font-weight: 600;
-        margin-bottom: 20px;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 24px;
+        color: #0f172a;
+        letter-spacing: -0.01em;
       }
       
       .modal-row {
-        margin-bottom: 16px;
+        margin-bottom: 20px;
       }
       
       .modal-row label {
         display: block;
         font-size: 14px;
-        font-weight: 500;
-        color: #64748b;
-        margin-bottom: 6px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 8px;
       }
       
       .modal-row input,
       .modal-row select,
       .modal-row textarea {
         width: 100%;
-        padding: 10px 12px;
+        padding: 12px 14px;
         border: 1px solid #cbd5e1;
         border-radius: 8px;
-        font-size: 14px;
+        font-size: 15px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      
+      .modal-row input:focus,
+      .modal-row select:focus,
+      .modal-row textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      
+      .modal-row small {
+        font-size: 13px;
+        color: #64748b;
       }
       
       .modal-actions {
         display: flex;
         gap: 12px;
         justify-content: flex-end;
-        margin-top: 24px;
+        margin-top: 28px;
+        padding-top: 24px;
+        border-top: 1px solid #e2e8f0;
       }
       
       .form-error {
-        background: #fee;
-        border: 1px solid #f88;
-        color: #c00;
-        padding: 12px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        padding: 14px 16px;
         border-radius: 8px;
-        margin-bottom: 16px;
+        margin-bottom: 20px;
         font-size: 14px;
+        font-weight: 500;
       }
       
       .empty-state {
         text-align: center;
-        padding: 48px 20px;
-        color: #9ca3af;
-        font-size: 14px;
+        padding: 64px 20px;
+        color: #94a3b8;
+        font-size: 15px;
       }
       
       .back-link {
@@ -283,8 +344,13 @@
   <body>
     <div class="receipt-detail-container">
       <!-- 返回按钮 -->
-      <div style="margin-bottom: 16px;">
-        <a href="/internal/receipts" class="btn">← 返回收據列表</a>
+      <div style="margin-bottom: 24px;">
+        <a href="/internal/receipts" class="btn" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          返回收據列表
+        </a>
       </div>
       
       <!-- 收据基本信息 -->
@@ -299,7 +365,7 @@
           <thead>
             <tr>
               <th>服務項目</th>
-              <th>數量</th>
+              <th style="text-align: center;">數量</th>
               <th>單價</th>
               <th>小計</th>
               <th>備註</th>
@@ -501,13 +567,13 @@
               </div>
               <div class="receipt-info-item">
                 <div class="receipt-info-label">已收金額</div>
-                <div class="receipt-info-value" style="color: #10b981; font-size: 18px; font-weight: 600;">
+                <div class="receipt-info-value" style="color: #10b981; font-size: 24px; font-weight: 700;">
                   $${(data.paidAmount || 0).toLocaleString()}
                 </div>
               </div>
               <div class="receipt-info-item">
                 <div class="receipt-info-label">未收金額</div>
-                <div class="receipt-info-value" style="color: #ef4444; font-size: 18px; font-weight: 600;">
+                <div class="receipt-info-value" style="color: #ef4444; font-size: 24px; font-weight: 700;">
                   $${(data.outstandingAmount || 0).toLocaleString()}
                 </div>
               </div>
@@ -517,9 +583,9 @@
               </div>
             </div>
             ${data.notes ? `
-              <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
-                <div class="receipt-info-label">備註</div>
-                <div class="receipt-info-value">${data.notes}</div>
+              <div style="margin-top: 32px; padding-top: 32px; border-top: 2px solid #e2e8f0;">
+                <div class="receipt-info-label" style="margin-bottom: 12px;">備註</div>
+                <div class="receipt-info-value" style="font-size: 15px; line-height: 1.8; color: #475569;">${data.notes}</div>
               </div>
             ` : ''}
           `;
@@ -532,11 +598,11 @@
             const itemsTableBody = document.getElementById('itemsTableBody');
             itemsTableBody.innerHTML = data.items.map(item => `
               <tr>
-                <td>${item.serviceName}</td>
-                <td>${item.quantity}</td>
-                <td>$${(item.unitPrice || 0).toLocaleString()}</td>
-                <td>$${(item.subtotal || 0).toLocaleString()}</td>
-                <td>${item.notes || '-'}</td>
+                <td style="font-weight: 600;">${item.serviceName}</td>
+                <td style="text-align: center;">${item.quantity}</td>
+                <td style="font-weight: 600;">$${(item.unitPrice || 0).toLocaleString()}</td>
+                <td style="font-weight: 700; font-size: 16px;">$${(item.subtotal || 0).toLocaleString()}</td>
+                <td style="color: #64748b;">${item.notes || '-'}</td>
               </tr>
             `).join('');
           }
@@ -546,12 +612,12 @@
           if (data.payments && data.payments.length > 0) {
             paymentsTableBody.innerHTML = data.payments.map(p => `
               <tr>
-                <td>${p.paymentDate}</td>
-                <td style="color: #10b981; font-weight: 600;">$${(p.paymentAmount || 0).toLocaleString()}</td>
+                <td style="font-weight: 600;">${p.paymentDate}</td>
+                <td style="color: #10b981; font-weight: 700; font-size: 16px;">$${(p.paymentAmount || 0).toLocaleString()}</td>
                 <td>${getPaymentMethodName(p.paymentMethod)}</td>
-                <td>${p.referenceNumber || '-'}</td>
+                <td style="color: #64748b;">${p.referenceNumber || '-'}</td>
                 <td>${p.createdBy || '-'}</td>
-                <td>${p.notes || '-'}</td>
+                <td style="color: #64748b;">${p.notes || '-'}</td>
               </tr>
             `).join('');
           } else {
