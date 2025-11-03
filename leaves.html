@@ -376,6 +376,7 @@
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
         const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
 
+        const balanceEl = document.getElementById('balances');
         const tbody = document.getElementById('tbody');
         const leaveTypeFilterEl = document.getElementById('leave-type-filter');
         const yearFilterEl = document.getElementById('year-filter');
