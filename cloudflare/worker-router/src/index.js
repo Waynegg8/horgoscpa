@@ -177,26 +177,49 @@ export default {
 			await saveKVCache(env, clientsCacheKey, 'clients_list', clientsData, { ttl: 3600 });
 			warmupResults.push({ type: 'clients_list', key: clientsCacheKey, count: clientsData.list.length });
 			
-			// 2. 预热假日数据
-			const holidaysRows = await env.DATABASE.prepare(
-				`SELECT holiday_date, name, is_national_holiday, is_weekly_restday, is_makeup_workday
-				 FROM Holidays
-				 WHERE holiday_date >= date('now', '-1 year')
-				 ORDER BY holiday_date ASC`
-			).all();
+			// 2. 预热假日数据（预热当前周和未来4周的假日数据）
+			const today = new Date();
+			const monday = new Date(today);
+			monday.setDate(today.getDate() - today.getDay() + 1); // 本周一
 			
-			const holidaysData = (holidaysRows?.results || []).map(r => ({
-				holiday_date: r.holiday_date,
-				date: r.holiday_date,
-				name: r.name || "",
-				is_national_holiday: Boolean(r.is_national_holiday),
-				is_weekly_restday: Boolean(r.is_weekly_restday),
-				is_makeup_workday: Boolean(r.is_makeup_workday),
-			}));
-			
-			const holidaysCacheKey = generateCacheKey('holidays_all', { start: '', end: '' });
-			await saveKVCache(env, holidaysCacheKey, 'holidays_all', holidaysData, { ttl: 3600 });
-			warmupResults.push({ type: 'holidays_all', key: holidaysCacheKey, count: holidaysData.length });
+			// 预热接下来5周的假日数据
+			for (let weekOffset = 0; weekOffset < 5; weekOffset++) {
+				const weekStart = new Date(monday);
+				weekStart.setDate(monday.getDate() + (weekOffset * 7));
+				const weekEnd = new Date(weekStart);
+				weekEnd.setDate(weekStart.getDate() + 6);
+				
+				const startStr = weekStart.toISOString().substring(0, 10);
+				const endStr = weekEnd.toISOString().substring(0, 10);
+				
+				const weekHolidaysRows = await env.DATABASE.prepare(
+					`SELECT holiday_date, name, is_national_holiday, is_weekly_restday, is_makeup_workday
+					 FROM Holidays
+					 WHERE holiday_date BETWEEN ? AND ?
+					 ORDER BY holiday_date ASC`
+				).bind(startStr, endStr).all();
+				
+				const weekHolidaysData = (weekHolidaysRows?.results || []).map(r => ({
+					holiday_date: r.holiday_date,
+					date: r.holiday_date,
+					name: r.name || "",
+					is_national_holiday: Boolean(r.is_national_holiday),
+					is_weekly_restday: Boolean(r.is_weekly_restday),
+					is_makeup_workday: Boolean(r.is_makeup_workday),
+				}));
+				
+				const weekHolidaysCacheKey = generateCacheKey('holidays_all', { start: startStr, end: endStr });
+				await saveKVCache(env, weekHolidaysCacheKey, 'holidays_all', weekHolidaysData, { ttl: 3600 });
+				
+				if (weekOffset === 0) {
+					warmupResults.push({ 
+						type: 'holidays_all', 
+						key: weekHolidaysCacheKey, 
+						count: weekHolidaysData.length,
+						week: `${startStr} to ${endStr}`
+					});
+				}
+			}
 			
 			return jsonResponse(200, {
 				ok: true,
