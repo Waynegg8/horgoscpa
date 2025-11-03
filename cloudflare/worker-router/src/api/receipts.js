@@ -391,7 +391,8 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			
 			// 获取收据明细
 			const items = await env.DATABASE.prepare(
-				`SELECT item_id, service_name, quantity, unit_price, subtotal, notes
+				`SELECT item_id, service_name, quantity, unit_price, subtotal, notes, 
+				        service_fee, government_fee, miscellaneous_fee
 				 FROM ReceiptItems
 				 WHERE receipt_id = ?
 				 ORDER BY item_id`
@@ -430,6 +431,9 @@ export async function handleReceipts(request, env, me, requestId, url) {
 					serviceName: i.service_name,
 					quantity: Number(i.quantity || 1),
 					unitPrice: Number(i.unit_price || 0),
+					serviceFee: Number(i.service_fee || 0),
+					governmentFee: Number(i.government_fee || 0),
+					miscellaneousFee: Number(i.miscellaneous_fee || 0),
 					subtotal: Number(i.subtotal || 0),
 					notes: i.notes || ""
 				})),
@@ -672,15 +676,20 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			if (items.length > 0) {
 				for (const item of items) {
 					const service_name = String(item.service_name).trim();
-					const quantity = Number(item.quantity || 1);
-					const unit_price = Number(item.unit_price || 0);
-					const subtotal = quantity * unit_price;
+					const service_fee = Number(item.service_fee || 0);
+					const government_fee = Number(item.government_fee || 0);
+					const miscellaneous_fee = Number(item.miscellaneous_fee || 0);
+					const subtotal = service_fee + government_fee + miscellaneous_fee;
 					const item_notes = String(item.notes || "").trim();
 					
+					// 为了向后兼容，保留quantity和unit_price字段（但设为默认值）
+					const quantity = Number(item.quantity || 1);
+					const unit_price = Number(item.unit_price || 0);
+					
 					await env.DATABASE.prepare(
-						`INSERT INTO ReceiptItems (receipt_id, service_name, quantity, unit_price, subtotal, notes, created_at)
-						 VALUES (?, ?, ?, ?, ?, ?, ?)`
-					).bind(receipt_id, service_name, quantity, unit_price, subtotal, item_notes, new Date().toISOString()).run();
+						`INSERT INTO ReceiptItems (receipt_id, service_name, quantity, unit_price, subtotal, notes, service_fee, government_fee, miscellaneous_fee, created_at)
+						 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+					).bind(receipt_id, service_name, quantity, unit_price, subtotal, item_notes, service_fee, government_fee, miscellaneous_fee, new Date().toISOString()).run();
 				}
 			}
 			

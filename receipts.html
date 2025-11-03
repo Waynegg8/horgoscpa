@@ -645,8 +645,9 @@
           const item = {
             id: Date.now(),
             serviceName: '',
-            quantity: 1,
-            unitPrice: 0,
+            serviceFee: 0,
+            governmentFee: 0,
+            miscellaneousFee: 0,
             notes: ''
           };
           receiptItems.push(item);
@@ -673,22 +674,25 @@
                 <button type="button" onclick="removeReceiptItem(${item.id})" style="background:#ef4444;color:white;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;">刪除</button>
               </div>
               <div style="display:grid;gap:8px;">
-                <input type="text" placeholder="服務名稱（必填）" value="${item.serviceName || ''}" 
+                <input type="text" placeholder="項目名稱（必填）" value="${item.serviceName || ''}" 
                   onchange="updateReceiptItem(${item.id}, 'serviceName', this.value)"
                   style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                  <input type="number" placeholder="數量" value="${item.quantity || 1}" min="1" step="1"
-                    onchange="updateReceiptItem(${item.id}, 'quantity', parseFloat(this.value) || 1)"
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                  <input type="number" placeholder="代辦費" value="${item.serviceFee || 0}" min="0" step="1"
+                    onchange="updateReceiptItem(${item.id}, 'serviceFee', parseFloat(this.value) || 0)"
                     style="padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
-                  <input type="number" placeholder="單價" value="${item.unitPrice || 0}" min="0" step="1"
-                    onchange="updateReceiptItem(${item.id}, 'unitPrice', parseFloat(this.value) || 0)"
+                  <input type="number" placeholder="規費" value="${item.governmentFee || 0}" min="0" step="1"
+                    onchange="updateReceiptItem(${item.id}, 'governmentFee', parseFloat(this.value) || 0)"
+                    style="padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
+                  <input type="number" placeholder="雜費" value="${item.miscellaneousFee || 0}" min="0" step="1"
+                    onchange="updateReceiptItem(${item.id}, 'miscellaneousFee', parseFloat(this.value) || 0)"
                     style="padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
                 </div>
                 <input type="text" placeholder="備註（選填）" value="${item.notes || ''}"
                   onchange="updateReceiptItem(${item.id}, 'notes', this.value)"
                   style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;" />
                 <div style="text-align:right;color:#6b7280;font-size:13px;padding-top:4px;">
-                  小計：$<span style="font-weight:600;color:#1f2937;">${((item.quantity || 1) * (item.unitPrice || 0)).toLocaleString()}</span>
+                  小計：$<span style="font-weight:600;color:#1f2937;">${((item.serviceFee || 0) + (item.governmentFee || 0) + (item.miscellaneousFee || 0)).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -711,7 +715,7 @@
           }
           
           const total = receiptItems.reduce((sum, item) => {
-            return sum + ((item.quantity || 1) * (item.unitPrice || 0));
+            return sum + (item.serviceFee || 0) + (item.governmentFee || 0) + (item.miscellaneousFee || 0);
           }, 0);
           
           if (total > 0) {
@@ -942,8 +946,9 @@
               if (validItems.length > 0) {
                 payload.items = validItems.map(item => ({
                   service_name: item.serviceName.trim(),
-                  quantity: item.quantity || 1,
-                  unit_price: item.unitPrice || 0,
+                  service_fee: item.serviceFee || 0,
+                  government_fee: item.governmentFee || 0,
+                  miscellaneous_fee: item.miscellaneousFee || 0,
                   notes: item.notes ? item.notes.trim() : ''
                 }));
               }
@@ -1022,17 +1027,34 @@
         printWindow.document.write('<html><head><title>列印請款單</title>');
         printWindow.document.write('<meta charset="utf-8">');
         printWindow.document.write(`<style>
-          @page { margin: 20mm; }
-          body { font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; padding: 20px; }
-          h1 { text-align: center; color: #8b7542; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th, td { border: 1px solid #000; padding: 10px; }
-          th { background: #f0f0f0; text-align: center; }
-          @media print { button { display: none; } }
+          @page { size: A4; margin: 15mm 20mm; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: "Microsoft JhengHei", "PingFang TC", "SimSun", sans-serif; 
+            font-size: 12pt;
+            line-height: 1.6;
+            padding: 10mm;
+          }
+          .header { text-align: center; margin-bottom: 8mm; }
+          .company-name { font-size: 18pt; font-weight: bold; margin-bottom: 3mm; }
+          .doc-title { font-size: 20pt; font-weight: bold; letter-spacing: 4pt; margin-bottom: 8mm; }
+          .info-section { margin-bottom: 5mm; font-size: 11pt; }
+          .info-row { margin-bottom: 2mm; }
+          table { width: 100%; border-collapse: collapse; margin: 5mm 0; }
+          th, td { border: 1px solid #000; padding: 6pt 8pt; text-align: left; }
+          th { background: #f5f5f5; text-align: center; font-weight: bold; font-size: 11pt; }
+          td { font-size: 11pt; }
+          .text-right { text-align: right !important; }
+          .text-center { text-align: center !important; }
+          .summary { margin: 5mm 0; font-size: 11pt; }
+          .bank-info { margin-top: 8mm; font-size: 10pt; line-height: 1.8; }
+          @media print { 
+            button { display: none !important; }
+            body { padding: 0; }
+          }
         </style>`);
         printWindow.document.write('</head><body>');
-        printWindow.document.write('<button onclick="window.print()" style="margin-bottom:10px;padding:10px 20px;">列印</button>');
-        printWindow.document.write('<h1>霍爾果斯會計師事務所<br/>請款單</h1>');
+        printWindow.document.write('<button onclick="window.print()" style="position:fixed;top:10px;right:10px;padding:8px 16px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;z-index:1000;">列印</button>');
         
         try {
           const response = await fetch(`/internal/api/v1/receipts/${receiptId}`);
@@ -1046,35 +1068,90 @@
           
           const receipt = result.data;
           
-          // 添加客户和收据信息
-          printWindow.document.write(`<p><strong>客戶名稱：</strong>${receipt.clientName}</p>`);
-          printWindow.document.write(`<p><strong>收據編號：</strong>${receiptId}</p>`);
-          printWindow.document.write(`<p><strong>開立日期：</strong>${receipt.receiptDate}</p>`);
+          let totalServiceFee = 0;
+          let totalGovFee = 0;
+          let totalMiscFee = 0;
           
-          // 添加表格
-          let tableHTML = '<table><thead><tr><th>項目</th><th>代辦費(新台幣)</th><th>規費(新台幣)</th><th>雜費(新台幣)</th></tr></thead><tbody>';
+          printWindow.document.write(`
+            <div class="header">
+              <div class="company-name">${COMPANY_INFO.name}</div>
+              <div class="doc-title">請 款 單</div>
+            </div>
+            
+            <div class="info-section">
+              <div class="info-row"><strong>客戶名稱：</strong>${receipt.clientName}</div>
+              <div class="info-row"><strong>收據編號：</strong>${receiptId}</div>
+              <div class="info-row"><strong>開立日期：</strong>${receipt.receiptDate}</div>
+            </div>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:40%">項　　目</th>
+                  <th style="width:20%">代辦費（新台幣）</th>
+                  <th style="width:20%">規　費（新台幣）</th>
+                  <th style="width:20%">雜　費（新台幣）</th>
+                </tr>
+              </thead>
+              <tbody>
+          `);
           
-          // 添加明细或总金额
+          // 添加明细
           if (receipt.items && receipt.items.length > 0) {
             receipt.items.forEach(item => {
-              tableHTML += `<tr><td>${item.serviceName}</td><td style="text-align:right">$${item.unitPrice.toLocaleString()}</td><td style="text-align:right">$-</td><td style="text-align:right">$-</td></tr>`;
+              const serviceFee = item.serviceFee || 0;
+              const govFee = item.governmentFee || 0;
+              const miscFee = item.miscellaneousFee || 0;
+              
+              totalServiceFee += serviceFee;
+              totalGovFee += govFee;
+              totalMiscFee += miscFee;
+              
+              printWindow.document.write(`
+                <tr>
+                  <td>${item.serviceName}${item.notes ? '<br><small style="color:#666;">'+item.notes+'</small>' : ''}</td>
+                  <td class="text-right">${serviceFee > 0 ? '$' + serviceFee.toLocaleString() : '-'}</td>
+                  <td class="text-right">${govFee > 0 ? '$' + govFee.toLocaleString() : '-'}</td>
+                  <td class="text-right">${miscFee > 0 ? '$' + miscFee.toLocaleString() : '-'}</td>
+                </tr>
+              `);
             });
           } else {
-            tableHTML += `<tr><td>${receipt.notes || '服務費用'}</td><td style="text-align:right">$${receipt.totalAmount.toLocaleString()}</td><td style="text-align:right">$-</td><td style="text-align:right">$-</td></tr>`;
+            totalServiceFee = receipt.totalAmount;
+            printWindow.document.write(`
+              <tr>
+                <td>${receipt.notes || '服務費用'}</td>
+                <td class="text-right">$${receipt.totalAmount.toLocaleString()}</td>
+                <td class="text-right">-</td>
+                <td class="text-right">-</td>
+              </tr>
+            `);
           }
           
           // 合计行
-          tableHTML += `<tr><td><strong>合計</strong></td><td style="text-align:right"><strong>$${receipt.totalAmount.toLocaleString()}</strong></td><td style="text-align:right"><strong>$-</strong></td><td style="text-align:right"><strong>$-</strong></td></tr>`;
-          tableHTML += '</tbody></table>';
-          
-          printWindow.document.write(tableHTML);
-          printWindow.document.write(`<p><strong>費用總計：${receipt.totalAmount.toLocaleString()} 元</strong></p>`);
-          printWindow.document.write('<p>(本次扣繳金額：0 元)</p>');
-          printWindow.document.write('<p>款項請匯入下列帳戶，謝謝！</p>');
-          printWindow.document.write(`<p>戶名：${COMPANY_INFO.name}<br>`);
-          printWindow.document.write(`銀行：${COMPANY_INFO.bank}<br>`);
-          printWindow.document.write(`銀行代號：${COMPANY_INFO.bankCode}<br>`);
-          printWindow.document.write(`帳號：${COMPANY_INFO.accountNumber}</p>`);
+          printWindow.document.write(`
+                <tr style="font-weight:bold;">
+                  <td class="text-center">合　　計</td>
+                  <td class="text-right">${totalServiceFee > 0 ? '$' + totalServiceFee.toLocaleString() : '-'}</td>
+                  <td class="text-right">${totalGovFee > 0 ? '$' + totalGovFee.toLocaleString() : '-'}</td>
+                  <td class="text-right">${totalMiscFee > 0 ? '$' + totalMiscFee.toLocaleString() : '-'}</td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <div class="summary">
+              <div><strong>費用總計：新台幣 ${receipt.totalAmount.toLocaleString()} 元</strong></div>
+              <div style="margin-top:2mm;">（本次扣繳金額：0 元）</div>
+            </div>
+            
+            <div class="bank-info">
+              <div style="margin-bottom:3mm;"><strong>款項請匯入下列帳戶，謝謝！</strong></div>
+              <div>戶　　名：${COMPANY_INFO.name}</div>
+              <div>銀　　行：${COMPANY_INFO.bank}</div>
+              <div>銀行代號：${COMPANY_INFO.bankCode}</div>
+              <div>帳　　號：${COMPANY_INFO.accountNumber}</div>
+            </div>
+          `);
           
           printWindow.document.write('</body></html>');
           printWindow.document.close();
@@ -1089,28 +1166,75 @@
         printWindow.document.write('<html><head><title>列印收據</title>');
         printWindow.document.write('<meta charset="utf-8">');
         printWindow.document.write(`<style>
-          @page { margin: 15mm; }
-          body { font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; padding: 0; margin: 0; }
-          .receipt-copy { page-break-after: always; padding: 20px; border: 2px solid #000; margin-bottom: 20px; }
-          .receipt-copy:last-child { page-break-after: auto; }
-          .header { text-align: center; margin-bottom: 10px; }
-          .company-name { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
-          .company-info { font-size: 11px; text-align: right; margin-bottom: 10px; }
-          .title { font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 8px; margin: 15px 0; }
-          .date { text-align: center; font-size: 13px; margin-bottom: 10px; }
-          .received-from { font-size: 14px; margin: 15px 0; }
-          table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-          th, td { border: 1px solid #000; padding: 8px; }
-          th { background: #f5f5f5; text-align: center; font-size: 13px; }
-          td { font-size: 13px; }
-          .amount-chinese { font-weight: bold; padding: 10px; }
-          .signature { display: flex; justify-content: space-around; margin: 20px 0; font-size: 14px; }
-          .bank-info { font-size: 12px; margin-top: 15px; line-height: 1.8; }
-          .copy-label { position: absolute; right: 10px; top: 50%; transform: translateY(-50%) rotate(90deg); font-size: 16px; font-weight: bold; }
-          @media print { button { display: none; } .receipt-copy { page-break-after: always; } }
+          @page { size: A4; margin: 12mm 15mm; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: "Microsoft JhengHei", "PingFang TC", "SimSun", sans-serif; 
+            font-size: 10pt;
+            padding: 5mm;
+          }
+          .receipt-page { page-break-after: auto; }
+          .receipt-copy { 
+            position: relative;
+            border: 2px solid #000; 
+            padding: 8mm 10mm;
+            margin-bottom: 8mm;
+            min-height: 120mm;
+          }
+          .receipt-copy:last-child { margin-bottom: 0; }
+          .copy-label { 
+            position: absolute; 
+            right: -2px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            writing-mode: vertical-rl;
+            font-size: 14pt; 
+            font-weight: bold;
+            background: white;
+            padding: 8pt 4pt;
+            border: 2px solid #000;
+            border-right: none;
+          }
+          .header { text-align: center; margin-bottom: 3mm; }
+          .company-name { font-size: 16pt; font-weight: bold; margin-bottom: 2mm; }
+          .company-info { 
+            font-size: 9pt; 
+            text-align: right; 
+            margin-bottom: 3mm;
+            line-height: 1.4;
+          }
+          .title { 
+            font-size: 20pt; 
+            font-weight: bold; 
+            text-align: center; 
+            letter-spacing: 12pt; 
+            margin: 4mm 0;
+          }
+          .date { text-align: center; font-size: 10pt; margin-bottom: 3mm; }
+          .received-from { font-size: 11pt; margin: 3mm 0; }
+          table { width: 100%; border-collapse: collapse; margin: 3mm 0; }
+          th, td { border: 1px solid #000; padding: 4pt 6pt; }
+          th { background: #f5f5f5; text-align: center; font-weight: bold; font-size: 10pt; }
+          td { font-size: 10pt; }
+          .amount-chinese { font-weight: bold; padding: 6pt; font-size: 11pt; }
+          .signature { 
+            display: flex; 
+            justify-content: space-around; 
+            margin: 4mm 0; 
+            font-size: 11pt; 
+          }
+          .bank-info { 
+            font-size: 9pt; 
+            margin-top: 3mm; 
+            line-height: 1.6; 
+          }
+          @media print { 
+            button { display: none !important; }
+            body { padding: 0; }
+          }
         </style>`);
         printWindow.document.write('</head><body>');
-        printWindow.document.write('<button onclick="window.print()" style="margin:10px;padding:10px 20px;position:fixed;top:0;left:0;z-index:1000;">列印</button>');
+        printWindow.document.write('<button onclick="window.print()" style="position:fixed;top:10px;right:10px;padding:8px 16px;background:#10b981;color:white;border:none;border-radius:4px;cursor:pointer;z-index:1000;">列印</button>');
         
         try {
           const response = await fetch(`/internal/api/v1/receipts/${receiptId}`);
@@ -1167,10 +1291,12 @@
           const rocDate = convertToROCDate(receipt.receiptDate);
           const amountChinese = convertAmountToChinese(receipt.totalAmount);
           
-          // 生成两联收据（收税联和存查联）
+          // 生成两联收据（收税联和存查联）在同一页
+          printWindow.document.write('<div class="receipt-page">');
+          
           const copies = ['收稅聯', '存查聯'];
           
-          copies.forEach(copyLabel => {
+          copies.forEach((copyLabel, index) => {
             printWindow.document.write(`
               <div class="receipt-copy" style="position:relative;">
                 <div class="copy-label">${copyLabel}</div>
@@ -1209,10 +1335,11 @@
             // 添加明细或总金额
             if (receipt.items && receipt.items.length > 0) {
               receipt.items.forEach(item => {
+                const itemTotal = (item.serviceFee || 0) + (item.governmentFee || 0) + (item.miscellaneousFee || 0);
                 printWindow.document.write(`
                   <tr>
                     <td>${item.serviceName}</td>
-                    <td style="text-align:right">${item.unitPrice.toLocaleString()}</td>
+                    <td style="text-align:right">${itemTotal.toLocaleString()}</td>
                     <td style="text-align:center"></td>
                     <td>${item.notes || ''}</td>
                   </tr>
@@ -1261,6 +1388,7 @@
             `);
           });
           
+          printWindow.document.write('</div>'); // 关闭 receipt-page
           printWindow.document.write('</body></html>');
           printWindow.document.close();
         } catch (error) {
