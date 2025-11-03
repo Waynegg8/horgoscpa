@@ -372,6 +372,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			// 获取收据基本信息
 			const receipt = await env.DATABASE.prepare(
 				`SELECT r.receipt_id, r.client_id, r.receipt_date, r.due_date, r.total_amount, 
+				        COALESCE(r.withholding_amount, 0) as withholding_amount,
 				        r.paid_amount, r.status, r.receipt_type, r.related_task_id, 
 				        r.client_service_id, r.billing_month, r.service_month, r.notes, 
 				        r.created_at, r.created_by,
@@ -431,6 +432,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				receiptDate: receipt.receipt_date,
 				dueDate: receipt.due_date,
 				totalAmount: Number(receipt.total_amount || 0),
+				withholdingAmount: Number(receipt.withholding_amount || 0),
 				paidAmount: Number(receipt.paid_amount || 0),
 				outstandingAmount: Number(receipt.total_amount || 0) - Number(receipt.paid_amount || 0),
 				status: receipt.status,
@@ -608,14 +610,33 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			let itemsTotal = 0;
 			items.forEach((item, idx) => {
 				const service_name = String(item?.service_name || "").trim();
-				const quantity = Number(item?.quantity || 1);
-				const unit_price = Number(item?.unit_price || 0);
 				
-				if (!service_name) errors.push({ field: `items[${idx}].service_name`, message: "必填" });
-				if (!Number.isFinite(quantity) || quantity <= 0) errors.push({ field: `items[${idx}].quantity`, message: "必須大於 0" });
-				if (!Number.isFinite(unit_price) || unit_price < 0) errors.push({ field: `items[${idx}].unit_price`, message: "必須大於等於 0" });
+				// 支持新旧两种格式
+				const hasNewFormat = item?.service_fee !== undefined || item?.government_fee !== undefined || item?.miscellaneous_fee !== undefined;
 				
-				itemsTotal += quantity * unit_price;
+				if (hasNewFormat) {
+					// 新格式：三个费用字段
+					const service_fee = Number(item?.service_fee || 0);
+					const government_fee = Number(item?.government_fee || 0);
+					const miscellaneous_fee = Number(item?.miscellaneous_fee || 0);
+					
+					if (!service_name) errors.push({ field: `items[${idx}].service_name`, message: "必填" });
+					if (!Number.isFinite(service_fee) || service_fee < 0) errors.push({ field: `items[${idx}].service_fee`, message: "必須大於等於 0" });
+					if (!Number.isFinite(government_fee) || government_fee < 0) errors.push({ field: `items[${idx}].government_fee`, message: "必須大於等於 0" });
+					if (!Number.isFinite(miscellaneous_fee) || miscellaneous_fee < 0) errors.push({ field: `items[${idx}].miscellaneous_fee`, message: "必須大於等於 0" });
+					
+					itemsTotal += service_fee + government_fee + miscellaneous_fee;
+				} else {
+					// 旧格式：quantity和unit_price
+					const quantity = Number(item?.quantity || 1);
+					const unit_price = Number(item?.unit_price || 0);
+					
+					if (!service_name) errors.push({ field: `items[${idx}].service_name`, message: "必填" });
+					if (!Number.isFinite(quantity) || quantity <= 0) errors.push({ field: `items[${idx}].quantity`, message: "必須大於 0" });
+					if (!Number.isFinite(unit_price) || unit_price < 0) errors.push({ field: `items[${idx}].unit_price`, message: "必須大於等於 0" });
+					
+					itemsTotal += quantity * unit_price;
+				}
 			});
 			
 			// 检查items总计是否与total_amount一致（允许小误差）

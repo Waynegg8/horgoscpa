@@ -1110,7 +1110,6 @@
           }
           .company-name-zh span {
             border-bottom: 2.5px solid #8B6914;
-            padding-bottom: 2pt;
           }
           .company-name-en { 
             font-size: 13pt; 
@@ -1120,7 +1119,6 @@
           }
           .company-name-en span {
             border-bottom: 2.5px solid #000;
-            padding-bottom: 2pt;
           }
           .doc-title { 
             font-size: 18pt; 
@@ -1386,7 +1384,6 @@
           }
           .company-name span {
             border-bottom: 2px solid #000;
-            padding-bottom: 2pt;
           }
           .company-info { 
             font-size: 9pt; 
@@ -1403,7 +1400,6 @@
           }
           .title span {
             border-bottom: 2px solid #000;
-            padding-bottom: 2pt;
             letter-spacing: 16pt;
             display: inline-block;
             padding-right: 16pt;
@@ -1455,31 +1451,69 @@
           // 数字转中文大写
           const convertAmountToChinese = (amount) => {
             const digits = ['零', '壹', '貳', '參', '肆', '伍', '陸', '柒', '捌', '玖'];
-            const units = ['', '拾', '佰', '仟', '萬', '拾萬', '佰萬', '仟萬', '億'];
+            const units = ['', '拾', '佰', '仟'];
             
             if (amount === 0) return '零';
             
-            const amountStr = Math.floor(amount).toString();
-            const len = amountStr.length;
-            let result = '';
-            let zeroCount = 0;
+            const amountInt = Math.floor(amount);
             
-            for (let i = 0; i < len; i++) {
-              const digit = parseInt(amountStr[i]);
-              const unitIndex = len - i - 1;
+            // 转换一个4位数段
+            const convertSection = (num) => {
+              if (num === 0) return '';
+              const str = num.toString().padStart(4, '0');
+              let result = '';
+              let hasNonZero = false;
               
-              if (digit === 0) {
-                zeroCount++;
-              } else {
-                if (zeroCount > 0) {
-                  result += '零';
+              for (let i = 0; i < 4; i++) {
+                const digit = parseInt(str[i]);
+                const unitIndex = 3 - i;
+                
+                if (digit === 0) {
+                  if (hasNonZero && i < 3) {
+                    // 只在有非零数字之后且不是最后一位时可能加零
+                    const hasNextNonZero = str.slice(i + 1).split('').some(d => d !== '0');
+                    if (hasNextNonZero) {
+                      result += '零';
+                      hasNonZero = false;
+                    }
+                  }
+                } else {
+                  result += digits[digit] + units[unitIndex];
+                  hasNonZero = true;
                 }
-                result += digits[digit] + units[unitIndex];
-                zeroCount = 0;
               }
+              
+              return result;
+            };
+            
+            // 分段：亿、万、个
+            const yi = Math.floor(amountInt / 100000000);
+            const wan = Math.floor((amountInt % 100000000) / 10000);
+            const ge = amountInt % 10000;
+            
+            let result = '';
+            
+            if (yi > 0) {
+              result += convertSection(yi) + '億';
             }
             
-            return result;
+            if (wan > 0) {
+              if (result && wan < 1000) {
+                result += '零';
+              }
+              result += convertSection(wan) + '萬';
+            } else if (yi > 0 && ge > 0) {
+              result += '零';
+            }
+            
+            if (ge > 0) {
+              if (result && ge < 1000) {
+                result += '零';
+              }
+              result += convertSection(ge);
+            }
+            
+            return result || '零';
           };
           
           const rocDate = convertToROCDate(receipt.receiptDate);
