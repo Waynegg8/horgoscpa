@@ -788,6 +788,7 @@ async function handleGetMonthlySummary(request, env, me, requestId, url) {
 		
 		// ⚡ 优先尝试从KV缓存读取（极快<50ms）
 		const cacheKey = generateCacheKey('monthly_summary', { userId, month });
+		console.log('[MONTHLY_SUMMARY] 🔍 查询缓存', { userId, month, cacheKey });
 		const kvCached = await getKVCache(env, cacheKey);
 		
 		if (kvCached && kvCached.data) {

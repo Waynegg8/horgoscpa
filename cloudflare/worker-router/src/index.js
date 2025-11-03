@@ -269,6 +269,7 @@ export default {
 			};
 			
 			const monthlySummaryCacheKey = generateCacheKey('monthly_summary', { userId: me.user_id, month: currentMonth });
+			console.log('[KV Warmup] 🔥 预热月度统计', { userId: me.user_id, month: currentMonth, cacheKey: monthlySummaryCacheKey, data: monthlySummaryData });
 			await saveKVCache(env, monthlySummaryCacheKey, 'monthly_summary', monthlySummaryData, { ttl: 3600 });
 			warmupResults.push({ type: 'monthly_summary', key: monthlySummaryCacheKey, month: currentMonth });
 			
