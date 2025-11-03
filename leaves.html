@@ -220,7 +220,7 @@
       </div>
     </div>
 
-    <main style="padding:24px;" id="leavesMain">
+    <main style="padding:24px; display:grid; gap:16px;" id="leavesMain">
       <script>
       // ⚡ 立即插入预渲染内容（同步执行，无需等待）
       (function() {
@@ -239,6 +239,14 @@
       })();
       </script>
       <section class="leaves-card">
+        <h2 style="margin:0 0 8px 0; font-size:16px;">餘額總覽</h2>
+        <div class="balance-grid" id="balances">
+          <!-- 骨架：餘額卡 -->
+        </div>
+      </section>
+
+      <section class="leaves-card">
+        <h2 style="margin:0 0 8px 0; font-size:16px;">假期記錄</h2>
         <table class="leaves-table" aria-label="假期記錄">
           <thead>
             <tr>
