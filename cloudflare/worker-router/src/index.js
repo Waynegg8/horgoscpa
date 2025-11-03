@@ -146,14 +146,14 @@ export default {
 			
 			const warmupResults = [];
 			
-			// 1. 预热客户列表
+			// 1. 预热客户列表（使用perPage=100，匹配实际调用）
 			const clientsRows = await env.DATABASE.prepare(
 				`SELECT client_id, company_name, tax_registration_number, contact_person_1, 
 				        phone, email, created_at, assignee_user_id
 				 FROM Clients
 				 WHERE is_deleted = 0
 				 ORDER BY created_at DESC
-				 LIMIT 50`
+				 LIMIT 100`
 			).all();
 			
 			const clientsData = {
@@ -169,11 +169,11 @@ export default {
 					createdAt: r.created_at,
 					year_total: 0
 				})),
-				meta: { page: 1, perPage: 50, total: clientsRows?.results?.length || 0 }
+				meta: { page: 1, perPage: 100, total: clientsRows?.results?.length || 0 }
 			};
 			
 			const { generateCacheKey } = await import("./kv-cache-helper.js");
-			const clientsCacheKey = generateCacheKey('clients_list', { page: 1, perPage: 50, q: '', tag_id: '' });
+			const clientsCacheKey = generateCacheKey('clients_list', { page: 1, perPage: 100, q: '', tag_id: '' });
 			await saveKVCache(env, clientsCacheKey, 'clients_list', clientsData, { ttl: 3600 });
 			warmupResults.push({ type: 'clients_list', key: clientsCacheKey, count: clientsData.list.length });
 			
