@@ -635,6 +635,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 			esi.expiry_date,
 			sit.category,
 			sit.item_name,
+			sit.item_code,
 			sit.is_regular_payment
 		FROM EmployeeSalaryItems esi
 		JOIN SalaryItemTypes sit ON sit.item_type_id = esi.item_type_id
@@ -768,11 +769,15 @@ async function calculateEmployeePayroll(env, userId, month) {
 	if (bonusAdjustment) {
 		// 使用调整后的绩效奖金
 		performanceBonusCents = bonusAdjustment.bonus_amount_cents || 0;
+		console.log(`[Payroll] 使用調整後績效獎金: ${performanceBonusCents / 100} 元`);
 	} else {
-		// 使用默认的绩效奖金（从薪资项目中提取）
-		const perfItem = items.find(i => i.item_name === '绩效奖金' || i.item_name === '績效獎金');
+		// 使用默认的绩效奖金（从薪资项目中提取，通过item_code识别）
+		const perfItem = items.find(i => i.item_code === 'PERFORMANCE');
 		if (perfItem) {
 			performanceBonusCents = perfItem.amount_cents || 0;
+			console.log(`[Payroll] 使用預設績效獎金: ${performanceBonusCents / 100} 元`);
+		} else {
+			console.log(`[Payroll] 未找到績效獎金項目 (item_code = 'PERFORMANCE')`);
 		}
 	}
 
