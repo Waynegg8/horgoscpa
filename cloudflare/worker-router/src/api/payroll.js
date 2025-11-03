@@ -59,6 +59,86 @@ async function calculateHourlyRate(env, baseSalaryCents, regularPaymentCents) {
 }
 
 /**
+ * 读取工时月度统计数据
+ * 从缓存或数据库读取已计算的统计数据
+ * 返回 { total_hours, overtime_hours, weighted_hours, leave_hours }
+ */
+async function getTimesheetMonthlyStats(env, userId, month) {
+	// 1. 尝试从 KV 缓存读取
+	const cacheKey = `monthly_summary:${userId}:${month}`;
+	try {
+		const cached = await env.CACHE.get(cacheKey, 'json');
+		if (cached) {
+			console.log(`[Payroll] 从缓存读取工时统计: ${cacheKey}`);
+			return cached;
+		}
+	} catch (err) {
+		console.warn(`[Payroll] 读取工时统计缓存失败:`, err);
+	}
+	
+	// 2. 缓存未命中，从数据库实时计算
+	console.log(`[Payroll] 缓存未命中，从数据库计算工时统计`);
+	const [year, monthNum] = month.split('-');
+	const firstDay = `${year}-${monthNum}-01`;
+	const lastDay = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
+	const lastDayStr = `${year}-${monthNum}-${String(lastDay).padStart(2, '0')}`;
+	
+	const timelogs = await env.DATABASE.prepare(`
+		SELECT work_type, hours
+		FROM Timesheets
+		WHERE user_id = ?
+		  AND work_date >= ?
+		  AND work_date <= ?
+		  AND is_deleted = 0
+	`).bind(userId, firstDay, lastDayStr).all();
+	
+	// 工时类型定义（与 timesheets.js 一致）
+	const WORK_TYPES = {
+		1: { multiplier: 1.0, isOvertime: false },
+		2: { multiplier: 1.34, isOvertime: true },
+		3: { multiplier: 1.67, isOvertime: true },
+		4: { multiplier: 1.34, isOvertime: true },
+		5: { multiplier: 1.67, isOvertime: true },
+		6: { multiplier: 2.67, isOvertime: true },
+		7: { multiplier: 2.0, isOvertime: true, special: 'fixed_8h' },
+		8: { multiplier: 1.34, isOvertime: true },
+		9: { multiplier: 1.67, isOvertime: true },
+		10: { multiplier: 2.0, isOvertime: true, special: 'fixed_8h' },
+		11: { multiplier: 2.0, isOvertime: true },
+	};
+	
+	let totalHours = 0;
+	let overtimeHours = 0;
+	let weightedHours = 0;
+	
+	for (const log of (timelogs.results || [])) {
+		const hours = parseFloat(log.hours) || 0;
+		const workTypeId = parseInt(log.work_type) || 1;
+		const workType = WORK_TYPES[workTypeId];
+		
+		if (workType) {
+			totalHours += hours;
+			if (workType.isOvertime) {
+				overtimeHours += hours;
+			}
+			
+			// 计算加权工时
+			if (workType.special === 'fixed_8h') {
+				weightedHours += 8.0;
+			} else {
+				weightedHours += hours * workType.multiplier;
+			}
+		}
+	}
+	
+	return {
+		total_hours: Math.round(totalHours * 10) / 10,
+		overtime_hours: Math.round(overtimeHours * 10) / 10,
+		weighted_hours: Math.round(weightedHours * 10) / 10,
+	};
+}
+
+/**
  * 计算误餐费
  * 从 Timesheets 读取平日加班记录，统计满足条件的天数
  * 返回 { mealAllowanceCents, overtimeDays }
@@ -325,22 +405,28 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const mealAllowanceCents = mealResult.mealAllowanceCents;
 	const overtimeDays = mealResult.overtimeDays;
 	
-	// TODO: 加班费从工时表或其他来源读取（工时表已经计算过）
-	const overtimeCents = 0;
+	// 7. 从工时统计读取加权工时，计算加班费
+	const timesheetStats = await getTimesheetMonthlyStats(env, userId, month);
+	const weightedHours = timesheetStats?.weighted_hours || 0;
+	const actualOvertimeHours = timesheetStats?.overtime_hours || 0; // 实际加班小时数（未加权）
+	
+	// 加班费 = 加权工时 × 时薪
+	// 注意：工时统计中的加权工时包含了所有加班类型（平日、休息日、国定假日等）
+	const overtimeCents = Math.round(weightedHours * hourlyRateCents);
 
-	// 7. 计算交通补贴
+	// 8. 计算交通补贴
 	const transportResult = await calculateTransportAllowance(env, userId, month);
 	const transportCents = transportResult.transportCents;
 	const totalKm = transportResult.totalKm;
 	const transportIntervals = transportResult.intervals || 0;
 
-	// 8. 计算请假扣款
+	// 9. 计算请假扣款
 	const leaveResult = await calculateLeaveDeductions(env, userId, month, baseSalaryCents);
 	const leaveDeductionCents = leaveResult.leaveDeductionCents;
 	const sickDays = leaveResult.sickDays;
 	const personalDays = leaveResult.personalDays;
 
-	// 9. 检查绩效奖金调整（如果有月度调整，优先使用调整后的金额）
+	// 10. 检查绩效奖金调整（如果有月度调整，优先使用调整后的金额）
 	const bonusAdjustment = await env.DATABASE.prepare(`
 		SELECT bonus_amount_cents 
 		FROM MonthlyBonusAdjustments 
@@ -359,7 +445,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 		}
 	}
 
-	// 10. 计算总薪资
+	// 11. 计算总薪资
 	// 应发 = 底薪 + 经常性津贴 + 奖金 + 加班费 + 误餐费 + 交通补贴 + 绩效奖金
 	const grossSalaryCents = baseSalaryCents + regularAllowanceCents + bonusCents + 
 	                          overtimeCents + mealAllowanceCents + transportCents + performanceBonusCents;
