@@ -10,17 +10,18 @@
     <link rel="stylesheet" href="/assets/css/receipts-page.css" />
     <style>
       .receipt-detail-container {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
         padding: 24px;
       }
       
       .receipt-header-section {
         background: white;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid rgba(15,23,42,0.08);
+        border-radius: 10px;
+        padding: 32px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
       }
       
       .receipt-header-top {
@@ -51,39 +52,55 @@
       
       .receipt-info-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px 32px;
       }
       
       .receipt-info-item {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
       }
       
       .receipt-info-label {
-        font-size: 13px;
-        color: #64748b;
-        font-weight: 500;
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
       
       .receipt-info-value {
         font-size: 15px;
-        color: #0f172a;
+        color: #1f2937;
+        font-weight: 500;
       }
       
       .receipt-amount-highlight {
-        font-size: 28px;
-        font-weight: 600;
+        font-size: 24px;
+        font-weight: 700;
         color: #0f172a;
       }
       
       .receipt-section {
         background: white;
-        border-radius: 12px;
+        border: 1px solid rgba(15,23,42,0.08);
+        border-radius: 10px;
         padding: 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      }
+      
+      @media (max-width: 1024px) {
+        .receipt-info-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      
+      @media (max-width: 640px) {
+        .receipt-info-grid {
+          grid-template-columns: 1fr;
+        }
       }
       
       .receipt-section-title {
@@ -98,20 +115,34 @@
         border-collapse: collapse;
       }
       
+      .receipt-table thead {
+        background: #f9fafb;
+      }
+      
       .receipt-table th {
-        background: #f8fafc;
-        padding: 12px;
+        padding: 14px 16px;
         text-align: left;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 600;
-        color: #64748b;
-        border-bottom: 2px solid #e2e8f0;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid #e5e7eb;
+      }
+      
+      .receipt-table tbody tr {
+        transition: background 0.2s;
+      }
+      
+      .receipt-table tbody tr:hover {
+        background: #f9fafb;
       }
       
       .receipt-table td {
-        padding: 12px;
-        border-bottom: 1px solid #f1f5f9;
+        padding: 14px 16px;
+        border-bottom: 1px solid #f3f4f6;
         font-size: 14px;
+        color: #1f2937;
       }
       
       .receipt-actions {
@@ -230,8 +261,22 @@
       
       .empty-state {
         text-align: center;
-        padding: 40px 20px;
-        color: #94a3b8;
+        padding: 48px 20px;
+        color: #9ca3af;
+        font-size: 14px;
+      }
+      
+      .back-link {
+        display: inline-block;
+        margin-bottom: 16px;
+        color: #3b82f6;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      
+      .back-link:hover {
+        color: #2563eb;
       }
     </style>
   </head>

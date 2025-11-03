@@ -34,12 +34,13 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				 JOIN ServiceBillingSchedule sbs ON sbs.client_service_id = cs.client_service_id
 				 WHERE cs.status = 'active'
 				   AND sbs.billing_month = ?
-				   -- 该月份还没开收据
+				   -- 该月份还没开收据（排除已作废的收据）
 				   AND NOT EXISTS (
 				     SELECT 1 FROM Receipts r 
 				     WHERE r.client_service_id = cs.client_service_id 
 				       AND r.billing_month = sbs.billing_month
 				       AND r.is_deleted = 0
+				       AND r.status != 'cancelled'
 				   )
 				   -- 该服务该月有任务
 				   AND EXISTS (
@@ -71,7 +72,13 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				completed_tasks: Number(r.completed_tasks || 0)
 			}));
 			
-			console.log(`[收据提醒] 当前月份: ${serviceMonth}, 找到 ${data.length} 个待开收据（任务已完成）`);
+			// 详细日志：帮助调试
+			console.log(`[收据提醒] 当前月份: ${currentMonth} (${serviceMonth}), 找到 ${data.length} 个待开收据（任务已完成）`);
+			if (data.length > 0) {
+				data.forEach(item => {
+					console.log(`  - ${item.client_name} (client_service_id: ${item.client_service_id}), ${item.service_name}, ${item.billing_month}月, $${item.amount}`);
+				});
+			}
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
@@ -159,8 +166,8 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
 			const rows = await env.DATABASE.prepare(
-				`SELECT r.receipt_id, r.client_id, c.company_name AS client_name, r.total_amount, 
-				        r.receipt_date, r.due_date, r.status, r.receipt_type
+				`SELECT r.receipt_id, r.client_id, c.company_name AS client_name, c.tax_id AS client_tax_id, 
+				        r.total_amount, r.receipt_date, r.due_date, r.status, r.receipt_type
 				 FROM Receipts r LEFT JOIN Clients c ON c.client_id = r.client_id
 				 ${whereSql}
 				 ORDER BY r.receipt_date DESC, r.receipt_id DESC
@@ -170,6 +177,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				receiptId: r.receipt_id,
 				clientId: r.client_id,
 				clientName: r.client_name || "",
+				clientTaxId: r.client_tax_id || "",
 				totalAmount: Number(r.total_amount || 0),
 				receiptDate: r.receipt_date,
 				dueDate: r.due_date || null,
@@ -301,7 +309,11 @@ export async function handleReceipts(request, env, me, requestId, url) {
 		try {
 			// 获取收据基本信息
 			const receipt = await env.DATABASE.prepare(
-				`SELECT r.*, c.company_name as client_name, u.full_name as created_by_name
+				`SELECT r.receipt_id, r.client_id, r.receipt_date, r.due_date, r.total_amount, 
+				        r.paid_amount, r.status, r.receipt_type, r.related_task_id, 
+				        r.client_service_id, r.billing_month, r.service_month, r.notes, 
+				        r.created_at, r.created_by,
+				        c.company_name as client_name, u.full_name as created_by_name
 				 FROM Receipts r
 				 LEFT JOIN Clients c ON c.client_id = r.client_id
 				 LEFT JOIN Users u ON u.user_id = r.created_by

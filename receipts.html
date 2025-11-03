@@ -143,7 +143,7 @@
         <!-- 搜尋篩選工具列 -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div class="toolbar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-            <input id="q" type="search" placeholder="搜尋客戶/收據號…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:220px;" />
+            <input id="q" type="search" placeholder="搜尋客戶/統編/收據號…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;min-width:240px;" />
             <div style="display: flex; gap: 8px; align-items: center;">
               <label style="font-size: 14px; color: #6b7280;">起</label>
               <input id="dateFrom" type="date" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;" />
@@ -174,6 +174,7 @@
               <tr style="border-bottom:2px solid #e5e7eb;">
                 <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">收據號</th>
                 <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">客戶</th>
+                <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">統編</th>
                 <th style="padding:12px;text-align:right;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">金額</th>
                 <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">開立日期</th>
                 <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">到期日</th>
@@ -482,10 +483,15 @@
           const today = new Date();
           
           return allReceipts.filter(r => {
-            // 搜索
-            if (query && !r.clientName.toLowerCase().includes(query) && 
-                !(r.receiptId && r.receiptId.toLowerCase().includes(query))) {
-              return false;
+            // 搜索（支持客户名、收据号、统编）
+            if (query) {
+              const matchName = r.clientName && r.clientName.toLowerCase().includes(query);
+              const matchReceiptId = r.receiptId && r.receiptId.toLowerCase().includes(query);
+              const matchTaxId = r.clientTaxId && r.clientTaxId.includes(query);
+              
+              if (!matchName && !matchReceiptId && !matchTaxId) {
+                return false;
+              }
             }
             
             // 狀態篩選
@@ -510,7 +516,7 @@
           tbody.innerHTML = '';
           
           if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:48px;font-size:14px;">沒有符合條件的收據</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:48px;font-size:14px;">沒有符合條件的收據</td></tr>';
             return;
           }
           
@@ -543,6 +549,7 @@
             tr.innerHTML = `
               <td style="padding:12px;font-size:14px;color:#1f2937;">${r.receiptId || '—'}</td>
               <td style="padding:12px;font-size:14px;color:#1f2937;">${r.clientName || '—'}</td>
+              <td style="padding:12px;font-size:14px;color:#6b7280;">${r.clientTaxId || '—'}</td>
               <td style="padding:12px;text-align:right;font-size:14px;font-weight:600;color:#1f2937;">$${(r.totalAmount||0).toLocaleString()}</td>
               <td style="padding:12px;font-size:14px;color:#6b7280;">${r.receiptDate || '—'}</td>
               <td style="padding:12px;font-size:14px;color:#6b7280;">${r.dueDate || '—'}</td>
