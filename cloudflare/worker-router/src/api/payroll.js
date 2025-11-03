@@ -59,56 +59,40 @@ async function calculateHourlyRate(env, baseSalaryCents, regularPaymentCents) {
 }
 
 /**
- * 计算加班费和误餐费
- * 从 Timesheets 读取加班记录并计算
- * 返回 { overtimeCents, mealAllowanceCents, overtimeHours }
+ * 计算误餐费
+ * 从 Timesheets 读取平日加班记录，统计满足条件的天数
+ * 返回 { mealAllowanceCents, overtimeDays }
  */
-async function calculateOvertimeAndMeal(env, userId, month, hourlyRateCents) {
+async function calculateMealAllowance(env, userId, month) {
 	const [year, monthNum] = month.split('-');
 	const firstDay = `${year}-${monthNum}-01`;
 	const lastDay = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
 	const lastDayStr = `${year}-${monthNum}-${String(lastDay).padStart(2, '0')}`;
 
-	// 读取该月的工时记录
+	// 从系统设定读取误餐费条件
+	const minOvertimeHours = await getSettingValue(env, 'meal_allowance_min_overtime_hours', 1.5);
+	
+	// 读取该月的平日加班记录（work_type = 2 或 3）
 	const timesheets = await env.DATABASE.prepare(`
 		SELECT 
 			work_date,
-			regular_hours,
-			overtime_hours,
-			overtime_1_5x,
-			overtime_2x,
-			overtime_3x
+			SUM(hours) as daily_overtime_hours
 		FROM Timesheets
 		WHERE user_id = ?
 		  AND work_date >= ?
 		  AND work_date <= ?
+		  AND work_type IN ('2', '3')
+		  AND is_deleted = 0
+		GROUP BY work_date
 	`).bind(userId, firstDay, lastDayStr).all();
 
-	let totalOvertimeCents = 0;
-	let totalOvertimeHours = 0;
-	let totalWeightedHours = 0; // 加权工时总计
 	let mealAllowanceCount = 0;
-
-	// 从系统设定读取误餐费条件
-	const minOvertimeHours = await getSettingValue(env, 'meal_allowance_min_overtime_hours', 1.5);
-
+	
+	// 统计满足条件的天数
 	for (const ts of (timesheets.results || [])) {
-		const ot_1_5 = ts.overtime_1_5x || 0; // 已加权（实际小时 × 1.5）
-		const ot_2 = ts.overtime_2x || 0;     // 已加权（实际小时 × 2.0）
-		const ot_3 = ts.overtime_3x || 0;     // 已加权（实际小时 × 3.0）
-
-		// 计算加班费（工时表中已是加权工时，直接乘以时薪即可）
-		const weightedHoursThisDay = ot_1_5 + ot_2 + ot_3;
-		totalOvertimeCents += Math.round(weightedHoursThisDay * hourlyRateCents);
-		totalWeightedHours += weightedHoursThisDay;
-
-		// 实际加班时数（用于误餐费判定）
-		const actualOvertimeHours = ts.overtime_hours || 0;
-		totalOvertimeHours += actualOvertimeHours;
-
-		// 误餐费判定：加班满指定时数
-		if (actualOvertimeHours >= minOvertimeHours) {
-			mealAllowanceCount += 1;
+		const dailyHours = parseFloat(ts.daily_overtime_hours) || 0;
+		if (dailyHours >= minOvertimeHours) {
+			mealAllowanceCount++;
 		}
 	}
 
@@ -117,9 +101,8 @@ async function calculateOvertimeAndMeal(env, userId, month, hourlyRateCents) {
 	const mealAllowanceCents = mealAllowanceCount * (mealAllowancePerTime * 100); // 元转分
 
 	return {
-		overtimeCents: totalOvertimeCents,
 		mealAllowanceCents,
-		overtimeHours: totalOvertimeHours
+		overtimeDays: mealAllowanceCount
 	};
 }
 
@@ -337,11 +320,13 @@ async function calculateEmployeePayroll(env, userId, month) {
 	// 5. 判定全勤
 	const isFullAttendance = await checkFullAttendance(env, userId, month);
 
-	// 6. 计算加班费和误餐费
-	const overtimeResult = await calculateOvertimeAndMeal(env, userId, month, hourlyRateCents);
-	const overtimeCents = overtimeResult.overtimeCents;
-	const mealAllowanceCents = overtimeResult.mealAllowanceCents;
-	const overtimeHours = overtimeResult.overtimeHours;
+	// 6. 计算误餐费（仅统计平日加班）
+	const mealResult = await calculateMealAllowance(env, userId, month);
+	const mealAllowanceCents = mealResult.mealAllowanceCents;
+	const overtimeDays = mealResult.overtimeDays;
+	
+	// TODO: 加班费从工时表或其他来源读取（工时表已经计算过）
+	const overtimeCents = 0;
 
 	// 7. 计算交通补贴
 	const transportResult = await calculateTransportAllowance(env, userId, month);
@@ -404,7 +389,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 		isFullAttendance,
 		hourlyRateCents,
 		// 附加信息
-		overtimeHours,
+		overtimeDays,             // 满足误餐费条件的天数
 		totalKm,
 		transportIntervals,
 		sickDays,
