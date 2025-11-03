@@ -40,7 +40,7 @@
 
     <main class="payroll-content">
       <!-- 薪資計算 -->
-      <section id="panel-calc" class="panel show" role="tabpanel" aria-labelledby="tab-calc">
+      <section id="panel-calc" class="panel" role="tabpanel" aria-labelledby="tab-calc">
         <div class="card">
           <div class="section-toolbar">
             <input id="empSearchCalc" type="search" placeholder="搜尋員工…" />
@@ -84,7 +84,7 @@
       </section>
 
       <!-- 薪資項目設定 -->
-      <section id="panel-items" class="panel" role="tabpanel" aria-labelledby="tab-items">
+      <section id="panel-items" class="panel" role="tabpanel" aria-labelledby="tab-items" hidden>
         <div class="card">
           <div class="section-toolbar">
             <input id="itemSearch" type="search" placeholder="搜尋項目代碼/名稱…" />
@@ -192,7 +192,7 @@
       </dialog>
 
       <!-- 員工薪資設定 -->
-      <section id="panel-emp" class="panel" role="tabpanel" aria-labelledby="tab-emp">
+      <section id="panel-emp" class="panel" role="tabpanel" aria-labelledby="tab-emp" hidden>
         <div class="card grid">
           <div class="col">
             <div class="section-toolbar">
@@ -239,7 +239,7 @@
       </section>
 
       <!-- 績效獎金調整 -->
-      <section id="panel-bonus" class="panel" role="tabpanel" aria-labelledby="tab-bonus">
+      <section id="panel-bonus" class="panel" role="tabpanel" aria-labelledby="tab-bonus" hidden>
         <div class="card" style="padding: 12px;">
           <div class="section-toolbar" style="margin-bottom: 10px;">
             <label for="yearBonus" style="font-size: 14px;">年度</label>
@@ -284,7 +284,7 @@
       </section>
 
       <!-- 年終獎金管理 -->
-      <section id="panel-yearend" class="panel" role="tabpanel" aria-labelledby="tab-yearend">
+      <section id="panel-yearend" class="panel" role="tabpanel" aria-labelledby="tab-yearend" hidden>
         <div class="card">
           <div class="section-toolbar">
             <label for="yearInput">年度</label>
@@ -313,7 +313,7 @@
       </section>
 
       <!-- 系統設定 -->
-      <section id="panel-settings" class="panel" role="tabpanel" aria-labelledby="tab-settings">
+      <section id="panel-settings" class="panel" role="tabpanel" aria-labelledby="tab-settings" hidden>
         <div class="card" style="max-width: 1000px; margin: 0 auto;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <div>
@@ -414,7 +414,7 @@
       </section>
 
       <!-- 打卡記錄上傳 -->
-      <section id="panel-punch" class="panel" role="tabpanel" aria-labelledby="tab-punch">
+      <section id="panel-punch" class="panel" role="tabpanel" aria-labelledby="tab-punch" hidden>
         <!-- 左右分栏布局 -->
         <div style="display: grid; grid-template-columns: 450px 1fr; gap: 16px;">
           <!-- 左側：上傳表單和檔案列表 -->
@@ -575,87 +575,39 @@
           document.querySelectorAll('.payroll-toolbar .btn, .section-toolbar input, .section-toolbar select, .section-toolbar button').forEach(el=>{ el.disabled = !enabled; });
         }
 
-        // TAB切换逻辑 - 健壮版本
+        // TAB切換 - 極簡版本（只用hidden屬性）
         function switchTab(targetKey) {
-          if (!targetKey) {
-            console.error('[TAB] targetKey为空');
-            return false;
-          }
+          console.log('[TAB切換]', targetKey);
           
-          const targetPanel = panels[targetKey];
-          if (!targetPanel) {
-            console.error('[TAB] 找不到面板:', targetKey);
-            return false;
-          }
+          // 更新TAB按鈕樣式
+          tabs.forEach(btn => {
+            if (btn.getAttribute('data-tab') === targetKey) {
+              btn.classList.add('active');
+            } else {
+              btn.classList.remove('active');
+            }
+          });
           
-          console.log('[TAB] 開始切換到:', targetKey);
-          
-          try {
-            // 1. 更新TAB按钮状态
-            tabs.forEach(b => {
-              const key = b.getAttribute('data-tab');
+          // 切換面板顯示（只用hidden屬性）
+          for (const [key, panel] of Object.entries(panels)) {
+            if (panel) {
               if (key === targetKey) {
-                b.classList.add('active');
-                b.setAttribute('aria-selected', 'true');
+                panel.hidden = false;
               } else {
-                b.classList.remove('active');
-                b.setAttribute('aria-selected', 'false');
+                panel.hidden = true;
               }
-            });
-            
-            // 2. 隐藏所有面板，显示目标面板（使用requestAnimationFrame确保DOM更新）
-            requestAnimationFrame(() => {
-              Object.entries(panels).forEach(([k, el]) => {
-                if (!el) return;
-                
-                // 强制移除所有可能影响显示的类和属性
-                el.classList.remove('show');
-                el.removeAttribute('hidden');
-                el.style.removeProperty('display');
-                
-                // 只给目标面板添加show类
-                if (k === targetKey) {
-                  el.classList.add('show');
-                }
-              });
-              
-              console.log('[TAB] ✅ 已切換到:', targetKey);
-            });
-            
-            return true;
-          } catch (error) {
-            console.error('[TAB] 切換失敗:', error);
-            return false;
+            }
           }
         }
         
-        // 綁定TAB點擊事件（使用事件委托，更健壮）
-        const tabContainer = document.querySelector('.payroll-tabs');
-        if (tabContainer) {
-          tabContainer.addEventListener('click', (e) => {
-            const tab = e.target.closest('.tab');
-            if (tab && tab.hasAttribute('data-tab')) {
-              e.preventDefault();
-              e.stopPropagation();
-              const key = tab.getAttribute('data-tab');
-              if (!tab.disabled) {
-                switchTab(key);
-              }
+        // 綁定TAB點擊事件（極簡版）
+        tabs.forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (!btn.disabled) {
+              switchTab(btn.getAttribute('data-tab'));
             }
           });
-        } else {
-          // 后备方案：直接绑定
-          tabs.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const key = btn.getAttribute('data-tab');
-              if (!btn.disabled) {
-                switchTab(key);
-              }
-            });
-          });
-        }
+        });
 
         async function ensureAdmin(){
           try {
@@ -2215,33 +2167,15 @@
           window.PagePrerender.init('main');
         }
 
-        // 初始化流程 - 確保健壯性
-        function initializePayrollPage() {
-          console.log('[初始化] 開始初始化薪資管理頁面');
-          
-          // 先清理所有面板狀態
-          Object.values(panels).forEach(el => {
-            if (el) {
-              el.classList.remove('show');
-              el.removeAttribute('hidden');
-              el.style.removeProperty('display');
-            }
-          });
-          
-          // 默认显示第一个TAB
-          console.log('[初始化] 設置預設TAB: calc');
-          switchTab('calc');
-          
-          // 異步載入權限和數據
-          ensureAdmin().then(result => { 
-            console.log('[初始化] 權限檢查完成:', result);
-            if (result.isAdmin) {
-              // 管理員：載入所有管理功能
-              console.log('[初始化] 載入管理員功能');
-              loadPreview(); 
-              checkFinalized(); 
-              loadItems(); // 載入薪資項目
-              loadUsers(); // 載入員工列表
+        // 初始化（極簡版）
+        switchTab('calc');
+        
+        ensureAdmin().then(result => { 
+          if (result.isAdmin) {
+            loadPreview(); 
+            checkFinalized(); 
+            loadItems();
+            loadUsers();
             
             // 設置績效獎金預設年份並載入
             const currentYear = new Date().getFullYear();
@@ -2259,18 +2193,7 @@
             console.log('[初始化] 載入員工打卡記錄');
             loadPunchRecords(result.userData.user_id);
           } 
-          }).catch(error => {
-            console.error('[初始化] 權限檢查失敗:', error);
-          });
-        }
-        
-        // 確保DOM完全載入後再初始化
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', initializePayrollPage);
-        } else {
-          // DOM已載入，直接執行
-          setTimeout(initializePayrollPage, 0);
-        }
+        });
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
