@@ -223,14 +223,23 @@ async function updateUserSalary(request, env, me, requestId, corsHeaders, userId
 
 		// 更新薪资项目（如果提供）
 		if (Array.isArray(salaryItems)) {
-			// 先停用所有现有项目
+			console.log(`[updateUserSalary] 收到 ${salaryItems.length} 个薪资项目`);
+			
+			// 先删除所有现有项目（彻底删除，而不是停用）
 			await env.DATABASE.prepare(
-				`UPDATE EmployeeSalaryItems SET is_active = 0 WHERE user_id = ?`
+				`DELETE FROM EmployeeSalaryItems WHERE user_id = ?`
 			).bind(userId).run();
+			
+			console.log(`[updateUserSalary] 已删除员工 ${userId} 的旧薪资项目`);
 
 			// 添加新的项目
 			for (const item of salaryItems) {
-				if (!item.itemTypeId || !item.amountCents) continue;
+				if (!item.itemTypeId || item.amountCents === undefined || item.amountCents === null) {
+					console.warn(`[updateUserSalary] 跳过无效项目:`, item);
+					continue;
+				}
+
+				console.log(`[updateUserSalary] 插入项目: itemTypeId=${item.itemTypeId}, amountCents=${item.amountCents}`);
 
 				await env.DATABASE.prepare(`
 					INSERT INTO EmployeeSalaryItems 
@@ -248,6 +257,8 @@ async function updateUserSalary(request, env, me, requestId, corsHeaders, userId
 					item.recurringMonths || null
 				).run();
 			}
+			
+			console.log(`[updateUserSalary] ✓ 已保存 ${salaryItems.length} 个薪资项目`);
 		}
 
 		// 返回更新后的数据

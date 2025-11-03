@@ -52,6 +52,7 @@
           <table class="table" aria-label="薪資計算列表" style="font-size: 0.875rem;">
             <thead>
               <tr>
+                <th rowspan="2" style="width: 40px;">明細</th>
                 <th rowspan="2">姓名</th>
                 <th rowspan="2">底薪</th>
                 <th colspan="7" style="background: #f0fdf4; text-align: center;">收入明細</th>
@@ -72,7 +73,7 @@
               </tr>
             </thead>
             <tbody id="tbodyCalc">
-              <tr><td colspan="12" class="muted">尚無資料</td></tr>
+              <tr><td colspan="13" class="muted">尚無資料</td></tr>
             </tbody>
           </table>
           <div class="pagination">
@@ -465,10 +466,20 @@
 
         // TAB切换逻辑（防止重复绑定）
         function switchTab(targetKey) {
-          if (!targetKey || !panels[targetKey]) {
-            console.error('[TAB] 无效的TAB:', targetKey);
+          console.log('[TAB] 尝试切换到:', targetKey);
+          
+          if (!targetKey) {
+            console.error('[TAB] targetKey为空');
             return;
           }
+          
+          const targetPanel = panels[targetKey];
+          if (!targetPanel) {
+            console.error('[TAB] 找不到面板:', targetKey, '可用面板:', Object.keys(panels));
+            return;
+          }
+          
+          console.log('[TAB] 目标面板:', targetPanel.id, '当前类名:', targetPanel.className);
           
           // 更新TAB按钮状态
           tabs.forEach(b => {
@@ -484,16 +495,25 @@
           
           // 更新面板显示
           Object.entries(panels).forEach(([k, el]) => {
+            if (!el) {
+              console.warn('[TAB] 面板元素不存在:', k);
+              return;
+            }
+            
             if (k === targetKey) {
+              // 显示目标面板
               el.classList.add('show');
               el.style.display = 'block';
+              el.removeAttribute('hidden');
+              console.log('[TAB] ✓ 显示面板:', el.id, '当前display:', window.getComputedStyle(el).display);
             } else {
+              // 隐藏其他面板
               el.classList.remove('show');
               el.style.display = 'none';
             }
           });
           
-          console.log('[TAB] 已切换到:', targetKey);
+          console.log('[TAB] ✓ 已切换到:', targetKey);
         }
         
         // 绑定TAB点击事件
@@ -643,6 +663,142 @@
           nextCalc.disabled = calcState.page * calcState.perPage >= total;
         }
 
+        // 生成详细明细HTML
+        function generateDetailRow(r, rowId) {
+          const hourlyRate = centsToTwd(r.hourlyRateCents || 0).replace('NT$ ', '');
+          const hourlyRateNum = (r.hourlyRateCents || 0) / 100;
+          
+          // 时薪计算基础
+          let hourlyRateBaseHtml = `<div style="margin-bottom: 10px;"><strong>时薪计算基础：</strong></div>`;
+          hourlyRateBaseHtml += `<div style="margin-left: 10px;">底薪: ${centsToTwd(r.baseSalaryCents)}</div>`;
+          if (r.hourlyRateBaseItems && r.hourlyRateBaseItems.length > 0) {
+            r.hourlyRateBaseItems.forEach(item => {
+              hourlyRateBaseHtml += `<div style="margin-left: 10px;">${item.name}: ${centsToTwd(item.amountCents)}</div>`;
+            });
+          }
+          const totalBase = r.baseSalaryCents + r.regularAllowanceCents;
+          hourlyRateBaseHtml += `<div style="margin-left: 10px; margin-top: 5px; font-weight: 600;">合计: ${centsToTwd(totalBase)} ÷ 240 = ${hourlyRate}</div>`;
+          
+          // 加班费明细
+          let overtimeHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>加班费明细：</strong></div>';
+          if (r.dailyOvertime && r.dailyOvertime.length > 0) {
+            overtimeHtml += '<div style="margin-left: 10px;">';
+            r.dailyOvertime.forEach(day => {
+              const dayDate = day.date;
+              const dayOfWeek = day.dayOfWeek || '';
+              const holidayName = day.holidayName || '';
+              const dateDisplay = holidayName ? `${dayDate} (周${dayOfWeek}，${holidayName})` : `${dayDate} (周${dayOfWeek})`;
+              
+              if (day.items && day.items.length > 0) {
+                overtimeHtml += `<div style="margin-bottom: 5px;"><strong>${dateDisplay}</strong></div>`;
+                day.items.forEach(item => {
+                  const compInfo = item.compDeducted > 0 ? ` → 扣补休${item.compDeducted}h → 剩余${item.remainingHours}h` : '';
+                  overtimeHtml += `<div style="margin-left: 20px;">`;
+                  overtimeHtml += `${item.workType}: ${item.originalHours}h${compInfo}`;
+                  overtimeHtml += ` → 加权${item.effectiveWeighted.toFixed(2)}h`;
+                  overtimeHtml += `</div>`;
+                });
+              }
+            });
+            overtimeHtml += '</div>';
+            
+            const effectiveHours = r.effectiveWeightedHours || 0;
+            const expiredComp = r.expiredCompPayCents || 0;
+            overtimeHtml += `<div style="margin-left: 10px; margin-top: 5px; font-weight: 600;">`;
+            overtimeHtml += `有效加权工时: ${effectiveHours.toFixed(2)}h × ${hourlyRate} = ${centsToTwd(Math.round(effectiveHours * hourlyRateNum * 100))}`;
+            if (expiredComp > 0) {
+              overtimeHtml += `<br>到期补休转加班费: ${centsToTwd(expiredComp)}`;
+            }
+            if (r.totalCompHoursUsed > 0) {
+              overtimeHtml += `<br><span style="color:#dc2626;">本月使用补休: ${r.totalCompHoursUsed}h</span>`;
+            }
+            overtimeHtml += `</div>`;
+          } else {
+            overtimeHtml += '<div style="margin-left: 10px; color: #9ca3af;">本月无加班记录</div>';
+          }
+          
+          // 交通补贴明细（按单次计算区间）
+          let transportHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>交通补贴明细：</strong></div>';
+          if (r.tripDetails && r.tripDetails.length > 0) {
+            transportHtml += '<div style="margin-left: 10px;">';
+            r.tripDetails.forEach(trip => {
+              transportHtml += `<div>${trip.date}: ${trip.destination}, ${trip.distance}km → ${trip.intervals}区间 × NT$ ${trip.amount / trip.intervals} = NT$ ${trip.amount} - ${trip.purpose || ''}</div>`;
+            });
+            transportHtml += '</div>';
+            transportHtml += `<div style="margin-left: 10px; margin-top: 5px; font-weight: 600;">`;
+            transportHtml += `总计: ${r.totalKm || 0}km，${r.transportIntervals || 0}个区间 = ${centsToTwd(r.transportCents || 0)}`;
+            transportHtml += `</div>`;
+          } else {
+            transportHtml += '<div style="margin-left: 10px; color: #9ca3af;">本月无外出记录</div>';
+          }
+          
+          // 请假扣款明细（包含病假、事假、生理假）
+          let leaveHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>请假扣款明细：</strong></div>';
+          const dailyRate = r.dailySalaryCents || 0; // 使用后端计算的日薪
+          
+          if (r.sickDays > 0 || r.personalDays > 0 || r.menstrualDays > 0) {
+            leaveHtml += '<div style="margin-left: 10px;">';
+            if (r.sickDays > 0) {
+              leaveHtml += `<div>病假: ${r.sickDays}天 × ${centsToTwd(dailyRate)} × 50% = ${centsToTwd(Math.round(r.sickDays * dailyRate * 0.5))}</div>`;
+            }
+            if (r.personalDays > 0) {
+              leaveHtml += `<div>事假: ${r.personalDays}天 × ${centsToTwd(dailyRate)} × 100% = ${centsToTwd(Math.round(r.personalDays * dailyRate))}</div>`;
+            }
+            if (r.menstrualDays > 0) {
+              leaveHtml += `<div>生理假: ${r.menstrualDays}天 × ${centsToTwd(dailyRate)} × 50% = ${centsToTwd(Math.round(r.menstrualDays * dailyRate * 0.5))}`;
+              if (r.menstrualFreeDays > 0) {
+                leaveHtml += `<br><small style="color:#16a34a;margin-left:20px;">（前${r.menstrualFreeDays}天独立计算，不并入病假额度）</small>`;
+              }
+              if (r.menstrualMergedDays > 0) {
+                leaveHtml += `<br><small style="color:#f59e0b;margin-left:20px;">（${r.menstrualMergedDays}天并入病假额度）</small>`;
+              }
+              leaveHtml += `<br><small style="color:#16a34a;margin-left:20px;">✓ 生理假不影响全勤</small></div>`;
+            }
+            leaveHtml += '</div>';
+          } else {
+            leaveHtml += '<div style="margin-left: 10px; color: #16a34a;">✓ 无请假记录</div>';
+          }
+          
+          // 全勤奖金判断
+          let fullAttendanceHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>全勤奖金判断：</strong></div>';
+          if (r.isFullAttendance) {
+            fullAttendanceHtml += '<div style="margin-left: 10px; color: #16a34a;">';
+            fullAttendanceHtml += '✓ 本月全勤<br>';
+            fullAttendanceHtml += '<small>（无病假、事假）</small>';
+            if (r.menstrualDays > 0) {
+              fullAttendanceHtml += '<br><small style="color:#16a34a;">生理假不影响全勤</small>';
+            }
+            fullAttendanceHtml += '</div>';
+          } else {
+            fullAttendanceHtml += '<div style="margin-left: 10px; color: #dc2626;">';
+            fullAttendanceHtml += '✗ 未达全勤标准<br>';
+            fullAttendanceHtml += '<small>原因: ';
+            const reasons = [];
+            if (r.sickDays > 0) reasons.push('病假');
+            if (r.personalDays > 0) reasons.push('事假');
+            fullAttendanceHtml += reasons.join('、');
+            fullAttendanceHtml += '</small></div>';
+          }
+          
+          return `
+            <tr class="detail-row" id="${rowId}-detail" style="display: none; background: #fafafa;">
+              <td colspan="13" style="padding: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                  <div>
+                    ${hourlyRateBaseHtml}
+                    ${overtimeHtml}
+                  </div>
+                  <div>
+                    ${fullAttendanceHtml}
+                    ${transportHtml}
+                    ${leaveHtml}
+                  </div>
+                </div>
+              </td>
+            </tr>
+          `;
+        }
+        
         function renderCalc(){
           const start = (calcState.page - 1) * calcState.perPage;
           const end = start + calcState.perPage;
@@ -650,19 +806,21 @@
           tbodyCalc.innerHTML = '';
           if (pageRows.length === 0){
             const tr = document.createElement('tr');
-            tr.innerHTML = '<td colspan="12" class="muted">沒有符合條件的資料</td>';
+            tr.innerHTML = '<td colspan="13" class="muted">沒有符合條件的資料</td>';
             tbodyCalc.appendChild(tr);
           } else {
-            pageRows.forEach(r => {
+            pageRows.forEach((r, idx) => {
               const tr = document.createElement('tr');
+              const rowId = `payroll-row-${idx}`;
+              tr.id = rowId;
               
               // 计算时薪显示
               const hourlyRate = centsToTwd(r.hourlyRateCents || 0).replace('NT$ ', '');
-              const weightedHours = r.weightedHours || 0; // 加权工时
-              const overtimeDetail = r.overtimeCents > 0 ? `<br><small style="color:#059669;">${weightedHours.toFixed(1)}h × $${hourlyRate}</small>` : '';
+              const effectiveHours = r.effectiveWeightedHours || 0;
+              const overtimeDetail = r.overtimeCents > 0 ? `<br><small style="color:#059669;">${effectiveHours.toFixed(1)}h × $${hourlyRate}</small>` : '';
               
               // 误餐费明细
-              const mealDays = r.overtimeDays || 0; // 满足误餐费条件的天数
+              const mealDays = r.overtimeDays || 0;
               const mealRate = r.mealAllowanceCents > 0 && mealDays > 0 ? Math.round((r.mealAllowanceCents / 100) / mealDays) : 0;
               const mealDetail = r.mealAllowanceCents > 0 ? `<br><small style="color:#059669;">${mealDays}天 × $${mealRate}</small>` : '';
               
@@ -672,10 +830,13 @@
               // 请假扣款明细
               const leaveDetail = (r.sickDays || r.personalDays) ? `<br><small style="color:#dc2626;">病${r.sickDays || 0}天 事${r.personalDays || 0}天</small>` : '';
               
-              // 全勤奖金（从bonusCents中分离，这里暂时显示在bonusCents中）
+              // 全勤奖金
               const fullAttendanceBonus = r.isFullAttendance ? (r.bonusCents > 0 ? '含全勤' : '') : '';
               
               tr.innerHTML = `
+                <td style="text-align: center;">
+                  <button class="btn btn-sm" onclick="window.togglePayrollDetail('${rowId}')" style="padding: 2px 8px; font-size: 0.75rem;">▼</button>
+                </td>
                 <td><strong>${r.name || ''}</strong></td>
                 <td>${centsToTwd(r.baseSalaryCents)}</td>
                 <td style="background: #f0fdf4;">${centsToTwd(r.regularAllowanceCents)}</td>
@@ -691,10 +852,26 @@
                 <td style="font-weight:600;color:#16a34a;background:#dbeafe;font-size:1.05em;">${centsToTwd(r.netSalaryCents)}</td>
               `;
               tbodyCalc.appendChild(tr);
+              
+              // 添加详细明细行
+              tbodyCalc.insertAdjacentHTML('beforeend', generateDetailRow(r, rowId));
             });
           }
           renderCalcPager();
         }
+        
+        // 切换详细明细显示
+        window.togglePayrollDetail = function(rowId) {
+          const detailRow = document.getElementById(`${rowId}-detail`);
+          const btn = document.querySelector(`#${rowId} button`);
+          if (detailRow) {
+            const isHidden = detailRow.style.display === 'none';
+            detailRow.style.display = isHidden ? 'table-row' : 'none';
+            if (btn) {
+              btn.textContent = isHidden ? '▲' : '▼';
+            }
+          }
+        };
 
         function applyCalcFilters(){
           const kw = (empSearchCalc.value || '').trim().toLowerCase();
