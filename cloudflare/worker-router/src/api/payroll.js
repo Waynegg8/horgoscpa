@@ -888,6 +888,17 @@ async function calculateEmployeePayroll(env, userId, month) {
 
 	// 5. 判定全勤
 	const isFullAttendance = await checkFullAttendance(env, userId, month);
+	
+	// 5.1 重新计算奖金总额（排除未达标的全勤奖金）
+	let actualBonusCents = 0;
+	for (const bonusItem of bonusItems) {
+		// 如果是全勤奖金且未达标，则不计入
+		if (bonusItem.isFullAttendanceBonus && !isFullAttendance) {
+			continue;
+		}
+		actualBonusCents += bonusItem.amountCents || 0;
+	}
+	bonusCents = actualBonusCents; // 更新为实际发放的奖金总额
 
 	// 6. 计算误餐费（仅统计平日加班）
 	const mealResult = await calculateMealAllowance(env, userId, month);

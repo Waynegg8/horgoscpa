@@ -927,12 +927,17 @@
               allowancesHtml += '<div style="margin-bottom: 8px; margin-top: 8px;"><strong style="color: #f59e0b;">🎁 獎金：</strong></div>';
               bonusItems.forEach(item => {
                 const isRegular = item.isRegularPayment ? '<span style="color: #3b82f6; font-size: 0.85em;"> (經常性給與)</span>' : '';
+                const isFullAttendancePaid = !item.isFullAttendanceBonus || r.isFullAttendance; // 不是全勤奖金，或者全勤达标
                 const fullAttendanceNote = item.isFullAttendanceBonus ? 
                   (r.isFullAttendance ? 
                     '<span style="color: #16a34a; font-size: 0.85em;"> ✓ 全勤達標，發放</span>' : 
                     '<span style="color: #dc2626; font-size: 0.85em;"> ✗ 未達全勤，不發放</span>') : '';
                 allowancesHtml += `<div style="margin-left: 20px;">• ${item.name}: ${centsToTwd(item.amountCents)}${isRegular}${fullAttendanceNote}</div>`;
-                totalAllowancesCents += item.amountCents || 0;
+                
+                // 只有发放的奖金才计入小计
+                if (isFullAttendancePaid) {
+                  totalAllowancesCents += item.amountCents || 0;
+                }
               });
             }
             
