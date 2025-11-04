@@ -627,7 +627,8 @@ export default {
 			const lastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
 			const lastDayOfLastMonth = new Date(Date.UTC(lastMonth.getUTCFullYear(), lastMonth.getUTCMonth() + 1, 0));
 			const expiryDate = `${lastDayOfLastMonth.getUTCFullYear()}-${String(lastDayOfLastMonth.getUTCMonth() + 1).padStart(2, '0')}-${String(lastDayOfLastMonth.getUTCDate()).padStart(2, '0')}`;
-			const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+			// 到期補休應記入到期當月的薪資（例如10月底到期 → 記入10月薪資）
+			const payrollMonth = `${lastMonth.getUTCFullYear()}-${String(lastMonth.getUTCMonth() + 1).padStart(2, '0')}`;
 
 			// 掃描到期的補休記錄
 			const expiredGrants = await env.DATABASE.prepare(
@@ -647,18 +648,18 @@ export default {
 				const rate = Number(grant.original_rate || 1);
 				const amountCents = Math.round(hours * hourlyRate * rate * 100);
 
-				// 寫入加班費記錄
-				await env.DATABASE.prepare(
-					`INSERT INTO CompensatoryOvertimePay 
-					 (user_id, year_month, hours_expired, amount_cents, source_grant_ids)
-					 VALUES (?, ?, ?, ?, ?)`
-				).bind(
-					String(grant.user_id),
-					currentMonth,
-					hours,
-					amountCents,
-					JSON.stringify([grant.grant_id])
-				).run();
+			// 寫入加班費記錄
+			await env.DATABASE.prepare(
+				`INSERT INTO CompensatoryOvertimePay 
+				 (user_id, year_month, hours_expired, amount_cents, source_grant_ids)
+				 VALUES (?, ?, ?, ?, ?)`
+			).bind(
+				String(grant.user_id),
+				payrollMonth,
+				hours,
+				amountCents,
+				JSON.stringify([grant.grant_id])
+			).run();
 
 				// 更新補休記錄狀態為 expired
 				await env.DATABASE.prepare(
@@ -670,26 +671,26 @@ export default {
 			}
 
 			// 記錄執行成功
-			await env.DATABASE.prepare(
-				`INSERT INTO CronJobExecutions 
-				 (job_name, status, executed_at, details)
-				 VALUES (?, 'success', datetime('now'), ?)`
-			).bind('comp_leave_expiry', JSON.stringify({
-				expiryDate,
-				processedCount,
-				grantIds,
-				currentMonth,
-				triggeredBy: 'cron'
-			})).run();
+		await env.DATABASE.prepare(
+			`INSERT INTO CronJobExecutions 
+			 (job_name, status, executed_at, details)
+			 VALUES (?, 'success', datetime('now'), ?)`
+		).bind('comp_leave_expiry', JSON.stringify({
+			expiryDate,
+			processedCount,
+			grantIds,
+			payrollMonth,
+			triggeredBy: 'cron'
+		})).run();
 
-			console.log(JSON.stringify({ 
-				level: "info", 
-				requestId, 
-				event: "cron_completed", 
-				processedCount,
-				expiryDate,
-				currentMonth
-			}));
+		console.log(JSON.stringify({ 
+			level: "info", 
+			requestId, 
+			event: "cron_completed", 
+			processedCount,
+			expiryDate,
+			payrollMonth
+		}));
 
 		} catch (err) {
 			console.error(JSON.stringify({ 

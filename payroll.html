@@ -23,6 +23,7 @@
         <label for="month">月份</label>
         <input id="month" type="month" aria-label="月份" />
         <div class="toolbar-spacer" style="flex:1;"></div>
+        <button id="btn-process-expired-comp" type="button" class="btn" style="background:#f59e0b;color:white;">⏰ 處理到期補休</button>
         <button id="btn-finalize" type="button" class="btn primary" disabled>產製月結</button>
       </div>
       <div id="finalizeMsg" class="info-bar" style="display:none;"></div>
@@ -3327,6 +3328,45 @@
         // 綁定事件
         monthInput.addEventListener('change', ()=>{ loadPreview(); checkFinalized(); });
         btnFinalize.addEventListener('click', finalizeMonth);
+        
+        // 處理到期補休按鈕
+        document.getElementById('btn-process-expired-comp').addEventListener('click', async () => {
+          if (!confirm('確定要處理上月到期的補休嗎？\n\n這會將上月底到期且未使用的補休轉為【上月薪資】的加班費。\n（例如：10月底到期 → 記入10月薪資）')) return;
+          
+          const btn = document.getElementById('btn-process-expired-comp');
+          btn.disabled = true;
+          btn.textContent = '處理中...';
+          
+          try {
+            const res = await fetch(`${apiBase}/admin/cron/execute`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ job_name: 'comp_leave_expiry' })
+            });
+            
+            const json = await res.json();
+            
+            if (res.ok && json.ok) {
+              alert(`✅ 處理成功！\n\n已處理 ${json.data.processedCount} 筆到期補休\n到期日：${json.data.expiryDate}\n記入薪資月份：${json.data.payrollMonth}`);
+              
+              // 清除薪資預覽快取，強制重新計算
+              console.log('[處理到期補休] 清除薪資預覽快取');
+              payrollCache.clear();
+              
+              // 重新載入數據
+              await loadPreview(true);
+            } else {
+              alert('處理失敗：' + (json.message || '未知錯誤'));
+            }
+          } catch (err) {
+            console.error('[處理到期補休] 錯誤:', err);
+            alert('處理失敗：' + err.message);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = '⏰ 處理到期補休';
+          }
+        });
         
         // 刷新按鈕：強制重新載入資料
         document.getElementById('btnRefreshCalc').addEventListener('click', () => {
