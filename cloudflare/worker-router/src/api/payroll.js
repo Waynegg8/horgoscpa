@@ -769,64 +769,71 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const lastDay = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
 	const lastDayStr = `${year}-${monthNum}-${String(lastDay).padStart(2, '0')}`;
 	
-	// 2.1 自动处理当月底到期的补休（当月产生、当月未用完、当月转加班费）
-	// 查询该月底到期且尚未转换的补休
-	const expiredGrants = await env.DATABASE.prepare(`
-		SELECT grant_id, hours_remaining, original_rate
-		FROM CompensatoryLeaveGrants
-		WHERE user_id = ? 
-		  AND expiry_date = ?
-		  AND status = 'active'
-		  AND hours_remaining > 0
-	`).bind(userId, lastDayStr).all();
+	// 2.1 计算未使用补休转加班费（实时计算，不依赖数据库）
+	// 从加班明细中获取本月产生和使用的补休
+	const overtimeDetails = await getOvertimeDetails(env, userId, month);
 	
-	if (expiredGrants.results && expiredGrants.results.length > 0) {
-		console.log(`[Payroll] 用户${userId}在${month}有${expiredGrants.results.length}笔到期补休需要转换`);
-		
-		// 检查是否已经转换过了
-		const existing = await env.DATABASE.prepare(`
-			SELECT pay_id FROM CompensatoryOvertimePay
-			WHERE user_id = ? AND year_month = ?
-		`).bind(userId, month).first();
-		
-		if (!existing) {
-			// 还没转换，现在转换
-			const hourlyRate = (user.base_salary || 0) / 240;
-			let totalExpiredHours = 0;
-			let totalExpiredCents = 0;
-			const grantIds = [];
-			
-			for (const grant of expiredGrants.results) {
-				const hours = Number(grant.hours_remaining || 0);
-				const rate = Number(grant.original_rate || 1);
-				const amountCents = Math.round(hours * hourlyRate * rate * 100);
-				
-				totalExpiredHours += hours;
-				totalExpiredCents += amountCents;
-				grantIds.push(grant.grant_id);
-				
-				// 更新补休状态为 expired
-				await env.DATABASE.prepare(
-					`UPDATE CompensatoryLeaveGrants SET status = 'expired' WHERE grant_id = ?`
-				).bind(grant.grant_id).run();
-			}
-			
-			// 写入到期转加班费记录
-			await env.DATABASE.prepare(`
-				INSERT INTO CompensatoryOvertimePay 
-				(user_id, year_month, hours_expired, amount_cents, source_grant_ids)
-				VALUES (?, ?, ?, ?, ?)
-			`).bind(
-				userId,
-				month,
-				totalExpiredHours,
-				totalExpiredCents,
-				JSON.stringify(grantIds)
-			).run();
-			
-			console.log(`[Payroll] 已自动转换${totalExpiredHours}小时到期补休为${totalExpiredCents}分加班费`);
+	// 计算本月产生的补休总时数
+	let totalCompHoursGenerated = 0;
+	const compGenerationDetails = []; // 记录每条加班产生的补休明细
+	
+	for (const day of overtimeDetails.dailyOvertime) {
+		for (const item of day.items) {
+			totalCompHoursGenerated += item.compHoursGenerated;
+			compGenerationDetails.push({
+				date: day.date,
+				workType: item.workType,
+				workTypeId: item.workTypeId,
+				hours: item.compHoursGenerated,
+				multiplier: item.multiplier,
+				isFixedType: item.isFixedType
+			});
 		}
 	}
+	
+	// 本月使用的补休总时数
+	const totalCompHoursUsed = overtimeDetails.totalCompHoursUsed;
+	
+	// 未使用的补休（需要转为加班费）
+	const unusedCompHours = Math.max(0, totalCompHoursGenerated - totalCompHoursUsed);
+	
+	console.log(`[Payroll] ${month} 补休情况:`, {
+		totalCompHoursGenerated,
+		totalCompHoursUsed,
+		unusedCompHours
+	});
+	
+	// 计算未使用补休转加班费：按FIFO顺序，使用原倍率
+	let expiredCompPayCents = 0;
+	let remainingToConvert = unusedCompHours;
+	const expiredCompDetails = []; // 记录转换明细
+	
+	// 临时时薪基础（用于计算补休转加班费，后续会重新计算准确时薪）
+	const tempHourlyRate = (user.base_salary || 0) / 240;
+	
+	for (const detail of compGenerationDetails) {
+		if (remainingToConvert <= 0) break;
+		
+		const hoursToConvert = Math.min(detail.hours, remainingToConvert);
+		const amountCents = Math.round(hoursToConvert * tempHourlyRate * detail.multiplier * 100);
+		
+		expiredCompPayCents += amountCents;
+		remainingToConvert -= hoursToConvert;
+		
+		expiredCompDetails.push({
+			date: detail.date,
+			workType: detail.workType,
+			hours: hoursToConvert,
+			multiplier: detail.multiplier,
+			amountCents: amountCents
+		});
+	}
+	
+	console.log(`[Payroll] ${month} 未使用补休转加班费:`, {
+		unusedCompHours,
+		expiredCompPayCents,
+		expiredCompDetails
+	});
 
 	// 3. 读取该月有效的薪资项目
 
@@ -990,15 +997,11 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const weightedHours = timesheetStats?.weighted_hours || 0;
 	const actualOvertimeHours = timesheetStats?.overtime_hours || 0;
 	
-	// 获取加班明细（按日期+类型）+ 补休使用情况 + 交通明细
-	const detailResult = await getOvertimeDetails(env, userId, month);
-	const dailyOvertime = detailResult.dailyOvertime || [];
-	const totalCompHoursUsed = detailResult.totalCompHoursUsed || 0;
-	const effectiveWeightedHours = detailResult.effectiveTotalWeightedHours || 0;
-	const expiredCompHours = detailResult.expiredCompHours || 0;
-	const expiredCompPayCents = detailResult.expiredCompPayCents || 0;
+	// 使用前面已经获取的加班明细（overtimeDetails）
+	const dailyOvertime = overtimeDetails.dailyOvertime || [];
+	const effectiveWeightedHours = overtimeDetails.effectiveTotalWeightedHours || 0;
 	
-	// 加班费 = 有效加权工时（已按FIFO扣除补休）× 时薪 + 到期补休转加班费
+	// 加班费 = 有效加权工时（已按FIFO扣除补休）× 时薪 + 未使用补休转加班费
 	const overtimeCents = Math.round(effectiveWeightedHours * hourlyRateCents) + expiredCompPayCents;
 
 	// 8. 计算交通补贴
@@ -1084,9 +1087,11 @@ async function calculateEmployeePayroll(env, userId, month) {
 		weightedHours,            // 原始加权工时（计算前）
 		effectiveWeightedHours,   // 有效加权工时（扣除补休后）
 		dailyOvertime,            // 每日加班明细（按日期+类型+周几+国定假日）
+		totalCompHoursGenerated,  // 当月产生的补休总时数
 		totalCompHoursUsed,       // 当月使用的补休时数
-		expiredCompHours,         // 到期转加班费的补休时数
-		expiredCompPayCents,      // 到期补休转换的加班费
+		unusedCompHours,          // 未使用的补休时数（需转加班费）
+		expiredCompPayCents,      // 未使用补休转换的加班费
+		expiredCompDetails,       // 未使用补休转换明细
 		tripDetails,              // 外出交通明细（按日期）
 		totalKm,
 		transportIntervals,
