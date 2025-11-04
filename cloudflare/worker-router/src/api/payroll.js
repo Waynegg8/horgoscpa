@@ -889,16 +889,32 @@ async function calculateEmployeePayroll(env, userId, month) {
 	// 5. 判定全勤
 	const isFullAttendance = await checkFullAttendance(env, userId, month);
 	
-	// 5.1 重新计算奖金总额（排除未达标的全勤奖金）
+	// 5.1 重新计算奖金总额和经常性给与（排除未达标的全勤奖金）
 	let actualBonusCents = 0;
+	let actualRegularAllowanceCents = baseSalaryCents; // 重新计算，从底薪开始
+	
+	// 重新计算津贴的经常性给与部分
+	for (const allowanceItem of allowanceItems) {
+		if (allowanceItem.isRegularPayment) {
+			actualRegularAllowanceCents += allowanceItem.amountCents || 0;
+		}
+	}
+	
+	// 重新计算奖金总额，并处理经常性给与的奖金
 	for (const bonusItem of bonusItems) {
 		// 如果是全勤奖金且未达标，则不计入
 		if (bonusItem.isFullAttendanceBonus && !isFullAttendance) {
 			continue;
 		}
 		actualBonusCents += bonusItem.amountCents || 0;
+		// 如果是经常性给与的奖金（且不是未达标的全勤），计入时薪基准
+		if (bonusItem.isRegularPayment) {
+			actualRegularAllowanceCents += bonusItem.amountCents || 0;
+		}
 	}
+	
 	bonusCents = actualBonusCents; // 更新为实际发放的奖金总额
+	regularAllowanceCents = actualRegularAllowanceCents - baseSalaryCents; // 减去底薪，得到纯津贴/奖金部分
 
 	// 6. 计算误餐费（仅统计平日加班）
 	const mealResult = await calculateMealAllowance(env, userId, month);
