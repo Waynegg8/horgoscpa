@@ -465,6 +465,16 @@
                 </div>
               </div>
 
+              <!-- 員工選擇器（管理員專用） -->
+              <div id="punchAdminTools" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.875rem; color: #1e40af;">
+                  👤 選擇員工
+                </label>
+                <select id="punchUserSelect" style="width: 100%; padding: 0.5rem; border: 1px solid #93c5fd; border-radius: 6px; font-size: 0.875rem; background: white;">
+                  <option value="">請選擇員工...</option>
+                </select>
+              </div>
+
               <!-- 已上傳檔案列表 -->
               <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
@@ -483,7 +493,7 @@
                       </tr>
                     </thead>
                     <tbody id="punchFilesList">
-                      <tr><td colspan="3" class="muted" style="padding: 2rem; text-align: center;">載入中...</td></tr>
+                      <tr><td colspan="3" class="muted" style="padding: 2rem; text-align: center;">切換到此分頁後載入...</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -576,6 +586,9 @@
           document.querySelectorAll('.payroll-toolbar .btn, #empSearchCalc, #statusCalc, #month, #empSearch, #itemSearch').forEach(el=>{ el.disabled = !enabled; });
         }
 
+        // 打卡記錄是否已初始化（避免重複初始化）
+        let punchRecordsInitialized = false;
+
         // TAB切換 - 最終方案（使用inline style，優先級最高）
         function switchTab(targetKey) {
           console.log('[TAB切換]', targetKey);
@@ -595,6 +608,20 @@
           panels.yearend.style.display = (targetKey === 'yearend') ? 'block' : 'none';
           panels.settings.style.display = (targetKey === 'settings') ? 'block' : 'none';
           panels.punch.style.display = (targetKey === 'punch') ? 'block' : 'none';
+          
+          // 當切換到打卡記錄TAB時，首次進行初始化
+          if (targetKey === 'punch' && !punchRecordsInitialized) {
+            console.log('[打卡記錄] 首次切換到此TAB，進行初始化');
+            punchRecordsInitialized = true;
+            
+            if (isAdminMode) {
+              // 管理員：初始化員工選擇器
+              initAdminPunchSelector();
+            } else if (currentUserId) {
+              // 普通員工：直接載入記錄
+              loadPunchRecords(currentUserId);
+            }
+          }
         }
         
         // 使用事件委託綁定TAB點擊
@@ -1875,9 +1902,12 @@
         const uploadStatus = document.getElementById('uploadStatus');
         const punchFilesList = document.getElementById('punchFilesList');
         const btnRefreshFiles = document.getElementById('btnRefreshFiles');
+        const punchAdminTools = document.getElementById('punchAdminTools');
+        const punchUserSelect = document.getElementById('punchUserSelect');
 
         let selectedFile = null;
         let currentUserId = null;
+        let isAdminMode = false; // 是否為管理員模式
 
         // 選擇檔案
         btnSelectFile.addEventListener('click', () => {
@@ -2146,6 +2176,55 @@
           }
         });
 
+        // 管理員：初始化員工選擇器
+        async function initAdminPunchSelector() {
+          console.log('[打卡記錄] 初始化管理員模式');
+          isAdminMode = true;
+          punchAdminTools.style.display = 'block';
+          
+          // 更新占位文字
+          punchFilesList.innerHTML = '<tr><td colspan="3" class="muted" style="padding: 2rem; text-align: center;">請先選擇員工</td></tr>';
+          
+          try {
+            // 獲取所有員工（復用全局的 empState.allUsers 或重新載入）
+            let users = empState?.allUsers;
+            if (!users || users.length === 0) {
+              const res = await fetch(`${apiBase}/admin/users`, { credentials: 'include' });
+              if (!res.ok) throw new Error('無法載入員工列表');
+              const json = await res.json();
+              users = json.data || [];
+            }
+            
+            // 填充選擇器
+            punchUserSelect.innerHTML = '<option value="">請選擇員工...</option>';
+            users.forEach(u => {
+              const opt = document.createElement('option');
+              opt.value = u.user_id;
+              opt.textContent = `${u.full_name || u.username} (ID: ${u.user_id})`;
+              punchUserSelect.appendChild(opt);
+            });
+            
+            console.log('[打卡記錄] 管理員模式就緒，共', users.length, '位員工');
+          } catch (err) {
+            console.error('[打卡記錄] 初始化失敗:', err);
+            alert('載入員工列表失敗：' + err.message);
+            punchFilesList.innerHTML = '<tr><td colspan="3" class="muted" style="padding: 2rem; text-align: center; color: red;">載入失敗</td></tr>';
+          }
+        }
+
+        // 管理員：選擇員工時載入其打卡記錄
+        punchUserSelect.addEventListener('change', (e) => {
+          const userId = parseInt(e.target.value);
+          if (userId) {
+            console.log('[打卡記錄] 管理員選擇員工:', userId);
+            currentUserId = userId;
+            loadPunchRecords(userId);
+          } else {
+            // 清空列表
+            punchFilesList.innerHTML = '<tr><td colspan="3" class="muted" style="padding: 2rem; text-align: center;">請先選擇員工</td></tr>';
+          }
+        });
+
         // 預設月份為本月
         const now = new Date();
         monthInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -2178,6 +2257,7 @@
         
         ensureAdmin().then(result => { 
           if (result.isAdmin) {
+            isAdminMode = true; // 設置管理員模式
             loadPreview(); 
             checkFinalized(); 
             loadItems();
@@ -2190,14 +2270,18 @@
             
             loadYearEndBonus(); // 載入年終獎金
             loadSystemSettings(); // 載入系統設定
+            
+            console.log('[初始化] 管理員模式已啟用（打卡記錄將在切換到該TAB時初始化）');
+            
             // ⚡ 自动保存预渲染
             if (window.PagePrerender) {
               setTimeout(() => window.PagePrerender.autoSave('main', 2000), 1000);
             }
           } else if (result.userData) {
-            // 普通員工：只載入打卡記錄
-            console.log('[初始化] 載入員工打卡記錄');
-            loadPunchRecords(result.userData.user_id);
+            // 普通員工：設置當前用戶ID，打卡記錄在切換到該TAB時載入
+            console.log('[初始化] 普通員工登入');
+            currentUserId = result.userData.user_id;
+            isAdminMode = false;
           } 
         });
       })();
