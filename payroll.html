@@ -590,7 +590,7 @@
           console.log('[TAB切換]', targetKey);
           
           // 更新TAB按鈕狀態
-          tabs.forEach(btn => {
+        tabs.forEach(btn => {
             const isActive = btn.getAttribute('data-tab') === targetKey;
             btn.classList.toggle('active', isActive);
             btn.setAttribute('aria-selected', isActive);
@@ -890,43 +890,60 @@
               </div>
           `;
           
-          // 2. 津贴（经常性给与，包括经常性津贴和经常性奖金如全勤）
-          // 对应表格"津贴"列 = regularAllowanceCents
-          payrollDetailHtml += `
-            <div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #059669;">2. 津貼 (經常性給與)</strong></div>
-            <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #047857;">
-              <div>&nbsp;&nbsp;包含所有經常性津貼與獎金（如全勤）</div>
-              <div style="font-weight: 600;">${centsToTwd(r.regularAllowanceCents)}</div>
-            </div>
-          `;
-          
-          // 3. 奖金（所有奖金）
-          // 对应表格"奖金"列 = bonusCents
-          if (r.bonusCents > 0 || (r.bonusItems && r.bonusItems.length > 0)) {
-            payrollDetailHtml += `
-              <div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #d97706;">3. 獎金</strong></div>
-            `;
-            
-            if (r.bonusItems && r.bonusItems.length > 0) {
-              r.bonusItems.forEach((item, idx) => {
-                const isFullAttendancePaid = !item.isFullAttendanceBonus || r.isFullAttendance;
-                const note = item.isFullAttendanceBonus ? 
-                  (r.isFullAttendance ? ' <small style="color: #16a34a;">✓ 達標</small>' : ' <small style="color: #dc2626;">✗ 未達標</small>') : '';
-                const amount = isFullAttendancePaid ? item.amountCents : 0;
-                
+          // 2. 津贴（只显示 category='allowance' 且 isRegularPayment=true 的项目）
+          // 对应表格"津贴"列
+          let allowanceSubtotal = 0;
+          if (r.allowanceItems && r.allowanceItems.length > 0) {
+            const regularAllowances = r.allowanceItems.filter(item => item.category === 'allowance' && item.isRegularPayment);
+            if (regularAllowances.length > 0) {
+              payrollDetailHtml += `<div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #059669;">2. 津貼 (經常性給與)</strong></div>`;
+              regularAllowances.forEach((item, idx) => {
                 payrollDetailHtml += `
-                  <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #92400e;">
-                    <div>&nbsp;&nbsp;${String.fromCharCode(97 + idx)}. ${item.name}${note}</div>
-                    <div style="${amount === 0 ? 'text-decoration: line-through; color: #9ca3af;' : ''}">${centsToTwd(item.amountCents)}</div>
+                  <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #047857;">
+                    <div>&nbsp;&nbsp;${String.fromCharCode(97 + idx)}. ${item.name}</div>
+                    <div>${centsToTwd(item.amountCents)}</div>
                   </div>
                 `;
+                allowanceSubtotal += item.amountCents || 0;
               });
+              payrollDetailHtml += `
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; margin-top: 4px; color: #065f46; font-weight: 600;">
+                  <div>&nbsp;&nbsp;津貼小計</div>
+                  <div>${centsToTwd(allowanceSubtotal)}</div>
+                </div>
+              `;
             }
+          }
+          
+          // 3. 奖金（只显示 category='bonus' 的项目，排除未达标全勤）
+          // 对应表格"奖金"列 = bonusCents
+          let bonusSubtotal = 0;
+          if (r.bonusItems && r.bonusItems.length > 0) {
+            payrollDetailHtml += `<div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #d97706;">3. 獎金</strong></div>`;
+            
+            r.bonusItems.forEach((item, idx) => {
+              const isFullAttendancePaid = !item.isFullAttendanceBonus || r.isFullAttendance;
+              const note = item.isFullAttendanceBonus ? 
+                (r.isFullAttendance ? ' <small style="color: #16a34a;">✓ 達標</small>' : ' <small style="color: #dc2626;">✗ 未達標</small>') : '';
+              const amount = isFullAttendancePaid ? item.amountCents : 0;
+              
+              payrollDetailHtml += `
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #92400e;">
+                  <div>&nbsp;&nbsp;${String.fromCharCode(97 + idx)}. ${item.name}${note}</div>
+                  <div style="${amount === 0 ? 'text-decoration: line-through; color: #9ca3af;' : ''}">${centsToTwd(item.amountCents)}</div>
+                </div>
+              `;
+              
+              // 只累加达标的奖金（未达标的全勤不累加）
+              if (isFullAttendancePaid) {
+                bonusSubtotal += amount;
+              }
+            });
             
             payrollDetailHtml += `
               <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; margin-top: 4px; color: #92400e; font-weight: 600;">
                 <div>&nbsp;&nbsp;獎金小計</div>
-                <div>${centsToTwd(r.bonusCents)}</div>
+                <div>${centsToTwd(bonusSubtotal)}</div>
               </div>
             `;
           }
@@ -997,8 +1014,9 @@
             `;
           }
           
-          // 收入合计（验证：底薪+津贴+奖金+加班+误餐+交通+绩效）
-          const calculatedIncome = r.baseSalaryCents + r.regularAllowanceCents + r.bonusCents + 
+          // 收入合计（从明细累加验证）
+          // 底薪 + 津贴小计 + 奖金小计 + 加班费 + 误餐费 + 交通 + 绩效
+          const calculatedIncome = r.baseSalaryCents + allowanceSubtotal + bonusSubtotal + 
                                    totalOvertimePay + mealAmount + transportAmount + performanceAmount;
           const incomeMatch = Math.abs(calculatedIncome - r.grossSalaryCents) < 10; // 允许1分以内的误差
           
@@ -1604,6 +1622,14 @@
               // 请假扣款明细
               const leaveDetail = (r.sickDays || r.personalDays) ? `<br><small style="color:#dc2626;">病${r.sickDays || 0}天 事${r.personalDays || 0}天</small>` : '';
               
+              // 计算津贴总和（只包含 category='allowance' 且 isRegularPayment=true）
+              let allowanceTotal = 0;
+              if (r.allowanceItems && r.allowanceItems.length > 0) {
+                allowanceTotal = r.allowanceItems
+                  .filter(item => item.category === 'allowance' && item.isRegularPayment)
+                  .reduce((sum, item) => sum + (item.amountCents || 0), 0);
+              }
+              
               // 全勤奖金
               const fullAttendanceBonus = r.isFullAttendance ? (r.bonusCents > 0 ? '含全勤' : '') : '';
               
@@ -1613,7 +1639,7 @@
                 </td>
                 <td><strong>${r.name || ''}</strong></td>
                 <td>${centsToTwd(r.baseSalaryCents)}</td>
-                <td style="background: #f0fdf4;">${centsToTwd(r.regularAllowanceCents)}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(allowanceTotal)}</td>
                 <td style="background: #f0fdf4;">${centsToTwd(r.bonusCents)}${fullAttendanceBonus ? `<br><small style="color:#059669;">${fullAttendanceBonus}</small>` : ''}</td>
                 <td style="background: #f0fdf4;text-align:center;">${r.isFullAttendance ? '<span style="color:#16a34a;font-size:1.2em;">✓</span>' : '<span style="color:#dc2626;">✗</span>'}</td>
                 <td style="background: #f0fdf4;">${centsToTwd(r.overtimeCents)}${overtimeDetail}</td>
@@ -3307,7 +3333,7 @@
         // 綁定事件
         monthInput.addEventListener('change', ()=>{ loadPreview(); checkFinalized(); });
         btnFinalize.addEventListener('click', finalizeMonth);
-        
+
         // 處理到期補休按鈕
         document.getElementById('btn-process-expired-comp').addEventListener('click', async () => {
           const selectedMonth = monthInput.value; // 例如: 2024-10
