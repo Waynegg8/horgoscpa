@@ -29,17 +29,17 @@ export async function handlePunchRecords(request, env, me, requestId, url, path)
 			return await uploadFile(request, env, me, requestId, corsHeaders);
 		}
 
-		// GET /punch-records/:recordId/download - 直接下载文件
-		if (method === "GET" && path.match(/^\/internal\/api\/v1\/punch-records\/\d+\/download$/)) {
-			const recordId = parseInt(path.split("/")[6]);
-			return await downloadFile(env, me, requestId, corsHeaders, recordId, false);
-		}
+	// GET /punch-records/:recordId/download - 直接下载文件
+	if (method === "GET" && path.match(/^\/internal\/api\/v1\/punch-records\/\d+\/download$/)) {
+		const recordId = parseInt(path.split("/")[5]);
+		return await downloadFile(env, me, requestId, corsHeaders, recordId, false);
+	}
 
-		// GET /punch-records/:recordId/preview - 预览文件
-		if (method === "GET" && path.match(/^\/internal\/api\/v1\/punch-records\/\d+\/preview$/)) {
-			const recordId = parseInt(path.split("/")[6]);
-			return await downloadFile(env, me, requestId, corsHeaders, recordId, true);
-		}
+	// GET /punch-records/:recordId/preview - 预览文件
+	if (method === "GET" && path.match(/^\/internal\/api\/v1\/punch-records\/\d+\/preview$/)) {
+		const recordId = parseInt(path.split("/")[5]);
+		return await downloadFile(env, me, requestId, corsHeaders, recordId, true);
+	}
 
 		// DELETE /punch-records/:recordId - 删除记录
 		if (method === "DELETE" && path.match(/^\/internal\/api\/v1\/punch-records\/\d+$/)) {
