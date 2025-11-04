@@ -572,7 +572,8 @@
 
         function setTabsEnabled(enabled){
           tabs.forEach(b=>{ b.disabled = !enabled; });
-          document.querySelectorAll('.payroll-toolbar .btn, .section-toolbar input, .section-toolbar select, .section-toolbar button').forEach(el=>{ el.disabled = !enabled; });
+          // 只禁用特定的工具栏控制元素，不影响绩效奖金等功能的输入框
+          document.querySelectorAll('.payroll-toolbar .btn, #empSearchCalc, #statusCalc, #month, #empSearch, #itemSearch').forEach(el=>{ el.disabled = !enabled; });
         }
 
         // TAB切換 - 極簡版本（只用hidden屬性）
