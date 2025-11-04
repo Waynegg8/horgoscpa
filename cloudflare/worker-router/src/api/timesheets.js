@@ -16,7 +16,8 @@ const WORK_TYPES = {
 	8: { name: '國定假日加班（第9-10小時）', multiplier: 1.34, isOvertime: true },
 	9: { name: '國定假日加班（第11-12小時）', multiplier: 1.67, isOvertime: true },
 	10: { name: '例假日加班（8小時內）', multiplier: 2.0, isOvertime: true, maxHours: 8, special: 'fixed_8h' },
-	11: { name: '例假日加班（第9-12小時）', multiplier: 2.0, isOvertime: true },
+	11: { name: '例假日加班（第9-10小時）', multiplier: 1.34, isOvertime: true },  // 修正：超过8h按平日加班
+	12: { name: '例假日加班（第11-12小時）', multiplier: 1.67, isOvertime: true },  // 新增：11-12h按平日加班后2h
 };
 
 /**

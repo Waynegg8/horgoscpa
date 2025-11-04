@@ -843,31 +843,75 @@
             transportHtml += '<div style="margin-left: 10px; color: #9ca3af;">本月無外出記錄</div>';
           }
           
-          // 請假扣款明細（包含病假、事假、生理假）
+          // 請假扣款明細（包含病假、事假、生理假）- 顯示詳細日期
           let leaveHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>請假扣款明細：</strong></div>';
           const dailyRate = r.dailySalaryCents || 0; // 使用後端計算的日薪
           
-          if (r.sickDays > 0 || r.personalDays > 0 || r.menstrualDays > 0) {
+          if (r.leaveDetails && r.leaveDetails.length > 0) {
+            const leaveTypeMap = { 'sick': '病假', 'personal': '事假', 'menstrual': '生理假' };
+            const leavesByType = { 'sick': [], 'personal': [], 'menstrual': [] };
+            
+            // 按類型分組
+            r.leaveDetails.forEach(leave => {
+              if (leavesByType[leave.leaveType]) leavesByType[leave.leaveType].push(leave);
+            });
+            
             leaveHtml += '<div style="margin-left: 10px;">';
-            if (r.sickDays > 0) {
-              leaveHtml += `<div>病假: ${r.sickDays}天 × ${centsToTwd(dailyRate)} × 50% = ${centsToTwd(Math.round(r.sickDays * dailyRate * 0.5))}</div>`;
+            
+            // 顯示病假
+            if (leavesByType.sick.length > 0) {
+              leaveHtml += `<div style="margin-bottom: 8px;"><strong>病假 (扣50%)：</strong></div>`;
+              leavesByType.sick.forEach(leave => {
+                const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
+                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${leave.amount}${leave.unit === 'day' ? '天' : '小時'}${leave.reason ? ` (${leave.reason})` : ''}</div>`;
+              });
+              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${r.sickDays}天 × ${centsToTwd(dailyRate)} × 50% = ${centsToTwd(Math.round(r.sickDays * dailyRate * 0.5))}</div>`;
             }
-            if (r.personalDays > 0) {
-              leaveHtml += `<div>事假: ${r.personalDays}天 × ${centsToTwd(dailyRate)} × 100% = ${centsToTwd(Math.round(r.personalDays * dailyRate))}</div>`;
+            
+            // 顯示事假
+            if (leavesByType.personal.length > 0) {
+              leaveHtml += `<div style="margin-bottom: 8px; margin-top: 8px;"><strong>事假 (扣100%)：</strong></div>`;
+              leavesByType.personal.forEach(leave => {
+                const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
+                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${leave.amount}${leave.unit === 'day' ? '天' : '小時'}${leave.reason ? ` (${leave.reason})` : ''}</div>`;
+              });
+              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${r.personalDays}天 × ${centsToTwd(dailyRate)} × 100% = ${centsToTwd(Math.round(r.personalDays * dailyRate))}</div>`;
             }
-            if (r.menstrualDays > 0) {
-              leaveHtml += `<div>生理假: ${r.menstrualDays}天 × ${centsToTwd(dailyRate)} × 50% = ${centsToTwd(Math.round(r.menstrualDays * dailyRate * 0.5))}`;
+            
+            // 顯示生理假
+            if (leavesByType.menstrual.length > 0) {
+              leaveHtml += `<div style="margin-bottom: 8px; margin-top: 8px;"><strong>生理假 (扣50%)：</strong></div>`;
+              leavesByType.menstrual.forEach(leave => {
+                const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
+                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${leave.amount}${leave.unit === 'day' ? '天' : '小時'}</div>`;
+              });
+              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${r.menstrualDays}天 × ${centsToTwd(dailyRate)} × 50% = ${centsToTwd(Math.round(r.menstrualDays * dailyRate * 0.5))}</div>`;
               if (r.menstrualFreeDays > 0) {
-                leaveHtml += `<br><small style="color:#16a34a;margin-left:20px;">（前${r.menstrualFreeDays}天獨立計算，不併入病假額度）</small>`;
+                leaveHtml += `<div style="margin-left: 20px;"><small style="color:#16a34a;">（前${r.menstrualFreeDays}天獨立計算，不併入病假額度）</small></div>`;
               }
               if (r.menstrualMergedDays > 0) {
-                leaveHtml += `<br><small style="color:#f59e0b;margin-left:20px;">（${r.menstrualMergedDays}天併入病假額度）</small>`;
+                leaveHtml += `<div style="margin-left: 20px;"><small style="color:#f59e0b;">（${r.menstrualMergedDays}天併入病假額度）</small></div>`;
               }
-              leaveHtml += `<br><small style="color:#16a34a;margin-left:20px;">✓ 生理假不影響全勤</small></div>`;
+              leaveHtml += `<div style="margin-left: 20px;"><small style="color:#16a34a;">✓ 生理假不影響全勤</small></div>`;
             }
+            
             leaveHtml += '</div>';
+            leaveHtml += `<div style="margin-left: 10px; margin-top: 8px; font-weight: 600;">總扣款: ${centsToTwd(r.leaveDeductionCents || 0)}</div>`;
           } else {
             leaveHtml += '<div style="margin-left: 10px; color: #16a34a;">✓ 無請假記錄</div>';
+          }
+          
+          // 固定扣款明細（劳保、健保等）
+          let deductionHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>固定扣款明細：</strong></div>';
+          if (r.deductionItems && r.deductionItems.length > 0) {
+            deductionHtml += '<div style="margin-left: 10px;">';
+            r.deductionItems.forEach(item => {
+              deductionHtml += `<div style="margin-bottom: 4px;">• ${item.name}: ${centsToTwd(item.amountCents)}</div>`;
+            });
+            deductionHtml += '</div>';
+            deductionHtml += `<div style="margin-left: 10px; margin-top: 8px; font-weight: 600; color: #dc2626;">小計: ${centsToTwd(r.deductionCents)}</div>`;
+          } else {
+            deductionHtml += '<div style="margin-left: 10px; color: #16a34a;">✓ 無固定扣款</div>';
           }
           
           // 全勤獎金判斷
@@ -902,6 +946,7 @@
                   <div>
                     ${fullAttendanceHtml}
                     ${transportHtml}
+                    ${deductionHtml}
                     ${leaveHtml}
                   </div>
                 </div>

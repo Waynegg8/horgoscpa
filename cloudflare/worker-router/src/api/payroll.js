@@ -173,7 +173,8 @@ async function getOvertimeDetails(env, userId, month) {
 		8: { name: '國定假日（9-10h）', multiplier: 1.34, isOvertime: true },
 		9: { name: '國定假日（11-12h）', multiplier: 1.67, isOvertime: true },
 		10: { name: '例假日（8h內）', multiplier: 2.0, isOvertime: true, special: 'fixed_8h' },
-		11: { name: '例假日（9-12h）', multiplier: 2.0, isOvertime: true },
+		11: { name: '例假日（9-10h）', multiplier: 1.34, isOvertime: true },  // 修正：超过8h按平日加班
+		12: { name: '例假日（11-12h）', multiplier: 1.67, isOvertime: true },  // 新增：11-12h按平日加班后2h
 	};
 
 	// 查询每日加班记录（按日期+类型）
@@ -207,6 +208,7 @@ async function getOvertimeDetails(env, userId, month) {
 	`).bind(userId, firstDay, lastDayStr).all();
 
 	// 按日期+类型整理加班记录（按时间顺序，用于FIFO扣减补休）
+	// 保留所有记录（用于客户成本追踪），每条记录独立计算
 	const overtimeRecords = [];
 	
 	for (const log of (timelogs.results || [])) {
@@ -217,14 +219,17 @@ async function getOvertimeDetails(env, userId, month) {
 		
 		if (!workType || !workType.isOvertime || hours === 0) continue;
 		
+		// 所有记录都保留，用于客户成本追踪
+		// 标记是否为固定类型（用于显示补休累积逻辑）
 		overtimeRecords.push({
 			date: date,
 			workType: workType.name,
 			workTypeId: workTypeId,
-			originalHours: hours,
+			originalHours: hours,  // 实际工作小时数
 			remainingHours: hours,  // 扣减补休后的剩余时数
 			multiplier: workType.multiplier,
-			isFixedType: workType.special === 'fixed_8h'
+			isFixedType: workType.special === 'fixed_8h',  // 标记固定类型（例假日/国定假日8h内）
+			compHoursGenerated: workType.special === 'fixed_8h' ? 8 : hours  // 累积的补休小时数
 		});
 	}
 	
@@ -281,24 +286,11 @@ async function getOvertimeDetails(env, userId, month) {
 			};
 		}
 		
-		// 计算原始加权工时
-		let originalWeighted = 0;
-		if (record.isFixedType) {
-			originalWeighted = 8.0;
-		} else {
-			originalWeighted = record.originalHours * record.multiplier;
-		}
+		// 计算原始加权工时（所有类型都按实际小时数 × 倍率）
+		const originalWeighted = record.originalHours * record.multiplier;
 		
 		// 计算扣除补休后的有效加权工时
-		let effectiveWeighted = 0;
-		if (record.remainingHours > 0) {
-			if (record.isFixedType) {
-				// 固定类型：如果有剩余则仍是8.0，否则为0
-				effectiveWeighted = 8.0;
-			} else {
-				effectiveWeighted = record.remainingHours * record.multiplier;
-			}
-		}
+		const effectiveWeighted = record.remainingHours * record.multiplier;
 		
 		dailyOvertimeMap[record.date].items.push({
 			workType: record.workType,
@@ -306,10 +298,11 @@ async function getOvertimeDetails(env, userId, month) {
 			originalHours: Math.round(record.originalHours * 10) / 10,
 			remainingHours: Math.round(record.remainingHours * 10) / 10,
 			compDeducted: Math.round((record.compDeducted || 0) * 10) / 10,
+			compHoursGenerated: Math.round(record.compHoursGenerated * 10) / 10,  // 累积的补休时数
+			isFixedType: record.isFixedType,  // 是否为固定类型（用于显示）
 			multiplier: record.multiplier,
 			originalWeighted: Math.round(originalWeighted * 10) / 10,
-			effectiveWeighted: Math.round(effectiveWeighted * 10) / 10,
-			isFixedType: record.isFixedType
+			effectiveWeighted: Math.round(effectiveWeighted * 10) / 10
 		});
 		
 		dailyOvertimeMap[record.date].totalHours += record.originalHours;
@@ -489,7 +482,7 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents, reg
 	const lastDayStr = `${year}-${monthNum}-${String(lastDay).padStart(2, '0')}`;
 	const yearFirstDay = `${year}-01-01`;
 
-	// 读取该月的请假记录（病假、事假、生理假）
+	// 读取该月的请假记录（病假、事假、生理假）- 汇总
 	const leavesMonth = await env.DATABASE.prepare(`
 		SELECT 
 			leave_type,
@@ -501,6 +494,24 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents, reg
 		  AND status = 'approved'
 		  AND leave_type IN ('sick', 'personal', 'menstrual')
 		GROUP BY leave_type
+	`).bind(userId, lastDayStr, firstDay).all();
+
+	// 读取该月的请假记录详细列表（用于显示日期）
+	const leaveDetails = await env.DATABASE.prepare(`
+		SELECT 
+			leave_type,
+			start_date,
+			end_date,
+			amount,
+			unit,
+			reason
+		FROM LeaveRequests
+		WHERE user_id = ?
+		  AND start_date <= ?
+		  AND end_date >= ?
+		  AND status = 'approved'
+		  AND leave_type IN ('sick', 'personal', 'menstrual')
+		ORDER BY start_date
 	`).bind(userId, lastDayStr, firstDay).all();
 
 	// 读取今年累计的生理假天数（用于判断是否超过3天）
@@ -568,6 +579,16 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents, reg
 	// 事假扣款（按比例扣除）
 	const personalDeductionCents = Math.round(personalDays * dailySalaryCents * personalLeaveRate);
 
+	// 整理请假详细记录列表
+	const leaveDetailsList = (leaveDetails.results || []).map(leave => ({
+		leaveType: leave.leave_type,
+		startDate: leave.start_date,
+		endDate: leave.end_date,
+		amount: leave.amount,
+		unit: leave.unit,
+		reason: leave.reason || ''
+	}));
+
 	return {
 		leaveDeductionCents: sickDeductionCents + personalDeductionCents + menstrualDeductionCents,
 		sickDays,
@@ -575,7 +596,8 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents, reg
 		menstrualDays,
 		menstrualFreeDays, // 不扣全勤的生理假天数
 		menstrualMergedDays, // 并入病假计算的生理假天数
-		dailySalaryCents
+		dailySalaryCents,
+		leaveDetails: leaveDetailsList // 详细的请假记录列表
 	};
 }
 
@@ -649,8 +671,9 @@ async function calculateEmployeePayroll(env, userId, month) {
 	// 3. 分类统计薪资项目（根据循环类型过滤）
 	let regularAllowanceCents = 0;  // 经常性津贴（计入时薪）
 	let bonusCents = 0;              // 奖金
-	let deductionCents = 0;          // 扣款
+	let deductionCents = 0;          // 扣款总额
 	const hourlyRateBaseItems = [];  // 记录计入时薪的项目
+	const deductionItems = [];       // 记录所有扣款项目明细（劳保、健保等）
 
 	const items = salaryItems.results || [];
 	console.log(`[Payroll] 员工 ${userId} 查询到 ${items.length} 个薪资项目`);
@@ -683,8 +706,13 @@ async function calculateEmployeePayroll(env, userId, month) {
 		const amount = item.amount_cents || 0;
 		
 		if (item.category === 'deduction') {
-			// 扣款类别：累加到扣款总额
+			// 扣款类别：累加到扣款总额，并记录详细项目
 			deductionCents += amount;
+			deductionItems.push({
+				name: item.item_name,
+				amountCents: amount,
+				itemCode: item.item_code || ''
+			});
 		} else if (item.category === 'bonus') {
 			// 奖金类别
 			bonusCents += amount;
@@ -757,6 +785,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const menstrualFreeDays = leaveResult.menstrualFreeDays || 0;
 	const menstrualMergedDays = leaveResult.menstrualMergedDays || 0;
 	const dailySalaryCents = leaveResult.dailySalaryCents || 0;
+	const leaveDetails = leaveResult.leaveDetails || []; // 详细的请假记录列表
 
 	// 10. 检查绩效奖金调整（如果有月度调整，优先使用调整后的金额）
 	const bonusAdjustment = await env.DATABASE.prepare(`
@@ -803,7 +832,8 @@ async function calculateEmployeePayroll(env, userId, month) {
 		mealAllowanceCents,
 		transportCents,
 		performanceBonusCents,
-		deductionCents,           // 固定扣款
+		deductionCents,           // 固定扣款总额
+		deductionItems,           // 固定扣款明细（劳保、健保等）
 		leaveDeductionCents,      // 请假扣款
 		totalDeductionCents,      // 总扣款
 		grossSalaryCents,         // 应发薪资（扣款前）
@@ -828,6 +858,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 		menstrualFreeDays,        // 不扣全勤的生理假天数（前3天）
 		menstrualMergedDays,      // 并入病假的生理假天数（超过3天）
 		dailySalaryCents,         // 日薪（用于请假扣款计算）
+		leaveDetails,             // 详细的请假记录列表（包含日期）
 	};
 }
 
