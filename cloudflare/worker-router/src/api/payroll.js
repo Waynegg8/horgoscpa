@@ -900,7 +900,10 @@ async function calculateEmployeePayroll(env, userId, month) {
 			});
 		} else if (item.category === 'bonus') {
 			// 奖金类别
-			const isFullAttendanceBonus = item.item_code && item.item_code.toUpperCase().includes('FULL'); // 识别全勤奖金
+			// 识别全勤奖金：通过item_code或名称判断
+			const isFullAttendanceBonus = 
+				(item.item_code && item.item_code.toUpperCase().includes('FULL')) ||
+				(item.item_name && item.item_name.includes('全勤'));
 			
 			bonusCents += amount;
 			bonusItems.push({
