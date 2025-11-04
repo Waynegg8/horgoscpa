@@ -2190,18 +2190,20 @@
             // 獲取所有員工（復用全局的 empState.allUsers 或重新載入）
             let users = empState?.allUsers;
             if (!users || users.length === 0) {
+              console.log('[打卡記錄] empState 為空，重新載入員工列表');
               const res = await fetch(`${apiBase}/admin/users`, { credentials: 'include' });
               if (!res.ok) throw new Error('無法載入員工列表');
               const json = await res.json();
-              users = json.data || [];
+              users = json.data?.users || []; // 注意：需要取 .users
+              console.log('[打卡記錄] API 返回員工數據:', users);
             }
             
-            // 填充選擇器
+            // 填充選擇器（使用正確的字段名：userId 和 name）
             punchUserSelect.innerHTML = '<option value="">請選擇員工...</option>';
             users.forEach(u => {
               const opt = document.createElement('option');
-              opt.value = u.user_id;
-              opt.textContent = `${u.full_name || u.username} (ID: ${u.user_id})`;
+              opt.value = u.userId; // 驼峰式
+              opt.textContent = `${u.name || u.username}`;
               punchUserSelect.appendChild(opt);
             });
             
