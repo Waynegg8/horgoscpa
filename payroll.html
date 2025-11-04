@@ -12,8 +12,9 @@
     <!-- ⚡ 預載入與快取系統 -->
     <script src="/assets/js/data-cache.js"></script>
     <script src="/assets/js/fetch-interceptor.js"></script>
-    <script src="/assets/js/prerender.js"></script>
-    <script src="/assets/js/page-prerender.js"></script>
+    <!-- 預渲染系統已禁用（會干擾TAB切換） -->
+    <!-- <script src="/assets/js/prerender.js"></script> -->
+    <!-- <script src="/assets/js/page-prerender.js"></script> -->
   </head>
   <body class="payroll-page">
     <div style="padding:16px 20px;">
@@ -2247,11 +2248,6 @@
           loadPreview(true); // forceRefresh = true
         });
 
-        // ⚡ 預渲染初始化
-        if (window.PagePrerender) {
-          window.PagePrerender.init('main');
-        }
-
         // 初始化（極簡版）
         switchTab('calc');
         
@@ -2272,11 +2268,6 @@
             loadSystemSettings(); // 載入系統設定
             
             console.log('[初始化] 管理員模式已啟用（打卡記錄將在切換到該TAB時初始化）');
-            
-            // ⚡ 自动保存预渲染
-            if (window.PagePrerender) {
-              setTimeout(() => window.PagePrerender.autoSave('main', 2000), 1000);
-            }
           } else if (result.userData) {
             // 普通員工：設置當前用戶ID，打卡記錄在切換到該TAB時載入
             console.log('[初始化] 普通員工登入');
