@@ -24,8 +24,6 @@
         <input id="month" type="month" aria-label="月份" />
         <div class="toolbar-spacer" style="flex:1;"></div>
         <button id="btn-finalize" type="button" class="btn primary" disabled>產製月結</button>
-        <button id="btn-export-csv" type="button" class="btn" disabled>匯出 CSV</button>
-        <button id="btn-export-pdf" type="button" class="btn" disabled>匯出 PDF</button>
       </div>
       <div id="finalizeMsg" class="info-bar" style="display:none;"></div>
       <nav class="payroll-tabs" role="tablist" aria-label="薪資管理分頁" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
@@ -44,13 +42,7 @@
       <section id="panel-calc" class="panel" role="tabpanel" aria-labelledby="tab-calc">
         <div class="card">
           <div class="section-toolbar">
-            <input id="empSearchCalc" type="search" placeholder="搜尋員工…" />
-            <select id="statusCalc">
-              <option value="all">全部</option>
-              <option value="complete">已完成</option>
-              <option value="pending">未完成</option>
-            </select>
-            <button id="btnRefreshCalc" class="btn btn-sm" style="margin-left: 10px;">
+            <button id="btnRefreshCalc" class="btn btn-sm">
               🔄 刷新數據
             </button>
           </div>
@@ -64,6 +56,7 @@
                 <th colspan="2" style="background: #fef2f2; text-align: center;">扣款明細</th>
                 <th rowspan="2" style="background: #f0f9ff;">應發</th>
                 <th rowspan="2" style="background: #dbeafe;">實發</th>
+                <th rowspan="2" style="width: 80px;">打印</th>
               </tr>
               <tr>
                 <th style="background: #f0fdf4;">津貼</th>
@@ -78,7 +71,7 @@
               </tr>
             </thead>
             <tbody id="tbodyCalc">
-              <tr><td colspan="13" class="muted">尚無資料</td></tr>
+              <tr><td colspan="14" class="muted">尚無資料</td></tr>
             </tbody>
           </table>
         </div>
@@ -575,8 +568,6 @@
 
         // 計算相關 DOM
         const tbodyCalc = document.getElementById('tbodyCalc');
-        const empSearchCalc = document.getElementById('empSearchCalc');
-        const statusCalc = document.getElementById('statusCalc');
         const monthInput = document.getElementById('month');
         const btnFinalize = document.getElementById('btn-finalize');
 
@@ -586,7 +577,7 @@
         function setTabsEnabled(enabled){
           tabs.forEach(b=>{ b.disabled = !enabled; });
           // 只禁用特定的工具栏控制元素，不影响绩效奖金等功能的输入框
-          document.querySelectorAll('.payroll-toolbar .btn, #empSearchCalc, #statusCalc, #month, #empSearch, #itemSearch').forEach(el=>{ el.disabled = !enabled; });
+          document.querySelectorAll('.payroll-toolbar .btn, #month, #empSearch, #itemSearch').forEach(el=>{ el.disabled = !enabled; });
           // 注意：不禁用 .bonus-input 和 #yearBonus
         }
 
@@ -1308,7 +1299,7 @@
           tbodyCalc.innerHTML = '';
           if (rows.length === 0){
             const tr = document.createElement('tr');
-            tr.innerHTML = '<td colspan="13" class="muted">沒有符合條件的資料</td>';
+            tr.innerHTML = '<td colspan="14" class="muted">沒有符合條件的資料</td>';
             tbodyCalc.appendChild(tr);
           } else {
             rows.forEach((r, idx) => {
@@ -1352,6 +1343,9 @@
                 <td style="background: #fef2f2;color:#dc2626;">${r.leaveDeductionCents > 0 ? '-' + centsToTwd(r.leaveDeductionCents) : '0'}${leaveDetail}</td>
                 <td style="font-weight:600;background:#f0f9ff;">${centsToTwd(r.grossSalaryCents)}</td>
                 <td style="font-weight:600;color:#16a34a;background:#dbeafe;font-size:1.05em;">${centsToTwd(r.netSalaryCents)}</td>
+                <td style="text-align: center;">
+                  <button class="btn btn-sm" onclick="window.printPayslip(${r.userId}, '${monthInput.value}')" style="padding: 4px 10px; font-size: 0.75rem; background: #3b82f6; color: white;">🖨️ 打印</button>
+                </td>
               `;
               tbodyCalc.appendChild(tr);
               
@@ -1373,19 +1367,391 @@
             }
           }
         };
+        
+        // 打印薪资条功能
+        window.printPayslip = async function(userId, month) {
+          if (!userId || !month) {
+            alert('缺少必要参数');
+            return;
+          }
+          
+          const printWindow = window.open('', '_blank', 'width=800,height=1000');
+          printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="zh-Hant">
+            <head>
+              <meta charset="UTF-8">
+              <title>薪資條 - ${month}</title>
+              <style>
+                @page { 
+                  size: A4; 
+                  margin: 15mm; 
+                }
+                * { 
+                  margin: 0; 
+                  padding: 0; 
+                  box-sizing: border-box; 
+                }
+                body { 
+                  font-family: "Microsoft JhengHei", "微軟正黑體", Arial, sans-serif;
+                  line-height: 1.6;
+                  padding: 20px;
+                  max-width: 800px;
+                  margin: 0 auto;
+                }
+                .header {
+                  text-align: center;
+                  margin-bottom: 30px;
+                  border-bottom: 3px solid #1e40af;
+                  padding-bottom: 15px;
+                }
+                .company-name {
+                  font-size: 24pt;
+                  font-weight: bold;
+                  color: #1e40af;
+                  margin-bottom: 8px;
+                }
+                .document-title {
+                  font-size: 20pt;
+                  font-weight: bold;
+                  margin: 10px 0;
+                }
+                .employee-info {
+                  display: flex;
+                  justify-content: space-between;
+                  margin: 20px 0;
+                  padding: 15px;
+                  background: #f0f9ff;
+                  border-radius: 8px;
+                  border: 2px solid #bfdbfe;
+                }
+                .info-item {
+                  font-size: 12pt;
+                }
+                .info-label {
+                  color: #1e40af;
+                  font-weight: bold;
+                  margin-right: 8px;
+                }
+                .section-title {
+                  font-size: 14pt;
+                  font-weight: bold;
+                  color: #1e40af;
+                  margin: 25px 0 12px 0;
+                  padding-bottom: 5px;
+                  border-bottom: 2px solid #1e40af;
+                }
+                table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin: 15px 0;
+                }
+                th, td {
+                  border: 1.5px solid #666;
+                  padding: 10px;
+                  text-align: left;
+                  font-size: 11pt;
+                }
+                th {
+                  background: #dbeafe;
+                  font-weight: bold;
+                  text-align: center;
+                }
+                td.amount {
+                  text-align: right;
+                  font-family: "Courier New", monospace;
+                }
+                .income-row {
+                  background: #f0fdf4;
+                }
+                .deduction-row {
+                  background: #fef2f2;
+                }
+                .total-row {
+                  background: #e0f2fe;
+                  font-weight: bold;
+                  font-size: 12pt;
+                }
+                .final-row {
+                  background: #dbeafe;
+                  font-weight: bold;
+                  font-size: 13pt;
+                  color: #16a34a;
+                }
+                .summary-box {
+                  margin: 25px 0;
+                  padding: 20px;
+                  border: 3px solid #16a34a;
+                  border-radius: 8px;
+                  background: #f0fdf4;
+                }
+                .summary-item {
+                  display: flex;
+                  justify-content: space-between;
+                  padding: 8px 0;
+                  font-size: 13pt;
+                }
+                .summary-item.final {
+                  border-top: 2px solid #16a34a;
+                  margin-top: 10px;
+                  padding-top: 15px;
+                  font-size: 16pt;
+                  font-weight: bold;
+                  color: #16a34a;
+                }
+                .signature {
+                  display: flex;
+                  justify-content: space-around;
+                  margin: 40px 0 20px 0;
+                  padding-top: 20px;
+                  border-top: 1px dashed #666;
+                }
+                .signature-item {
+                  text-align: center;
+                  font-size: 11pt;
+                }
+                .signature-line {
+                  width: 200px;
+                  border-bottom: 1px solid #000;
+                  height: 40px;
+                  margin: 10px auto;
+                }
+                .footer {
+                  text-align: center;
+                  margin-top: 30px;
+                  padding-top: 15px;
+                  border-top: 1px solid #ccc;
+                  font-size: 9pt;
+                  color: #666;
+                }
+                .note {
+                  margin: 15px 0;
+                  padding: 12px;
+                  background: #fffbeb;
+                  border-left: 4px solid #f59e0b;
+                  font-size: 10pt;
+                  color: #92400e;
+                }
+                @media print {
+                  button { display: none !important; }
+                  body { padding: 0; }
+                }
+              </style>
+            </head>
+            <body>
+              <button onclick="window.print()" style="position:fixed;top:10px;right:10px;padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;z-index:1000;font-size:14px;">🖨️ 列印薪資條</button>
+              <div id="payslip-content">載入中...</div>
+              <script>
+                (async function() {
+                  try {
+                    const response = await fetch('/internal/api/v1/admin/payroll/calculate/${userId}?month=${month}', {
+                      credentials: 'include'
+                    });
+                    const result = await response.json();
+                    
+                    if (!result.ok || !result.data) {
+                      document.getElementById('payslip-content').innerHTML = '<p style="color:red;text-align:center;margin-top:50px;">無法載入薪資數據</p>';
+                      return;
+                    }
+                    
+                    const data = result.data;
+                    const userName = data.name || '未知員工';
+                    
+                    // 格式化金额
+                    const fmt = (cents) => {
+                      const val = Math.abs(cents || 0) / 100;
+                      return 'NT$ ' + val.toLocaleString('zh-TW', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    };
+                    
+                    // 格式化月份为民国年月
+                    const formatMonth = (month) => {
+                      const [y, m] = month.split('-');
+                      const rocYear = parseInt(y) - 1911;
+                      return rocYear + '年' + parseInt(m) + '月';
+                    };
+                    
+                    // 构建收入明细
+                    let incomeRows = '';
+                    
+                    // 基本薪资
+                    incomeRows += '<tr class="income-row"><td>基本薪資</td><td class="amount">' + fmt(data.baseSalaryCents) + '</td><td>底薪</td></tr>';
+                    
+                    // 津贴
+                    if (data.allowanceItems && data.allowanceItems.length > 0) {
+                      data.allowanceItems.forEach(item => {
+                        const regular = item.isRegularPayment ? ' <small>(經常性給與)</small>' : '';
+                        incomeRows += '<tr class="income-row"><td>' + item.name + regular + '</td><td class="amount">' + fmt(item.amountCents) + '</td><td>津貼</td></tr>';
+                      });
+                    }
+                    
+                    // 奖金
+                    if (data.bonusItems && data.bonusItems.length > 0) {
+                      data.bonusItems.forEach(item => {
+                        const regular = item.isRegularPayment ? ' <small>(經常性給與)</small>' : '';
+                        let note = '獎金';
+                        if (item.isFullAttendanceBonus) {
+                          note = data.isFullAttendance ? '✓ 全勤達標，發放' : '✗ 未達全勤，不發放';
+                        }
+                        // 只显示实际发放的奖金
+                        if (!item.isFullAttendanceBonus || data.isFullAttendance) {
+                          incomeRows += '<tr class="income-row"><td>' + item.name + regular + '</td><td class="amount">' + fmt(item.amountCents) + '</td><td>' + note + '</td></tr>';
+                        }
+                      });
+                    }
+                    
+                    // 加班费
+                    if ((data.overtimeCents || 0) > 0 || (data.expiredCompPayCents || 0) > 0) {
+                      const effectiveHours = data.effectiveWeightedHours || 0;
+                      const hourlyRate = (data.hourlyRateCents || 0) / 100;
+                      const overtimeFromHours = Math.round(effectiveHours * hourlyRate * 100);
+                      const expiredComp = data.expiredCompPayCents || 0;
+                      const total = overtimeFromHours + expiredComp;
+                      
+                      if (overtimeFromHours > 0) {
+                        incomeRows += '<tr class="income-row"><td>加班費（有效加權工時）<br><small>' + effectiveHours.toFixed(1) + 'h × NT$ ' + hourlyRate.toFixed(2) + '</small></td><td class="amount">' + fmt(overtimeFromHours) + '</td><td>加班費</td></tr>';
+                      }
+                      if (expiredComp > 0) {
+                        incomeRows += '<tr class="income-row"><td>上月到期補休轉加班費</td><td class="amount" style="color:#dc2626;">' + fmt(expiredComp) + '</td><td>加班費</td></tr>';
+                      }
+                    }
+                    
+                    // 误餐费
+                    if ((data.mealAllowanceCents || 0) > 0) {
+                      const days = data.overtimeDays || 0;
+                      incomeRows += '<tr class="income-row"><td>誤餐費<br><small>' + days + '天</small></td><td class="amount">' + fmt(data.mealAllowanceCents) + '</td><td>津貼</td></tr>';
+                    }
+                    
+                    // 交通费
+                    if ((data.transportCents || 0) > 0) {
+                      const km = data.totalKm || 0;
+                      incomeRows += '<tr class="income-row"><td>交通補貼<br><small>' + km + ' km</small></td><td class="amount">' + fmt(data.transportCents) + '</td><td>津貼</td></tr>';
+                    }
+                    
+                    // 绩效奖金调整
+                    if ((data.performanceBonusCents || 0) > 0) {
+                      incomeRows += '<tr class="income-row"><td>績效獎金（月度調整）</td><td class="amount">' + fmt(data.performanceBonusCents) + '</td><td>獎金</td></tr>';
+                    }
+                    
+                    // 构建扣款明细
+                    let deductionRows = '';
+                    
+                    // 固定扣款
+                    if (data.deductionItems && data.deductionItems.length > 0) {
+                      data.deductionItems.forEach(item => {
+                        deductionRows += '<tr class="deduction-row"><td>' + item.name + '</td><td class="amount">-' + fmt(item.amountCents) + '</td><td>固定扣款</td></tr>';
+                      });
+                    }
+                    
+                    // 请假扣款
+                    if ((data.leaveDeductionCents || 0) > 0) {
+                      const sickH = data.sickHours || 0;
+                      const personalH = data.personalHours || 0;
+                      const menstrualH = data.menstrualHours || 0;
+                      let leaveDetail = '';
+                      if (sickH > 0) leaveDetail += '病假' + sickH + 'h ';
+                      if (personalH > 0) leaveDetail += '事假' + personalH + 'h ';
+                      if (menstrualH > 0) leaveDetail += '生理假' + menstrualH + 'h';
+                      deductionRows += '<tr class="deduction-row"><td>請假扣款<br><small>' + leaveDetail + '</small></td><td class="amount">-' + fmt(data.leaveDeductionCents) + '</td><td>請假扣款</td></tr>';
+                    }
+                    
+                    // 渲染HTML
+                    const html = \`
+                      <div class="header">
+                        <div class="company-name">宏國聯合會計師事務所</div>
+                        <div class="document-title">薪資條</div>
+                      </div>
+                      
+                      <div class="employee-info">
+                        <div class="info-item"><span class="info-label">員工姓名：</span>\${userName}</div>
+                        <div class="info-item"><span class="info-label">薪資月份：</span>\${formatMonth('${month}')}</div>
+                        <div class="info-item"><span class="info-label">列印日期：</span>\${new Date().toLocaleDateString('zh-TW')}</div>
+                      </div>
+                      
+                      <div class="section-title">📈 收入明細</div>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th style="width: 50%;">項目</th>
+                            <th style="width: 30%;">金額</th>
+                            <th style="width: 20%;">類別</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          \${incomeRows}
+                        </tbody>
+                      </table>
+                      
+                      <div class="section-title">📉 扣款明細</div>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th style="width: 50%;">項目</th>
+                            <th style="width: 30%;">金額</th>
+                            <th style="width: 20%;">類別</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          \${deductionRows || '<tr><td colspan="3" style="text-align:center;color:#666;">本月無扣款</td></tr>'}
+                        </tbody>
+                      </table>
+                      
+                      <div class="summary-box">
+                        <div class="summary-item">
+                          <span>應發工資：</span>
+                          <span style="font-weight:bold;">\${fmt(data.grossSalaryCents)}</span>
+                        </div>
+                        <div class="summary-item">
+                          <span>總扣款：</span>
+                          <span style="color:#dc2626;">-\${fmt((data.deductionCents || 0) + (data.leaveDeductionCents || 0))}</span>
+                        </div>
+                        <div class="summary-item final">
+                          <span>實發工資：</span>
+                          <span>\${fmt(data.netSalaryCents)}</span>
+                        </div>
+                      </div>
+                      
+                      <div class="note">
+                        💡 <strong>說明：</strong><br>
+                        • 時薪計算基準 = (底薪 + 經常性給與) ÷ 240小時<br>
+                        • 加班費 = 有效加權工時 × 時薪<br>
+                        • 本薪資條僅供參考，實際發放金額以公司財務部門為準
+                      </div>
+                      
+                      <div class="signature">
+                        <div class="signature-item">
+                          <div>員工簽收</div>
+                          <div class="signature-line"></div>
+                          <div style="font-size:9pt;color:#666;">日期：____________</div>
+                        </div>
+                        <div class="signature-item">
+                          <div>會計確認</div>
+                          <div class="signature-line"></div>
+                          <div style="font-size:9pt;color:#666;">日期：____________</div>
+                        </div>
+                      </div>
+                      
+                      <div class="footer">
+                        <div>宏國聯合會計師事務所 | www.horgoscpa.com</div>
+                        <div style="margin-top:5px;">本文件由系統自動產生，如有疑問請洽人事部門</div>
+                      </div>
+                    \`;
+                    
+                    document.getElementById('payslip-content').innerHTML = html;
+                  } catch (error) {
+                    console.error('載入薪資數據失敗:', error);
+                    document.getElementById('payslip-content').innerHTML = '<p style="color:red;text-align:center;margin-top:50px;">載入失敗：' + error.message + '</p>';
+                  }
+                })();
+              </script>
+            </body>
+            </html>
+          `);
+          printWindow.document.close();
+        };
 
+        // 不再需要筛选功能，直接显示所有数据
         function applyCalcFilters(){
-          const kw = (empSearchCalc.value || '').trim().toLowerCase();
-          const st = statusCalc.value;
-          let rows = calcState.all.slice();
-          console.log('[筛选] 原始数据:', rows.length, '条');
-          console.log('[筛选] 关键词:', kw, '状态:', st);
-          if (kw) rows = rows.filter(r => (r.name || '').toLowerCase().includes(kw));
-          if (st === 'complete') rows = rows.filter(r => r.isFullAttendance === true);
-          if (st === 'pending') rows = rows.filter(r => r.isFullAttendance === false);
-          console.log('[筛选] 筛选后数据:', rows.length, '条');
-          calcState.filtered = rows;
-          calcState.page = 1;
+          calcState.filtered = calcState.all.slice();
           renderCalc();
         }
 
@@ -2658,9 +3024,6 @@
         yearInput.value = now.getFullYear();
 
         // 綁定事件
-        let timer = null;
-        empSearchCalc.addEventListener('input', ()=>{ clearTimeout(timer); timer = setTimeout(applyCalcFilters, 300); });
-        statusCalc.addEventListener('change', applyCalcFilters);
         monthInput.addEventListener('change', ()=>{ loadPreview(); checkFinalized(); });
         btnFinalize.addEventListener('click', finalizeMonth);
         
