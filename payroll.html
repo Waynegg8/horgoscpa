@@ -1403,7 +1403,7 @@
           
           // 到期轉加班費的補休
           const expiredCompHours = r.expiredCompHours || 0;
-          const expiredComp = r.expiredCompPayCents || 0;
+          // expiredComp 已在上面的加班費區塊聲明
           if (expiredCompHours > 0 || expiredComp > 0) {
             compLeaveHtml += `<div style="padding: 8px; margin-top: 8px; background: #fef2f2; border-left: 3px solid #dc2626; border-radius: 4px;">`;
             compLeaveHtml += `<div style="color: #991b1b; font-weight: 600; margin-bottom: 4px;">`;
