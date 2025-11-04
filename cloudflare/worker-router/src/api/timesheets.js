@@ -577,7 +577,22 @@ async function handlePostTimelogs(request, env, me, requestId, url) {
 		}
 		
 		// 計算補休工時（如果是加班）
-		const comp_hours_generated = workType.isOvertime ? (workType.special === 'fixed_8h' ? 8 : hours) : 0;
+		// 國定假日（ID 7）：8h補休
+		// 例假日（ID 10）：16h補休（8h工資補休 + 8h額外補休，勞基法第40條）
+		// 其他類型：按實際工時
+		let comp_hours_generated = 0;
+		if (workType.isOvertime) {
+			if (work_type === 10) {
+				// 例假日：加倍工資 + 另給補休 = 8h加權 + 16h補休
+				comp_hours_generated = 16;
+			} else if (workType.special === 'fixed_8h') {
+				// 國定假日：加倍工資 = 8h加權 + 8h補休
+				comp_hours_generated = 8;
+			} else {
+				// 一般加班：按實際工時
+				comp_hours_generated = hours;
+			}
+		}
 		
 		// 如果是加班，寫入補休追蹤表
 		if (comp_hours_generated > 0) {

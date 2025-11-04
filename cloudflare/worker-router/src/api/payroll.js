@@ -271,18 +271,22 @@ async function getOvertimeDetails(env, userId, month) {
 			const key = `${date}:${workTypeId}`;
 			const group = dailyFixedTypeMap[key];
 			
-			// 同一天同类型的所有记录，共享8h补休和8h加权（按比例分配）
+			// 同一天同类型的所有记录，共享补休和8h加权（按比例分配）
 			const totalHours = group.totalHours;
 			const ratio = hours / totalHours; // 当前记录占比
 			
-			// 不论总工时多少，固定给8h补休和8h加权，按比例分配
-			const compHoursGenerated = 8 * ratio;
-			const fixedWeightedHours = 8 * ratio; // ⭐ 加权工时也按比例分配（确保总和8h）
+			// 例假日（ID 10）：16h补休 + 8h加权
+			// 国定假日（ID 7）：8h补休 + 8h加权
+			const totalCompHours = workTypeId === 10 ? 16 : 8;
+			const compHoursGenerated = totalCompHours * ratio;
+			const fixedWeightedHours = 8 * ratio; // ⭐ 加权工时固定8h按比例分配
 			
 			console.log(`[DEBUG fixed_8h] ${date} ${workType.name}:`, {
+				workTypeId,
 				hours,
 				totalHours,
 				ratio,
+				totalCompHours,
 				compHoursGenerated,
 				fixedWeightedHours
 			});

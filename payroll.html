@@ -911,11 +911,19 @@
                 const fixedTypeItems = day.items.filter(item => item.isFixedType);
                 if (fixedTypeItems.length > 1 && fixedTypeItems[0].totalDailyHours) {
                   const totalDailyHours = fixedTypeItems[0].totalDailyHours;
+                  const isRestDay = fixedTypeItems[0].workTypeId === 10; // 例假日
+                  const compHours = isRestDay ? '16h' : '8h';
+                  const lawArticle = isRestDay ? '第40條' : '第39條';
+                  
                   overtimeHtml += `<div style="margin-left: 20px; margin-bottom: 10px; padding: 8px; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 6px; font-size: 0.9em;">`;
                   overtimeHtml += `<strong style="color: #92400e;">⚠️ ${fixedTypeItems[0].workType}規則說明：</strong><br>`;
                   overtimeHtml += `<span style="color: #78350f;">當天共工作 <strong>${totalDailyHours}h</strong>（分${fixedTypeItems.length}筆記錄，用於客戶成本核算）<br>`;
-                  overtimeHtml += `依勞基法：不論實際工時，統一給付 <strong>2日工資</strong>（原本1日+加班1日）<br>`;
-                  overtimeHtml += `月薪已含原本1日，加班費計算：<strong>8h×1倍=8h加權工時</strong> + <strong>8h補休</strong><br>`;
+                  overtimeHtml += `依勞基法${lawArticle}：不論實際工時，統一給付 <strong>2日工資</strong>（原本1日+加班1日）`;
+                  if (isRestDay) {
+                    overtimeHtml += ` + <strong style="color: #dc2626;">另給1日補休</strong>`;
+                  }
+                  overtimeHtml += `<br>`;
+                  overtimeHtml += `月薪已含原本1日，加班費計算：<strong>8h×1倍=8h加權工時</strong> + <strong>${compHours}補休</strong><br>`;
                   overtimeHtml += `以下各筆記錄按比例分配補休時數</span>`;
                   overtimeHtml += `</div>`;
                 }
@@ -980,7 +988,7 @@
                     // 补休分配
                     overtimeHtml += `<div style="color: #059669; margin-top: 2px;">`;
                     const compHours = item.compHoursGenerated || 0;
-                    overtimeHtml += `🎁 分配補休: <strong>${compHours.toFixed(2)}h</strong>`;
+                    overtimeHtml += `🎁 分配補休: <strong>${compHours}h</strong>`;
                     overtimeHtml += `</div>`;
                     
                     // 加权工时
