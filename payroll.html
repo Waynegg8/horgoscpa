@@ -874,249 +874,169 @@
             </details>
           `;
           
-          // ========== 薪資明細HTML構建 ==========
+          // ========== 薪資計算摘要 ==========
           let payrollDetailHtml = '';
           
-          // 1. 收入部分
+          // 【收入】
           payrollDetailHtml += `
             <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 2px solid #10b981; margin-bottom: 15px;">
               <div style="font-size: 1.1em; font-weight: 700; color: #065f46; margin-bottom: 12px; border-bottom: 2px solid #10b981; padding-bottom: 8px;">
-                💰 收入明細
+                💰 收入
               </div>
               
-              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 10px;">
-                <div>1. 基本薪資</div>
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px;">
+                <div>基本工資</div>
                 <div style="font-weight: 600;">${centsToTwd(r.baseSalaryCents)}</div>
               </div>
           `;
           
-          // 2. 津贴（只显示 category='allowance' 且 isRegularPayment=true 的项目）
-          // 对应表格"津贴"列
-          let allowanceSubtotal = 0;
+          // 津贴（显示明细）
           if (r.allowanceItems && r.allowanceItems.length > 0) {
             const regularAllowances = r.allowanceItems.filter(item => item.category === 'allowance' && item.isRegularPayment);
-            if (regularAllowances.length > 0) {
-              payrollDetailHtml += `<div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #059669;">2. 津貼 (經常性給與)</strong></div>`;
-              regularAllowances.forEach((item, idx) => {
-                payrollDetailHtml += `
-                  <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #047857;">
-                    <div>&nbsp;&nbsp;${String.fromCharCode(97 + idx)}. ${item.name}</div>
-                    <div>${centsToTwd(item.amountCents)}</div>
-                  </div>
-                `;
-                allowanceSubtotal += item.amountCents || 0;
-              });
+            regularAllowances.forEach((item) => {
               payrollDetailHtml += `
-                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; margin-top: 4px; color: #065f46; font-weight: 600;">
-                  <div>&nbsp;&nbsp;津貼小計</div>
-                  <div>${centsToTwd(allowanceSubtotal)}</div>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #047857;">
+                  <div>津貼 - ${item.name}</div>
+                  <div>${centsToTwd(item.amountCents)}</div>
                 </div>
               `;
-            }
+            });
           }
           
-          // 3. 奖金（只显示 category='bonus' 的项目，排除未达标全勤和绩效奖金）
-          // 对应表格"奖金"列 = bonusCents
-          let bonusSubtotal = 0;
+          // 奖金（显示明细，标注达标状态）
           if (r.bonusItems && r.bonusItems.length > 0) {
-            // 过滤掉绩效奖金（item_code='PERFORMANCE'），它应该单独显示
-            const nonPerformanceBonuses = r.bonusItems.filter(item => 
-              item.itemCode !== 'PERFORMANCE'
-            );
-            
-            if (nonPerformanceBonuses.length > 0) {
-              payrollDetailHtml += `<div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #d97706;">3. 獎金</strong></div>`;
-              
-              nonPerformanceBonuses.forEach((item, idx) => {
-                const isFullAttendancePaid = !item.isFullAttendanceBonus || r.isFullAttendance;
-                const note = item.isFullAttendanceBonus ? 
-                  (r.isFullAttendance ? ' <small style="color: #16a34a;">✓ 達標</small>' : ' <small style="color: #dc2626;">✗ 未達標</small>') : '';
-                const amount = isFullAttendancePaid ? item.amountCents : 0;
-                
-                payrollDetailHtml += `
-                  <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #92400e;">
-                    <div>&nbsp;&nbsp;${String.fromCharCode(97 + idx)}. ${item.name}${note}</div>
-                    <div style="${amount === 0 ? 'text-decoration: line-through; color: #9ca3af;' : ''}">${centsToTwd(item.amountCents)}</div>
-                  </div>
-                `;
-                
-                // 只累加达标的奖金（未达标的全勤不累加）
-                if (isFullAttendancePaid) {
-                  bonusSubtotal += amount;
-                }
-              });
+            const nonPerformanceBonuses = r.bonusItems.filter(item => item.itemCode !== 'PERFORMANCE');
+            nonPerformanceBonuses.forEach((item) => {
+              const isFullAttendancePaid = !item.isFullAttendanceBonus || r.isFullAttendance;
+              const note = item.isFullAttendanceBonus ? 
+                (r.isFullAttendance ? ' <small style="color: #16a34a;">✓ 達標</small>' : ' <small style="color: #dc2626;">✗ 未達標</small>') : '';
+              const amount = isFullAttendancePaid ? item.amountCents : 0;
               
               payrollDetailHtml += `
-                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; margin-top: 4px; color: #92400e; font-weight: 600;">
-                  <div>&nbsp;&nbsp;獎金小計</div>
-                  <div>${centsToTwd(bonusSubtotal)}</div>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #92400e;">
+                  <div>獎金 - ${item.name}${note}</div>
+                  <div style="${amount === 0 ? 'text-decoration: line-through; color: #9ca3af;' : ''}">${centsToTwd(item.amountCents)}</div>
                 </div>
               `;
-            }
+            });
           }
           
-          // 加班费
-          const effectiveHours = r.effectiveWeightedHours || 0;
-          const expiredComp = r.expiredCompPayCents || 0;
-          const baseOvertimePay = Math.round(effectiveHours * hourlyRateNum * 100);
-          const totalOvertimePay = baseOvertimePay + expiredComp;
-          
-          payrollDetailHtml += `
-            <div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #0284c7;">4. 加班費</strong></div>
-            <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #0369a1;">
-              <div>&nbsp;&nbsp;a. 本月有效加權工時 (${effectiveHours.toFixed(2)}h × ${hourlyRate})</div>
-              <div>${centsToTwd(baseOvertimePay)}</div>
-            </div>
-          `;
-          
-          if (expiredComp > 0) {
-            payrollDetailHtml += `
-              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #dc2626;">
-                <div>&nbsp;&nbsp;b. 當月補休未用完轉加班費 (${r.unusedCompHours || 0}h)</div>
-                <div>${centsToTwd(expiredComp)}</div>
-              </div>
-            `;
-          }
-          
-          payrollDetailHtml += `
-            <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; margin-top: 4px; color: #0284c7; font-weight: 600;">
-              <div>&nbsp;&nbsp;加班費小計</div>
-              <div>${centsToTwd(totalOvertimePay)}</div>
-            </div>
-          `;
-          
-          // 5. 误餐费（对应表格"误餐费"列）
-          const mealAmount = r.mealAllowanceCents || 0;
-          if (mealAmount > 0) {
-            payrollDetailHtml += `
-              <div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #7c3aed;">5. 誤餐費</strong></div>
-              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #6d28d9;">
-                <div>&nbsp;&nbsp;${r.overtimeDays || 0}天 × 誤餐費單價</div>
-                <div style="font-weight: 600;">${centsToTwd(mealAmount)}</div>
-              </div>
-            `;
-          }
-          
-          // 6. 交通补贴（对应表格"交通"列）
-          const transportAmount = r.transportCents || 0;
-          if (transportAmount > 0) {
-            payrollDetailHtml += `
-              <div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #10b981;">6. 交通補貼</strong></div>
-              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #059669;">
-                <div>&nbsp;&nbsp;${r.totalKm || 0}km (${r.transportIntervals || 0}個區間)</div>
-                <div style="font-weight: 600;">${centsToTwd(transportAmount)}</div>
-              </div>
-            `;
-          }
-          
-          // 7. 绩效奖金（对应表格"绩效"列）
+          // 绩效
           const performanceAmount = r.performanceBonusCents || 0;
           if (performanceAmount > 0) {
             payrollDetailHtml += `
-              <div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #f59e0b;">7. 績效獎金</strong></div>
-              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #d97706;">
-                <div>&nbsp;&nbsp;當月績效（含調整）</div>
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #d97706;">
+                <div>績效</div>
                 <div style="font-weight: 600;">${centsToTwd(performanceAmount)}</div>
               </div>
             `;
           }
           
-          // 收入合计（从明细累加验证）
-          // 底薪 + 津贴小计 + 奖金小计 + 加班费 + 误餐费 + 交通 + 绩效
-          const calculatedIncome = r.baseSalaryCents + allowanceSubtotal + bonusSubtotal + 
-                                   totalOvertimePay + mealAmount + transportAmount + performanceAmount;
-          const incomeMatch = Math.abs(calculatedIncome - r.grossSalaryCents) < 10; // 允许1分以内的误差
+          // 加班费（不拆分细节）
+          const totalOvertimePay = r.overtimeCents || 0;
+          if (totalOvertimePay > 0) {
+            payrollDetailHtml += `
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #0369a1;">
+                <div>加班費</div>
+                <div style="font-weight: 600;">${centsToTwd(totalOvertimePay)}</div>
+              </div>
+            `;
+          }
           
+          // 误餐费
+          const mealAmount = r.mealAllowanceCents || 0;
+          if (mealAmount > 0) {
+            payrollDetailHtml += `
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #6d28d9;">
+                <div>誤餐費</div>
+                <div>${centsToTwd(mealAmount)}</div>
+              </div>
+            `;
+          }
+          
+          // 交通补助
+          const transportAmount = r.transportCents || 0;
+          if (transportAmount > 0) {
+            payrollDetailHtml += `
+              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #059669;">
+                <div>交通補助</div>
+                <div>${centsToTwd(transportAmount)}</div>
+              </div>
+            `;
+          }
+          
+          // 收入合计
           payrollDetailHtml += `
             <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 15px; padding-top: 15px; border-top: 3px double #10b981; font-size: 1.1em; font-weight: 700; color: #065f46;">
-              <div>【收入合計】${incomeMatch ? '' : ' <span style="color:#dc2626;font-size:0.8em;">⚠️計算不符</span>'}</div>
+              <div>收入合計</div>
               <div>${centsToTwd(r.grossSalaryCents)}</div>
             </div>
           `;
           
           payrollDetailHtml += `</div>`;
           
-          // 2. 扣款部分
+          // 【扣款】
           payrollDetailHtml += `
             <div style="background: #fef2f2; padding: 15px; border-radius: 8px; border: 2px solid #dc2626; margin-bottom: 15px;">
               <div style="font-size: 1.1em; font-weight: 700; color: #991b1b; margin-bottom: 12px; border-bottom: 2px solid #dc2626; padding-bottom: 8px;">
-                📉 扣款明細
+                📉 扣款
               </div>
           `;
           
-          // 固定扣款
+          // 固定扣款（显示明细）
           if (r.deductionItems && r.deductionItems.length > 0) {
-            payrollDetailHtml += `<div style="margin-left: 10px;"><strong style="color: #b91c1c;">1. 固定扣款</strong></div>`;
-            r.deductionItems.forEach((item, idx) => {
+            r.deductionItems.forEach((item) => {
               payrollDetailHtml += `
-                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #dc2626;">
-                  <div>&nbsp;&nbsp;${String.fromCharCode(97 + idx)}. ${item.name}</div>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #dc2626;">
+                  <div>固定扣款 - ${item.name}</div>
                   <div>${centsToTwd(item.amountCents)}</div>
                 </div>
               `;
             });
-            payrollDetailHtml += `
-              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; margin-top: 4px; color: #b91c1c; font-weight: 600;">
-                <div>&nbsp;&nbsp;固定扣款小計</div>
-                <div>${centsToTwd(r.deductionCents)}</div>
-              </div>
-            `;
           }
           
-          // 请假扣款
+          // 请假扣款（显示明细，标注"无条件舍去"）
           const leaveDeduction = r.leaveDeductionCents || 0;
           if (leaveDeduction > 0) {
             const sickH = r.sickHours || 0;
             const personalH = r.personalHours || 0;
             const menstrualH = r.menstrualHours || 0;
             
-            payrollDetailHtml += `<div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #b91c1c;">2. 請假扣款</strong></div>`;
-            
-            let itemIndex = 0;
             if (sickH > 0) {
-              const sickDeduction = Math.round(sickH * hourlyRateNum * 0.5 * 100);
+              const sickDeduction = Math.floor(sickH * hourlyRateNum * 0.5 * 100);
               payrollDetailHtml += `
-                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #dc2626;">
-                  <div>&nbsp;&nbsp;${String.fromCharCode(97 + itemIndex)}. 病假 (${sickH}h × ${hourlyRate} × 50%)</div>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #dc2626;">
+                  <div>請假扣款 - 病假 ${sickH}h × ${hourlyRate} × 50% <small style="color: #9ca3af;">(無條件捨去)</small></div>
                   <div>${centsToTwd(sickDeduction)}</div>
                 </div>
               `;
-              itemIndex++;
             }
             
             if (personalH > 0) {
-              const personalDeduction = Math.round(personalH * hourlyRateNum * 100);
+              const personalDeduction = Math.floor(personalH * hourlyRateNum * 100);
               payrollDetailHtml += `
-                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #dc2626;">
-                  <div>&nbsp;&nbsp;${String.fromCharCode(97 + itemIndex)}. 事假 (${personalH}h × ${hourlyRate} × 100%)</div>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #dc2626;">
+                  <div>請假扣款 - 事假 ${personalH}h × ${hourlyRate} <small style="color: #9ca3af;">(無條件捨去)</small></div>
                   <div>${centsToTwd(personalDeduction)}</div>
                 </div>
               `;
-              itemIndex++;
             }
             
             if (menstrualH > 0) {
-              const menstrualDeduction = Math.round(menstrualH * hourlyRateNum * 0.5 * 100);
+              const menstrualDeduction = Math.floor(menstrualH * hourlyRateNum * 0.5 * 100);
               payrollDetailHtml += `
-                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #dc2626;">
-                  <div>&nbsp;&nbsp;${String.fromCharCode(97 + itemIndex)}. 生理假 (${menstrualH}h × ${hourlyRate} × 50%)</div>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #dc2626;">
+                  <div>請假扣款 - 生理假 ${menstrualH}h × ${hourlyRate} × 50% <small style="color: #9ca3af;">(無條件捨去)</small></div>
                   <div>${centsToTwd(menstrualDeduction)}</div>
                 </div>
               `;
             }
-            
-            payrollDetailHtml += `
-              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; margin-top: 4px; color: #b91c1c; font-weight: 600;">
-                <div>&nbsp;&nbsp;請假扣款小計</div>
-                <div>${centsToTwd(leaveDeduction)}</div>
-              </div>
-            `;
           }
           
           // 扣款合计
           payrollDetailHtml += `
             <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 15px; padding-top: 15px; border-top: 3px double #dc2626; font-size: 1.1em; font-weight: 700; color: #991b1b;">
-              <div>【扣款合計】</div>
+              <div>扣款合計</div>
               <div>${centsToTwd(r.totalDeductionCents || 0)}</div>
             </div>
           `;

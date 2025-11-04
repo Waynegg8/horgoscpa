@@ -50,12 +50,12 @@ function shouldPayInMonth(recurringType, recurringMonths, effectiveDate, expiryD
 
 /**
  * 计算员工的时薪基准
- * 时薪基准 = (底薪 + 经常性给与) ÷ 时薪除数（从系统设定读取，默认240）
+ * 时薪基准 = 底薪 ÷ 时薪除数（从系统设定读取，默认240）
+ * 注意：只用底薪计算，不包含津贴、奖金等其他项目
  */
-async function calculateHourlyRate(env, baseSalaryCents, regularPaymentCents) {
+async function calculateHourlyRate(env, baseSalaryCents) {
 	const divisor = await getSettingValue(env, 'hourly_rate_divisor', 240);
-	const totalCents = baseSalaryCents + regularPaymentCents;
-	return Math.round(totalCents / divisor); // 四舍五入到整数（分）
+	return Math.round(baseSalaryCents / divisor); // 四舍五入到整数（分）
 }
 
 /**
@@ -266,20 +266,19 @@ async function getOvertimeDetails(env, userId, month) {
 		
 		if (!workType || !workType.isOvertime || hours === 0) continue;
 		
-		// 对于fixed_8h类型，按比例分配补休和加权
+		// 对于fixed_8h类型（例假日/国定假日前8小时），按比例分配补休和加权
 		if (workType.special === 'fixed_8h') {
 			const key = `${date}:${workTypeId}`;
 			const group = dailyFixedTypeMap[key];
 			
-			// 同一天同类型的所有记录，共享补休和8h加权（按比例分配）
+			// 同一天同类型的所有记录，共享补休（按比例分配）
 			const totalHours = group.totalHours;
 			const ratio = hours / totalHours; // 当前记录占比
 			
-			// 例假日（ID 10）：16h补休 + 8h加权
-			// 国定假日（ID 7）：8h补休 + 8h加权
+			// 例假日（ID 10）：前8h固定16h补休
+			// 国定假日（ID 7）：前8h固定8h补休（暂定，待确认）
 			const totalCompHours = workTypeId === 10 ? 16 : 8;
 			const compHoursGenerated = totalCompHours * ratio;
-			const fixedWeightedHours = 8 * ratio; // ⭐ 加权工时固定8h按比例分配
 			
 			console.log(`[DEBUG fixed_8h] ${date} ${workType.name}:`, {
 				workTypeId,
@@ -287,8 +286,7 @@ async function getOvertimeDetails(env, userId, month) {
 				totalHours,
 				ratio,
 				totalCompHours,
-				compHoursGenerated,
-				fixedWeightedHours
+				compHoursGenerated
 			});
 			
 			overtimeRecords.push({
@@ -296,15 +294,20 @@ async function getOvertimeDetails(env, userId, month) {
 				workType: workType.name,
 				workTypeId: workTypeId,
 				originalHours: hours, // 实际工作时数（用于显示）
-				remainingHours: fixedWeightedHours, // ⭐ 用于FIFO扣减的是加权时数
+				remainingHours: hours, // 用于FIFO扣减（加班时数本身）
 				multiplier: workType.multiplier,
 				isFixedType: true,
 				compHoursGenerated: Math.round(compHoursGenerated * 100) / 100, // 按比例分配的补休
-				fixedWeightedHours: Math.round(fixedWeightedHours * 100) / 100, // ⭐ 固定分配的加权时数
 				totalDailyHours: totalHours, // 标记当天该类型的总工时（用于前端显示）
 			});
 		} else {
 			// 非fixed_8h类型，正常处理
+			// 例假日超过8h（ID 11）：每小时 × 2 补休
+			let compHoursGenerated = hours;
+			if (workTypeId === 11) {
+				compHoursGenerated = hours * 2; // 例假日超过8h：每小时×2补休
+			}
+			
 			overtimeRecords.push({
 				date: date,
 				workType: workType.name,
@@ -313,8 +316,7 @@ async function getOvertimeDetails(env, userId, month) {
 				remainingHours: hours,
 				multiplier: workType.multiplier,
 				isFixedType: false,
-				compHoursGenerated: hours, // 实际工时=补休时数
-				fixedWeightedHours: null, // 非固定类型没有这个字段
+				compHoursGenerated: compHoursGenerated, // 补休时数
 			});
 		}
 	}
@@ -372,28 +374,11 @@ async function getOvertimeDetails(env, userId, month) {
 			};
 		}
 		
-		// ⭐ 计算原始加权工时
-		// 对于fixed_8h类型，使用固定分配的加权时数（确保总和8h）
-		// 对于其他类型，按实际小时数 × 倍率
-		const originalWeighted = record.isFixedType 
-			? record.fixedWeightedHours  // 国定假日/例假日固定8h，按比例分配
-			: record.originalHours * record.multiplier;
+		// 计算原始加权工时 = 实际工时 × 倍率
+		const originalWeighted = record.originalHours * record.multiplier;
 		
-		// ⭐ 计算扣除补休后的有效加权工时
-		// remainingHours对于fixed_8h类型已经是加权时数
-		const effectiveWeighted = record.isFixedType
-			? record.remainingHours  // 已经是加权时数
-			: record.remainingHours * record.multiplier;
-		
-		if (record.isFixedType) {
-			console.log(`[DEBUG 整理数据] ${record.date}:`, {
-				isFixedType: record.isFixedType,
-				fixedWeightedHours: record.fixedWeightedHours,
-				compHoursGenerated: record.compHoursGenerated,
-				originalWeighted,
-				effectiveWeighted
-			});
-		}
+		// 计算扣除补休后的有效加权工时 = 剩余工时 × 倍率
+		const effectiveWeighted = record.remainingHours * record.multiplier;
 		
 		dailyOvertimeMap[record.date].items.push({
 			workType: record.workType,
@@ -688,13 +673,13 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents, reg
 			menstrualMergedDays = menstrualDays;
 		}
 		
-		// 请假扣款 = 小时数 × 时薪 × 扣除比例
-		menstrualDeductionCents = Math.round(menstrualHours * hourlyRateCents * menstrualLeaveRate);
+		// 请假扣款 = 小时数 × 时薪 × 扣除比例（无条件舍去）
+		menstrualDeductionCents = Math.floor(menstrualHours * hourlyRateCents * menstrualLeaveRate);
 	}
 	
-	// 请假扣款 = 小时数 × 时薪 × 扣除比例
-	const sickDeductionCents = Math.round(sickHours * hourlyRateCents * sickLeaveRate);
-	const personalDeductionCents = Math.round(personalHours * hourlyRateCents * personalLeaveRate);
+	// 请假扣款 = 小时数 × 时薪 × 扣除比例（无条件舍去）
+	const sickDeductionCents = Math.floor(sickHours * hourlyRateCents * sickLeaveRate);
+	const personalDeductionCents = Math.floor(personalHours * hourlyRateCents * personalLeaveRate);
 
 	// 整理请假详细记录列表
 	const leaveDetailsList = (leaveDetails.results || []).map(leave => ({
@@ -922,51 +907,32 @@ async function calculateEmployeePayroll(env, userId, month) {
 		}
 	}
 
-	// 4. 计算时薪基准（用于加班费计算）
-	const hourlyRateCents = await calculateHourlyRate(env, baseSalaryCents, regularAllowanceCents);
+	// 4. 计算时薪基准（只用底薪）
+	const hourlyRateCents = await calculateHourlyRate(env, baseSalaryCents);
+	
+	console.log(`[Payroll] ${month} 时薪计算:`, {
+		baseSalaryCents,
+		hourlyRateCents: hourlyRateCents / 100
+	});
 
 	// 5. 判定全勤
 	const isFullAttendance = await checkFullAttendance(env, userId, month);
 	
-	// 5.1 重新计算奖金总额和经常性给与（排除未达标的全勤奖金）
+	// 5.1 重新计算奖金总额（排除未达标的全勤奖金）
 	let actualBonusCents = 0;
-	let actualRegularAllowanceCents = baseSalaryCents; // 重新计算，从底薪开始
 	
-	// 重新计算津贴的经常性给与部分
-	for (const allowanceItem of allowanceItems) {
-		if (allowanceItem.isRegularPayment) {
-			actualRegularAllowanceCents += allowanceItem.amountCents || 0;
-		}
-	}
-	
-	// 重新计算奖金总额，并处理经常性给与的奖金
+	// 重新计算奖金总额
 	for (const bonusItem of bonusItems) {
 		// 如果是全勤奖金且未达标，则不计入
 		if (bonusItem.isFullAttendanceBonus && !isFullAttendance) {
 			continue;
 		}
 		actualBonusCents += bonusItem.amountCents || 0;
-		// 如果是经常性给与的奖金（且不是未达标的全勤），计入时薪基准
-		if (bonusItem.isRegularPayment) {
-			actualRegularAllowanceCents += bonusItem.amountCents || 0;
-		}
 	}
 	
 	bonusCents = actualBonusCents; // 更新为实际发放的奖金总额
-	regularAllowanceCents = actualRegularAllowanceCents - baseSalaryCents; // 减去底薪，得到纯津贴/奖金部分
 	
-	// 5.2 重新计算准确的时薪（基于实际发放的经常性给与）
-	const actualHourlyRateCents = await calculateHourlyRate(env, baseSalaryCents, regularAllowanceCents);
-	
-	console.log(`[Payroll] ${month} 时薪计算:`, {
-		baseSalaryCents,
-		regularAllowanceCents,
-		actualRegularAllowanceCents,
-		isFullAttendance,
-		hourlyRateCents: actualHourlyRateCents / 100
-	});
-	
-	// 5.3 使用准确的时薪计算未使用补休转加班费
+	// 5.2 使用时薪计算未使用补休转加班费
 	let expiredCompPayCents = 0;
 	let remainingToConvert = unusedCompHours;
 	const expiredCompDetails = []; // 记录转换明细
@@ -975,8 +941,8 @@ async function calculateEmployeePayroll(env, userId, month) {
 		if (remainingToConvert <= 0) break;
 		
 		const hoursToConvert = Math.min(detail.hours, remainingToConvert);
-		// 使用准确的时薪（已考虑全勤判断）
-		const amountCents = Math.round(hoursToConvert * actualHourlyRateCents * detail.multiplier);
+		// 使用时薪 × 原倍率计算
+		const amountCents = Math.round(hoursToConvert * hourlyRateCents * detail.multiplier);
 		
 		expiredCompPayCents += amountCents;
 		remainingToConvert -= hoursToConvert;
@@ -992,7 +958,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 	
 	console.log(`[Payroll] ${month} 未使用补休转加班费:`, {
 		unusedCompHours,
-		actualHourlyRateCents: actualHourlyRateCents / 100,
+		hourlyRateCents: hourlyRateCents / 100,
 		expiredCompPayCents: expiredCompPayCents / 100,
 		expiredCompDetails
 	});
@@ -1012,7 +978,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const effectiveWeightedHours = overtimeDetails.effectiveTotalWeightedHours || 0;
 	
 	// 加班费 = 有效加权工时（已按FIFO扣除补休）× 时薪 + 未使用补休转加班费
-	const overtimeCents = Math.round(effectiveWeightedHours * actualHourlyRateCents) + expiredCompPayCents;
+	const overtimeCents = Math.round(effectiveWeightedHours * hourlyRateCents) + expiredCompPayCents;
 
 	// 8. 计算交通补贴
 	const transportResult = await calculateTransportAllowance(env, userId, month);
@@ -1090,7 +1056,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 		grossSalaryCents,         // 应发薪资（扣款前）
 		netSalaryCents,           // 实发薪资（扣款后）
 		isFullAttendance,
-		hourlyRateCents: actualHourlyRateCents,  // 实际时薪（已考虑全勤判断）
+		hourlyRateCents,  // 时薪（底薪 / 240）
 		hourlyRateBaseItems,      // 计入时薪的项目明细
 		// 附加信息
 		overtimeDays,             // 满足误餐费条件的天数
