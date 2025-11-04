@@ -779,8 +779,111 @@
           const hourlyRate = centsToTwd(r.hourlyRateCents || 0).replace('NT$ ', '');
           const hourlyRateNum = (r.hourlyRateCents || 0) / 100;
           
+          // 📚 加班費計算規則總覽（折疊式）
+          let rulesHtml = `
+            <details style="margin-bottom: 15px; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white;">
+              <summary style="cursor: pointer; font-weight: 700; font-size: 1.1em; user-select: none; padding: 8px;">
+                📚 加班費計算規則總覽（點擊展開/收合）
+              </summary>
+              <div style="margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.95); border-radius: 6px; color: #1f2937; font-size: 0.9em; line-height: 1.6;">
+                
+                <div style="margin-bottom: 15px; padding: 10px; background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                  <strong style="color: #1e40af; font-size: 1.05em;">🧮 時薪計算公式</strong><br>
+                  <span style="color: #1e3a8a;">時薪 = (基本薪資 + 經常性給付) ÷ 240小時</span><br>
+                  <span style="color: #6b7280; font-size: 0.9em;">經常性給付：職務加給、伙食津貼等每月固定發放的項目</span>
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                  <strong style="color: #1e40af; font-size: 1.05em;">📋 加班類型與倍率</strong>
+                </div>
+                
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+                  <thead>
+                    <tr style="background: #f3f4f6;">
+                      <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">類型</th>
+                      <th style="padding: 8px; text-align: center; border: 1px solid #d1d5db;">倍率</th>
+                      <th style="padding: 8px; text-align: left; border: 1px solid #d1d5db;">說明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style="background: #e0f2fe;">
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">平日加班（前2h）</td>
+                      <td style="padding: 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 600;">1.34倍</td>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">勞基法第24條：加給1/3以上</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">平日加班（後2h）</td>
+                      <td style="padding: 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 600;">1.67倍</td>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">勞基法第24條：加給2/3以上</td>
+                    </tr>
+                    <tr style="background: #fef3c7;">
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">休息日（前2h）</td>
+                      <td style="padding: 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 600;">1.34倍</td>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">勞基法第24條：加給1/3以上</td>
+                    </tr>
+                    <tr style="background: #fef3c7;">
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">休息日（3-8h）</td>
+                      <td style="padding: 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 600;">1.67倍</td>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">勞基法第24條：加給2/3以上</td>
+                    </tr>
+                    <tr style="background: #fef3c7;">
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">休息日（9-12h）</td>
+                      <td style="padding: 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 600;">2.67倍</td>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">勞基法第24條：加給5/3以上</td>
+                    </tr>
+                    <tr style="background: #fef2f2;">
+                      <td style="padding: 8px; border: 1px solid #d1d5db;"><strong>國定假日（8h內）⭐</strong></td>
+                      <td style="padding: 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 600; color: #dc2626;">1.0倍</td>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;"><strong style="color: #dc2626;">不論工時，固定8h加權+8h補休</strong></td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">國定假日（9-10h）</td>
+                      <td style="padding: 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 600;">1.34倍</td>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">按平日延長工時計算</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">國定假日（11-12h）</td>
+                      <td style="padding: 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 600;">1.67倍</td>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">按平日延長工時計算</td>
+                    </tr>
+                    <tr style="background: #fee2e2;">
+                      <td style="padding: 8px; border: 1px solid #d1d5db;"><strong>例假日（8h內）⭐⭐</strong></td>
+                      <td style="padding: 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 600; color: #dc2626;">1.0倍</td>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;"><strong style="color: #dc2626;">固定8h加權+8h補休+8h補假</strong></td>
+                    </tr>
+                    <tr style="background: #fee2e2;">
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">例假日（9-12h）</td>
+                      <td style="padding: 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 600; color: #dc2626;">1.0倍</td>
+                      <td style="padding: 8px; border: 1px solid #d1d5db;">每小時加倍發給</td>
+                    </tr>
+                  </tbody>
+                </table>
+                
+                <div style="margin-top: 15px; padding: 10px; background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 4px;">
+                  <strong style="color: #991b1b;">⚠️ 重要說明</strong><br>
+                  <ul style="margin: 8px 0; padding-left: 20px; color: #7f1d1d;">
+                    <li><strong>"加倍發給"不是2倍加班費！</strong>是指總共給2日工資（原本1日+加班1日），但月薪已含原本1日，所以加班費只計算額外1日。</li>
+                    <li><strong>國定假日/例假日8h內：</strong>即使只工作1小時，也必須給付完整8h加權+8h補休（保護勞工休息權）。</li>
+                    <li><strong>例假日出勤：</strong>僅限天災、事變或突發事件，且必須額外給1日補假（共16h補休）。</li>
+                    <li><strong>多客戶成本核算：</strong>同一天服務多個客戶時，雖然分多筆記錄，但固定8h加權按比例分配。</li>
+                  </ul>
+                </div>
+                
+                <div style="margin-top: 15px; padding: 10px; background: #ecfdf5; border-left: 4px solid #10b981; border-radius: 4px;">
+                  <strong style="color: #065f46;">💡 補休使用規則</strong><br>
+                  <span style="color: #047857;">
+                    • 補休採FIFO（先進先出）：從最早的加班記錄開始扣除<br>
+                    • 使用補休的部分不計入加班費，未使用的轉換為加班費發放<br>
+                    • 國定假日/例假日8h內類型，補休按比例分配給各筆記錄
+                  </span>
+                </div>
+                
+              </div>
+            </details>
+          `;
+          
           // 時薪計算基礎
-          let hourlyRateBaseHtml = `<div style="margin-bottom: 10px;"><strong>時薪計算基礎：</strong></div>`;
+          let hourlyRateBaseHtml = rulesHtml + `<div style="margin-bottom: 10px;"><strong>時薪計算基礎：</strong></div>`;
           hourlyRateBaseHtml += `<div style="margin-left: 10px;">底薪: ${centsToTwd(r.baseSalaryCents)}</div>`;
           if (r.hourlyRateBaseItems && r.hourlyRateBaseItems.length > 0) {
             r.hourlyRateBaseItems.forEach(item => {
@@ -802,6 +905,20 @@
               
               if (day.items && day.items.length > 0) {
                 overtimeHtml += `<div style="margin-bottom: 8px;"><strong>${dateDisplay}</strong></div>`;
+                
+                // 检查是否有fixed_8h类型的记录，如果有且有多条，显示合计说明
+                const fixedTypeItems = day.items.filter(item => item.isFixedType);
+                if (fixedTypeItems.length > 1 && fixedTypeItems[0].totalDailyHours) {
+                  const totalDailyHours = fixedTypeItems[0].totalDailyHours;
+                  overtimeHtml += `<div style="margin-left: 20px; margin-bottom: 10px; padding: 8px; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 6px; font-size: 0.9em;">`;
+                  overtimeHtml += `<strong style="color: #92400e;">⚠️ ${fixedTypeItems[0].workType}規則說明：</strong><br>`;
+                  overtimeHtml += `<span style="color: #78350f;">當天共工作 <strong>${totalDailyHours}h</strong>（分${fixedTypeItems.length}筆記錄，用於客戶成本核算）<br>`;
+                  overtimeHtml += `依勞基法：不論實際工時，統一給付 <strong>2日工資</strong>（原本1日+加班1日）<br>`;
+                  overtimeHtml += `月薪已含原本1日，加班費計算：<strong>8h×1倍=8h加權工時</strong> + <strong>8h補休</strong><br>`;
+                  overtimeHtml += `以下各筆記錄按比例分配補休時數</span>`;
+                  overtimeHtml += `</div>`;
+                }
+                
                 day.items.forEach(item => {
                   // 根据工作类型ID获取规则说明
                   const ruleMap = {
@@ -810,11 +927,11 @@
                     4: '勞基法第24條：休息日前2小時，加給1/3以上',
                     5: '勞基法第24條：休息日第3-8小時，加給2/3以上',
                     6: '勞基法第24條：休息日第9-12小時，加給5/3以上',
-                    7: '勞基法第39條：國定假日出勤8h內，加倍發給（2倍），另給補休8h',
+                    7: '勞基法第39條：國定假日出勤，加倍發給工資（原本1日+加班1日=共2日），月薪已含原本1日，加班費計算額外1日',
                     8: '勞基法第24條：國定假日超過8h部分，按平日延長工時計算（1.34倍）',
                     9: '勞基法第24條：國定假日超過10h部分，按平日延長工時計算（1.67倍）',
-                    10: '勞基法第40條：例假日因天災事變出勤，前8h加倍發給（2倍），另給補休1日+8h',
-                    11: '勞基法第40條：例假日超過8h部分，每小時加倍發給（2倍）'
+                    10: '勞基法第40條：例假日出勤，加倍發給工資（原本1日+加班1日=共2日），月薪已含原本1日，加班費計算額外1日',
+                    11: '勞基法第40條：例假日超過8h部分，每小時加倍發給（原本1+加班1=共2），月薪已含原本1，加班費計算額外1'
                   };
                   
                   const rule = ruleMap[item.workTypeId] || '';
@@ -838,24 +955,53 @@
                   // 第三行：详细计算
                   overtimeHtml += `<div style="color: #374151; margin-top: 4px;">`;
                   overtimeHtml += `💼 實際工作: <strong>${item.originalHours}h</strong>`;
+                  overtimeHtml += `</div>`;
                   
-                  // 显示补休累积（如果和工作时间不同）
-                  if (item.isFixedType && item.compHoursGenerated && item.compHoursGenerated !== item.originalHours) {
-                    overtimeHtml += ` <span style="color: #059669; font-weight: 600;">（累積補休: ${item.compHoursGenerated}h）</span>`;
-                  } else if (item.compHoursGenerated && item.compHoursGenerated === item.originalHours) {
-                    overtimeHtml += ` <span style="color: #059669;">（累積補休: ${item.compHoursGenerated}h）</span>`;
+                  // 第四行：fixed_8h类型的特殊说明
+                  if (item.isFixedType) {
+                    overtimeHtml += `<div style="color: #374151; margin-top: 2px;">`;
+                    overtimeHtml += `📋 法定給付: <strong style="color: #dc2626;">不論工時，固定8h加權</strong>`;
+                    if (item.totalDailyHours && item.totalDailyHours > item.originalHours) {
+                      // 有多条记录，显示比例分配
+                      const ratio = (item.originalHours / item.totalDailyHours * 100).toFixed(1);
+                      overtimeHtml += ` <span style="color: #6b7280;">（當天共${item.totalDailyHours}h，本筆佔${ratio}%）</span>`;
+                    }
+                    overtimeHtml += `</div>`;
+                    
+                    // 补休分配
+                    overtimeHtml += `<div style="color: #059669; margin-top: 2px;">`;
+                    overtimeHtml += `🎁 分配補休: <strong>${item.compHoursGenerated.toFixed(2)}h</strong>`;
+                    overtimeHtml += `</div>`;
+                    
+                    // 加权工时
+                    overtimeHtml += `<div style="color: #374151; margin-top: 2px;">`;
+                    overtimeHtml += `💰 加班費: 固定分配 <strong style="color: #059669;">${item.originalWeighted.toFixed(2)}h</strong> 加權工時`;
+                    if (item.originalWeighted !== item.originalHours) {
+                      overtimeHtml += ` <span style="color: #dc2626;">（⚠️ 非按實際${item.originalHours}h計算）</span>`;
+                    }
+                    overtimeHtml += `</div>`;
+                  } else {
+                    // 一般类型：补休 = 实际工时
+                    overtimeHtml += `<div style="color: #059669; margin-top: 2px;">`;
+                    overtimeHtml += `🎁 累積補休: <strong>${item.compHoursGenerated}h</strong>`;
+                    overtimeHtml += `</div>`;
+                    
+                    // 加权工时
+                    overtimeHtml += `<div style="color: #374151; margin-top: 2px;">`;
+                    overtimeHtml += `💰 加班費: ${item.originalHours}h × ${item.multiplier}倍 = <strong style="color: #059669;">${item.originalWeighted.toFixed(2)}h</strong> 加權工時`;
+                    overtimeHtml += `</div>`;
                   }
-                  overtimeHtml += `</div>`;
-                  
-                  // 第四行：加权计算
-                  overtimeHtml += `<div style="color: #374151; margin-top: 2px;">`;
-                  overtimeHtml += `💰 加班費: ${item.originalHours}h × ${item.multiplier}倍 = <strong style="color: #059669;">${item.originalWeighted.toFixed(2)}h</strong> 加權工時`;
-                  overtimeHtml += `</div>`;
                   
                   // 第五行：补休扣除（如果有）
                   if (item.compDeducted > 0) {
                     overtimeHtml += `<div style="color: #dc2626; margin-top: 3px; padding-top: 3px; border-top: 1px dashed #fecaca;">`;
-                    overtimeHtml += `⚠️ 扣除補休: ${item.compDeducted}h → 剩餘 ${item.remainingHours}h × ${item.multiplier}倍 = <strong>${item.effectiveWeighted.toFixed(2)}h</strong> 有效加權`;
+                    if (item.isFixedType) {
+                      // fixed_8h类型，扣除的已经是加权时数
+                      overtimeHtml += `⚠️ 扣除補休（加權）: ${item.compDeducted}h → 剩餘 <strong>${item.effectiveWeighted.toFixed(2)}h</strong> 有效加權`;
+                    } else {
+                      // 一般类型，需要乘以倍率
+                      overtimeHtml += `⚠️ 扣除補休: ${item.compDeducted}h → 剩餘 ${item.remainingHours}h × ${item.multiplier}倍 = <strong>${item.effectiveWeighted.toFixed(2)}h</strong> 有效加權`;
+                    }
                     overtimeHtml += `</div>`;
                   }
                   

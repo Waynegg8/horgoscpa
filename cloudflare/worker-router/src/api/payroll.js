@@ -84,12 +84,13 @@ async function getTimesheetMonthlyStats(env, userId, month) {
 	const lastDayStr = `${year}-${monthNum}-${String(lastDay).padStart(2, '0')}`;
 	
 	const timelogs = await env.DATABASE.prepare(`
-		SELECT work_type, hours
+		SELECT work_date, work_type, hours
 		FROM Timesheets
 		WHERE user_id = ?
 		  AND work_date >= ?
 		  AND work_date <= ?
 		  AND is_deleted = 0
+		ORDER BY work_date, work_type
 	`).bind(userId, firstDay, lastDayStr).all();
 	
 	// 工时类型定义（与 timesheets.js 一致）
@@ -100,18 +101,38 @@ async function getTimesheetMonthlyStats(env, userId, month) {
 		4: { multiplier: 1.34, isOvertime: true },
 		5: { multiplier: 1.67, isOvertime: true },
 		6: { multiplier: 2.67, isOvertime: true },
-		7: { multiplier: 2.0, isOvertime: true, special: 'fixed_8h' },
+		7: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },  // 国定假日：月薪已含原本1日，加班费只算额外1日
 		8: { multiplier: 1.34, isOvertime: true },
 		9: { multiplier: 1.67, isOvertime: true },
-		10: { multiplier: 2.0, isOvertime: true, special: 'fixed_8h' },
-		11: { multiplier: 2.0, isOvertime: true },
+		10: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' }, // 例假日：月薪已含原本1日，加班费只算额外1日
+		11: { multiplier: 1.0, isOvertime: true },  // 例假日超过8h：同样只算额外1日
 	};
 	
+	// 第一步：统计fixed_8h类型的每日总工时
+	const dailyFixedTypeMap = {};
+	for (const log of (timelogs.results || [])) {
+		const date = log.work_date;
+		const workTypeId = parseInt(log.work_type) || 1;
+		const workType = WORK_TYPES[workTypeId];
+		const hours = parseFloat(log.hours) || 0;
+		
+		if (workType && workType.special === 'fixed_8h') {
+			const key = `${date}:${workTypeId}`;
+			if (!dailyFixedTypeMap[key]) {
+				dailyFixedTypeMap[key] = 0;
+			}
+			dailyFixedTypeMap[key] += hours;
+		}
+	}
+	
+	// 第二步：计算总工时、加班工时、加权工时
 	let totalHours = 0;
 	let overtimeHours = 0;
 	let weightedHours = 0;
+	const processedFixedKeys = new Set();
 	
 	for (const log of (timelogs.results || [])) {
+		const date = log.work_date;
 		const hours = parseFloat(log.hours) || 0;
 		const workTypeId = parseInt(log.work_type) || 1;
 		const workType = WORK_TYPES[workTypeId];
@@ -124,7 +145,12 @@ async function getTimesheetMonthlyStats(env, userId, month) {
 			
 			// 计算加权工时
 			if (workType.special === 'fixed_8h') {
-				weightedHours += 8.0;
+				// 同一天同类型的fixed_8h，只计算一次固定8h加权
+				const key = `${date}:${workTypeId}`;
+				if (!processedFixedKeys.has(key)) {
+					weightedHours += 8.0; // 固定8h加权（不论实际工时多少）
+					processedFixedKeys.add(key);
+				}
 			} else {
 				weightedHours += hours * workType.multiplier;
 			}
@@ -169,11 +195,11 @@ async function getOvertimeDetails(env, userId, month) {
 		4: { name: '休息日（前2h）', multiplier: 1.34, isOvertime: true },
 		5: { name: '休息日（3-8h）', multiplier: 1.67, isOvertime: true },
 		6: { name: '休息日（9-12h）', multiplier: 2.67, isOvertime: true },
-		7: { name: '國定假日（8h內）', multiplier: 2.0, isOvertime: true, special: 'fixed_8h' },
+		7: { name: '國定假日（8h內）', multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },  // 月薪已含原本1日，加班费只算额外1日
 		8: { name: '國定假日（9-10h）', multiplier: 1.34, isOvertime: true },
 		9: { name: '國定假日（11-12h）', multiplier: 1.67, isOvertime: true },
-		10: { name: '例假日（8h內）', multiplier: 2.0, isOvertime: true, special: 'fixed_8h' },
-		11: { name: '例假日（9-12h）', multiplier: 2.0, isOvertime: true },  // 例假日全时段都是2.0倍
+		10: { name: '例假日（8h內）', multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },  // 月薪已含原本1日，加班费只算额外1日
+		11: { name: '例假日（9-12h）', multiplier: 1.0, isOvertime: true },  // 例假日全时段加班费都只算额外1日
 	};
 
 	// 查询每日加班记录（按日期+类型）
@@ -206,9 +232,8 @@ async function getOvertimeDetails(env, userId, month) {
 		ORDER BY start_date
 	`).bind(userId, firstDay, lastDayStr).all();
 
-	// 按日期+类型整理加班记录（按时间顺序，用于FIFO扣减补休）
-	// 保留所有记录（用于客户成本追踪），每条记录独立计算
-	const overtimeRecords = [];
+	// 第一步：按日期+类型分组，计算fixed_8h类型的总工时
+	const dailyFixedTypeMap = {}; // { "2024-11-01:10": { totalHours: 5, records: [...] } }
 	
 	for (const log of (timelogs.results || [])) {
 		const date = log.work_date;
@@ -218,18 +243,68 @@ async function getOvertimeDetails(env, userId, month) {
 		
 		if (!workType || !workType.isOvertime || hours === 0) continue;
 		
-		// 所有记录都保留，用于客户成本追踪
-		// 标记是否为固定类型（用于显示补休累积逻辑）
-		overtimeRecords.push({
-			date: date,
-			workType: workType.name,
-			workTypeId: workTypeId,
-			originalHours: hours,  // 实际工作小时数
-			remainingHours: hours,  // 扣减补休后的剩余时数
-			multiplier: workType.multiplier,
-			isFixedType: workType.special === 'fixed_8h',  // 标记固定类型（例假日/国定假日8h内）
-			compHoursGenerated: workType.special === 'fixed_8h' ? 8 : hours  // 累积的补休小时数
-		});
+		// 对于fixed_8h类型（例假日/国定假日8h内），需要先分组统计
+		if (workType.special === 'fixed_8h') {
+			const key = `${date}:${workTypeId}`;
+			if (!dailyFixedTypeMap[key]) {
+				dailyFixedTypeMap[key] = { totalHours: 0, records: [] };
+			}
+			dailyFixedTypeMap[key].totalHours += hours;
+			dailyFixedTypeMap[key].records.push({ log, workType, hours });
+		}
+	}
+	
+	// 第二步：生成overtimeRecords，对fixed_8h类型按比例分配补休和加权
+	const overtimeRecords = [];
+	const processedFixedKeys = new Set(); // 防止重复处理
+	
+	for (const log of (timelogs.results || [])) {
+		const date = log.work_date;
+		const workTypeId = parseInt(log.work_type) || 1;
+		const workType = WORK_TYPES[workTypeId];
+		const hours = parseFloat(log.hours) || 0;
+		
+		if (!workType || !workType.isOvertime || hours === 0) continue;
+		
+		// 对于fixed_8h类型，按比例分配补休和加权
+		if (workType.special === 'fixed_8h') {
+			const key = `${date}:${workTypeId}`;
+			const group = dailyFixedTypeMap[key];
+			
+			// 同一天同类型的所有记录，共享8h补休和8h加权（按比例分配）
+			const totalHours = group.totalHours;
+			const ratio = hours / totalHours; // 当前记录占比
+			
+			// 不论总工时多少，固定给8h补休和8h加权，按比例分配
+			const compHoursGenerated = 8 * ratio;
+			const fixedWeightedHours = 8 * ratio; // ⭐ 加权工时也按比例分配（确保总和8h）
+			
+			overtimeRecords.push({
+				date: date,
+				workType: workType.name,
+				workTypeId: workTypeId,
+				originalHours: hours, // 实际工作时数（用于显示）
+				remainingHours: fixedWeightedHours, // ⭐ 用于FIFO扣减的是加权时数
+				multiplier: workType.multiplier,
+				isFixedType: true,
+				compHoursGenerated: Math.round(compHoursGenerated * 100) / 100, // 按比例分配的补休
+				fixedWeightedHours: Math.round(fixedWeightedHours * 100) / 100, // ⭐ 固定分配的加权时数
+				totalDailyHours: totalHours, // 标记当天该类型的总工时（用于前端显示）
+			});
+		} else {
+			// 非fixed_8h类型，正常处理
+			overtimeRecords.push({
+				date: date,
+				workType: workType.name,
+				workTypeId: workTypeId,
+				originalHours: hours,
+				remainingHours: hours,
+				multiplier: workType.multiplier,
+				isFixedType: false,
+				compHoursGenerated: hours, // 实际工时=补休时数
+				fixedWeightedHours: null, // 非固定类型没有这个字段
+			});
+		}
 	}
 	
 	// 按日期排序（确保FIFO顺序）
@@ -285,11 +360,18 @@ async function getOvertimeDetails(env, userId, month) {
 			};
 		}
 		
-		// 计算原始加权工时（所有类型都按实际小时数 × 倍率）
-		const originalWeighted = record.originalHours * record.multiplier;
+		// ⭐ 计算原始加权工时
+		// 对于fixed_8h类型，使用固定分配的加权时数（确保总和8h）
+		// 对于其他类型，按实际小时数 × 倍率
+		const originalWeighted = record.isFixedType 
+			? record.fixedWeightedHours  // 国定假日/例假日固定8h，按比例分配
+			: record.originalHours * record.multiplier;
 		
-		// 计算扣除补休后的有效加权工时
-		const effectiveWeighted = record.remainingHours * record.multiplier;
+		// ⭐ 计算扣除补休后的有效加权工时
+		// remainingHours对于fixed_8h类型已经是加权时数
+		const effectiveWeighted = record.isFixedType
+			? record.remainingHours  // 已经是加权时数
+			: record.remainingHours * record.multiplier;
 		
 		dailyOvertimeMap[record.date].items.push({
 			workType: record.workType,
@@ -299,6 +381,7 @@ async function getOvertimeDetails(env, userId, month) {
 			compDeducted: Math.round((record.compDeducted || 0) * 10) / 10,
 			compHoursGenerated: Math.round(record.compHoursGenerated * 10) / 10,  // 累积的补休时数
 			isFixedType: record.isFixedType,  // 是否为固定类型（用于显示）
+			totalDailyHours: record.totalDailyHours || null, // 当天该类型的总工时
 			multiplier: record.multiplier,
 			originalWeighted: Math.round(originalWeighted * 10) / 10,
 			effectiveWeighted: Math.round(effectiveWeighted * 10) / 10

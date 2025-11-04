@@ -12,11 +12,11 @@ const WORK_TYPES = {
 	4: { name: '休息日加班（前2小時）', multiplier: 1.34, isOvertime: true },
 	5: { name: '休息日加班（第3-8小時）', multiplier: 1.67, isOvertime: true },
 	6: { name: '休息日加班（第9-12小時）', multiplier: 2.67, isOvertime: true },
-	7: { name: '國定假日加班（8小時內）', multiplier: 2.0, isOvertime: true, maxHours: 8, special: 'fixed_8h' },
+	7: { name: '國定假日加班（8小時內）', multiplier: 1.0, isOvertime: true, maxHours: 8, special: 'fixed_8h' },  // 月薪已含原本1日，加班费只算额外1日
 	8: { name: '國定假日加班（第9-10小時）', multiplier: 1.34, isOvertime: true },
 	9: { name: '國定假日加班（第11-12小時）', multiplier: 1.67, isOvertime: true },
-	10: { name: '例假日加班（8小時內）', multiplier: 2.0, isOvertime: true, maxHours: 8, special: 'fixed_8h' },
-	11: { name: '例假日加班（第9-12小時）', multiplier: 2.0, isOvertime: true },  // 例假日9-12h全部2.0倍
+	10: { name: '例假日加班（8小時內）', multiplier: 1.0, isOvertime: true, maxHours: 8, special: 'fixed_8h' },  // 月薪已含原本1日，加班费只算额外1日
+	11: { name: '例假日加班（第9-12小時）', multiplier: 1.0, isOvertime: true },  // 例假日全时段加班费都只算额外1日
 };
 
 /**
