@@ -912,11 +912,14 @@
           if (allowanceItems.length > 0 || bonusItems.length > 0) {
             allowancesHtml += '<div style="margin-left: 10px;">';
             
+            let totalAllowancesCents = 0;
+            
             if (allowanceItems.length > 0) {
               allowancesHtml += '<div style="margin-bottom: 8px;"><strong style="color: #059669;">📊 津貼：</strong></div>';
               allowanceItems.forEach(item => {
                 const isRegular = item.isRegularPayment ? '<span style="color: #3b82f6; font-size: 0.85em;"> (經常性給與)</span>' : '';
                 allowancesHtml += `<div style="margin-left: 20px;">• ${item.name}: ${centsToTwd(item.amountCents)}${isRegular}</div>`;
+                totalAllowancesCents += item.amountCents || 0;
               });
             }
             
@@ -924,12 +927,16 @@
               allowancesHtml += '<div style="margin-bottom: 8px; margin-top: 8px;"><strong style="color: #f59e0b;">🎁 獎金：</strong></div>';
               bonusItems.forEach(item => {
                 const isRegular = item.isRegularPayment ? '<span style="color: #3b82f6; font-size: 0.85em;"> (經常性給與)</span>' : '';
-                allowancesHtml += `<div style="margin-left: 20px;">• ${item.name}: ${centsToTwd(item.amountCents)}${isRegular}</div>`;
+                const fullAttendanceNote = item.isFullAttendanceBonus ? 
+                  (r.isFullAttendance ? 
+                    '<span style="color: #16a34a; font-size: 0.85em;"> ✓ 全勤達標，發放</span>' : 
+                    '<span style="color: #dc2626; font-size: 0.85em;"> ✗ 未達全勤，不發放</span>') : '';
+                allowancesHtml += `<div style="margin-left: 20px;">• ${item.name}: ${centsToTwd(item.amountCents)}${isRegular}${fullAttendanceNote}</div>`;
+                totalAllowancesCents += item.amountCents || 0;
               });
             }
             
-            const totalAllowances = (r.allowanceCents || 0) + (r.bonusCents || 0);
-            allowancesHtml += `<div style="margin-left: 10px; margin-top: 8px; font-weight: 600; color: #059669;">小計: ${centsToTwd(totalAllowances)}</div>`;
+            allowancesHtml += `<div style="margin-left: 10px; margin-top: 8px; font-weight: 600; color: #059669;">小計: ${centsToTwd(totalAllowancesCents)}</div>`;
             allowancesHtml += '</div>';
           } else {
             allowancesHtml += '<div style="margin-left: 10px; color: #9ca3af;">本月無津貼或獎金</div>';
@@ -1079,8 +1086,16 @@
             
             const effectiveHours = r.effectiveWeightedHours || 0;
             const expiredComp = r.expiredCompPayCents || 0;
-            overtimeHtml += `<div style="margin-left: 10px; margin-top: 5px; font-weight: 600;">`;
-            overtimeHtml += `有效加權工時: ${effectiveHours.toFixed(2)}h × ${hourlyRate} = ${centsToTwd(Math.round(effectiveHours * hourlyRateNum * 100))}`;
+            const baseOvertimePay = Math.round(effectiveHours * hourlyRateNum * 100);
+            
+            overtimeHtml += `<div style="margin-left: 10px; margin-top: 8px; padding-top: 8px; border-top: 2px solid #e5e7eb;">`;
+            overtimeHtml += `<div style="font-weight: 600; margin-bottom: 4px;">加班費合計：</div>`;
+            overtimeHtml += `<div style="margin-left: 10px;">• 有效加權工時: ${effectiveHours.toFixed(2)}h × ${hourlyRate} = ${centsToTwd(baseOvertimePay)}</div>`;
+            if (expiredComp > 0) {
+              overtimeHtml += `<div style="margin-left: 10px; color: #dc2626;">• 上月到期補休轉加班費: ${centsToTwd(expiredComp)}</div>`;
+            }
+            const totalOvertimePay = baseOvertimePay + expiredComp;
+            overtimeHtml += `<div style="margin-left: 10px; margin-top: 4px; font-weight: 600; color: #059669;">總計: ${centsToTwd(totalOvertimePay)}</div>`;
             overtimeHtml += `</div>`;
           } else {
             overtimeHtml += '<div style="margin-left: 10px; color: #9ca3af;">本月無加班記錄</div>';
@@ -1181,9 +1196,11 @@
               leaveHtml += `<div style="margin-bottom: 8px;"><strong>病假 (扣50%)：</strong></div>`;
               leavesByType.sick.forEach(leave => {
                 const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
-                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${leave.amount}${leave.unit === 'day' ? '天' : '小時'}${leave.reason ? ` (${leave.reason})` : ''}</div>`;
+                const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
+                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${hours}小時${leave.reason ? ` (${leave.reason})` : ''}</div>`;
               });
-              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${r.sickDays}天 × ${centsToTwd(dailyRate)} × 50% = ${centsToTwd(Math.round(r.sickDays * dailyRate * 0.5))}</div>`;
+              const sickHours = r.sickHours || 0;
+              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${sickHours}h × ${hourlyRate} × 50% = ${centsToTwd(Math.round(sickHours * hourlyRateNum * 0.5 * 100))}</div>`;
             }
             
             // 顯示事假
@@ -1191,9 +1208,11 @@
               leaveHtml += `<div style="margin-bottom: 8px; margin-top: 8px;"><strong>事假 (扣100%)：</strong></div>`;
               leavesByType.personal.forEach(leave => {
                 const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
-                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${leave.amount}${leave.unit === 'day' ? '天' : '小時'}${leave.reason ? ` (${leave.reason})` : ''}</div>`;
+                const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
+                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${hours}小時${leave.reason ? ` (${leave.reason})` : ''}</div>`;
               });
-              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${r.personalDays}天 × ${centsToTwd(dailyRate)} × 100% = ${centsToTwd(Math.round(r.personalDays * dailyRate))}</div>`;
+              const personalHours = r.personalHours || 0;
+              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${personalHours}h × ${hourlyRate} × 100% = ${centsToTwd(Math.round(personalHours * hourlyRateNum * 100))}</div>`;
             }
             
             // 顯示生理假
@@ -1201,9 +1220,11 @@
               leaveHtml += `<div style="margin-bottom: 8px; margin-top: 8px;"><strong>生理假 (扣50%)：</strong></div>`;
               leavesByType.menstrual.forEach(leave => {
                 const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
-                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${leave.amount}${leave.unit === 'day' ? '天' : '小時'}</div>`;
+                const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
+                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${hours}小時</div>`;
               });
-              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${r.menstrualDays}天 × ${centsToTwd(dailyRate)} × 50% = ${centsToTwd(Math.round(r.menstrualDays * dailyRate * 0.5))}</div>`;
+              const menstrualHours = r.menstrualHours || 0;
+              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${menstrualHours}h × ${hourlyRate} × 50% = ${centsToTwd(Math.round(menstrualHours * hourlyRateNum * 0.5 * 100))}</div>`;
               if (r.menstrualFreeDays > 0) {
                 leaveHtml += `<div style="margin-left: 20px;"><small style="color:#16a34a;">（前${r.menstrualFreeDays}天獨立計算，不併入病假額度）</small></div>`;
               }

@@ -586,18 +586,19 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents, reg
 	const lastDayStr = `${year}-${monthNum}-${String(lastDay).padStart(2, '0')}`;
 	const yearFirstDay = `${year}-01-01`;
 
-	// 读取该月的请假记录（病假、事假、生理假）- 汇总
+	// 读取该月的请假记录（病假、事假、生理假）- 分别按单位汇总
 	const leavesMonth = await env.DATABASE.prepare(`
 		SELECT 
 			leave_type,
-			SUM(amount) as total_days
+			unit,
+			SUM(amount) as total_amount
 		FROM LeaveRequests
 		WHERE user_id = ?
 		  AND start_date <= ?
 		  AND end_date >= ?
 		  AND status = 'approved'
 		  AND leave_type IN ('sick', 'personal', 'menstrual')
-		GROUP BY leave_type
+		GROUP BY leave_type, unit
 	`).bind(userId, lastDayStr, firstDay).all();
 
 	// 读取该月的请假记录详细列表（用于显示日期）
@@ -631,19 +632,29 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents, reg
 	
 	const yearMenstrualDays = menstrualYearResult?.total_menstrual || 0;
 
-	let sickDays = 0;
-	let personalDays = 0;
-	let menstrualDays = 0;
+	// 统一按小时汇总（天数转换为小时）
+	let sickHours = 0;
+	let personalHours = 0;
+	let menstrualHours = 0;
 
 	for (const leave of (leavesMonth.results || [])) {
+		const amount = leave.total_amount || 0;
+		const unit = leave.unit || 'day';
+		const hours = unit === 'day' ? amount * 8 : amount; // 天数转小时
+		
 		if (leave.leave_type === 'sick') {
-			sickDays = leave.total_days || 0;
+			sickHours += hours;
 		} else if (leave.leave_type === 'personal') {
-			personalDays = leave.total_days || 0;
+			personalHours += hours;
 		} else if (leave.leave_type === 'menstrual') {
-			menstrualDays = leave.total_days || 0;
+			menstrualHours += hours;
 		}
 	}
+	
+	// 保留天数字段用于全勤判定（按原始天数）
+	const sickDays = sickHours / 8;
+	const personalDays = personalHours / 8;
+	const menstrualDays = menstrualHours / 8;
 
 	// 从系统设定读取日薪计算除数和扣款比例
 	const dailySalaryDivisor = await getSettingValue(env, 'leave_daily_salary_divisor', 30);
@@ -654,6 +665,10 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents, reg
 	// 日薪 = (底薪 + 经常性给与) / 除数
 	const totalBase = baseSalaryCents + regularAllowanceCents;
 	const dailySalaryCents = Math.round(totalBase / dailySalaryDivisor);
+	
+	// 计算时薪（用于请假扣款的精确计算）
+	// 时薪 = (底薪 + 经常性给与) / 240
+	const hourlyRateCents = Math.round(totalBase / 240);
 	
 	// 生理假扣款计算
 	let menstrualDeductionCents = 0;
@@ -673,15 +688,13 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents, reg
 			menstrualMergedDays = menstrualDays;
 		}
 		
-		// 所有生理假都减半支薪
-		menstrualDeductionCents = Math.round(menstrualDays * dailySalaryCents * menstrualLeaveRate);
+		// 请假扣款 = 小时数 × 时薪 × 扣除比例
+		menstrualDeductionCents = Math.round(menstrualHours * hourlyRateCents * menstrualLeaveRate);
 	}
 	
-	// 病假扣款（按比例扣除）
-	const sickDeductionCents = Math.round(sickDays * dailySalaryCents * sickLeaveRate);
-	
-	// 事假扣款（按比例扣除）
-	const personalDeductionCents = Math.round(personalDays * dailySalaryCents * personalLeaveRate);
+	// 请假扣款 = 小时数 × 时薪 × 扣除比例
+	const sickDeductionCents = Math.round(sickHours * hourlyRateCents * sickLeaveRate);
+	const personalDeductionCents = Math.round(personalHours * hourlyRateCents * personalLeaveRate);
 
 	// 整理请假详细记录列表
 	const leaveDetailsList = (leaveDetails.results || []).map(leave => ({
@@ -698,9 +711,13 @@ async function calculateLeaveDeductions(env, userId, month, baseSalaryCents, reg
 		sickDays,
 		personalDays,
 		menstrualDays,
+		sickHours,           // 病假小时数
+		personalHours,       // 事假小时数
+		menstrualHours,      // 生理假小时数
 		menstrualFreeDays, // 不扣全勤的生理假天数
 		menstrualMergedDays, // 并入病假计算的生理假天数
 		dailySalaryCents,
+		hourlyRateCents,     // 时薪（用于前端显示计算公式）
 		leaveDetails: leaveDetailsList // 详细的请假记录列表
 	};
 }
@@ -822,13 +839,16 @@ async function calculateEmployeePayroll(env, userId, month) {
 			});
 		} else if (item.category === 'bonus') {
 			// 奖金类别
+			const isFullAttendanceBonus = item.item_code && item.item_code.toUpperCase().includes('FULL'); // 识别全勤奖金
+			
 			bonusCents += amount;
 			bonusItems.push({
 				name: item.item_name,
 				amountCents: amount,
 				category: 'bonus',
 				isRegularPayment: !!item.is_regular_payment,
-				itemCode: item.item_code || ''
+				itemCode: item.item_code || '',
+				isFullAttendanceBonus: isFullAttendanceBonus
 			});
 			// 如果是经常性给与的奖金（如全勤），也计入时薪基准
 			if (item.is_regular_payment) {
@@ -903,6 +923,9 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const sickDays = leaveResult.sickDays;
 	const personalDays = leaveResult.personalDays;
 	const menstrualDays = leaveResult.menstrualDays || 0;
+	const sickHours = leaveResult.sickHours || 0;
+	const personalHours = leaveResult.personalHours || 0;
+	const menstrualHours = leaveResult.menstrualHours || 0;
 	const menstrualFreeDays = leaveResult.menstrualFreeDays || 0;
 	const menstrualMergedDays = leaveResult.menstrualMergedDays || 0;
 	const dailySalaryCents = leaveResult.dailySalaryCents || 0;
@@ -979,6 +1002,9 @@ async function calculateEmployeePayroll(env, userId, month) {
 		sickDays,
 		personalDays,
 		menstrualDays,            // 生理假天数
+		sickHours,                // 病假小时数（用于显示）
+		personalHours,            // 事假小时数（用于显示）
+		menstrualHours,           // 生理假小时数（用于显示）
 		menstrualFreeDays,        // 不扣全勤的生理假天数（前3天）
 		menstrualMergedDays,      // 并入病假的生理假天数（超过3天）
 		dailySalaryCents,         // 日薪（用于请假扣款计算）
