@@ -84,7 +84,7 @@
       </section>
 
       <!-- 薪資項目設定 -->
-      <section id="panel-items" class="panel" role="tabpanel" aria-labelledby="tab-items" hidden>
+      <section id="panel-items" class="panel" role="tabpanel" aria-labelledby="tab-items">
         <div class="card">
           <div class="section-toolbar">
             <input id="itemSearch" type="search" placeholder="搜尋項目代碼/名稱…" />
@@ -192,7 +192,7 @@
       </dialog>
 
       <!-- 員工薪資設定 -->
-      <section id="panel-emp" class="panel" role="tabpanel" aria-labelledby="tab-emp" hidden>
+      <section id="panel-emp" class="panel" role="tabpanel" aria-labelledby="tab-emp">
         <div class="card grid">
           <div class="col">
             <div class="section-toolbar">
@@ -239,7 +239,7 @@
       </section>
 
       <!-- 績效獎金調整 -->
-      <section id="panel-bonus" class="panel" role="tabpanel" aria-labelledby="tab-bonus" hidden>
+      <section id="panel-bonus" class="panel" role="tabpanel" aria-labelledby="tab-bonus">
         <div class="card" style="padding: 12px;">
           <div class="section-toolbar" style="margin-bottom: 10px;">
             <label for="yearBonus" style="font-size: 14px;">年度</label>
@@ -284,7 +284,7 @@
       </section>
 
       <!-- 年終獎金管理 -->
-      <section id="panel-yearend" class="panel" role="tabpanel" aria-labelledby="tab-yearend" hidden>
+      <section id="panel-yearend" class="panel" role="tabpanel" aria-labelledby="tab-yearend">
         <div class="card">
           <div class="section-toolbar">
             <label for="yearInput">年度</label>
@@ -313,7 +313,7 @@
       </section>
 
       <!-- 系統設定 -->
-      <section id="panel-settings" class="panel" role="tabpanel" aria-labelledby="tab-settings" hidden>
+      <section id="panel-settings" class="panel" role="tabpanel" aria-labelledby="tab-settings">
         <div class="card" style="max-width: 1000px; margin: 0 auto;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <div>
@@ -414,7 +414,7 @@
       </section>
 
       <!-- 打卡記錄上傳 -->
-      <section id="panel-punch" class="panel" role="tabpanel" aria-labelledby="tab-punch" hidden>
+      <section id="panel-punch" class="panel" role="tabpanel" aria-labelledby="tab-punch">
         <!-- 左右分栏布局 -->
         <div style="display: grid; grid-template-columns: 450px 1fr; gap: 16px;">
           <!-- 左側：上傳表單和檔案列表 -->
@@ -576,39 +576,37 @@
           document.querySelectorAll('.payroll-toolbar .btn, #empSearchCalc, #statusCalc, #month, #empSearch, #itemSearch').forEach(el=>{ el.disabled = !enabled; });
         }
 
-        // TAB切換 - 極簡版本（只用hidden屬性）
+        // TAB切換 - 最終方案（使用inline style，優先級最高）
         function switchTab(targetKey) {
           console.log('[TAB切換]', targetKey);
           
-          // 更新TAB按鈕樣式
+          // 更新TAB按鈕狀態
           tabs.forEach(btn => {
-            if (btn.getAttribute('data-tab') === targetKey) {
-              btn.classList.add('active');
-            } else {
-              btn.classList.remove('active');
-            }
+            const isActive = btn.getAttribute('data-tab') === targetKey;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-selected', isActive);
           });
           
-          // 切換面板顯示（只用hidden屬性）
-          for (const [key, panel] of Object.entries(panels)) {
-            if (panel) {
-              if (key === targetKey) {
-                panel.hidden = false;
-              } else {
-                panel.hidden = true;
-              }
-            }
-          }
+          // 直接使用style.display切換面板（優先級最高，不會被覆蓋）
+          panels.calc.style.display = (targetKey === 'calc') ? 'block' : 'none';
+          panels.items.style.display = (targetKey === 'items') ? 'block' : 'none';
+          panels.emp.style.display = (targetKey === 'emp') ? 'block' : 'none';
+          panels.bonus.style.display = (targetKey === 'bonus') ? 'block' : 'none';
+          panels.yearend.style.display = (targetKey === 'yearend') ? 'block' : 'none';
+          panels.settings.style.display = (targetKey === 'settings') ? 'block' : 'none';
+          panels.punch.style.display = (targetKey === 'punch') ? 'block' : 'none';
         }
         
-        // 綁定TAB點擊事件（極簡版）
-        tabs.forEach(btn => {
-          btn.addEventListener('click', () => {
-            if (!btn.disabled) {
-              switchTab(btn.getAttribute('data-tab'));
-            }
-          });
+        // 使用事件委託綁定TAB點擊
+        document.querySelector('.payroll-tabs').addEventListener('click', (e) => {
+          const tab = e.target.closest('.tab');
+          if (tab && !tab.disabled) {
+            switchTab(tab.getAttribute('data-tab'));
+          }
         });
+        
+        // 初始化：默認顯示第一個TAB
+        switchTab('calc');
 
         async function ensureAdmin(){
           try {
