@@ -1640,10 +1640,21 @@
               // 计算奖金总和（只包含 category='bonus'，排除未达标全勤和绩效奖金）
               let bonusTotal = 0;
               if (r.bonusItems && r.bonusItems.length > 0) {
+                // 调试：打印奖金项目信息
+                console.log(`[${r.name}] 全勤状态: ${r.isFullAttendance}, 奖金项目:`, r.bonusItems);
+                
                 bonusTotal = r.bonusItems
-                  .filter(item => item.itemCode !== 'PERFORMANCE') // 排除绩效奖金
+                  .filter(item => {
+                    const isPerformance = item.itemCode === 'PERFORMANCE';
+                    const isFullAttendance = item.isFullAttendanceBonus;
+                    const shouldPay = !isFullAttendance || r.isFullAttendance;
+                    console.log(`  - ${item.name}: itemCode=${item.itemCode}, isFullAttendance=${isFullAttendance}, shouldPay=${shouldPay}`);
+                    return !isPerformance;
+                  })
                   .filter(item => !item.isFullAttendanceBonus || r.isFullAttendance) // 排除未达标全勤
                   .reduce((sum, item) => sum + (item.amountCents || 0), 0);
+                
+                console.log(`[${r.name}] 奖金总计: ${bonusTotal / 100} 元`);
               }
               
               // 全勤奖金
