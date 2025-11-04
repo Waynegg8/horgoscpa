@@ -156,7 +156,7 @@ function initWorkTypes() {
     {
       id: 7,
       name: '國定8h內',
-      multiplier: 2.0,
+      multiplier: 1.0,  // 月薪已含原本1日，加班费只算额外1日
       isOvertime: true,
       maxHours: 8,
       allowedOn: ['national_holiday']
@@ -182,7 +182,7 @@ function initWorkTypes() {
     {
       id: 10,
       name: '例假8h內',
-      multiplier: 2.0,
+      multiplier: 1.0,  // 月薪已含原本1日，加班费只算额外1日
       isOvertime: true,
       maxHours: 8,
       allowedOn: ['weekly_restday']
@@ -190,7 +190,7 @@ function initWorkTypes() {
     {
       id: 11,
       name: '例假9-12h',
-      multiplier: 2.0,
+      multiplier: 1.0,  // 例假日全时段加班费都只算额外1日
       isOvertime: true,
       maxHours: 4,
       requiresTypes: [10],
