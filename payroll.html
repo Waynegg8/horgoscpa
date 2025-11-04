@@ -915,37 +915,44 @@
             }
           }
           
-          // 3. 奖金（只显示 category='bonus' 的项目，排除未达标全勤）
+          // 3. 奖金（只显示 category='bonus' 的项目，排除未达标全勤和绩效奖金）
           // 对应表格"奖金"列 = bonusCents
           let bonusSubtotal = 0;
           if (r.bonusItems && r.bonusItems.length > 0) {
-            payrollDetailHtml += `<div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #d97706;">3. 獎金</strong></div>`;
+            // 过滤掉绩效奖金（item_code='PERFORMANCE'），它应该单独显示
+            const nonPerformanceBonuses = r.bonusItems.filter(item => 
+              item.itemCode !== 'PERFORMANCE'
+            );
             
-            r.bonusItems.forEach((item, idx) => {
-              const isFullAttendancePaid = !item.isFullAttendanceBonus || r.isFullAttendance;
-              const note = item.isFullAttendanceBonus ? 
-                (r.isFullAttendance ? ' <small style="color: #16a34a;">✓ 達標</small>' : ' <small style="color: #dc2626;">✗ 未達標</small>') : '';
-              const amount = isFullAttendancePaid ? item.amountCents : 0;
+            if (nonPerformanceBonuses.length > 0) {
+              payrollDetailHtml += `<div style="margin-top: 12px; margin-left: 10px;"><strong style="color: #d97706;">3. 獎金</strong></div>`;
+              
+              nonPerformanceBonuses.forEach((item, idx) => {
+                const isFullAttendancePaid = !item.isFullAttendanceBonus || r.isFullAttendance;
+                const note = item.isFullAttendanceBonus ? 
+                  (r.isFullAttendance ? ' <small style="color: #16a34a;">✓ 達標</small>' : ' <small style="color: #dc2626;">✗ 未達標</small>') : '';
+                const amount = isFullAttendancePaid ? item.amountCents : 0;
+                
+                payrollDetailHtml += `
+                  <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #92400e;">
+                    <div>&nbsp;&nbsp;${String.fromCharCode(97 + idx)}. ${item.name}${note}</div>
+                    <div style="${amount === 0 ? 'text-decoration: line-through; color: #9ca3af;' : ''}">${centsToTwd(item.amountCents)}</div>
+                  </div>
+                `;
+                
+                // 只累加达标的奖金（未达标的全勤不累加）
+                if (isFullAttendancePaid) {
+                  bonusSubtotal += amount;
+                }
+              });
               
               payrollDetailHtml += `
-                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; color: #92400e;">
-                  <div>&nbsp;&nbsp;${String.fromCharCode(97 + idx)}. ${item.name}${note}</div>
-                  <div style="${amount === 0 ? 'text-decoration: line-through; color: #9ca3af;' : ''}">${centsToTwd(item.amountCents)}</div>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; margin-top: 4px; color: #92400e; font-weight: 600;">
+                  <div>&nbsp;&nbsp;獎金小計</div>
+                  <div>${centsToTwd(bonusSubtotal)}</div>
                 </div>
               `;
-              
-              // 只累加达标的奖金（未达标的全勤不累加）
-              if (isFullAttendancePaid) {
-                bonusSubtotal += amount;
-              }
-            });
-            
-            payrollDetailHtml += `
-              <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-left: 30px; margin-top: 4px; color: #92400e; font-weight: 600;">
-                <div>&nbsp;&nbsp;獎金小計</div>
-                <div>${centsToTwd(bonusSubtotal)}</div>
-              </div>
-            `;
+            }
           }
           
           // 加班费
@@ -1630,8 +1637,17 @@
                   .reduce((sum, item) => sum + (item.amountCents || 0), 0);
               }
               
+              // 计算奖金总和（只包含 category='bonus'，排除未达标全勤和绩效奖金）
+              let bonusTotal = 0;
+              if (r.bonusItems && r.bonusItems.length > 0) {
+                bonusTotal = r.bonusItems
+                  .filter(item => item.itemCode !== 'PERFORMANCE') // 排除绩效奖金
+                  .filter(item => !item.isFullAttendanceBonus || r.isFullAttendance) // 排除未达标全勤
+                  .reduce((sum, item) => sum + (item.amountCents || 0), 0);
+              }
+              
               // 全勤奖金
-              const fullAttendanceBonus = r.isFullAttendance ? (r.bonusCents > 0 ? '含全勤' : '') : '';
+              const fullAttendanceBonus = r.isFullAttendance ? (bonusTotal > 0 ? '含全勤' : '') : '';
               
               tr.innerHTML = `
                 <td style="text-align: center;">
@@ -1640,7 +1656,7 @@
                 <td><strong>${r.name || ''}</strong></td>
                 <td>${centsToTwd(r.baseSalaryCents)}</td>
                 <td style="background: #f0fdf4;">${centsToTwd(allowanceTotal)}</td>
-                <td style="background: #f0fdf4;">${centsToTwd(r.bonusCents)}${fullAttendanceBonus ? `<br><small style="color:#059669;">${fullAttendanceBonus}</small>` : ''}</td>
+                <td style="background: #f0fdf4;">${centsToTwd(bonusTotal)}${fullAttendanceBonus ? `<br><small style="color:#059669;">${fullAttendanceBonus}</small>` : ''}</td>
                 <td style="background: #f0fdf4;text-align:center;">${r.isFullAttendance ? '<span style="color:#16a34a;font-size:1.2em;">✓</span>' : '<span style="color:#dc2626;">✗</span>'}</td>
                 <td style="background: #f0fdf4;">${centsToTwd(r.overtimeCents)}${overtimeDetail}</td>
                 <td style="background: #f0fdf4;">${centsToTwd(r.mealAllowanceCents || 0)}${mealDetail}</td>
