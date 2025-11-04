@@ -802,38 +802,6 @@ async function calculateEmployeePayroll(env, userId, month) {
 		totalCompHoursUsed,
 		unusedCompHours
 	});
-	
-	// 计算未使用补休转加班费：按FIFO顺序，使用原倍率
-	let expiredCompPayCents = 0;
-	let remainingToConvert = unusedCompHours;
-	const expiredCompDetails = []; // 记录转换明细
-	
-	// 临时时薪基础（用于计算补休转加班费，后续会重新计算准确时薪）
-	const tempHourlyRate = (user.base_salary || 0) / 240;
-	
-	for (const detail of compGenerationDetails) {
-		if (remainingToConvert <= 0) break;
-		
-		const hoursToConvert = Math.min(detail.hours, remainingToConvert);
-		const amountCents = Math.round(hoursToConvert * tempHourlyRate * detail.multiplier * 100);
-		
-		expiredCompPayCents += amountCents;
-		remainingToConvert -= hoursToConvert;
-		
-		expiredCompDetails.push({
-			date: detail.date,
-			workType: detail.workType,
-			hours: hoursToConvert,
-			multiplier: detail.multiplier,
-			amountCents: amountCents
-		});
-	}
-	
-	console.log(`[Payroll] ${month} 未使用补休转加班费:`, {
-		unusedCompHours,
-		expiredCompPayCents,
-		expiredCompDetails
-	});
 
 	// 3. 读取该月有效的薪资项目
 
@@ -986,6 +954,48 @@ async function calculateEmployeePayroll(env, userId, month) {
 	
 	bonusCents = actualBonusCents; // 更新为实际发放的奖金总额
 	regularAllowanceCents = actualRegularAllowanceCents - baseSalaryCents; // 减去底薪，得到纯津贴/奖金部分
+	
+	// 5.2 重新计算准确的时薪（基于实际发放的经常性给与）
+	const actualHourlyRateCents = await calculateHourlyRate(env, baseSalaryCents, regularAllowanceCents);
+	
+	console.log(`[Payroll] ${month} 时薪计算:`, {
+		baseSalaryCents,
+		regularAllowanceCents,
+		actualRegularAllowanceCents,
+		isFullAttendance,
+		hourlyRateCents: actualHourlyRateCents / 100
+	});
+	
+	// 5.3 使用准确的时薪计算未使用补休转加班费
+	let expiredCompPayCents = 0;
+	let remainingToConvert = unusedCompHours;
+	const expiredCompDetails = []; // 记录转换明细
+	
+	for (const detail of compGenerationDetails) {
+		if (remainingToConvert <= 0) break;
+		
+		const hoursToConvert = Math.min(detail.hours, remainingToConvert);
+		// 使用准确的时薪（已考虑全勤判断）
+		const amountCents = Math.round(hoursToConvert * actualHourlyRateCents * detail.multiplier);
+		
+		expiredCompPayCents += amountCents;
+		remainingToConvert -= hoursToConvert;
+		
+		expiredCompDetails.push({
+			date: detail.date,
+			workType: detail.workType,
+			hours: hoursToConvert,
+			multiplier: detail.multiplier,
+			amountCents: amountCents
+		});
+	}
+	
+	console.log(`[Payroll] ${month} 未使用补休转加班费:`, {
+		unusedCompHours,
+		actualHourlyRateCents: actualHourlyRateCents / 100,
+		expiredCompPayCents: expiredCompPayCents / 100,
+		expiredCompDetails
+	});
 
 	// 6. 计算误餐费（仅统计平日加班）
 	const mealResult = await calculateMealAllowance(env, userId, month);
@@ -1002,7 +1012,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const effectiveWeightedHours = overtimeDetails.effectiveTotalWeightedHours || 0;
 	
 	// 加班费 = 有效加权工时（已按FIFO扣除补休）× 时薪 + 未使用补休转加班费
-	const overtimeCents = Math.round(effectiveWeightedHours * hourlyRateCents) + expiredCompPayCents;
+	const overtimeCents = Math.round(effectiveWeightedHours * actualHourlyRateCents) + expiredCompPayCents;
 
 	// 8. 计算交通补贴
 	const transportResult = await calculateTransportAllowance(env, userId, month);
@@ -1080,7 +1090,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 		grossSalaryCents,         // 应发薪资（扣款前）
 		netSalaryCents,           // 实发薪资（扣款后）
 		isFullAttendance,
-		hourlyRateCents,
+		hourlyRateCents: actualHourlyRateCents,  // 实际时薪（已考虑全勤判断）
 		hourlyRateBaseItems,      // 计入时薪的项目明细
 		// 附加信息
 		overtimeDays,             // 满足误餐费条件的天数
