@@ -173,8 +173,7 @@ async function getOvertimeDetails(env, userId, month) {
 		8: { name: '國定假日（9-10h）', multiplier: 1.34, isOvertime: true },
 		9: { name: '國定假日（11-12h）', multiplier: 1.67, isOvertime: true },
 		10: { name: '例假日（8h內）', multiplier: 2.0, isOvertime: true, special: 'fixed_8h' },
-		11: { name: '例假日（9-10h）', multiplier: 1.34, isOvertime: true },  // 修正：超过8h按平日加班
-		12: { name: '例假日（11-12h）', multiplier: 1.67, isOvertime: true },  // 新增：11-12h按平日加班后2h
+		11: { name: '例假日（9-12h）', multiplier: 2.0, isOvertime: true },  // 例假日全时段都是2.0倍
 	};
 
 	// 查询每日加班记录（按日期+类型）
