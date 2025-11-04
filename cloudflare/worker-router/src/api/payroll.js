@@ -774,9 +774,12 @@ async function calculateEmployeePayroll(env, userId, month) {
 
 	// 3. 分类统计薪资项目（根据循环类型过滤）
 	let regularAllowanceCents = 0;  // 经常性津贴（计入时薪）
+	let allowanceCents = 0;          // 非经常性津贴
 	let bonusCents = 0;              // 奖金
 	let deductionCents = 0;          // 扣款总额
 	const hourlyRateBaseItems = [];  // 记录计入时薪的项目
+	const allowanceItems = [];       // 所有津贴项目明细
+	const bonusItems = [];           // 所有奖金项目明细
 	const deductionItems = [];       // 记录所有扣款项目明细（劳保、健保等）
 
 	const items = salaryItems.results || [];
@@ -820,6 +823,13 @@ async function calculateEmployeePayroll(env, userId, month) {
 		} else if (item.category === 'bonus') {
 			// 奖金类别
 			bonusCents += amount;
+			bonusItems.push({
+				name: item.item_name,
+				amountCents: amount,
+				category: 'bonus',
+				isRegularPayment: !!item.is_regular_payment,
+				itemCode: item.item_code || ''
+			});
 			// 如果是经常性给与的奖金（如全勤），也计入时薪基准
 			if (item.is_regular_payment) {
 				regularAllowanceCents += amount;
@@ -831,6 +841,13 @@ async function calculateEmployeePayroll(env, userId, month) {
 			}
 		} else if (item.category === 'allowance') {
 			// 津贴类别
+			allowanceItems.push({
+				name: item.item_name,
+				amountCents: amount,
+				category: 'allowance',
+				isRegularPayment: !!item.is_regular_payment,
+				itemCode: item.item_code || ''
+			});
 			// 如果是经常性给与，计入时薪基准
 			if (item.is_regular_payment) {
 				regularAllowanceCents += amount;
@@ -840,8 +857,8 @@ async function calculateEmployeePayroll(env, userId, month) {
 					category: 'allowance'
 				});
 			} else {
-				// 非经常性津贴（如误餐费）计入奖金
-				bonusCents += amount;
+				// 非经常性津贴（如误餐费）也计入津贴总额
+				allowanceCents += amount;
 			}
 		}
 	}
@@ -931,6 +948,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 		name: user.name,
 		baseSalaryCents,
 		regularAllowanceCents,
+		allowanceCents,           // 非经常性津贴总额
 		bonusCents,
 		overtimeCents,
 		mealAllowanceCents,
@@ -938,6 +956,8 @@ async function calculateEmployeePayroll(env, userId, month) {
 		performanceBonusCents,
 		deductionCents,           // 固定扣款总额
 		deductionItems,           // 固定扣款明细（劳保、健保等）
+		allowanceItems,           // 所有津贴项目明细
+		bonusItems,               // 所有奖金项目明细
 		leaveDeductionCents,      // 请假扣款
 		totalDeductionCents,      // 总扣款
 		grossSalaryCents,         // 应发薪资（扣款前）

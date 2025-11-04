@@ -893,6 +893,48 @@
           const totalBase = r.baseSalaryCents + r.regularAllowanceCents;
           hourlyRateBaseHtml += `<div style="margin-left: 10px; margin-top: 5px; font-weight: 600;">合計: ${centsToTwd(totalBase)} ÷ 240 = ${hourlyRate}</div>`;
           
+          // 津貼及獎金明細（本月發放）
+          let allowancesHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>津貼及獎金明細：</strong></div>';
+          const allowanceItems = [];
+          const bonusItems = [];
+          
+          // 分類津貼和獎金
+          if (r.allowanceItems && r.allowanceItems.length > 0) {
+            r.allowanceItems.forEach(item => {
+              if (item.category === 'allowance') {
+                allowanceItems.push(item);
+              } else if (item.category === 'bonus') {
+                bonusItems.push(item);
+              }
+            });
+          }
+          
+          if (allowanceItems.length > 0 || bonusItems.length > 0) {
+            allowancesHtml += '<div style="margin-left: 10px;">';
+            
+            if (allowanceItems.length > 0) {
+              allowancesHtml += '<div style="margin-bottom: 8px;"><strong style="color: #059669;">📊 津貼：</strong></div>';
+              allowanceItems.forEach(item => {
+                const isRegular = item.isRegularPayment ? '<span style="color: #3b82f6; font-size: 0.85em;"> (經常性給與)</span>' : '';
+                allowancesHtml += `<div style="margin-left: 20px;">• ${item.name}: ${centsToTwd(item.amountCents)}${isRegular}</div>`;
+              });
+            }
+            
+            if (bonusItems.length > 0) {
+              allowancesHtml += '<div style="margin-bottom: 8px; margin-top: 8px;"><strong style="color: #f59e0b;">🎁 獎金：</strong></div>';
+              bonusItems.forEach(item => {
+                const isRegular = item.isRegularPayment ? '<span style="color: #3b82f6; font-size: 0.85em;"> (經常性給與)</span>' : '';
+                allowancesHtml += `<div style="margin-left: 20px;">• ${item.name}: ${centsToTwd(item.amountCents)}${isRegular}</div>`;
+              });
+            }
+            
+            const totalAllowances = (r.allowanceCents || 0) + (r.bonusCents || 0);
+            allowancesHtml += `<div style="margin-left: 10px; margin-top: 8px; font-weight: 600; color: #059669;">小計: ${centsToTwd(totalAllowances)}</div>`;
+            allowancesHtml += '</div>';
+          } else {
+            allowancesHtml += '<div style="margin-left: 10px; color: #9ca3af;">本月無津貼或獎金</div>';
+          }
+          
           // 加班費明細
           console.log('[DEBUG] 加班費詳細數據:', JSON.stringify(r.dailyOvertime, null, 2));
           let overtimeHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>加班費明細：</strong></div>';
@@ -1039,16 +1081,70 @@
             const expiredComp = r.expiredCompPayCents || 0;
             overtimeHtml += `<div style="margin-left: 10px; margin-top: 5px; font-weight: 600;">`;
             overtimeHtml += `有效加權工時: ${effectiveHours.toFixed(2)}h × ${hourlyRate} = ${centsToTwd(Math.round(effectiveHours * hourlyRateNum * 100))}`;
-            if (expiredComp > 0) {
-              overtimeHtml += `<br>到期補休轉加班費: ${centsToTwd(expiredComp)}`;
-            }
-            if (r.totalCompHoursUsed > 0) {
-              overtimeHtml += `<br><span style="color:#dc2626;">本月使用補休: ${r.totalCompHoursUsed}h</span>`;
-            }
             overtimeHtml += `</div>`;
           } else {
             overtimeHtml += '<div style="margin-left: 10px; color: #9ca3af;">本月無加班記錄</div>';
           }
+          
+          // 補休使用情況明細
+          let compLeaveHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>補休使用情況：</strong></div>';
+          compLeaveHtml += '<div style="margin-left: 10px;">';
+          
+          // 本月累積的補休
+          const totalCompGenerated = r.dailyOvertime ? r.dailyOvertime.reduce((sum, day) => {
+            return sum + (day.items || []).reduce((daySum, item) => daySum + (item.compHoursGenerated || 0), 0);
+          }, 0) : 0;
+          
+          if (totalCompGenerated > 0) {
+            compLeaveHtml += `<div style="color: #059669; margin-bottom: 4px;">`;
+            compLeaveHtml += `➕ 本月加班累積補休: <strong>${totalCompGenerated.toFixed(2)}h</strong>`;
+            compLeaveHtml += `</div>`;
+          }
+          
+          // 本月使用的補休
+          const totalCompUsed = r.totalCompHoursUsed || 0;
+          if (totalCompUsed > 0) {
+            compLeaveHtml += `<div style="color: #dc2626; margin-bottom: 4px;">`;
+            compLeaveHtml += `➖ 本月使用補休: <strong>${totalCompUsed.toFixed(2)}h</strong>`;
+            compLeaveHtml += `</div>`;
+          }
+          
+          // 到期轉加班費的補休
+          const expiredCompHours = r.expiredCompHours || 0;
+          const expiredComp = r.expiredCompPayCents || 0;
+          if (expiredCompHours > 0 || expiredComp > 0) {
+            compLeaveHtml += `<div style="padding: 8px; margin-top: 8px; background: #fef2f2; border-left: 3px solid #dc2626; border-radius: 4px;">`;
+            compLeaveHtml += `<div style="color: #991b1b; font-weight: 600; margin-bottom: 4px;">`;
+            compLeaveHtml += `⏰ 上月到期未使用補休：`;
+            compLeaveHtml += `</div>`;
+            compLeaveHtml += `<div style="color: #7f1d1d; margin-left: 10px;">`;
+            compLeaveHtml += `• 到期時數: <strong>${expiredCompHours.toFixed(2)}h</strong><br>`;
+            compLeaveHtml += `• 轉為加班費: <strong>${centsToTwd(expiredComp)}</strong>`;
+            compLeaveHtml += `</div>`;
+            compLeaveHtml += `<div style="color: #991b1b; font-size: 0.85em; margin-top: 4px; margin-left: 10px;">`;
+            compLeaveHtml += `💡 按原始加班倍率 × 時薪計算`;
+            compLeaveHtml += `</div>`;
+            compLeaveHtml += `</div>`;
+          }
+          
+          // 淨變化
+          const netChange = totalCompGenerated - totalCompUsed;
+          if (totalCompGenerated > 0 || totalCompUsed > 0) {
+            compLeaveHtml += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #d1d5db;">`;
+            const changeColor = netChange > 0 ? '#059669' : (netChange < 0 ? '#dc2626' : '#6b7280');
+            const changeIcon = netChange > 0 ? '📈' : (netChange < 0 ? '📉' : '➡️');
+            compLeaveHtml += `<div style="color: ${changeColor}; font-weight: 600;">`;
+            compLeaveHtml += `${changeIcon} 本月補休淨變化: ${netChange > 0 ? '+' : ''}${netChange.toFixed(2)}h`;
+            compLeaveHtml += `</div>`;
+            compLeaveHtml += `<div style="color: #6b7280; font-size: 0.85em; margin-top: 4px;">`;
+            compLeaveHtml += `補休於生成當月月底到期，未使用自動轉為加班費`;
+            compLeaveHtml += `</div>`;
+            compLeaveHtml += `</div>`;
+          } else if (expiredCompHours === 0 && expiredComp === 0) {
+            compLeaveHtml += '<div style="color: #9ca3af;">本月無補休變動</div>';
+          }
+          
+          compLeaveHtml += '</div>';
           
           // 交通補貼明細（按單次計算區間）
           let transportHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>交通補貼明細：</strong></div>';
@@ -1163,7 +1259,9 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                   <div>
                     ${hourlyRateBaseHtml}
+                    ${allowancesHtml}
                     ${overtimeHtml}
+                    ${compLeaveHtml}
                   </div>
                   <div>
                     ${fullAttendanceHtml}
