@@ -279,6 +279,14 @@ async function getOvertimeDetails(env, userId, month) {
 			const compHoursGenerated = 8 * ratio;
 			const fixedWeightedHours = 8 * ratio; // ⭐ 加权工时也按比例分配（确保总和8h）
 			
+			console.log(`[DEBUG fixed_8h] ${date} ${workType.name}:`, {
+				hours,
+				totalHours,
+				ratio,
+				compHoursGenerated,
+				fixedWeightedHours
+			});
+			
 			overtimeRecords.push({
 				date: date,
 				workType: workType.name,
@@ -372,6 +380,16 @@ async function getOvertimeDetails(env, userId, month) {
 		const effectiveWeighted = record.isFixedType
 			? record.remainingHours  // 已经是加权时数
 			: record.remainingHours * record.multiplier;
+		
+		if (record.isFixedType) {
+			console.log(`[DEBUG 整理数据] ${record.date}:`, {
+				isFixedType: record.isFixedType,
+				fixedWeightedHours: record.fixedWeightedHours,
+				compHoursGenerated: record.compHoursGenerated,
+				originalWeighted,
+				effectiveWeighted
+			});
+		}
 		
 		dailyOvertimeMap[record.date].items.push({
 			workType: record.workType,

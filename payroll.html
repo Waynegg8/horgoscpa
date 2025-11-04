@@ -894,6 +894,7 @@
           hourlyRateBaseHtml += `<div style="margin-left: 10px; margin-top: 5px; font-weight: 600;">合計: ${centsToTwd(totalBase)} ÷ 240 = ${hourlyRate}</div>`;
           
           // 加班費明細
+          console.log('[DEBUG] 加班費詳細數據:', JSON.stringify(r.dailyOvertime, null, 2));
           let overtimeHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>加班費明細：</strong></div>';
           if (r.dailyOvertime && r.dailyOvertime.length > 0) {
             overtimeHtml += '<div style="margin-left: 10px;">';
