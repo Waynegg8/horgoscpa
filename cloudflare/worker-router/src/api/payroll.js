@@ -763,11 +763,72 @@ async function calculateEmployeePayroll(env, userId, month) {
 
 	const baseSalaryCents = (user.base_salary || 0) * 100; // 转换为分
 
-	// 2. 读取该月有效的薪资项目
+	// 2. 计算该月的日期范围
 	const [year, monthNum] = month.split('-');
 	const firstDay = `${year}-${monthNum}-01`;
 	const lastDay = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
 	const lastDayStr = `${year}-${monthNum}-${String(lastDay).padStart(2, '0')}`;
+	
+	// 2.1 自动处理当月底到期的补休（当月产生、当月未用完、当月转加班费）
+	// 查询该月底到期且尚未转换的补休
+	const expiredGrants = await env.DATABASE.prepare(`
+		SELECT grant_id, hours_remaining, original_rate
+		FROM CompensatoryLeaveGrants
+		WHERE user_id = ? 
+		  AND expiry_date = ?
+		  AND status = 'active'
+		  AND hours_remaining > 0
+	`).bind(userId, lastDayStr).all();
+	
+	if (expiredGrants.results && expiredGrants.results.length > 0) {
+		console.log(`[Payroll] 用户${userId}在${month}有${expiredGrants.results.length}笔到期补休需要转换`);
+		
+		// 检查是否已经转换过了
+		const existing = await env.DATABASE.prepare(`
+			SELECT pay_id FROM CompensatoryOvertimePay
+			WHERE user_id = ? AND year_month = ?
+		`).bind(userId, month).first();
+		
+		if (!existing) {
+			// 还没转换，现在转换
+			const hourlyRate = (user.base_salary || 0) / 240;
+			let totalExpiredHours = 0;
+			let totalExpiredCents = 0;
+			const grantIds = [];
+			
+			for (const grant of expiredGrants.results) {
+				const hours = Number(grant.hours_remaining || 0);
+				const rate = Number(grant.original_rate || 1);
+				const amountCents = Math.round(hours * hourlyRate * rate * 100);
+				
+				totalExpiredHours += hours;
+				totalExpiredCents += amountCents;
+				grantIds.push(grant.grant_id);
+				
+				// 更新补休状态为 expired
+				await env.DATABASE.prepare(
+					`UPDATE CompensatoryLeaveGrants SET status = 'expired' WHERE grant_id = ?`
+				).bind(grant.grant_id).run();
+			}
+			
+			// 写入到期转加班费记录
+			await env.DATABASE.prepare(`
+				INSERT INTO CompensatoryOvertimePay 
+				(user_id, year_month, hours_expired, amount_cents, source_grant_ids)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind(
+				userId,
+				month,
+				totalExpiredHours,
+				totalExpiredCents,
+				JSON.stringify(grantIds)
+			).run();
+			
+			console.log(`[Payroll] 已自动转换${totalExpiredHours}小时到期补休为${totalExpiredCents}分加班费`);
+		}
+	}
+
+	// 3. 读取该月有效的薪资项目
 
 	const salaryItems = await env.DATABASE.prepare(`
 		SELECT 

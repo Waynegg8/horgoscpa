@@ -387,13 +387,25 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 		}
 		
 		try {
-			// 計算上月底日期
-			const now = new Date();
-			const lastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
-			const lastDayOfLastMonth = new Date(Date.UTC(lastMonth.getUTCFullYear(), lastMonth.getUTCMonth() + 1, 0));
-			const expiryDate = `${lastDayOfLastMonth.getUTCFullYear()}-${String(lastDayOfLastMonth.getUTCMonth() + 1).padStart(2, '0')}-${String(lastDayOfLastMonth.getUTCDate()).padStart(2, '0')}`;
-			// 到期補休應記入到期當月的薪資（例如10月底到期 → 記入10月薪資）
-			const payrollMonth = `${lastMonth.getUTCFullYear()}-${String(lastMonth.getUTCMonth() + 1).padStart(2, '0')}`;
+			// 如果有指定target_month，使用指定月份；否則使用上個月
+			const targetMonth = body?.target_month; // 格式: YYYY-MM
+			let payrollMonth, expiryDate;
+			
+			if (targetMonth) {
+				// 手動指定月份：處理該月底到期的補休，記入該月薪資
+				const [year, month] = targetMonth.split('-');
+				const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+				expiryDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+				payrollMonth = targetMonth;
+				console.log(`[手動處理到期補休] 月份: ${targetMonth}, 到期日: ${expiryDate}`);
+			} else {
+				// 自動Cron：處理上月底到期的補休
+				const now = new Date();
+				const lastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+				const lastDayOfLastMonth = new Date(Date.UTC(lastMonth.getUTCFullYear(), lastMonth.getUTCMonth() + 1, 0));
+				expiryDate = `${lastDayOfLastMonth.getUTCFullYear()}-${String(lastDayOfLastMonth.getUTCMonth() + 1).padStart(2, '0')}-${String(lastDayOfLastMonth.getUTCDate()).padStart(2, '0')}`;
+				payrollMonth = `${lastMonth.getUTCFullYear()}-${String(lastMonth.getUTCMonth() + 1).padStart(2, '0')}`;
+			}
 			
 			// 掃描到期的補休記錄
 			const expiredGrants = await env.DATABASE.prepare(
