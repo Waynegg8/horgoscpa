@@ -801,12 +801,64 @@
               const dateDisplay = holidayName ? `${dayDate} (周${dayOfWeek}，${holidayName})` : `${dayDate} (周${dayOfWeek})`;
               
               if (day.items && day.items.length > 0) {
-                overtimeHtml += `<div style="margin-bottom: 5px;"><strong>${dateDisplay}</strong></div>`;
+                overtimeHtml += `<div style="margin-bottom: 8px;"><strong>${dateDisplay}</strong></div>`;
                 day.items.forEach(item => {
-                  const compInfo = item.compDeducted > 0 ? ` → 扣補休${item.compDeducted}h → 剩餘${item.remainingHours}h` : '';
-                  overtimeHtml += `<div style="margin-left: 20px;">`;
-                  overtimeHtml += `${item.workType}: ${item.originalHours}h${compInfo}`;
-                  overtimeHtml += ` → 加權${item.effectiveWeighted.toFixed(2)}h`;
+                  // 根据工作类型ID获取规则说明
+                  const ruleMap = {
+                    2: '勞基法第24條：平日延長工時第1-2小時，加給1/3以上',
+                    3: '勞基法第24條：平日延長工時第3-4小時，加給2/3以上',
+                    4: '勞基法第24條：休息日前2小時，加給1/3以上',
+                    5: '勞基法第24條：休息日第3-8小時，加給2/3以上',
+                    6: '勞基法第24條：休息日第9-12小時，加給5/3以上',
+                    7: '勞基法第39條：國定假日出勤8h內，加倍發給（2倍），另給補休8h',
+                    8: '勞基法第24條：國定假日超過8h部分，按平日延長工時計算（1.34倍）',
+                    9: '勞基法第24條：國定假日超過10h部分，按平日延長工時計算（1.67倍）',
+                    10: '勞基法第40條：例假日因天災事變出勤，前8h加倍發給（2倍），另給補休1日+8h',
+                    11: '勞基法第40條：例假日超過8h部分，每小時加倍發給（2倍）'
+                  };
+                  
+                  const rule = ruleMap[item.workTypeId] || '';
+                  const borderColor = item.workTypeId >= 10 ? '#dc2626' : (item.workTypeId >= 7 ? '#f59e0b' : '#3b82f6');
+                  
+                  overtimeHtml += `<div style="margin-left: 20px; margin-bottom: 8px; padding: 8px; background: #f9fafb; border-left: 3px solid ${borderColor}; font-size: 0.9em;">`;
+                  
+                  // 第一行：工作类型
+                  overtimeHtml += `<div style="display: flex; justify-content: space-between; align-items: center;">`;
+                  overtimeHtml += `<strong style="color: #1f2937;">${item.workType}</strong>`;
+                  overtimeHtml += `<span style="background: ${borderColor}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; font-weight: 600;">${item.multiplier}倍</span>`;
+                  overtimeHtml += `</div>`;
+                  
+                  // 第二行：法规依据
+                  if (rule) {
+                    overtimeHtml += `<div style="color: #6b7280; font-size: 0.85em; margin-top: 3px; padding: 3px 0; border-bottom: 1px dashed #d1d5db;">`;
+                    overtimeHtml += `📖 ${rule}`;
+                    overtimeHtml += `</div>`;
+                  }
+                  
+                  // 第三行：详细计算
+                  overtimeHtml += `<div style="color: #374151; margin-top: 4px;">`;
+                  overtimeHtml += `💼 實際工作: <strong>${item.originalHours}h</strong>`;
+                  
+                  // 显示补休累积（如果和工作时间不同）
+                  if (item.isFixedType && item.compHoursGenerated && item.compHoursGenerated !== item.originalHours) {
+                    overtimeHtml += ` <span style="color: #059669; font-weight: 600;">（累積補休: ${item.compHoursGenerated}h）</span>`;
+                  } else if (item.compHoursGenerated && item.compHoursGenerated === item.originalHours) {
+                    overtimeHtml += ` <span style="color: #059669;">（累積補休: ${item.compHoursGenerated}h）</span>`;
+                  }
+                  overtimeHtml += `</div>`;
+                  
+                  // 第四行：加权计算
+                  overtimeHtml += `<div style="color: #374151; margin-top: 2px;">`;
+                  overtimeHtml += `💰 加班費: ${item.originalHours}h × ${item.multiplier}倍 = <strong style="color: #059669;">${item.originalWeighted.toFixed(2)}h</strong> 加權工時`;
+                  overtimeHtml += `</div>`;
+                  
+                  // 第五行：补休扣除（如果有）
+                  if (item.compDeducted > 0) {
+                    overtimeHtml += `<div style="color: #dc2626; margin-top: 3px; padding-top: 3px; border-top: 1px dashed #fecaca;">`;
+                    overtimeHtml += `⚠️ 扣除補休: ${item.compDeducted}h → 剩餘 ${item.remainingHours}h × ${item.multiplier}倍 = <strong>${item.effectiveWeighted.toFixed(2)}h</strong> 有效加權`;
+                    overtimeHtml += `</div>`;
+                  }
+                  
                   overtimeHtml += `</div>`;
                 });
               }
