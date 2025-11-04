@@ -1979,17 +1979,24 @@
 
         // 載入打卡記錄列表
         async function loadPunchRecords(userId) {
+          console.log('[打卡記錄] 開始載入，用戶ID:', userId);
           currentUserId = userId;
+          
+          // 顯示載入中狀態
+          punchFilesList.innerHTML = '<tr><td colspan="3" class="muted" style="padding: 2rem; text-align: center;">載入中...</td></tr>';
           
           try {
             const res = await fetch(`${apiBase}/punch-records`, { credentials: 'include' });
-            if (!res.ok) throw new Error('載入失敗');
+            console.log('[打卡記錄] API 回應狀態:', res.status);
+            if (!res.ok) throw new Error('載入失敗：' + res.status);
             const json = await res.json();
+            console.log('[打卡記錄] 收到資料:', json);
             const records = json.data?.records || [];
+            console.log('[打卡記錄] 記錄數量:', records.length);
             renderPunchRecords(records);
           } catch (err) {
-            console.error('載入打卡記錄失敗:', err);
-            punchFilesList.innerHTML = '<tr><td colspan="3" class="muted" style="padding: 2rem; text-align: center;">載入失敗</td></tr>';
+            console.error('[打卡記錄] 載入失敗:', err);
+            punchFilesList.innerHTML = '<tr><td colspan="3" class="muted" style="padding: 2rem; text-align: center;">載入失敗：' + err.message + '</td></tr>';
           }
         }
 
