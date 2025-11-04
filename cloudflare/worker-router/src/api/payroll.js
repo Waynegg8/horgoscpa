@@ -1051,13 +1051,33 @@ export async function handlePayroll(request, env, me, requestId, url, path) {
 			return await previewPayroll(env, requestId, corsHeaders, url);
 		}
 
-		// POST /admin/payroll/finalize - 产制月结（保存）
+		// POST /admin/payroll/finalize - 产制月结（保存版本快照）
 		if (method === "POST" && path === "/internal/api/v1/admin/payroll/finalize") {
 			console.log('[Payroll] Matched: finalize');
 			return await finalizePayroll(request, env, me, requestId, corsHeaders);
 		}
 
-		// GET /admin/payroll - 查询已产制的薪资
+		// GET /admin/payroll/snapshots - 获取月结版本列表
+		if (method === "GET" && path === "/internal/api/v1/admin/payroll/snapshots") {
+			console.log('[Payroll] Matched: get snapshots');
+			return await getPayrollSnapshots(env, requestId, corsHeaders, url);
+		}
+
+		// GET /admin/payroll/snapshots/:id - 获取特定版本详情
+		if (method === "GET" && path.match(/^\/internal\/api\/v1\/admin\/payroll\/snapshots\/\d+$/)) {
+			console.log('[Payroll] Matched: get snapshot by id');
+			const snapshotId = parseInt(path.split('/').pop());
+			return await getPayrollSnapshotById(env, snapshotId, requestId, corsHeaders);
+		}
+
+		// GET /admin/payroll/snapshots/:id/download - 下载版本数据
+		if (method === "GET" && path.match(/^\/internal\/api\/v1\/admin\/payroll\/snapshots\/\d+\/download$/)) {
+			console.log('[Payroll] Matched: download snapshot');
+			const snapshotId = parseInt(path.split('/')[path.split('/').length - 2]);
+			return await downloadPayrollSnapshot(env, snapshotId, requestId, corsHeaders);
+		}
+
+		// GET /admin/payroll - 查询已产制的薪资（旧API，兼容）
 		if (method === "GET" && path === "/internal/api/v1/admin/payroll") {
 			console.log('[Payroll] Matched: get run');
 			return await getPayrollRun(env, requestId, corsHeaders, url);
@@ -1131,7 +1151,82 @@ async function previewPayroll(env, requestId, corsHeaders, url) {
 }
 
 /**
- * 产制月结（保存到数据库）
+ * 计算两个版本之间的差异
+ */
+function calculatePayrollChanges(previousData, currentData) {
+	const changes = {
+		employeesChanged: [],
+		summary: {
+			totalEmployees: currentData.length,
+			changedEmployees: 0,
+			totalDifferenceCents: 0
+		}
+	};
+
+	// 创建上一版本的映射（按 userId）
+	const previousMap = new Map();
+	if (previousData) {
+		previousData.forEach(emp => {
+			previousMap.set(emp.userId, emp);
+		});
+	}
+
+	// 对比每个员工的数据
+	currentData.forEach(current => {
+		const previous = previousMap.get(current.userId);
+		
+		if (!previous) {
+			// 新增员工
+			changes.employeesChanged.push({
+				userId: current.userId,
+				name: current.name,
+				changeType: 'added',
+				netSalaryDiff: current.netSalaryCents
+			});
+			changes.summary.changedEmployees++;
+			changes.summary.totalDifferenceCents += current.netSalaryCents;
+		} else {
+			// 检查是否有变化
+			const diff = current.netSalaryCents - previous.netSalaryCents;
+			if (diff !== 0 || current.isFullAttendance !== previous.isFullAttendance) {
+				const changeDetails = [];
+				if (current.baseSalaryCents !== previous.baseSalaryCents) {
+					changeDetails.push(`底薪: ${previous.baseSalaryCents/100} → ${current.baseSalaryCents/100}`);
+				}
+				if (current.overtimeCents !== previous.overtimeCents) {
+					changeDetails.push(`加班費: ${previous.overtimeCents/100} → ${current.overtimeCents/100}`);
+				}
+				if (current.bonusCents !== previous.bonusCents) {
+					changeDetails.push(`獎金: ${previous.bonusCents/100} → ${current.bonusCents/100}`);
+				}
+				if (current.leaveDeductionCents !== previous.leaveDeductionCents) {
+					changeDetails.push(`請假扣款: ${previous.leaveDeductionCents/100} → ${current.leaveDeductionCents/100}`);
+				}
+				if (current.isFullAttendance !== previous.isFullAttendance) {
+					changeDetails.push(`全勤: ${previous.isFullAttendance ? '是' : '否'} → ${current.isFullAttendance ? '是' : '否'}`);
+				}
+				
+				changes.employeesChanged.push({
+					userId: current.userId,
+					name: current.name,
+					changeType: 'modified',
+					netSalaryDiff: diff,
+					previousNetSalary: previous.netSalaryCents,
+					currentNetSalary: current.netSalaryCents,
+					details: changeDetails
+				});
+				changes.summary.changedEmployees++;
+				changes.summary.totalDifferenceCents += diff;
+			}
+		}
+	});
+
+	return changes;
+}
+
+/**
+ * 产制月结（保存版本快照）
+ * 允许重复产制，每次产制创建新版本
  */
 async function finalizePayroll(request, env, me, requestId, corsHeaders) {
 	let body;
@@ -1146,7 +1241,7 @@ async function finalizePayroll(request, env, me, requestId, corsHeaders) {
 		}, corsHeaders);
 	}
 
-	const { month, idempotency_key } = body;
+	const { month, notes } = body;
 
 	if (!month || !/^\d{4}-\d{2}$/.test(month)) {
 		return jsonResponse(400, {
@@ -1157,23 +1252,12 @@ async function finalizePayroll(request, env, me, requestId, corsHeaders) {
 		}, corsHeaders);
 	}
 
-	// 检查是否已经产制过
-	const existing = await env.DATABASE.prepare(
-		`SELECT run_id FROM PayrollRuns WHERE month = ?`
+	// 查询该月份的最新版本号
+	const latestVersion = await env.DATABASE.prepare(
+		`SELECT version, snapshot_data FROM PayrollSnapshots WHERE month = ? ORDER BY version DESC LIMIT 1`
 	).bind(month).first();
 
-	if (existing) {
-		return jsonResponse(409, {
-			ok: false,
-			code: "ALREADY_FINALIZED",
-			message: "该月份已经产制过",
-			data: { runId: existing.run_id },
-			meta: { requestId }
-		}, corsHeaders);
-	}
-
-	// 生成 run_id
-	const runId = `run_${month}_${Date.now()}`;
+	const newVersion = latestVersion ? latestVersion.version + 1 : 1;
 
 	// 计算所有员工薪资
 	const users = await env.DATABASE.prepare(
@@ -1188,37 +1272,50 @@ async function finalizePayroll(request, env, me, requestId, corsHeaders) {
 		}
 	}
 
-	// 保存到数据库（使用事务）
-	try {
-		// 创建 PayrollRun 记录
-		await env.DATABASE.prepare(
-			`INSERT INTO PayrollRuns (run_id, month, idempotency_key, created_by) VALUES (?, ?, ?, ?)`
-		).bind(runId, month, idempotency_key || null, me.user_id).run();
-
-		// 批量插入 MonthlyPayroll 记录
-		for (const payroll of results) {
-			await env.DATABASE.prepare(`
-				INSERT INTO MonthlyPayroll 
-				(run_id, user_id, base_salary_cents, regular_allowance_cents, bonus_cents, overtime_cents, total_cents, is_full_attendance)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-			`).bind(
-				runId,
-				payroll.userId,
-				payroll.baseSalaryCents,
-				payroll.regularAllowanceCents,
-				payroll.bonusCents,
-				payroll.overtimeCents,
-				payroll.netSalaryCents,  // total_cents 存储实发薪资
-				payroll.isFullAttendance ? 1 : 0
-			).run();
+	// 对比上一版本，计算变更摘要
+	let changesSummary = null;
+	if (latestVersion && latestVersion.snapshot_data) {
+		try {
+			const previousData = JSON.parse(latestVersion.snapshot_data);
+			changesSummary = calculatePayrollChanges(previousData.users || [], results);
+		} catch (err) {
+			console.error('[finalizePayroll] 解析上一版本数据失败:', err);
 		}
+	}
+
+	// 准备快照数据
+	const snapshotData = {
+		month,
+		version: newVersion,
+		createdAt: new Date().toISOString(),
+		createdBy: me.user_id,
+		createdByName: me.full_name || me.username,
+		totalEmployees: results.length,
+		users: results
+	};
+
+	// 保存到数据库
+	try {
+		const result = await env.DATABASE.prepare(`
+			INSERT INTO PayrollSnapshots (month, version, created_by, snapshot_data, changes_summary, notes)
+			VALUES (?, ?, ?, ?, ?, ?)
+		`).bind(
+			month,
+			newVersion,
+			me.user_id,
+			JSON.stringify(snapshotData),
+			changesSummary ? JSON.stringify(changesSummary) : null,
+			notes || null
+		).run();
 
 		return jsonResponse(201, {
 			ok: true,
 			data: {
-				runId,
+				snapshotId: result.meta.last_row_id,
 				month,
-				totalEmployees: results.length
+				version: newVersion,
+				totalEmployees: results.length,
+				changes: changesSummary
 			},
 			meta: { requestId }
 		}, corsHeaders);
@@ -1228,7 +1325,7 @@ async function finalizePayroll(request, env, me, requestId, corsHeaders) {
 		return jsonResponse(500, {
 			ok: false,
 			code: "DATABASE_ERROR",
-			message: "保存失败",
+			message: "保存失败: " + error.message,
 			meta: { requestId }
 		}, corsHeaders);
 	}
@@ -1271,5 +1368,209 @@ async function getPayrollRun(env, requestId, corsHeaders, url) {
 		},
 		meta: { requestId } 
 	}, corsHeaders);
+}
+
+/**
+ * 获取薪资月结版本列表
+ */
+async function getPayrollSnapshots(env, requestId, corsHeaders, url) {
+	const month = url.searchParams.get('month');
+	
+	if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+		return jsonResponse(400, {
+			ok: false,
+			code: "INVALID_MONTH",
+			message: "月份格式错误，应为 YYYY-MM",
+			meta: { requestId }
+		}, corsHeaders);
+	}
+
+	// 获取该月的所有版本，包含创建人信息
+	const snapshots = await env.DATABASE.prepare(`
+		SELECT 
+			ps.snapshot_id, 
+			ps.month, 
+			ps.version, 
+			ps.created_at, 
+			ps.created_by,
+			ps.changes_summary,
+			ps.notes,
+			u.full_name as creator_name
+		FROM PayrollSnapshots ps
+		LEFT JOIN Users u ON ps.created_by = u.user_id
+		WHERE ps.month = ?
+		ORDER BY ps.version DESC
+	`).bind(month).all();
+
+	// 解析 changes_summary
+	const results = (snapshots.results || []).map(snap => {
+		let changesSummary = null;
+		if (snap.changes_summary) {
+			try {
+				changesSummary = JSON.parse(snap.changes_summary);
+			} catch (err) {
+				console.error('[getPayrollSnapshots] 解析changes_summary失败:', err);
+			}
+		}
+		
+		return {
+			snapshotId: snap.snapshot_id,
+			month: snap.month,
+			version: snap.version,
+			createdAt: snap.created_at,
+			createdBy: snap.created_by,
+			creatorName: snap.creator_name || '未知',
+			notes: snap.notes,
+			changesSummary
+		};
+	});
+
+	return jsonResponse(200, {
+		ok: true,
+		data: {
+			month,
+			snapshots: results,
+			total: results.length
+		},
+		meta: { requestId }
+	}, corsHeaders);
+}
+
+/**
+ * 获取特定版本的详细数据
+ */
+async function getPayrollSnapshotById(env, snapshotId, requestId, corsHeaders) {
+	const snapshot = await env.DATABASE.prepare(`
+		SELECT 
+			ps.snapshot_id,
+			ps.month,
+			ps.version,
+			ps.created_at,
+			ps.created_by,
+			ps.snapshot_data,
+			ps.changes_summary,
+			ps.notes,
+			u.full_name as creator_name
+		FROM PayrollSnapshots ps
+		LEFT JOIN Users u ON ps.created_by = u.user_id
+		WHERE ps.snapshot_id = ?
+	`).bind(snapshotId).first();
+
+	if (!snapshot) {
+		return jsonResponse(404, {
+			ok: false,
+			code: "NOT_FOUND",
+			message: "找不到该版本",
+			meta: { requestId }
+		}, corsHeaders);
+	}
+
+	// 解析 JSON 数据
+	let snapshotData = null;
+	let changesSummary = null;
+	
+	try {
+		if (snapshot.snapshot_data) {
+			snapshotData = JSON.parse(snapshot.snapshot_data);
+		}
+		if (snapshot.changes_summary) {
+			changesSummary = JSON.parse(snapshot.changes_summary);
+		}
+	} catch (err) {
+		console.error('[getPayrollSnapshotById] JSON解析失败:', err);
+		return jsonResponse(500, {
+			ok: false,
+			code: "PARSE_ERROR",
+			message: "数据解析失败",
+			meta: { requestId }
+		}, corsHeaders);
+	}
+
+	return jsonResponse(200, {
+		ok: true,
+		data: {
+			snapshotId: snapshot.snapshot_id,
+			month: snapshot.month,
+			version: snapshot.version,
+			createdAt: snapshot.created_at,
+			createdBy: snapshot.created_by,
+			creatorName: snapshot.creator_name || '未知',
+			notes: snapshot.notes,
+			data: snapshotData,
+			changes: changesSummary
+		},
+		meta: { requestId }
+	}, corsHeaders);
+}
+
+/**
+ * 下载薪资月结版本数据（JSON格式）
+ */
+async function downloadPayrollSnapshot(env, snapshotId, requestId, corsHeaders) {
+	const snapshot = await env.DATABASE.prepare(`
+		SELECT 
+			ps.snapshot_id,
+			ps.month,
+			ps.version,
+			ps.created_at,
+			ps.created_by,
+			ps.snapshot_data,
+			ps.changes_summary,
+			ps.notes,
+			u.full_name as creator_name
+		FROM PayrollSnapshots ps
+		LEFT JOIN Users u ON ps.created_by = u.user_id
+		WHERE ps.snapshot_id = ?
+	`).bind(snapshotId).first();
+
+	if (!snapshot) {
+		return jsonResponse(404, {
+			ok: false,
+			code: "NOT_FOUND",
+			message: "找不到该版本",
+			meta: { requestId }
+		}, corsHeaders);
+	}
+
+	// 准备下载数据
+	let snapshotData = null;
+	let changesSummary = null;
+	
+	try {
+		if (snapshot.snapshot_data) {
+			snapshotData = JSON.parse(snapshot.snapshot_data);
+		}
+		if (snapshot.changes_summary) {
+			changesSummary = JSON.parse(snapshot.changes_summary);
+		}
+	} catch (err) {
+		console.error('[downloadPayrollSnapshot] JSON解析失败:', err);
+	}
+
+	const downloadData = {
+		snapshotId: snapshot.snapshot_id,
+		month: snapshot.month,
+		version: snapshot.version,
+		createdAt: snapshot.created_at,
+		createdBy: snapshot.created_by,
+		creatorName: snapshot.creator_name || '未知',
+		notes: snapshot.notes,
+		payrollData: snapshotData,
+		changes: changesSummary,
+		downloadedAt: new Date().toISOString()
+	};
+
+	// 返回 JSON 文件
+	const filename = `payroll_${snapshot.month}_v${snapshot.version}_${Date.now()}.json`;
+	
+	return new Response(JSON.stringify(downloadData, null, 2), {
+		status: 200,
+		headers: {
+			'Content-Type': 'application/json; charset=utf-8',
+			'Content-Disposition': `attachment; filename="${filename}"`,
+			'Access-Control-Allow-Origin': corsHeaders['Access-Control-Allow-Origin'],
+			'Access-Control-Allow-Credentials': corsHeaders['Access-Control-Allow-Credentials']
+		}
+	});
 }
 
