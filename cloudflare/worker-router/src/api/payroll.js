@@ -1602,11 +1602,11 @@ async function downloadPayrollSnapshot(env, snapshotId, requestId, corsHeaders) 
 
 	if (!snapshot) {
 		return jsonResponse(404, {
-			ok: false,
+		ok: false, 
 			code: "NOT_FOUND",
 			message: "找不到该版本",
-			meta: { requestId }
-		}, corsHeaders);
+		meta: { requestId } 
+	}, corsHeaders);
 	}
 
 	// 准备下载数据
