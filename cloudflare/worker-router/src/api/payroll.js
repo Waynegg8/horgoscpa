@@ -993,8 +993,8 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const transportIntervals = transportResult.intervals || 0;
 	const tripDetails = transportResult.tripDetails || [];
 
-	// 9. 计算请假扣款
-	const leaveResult = await calculateLeaveDeductions(env, userId, month, baseSalaryCents, regularAllowanceCents);
+	// 9. 计算请假扣款（只用底薪）
+	const leaveResult = await calculateLeaveDeductions(env, userId, month, baseSalaryCents, 0);
 	const leaveDeductionCents = leaveResult.leaveDeductionCents;
 	const sickDays = leaveResult.sickDays;
 	const personalDays = leaveResult.personalDays;
