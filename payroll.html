@@ -1307,6 +1307,9 @@
           let compLeaveHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>補休使用情況：</strong></div>';
           compLeaveHtml += '<div style="margin-left: 10px;">';
           
+          // 提前定义 expiredComp（补休转加班费）
+          const expiredCompPayCents = r.expiredCompPayCents || 0;
+          
           // 本月累積的補休（使用後端計算好的值）
           const totalCompGenerated = r.totalCompHoursGenerated || 0;
           
@@ -1326,15 +1329,14 @@
           
           // 當月未使用補休轉加班費
           const unusedCompHours = r.unusedCompHours || 0;
-          // expiredComp 已在上面的加班費區塊聲明
-          if (unusedCompHours > 0 || expiredComp > 0) {
+          if (unusedCompHours > 0 || expiredCompPayCents > 0) {
             compLeaveHtml += `<div style="padding: 8px; margin-top: 8px; background: #fef2f2; border-left: 3px solid #dc2626; border-radius: 4px;">`;
             compLeaveHtml += `<div style="color: #991b1b; font-weight: 600; margin-bottom: 4px;">`;
             compLeaveHtml += `⏰ 當月未使用補休（月底到期轉加班費）：`;
             compLeaveHtml += `</div>`;
             compLeaveHtml += `<div style="color: #7f1d1d; margin-left: 10px;">`;
             compLeaveHtml += `• 未使用時數: <strong>${unusedCompHours.toFixed(2)}h</strong><br>`;
-            compLeaveHtml += `• 轉為加班費: <strong>${centsToTwd(expiredComp)}</strong>`;
+            compLeaveHtml += `• 轉為加班費: <strong>${centsToTwd(expiredCompPayCents)}</strong>`;
             compLeaveHtml += `</div>`;
             compLeaveHtml += `<div style="color: #991b1b; font-size: 0.85em; margin-top: 4px; margin-left: 10px;">`;
             compLeaveHtml += `💡 按原始加班倍率 × 時薪計算（當月產生補休，當月未用完，當月轉加班費）`;
@@ -1355,7 +1357,7 @@
             compLeaveHtml += `⚠️ 補休於生成當月月底到期，當月未使用完自動轉為加班費`;
             compLeaveHtml += `</div>`;
             compLeaveHtml += `</div>`;
-          } else if (unusedCompHours === 0 && expiredComp === 0) {
+          } else if (unusedCompHours === 0 && expiredCompPayCents === 0) {
             compLeaveHtml += '<div style="color: #9ca3af;">本月無補休變動</div>';
           }
           
