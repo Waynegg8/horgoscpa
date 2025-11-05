@@ -1493,63 +1493,63 @@
                 }
                 body { 
                   font-family: "Microsoft JhengHei", "微軟正黑體", Arial, sans-serif;
-                  line-height: 1.6;
-                  padding: 20px;
+                  line-height: 1.3;
+                  padding: 10px;
                   max-width: 800px;
                   margin: 0 auto;
                 }
                 .header {
                   text-align: center;
-                  margin-bottom: 30px;
-                  border-bottom: 3px solid #1e40af;
-                  padding-bottom: 15px;
+                  margin-bottom: 12px;
+                  border-bottom: 2px solid #1e40af;
+                  padding-bottom: 8px;
                 }
                 .company-name {
-                  font-size: 24pt;
+                  font-size: 16pt;
                   font-weight: bold;
                   color: #1e40af;
-                  margin-bottom: 8px;
+                  margin-bottom: 4px;
                 }
                 .document-title {
-                  font-size: 20pt;
+                  font-size: 14pt;
                   font-weight: bold;
-                  margin: 10px 0;
+                  margin: 5px 0;
                 }
                 .employee-info {
                   display: flex;
                   justify-content: space-between;
-                  margin: 20px 0;
-                  padding: 15px;
+                  margin: 10px 0;
+                  padding: 8px 12px;
                   background: #f0f9ff;
-                  border-radius: 8px;
-                  border: 2px solid #bfdbfe;
+                  border-radius: 4px;
+                  border: 1px solid #bfdbfe;
                 }
                 .info-item {
-                  font-size: 12pt;
+                  font-size: 10pt;
                 }
                 .info-label {
                   color: #1e40af;
                   font-weight: bold;
-                  margin-right: 8px;
+                  margin-right: 6px;
                 }
                 .section-title {
-                  font-size: 14pt;
+                  font-size: 11pt;
                   font-weight: bold;
                   color: #1e40af;
-                  margin: 25px 0 12px 0;
-                  padding-bottom: 5px;
-                  border-bottom: 2px solid #1e40af;
+                  margin: 12px 0 6px 0;
+                  padding-bottom: 3px;
+                  border-bottom: 1.5px solid #1e40af;
                 }
                 table {
                   width: 100%;
                   border-collapse: collapse;
-                  margin: 15px 0;
+                  margin: 8px 0;
                 }
                 th, td {
-                  border: 1.5px solid #666;
-                  padding: 10px;
+                  border: 1px solid #666;
+                  padding: 5px 8px;
                   text-align: left;
-                  font-size: 11pt;
+                  font-size: 9pt;
                 }
                 th {
                   background: #dbeafe;
@@ -1569,54 +1569,50 @@
                 .total-row {
                   background: #e0f2fe;
                   font-weight: bold;
-                  font-size: 12pt;
+                  font-size: 9pt;
                 }
                 .final-row {
                   background: #dbeafe;
                   font-weight: bold;
-                  font-size: 13pt;
+                  font-size: 10pt;
                   color: #16a34a;
                 }
                 .summary-box {
-                  margin: 25px 0;
-                  padding: 20px;
-                  border: 3px solid #16a34a;
-                  border-radius: 8px;
+                  margin: 12px 0;
+                  padding: 10px 15px;
+                  border: 2px solid #16a34a;
+                  border-radius: 4px;
                   background: #f0fdf4;
                 }
                 .summary-item {
                   display: flex;
                   justify-content: space-between;
-                  padding: 8px 0;
-                  font-size: 13pt;
+                  padding: 4px 0;
+                  font-size: 10pt;
                 }
                 .summary-item.final {
                   border-top: 2px solid #16a34a;
-                  margin-top: 10px;
-                  padding-top: 15px;
-                  font-size: 16pt;
+                  margin-top: 6px;
+                  padding-top: 8px;
+                  font-size: 12pt;
                   font-weight: bold;
                   color: #16a34a;
                 }
                 .footer {
                   text-align: center;
-                  margin-top: 30px;
-                  padding-top: 15px;
+                  margin-top: 15px;
+                  padding-top: 8px;
                   border-top: 1px solid #ccc;
-                  font-size: 9pt;
+                  font-size: 8pt;
                   color: #666;
-                }
-                .note {
-                  margin: 15px 0;
-                  padding: 12px;
-                  background: #fffbeb;
-                  border-left: 4px solid #f59e0b;
-                  font-size: 10pt;
-                  color: #92400e;
                 }
                 @media print {
                   button { display: none !important; }
-                  body { padding: 0; }
+                  body { padding: 5px; margin: 0; }
+                  @page {
+                    size: A4;
+                    margin: 10mm;
+                  }
                 }
               </style>
             </head>
@@ -1705,7 +1701,7 @@
                         incomeRows += '<tr class="income-row"><td>加班費（有效加權工時）<br><small>' + effectiveHours.toFixed(1) + 'h × NT$ ' + hourlyRate.toFixed(2) + '</small></td><td class="amount">' + fmt(overtimeFromHours) + '</td><td>加班費</td></tr>';
                       }
                       if (expiredComp > 0) {
-                        incomeRows += '<tr class="income-row"><td>上月到期補休轉加班費</td><td class="amount" style="color:#dc2626;">' + fmt(expiredComp) + '</td><td>加班費</td></tr>';
+                        incomeRows += '<tr class="income-row"><td>未使用補休轉加班費（本月）</td><td class="amount">' + fmt(expiredComp) + '</td><td>加班費</td></tr>';
                       }
                     }
                     
