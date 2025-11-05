@@ -175,6 +175,28 @@
       .modal__actions button {
         flex-shrink: 0 !important;
       }
+      
+      /* 删除按钮hover效果 */
+      .btn-delete:hover:not(:disabled) {
+        background: #dc2626 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+      }
+      
+      .btn-delete:active {
+        transform: translateY(0);
+      }
+      
+      .btn-delete:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      
+      .btn-danger:hover {
+        background: #dc2626 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+      }
     </style>
   </head>
   <body class="leaves-page">
@@ -217,6 +239,7 @@
         </select>
         <button id="btn-apply" class="clients-btn" type="button">申請假期</button>
         <button id="btn-event" class="clients-btn btn-secondary" type="button">登記生活事件</button>
+        <button id="btn-clear-test" class="btn-danger" type="button" style="margin-left:auto;padding:10px 16px;background:#ef4444;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;">清除測試數據</button>
       </div>
     </div>
 
@@ -254,6 +277,7 @@
               <th>日期與時間</th>
               <th>時數</th>
               <th>提交日期</th>
+              <th style="width:80px;text-align:center;">操作</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -479,7 +503,44 @@
             const typeText = zhType[r.type] || r.type;
             const dateTimeText = r.start + (r.startTime && r.endTime ? ` ${r.startTime}-${r.endTime}` : '');
             const hours = `${r.amount} 小時`;
+            
+            // 創建刪除按鈕
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '刪除';
+            deleteBtn.className = 'btn-delete';
+            deleteBtn.style.cssText = 'padding:4px 12px;font-size:13px;background:#ef4444;color:white;border:none;border-radius:6px;cursor:pointer;';
+            deleteBtn.addEventListener('click', async function() {
+              if (!confirm(`確定要刪除這筆${typeText}記錄嗎？\n日期：${dateTimeText}\n時數：${hours}`)) return;
+              
+              try {
+                deleteBtn.disabled = true;
+                deleteBtn.textContent = '刪除中...';
+                const res = await fetch(`${apiBase}/leaves/${r.leaveId}`, { method:'DELETE', credentials:'include' });
+                if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
+                const json = await res.json().catch(()=>null);
+                if (!res.ok || !json || json.ok !== true) {
+                  alert(json?.message || '刪除失敗');
+                  deleteBtn.disabled = false;
+                  deleteBtn.textContent = '刪除';
+                  return;
+                }
+                alert('已成功刪除');
+                await loadBalances();
+                await loadLeaves();
+              } catch (err) {
+                console.error(err);
+                alert('刪除失敗，請稍後再試');
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = '刪除';
+              }
+            });
+            
+            const actionTd = document.createElement('td');
+            actionTd.style.textAlign = 'center';
+            actionTd.appendChild(deleteBtn);
+            
             tr.innerHTML = `<td>${typeText}</td><td>${dateTimeText}</td><td>${hours}</td><td>${r.submittedAt?.slice(0,10) || ''}</td>`;
+            tr.appendChild(actionTd);
             tbody.appendChild(tr);
           });
         }
@@ -775,6 +836,66 @@
           loadBalances();
           loadLeaves();
         });
+        
+        // 清除測試數據按鈕
+        const clearTestBtn = document.getElementById('btn-clear-test');
+        if (clearTestBtn) {
+          clearTestBtn.addEventListener('click', async function() {
+            if (!confirm('⚠️ 警告：此操作將刪除您所有的請假記錄！\n\n這個功能主要用於清除測試數據。\n\n確定要繼續嗎？')) return;
+            
+            // 二次確認
+            if (!confirm('再次確認：真的要刪除所有請假記錄嗎？此操作無法復原！')) return;
+            
+            try {
+              clearTestBtn.disabled = true;
+              clearTestBtn.textContent = '清除中...';
+              
+              // 獲取所有記錄
+              const res = await fetch(`${apiBase}/leaves?page=1&perPage=1000`, { credentials:'include' });
+              if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
+              const json = await res.json();
+              
+              if (!res.ok || !json || json.ok !== true || !json.data) {
+                alert('獲取記錄失敗');
+                clearTestBtn.disabled = false;
+                clearTestBtn.textContent = '清除測試數據';
+                return;
+              }
+              
+              const records = json.data;
+              let successCount = 0;
+              let failCount = 0;
+              
+              // 逐一刪除
+              for (const record of records) {
+                try {
+                  const delRes = await fetch(`${apiBase}/leaves/${record.leaveId}`, { method:'DELETE', credentials:'include' });
+                  if (delRes.ok) {
+                    successCount++;
+                  } else {
+                    failCount++;
+                  }
+                } catch (err) {
+                  console.error('刪除失敗:', record.leaveId, err);
+                  failCount++;
+                }
+              }
+              
+              alert(`清除完成！\n成功：${successCount} 筆\n失敗：${failCount} 筆`);
+              
+              // 重新載入數據
+              await loadBalances();
+              await loadLeaves();
+              
+            } catch (err) {
+              console.error(err);
+              alert('清除失敗，請稍後再試');
+            } finally {
+              clearTestBtn.disabled = false;
+              clearTestBtn.textContent = '清除測試數據';
+            }
+          });
+        }
 
         // 根據性別過濾假期選項
         function filterLeaveTypesByGender(gender) {

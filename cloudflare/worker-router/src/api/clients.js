@@ -362,7 +362,8 @@ export async function handleClients(request, env, me, requestId, url) {
 		const tagId = params.get("tag_id") || "";
 		
 		// ⚡ 优先尝试从KV缓存读取（极快<50ms）
-		const cacheKey = generateCacheKey('clients_list', { page, perPage, q: searchQuery, tag_id: tagId });
+		// 版本号v2：包含负责人、标签、服务数量、年度总额
+		const cacheKey = generateCacheKey('clients_list', { page, perPage, q: searchQuery, tag_id: tagId, v: 'v2' });
 		const kvCached = await getKVCache(env, cacheKey);
 		
 		if (kvCached && kvCached.data) {
@@ -380,7 +381,7 @@ export async function handleClients(request, env, me, requestId, url) {
 		if (d1Cached && d1Cached.data) {
 			// 异步同步到KV
 			saveKVCache(env, cacheKey, 'clients_list', d1Cached.data, {
-				scopeParams: { page, perPage, q: searchQuery, tag_id: tagId },
+				scopeParams: { page, perPage, q: searchQuery, tag_id: tagId, v: 'v2' },
 				ttl: 3600
 			}).catch(err => console.error('[CLIENTS] KV同步失败:', err));
 			
@@ -506,14 +507,14 @@ export async function handleClients(request, env, me, requestId, url) {
 			try {
 				await Promise.all([
 					saveKVCache(env, cacheKey, 'clients_list', cacheData, {
-						scopeParams: { page, perPage, q: searchQuery, tag_id: tagId },
+						scopeParams: { page, perPage, q: searchQuery, tag_id: tagId, v: 'v2' },
 						ttl: 3600 // 1小时
 					}),
 					saveCache(env, cacheKey, 'clients_list', cacheData, {
-						scopeParams: { page, perPage, q: searchQuery, tag_id: tagId }
+						scopeParams: { page, perPage, q: searchQuery, tag_id: tagId, v: 'v2' }
 					})
 				]);
-				console.log('[CLIENTS] ✓ 客户列表缓存已保存（KV+D1）');
+				console.log('[CLIENTS] ✓ 客户列表缓存已保存（KV+D1）v2');
 			} catch (err) {
 				console.error('[CLIENTS] ✗ 缓存保存失败:', err);
 			}

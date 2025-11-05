@@ -669,6 +669,89 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 		}
 	}
 	
+	// 刪除請假記錄
+	if (path.startsWith("/internal/api/v1/leaves/") && method === "DELETE") {
+		const leaveId = path.replace("/internal/api/v1/leaves/", "").trim();
+		
+		if (!leaveId) {
+			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"缺少請假記錄 ID", meta:{ requestId } }, corsHeaders);
+		}
+		
+		try {
+			// 查詢請假記錄
+			const leaveRow = await env.DATABASE.prepare(
+				"SELECT leave_id, user_id, leave_type, amount, status FROM LeaveRequests WHERE leave_id = ? AND is_deleted = 0"
+			).bind(leaveId).first();
+			
+			if (!leaveRow) {
+				return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"請假記錄不存在", meta:{ requestId } }, corsHeaders);
+			}
+			
+			// 權限檢查：只能刪除自己的記錄，管理員可以刪除任何記錄
+			if (!me.is_admin && String(leaveRow.user_id) !== String(me.user_id)) {
+				return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
+			}
+			
+			// 如果是補休且已批准，需要歸還補休額度
+			if (leaveRow.leave_type === 'comp' && leaveRow.status === 'approved') {
+				const hoursToReturn = Number(leaveRow.amount || 0);
+				
+				// 查找最舊的未完全使用的補休記錄，歸還額度（FIFO反向）
+				const compGrants = await env.DATABASE.prepare(
+					`SELECT grant_id, hours_granted, hours_used, hours_remaining 
+					 FROM CompensatoryLeaveGrants 
+					 WHERE user_id = ? AND (status = 'active' OR status = 'fully_used')
+					 ORDER BY generated_date ASC`
+				).bind(String(leaveRow.user_id)).all();
+				
+				let remaining = hoursToReturn;
+				for (const grant of (compGrants?.results || [])) {
+					if (remaining <= 0) break;
+					
+					const hoursGranted = Number(grant.hours_granted || 0);
+					const hoursUsed = Number(grant.hours_used || 0);
+					const hoursRemaining = Number(grant.hours_remaining || 0);
+					
+					// 計算可以歸還的額度（不能超過已使用的）
+					const canReturn = Math.min(remaining, hoursUsed);
+					if (canReturn <= 0) continue;
+					
+					const newUsed = hoursUsed - canReturn;
+					const newRemaining = hoursRemaining + canReturn;
+					const newStatus = newRemaining > 0 ? 'active' : (newUsed > 0 ? 'partially_used' : 'active');
+					
+					await env.DATABASE.prepare(
+						`UPDATE CompensatoryLeaveGrants 
+						 SET hours_used = ?, hours_remaining = ?, status = ? 
+						 WHERE grant_id = ?`
+					).bind(newUsed, newRemaining, newStatus, grant.grant_id).run();
+					
+					remaining -= canReturn;
+				}
+			}
+			
+			// 軟刪除請假記錄
+			await env.DATABASE.prepare(
+				"UPDATE LeaveRequests SET is_deleted = 1, deleted_at = datetime('now'), deleted_by = ? WHERE leave_id = ?"
+			).bind(String(me.user_id), leaveId).run();
+			
+			// ⚡ 失效該用戶的請假列表和余額緩存
+			Promise.all([
+				invalidateCacheByType(env, 'leaves_list', { userId: String(leaveRow.user_id) }),
+				invalidateCacheByType(env, 'leaves_balances', { userId: String(leaveRow.user_id) })
+			]).catch(err => console.error('[LEAVES] 失效緩存失敗:', err));
+			
+			// ⚡ 清除KV緩存
+			await deleteKVCacheByPrefix(env, 'leaves_');
+			
+			return jsonResponse(200, { ok:true, code:"OK", message:"已刪除請假記錄", meta:{ requestId } }, corsHeaders);
+			
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+	
 	return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 }
 
