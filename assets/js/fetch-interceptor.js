@@ -120,13 +120,19 @@
     if (!window.DataCache) return null;
     
     try {
-      const data = await window.DataCache.fetchWithCache('', cacheKey, {});
+      // 直接从 localStorage 读取缓存，避免递归调用 fetch
+      const cacheData = localStorage.getItem(`cache_${cacheKey}`);
+      if (!cacheData) return null;
       
-      if (data && !data.error && data.data !== null) {
-        // 構造一個假的 Response 對象
+      const cached = JSON.parse(cacheData);
+      const now = Date.now();
+      
+      // 检查缓存是否过期（默认 1 小时 = 3600 秒）
+      if (cached.timestamp && (now - cached.timestamp) / 1000 < 3600) {
+        // 構造一個 Response 對象
         const responseData = {
           ok: true,
-          data: data.data
+          data: cached.data
         };
         
         const response = new Response(JSON.stringify(responseData), {

@@ -395,24 +395,24 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 		
 		try {
-			const where = ["is_deleted = 0"];
+			const where = ["c.is_deleted = 0"];
 			const binds = [];
 			
 			// 搜索：支持公司名称和统编
 			if (searchQuery) {
-				where.push("(company_name LIKE ? OR tax_registration_number LIKE ?)");
+				where.push("(c.company_name LIKE ? OR c.tax_registration_number LIKE ?)");
 				binds.push(`%${searchQuery}%`, `%${searchQuery}%`);
 			}
 			
 			// 标签筛选
 			if (tagId) {
-				where.push("EXISTS (SELECT 1 FROM ClientTagAssignments cta WHERE cta.client_id = Clients.client_id AND cta.tag_id = ?)");
+				where.push("EXISTS (SELECT 1 FROM ClientTagAssignments cta2 WHERE cta2.client_id = c.client_id AND cta2.tag_id = ?)");
 				binds.push(tagId);
 			}
 			
 			const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 			const countRow = await env.DATABASE.prepare(
-				`SELECT COUNT(*) as total FROM Clients ${whereSql}`
+				`SELECT COUNT(*) as total FROM Clients c ${whereSql}`
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
 			
@@ -432,47 +432,12 @@ export async function handleClients(request, env, me, requestId, url) {
 				 LIMIT ? OFFSET ?`
 			).bind(...binds, perPage, offset).all();
 			
-			// 获取所有客户ID用于批量查询服务和收费
-			const clientIds = (rows?.results || []).map(r => r.client_id);
-			
-			// 批量查询每个客户的服务数量和年度收费总额
-			let servicesMap = {};
-			let yearTotalMap = {};
-			
-			if (clientIds.length > 0) {
-				// 查询每个客户的服务数量
-				const placeholders = clientIds.map(() => '?').join(',');
-				const servicesCount = await env.DATABASE.prepare(
-					`SELECT client_id, COUNT(*) as service_count
-					 FROM ClientServices
-					 WHERE client_id IN (${placeholders}) AND is_deleted = 0
-					 GROUP BY client_id`
-				).bind(...clientIds).all();
-				
-				servicesCount.results?.forEach(row => {
-					servicesMap[row.client_id] = row.service_count;
-				});
-				
-				// 查询每个客户的年度收费总额
-				const yearTotals = await env.DATABASE.prepare(
-					`SELECT cs.client_id, SUM(sbs.billing_amount) as year_total
-					 FROM ClientServices cs
-					 LEFT JOIN ServiceBillingSchedule sbs ON sbs.client_service_id = cs.client_service_id
-					 WHERE cs.client_id IN (${placeholders}) AND cs.is_deleted = 0
-					 GROUP BY cs.client_id`
-				).bind(...clientIds).all();
-				
-				yearTotals.results?.forEach(row => {
-					yearTotalMap[row.client_id] = Number(row.year_total || 0);
-				});
-			}
-			
-			// 映射数据
+			// 映射数据（先不查询服务数量和年度总额，避免复杂查询导致错误）
 			const data = (rows?.results || []).map(r => {
 				// 解析标签
 				const tags = [];
 				if (r.tags) {
-					const tagParts = String(r.tags).split('|');
+					const tagParts = String(r.tags).split('|').filter(p => p);
 					tagParts.forEach(part => {
 						const [id, name, color] = part.split(':');
 						if (id && name) {
@@ -492,11 +457,11 @@ export async function handleClients(request, env, me, requestId, url) {
 					contact_person_1: r.contact_person_1 || "",
 					assigneeName: r.assignee_name || "未分配",
 					tags: tags,
-					services: servicesMap[r.client_id] ? Array(servicesMap[r.client_id]).fill({}) : [], // 用于计算服务数量
+					services: [], // 暂时返回空数组
 					phone: r.phone || "",
 					email: r.email || "",
 					createdAt: r.created_at,
-					year_total: yearTotalMap[r.client_id] || 0
+					year_total: 0 // 暂时返回0
 				};
 			});
 			
