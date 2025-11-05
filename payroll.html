@@ -966,6 +966,18 @@
           }
           
           // 收入合计
+          console.log(`[${r.name}] 收入明细:`, {
+            baseSalaryCents: r.baseSalaryCents,
+            allowanceItems: r.allowanceItems,
+            bonusItems: r.bonusItems,
+            performanceBonusCents: r.performanceBonusCents,
+            overtimeCents: r.overtimeCents,
+            mealAllowanceCents: r.mealAllowanceCents,
+            transportCents: r.transportCents,
+            grossSalaryCents: r.grossSalaryCents,
+            计算出的收入: r.baseSalaryCents + (r.overtimeCents||0) + (r.performanceBonusCents||0) + (r.mealAllowanceCents||0) + (r.transportCents||0)
+          });
+          
           payrollDetailHtml += `
             <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 15px; padding-top: 15px; border-top: 3px double #10b981; font-size: 1.1em; font-weight: 700; color: #065f46;">
               <div>收入合計</div>
