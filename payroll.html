@@ -986,60 +986,6 @@
             </details>
           `;
           
-          let hourlyRateBaseHtml = rulesHtml;
-          
-          // 津貼及獎金明細（本月發放）
-          let allowancesHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>津貼及獎金明細：</strong></div>';
-          const allowanceItems = [];
-          const bonusItems = [];
-          
-          // 分類津貼和獎金
-          if (r.allowanceItems && r.allowanceItems.length > 0) {
-            r.allowanceItems.forEach(item => {
-              if (item.category === 'allowance') {
-                allowanceItems.push(item);
-              } else if (item.category === 'bonus') {
-                bonusItems.push(item);
-              }
-            });
-          }
-          
-          if (allowanceItems.length > 0 || bonusItems.length > 0) {
-            allowancesHtml += '<div style="margin-left: 10px;">';
-            
-            let totalAllowancesCents = 0;
-            
-            if (allowanceItems.length > 0) {
-              allowancesHtml += '<div style="margin-bottom: 8px;"><strong style="color: #059669;">📊 津貼：</strong></div>';
-              allowanceItems.forEach(item => {
-                allowancesHtml += `<div style="margin-left: 20px;">• ${item.name}: ${centsToTwd(item.amountCents)}</div>`;
-                totalAllowancesCents += item.amountCents || 0;
-              });
-            }
-            
-            if (bonusItems.length > 0) {
-              allowancesHtml += '<div style="margin-bottom: 8px; margin-top: 8px;"><strong style="color: #f59e0b;">🎁 獎金：</strong></div>';
-              bonusItems.forEach(item => {
-                const isFullAttendancePaid = !item.isFullAttendanceBonus || r.isFullAttendance; // 不是全勤奖金，或者全勤达标
-                const fullAttendanceNote = item.isFullAttendanceBonus ? 
-                  (r.isFullAttendance ? 
-                    '<span style="color: #16a34a; font-size: 0.85em;"> ✓ 全勤達標，發放</span>' : 
-                    '<span style="color: #dc2626; font-size: 0.85em;"> ✗ 未達全勤，不發放</span>') : '';
-                allowancesHtml += `<div style="margin-left: 20px;">• ${item.name}: ${centsToTwd(item.amountCents)}${fullAttendanceNote}</div>`;
-                
-                // 只有发放的奖金才计入小计
-                if (isFullAttendancePaid) {
-                  totalAllowancesCents += item.amountCents || 0;
-                }
-              });
-            }
-            
-            allowancesHtml += `<div style="margin-left: 10px; margin-top: 8px; font-weight: 600; color: #059669;">小計: ${centsToTwd(totalAllowancesCents)}</div>`;
-            allowancesHtml += '</div>';
-          } else {
-            allowancesHtml += '<div style="margin-left: 10px; color: #9ca3af;">本月無津貼或獎金</div>';
-          }
-          
           // 加班費明細（可折叠区块，含误餐费）
           console.log('[DEBUG] 加班費詳細數據:', JSON.stringify(r.dailyOvertime, null, 2));
           payrollDetailHtml += `
