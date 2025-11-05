@@ -1436,8 +1436,15 @@
               // 交通费明细
               const transportDetail = r.totalKm > 0 ? `<br><small style="color:#059669;">${r.totalKm}km (${r.transportIntervals || 0}区间)</small>` : '';
               
-              // 请假扣款明细
-              const leaveDetail = (r.sickDays || r.personalDays) ? `<br><small style="color:#dc2626;">病${r.sickDays || 0}天 事${r.personalDays || 0}天</small>` : '';
+              // 请假扣款明细（显示小时数）
+              const sickHours = r.sickHours || 0;
+              const personalHours = r.personalHours || 0;
+              const menstrualHours = r.menstrualHours || 0;
+              let leaveDetailParts = [];
+              if (sickHours > 0) leaveDetailParts.push(`病假${sickHours}h`);
+              if (personalHours > 0) leaveDetailParts.push(`事假${personalHours}h`);
+              if (menstrualHours > 0) leaveDetailParts.push(`生理假${menstrualHours}h`);
+              const leaveDetail = leaveDetailParts.length > 0 ? `<br><small style="color:#dc2626;">${leaveDetailParts.join(' ')}</small>` : '';
               
               // 计算加给总和（regularAllowanceItems）
               let allowanceTotal = 0;
@@ -1688,9 +1695,9 @@
                     const data = result.data;
                     const userName = data.name || '未知員工';
                     
-                    // 格式化金额
+                    // 格式化金额（使用无条件舍去）
                     const fmt = (cents) => {
-                      const val = Math.abs(cents || 0) / 100;
+                      const val = Math.floor(Math.abs(cents || 0)) / 100;
                       return 'NT$ ' + val.toLocaleString('zh-TW', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                     };
                     
@@ -1856,8 +1863,7 @@
                       <div class="note">
                         💡 <strong>說明：</strong><br>
                         • 時薪計算基準 = (底薪 + 經常性給與) ÷ 240小時<br>
-                        • 加班費 = 有效加權工時 × 時薪<br>
-                        • 本薪資條僅供參考，實際發放金額以公司財務部門為準
+                        • 加班費 = 有效加權工時 × 時薪
                       </div>
                       
                       <div class="signature">
@@ -1875,7 +1881,6 @@
                       
                       <div class="footer">
                         <div>霍爾果斯會計師事務所 | www.horgoscpa.com</div>
-                        <div style="margin-top:5px;">本文件由系統自動產生，如有疑問請洽人事部門</div>
                       </div>
                     \`;
                     
