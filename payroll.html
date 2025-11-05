@@ -2439,10 +2439,23 @@
 
         // 渲染薪資項目類型選項
         function renderItemTypeOptions(selectedId) {
+          const getCategoryText = (cat) => {
+            const map = {
+              'regular_allowance': '加給',
+              'irregular_allowance': '津貼',
+              'bonus': '月度獎金',
+              'year_end_bonus': '年終獎金',
+              'deduction': '扣款',
+              // 向下兼容
+              'allowance': '津貼'
+            };
+            return map[cat] || '其他';
+          };
+          
           return itemsState.all
             .filter(t => t.isActive)
             .map(t => `<option value="${t.itemTypeId}" ${t.itemTypeId === selectedId ? 'selected' : ''}>
-              ${t.itemName} (${t.category === 'allowance' ? '津貼' : t.category === 'bonus' ? '獎金' : '扣款'})
+              ${t.itemName} (${getCategoryText(t.category)})
             </option>`)
             .join('');
         }
