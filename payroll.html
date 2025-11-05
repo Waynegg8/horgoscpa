@@ -65,7 +65,7 @@
                 <th rowspan="2" style="width: 40px;">明細</th>
                 <th rowspan="2">姓名</th>
                 <th rowspan="2">底薪</th>
-                <th colspan="7" style="background: #f0fdf4; text-align: center;">收入明細</th>
+                <th colspan="8" style="background: #f0fdf4; text-align: center;">收入明細</th>
                 <th colspan="2" style="background: #fef2f2; text-align: center;">扣款明細</th>
                 <th rowspan="2" style="background: #f0f9ff;">應發</th>
                 <th rowspan="2" style="background: #dbeafe;">實發</th>
@@ -79,12 +79,13 @@
                 <th style="background: #f0fdf4;">誤餐費<br><small style="font-weight:normal;font-size:0.75rem;">天數×單價</small></th>
                 <th style="background: #f0fdf4;">交通<br><small style="font-weight:normal;font-size:0.75rem;">里程</small></th>
                 <th style="background: #f0fdf4;">績效</th>
+                <th style="background: #f0fdf4;">年終</th>
                 <th style="background: #fef2f2;">固定<br><small style="font-weight:normal;font-size:0.75rem;">勞健保等</small></th>
                 <th style="background: #fef2f2;">請假<br><small style="font-weight:normal;font-size:0.75rem;">病/事假</small></th>
               </tr>
             </thead>
             <tbody id="tbodyCalc">
-              <tr><td colspan="14" class="muted">尚無資料</td></tr>
+              <tr><td colspan="15" class="muted">尚無資料</td></tr>
             </tbody>
           </table>
         </div>
@@ -1375,6 +1376,32 @@
             </details>
           `;
           
+          // 年終獎金明細（折疊塊）
+          if (r.yearEndBonusItems && r.yearEndBonusItems.length > 0) {
+            payrollDetailHtml += `
+              <details style="background: #fffbeb; border: 2px solid #fbbf24; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <summary style="font-weight: 700; font-size: 1.05em; color: #92400e; cursor: pointer; user-select: none;">
+                  🎉 年終獎金明細
+                </summary>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #fde68a;">
+            `;
+            
+            let yearEndTotal = 0;
+            r.yearEndBonusItems.forEach(item => {
+              const amount = item.amountCents || 0;
+              yearEndTotal += amount;
+              payrollDetailHtml += `<div style="margin-bottom: 8px; color: #374151;">• ${item.name}: ${centsToTwd(amount)}</div>`;
+            });
+            
+            payrollDetailHtml += `
+                  <div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #fde68a; font-weight: 700; color: #92400e; font-size: 1.1em;">
+                    年終獎金合計: ${centsToTwd(yearEndTotal)}
+                  </div>
+                </div>
+              </details>
+            `;
+          }
+          
           // 固定扣款明細（改为折叠块）
           payrollDetailHtml += `
             <details style="background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
@@ -1400,7 +1427,7 @@
           
           return `
             <tr class="detail-row" id="${rowId}-detail" style="display: none; background: #fafafa;">
-              <td colspan="14" style="padding: 20px;">
+              <td colspan="15" style="padding: 20px;">
                 ${rulesHtml}
                 ${payrollDetailHtml}
               </td>
@@ -1464,6 +1491,14 @@
               // 全勤奖金
               const fullAttendanceBonus = r.isFullAttendance ? (bonusTotal > 0 ? '含全勤' : '') : '';
               
+              // 计算年终奖金总和
+              let yearEndBonusTotal = 0;
+              if (r.yearEndBonusItems && r.yearEndBonusItems.length > 0) {
+                yearEndBonusTotal = r.yearEndBonusItems
+                  .filter(item => item.shouldPay)
+                  .reduce((sum, item) => sum + (item.amountCents || 0), 0);
+              }
+              
               tr.innerHTML = `
                 <td style="text-align: center;">
                   <button class="btn btn-sm" onclick="window.togglePayrollDetail('${rowId}')" style="padding: 2px 8px; font-size: 0.75rem;">▼</button>
@@ -1477,6 +1512,7 @@
                 <td style="background: #f0fdf4;">${centsToTwd(r.mealAllowanceCents || 0)}${mealDetail}</td>
                 <td style="background: #f0fdf4;">${centsToTwd(r.transportCents || 0)}${transportDetail}</td>
                 <td style="background: #f0fdf4;">${centsToTwd(r.performanceBonusCents || 0)}</td>
+                <td style="background: #f0fdf4;">${yearEndBonusTotal > 0 ? centsToTwd(yearEndBonusTotal) : '0'}</td>
                 <td style="background: #fef2f2;color:#dc2626;">${r.deductionCents > 0 ? '-' + centsToTwd(r.deductionCents) : '0'}</td>
                 <td style="background: #fef2f2;color:#dc2626;">${r.leaveDeductionCents > 0 ? '-' + centsToTwd(r.leaveDeductionCents) : '0'}${leaveDetail}</td>
                 <td style="font-weight:600;background:#f0f9ff;">${centsToTwd(r.grossSalaryCents)}</td>
@@ -1780,6 +1816,13 @@
                     // 绩效奖金调整
                     if ((data.performanceBonusCents || 0) > 0) {
                       incomeRows += '<tr class="income-row"><td>績效獎金（月度調整）</td><td class="amount">' + fmt(data.performanceBonusCents) + '</td><td>獎金</td></tr>';
+                    }
+                    
+                    // 年终奖金
+                    if (data.yearEndBonusItems && data.yearEndBonusItems.length > 0) {
+                      data.yearEndBonusItems.forEach(item => {
+                        incomeRows += '<tr class="income-row"><td>' + item.name + '</td><td class="amount">' + fmt(item.amountCents) + '</td><td>年終獎金</td></tr>';
+                      });
                     }
                     
                     // 构建扣款明细
