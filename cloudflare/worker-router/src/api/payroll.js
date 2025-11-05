@@ -371,11 +371,17 @@ async function getOvertimeDetails(env, userId, month) {
 			};
 		}
 		
-		// 计算原始加权工时 = 实际工时 × 倍率
-		const originalWeighted = record.originalHours * record.multiplier;
+		// 计算原始加权工时（用于转加班费）
+		// 对于固定类型（国定假日/例假日8h内），应该用补休时数，因为补休未使用时会按此时数转加班费
+		// 对于一般类型，补休时数 = 实际工时 × 倍率，所以用实际工时 × 倍率也一样
+		const originalWeighted = record.isFixedType 
+			? record.compHoursGenerated * 1.0  // 固定类型：补休时数 × 1.0（因为倍率已在补休计算中体现）
+			: record.originalHours * record.multiplier;  // 一般类型：实际工时 × 倍率
 		
-		// 计算扣除补休后的有效加权工时 = 剩余工时 × 倍率
-		const effectiveWeighted = record.remainingHours * record.multiplier;
+		// 计算扣除补休后的有效加权工时
+		const effectiveWeighted = record.isFixedType
+			? (record.compHoursGenerated - (record.compDeducted || 0)) * 1.0  // 固定类型：剩余补休 × 1.0
+			: record.remainingHours * record.multiplier;  // 一般类型：剩余工时 × 倍率
 		
 		dailyOvertimeMap[record.date].items.push({
 			workType: record.workType,
