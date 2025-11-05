@@ -28,10 +28,16 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
     const financeYm = searchParams.get('financeYm') && /^\d{4}-\d{2}$/.test(searchParams.get('financeYm')) ? searchParams.get('financeYm') : ym;
     const financeMode = searchParams.get('financeMode') || 'month'; // 'month' 或 'ytd'
     
+    // 获取筛选参数（用于构建缓存 key）
+    const activityDays = searchParams.get('activity_days') || '3';
+    const activityUserId = searchParams.get('activity_user_id') || '';
+    const activityType = searchParams.get('activity_type') || '';
+    
     const today = todayYmd();
     
     // ⚡⚡⚡ 添加KV缓存（仪表板数据变化不频繁，缓存5分钟）
-    const cacheKey = `dashboard:userId=${me.user_id}&ym=${ym}&financeYm=${financeYm}&financeMode=${financeMode}&role=${me.is_admin ? 'admin' : 'employee'}`;
+    // 重要：缓存 key 必须包含所有影响数据的参数，包括筛选参数
+    const cacheKey = `dashboard:userId=${me.user_id}&ym=${ym}&financeYm=${financeYm}&financeMode=${financeMode}&role=${me.is_admin ? 'admin' : 'employee'}&actDays=${activityDays}&actUser=${activityUserId}&actType=${activityType}`;
     
     // 1. 尝试从KV缓存读取
     const kvCached = await getKVCache(env, cacheKey);
