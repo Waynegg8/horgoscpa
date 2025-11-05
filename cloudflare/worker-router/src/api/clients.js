@@ -416,46 +416,67 @@ export async function handleClients(request, env, me, requestId, url) {
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
 			
-			// 查询客户基础数据（包含负责人和标签）
+			// 简化查询：只获取基础数据
 			const rows = await env.DATABASE.prepare(
 				`SELECT c.client_id, c.company_name, c.tax_registration_number, c.contact_person_1, 
-				        c.phone, c.email, c.created_at, c.assignee_user_id,
-				        u.name as assignee_name,
-				        GROUP_CONCAT(DISTINCT t.tag_id || ':' || t.tag_name || ':' || COALESCE(t.tag_color, ''), '|') as tags
+				        c.phone, c.email, c.created_at, c.assignee_user_id
 				 FROM Clients c
-				 LEFT JOIN Users u ON u.user_id = c.assignee_user_id AND u.is_deleted = 0
-				 LEFT JOIN ClientTagAssignments cta ON cta.client_id = c.client_id
-				 LEFT JOIN CustomerTags t ON t.tag_id = cta.tag_id
 				 ${whereSql}
-				 GROUP BY c.client_id
 				 ORDER BY c.created_at DESC
 				 LIMIT ? OFFSET ?`
 			).bind(...binds, perPage, offset).all();
 			
-			// 映射数据（先不查询服务数量和年度总额，避免复杂查询导致错误）
-			const data = (rows?.results || []).map(r => {
-				// 解析标签
-				const tags = [];
-				if (r.tags) {
-					const tagParts = String(r.tags).split('|').filter(p => p);
-					tagParts.forEach(part => {
-						const [id, name, color] = part.split(':');
-						if (id && name) {
-							tags.push({
-								tag_id: parseInt(id),
-								tag_name: name,
-								tag_color: color || null
-							});
-						}
+			// 为每个客户查询负责人和标签（分开查询避免GROUP BY问题）
+			const clientIds = (rows?.results || []).map(r => r.client_id);
+			const usersMap = {};
+			const tagsMap = {};
+			
+			if (clientIds.length > 0) {
+				// 批量获取负责人信息
+				const assigneeIds = [...new Set((rows?.results || []).map(r => r.assignee_user_id).filter(id => id))];
+				if (assigneeIds.length > 0) {
+					const placeholders = assigneeIds.map(() => '?').join(',');
+					const usersRows = await env.DATABASE.prepare(
+						`SELECT user_id, name FROM Users WHERE user_id IN (${placeholders}) AND is_deleted = 0`
+					).bind(...assigneeIds).all();
+					
+					usersRows.results?.forEach(u => {
+						usersMap[u.user_id] = u.name;
 					});
 				}
+				
+				// 批量获取标签
+				const placeholders = clientIds.map(() => '?').join(',');
+				const tagsRows = await env.DATABASE.prepare(
+					`SELECT cta.client_id, t.tag_id, t.tag_name, t.tag_color
+					 FROM ClientTagAssignments cta
+					 JOIN CustomerTags t ON t.tag_id = cta.tag_id
+					 WHERE cta.client_id IN (${placeholders})`
+				).bind(...clientIds).all();
+				
+				tagsRows.results?.forEach(row => {
+					if (!tagsMap[row.client_id]) {
+						tagsMap[row.client_id] = [];
+					}
+					tagsMap[row.client_id].push({
+						tag_id: row.tag_id,
+						tag_name: row.tag_name,
+						tag_color: row.tag_color || null
+					});
+				});
+			}
+			
+			// 映射数据
+			const data = (rows?.results || []).map(r => {
+				const assigneeName = r.assignee_user_id ? (usersMap[r.assignee_user_id] || "未分配") : "未分配";
+				const tags = tagsMap[r.client_id] || [];
 				
 				return {
 					clientId: r.client_id,
 					companyName: r.company_name,
 					taxId: r.tax_registration_number,
 					contact_person_1: r.contact_person_1 || "",
-					assigneeName: r.assignee_name || "未分配",
+					assigneeName: assigneeName,
 					tags: tags,
 					services: [], // 暂时返回空数组
 					phone: r.phone || "",
