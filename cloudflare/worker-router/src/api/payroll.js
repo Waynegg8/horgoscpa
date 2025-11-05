@@ -818,6 +818,20 @@ async function calculateEmployeePayroll(env, userId, month) {
 		  AND esi.effective_date <= ?
 		  AND (esi.expiry_date IS NULL OR esi.expiry_date >= ?)
 	`).bind(userId, lastDayStr, firstDay).all();
+	
+	// 3.1 查询年终奖金（从YearEndBonus表）
+	const [yearStr] = month.split('-');
+	const yearEndBonusData = await env.DATABASE.prepare(`
+		SELECT 
+			amount_cents,
+			payment_month,
+			notes
+		FROM YearEndBonus
+		WHERE user_id = ?
+		  AND year = ?
+		  AND amount_cents > 0
+		  AND payment_month = ?
+	`).bind(userId, parseInt(yearStr), month).first();
 
 	// 3. 分类薪资项目（清晰分类）
 	const regularAllowanceItems = [];  // 加给（固定每月发放）
@@ -825,6 +839,19 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const regularBonusItems = [];       // 月度奖金（不含年终）
 	const yearEndBonusItems = [];       // 年终奖金
 	const deductionItems = [];          // 扣款明细
+	
+	// 3.2 如果有年终奖金，添加到年终奖金数组
+	if (yearEndBonusData && yearEndBonusData.amount_cents > 0) {
+		yearEndBonusItems.push({
+			name: '年終獎金',
+			amountCents: yearEndBonusData.amount_cents,
+			itemCode: 'YEAR_END',
+			isFullAttendanceBonus: false,
+			shouldPay: true,
+			notes: yearEndBonusData.notes || ''
+		});
+		console.log(`[Payroll] 员工 ${userId} 年终奖金: ${yearEndBonusData.amount_cents / 100} 元（发放月份: ${yearEndBonusData.payment_month}）`);
+	}
 
 	const items = salaryItems.results || [];
 	console.log(`[Payroll] 员工 ${userId} 查询到 ${items.length} 个薪资项目`);
@@ -953,6 +980,11 @@ async function calculateEmployeePayroll(env, userId, month) {
 	for (const bonusItem of yearEndBonusItems) {
 		bonusItem.shouldPay = true;
 	}
+	
+	console.log(`[Payroll] ${month} 年终奖金项目:`, {
+		count: yearEndBonusItems.length,
+		items: yearEndBonusItems.map(i => ({ name: i.name, amount: i.amountCents / 100, shouldPay: i.shouldPay }))
+	});
 	
 	// 5.2 使用时薪计算未使用补休转加班费
 	let expiredCompPayCents = 0;
