@@ -1099,18 +1099,11 @@
               </div>
               <div style="margin-left: 10px; color: #0c4a6e;">
                 <div>底薪: ${centsToTwd(r.baseSalaryCents)}</div>
-          `;
-          
-          if (r.hourlyRateBaseItems && r.hourlyRateBaseItems.length > 0) {
-            r.hourlyRateBaseItems.forEach(item => {
-              hourlyRateBaseHtml += `<div>${item.name}: ${centsToTwd(item.amountCents)}</div>`;
-            });
-          }
-          
-          const totalBase = r.baseSalaryCents + r.regularAllowanceCents;
-          hourlyRateBaseHtml += `
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 2px solid #bae6fd; font-weight: 600;">
-                  合計: ${centsToTwd(totalBase)} ÷ 240小時 = <span style="color: #0284c7;">${hourlyRate}</span>
+                  ${centsToTwd(r.baseSalaryCents)} ÷ 240小時 = <span style="color: #0284c7;">${hourlyRate}</span>
+                </div>
+                <div style="margin-top: 4px; font-size: 0.9em; color: #6b7280;">
+                  💡 時薪僅以底薪計算（不含加給、津貼、獎金）
                 </div>
               </div>
             </div>
@@ -1310,18 +1303,15 @@
             });
             overtimeHtml += '</div>';
             
-            const effectiveHours = r.effectiveWeightedHours || 0;
             const expiredComp = r.expiredCompPayCents || 0;
-            const baseOvertimePay = Math.round(effectiveHours * hourlyRateNum * 100);
             
             overtimeHtml += `<div style="margin-left: 10px; margin-top: 8px; padding-top: 8px; border-top: 2px solid #e5e7eb;">`;
             overtimeHtml += `<div style="font-weight: 600; margin-bottom: 4px;">加班費合計：</div>`;
-            overtimeHtml += `<div style="margin-left: 10px;">• 有效加權工時: ${effectiveHours.toFixed(2)}h × ${hourlyRate} = ${centsToTwd(baseOvertimePay)}</div>`;
-            if (expiredComp > 0) {
-              overtimeHtml += `<div style="margin-left: 10px; color: #dc2626;">• 上月到期補休轉加班費: ${centsToTwd(expiredComp)}</div>`;
-            }
-            const totalOvertimePay = baseOvertimePay + expiredComp;
-            overtimeHtml += `<div style="margin-left: 10px; margin-top: 4px; font-weight: 600; color: #059669;">總計: ${centsToTwd(totalOvertimePay)}</div>`;
+            overtimeHtml += `<div style="margin-left: 10px; color: #0369a1;">• 當月未使用補休轉加班費: ${centsToTwd(expiredComp)}</div>`;
+            overtimeHtml += `<div style="margin-left: 10px; margin-top: 4px; font-size: 0.9em; color: #6b7280;">`;
+            overtimeHtml += `💡 所有加班先轉補休，月底未使用再轉加班費`;
+            overtimeHtml += `</div>`;
+            overtimeHtml += `<div style="margin-left: 10px; margin-top: 4px; font-weight: 600; color: #059669;">總計: ${centsToTwd(expiredComp)}</div>`;
             overtimeHtml += `</div>`;
           } else {
             overtimeHtml += '<div style="margin-left: 10px; color: #9ca3af;">本月無加班記錄</div>';
