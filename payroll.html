@@ -1247,20 +1247,30 @@
             </div>
           `;
           
-          // 交通補貼明細（按單次計算區間）
-          let transportHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>交通補貼明細：</strong></div>';
+          // 交通補貼明細（改为折叠块）
+          payrollDetailHtml += `
+            <details style="background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+              <summary style="font-weight: 700; font-size: 1.05em; color: #374151; cursor: pointer; user-select: none;">
+                🚗 交通補貼明細
+              </summary>
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
+          `;
+          
           if (r.tripDetails && r.tripDetails.length > 0) {
-            transportHtml += '<div style="margin-left: 10px;">';
             r.tripDetails.forEach(trip => {
-              transportHtml += `<div>${trip.date}: ${trip.destination}, ${trip.distance}km → ${trip.intervals}區間 × NT$ ${trip.amount / trip.intervals} = NT$ ${trip.amount} - ${trip.purpose || ''}</div>`;
+              payrollDetailHtml += `<div style="margin-bottom: 8px; color: #374151;">${trip.date}: ${trip.destination}, ${trip.distance}km → ${trip.intervals}區間 × NT$ ${trip.amount / trip.intervals} = NT$ ${trip.amount} - ${trip.purpose || ''}</div>`;
             });
-            transportHtml += '</div>';
-            transportHtml += `<div style="margin-left: 10px; margin-top: 5px; font-weight: 600;">`;
-            transportHtml += `總計: ${r.totalKm || 0}km，${r.transportIntervals || 0}個區間 = ${centsToTwd(r.transportCents || 0)}`;
-            transportHtml += `</div>`;
+            payrollDetailHtml += `<div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #e5e7eb; font-weight: 600; color: #059669;">`;
+            payrollDetailHtml += `總計: ${r.totalKm || 0}km，${r.transportIntervals || 0}個區間 = ${centsToTwd(r.transportCents || 0)}`;
+            payrollDetailHtml += `</div>`;
           } else {
-            transportHtml += '<div style="margin-left: 10px; color: #9ca3af;">本月無外出記錄</div>';
+            payrollDetailHtml += '<div style="color: #9ca3af; text-align: center; padding: 20px 0;">本月無外出記錄</div>';
           }
+          
+          payrollDetailHtml += `
+              </div>
+            </details>
+          `;
           
           // 請假扣款明細（包含病假、事假、生理假）- 顯示詳細日期
           let leaveHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>請假扣款明細：</strong></div>';
