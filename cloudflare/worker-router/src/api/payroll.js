@@ -101,11 +101,12 @@ async function getTimesheetMonthlyStats(env, userId, month) {
 		4: { multiplier: 1.34, isOvertime: true },
 		5: { multiplier: 1.67, isOvertime: true },
 		6: { multiplier: 2.67, isOvertime: true },
-		7: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },  // 国定假日：月薪已含原本1日，加班费只算额外1日
+		7: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },  // 国定假日前8h：月薪已含原本1日，加班费只算额外1日，固定8h补休
 		8: { multiplier: 1.34, isOvertime: true },
 		9: { multiplier: 1.67, isOvertime: true },
-		10: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' }, // 例假日：月薪已含原本1日，加班费只算额外1日
-		11: { multiplier: 2.0, isOvertime: true },  // 例假日超过8h：加班费2倍，补休也是每小时×2
+		10: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' }, // 例假日前8h：与国定假日相同
+		11: { multiplier: 1.34, isOvertime: true },  // 例假日9-10h：与国定假日相同
+		12: { multiplier: 1.67, isOvertime: true },  // 例假日11-12h：与国定假日相同
 	};
 	
 	// 第一步：统计fixed_8h类型的每日总工时
@@ -195,11 +196,12 @@ async function getOvertimeDetails(env, userId, month) {
 		4: { name: '休息日（前2h）', multiplier: 1.34, isOvertime: true },
 		5: { name: '休息日（3-8h）', multiplier: 1.67, isOvertime: true },
 		6: { name: '休息日（9-12h）', multiplier: 2.67, isOvertime: true },
-		7: { name: '國定假日（8h內）', multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },  // 月薪已含原本1日，加班费只算额外1日
+		7: { name: '國定假日（8h內）', multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },  // 月薪已含原本1日，加班费只算额外1日，固定8h补休
 		8: { name: '國定假日（9-10h）', multiplier: 1.34, isOvertime: true },
 		9: { name: '國定假日（11-12h）', multiplier: 1.67, isOvertime: true },
-		10: { name: '例假日（8h內）', multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },  // 月薪已含原本1日，加班费只算额外1日
-		11: { name: '例假日（9-12h）', multiplier: 2.0, isOvertime: true },  // 例假日超过8h：加班费2倍，补休也是每小时×2
+		10: { name: '例假日（8h內）', multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },  // 与国定假日相同：固定8h补休
+		11: { name: '例假日（9-10h）', multiplier: 1.34, isOvertime: true },  // 与国定假日相同
+		12: { name: '例假日（11-12h）', multiplier: 1.67, isOvertime: true },  // 与国定假日相同
 	};
 
 	// 查询每日加班记录（按日期+类型）
@@ -275,9 +277,8 @@ async function getOvertimeDetails(env, userId, month) {
 			const totalHours = group.totalHours;
 			const ratio = hours / totalHours; // 当前记录占比
 			
-			// 例假日（ID 10）：前8h固定16h补休
-			// 国定假日（ID 7）：前8h固定8h补休（暂定，待确认）
-			const totalCompHours = workTypeId === 10 ? 16 : 8;
+			// 例假日（ID 10）和国定假日（ID 7）：前8h固定8h补休
+			const totalCompHours = 8;
 			const compHoursGenerated = totalCompHours * ratio;
 			
 			console.log(`[DEBUG fixed_8h] ${date} ${workType.name}:`, {
@@ -301,12 +302,8 @@ async function getOvertimeDetails(env, userId, month) {
 				totalDailyHours: totalHours, // 标记当天该类型的总工时（用于前端显示）
 			});
 		} else {
-			// 非fixed_8h类型，正常处理
-			// 例假日超过8h（ID 11）：每小时 × 2 补休
-			let compHoursGenerated = hours;
-			if (workTypeId === 11) {
-				compHoursGenerated = hours * 2; // 例假日超过8h：每小时×2补休
-			}
+			// 非fixed_8h类型，正常处理（每小时1倍补休）
+			const compHoursGenerated = hours;
 			
 			overtimeRecords.push({
 				date: date,
