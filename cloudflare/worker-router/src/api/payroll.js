@@ -393,8 +393,8 @@ async function getOvertimeDetails(env, userId, month) {
 			isFixedType: record.isFixedType,  // 是否为固定类型（用于显示）
 			totalDailyHours: record.totalDailyHours || null, // 当天该类型的总工时
 			multiplier: record.multiplier,
-			originalWeighted: Math.round(originalWeighted * 10) / 10,
-			effectiveWeighted: Math.round(effectiveWeighted * 10) / 10
+			originalWeighted: Math.round(originalWeighted * 100) / 100,  // 保留2位小数
+			effectiveWeighted: Math.round(effectiveWeighted * 100) / 100  // 保留2位小数
 		});
 		
 		dailyOvertimeMap[record.date].totalHours += record.originalHours;
