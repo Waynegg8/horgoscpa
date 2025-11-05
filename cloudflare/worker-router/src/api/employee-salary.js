@@ -131,9 +131,7 @@ async function getUserSalary(env, requestId, corsHeaders, userId) {
 			esi.recurring_months,
 			sit.item_code,
 			sit.item_name,
-			sit.category,
-			sit.is_regular_payment,
-			sit.is_fixed
+			sit.category
 		FROM EmployeeSalaryItems esi
 		JOIN SalaryItemTypes sit ON sit.item_type_id = esi.item_type_id
 		WHERE esi.user_id = ?
@@ -146,8 +144,6 @@ async function getUserSalary(env, requestId, corsHeaders, userId) {
 		itemCode: item.item_code,
 		itemName: item.item_name,
 		category: item.category,
-		isRegularPayment: !!item.is_regular_payment,
-		isFixed: !!item.is_fixed,
 		amountCents: item.amount_cents || 0,
 		effectiveDate: item.effective_date,
 		expiryDate: item.expiry_date,
