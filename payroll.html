@@ -1096,6 +1096,15 @@
                   
                   overtimeHtml += `</div>`;
                 });
+                
+                // 检查当天是否获得误餐费
+                const mealDayInfo = (r.mealAllowanceDays || []).find(m => m.date === dayDate);
+                if (mealDayInfo) {
+                  overtimeHtml += `<div style="margin: 10px 20px 0; padding: 8px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">`;
+                  overtimeHtml += `<span style="color: #92400e; font-size: 0.9em;">🍱 <strong>誤餐費：</strong>平日加班 ${mealDayInfo.hours.toFixed(1)}h >= 1.5h → 達標給予誤餐費</span>`;
+                  overtimeHtml += `</div>`;
+                }
+                
                 overtimeHtml += `</div>`; // 关闭日期卡片
               }
             });
@@ -1156,6 +1165,24 @@
             overtimeHtml += `<div style="font-weight: 700; color: #065f46; margin-bottom: 8px; font-size: 1.15em;">💰 本月加班費合計</div>`;
             overtimeHtml += `<div style="margin-top: 8px; padding-top: 8px; border-top: 2px solid #a7f3d0; font-weight: 700; color: #059669; font-size: 1.2em; text-align: right;">總計: ${centsToTwd(expiredComp)}</div>`;
             overtimeHtml += `</div>`;
+            
+            // 误餐费合计
+            const mealDays = r.mealAllowanceDays || [];
+            if (mealDays.length > 0) {
+              overtimeHtml += `<div style="background: #fffbeb; padding: 15px; border-radius: 8px; margin-top: 12px; border: 3px solid #f59e0b; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
+              overtimeHtml += `<div style="font-weight: 700; color: #92400e; margin-bottom: 8px; font-size: 1.15em;">🍱 本月誤餐費合計</div>`;
+              overtimeHtml += `<div style="margin-bottom: 8px;">`;
+              mealDays.forEach(day => {
+                overtimeHtml += `<div style="color: #78350f; font-size: 0.9em; margin-bottom: 4px;">`;
+                overtimeHtml += `📅 ${day.date}: 平日加班 ${day.hours.toFixed(1)}h`;
+                overtimeHtml += `</div>`;
+              });
+              overtimeHtml += `</div>`;
+              overtimeHtml += `<div style="margin-top: 8px; padding-top: 8px; border-top: 2px solid #fcd34d; font-weight: 700; color: #92400e; font-size: 1.2em; text-align: right;">`;
+              overtimeHtml += `${mealDays.length} 天 × ${centsToTwd(r.mealAllowanceCents / (mealDays.length * 100))} = ${centsToTwd(r.mealAllowanceCents)}`;
+              overtimeHtml += `</div>`;
+              overtimeHtml += `</div>`;
+            }
           } else {
             overtimeHtml += '<div style="color: #9ca3af; text-align: center; padding: 20px 0;">本月無加班記錄</div>';
           }

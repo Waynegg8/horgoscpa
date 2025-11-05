@@ -459,7 +459,8 @@ async function calculateMealAllowance(env, userId, month) {
 	// 从系统设定读取误餐费条件
 	const minOvertimeHours = await getSettingValue(env, 'meal_allowance_min_overtime_hours', 1.5);
 	
-	// 读取该月的平日加班记录（work_type = 2 或 3）
+	// 读取该月的平日加班记录（只看 work_type = 2，即前2小时）
+	// 由于填写规则强制先填 work_type 2，只需检查此类型即可判断是否达标
 	const timesheets = await env.DATABASE.prepare(`
 		SELECT 
 			work_date,
@@ -468,18 +469,23 @@ async function calculateMealAllowance(env, userId, month) {
 		WHERE user_id = ?
 		  AND work_date >= ?
 		  AND work_date <= ?
-		  AND work_type IN ('2', '3')
+		  AND work_type = '2'
 		  AND is_deleted = 0
 		GROUP BY work_date
 	`).bind(userId, firstDay, lastDayStr).all();
 
 	let mealAllowanceCount = 0;
+	const mealAllowanceDays = []; // 记录符合条件的日期
 	
 	// 统计满足条件的天数
 	for (const ts of (timesheets.results || [])) {
 		const dailyHours = parseFloat(ts.daily_overtime_hours) || 0;
 		if (dailyHours >= minOvertimeHours) {
 			mealAllowanceCount++;
+			mealAllowanceDays.push({
+				date: ts.work_date,
+				hours: dailyHours
+			});
 		}
 	}
 
@@ -489,7 +495,8 @@ async function calculateMealAllowance(env, userId, month) {
 
 	return {
 		mealAllowanceCents,
-		overtimeDays: mealAllowanceCount
+		overtimeDays: mealAllowanceCount,
+		mealAllowanceDays // 返回详细日期列表
 	};
 }
 
@@ -976,6 +983,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const mealResult = await calculateMealAllowance(env, userId, month);
 	const mealAllowanceCents = mealResult.mealAllowanceCents;
 	const overtimeDays = mealResult.overtimeDays;
+	const mealAllowanceDays = mealResult.mealAllowanceDays || []; // 误餐费详细日期
 	
 	// 7. 从工时统计读取加权工时，并获取详细明细
 	const timesheetStats = await getTimesheetMonthlyStats(env, userId, month);
@@ -1132,6 +1140,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 		
 		// 附加信息
 		overtimeDays,               // 满足误餐费条件的天数
+		mealAllowanceDays,          // 误餐费详细日期列表
 		weightedHours,              // 原始加权工时
 		effectiveWeightedHours,     // 有效加权工时
 		dailyOvertime,              // 每日加班明细
