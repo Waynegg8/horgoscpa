@@ -36,7 +36,6 @@
         <input id="month" type="month" aria-label="月份" />
         <div class="toolbar-spacer" style="flex:1;"></div>
       </div>
-      <div id="finalizeMsg" class="info-bar" style="display:none;"></div>
       <nav class="payroll-tabs" role="tablist" aria-label="薪資管理分頁" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
         <button class="tab active" role="tab" aria-selected="true" data-tab="calc" data-admin-only="true">薪資計算</button>
         <button class="tab" role="tab" aria-selected="false" data-tab="items" data-admin-only="true">薪資項目設定</button>
@@ -702,32 +701,9 @@
           finalizeMsg.style.display = 'block';
         }
 
+        // 已移除月结功能
         async function checkFinalized(){
-          setFinalizeMsg('', '');
-          try {
-            const m = monthInput.value;
-            const res = await fetch(`${apiBase}/admin/payroll?month=${encodeURIComponent(m)}`, { credentials:'include' });
-            if (res.status === 200){
-              const json = await res.json();
-              const runId = json?.data?.runId;
-              setFinalizeMsg('info', `本月已產製（Run: ${runId}）`);
-              setFinalizeUIDisabled(true);
-              return true;
-            }
-            if (res.status === 404){
-              setFinalizeMsg('', '');
-              setFinalizeUIDisabled(false);
-              return false;
-            }
-            // 其他錯誤
-            setFinalizeMsg('error', '查詢月結狀態失敗');
-            setFinalizeUIDisabled(false);
-            return false;
-          } catch(_){
-            setFinalizeMsg('error', '查詢月結狀態失敗');
-            setFinalizeUIDisabled(false);
-            return false;
-          }
+          return false;
         }
 
         function genIdk(){
@@ -3270,7 +3246,6 @@
           if (result.isAdmin) {
             isAdminMode = true; // 設置管理員模式
             loadPreview(); 
-            checkFinalized(); 
             loadItems();
             loadUsers();
             
