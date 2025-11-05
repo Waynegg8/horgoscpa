@@ -35,8 +35,6 @@
         <label for="month">月份</label>
         <input id="month" type="month" aria-label="月份" />
         <div class="toolbar-spacer" style="flex:1;"></div>
-        <button id="btn-process-expired-comp" type="button" class="btn" style="background:#f59e0b;color:white;">⏰ 處理到期補休</button>
-        <button id="btn-finalize" type="button" class="btn primary" disabled>產製月結</button>
       </div>
       <div id="finalizeMsg" class="info-bar" style="display:none;"></div>
       <nav class="payroll-tabs" role="tablist" aria-label="薪資管理分頁" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
@@ -768,7 +766,7 @@
 
 
         function centsToTwd(n){
-          const v = Number(n || 0) / 100;
+          const v = Math.floor(Number(n || 0) / 100);
           return 'NT$ ' + v.toLocaleString();
         }
 
@@ -1463,7 +1461,7 @@
               // 交通费明细
               const transportDetail = r.totalKm > 0 ? `<br><small style="color:#059669;">${r.totalKm}km (${r.transportIntervals || 0}区间)</small>` : '';
               
-              // 请假扣款明细（显示小时数，不换行）
+              // 请假扣款明细（显示小时数，换行显示）
               const sickHours = r.sickHours || 0;
               const personalHours = r.personalHours || 0;
               const menstrualHours = r.menstrualHours || 0;
@@ -1471,7 +1469,7 @@
               if (sickHours > 0) leaveDetailParts.push(`病假${sickHours}h`);
               if (personalHours > 0) leaveDetailParts.push(`事假${personalHours}h`);
               if (menstrualHours > 0) leaveDetailParts.push(`生理假${menstrualHours}h`);
-              const leaveDetail = leaveDetailParts.length > 0 ? ` <small style="color:#999;">(${leaveDetailParts.join(' ')})</small>` : '';
+              const leaveDetail = leaveDetailParts.length > 0 ? `<br><small style="color:#999;">${leaveDetailParts.join(' ')}</small>` : '';
               
               // 计算加给总和（regularAllowanceItems）
               let allowanceTotal = 0;
@@ -1844,7 +1842,7 @@
                       if (sickH > 0) leaveDetail += '病假' + sickH + 'h ';
                       if (personalH > 0) leaveDetail += '事假' + personalH + 'h ';
                       if (menstrualH > 0) leaveDetail += '生理假' + menstrualH + 'h';
-                      deductionRows += '<tr class="deduction-row"><td>請假扣款 <small style="color:#999;">(' + leaveDetail.trim() + ')</small></td><td class="amount">-' + fmt(data.leaveDeductionCents) + '</td><td>請假扣款</td></tr>';
+                      deductionRows += '<tr class="deduction-row"><td>請假扣款<br><small style="color:#999;">' + leaveDetail.trim() + '</small></td><td class="amount">-' + fmt(data.leaveDeductionCents) + '</td><td>請假扣款</td></tr>';
                     }
                     
                     // 渲染HTML
@@ -3257,59 +3255,7 @@
         yearInput.value = now.getFullYear();
 
         // 綁定事件
-        monthInput.addEventListener('change', ()=>{ loadPreview(); checkFinalized(); });
-        btnFinalize.addEventListener('click', finalizeMonth);
-
-        // 處理到期補休按鈕
-        document.getElementById('btn-process-expired-comp').addEventListener('click', async () => {
-          const selectedMonth = monthInput.value; // 例如: 2024-10
-          if (!selectedMonth) {
-            alert('請先選擇月份');
-            return;
-          }
-          
-          const [year, month] = selectedMonth.split('-');
-          const displayMonth = `${year}年${month}月`;
-          
-          if (!confirm(`確定要處理 ${displayMonth} 到期的補休嗎？\n\n這會將 ${displayMonth} 月底到期且未使用的補休轉為【${displayMonth} 薪資】的加班費。`)) return;
-          
-          const btn = document.getElementById('btn-process-expired-comp');
-          btn.disabled = true;
-          btn.textContent = '處理中...';
-          
-          try {
-            const res = await fetch(`${apiBase}/admin/cron/execute`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                job_name: 'comp_leave_expiry',
-                target_month: selectedMonth
-              })
-            });
-            
-            const json = await res.json();
-            
-            if (res.ok && json.ok) {
-              alert(`✅ 處理成功！\n\n已處理 ${json.data.processedCount} 筆到期補休\n到期日：${json.data.expiryDate}\n記入薪資月份：${json.data.payrollMonth}`);
-              
-              // 清除薪資預覽快取，強制重新計算
-              console.log('[處理到期補休] 清除薪資預覽快取');
-              payrollCache.clear();
-              
-              // 重新載入數據
-              await loadPreview(true);
-            } else {
-              alert('處理失敗：' + (json.message || '未知錯誤'));
-            }
-          } catch (err) {
-            console.error('[處理到期補休] 錯誤:', err);
-            alert('處理失敗：' + err.message);
-          } finally {
-            btn.disabled = false;
-            btn.textContent = '⏰ 處理到期補休';
-          }
-        });
+        monthInput.addEventListener('change', ()=>{ loadPreview(); });
         
         // 刷新按鈕：強制重新載入資料
         document.getElementById('btnRefreshCalc').addEventListener('click', () => {
