@@ -316,6 +316,31 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				}
 			}
 			
+			// 生理假特殊處理：每月最多1天（8小時）
+			if (leave_type === 'menstrual') {
+				const [year, month] = start_date.split('-');
+				const monthFirstDay = `${year}-${month}-01`;
+				const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+				const monthLastDay = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+				
+				// 查询当月已有的生理假（已批准的）
+				const existingRow = await env.DATABASE.prepare(
+					`SELECT SUM(amount) as total_hours FROM LeaveRequests 
+					 WHERE user_id = ? AND leave_type = 'menstrual' AND status = 'approved' 
+					 AND start_date >= ? AND start_date <= ?`
+				).bind(String(me.user_id), monthFirstDay, monthLastDay).first();
+				
+				const existingHours = Number(existingRow?.total_hours || 0);
+				const totalHours = existingHours + amount;
+				
+				if (totalHours > 8) {
+					errors.push({ 
+						field:"amount", 
+						message:`生理假每月限制1天（8小時）。本月已請 ${existingHours} 小時，無法再請 ${amount} 小時（總計 ${totalHours} 小時超過限制）` 
+					});
+				}
+			}
+			
 			if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
 
 			try {
