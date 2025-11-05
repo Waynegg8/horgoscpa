@@ -523,7 +523,6 @@
         const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
 
         const infoBar = document.getElementById('infoBar');
-        const finalizeMsg = document.getElementById('finalizeMsg');
         const tabs = Array.from(document.querySelectorAll('.payroll-tabs .tab'));
         const panels = {
           calc: document.getElementById('panel-calc'),
@@ -573,7 +572,6 @@
         // 計算相關 DOM
         const tbodyCalc = document.getElementById('tbodyCalc');
         const monthInput = document.getElementById('month');
-        const btnFinalize = document.getElementById('btn-finalize');
 
         // 計算狀態（移除分頁）
         const calcState = { all: [], filtered: [] };
@@ -691,54 +689,7 @@
             return { isAdmin: false, userData: null };
           }
         }
-        function setFinalizeUIDisabled(disabled){
-          btnFinalize.disabled = disabled;
-        }
-
-        function setFinalizeMsg(type, text){
-          if (!text) { finalizeMsg.style.display='none'; return; }
-          finalizeMsg.textContent = text;
-          finalizeMsg.style.display = 'block';
-        }
-
-        // 已移除月结功能
-        async function checkFinalized(){
-          return false;
-        }
-
-        function genIdk(){
-          return 'idk_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
-        }
-
-        async function finalizeMonth(){
-          setFinalizeMsg('', '');
-          const m = monthInput.value;
-          btnFinalize.disabled = true;
-          try {
-            const res = await fetch(`${apiBase}/admin/payroll/finalize`, {
-              method:'POST', credentials:'include', headers:{ 'Content-Type':'application/json' },
-              body: JSON.stringify({ month: m, idempotency_key: genIdk() })
-            });
-            const json = await res.json().catch(()=>({}));
-            if (res.status === 201 && json?.ok){
-              setFinalizeMsg('success', `已產製完成（Run: ${json.data?.runId}）`);
-              btnFinalize.disabled = true;
-              return;
-            }
-            if (res.status === 409){
-              setFinalizeMsg('info', `該月份已產製（Run: ${json?.data?.runId || ''}）`);
-              btnFinalize.disabled = true;
-              return;
-            }
-            if (res.status === 401){ location.assign('/login?redirect=/internal/payroll'); return; }
-            if (res.status === 403){ setTabsEnabled(false); setFinalizeMsg('error', '沒有權限'); return; }
-            setFinalizeMsg('error', json?.message || '產製失敗');
-            btnFinalize.disabled = false;
-          } catch (_){
-            setFinalizeMsg('error', '產製失敗');
-            btnFinalize.disabled = false;
-          }
-        }
+        // 已移除月结功能相关函数
 
 
         function centsToTwd(n){
