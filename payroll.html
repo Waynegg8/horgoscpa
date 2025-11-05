@@ -767,12 +767,12 @@
 
         function centsToTwd(n){
           const v = Math.floor(Number(n || 0) / 100);
-          return 'NT$ ' + v.toLocaleString();
+          return v.toLocaleString();
         }
 
         // 生成详细明细HTML
         function generateDetailRow(r, rowId) {
-          const hourlyRate = centsToTwd(r.hourlyRateCents || 0).replace('NT$ ', '');
+          const hourlyRate = centsToTwd(r.hourlyRateCents || 0);
           const hourlyRateNum = (r.hourlyRateCents || 0) / 100;
           
           // 📚 加班費計算規則總覽（折疊式）
@@ -1732,7 +1732,7 @@
                     // 格式化金额（使用无条件舍去）
                     const fmt = (cents) => {
                       const val = Math.floor(Math.abs(cents || 0) / 100);
-                      return 'NT$ ' + val.toLocaleString('zh-TW', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                      return val.toLocaleString('zh-TW');
                     };
                     
                     // 格式化月份为民国年月
