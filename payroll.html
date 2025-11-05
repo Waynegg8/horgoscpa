@@ -1297,14 +1297,14 @@
               leavesByType.sick.forEach(leave => {
                 const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
                 const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
-                const amountCents = Math.round(hours * hourlyRateNum * 0.5 * 100);
+                const amountCents = Math.floor(hours * hourlyRateNum * 0.5 * 100);
                 payrollDetailHtml += `<div style="margin-left: 20px; margin-bottom: 4px; color: #374151;">`;
                 payrollDetailHtml += `📅 ${dateRange}: ${hours}h × ${hourlyRate} × 50% = ${centsToTwd(amountCents)}`;
                 if (leave.reason) payrollDetailHtml += ` <span style="color: #6b7280;">(${leave.reason})</span>`;
                 payrollDetailHtml += `</div>`;
               });
               const sickHours = r.sickHours || 0;
-              const sickTotal = Math.round(sickHours * hourlyRateNum * 0.5 * 100);
+              const sickTotal = Math.floor(sickHours * hourlyRateNum * 0.5 * 100);
               payrollDetailHtml += `<div style="margin-left: 20px; margin-top: 8px; padding-top: 8px; border-top: 2px solid #fecaca; font-weight: 600; color: #dc2626;">小計: ${centsToTwd(sickTotal)}</div>`;
               payrollDetailHtml += `</div>`;
             }
@@ -1316,14 +1316,14 @@
               leavesByType.personal.forEach(leave => {
                 const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
                 const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
-                const amountCents = Math.round(hours * hourlyRateNum * 100);
+                const amountCents = Math.floor(hours * hourlyRateNum * 100);
                 payrollDetailHtml += `<div style="margin-left: 20px; margin-bottom: 4px; color: #374151;">`;
                 payrollDetailHtml += `📅 ${dateRange}: ${hours}h × ${hourlyRate} × 100% = ${centsToTwd(amountCents)}`;
                 if (leave.reason) payrollDetailHtml += ` <span style="color: #6b7280;">(${leave.reason})</span>`;
                 payrollDetailHtml += `</div>`;
               });
               const personalHours = r.personalHours || 0;
-              const personalTotal = Math.round(personalHours * hourlyRateNum * 100);
+              const personalTotal = Math.floor(personalHours * hourlyRateNum * 100);
               payrollDetailHtml += `<div style="margin-left: 20px; margin-top: 8px; padding-top: 8px; border-top: 2px solid #fecaca; font-weight: 600; color: #dc2626;">小計: ${centsToTwd(personalTotal)}</div>`;
               payrollDetailHtml += `</div>`;
             }
@@ -1335,13 +1335,13 @@
               leavesByType.menstrual.forEach(leave => {
                 const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
                 const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
-                const amountCents = Math.round(hours * hourlyRateNum * 0.5 * 100);
+                const amountCents = Math.floor(hours * hourlyRateNum * 0.5 * 100);
                 payrollDetailHtml += `<div style="margin-left: 20px; margin-bottom: 4px; color: #374151;">`;
                 payrollDetailHtml += `📅 ${dateRange}: ${hours}h × ${hourlyRate} × 50% = ${centsToTwd(amountCents)}`;
                 payrollDetailHtml += `</div>`;
               });
               const menstrualHours = r.menstrualHours || 0;
-              const menstrualTotal = Math.round(menstrualHours * hourlyRateNum * 0.5 * 100);
+              const menstrualTotal = Math.floor(menstrualHours * hourlyRateNum * 0.5 * 100);
               payrollDetailHtml += `<div style="margin-left: 20px; margin-top: 8px; padding-top: 8px; border-top: 2px solid #fcd34d; font-weight: 600; color: #f59e0b;">小計: ${centsToTwd(menstrualTotal)}</div>`;
               if (r.menstrualFreeDays > 0) {
                 payrollDetailHtml += `<div style="margin-left: 20px; margin-top: 4px;"><small style="color:#16a34a;">（前${r.menstrualFreeDays}天獨立計算，不併入病假額度）</small></div>`;
