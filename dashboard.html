@@ -60,7 +60,7 @@
         let currentYm = null; // 当前查看的年月，格式：YYYY-MM
         let financeMode = 'month'; // 'month' 或 'ytd'（本年累计）
         let financeYm = null; // 财务查看的年月
-        let activityDays = 30; // 最近动态天数
+        let activityDays = 3; // 最近动态天数
         let activityUserId = ''; // 最近动态筛选的员工ID
         let activityType = ''; // 最近动态筛选的类型
 
@@ -475,6 +475,14 @@
                   </div>
                 </a>`;
               } else if (act.activity_type === 'leave_application') {
+                // 根据 unit 决定显示单位
+                let unitText = '天';
+                if (act.leaveUnit === 'hour') {
+                  unitText = '小時';
+                } else if (act.leaveUnit === 'half') {
+                  unitText = '半天';
+                }
+                
                 return `<a href="${act.link || '#'}" style="text-decoration:none;color:inherit;">
                   <div style="padding:14px;border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
                     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
@@ -483,7 +491,7 @@
                     </div>
                     <div style="display:flex;align-items:center;gap:10px;font-size:14px;">
                       <span style="color:#6b7280;">${act.period}</span>
-                      <span style="padding:4px 8px;border-radius:4px;background:#dbeafe;color:#2563eb;font-weight:500;">${act.leaveDays}天</span>
+                      <span style="padding:4px 8px;border-radius:4px;background:#dbeafe;color:#2563eb;font-weight:500;">${act.leaveDays}${unitText}</span>
                     </div>
                     ${act.reason ? `<div style="font-size:13px;color:#6b7280;margin-top:6px;line-height:1.5;">${act.reason}</div>` : ''}
                   </div>
@@ -531,6 +539,7 @@
             if (typeFilter) {
               typeFilter.addEventListener('change', (e) => {
                 activityType = e.target.value;
+                showLoadingIndicator();
                 refresh();
               });
             }
@@ -538,6 +547,7 @@
             if (userFilter) {
               userFilter.addEventListener('change', (e) => {
                 activityUserId = e.target.value;
+                showLoadingIndicator();
                 refresh();
               });
             }
@@ -545,6 +555,7 @@
             if (daysFilter) {
               daysFilter.addEventListener('change', (e) => {
                 activityDays = parseInt(e.target.value, 10);
+                showLoadingIndicator();
                 refresh();
               });
             }
@@ -679,6 +690,69 @@
           grid.innerHTML = '<div class="card" style="padding:16px;">載入中…</div>';
         }
 
+        function showLoadingIndicator(){
+          // 在页面上显示加载指示器
+          const existingIndicator = document.getElementById('loadingIndicator');
+          if (existingIndicator) return; // 如果已存在，不重复创建
+          
+          const indicator = document.createElement('div');
+          indicator.id = 'loadingIndicator';
+          indicator.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+          `;
+          
+          indicator.innerHTML = `
+            <div style="
+              background: white;
+              padding: 24px 32px;
+              border-radius: 12px;
+              box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 16px;
+            ">
+              <div style="
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #3498db;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+              "></div>
+              <div style="
+                font-size: 16px;
+                font-weight: 500;
+                color: #333;
+              ">載入資料中...</div>
+            </div>
+            <style>
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            </style>
+          `;
+          
+          document.body.appendChild(indicator);
+        }
+
+        function hideLoadingIndicator(){
+          const indicator = document.getElementById('loadingIndicator');
+          if (indicator) {
+            indicator.remove();
+          }
+        }
+
         // ⚡ 预渲染支持（使用统一的 Prerender 系统）
         function loadPrerenderedHTML() {
           if (window.Prerender) {
@@ -767,9 +841,14 @@
             
             // ⚡ 保存预渲染 HTML
             savePrerenderedHTML(grid.innerHTML);
+            
+            // 隐藏加载指示器
+            hideLoadingIndicator();
           } catch (_) {
             // fallback to placeholders
             if (me && me.isAdmin) renderAdminDashboard(null); else renderEmployeeDashboard(null);
+            // 即使出错也要隐藏加载指示器
+            hideLoadingIndicator();
           }
         }
 

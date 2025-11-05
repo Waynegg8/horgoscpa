@@ -415,29 +415,89 @@ export async function handleClients(request, env, me, requestId, url) {
 			).bind(...binds).first();
 			const total = Number(countRow?.total || 0);
 			
-			// 简化查询：只查客户基础数据
+			// 查询客户基础数据（包含负责人和标签）
 			const rows = await env.DATABASE.prepare(
-				`SELECT client_id, company_name, tax_registration_number, contact_person_1, 
-				        phone, email, created_at, assignee_user_id
-				 FROM Clients
+				`SELECT c.client_id, c.company_name, c.tax_registration_number, c.contact_person_1, 
+				        c.phone, c.email, c.created_at, c.assignee_user_id,
+				        u.name as assignee_name,
+				        GROUP_CONCAT(DISTINCT t.tag_id || ':' || t.tag_name || ':' || COALESCE(t.tag_color, ''), '|') as tags
+				 FROM Clients c
+				 LEFT JOIN Users u ON u.user_id = c.assignee_user_id AND u.is_deleted = 0
+				 LEFT JOIN ClientTagAssignments cta ON cta.client_id = c.client_id
+				 LEFT JOIN CustomerTags t ON t.tag_id = cta.tag_id
 				 ${whereSql}
-				 ORDER BY created_at DESC
+				 GROUP BY c.client_id
+				 ORDER BY c.created_at DESC
 				 LIMIT ? OFFSET ?`
 			).bind(...binds, perPage, offset).all();
 			
-			// 映射数据（简化版本）
-			const data = (rows?.results || []).map(r => ({
-				clientId: r.client_id,
-				companyName: r.company_name,
-				taxId: r.tax_registration_number,
-				contact_person_1: r.contact_person_1 || "",
-				assigneeName: "", // 暂时为空，避免额外查询
-				tags: [], // 暂时为空，避免额外查询
-				phone: r.phone || "",
-				email: r.email || "",
-				createdAt: r.created_at,
-				year_total: 0
-			}));
+			// 获取所有客户ID用于批量查询服务和收费
+			const clientIds = (rows?.results || []).map(r => r.client_id);
+			
+			// 批量查询每个客户的服务数量和年度收费总额
+			let servicesMap = {};
+			let yearTotalMap = {};
+			
+			if (clientIds.length > 0) {
+				// 查询每个客户的服务数量
+				const placeholders = clientIds.map(() => '?').join(',');
+				const servicesCount = await env.DATABASE.prepare(
+					`SELECT client_id, COUNT(*) as service_count
+					 FROM ClientServices
+					 WHERE client_id IN (${placeholders}) AND is_deleted = 0
+					 GROUP BY client_id`
+				).bind(...clientIds).all();
+				
+				servicesCount.results?.forEach(row => {
+					servicesMap[row.client_id] = row.service_count;
+				});
+				
+				// 查询每个客户的年度收费总额
+				const yearTotals = await env.DATABASE.prepare(
+					`SELECT cs.client_id, SUM(sbs.billing_amount) as year_total
+					 FROM ClientServices cs
+					 LEFT JOIN ServiceBillingSchedule sbs ON sbs.client_service_id = cs.client_service_id
+					 WHERE cs.client_id IN (${placeholders}) AND cs.is_deleted = 0
+					 GROUP BY cs.client_id`
+				).bind(...clientIds).all();
+				
+				yearTotals.results?.forEach(row => {
+					yearTotalMap[row.client_id] = Number(row.year_total || 0);
+				});
+			}
+			
+			// 映射数据
+			const data = (rows?.results || []).map(r => {
+				// 解析标签
+				const tags = [];
+				if (r.tags) {
+					const tagParts = String(r.tags).split('|');
+					tagParts.forEach(part => {
+						const [id, name, color] = part.split(':');
+						if (id && name) {
+							tags.push({
+								tag_id: parseInt(id),
+								tag_name: name,
+								tag_color: color || null
+							});
+						}
+					});
+				}
+				
+				return {
+					clientId: r.client_id,
+					companyName: r.company_name,
+					taxId: r.tax_registration_number,
+					contact_person_1: r.contact_person_1 || "",
+					assigneeName: r.assignee_name || "未分配",
+					tags: tags,
+					services: servicesMap[r.client_id] ? Array(servicesMap[r.client_id]).fill({}) : [], // 用于计算服务数量
+					phone: r.phone || "",
+					email: r.email || "",
+					createdAt: r.created_at,
+					year_total: yearTotalMap[r.client_id] || 0
+				};
+			});
 			
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
 			const cacheData = { list: data, meta };

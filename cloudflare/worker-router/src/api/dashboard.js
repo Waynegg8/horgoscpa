@@ -342,8 +342,8 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
       console.log('[仪表板] 开始处理 Recent Activities');
       console.log('========================================');
       try {
-        // 从查询参数获取筛选条件（默认30天）
-        const days = parseInt(params.get('activity_days') || '30', 10);
+        // 从查询参数获取筛选条件（默认3天）
+        const days = parseInt(params.get('activity_days') || '3', 10);
         const filterUserId = params.get('activity_user_id');
         const filterType = params.get('activity_type'); // 类型筛选：status_update, due_date_adjustment, leave_application, timesheet_reminder
         console.log('[仪表板] 筛选参数 - days:', days, 'filterUserId:', filterUserId, 'filterType:', filterType);
@@ -438,6 +438,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             l.leave_type,
             l.start_date,
             l.end_date,
+            l.unit as leave_unit,
             l.amount as leave_days,
             l.status as leave_status,
             l.reason,
@@ -645,12 +646,14 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             const startDate = act.start_date ? act.start_date.slice(5) : '';
             const endDate = act.end_date ? act.end_date.slice(5) : '';
             const leaveDays = act.leave_days || 0;
+            const leaveUnit = act.leave_unit || 'day'; // 默认为天
             
             return {
               activity_type: 'leave_application',
               text: `${act.user_name} 申請${leaveType}`,
               leaveType: leaveType,
               leaveDays: leaveDays,
+              leaveUnit: leaveUnit,
               period: `${startDate} ~ ${endDate}`,
               reason: act.reason || '',
               userName: act.user_name,
