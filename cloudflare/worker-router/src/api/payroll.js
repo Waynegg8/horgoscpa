@@ -1072,9 +1072,9 @@ async function calculateEmployeePayroll(env, userId, month) {
 		totalYearEndBonusCents += bonusItem.amountCents || 0;
 	}
 	
-	let totalDeductionCents = 0;
+	let deductionCents = 0;
 	for (const item of deductionItems) {
-		totalDeductionCents += item.amountCents || 0;
+		deductionCents += item.amountCents || 0;
 	}
 	
 	// 应发 = 底薪 + 加给 + 津贴 + 奖金 + 年终 + 绩效 + 加班费 + 补助
@@ -1102,7 +1102,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 	});
 	
 	// 总扣款 = 固定扣款 + 请假扣款
-	totalDeductionCents += leaveDeductionCents;
+	const totalDeductionCents = deductionCents + leaveDeductionCents;
 	
 	// 实发 = 应发 - 总扣款
 	const netSalaryCents = grossSalaryCents - totalDeductionCents;
@@ -1125,7 +1125,6 @@ async function calculateEmployeePayroll(env, userId, month) {
 		totalIrregularAllowanceCents,
 		totalRegularBonusCents,
 		totalYearEndBonusCents,
-		totalDeductionCents,        // 固定扣款总额
 		
 		// 其他收入
 		overtimeCents,
@@ -1134,7 +1133,9 @@ async function calculateEmployeePayroll(env, userId, month) {
 		performanceBonusCents,
 		
 		// 扣款
+		deductionCents,             // 固定扣款总额（劳保、健保等）
 		leaveDeductionCents,        // 请假扣款
+		totalDeductionCents,        // 总扣款（固定扣款+请假扣款）
 		
 		// 汇总
 		grossSalaryCents,           // 应发薪资（扣款前）
