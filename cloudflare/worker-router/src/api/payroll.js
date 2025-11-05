@@ -1194,6 +1194,40 @@ export async function handlePayroll(request, env, me, requestId, url, path) {
 	console.log(`[Payroll] Method: ${method}, Path: ${path}, URL: ${url.pathname}`);
 
 	try {
+		// GET /admin/payroll/calculate/:userId - 单个员工薪资计算（用于打印）
+		if (method === "GET" && path.match(/^\/internal\/api\/v1\/admin\/payroll\/calculate\/\d+$/)) {
+			console.log('[Payroll] Matched: calculate single employee');
+			const userId = parseInt(path.split('/').pop());
+			const month = url.searchParams.get('month');
+			
+			if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+				return jsonResponse(400, {
+					ok: false,
+					code: "INVALID_MONTH",
+					message: "月份格式错误，应为 YYYY-MM",
+					meta: { requestId }
+				}, corsHeaders);
+			}
+			
+			try {
+				const payroll = await calculateEmployeePayroll(env, userId, month);
+				return jsonResponse(200, {
+					ok: true,
+					code: "OK",
+					data: payroll,
+					meta: { requestId, month, userId }
+				}, corsHeaders);
+			} catch (err) {
+				console.error(`[Payroll] 计算员工 ${userId} 薪资失败:`, err);
+				return jsonResponse(500, {
+					ok: false,
+					code: "CALCULATION_ERROR",
+					message: `计算薪资失败: ${err.message}`,
+					meta: { requestId, month, userId }
+				}, corsHeaders);
+			}
+		}
+		
 		// GET /admin/payroll/preview - 薪资预览（不保存）
 		if (method === "GET" && path === "/internal/api/v1/admin/payroll/preview") {
 			console.log('[Payroll] Matched: preview');
