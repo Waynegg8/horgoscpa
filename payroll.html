@@ -1272,9 +1272,14 @@
             </details>
           `;
           
-          // 請假扣款明細（包含病假、事假、生理假）- 顯示詳細日期
-          let leaveHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>請假扣款明細：</strong></div>';
-          const dailyRate = r.dailySalaryCents || 0; // 使用後端計算的日薪
+          // 請假扣款明細（改为折叠块）
+          payrollDetailHtml += `
+            <details style="background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+              <summary style="font-weight: 700; font-size: 1.05em; color: #374151; cursor: pointer; user-select: none;">
+                💰 請假扣款明細
+              </summary>
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
+          `;
           
           if (r.leaveDetails && r.leaveDetails.length > 0) {
             const leaveTypeMap = { 'sick': '病假', 'personal': '事假', 'menstrual': '生理假' };
@@ -1285,56 +1290,78 @@
               if (leavesByType[leave.leaveType]) leavesByType[leave.leaveType].push(leave);
             });
             
-            leaveHtml += '<div style="margin-left: 10px;">';
-            
             // 顯示病假
             if (leavesByType.sick.length > 0) {
-              leaveHtml += `<div style="margin-bottom: 8px;"><strong>病假 (扣50%)：</strong></div>`;
+              payrollDetailHtml += `<div style="margin-bottom: 15px;">`;
+              payrollDetailHtml += `<div style="font-weight: 600; color: #dc2626; margin-bottom: 8px;">❌ 病假 (扣50%)：</div>`;
               leavesByType.sick.forEach(leave => {
                 const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
                 const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
-                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${hours}小時${leave.reason ? ` (${leave.reason})` : ''}</div>`;
+                const amountCents = Math.round(hours * hourlyRateNum * 0.5 * 100);
+                payrollDetailHtml += `<div style="margin-left: 20px; margin-bottom: 4px; color: #374151;">`;
+                payrollDetailHtml += `📅 ${dateRange}: ${hours}h × ${hourlyRate} × 50% = ${centsToTwd(amountCents)}`;
+                if (leave.reason) payrollDetailHtml += ` <span style="color: #6b7280;">(${leave.reason})</span>`;
+                payrollDetailHtml += `</div>`;
               });
               const sickHours = r.sickHours || 0;
-              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${sickHours}h × ${hourlyRate} × 50% = ${centsToTwd(Math.round(sickHours * hourlyRateNum * 0.5 * 100))}</div>`;
+              const sickTotal = Math.round(sickHours * hourlyRateNum * 0.5 * 100);
+              payrollDetailHtml += `<div style="margin-left: 20px; margin-top: 8px; padding-top: 8px; border-top: 2px solid #fecaca; font-weight: 600; color: #dc2626;">小計: ${centsToTwd(sickTotal)}</div>`;
+              payrollDetailHtml += `</div>`;
             }
             
             // 顯示事假
             if (leavesByType.personal.length > 0) {
-              leaveHtml += `<div style="margin-bottom: 8px; margin-top: 8px;"><strong>事假 (扣100%)：</strong></div>`;
+              payrollDetailHtml += `<div style="margin-bottom: 15px;">`;
+              payrollDetailHtml += `<div style="font-weight: 600; color: #dc2626; margin-bottom: 8px;">❌ 事假 (扣100%)：</div>`;
               leavesByType.personal.forEach(leave => {
                 const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
                 const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
-                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${hours}小時${leave.reason ? ` (${leave.reason})` : ''}</div>`;
+                const amountCents = Math.round(hours * hourlyRateNum * 100);
+                payrollDetailHtml += `<div style="margin-left: 20px; margin-bottom: 4px; color: #374151;">`;
+                payrollDetailHtml += `📅 ${dateRange}: ${hours}h × ${hourlyRate} × 100% = ${centsToTwd(amountCents)}`;
+                if (leave.reason) payrollDetailHtml += ` <span style="color: #6b7280;">(${leave.reason})</span>`;
+                payrollDetailHtml += `</div>`;
               });
               const personalHours = r.personalHours || 0;
-              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${personalHours}h × ${hourlyRate} × 100% = ${centsToTwd(Math.round(personalHours * hourlyRateNum * 100))}</div>`;
+              const personalTotal = Math.round(personalHours * hourlyRateNum * 100);
+              payrollDetailHtml += `<div style="margin-left: 20px; margin-top: 8px; padding-top: 8px; border-top: 2px solid #fecaca; font-weight: 600; color: #dc2626;">小計: ${centsToTwd(personalTotal)}</div>`;
+              payrollDetailHtml += `</div>`;
             }
             
             // 顯示生理假
             if (leavesByType.menstrual.length > 0) {
-              leaveHtml += `<div style="margin-bottom: 8px; margin-top: 8px;"><strong>生理假 (扣50%)：</strong></div>`;
+              payrollDetailHtml += `<div style="margin-bottom: 15px;">`;
+              payrollDetailHtml += `<div style="font-weight: 600; color: #f59e0b; margin-bottom: 8px;">⚠️ 生理假 (扣50%)：</div>`;
               leavesByType.menstrual.forEach(leave => {
                 const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
                 const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
-                leaveHtml += `<div style="margin-left: 20px;">• ${dateRange}: ${hours}小時</div>`;
+                const amountCents = Math.round(hours * hourlyRateNum * 0.5 * 100);
+                payrollDetailHtml += `<div style="margin-left: 20px; margin-bottom: 4px; color: #374151;">`;
+                payrollDetailHtml += `📅 ${dateRange}: ${hours}h × ${hourlyRate} × 50% = ${centsToTwd(amountCents)}`;
+                payrollDetailHtml += `</div>`;
               });
               const menstrualHours = r.menstrualHours || 0;
-              leaveHtml += `<div style="margin-left: 20px; margin-top: 4px; color: #666;">小計: ${menstrualHours}h × ${hourlyRate} × 50% = ${centsToTwd(Math.round(menstrualHours * hourlyRateNum * 0.5 * 100))}</div>`;
+              const menstrualTotal = Math.round(menstrualHours * hourlyRateNum * 0.5 * 100);
+              payrollDetailHtml += `<div style="margin-left: 20px; margin-top: 8px; padding-top: 8px; border-top: 2px solid #fcd34d; font-weight: 600; color: #f59e0b;">小計: ${centsToTwd(menstrualTotal)}</div>`;
               if (r.menstrualFreeDays > 0) {
-                leaveHtml += `<div style="margin-left: 20px;"><small style="color:#16a34a;">（前${r.menstrualFreeDays}天獨立計算，不併入病假額度）</small></div>`;
+                payrollDetailHtml += `<div style="margin-left: 20px; margin-top: 4px;"><small style="color:#16a34a;">（前${r.menstrualFreeDays}天獨立計算，不併入病假額度）</small></div>`;
               }
               if (r.menstrualMergedDays > 0) {
-                leaveHtml += `<div style="margin-left: 20px;"><small style="color:#f59e0b;">（${r.menstrualMergedDays}天併入病假額度）</small></div>`;
+                payrollDetailHtml += `<div style="margin-left: 20px;"><small style="color:#f59e0b;">（${r.menstrualMergedDays}天併入病假額度）</small></div>`;
               }
-              leaveHtml += `<div style="margin-left: 20px;"><small style="color:#16a34a;">✓ 生理假不影響全勤</small></div>`;
+              payrollDetailHtml += `<div style="margin-left: 20px;"><small style="color:#16a34a;">✓ 生理假不影響全勤</small></div>`;
+              payrollDetailHtml += `</div>`;
             }
             
-            leaveHtml += '</div>';
-            leaveHtml += `<div style="margin-left: 10px; margin-top: 8px; font-weight: 600;">總扣款: ${centsToTwd(r.leaveDeductionCents || 0)}</div>`;
+            payrollDetailHtml += `<div style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #e5e7eb; font-weight: 700; color: #dc2626; font-size: 1.1em;">總扣款: ${centsToTwd(r.leaveDeductionCents || 0)}</div>`;
           } else {
-            leaveHtml += '<div style="margin-left: 10px; color: #16a34a;">✓ 無請假記錄</div>';
+            payrollDetailHtml += '<div style="color: #16a34a; text-align: center; padding: 20px 0;">✓ 無請假記錄</div>';
           }
+          
+          payrollDetailHtml += `
+              </div>
+            </details>
+          `;
           
           // 固定扣款明細（劳保、健保等）
           let deductionHtml = '<div style="margin-bottom: 10px; margin-top: 15px;"><strong>固定扣款明細：</strong></div>';
