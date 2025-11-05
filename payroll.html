@@ -890,12 +890,25 @@
               </div>
           `;
           
-          // 津贴（显示明细）
+          // 加给（allowance + is_regular_payment=true）
           if (r.allowanceItems && r.allowanceItems.length > 0) {
             const regularAllowances = r.allowanceItems.filter(item => item.category === 'allowance' && item.isRegularPayment);
             regularAllowances.forEach((item) => {
               payrollDetailHtml += `
                 <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #047857;">
+                  <div>加給 - ${item.name}</div>
+                  <div>${centsToTwd(item.amountCents)}</div>
+                </div>
+              `;
+            });
+          }
+          
+          // 津贴（allowance + is_regular_payment=false）
+          if (r.allowanceItems && r.allowanceItems.length > 0) {
+            const nonRegularAllowances = r.allowanceItems.filter(item => item.category === 'allowance' && !item.isRegularPayment);
+            nonRegularAllowances.forEach((item) => {
+              payrollDetailHtml += `
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #0891b2;">
                   <div>津貼 - ${item.name}</div>
                   <div>${centsToTwd(item.amountCents)}</div>
                 </div>
@@ -903,10 +916,17 @@
             });
           }
           
-          // 奖金（显示明细，标注达标状态）
+          // 奖金（bonus，排除绩效和年终）
           if (r.bonusItems && r.bonusItems.length > 0) {
-            const nonPerformanceBonuses = r.bonusItems.filter(item => item.itemCode !== 'PERFORMANCE');
-            nonPerformanceBonuses.forEach((item) => {
+            const regularBonuses = r.bonusItems.filter(item => {
+              // 排除绩效
+              if (item.itemCode === 'PERFORMANCE') return false;
+              // 排除年终（通过名称识别）
+              if (item.name && (item.name.includes('年終') || item.name.includes('年终'))) return false;
+              return true;
+            });
+            
+            regularBonuses.forEach((item) => {
               const isFullAttendancePaid = !item.isFullAttendanceBonus || r.isFullAttendance;
               const note = item.isFullAttendanceBonus ? 
                 (r.isFullAttendance ? ' <small style="color: #16a34a;">✓ 達標</small>' : ' <small style="color: #dc2626;">✗ 未達標</small>') : '';
@@ -916,6 +936,22 @@
                 <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #92400e;">
                   <div>獎金 - ${item.name}${note}</div>
                   <div style="${amount === 0 ? 'text-decoration: line-through; color: #9ca3af;' : ''}">${centsToTwd(item.amountCents)}</div>
+                </div>
+              `;
+            });
+          }
+          
+          // 年终奖金（bonus + 名称包含"年終"）
+          if (r.bonusItems && r.bonusItems.length > 0) {
+            const yearEndBonuses = r.bonusItems.filter(item => 
+              item.name && (item.name.includes('年終') || item.name.includes('年终'))
+            );
+            
+            yearEndBonuses.forEach((item) => {
+              payrollDetailHtml += `
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #dc2626;">
+                  <div>年終獎金 - ${item.name}</div>
+                  <div style="font-weight: 600;">${centsToTwd(item.amountCents)}</div>
                 </div>
               `;
             });
@@ -943,23 +979,23 @@
             `;
           }
           
-          // 误餐费
+          // 补助 - 误餐费
           const mealAmount = r.mealAllowanceCents || 0;
           if (mealAmount > 0) {
             payrollDetailHtml += `
               <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #6d28d9;">
-                <div>誤餐費</div>
+                <div>補助 - 誤餐費</div>
                 <div>${centsToTwd(mealAmount)}</div>
               </div>
             `;
           }
           
-          // 交通补助
+          // 补助 - 交通补助
           const transportAmount = r.transportCents || 0;
           if (transportAmount > 0) {
             payrollDetailHtml += `
               <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; color: #059669;">
-                <div>交通補助</div>
+                <div>補助 - 交通補助</div>
                 <div>${centsToTwd(transportAmount)}</div>
               </div>
             `;
