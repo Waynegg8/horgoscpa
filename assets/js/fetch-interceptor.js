@@ -164,17 +164,22 @@
       
       if (cacheKey) {
         // 嘗試從緩存獲取
-        const cachedResponse = await getFromCache(cacheKey);
-        
-        if (cachedResponse) {
-          console.log(`[FetchInterceptor] ✓ 使用緩存: ${cacheKey}`);
-          return cachedResponse;
+        try {
+          const cachedResponse = await getFromCache(cacheKey);
+          
+          if (cachedResponse) {
+            console.log(`[FetchInterceptor] ✓ 使用緩存: ${cacheKey}`);
+            return cachedResponse;
+          }
+        } catch (err) {
+          console.warn(`[FetchInterceptor] 緩存失敗，回退到網路請求:`, err);
         }
       }
     }
     
     // 如果沒有緩存或不是 GET API 請求，使用原始 fetch
-    return originalFetch.apply(this, arguments);
+    // 重要：必須傳遞 url 和 options 參數，而不是使用 arguments
+    return originalFetch.call(this, url, options);
   };
 
   // 保持原始 fetch 的屬性
