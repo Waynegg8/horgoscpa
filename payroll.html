@@ -1463,7 +1463,7 @@
               // 交通费明细
               const transportDetail = r.totalKm > 0 ? `<br><small style="color:#059669;">${r.totalKm}km (${r.transportIntervals || 0}区间)</small>` : '';
               
-              // 请假扣款明细（显示小时数）
+              // 请假扣款明细（显示小时数，不换行）
               const sickHours = r.sickHours || 0;
               const personalHours = r.personalHours || 0;
               const menstrualHours = r.menstrualHours || 0;
@@ -1471,7 +1471,7 @@
               if (sickHours > 0) leaveDetailParts.push(`病假${sickHours}h`);
               if (personalHours > 0) leaveDetailParts.push(`事假${personalHours}h`);
               if (menstrualHours > 0) leaveDetailParts.push(`生理假${menstrualHours}h`);
-              const leaveDetail = leaveDetailParts.length > 0 ? `<br><small style="color:#dc2626;">${leaveDetailParts.join(' ')}</small>` : '';
+              const leaveDetail = leaveDetailParts.length > 0 ? ` <small style="color:#999;">(${leaveDetailParts.join(' ')})</small>` : '';
               
               // 计算加给总和（regularAllowanceItems）
               let allowanceTotal = 0;
@@ -1733,7 +1733,7 @@
                     
                     // 格式化金额（使用无条件舍去）
                     const fmt = (cents) => {
-                      const val = Math.floor(Math.abs(cents || 0)) / 100;
+                      const val = Math.floor(Math.abs(cents || 0) / 100);
                       return 'NT$ ' + val.toLocaleString('zh-TW', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                     };
                     
@@ -1844,7 +1844,7 @@
                       if (sickH > 0) leaveDetail += '病假' + sickH + 'h ';
                       if (personalH > 0) leaveDetail += '事假' + personalH + 'h ';
                       if (menstrualH > 0) leaveDetail += '生理假' + menstrualH + 'h';
-                      deductionRows += '<tr class="deduction-row"><td>請假扣款<br><small>' + leaveDetail + '</small></td><td class="amount">-' + fmt(data.leaveDeductionCents) + '</td><td>請假扣款</td></tr>';
+                      deductionRows += '<tr class="deduction-row"><td>請假扣款 <small style="color:#999;">(' + leaveDetail.trim() + ')</small></td><td class="amount">-' + fmt(data.leaveDeductionCents) + '</td><td>請假扣款</td></tr>';
                     }
                     
                     // 渲染HTML
