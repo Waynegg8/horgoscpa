@@ -1025,9 +1025,26 @@ async function calculateEmployeePayroll(env, userId, month) {
 	}
 
 	// 11. 计算总薪资
-	// 应发 = 底薪 + 经常性津贴 + 奖金 + 加班费 + 误餐费 + 交通补贴 + 绩效奖金
-	const grossSalaryCents = baseSalaryCents + regularAllowanceCents + bonusCents + 
+	// 应发 = 底薪 + 所有津贴 + 奖金 + 加班费 + 误餐费 + 交通补贴 + 绩效奖金
+	// 从allowanceItems累加所有津贴
+	let totalAllowanceCents = 0;
+	for (const item of allowanceItems) {
+		totalAllowanceCents += item.amountCents || 0;
+	}
+	
+	const grossSalaryCents = baseSalaryCents + totalAllowanceCents + bonusCents + 
 	                          overtimeCents + mealAllowanceCents + transportCents + performanceBonusCents;
+	
+	console.log(`[Payroll] ${month} 应发计算:`, {
+		baseSalaryCents: baseSalaryCents / 100,
+		totalAllowanceCents: totalAllowanceCents / 100,
+		bonusCents: bonusCents / 100,
+		overtimeCents: overtimeCents / 100,
+		mealAllowanceCents: mealAllowanceCents / 100,
+		transportCents: transportCents / 100,
+		performanceBonusCents: performanceBonusCents / 100,
+		grossSalaryCents: grossSalaryCents / 100
+	});
 	
 	// 总扣款 = 固定扣款 + 请假扣款
 	const totalDeductionCents = deductionCents + leaveDeductionCents;
