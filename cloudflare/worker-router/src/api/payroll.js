@@ -799,8 +799,7 @@ async function calculateEmployeePayroll(env, userId, month) {
 			esi.expiry_date,
 			sit.category,
 			sit.item_name,
-			sit.item_code,
-			sit.is_regular_payment
+			sit.item_code
 		FROM EmployeeSalaryItems esi
 		JOIN SalaryItemTypes sit ON sit.item_type_id = esi.item_type_id
 		WHERE esi.user_id = ?
@@ -905,18 +904,12 @@ async function calculateEmployeePayroll(env, userId, month) {
 				regularBonusItems.push(bonusItem);
 			}
 		} else if (item.category === 'allowance') {
-			// 旧分类：通过 is_regular_payment 区分加给和津贴
-			const allowanceItem = {
+			// 旧分类：默认作为津贴处理
+			irregularAllowanceItems.push({
 				name: item.item_name,
 				amountCents: amount,
 				itemCode: item.item_code || ''
-			};
-			
-			if (item.is_regular_payment) {
-				regularAllowanceItems.push(allowanceItem);
-			} else {
-				irregularAllowanceItems.push(allowanceItem);
-			}
+			});
 		}
 	}
 
