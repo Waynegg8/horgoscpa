@@ -2503,14 +2503,14 @@
               // 如果有調整金額，顯示調整後的金額；否則顯示預設金額作為placeholder
               monthInputs.push(`
                 <td style="padding: 4px 6px;">
-                  <input type="number" 
+                  <input type="text" 
                          class="bonus-input" 
                          data-emp-index="${empIndex}" 
                          data-month="${month}" 
                          value="${value}" 
                          placeholder="${defaultAmount}" 
-                         min="0" 
-                         step="1" 
+                         inputmode="numeric"
+                         pattern="[0-9]*"
                          title="預設: ${defaultAmount} 元"
                          style="width: 75px; padding: 4px 6px; text-align: right; font-size: 13px; border: 1px solid #d1d5db; border-radius: 4px;" />
                 </td>
@@ -2562,13 +2562,18 @@
 
             const value = input.value.trim();
             
-            // 只保存有填寫金額的項目
+            // 只保存有填寫金額的項目（必須是有效數字）
             if (value !== '') {
+              const numValue = parseFloat(value);
+              if (isNaN(numValue) || numValue < 0) {
+                console.warn(`[績效獎金] 跳過無效值: ${value} (員工: ${emp.name}, 月份: ${month})`);
+                return;
+              }
               const monthStr = `${year}-${String(month).padStart(2, '0')}`;
               allAdjustments.push({
                 userId: emp.userId,
                 month: monthStr,
-                bonusAmountCents: Math.round(parseFloat(value) * 100),
+                bonusAmountCents: Math.round(numValue * 100),
                 notes: null
               });
             }
@@ -2612,9 +2617,13 @@
               }
               
               if (value !== '') {
-                bonusState.employees[empIndex].monthlyAdjustments[month] = {
-                  bonusAmountCents: Math.round(parseFloat(value) * 100)
-                };
+                const numValue = parseFloat(value);
+                // 只接受有效數字
+                if (!isNaN(numValue) && numValue >= 0) {
+                  bonusState.employees[empIndex].monthlyAdjustments[month] = {
+                    bonusAmountCents: Math.round(numValue * 100)
+                  };
+                }
               } else {
                 delete bonusState.employees[empIndex].monthlyAdjustments[month];
               }
