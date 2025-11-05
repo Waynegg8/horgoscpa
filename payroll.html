@@ -1160,11 +1160,27 @@
             
             overtimeHtml += `</div>`;
             
-            // 加班费合计
-            overtimeHtml += `<div style="background: #ecfdf5; padding: 15px; border-radius: 8px; margin-top: 12px; border: 3px solid #059669; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
-            overtimeHtml += `<div style="font-weight: 700; color: #065f46; margin-bottom: 8px; font-size: 1.15em;">💰 本月加班費合計</div>`;
-            overtimeHtml += `<div style="margin-top: 8px; padding-top: 8px; border-top: 2px solid #a7f3d0; font-weight: 700; color: #059669; font-size: 1.2em; text-align: right;">總計: ${centsToTwd(expiredComp)}</div>`;
-            overtimeHtml += `</div>`;
+            // 加班费合计（列出明细）
+            const expiredCompDetails = r.expiredCompDetails || [];
+            if (expiredCompDetails.length > 0) {
+              overtimeHtml += `<div style="background: #ecfdf5; padding: 15px; border-radius: 8px; margin-top: 12px; border: 3px solid #059669; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
+              overtimeHtml += `<div style="font-weight: 700; color: #065f46; margin-bottom: 8px; font-size: 1.15em;">💰 本月加班費合計</div>`;
+              overtimeHtml += `<div style="margin-bottom: 8px;">`;
+              expiredCompDetails.forEach(detail => {
+                overtimeHtml += `<div style="color: #047857; font-size: 0.9em; margin-bottom: 4px;">`;
+                overtimeHtml += `📅 ${detail.date}: ${detail.workType} ${detail.hours.toFixed(1)}h × 時薪 ${hourlyRate} × ${detail.multiplier}倍 = ${centsToTwd(detail.amountCents)}`;
+                overtimeHtml += `</div>`;
+              });
+              overtimeHtml += `</div>`;
+              overtimeHtml += `<div style="margin-top: 8px; padding-top: 8px; border-top: 2px solid #a7f3d0; font-weight: 700; color: #059669; font-size: 1.2em; text-align: right;">總計: ${centsToTwd(expiredComp)}</div>`;
+              overtimeHtml += `</div>`;
+            } else if (expiredComp > 0) {
+              // 如果有加班费但没有明细（不应该发生），显示简单合计
+              overtimeHtml += `<div style="background: #ecfdf5; padding: 15px; border-radius: 8px; margin-top: 12px; border: 3px solid #059669; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`;
+              overtimeHtml += `<div style="font-weight: 700; color: #065f46; margin-bottom: 8px; font-size: 1.15em;">💰 本月加班費合計</div>`;
+              overtimeHtml += `<div style="margin-top: 8px; padding-top: 8px; border-top: 2px solid #a7f3d0; font-weight: 700; color: #059669; font-size: 1.2em; text-align: right;">總計: ${centsToTwd(expiredComp)}</div>`;
+              overtimeHtml += `</div>`;
+            }
             
             // 误餐费合计
             const mealDays = r.mealAllowanceDays || [];
@@ -1179,7 +1195,7 @@
               });
               overtimeHtml += `</div>`;
               overtimeHtml += `<div style="margin-top: 8px; padding-top: 8px; border-top: 2px solid #fcd34d; font-weight: 700; color: #92400e; font-size: 1.2em; text-align: right;">`;
-              overtimeHtml += `${mealDays.length} 天 × ${centsToTwd(r.mealAllowanceCents / (mealDays.length * 100))} = ${centsToTwd(r.mealAllowanceCents)}`;
+              overtimeHtml += `${mealDays.length} 天 × ${centsToTwd(r.mealAllowanceCents / mealDays.length)} = ${centsToTwd(r.mealAllowanceCents)}`;
               overtimeHtml += `</div>`;
               overtimeHtml += `</div>`;
             }
