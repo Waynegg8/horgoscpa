@@ -896,6 +896,96 @@
               </details>
           `;
           
+          // 全勤獎金明細（改为折叠块）
+          payrollDetailHtml += `
+            <details style="background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+              <summary style="font-weight: 700; font-size: 1.05em; color: #374151; cursor: pointer; user-select: none;">
+                🎁 全勤獎金明細
+              </summary>
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
+          `;
+          
+          // 判定标准说明
+          payrollDetailHtml += `
+            <div style="background: #f0f9ff; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+              <div style="font-weight: 600; color: #0369a1; margin-bottom: 8px;">📋 判定標準</div>
+              <div style="color: #0c4a6e; font-size: 0.9em;">
+                ✓ 全勤條件：當月無病假、無事假<br>
+                💡 生理假不影響全勤獎金
+              </div>
+            </div>
+          `;
+          
+          // 判定结果
+          if (r.isFullAttendance) {
+            // 达标
+            payrollDetailHtml += `
+              <div style="background: #ecfdf5; padding: 12px; border-radius: 6px; border-left: 4px solid #10b981;">
+                <div style="font-weight: 600; color: #059669; margin-bottom: 4px;">✓ 本月全勤達標</div>
+                <div style="color: #047857; font-size: 0.9em;">
+                  無病假、無事假記錄`;
+            if (r.menstrualDays > 0) {
+              payrollDetailHtml += `<br>生理假 ${r.menstrualDays} 天（不影響全勤）`;
+            }
+            payrollDetailHtml += `
+                </div>
+              </div>
+            `;
+          } else {
+            // 未达标，列出明细
+            payrollDetailHtml += `
+              <div style="background: #fef2f2; padding: 12px; border-radius: 6px; border-left: 4px solid #ef4444;">
+                <div style="font-weight: 600; color: #dc2626; margin-bottom: 8px;">✗ 未達全勤標準</div>
+            `;
+            
+            // 病假明细
+            const sickLeaves = (r.leaveDetails || []).filter(l => l.leaveType === 'sick');
+            if (sickLeaves.length > 0) {
+              payrollDetailHtml += `
+                <div style="margin-bottom: 8px;">
+                  <div style="color: #991b1b; font-weight: 600; margin-bottom: 4px;">❌ 病假記錄：</div>
+              `;
+              sickLeaves.forEach(leave => {
+                const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
+                const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
+                payrollDetailHtml += `
+                  <div style="color: #7f1d1d; font-size: 0.9em; margin-left: 10px;">
+                    📅 ${dateRange}: ${hours}小時${leave.reason ? ` (${leave.reason})` : ''}
+                  </div>
+                `;
+              });
+              payrollDetailHtml += `</div>`;
+            }
+            
+            // 事假明细
+            const personalLeaves = (r.leaveDetails || []).filter(l => l.leaveType === 'personal');
+            if (personalLeaves.length > 0) {
+              payrollDetailHtml += `
+                <div style="margin-bottom: 8px;">
+                  <div style="color: #991b1b; font-weight: 600; margin-bottom: 4px;">❌ 事假記錄：</div>
+              `;
+              personalLeaves.forEach(leave => {
+                const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
+                const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
+                payrollDetailHtml += `
+                  <div style="color: #7f1d1d; font-size: 0.9em; margin-left: 10px;">
+                    📅 ${dateRange}: ${hours}小時${leave.reason ? ` (${leave.reason})` : ''}
+                  </div>
+                `;
+              });
+              payrollDetailHtml += `</div>`;
+            }
+            
+            payrollDetailHtml += `
+              </div>
+            `;
+          }
+          
+          payrollDetailHtml += `
+              </div>
+            </details>
+          `;
+          
           let hourlyRateBaseHtml = rulesHtml;
           
           // 津貼及獎金明細（本月發放）
@@ -1302,96 +1392,6 @@
           } else {
             deductionHtml += '<div style="margin-left: 10px; color: #16a34a;">✓ 無固定扣款</div>';
           }
-          
-          // 全勤獎金明細（改为折叠块）
-          payrollDetailHtml += `
-            <details style="background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-              <summary style="font-weight: 700; font-size: 1.05em; color: #374151; cursor: pointer; user-select: none;">
-                🎁 全勤獎金明細
-              </summary>
-              <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #e5e7eb;">
-          `;
-          
-          // 判定标准说明
-          payrollDetailHtml += `
-            <div style="background: #f0f9ff; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
-              <div style="font-weight: 600; color: #0369a1; margin-bottom: 8px;">📋 判定標準</div>
-              <div style="color: #0c4a6e; font-size: 0.9em;">
-                ✓ 全勤條件：當月無病假、無事假<br>
-                💡 生理假不影響全勤獎金
-              </div>
-            </div>
-          `;
-          
-          // 判定结果
-          if (r.isFullAttendance) {
-            // 达标
-            payrollDetailHtml += `
-              <div style="background: #ecfdf5; padding: 12px; border-radius: 6px; border-left: 4px solid #10b981;">
-                <div style="font-weight: 600; color: #059669; margin-bottom: 4px;">✓ 本月全勤達標</div>
-                <div style="color: #047857; font-size: 0.9em;">
-                  無病假、無事假記錄`;
-            if (r.menstrualDays > 0) {
-              payrollDetailHtml += `<br>生理假 ${r.menstrualDays} 天（不影響全勤）`;
-            }
-            payrollDetailHtml += `
-                </div>
-              </div>
-            `;
-          } else {
-            // 未达标，列出明细
-            payrollDetailHtml += `
-              <div style="background: #fef2f2; padding: 12px; border-radius: 6px; border-left: 4px solid #ef4444;">
-                <div style="font-weight: 600; color: #dc2626; margin-bottom: 8px;">✗ 未達全勤標準</div>
-            `;
-            
-            // 病假明细
-            const sickLeaves = (r.leaveDetails || []).filter(l => l.leaveType === 'sick');
-            if (sickLeaves.length > 0) {
-              payrollDetailHtml += `
-                <div style="margin-bottom: 8px;">
-                  <div style="color: #991b1b; font-weight: 600; margin-bottom: 4px;">❌ 病假記錄：</div>
-              `;
-              sickLeaves.forEach(leave => {
-                const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
-                const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
-                payrollDetailHtml += `
-                  <div style="color: #7f1d1d; font-size: 0.9em; margin-left: 10px;">
-                    📅 ${dateRange}: ${hours}小時${leave.reason ? ` (${leave.reason})` : ''}
-                  </div>
-                `;
-              });
-              payrollDetailHtml += `</div>`;
-            }
-            
-            // 事假明细
-            const personalLeaves = (r.leaveDetails || []).filter(l => l.leaveType === 'personal');
-            if (personalLeaves.length > 0) {
-              payrollDetailHtml += `
-                <div style="margin-bottom: 8px;">
-                  <div style="color: #991b1b; font-weight: 600; margin-bottom: 4px;">❌ 事假記錄：</div>
-              `;
-              personalLeaves.forEach(leave => {
-                const dateRange = leave.startDate === leave.endDate ? leave.startDate : `${leave.startDate} ~ ${leave.endDate}`;
-                const hours = leave.unit === 'day' ? leave.amount * 8 : leave.amount;
-                payrollDetailHtml += `
-                  <div style="color: #7f1d1d; font-size: 0.9em; margin-left: 10px;">
-                    📅 ${dateRange}: ${hours}小時${leave.reason ? ` (${leave.reason})` : ''}
-                  </div>
-                `;
-              });
-              payrollDetailHtml += `</div>`;
-            }
-            
-            payrollDetailHtml += `
-              </div>
-            `;
-          }
-          
-          payrollDetailHtml += `
-              </div>
-            </details>
-          `;
           
           return `
             <tr class="detail-row" id="${rowId}-detail" style="display: none; background: #fafafa;">
