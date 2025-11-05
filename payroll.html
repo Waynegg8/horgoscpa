@@ -2606,6 +2606,7 @@
         // 監聽績效獎金輸入框的變更（使用事件委託）
         tbodyBonus.addEventListener('input', (e) => {
           if (e.target.classList.contains('bonus-input')) {
+            console.log('[績效獎金] Input event triggered', e.target.value);
             const empIndex = parseInt(e.target.dataset.empIndex);
             const month = parseInt(e.target.dataset.month);
             const value = e.target.value.trim();
@@ -2623,6 +2624,7 @@
                   bonusState.employees[empIndex].monthlyAdjustments[month] = {
                     bonusAmountCents: Math.round(numValue * 100)
                   };
+                  console.log('[績效獎金] Updated:', empIndex, month, numValue);
                 }
               } else {
                 delete bonusState.employees[empIndex].monthlyAdjustments[month];
@@ -2632,6 +2634,19 @@
             }
           }
         });
+        
+        // 添加额外的事件监听器来调试
+        tbodyBonus.addEventListener('click', (e) => {
+          if (e.target.classList.contains('bonus-input')) {
+            console.log('[績效獎金] Input clicked', e.target);
+          }
+        });
+        
+        tbodyBonus.addEventListener('focus', (e) => {
+          if (e.target.classList.contains('bonus-input')) {
+            console.log('[績效獎金] Input focused', e.target);
+          }
+        }, true);
 
         // 綁定績效獎金事件
         yearBonusInput.addEventListener('change', loadYearlyBonus);
