@@ -880,6 +880,12 @@ async function calculateEmployeePayroll(env, userId, month) {
 				isFullAttendanceBonus: isFullAttendanceBonus
 			});
 		} else if (item.category === 'bonus') {
+			// 跳过績效獎金（PERFORMANCE），因为它会在后面单独处理
+			if (item.item_code === 'PERFORMANCE') {
+				console.log(`[Payroll] ✓ 跳过績效獎金（将单独提取）`);
+				continue;
+			}
+			
 			// 新旧分类：月度奖金
 			const isFullAttendanceBonus = 
 				(item.item_code && item.item_code.toUpperCase().includes('FULL')) ||
