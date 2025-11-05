@@ -148,7 +148,7 @@ async function createSalaryItemType(request, env, me, requestId, corsHeaders) {
 		}, corsHeaders);
 	}
 
-	const { itemCode, itemName, category, isRegularPayment, description, displayOrder } = body;
+	const { itemCode, itemName, category, description, displayOrder } = body;
 
 	// 验证必填字段
 	if (!itemCode || !itemName || !category) {
@@ -171,11 +171,12 @@ async function createSalaryItemType(request, env, me, requestId, corsHeaders) {
 	}
 
 	// 验证类别
-	if (!["allowance", "bonus", "deduction"].includes(category)) {
+	const validCategories = ["regular_allowance", "irregular_allowance", "bonus", "year_end_bonus", "deduction", "allowance"]; // 保留 allowance 向下兼容
+	if (!validCategories.includes(category)) {
 		return jsonResponse(400, {
 			ok: false,
 			code: "VALIDATION_ERROR",
-			message: "类别必须为 allowance、bonus 或 deduction",
+			message: "类别必须为 regular_allowance、irregular_allowance、bonus、year_end_bonus 或 deduction",
 			meta: { requestId }
 		}, corsHeaders);
 	}
@@ -208,13 +209,12 @@ async function createSalaryItemType(request, env, me, requestId, corsHeaders) {
 		// 插入新项目
 		const result = await env.DATABASE.prepare(`
 			INSERT INTO SalaryItemTypes 
-			(item_code, item_name, category, is_regular_payment, description, display_order, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+			(item_code, item_name, category, description, display_order, updated_at)
+			VALUES (?, ?, ?, ?, ?, datetime('now'))
 		`).bind(
 			itemCode,
 			itemName,
 			category,
-			isRegularPayment ? 1 : 0,
 			description || null,
 			displayOrder || 0
 		).run();
@@ -286,7 +286,7 @@ async function updateSalaryItemType(request, env, me, requestId, corsHeaders, it
 		}, corsHeaders);
 	}
 
-	const { itemCode, itemName, category, isRegularPayment, description, displayOrder, isActive } = body;
+	const { itemCode, itemName, category, description, displayOrder, isActive } = body;
 
 	// 验证项目代码格式（如果有更新）
 	if (itemCode && !/^[A-Z0-9_]{1,20}$/.test(itemCode)) {
@@ -299,11 +299,12 @@ async function updateSalaryItemType(request, env, me, requestId, corsHeaders, it
 	}
 
 	// 验证类别（如果有更新）
-	if (category && !["allowance", "bonus", "deduction"].includes(category)) {
+	const validCategories = ["regular_allowance", "irregular_allowance", "bonus", "year_end_bonus", "deduction", "allowance"];
+	if (category && !validCategories.includes(category)) {
 		return jsonResponse(400, {
 			ok: false,
 			code: "VALIDATION_ERROR",
-			message: "类别必须为 allowance、bonus 或 deduction",
+			message: "类别必须为 regular_allowance、irregular_allowance、bonus、year_end_bonus 或 deduction",
 			meta: { requestId }
 		}, corsHeaders);
 	}
@@ -350,10 +351,6 @@ async function updateSalaryItemType(request, env, me, requestId, corsHeaders, it
 		if (category !== undefined) {
 			updates.push("category = ?");
 			params.push(category);
-		}
-		if (isRegularPayment !== undefined) {
-			updates.push("is_regular_payment = ?");
-			params.push(isRegularPayment ? 1 : 0);
 		}
 		if (description !== undefined) {
 			updates.push("description = ?");

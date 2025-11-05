@@ -810,15 +810,12 @@ async function calculateEmployeePayroll(env, userId, month) {
 		  AND (esi.expiry_date IS NULL OR esi.expiry_date >= ?)
 	`).bind(userId, lastDayStr, firstDay).all();
 
-	// 3. 分类统计薪资项目（根据循环类型过滤）
-	let regularAllowanceCents = 0;  // 经常性津贴（计入时薪）
-	let allowanceCents = 0;          // 非经常性津贴
-	let bonusCents = 0;              // 奖金
-	let deductionCents = 0;          // 扣款总额
-	const hourlyRateBaseItems = [];  // 记录计入时薪的项目
-	const allowanceItems = [];       // 所有津贴项目明细
-	const bonusItems = [];           // 所有奖金项目明细
-	const deductionItems = [];       // 记录所有扣款项目明细（劳保、健保等）
+	// 3. 分类薪资项目（清晰分类）
+	const regularAllowanceItems = [];  // 加给（固定每月发放）
+	const irregularAllowanceItems = []; // 津贴（特定月份发放）
+	const regularBonusItems = [];       // 月度奖金（不含年终）
+	const yearEndBonusItems = [];       // 年终奖金
+	const deductionItems = [];          // 扣款明细
 
 	const items = salaryItems.results || [];
 	console.log(`[Payroll] 员工 ${userId} 查询到 ${items.length} 个薪资项目`);
@@ -851,58 +848,74 @@ async function calculateEmployeePayroll(env, userId, month) {
 		const amount = item.amount_cents || 0;
 		
 		if (item.category === 'deduction') {
-			// 扣款类别：累加到扣款总额，并记录详细项目
-			deductionCents += amount;
+			// 扣款
 			deductionItems.push({
 				name: item.item_name,
 				amountCents: amount,
 				itemCode: item.item_code || ''
 			});
-		} else if (item.category === 'bonus') {
-			// 奖金类别
-			// 识别全勤奖金：通过item_code或名称判断
+		} else if (item.category === 'regular_allowance') {
+			// 新分类：加给
+			regularAllowanceItems.push({
+				name: item.item_name,
+				amountCents: amount,
+				itemCode: item.item_code || ''
+			});
+		} else if (item.category === 'irregular_allowance') {
+			// 新分类：津贴
+			irregularAllowanceItems.push({
+				name: item.item_name,
+				amountCents: amount,
+				itemCode: item.item_code || ''
+			});
+		} else if (item.category === 'year_end_bonus') {
+			// 新分类：年终奖金
 			const isFullAttendanceBonus = 
 				(item.item_code && item.item_code.toUpperCase().includes('FULL')) ||
 				(item.item_name && item.item_name.includes('全勤'));
 			
-			bonusCents += amount;
-			bonusItems.push({
+			yearEndBonusItems.push({
 				name: item.item_name,
 				amountCents: amount,
-				category: 'bonus',
-				isRegularPayment: !!item.is_regular_payment,
 				itemCode: item.item_code || '',
 				isFullAttendanceBonus: isFullAttendanceBonus
 			});
-			// 如果是经常性给与的奖金（如全勤），也计入时薪基准
-			if (item.is_regular_payment) {
-				regularAllowanceCents += amount;
-				hourlyRateBaseItems.push({
-					name: item.item_name,
-					amountCents: amount,
-					category: 'bonus'
-				});
-			}
-		} else if (item.category === 'allowance') {
-			// 津贴类别
-			allowanceItems.push({
+		} else if (item.category === 'bonus') {
+			// 新旧分类：月度奖金
+			const isFullAttendanceBonus = 
+				(item.item_code && item.item_code.toUpperCase().includes('FULL')) ||
+				(item.item_name && item.item_name.includes('全勤'));
+			
+			// 旧数据可能通过名称识别年终奖金
+			const isYearEndBonus = item.item_name && (
+				item.item_name.includes('年終') || 
+				item.item_name.includes('年终')
+			);
+			
+			const bonusItem = {
 				name: item.item_name,
 				amountCents: amount,
-				category: 'allowance',
-				isRegularPayment: !!item.is_regular_payment,
-				itemCode: item.item_code || ''
-			});
-			// 如果是经常性给与，计入时薪基准
-			if (item.is_regular_payment) {
-				regularAllowanceCents += amount;
-				hourlyRateBaseItems.push({
-					name: item.item_name,
-					amountCents: amount,
-					category: 'allowance'
-				});
+				itemCode: item.item_code || '',
+				isFullAttendanceBonus: isFullAttendanceBonus
+			};
+			
+			if (isYearEndBonus) {
+				yearEndBonusItems.push(bonusItem);
 			} else {
-				// 非经常性津贴（如误餐费）也计入津贴总额
-				allowanceCents += amount;
+				regularBonusItems.push(bonusItem);
+			}
+		} else if (item.category === 'allowance') {
+			// 旧分类：通过 is_regular_payment 区分加给和津贴
+			const allowanceItem = {
+				name: item.item_name,
+				amountCents: amount,
+				itemCode: item.item_code || ''
+			};
+			
+			if (item.is_regular_payment) {
+				regularAllowanceItems.push(allowanceItem);
+			} else {
+				irregularAllowanceItems.push(allowanceItem);
 			}
 		}
 	}
@@ -918,19 +931,19 @@ async function calculateEmployeePayroll(env, userId, month) {
 	// 5. 判定全勤
 	const isFullAttendance = await checkFullAttendance(env, userId, month);
 	
-	// 5.1 重新计算奖金总额（排除未达标的全勤奖金）
-	let actualBonusCents = 0;
-	
-	// 重新计算奖金总额
-	for (const bonusItem of bonusItems) {
-		// 如果是全勤奖金且未达标，则不计入
-		if (bonusItem.isFullAttendanceBonus && !isFullAttendance) {
-			continue;
+	// 5.1 标记全勤奖金是否发放
+	for (const bonusItem of regularBonusItems) {
+		if (bonusItem.isFullAttendanceBonus) {
+			bonusItem.shouldPay = isFullAttendance;
+		} else {
+			bonusItem.shouldPay = true; // 其他奖金正常发放
 		}
-		actualBonusCents += bonusItem.amountCents || 0;
 	}
 	
-	bonusCents = actualBonusCents; // 更新为实际发放的奖金总额
+	// 年终奖金正常发放
+	for (const bonusItem of yearEndBonusItems) {
+		bonusItem.shouldPay = true;
+	}
 	
 	// 5.2 使用时薪计算未使用补休转加班费
 	let expiredCompPayCents = 0;
@@ -1025,29 +1038,61 @@ async function calculateEmployeePayroll(env, userId, month) {
 	}
 
 	// 11. 计算总薪资
-	// 应发 = 底薪 + 所有津贴 + 奖金 + 加班费 + 误餐费 + 交通补贴 + 绩效奖金
-	// 从allowanceItems累加所有津贴
-	let totalAllowanceCents = 0;
-	for (const item of allowanceItems) {
-		totalAllowanceCents += item.amountCents || 0;
+	// 累加各项收入
+	let totalRegularAllowanceCents = 0;
+	for (const item of regularAllowanceItems) {
+		totalRegularAllowanceCents += item.amountCents || 0;
 	}
 	
-	const grossSalaryCents = baseSalaryCents + totalAllowanceCents + bonusCents + 
-	                          overtimeCents + mealAllowanceCents + transportCents + performanceBonusCents;
+	let totalIrregularAllowanceCents = 0;
+	for (const item of irregularAllowanceItems) {
+		totalIrregularAllowanceCents += item.amountCents || 0;
+	}
+	
+	let totalRegularBonusCents = 0;
+	for (const bonusItem of regularBonusItems) {
+		// 只累加应发放的奖金
+		if (bonusItem.shouldPay) {
+			totalRegularBonusCents += bonusItem.amountCents || 0;
+		}
+	}
+	
+	let totalYearEndBonusCents = 0;
+	for (const bonusItem of yearEndBonusItems) {
+		totalYearEndBonusCents += bonusItem.amountCents || 0;
+	}
+	
+	let totalDeductionCents = 0;
+	for (const item of deductionItems) {
+		totalDeductionCents += item.amountCents || 0;
+	}
+	
+	// 应发 = 底薪 + 加给 + 津贴 + 奖金 + 年终 + 绩效 + 加班费 + 补助
+	const grossSalaryCents = baseSalaryCents + 
+	                          totalRegularAllowanceCents + 
+	                          totalIrregularAllowanceCents +
+	                          totalRegularBonusCents + 
+	                          totalYearEndBonusCents + 
+	                          performanceBonusCents + 
+	                          overtimeCents + 
+	                          mealAllowanceCents + 
+	                          transportCents;
 	
 	console.log(`[Payroll] ${month} 应发计算:`, {
 		baseSalaryCents: baseSalaryCents / 100,
-		totalAllowanceCents: totalAllowanceCents / 100,
-		bonusCents: bonusCents / 100,
+		totalRegularAllowanceCents: totalRegularAllowanceCents / 100,
+		totalIrregularAllowanceCents: totalIrregularAllowanceCents / 100,
+		totalRegularBonusCents: totalRegularBonusCents / 100,
+		totalYearEndBonusCents: totalYearEndBonusCents / 100,
+		performanceBonusCents: performanceBonusCents / 100,
 		overtimeCents: overtimeCents / 100,
 		mealAllowanceCents: mealAllowanceCents / 100,
 		transportCents: transportCents / 100,
-		performanceBonusCents: performanceBonusCents / 100,
 		grossSalaryCents: grossSalaryCents / 100
 	});
 	
 	// 总扣款 = 固定扣款 + 请假扣款
-	const totalDeductionCents = deductionCents + leaveDeductionCents;
+	totalDeductionCents += leaveDeductionCents;
 	
 	// 实发 = 应发 - 总扣款
 	const netSalaryCents = grossSalaryCents - totalDeductionCents;
@@ -1057,47 +1102,61 @@ async function calculateEmployeePayroll(env, userId, month) {
 		username: user.username,
 		name: user.name,
 		baseSalaryCents,
-		regularAllowanceCents,
-		allowanceCents,           // 非经常性津贴总额
-		bonusCents,
+		
+		// 新的分类数据结构
+		regularAllowanceItems,      // 加给（固定每月）
+		irregularAllowanceItems,    // 津贴（特定月份）
+		regularBonusItems,          // 月度奖金（不含年终）
+		yearEndBonusItems,          // 年终奖金
+		deductionItems,             // 扣款明细
+		
+		// 各项总额
+		totalRegularAllowanceCents,
+		totalIrregularAllowanceCents,
+		totalRegularBonusCents,
+		totalYearEndBonusCents,
+		totalDeductionCents,        // 固定扣款总额
+		
+		// 其他收入
 		overtimeCents,
 		mealAllowanceCents,
 		transportCents,
 		performanceBonusCents,
-		deductionCents,           // 固定扣款总额
-		deductionItems,           // 固定扣款明细（劳保、健保等）
-		allowanceItems,           // 所有津贴项目明细
-		bonusItems,               // 所有奖金项目明细
-		leaveDeductionCents,      // 请假扣款
-		totalDeductionCents,      // 总扣款
-		grossSalaryCents,         // 应发薪资（扣款前）
-		netSalaryCents,           // 实发薪资（扣款后）
+		
+		// 扣款
+		leaveDeductionCents,        // 请假扣款
+		
+		// 汇总
+		grossSalaryCents,           // 应发薪资（扣款前）
+		netSalaryCents,             // 实发薪资（扣款后）
+		
+		// 状态
 		isFullAttendance,
-		hourlyRateCents,  // 时薪（底薪 / 240）
-		hourlyRateBaseItems,      // 计入时薪的项目明细
+		hourlyRateCents,            // 时薪（底薪 / 240）
+		
 		// 附加信息
-		overtimeDays,             // 满足误餐费条件的天数
-		weightedHours,            // 原始加权工时（计算前）
-		effectiveWeightedHours,   // 有效加权工时（扣除补休后）
-		dailyOvertime,            // 每日加班明细（按日期+类型+周几+国定假日）
-		totalCompHoursGenerated,  // 当月产生的补休总时数
-		totalCompHoursUsed,       // 当月使用的补休时数
-		unusedCompHours,          // 未使用的补休时数（需转加班费）
-		expiredCompPayCents,      // 未使用补休转换的加班费
-		expiredCompDetails,       // 未使用补休转换明细
-		tripDetails,              // 外出交通明细（按日期）
+		overtimeDays,               // 满足误餐费条件的天数
+		weightedHours,              // 原始加权工时
+		effectiveWeightedHours,     // 有效加权工时
+		dailyOvertime,              // 每日加班明细
+		totalCompHoursGenerated,    // 当月产生的补休总时数
+		totalCompHoursUsed,         // 当月使用的补休时数
+		unusedCompHours,            // 未使用的补休时数
+		expiredCompPayCents,        // 未使用补休转换的加班费
+		expiredCompDetails,         // 未使用补休转换明细
+		tripDetails,                // 外出交通明细
 		totalKm,
 		transportIntervals,
 		sickDays,
 		personalDays,
-		menstrualDays,            // 生理假天数
-		sickHours,                // 病假小时数（用于显示）
-		personalHours,            // 事假小时数（用于显示）
-		menstrualHours,           // 生理假小时数（用于显示）
-		menstrualFreeDays,        // 不扣全勤的生理假天数（前3天）
-		menstrualMergedDays,      // 并入病假的生理假天数（超过3天）
-		dailySalaryCents,         // 日薪（用于请假扣款计算）
-		leaveDetails,             // 详细的请假记录列表（包含日期）
+		menstrualDays,              // 生理假天数
+		sickHours,                  // 病假小时数
+		personalHours,              // 事假小时数
+		menstrualHours,             // 生理假小时数
+		menstrualFreeDays,          // 不扣全勤的生理假天数
+		menstrualMergedDays,        // 并入病假的生理假天数
+		dailySalaryCents,           // 日薪
+		leaveDetails,               // 详细的请假记录列表
 	};
 }
 
