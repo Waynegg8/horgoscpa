@@ -989,8 +989,8 @@ async function calculateEmployeePayroll(env, userId, month) {
 	const dailyOvertime = overtimeDetails.dailyOvertime || [];
 	const effectiveWeightedHours = overtimeDetails.effectiveTotalWeightedHours || 0;
 	
-	// 加班费 = 有效加权工时（已按FIFO扣除补休）× 时薪 + 未使用补休转加班费
-	const overtimeCents = Math.round(effectiveWeightedHours * hourlyRateCents) + expiredCompPayCents;
+	// 加班费 = 未使用补休转加班费（所有加班都先转补休，月底未使用的再转加班费）
+	const overtimeCents = expiredCompPayCents;
 
 	// 8. 计算交通补贴
 	const transportResult = await calculateTransportAllowance(env, userId, month);
