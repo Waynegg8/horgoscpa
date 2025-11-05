@@ -356,6 +356,59 @@ export default {
 		}
 	}
 	
+	// ⚡ 清除缓存端点（管理员专用）
+	if (path === "/internal/api/v1/cache-clear" && method === "POST") {
+		const corsHeaders = getCorsHeadersForRequest(request, env);
+		
+		try {
+			const me = await getSessionUser(request, env);
+			if (!me || !me.is_admin) {
+				return jsonResponse(403, {
+					ok: false,
+					message: '需要管理员权限'
+				}, corsHeaders);
+			}
+			
+			const { invalidateCacheByType } = await import("./cache-helper.js");
+			const { deleteKVCacheByPrefix } = await import("./kv-cache-helper.js");
+			
+			// 读取请求体以获取缓存类型
+			let body = {};
+			try {
+				body = await request.json();
+			} catch (e) {
+				// 如果没有请求体，则清除所有客户相关缓存
+			}
+			
+			const cacheType = body.cache_type || 'clients_list';
+			const clearResults = [];
+			
+			// 清除 D1 缓存
+			await invalidateCacheByType(env, cacheType);
+			clearResults.push({ storage: 'D1', type: cacheType, status: 'cleared' });
+			
+			// 清除 KV 缓存
+			await deleteKVCacheByPrefix(env, cacheType);
+			clearResults.push({ storage: 'KV', type: cacheType, status: 'cleared' });
+			
+			return jsonResponse(200, {
+				ok: true,
+				message: `✅ 缓存已清除: ${cacheType}`,
+				results: clearResults,
+				note: '请刷新页面查看最新数据'
+			}, corsHeaders);
+			
+		} catch (err) {
+			console.error('[Cache Clear] ❌ 清除失败:', err);
+			return jsonResponse(500, {
+				ok: false,
+				message: '清除缓存失败',
+				error: String(err),
+				stack: err.stack
+			}, corsHeaders);
+		}
+	}
+	
 	// Auth routes
 	if (path === "/internal/api/v1/auth/login") {
 		return handleLogin(request, env, requestId);
