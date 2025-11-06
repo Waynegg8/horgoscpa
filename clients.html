@@ -55,11 +55,17 @@
               <button id="btn-batch-assign" class="clients-btn btn-secondary" type="button">批量分配負責人</button>
               <button id="btn-cancel-select" class="clients-btn btn-secondary" type="button">取消選擇</button>
             </div>
+          <button id="btn-debug-toggle" class="clients-btn btn-secondary" type="button">🧪 調試</button>
             <button onclick="window.location.href='/internal/client-new'" class="clients-btn" type="button">+ 新增客戶</button>
           </div>
         </div>
         
         <p id="clients-error" style="color:#c0392b;min-height:1.25rem;margin:0 0 8px 0;"></p>
+        <!-- 🧪 調試面板（預設隱藏） -->
+        <div id="debug-panel" hidden style="margin:8px 0 16px 0;padding:12px 14px;border:1px dashed #c9a227;border-radius:8px;background:#fff8e1;color:#4d3b00;">
+          <div id="debug-summary" style="font-size:13px;line-height:1.6;white-space:pre-wrap;"></div>
+          <div id="debug-list" style="margin-top:8px;max-height:150px;overflow:auto;font-size:13px;background:#fff;border:1px solid #ecd9a3;border-radius:6px;padding:8px;"></div>
+        </div>
         <div id="empty" class="clients-empty" hidden>
           <p>尚無客戶</p>
           <p><button onclick="window.location.href='/internal/client-new'" class="clients-btn" type="button">新增客戶</button></p>
@@ -132,8 +138,23 @@
         const emptyEl = document.getElementById('empty');
         const pager = document.getElementById('pager');
         const errEl = document.getElementById('clients-error');
+        const debugPanel = document.getElementById('debug-panel');
+        const debugSummaryEl = document.getElementById('debug-summary');
+        const debugListEl = document.getElementById('debug-list');
 
         function setError(msg){ if (errEl) errEl.textContent = msg || ''; }
+
+        // 🧪 調試資訊狀態
+        let lastDebug = { loadedAt: '', durationMs: 0, cacheSource: '', requestId: '', total: 0, list: [] };
+
+        function renderDebugPanel() {
+          if (!debugPanel) return;
+          const { loadedAt, durationMs, cacheSource, requestId, total, list } = lastDebug;
+          const cacheText = cacheSource ? cacheSource : 'db';
+          debugSummaryEl.textContent = `載入時間: ${loadedAt}\n耗時: ${durationMs} ms\n來源: ${cacheText}${requestId ? `\n請求ID: ${requestId}` : ''}\n筆數: ${total}`;
+          const lines = list.map(item => `• ${item.companyName}（${item.clientId}）→ ${item.assigneeName || '未分配'}`);
+          debugListEl.textContent = lines.join('\n');
+        }
 
         // 加载员工列表并填充下拉选单
         let employeesList = [];
@@ -271,6 +292,7 @@
 
         async function load() {
           setError('');
+          const t0 = performance.now();
           const params = new URLSearchParams();
           params.set('page', String(state.page));
           params.set('perPage', String(state.perPage));
@@ -293,6 +315,19 @@
             const meta = json.meta || {};
             state.total = meta.total || 0;
             renderPager();
+
+            // 🧪 構造調試資訊
+            const t1 = performance.now();
+            lastDebug = {
+              loadedAt: new Date().toLocaleString(),
+              durationMs: (t1 - t0).toFixed(1),
+              cacheSource: meta.cache_source || '',
+              requestId: meta.requestId || '',
+              total: rows.length,
+              list: rows.map(r => ({ clientId: r.clientId, companyName: r.companyName, assigneeName: r.assigneeName || r.assignee_name || '未分配' }))
+            };
+            console.log('[Clients][🧪 調試] 載入完成:', lastDebug);
+            if (!debugPanel.hidden) renderDebugPanel();
           } catch (err) {
             setError('載入失敗，請稍後再試');
           }
@@ -336,6 +371,12 @@
         loadEmployees(); // 加载员工列表
         loadTags(); // 加载标签列表
         load();
+        // 調試面板開關
+        document.getElementById('btn-debug-toggle').addEventListener('click', function(){
+          if (!debugPanel) return;
+          debugPanel.hidden = !debugPanel.hidden;
+          if (!debugPanel.hidden) renderDebugPanel();
+        });
         
         // 綁定操作按鈕事件（全局绑定一次，避免重复）
         tbody.addEventListener('click', function(e) {

@@ -267,6 +267,24 @@
           <!-- 骨架：餘額卡 -->
         </div>
       </section>
+      
+      <!-- 生活事件紀錄 -->
+      <section class="leaves-card">
+        <h2 style="margin:0 0 8px 0; font-size:16px;">生活事件紀錄</h2>
+        <table class="leaves-table" aria-label="生活事件紀錄">
+          <thead>
+            <tr>
+              <th>事件</th>
+              <th>日期</th>
+              <th>假別</th>
+              <th>額度/剩餘</th>
+              <th>有效期</th>
+              <th style="width:80px;text-align:center;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-events"></tbody>
+        </table>
+      </section>
 
       <section class="leaves-card">
         <h2 style="margin:0 0 8px 0; font-size:16px;">假期記錄</h2>
@@ -402,6 +420,7 @@
 
         const balanceEl = document.getElementById('balances');
         const tbody = document.getElementById('tbody');
+        const eventsTbody = document.getElementById('tbody-events');
         const leaveTypeFilterEl = document.getElementById('leave-type-filter');
         const yearFilterEl = document.getElementById('year-filter');
         const monthFilterEl = document.getElementById('month-filter');
@@ -421,6 +440,16 @@
           public:'公假'
         };
         const zhStatus = { pending:'待審', approved:'已核准', rejected:'已駁回' };
+        const zhEventType = {
+          marriage: '結婚',
+          funeral_parent: '喪假（父母/養父母/繼父母/配偶）',
+          funeral_grandparent: '喪假（祖父母/子女/配偶之父母）',
+          funeral_sibling: '喪假（曾祖父母/兄弟姊妹/配偶之祖父母）',
+          maternity: '分娩',
+          miscarriage: '流產',
+          pregnancy: '妊娠',
+          paternity: '配偶分娩或懷孕'
+        };
 
         let state = { isAdmin: false, selectedUserId: null, selectedYear: null, selectedMonth: null };
         
@@ -504,6 +533,15 @@
             const dateTimeText = r.start + (r.startTime && r.endTime ? ` ${r.startTime}-${r.endTime}` : '');
             const hours = `${r.amount} 小時`;
             
+            // 創建編輯按鈕
+            const editBtn = document.createElement('button');
+            editBtn.textContent = '編輯';
+            editBtn.className = 'btn-edit';
+            editBtn.style.cssText = 'padding:4px 12px;font-size:13px;background:#64748b;color:white;border:none;border-radius:6px;cursor:pointer;margin-right:8px;';
+            editBtn.addEventListener('click', function(){
+              openEditModal(r);
+            });
+
             // 創建刪除按鈕
             const deleteBtn = document.createElement('button');
             deleteBtn.textContent = '刪除';
@@ -537,12 +575,64 @@
             
             const actionTd = document.createElement('td');
             actionTd.style.textAlign = 'center';
+            actionTd.appendChild(editBtn);
             actionTd.appendChild(deleteBtn);
             
             tr.innerHTML = `<td>${typeText}</td><td>${dateTimeText}</td><td>${hours}</td><td>${r.submittedAt?.slice(0,10) || ''}</td>`;
             tr.appendChild(actionTd);
             tbody.appendChild(tr);
           });
+        }
+
+        // 渲染生活事件列表
+        function renderEvents(list){
+          eventsTbody.innerHTML = '';
+          list.forEach(ev => {
+            const tr = document.createElement('tr');
+            const evName = zhEventType[ev.eventType] || ev.eventType;
+            const leaveName = zhType[ev.leaveType] || ev.leaveType;
+            const quota = `${ev.daysGranted} / ${ev.daysRemaining}`;
+            const valid = `${ev.validFrom?.slice(0,10) || ''} ~ ${ev.validUntil?.slice(0,10) || ''}`;
+            const delBtn = document.createElement('button');
+            delBtn.textContent = '刪除';
+            delBtn.className = 'btn-delete';
+            delBtn.style.cssText = 'padding:4px 12px;font-size:13px;background:#ef4444;color:white;border:none;border-radius:6px;cursor:pointer;';
+            delBtn.addEventListener('click', async function(){
+              if (!confirm(`確定刪除此事件？\n${evName}（${ev.date}）`)) return;
+              try {
+                delBtn.disabled = true; delBtn.textContent = '刪除中...';
+                const res = await fetch(`${apiBase}/leaves/life-events/${ev.id}`, { method:'DELETE', credentials:'include' });
+                const json = await res.json().catch(()=>null);
+                if (!res.ok || !json || json.ok !== true) { alert(json?.message || '刪除失敗'); delBtn.disabled=false; delBtn.textContent='刪除'; return; }
+                alert('事件已刪除');
+                await loadBalances();
+                await loadLifeEvents();
+                // 重新計算可請的生活事件假
+                const meRes = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
+                if (meRes.ok) {
+                  const meJson = await meRes.json();
+                  await showAvailableLifeEventLeaves(meJson.data?.gender || null);
+                }
+              } catch (err) {
+                console.error(err); alert('刪除失敗'); delBtn.disabled=false; delBtn.textContent='刪除';
+              }
+            });
+            const actionTd = document.createElement('td'); actionTd.style.textAlign='center'; actionTd.appendChild(delBtn);
+            tr.innerHTML = `<td>${evName}</td><td>${ev.date}</td><td>${leaveName}</td><td>${quota}</td><td>${valid}</td>`;
+            tr.appendChild(actionTd);
+            eventsTbody.appendChild(tr);
+          });
+        }
+
+        async function loadLifeEvents(){
+          try {
+            const params = new URLSearchParams();
+            if (state.isAdmin && state.selectedUserId) params.set('user_id', state.selectedUserId);
+            const res = await fetch(`${apiBase}/leaves/life-events?${params.toString()}`, { credentials:'include' });
+            if (!res.ok) return;
+            const json = await res.json();
+            if (json.ok) renderEvents(json.data || []);
+          } catch (err) { console.error('載入生活事件失敗', err); }
         }
 
         async function loadLeaves(){
@@ -643,8 +733,12 @@
         const closeBtn = document.getElementById('btn-close');
         const cancelBtn = document.getElementById('btn-cancel');
         const form = document.getElementById('applyForm');
+        let editingLeaveId = null;
+        const submitBtnEl = document.getElementById('btn-submit');
+        const originalSubmitText = submitBtnEl.textContent;
         function openModal(){ modal.classList.add('active'); modal.setAttribute('aria-hidden','false'); document.getElementById('leave_type').focus(); }
-        function closeModal(){ modal.classList.remove('active'); modal.setAttribute('aria-hidden','true'); form.reset(); clearErrors(); document.getElementById('hours_display').value = ''; }
+        function closeModal(){ modal.classList.remove('active'); modal.setAttribute('aria-hidden','true'); form.reset(); clearErrors(); document.getElementById('hours_display').value = ''; editingLeaveId = null; submitBtnEl.textContent = originalSubmitText; }
+        openBtn.addEventListener('click', function(){ editingLeaveId = null; submitBtnEl.textContent = originalSubmitText; openModal(); });
         function clearErrors(){ ['type','start','start_time','end_time'].forEach(k=>{ const el=document.getElementById('e_'+k); if(el) el.textContent=''; }); }
         
         // 生成上班時間選項（8:30-12:30, 13:30-17:30，半小時間隔）
@@ -715,9 +809,18 @@
           
           return totalMinutes / 60;
         }
-        openBtn.addEventListener('click', openModal);
         closeBtn.addEventListener('click', closeModal);
         cancelBtn.addEventListener('click', closeModal);
+        function openEditModal(row){
+          editingLeaveId = row.leaveId;
+          document.getElementById('leave_type').value = row.type;
+          document.getElementById('start_date').value = row.start;
+          if (row.startTime) document.getElementById('start_time').value = row.startTime;
+          if (row.endTime) document.getElementById('end_time').value = row.endTime;
+          updateHoursDisplay();
+          submitBtnEl.textContent = '儲存變更';
+          openModal();
+        }
 
         // 初始化時間選項
         populateTimeOptions();
@@ -795,9 +898,11 @@
             amount: hours
           };
           const submitBtn = document.getElementById('btn-submit');
-          submitBtn.disabled = true; submitBtn.textContent = '送出中…';
+          submitBtn.disabled = true; submitBtn.textContent = editingLeaveId ? '儲存中…' : '送出中…';
           try {
-            const res = await fetch(`${apiBase}/leaves`, { method:'POST', headers:{ 'Content-Type':'application/json' }, credentials:'include', body: JSON.stringify(payload) });
+            const endpoint = editingLeaveId ? `${apiBase}/leaves/${editingLeaveId}` : `${apiBase}/leaves`;
+            const method = editingLeaveId ? 'PUT' : 'POST';
+            const res = await fetch(endpoint, { method, headers:{ 'Content-Type':'application/json' }, credentials:'include', body: JSON.stringify(payload) });
             if (res.status === 401) { location.assign('/login?redirect=/internal/leaves'); return; }
             const json = await res.json().catch(()=>null);
             if (!res.ok || !json || json.ok !== true) {
@@ -807,14 +912,14 @@
               } else { alert(msg); }
               return;
             }
-            alert('申請成功');
+            alert(editingLeaveId ? '已更新' : '申請成功');
             closeModal();
             await loadBalances();
             await loadLeaves();
           } catch (_) {
             alert('送出失敗，請稍後再試');
           } finally {
-            submitBtn.disabled = false; submitBtn.textContent = '送出申請';
+            submitBtn.disabled = false; submitBtn.textContent = originalSubmitText;
           }
         });
 
@@ -835,6 +940,7 @@
           state.selectedUserId = this.value || null;
           loadBalances();
           loadLeaves();
+          loadLifeEvents();
         });
         
         // 清除測試數據按鈕

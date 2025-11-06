@@ -19,6 +19,83 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
 
+	// 生活事件：刪除（/internal/api/v1/leaves/life-events/:id）
+	if (path.startsWith("/internal/api/v1/leaves/life-events/") && method === "DELETE") {
+		const grantId = path.replace("/internal/api/v1/leaves/life-events/", "").trim();
+		if (!/^\d+$/.test(grantId)) {
+			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"缺少或無效的事件ID", meta:{ requestId } }, corsHeaders);
+		}
+		try {
+			const row = await env.DATABASE.prepare(
+				`SELECT grant_id, user_id, status FROM LifeEventLeaveGrants WHERE grant_id = ?`
+			).bind(grantId).first();
+			if (!row) return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"事件不存在", meta:{ requestId } }, corsHeaders);
+			if (!me.is_admin && String(row.user_id) !== String(me.user_id)) {
+				return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
+			}
+			// 標記為刪除（不再計入餘額）
+			await env.DATABASE.prepare(
+				`UPDATE LifeEventLeaveGrants SET status = 'deleted' WHERE grant_id = ?`
+			).bind(grantId).run();
+			// 清除相關快取
+			Promise.all([
+				invalidateCacheByType(env, 'leaves_balances', { userId: String(row.user_id) })
+			]).catch(()=>{});
+			await deleteKVCacheByPrefix(env, 'leaves_');
+			return jsonResponse(200, { ok:true, code:"OK", message:"事件已刪除", meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
+	// 編輯請假紀錄（不支援補休）：/internal/api/v1/leaves/:id
+	if (method === "PUT" && /^\/internal\/api\/v1\/leaves\/\d+$/.test(path)) {
+		const leaveId = path.split('/').pop();
+		let body;
+		try { body = await request.json(); } catch (_) {
+			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders);
+		}
+		const leave_type = String(body?.leave_type || "").trim();
+		const start_date = String(body?.start_date || "").trim();
+		const amount = Number(body?.amount);
+		const start_time = String(body?.start_time || "").trim();
+		const end_time = String(body?.end_time || "").trim();
+		const errors = [];
+		if (!leave_type) errors.push({ field:"leave_type", message:"必選假別" });
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(start_date)) errors.push({ field:"start_date", message:"日期格式 YYYY-MM-DD" });
+		if (!Number.isFinite(amount) || amount <= 0) errors.push({ field:"amount", message:"需大於 0" });
+		if (!/^\d{2}:\d{2}$/.test(start_time)) errors.push({ field:"start_time", message:"請選擇開始時間（格式 HH:MM）" });
+		if (!/^\d{2}:\d{2}$/.test(end_time)) errors.push({ field:"end_time", message:"請選擇結束時間（格式 HH:MM）" });
+		if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
+
+		try {
+			const row = await env.DATABASE.prepare(
+				`SELECT leave_id, user_id, leave_type FROM LeaveRequests WHERE leave_id = ? AND is_deleted = 0`
+			).bind(leaveId).first();
+			if (!row) return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"記錄不存在", meta:{ requestId } }, corsHeaders);
+			if (!me.is_admin && String(row.user_id) !== String(me.user_id)) {
+				return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
+			}
+			// 暫不支援編輯補休
+			if (row.leave_type === 'comp' || leave_type === 'comp') {
+				return jsonResponse(422, { ok:false, code:"UNSUPPORTED", message:"補休紀錄暫不支援編輯，請刪除後重建", meta:{ requestId } }, corsHeaders);
+			}
+			await env.DATABASE.prepare(
+				`UPDATE LeaveRequests SET leave_type = ?, start_date = ?, end_date = ?, amount = ?, start_time = ?, end_time = ? WHERE leave_id = ?`
+			).bind(leave_type, start_date, start_date, amount, start_time, end_time, leaveId).run();
+			Promise.all([
+				invalidateCacheByType(env, 'leaves_list', { userId: String(row.user_id) }),
+				invalidateCacheByType(env, 'leaves_balances', { userId: String(row.user_id) })
+			]).catch(()=>{});
+			await deleteKVCacheByPrefix(env, 'leaves_');
+			return jsonResponse(200, { ok:true, code:"OK", message:"已更新請假紀錄", meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
 	// 刪除請假記錄 - 必須在通用 /leaves 路由之前檢查
 	if (path.startsWith("/internal/api/v1/leaves/") && method === "DELETE") {
 		const leaveId = path.replace("/internal/api/v1/leaves/", "").trim();
@@ -476,6 +553,39 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
 			}
+		}
+	}
+
+	// 生活事件：列表
+	if (path === "/internal/api/v1/leaves/life-events" && method === "GET") {
+		try {
+			const params = url.searchParams;
+			const queryUserId = params.get('user_id');
+			let targetUserId = String(me.user_id);
+			if (queryUserId && me.is_admin) targetUserId = String(queryUserId);
+			const rows = await env.DATABASE.prepare(
+				`SELECT grant_id, event_type, event_date, leave_type, days_granted, days_used, days_remaining, valid_from, valid_until, status, notes, created_by, created_at
+				 FROM LifeEventLeaveGrants
+				 WHERE user_id = ? AND status != 'deleted'
+				 ORDER BY created_at DESC, event_date DESC`
+			).bind(targetUserId).all();
+			const data = (rows?.results || []).map(r => ({
+				id: String(r.grant_id),
+				eventType: r.event_type,
+				leaveType: r.leave_type,
+				date: r.event_date,
+				daysGranted: Number(r.days_granted || 0),
+				daysRemaining: Number(r.days_remaining || 0),
+				validFrom: r.valid_from,
+				validUntil: r.valid_until,
+				status: r.status,
+				notes: r.notes || null,
+				createdAt: r.created_at
+			}));
+			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
 		}
 	}
 
