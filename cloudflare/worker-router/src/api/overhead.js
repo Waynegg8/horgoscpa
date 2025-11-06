@@ -303,20 +303,45 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				const set = new Set(body.template_ids.map(x => parseInt(x,10)));
 				templates = templates.filter(t => set.has(t.template_id));
 			}
-			let created = 0, skipped = 0;
+			let created = 0, skipped = 0, duplicates = 0;
+			const records = [];
 			for (const t of templates) {
-				if (!shouldApply(t.recurring_type, t.recurring_months, t.effective_from, t.effective_to, year, month)) { skipped++; continue; }
+				if (!shouldApply(t.recurring_type, t.recurring_months, t.effective_from, t.effective_to, year, month)) { 
+					skipped++; 
+					continue; 
+				}
 				try {
-					await env.DATABASE.prepare(
-						`INSERT OR IGNORE INTO MonthlyOverheadCosts (cost_type_id, year, month, amount, notes, recorded_by)
+					// 先检查是否已存在
+					const exists = await env.DATABASE.prepare(
+						`SELECT overhead_id FROM MonthlyOverheadCosts WHERE cost_type_id = ? AND year = ? AND month = ? AND is_deleted = 0`
+					).bind(t.cost_type_id, year, month).first();
+					
+					if (exists) {
+						console.log(`[Generate] 記錄已存在: cost_type_id=${t.cost_type_id}, year=${year}, month=${month}`);
+						duplicates++;
+						continue;
+					}
+					
+					const result = await env.DATABASE.prepare(
+						`INSERT INTO MonthlyOverheadCosts (cost_type_id, year, month, amount, notes, recorded_by)
 						 VALUES (?, ?, ?, ?, ?, ?)`
 					).bind(t.cost_type_id, year, month, Number(t.amount||0), t.notes || '[auto]', String(me.user_id)).run();
+					
+					console.log(`[Generate] 插入成功: cost_type_id=${t.cost_type_id}, overhead_id=${result.meta.last_row_id}`);
 					created++;
+					records.push({
+						overhead_id: result.meta.last_row_id,
+						cost_type_id: t.cost_type_id,
+						year, month,
+						amount: Number(t.amount||0)
+					});
 				} catch (err) {
-					console.error('[overhead-generate] insert failed', err);
+					console.error('[overhead-generate] insert failed', err, err.stack);
+					skipped++;
 				}
 			}
-			return jsonResponse(200, { ok:true, code:"OK", message:"已生成", data:{ year, month, created, skipped }, meta:{ requestId } }, corsHeaders);
+			console.log(`[Generate] 完成: created=${created}, skipped=${skipped}, duplicates=${duplicates}, total templates=${templates.length}`);
+			return jsonResponse(200, { ok:true, code:"OK", message:"已生成", data:{ year, month, created, skipped, duplicates, records }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);

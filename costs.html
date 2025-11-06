@@ -1034,26 +1034,61 @@
               const selected = Array.from(list.querySelectorAll('input[type="checkbox"]')).filter(x=>x.checked).map(x=>parseInt(x.value,10));
               if (selected.length === 0) { alert('請至少勾選一項'); return; }
               try {
+                console.log('[Generate] 開始生成，年月:', ym, '模板ID:', selected);
                 const res = await fetch(`${apiBase}/admin/overhead-costs/generate?year=${ym.year}&month=${ym.month}` , { method:'POST', credentials:'include', headers:{'content-type':'application/json'}, body: JSON.stringify({ template_ids: selected }) });
                 const json = await res.json().catch(()=>({}));
+                console.log('[Generate] API 回應:', json);
                 if (!res.ok || !json || json.ok !== true) { 
                   alert(json?.message||'自動生成失敗'); 
                   return; 
                 }
                 
+                console.log('[Generate] 生成成功，創建了', json.data?.created, '筆記錄');
+                console.log('[Generate] 重複:', json.data?.duplicates, '已跳過:', json.data?.skipped);
+                console.log('[Generate] 生成的記錄詳情:', json.data?.records);
+                
+                const created = json.data?.created || 0;
+                const duplicates = json.data?.duplicates || 0;
+                const skipped = json.data?.skipped || 0;
+                
+                if (created === 0 && duplicates > 0) {
+                  alert(`本月記錄已存在（${duplicates} 筆），無需重複生成`);
+                  close();
+                  return;
+                }
+                
+                if (created === 0 && skipped > 0) {
+                  alert(`所選模板不符合本月生成條件（已跳過 ${skipped} 筆）`);
+                  close();
+                  return;
+                }
+                
+                if (created === 0) {
+                  alert('未生成任何記錄，請檢查模板設定');
+                  close();
+                  return;
+                }
+                
                 // 1. 先使缓存失效
                 if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
                 
-                // 2. 等待数据刷新完成
+                // 2. 延迟一下再刷新（等待数据库提交）
+                console.log('[Generate] 等待 500ms 後刷新...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 3. 等待数据刷新完成
                 console.log('[Generate] 開始刷新記錄列表...');
                 await loadRecords();
                 console.log('[Generate] 記錄列表刷新完成');
                 
-                // 3. 关闭对话框
+                // 4. 关闭对话框
                 close();
                 
-                // 4. 显示成功消息
-                alert(`已自動生成 ${json.data?.created || 0} 筆記錄`);
+                // 5. 显示成功消息
+                let message = `已自動生成 ${created} 筆記錄`;
+                if (duplicates > 0) message += `（${duplicates} 筆已存在）`;
+                if (skipped > 0) message += `（${skipped} 筆已跳過）`;
+                alert(message);
               } catch (err) {
                 console.error('生成失敗:', err);
                 alert('自動生成失敗：' + (err?.message || String(err)));

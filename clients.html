@@ -71,6 +71,7 @@
             <thead>
               <tr>
                 <th><input type="checkbox" id="select-all" aria-label="全選" /></th>
+                <th>客戶編號</th>
                 <th>公司名稱</th>
                 <th>統一編號</th>
                 <th>聯絡人</th>
@@ -304,6 +305,7 @@
             
             tr.innerHTML = `
               <td><input type="checkbox" class="client-checkbox" data-client-id="${r.clientId}" /></td>
+              <td><span style="font-family: monospace; font-size: 13px; color: #6b7280;">${r.clientId}</span></td>
               <td><a href="/internal/client-detail?id=${r.clientId}" class="client-name-link">${r.companyName}</a></td>
               <td>${r.taxId||''}</td>
               <td>${contactPerson}</td>

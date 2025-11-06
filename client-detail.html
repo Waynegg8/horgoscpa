@@ -55,16 +55,26 @@
       <form id="clientForm" class="edit-form">
         <div class="form-row-2col">
           <div class="form-field">
+            <label>客戶編號</label>
+            <div style="padding: 10px 14px; background: #f9fafb; border: 1px solid rgba(15,23,42,0.1); border-radius: 8px; font-family: monospace; font-size: 14px; color: #374151; display: flex; align-items: center; gap: 8px;">
+              <span id="displayClientId" style="flex: 1;">-</span>
+              <span style="font-size: 12px; color: #9ca3af;">🔒 不可修改</span>
+            </div>
+          </div>
+          <div class="form-field">
             <label for="inputCompanyName">公司名稱（必填）</label>
             <input type="text" id="inputCompanyName" required />
             <span class="error-text" id="error_company_name"></span>
           </div>
+        </div>
+        <div class="form-row-2col">
           <div class="form-field">
             <label for="inputTaxId">統一編號（選填，個人客戶可不填）</label>
             <input type="text" id="inputTaxId" maxlength="8" placeholder="8位數字" />
             <span class="error-text" id="error_tax_id"></span>
             <small class="form-help-text" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">個人客戶可不填寫統一編號</small>
           </div>
+          <div class="form-field"></div>
         </div>
         <div class="form-row-2col">
           <div class="form-field">
@@ -448,6 +458,9 @@
 
         const client = json.data;
         clientDetail = client;  // 存储到全局变量
+        
+        // 顯示客戶編號（只讀）
+        document.getElementById('displayClientId').textContent = client.clientId || currentClientId || '-';
         
         // 預填表單
         document.getElementById('inputCompanyName').value = client.companyName || '';
