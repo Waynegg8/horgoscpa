@@ -806,9 +806,24 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				// 2. 實際計算本月薪資成本
 				let totalLaborCostCents = monthlySalary * 100; // 底薪
 				
-				// 2.1 查詢並計算所有薪資項目（津貼、獎金、全勤等）
+				// 2.1 判定是否全勤（有病假或事假則不全勤）
+				const [y, m] = yearMonth.split('-');
+				const firstDay = `${y}-${m}-01`;
+				const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+				const lastDayStr = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
+				
+				const leaveCheckResult = await env.DATABASE.prepare(
+					`SELECT COUNT(*) as count
+					 FROM LeaveRequests
+					 WHERE user_id = ? AND start_date <= ? AND end_date >= ?
+					 AND status = 'approved' AND leave_type IN ('sick', 'personal')`
+				).bind(userId, lastDayStr, firstDay).first();
+				const isFullAttendance = (leaveCheckResult?.count || 0) === 0;
+				
+				// 2.2 查詢並計算所有薪資項目（津貼、獎金等），全勤獎金需判定
 				const salaryItems = await env.DATABASE.prepare(
-					`SELECT t.category as item_type, e.amount_cents, e.recurring_type, e.recurring_months, 
+					`SELECT t.category as item_type, t.item_name, t.item_code, 
+					        e.amount_cents, e.recurring_type, e.recurring_months, 
 					        e.effective_date, e.expiry_date
 					 FROM EmployeeSalaryItems e
 					 LEFT JOIN SalaryItemTypes t ON e.item_type_id = t.item_type_id
@@ -818,18 +833,25 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				const items = salaryItems?.results || [];
 				for (const item of items) {
 					const shouldPay = shouldPayInMonth(item.recurring_type, item.recurring_months, item.effective_date, item.expiry_date, yearMonth);
-					// 所有類型的薪資項目都計入成本（津貼、獎金、全勤等），扣款除外
+					
+					// 判斷是否為全勤獎金
+					const isFullAttendanceBonus = 
+						(item.item_code && item.item_code.toUpperCase().includes('FULL')) ||
+						(item.item_name && item.item_name.includes('全勤'));
+					
+					// 全勤獎金需要判定，其他正常計入（扣款除外）
 					if (shouldPay && item.item_type !== 'deduction') {
-						totalLaborCostCents += Number(item.amount_cents || 0);
+						if (isFullAttendanceBonus) {
+							if (isFullAttendance) {
+								totalLaborCostCents += Number(item.amount_cents || 0);
+							}
+						} else {
+							totalLaborCostCents += Number(item.amount_cents || 0);
+						}
 					}
 				}
 				
-				// 2.2 從工時記錄實時計算本月產生的補休時數
-				const [y, m] = yearMonth.split('-');
-				const firstDay = `${y}-${m}-01`;
-				const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
-				const lastDayStr = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
-				
+				// 2.3 從工時記錄實時計算本月產生的補休時數
 				const timesheetsRows = await env.DATABASE.prepare(
 					`SELECT work_date, work_type, hours 
 					 FROM Timesheets 
@@ -927,28 +949,61 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				
 				totalLaborCostCents += expiredCompPayCents;
 				
-				// 2.5 計算請假扣款（減少公司實際支付成本）
+				// 2.5 計算請假扣款（與薪資頁面邏輯一致）
+				// 先查詢經常性給與（用於時薪計算）
+				const regularAllowanceResult = await env.DATABASE.prepare(
+					`SELECT SUM(e.amount_cents) as total
+					 FROM EmployeeSalaryItems e
+					 LEFT JOIN SalaryItemTypes t ON e.item_type_id = t.item_type_id
+					 WHERE e.user_id = ? AND e.is_active = 1 
+					   AND t.category = 'regular_allowance' 
+					   AND t.item_type != 'deduction'`
+				).bind(userId).first();
+				const regularAllowanceCents = Number(regularAllowanceResult?.total || 0);
+				
+				// 時薪 = (底薪 + 經常性給與) / 240
+				const baseSalaryCents = monthlySalary * 100;
+				const totalBaseCents = baseSalaryCents + regularAllowanceCents;
+				const hourlyRateForLeave = Math.round(totalBaseCents / 240);
+				
+				// 查詢請假記錄（病假、事假、生理假）
 				const leaveDeductionRows = await env.DATABASE.prepare(
-					`SELECT leave_type, amount, unit
+					`SELECT leave_type, unit, SUM(amount) as total_amount
 					 FROM LeaveRequests
 					 WHERE user_id = ? AND status = 'approved' 
-					   AND start_date >= ? AND start_date <= ?
-					   AND leave_type IN ('sick', 'personal')
-					   AND is_deleted = 0`
-				).bind(userId, firstDay, lastDayStr).all();
+					   AND start_date <= ? AND end_date >= ?
+					   AND leave_type IN ('sick', 'personal', 'menstrual')
+					 GROUP BY leave_type, unit`
+				).bind(userId, lastDayStr, firstDay).all();
 				
-				let leaveDeductionCents = 0;
-				const dailySalary = monthlySalary / 30; // 日薪 = 月薪 / 30
+				let sickHours = 0;
+				let personalHours = 0;
+				let menstrualHours = 0;
 				
 				for (const leave of (leaveDeductionRows?.results || [])) {
-					const leaveDays = leave.unit === 'days' ? Number(leave.amount) : Number(leave.amount) / 8;
+					const amount = leave.total_amount || 0;
+					const unit = leave.unit || 'days';
+					const hours = unit === 'days' ? amount * 8 : amount;
+					
 					if (leave.leave_type === 'sick') {
-						// 病假扣50%
-						leaveDeductionCents += Math.round(leaveDays * dailySalary * 0.5 * 100);
+						sickHours += hours;
 					} else if (leave.leave_type === 'personal') {
-						// 事假扣100%
-						leaveDeductionCents += Math.round(leaveDays * dailySalary * 1.0 * 100);
+						personalHours += hours;
+					} else if (leave.leave_type === 'menstrual') {
+						menstrualHours += hours;
 					}
+				}
+				
+				// 請假扣款 = 小時數 × 時薪 × 扣除比例（無條件舍去，與薪資頁面一致）
+				let leaveDeductionCents = 0;
+				if (sickHours > 0) {
+					leaveDeductionCents += Math.floor(sickHours * hourlyRateForLeave * 0.5);
+				}
+				if (personalHours > 0) {
+					leaveDeductionCents += Math.floor(personalHours * hourlyRateForLeave * 1.0);
+				}
+				if (menstrualHours > 0) {
+					leaveDeductionCents += Math.floor(menstrualHours * hourlyRateForLeave * 0.5);
 				}
 				
 				// 公司實際成本 = 應發工資 - 請假扣款（公司少付的部分）
