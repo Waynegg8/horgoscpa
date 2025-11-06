@@ -170,7 +170,7 @@ export async function handleBilling(request, env, me, requestId, url, path) {
         return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "服务不存在", meta: { requestId } }, corsHeaders);
       }
 
-      // 如果是按月收费，检查该月份是否已存在
+      // 唯一性檢查
       if (billingType === 'monthly') {
         const existing = await env.DATABASE.prepare(
           "SELECT schedule_id FROM ServiceBillingSchedule WHERE client_service_id = ? AND billing_month = ? AND billing_type = 'monthly'"
@@ -182,6 +182,19 @@ export async function handleBilling(request, env, me, requestId, url, path) {
             code: "DUPLICATE",
             message: "该月份已设定收费",
             errors: [{ field: "billing_month", message: "该月份已存在" }],
+            meta: { requestId }
+          }, corsHeaders);
+        }
+      } else if (billingType === 'one-time') {
+        const existing = await env.DATABASE.prepare(
+          "SELECT schedule_id FROM ServiceBillingSchedule WHERE client_service_id = ? AND billing_type = 'one-time' AND billing_date = ? AND COALESCE(description,'') = ?"
+        ).bind(clientServiceId, billingDate, description).first();
+        if (existing) {
+          return jsonResponse(422, {
+            ok: false,
+            code: "DUPLICATE",
+            message: "該日期與說明的一次性收費已存在",
+            errors: [{ field: "billing_date", message: "重複" }],
             meta: { requestId }
           }, corsHeaders);
         }
