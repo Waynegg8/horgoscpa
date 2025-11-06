@@ -1,6 +1,6 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 import { generateCacheKey, getCache, saveCache, invalidateCache, invalidateCacheByType } from "../cache-helper.js";
-import { getKVCache, saveKVCache, deleteKVCacheByPrefix } from "../kv-cache-helper.js";
+import { getKVCache, saveKVCache, deleteKVCacheByPrefix, deleteKVCache } from "../kv-cache-helper.js";
 
 export async function handleClients(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -804,6 +804,32 @@ export async function handleClients(request, env, me, requestId, url) {
 				实际验证: actuallyUpdated,
 				匹配: actuallyUpdated === updatedCount
 			});
+
+			// ✅ 失效與清理相關緩存（服務端 KV + D1 緩存）
+			try {
+				// 1) 列表緩存（含各種分頁/查詢參數版本），用前綴清理最穩妥
+				const invalidateListCaches = Promise.all([
+					deleteKVCacheByPrefix(env, 'clients_list'),
+					invalidateCacheByType(env, 'clients_list')
+				]);
+
+				// 2) 客戶詳情緩存（逐個客戶清理）
+				const invalidateDetailCaches = clientIdsAsStrings.flatMap((cid) => {
+					const detailKey = generateCacheKey('client_detail', { clientId: cid });
+					return [
+						deleteKVCache(env, detailKey),
+						invalidateCache(env, detailKey)
+					];
+				});
+
+				await Promise.all([
+					invalidateListCaches,
+					...invalidateDetailCaches
+				]);
+				console.log('[BATCH-ASSIGN] ✓ 緩存已失效（clients_list + client_detail）');
+			} catch (cacheErr) {
+				console.error('[BATCH-ASSIGN] 緩存失效失敗:', cacheErr);
+			}
 			
 			return jsonResponse(200, { 
 				ok: true, 
