@@ -244,9 +244,9 @@
             // 載入客戶列表
             await loadClients();
 
-            // 載入外出登記
-            await loadTrips();
-            await loadSummary();
+            // 載入外出登記（強制繞過KV緩存，避免舊錯誤數據）
+            await loadTrips(true);
+            await loadSummary(true);
 
             // 綁定事件
             bindEvents();
@@ -469,21 +469,21 @@
         function bindEvents() {
           // 篩選器
           monthFilter.addEventListener('change', () => {
-            loadTrips();
-            loadSummary();
+            loadTrips(true);
+            loadSummary(true);
           });
-          clientFilter.addEventListener('change', loadTrips);
+          clientFilter.addEventListener('change', () => loadTrips(true));
           userFilter.addEventListener('change', () => {
-            loadTrips();
-            loadSummary();
+            loadTrips(true);
+            loadSummary(true);
           });
           btnResetFilters.addEventListener('click', () => {
             clientFilter.value = '';
             if (currentUser.is_admin) {
               userFilter.value = '';
             }
-            loadTrips();
-            loadSummary();
+            loadTrips(true);
+            loadSummary(true);
           });
 
           // 分頁
