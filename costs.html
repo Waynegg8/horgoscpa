@@ -38,19 +38,12 @@
       <section id="panel-items" class="panel show" role="tabpanel" aria-labelledby="tab-items">
         <div class="card">
           <div class="section-toolbar">
-            <input id="itemSearch" type="search" placeholder="搜尋代碼/名稱…" />
-            <select id="itemCategory">
-              <option value="all">全部類別</option>
-              <option value="fixed">固定</option>
-              <option value="variable">變動</option>
-            </select>
             <div class="toolbar-spacer"></div>
             <button id="btn-add-item" type="button" class="btn primary" disabled>新增項目</button>
           </div>
           <table class="table" aria-label="成本項目列表">
             <thead>
               <tr>
-                <th>成本代碼</th>
                 <th>成本名稱</th>
                 <th>類別</th>
                 <th>分攤方式</th>
@@ -60,7 +53,7 @@
               </tr>
             </thead>
             <tbody id="tbody-items">
-              <tr><td colspan="7" class="muted">尚無資料</td></tr>
+              <tr><td colspan="6" class="muted">尚無資料</td></tr>
             </tbody>
           </table>
         </div>
@@ -68,8 +61,8 @@
         <div class="card" style="margin-top: 16px;">
           <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">月度管理費用記錄</h3>
           <div class="section-toolbar">
-            <input id="recordSearch" type="search" placeholder="搜尋項目/備註…" />
             <div class="toolbar-spacer"></div>
+            <button id="btn-generate-month" type="button" class="btn" disabled>本月自動生成</button>
             <button id="btn-add-record" type="button" class="btn primary" disabled>新增記錄</button>
           </div>
           <div class="stats-cards">
@@ -101,7 +94,6 @@
       <section id="panel-employee" class="panel" role="tabpanel" aria-labelledby="tab-employee">
         <div class="card">
           <div class="section-toolbar">
-            <input id="empSearch" type="search" placeholder="搜尋員工…" />
             <div class="toolbar-spacer"></div>
             <button type="button" class="btn" id="btn-refresh-emp" disabled>刷新</button>
           </div>
@@ -148,7 +140,6 @@
       <section id="panel-client" class="panel" role="tabpanel" aria-labelledby="tab-client">
         <div class="card">
           <div class="section-toolbar">
-            <input id="clientSearch" type="search" placeholder="搜尋客戶/任務…" />
             <select id="viewType">
               <option value="client">按客戶彙總</option>
               <option value="task">按任務明細</option>
@@ -736,24 +727,43 @@
           const types = (typesJson?.data)||[];
           if (!Array.isArray(types) || types.length === 0) { alert('尚無啟用的成本項目，請先建立'); return; }
           const form = document.createElement('div');
+          const monthSel = document.createElement('input'); monthSel.type = 'month'; monthSel.value = `${String(ym.year)}-${String(ym.month).padStart(2,'0')}`;
           const typeSel = document.createElement('select');
           typeSel.innerHTML = types.map(t => `<option value="${t.id}">${t.name}（${t.category==='fixed'?'固定':'變動'}）</option>`).join('');
           const amtInput = document.createElement('input'); amtInput.type = 'number'; amtInput.placeholder = '請輸入金額'; amtInput.min = '1';
           const notesInput = document.createElement('input'); notesInput.type = 'text'; notesInput.placeholder = '備註（可留空）';
+          const recurringWrap = document.createElement('div'); recurringWrap.style.marginTop = '6px';
+          const recurringChk = document.createElement('input'); recurringChk.type = 'checkbox'; recurringChk.id = 'recurringMonthly';
+          const recurringLbl = document.createElement('label'); recurringLbl.htmlFor = 'recurringMonthly'; recurringLbl.textContent = '設為每月自動生成'; recurringLbl.style.marginLeft = '6px'; recurringWrap.appendChild(recurringChk); recurringWrap.appendChild(recurringLbl);
+          form.appendChild(buildField('月份', monthSel));
           form.appendChild(buildField('成本項目', typeSel));
           form.appendChild(buildField('金額', amtInput));
           form.appendChild(buildField('備註', notesInput));
+          form.appendChild(recurringWrap);
           openModal('新增月度記錄', form, async (close)=>{
             const cost_type_id = parseInt(typeSel.value, 10);
             const amount = Number(amtInput.value);
             const notes = notesInput.value.trim();
             if (!Number.isFinite(amount) || amount <= 0) { alert('金額無效'); return; }
+            const mVal = String(monthSel.value||'');
+            const mMatch = mVal.match(/^(\d{4})-(\d{2})$/);
+            if (!mMatch) { alert('月份無效'); return; }
+            const y = parseInt(mMatch[1], 10); const m = parseInt(mMatch[2], 10);
             const res = await fetch(`${apiBase}/admin/overhead-costs`, {
               method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ cost_type_id, year: ym.year, month: ym.month, amount, notes })
+              body: JSON.stringify({ cost_type_id, year: y, month: m, amount, notes })
             });
             const json = await res.json().catch(()=>({}));
             if (!res.ok || !json || json.ok !== true) { alert(json?.message||'建立失敗'); return; }
+            // 若勾選每月自動生成，建立模板
+            if (recurringChk.checked) {
+              try {
+                await fetch(`${apiBase}/admin/overhead-templates`, {
+                  method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ cost_type_id, amount, notes, recurring_type: 'monthly', effective_from: `${y}-${String(m).padStart(2,'0')}` })
+                });
+              } catch (_) {}
+            }
             close();
             if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
             loadRecords();
@@ -790,10 +800,27 @@
 
         document.getElementById('btn-add-item')?.addEventListener('click', openAddTypeModal);
         document.getElementById('btn-add-record')?.addEventListener('click', openAddRecordModal);
+        document.getElementById('btn-generate-month')?.addEventListener('click', generateCurrentMonth);
         document.getElementById('btn-export-csv')?.addEventListener('click', exportActiveTableToCsv);
         document.getElementById('btn-export-pdf')?.addEventListener('click', ()=>{
           alert('PDF 匯出尚未實作，請先使用 CSV 匯出');
         });
+
+        // 一鍵生成：按模板生成本月記錄
+        async function generateCurrentMonth(){
+          const ym = parseYearMonth();
+          if (!ym) { alert('請先選擇有效月份'); return; }
+          try {
+            const res = await fetch(`${apiBase}/admin/overhead-costs/generate?year=${ym.year}&month=${ym.month}` , { method:'POST', credentials:'include' });
+            const json = await res.json().catch(()=>({}));
+            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message||'自動生成失敗');
+            if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+            loadRecords();
+            alert('已自動生成');
+          } catch (err) {
+            alert('自動生成失敗：' + (err?.message||String(err)));
+          }
+        }
 
         // ⚡ 预渲染初始化
         if (window.PagePrerender) {

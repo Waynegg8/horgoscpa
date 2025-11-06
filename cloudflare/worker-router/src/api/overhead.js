@@ -105,6 +105,126 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 		}
 	}
 
+	// ============ 成本項目模板（循環） ============
+	if (path === "/internal/api/v1/admin/overhead-templates") {
+		if (method === "GET") {
+			try {
+				const params = url.searchParams;
+				const isActive = params.get("is_active");
+				const where = [];
+				const binds = [];
+				if (isActive === "0" || isActive === "1") { where.push("is_active = ?"); binds.push(parseInt(isActive,10)); }
+				const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+				const rows = await env.DATABASE.prepare(
+					`SELECT template_id, cost_type_id, amount, notes, recurring_type, recurring_months, effective_from, effective_to, is_active, created_at, updated_at
+					 FROM OverheadRecurringTemplates ${whereSql}
+					 ORDER BY template_id DESC`
+				).bind(...binds).all();
+				const data = (rows?.results||[]).map(r => ({
+					templateId: r.template_id,
+					costTypeId: r.cost_type_id,
+					amount: Number(r.amount||0),
+					notes: r.notes||"",
+					recurringType: r.recurring_type||'monthly',
+					recurringMonths: r.recurring_months||null,
+					effectiveFrom: r.effective_from||null,
+					effectiveTo: r.effective_to||null,
+					isActive: r.is_active === 1,
+					createdAt: r.created_at,
+					updatedAt: r.updated_at
+				}));
+				return jsonResponse(200, { ok:true, code:"OK", data, meta:{ requestId, count: data.length } }, corsHeaders);
+			} catch (err) {
+				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+			}
+		}
+		if (method === "POST") {
+			let body; try { body = await request.json(); } catch (_) { return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders); }
+			const cost_type_id = parseInt(body?.cost_type_id, 10);
+			const amount = Number(body?.amount);
+			const notes = String(body?.notes||"").trim();
+			let recurring_type = String(body?.recurring_type||'monthly').trim();
+			const recurring_months = body?.recurring_months ? String(body.recurring_months) : null;
+			const effective_from = body?.effective_from ? String(body.effective_from) : null;
+			const effective_to = body?.effective_to ? String(body.effective_to) : null;
+			const errors = [];
+			if (!Number.isFinite(cost_type_id)) errors.push({ field:"cost_type_id", message:"必填" });
+			if (!Number.isFinite(amount) || amount <= 0) errors.push({ field:"amount", message:"需大於 0" });
+			if (!['monthly','yearly','once'].includes(recurring_type)) recurring_type = 'monthly';
+			if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
+			try {
+				await env.DATABASE.prepare(
+					`INSERT INTO OverheadRecurringTemplates (cost_type_id, amount, notes, recurring_type, recurring_months, effective_from, effective_to, created_by)
+					 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+				).bind(cost_type_id, amount, notes, recurring_type, recurring_months, effective_from, effective_to, String(me.user_id)).run();
+				const row = await env.DATABASE.prepare("SELECT last_insert_rowid() AS id").first();
+				return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data:{ id: String(row?.id) }, meta:{ requestId } }, corsHeaders);
+			} catch (err) {
+				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+			}
+		}
+	}
+
+	// ============ 依模板自動生成當月記錄 ============
+	if (path === "/internal/api/v1/admin/overhead-costs/generate") {
+		if (method !== "POST") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
+		try {
+			const params = url.searchParams;
+			const year = parseInt(params.get("year") || String((new Date()).getUTCFullYear()), 10);
+			const month = parseInt(params.get("month") || String((new Date()).getUTCMonth()+1), 10);
+			if (!Number.isFinite(year) || year < 2000 || month < 1 || month > 12) {
+				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"year/month 不合法", meta:{ requestId } }, corsHeaders);
+			}
+			const ym = `${year}-${String(month).padStart(2,'0')}`;
+
+			function withinRange(from, to, target) {
+				if (from && String(from) > target) return false;
+				if (to && String(to) < target) return false;
+				return true;
+			}
+			function shouldApply(recurringType, recurringMonths, effFrom, effTo, y, m) {
+				const target = `${y}-${String(m).padStart(2,'0')}`;
+				if (!withinRange(effFrom, effTo, target)) return false;
+				if (recurringType === 'monthly') return true;
+				if (recurringType === 'once') return true; // 一次性模板：允許手動生成使用一次
+				if (recurringType === 'yearly') {
+					if (!recurringMonths) return false;
+					try {
+						const arr = Array.isArray(recurringMonths) ? recurringMonths : JSON.parse(String(recurringMonths));
+						return arr.includes(m);
+					} catch (_) { return false; }
+				}
+				return false;
+			}
+
+			// 讀取啟用模板
+			const tplRows = await env.DATABASE.prepare(
+				`SELECT template_id, cost_type_id, amount, notes, recurring_type, recurring_months, effective_from, effective_to
+				 FROM OverheadRecurringTemplates WHERE is_active = 1`
+			).all();
+			const templates = tplRows?.results || [];
+			let created = 0, skipped = 0;
+			for (const t of templates) {
+				if (!shouldApply(t.recurring_type, t.recurring_months, t.effective_from, t.effective_to, year, month)) { skipped++; continue; }
+				try {
+					await env.DATABASE.prepare(
+						`INSERT OR IGNORE INTO MonthlyOverheadCosts (cost_type_id, year, month, amount, notes, recorded_by)
+						 VALUES (?, ?, ?, ?, ?, ?)`
+					).bind(t.cost_type_id, year, month, Number(t.amount||0), t.notes || '[auto]', String(me.user_id)).run();
+					created++;
+				} catch (err) {
+					console.error('[overhead-generate] insert failed', err);
+				}
+			}
+			return jsonResponse(200, { ok:true, code:"OK", message:"已生成", data:{ year, month, created, skipped }, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
 	if (path === "/internal/api/v1/admin/overhead-costs") {
 		if (method === "GET") {
 			try {
