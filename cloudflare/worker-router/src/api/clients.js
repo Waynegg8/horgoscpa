@@ -360,11 +360,12 @@ export async function handleClients(request, env, me, requestId, url) {
 		const offset = (page - 1) * perPage;
 		const searchQuery = (params.get("q") || "").trim();
 		const tagId = params.get("tag_id") || "";
+		const noCache = (params.get("no_cache") === "1");
 		
 			// ⚡ 优先尝试从KV缓存读取（极快<50ms）
 			// 版本号v3：修復標籤回傳（避免舊KV緩存）
 			const cacheKey = generateCacheKey('clients_list', { page, perPage, q: searchQuery, tag_id: tagId, v: 'v3' });
-		const kvCached = await getKVCache(env, cacheKey);
+		const kvCached = noCache ? null : await getKVCache(env, cacheKey);
 		
 		if (kvCached && kvCached.data) {
 			return jsonResponse(200, { 
@@ -377,7 +378,7 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 		
 		// ⚡ KV未命中，尝试D1缓存（备份）
-		const d1Cached = await getCache(env, cacheKey);
+		const d1Cached = noCache ? null : await getCache(env, cacheKey);
 		if (d1Cached && d1Cached.data) {
 			// 异步同步到KV
 				saveKVCache(env, cacheKey, 'clients_list', d1Cached.data, {
@@ -539,7 +540,8 @@ export async function handleClients(request, env, me, requestId, url) {
 			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
 			const cacheData = { list: data, meta };
 			
-			// ⚡ 并行保存到KV（极快）和D1（备份）
+		// ⚡ 并行保存到KV（极快）和D1（备份）（no_cache 時不保存）
+		if (!noCache) {
 			try {
 				await Promise.all([
 					saveKVCache(env, cacheKey, 'clients_list', cacheData, {
@@ -550,10 +552,11 @@ export async function handleClients(request, env, me, requestId, url) {
 						scopeParams: { page, perPage, q: searchQuery, tag_id: tagId, v: 'v3' }
 					})
 				]);
-				console.log('[CLIENTS] ✓ 客户列表缓存已保存（KV+D1）v2');
+				console.log('[CLIENTS] ✓ 客户列表缓存已保存（KV+D1）v3');
 			} catch (err) {
 				console.error('[CLIENTS] ✗ 缓存保存失败:', err);
 			}
+		}
 			
 			return jsonResponse(200, { ok: true, code: "OK", message: "成功", data, meta }, corsHeaders);
 		} catch (err) {

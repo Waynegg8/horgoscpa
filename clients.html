@@ -321,6 +321,8 @@
           const params = new URLSearchParams();
           params.set('page', String(state.page));
           params.set('perPage', String(state.perPage));
+          // 伺服器端禁用快取
+          params.set('no_cache', '1');
           // 搜索支持公司名稱和統一編號
           if (state.q) {
             params.set('q', state.q);
