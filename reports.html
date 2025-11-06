@@ -12,7 +12,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   </head>
   <body class="reports-page">
-    <div id="navbar-container"></div>
     <div style="padding:16px 20px;">
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此報表</div>
       <nav class="reports-tabs" role="tablist" aria-label="報表分頁" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
@@ -852,22 +851,7 @@
           }
         }
 
-        async function loadNavbar() {
-          try {
-            const res = await fetch('/templates/partials/internal-navbar.html');
-            if (res.ok) {
-              const html = await res.text();
-              document.getElementById('navbar-container').innerHTML = html;
-            }
-          } catch (err) {
-            console.error('載入導航欄失敗:', err);
-          }
-        }
-
         async function bootstrap(){
-          // 載入導航欄
-          await loadNavbar();
-          
           // 初始化年度选择器
           initializeYearSelects();
           
@@ -898,6 +882,9 @@
           }
 
           attachValidation();
+          
+          // 自動載入預設報表（員工工時）
+          loadEmployeeHours();
         }
 
         bootstrap();
