@@ -1498,94 +1498,111 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				 WHERE m.year = ? AND m.month = ? AND m.is_deleted = 0`
 			).bind(year, month).first();
 			const totalOverhead = Number(overheadRow?.total || 0);
-
-			const clients = [];
 			
-			// 3. 為每個客戶計算成本
+			// 3. 為每個客戶計算成本，並按員工分組顯示（模擬任務明細）
+			const tasks = [];
+			
 			for (const client of clientList) {
-				// 獲取該客戶的所有工時記錄（包含work_date用于去重）
+				// 獲取該客戶的所有工時記錄，按員工分組
 				const timesheetRows = await env.DATABASE.prepare(
-					`SELECT user_id, work_type, work_date, hours
-					 FROM Timesheets 
-					 WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
+					`SELECT ts.user_id, u.name as user_name, ts.work_type, ts.work_date, ts.hours, ts.service_name
+					 FROM Timesheets ts
+					 LEFT JOIN Users u ON ts.user_id = u.user_id
+					 WHERE ts.client_id = ? AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
+					 ORDER BY u.name, ts.work_date`
 				).bind(client.client_id, yearMonth).all();
 				const timesheets = timesheetRows?.results || [];
 				
-				let hours = 0;
-				let weightedHours = 0;
-				const processedFixedKeys = new Set(); // 追踪已处理的 fixed_8h 类型（国定假日/例假日）
-				
-				// 第一遍：计算加权工时
+				// 按員工分組計算
+				const userGroups = {};
 				for (const ts of timesheets) {
-					const tsHours = Number(ts.hours || 0);
-					const date = ts.work_date || '';
-					const workTypeId = parseInt(ts.work_type) || 1;
-					const multiplier = WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0;
-					
-					hours += tsHours;
-					
-					// 計算加權工時
-					if (workTypeId === 7 || workTypeId === 10) {
-						// 國定假日和例假日：同一天同类型只计算一次8h加权（与薪资页面逻辑一致）
-						const key = `${date}:${workTypeId}`;
-						if (!processedFixedKeys.has(key)) {
-							weightedHours += 8.0;
-							processedFixedKeys.add(key);
-						}
-					} else {
-						weightedHours += tsHours * multiplier;
+					const userId = ts.user_id;
+					if (!userGroups[userId]) {
+						userGroups[userId] = {
+							userName: ts.user_name || '未知員工',
+							serviceName: ts.service_name || '',
+							timesheets: []
+						};
 					}
+					userGroups[userId].timesheets.push(ts);
 				}
 				
-				// 第二遍：使用每筆時錄對應員工之時薪計算人力成本
-				let laborCost = 0;
-				processedFixedKeys.clear(); // 重置，用于第二遍计算
-				
-				for (const ts of timesheets) {
-					const date = ts.work_date || '';
-					const workTypeId = parseInt(ts.work_type) || 1;
-					let tsWeightedHours;
+				// 為每個員工生成一筆"任務"記錄
+				for (const [userId, group] of Object.entries(userGroups)) {
+					let hours = 0;
+					let weightedHours = 0;
+					const processedFixedKeys = new Set();
 					
-					if (workTypeId === 7 || workTypeId === 10) {
-						// 國定假日和例假日：同一天同类型只计算一次8h加权
-						const key = `${date}:${workTypeId}`;
-						if (!processedFixedKeys.has(key)) {
-							tsWeightedHours = 8.0;
-							processedFixedKeys.add(key);
+					// 第一遍：计算加权工时
+					for (const ts of group.timesheets) {
+						const tsHours = Number(ts.hours || 0);
+						const date = ts.work_date || '';
+						const workTypeId = parseInt(ts.work_type) || 1;
+						const multiplier = WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0;
+						
+						hours += tsHours;
+						
+						if (workTypeId === 7 || workTypeId === 10) {
+							const key = `${date}:${workTypeId}`;
+							if (!processedFixedKeys.has(key)) {
+								weightedHours += 8.0;
+								processedFixedKeys.add(key);
+							}
 						} else {
-							tsWeightedHours = 0; // 同一天同类型的后续记录不计入
+							weightedHours += tsHours * multiplier;
 						}
-					} else {
-						tsWeightedHours = Number(ts.hours || 0) * (WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0);
 					}
-					const rate = Number(hourlyRatesMap[ts.user_id] || 0);
-					laborCost += Math.round(rate * tsWeightedHours);
+					
+					// 第二遍：计算人力成本
+					let laborCost = 0;
+					processedFixedKeys.clear();
+					
+					for (const ts of group.timesheets) {
+						const date = ts.work_date || '';
+						const workTypeId = parseInt(ts.work_type) || 1;
+						let tsWeightedHours;
+						
+						if (workTypeId === 7 || workTypeId === 10) {
+							const key = `${date}:${workTypeId}`;
+							if (!processedFixedKeys.has(key)) {
+								tsWeightedHours = 8.0;
+								processedFixedKeys.add(key);
+							} else {
+								tsWeightedHours = 0;
+							}
+						} else {
+							tsWeightedHours = Number(ts.hours || 0) * (WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0);
+						}
+						const rate = Number(hourlyRatesMap[ts.user_id] || 0);
+						laborCost += Math.round(rate * tsWeightedHours);
+					}
+					
+					// 按工時比例分攤管理費用
+					const overheadAllocation = totalMonthHours > 0 
+						? Math.round(totalOverhead * (hours / totalMonthHours))
+						: 0;
+					
+					// 生成任務記錄（用客戶+員工作為"任務"）
+					const taskTitle = group.serviceName || '一般服務';
+					tasks.push({
+						clientName: client.company_name,
+						taskTitle: taskTitle,
+						assigneeName: group.userName,
+						hours: hours,
+						weightedHours: weightedHours,
+						laborCost: laborCost,
+						overheadAllocation: overheadAllocation,
+						totalCost: laborCost + overheadAllocation
+					});
 				}
-				
-				// 按工時比例分攤管理費用
-				const overheadAllocation = totalMonthHours > 0 
-					? Math.round(totalOverhead * (hours / totalMonthHours))
-					: 0;
-				
-				clients.push({
-					clientId: client.client_id,
-					clientName: client.company_name,
-					totalHours: hours,
-					weightedHours,
-					laborCost,
-					overheadAllocation,
-					totalCost: laborCost + overheadAllocation,
-					taskCount: 0,  // 由于没有 task_id，无法统计任务数
-					revenue: 0      // 需要从其他地方获取收入数据
-				});
 			}
 
 			return jsonResponse(200, { 
 				ok:true, 
 				code:"OK", 
 				message:"成功", 
-				data:{ year, month, clients }, 
-				meta:{ requestId, count: clients.length } 
+				data:{ year, month, tasks }, 
+				meta:{ requestId, count: tasks.length } 
 			}, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
