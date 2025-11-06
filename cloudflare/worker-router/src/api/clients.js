@@ -360,7 +360,10 @@ export async function handleClients(request, env, me, requestId, url) {
 		const offset = (page - 1) * perPage;
 		const searchQuery = (params.get("q") || "").trim();
 		const tagId = params.get("tag_id") || "";
-		const noCache = (params.get("no_cache") === "1");
+		const noCacheParam = (params.get("no_cache") === "1");
+		const noCacheHeader = (request.headers.get('x-no-cache') === '1');
+		const noCache = noCacheParam || noCacheHeader;
+		console.log('[CLIENTS][LIST] flags:', { noCache, noCacheParam, noCacheHeader, q: searchQuery, tagId });
 		
 			// ⚡ 优先尝试从KV缓存读取（极快<50ms）
 			// 版本号v3：修復標籤回傳（避免舊KV緩存）
@@ -373,7 +376,7 @@ export async function handleClients(request, env, me, requestId, url) {
 				code: "OK", 
 				message: "成功（KV缓存）⚡", 
 				data: kvCached.data.list, 
-				meta: { ...kvCached.data.meta, requestId, ...kvCached.meta, cache_source: 'kv' } 
+				meta: { ...kvCached.data.meta, requestId, ...kvCached.meta, cache_source: 'kv', cache_bypass: noCache } 
 			}, corsHeaders);
 		}
 		
@@ -381,17 +384,19 @@ export async function handleClients(request, env, me, requestId, url) {
 		const d1Cached = noCache ? null : await getCache(env, cacheKey);
 		if (d1Cached && d1Cached.data) {
 			// 异步同步到KV
-				saveKVCache(env, cacheKey, 'clients_list', d1Cached.data, {
-					scopeParams: { page, perPage, q: searchQuery, tag_id: tagId, v: 'v3' },
-				ttl: 3600
-			}).catch(err => console.error('[CLIENTS] KV同步失败:', err));
+				if (!noCache) {
+					saveKVCache(env, cacheKey, 'clients_list', d1Cached.data, {
+						scopeParams: { page, perPage, q: searchQuery, tag_id: tagId, v: 'v3' },
+						tl: 3600
+					}).catch(err => console.error('[CLIENTS] KV同步失败:', err));
+				}
 			
 			return jsonResponse(200, { 
 				ok: true, 
 				code: "OK", 
 				message: "成功（D1缓存）", 
 				data: d1Cached.data.list, 
-				meta: { ...d1Cached.data.meta, requestId, ...d1Cached.meta, cache_source: 'd1' } 
+				meta: { ...d1Cached.data.meta, requestId, ...d1Cached.meta, cache_source: 'd1', cache_bypass: noCache } 
 			}, corsHeaders);
 		}
 		
@@ -537,7 +542,7 @@ export async function handleClients(request, env, me, requestId, url) {
 				};
 			});
 			
-			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
+			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total, cache_bypass: noCache };
 			const cacheData = { list: data, meta };
 			
 		// ⚡ 并行保存到KV（极快）和D1（备份）（no_cache 時不保存）
@@ -856,13 +861,73 @@ export async function handleClients(request, env, me, requestId, url) {
 			
 			const data = { clientId, companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, tags: tagIds, updatedAt: now };
 			
-			// ⚡ 失效客户列表缓存
+			// ⚡ 失效缓存：客户列表 + 客户詳情（KV）
 			invalidateCacheByType(env, 'clients_list').catch(err => 
 				console.error('[CLIENTS] 失效缓存失败:', err)
 			);
+			try {
+				const detailKey = generateCacheKey('client_detail', { clientId });
+				await deleteKVCache(env, detailKey);
+			} catch (e) {
+				console.error('[CLIENTS] 刪除 client_detail KV 失敗:', e);
+			}
 			
 			return jsonResponse(200, { ok: true, code: "SUCCESS", message: "已更新", data, meta: { requestId } }, corsHeaders);
 			
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
+	// PUT /api/v1/clients/:clientId/tags - 僅更新客戶標籤
+	const matchUpdateTags = url.pathname.match(/^\/internal\/api\/v1\/clients\/([^\/]+)\/tags$/);
+	if (method === "PUT" && matchUpdateTags) {
+		const clientId = matchUpdateTags[1];
+		let body;
+		try {
+			body = await request.json();
+		} catch (_) {
+			return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, corsHeaders);
+		}
+
+		const tagIds = Array.isArray(body?.tag_ids) ? body.tag_ids.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0) : [];
+
+		try {
+			// 檢查客戶是否存在
+			const existing = await env.DATABASE.prepare("SELECT 1 FROM Clients WHERE client_id = ? AND is_deleted = 0 LIMIT 1").bind(clientId).first();
+			if (!existing) {
+				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "客戶不存在", meta: { requestId } }, corsHeaders);
+			}
+
+			// 檢查標籤是否存在
+			if (tagIds.length > 0) {
+				const placeholders = tagIds.map(() => "?").join(",");
+				const row = await env.DATABASE.prepare(`SELECT COUNT(1) as cnt FROM CustomerTags WHERE tag_id IN (${placeholders})`).bind(...tagIds).first();
+				if (Number(row?.cnt || 0) !== tagIds.length) {
+					return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "標籤不存在", meta: { requestId } }, corsHeaders);
+				}
+			}
+
+			const now = new Date().toISOString();
+			// 先刪除，再新增
+			await env.DATABASE.prepare("DELETE FROM ClientTagAssignments WHERE client_id = ?").bind(clientId).run();
+			for (const tagId of tagIds) {
+				await env.DATABASE.prepare("INSERT INTO ClientTagAssignments (client_id, tag_id, assigned_at) VALUES (?, ?, ?)").bind(clientId, tagId, now).run();
+			}
+
+			// 失效快取：列表與詳情
+			invalidateCacheByType(env, 'clients_list').catch(err => console.error('[CLIENTS] 失效列表快取失敗:', err));
+			try {
+				const detailKey = generateCacheKey('client_detail', { clientId });
+				await deleteKVCache(env, detailKey);
+			} catch (e) {
+				console.error('[CLIENTS] 刪除 client_detail KV 失敗:', e);
+			}
+
+			return jsonResponse(200, { ok: true, code: "SUCCESS", message: "標籤已更新", data: { clientId, tag_ids: tagIds }, meta: { requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
 			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };

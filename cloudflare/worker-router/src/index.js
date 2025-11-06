@@ -437,8 +437,8 @@ export default {
 			return handleTags(request, env, me, requestId, url);
 		}
 		
-		// 收费明细API
-		if (path.startsWith("/internal/api/v1/billing/")) {
+		// 收费明细API（同時支援 /billing 與 /billing/...）
+		if (path === "/internal/api/v1/billing" || path.startsWith("/internal/api/v1/billing/")) {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handleBilling(request, env, me, requestId, url, path);

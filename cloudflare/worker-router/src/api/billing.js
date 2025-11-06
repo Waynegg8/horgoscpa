@@ -1,4 +1,6 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+import { generateCacheKey, invalidateCacheByType } from "../cache-helper.js";
+import { deleteKVCache, deleteKVCacheByPrefix } from "../kv-cache-helper.js";
 
 function parseId(s) {
   const n = parseInt(String(s || ""), 10);
@@ -133,7 +135,7 @@ export async function handleBilling(request, env, me, requestId, url, path) {
     try {
       // 检查服务是否存在
       const service = await env.DATABASE.prepare(
-        "SELECT client_service_id FROM ClientServices WHERE client_service_id = ? AND is_deleted = 0"
+        "SELECT client_service_id, client_id FROM ClientServices WHERE client_service_id = ? AND is_deleted = 0"
       ).bind(clientServiceId).first();
 
       if (!service) {
@@ -174,6 +176,19 @@ export async function handleBilling(request, env, me, requestId, url, path) {
       ).run();
 
       const scheduleId = result?.meta?.last_row_id;
+
+      // 失效與此客戶相關的快取（列表+詳情）
+      try {
+        const clientId = service?.client_id;
+        if (clientId) {
+          const detailKey = generateCacheKey('client_detail', { clientId });
+          await deleteKVCache(env, detailKey);
+        }
+        await invalidateCacheByType(env, 'clients_list');
+        await deleteKVCacheByPrefix(env, 'clients_list');
+      } catch (e) {
+        console.error('[BILLING] 快取失效失敗:', e);
+      }
 
       return jsonResponse(201, {
         ok: true,
@@ -306,7 +321,10 @@ export async function handleBilling(request, env, me, requestId, url, path) {
     try {
       // 检查明细是否存在
       const existing = await env.DATABASE.prepare(
-        "SELECT schedule_id FROM ServiceBillingSchedule WHERE schedule_id = ?"
+        `SELECT s.schedule_id, cs.client_id
+         FROM ServiceBillingSchedule s
+         LEFT JOIN ClientServices cs ON cs.client_service_id = s.client_service_id
+         WHERE s.schedule_id = ?`
       ).bind(scheduleId).first();
 
       if (!existing) {
@@ -319,6 +337,19 @@ export async function handleBilling(request, env, me, requestId, url, path) {
          SET billing_amount = ?, payment_due_days = ?, notes = ?, updated_at = datetime('now')
          WHERE schedule_id = ?`
       ).bind(billingAmount, paymentDueDays, notes, scheduleId).run();
+
+      // 失效快取
+      try {
+        const clientId = existing?.client_id;
+        if (clientId) {
+          const detailKey = generateCacheKey('client_detail', { clientId });
+          await deleteKVCache(env, detailKey);
+        }
+        await invalidateCacheByType(env, 'clients_list');
+        await deleteKVCacheByPrefix(env, 'clients_list');
+      } catch (e) {
+        console.error('[BILLING] 快取失效失敗:', e);
+      }
 
       return jsonResponse(200, {
         ok: true,
@@ -344,7 +375,10 @@ export async function handleBilling(request, env, me, requestId, url, path) {
     try {
       // 检查明细是否存在
       const existing = await env.DATABASE.prepare(
-        "SELECT schedule_id FROM ServiceBillingSchedule WHERE schedule_id = ?"
+        `SELECT s.schedule_id, cs.client_id
+         FROM ServiceBillingSchedule s
+         LEFT JOIN ClientServices cs ON cs.client_service_id = s.client_service_id
+         WHERE s.schedule_id = ?`
       ).bind(scheduleId).first();
 
       if (!existing) {
@@ -355,6 +389,19 @@ export async function handleBilling(request, env, me, requestId, url, path) {
       await env.DATABASE.prepare(
         "DELETE FROM ServiceBillingSchedule WHERE schedule_id = ?"
       ).bind(scheduleId).run();
+
+      // 失效快取
+      try {
+        const clientId = existing?.client_id;
+        if (clientId) {
+          const detailKey = generateCacheKey('client_detail', { clientId });
+          await deleteKVCache(env, detailKey);
+        }
+        await invalidateCacheByType(env, 'clients_list');
+        await deleteKVCacheByPrefix(env, 'clients_list');
+      } catch (e) {
+        console.error('[BILLING] 快取失效失敗:', e);
+      }
 
       return jsonResponse(200, {
         ok: true,

@@ -332,7 +332,10 @@
             params.set('tag_id', state.tag_id);
           }
           try {
-            const res = await fetch(`${apiBase}/clients?${params.toString()}`, { credentials: 'include' });
+            const res = await fetch(`${apiBase}/clients?${params.toString()}`, { 
+              credentials: 'include',
+              headers: { 'X-No-Cache': '1' }
+            });
             const json = await res.json();
             if (!res.ok || !json || json.ok !== true) {
               throw new Error((json && json.message) || '載入失敗');
