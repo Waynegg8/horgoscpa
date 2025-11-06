@@ -892,7 +892,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				const timesheetRows = await env.DATABASE.prepare(
 					`SELECT ts.user_id, ts.work_type, ts.hours, ts.task_id
 					 FROM Timesheets ts
-					 JOIN Tasks t ON t.task_id = ts.task_id
+					 JOIN ClientTasks t ON t.task_id = ts.task_id
 					 WHERE t.client_id = ? AND substr(ts.work_date, 1, 7) = ? 
 					   AND ts.is_deleted = 0 AND t.is_deleted = 0`
 				).bind(clientId, yearMonth).all();
