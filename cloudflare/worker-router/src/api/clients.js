@@ -430,6 +430,9 @@ export async function handleClients(request, env, me, requestId, url) {
 			const clientIds = (rows?.results || []).map(r => r.client_id);
 			const usersMap = {};
 			const tagsMap = {};
+			// 服務/年額聚合映射需在外層宣告，供後續映射使用
+			const serviceCountMap = {};
+			const yearTotalMap = {};
 			
 			if (clientIds.length > 0) {
 				// 批量获取负责人信息
@@ -498,7 +501,6 @@ export async function handleClients(request, env, me, requestId, url) {
 					 WHERE cs.client_id IN (${placeholders}) AND cs.is_deleted = 0
 					 GROUP BY cs.client_id`
 				).bind(...clientIds).all();
-				const serviceCountMap = {};
 				svcCountRows.results?.forEach(r => { serviceCountMap[r.client_id] = Number(r.svc_count || 0); });
 
 				// 批量彙總全年收費總額（所有明細加總）
@@ -509,7 +511,6 @@ export async function handleClients(request, env, me, requestId, url) {
 					 WHERE cs.client_id IN (${placeholders}) AND cs.is_deleted = 0
 					 GROUP BY cs.client_id`
 				).bind(...clientIds).all();
-				const yearTotalMap = {};
 				yearTotalRows.results?.forEach(r => { yearTotalMap[r.client_id] = Number(r.total_amount || 0); });
 			}
 			

@@ -195,37 +195,41 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				targetUserId = String(queryUserId);
 			}
 			
-			// ⚡ 优先尝试从KV缓存读取（极快<50ms）
+			const bypass = (params.get('fresh') || params.get('nocache')) === '1';
+			// ⚡ 优先尝试从KV缓存读取（除非要求新鮮資料）
 			const cacheKey = generateCacheKey('leaves_balances', { userId: targetUserId, year });
-			const kvCached = await getKVCache(env, cacheKey);
-			
-			if (kvCached && kvCached.data) {
-				return jsonResponse(200, { 
-					ok: true, 
-					code: "OK", 
-					message: "成功（KV缓存）⚡", 
-					data: kvCached.data, 
-					meta: { requestId, year, userId: targetUserId, ...kvCached.meta, cache_source: 'kv' } 
-				}, corsHeaders);
+			if (!bypass) {
+				const kvCached = await getKVCache(env, cacheKey);
+				if (kvCached && kvCached.data) {
+					return jsonResponse(200, { 
+						ok: true, 
+						code: "OK", 
+						message: "成功（KV缓存）⚡", 
+						data: kvCached.data, 
+						meta: { requestId, year, userId: targetUserId, ...kvCached.meta, cache_source: 'kv' } 
+					}, corsHeaders);
+				}
 			}
 			
-			// ⚡ KV未命中，尝试D1缓存（备份）
-			const d1Cached = await getCache(env, cacheKey);
-			if (d1Cached && d1Cached.data) {
-				// 异步同步到KV
-				saveKVCache(env, cacheKey, 'leaves_balances', d1Cached.data, {
-					userId: targetUserId,
-					scopeParams: { userId: targetUserId, year },
-					ttl: 3600
-				}).catch(err => console.error('[LEAVES] KV同步失败:', err));
-				
-				return jsonResponse(200, { 
-					ok: true, 
-					code: "OK", 
-					message: "成功（D1缓存）", 
-					data: d1Cached.data, 
-					meta: { requestId, year, userId: targetUserId, ...d1Cached.meta, cache_source: 'd1' } 
-				}, corsHeaders);
+			// ⚡ D1 缓存（备份），除非要求新鮮資料
+			if (!bypass) {
+				const d1Cached = await getCache(env, cacheKey);
+				if (d1Cached && d1Cached.data) {
+					// 异步同步到KV
+					saveKVCache(env, cacheKey, 'leaves_balances', d1Cached.data, {
+						userId: targetUserId,
+						scopeParams: { userId: targetUserId, year },
+						tl: 3600
+					}).catch(err => console.error('[LEAVES] KV同步失败:', err));
+					
+					return jsonResponse(200, { 
+						ok: true, 
+						code: "OK", 
+						message: "成功（D1缓存）", 
+						data: d1Cached.data, 
+						meta: { requestId, year, userId: targetUserId, ...d1Cached.meta, cache_source: 'd1' } 
+					}, corsHeaders);
+				}
 			}
 			
 			// 确保用户有基本假期余额记录

@@ -460,6 +460,7 @@
           try {
             const params = new URLSearchParams();
             params.set('year', year);
+            params.set('fresh', '1');
             if (state.isAdmin && state.selectedUserId) {
               params.set('user_id', state.selectedUserId);
             }
