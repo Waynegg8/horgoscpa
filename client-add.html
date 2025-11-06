@@ -3813,19 +3813,47 @@
                 };
                 
                 console.log(`    創建收費 ${j + 1}:`, payloadBilling);
-                const resBilling = await fetch('/internal/api/v1/billing', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'include',
-                  body: JSON.stringify(payloadBilling)
-                });
                 
-                const jsonBilling = await resBilling.json().catch(() => null);
-                console.log(`    收費 ${j + 1} 創建響應:`, jsonBilling);
+                // 添加重試機制
+                let retryCount = 0;
+                let success = false;
+                while (retryCount < 3 && !success) {
+                  try {
+                    const resBilling = await fetch('/internal/api/v1/billing', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify(payloadBilling)
+                    });
+                    
+                    const jsonBilling = await resBilling.json().catch(() => null);
+                    console.log(`    收費 ${j + 1} 創建響應:`, jsonBilling);
+                    
+                    if (resBilling.ok && jsonBilling?.ok) {
+                      success = true;
+                    } else {
+                      console.error(`    收費 ${j + 1} 創建失敗 (嘗試 ${retryCount + 1}/3):`, jsonBilling);
+                      if (retryCount === 2) {
+                        alert(`警告：服務「${svc.service_name}」的收費記錄 ${j + 1} 創建失敗：${jsonBilling?.message || '未知錯誤'}\n\n將繼續創建其他收費記錄...`);
+                      }
+                    }
+                  } catch (fetchError) {
+                    console.error(`    收費 ${j + 1} 網絡錯誤 (嘗試 ${retryCount + 1}/3):`, fetchError);
+                    if (retryCount === 2) {
+                      alert(`警告：服務「${svc.service_name}」的收費記錄 ${j + 1} 創建失敗：網絡錯誤\n\n將繼續創建其他收費記錄...`);
+                    }
+                  }
+                  
+                  retryCount++;
+                  if (!success && retryCount < 3) {
+                    // 等待一段時間後重試
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                  }
+                }
                 
-                if (!resBilling.ok || !jsonBilling?.ok) {
-                  console.error(`    收費 ${j + 1} 創建失敗:`, jsonBilling);
-                  alert(`警告：服務「${svc.service_name}」的收費記錄創建失敗：${jsonBilling?.message || '未知錯誤'}\n\n將繼續創建其他收費記錄...`);
+                // 在請求之間添加短暫延遲，避免請求過於頻繁
+                if (j < svc.billings.length - 1) {
+                  await new Promise(resolve => setTimeout(resolve, 100));
                 }
               }
             }
@@ -3849,19 +3877,47 @@
                 };
                 
                 console.log(`    創建組件 ${k + 1}:`, payloadComp);
-                const resComp = await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'include',
-                  body: JSON.stringify(payloadComp)
-                });
                 
-                const jsonComp = await resComp.json().catch(() => null);
-                console.log(`    組件 ${k + 1} 創建響應:`, jsonComp);
+                // 添加重試機制
+                let retryCount = 0;
+                let success = false;
+                while (retryCount < 3 && !success) {
+                  try {
+                    const resComp = await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify(payloadComp)
+                    });
+                    
+                    const jsonComp = await resComp.json().catch(() => null);
+                    console.log(`    組件 ${k + 1} 創建響應:`, jsonComp);
+                    
+                    if (resComp.ok && jsonComp?.ok) {
+                      success = true;
+                    } else {
+                      console.error(`    組件 ${k + 1} 創建失敗 (嘗試 ${retryCount + 1}/3):`, jsonComp);
+                      if (retryCount === 2) {
+                        alert(`警告：服務「${svc.service_name}」的組件配置創建失敗：${jsonComp?.message || '未知錯誤'}\n\n將繼續創建其他組件...`);
+                      }
+                    }
+                  } catch (fetchError) {
+                    console.error(`    組件 ${k + 1} 網絡錯誤 (嘗試 ${retryCount + 1}/3):`, fetchError);
+                    if (retryCount === 2) {
+                      alert(`警告：服務「${svc.service_name}」的組件配置創建失敗：網絡錯誤\n\n將繼續創建其他組件...`);
+                    }
+                  }
+                  
+                  retryCount++;
+                  if (!success && retryCount < 3) {
+                    // 等待一段時間後重試
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                  }
+                }
                 
-                if (!resComp.ok || !jsonComp?.ok) {
-                  console.error(`    組件 ${k + 1} 創建失敗:`, jsonComp);
-                  alert(`警告：服務「${svc.service_name}」的組件配置創建失敗：${jsonComp?.message || '未知錯誤'}\n\n將繼續創建其他組件...`);
+                // 在請求之間添加短暫延遲，避免請求過於頻繁
+                if (k < svc.components.length - 1) {
+                  await new Promise(resolve => setTimeout(resolve, 100));
                 }
               }
             }

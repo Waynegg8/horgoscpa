@@ -208,6 +208,81 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 	}
 	
+	// ⭐ 路由优先级 2.5: GET /api/v1/clients/next-personal-id - 獲取下一個可用的個人客戶編號（方案C：智能避開合法統編）
+	// 注意：此路由必須放在通用客戶詳情路由之前，否則會被當作客戶ID處理
+	if (method === "GET" && url.pathname === "/internal/api/v1/clients/next-personal-id") {
+		try {
+			// 查詢最大的00開頭的客戶編號
+			const result = await env.DATABASE.prepare(
+				`SELECT client_id FROM Clients 
+				 WHERE client_id LIKE '00%' AND is_deleted = 0 
+				 ORDER BY client_id DESC LIMIT 1`
+			).first();
+			
+			let nextId;
+			let startNum;
+			
+			if (result && result.client_id) {
+				// 有現有的00開頭編號，從下一個開始
+				startNum = parseInt(result.client_id) + 1;
+			} else {
+				// 沒有現有編號，從00000001開始
+				startNum = 1;
+			}
+			
+			// 循環查找下一個不是合法統編的編號（最多嘗試100次）
+			let attempts = 0;
+			let found = false;
+			
+			while (!found && attempts < 100) {
+				nextId = String(startNum).padStart(8, '0');
+				
+				// 檢查是否已被使用
+				const exists = await env.DATABASE.prepare(
+					`SELECT 1 FROM Clients WHERE client_id = ? LIMIT 1`
+				).bind(nextId).first();
+				
+				// 如果未被使用 且 不是合法統編，則使用此編號
+				if (!exists && !isValidTaxId(nextId)) {
+					found = true;
+					break;
+				}
+				
+				startNum++;
+				attempts++;
+			}
+			
+			// 如果100次都沒找到，使用時間戳（備用方案）
+			if (!found) {
+				const timestamp = Date.now().toString().slice(-6);
+				nextId = '00' + timestamp;
+				
+				// 再次檢查時間戳生成的編號
+				if (isValidTaxId(nextId)) {
+					// 如果時間戳剛好是合法統編，加1
+					nextId = String(parseInt(nextId) + 1).padStart(8, '0');
+				}
+			}
+			
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "已生成下一個個人客戶編號（智能避開合法統編）",
+				data: { 
+					next_id: nextId,
+					is_safe: !isValidTaxId(nextId),
+					note: "此編號不符合統編驗證規則，100%不會與真實統編衝突"
+				},
+				meta: { requestId }
+			}, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+	
 	// ⭐ 路由优先级 3: GET /api/v1/clients/:id - 客戶詳情
 	const matchSingle = url.pathname.match(/\/clients\/[^\/]+$/);
 	console.log(`[CLIENTS.JS] 路由3匹配結果 (single):`, matchSingle);
@@ -602,80 +677,6 @@ export async function handleClients(request, env, me, requestId, url) {
 		
 		// 能被5整除即為有效統編
 		return sum % 5 === 0;
-	}
-
-	// GET /api/v1/clients/next-personal-id - 獲取下一個可用的個人客戶編號（方案C：智能避開合法統編）
-	if (method === "GET" && url.pathname === "/internal/api/v1/clients/next-personal-id") {
-		try {
-			// 查詢最大的00開頭的客戶編號
-			const result = await env.DATABASE.prepare(
-				`SELECT client_id FROM Clients 
-				 WHERE client_id LIKE '00%' AND is_deleted = 0 
-				 ORDER BY client_id DESC LIMIT 1`
-			).first();
-			
-			let nextId;
-			let startNum;
-			
-			if (result && result.client_id) {
-				// 有現有的00開頭編號，從下一個開始
-				startNum = parseInt(result.client_id) + 1;
-			} else {
-				// 沒有現有編號，從00000001開始
-				startNum = 1;
-			}
-			
-			// 循環查找下一個不是合法統編的編號（最多嘗試100次）
-			let attempts = 0;
-			let found = false;
-			
-			while (!found && attempts < 100) {
-				nextId = String(startNum).padStart(8, '0');
-				
-				// 檢查是否已被使用
-				const exists = await env.DATABASE.prepare(
-					`SELECT 1 FROM Clients WHERE client_id = ? LIMIT 1`
-				).bind(nextId).first();
-				
-				// 如果未被使用 且 不是合法統編，則使用此編號
-				if (!exists && !isValidTaxId(nextId)) {
-					found = true;
-					break;
-				}
-				
-				startNum++;
-				attempts++;
-			}
-			
-			// 如果100次都沒找到，使用時間戳（備用方案）
-			if (!found) {
-				const timestamp = Date.now().toString().slice(-6);
-				nextId = '00' + timestamp;
-				
-				// 再次檢查時間戳生成的編號
-				if (isValidTaxId(nextId)) {
-					// 如果時間戳剛好是合法統編，加1
-					nextId = String(parseInt(nextId) + 1).padStart(8, '0');
-				}
-			}
-			
-			return jsonResponse(200, {
-				ok: true,
-				code: "SUCCESS",
-				message: "已生成下一個個人客戶編號（智能避開合法統編）",
-				data: { 
-					next_id: nextId,
-					is_safe: !isValidTaxId(nextId),
-					note: "此編號不符合統編驗證規則，100%不會與真實統編衝突"
-				},
-				meta: { requestId }
-			}, corsHeaders);
-		} catch (err) {
-			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
-			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
-			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
-			return jsonResponse(500, body, corsHeaders);
-		}
 	}
 
 	// POST /api/v1/clients/diagnose - 資料庫即時診斷（不使用任何快取）

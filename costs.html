@@ -303,11 +303,14 @@
           const params = new URLSearchParams();
           params.set('_t', String(Date.now())); // 强制绕过缓存
           try {
+            console.log('[loadItems] 開始加載成本項目...');
             tbodyItems.innerHTML = '<tr><td colspan="6" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/overhead-types?${params.toString()}`, { credentials:'include', cache: 'no-store' });
+            console.log('[loadItems] API 回應狀態:', res.status);
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error();
+            console.log('[loadItems] 收到數據:', json);
+            if (!res.ok || !json || json.ok !== true) throw new Error('API 返回錯誤');
             const items = json.data || [];
             if (items.length === 0) {
               tbodyItems.innerHTML = '<tr><td colspan="6" class="muted">尚無資料</td></tr>';
@@ -360,7 +363,8 @@
                 }
               });
             });
-          } catch (_) {
+          } catch (err) {
+            console.error('[loadItems] 載入失敗:', err);
             tbodyItems.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
@@ -478,7 +482,14 @@
 
         async function loadRecords(){
           const ym = parseYearMonth();
-          if (!ym) return;
+          if (!ym) {
+            console.warn('[loadRecords] 無效月份，monthInput.value:', monthInput?.value);
+            tbodyRecords.innerHTML = '<tr><td colspan="6" class="muted">請選擇月份</td></tr>';
+            statTotal.textContent = '—';
+            statBreakdown.textContent = '固定：—｜變動：—';
+            return;
+          }
+          console.log('[loadRecords] 加載數據:', ym);
           const params = new URLSearchParams();
           params.set('year', String(ym.year));
           params.set('month', String(ym.month));
@@ -541,7 +552,8 @@
             const totalVariable = Number(data.totalVariable||0);
             statTotal.textContent = formatCurrency(total);
             statBreakdown.textContent = `固定：${formatCurrency(totalFixed)}｜變動：${formatCurrency(totalVariable)}`;
-          } catch (_) {
+          } catch (err) {
+            console.error('[loadRecords] 載入失敗:', err);
             tbodyRecords.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
             statTotal.textContent = '—';
             statBreakdown.textContent = '固定：—｜變動：—';
@@ -1037,10 +1049,16 @@
 
         // 初始化月份选择器为当前月份
         function initMonthSelector() {
+          if (!monthInput) {
+            console.error('[initMonthSelector] monthInput 不存在！');
+            return;
+          }
           const now = new Date();
           const year = now.getFullYear();
           const month = String(now.getMonth() + 1).padStart(2, '0');
-          monthInput.value = `${year}-${month}`;
+          const value = `${year}-${month}`;
+          monthInput.value = value;
+          console.log('[initMonthSelector] 已設置月份:', value);
         }
 
         // 更新按钮状态
@@ -1049,13 +1067,19 @@
           const isValid = !!ym;
           document.getElementById('btn-generate-month').disabled = !isValid;
           document.getElementById('btn-add-record').disabled = !isValid;
+          console.log('[updateButtonState] 月份有效:', isValid, '值:', monthInput?.value);
         }
 
         // 监听月份变化
-        monthInput.addEventListener('change', () => {
-          loadRecords();
-          updateButtonState();
-        });
+        if (monthInput) {
+          monthInput.addEventListener('change', () => {
+            console.log('[Event] 月份已變更:', monthInput.value);
+            loadRecords();
+            updateButtonState();
+          });
+        } else {
+          console.error('[Event] 無法添加月份監聽器：monthInput 不存在');
+        }
 
         // ⚡ 预渲染初始化
         if (window.PagePrerender) {
@@ -1063,8 +1087,10 @@
         }
 
         // 初始化
+        console.log('[Init] 開始初始化成本頁面...');
         ensureAdmin().then(ok => { 
           if (ok) {
+            console.log('[Init] 權限驗證通過，開始加載頁面...');
             // 1. 初始化月份
             initMonthSelector();
             // 2. 加载数据
@@ -1076,7 +1102,11 @@
             if (window.PagePrerender) {
               setTimeout(() => window.PagePrerender.autoSave('main', 2000), 1000);
             }
-          } 
+          } else {
+            console.warn('[Init] 權限驗證失敗');
+          }
+        }).catch(err => {
+          console.error('[Init] 初始化失敗:', err);
         });
       })();
     </script>
