@@ -128,7 +128,10 @@
     <div class="content-card">
       <div class="card-header-with-action">
         <h2 class="card-title">客戶服務</h2>
-        <button class="btn btn-primary" onclick="showAddServiceRow()">+ 新增服務</button>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn btn-secondary" onclick="showGlobalBillingModal()">集中新增收費</button>
+          <button class="btn btn-primary" onclick="showAddServiceRow()">+ 新增服務</button>
+        </div>
       </div>
       <div class="table-wrapper">
         <table class="services-table" id="servicesTable">
@@ -156,6 +159,67 @@
   <div id="footer-placeholder"></div>
 
   <script src="/assets/js/components/bootstrap.js?v=3"></script>
+  
+  <!-- 集中新增收費彈窗 -->
+  <div id="globalBillingModal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:8px; padding:20px; width:90%; max-width:780px; max-height:80vh; overflow:auto;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">集中新增收費</h3>
+        <button onclick="closeGlobalBillingModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280">×</button>
+      </div>
+      <div style="margin-top:12px; display:grid; grid-template-columns: 1fr 2fr; gap:12px;">
+        <div>
+          <label>選擇服務</label>
+          <select id="gb-service-select" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></select>
+        </div>
+        <div>
+          <label>收費類型</label>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <label style="display:flex; align-items:center; gap:6px;">
+              <input type="radio" name="gb-type" value="monthly" checked> 按月
+            </label>
+            <label style="display:flex; align-items:center; gap:6px;">
+              <input type="radio" name="gb-type" value="one-time"> 一次性
+            </label>
+          </div>
+        </div>
+      </div>
+      <div id="gb-monthly" style="margin-top:10px;">
+        <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:12px;">
+          <div><label>每月金額 *</label><input id="gb-amount" type="number" step="0.01" min="0" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
+          <div><label>付款期限（天）</label><input id="gb-due" type="number" value="30" min="1" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
+          <div><label>月份範圍</label>
+            <select id="gb-range" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;">
+              <option value="all">全年（1-12月）</option>
+              <option value="custom">自選月份</option>
+            </select>
+          </div>
+        </div>
+        <div id="gb-months" style="display:none; margin-top:8px;">
+          ${Array.from({length:12},(_,i)=>`<label style=\"display:inline-flex;align-items:center;gap:6px;margin:4px 8px;\"><input type=\"checkbox\" class=\"gb-month\" value=\"${i+1}\" checked> ${i+1}月</label>`).join('')}
+          <div style="margin-top:6px;"><button class="btn btn-sm btn-secondary" type="button" onclick="gbToggleMonths(true)">全選</button> <button class="btn btn-sm btn-secondary" type="button" onclick="gbToggleMonths(false)">全不選</button></div>
+        </div>
+      </div>
+      <div id="gb-onetime" style="margin-top:10px; display:none;">
+        <div style="display:grid; grid-template-columns: repeat(2,1fr); gap:12px;">
+          <div><label>項目名稱 *</label><input id="gb-ot-desc" type="text" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
+          <div><label>收費日期 *</label><input id="gb-ot-date" type="date" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-top:8px;">
+          <div><label>金額 *</label><input id="gb-ot-amount" type="number" step="0.01" min="0" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
+          <div><label>付款期限（天）</label><input id="gb-ot-due" type="number" value="30" min="1" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
+          <div><label>備註</label><input id="gb-ot-notes" type="text" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+        <label style="display:inline-flex; align-items:center; gap:6px; margin-right:auto;">
+          <input type="checkbox" id="generate-now"> 保存後立即產生任務（管理員）
+        </label>
+        <button class="btn btn-secondary" onclick="closeGlobalBillingModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveGlobalBillingFromModal()">確認新增</button>
+      </div>
+    </div>
+  </div>
   <script>
     let currentClientId = null;
     let currentEditingServiceId = null;
@@ -319,6 +383,10 @@
               <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
                 <input type="checkbox" id="new-service-autogen" checked> 自動產生任務
               </label>
+            </div>
+            <div style="margin-top:6px;">
+              <label>服務備註</label>
+              <input type="text" id="new-service-notes" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;" />
             </div>
           </td>
           <td>
@@ -519,21 +587,12 @@
       const el = document.getElementById(`tasks-list-${serviceIndex}`);
       if (!el) return;
       el.innerHTML = tasks.map((t, idx) => {
-        const assigneeOptions = (Array.isArray(employeesList)?employeesList:[]).map(u=>`<option value=\"${u.user_id}\" ${t.assignee_user_id==u.user_id?'selected':''}>${u.name||u.username}</option>`).join('');
-        return `<div style=\"border:1px solid #e5e7eb;border-radius:6px;padding:8px;margin-bottom:8px;\">
-          <div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:8px;\">
-            <div><label>名稱</label><input type=\"text\" value=\"${t.task_name}\" oninput=\"updateTaskField(${serviceIndex},${idx},'task_name',this.value)\"></div>
-            <div><label>負責人</label><select onchange=\"updateTaskField(${serviceIndex},${idx},'assignee_user_id',this.value)\"><option value=\"\">（不指定）</option>${assigneeOptions}</select></div>
-            <div><label>預估時數</label><input type=\"number\" step=\"0.1\" min=\"0\" value=\"${t.estimated_hours||''}\" oninput=\"updateTaskField(${serviceIndex},${idx},'estimated_hours',this.value)\"></div>
-          </div>
-          <div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px;\">
-            <div><label>到期規則</label><select onchange=\"updateTaskField(${serviceIndex},${idx},'due_rule',this.value)\"><option value=\"end_of_month\" ${t.due_rule==='end_of_month'?'selected':''}>月末</option><option value=\"fixed_day\" ${t.due_rule==='fixed_day'?'selected':''}>固定日</option></select></div>
-            <div><label>規則值</label><input type=\"text\" value=\"${t.due_value||''}\" oninput=\"updateTaskField(${serviceIndex},${idx},'due_value',this.value)\" placeholder=\"例如 20（固定每月20日）\"></div>
-            <div><label>提前天數</label><input type=\"number\" min=\"0\" value=\"${t.advance_days||7}\" oninput=\"updateTaskField(${serviceIndex},${idx},'advance_days',this.value)\"></div>
-          </div>
-          <div style=\"margin-top:6px;\"><label>備註</label><input type=\"text\" value=\"${t.notes||''}\" oninput=\"updateTaskField(${serviceIndex},${idx},'notes',this.value)\" style=\"width:100%\"></div>
-          <div style=\"margin-top:6px;\"><button type=\"button\" class=\"table-btn-link danger\" onclick=\"removeComponentTask(${serviceIndex},${idx})\">刪除此任務</button></div>
-        </div>`;
+        const assigneeOptions = (Array.isArray(employeesList)?employeesList:[]).map(u=>`<option value="${u.user_id}" ${t.assignee_user_id==u.user_id?'selected':''}>${u.name||u.username}</option>`).join('');
+        const sopOptions = (allSOPs||[]).map(s => {
+          const checked = Array.isArray(t.sop_ids) && t.sop_ids.includes(s.sop_id) ? 'checked' : '';
+          return `<label style=\"display:inline-flex;align-items:center;gap:6px;margin:4px 8px;\"><input type=\"checkbox\" ${checked} onchange=\"toggleTaskSOP(${serviceIndex},${idx},${s.sop_id},this.checked)\"> ${s.title}</label>`;
+        }).join('');
+        return `<div style=\"border:1px solid #e5e7eb;border-radius:6px;padding:8px;margin-bottom:8px;\">\n          <div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:8px;\">\n            <div><label>名稱</label><input type=\"text\" value=\"${t.task_name}\" oninput=\"updateTaskField(${serviceIndex},${idx},'task_name',this.value)\"></div>\n            <div><label>負責人</label><select onchange=\"updateTaskField(${serviceIndex},${idx},'assignee_user_id',this.value)\"><option value=\"\">（不指定）</option>${assigneeOptions}</select></div>\n            <div><label>預估時數</label><input type=\"number\" step=\"0.1\" min=\"0\" value=\"${t.estimated_hours||''}\" oninput=\"updateTaskField(${serviceIndex},${idx},'estimated_hours',this.value)\"></div>\n          </div>\n          <div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px;\">\n            <div><label>到期規則</label><select onchange=\"updateTaskField(${serviceIndex},${idx},'due_rule',this.value)\"><option value=\"end_of_month\" ${t.due_rule==='end_of_month'?'selected':''}>月末</option><option value=\"fixed_day\" ${t.due_rule==='fixed_day'?'selected':''}>固定日</option><option value=\"days_after_month_start\" ${t.due_rule==='days_after_month_start'?'selected':''}>月初後N天</option><option value=\"days_before_month_end\" ${t.due_rule==='days_before_month_end'?'selected':''}>月末前N天</option></select></div>\n            <div><label>規則值</label><input type=\"text\" value=\"${t.due_value||''}\" oninput=\"updateTaskField(${serviceIndex},${idx},'due_value',this.value)\" placeholder=\"例如 20（固定每月20日）\"></div>\n            <div><label>提前天數</label><input type=\"number\" min=\"0\" value=\"${t.advance_days||7}\" oninput=\"updateTaskField(${serviceIndex},${idx},'advance_days',this.value)\"></div>\n          </div>\n          <div style=\"margin-top:6px;\"><label>備註</label><input type=\"text\" value=\"${t.notes||''}\" oninput=\"updateTaskField(${serviceIndex},${idx},'notes',this.value)\" style=\"width:100%\"></div>\n          <div style=\"margin-top:6px;\"><label>SOP（任務層級）</label><div>${sopOptions || '<span style=\\"color:#9ca3af;\\">尚無 SOP</span>'}</div></div>\n          <div style=\"margin-top:6px;\"><button type=\"button\" class=\"table-btn-link danger\" onclick=\"removeComponentTask(${serviceIndex},${idx})\">刪除此任務</button></div>\n        </div>`;
       }).join('');
     }
 
@@ -551,6 +610,13 @@
       if (field==='estimated_hours') value = value ? parseFloat(value) : null;
       if (['advance_days'].includes(field)) value = value ? parseInt(value,10) : 7;
       tasks[idx][field] = value;
+    }
+    function toggleTaskSOP(serviceIndex, idx, sopId, on) {
+      const tasks = window[`compTasks${serviceIndex}`] || [];
+      if (!tasks[idx]) return;
+      tasks[idx].sop_ids = tasks[idx].sop_ids || [];
+      if (on) { if (!tasks[idx].sop_ids.includes(sopId)) tasks[idx].sop_ids.push(sopId); }
+      else { tasks[idx].sop_ids = tasks[idx].sop_ids.filter(id => id !== sopId); }
     }
 
     function removeComponentTask(serviceIndex, idx) {
@@ -608,6 +674,61 @@
 
     // 暴露函數到全局
     window.toggleBilling = toggleBilling;
+
+    // 集中新增收費 - 控制
+    function showGlobalBillingModal() {
+      const modal = document.getElementById('globalBillingModal');
+      const sel = document.getElementById('gb-service-select');
+      sel.innerHTML = tempServices.length > 0
+        ? tempServices.map((svc, idx) => {
+            const name = (allServices.find(s=>s.service_id==svc.service_id)||{}).service_name || `服務${idx+1}`;
+            return `<option value="${idx}">${name}</option>`;
+          }).join('')
+        : '<option value="">（尚未新增服務）</option>';
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('gb-ot-date').value = today;
+      modal.style.display = 'flex';
+    }
+    function closeGlobalBillingModal() { document.getElementById('globalBillingModal').style.display='none'; }
+    function gbToggleMonths(on) { document.querySelectorAll('.gb-month').forEach(cb => cb.checked = !!on); }
+    document.addEventListener('change', function(e){
+      if (e.target && e.target.id === 'gb-range') {
+        const v = e.target.value; const box = document.getElementById('gb-months');
+        box.style.display = v==='custom' ? 'block' : 'none';
+      }
+      if (e.target && e.target.name === 'gb-type') {
+        const v = e.target.value; document.getElementById('gb-monthly').style.display = v==='monthly' ? 'block' : 'none'; document.getElementById('gb-onetime').style.display = v==='one-time' ? 'block' : 'none';
+      }
+    });
+    function saveGlobalBillingFromModal() {
+      const type = (document.querySelector('input[name=gb-type]:checked')||{}).value;
+      const idxStr = document.getElementById('gb-service-select').value;
+      const idx = idxStr ? parseInt(idxStr,10) : -1;
+      if (idx<0 || !tempServices[idx]) { alert('請先新增服務'); return; }
+      const svc = tempServices[idx]; svc.billings = svc.billings || [];
+      if (type==='one-time') {
+        const desc = document.getElementById('gb-ot-desc').value.trim();
+        const date = document.getElementById('gb-ot-date').value;
+        const amount = parseFloat(document.getElementById('gb-ot-amount').value);
+        const due = parseInt(document.getElementById('gb-ot-due').value);
+        const notes = document.getElementById('gb-ot-notes').value.trim();
+        if (!desc || !date || !amount) { alert('請填寫完整一次性收費'); return; }
+        svc.billings.push({ billing_type:'one-time', billing_date:date, description:desc, billing_amount:amount, payment_due_days: due||30, notes: notes||null, billing_month: 0 });
+      } else {
+        const amount = parseFloat(document.getElementById('gb-amount').value);
+        const due = parseInt(document.getElementById('gb-due').value);
+        const range = document.getElementById('gb-range').value;
+        if (!amount || amount<=0) { alert('請輸入有效金額'); return; }
+        let months = [];
+        if (range==='all') months = Array.from({length:12},(_,i)=>i+1); else months = Array.from(document.querySelectorAll('.gb-month:checked')).map(cb=>parseInt(cb.value,10));
+        if (months.length===0) { alert('請選擇月份'); return; }
+        months.forEach(m => svc.billings.push({ billing_type:'monthly', billing_month:m, billing_amount:amount, payment_due_days: due||30, notes: null }));
+      }
+      closeGlobalBillingModal();
+      // 重新渲染目標服務的收費表
+      const container = document.getElementById(`billing-content-${idx}`);
+      if (container) container.innerHTML = renderBillingTable(idx);
+    }
 
     // 載入服務類型選項
     async function loadServices() {
@@ -676,6 +797,7 @@
       const startDate = document.getElementById('new-service-start-date').value;
       const templateId = document.getElementById('new-service-template').value;
       const autogen = document.getElementById('new-service-autogen').checked;
+      const serviceNotes = document.getElementById('new-service-notes').value.trim();
 
       if (!serviceId) {
         alert('請選擇服務');
@@ -689,6 +811,7 @@
         start_date: startDate || null,
         task_template_id: templateId ? parseInt(templateId) : null,
         auto_generate_tasks: autogen,
+        service_notes: serviceNotes || null,
         billings: []
       };
 
@@ -733,7 +856,9 @@
             <option value="one-time" ${service.service_cycle == 'one-time' ? 'selected' : ''}>一次性</option>
           </select>
         </td>
-        <td>-</td>
+        <td>
+          <input type="text" id="edit-service-notes-${index}" value="${service.service_notes || ''}" placeholder="服務備註" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;" />
+        </td>
         <td>
           <input type="date" id="edit-service-start-date-${index}" value="${service.start_date || ''}" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;" />
         </td>
@@ -756,7 +881,8 @@
         service_id: parseInt(serviceId),
         status: status,
         service_cycle: cycle,
-        start_date: startDate || null
+        start_date: startDate || null,
+        service_notes: (document.getElementById(`edit-service-notes-${index}`).value||'').trim() || null
       };
 
       renderServices(tempServices);
@@ -1019,7 +1145,7 @@
                 auto_generate_tasks: svc.auto_generate_tasks !== false
               })
             });
-            const jsonSvc = await resSvc.json().catch(()=>null);
+        const jsonSvc = await resSvc.json().catch(()=>null);
             const clientServiceId = jsonSvc?.data?.client_service_id;
             if (clientServiceId && Array.isArray(svc.billings)) {
               for (const b of svc.billings) {
@@ -1105,6 +1231,14 @@
               }
             }
           }
+        }
+
+        // 若選擇立即產生任務則嘗試觸發（非管理員會被忽略）
+        const genNowEl = document.getElementById('generate-now');
+        if (genNowEl && genNowEl.checked) {
+          try {
+            await fetch('/internal/api/v1/admin/tasks/generate-from-components', { method:'POST', credentials:'include' });
+          } catch (_) {}
         }
 
         alert('客戶新增成功！');
