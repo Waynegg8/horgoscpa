@@ -11,6 +11,21 @@ export async function handleBilling(request, env, me, requestId, url, path) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
   const method = request.method.toUpperCase();
 
+  // 檢查資料表欄位（兼容舊結構）
+  async function getBillingSchema() {
+    try {
+      const info = await env.DATABASE.prepare("PRAGMA table_info(ServiceBillingSchedule)").all();
+      const cols = new Set((info?.results || []).map(r => r.name));
+      return {
+        hasType: cols.has("billing_type"),
+        hasDate: cols.has("billing_date"),
+        hasDesc: cols.has("description"),
+      };
+    } catch (_) {
+      return { hasType: false, hasDate: false, hasDesc: false };
+    }
+  }
+
   // GET /internal/api/v1/billing/service/:serviceId - 获取服务的收费明细
   const matchGet = path.match(/^\/internal\/api\/v1\/billing\/service\/(\d+)$/);
   if (method === "GET" && matchGet) {
@@ -37,13 +52,25 @@ export async function handleBilling(request, env, me, requestId, url, path) {
         return jsonResponse(403, { ok: false, code: "FORBIDDEN", message: "无权限访问", meta: { requestId } }, corsHeaders);
       }
 
-      // 获取收费明细
+      const schema = await getBillingSchema();
+      const selectCols = [
+        "schedule_id",
+        "billing_month",
+        "billing_amount",
+        "payment_due_days",
+        "notes",
+      ];
+      if (schema.hasType) selectCols.push("billing_type");
+      if (schema.hasDate) selectCols.push("billing_date");
+      if (schema.hasDesc) selectCols.push("description");
+      selectCols.push("created_at", "updated_at");
+
+      const orderBy = schema.hasType ? "billing_type ASC, billing_month ASC" : "billing_month ASC";
       const rows = await env.DATABASE.prepare(
-        `SELECT schedule_id, billing_month, billing_amount, payment_due_days, notes, 
-                billing_type, billing_date, description, created_at, updated_at
+        `SELECT ${selectCols.join(", ")}
          FROM ServiceBillingSchedule
          WHERE client_service_id = ?
-         ORDER BY billing_type ASC, billing_month ASC`
+         ORDER BY ${orderBy}`
       ).bind(clientServiceId).all();
 
       const data = (rows?.results || []).map(r => ({
@@ -52,9 +79,9 @@ export async function handleBilling(request, env, me, requestId, url, path) {
         billing_amount: Number(r.billing_amount || 0),
         payment_due_days: Number(r.payment_due_days || 30),
         notes: r.notes || "",
-        billing_type: r.billing_type || 'monthly',
-        billing_date: r.billing_date || null,
-        description: r.description || null,
+        billing_type: schema.hasType ? (r.billing_type || 'monthly') : 'monthly',
+        billing_date: schema.hasDate ? (r.billing_date || null) : null,
+        description: schema.hasDesc ? (r.description || null) : null,
         created_at: r.created_at,
         updated_at: r.updated_at
       }));
@@ -133,6 +160,7 @@ export async function handleBilling(request, env, me, requestId, url, path) {
     }
 
     try {
+      const schema = await getBillingSchema();
       // 检查服务是否存在
       const service = await env.DATABASE.prepare(
         "SELECT client_service_id, client_id FROM ClientServices WHERE client_service_id = ? AND is_deleted = 0"
@@ -159,21 +187,41 @@ export async function handleBilling(request, env, me, requestId, url, path) {
         }
       }
 
-      // 插入收费明细
-      const result = await env.DATABASE.prepare(
-        `INSERT INTO ServiceBillingSchedule 
-         (client_service_id, billing_type, billing_month, billing_amount, payment_due_days, notes, billing_date, description)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).bind(
-        clientServiceId, 
-        billingType, 
-        billingType === 'monthly' ? billingMonth : 0, 
-        billingAmount, 
-        paymentDueDays, 
-        notes || null,
-        billingDate || null,
-        description || null
-      ).run();
+      // 插入收费明细（兼容舊表結構）
+      let result;
+      if (schema.hasType && schema.hasDate) {
+        // 新結構：完整字段
+        result = await env.DATABASE.prepare(
+          `INSERT INTO ServiceBillingSchedule 
+           (client_service_id, billing_type, billing_month, billing_amount, payment_due_days, notes, billing_date, description)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          clientServiceId,
+          billingType,
+          billingType === 'monthly' ? billingMonth : 0,
+          billingAmount,
+          paymentDueDays,
+          notes || null,
+          billingDate || null,
+          description || null
+        ).run();
+      } else {
+        // 舊結構：僅支援 monthly 欄位。若 one-time，退化為該日期所在月份。
+        const finalMonth = billingType === 'one-time'
+          ? (parseInt((billingDate || '').slice(5,7), 10) || new Date().getMonth() + 1)
+          : billingMonth;
+        result = await env.DATABASE.prepare(
+          `INSERT INTO ServiceBillingSchedule 
+           (client_service_id, billing_month, billing_amount, payment_due_days, notes)
+           VALUES (?, ?, ?, ?, ?)`
+        ).bind(
+          clientServiceId,
+          finalMonth,
+          billingAmount,
+          paymentDueDays,
+          (description ? `[一次性] ${description} ` : '') + (notes || '')
+        ).run();
+      }
 
       const scheduleId = result?.meta?.last_row_id;
 
@@ -319,6 +367,7 @@ export async function handleBilling(request, env, me, requestId, url, path) {
     }
 
     try {
+      const schema = await getBillingSchema();
       // 检查明细是否存在
       const existing = await env.DATABASE.prepare(
         `SELECT s.schedule_id, cs.client_id
@@ -331,7 +380,7 @@ export async function handleBilling(request, env, me, requestId, url, path) {
         return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "收费明细不存在", meta: { requestId } }, corsHeaders);
       }
 
-      // 更新收费明细
+      // 更新收费明细（兼容舊結構）
       await env.DATABASE.prepare(
         `UPDATE ServiceBillingSchedule 
          SET billing_amount = ?, payment_due_days = ?, notes = ?, updated_at = datetime('now')
@@ -373,6 +422,7 @@ export async function handleBilling(request, env, me, requestId, url, path) {
     }
 
     try {
+      const schema = await getBillingSchema();
       // 检查明细是否存在
       const existing = await env.DATABASE.prepare(
         `SELECT s.schedule_id, cs.client_id
