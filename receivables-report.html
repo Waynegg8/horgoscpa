@@ -403,9 +403,18 @@
           }
         };
         
-        // 初始化
-        loadStatistics();
-        loadAgingReport();
+        // 初始化 - 確保DOM完全載入後再執行
+        function init() {
+          console.log('[應收帳款報表] 開始初始化');
+          loadStatistics();
+          loadAgingReport();
+        }
+        
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
