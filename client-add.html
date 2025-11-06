@@ -52,10 +52,32 @@
             <span class="error-text" id="error_company_name"></span>
           </div>
           <div class="form-field">
+            <label for="inputClientId">客戶編號（必填，8位數字）</label>
+            <input type="text" id="inputClientId" maxlength="8" placeholder="8位數字" required />
+            <span class="error-text" id="error_client_id"></span>
+            <small class="form-help-text" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
+              <strong>公司客戶：</strong>使用統一編號<br>
+              <strong>個人客戶：</strong>使用99開頭的編號（如：99000001）
+            </small>
+          </div>
+        </div>
+        <div class="form-row-2col">
+          <div class="form-field">
             <label for="inputTaxId">統一編號（選填，個人客戶可不填）</label>
             <input type="text" id="inputTaxId" maxlength="8" placeholder="8位數字" />
             <span class="error-text" id="error_tax_registration_number"></span>
-            <small class="form-help-text" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">個人客戶可不填寫統一編號</small>
+            <small class="form-help-text" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
+              填寫統編時會自動同步到客戶編號
+            </small>
+          </div>
+          <div class="form-field">
+            <label>&nbsp;</label>
+            <button type="button" onclick="generatePersonalClientId()" class="btn-secondary" style="width: 100%; padding: 10px;">
+              🔢 產生個人客戶編號
+            </button>
+            <small class="form-help-text" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
+              點擊自動產生99開頭的編號
+            </small>
           </div>
         </div>
         <div class="form-row-2col">
@@ -396,6 +418,80 @@
       return categoryMap[category] || category;
     }
 
+    // ==================== 客戶編號管理 ====================
+    
+    // 設置統編與客戶編號的同步邏輯
+    function setupClientIdSync() {
+      const taxIdInput = document.getElementById('inputTaxId');
+      const clientIdInput = document.getElementById('inputClientId');
+      
+      if (taxIdInput && clientIdInput) {
+        // 當統編輸入時，自動同步到客戶編號
+        taxIdInput.addEventListener('input', function() {
+          const taxId = this.value.trim();
+          if (taxId.length > 0) {
+            // 如果填寫了統編，自動同步到客戶編號
+            clientIdInput.value = taxId;
+            // 清除客戶編號的錯誤提示
+            const errorEl = document.getElementById('error_client_id');
+            if (errorEl) {
+              errorEl.textContent = '';
+              errorEl.style.display = 'none';
+            }
+          }
+        });
+        
+        // 當客戶編號改變時，檢查是否與統編一致
+        clientIdInput.addEventListener('blur', function() {
+          const clientId = this.value.trim();
+          const taxId = taxIdInput.value.trim();
+          
+          // 如果有統編且客戶編號與統編不一致，給出提示
+          if (taxId && clientId && clientId !== taxId && !clientId.startsWith('99')) {
+            showFieldError('client_id', '提示：公司客戶建議使用統一編號作為客戶編號');
+          }
+        });
+      }
+    }
+    
+    // 產生個人客戶編號（從API獲取下一個可用編號）
+    async function generatePersonalClientId() {
+      const clientIdInput = document.getElementById('inputClientId');
+      if (!clientIdInput) return;
+      
+      try {
+        // 嘗試從API獲取下一個可用編號
+        const res = await fetch('/internal/api/v1/clients/next-personal-id', {
+          method: 'GET',
+          credentials: 'include'
+        });
+        
+        if (res.ok) {
+          const json = await res.json();
+          if (json.ok && json.data?.next_id) {
+            clientIdInput.value = json.data.next_id;
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('無法從API獲取編號，使用本地生成', err);
+      }
+      
+      // 如果API不可用，使用隨機生成（99 + 6位隨機數字）
+      const randomNum = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+      const personalId = '99' + randomNum;
+      clientIdInput.value = personalId;
+      
+      // 清除錯誤提示
+      const errorEl = document.getElementById('error_client_id');
+      if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.style.display = 'none';
+      }
+      
+      alert('已產生個人客戶編號：' + personalId + '\n\n請確認此編號尚未被使用。');
+    }
+    
     // 頁面初始化
     async function init() {
       // 新增模式：載入基礎數據，但不載入客戶詳情
@@ -418,6 +514,9 @@
       
       // 初始化標籤顯示
       renderTagsDisplay();
+      
+      // 設置統編輸入框的自動同步邏輯
+      setupClientIdSync();
       
       // 绑定收费服务筛选事件
       const billingServiceFilter = document.getElementById('billing-service-filter');
@@ -3503,9 +3602,11 @@
       const assigneeValue = document.getElementById('inputAssignee').value;
       const assigneeUserId = assigneeValue ? parseInt(assigneeValue) : 0;
       
+      const clientId = document.getElementById('inputClientId').value.trim();
       const taxId = document.getElementById('inputTaxId').value.trim();
       
       const payload = {
+        client_id: clientId,
         company_name: document.getElementById('inputCompanyName').value.trim(),
         tax_registration_number: taxId || null,
         contact_person_1: document.getElementById('inputContactPerson1').value.trim() || null,
@@ -3520,15 +3621,32 @@
       
       // 驗證
       let hasError = false;
+      
+      // 客戶編號驗證
+      if (!clientId) {
+        showFieldError('client_id', '客戶編號為必填');
+        hasError = true;
+      } else if (clientId.length !== 8) {
+        showFieldError('client_id', '客戶編號必須為8位數字');
+        hasError = true;
+      } else if (!/^\d+$/.test(clientId)) {
+        showFieldError('client_id', '客戶編號只能包含數字');
+        hasError = true;
+      }
+      
+      // 公司名稱驗證
       if (!payload.company_name) {
         showFieldError('company_name', '公司名稱為必填');
         hasError = true;
       }
+      
+      // 負責人驗證
       if (!assigneeUserId || assigneeUserId <= 0) {
         showFieldError('assignee', '請選擇負責人員');
         hasError = true;
       }
-      // 驗證統編格式（如果有填的話）
+      
+      // 統編驗證（如果填寫）
       if (taxId && taxId.length !== 8) {
         showFieldError('tax_registration_number', '統一編號必須為8位數字');
         hasError = true;
@@ -3536,6 +3654,18 @@
       if (taxId && !/^\d+$/.test(taxId)) {
         showFieldError('tax_registration_number', '統一編號只能包含數字');
         hasError = true;
+      }
+      
+      // 邏輯一致性檢查
+      if (taxId && clientId && taxId !== clientId && !clientId.startsWith('99')) {
+        const confirmed = confirm(
+          '提醒：您的客戶編號與統一編號不一致。\n\n' +
+          '客戶編號：' + clientId + '\n' +
+          '統一編號：' + taxId + '\n\n' +
+          '建議公司客戶使用統一編號作為客戶編號。\n' +
+          '是否繼續？'
+        );
+        if (!confirmed) return;
       }
       
       if (hasError) return;

@@ -582,6 +582,52 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 	}
 
+	// GET /api/v1/clients/next-personal-id - 獲取下一個可用的個人客戶編號
+	if (method === "GET" && url.pathname === "/internal/api/v1/clients/next-personal-id") {
+		try {
+			// 查詢最大的99開頭的客戶編號
+			const result = await env.DATABASE.prepare(
+				`SELECT client_id FROM Clients 
+				 WHERE client_id LIKE '99%' AND is_deleted = 0 
+				 ORDER BY client_id DESC LIMIT 1`
+			).first();
+			
+			let nextId;
+			if (result && result.client_id) {
+				// 有現有的99開頭編號，遞增
+				const currentNum = parseInt(result.client_id);
+				nextId = String(currentNum + 1).padStart(8, '0');
+			} else {
+				// 沒有現有編號，從99000001開始
+				nextId = '99000001';
+			}
+			
+			// 檢查生成的編號是否已被使用（避免衝突）
+			const exists = await env.DATABASE.prepare(
+				`SELECT 1 FROM Clients WHERE client_id = ? LIMIT 1`
+			).bind(nextId).first();
+			
+			if (exists) {
+				// 如果已存在，使用時間戳生成一個隨機編號
+				const timestamp = Date.now().toString().slice(-6);
+				nextId = '99' + timestamp;
+			}
+			
+			return jsonResponse(200, {
+				ok: true,
+				code: "SUCCESS",
+				message: "已生成下一個個人客戶編號",
+				data: { next_id: nextId },
+				meta: { requestId }
+			}, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
 	// POST /api/v1/clients/diagnose - 資料庫即時診斷（不使用任何快取）
 	if (method === "POST" && url.pathname === "/internal/api/v1/clients/diagnose") {
 		let body;
