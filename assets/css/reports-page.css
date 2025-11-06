@@ -34,7 +34,7 @@
 .form-select:focus, .filter-group select:focus, .filter-group input:focus { outline:none; border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,0.1); }
 
 /* Button */
-.btn { padding:8px 16px; border:1px solid #e5e7eb; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; transition:all 0.2s; font-weight:500; white-space:nowrap; }
+.btn { padding:8px 16px; border:1px solid #e5e7eb; border-radius:6px; background:#fff; cursor:pointer; font-size:14px; transition:all 0.2s; font-weight:500; white-space:nowrap; color:#334155; }
 .btn.primary { background:#0ea5e9; border-color:#0ea5e9; color:#fff; }
 .btn:hover:not(:disabled) { background:#0284c7; border-color:#0284c7; color:#fff; }
 .btn:disabled { opacity:0.6; cursor:not-allowed; }
@@ -44,6 +44,7 @@
 .stat-item { flex:1; min-width:120px; }
 .stat-label { font-size:12px; color:#64748b; margin-bottom:4px; }
 .stat-value { font-size:18px; font-weight:700; color:#0f172a; }
+.stat-sub { font-size:12px; color:#94a3b8; margin-top:4px; }
 
 /* Table */
 .report-table-wrapper { overflow-x:auto; border-radius:8px; margin-bottom:20px; }

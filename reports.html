@@ -147,6 +147,7 @@
             <div class="stat-item">
               <div class="stat-label">使用率</div>
               <div class="stat-value" id="eh-utilization">—</div>
+              <div class="stat-sub" style="font-size:12px;color:#64748b;margin-top:4px;">可計費工時 / (工作天數 × 8)</div>
             </div>
           </div>
 
@@ -632,8 +633,13 @@
             const rows = Array.isArray(json.data) ? json.data : [];
             let totalHours = 0; let utilSum = 0;
             listEl.innerHTML = '';
+            
+            console.log('[員工工時] 處理數據', { rowCount: rows.length, rows });
+            
             if (!rows.length) {
               listEl.innerHTML = '<div class="muted" style="padding:10px;">尚無資料</div>';
+              totalHoursEl.textContent = '—';
+              utilizationEl.textContent = '—';
             } else {
               rows.forEach(r => {
                 totalHours += Number(r.total_hours||0);
@@ -646,14 +652,14 @@
                 `;
                 listEl.appendChild(item);
               });
-            }
-            const avgUtil = rows.length ? (utilSum/rows.length) : 0;
-            totalHoursEl.textContent = totalHours === 0 ? '—' : formatNumber(totalHours);
-            utilizationEl.textContent = avgUtil === 0 ? '—' : `${avgUtil.toFixed(1)}%`;
-
-            // Render client distribution pie chart
-            ehClientDistChart = destroyChart(ehClientDistChart);
-            if (rows.length > 0 && rows[0].client_distribution && rows[0].client_distribution.length > 0) {
+              
+              const avgUtil = rows.length ? (utilSum/rows.length) : 0;
+              totalHoursEl.textContent = totalHours === 0 ? '—' : formatNumber(totalHours);
+              utilizationEl.textContent = avgUtil === 0 ? '—' : `${avgUtil.toFixed(1)}%`;
+              
+              // Render client distribution pie chart
+              ehClientDistChart = destroyChart(ehClientDistChart);
+              if (rows[0].client_distribution && rows[0].client_distribution.length > 0) {
               const ctx = document.getElementById('eh-client-dist-chart');
               const dist = rows[0].client_distribution;
               const colors = generateColors(dist.length);
@@ -870,6 +876,7 @@
           const currentMonth = String(now.getMonth() + 1);
           document.getElementById('eh-month').value = currentMonth;
           document.getElementById('pr-month').value = currentMonth;
+          document.getElementById('rc-month').value = currentMonth;
 
           // 載入客戶和員工列表
           await Promise.all([loadClientsList(), loadEmployeesList()]);
