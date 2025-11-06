@@ -1627,6 +1627,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					
 					// 第二遍：使用实际时薪计算总成本（实际时薪已包含薪资+管理费）
 					let totalCost = 0;
+					let totalWeightedHoursForAvg = 0;
 					processedFixedKeys.clear();
 					
 					for (const ts of group.timesheets) {
@@ -1648,12 +1649,23 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						// 使用员工的实际时薪（已包含薪资成本+管理费分摊）
 						const actualHourlyRate = Number(employeeActualHourlyRates[ts.user_id] || 0);
 						totalCost += Math.round(actualHourlyRate * tsWeightedHours);
+						totalWeightedHoursForAvg += tsWeightedHours;
 					}
+					
+					// 计算平均实际时薪
+					const avgActualHourlyRate = totalWeightedHoursForAvg > 0 ? Math.round(totalCost / totalWeightedHoursForAvg) : 0;
 					
 					// 生成任務記錄（按服務子項目）
 					const assigneeNames = Array.from(group.userNames).join(', ') || '未指定';
-					// 获取服务项目名称（从第一笔工时记录中获取）
-					const serviceName = group.timesheets[0]?.service_name_full || '未分類';
+					// 获取服务项目名称，优先从关联表获取
+					const firstTs = group.timesheets[0];
+					let serviceName = '未分類';
+					if (firstTs?.service_name_full) {
+						serviceName = firstTs.service_name_full;
+					} else if (firstTs?.service_name) {
+						serviceName = firstTs.service_name;
+					}
+					
 					tasks.push({
 						clientName: client.company_name,
 						serviceName: serviceName,
@@ -1661,6 +1673,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						assigneeName: assigneeNames,
 						hours: hours,
 						weightedHours: weightedHours,
+						avgActualHourlyRate: avgActualHourlyRate,
 						totalCost: totalCost
 					});
 				}
