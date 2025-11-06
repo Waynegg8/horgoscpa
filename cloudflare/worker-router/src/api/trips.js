@@ -460,20 +460,27 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 			}
 			
 			// 一般用戶只能查看自己的統計，管理員可以查看所有
-			let targetUserId = me.is_admin && userId ? userId : String(me.user_id);
+			const isAdmin = me.is_admin === 1 || me.is_admin === true;
+			let targetUserId = isAdmin && userId ? userId : String(me.user_id);
 			
-			// ⚡ 嘗試從KV緩存讀取
+			// 檢查是否強制跳過緩存
+			const bypassCache = params.get("_t");
+			
+			// ⚡ 嘗試從KV緩存讀取（除非強制跳過）
 			const cacheKey = generateCacheKey('trips_summary', { userId: targetUserId, month });
-			const kvCached = await getKVCache(env, cacheKey);
 			
-			if (kvCached && kvCached.data) {
-				return jsonResponse(200, { 
-					ok: true, 
-					code: "OK", 
-					message: "成功（KV緩存）⚡", 
-					data: kvCached.data, 
-					meta: { requestId, ...kvCached.meta, cache_source: 'kv' } 
-				}, corsHeaders);
+			if (!bypassCache) {
+				const kvCached = await getKVCache(env, cacheKey);
+				
+				if (kvCached && kvCached.data) {
+					return jsonResponse(200, { 
+						ok: true, 
+						code: "OK", 
+						message: "成功（KV緩存）⚡", 
+						data: kvCached.data, 
+						meta: { requestId, ...kvCached.meta, cache_source: 'kv' } 
+					}, corsHeaders);
+				}
 			}
 			
 			// 查詢該月份的外出登記統計
@@ -497,12 +504,12 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 				total_subsidy_twd: (result?.total_subsidy_cents || 0) / 100
 			};
 			
-			// 保存到緩存（1小時）
-			await saveKVCache(env, cacheKey, 'trips_summary', data, {
+			// 保存到緩存（1小時）- 不阻塞响应
+			saveKVCache(env, cacheKey, 'trips_summary', data, {
 				userId: targetUserId,
 				scopeParams: { userId: targetUserId, month },
 				ttl: 3600
-			});
+			}).catch(err => console.error('[TRIPS] Summary缓存保存失败:', err));
 			
 			return jsonResponse(200, { 
 				ok: true, 
