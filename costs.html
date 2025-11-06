@@ -312,28 +312,35 @@
             console.log('[loadItems] 收到數據:', json);
             if (!res.ok || !json || json.ok !== true) throw new Error('API 返回錯誤');
             const items = json.data || [];
+            console.log('[loadItems] 項目數量:', items.length);
             if (items.length === 0) {
               tbodyItems.innerHTML = '<tr><td colspan="6" class="muted">尚無資料</td></tr>';
               return;
             }
             tbodyItems.innerHTML = '';
-            items.forEach(item => {
-              const tr = document.createElement('tr');
-              const allocationText = { per_employee: '按員工數', per_hour: '按工時', per_revenue: '按收入' }[item.allocationMethod] || item.allocationMethod;
-              tr.innerHTML = `
-                <td>${item.name||''}</td>
-                <td>${item.category === 'fixed' ? '固定' : '變動'}</td>
-                <td>${allocationText}</td>
-                <td>${item.description||''}</td>
-                <td>${item.isActive ? '啟用' : '停用'}</td>
-                <td>
-                  <button class="btn-link" data-edit-item-id="${item.id}">編輯</button>
-                  <button class="btn-link" data-template-id="${item.id}">自動生成</button>
-                  <button class="btn-link" style="color:#dc2626;" data-delete-id="${item.id}">刪除</button>
-                </td>
-              `;
-              tbodyItems.appendChild(tr);
+            items.forEach((item, index) => {
+              try {
+                console.log(`[loadItems] 渲染項目 ${index}:`, item);
+                const tr = document.createElement('tr');
+                const allocationText = { per_employee: '按員工數', per_hour: '按工時', per_revenue: '按收入' }[item.allocationMethod] || item.allocationMethod;
+                tr.innerHTML = `
+                  <td>${item.name||''}</td>
+                  <td>${item.category === 'fixed' ? '固定' : '變動'}</td>
+                  <td>${allocationText}</td>
+                  <td>${item.description||''}</td>
+                  <td>${item.isActive ? '啟用' : '停用'}</td>
+                  <td>
+                    <button class="btn-link" data-edit-item-id="${item.id}">編輯</button>
+                    <button class="btn-link" data-template-id="${item.id}">自動生成</button>
+                    <button class="btn-link" style="color:#dc2626;" data-delete-id="${item.id}">刪除</button>
+                  </td>
+                `;
+                tbodyItems.appendChild(tr);
+              } catch (itemErr) {
+                console.error(`[loadItems] 渲染項目 ${index} 失敗:`, itemErr, item);
+              }
             });
+            console.log('[loadItems] 渲染完成，已添加', items.length, '個項目');
             // 綁定編輯成本項目
             tbodyItems.querySelectorAll('button[data-edit-item-id]').forEach(btn => {
               btn.addEventListener('click', ()=> {
@@ -497,30 +504,39 @@
           try {
             tbodyRecords.innerHTML = '<tr><td colspan="6" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/overhead-costs?${params.toString()}`, { credentials:'include', cache: 'no-store' });
+            console.log('[loadRecords] API 回應狀態:', res.status);
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error();
+            console.log('[loadRecords] 收到數據:', json);
+            if (!res.ok || !json || json.ok !== true) throw new Error('API 返回錯誤');
             const data = json.data || {};
             const items = data.items || [];
+            console.log('[loadRecords] 記錄數量:', items.length);
             if (items.length === 0) {
               tbodyRecords.innerHTML = '<tr><td colspan="6" class="muted">尚無資料</td></tr>';
             } else {
               tbodyRecords.innerHTML = '';
-              items.forEach(r => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                  <td>${r.costName||''}</td>
-                  <td>${formatCurrency(r.amount)}</td>
-                  <td>${r.notes||''}</td>
-                  <td>${r.recordedBy||''}</td>
-                  <td>${r.recordedAt||''}</td>
-                  <td>
-                    <button class="btn-link" data-edit-record-id="${r.id}">編輯</button>
-                    <button class="btn-link" style="color:#dc2626;" data-delete-record-id="${r.id}">刪除</button>
-                  </td>
-                `;
-                tbodyRecords.appendChild(tr);
+              items.forEach((r, index) => {
+                try {
+                  console.log(`[loadRecords] 渲染記錄 ${index}:`, r);
+                  const tr = document.createElement('tr');
+                  tr.innerHTML = `
+                    <td>${r.costName||''}</td>
+                    <td>${formatCurrency(r.amount)}</td>
+                    <td>${r.notes||''}</td>
+                    <td>${r.recordedBy||''}</td>
+                    <td>${r.recordedAt||''}</td>
+                    <td>
+                      <button class="btn-link" data-edit-record-id="${r.id}">編輯</button>
+                      <button class="btn-link" style="color:#dc2626;" data-delete-record-id="${r.id}">刪除</button>
+                    </td>
+                  `;
+                  tbodyRecords.appendChild(tr);
+                } catch (itemErr) {
+                  console.error(`[loadRecords] 渲染記錄 ${index} 失敗:`, itemErr, r);
+                }
               });
+              console.log('[loadRecords] 渲染完成，已添加', items.length, '筆記錄');
               // 綁定編輯月度記錄
               tbodyRecords.querySelectorAll('button[data-edit-record-id]').forEach(btn => {
                 btn.addEventListener('click', ()=> {
@@ -550,6 +566,7 @@
             const total = Number(data.total||0);
             const totalFixed = Number(data.totalFixed||0);
             const totalVariable = Number(data.totalVariable||0);
+            console.log('[loadRecords] 統計資料:', { total, totalFixed, totalVariable });
             statTotal.textContent = formatCurrency(total);
             statBreakdown.textContent = `固定：${formatCurrency(totalFixed)}｜變動：${formatCurrency(totalVariable)}`;
           } catch (err) {
@@ -1059,6 +1076,16 @@
           const value = `${year}-${month}`;
           monthInput.value = value;
           console.log('[initMonthSelector] 已設置月份:', value);
+          console.log('[initMonthSelector] 驗證設置結果，monthInput.value =', monthInput.value);
+          
+          // 如果设置失败，强制延迟再次设置
+          if (monthInput.value !== value) {
+            console.warn('[initMonthSelector] 首次設置失敗，將延遲重試...');
+            setTimeout(() => {
+              monthInput.value = value;
+              console.log('[initMonthSelector] 重試後 monthInput.value =', monthInput.value);
+            }, 100);
+          }
         }
 
         // 更新按钮状态
@@ -1081,10 +1108,16 @@
           console.error('[Event] 無法添加月份監聽器：monthInput 不存在');
         }
 
-        // ⚡ 预渲染初始化
-        if (window.PagePrerender) {
-          window.PagePrerender.init('main');
+        // ⚡ 清除 costs 页面的预渲染缓存（排查问题）
+        if (window.PagePrerender && window.PagePrerender.clear) {
+          window.PagePrerender.clear('costs');
+          console.log('[Init] 已清除 costs 預渲染緩存');
         }
+        
+        // ⚡ 预渲染初始化（暂时禁用以排查问题）
+        // if (window.PagePrerender) {
+        //   window.PagePrerender.init('main');
+        // }
 
         // 初始化
         console.log('[Init] 開始初始化成本頁面...');
@@ -1098,10 +1131,10 @@
             loadRecords();
             // 3. 更新按钮状态
             updateButtonState();
-            // ⚡ 自动保存预渲染
-            if (window.PagePrerender) {
-              setTimeout(() => window.PagePrerender.autoSave('main', 2000), 1000);
-            }
+            // ⚡ 自动保存预渲染（暂时禁用）
+            // if (window.PagePrerender) {
+            //   setTimeout(() => window.PagePrerender.autoSave('main', 2000), 1000);
+            // }
           } else {
             console.warn('[Init] 權限驗證失敗');
           }
