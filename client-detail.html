@@ -155,6 +155,9 @@
           <select id="billing-service-filter" style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
             <option value="">全部服務</option>
           </select>
+          <button id="btn-billing-select-all" class="btn btn-secondary" onclick="toggleSelectAll(true)" title="選取目前清單全部">全選</button>
+          <button id="btn-billing-clear-all" class="btn btn-secondary" onclick="toggleSelectAll(false)" title="取消目前清單全部">全不選</button>
+          <button id="btn-batch-delete" class="btn btn-danger" onclick="batchDeleteBilling()" disabled>批量刪除</button>
           <button class="btn btn-primary" onclick="showAddBillingModal()">+ 新增收費</button>
         </div>
       </div>
@@ -162,6 +165,7 @@
         <table class="billing-table" id="billingTable">
           <thead>
             <tr>
+              <th style="width: 44px; text-align:center;"><input type="checkbox" id="billing-master" onchange="onMasterSelectChange(this)"></th>
               <th>服務名稱</th>
               <th style="width: 80px;">月份</th>
               <th style="width: 120px;">金額</th>
@@ -172,7 +176,7 @@
           </thead>
           <tbody id="billingList">
             <tr>
-              <td colspan="6" class="loading-text">載入中...</td>
+              <td colspan="7" class="loading-text">載入中...</td>
             </tr>
           </tbody>
         </table>
@@ -245,7 +249,13 @@
         </div>
         
         <div id="modal-month-checkboxes" style="display: none; margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 8px; font-size: 13px; font-weight: 500;">選擇月份：</label>
+          <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:8px;">
+            <label style="font-size: 13px; font-weight: 500;">選擇月份：</label>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn btn-sm btn-secondary" onclick="modalSelectAllMonths(true)">全選</button>
+              <button type="button" class="btn btn-sm btn-secondary" onclick="modalSelectAllMonths(false)">全不選</button>
+            </div>
+          </div>
           <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;">
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" class="modal-month-checkbox" value="1" checked style="cursor: pointer;" /><span>1月</span></label>
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" class="modal-month-checkbox" value="2" checked style="cursor: pointer;" /><span>2月</span></label>
@@ -580,6 +590,9 @@
       const billingList = document.getElementById('billingList');
       const serviceFilter = document.getElementById('billing-service-filter');
       
+      window.selectedBillingIds = window.selectedBillingIds || new Set();
+      window.currentBillingFilter = '';
+
       try {
         // 获取当前客户的所有服务
         const clientRes = await fetch(`/internal/api/v1/clients/${currentClientId}`);
@@ -618,12 +631,18 @@
           }
         }
         
-        // 排序：先按服务名称，再按月份
+        // 排序：先按服务名称，再按月份（一次性以 billing_date 月份排序）
         allBillingData.sort((a, b) => {
           if (a.service_name !== b.service_name) {
             return a.service_name.localeCompare(b.service_name);
           }
-          return a.billing_month - b.billing_month;
+          const am = (a.billing_type === 'one-time' && a.billing_date)
+            ? (new Date(a.billing_date).getMonth() + 1)
+            : (a.billing_month || 0);
+          const bm = (b.billing_type === 'one-time' && b.billing_date)
+            ? (new Date(b.billing_date).getMonth() + 1)
+            : (b.billing_month || 0);
+          return am - bm;
         });
         
         renderBillingList();
@@ -637,15 +656,17 @@
     // 渲染收费列表
     function renderBillingList(filterServiceId = '') {
       const billingList = document.getElementById('billingList');
+      window.currentBillingFilter = filterServiceId || '';
       
       // 按服务筛选
       let filteredData = allBillingData;
       if (filterServiceId) {
         filteredData = allBillingData.filter(b => b.client_service_id == filterServiceId);
       }
+      window.__billingFilteredIds = filteredData.map(x => x.schedule_id);
       
       if (filteredData.length === 0) {
-        billingList.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #9ca3af;">尚未設定收費</td></tr>';
+        billingList.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #9ca3af;">尚未設定收費</td></tr>';
         return;
       }
       
@@ -656,22 +677,37 @@
         // 月份/类型显示
         let monthDisplay = '';
         if (isOneTime) {
-          // 一次性收费：显示项目名称和日期
-          const dateStr = billing.billing_date ? new Date(billing.billing_date).toLocaleDateString('zh-TW') : '';
-          monthDisplay = `<div style="font-weight: 500; color: #f59e0b;">一次性</div><div style="font-size: 12px; color: #6b7280;">${billing.description || dateStr}</div>`;
+          // 一次性：月份顯示真實月份
+          const d = billing.billing_date ? new Date(billing.billing_date) : null;
+          const m = d ? (d.getMonth() + 1) : (billing.billing_month || '—');
+          monthDisplay = `${m}月`;
       } else {
           // 按月收费：显示月份
           monthDisplay = `${billing.billing_month}月`;
         }
         
         // 备注显示
-        const notesDisplay = billing.notes || billing.description || '-';
+        let notesDisplay = '-';
+        if (isOneTime) {
+          const d = billing.billing_date ? new Date(billing.billing_date) : null;
+          const y = d ? d.getFullYear() : '';
+          const m = d ? String(d.getMonth() + 1).padStart(2, '0') : '';
+          const parts = [];
+          parts.push(`[一次性] ${y}${y?'/':''}${m}`.trim());
+          if (billing.description) parts.push(billing.description);
+          if (billing.notes) parts.push(billing.notes);
+          notesDisplay = parts.filter(Boolean).join(' - ');
+        } else {
+          notesDisplay = billing.notes || '-';
+        }
         
         // 删除时的标识
         const deleteLabel = isOneTime ? `一次性收費（${billing.description || ''}）` : `${billing.billing_month}月`;
         
+        const checked = window.selectedBillingIds.has(billing.schedule_id) ? 'checked' : '';
         return `
-          <tr>
+          <tr data-schedule-id="${billing.schedule_id}">
+            <td style="text-align:center;"><input type="checkbox" ${checked} onchange="toggleBillingSelect(${billing.schedule_id}, this.checked)"></td>
             <td><strong>${billing.service_name}</strong></td>
             <td>${monthDisplay}</td>
             <td class="amount">$${billing.billing_amount.toLocaleString('zh-TW')}</td>
@@ -684,6 +720,12 @@
           </tr>
         `;
       }).join('');
+
+      // 更新全選框狀態與批量刪除按鈕
+      const allSelected = window.__billingFilteredIds.length > 0 && window.__billingFilteredIds.every(id => window.selectedBillingIds.has(id));
+      const master = document.getElementById('billing-master');
+      if (master) master.checked = allSelected;
+      updateBatchDeleteButton();
     }
     
     // 切换收费类型
@@ -799,8 +841,62 @@
         alert(err.message || '新增失敗，請稍後再試');
       }
     }
+
+    // ===== 批量刪除 =====
+    function toggleBillingSelect(id, checked) {
+      window.selectedBillingIds = window.selectedBillingIds || new Set();
+      if (checked) window.selectedBillingIds.add(id); else window.selectedBillingIds.delete(id);
+      updateBatchDeleteButton();
+    }
+
+    function onMasterSelectChange(el) {
+      toggleSelectAll(el.checked);
+    }
+
+    function toggleSelectAll(selectAll) {
+      window.selectedBillingIds = window.selectedBillingIds || new Set();
+      const ids = window.__billingFilteredIds || [];
+      ids.forEach(id => { if (selectAll) window.selectedBillingIds.add(id); else window.selectedBillingIds.delete(id); });
+      // 更新列表中的 checkbox 顯示
+      ids.forEach(id => {
+        const row = document.querySelector(`tr[data-schedule-id="${id}"] input[type=checkbox]`);
+        if (row) row.checked = selectAll;
+      });
+      const master = document.getElementById('billing-master');
+      if (master) master.checked = !!selectAll && ids.length > 0;
+      updateBatchDeleteButton();
+    }
+
+    function updateBatchDeleteButton() {
+      const btn = document.getElementById('btn-batch-delete');
+      if (!btn) return;
+      btn.disabled = !(window.selectedBillingIds && window.selectedBillingIds.size > 0);
+      btn.textContent = window.selectedBillingIds.size > 0 ? `批量刪除（${window.selectedBillingIds.size}）` : '批量刪除';
+    }
+
+    async function batchDeleteBilling() {
+      const ids = Array.from(window.selectedBillingIds || []);
+      if (ids.length === 0) return;
+      if (!confirm(`確定刪除選取的 ${ids.length} 筆收費嗎？`)) return;
+      let ok = 0, fail = 0;
+      for (const id of ids) {
+        try {
+          const res = await fetch(`/internal/api/v1/billing/${id}`, { method: 'DELETE' });
+          const json = await res.json().catch(()=>({ ok:false }));
+          if (res.ok && json.ok) { ok++; window.selectedBillingIds.delete(id); }
+          else fail++;
+        } catch { fail++; }
+      }
+      alert(`已刪除 ${ok} 筆${fail?`，失敗 ${fail} 筆`:''}`);
+      await loadAllBilling();
+    }
+
+    // ===== 月份多選：全選/全不選 =====
+    function modalSelectAllMonths(selectAll) {
+      document.querySelectorAll('.modal-month-checkbox').forEach(cb => cb.checked = !!selectAll);
+    }
     
-    // 保存按月收费
+    // 保存按月收费（支援全年批量與重複月份跳過）
     async function saveMonthlyBilling(serviceId) {
       const amount = parseFloat(document.getElementById('modal-batch-amount').value);
       const dueDays = parseInt(document.getElementById('modal-batch-due').value);
@@ -823,27 +919,37 @@
         throw new Error('請至少選擇一個月份');
       }
       
-      // 批量创建收费
+      // 批量创建收费（統計成功/跳過/失敗）
+      let okCount = 0, skipCount = 0, failCount = 0;
+      const errors = [];
       for (const month of months) {
-        const res = await fetch('/internal/api/v1/billing', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client_service_id: parseInt(serviceId),
-            billing_type: 'monthly',
-            billing_month: month,
-            billing_amount: amount,
-            payment_due_days: dueDays
-          })
-        });
-        
-        if (!res.ok) {
-          const json = await res.json();
-          throw new Error(json.message || `${month}月新增失敗`);
+        try {
+          const res = await fetch('/internal/api/v1/billing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              client_service_id: parseInt(serviceId),
+              billing_type: 'monthly',
+              billing_month: month,
+              billing_amount: amount,
+              payment_due_days: dueDays
+            })
+          });
+          const json = await res.json().catch(() => ({ ok:false, message:'網路錯誤' }));
+          if (res.ok && json.ok) {
+            okCount++;
+          } else if (json.code === 'DUPLICATE') {
+            skipCount++;
+          } else {
+            failCount++;
+            errors.push(`${month}月: ${json.message || '未知錯誤'}`);
+          }
+        } catch (e) {
+          failCount++;
+          errors.push(`${month}月: ${e.message || e}`);
         }
       }
-      
-      alert(`已成功新增 ${months.length} 個月份的收費`);
+      alert(`批量新增完成：成功 ${okCount} 個，跳過（已存在）${skipCount} 個，失敗 ${failCount} 個${errors.length ? '\n\n詳情：\n' + errors.join('\n') : ''}`);
     }
     
     // 保存一次性收费
@@ -890,10 +996,49 @@
       alert('已成功新增一次性收費');
     }
     
-    // 编辑收费
-    function editBillingRow(scheduleId, serviceId, month, amount, dueDays, notes) {
-      // TODO: 实现编辑功能
-      alert('編輯功能開發中');
+    // 编辑收费（行內編輯）
+    async function editBillingRow(scheduleId, serviceId, month, amount, dueDays, notes) {
+      const row = document.querySelector(`tr[data-schedule-id="${scheduleId}"]`);
+      if (!row) return;
+      const item = (allBillingData || []).find(x => x.schedule_id === scheduleId) || {};
+      const monthText = item.billing_type === 'one-time' && item.billing_date
+        ? (new Date(item.billing_date).getMonth() + 1) + '月'
+        : (item.billing_month ? item.billing_month + '月' : '');
+      row.innerHTML = `
+        <td style="text-align:center;"><input type="checkbox" onchange="toggleBillingSelect(${scheduleId}, this.checked)" ${window.selectedBillingIds && window.selectedBillingIds.has(scheduleId) ? 'checked' : ''}></td>
+        <td><strong>${item.service_name || ''}</strong></td>
+        <td>${monthText}</td>
+        <td><input type="number" id="edit-amount-${scheduleId}" value="${amount}" step="0.01" min="0" style="width:120px"></td>
+        <td><input type="number" id="edit-due-${scheduleId}" value="${dueDays}" min="1" style="width:80px">天</td>
+        <td><input type="text" id="edit-notes-${scheduleId}" value="${(notes||'').replace(/"/g,'&quot;')}" style="width:100%"></td>
+        <td>
+          <button class="table-btn-link" onclick="saveEditedBilling(${scheduleId})">儲存</button>
+          <button class="table-btn-link" onclick="cancelEditBilling()">取消</button>
+        </td>`;
+      window.__editingBilling = { scheduleId };
+    }
+
+    async function saveEditedBilling(scheduleId) {
+      const amount = parseFloat(document.getElementById(`edit-amount-${scheduleId}`).value);
+      const dueDays = parseInt(document.getElementById(`edit-due-${scheduleId}`).value);
+      const notes = document.getElementById(`edit-notes-${scheduleId}`).value.trim();
+      try {
+        const res = await fetch(`/internal/api/v1/billing/${scheduleId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ billing_amount: amount, payment_due_days: dueDays, notes })
+        });
+        const json = await res.json();
+        if (!json.ok) throw new Error(json.message || '更新失敗');
+        alert('收費明細已更新');
+        await loadAllBilling();
+      } catch (e) {
+        alert(e.message || '更新失敗');
+      }
+    }
+
+    async function cancelEditBilling() {
+      await loadAllBilling();
     }
     
     // 删除收费
