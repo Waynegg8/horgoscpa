@@ -399,7 +399,7 @@
       
       // 其他（靜默失敗）
       { key: 'automation_rules', endpoint: '/automation/rules', priority: 'P3' },
-      { key: 'task_templates', endpoint: '/tasks/templates?perPage=50', priority: 'P3' },
+      { key: 'task_templates', endpoint: '/task-templates?perPage=50', priority: 'P3' },
       { key: 'billing_schedules', endpoint: '/billing-schedules?perPage=100', priority: 'P3' },
       // 移除不存在的 API：
       // { key: 'reports_overview', endpoint: '/reports?perPage=50', priority: 'P3' }, // 404
