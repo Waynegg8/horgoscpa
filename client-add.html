@@ -3752,12 +3752,21 @@
           return;
         }
         
-        const newClientId = json.data.client_id;
+        // 注意：後端返回的字段是 clientId，不是 client_id
+        const newClientId = json.data.clientId;
+        console.log('新建客戶ID:', newClientId);
         
         // 步驟 2: 如果有服務，逐一新增
         if (tempServices.length > 0) {
+          console.log(`開始創建 ${tempServices.length} 個服務...`);
           for (let i = 0; i < tempServices.length; i++) {
             const svc = tempServices[i];
+            console.log(`創建服務 ${i + 1}:`, {
+              service_id: svc.service_id,
+              service_name: svc.service_name,
+              status: svc.status
+            });
+            
             const resSvc = await fetch(`/internal/api/v1/clients/${newClientId}/services`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -3770,11 +3779,21 @@
             });
             
             const jsonSvc = await resSvc.json().catch(() => null);
+            console.log(`服務 ${i + 1} 創建響應:`, jsonSvc);
+            
+            if (!resSvc.ok || !jsonSvc?.ok) {
+              console.error(`服務 ${i + 1} 創建失敗:`, jsonSvc);
+              alert(`警告：服務「${svc.service_name}」創建失敗：${jsonSvc?.message || '未知錯誤'}\n\n將繼續創建其他服務...`);
+              continue;
+            }
+            
             const clientServiceId = jsonSvc?.data?.client_service_id;
             
             // 步驟 3: 為服務添加收費
-            if (clientServiceId && Array.isArray(svc.billings)) {
-              for (const b of svc.billings) {
+            if (clientServiceId && Array.isArray(svc.billings) && svc.billings.length > 0) {
+              console.log(`  為服務 ${i + 1} 創建 ${svc.billings.length} 條收費記錄...`);
+              for (let j = 0; j < svc.billings.length; j++) {
+                const b = svc.billings[j];
                 const payloadBilling = (b.billing_type === 'one-time') ? {
                   client_service_id: clientServiceId,
                   billing_type: 'one-time',
@@ -3793,18 +3812,29 @@
                   notes: b.notes || null
                 };
                 
-                await fetch('/internal/api/v1/billing', {
+                console.log(`    創建收費 ${j + 1}:`, payloadBilling);
+                const resBilling = await fetch('/internal/api/v1/billing', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   credentials: 'include',
                   body: JSON.stringify(payloadBilling)
                 });
+                
+                const jsonBilling = await resBilling.json().catch(() => null);
+                console.log(`    收費 ${j + 1} 創建響應:`, jsonBilling);
+                
+                if (!resBilling.ok || !jsonBilling?.ok) {
+                  console.error(`    收費 ${j + 1} 創建失敗:`, jsonBilling);
+                  alert(`警告：服務「${svc.service_name}」的收費記錄創建失敗：${jsonBilling?.message || '未知錯誤'}\n\n將繼續創建其他收費記錄...`);
+                }
               }
             }
             
             // 步驟 4: 若手動配置了服務組件，逐一建立
             if (clientServiceId && Array.isArray(svc.components) && svc.components.length > 0) {
-              for (const comp of svc.components) {
+              console.log(`  為服務 ${i + 1} 創建 ${svc.components.length} 個組件配置...`);
+              for (let k = 0; k < svc.components.length; k++) {
+                const comp = svc.components[k];
                 const payloadComp = {
                   service_id: svc.service_id,
                   service_item_id: comp.service_item_id || null,
@@ -3818,15 +3848,25 @@
                   tasks: comp.tasks || []
                 };
                 
-                await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`, {
+                console.log(`    創建組件 ${k + 1}:`, payloadComp);
+                const resComp = await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   credentials: 'include',
                   body: JSON.stringify(payloadComp)
                 });
+                
+                const jsonComp = await resComp.json().catch(() => null);
+                console.log(`    組件 ${k + 1} 創建響應:`, jsonComp);
+                
+                if (!resComp.ok || !jsonComp?.ok) {
+                  console.error(`    組件 ${k + 1} 創建失敗:`, jsonComp);
+                  alert(`警告：服務「${svc.service_name}」的組件配置創建失敗：${jsonComp?.message || '未知錯誤'}\n\n將繼續創建其他組件...`);
+                }
               }
             }
           }
+          console.log('所有服務、收費和組件創建完成！');
         }
         
         alert('客戶新增成功！即將跳轉至客戶詳情頁。');

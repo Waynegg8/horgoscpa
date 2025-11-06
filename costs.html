@@ -1035,6 +1035,28 @@
           }
         }
 
+        // 初始化月份选择器为当前月份
+        function initMonthSelector() {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = String(now.getMonth() + 1).padStart(2, '0');
+          monthInput.value = `${year}-${month}`;
+        }
+
+        // 更新按钮状态
+        function updateButtonState() {
+          const ym = parseYearMonth();
+          const isValid = !!ym;
+          document.getElementById('btn-generate-month').disabled = !isValid;
+          document.getElementById('btn-add-record').disabled = !isValid;
+        }
+
+        // 监听月份变化
+        monthInput.addEventListener('change', () => {
+          loadRecords();
+          updateButtonState();
+        });
+
         // ⚡ 预渲染初始化
         if (window.PagePrerender) {
           window.PagePrerender.init('main');
@@ -1042,9 +1064,14 @@
 
         // 初始化
         ensureAdmin().then(ok => { 
-          if (ok) { 
+          if (ok) {
+            // 1. 初始化月份
+            initMonthSelector();
+            // 2. 加载数据
             loadItems(); 
-            loadRecords(); 
+            loadRecords();
+            // 3. 更新按钮状态
+            updateButtonState();
             // ⚡ 自动保存预渲染
             if (window.PagePrerender) {
               setTimeout(() => window.PagePrerender.autoSave('main', 2000), 1000);
