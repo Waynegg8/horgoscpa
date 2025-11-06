@@ -545,11 +545,8 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				invalidateCacheByType(env, 'leaves_balances', { userId: String(me.user_id) })
 			]).catch(err => console.error('[LEAVES] 失效缓存失败:', err));
 			
-			// ⚡ 失效緩存（D1 + KV）
-			Promise.all([
-				invalidateCacheByType(env, 'leaves_balances', { userId: String(user_id) }),
-				deleteKVCacheByPrefix(env, 'leaves_')
-			]).catch(()=>{});
+			// ⚡ 清除 KV 快取前綴，與上方 D1 緩存失效配合
+			await deleteKVCacheByPrefix(env, 'leaves_');
 			
 			return jsonResponse(201, { ok:true, code:"CREATED", message:"申請成功", data:{ leaveId }, meta:{ requestId } }, corsHeaders);
 			} catch (err) {
