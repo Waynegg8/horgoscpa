@@ -7,10 +7,8 @@
     <title>應收帳款報表｜內部系統</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
-    <link rel="stylesheet" href="/assets/css/navbar.css" />
     <link rel="stylesheet" href="/assets/css/reports-page.css" />
     <style>
-      body { padding-top: 0; }
       .report-container {
         max-width: 1400px;
         margin: 0 auto;
@@ -265,10 +263,14 @@
         // 加载统计数据
         async function loadStatistics() {
           try {
-            const res = await fetch(`${apiBase}/receipts/statistics`, { credentials: 'include' });
+            const url = `${apiBase}/receipts/statistics`;
+            console.log('[應收統計] API請求:', url);
+            const res = await fetch(url, { credentials: 'include' });
+            console.log('[應收統計] API回應狀態:', res.status);
             if (res.status === 401) { location.assign('/login?redirect=/internal/receivables-report'); return; }
             
             const json = await res.json();
+            console.log('[應收統計] API回應數據:', json);
             if (!json.ok) throw new Error(json.message || '載入失敗');
             
             statisticsData = json.data;
@@ -282,10 +284,14 @@
         // 加载账龄分析
         async function loadAgingReport() {
           try {
-            const res = await fetch(`${apiBase}/receipts/aging-report`, { credentials: 'include' });
+            const url = `${apiBase}/receipts/aging-report`;
+            console.log('[帳齡分析] API請求:', url);
+            const res = await fetch(url, { credentials: 'include' });
+            console.log('[帳齡分析] API回應狀態:', res.status);
             if (res.status === 401) { location.assign('/login?redirect=/internal/receivables-report'); return; }
             
             const json = await res.json();
+            console.log('[帳齡分析] API回應數據:', json);
             if (!json.ok) throw new Error(json.message || '載入失敗');
             
             agingData = json.data;

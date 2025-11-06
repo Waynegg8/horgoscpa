@@ -605,7 +605,12 @@
           const month = document.getElementById('eh-month').value;
           const userId = document.getElementById('eh-employee').value;
           
-          if (!year || !month) { alert('請選擇年度和月份'); return; }
+          if (!year || !month) { 
+            console.log('[員工工時] 缺少年度或月份參數', { year, month });
+            return; 
+          }
+          
+          console.log('[員工工時] 開始載入', { year, month, userId });
           
           const params = new URLSearchParams();
           params.set('year', year);
@@ -616,10 +621,14 @@
           const listEl = panel.querySelector('.employee-hours-list');
           try {
             listEl.innerHTML = '<div class="muted" style="padding:10px;">載入中…</div>';
-            const res = await fetch(`${apiBase}/reports/employee-hours?${params.toString()}`, { credentials:'include' });
+            const url = `${apiBase}/reports/employee-hours?${params.toString()}`;
+            console.log('[員工工時] API請求:', url);
+            const res = await fetch(url, { credentials:'include' });
+            console.log('[員工工時] API回應狀態:', res.status);
             if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
             const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error();
+            console.log('[員工工時] API回應數據:', json);
+            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
             const rows = Array.isArray(json.data) ? json.data : [];
             let totalHours = 0; let utilSum = 0;
             listEl.innerHTML = '';
@@ -679,8 +688,9 @@
               });
             }
 
-          } catch (_) {
-            listEl.innerHTML = '<div style="color:#c0392b;padding:10px;">查詢失敗</div>';
+          } catch (err) {
+            console.error('[員工工時] 查詢失敗:', err);
+            listEl.innerHTML = `<div style="color:#c0392b;padding:10px;">查詢失敗: ${err.message || '未知錯誤'}</div>`;
           }
         }
 
@@ -883,11 +893,18 @@
 
           attachValidation();
           
-          // 自動載入預設報表（員工工時）
-          loadEmployeeHours();
+          // 等待一小段時間確保所有依賴都已載入，然後自動載入預設報表
+          setTimeout(() => {
+            loadEmployeeHours();
+          }, 100);
         }
 
-        bootstrap();
+        // 確保DOM完全載入後再執行
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', bootstrap);
+        } else {
+          bootstrap();
+        }
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
