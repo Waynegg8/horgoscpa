@@ -97,6 +97,19 @@
               </tbody>
             </table>
           </div>
+          
+          <div style="margin-top:20px;padding:15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
+            <div style="font-weight:700;margin-bottom:10px;color:#334155;">計算說明</div>
+            <div style="font-size:13px;color:#64748b;line-height:1.8;">
+              <strong style="color:#0ea5e9;">實際工時：</strong>員工在該客戶任務上的總工時<br>
+              <strong style="color:#0ea5e9;">加權工時：</strong>實際工時 × 工時類型倍率（平日1.0、平日加班1.34、休息日1.67、國定假日2.67等）<br>
+              <strong style="color:#0ea5e9;">薪資成本：</strong>加權工時 × (員工底薪 / 240)<br>
+              <strong style="color:#0ea5e9;">管理成本：</strong>加權工時 × 管理成本時薪率（總管理成本 / 全公司總加權工時）<br>
+              <strong style="color:#0ea5e9;">總成本：</strong>薪資成本 + 管理成本<br>
+              <strong style="color:#0ea5e9;">毛利：</strong>收據金額 - 總成本<br>
+              <strong style="color:#0ea5e9;">毛利率：</strong>(毛利 / 收據金額) × 100%
+            </div>
+          </div>
         </div>
       </section>
 
@@ -409,9 +422,14 @@
 
         async function loadEmployeesList() {
           try {
-            const res = await fetch(`${apiBase}/settings/users`, { credentials: 'include' });
-            if (!res.ok) return;
+            const res = await fetch(`${apiBase}/admin/settings/users`, { credentials: 'include' });
+            console.log('[員工列表] API回應狀態:', res.status);
+            if (!res.ok) {
+              console.error('[員工列表] API請求失敗');
+              return;
+            }
             const json = await res.json();
+            console.log('[員工列表] API回應數據:', json);
             const users = json.data || [];
             ['eh-employee', 'pr-employee'].forEach(id => {
               const select = document.getElementById(id);
@@ -420,8 +438,9 @@
                   users.map(u => `<option value="${u.user_id}">${u.name || u.username}</option>`).join('');
               }
             });
+            console.log('[員工列表] 載入完成，共', users.length, '位員工');
           } catch (e) {
-            console.error('Failed to load employees:', e);
+            console.error('[員工列表] 載入失敗:', e);
           }
         }
 
@@ -496,25 +515,21 @@
           
           console.log('[客戶成本] 開始載入', { year, month, client });
           
-          let startDate, endDate;
-          if (month) {
-            const y = parseInt(year);
-            const m = parseInt(month);
-            startDate = `${y}-${String(m).padStart(2,'0')}-01`;
-            const lastDay = new Date(y, m, 0).getDate();
-            endDate = `${y}-${String(m).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
-          } else {
-            startDate = `${year}-01-01`;
-            endDate = `${year}-12-31`;
+          // 必须选择月份
+          if (!month) {
+            tbody.innerHTML = '<tr><td colspan="10" class="muted">請選擇月份</td></tr>';
+            totalCostEl.textContent = '—';
+            overheadStatusEl.textContent = '—';
+            return;
           }
           
+          // 使用与成本页面相同的API和参数格式
           const params = new URLSearchParams();
-          params.set('start_date', startDate);
-          params.set('end_date', endDate);
-          if (client) params.set('client_id', client);
+          params.set('year', year);
+          params.set('month', month);
           try {
             tbody.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
-            const url = `${apiBase}/reports/client-cost-analysis?${params.toString()}`;
+            const url = `${apiBase}/admin/costs/client?${params.toString()}`;
             console.log('[客戶成本] API請求:', url);
             const res = await fetch(url, { credentials:'include' });
             console.log('[客戶成本] API回應狀態:', res.status);
@@ -522,81 +537,37 @@
             const json = await res.json();
             console.log('[客戶成本] API回應數據:', json);
             if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
-            const rows = Array.isArray(json.data) ? json.data : [];
+            // 成本API返回的格式：{ data: { clients: [...] } }
+            const rows = Array.isArray(json.data?.clients) ? json.data.clients : [];
             let totalCostAll = 0;
             tbody.innerHTML = '';
             if (!rows.length) {
               tbody.innerHTML = '<tr><td colspan="10" class="muted">尚無資料</td></tr>';
             } else {
               rows.forEach((r, idx) => {
-                const salary = Number(r?.cost_breakdown?.salary_cost || 0);
-                const oh = Number(r?.cost_breakdown?.overhead_cost || 0);
-                const bonus = Number(r?.cost_breakdown?.year_end_bonus || 0);
-                const total = Number(r?.cost_breakdown?.total_cost || (salary+oh+bonus));
-                totalCostAll += total;
+                // 使用成本API返回的数据结构
+                const laborCost = Number(r.laborCost || 0);
+                const overheadCost = Number(r.overheadAllocation || 0);
+                const totalCost = Number(r.totalCost || 0);
+                const revenue = Number(r.revenue || 0);
+                const profit = Number(r.profit || 0);
+                const margin = revenue > 0 ? (profit / revenue * 100) : 0;
+                totalCostAll += totalCost;
+                
                 const tr = document.createElement('tr');
-                tr.style.cursor = r.user_breakdown && r.user_breakdown.length > 0 ? 'pointer' : 'default';
                 tr.innerHTML = `
-                  <td>${r.company_name||r.client_id||''} ${r.user_breakdown && r.user_breakdown.length > 0 ? '<span style="color:#3498db;font-size:0.85em;">▼</span>' : ''}</td>
-                  <td class="text-right">${formatValue(r.total_actual_hours)}</td>
-                  <td class="text-right">${formatValue(r.total_weighted_hours)}</td>
-                  <td class="text-right">${formatNumber(salary)}</td>
-                  <td class="text-right">${formatNumber(oh)}</td>
-                  <td class="text-right">${formatNumber(bonus)}</td>
-                  <td class="text-right">${formatNumber(total)}</td>
-                  <td class="text-right">${formatNumber(r.revenue||0)}</td>
-                  <td class="text-right">${formatNumber(r.gross_profit||0)}</td>
-                  <td class="text-right ${Number(r.profit_margin||0) >= 0 ? 'positive-value':'negative-value'}">${Number(r.profit_margin||0) === 0 ? '—' : Number(r.profit_margin||0).toFixed(1)+'%'}</td>
+                  <td>${r.clientName || r.clientId || ''}</td>
+                  <td class="text-right">${formatValue(r.totalHours || 0)}</td>
+                  <td class="text-right">${formatValue(r.weightedHours || 0)}</td>
+                  <td class="text-right">${formatNumber(laborCost)}</td>
+                  <td class="text-right">${formatNumber(overheadCost)}</td>
+                  <td class="text-right">—</td>
+                  <td class="text-right">${formatNumber(totalCost)}</td>
+                  <td class="text-right">${formatNumber(revenue)}</td>
+                  <td class="text-right">${formatNumber(profit)}</td>
+                  <td class="text-right ${margin >= 0 ? 'positive-value':'negative-value'}">${margin === 0 ? '—' : margin.toFixed(1)+'%'}</td>
                 `;
                 tbody.appendChild(tr);
-                
-                if (r.user_breakdown && r.user_breakdown.length > 0) {
-                  const detailRowId = `detail-row-${idx}`;
-                  tr.addEventListener('click', function() {
-                    const existingDetail = document.getElementById(detailRowId);
-                    if (existingDetail) {
-                      existingDetail.remove();
-                      tr.querySelector('span').textContent = '▼';
-                    } else {
-                      const detailTr = document.createElement('tr');
-                      detailTr.id = detailRowId;
-                      detailTr.style.backgroundColor = '#f8f9fa';
-                      detailTr.innerHTML = `
-                        <td colspan="10" style="padding:15px;">
-                          <div style="font-weight:700;margin-bottom:10px;">員工明細</div>
-                          <table style="width:100%;font-size:0.9em;">
-                            <thead>
-                              <tr style="background:#e9ecef;">
-                                <th style="padding:8px;text-align:left;">員工</th>
-                                <th style="padding:8px;text-align:right;">實際工時</th>
-                                <th style="padding:8px;text-align:right;">加權工時</th>
-                                <th style="padding:8px;text-align:right;">時薪成本率</th>
-                                <th style="padding:8px;text-align:right;">薪資成本</th>
-                                <th style="padding:8px;text-align:right;">管理成本</th>
-                                <th style="padding:8px;text-align:right;">總成本</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              ${r.user_breakdown.map(u => `
-                                <tr>
-                                  <td style="padding:8px;">${u.username}</td>
-                                  <td style="padding:8px;text-align:right;">${formatValue(u.actual_hours)}</td>
-                                  <td style="padding:8px;text-align:right;">${formatValue(u.weighted_hours)}</td>
-                                  <td style="padding:8px;text-align:right;">${formatNumber(u.hourly_cost_rate)}</td>
-                                  <td style="padding:8px;text-align:right;">${formatNumber(u.salary_cost)}</td>
-                                  <td style="padding:8px;text-align:right;">${formatNumber(u.overhead_cost)}</td>
-                                  <td style="padding:8px;text-align:right;font-weight:700;">${formatNumber(u.total_cost)}</td>
-                                </tr>
-                              `).join('')}
-                            </tbody>
-                          </table>
-                        </td>
-                      `;
-                      tr.after(detailTr);
-                      tr.querySelector('span').textContent = '▲';
-                    }
-                  });
-                }
               });
             }
             totalCostEl.textContent = formatNumber(totalCostAll);
