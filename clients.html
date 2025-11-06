@@ -183,6 +183,7 @@
               credentials: 'include'
             });
             const json = await res.json();
+            console.log('[Clients][API meta]:', json.meta);
             if (json.ok && Array.isArray(json.data)) {
               employeesList = json.data;
               populateEmployeeSelects();

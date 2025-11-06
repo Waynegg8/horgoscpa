@@ -544,7 +544,15 @@ export async function handleClients(request, env, me, requestId, url) {
 				};
 			});
 			
-			const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total, cache_bypass: noCache };
+			const meta = { 
+				requestId, page, perPage, total, hasNext: offset + perPage < total, cache_bypass: noCache,
+				// 調試資訊（非生產環境保留更多線索）
+				_debug: {
+					clientIds,
+					services: serviceCountMap,
+					yearTotals: yearTotalMap
+				}
+			};
 			const cacheData = { list: data, meta };
 			
 		// ⚡ 并行保存到KV（极快）和D1（备份）（no_cache 時不保存）
