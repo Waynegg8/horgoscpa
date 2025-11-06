@@ -4,11 +4,11 @@ import { getKVCache, saveKVCache, deleteKVCacheByPrefix } from "../kv-cache-help
 
 /**
  * 計算交通補貼（分）
- * 規則：每5公里60元
+ * 規則：每5公里60元（向上取整，5公里內算一個區間）
  */
 function calculateTransportSubsidy(distanceKm) {
 	if (!distanceKm || distanceKm <= 0) return 0;
-	return Math.floor(distanceKm / 5) * 60 * 100; // 轉換為分
+	return Math.ceil(distanceKm / 5) * 60 * 100; // 向上取整，轉換為分
 }
 
 export async function handleTrips(request, env, me, requestId, url, path) {
