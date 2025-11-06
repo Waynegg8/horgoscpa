@@ -352,8 +352,9 @@
                   const res = await fetch(`${apiBase}/admin/overhead-types/${id}`, { method: 'DELETE', credentials:'include' });
                   const json = await res.json().catch(()=>({}));
                   if (!res.ok || !json || json.ok !== true) { alert(json?.message||'刪除失敗'); return; }
+                  // 刷新数据
                   if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
-                  loadItems();
+                  await loadItems();
                 } catch (err) {
                   alert('刪除失敗：' + String(err));
                 }
@@ -397,9 +398,13 @@
               });
               const json = await res.json().catch(()=>({}));
               if (!res.ok || !json || json.ok !== true) { alert(json?.message||'更新失敗'); return; }
-              close();
+              
+              // 先刷新数据
               if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
               await loadItems();
+              
+              // 再关闭对话框
+              close();
             } catch (err) {
               console.error('更新項目失敗:', err);
               alert('更新失敗：' + (err?.message || String(err)));
@@ -426,9 +431,13 @@
               });
               const json = await res.json().catch(()=>({}));
               if (!res.ok || !json || json.ok !== true) { alert(json?.message||'更新失敗'); return; }
-              close();
+              
+              // 先刷新数据
               if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
               await loadRecords();
+              
+              // 再关闭对话框
+              close();
             } catch (err) {
               console.error('更新記錄失敗:', err);
               alert('更新失敗：' + (err?.message || String(err)));
@@ -518,8 +527,9 @@
                     const res = await fetch(`${apiBase}/admin/overhead-costs/${id}`, { method: 'DELETE', credentials:'include' });
                     const json = await res.json().catch(()=>({}));
                     if (!res.ok || !json || json.ok !== true) { alert(json?.message||'刪除失敗'); return; }
+                    // 刷新数据
                     if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
-                    loadRecords();
+                    await loadRecords();
                   } catch (err) {
                     alert('刪除失敗：' + String(err));
                   }
@@ -903,9 +913,12 @@
                 }
               }
               
-              close();
+              // 先刷新数据
               if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
               await loadItems();
+              
+              // 再关闭对话框
+              close();
             } catch (err) {
               console.error('新增項目失敗:', err);
               alert('新增失敗：' + (err?.message || String(err)));
@@ -947,9 +960,13 @@
               });
               const json = await res.json().catch(()=>({}));
               if (!res.ok || !json || json.ok !== true) { alert(json?.message||'建立失敗'); return; }
-              close();
+              
+              // 先刷新数据
               if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
               await loadRecords();
+              
+              // 再关闭对话框
+              close();
             } catch (err) {
               console.error('新增記錄失敗:', err);
               alert('新增失敗：' + (err?.message || String(err)));
@@ -994,11 +1011,19 @@
                   alert(json?.message||'自動生成失敗'); 
                   return; 
                 }
-                close();
-                // 使缓存失效
+                
+                // 1. 先使缓存失效
                 if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
-                // 等待刷新完成
+                
+                // 2. 等待数据刷新完成
+                console.log('[Generate] 開始刷新記錄列表...');
                 await loadRecords();
+                console.log('[Generate] 記錄列表刷新完成');
+                
+                // 3. 关闭对话框
+                close();
+                
+                // 4. 显示成功消息
                 alert(`已自動生成 ${json.data?.created || 0} 筆記錄`);
               } catch (err) {
                 console.error('生成失敗:', err);
