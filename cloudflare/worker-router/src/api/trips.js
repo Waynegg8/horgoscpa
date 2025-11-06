@@ -199,13 +199,13 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 			// 計算交通補貼
 			const transportSubsidy = calculateTransportSubsidy(distance_km);
 			
-			// 新增記錄
+			// 新增記錄（直接設為已核准）
 			const result = await env.DATABASE.prepare(`
 				INSERT INTO BusinessTrips (
 					user_id, client_id, trip_date, destination, 
 					distance_km, purpose, transport_subsidy_cents, 
-					status, notes, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, datetime('now'), datetime('now'))
+					status, notes, submitted_at, created_at, updated_at
+				) VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', ?, datetime('now'), datetime('now'), datetime('now'))
 			`).bind(
 				me.user_id,
 				client_id || null,
@@ -264,8 +264,8 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 				}, corsHeaders);
 			}
 			
-			// 一般用戶只能修改自己的記錄且狀態為pending
-			if (!me.is_admin && (existing.user_id !== me.user_id || existing.status !== 'pending')) {
+			// 一般用戶只能修改自己的記錄
+			if (!me.is_admin && existing.user_id !== me.user_id) {
 				return jsonResponse(403, { 
 					ok: false, 
 					code: "FORBIDDEN", 
@@ -389,8 +389,8 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 				}, corsHeaders);
 			}
 			
-			// 一般用戶只能刪除自己的記錄且狀態為pending
-			if (!me.is_admin && (existing.user_id !== me.user_id || existing.status !== 'pending')) {
+			// 一般用戶只能刪除自己的記錄
+			if (!me.is_admin && existing.user_id !== me.user_id) {
 				return jsonResponse(403, { 
 					ok: false, 
 					code: "FORBIDDEN", 
@@ -464,8 +464,7 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 				SELECT 
 					COUNT(*) as trip_count,
 					SUM(distance_km) as total_distance,
-					SUM(CASE WHEN status = 'approved' THEN transport_subsidy_cents ELSE 0 END) as approved_subsidy_cents,
-					SUM(CASE WHEN status = 'pending' THEN transport_subsidy_cents ELSE 0 END) as pending_subsidy_cents
+					SUM(transport_subsidy_cents) as total_subsidy_cents
 				FROM BusinessTrips
 				WHERE user_id = ? 
 					AND strftime('%Y-%m', trip_date) = ?
@@ -477,10 +476,8 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 				user_id: parseInt(targetUserId),
 				trip_count: result?.trip_count || 0,
 				total_distance_km: Number(result?.total_distance || 0),
-				approved_subsidy_cents: result?.approved_subsidy_cents || 0,
-				approved_subsidy_twd: (result?.approved_subsidy_cents || 0) / 100,
-				pending_subsidy_cents: result?.pending_subsidy_cents || 0,
-				pending_subsidy_twd: (result?.pending_subsidy_cents || 0) / 100
+				total_subsidy_cents: result?.total_subsidy_cents || 0,
+				total_subsidy_twd: (result?.total_subsidy_cents || 0) / 100
 			};
 			
 			// 保存到緩存（1小時）

@@ -1336,6 +1336,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				if (timesheets.length === 0) continue;
 				
 				let totalHours = 0;
+				let totalWeightedHours = 0;
 				let totalCost = 0;
 				const taskCount = new Set();
 				const userWeightedHours = {}; // 每位员工的加权工时
@@ -1371,6 +1372,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						tsWeightedHours = hours * info.multiplier;
 					}
 					userWeightedHours[userId] += tsWeightedHours;
+					totalWeightedHours += tsWeightedHours;
 				}
 				
 				// 5. 使用员工实际时薪计算客户总成本
@@ -1388,10 +1390,13 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				const revenue = Number(revenueRow?.total || 0);
 				
 				if (totalHours > 0 || revenue > 0) {
+					const avgHourlyRate = totalWeightedHours > 0 ? Math.round(totalCost / totalWeightedHours) : 0;
 					clients.push({
 						clientId,
 						clientName: client.company_name,
 						totalHours: Math.round(totalHours * 10) / 10,
+						weightedHours: Math.round(totalWeightedHours * 10) / 10,
+						avgHourlyRate,
 						totalCost,
 						revenue,
 						profit: revenue - totalCost

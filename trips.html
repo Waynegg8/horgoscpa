@@ -283,7 +283,7 @@
             const clients = json.data || [];
             
             const options = clients.map(c => 
-              `<option value="${c.client_id}">${c.name}</option>`
+              `<option value="${c.client_id}">${c.name || c.company_name || '未命名客戶'}</option>`
             ).join('');
             
             clientFilter.innerHTML = '<option value="">全部客戶</option>' + options;
@@ -430,17 +430,18 @@
             loadTrips();
             loadSummary();
           });
-          statusFilter.addEventListener('change', loadTrips);
           clientFilter.addEventListener('change', loadTrips);
           userFilter.addEventListener('change', () => {
             loadTrips();
             loadSummary();
           });
           btnResetFilters.addEventListener('click', () => {
-            statusFilter.value = '';
             clientFilter.value = '';
-            userFilter.value = '';
+            if (currentUser.is_admin) {
+              userFilter.value = '';
+            }
             loadTrips();
+            loadSummary();
           });
 
           // 分頁
@@ -592,35 +593,6 @@
           } catch (err) {
             console.error('刪除失敗:', err);
             showError('刪除失敗，請稍後再試');
-          }
-        };
-
-        // 審核外出登記
-        window.reviewTrip = async function(tripId, status) {
-          const action = status === 'approved' ? '核准' : '拒絕';
-          if (!confirm(`確定要${action}這筆外出登記嗎？`)) return;
-
-          try {
-            const res = await fetch(`${apiBase}/trips/${tripId}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({ status })
-            });
-
-            const json = await res.json();
-
-            if (!res.ok) {
-              showError(json.message || `${action}失敗`);
-              return;
-            }
-
-            showSuccess(`已${action}外出登記`);
-            await loadTrips();
-            await loadSummary();
-          } catch (err) {
-            console.error('審核失敗:', err);
-            showError('審核失敗，請稍後再試');
           }
         };
 

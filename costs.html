@@ -164,6 +164,8 @@
                 <tr>
                   <th>客戶名稱</th>
                   <th>總工時</th>
+                  <th>加權工時</th>
+                  <th>平均時薪</th>
                   <th>總成本</th>
                   <th>本月收入</th>
                   <th>利潤</th>
@@ -171,7 +173,7 @@
                 </tr>
               </thead>
               <tbody id="tbody-clients">
-                <tr><td colspan="6" class="muted">載入中…</td></tr>
+                <tr><td colspan="8" class="muted">載入中…</td></tr>
               </tbody>
             </table>
           </div>
@@ -758,12 +760,16 @@
               const revenue = Number(client.revenue || 0);
               const profit = Number(client.profit || 0);
               const margin = revenue > 0 ? (profit / revenue * 100) : 0;
+              const weightedHours = Number(client.weightedHours || 0);
+              const avgHourlyRate = Number(client.avgHourlyRate || 0);
               totalCost += cost;
               totalRevenue += revenue;
               totalProfit += profit;
               tr.innerHTML = `
                 <td>${client.clientName||''}</td>
                 <td>${Number(client.totalHours||0).toFixed(1)}</td>
+                <td>${weightedHours.toFixed(1)}</td>
+                <td style="color:#0ea5e9;font-weight:600;">${formatCurrency(avgHourlyRate)}</td>
                 <td style="font-weight:600;">${formatCurrency(cost)}</td>
                 <td>${formatCurrency(revenue)}</td>
                 <td style="color:${profit >= 0 ? '#16a34a' : '#dc2626'};font-weight:600;">${formatCurrency(profit)}</td>
@@ -774,7 +780,7 @@
             const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue * 100) : 0;
             updateClientSummary(totalCost, totalRevenue, totalProfit, avgMargin);
           } catch (_) {
-            tbodyClients.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
+            tbodyClients.innerHTML = '<tr><td colspan="8" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
 
