@@ -298,6 +298,7 @@
         // 載入外出登記列表
         async function loadTrips(bypassCache = false) {
           try {
+            console.log('[loadTrips] 開始加載, bypassCache=', bypassCache);
             const params = new URLSearchParams();
             
             if (monthFilter.value) {
@@ -315,17 +316,32 @@
               params.set('_t', Date.now());
             }
 
-            const res = await fetch(`${apiBase}/trips?${params.toString()}`, { 
+            const url = `${apiBase}/trips?${params.toString()}`;
+            console.log('[loadTrips] API URL:', url);
+            
+            const res = await fetch(url, { 
               credentials: 'include',
               cache: bypassCache ? 'no-store' : 'default'
             });
 
+            console.log('[loadTrips] Response status:', res.status);
+            
             if (res.status === 401) {
               location.assign('/login?redirect=/internal/trips');
               return;
             }
 
+            if (!res.ok) {
+              console.error('[loadTrips] API錯誤:', res.status);
+              // API錯誤時顯示錯誤訊息
+              allTrips = [];
+              filteredTrips = [];
+              renderTripsTable();
+              return;
+            }
+            
             const json = await res.json();
+            console.log('[loadTrips] 收到數據:', json.data?.length, '筆記錄');
             allTrips = json.data || [];
             filteredTrips = allTrips;
             currentPage = 1;
@@ -333,7 +349,9 @@
             renderTripsTable();
           } catch (err) {
             console.error('載入外出登記失敗:', err);
-            showError('載入外出登記失敗');
+            allTrips = [];
+            filteredTrips = [];
+            renderTripsTable();
           }
         }
 
@@ -576,15 +594,18 @@
               return;
             }
 
+            console.log('[保存成功] 準備刷新列表...', json);
             showSuccess(editingTripId ? '外出登記已更新' : '外出登記已新增');
             closeTripModal();
             
             // 等待一下讓後端清除緩存完成
-            await new Promise(resolve => setTimeout(resolve, 300));
+            await new Promise(resolve => setTimeout(resolve, 500));
             
             // 重新加載數據（繞過緩存）
+            console.log('[刷新列表] 開始加載...');
             await loadTrips(true);
             await loadSummary(true);
+            console.log('[刷新列表] 完成');
           } catch (err) {
             console.error('提交失敗:', err);
             showError('操作失敗，請稍後再試');
