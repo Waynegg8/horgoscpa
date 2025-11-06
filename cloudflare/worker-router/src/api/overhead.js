@@ -1610,8 +1610,11 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					
 					// 生成任務記錄（按服務子項目）
 					const assigneeNames = Array.from(group.userNames).join(', ') || '未指定';
+					// 获取服务项目名称（从第一笔工时记录中获取）
+					const serviceName = group.timesheets[0]?.service_name_full || '未分類';
 					tasks.push({
 						clientName: client.company_name,
+						serviceName: serviceName,
 						taskTitle: group.taskTitle,
 						assigneeName: assigneeNames,
 						hours: hours,

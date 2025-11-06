@@ -183,6 +183,7 @@
               <thead>
                 <tr>
                   <th>客戶名稱</th>
+                  <th>服務項目</th>
                   <th>任務標題</th>
                   <th>負責人</th>
                   <th>工時</th>
@@ -193,7 +194,7 @@
                 </tr>
               </thead>
               <tbody id="tbody-tasks">
-                <tr><td colspan="8" class="muted">載入中…</td></tr>
+                <tr><td colspan="9" class="muted">載入中…</td></tr>
               </tbody>
             </table>
           </div>
@@ -792,11 +793,11 @@
           params.set('month', String(ym.month));
           params.set('_t', String(Date.now())); // 强制绕过缓存
           try {
-            tbodyTasks.innerHTML = '<tr><td colspan="8" class="muted">載入中…</td></tr>';
+            tbodyTasks.innerHTML = '<tr><td colspan="9" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/costs/task?${params.toString()}`, { credentials:'include', cache: 'no-store' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             if (res.status === 501) {
-              tbodyTasks.innerHTML = '<tr><td colspan="8" class="muted">功能尚未實作，敬請期待</td></tr>';
+              tbodyTasks.innerHTML = '<tr><td colspan="9" class="muted">功能尚未實作，敬請期待</td></tr>';
               return;
             }
             const json = await res.json();
@@ -804,7 +805,7 @@
             const data = json.data || {};
             const tasks = data.tasks || [];
             if (tasks.length === 0) {
-              tbodyTasks.innerHTML = '<tr><td colspan="8" class="muted">尚無資料</td></tr>';
+              tbodyTasks.innerHTML = '<tr><td colspan="9" class="muted">尚無資料</td></tr>';
               return;
             }
             tbodyTasks.innerHTML = '';
@@ -812,6 +813,7 @@
               const tr = document.createElement('tr');
               tr.innerHTML = `
                 <td>${task.clientName||''}</td>
+                <td>${task.serviceName||''}</td>
                 <td>${task.taskTitle||''}</td>
                 <td>${task.assigneeName||''}</td>
                 <td>${Number(task.hours||0).toFixed(1)}</td>
@@ -823,7 +825,7 @@
               tbodyTasks.appendChild(tr);
             });
           } catch (_) {
-            tbodyTasks.innerHTML = '<tr><td colspan="8" style="color:#c0392b;">載入失敗</td></tr>';
+            tbodyTasks.innerHTML = '<tr><td colspan="9" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
 
