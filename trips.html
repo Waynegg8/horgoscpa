@@ -369,7 +369,7 @@
           if (pageTrips.length === 0) {
             tripsTableBody.innerHTML = `
               <tr>
-                <td colspan="8" class="empty-state">
+                <td colspan="7" class="empty-state">
                   <p>尚無外出登記記錄</p>
                 </td>
               </tr>
@@ -379,28 +379,19 @@
           }
 
           tripsTableBody.innerHTML = pageTrips.map(trip => {
-            const statusClass = `status-${trip.status}`;
-            const statusText = {
-              pending: '待審核',
-              approved: '已核准',
-              rejected: '已拒絕'
-            }[trip.status] || trip.status;
-
-            const canEdit = trip.status === 'pending' && trip.user_id === currentUser.user_id;
-            const canReview = currentUser.is_admin && trip.status === 'pending';
+            const canEdit = trip.user_id === currentUser.user_id || currentUser.is_admin;
 
             return `
               <tr>
                 <td>${trip.trip_date}</td>
                 <td>${trip.user_name || '-'}</td>
-                <td>${trip.client_name || '-'}</td>
+                <td>${trip.client_name || '無'}</td>
                 <td>
                   <div style="font-weight: 500;">${trip.destination}</div>
                   ${trip.purpose ? `<div style="font-size: 12px; color: rgba(15,23,42,0.5); margin-top: 2px;">${trip.purpose}</div>` : ''}
                 </td>
                 <td><span class="distance-badge">${trip.distance_km} km</span></td>
                 <td><span class="subsidy-amount">NT$ ${trip.transport_subsidy_twd.toLocaleString()}</span></td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td>
                   <div class="trip-actions">
                     ${canEdit ? `
@@ -409,14 +400,6 @@
                       </button>
                       <button class="btn-icon btn-delete" onclick="deleteTrip(${trip.trip_id})" title="刪除">
                         🗑️
-                      </button>
-                    ` : ''}
-                    ${canReview ? `
-                      <button class="btn-icon btn-approve" onclick="reviewTrip(${trip.trip_id}, 'approved')" title="核准">
-                        ✓
-                      </button>
-                      <button class="btn-icon btn-reject" onclick="reviewTrip(${trip.trip_id}, 'rejected')" title="拒絕">
-                        ✗
                       </button>
                     ` : ''}
                   </div>
