@@ -303,6 +303,15 @@
       renderServices(tempServices);
       renderTagsDisplay();
       renderTagsSelect();
+      // 初始化收費設定面板
+      refreshBillingFilterOptions();
+      const billingServiceFilter = document.getElementById('billing-service-filter');
+      if (billingServiceFilter) {
+        billingServiceFilter.addEventListener('change', function(){
+          renderBillingList(this.value);
+        });
+      }
+      renderBillingList('');
     }
 
     // 載入員工列表
@@ -701,6 +710,15 @@
         : '<option value="">（尚未新增服務）</option>';
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('gb-ot-date').value = today;
+      // 預設為按月並收起自選月份
+      const monthlyRadio = document.querySelector('input[name="gb-type"][value="monthly"]');
+      if (monthlyRadio) monthlyRadio.checked = true;
+      document.getElementById('gb-monthly').style.display = 'block';
+      document.getElementById('gb-onetime').style.display = 'none';
+      const rangeSel = document.getElementById('gb-range');
+      if (rangeSel) rangeSel.value = 'all';
+      const monthsBox = document.getElementById('gb-months');
+      if (monthsBox) monthsBox.style.display = 'none';
       modal.style.display = 'flex';
     }
     function closeGlobalBillingModal() { document.getElementById('globalBillingModal').style.display='none'; }
@@ -742,6 +760,10 @@
       // 重新渲染目標服務的收費表
       const container = document.getElementById(`billing-content-${idx}`);
       if (container) container.innerHTML = renderBillingTable(idx);
+      // 同步更新「收費設定」列表與服務年總額
+      refreshBillingFilterOptions();
+      renderBillingList(window.currentBillingFilter || '');
+      renderServices(tempServices);
     }
 
     // 載入服務類型選項
@@ -757,6 +779,207 @@
         console.error('載入服務選項失敗:', err);
       }
     }
+
+    // ==================== 收費設定（本頁暫存版本） ====================
+    window.selectedBillingIds = new Set();
+    window.currentBillingFilter = '';
+    window.__billingFilteredKeys = [];
+
+    function refreshBillingFilterOptions() {
+      const serviceFilter = document.getElementById('billing-service-filter');
+      if (!serviceFilter) return;
+      const current = serviceFilter.value;
+      serviceFilter.innerHTML = '<option value="">全部服務</option>' +
+        tempServices.map((svc, idx) => {
+          const name = (allServices.find(s=>s.service_id==svc.service_id)||{}).service_name || `服務${idx+1}`;
+          return `<option value="${idx}" ${String(current)===String(idx)?'selected':''}>${name}</option>`;
+        }).join('');
+    }
+
+    function buildAllBillingData() {
+      const items = [];
+      tempServices.forEach((svc, sIdx) => {
+        const svcName = (allServices.find(s=>s.service_id==svc.service_id)||{}).service_name || `服務${sIdx+1}`;
+        (svc.billings||[]).forEach((b, bIdx) => {
+          items.push({
+            key: `${sIdx}:${bIdx}`,
+            service_index: sIdx,
+            billing_index: bIdx,
+            service_name: svcName,
+            billing_type: b.billing_type || (b.billing_month===0?'one-time':'monthly'),
+            billing_month: b.billing_month || 0,
+            billing_date: b.billing_date || null,
+            description: b.description || '',
+            billing_amount: parseFloat(b.billing_amount)||0,
+            payment_due_days: parseInt(b.payment_due_days)||30,
+            notes: b.notes || ''
+          });
+        });
+      });
+      return items;
+    }
+
+    function renderBillingList(filterServiceId = '') {
+      const billingList = document.getElementById('billingList');
+      if (!billingList) return;
+      window.currentBillingFilter = filterServiceId || '';
+      const items = buildAllBillingData().filter(it => {
+        if (!window.currentBillingFilter) return true;
+        return String(it.service_index) === String(window.currentBillingFilter);
+      });
+      window.__billingFilteredKeys = items.map(i => i.key);
+      if (items.length === 0) {
+        billingList.innerHTML = '<tr><td colspan="7" class="no-data">尚未設定收費</td></tr>';
+        updateBatchDeleteButton();
+        const master = document.getElementById('billing-master');
+        if (master) master.checked = false;
+        return;
+      }
+      const rows = items.map(it => {
+        const isOT = it.billing_type === 'one-time' || it.billing_month === 0;
+        const d = it.billing_date ? new Date(it.billing_date) : null;
+        const monthText = isOT ? (d ? `${d.getMonth()+1}月` : `${it.billing_month||''}月`) : `${it.billing_month}月`;
+        let notesDisplay = '-';
+        if (isOT) {
+          const y = d ? d.getFullYear() : '';
+          const m2 = d ? String(d.getMonth()+1).padStart(2, '0') : '';
+          const parts = [`[一次性] ${y}${y?'/':''}${m2}`.trim()];
+          if (it.description) parts.push(it.description);
+          if (it.notes) parts.push(it.notes);
+          notesDisplay = parts.filter(Boolean).join(' - ');
+        } else {
+          notesDisplay = it.notes || '-';
+        }
+        const checked = window.selectedBillingIds.has(it.key) ? 'checked' : '';
+        const deleteLabel = isOT ? `一次性收費（${it.description || ''}）` : `${it.billing_month}月`;
+        return `
+          <tr data-schedule-id="${it.key}">
+            <td style="text-align:center;"><input type="checkbox" ${checked} onchange="toggleBillingSelect('${it.key}', this.checked)"></td>
+            <td><strong>${it.service_name}</strong></td>
+            <td>${monthText}</td>
+            <td class="amount">$${it.billing_amount.toLocaleString('zh-TW')}</td>
+            <td>${it.payment_due_days}天</td>
+            <td>${notesDisplay}</td>
+            <td>
+              <button class="table-btn-link" onclick="editBillingRow('${it.key}')">編輯</button>
+              <button class="table-btn-link danger" onclick="deleteBillingRow('${it.key}', '${it.service_name}', '${deleteLabel}')">刪除</button>
+            </td>
+          </tr>`;
+      }).join('');
+      billingList.innerHTML = rows;
+      const allSelected = window.__billingFilteredKeys.length > 0 && window.__billingFilteredKeys.every(k => window.selectedBillingIds.has(k));
+      const master = document.getElementById('billing-master');
+      if (master) master.checked = allSelected;
+      updateBatchDeleteButton();
+    }
+
+    function updateBatchDeleteButton() {
+      const btn = document.getElementById('btn-batch-delete');
+      if (!btn) return;
+      btn.disabled = !(window.selectedBillingIds && window.selectedBillingIds.size > 0);
+      btn.textContent = window.selectedBillingIds.size > 0 ? `批量刪除（${window.selectedBillingIds.size}）` : '批量刪除';
+    }
+
+    function toggleBillingSelect(key, checked) {
+      if (!window.selectedBillingIds) window.selectedBillingIds = new Set();
+      if (checked) window.selectedBillingIds.add(key); else window.selectedBillingIds.delete(key);
+      updateBatchDeleteButton();
+    }
+
+    function onMasterSelectChange(el) {
+      toggleSelectAll(el && el.checked);
+    }
+
+    function toggleSelectAll(selectAll) {
+      const ids = window.__billingFilteredKeys || [];
+      ids.forEach(k => { if (selectAll) window.selectedBillingIds.add(k); else window.selectedBillingIds.delete(k); });
+      ids.forEach(k => {
+        const row = document.querySelector(`tr[data-schedule-id="${k}"] input[type=checkbox]`);
+        if (row) row.checked = !!selectAll;
+      });
+      const master = document.getElementById('billing-master');
+      if (master) master.checked = !!selectAll && ids.length > 0;
+      updateBatchDeleteButton();
+    }
+
+    function batchDeleteBilling() {
+      if (!window.selectedBillingIds || window.selectedBillingIds.size === 0) return;
+      if (!confirm(`確定要刪除選取的 ${window.selectedBillingIds.size} 筆收費嗎？`)) return;
+      const keys = Array.from(window.selectedBillingIds);
+      keys.forEach(k => {
+        const [sIdx, bIdx] = k.split(':').map(n=>parseInt(n,10));
+        if (!isNaN(sIdx) && !isNaN(bIdx) && tempServices[sIdx] && tempServices[sIdx].billings) {
+          tempServices[sIdx].billings.splice(bIdx, 1);
+        }
+      });
+      window.selectedBillingIds.clear();
+      refreshBillingFilterOptions();
+      renderBillingList(window.currentBillingFilter || '');
+      renderServices(tempServices);
+    }
+
+    function editBillingRow(key) {
+      const row = document.querySelector(`tr[data-schedule-id="${key}"]`);
+      if (!row) return;
+      const [sIdx, bIdx] = key.split(':').map(n=>parseInt(n,10));
+      const b = (tempServices[sIdx]||{}).billings?.[bIdx];
+      if (!b) return;
+      const isOT = b.billing_type === 'one-time' || b.billing_month === 0;
+      const d = b.billing_date ? new Date(b.billing_date) : null;
+      const monthText = isOT ? (d ? `${d.getMonth()+1}月` : `${b.billing_month||''}月`) : `${b.billing_month}月`;
+      const notesStr = isOT ? `${(b.description||'')}${b.notes?(' - '+b.notes):''}` : (b.notes||'');
+      row.innerHTML = `
+        <td style="text-align:center;"><input type="checkbox" disabled></td>
+        <td><strong>${(allServices.find(s=>s.service_id==(tempServices[sIdx]||{}).service_id)||{}).service_name||''}</strong></td>
+        <td>${monthText}</td>
+        <td><input type="number" id="eb-amount-${sIdx}-${bIdx}" value="${parseFloat(b.billing_amount)||0}" step="0.01" min="0" style="width:120px"></td>
+        <td><input type="number" id="eb-due-${sIdx}-${bIdx}" value="${parseInt(b.payment_due_days)||30}" min="1" style="width:80px"></td>
+        <td><input type="text" id="eb-notes-${sIdx}-${bIdx}" value="${notesStr}" style="width:100%"></td>
+        <td>
+          <button class="table-btn-link" onclick="saveEditedBillingRow('${key}', ${isOT?1:0})">儲存</button>
+          <button class="table-btn-link" onclick="renderBillingList(window.currentBillingFilter||'')">取消</button>
+        </td>`;
+    }
+
+    function saveEditedBillingRow(key, isOT) {
+      const [sIdx, bIdx] = key.split(':').map(n=>parseInt(n,10));
+      const svc = tempServices[sIdx];
+      if (!svc || !svc.billings || !svc.billings[bIdx]) return;
+      const b = svc.billings[bIdx];
+      const amount = parseFloat(document.getElementById(`eb-amount-${sIdx}-${bIdx}`).value);
+      const due = parseInt(document.getElementById(`eb-due-${sIdx}-${bIdx}`).value);
+      const notesStr = (document.getElementById(`eb-notes-${sIdx}-${bIdx}`).value||'').trim();
+      if (!amount || amount<=0) { alert('金額無效'); return; }
+      b.billing_amount = amount;
+      b.payment_due_days = due||30;
+      if (b.billing_type === 'one-time' || isOT) {
+        b.notes = notesStr || null; // 描述仍維持原值
+      } else {
+        b.notes = notesStr || null;
+      }
+      renderBillingList(window.currentBillingFilter || '');
+      renderServices(tempServices);
+    }
+
+    function deleteBillingRow(key, serviceName, deleteLabel) {
+      if (!confirm(`確定刪除「${serviceName} - ${deleteLabel}」嗎？`)) return;
+      const [sIdx, bIdx] = key.split(':').map(n=>parseInt(n,10));
+      if (!isNaN(sIdx) && !isNaN(bIdx) && tempServices[sIdx] && tempServices[sIdx].billings) {
+        tempServices[sIdx].billings.splice(bIdx, 1);
+      }
+      window.selectedBillingIds.delete(key);
+      renderBillingList(window.currentBillingFilter || '');
+      renderServices(tempServices);
+    }
+
+    // 與詳情頁同名的包裝函數，維持 UI 行為一致
+    function showAddBillingModal() { showGlobalBillingModal(); }
+    function switchBillingType(type) {
+      if (type === 'monthly') { document.getElementById('gb-monthly').style.display='block'; document.getElementById('gb-onetime').style.display='none'; }
+      else { document.getElementById('gb-monthly').style.display='none'; document.getElementById('gb-onetime').style.display='block'; }
+    }
+    function modalSelectAllMonths(selectAll) { gbToggleMonths(!!selectAll); }
+    function saveBillingFromModal() { saveGlobalBillingFromModal(); }
 
     // 載入任務模板選項
     async function loadTemplates() {
@@ -799,7 +1022,6 @@
       addRow.style.display = 'none';
       document.getElementById('new-service-id').value = '';
       document.getElementById('new-service-status').value = 'active';
-      document.getElementById('new-service-cycle').value = 'monthly';
       document.getElementById('new-service-start-date').value = '';
     }
 
@@ -807,11 +1029,7 @@
     function saveNewService() {
       const serviceId = document.getElementById('new-service-id').value;
       const status = document.getElementById('new-service-status').value;
-      const cycle = document.getElementById('new-service-cycle').value;
       const startDate = document.getElementById('new-service-start-date').value;
-      const templateId = document.getElementById('new-service-template').value;
-      const autogen = document.getElementById('new-service-autogen').checked;
-      const serviceNotes = document.getElementById('new-service-notes').value.trim();
 
       if (!serviceId) {
         alert('請選擇服務');
@@ -821,16 +1039,14 @@
       const data = {
         service_id: parseInt(serviceId),
         status: status,
-        service_cycle: cycle,
         start_date: startDate || null,
-        task_template_id: templateId ? parseInt(templateId) : null,
-        auto_generate_tasks: autogen,
-        service_notes: serviceNotes || null,
         billings: []
       };
 
       tempServices.push(data);
       renderServices(tempServices);
+      refreshBillingFilterOptions();
+      renderBillingList(window.currentBillingFilter || '');
       cancelAddService();
     }
 
@@ -846,7 +1062,6 @@
       const serviceName = allServices.find(s => s.service_id == service.service_id)?.service_name || '';
       
       serviceRow.innerHTML = `
-        <td></td>
         <td>
           <select id="edit-service-id-${index}" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
             ${allServices.filter(s => s.is_active).map(s => 
@@ -862,17 +1077,7 @@
             <option value="cancelled" ${service.status == 'cancelled' ? 'selected' : ''}>已取消</option>
           </select>
         </td>
-        <td>
-          <select id="edit-service-cycle-${index}" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
-            <option value="monthly" ${service.service_cycle == 'monthly' ? 'selected' : ''}>每月</option>
-            <option value="quarterly" ${service.service_cycle == 'quarterly' ? 'selected' : ''}>每季</option>
-            <option value="yearly" ${service.service_cycle == 'yearly' ? 'selected' : ''}>每年</option>
-            <option value="one-time" ${service.service_cycle == 'one-time' ? 'selected' : ''}>一次性</option>
-          </select>
-        </td>
-        <td>
-          <input type="text" id="edit-service-notes-${index}" value="${service.service_notes || ''}" placeholder="服務備註" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;" />
-        </td>
+        <td>-</td>
         <td>
           <input type="date" id="edit-service-start-date-${index}" value="${service.start_date || ''}" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;" />
         </td>
@@ -887,24 +1092,25 @@
     function saveEditService(index) {
       const serviceId = document.getElementById(`edit-service-id-${index}`).value;
       const status = document.getElementById(`edit-service-status-${index}`).value;
-      const cycle = document.getElementById(`edit-service-cycle-${index}`).value;
       const startDate = document.getElementById(`edit-service-start-date-${index}`).value;
 
       tempServices[index] = {
         ...tempServices[index],
         service_id: parseInt(serviceId),
         status: status,
-        service_cycle: cycle,
-        start_date: startDate || null,
-        service_notes: (document.getElementById(`edit-service-notes-${index}`).value||'').trim() || null
+        start_date: startDate || null
       };
 
       renderServices(tempServices);
+      refreshBillingFilterOptions();
+      renderBillingList(window.currentBillingFilter || '');
     }
 
     // 取消編輯服務
     function cancelEditService(index) {
       renderServices(tempServices);
+      refreshBillingFilterOptions();
+      renderBillingList(window.currentBillingFilter || '');
     }
 
     // 刪除服務
@@ -913,6 +1119,8 @@
       
       tempServices.splice(index, 1);
       renderServices(tempServices);
+      refreshBillingFilterOptions();
+      renderBillingList(window.currentBillingFilter || '');
     }
 
     // 顯示新增收費行
@@ -1112,7 +1320,7 @@
       const assigneeUserId = assigneeValue ? parseInt(assigneeValue) : 0;
       
       const payload = {
-        client_id: document.getElementById('inputTaxId').value.trim() || null,
+        tax_registration_number: document.getElementById('inputTaxId').value.trim() || null,
         company_name: document.getElementById('inputCompanyName').value.trim(),
         assignee_user_id: assigneeUserId,
         phone: document.getElementById('inputPhone').value.trim() || null,
@@ -1176,10 +1384,7 @@
               body: JSON.stringify({
                 service_id: svc.service_id,
                 status: svc.status,
-                service_cycle: svc.service_cycle,
-                start_date: svc.start_date || null,
-                task_template_id: svc.task_template_id || null,
-                auto_generate_tasks: svc.auto_generate_tasks !== false
+                start_date: svc.start_date || null
               })
             });
         const jsonSvc = await resSvc.json().catch(()=>null);
