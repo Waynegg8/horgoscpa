@@ -1791,10 +1791,59 @@
       return map[rule] || '-';
     }
 
-    // 顯示新增表單
-    function showAddComponentForm(clientServiceId) {
-      const form = document.getElementById(`add-component-form-${clientServiceId}`);
-      form.style.display = 'block';
+    // 顯示新增表單（新增模式：使用索引）
+    function showAddComponentForm(serviceIndex) {
+      const svc = tempServices[serviceIndex];
+      const container = document.getElementById(`components-content-${serviceIndex}`);
+      if (!svc || !container) return;
+      
+      const row = document.getElementById(`components-row-${serviceIndex}`);
+      if (row) row.style.display = 'table-row';
+      
+      const currentServiceId = svc.service_id;
+      const items = allServiceItems.filter(it => String(it.service_id) === String(currentServiceId));
+      const itemsOptions = items.length > 0
+        ? items.map(it => `<option value="${it.item_id}">${it.item_name}</option>`).join('')
+        : '<option value="">（此服務無可用項目）</option>';
+      const sopOptions = (allSOPs||[]).map(s => `<label style=\"display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid #e5e7eb;border-radius:6px;padding:4px 8px;\"><input type=\"checkbox\" class=\"comp-sop-${serviceIndex}\" value=\"${s.sop_id}\"> ${s.title}</label>`).join('');
+      
+      container.innerHTML = `
+        <div id="add-component-form-${serviceIndex}" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 12px; border: 2px solid #3b82f6;">
+          <h5 style="margin:0 0 10px 0;">配置服務任務</h5>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div><label>組成名稱</label><input type="text" id="comp-name-${serviceIndex}" value="任務配置" /></div>
+            <div><label>服務項目</label><select id="comp-item-${serviceIndex}"><option value="">（可選）</option>${itemsOptions}</select></div>
+            <div><label>頻率</label><select id="comp-freq-${serviceIndex}"><option value="monthly" selected>每月</option><option value="quarterly">每季</option><option value="yearly">每年</option></select></div>
+          </div>
+          <div style="margin-top:10px;">
+            <label>交付月份（每月制）</label>
+            <div id="comp-months-${serviceIndex}" style="margin-top:6px;">
+              ${Array.from({length:12},(_,i)=>`<label style=\"display:inline-flex;align-items:center;gap:6px;margin:4px 8px;\"><input type=\"checkbox\" class=\"comp-month-${serviceIndex}\" value=\"${i+1}\" checked> ${i+1}月</label>`).join('')}
+              <div style="margin-top:6px;"><button type="button" class="table-btn" onclick="toggleMonths(${serviceIndex},true)">全選</button> <button type="button" class="table-btn" onclick="toggleMonths(${serviceIndex},false)">全不選</button></div>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <label>服務層級 SOP</label>
+            <div id="comp-sops-${serviceIndex}" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">${sopOptions||'<span style=\"color:#9ca3af;\">尚無 SOP</span>'}</div>
+          </div>
+          <div style="margin-top:10px;">
+            <label>任務列表</label>
+            <div id="tasks-list-${serviceIndex}" style="margin-top:6px;"></div>
+            <button type="button" class="table-btn" onclick="addComponentTask(${serviceIndex})">+ 新增任務</button>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+            <button type="button" class="table-btn table-btn-secondary" onclick="cancelComponentForm(${serviceIndex})">取消</button>
+            <button type="button" class="table-btn table-btn-primary" onclick="saveComponentConfig(${serviceIndex})">儲存配置</button>
+          </div>
+        </div>
+        <div id="components-list-${serviceIndex}"></div>`;
+      
+      // 預設一個任務
+      window[`compTasks${serviceIndex}`] = [
+        { task_name:'任務', assignee_user_id:null, notes:'', due_rule:'end_of_month', due_value:null, estimated_hours:null, advance_days:7, sop_ids:[] }
+      ];
+      renderComponentTasks(serviceIndex);
+      renderComponentsList(serviceIndex);
       
       // 创建服务项过滤模板的函数
       window[`filterTemplatesByServiceItem${clientServiceId}`] = function() {

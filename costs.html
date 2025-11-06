@@ -702,10 +702,33 @@
           const catSel = document.createElement('select'); catSel.innerHTML = '<option value="fixed">固定</option><option value="variable">變動</option>';
           const allocSel = document.createElement('select'); allocSel.innerHTML = '<option value="per_employee">按員工數</option><option value="per_hour">按工時</option><option value="per_revenue">按收入</option>';
           const descInput = document.createElement('input'); descInput.type = 'text'; descInput.placeholder = '描述（可留空）';
+          
+          // 自動生成設定
+          const divider = document.createElement('div'); 
+          divider.style.borderTop = '1px solid #e5e7eb'; 
+          divider.style.margin = '16px 0 12px 0';
+          const sectionTitle = document.createElement('div');
+          sectionTitle.style.fontSize = '14px';
+          sectionTitle.style.fontWeight = '600';
+          sectionTitle.style.marginBottom = '12px';
+          sectionTitle.style.color = '#374151';
+          sectionTitle.textContent = '自動生成設定';
+          const enableChk = document.createElement('input'); enableChk.type='checkbox'; enableChk.id='tplEnableNew';
+          const enableLbl = document.createElement('label'); enableLbl.htmlFor='tplEnableNew'; enableLbl.textContent='啟用每月自動生成'; enableLbl.style.marginLeft='6px';
+          const enWrap = document.createElement('div'); enWrap.appendChild(enableChk); enWrap.appendChild(enableLbl); enWrap.style.marginBottom='8px';
+          const amountInput = document.createElement('input'); amountInput.type='number'; amountInput.placeholder='預設金額'; amountInput.min='1';
+          const effInput = document.createElement('input'); effInput.type='month';
+          
           form.appendChild(buildField('成本名稱', nameInput));
           form.appendChild(buildField('類別', catSel));
           form.appendChild(buildField('分攤方式', allocSel));
           form.appendChild(buildField('描述', descInput));
+          form.appendChild(divider);
+          form.appendChild(sectionTitle);
+          form.appendChild(enWrap);
+          form.appendChild(buildField('預設金額', amountInput));
+          form.appendChild(buildField('生效起始月', effInput));
+          
           openModal('新增成本項目', form, async (close)=>{
             const name = nameInput.value.trim();
             const category = catSel.value;
@@ -718,6 +741,26 @@
             });
             const json = await res.json().catch(()=>({}));
             if (!res.ok || !json || json.ok !== true) { alert(json?.message||'建立失敗'); return; }
+            
+            // 若勾選自動生成，建立模板
+            const costTypeId = json.data?.id;
+            if (enableChk.checked && costTypeId) {
+              const is_active = true;
+              const amount = Number(amountInput.value||0);
+              const efv = String(effInput.value||'');
+              const tplBody = { is_active };
+              if (amount>0) tplBody.amount = amount;
+              if (/^\d{4}-\d{2}$/.test(efv)) tplBody.effective_from = efv;
+              try {
+                await fetch(`${apiBase}/admin/overhead-templates/by-type/${costTypeId}`, { 
+                  method:'PUT', 
+                  credentials:'include', 
+                  headers:{'content-type':'application/json'}, 
+                  body: JSON.stringify(tplBody) 
+                });
+              } catch (_) {}
+            }
+            
             close();
             if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
             loadItems();
@@ -738,14 +781,10 @@
           typeSel.innerHTML = types.map(t => `<option value="${t.id}">${t.name}（${t.category==='fixed'?'固定':'變動'}）</option>`).join('');
           const amtInput = document.createElement('input'); amtInput.type = 'number'; amtInput.placeholder = '請輸入金額'; amtInput.min = '1';
           const notesInput = document.createElement('input'); notesInput.type = 'text'; notesInput.placeholder = '備註（可留空）';
-          const recurringWrap = document.createElement('div'); recurringWrap.style.marginTop = '6px';
-          const recurringChk = document.createElement('input'); recurringChk.type = 'checkbox'; recurringChk.id = 'recurringMonthly';
-          const recurringLbl = document.createElement('label'); recurringLbl.htmlFor = 'recurringMonthly'; recurringLbl.textContent = '設為每月自動生成'; recurringLbl.style.marginLeft = '6px'; recurringWrap.appendChild(recurringChk); recurringWrap.appendChild(recurringLbl);
           form.appendChild(buildField('月份', monthSel));
           form.appendChild(buildField('成本項目', typeSel));
           form.appendChild(buildField('金額', amtInput));
           form.appendChild(buildField('備註', notesInput));
-          form.appendChild(recurringWrap);
           openModal('新增月度記錄', form, async (close)=>{
             const cost_type_id = parseInt(typeSel.value, 10);
             const amount = Number(amtInput.value);
@@ -761,15 +800,6 @@
             });
             const json = await res.json().catch(()=>({}));
             if (!res.ok || !json || json.ok !== true) { alert(json?.message||'建立失敗'); return; }
-            // 若勾選每月自動生成，建立模板
-            if (recurringChk.checked) {
-              try {
-                await fetch(`${apiBase}/admin/overhead-templates`, {
-                  method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
-                  body: JSON.stringify({ cost_type_id, amount, notes, recurring_type: 'monthly', effective_from: `${y}-${String(m).padStart(2,'0')}` })
-                });
-              } catch (_) {}
-            }
             close();
             if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
             loadRecords();
