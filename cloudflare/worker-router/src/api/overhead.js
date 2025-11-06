@@ -767,7 +767,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				`SELECT m.cost_type_id, m.amount, t.allocation_method
 				 FROM MonthlyOverheadCosts m
 				 LEFT JOIN OverheadCostTypes t ON m.cost_type_id = t.cost_type_id
-				 WHERE m.year = ? AND m.month = ? AND m.is_deleted = 0 AND t.is_deleted = 0`
+				 WHERE m.year = ? AND m.month = ? AND m.is_deleted = 0 AND t.is_active = 1`
 			).bind(year, month).all();
 			const overheadDetails = overheadDetailsRows?.results || [];
 			
