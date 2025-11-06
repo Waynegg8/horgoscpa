@@ -106,7 +106,7 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 					t.reviewed_by,
 					t.notes,
 					u.name as user_name,
-					c.name as client_name,
+					c.company_name as client_name,
 					r.name as reviewer_name
 				FROM BusinessTrips t
 				LEFT JOIN Users u ON t.user_id = u.user_id

@@ -229,6 +229,12 @@
             const userData = await userRes.json();
             currentUser = userData.data;
 
+            // 設定 navbar 用戶名稱
+            const userNameEl = document.getElementById('internalUserName');
+            if (userNameEl && currentUser) {
+              userNameEl.textContent = currentUser.name || currentUser.username || '用戶';
+            }
+
             // 顯示用戶篩選器（僅管理員）
             if (currentUser.is_admin) {
               userFilterField.style.display = 'block';
@@ -277,13 +283,13 @@
         // 載入客戶列表
         async function loadClients() {
           try {
-            const res = await fetch(`${apiBase}/clients`, { credentials: 'include' });
+            const res = await fetch(`${apiBase}/clients?per_page=1000`, { credentials: 'include' });
             if (!res.ok) return;
             const json = await res.json();
             const clients = json.data || [];
             
             const options = clients.map(c => 
-              `<option value="${c.client_id}">${c.name || c.company_name || '未命名客戶'}</option>`
+              `<option value="${c.clientId}">${c.companyName || '未命名客戶'}</option>`
             ).join('');
             
             clientFilter.innerHTML = '<option value="">全部客戶</option>' + options;
@@ -615,7 +621,21 @@
             ]);
 
             if (navbarRes.ok) {
-              document.getElementById('internal-navbar').innerHTML = await navbarRes.text();
+              const navbarHtml = await navbarRes.text();
+              const navbarContainer = document.getElementById('internal-navbar');
+              navbarContainer.innerHTML = navbarHtml;
+              
+              // 手動執行 navbar 中的 script
+              const scripts = navbarContainer.querySelectorAll('script');
+              scripts.forEach(oldScript => {
+                const newScript = document.createElement('script');
+                if (oldScript.src) {
+                  newScript.src = oldScript.src;
+                } else {
+                  newScript.textContent = oldScript.textContent;
+                }
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+              });
             }
             if (footerRes.ok) {
               document.getElementById('internal-footer').innerHTML = await footerRes.text();
