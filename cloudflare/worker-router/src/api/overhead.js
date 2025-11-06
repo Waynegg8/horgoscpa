@@ -299,8 +299,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				
 				const totalMonthHoursRow = await env.DATABASE.prepare(
 					`SELECT SUM(hours) as total FROM Timesheets 
-					 WHERE year = ? AND month = ? AND is_deleted = 0`
-				).bind(year, month).first();
+					 WHERE substr(work_date, 1, 7) = ? AND is_deleted = 0`
+				).bind(yearMonth).first();
 				const totalMonthHours = Number(totalMonthHoursRow?.total || 0);
 				
 				const overheadAllocation = totalMonthHours > 0 
@@ -353,6 +353,9 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				1: 1.0, 2: 1.34, 3: 1.67, 4: 1.34, 5: 1.67, 
 				6: 2.67, 7: 2.0, 8: 1.34, 9: 1.67, 10: 2.0, 11: 2.0
 			};
+
+			// 必須給補休的工時類型（國定假日/例假日8小時內）
+			const MANDATORY_COMP_LEAVE_TYPES = [7, 10];
 
 			// 1. 獲取所有客戶
 			const clientsRows = await env.DATABASE.prepare(
@@ -425,8 +428,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				
 				const totalMonthHoursRow = await env.DATABASE.prepare(
 					`SELECT SUM(hours) as total FROM Timesheets 
-					 WHERE year = ? AND month = ? AND is_deleted = 0`
-				).bind(year, month).first();
+					 WHERE substr(work_date, 1, 7) = ? AND is_deleted = 0`
+				).bind(yearMonth).first();
 				const totalMonthHours = Number(totalMonthHoursRow?.total || 0);
 				
 				const overheadAllocation = totalMonthHours > 0 
