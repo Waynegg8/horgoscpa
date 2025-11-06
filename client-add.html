@@ -523,7 +523,7 @@
             <td class="amount">$${yearTotal.toLocaleString('zh-TW')}</td>
             <td>${svc.start_date || '-'}</td>
             <td class="actions-cell">
-              <button type="button" class="table-btn table-btn-primary" onclick="showAddComponentForm(${index})">配置服務內容</button>
+              <button type="button" class="table-btn table-btn-primary" onclick="showComponentsSection(${index})">配置服務內容</button>
               <button type="button" class="table-btn table-btn-secondary" onclick="editService(${index})">編輯</button>
               <button type="button" class="table-btn table-btn-danger" onclick="deleteService(${index}, '${serviceName}')">刪除</button>
             </td>
@@ -1791,14 +1791,23 @@
       return map[rule] || '-';
     }
 
-    // 顯示新增表單（新增模式：使用索引）
-    function showAddComponentForm(serviceIndex) {
+    // 展開/收起組件配置區域（新增模式）
+    function showComponentsSection(serviceIndex) {
+      const componentRow = document.getElementById(`components-row-${serviceIndex}`);
+      
+      if (componentRow.style.display === 'none') {
+        componentRow.style.display = 'table-row';
+        loadComponentsInline(serviceIndex);
+      } else {
+        componentRow.style.display = 'none';
+      }
+    }
+    
+    // 載入組件配置區域（新增模式：從 tempServices 讀取）
+    function loadComponentsInline(serviceIndex) {
       const svc = tempServices[serviceIndex];
       const container = document.getElementById(`components-content-${serviceIndex}`);
       if (!svc || !container) return;
-      
-      const row = document.getElementById(`components-row-${serviceIndex}`);
-      if (row) row.style.display = 'table-row';
       
       const currentServiceId = svc.service_id;
       const items = allServiceItems.filter(it => String(it.service_id) === String(currentServiceId));
@@ -1807,9 +1816,17 @@
         : '<option value="">（此服務無可用項目）</option>';
       const sopOptions = (allSOPs||[]).map(s => `<label style=\"display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid #e5e7eb;border-radius:6px;padding:4px 8px;\"><input type=\"checkbox\" class=\"comp-sop-${serviceIndex}\" value=\"${s.sop_id}\"> ${s.title}</label>`).join('');
       
+      // 從 tempServices 讀取已配置的組件
+      const components = svc.components || [];
+      
       container.innerHTML = `
-        <div id="add-component-form-${serviceIndex}" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 12px; border: 2px solid #3b82f6;">
-          <h5 style="margin:0 0 10px 0;">配置服務任務</h5>
+        <div style="padding: 20px; background: #f9fafb; border-radius: 8px;">
+          <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 15px;">
+            <button class="table-btn table-btn-primary" onclick="showAddComponentForm(${serviceIndex})">+ 配置任務</button>
+          </div>
+          
+          <div id="add-component-form-${serviceIndex}" style="display: none; background: white; padding: 20px; border-radius: 8px; margin-bottom: 12px; border: 2px solid #3b82f6;">
+            <h5 style="margin:0 0 10px 0;">配置服務任務</h5>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
             <div><label>組成名稱</label><input type="text" id="comp-name-${serviceIndex}" value="任務配置" /></div>
             <div><label>服務項目</label><select id="comp-item-${serviceIndex}"><option value="">（可選）</option>${itemsOptions}</select></div>
@@ -1836,14 +1853,156 @@
             <button type="button" class="table-btn table-btn-primary" onclick="saveComponentConfig(${serviceIndex})">儲存配置</button>
           </div>
         </div>
-        <div id="components-list-${serviceIndex}"></div>`;
+        
+        <div id="components-list-${serviceIndex}"></div>
+      </div>`;
+      
+      // 渲染已有的組件列表
+      renderComponentsList(serviceIndex);
+    }
+    
+    // 顯示新增表單（新增模式）
+    function showAddComponentForm(serviceIndex) {
+      const form = document.getElementById(`add-component-form-${serviceIndex}`);
+      if (!form) return;
+      form.style.display = 'block';
       
       // 預設一個任務
       window[`compTasks${serviceIndex}`] = [
         { task_name:'任務', assignee_user_id:null, notes:'', due_rule:'end_of_month', due_value:null, estimated_hours:null, advance_days:7, sop_ids:[] }
       ];
       renderComponentTasks(serviceIndex);
+    }
+    
+    function toggleMonths(serviceIndex, on) {
+      document.querySelectorAll(`.comp-month-${serviceIndex}`).forEach(cb => cb.checked = !!on);
+    }
+
+    function cancelComponentForm(serviceIndex) {
+      const form = document.getElementById(`add-component-form-${serviceIndex}`);
+      if (form) form.style.display = 'none';
+    }
+
+    function renderComponentTasks(serviceIndex) {
+      const tasks = window[`compTasks${serviceIndex}`] || [];
+      const el = document.getElementById(`tasks-list-${serviceIndex}`);
+      if (!el) return;
+      el.innerHTML = tasks.map((t, idx) => {
+        const assigneeOptions = (Array.isArray(allUsers)?allUsers:[]).map(u=>`<option value="${u.user_id}" ${t.assignee_user_id==u.user_id?'selected':''}>${u.name||u.username}</option>`).join('');
+        const sopOptions = (allSOPs||[]).map(s => {
+          const checked = Array.isArray(t.sop_ids) && t.sop_ids.includes(s.sop_id) ? 'checked' : '';
+          return `<label style=\"display:inline-flex;align-items:center;gap:6px;margin:4px 8px;\"><input type=\"checkbox\" ${checked} onchange=\"toggleTaskSOP(${serviceIndex},${idx},${s.sop_id},this.checked)\"> ${s.title}</label>`;
+        }).join('');
+        return `<div style=\"border:1px solid #e5e7eb;border-radius:6px;padding:8px;margin-bottom:8px;\">\n          <div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:8px;\">\n            <div><label>名稱</label><input type=\"text\" value=\"${t.task_name}\" oninput=\"updateTaskField(${serviceIndex},${idx},'task_name',this.value)\"></div>\n            <div><label>負責人</label><select onchange=\"updateTaskField(${serviceIndex},${idx},'assignee_user_id',this.value)\"><option value=\"\">（不指定）</option>${assigneeOptions}</select></div>\n            <div><label>預估時數</label><input type=\"number\" step=\"0.1\" min=\"0\" value=\"${t.estimated_hours||''}\" oninput=\"updateTaskField(${serviceIndex},${idx},'estimated_hours',this.value)\"></div>\n          </div>\n          <div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px;\">\n            <div><label>到期規則</label><select onchange=\"updateTaskField(${serviceIndex},${idx},'due_rule',this.value)\"><option value=\"end_of_month\" ${t.due_rule==='end_of_month'?'selected':''}>月末</option><option value=\"fixed_day\" ${t.due_rule==='fixed_day'?'selected':''}>固定日</option><option value=\"days_after_month_start\" ${t.due_rule==='days_after_month_start'?'selected':''}>月初後N天</option><option value=\"days_before_month_end\" ${t.due_rule==='days_before_month_end'?'selected':''}>月末前N天</option></select></div>\n            <div><label>規則值</label><input type=\"text\" value=\"${t.due_value||''}\" oninput=\"updateTaskField(${serviceIndex},${idx},'due_value',this.value)\" placeholder=\"例如 20（固定每月20日）\"></div>\n            <div><label>提前天數</label><input type=\"number\" min=\"0\" value=\"${t.advance_days||7}\" oninput=\"updateTaskField(${serviceIndex},${idx},'advance_days',this.value)\"></div>\n          </div>\n          <div style=\"margin-top:6px;\"><label>備註</label><input type=\"text\" value=\"${t.notes||''}\" oninput=\"updateTaskField(${serviceIndex},${idx},'notes',this.value)\" style=\"width:100%\"></div>\n          <div style=\"margin-top:6px;\"><label>SOP（任務層級）</label><div>${sopOptions || '<span style=\\"color:#9ca3af;\\">尚無 SOP</span>'}</div></div>\n          <div style=\"margin-top:6px;\"><button type=\"button\" class=\"table-btn-link danger\" onclick=\"removeComponentTask(${serviceIndex},${idx})\">刪除此任務</button></div>\n        </div>`;
+      }).join('');
+    }
+
+    function addComponentTask(serviceIndex) {
+      const tasks = window[`compTasks${serviceIndex}`] || [];
+      tasks.push({ task_name:'任務', assignee_user_id:null, notes:'', due_rule:'end_of_month', due_value:null, estimated_hours:null, advance_days:7, sop_ids:[] });
+      window[`compTasks${serviceIndex}`] = tasks;
+      renderComponentTasks(serviceIndex);
+    }
+
+    function updateTaskField(serviceIndex, idx, field, value) {
+      const tasks = window[`compTasks${serviceIndex}`] || [];
+      if (!tasks[idx]) return;
+      if (field==='assignee_user_id') value = value ? parseInt(value,10) : null;
+      if (field==='estimated_hours') value = value ? parseFloat(value) : null;
+      if (['advance_days'].includes(field)) value = value ? parseInt(value,10) : 7;
+      tasks[idx][field] = value;
+    }
+    
+    function toggleTaskSOP(serviceIndex, idx, sopId, on) {
+      const tasks = window[`compTasks${serviceIndex}`] || [];
+      if (!tasks[idx]) return;
+      tasks[idx].sop_ids = tasks[idx].sop_ids || [];
+      if (on) { if (!tasks[idx].sop_ids.includes(sopId)) tasks[idx].sop_ids.push(sopId); }
+      else { tasks[idx].sop_ids = tasks[idx].sop_ids.filter(id => id !== sopId); }
+    }
+
+    function removeComponentTask(serviceIndex, idx) {
+      const tasks = window[`compTasks${serviceIndex}`] || [];
+      tasks.splice(idx,1);
+      window[`compTasks${serviceIndex}`] = tasks;
+      renderComponentTasks(serviceIndex);
+    }
+
+    function saveComponentConfig(serviceIndex) {
+      const svc = tempServices[serviceIndex];
+      if (!svc) return;
+      const name = document.getElementById(`comp-name-${serviceIndex}`).value.trim() || '任務配置';
+      const itemId = document.getElementById(`comp-item-${serviceIndex}`).value || null;
+      const freq = document.getElementById(`comp-freq-${serviceIndex}`).value || 'monthly';
+      const months = Array.from(document.querySelectorAll(`.comp-month-${serviceIndex}:checked`)).map(cb=>parseInt(cb.value,10));
+      const sopIds = Array.from(document.querySelectorAll(`.comp-sop-${serviceIndex}:checked`)).map(cb=>parseInt(cb.value,10));
+      const tasks = window[`compTasks${serviceIndex}`] || [];
+      if (tasks.length === 0) { alert('請至少新增一個任務'); return; }
+      svc.components = svc.components || [];
+      svc.components.push({
+        component_name: name,
+        service_item_id: itemId ? parseInt(itemId,10) : null,
+        delivery_frequency: freq,
+        delivery_months: freq==='monthly' ? months : [],
+        component_sop_ids: sopIds,
+        tasks: tasks.map(t => ({
+          task_name: t.task_name,
+          assignee_user_id: t.assignee_user_id || null,
+          notes: t.notes || null,
+          due_rule: t.due_rule || 'end_of_month',
+          due_value: t.due_value || null,
+          estimated_hours: t.estimated_hours || null,
+          advance_days: t.advance_days || 7,
+          sop_ids: t.sop_ids || []
+        }))
+      });
+      
+      // 隱藏表單
+      const form = document.getElementById(`add-component-form-${serviceIndex}`);
+      if (form) form.style.display = 'none';
+      
+      // 更新組件列表顯示
       renderComponentsList(serviceIndex);
+      
+      alert('已儲存任務配置');
+    }
+
+    function renderComponentsList(serviceIndex) {
+      const list = document.getElementById(`components-list-${serviceIndex}`);
+      const svc = tempServices[serviceIndex];
+      if (!list || !svc) return;
+      const comps = Array.isArray(svc.components) ? svc.components : [];
+      if (comps.length === 0) { list.innerHTML = '<div style="color:#9ca3af">尚未配置任務</div>'; return; }
+      list.innerHTML = comps.map((comp, i) => {
+        const sopTags = (comp.component_sop_ids||[]).map(id => {
+          const sop = (allSOPs||[]).find(s=>s.sop_id===id);
+          return sop ? `<div style=\"font-size:13px;color:#374151;padding:2px 0;\">• ${sop.title}</div>` : '';
+        }).join('');
+        const tasks = (comp.tasks||[]).map((t, idx) => {
+          const assignee = (allUsers||[]).find(u=>u.user_id===t.assignee_user_id);
+          const assigneeText = assignee ? `👤 負責人：${assignee.name||assignee.username} • ` : '';
+          const est = t.estimated_hours ? `⏱️ 預估：${t.estimated_hours}小時` : '';
+          const notes = t.notes ? ` • 💡 ${t.notes}` : '';
+          return `<div style=\"background:#f9fafb;padding:10px;border-radius:6px;margin-bottom:6px;border-left:3px solid #10b981;\">\n            <div style=\"font-size:13px;color:#1f2937;font-weight:500;margin-bottom:4px;\">${idx+1}. ${t.task_name||'未命名任務'}</div>\n            <div style=\"font-size:12px;color:#6b7280;margin-bottom:4px;\">${assigneeText}${est}${notes}</div>\n          </div>`;
+        }).join('');
+        return `
+          <div class=\"component-item\" style=\"background:white;padding:15px;border-radius:8px;margin-bottom:10px;border-left:4px solid #3b82f6;\">\n            <div style=\"display:flex;justify-content:space-between;align-items:start;\">\n              <div style=\"flex:1;\">\n                <h5 style=\"margin:0 0 12px 0;color:#1f2937;font-size:15px;\">任務配置 #${i+1}</h5>\n                ${comp.component_sop_ids && comp.component_sop_ids.length>0 ? `\n                  <div style=\\\"padding:8px 12px;background:#f0f9ff;border-radius:4px;border-left:3px solid #3b82f6;margin-bottom:12px;\\\">\n                    <div style=\\\"font-size:12px;font-weight:600;color:#1e40af;margin-bottom:4px;\\\">📖 服務層級SOP（${comp.component_sop_ids.length}個）</div>\n                    ${sopTags}\n                  </div>` : ''}\n                ${comp.tasks && comp.tasks.length>0 ? `\n                  <div>\n                    <strong style=\\\"font-size:13px;color:#374151;\\\">📋 任務列表（${comp.tasks.length}個）</strong>\n                    <div style=\\\"margin-top:8px;\\\">${tasks}</div>\n                  </div>` : ''}\n              </div>\n              <div style=\"display:flex;gap:5px;\">\n                <button class=\"table-btn-link danger\" onclick=\"deleteLocalComponent(${serviceIndex},${i})\">刪除</button>\n              </div>\n            </div>\n          </div>`;
+      }).join('');
+    }
+
+    function deleteLocalComponent(serviceIndex, compIndex) {
+      const svc = tempServices[serviceIndex];
+      if (!svc || !Array.isArray(svc.components)) return;
+      if (!confirm('確定要刪除此配置嗎？')) return;
+      svc.components.splice(compIndex, 1);
+      renderComponentsList(serviceIndex);
+    }
+    
+    // ❌ 以下為舊的詳情頁代碼，保留以防萬一
+    function __oldShowAddComponentForm(clientServiceId) {
+      const form = document.getElementById(`add-component-form-${clientServiceId}`);
+      if (!form) return;
+      form.style.display = 'block';
       
       // 创建服务项过滤模板的函数
       window[`filterTemplatesByServiceItem${clientServiceId}`] = function() {

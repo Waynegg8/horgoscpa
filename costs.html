@@ -21,8 +21,6 @@
       <div id="infoBar" class="info-bar" style="display:none;" role="alert">您沒有權限存取此模組</div>
       <div class="costs-toolbar" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
         <div class="toolbar-spacer" style="flex:1;"></div>
-        <button id="btn-export-csv" type="button" class="btn" disabled>匯出 CSV</button>
-        <button id="btn-export-pdf" type="button" class="btn" disabled>匯出 PDF</button>
       </div>
       <nav class="costs-tabs" role="tablist" aria-label="管理成本分頁" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
         <button class="tab active" role="tab" aria-selected="true" data-tab="items">成本項目設定</button>
@@ -806,41 +804,9 @@
           });
         }
 
-        function exportActiveTableToCsv(){
-          let table;
-          if (currentCostsTab === 'items') {
-            table = tbodyItems?.parentElement;
-          } else if (currentCostsTab === 'employee') {
-            table = tbodyEmployee?.parentElement;
-          } else if (currentCostsTab === 'client') {
-            table = (viewType.value === 'client') ? tbodyClients?.parentElement : tbodyTasks?.parentElement;
-          }
-          if (!table) { alert('沒有可匯出的資料'); return; }
-          const rows = Array.from(table.querySelectorAll('tr')).map(tr => {
-            const cells = Array.from(tr.querySelectorAll('th,td')).map(td => {
-              const text = (td.textContent||'').replace(/\s+/g,' ').trim();
-              return '"' + text.replace(/"/g,'""') + '"';
-            });
-            return cells.join(',');
-          });
-          const csv = rows.join('\n');
-          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          const fnYm = String(monthInput.value||'').replace('-','');
-          a.download = `costs_${currentCostsTab}_${fnYm||'current'}.csv`;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
-        }
-
         document.getElementById('btn-add-item')?.addEventListener('click', openAddTypeModal);
         document.getElementById('btn-add-record')?.addEventListener('click', openAddRecordModal);
         document.getElementById('btn-generate-month')?.addEventListener('click', generateCurrentMonth);
-        document.getElementById('btn-export-csv')?.addEventListener('click', exportActiveTableToCsv);
-        document.getElementById('btn-export-pdf')?.addEventListener('click', ()=>{
-          alert('PDF 匯出尚未實作，請先使用 CSV 匯出');
-        });
 
         // 一鍵生成：按模板生成本月記錄
         async function generateCurrentMonth(){

@@ -463,7 +463,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				
 				// 4. 計算年度特休時數（若無資料則為 0）
 				const annualRow = await env.DATABASE.prepare(
-					"SELECT total FROM LeaveBalances WHERE user_id = ? AND year = ? AND leave_type = 'annual'"
+					"SELECT total FROM LeaveBalances WHERE user_id = ? AND year = ? AND leave_type = 'annual' LIMIT 1"
 				).bind(userId, year).first();
 				const annualLeaveDays = Number(annualRow?.total || 0);
 				const annualLeaveHours = Math.max(0, annualLeaveDays * 8);
@@ -608,6 +608,26 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			// 必須給補休的工時類型（國定假日/例假日8小時內）
 			const MANDATORY_COMP_LEAVE_TYPES = [7, 10];
 
+			// 構建員工時薪快取（以 Users.base_salary 與年度特休計算）
+			const usersRateRows = await env.DATABASE.prepare(
+				"SELECT user_id, base_salary FROM Users WHERE is_deleted = 0"
+			).all();
+			const leaveRows = await env.DATABASE.prepare(
+				"SELECT user_id, total FROM LeaveBalances WHERE year = ? AND leave_type = 'annual'"
+			).bind(year).all();
+			const leavesMap = new Map();
+			(leaveRows?.results || []).forEach(r => { leavesMap.set(r.user_id, Number(r.total || 0)); });
+			const hourlyRatesMap = {};
+			(usersRateRows?.results || []).forEach(u => {
+				const monthlySalary = Number(u.base_salary || 0);
+				const annualHours = 2080;
+				const annualLeaveDays = Number(leavesMap.get(u.user_id) || 0);
+				const annualLeaveHours = annualLeaveDays * 8;
+				const actualHours = Math.max(0, annualHours - annualLeaveHours);
+				const monthlyBaseHours = actualHours / 12;
+				hourlyRatesMap[u.user_id] = monthlyBaseHours > 0 ? (monthlySalary / monthlyBaseHours) : 0;
+			});
+
 			// 1. 獲取所有客戶
 			const clientsRows = await env.DATABASE.prepare(
 				"SELECT client_id, company_name FROM Clients WHERE is_deleted = 0 ORDER BY company_name ASC"
@@ -746,15 +766,16 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				"SELECT user_id, base_salary FROM Users WHERE is_deleted = 0"
 			).all();
 			const leaveRows = await env.DATABASE.prepare(
-				"SELECT user_id, annual_leave_balance FROM LeaveBalances WHERE year = ?"
+				"SELECT user_id, total FROM LeaveBalances WHERE year = ? AND leave_type = 'annual'"
 			).bind(year).all();
 			const leavesMap = new Map();
-			(leaveRows?.results || []).forEach(r => { leavesMap.set(r.user_id, Number(r.annual_leave_balance || 0)); });
+			(leaveRows?.results || []).forEach(r => { leavesMap.set(r.user_id, Number(r.total || 0)); });
 			const hourlyRatesMap = {};
 			(usersRateRows?.results || []).forEach(u => {
 				const monthlySalary = Number(u.base_salary || 0);
 				const annualHours = 2080;
-				const annualLeaveHours = Number(leavesMap.get(u.user_id) || 0);
+				const annualLeaveDays = Number(leavesMap.get(u.user_id) || 0);
+				const annualLeaveHours = annualLeaveDays * 8;
 				const actualHours = Math.max(0, annualHours - annualLeaveHours);
 				const monthlyBaseHours = actualHours / 12;
 				hourlyRatesMap[u.user_id] = monthlyBaseHours > 0 ? (monthlySalary / monthlyBaseHours) : 0;
