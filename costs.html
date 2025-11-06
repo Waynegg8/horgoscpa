@@ -301,9 +301,10 @@
         // ============ 成本項目設定 ============
         async function loadItems(){
           const params = new URLSearchParams();
+          params.set('_t', String(Date.now())); // 强制绕过缓存
           try {
             tbodyItems.innerHTML = '<tr><td colspan="6" class="muted">載入中…</td></tr>';
-            const res = await fetch(`${apiBase}/admin/overhead-types?${params.toString()}`, { credentials:'include' });
+            const res = await fetch(`${apiBase}/admin/overhead-types?${params.toString()}`, { credentials:'include', cache: 'no-store' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             const json = await res.json();
             if (!res.ok || !json || json.ok !== true) throw new Error();
@@ -472,9 +473,10 @@
           const params = new URLSearchParams();
           params.set('year', String(ym.year));
           params.set('month', String(ym.month));
+          params.set('_t', String(Date.now())); // 强制绕过缓存
           try {
             tbodyRecords.innerHTML = '<tr><td colspan="6" class="muted">載入中…</td></tr>';
-            const res = await fetch(`${apiBase}/admin/overhead-costs?${params.toString()}`, { credentials:'include' });
+            const res = await fetch(`${apiBase}/admin/overhead-costs?${params.toString()}`, { credentials:'include', cache: 'no-store' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             const json = await res.json();
             if (!res.ok || !json || json.ok !== true) throw new Error();
@@ -543,9 +545,10 @@
           const params = new URLSearchParams();
           params.set('year', String(ym.year));
           params.set('month', String(ym.month));
+          params.set('_t', String(Date.now())); // 强制绕过缓存
           try {
             tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">載入中…</td></tr>';
-            const res = await fetch(`${apiBase}/admin/costs/employee?${params.toString()}`, { credentials:'include' });
+            const res = await fetch(`${apiBase}/admin/costs/employee?${params.toString()}`, { credentials:'include', cache: 'no-store' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             if (res.status === 501) {
               tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">功能尚未實作，敬請期待</td></tr>';
@@ -625,9 +628,10 @@
           const params = new URLSearchParams();
           params.set('year', String(ym.year));
           params.set('month', String(ym.month));
+          params.set('_t', String(Date.now())); // 强制绕过缓存
           try {
             tbodyClients.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
-            const res = await fetch(`${apiBase}/admin/costs/client?${params.toString()}`, { credentials:'include' });
+            const res = await fetch(`${apiBase}/admin/costs/client?${params.toString()}`, { credentials:'include', cache: 'no-store' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             if (res.status === 501) {
               tbodyClients.innerHTML = '<tr><td colspan="10" class="muted">功能尚未實作，敬請期待</td></tr>';
@@ -680,9 +684,10 @@
           const params = new URLSearchParams();
           params.set('year', String(ym.year));
           params.set('month', String(ym.month));
+          params.set('_t', String(Date.now())); // 强制绕过缓存
           try {
             tbodyTasks.innerHTML = '<tr><td colspan="8" class="muted">載入中…</td></tr>';
-            const res = await fetch(`${apiBase}/admin/costs/task?${params.toString()}`, { credentials:'include' });
+            const res = await fetch(`${apiBase}/admin/costs/task?${params.toString()}`, { credentials:'include', cache: 'no-store' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             if (res.status === 501) {
               tbodyTasks.innerHTML = '<tr><td colspan="8" class="muted">功能尚未實作，敬請期待</td></tr>';
@@ -911,7 +916,7 @@
         async function openAddRecordModal(){
           const ym = parseYearMonth();
           if (!ym) { alert('請先選擇有效月份'); return; }
-          const typesRes = await fetch(`${apiBase}/admin/overhead-types?is_active=1&perPage=200`, { credentials:'include' });
+          const typesRes = await fetch(`${apiBase}/admin/overhead-types?is_active=1&perPage=200&_t=${Date.now()}`, { credentials:'include', cache: 'no-store' });
           if (typesRes.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
           const typesJson = await typesRes.json();
           const types = (typesJson?.data)||[];
@@ -962,7 +967,7 @@
           if (!ym) { alert('請先選擇有效月份'); return; }
           try {
             // 先預覽
-            const prevRes = await fetch(`${apiBase}/admin/overhead-costs/generate/preview?year=${ym.year}&month=${ym.month}`, { credentials:'include' });
+            const prevRes = await fetch(`${apiBase}/admin/overhead-costs/generate/preview?year=${ym.year}&month=${ym.month}&_t=${Date.now()}`, { credentials:'include', cache: 'no-store' });
             const prevJson = await prevRes.json();
             if (!prevRes.ok || !prevJson || prevJson.ok !== true) throw new Error(prevJson?.message||'預覽失敗');
             const items = (prevJson.data?.items)||[];
