@@ -563,6 +563,87 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 	}
 
+	// POST /api/v1/clients/diagnose - 資料庫即時診斷（不使用任何快取）
+	if (method === "POST" && url.pathname === "/internal/api/v1/clients/diagnose") {
+		let body;
+		try {
+			body = await request.json();
+		} catch (_) {
+			return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, corsHeaders);
+		}
+		const clientIds = Array.isArray(body?.client_ids) ? body.client_ids.map(String) : [];
+		if (clientIds.length === 0) {
+			// 允許空：自動抓取最近的前 100 筆客戶
+			const rows = await env.DATABASE.prepare(
+				`SELECT client_id FROM Clients WHERE is_deleted = 0 ORDER BY created_at DESC LIMIT 100`
+			).all();
+			rows.results?.forEach(r => clientIds.push(r.client_id));
+		}
+		if (clientIds.length === 0) {
+			return jsonResponse(200, { ok: true, code: "SUCCESS", message: "無客戶資料", data: { clients: [] }, meta: { requestId } }, corsHeaders);
+		}
+		try {
+			const placeholders = clientIds.map(() => "?").join(",");
+			// 標籤（彙總）
+			const tagAgg = await env.DATABASE.prepare(
+				`SELECT c.client_id,
+				        COUNT(t.tag_id) AS tag_count,
+				        GROUP_CONCAT(t.tag_id || ':' || t.tag_name || ':' || COALESCE(t.tag_color, ''), '|') AS tags
+				 FROM Clients c
+				 LEFT JOIN ClientTagAssignments cta ON cta.client_id = c.client_id
+				 LEFT JOIN CustomerTags t ON t.tag_id = cta.tag_id
+				 WHERE c.client_id IN (${placeholders})
+				 GROUP BY c.client_id`
+			).bind(...clientIds).all();
+
+			// 服務數量
+			const svcRows = await env.DATABASE.prepare(
+				`SELECT client_id, COUNT(1) AS svc_count
+				 FROM ClientServices
+				 WHERE client_id IN (${placeholders}) AND is_deleted = 0
+				 GROUP BY client_id`
+			).bind(...clientIds).all();
+			// 全年收費總額
+			const totalRows = await env.DATABASE.prepare(
+				`SELECT cs.client_id, SUM(COALESCE(sbs.billing_amount, 0)) AS total_amount
+				 FROM ClientServices cs
+				 LEFT JOIN ServiceBillingSchedule sbs ON sbs.client_service_id = cs.client_service_id
+				 WHERE cs.client_id IN (${placeholders}) AND cs.is_deleted = 0
+				 GROUP BY cs.client_id`
+			).bind(...clientIds).all();
+
+			const svcMap = {}; svcRows.results?.forEach(r => svcMap[r.client_id] = Number(r.svc_count || 0));
+			const totalMap = {}; totalRows.results?.forEach(r => totalMap[r.client_id] = Number(r.total_amount || 0));
+			const tagMap = {};
+			tagAgg.results?.forEach(r => {
+				let parsed = [];
+				if (r.tags) {
+					parsed = String(r.tags).split('|').map(part => {
+						const [id, name, color] = part.split(':');
+						return { tag_id: Number(id), tag_name: name, tag_color: color || null };
+					});
+				}
+				tagMap[r.client_id] = { tag_count: Number(r.tag_count || 0), tags: parsed };
+			});
+
+			const clients = clientIds.map(id => ({
+				client_id: id,
+				tag_count: tagMap[id]?.tag_count || 0,
+				tags: tagMap[id]?.tags || [],
+				services_count: svcMap[id] || 0,
+				year_total: totalMap[id] || 0
+			}));
+
+			console.log('[CLIENTS][DIAGNOSE] 結果:', { count: clients.length, clients });
+			return jsonResponse(200, { ok: true, code: "SUCCESS", message: "診斷完成", data: { clients }, meta: { requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
+			if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+			return jsonResponse(500, body, corsHeaders);
+		}
+	}
+
 	// POST /api/v1/clients - 新增客户（必须在/clients/:id/services之前检查，并确保不匹配子路径）
 	console.log(`[CLIENTS.JS] 檢查創建客戶路由: ${method} === "POST" && ${url.pathname} === "/internal/api/v1/clients" => ${method === "POST" && url.pathname === "/internal/api/v1/clients"}`);
 	if (method === "POST" && url.pathname === "/internal/api/v1/clients") {

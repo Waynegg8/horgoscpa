@@ -66,6 +66,7 @@
           <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
             <div style="font-weight:600;">🧪 調試資訊</div>
             <button id="btn-debug-clear" class="clients-btn btn-secondary" type="button">清除服務端客戶快取</button>
+            <button id="btn-debug-dbcheck" class="clients-btn btn-secondary" type="button">資料庫檢查</button>
             <button id="btn-debug-reload" class="clients-btn btn-secondary" type="button">重新載入</button>
           </div>
           <div id="debug-summary" style="font-size:13px;line-height:1.6;white-space:pre-wrap;"></div>
@@ -148,11 +149,14 @@
         const debugListEl = document.getElementById('debug-list');
         const debugClearBtn = document.getElementById('btn-debug-clear');
         const debugReloadBtn = document.getElementById('btn-debug-reload');
+        const debugDbCheckBtn = document.getElementById('btn-debug-dbcheck');
 
         function setError(msg){ if (errEl) errEl.textContent = msg || ''; }
 
         // 🧪 調試資訊狀態
         let lastDebug = { loadedAt: '', durationMs: 0, cacheSource: '', requestId: '', total: 0, list: [] };
+
+        let lastDbDiagMap = {};
 
         function renderDebugPanel() {
           if (!debugPanel) return;
@@ -163,7 +167,9 @@
           debugSummaryEl.textContent = `載入時間: ${loadedAt}\n耗時: ${durationMs} ms\n來源: ${cacheText}${requestId ? `\n請求ID: ${requestId}` : ''}\n筆數: ${total}\n合計服務數: ${totalSvc}\n全年收費合計: ${totalYear.toLocaleString()}`;
           const lines = list.map(item => {
             const tags = Array.isArray(item.tags) ? item.tags.filter(Boolean).join(', ') : '';
-            return `• ${item.companyName}（${item.clientId}）→ ${item.assigneeName || '未分配'} | 標籤: ${tags || '無'} | 服務: ${item.services_count || 0} | 年額: ${Number(item.year_total||0).toLocaleString()}`;
+            const db = lastDbDiagMap[item.clientId];
+            const dbPart = db ? ` || DB: 標籤:${db.tag_count} 服務:${db.services_count} 年額:${Number(db.year_total||0).toLocaleString()}` : '';
+            return `• ${item.companyName}（${item.clientId}）→ ${item.assigneeName || '未分配'} | 標籤: ${tags || '無'} | 服務: ${item.services_count || 0} | 年額: ${Number(item.year_total||0).toLocaleString()}${dbPart}`;
           });
           debugListEl.textContent = lines.join('\n');
         }
@@ -432,6 +438,33 @@
         // 重新載入
         if (debugReloadBtn) {
           debugReloadBtn.addEventListener('click', function(){ load(); });
+        }
+
+        // 資料庫檢查
+        if (debugDbCheckBtn) {
+          debugDbCheckBtn.addEventListener('click', async function(){
+            try {
+              const ids = (lastDebug.list || []).map(i => i.clientId);
+              const res = await fetch(`${apiBase}/clients/diagnose`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ client_ids: ids })
+              });
+              const json = await res.json().catch(()=>null);
+              if (!res.ok || !json || json.ok !== true) {
+                alert((json && json.message) || '診斷失敗');
+                return;
+              }
+              const diag = (json.data && json.data.clients) || [];
+              lastDbDiagMap = {};
+              diag.forEach(r => { lastDbDiagMap[r.client_id] = r; });
+              renderDebugPanel();
+              alert('資料庫檢查完成');
+            } catch (e) {
+              alert('診斷失敗，請稍後再試');
+            }
+          });
         }
         
         // 綁定操作按鈕事件（全局绑定一次，避免重复）
