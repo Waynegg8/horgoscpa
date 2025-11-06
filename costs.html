@@ -362,6 +362,45 @@
             tbodyItems.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
+        async function openEditItemModal(item){
+          const form = document.createElement('div');
+          const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.value = item.name||'';
+          const catSel = document.createElement('select'); 
+          catSel.innerHTML = '<option value="fixed">固定</option><option value="variable">變動</option>';
+          catSel.value = item.category;
+          const allocSel = document.createElement('select'); 
+          allocSel.innerHTML = '<option value="per_employee">按員工數</option><option value="per_hour">按工時</option><option value="per_revenue">按收入</option>';
+          allocSel.value = item.allocationMethod;
+          const descInput = document.createElement('input'); descInput.type = 'text'; descInput.value = item.description||'';
+          const activeChk = document.createElement('input'); activeChk.type='checkbox'; activeChk.id='editActive'; activeChk.checked = item.isActive;
+          const activeLbl = document.createElement('label'); activeLbl.htmlFor='editActive'; activeLbl.textContent='啟用'; activeLbl.style.marginLeft='6px';
+          const activeWrap = document.createElement('div'); activeWrap.style.marginTop='10px'; activeWrap.appendChild(activeChk); activeWrap.appendChild(activeLbl);
+          
+          form.appendChild(buildField('成本名稱', nameInput));
+          form.appendChild(buildField('類別', catSel));
+          form.appendChild(buildField('分攤方式', allocSel));
+          form.appendChild(buildField('描述', descInput));
+          form.appendChild(activeWrap);
+          
+          openModal('編輯成本項目', form, async (close)=>{
+            const name = nameInput.value.trim();
+            const category = catSel.value;
+            const allocationMethod = allocSel.value;
+            const description = descInput.value.trim();
+            const isActive = activeChk.checked ? 1 : 0;
+            if (!name) { alert('請輸入成本名稱'); return; }
+            const res = await fetch(`${apiBase}/admin/overhead-types/${item.id}`, {
+              method: 'PUT', credentials: 'include', headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ cost_name: name, category, allocation_method: allocationMethod, description, is_active: isActive })
+            });
+            const json = await res.json().catch(()=>({}));
+            if (!res.ok || !json || json.ok !== true) { alert(json?.message||'更新失敗'); return; }
+            close();
+            if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+            loadItems();
+          });
+        }
+        
         async function openEditTemplateModal(costTypeId){
           // 讀目前模板（若需要可擴充：目前直接新建/覆蓋）
           const form = document.createElement('div');
