@@ -828,10 +828,10 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				const lastDayStr = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
 				
 				const compGrantsRows = await env.DATABASE.prepare(
-					`SELECT hours FROM CompensatoryLeaveGrants
-					 WHERE user_id = ? AND generated_date >= ? AND generated_date <= ? AND is_deleted = 0`
+					`SELECT hours_generated FROM CompensatoryLeaveGrants
+					 WHERE user_id = ? AND generated_date >= ? AND generated_date <= ?`
 				).bind(userId, firstDay, lastDayStr).all();
-				const totalCompHoursGenerated = (compGrantsRows?.results || []).reduce((sum, g) => sum + Number(g.hours || 0), 0);
+				const totalCompHoursGenerated = (compGrantsRows?.results || []).reduce((sum, g) => sum + Number(g.hours_generated || 0), 0);
 				
 				// 2.3 計算本月使用的補休時數
 				const compUsedRows = await env.DATABASE.prepare(
