@@ -1012,117 +1012,68 @@ export async function handleClients(request, env, me, requestId, url) {
 		const errors = [];
 		const clientIds = Array.isArray(body?.client_ids) ? body.client_ids : [];
 		const assigneeUserId = Number(body?.assignee_user_id || 0);
+		const fromAssigneeUserId = body?.from_assignee_user_id != null ? Number(body.from_assignee_user_id) : null;
+		const tagIdFilter = body?.tag_id ? Number(body.tag_id) : null;
 		
-		// 驗證
-		if (clientIds.length === 0) {
-			errors.push({ field: "client_ids", message: "請選擇至少一個客戶" });
-		}
-		if (clientIds.length > 100) {
-			errors.push({ field: "client_ids", message: "一次最多分配 100 個客戶" });
-		}
 		if (!Number.isInteger(assigneeUserId) || assigneeUserId <= 0) {
 			errors.push({ field: "assignee_user_id", message: "請選擇負責人員" });
+		}
+		if (clientIds.length === 0 && (fromAssigneeUserId == null || !Number.isInteger(fromAssigneeUserId) || fromAssigneeUserId <= 0)) {
+			// 兩者其一必填：client_ids 或 from_assignee_user_id
+			errors.push({ field: "client_ids", message: "請選擇客戶或指定目前負責人" });
+		}
+		if (fromAssigneeUserId && fromAssigneeUserId === assigneeUserId) {
+			errors.push({ field: "assignee_user_id", message: "新負責人不得與目前負責人相同" });
 		}
 		if (errors.length) {
 			return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } }, corsHeaders);
 		}
 		
 		try {
-			// 确保 clientIds 都是字符串类型（数据库 client_id 是 TEXT）
-			const clientIdsAsStrings = clientIds.map(id => String(id));
-			
-			// 調試日志
-			console.log('[BATCH-ASSIGN] 收到請求:', {
-				clientIds原始: clientIds,
-				clientIds转换后: clientIdsAsStrings,
-				assigneeUserId,
-				clientIdsCount: clientIds.length,
-				clientIdsDetail: clientIds.map(id => ({ value: id, type: typeof id, toString: String(id) }))
-			});
-			
-			// 檢查負責人員是否存在
+			// 檢查新負責人員是否存在
 			const assExist = await env.DATABASE.prepare("SELECT 1 FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1").bind(assigneeUserId).first();
 			if (!assExist) {
-				console.log('[BATCH-ASSIGN] 負責人不存在:', assigneeUserId);
-				return jsonResponse(422, { 
-					ok: false, 
-					code: "VALIDATION_ERROR", 
-					message: "負責人不存在", 
-					errors: [{ field: "assignee_user_id", message: "不存在" }], 
-					meta: { requestId } 
-				}, corsHeaders);
+				return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "負責人不存在", errors: [{ field: "assignee_user_id", message: "不存在" }], meta: { requestId } }, corsHeaders);
 			}
 			
-			console.log('[BATCH-ASSIGN] 負責人檢查通過');
+			let targetClientIds = clientIds.map((id) => String(id));
+			if (targetClientIds.length === 0) {
+				// 依目前負責人篩選客戶
+				let sql = `SELECT c.client_id
+						     FROM Clients c`;
+				const binds = [];
+				if (tagIdFilter) {
+					sql += ` JOIN ClientTagAssignments a ON a.client_id = c.client_id AND a.tag_id = ?`;
+					binds.push(tagIdFilter);
+				}
+				sql += ` WHERE c.is_deleted = 0 AND c.assignee_user_id = ?`;
+				binds.push(fromAssigneeUserId);
+				sql += ` LIMIT 2000`;
+				const rows = await env.DATABASE.prepare(sql).bind(...binds).all();
+				targetClientIds = (rows?.results || []).map(r => String(r.client_id));
+			}
 			
-			const now = new Date().toISOString();
-			const placeholders = clientIdsAsStrings.map(() => "?").join(",");
-			
-			const sql = `UPDATE Clients SET assignee_user_id = ?, updated_at = ? WHERE client_id IN (${placeholders}) AND is_deleted = 0`;
-			console.log('[BATCH-ASSIGN] SQL:', sql);
-			console.log('[BATCH-ASSIGN] 參數:', [assigneeUserId, now, ...clientIdsAsStrings]);
-			
-			// 先查询要更新的客户是否存在
-			const checkSql = `SELECT client_id, company_name, assignee_user_id FROM Clients WHERE client_id IN (${placeholders}) AND is_deleted = 0`;
-			const existingClients = await env.DATABASE.prepare(checkSql).bind(...clientIdsAsStrings).all();
-			console.log('[BATCH-ASSIGN] 數據庫中的客戶:', existingClients.results);
+			if (targetClientIds.length === 0) {
+				return jsonResponse(200, { ok: true, code: "NOOP", message: "沒有需要更新的客戶", data: { updated_count: 0 }, meta: { requestId } }, corsHeaders);
+			}
 			
 			// 批量更新
-			const result = await env.DATABASE.prepare(sql).bind(assigneeUserId, now, ...clientIdsAsStrings).run();
-			
+			const now = new Date().toISOString();
+			const placeholders = targetClientIds.map(() => "?").join(",");
+			const updateSql = `UPDATE Clients SET assignee_user_id = ?, updated_at = ? WHERE client_id IN (${placeholders}) AND is_deleted = 0`;
+			const result = await env.DATABASE.prepare(updateSql).bind(assigneeUserId, now, ...targetClientIds).run();
 			const updatedCount = result?.meta?.changes || 0;
-			console.log('[BATCH-ASSIGN] 更新結果:', {
-				updatedCount,
-				meta: result?.meta,
-				success: result?.success
-			});
 			
-			// ⚠️ 关键验证：立即查询数据库确认数据是否真的改变了
-			const verifyClients = await env.DATABASE.prepare(checkSql).bind(...clientIdsAsStrings).all();
-			console.log('[BATCH-ASSIGN] ⚠️ 更新后验证 - 数据库中的客户:', verifyClients.results);
-			
-			// 检查是否真的更新了
-			const actuallyUpdated = verifyClients.results?.filter(c => c.assignee_user_id === assigneeUserId).length || 0;
-			console.log('[BATCH-ASSIGN] ⚠️ 实际更新确认:', {
-				预期更新: updatedCount,
-				实际验证: actuallyUpdated,
-				匹配: actuallyUpdated === updatedCount
-			});
-
-			// ✅ 失效與清理相關緩存（服務端 KV + D1 緩存）
+			// 失效快取
 			try {
-				// 1) 列表緩存（含各種分頁/查詢參數版本），用前綴清理最穩妥
-				const invalidateListCaches = Promise.all([
-					deleteKVCacheByPrefix(env, 'clients_list'),
-					invalidateCacheByType(env, 'clients_list')
-				]);
-
-				// 2) 客戶詳情緩存（逐個客戶清理）
-				const invalidateDetailCaches = clientIdsAsStrings.flatMap((cid) => {
-					const detailKey = generateCacheKey('client_detail', { clientId: cid });
-					return [
-						deleteKVCache(env, detailKey),
-						invalidateCache(env, detailKey)
-					];
-				});
-
 				await Promise.all([
-					invalidateListCaches,
-					...invalidateDetailCaches
+					deleteKVCacheByPrefix(env, 'clients_list'),
+					invalidateCacheByType(env, 'clients_list'),
+					...targetClientIds.map(cid => deleteKVCache(env, generateCacheKey('client_detail', { clientId: cid })))
 				]);
-				console.log('[BATCH-ASSIGN] ✓ 緩存已失效（clients_list + client_detail）');
-			} catch (cacheErr) {
-				console.error('[BATCH-ASSIGN] 緩存失效失敗:', cacheErr);
-			}
+			} catch (_) {}
 			
-			return jsonResponse(200, { 
-				ok: true, 
-				code: "SUCCESS", 
-				message: `已更新 ${updatedCount} 個客戶`, 
-				data: { updated_count: updatedCount },
-				meta: { requestId } 
-			}, corsHeaders);
-			
+			return jsonResponse(200, { ok: true, code: "SUCCESS", message: `已更新 ${updatedCount} 個客戶`, data: { updated_count: updatedCount }, meta: { requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
 			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };
@@ -1135,10 +1086,7 @@ export async function handleClients(request, env, me, requestId, url) {
 	
 	// POST /api/v1/clients/:clientId/services - 新增客户服务（新结构）
 	const matchAddService = url.pathname.match(/^\/internal\/api\/v1\/clients\/([^\/]+)\/services$/);
-	console.log(`[CLIENTS.JS] 檢查新增服務路由: matchAddService =`, matchAddService, `method = ${method}`);
 	if (method === "POST" && matchAddService) {
-		console.log('[CLIENTS.JS] ✅ 匹配新增服務路由');
-		console.log('[CLIENTS.JS] 新增服務 - pathname =', url.pathname);
 		const clientId = matchAddService[1];
 		let body;
 		try {
@@ -1146,14 +1094,6 @@ export async function handleClients(request, env, me, requestId, url) {
 		} catch (_) {
 			return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "請求格式錯誤", meta: { requestId } }, corsHeaders);
 		}
-
-		console.log('[CLIENTS.JS] 新增服務 - clientId =', clientId, ' body =', JSON.stringify({
-			service_id: body?.service_id,
-			status: body?.status,
-			service_cycle: body?.service_cycle,
-			start_date: body?.start_date,
-			end_date: body?.end_date
-		}));
 		
 		const errors = [];
 		const serviceId = Number(body?.service_id || 0);
@@ -1165,69 +1105,33 @@ export async function handleClients(request, env, me, requestId, url) {
 		const endDate = String(body?.end_date || "").trim();
 		const serviceNotes = String(body?.service_notes || "").trim();
 		
-		// 验证
-		if (!serviceId || serviceId <= 0) {
-			errors.push({ field: "service_id", message: "請選擇服務項目" });
-		}
-		if (!["monthly", "quarterly", "yearly", "one-time"].includes(serviceCycle)) {
-			errors.push({ field: "service_cycle", message: "服務週期格式錯誤" });
-		}
-		if (!["active", "suspended", "expired", "cancelled"].includes(status)) {
-			errors.push({ field: "status", message: "狀態格式錯誤" });
-		}
-		if (startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-			errors.push({ field: "start_date", message: "日期格式 YYYY-MM-DD" });
-		}
-		if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
-			errors.push({ field: "end_date", message: "日期格式 YYYY-MM-DD" });
-		}
-		if (errors.length) {
-			return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } }, corsHeaders);
-		}
+		// 驗證
+		if (!serviceId || serviceId <= 0) errors.push({ field: "service_id", message: "請選擇服務項目" });
+		if (!["monthly", "quarterly", "yearly", "one-time"].includes(serviceCycle)) errors.push({ field: "service_cycle", message: "服務週期格式錯誤" });
+		if (!["active", "suspended", "expired", "cancelled"].includes(status)) errors.push({ field: "status", message: "狀態格式錯誤" });
+		if (startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) errors.push({ field: "start_date", message: "日期格式 YYYY-MM-DD" });
+		if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) errors.push({ field: "end_date", message: "日期格式 YYYY-MM-DD" });
+		if (errors.length) return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "輸入有誤", errors, meta: { requestId } }, corsHeaders);
 		
 		try {
-			// 检查客户是否存在
-			const client = await env.DATABASE.prepare(
-				"SELECT client_id FROM Clients WHERE client_id = ? AND is_deleted = 0"
-			).bind(clientId).first();
-			if (!client) {
-				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "客戶不存在", meta: { requestId } }, corsHeaders);
-			}
+			// 檢查客戶與服務
+			const client = await env.DATABASE.prepare("SELECT client_id FROM Clients WHERE client_id = ? AND is_deleted = 0").bind(clientId).first();
+			if (!client) return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "客戶不存在", meta: { requestId } }, corsHeaders);
+			const service = await env.DATABASE.prepare("SELECT service_id FROM Services WHERE service_id = ? AND is_active = 1").bind(serviceId).first();
+			if (!service) return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "服務不存在", meta: { requestId } }, corsHeaders);
 			
-			// 检查服务是否存在
-			const service = await env.DATABASE.prepare(
-				"SELECT service_id FROM Services WHERE service_id = ? AND is_active = 1"
-			).bind(serviceId).first();
-			if (!service) {
-				return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "服務不存在", meta: { requestId } }, corsHeaders);
-			}
-			
-			// 插入客户服务（新结构）
 			const result = await env.DATABASE.prepare(
 				`INSERT INTO ClientServices (client_id, service_id, status, service_cycle, 
 				 task_template_id, auto_generate_tasks, start_date, end_date, service_notes)
 				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-			).bind(clientId, serviceId, status, serviceCycle, taskTemplateId, autoGenerateTasks ? 1 : 0,
-				startDate || null, endDate || null, serviceNotes).run();
-
-			console.log('[CLIENTS.JS] 新增服務 - 插入成功 client_service_id =', result?.meta?.last_row_id);
-			
+			).bind(clientId, serviceId, status, serviceCycle, taskTemplateId, autoGenerateTasks ? 1 : 0, startDate || null, endDate || null, serviceNotes).run();
 			const clientServiceId = result?.meta?.last_row_id;
 			
-			// ⚡ 失效该客户的服务项目缓存
+			// 失效該客戶的服務快取
 			const invalidateCacheKey = generateCacheKey('client_services', { clientId });
-			invalidateCache(env, invalidateCacheKey).catch(err => 
-				console.error('[CLIENTS] 失效服务项目缓存失败:', err)
-			);
+			invalidateCache(env, invalidateCacheKey).catch(() => {});
 			
-			return jsonResponse(201, {
-				ok: true,
-				code: "CREATED",
-				message: "服務已新增",
-				data: { client_service_id: clientServiceId },
-				meta: { requestId }
-			}, corsHeaders);
-			
+			return jsonResponse(201, { ok: true, code: "CREATED", message: "服務已新增", data: { client_service_id: clientServiceId }, meta: { requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
 			const body = { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } };

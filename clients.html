@@ -55,23 +55,13 @@
               <button id="btn-batch-assign" class="clients-btn btn-secondary" type="button">批量分配負責人</button>
               <button id="btn-cancel-select" class="clients-btn btn-secondary" type="button">取消選擇</button>
             </div>
-          <button id="btn-debug-toggle" class="clients-btn btn-secondary" type="button">🧪 調試</button>
+            <button id="btn-quick-migrate" class="clients-btn btn-secondary" type="button">快速移轉（按目前負責人）</button>
             <button onclick="window.location.href='/internal/client-new'" class="clients-btn" type="button">+ 新增客戶</button>
           </div>
         </div>
         
         <p id="clients-error" style="color:#c0392b;min-height:1.25rem;margin:0 0 8px 0;"></p>
-        <!-- 🧪 調試面板（預設隱藏） -->
-        <div id="debug-panel" hidden style="margin:8px 0 16px 0;padding:12px 14px;border:1px dashed #c9a227;border-radius:8px;background:#fff8e1;color:#4d3b00;">
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-            <div style="font-weight:600;">🧪 調試資訊</div>
-            <button id="btn-debug-clear" class="clients-btn btn-secondary" type="button">清除服務端客戶快取</button>
-            <button id="btn-debug-dbcheck" class="clients-btn btn-secondary" type="button">資料庫檢查</button>
-            <button id="btn-debug-reload" class="clients-btn btn-secondary" type="button">重新載入</button>
-          </div>
-          <div id="debug-summary" style="font-size:13px;line-height:1.6;white-space:pre-wrap;"></div>
-          <div id="debug-list" style="margin-top:8px;max-height:200px;overflow:auto;font-size:13px;background:#fff;border:1px solid #ecd9a3;border-radius:6px;padding:8px;"></div>
-        </div>
+        
         <div id="empty" class="clients-empty" hidden>
           <p>尚無客戶</p>
           <p><button onclick="window.location.href='/internal/client-new'" class="clients-btn" type="button">新增客戶</button></p>
@@ -135,6 +125,33 @@
       </div>
     </div>
 
+    <!-- 快速移轉負責人（按目前負責人） -->
+    <div class="modal-overlay" id="assigneeMigrateModal" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="modal" role="document">
+        <div class="modal__header">
+          <h2 class="modal__title">快速移轉負責人</h2>
+          <button class="modal__close" type="button" id="btn-migrate-close">✕</button>
+        </div>
+        <div class="modal__body">
+          <div class="form-grid">
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="migrate_from">目前負責人</label>
+              <select id="migrate_from"></select>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label for="migrate_to">新負責人</label>
+              <select id="migrate_to"></select>
+              <div class="field__error" id="migrate_err"></div>
+            </div>
+            <div class="modal__actions" style="grid-column:1 / -1;">
+              <button class="clients-btn btn-secondary" type="button" id="btn-migrate-cancel">取消</button>
+              <button class="clients-btn" type="button" id="btn-migrate-submit">執行移轉</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script>
       (function () {
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
@@ -144,36 +161,11 @@
         const emptyEl = document.getElementById('empty');
         const pager = document.getElementById('pager');
         const errEl = document.getElementById('clients-error');
-        const debugPanel = document.getElementById('debug-panel');
-        const debugSummaryEl = document.getElementById('debug-summary');
-        const debugListEl = document.getElementById('debug-list');
-        const debugClearBtn = document.getElementById('btn-debug-clear');
-        const debugReloadBtn = document.getElementById('btn-debug-reload');
-        const debugDbCheckBtn = document.getElementById('btn-debug-dbcheck');
+        
 
         function setError(msg){ if (errEl) errEl.textContent = msg || ''; }
 
-        // 🧪 調試資訊狀態
-        let lastDebug = { loadedAt: '', durationMs: 0, cacheSource: '', requestId: '', total: 0, list: [] };
-
-        let lastDbDiagMap = {};
-
-        function renderDebugPanel() {
-          if (!debugPanel) return;
-          const { loadedAt, durationMs, cacheSource, requestId, total, list } = lastDebug;
-          const cacheText = cacheSource ? cacheSource : 'db';
-          const totalYear = list.reduce((s, i) => s + (Number(i.year_total || 0) || 0), 0);
-          const totalSvc = list.reduce((s, i) => s + (Number(i.services_count || 0) || 0), 0);
-          debugSummaryEl.textContent = `載入時間: ${loadedAt}\n耗時: ${durationMs} ms\n來源: ${cacheText}${requestId ? `\n請求ID: ${requestId}` : ''}\n筆數: ${total}\n合計服務數: ${totalSvc}\n全年收費合計: ${totalYear.toLocaleString()}`;
-          const lines = list.map(item => {
-            const tags = Array.isArray(item.tags) ? item.tags.filter(Boolean).join(', ') : '';
-            const db = lastDbDiagMap[item.clientId];
-            const dbPart = db ? ` || DB: 標籤:${db.tag_count} 服務:${db.services_count} 年額:${Number(db.year_total||0).toLocaleString()}` : '';
-            return `• ${item.companyName}（${item.clientId}）→ ${item.assigneeName || '未分配'} | 標籤: ${tags || '無'} | 服務: ${item.services_count || 0} | 年額: ${Number(item.year_total||0).toLocaleString()}${dbPart}`;
-          });
-          debugListEl.textContent = lines.join('\n');
-        }
-
+        
         // 加载员工列表并填充下拉选单
         let employeesList = [];
         async function loadEmployees() {
@@ -183,7 +175,6 @@
               credentials: 'include'
             });
             const json = await res.json();
-            console.log('[Clients][API meta]:', json.meta);
             if (json.ok && Array.isArray(json.data)) {
               employeesList = json.data;
               populateEmployeeSelects();
@@ -347,27 +338,7 @@
             state.total = meta.total || 0;
             renderPager();
 
-            // 🧪 構造調試資訊
-            const t1 = performance.now();
-            lastDebug = {
-              loadedAt: new Date().toLocaleString(),
-              durationMs: (t1 - t0).toFixed(1),
-              cacheSource: meta.cache_source || '',
-              requestId: meta.requestId || '',
-              total: rows.length,
-              list: rows.map(r => ({ 
-                clientId: r.clientId, 
-                companyName: r.companyName, 
-                assigneeName: r.assigneeName || r.assignee_name || '未分配',
-                tags: (Array.isArray(r.tags)
-                  ? r.tags.map(t => typeof t === 'string' ? t : (t.tag_name || t.tagName || ''))
-                  : (typeof r.tags === 'string' ? r.tags.split('|').map(p => (p.split(':')[1] || '')) : [])),
-                services_count: Number(r.services_count || r.servicesCount || 0) || 0,
-                year_total: Number(r.year_total || r.yearTotal || 0) || 0
-              }))
-            };
-            console.log('[Clients][🧪 調試] 載入完成:', lastDebug);
-            if (!debugPanel.hidden) renderDebugPanel();
+            
           } catch (err) {
             setError('載入失敗，請稍後再試');
           }
@@ -411,67 +382,6 @@
         loadEmployees(); // 加载员工列表
         loadTags(); // 加载标签列表
         load();
-        // 調試面板開關
-        document.getElementById('btn-debug-toggle').addEventListener('click', function(){
-          if (!debugPanel) return;
-          debugPanel.hidden = !debugPanel.hidden;
-          if (!debugPanel.hidden) renderDebugPanel();
-        });
-
-        // 清除服務端快取（clients_list）
-        if (debugClearBtn) {
-          debugClearBtn.addEventListener('click', async function(){
-            try {
-              const res = await fetch(`${apiBase}/cache-clear`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ cache_type: 'clients_list' })
-              });
-              const json = await res.json().catch(()=>null);
-              if (res.ok && json && json.ok) {
-                alert('已清除客戶列表快取');
-                load();
-              } else {
-                alert((json && json.message) || '清除失敗');
-              }
-            } catch (e) {
-              alert('清除失敗，請稍後再試');
-            }
-          });
-        }
-
-        // 重新載入
-        if (debugReloadBtn) {
-          debugReloadBtn.addEventListener('click', function(){ load(); });
-        }
-
-        // 資料庫檢查
-        if (debugDbCheckBtn) {
-          debugDbCheckBtn.addEventListener('click', async function(){
-            try {
-              const ids = (lastDebug.list || []).map(i => i.clientId);
-              const res = await fetch(`${apiBase}/clients/diagnose`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ client_ids: ids })
-              });
-              const json = await res.json().catch(()=>null);
-              if (!res.ok || !json || json.ok !== true) {
-                alert((json && json.message) || '診斷失敗');
-                return;
-              }
-              const diag = (json.data && json.data.clients) || [];
-              lastDbDiagMap = {};
-              diag.forEach(r => { lastDbDiagMap[r.client_id] = r; });
-              renderDebugPanel();
-              alert('資料庫檢查完成');
-            } catch (e) {
-              alert('診斷失敗，請稍後再試');
-            }
-          });
-        }
         
         // 綁定操作按鈕事件（全局绑定一次，避免重复）
         tbody.addEventListener('click', function(e) {
@@ -699,6 +609,36 @@
             submitBtn.disabled = false;
             submitBtn.textContent = '批量分配';
           }
+        });
+
+        // —— 快速移轉（按目前負責人） ——
+        const migrateModal = document.getElementById('assigneeMigrateModal');
+        const migrateFrom = document.getElementById('migrate_from');
+        const migrateTo = document.getElementById('migrate_to');
+        const migrateErr = document.getElementById('migrate_err');
+        function openMigrateModal(){ migrateModal.classList.add('active'); migrateModal.setAttribute('aria-hidden','false'); migrateErr.textContent=''; }
+        function closeMigrateModal(){ migrateModal.classList.remove('active'); migrateModal.setAttribute('aria-hidden','true'); migrateErr.textContent=''; }
+        document.getElementById('btn-quick-migrate').addEventListener('click', function(){
+          // 填充員工名單
+          migrateFrom.innerHTML = employeesList.map(u=>`<option value="${u.user_id}">${u.name}${u.is_admin?' (管理員)':''}</option>`).join('');
+          migrateTo.innerHTML = employeesList.map(u=>`<option value="${u.user_id}">${u.name}${u.is_admin?' (管理員)':''}</option>`).join('');
+          openMigrateModal();
+        });
+        document.getElementById('btn-migrate-close').addEventListener('click', closeMigrateModal);
+        document.getElementById('btn-migrate-cancel').addEventListener('click', closeMigrateModal);
+        document.getElementById('btn-migrate-submit').addEventListener('click', async function(){
+          migrateErr.textContent='';
+          const fromId = parseInt(migrateFrom.value,10); const toId = parseInt(migrateTo.value,10);
+          if (!fromId || !toId || fromId===toId){ migrateErr.textContent='請選擇不同的目前/新負責人'; return; }
+          if (!confirm('確定要將該負責人的所有客戶移轉給新負責人嗎？')) return;
+          try {
+            const res = await fetch(`${apiBase}/clients/batch-assign`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ from_assignee_user_id: fromId, assignee_user_id: toId }) });
+            const json = await res.json().catch(()=>null);
+            if (!res.ok || !json || !json.ok) { alert((json&&json.message)||'移轉失敗'); return; }
+            alert(`已完成移轉，更新 ${json.data?.updated_count||0} 筆`);
+            closeMigrateModal();
+            load();
+          } catch (e) { alert('移轉失敗，請稍後再試'); }
         });
 
       })();
