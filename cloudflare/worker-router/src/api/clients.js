@@ -821,7 +821,10 @@ export async function handleClients(request, env, me, requestId, url) {
 		const email = (body?.email || "").trim();
 		const clientNotes = (body?.client_notes || "").trim();
 		const paymentNotes = (body?.payment_notes || "").trim();
-		const tagIds = Array.isArray(body?.tag_ids) ? body.tag_ids.map((x) => Number(x)).filter((n) => Number.isFinite(n)) : [];
+		const hasTagIdsField = Object.prototype.hasOwnProperty.call(body, 'tag_ids');
+		const tagIds = hasTagIdsField && Array.isArray(body?.tag_ids)
+			? body.tag_ids.map((x) => Number(x)).filter((n) => Number.isFinite(n))
+			: null; // 若未帶入，保持不變
 
 		// 驗證
 		if (companyName.length < 1 || companyName.length > 100) errors.push({ field: "company_name", message: "長度需 1–100" });
@@ -845,8 +848,8 @@ export async function handleClients(request, env, me, requestId, url) {
 				return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "負責人不存在", errors: [{ field: "assignee_user_id", message: "不存在" }], meta: { requestId } }, corsHeaders);
 			}
 			
-			// 檢查標籤是否存在
-			if (tagIds.length > 0) {
+			// 檢查標籤是否存在（只有傳入 tag_ids 時才檢查與更新）
+			if (hasTagIdsField && Array.isArray(tagIds) && tagIds.length > 0) {
 				const placeholders = tagIds.map(() => "?").join(",");
 				const row = await env.DATABASE.prepare(`SELECT COUNT(1) as cnt FROM CustomerTags WHERE tag_id IN (${placeholders})`).bind(...tagIds).first();
 				if (Number(row?.cnt || 0) !== tagIds.length) {
@@ -861,15 +864,17 @@ export async function handleClients(request, env, me, requestId, url) {
 				"UPDATE Clients SET company_name = ?, contact_person_1 = ?, contact_person_2 = ?, assignee_user_id = ?, phone = ?, email = ?, client_notes = ?, payment_notes = ?, updated_at = ? WHERE client_id = ?"
 			).bind(companyName, contactPerson1, contactPerson2, assigneeUserId, phone, email, clientNotes, paymentNotes, now, clientId).run();
 			
-			// 刪除舊的標籤關聯
-			await env.DATABASE.prepare("DELETE FROM ClientTagAssignments WHERE client_id = ?").bind(clientId).run();
-			
-			// 新增新的標籤關聯
-			for (const tagId of tagIds) {
-				await env.DATABASE.prepare("INSERT INTO ClientTagAssignments (client_id, tag_id, assigned_at) VALUES (?, ?, ?)").bind(clientId, tagId, now).run();
+			// 僅在請求帶有 tag_ids 時更新標籤關聯；未帶入時保持不變
+			if (hasTagIdsField) {
+				await env.DATABASE.prepare("DELETE FROM ClientTagAssignments WHERE client_id = ?").bind(clientId).run();
+				if (Array.isArray(tagIds)) {
+					for (const tagId of tagIds) {
+						await env.DATABASE.prepare("INSERT INTO ClientTagAssignments (client_id, tag_id, assigned_at) VALUES (?, ?, ?)").bind(clientId, tagId, now).run();
+					}
+				}
 			}
 			
-			const data = { clientId, companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, tags: tagIds, updatedAt: now };
+			const data = { clientId, companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, tags: hasTagIdsField ? (tagIds || []) : undefined, updatedAt: now };
 			
 			// ⚡ 失效缓存：客户列表 + 客户詳情（KV）
 			invalidateCacheByType(env, 'clients_list').catch(err => 
