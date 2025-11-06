@@ -1511,7 +1511,6 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 
 		// 1. 调用共享函数计算所有员工的实际时薪
 		const employeeActualHourlyRates = await calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth);
-		console.log(`[任务明细Debug] 员工实际时薪映射表:`, JSON.stringify(employeeActualHourlyRates));
 
 		// 2. 獲取所有有工時記錄的客戶
 			const clientRows = await env.DATABASE.prepare(
@@ -1529,34 +1528,30 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			const tasks = [];
 			
 			for (const client of clientList) {
-				// 獲取該客戶的所有工時記錄，包含服務子項目信息
-				const timesheetRows = await env.DATABASE.prepare(
-					`SELECT 
-						ts.user_id, 
-						u.name as user_name, 
-						ts.work_type, 
-						ts.work_date, 
-						ts.hours, 
-						ts.service_id,
-						ts.service_item_id,
-						COALESCE(s.service_name, ts.service_name, '未分類') as service_name_full,
-						COALESCE(si.item_name, ts.service_name, '未指定') as service_item_name
-					 FROM Timesheets ts
-					 LEFT JOIN Users u ON ts.user_id = u.user_id
-					 LEFT JOIN Services s ON CAST(ts.service_id AS INTEGER) = s.service_id
-					 LEFT JOIN ServiceItems si ON CAST(ts.service_item_id AS INTEGER) = si.item_id
-					 WHERE ts.client_id = ? AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
-					 ORDER BY ts.service_id, ts.service_item_id, u.name`
-			).bind(client.client_id, yearMonth).all();
-			const timesheets = timesheetRows?.results || [];
-			
-			// 调试：检查第一条工时记录的服务项目信息
-			if (timesheets.length > 0) {
-				const sample = timesheets[0];
-				console.log(`[任务明细Debug] 客户=${client.company_name}, service_id=${sample.service_id}(${typeof sample.service_id}), service_item_id=${sample.service_item_id}(${typeof sample.service_item_id}), service_name_full=${sample.service_name_full}, service_item_name=${sample.service_item_name}`);
-			}
-			
-			// 按服務子項目分組計算（這才是真正的"任務"）
+		// 獲取該客戶的所有工時記錄，包含服務子項目信息
+		// 通过ServiceItems反查Services（处理service_id为NULL但service_item_id有值的情况）
+		const timesheetRows = await env.DATABASE.prepare(
+			`SELECT 
+				ts.user_id, 
+				u.name as user_name, 
+				ts.work_type, 
+				ts.work_date, 
+				ts.hours, 
+				ts.service_id,
+				ts.service_item_id,
+				si.item_name as service_item_name,
+				COALESCE(s.service_name, s2.service_name, '未分類') as service_name_full
+			 FROM Timesheets ts
+			 LEFT JOIN Users u ON ts.user_id = u.user_id
+			 LEFT JOIN ServiceItems si ON ts.service_item_id = si.item_id
+			 LEFT JOIN Services s ON ts.service_id = s.service_id
+			 LEFT JOIN Services s2 ON si.service_id = s2.service_id
+			 WHERE ts.client_id = ? AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
+			 ORDER BY COALESCE(s.service_id, s2.service_id, 0), ts.service_item_id, u.name`
+		).bind(client.client_id, yearMonth).all();
+		const timesheets = timesheetRows?.results || [];
+		
+		// 按服務子項目分組計算（這才是真正的"任務"）
 				const taskGroups = {};
 				for (const ts of timesheets) {
 					// 使用 service_item_id 作為任務的唯一標識
@@ -1627,22 +1622,14 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					} else {
 						tsWeightedHours = Number(ts.hours || 0) * (WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0);
 					}
-					// 使用员工的实际时薪（已包含薪资成本+管理费分摊）
-					const empUserId = String(ts.user_id); // 确保类型一致
-					const actualHourlyRate = Number(employeeActualHourlyRates[empUserId] || 0);
-					const costForThisRecord = Math.round(actualHourlyRate * tsWeightedHours);
-					totalCost += costForThisRecord;
-					
-					// 调试第一条记录
-					if (totalCost === costForThisRecord && costForThisRecord > 0) {
-						console.log(`[任务明细Debug] 第一笔成本计算: userId=${empUserId}, actualHourlyRate=${actualHourlyRate}, tsWeightedHours=${tsWeightedHours}, cost=${costForThisRecord}`);
-					}
-				}
-				
-			// 计算平均实际时薪（使用第一遍计算的weightedHours，与客户汇总逻辑一致）
-			const avgActualHourlyRate = weightedHours > 0 ? Math.round(totalCost / weightedHours) : 0;
+				// 使用员工的实际时薪（已包含薪资成本+管理费分摊）
+				const empUserId = String(ts.user_id); // 确保类型一致
+				const actualHourlyRate = Number(employeeActualHourlyRates[empUserId] || 0);
+				totalCost += Math.round(actualHourlyRate * tsWeightedHours);
+			}
 			
-			console.log(`[任务明细Debug] 最终计算: weightedHours=${weightedHours}, totalCost=${totalCost}, avgActualHourlyRate=${avgActualHourlyRate}`);
+		// 计算平均实际时薪（使用第一遍计算的weightedHours，与客户汇总逻辑一致）
+		const avgActualHourlyRate = weightedHours > 0 ? Math.round(totalCost / weightedHours) : 0;
 				
 				// 生成任務記錄（按服務子項目）
 				const assigneeNames = Array.from(group.userNames).join(', ') || '未指定';
