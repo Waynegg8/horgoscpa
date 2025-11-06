@@ -936,35 +936,25 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				
 				// 2.4 計算未使用補休轉加班費（使用實際的原始倍率）
 				const unusedCompHours = Math.max(0, totalCompHoursGenerated - totalCompHoursUsed);
-				const hourlyRateCents = Math.round(monthlySalary / 240 * 100);
+				
+				// 加班費計算時薪：只用底薪 ÷ 240（與薪資頁面一致）
+				const baseSalaryCents = monthlySalary * 100;
+				const hourlyRateForOvertime = Math.round(baseSalaryCents / 240);
 				
 				let expiredCompPayCents = 0;
 				let remainingToConvert = unusedCompHours;
 				for (const detail of compGenerationDetails) {
 					if (remainingToConvert <= 0) break;
 					const hoursToConvert = Math.min(detail.hours, remainingToConvert);
-					expiredCompPayCents += Math.round(hoursToConvert * hourlyRateCents * detail.rate);
+					expiredCompPayCents += Math.round(hoursToConvert * hourlyRateForOvertime * detail.rate);
 					remainingToConvert -= hoursToConvert;
 				}
 				
 				totalLaborCostCents += expiredCompPayCents;
 				
 				// 2.5 計算請假扣款（與薪資頁面邏輯一致）
-				// 先查詢經常性給與（用於時薪計算）
-				const regularAllowanceResult = await env.DATABASE.prepare(
-					`SELECT SUM(e.amount_cents) as total
-					 FROM EmployeeSalaryItems e
-					 LEFT JOIN SalaryItemTypes t ON e.item_type_id = t.item_type_id
-					 WHERE e.user_id = ? AND e.is_active = 1 
-					   AND t.category = 'regular_allowance' 
-					   AND t.item_type != 'deduction'`
-				).bind(userId).first();
-				const regularAllowanceCents = Number(regularAllowanceResult?.total || 0);
-				
-				// 時薪 = (底薪 + 經常性給與) / 240
-				const baseSalaryCents = monthlySalary * 100;
-				const totalBaseCents = baseSalaryCents + regularAllowanceCents;
-				const hourlyRateForLeave = Math.round(totalBaseCents / 240);
+				// 請假扣款時薪 = 底薪 ÷ 240（與加班費時薪相同）
+				const hourlyRateForLeave = hourlyRateForOvertime;
 				
 				// 查詢請假記錄（病假、事假、生理假）
 				const leaveDeductionRows = await env.DATABASE.prepare(
