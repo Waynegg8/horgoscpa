@@ -117,6 +117,10 @@
 
   async function ensureNavbar(){
     if (document.querySelector('.internal-navbar')) return;
+    if (!document.body) {
+      console.warn('[Bootstrap] document.body 尚未就緒，等待...');
+      return;
+    }
     const html = await fetchText('/templates/partials/internal-navbar.html', 'tpl:internal-navbar:v2');
     document.body.insertAdjacentHTML('afterbegin', html);
     markActiveNav();
@@ -126,12 +130,24 @@
 
   async function ensureFooter(){
     if (document.querySelector('.internal-footer')) return;
+    if (!document.body) {
+      console.warn('[Bootstrap] document.body 尚未就緒，等待...');
+      return;
+    }
     const html = await fetchText('/templates/partials/internal-footer.html', 'tpl:internal-footer:v1');
     document.body.insertAdjacentHTML('beforeend', html);
   }
 
-  ensureNavbar();
-  ensureFooter();
+  // 確保 DOM 就緒後再執行
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      ensureNavbar();
+      ensureFooter();
+    });
+  } else {
+    ensureNavbar();
+    ensureFooter();
+  }
 })();
 
 
