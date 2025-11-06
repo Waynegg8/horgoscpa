@@ -1013,14 +1013,17 @@ export async function handleClients(request, env, me, requestId, url) {
 		const clientIds = Array.isArray(body?.client_ids) ? body.client_ids : [];
 		const assigneeUserId = Number(body?.assignee_user_id || 0);
 		const fromAssigneeUserId = body?.from_assignee_user_id != null ? Number(body.from_assignee_user_id) : null;
-		const tagIdFilter = body?.tag_id ? Number(body.tag_id) : null;
+		const includeUnassigned = Boolean(body?.include_unassigned);
+		const tagIds = Array.isArray(body?.tag_ids) ? body.tag_ids.map((x)=>Number(x)).filter(n=>Number.isInteger(n)&&n>0) : (body?.tag_id ? [Number(body.tag_id)] : []);
+		const keyword = (body?.q || '').trim();
+		const dryRun = body?.dry_run === true;
 		
 		if (!Number.isInteger(assigneeUserId) || assigneeUserId <= 0) {
 			errors.push({ field: "assignee_user_id", message: "請選擇負責人員" });
 		}
-		if (clientIds.length === 0 && (fromAssigneeUserId == null || !Number.isInteger(fromAssigneeUserId) || fromAssigneeUserId <= 0)) {
-			// 兩者其一必填：client_ids 或 from_assignee_user_id
-			errors.push({ field: "client_ids", message: "請選擇客戶或指定目前負責人" });
+		if (clientIds.length === 0 && !includeUnassigned && (fromAssigneeUserId == null || !Number.isInteger(fromAssigneeUserId) || fromAssigneeUserId <= 0)) {
+			// 其一必填：client_ids / from_assignee_user_id / include_unassigned
+			errors.push({ field: "client_ids", message: "請選擇客戶、或指定目前負責人、或勾選包含未分配" });
 		}
 		if (fromAssigneeUserId && fromAssigneeUserId === assigneeUserId) {
 			errors.push({ field: "assignee_user_id", message: "新負責人不得與目前負責人相同" });
@@ -1038,19 +1041,37 @@ export async function handleClients(request, env, me, requestId, url) {
 			
 			let targetClientIds = clientIds.map((id) => String(id));
 			if (targetClientIds.length === 0) {
-				// 依目前負責人篩選客戶
-				let sql = `SELECT c.client_id
-						     FROM Clients c`;
+				// 依目前負責人/未分配/標籤/關鍵字 篩選客戶
+				let sql = `SELECT c.client_id, c.company_name FROM Clients c`;
+				const joins = [];
+				const conds = [ `c.is_deleted = 0` ];
 				const binds = [];
-				if (tagIdFilter) {
-					sql += ` JOIN ClientTagAssignments a ON a.client_id = c.client_id AND a.tag_id = ?`;
-					binds.push(tagIdFilter);
+				if (tagIds.length > 0) {
+					joins.push(`JOIN ClientTagAssignments a ON a.client_id = c.client_id`);
+					conds.push(`a.tag_id IN (${tagIds.map(()=>'?').join(',')})`);
+					binds.push(...tagIds);
 				}
-				sql += ` WHERE c.is_deleted = 0 AND c.assignee_user_id = ?`;
-				binds.push(fromAssigneeUserId);
-				sql += ` LIMIT 2000`;
+				if (fromAssigneeUserId && includeUnassigned) {
+					conds.push(`(c.assignee_user_id = ? OR c.assignee_user_id IS NULL)`);
+					binds.push(fromAssigneeUserId);
+				} else if (fromAssigneeUserId) {
+					conds.push(`c.assignee_user_id = ?`);
+					binds.push(fromAssigneeUserId);
+				} else if (includeUnassigned) {
+					conds.push(`c.assignee_user_id IS NULL`);
+				}
+				if (keyword) {
+					conds.push(`(LOWER(c.company_name) LIKE ? OR c.tax_registration_number LIKE ?)`);
+					const kw = `%${keyword.toLowerCase()}%`;
+					binds.push(kw, kw);
+				}
+				if (joins.length) sql += ' ' + joins.join(' ');
+				sql += ` WHERE ${conds.join(' AND ')} GROUP BY c.client_id ORDER BY c.created_at DESC LIMIT 2000`;
 				const rows = await env.DATABASE.prepare(sql).bind(...binds).all();
 				targetClientIds = (rows?.results || []).map(r => String(r.client_id));
+				if (dryRun) {
+					return jsonResponse(200, { ok:true, code:'PREVIEW', message:'預覽成功', data:{ match_count: targetClientIds.length, sample: (rows?.results||[]).slice(0,50) }, meta:{ requestId } }, corsHeaders);
+				}
 			}
 			
 			if (targetClientIds.length === 0) {

@@ -137,11 +137,29 @@
             <div class="field" style="grid-column:1 / -1;">
               <label for="migrate_from">目前負責人</label>
               <select id="migrate_from"></select>
+              <div style="margin-top:6px;">
+                <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+                  <input type="checkbox" id="migrate_include_unassigned" /> 包含未分配
+                </label>
+              </div>
             </div>
             <div class="field" style="grid-column:1 / -1;">
               <label for="migrate_to">新負責人</label>
               <select id="migrate_to"></select>
               <div class="field__error" id="migrate_err"></div>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label>標籤（可多選）</label>
+              <div id="migrate_tags" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <label>關鍵字（公司名或統編）</label>
+              <input type="text" id="migrate_q" placeholder="例如：有限公司、245…" />
+            </div>
+            <div class="field" style="grid-column:1 / -1;">
+              <button class="clients-btn btn-secondary" type="button" id="btn-migrate-preview">預覽符合名單</button>
+              <span id="migrate_preview_result" style="margin-left:8px;color:#555;"></span>
+              <div id="migrate_preview_list" style="margin-top:8px;max-height:160px;overflow:auto;font-size:13px;border:1px solid #e5e7eb;border-radius:6px;padding:8px;display:none;"></div>
             </div>
             <div class="modal__actions" style="grid-column:1 / -1;">
               <button class="clients-btn btn-secondary" type="button" id="btn-migrate-cancel">取消</button>
@@ -622,17 +640,49 @@
           // 填充員工名單
           migrateFrom.innerHTML = employeesList.map(u=>`<option value="${u.user_id}">${u.name}${u.is_admin?' (管理員)':''}</option>`).join('');
           migrateTo.innerHTML = employeesList.map(u=>`<option value="${u.user_id}">${u.name}${u.is_admin?' (管理員)':''}</option>`).join('');
+          // 標籤選單
+          const tagsDiv = document.getElementById('migrate_tags');
+          if (tagsDiv) {
+            tagsDiv.innerHTML = (allTags||[]).map(t=>`<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid #e5e7eb;border-radius:6px;padding:4px 8px;">
+              <input type="checkbox" value="${t.tag_id}"> ${t.tag_name}
+            </label>`).join('');
+          }
           openMigrateModal();
         });
         document.getElementById('btn-migrate-close').addEventListener('click', closeMigrateModal);
         document.getElementById('btn-migrate-cancel').addEventListener('click', closeMigrateModal);
+        document.getElementById('btn-migrate-preview').addEventListener('click', async function(){
+          migrateErr.textContent='';
+          const fromId = parseInt(migrateFrom.value,10); const toId = parseInt(migrateTo.value,10);
+          const includeUnassigned = document.getElementById('migrate_include_unassigned').checked;
+          const q = (document.getElementById('migrate_q').value||'').trim();
+          const tag_ids = Array.from(document.querySelectorAll('#migrate_tags input:checked')).map(i=>parseInt(i.value,10)).filter(Boolean);
+          if (!includeUnassigned && (!fromId || fromId<=0)) { migrateErr.textContent='請選擇目前負責人，或勾選包含未分配'; return; }
+          try {
+            const res = await fetch(`${apiBase}/clients/batch-assign`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ from_assignee_user_id: isNaN(fromId)?null:fromId, include_unassigned: includeUnassigned, tag_ids, q, assignee_user_id: toId||-1, dry_run:true }) });
+            const json = await res.json().catch(()=>null);
+            const resultEl = document.getElementById('migrate_preview_result');
+            const listEl = document.getElementById('migrate_preview_list');
+            if (!res.ok || !json || !json.ok) { resultEl.textContent='預覽失敗'; listEl.style.display='none'; return; }
+            resultEl.textContent = `符合 ${json.data?.match_count||0} 筆`;
+            const sample = json.data?.sample || [];
+            if (sample.length>0) {
+              listEl.style.display='block';
+              listEl.innerHTML = sample.map(r=>`<div>• ${r.company_name}（${r.client_id}）</div>`).join('');
+            } else { listEl.style.display='none'; }
+          } catch { document.getElementById('migrate_preview_result').textContent='預覽失敗'; }
+        });
         document.getElementById('btn-migrate-submit').addEventListener('click', async function(){
           migrateErr.textContent='';
           const fromId = parseInt(migrateFrom.value,10); const toId = parseInt(migrateTo.value,10);
-          if (!fromId || !toId || fromId===toId){ migrateErr.textContent='請選擇不同的目前/新負責人'; return; }
+          const includeUnassigned = document.getElementById('migrate_include_unassigned').checked;
+          const q = (document.getElementById('migrate_q').value||'').trim();
+          const tag_ids = Array.from(document.querySelectorAll('#migrate_tags input:checked')).map(i=>parseInt(i.value,10)).filter(Boolean);
+          if ((!fromId || fromId<=0) && !includeUnassigned){ migrateErr.textContent='請選擇目前負責人，或勾選包含未分配'; return; }
+          if (!toId || (fromId && toId===fromId)) { migrateErr.textContent='請選擇正確的新負責人'; return; }
           if (!confirm('確定要將該負責人的所有客戶移轉給新負責人嗎？')) return;
           try {
-            const res = await fetch(`${apiBase}/clients/batch-assign`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ from_assignee_user_id: fromId, assignee_user_id: toId }) });
+            const res = await fetch(`${apiBase}/clients/batch-assign`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ from_assignee_user_id: isNaN(fromId)?null:fromId, include_unassigned: includeUnassigned, tag_ids, q, assignee_user_id: toId }) });
             const json = await res.json().catch(()=>null);
             if (!res.ok || !json || !json.ok) { alert((json&&json.message)||'移轉失敗'); return; }
             alert(`已完成移轉，更新 ${json.data?.updated_count||0} 筆`);
