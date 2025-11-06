@@ -397,17 +397,34 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					continue; 
 				}
 				try {
-					// 先检查是否已存在
+					// 先检查是否已存在（不考虑 is_deleted，因为 UNIQUE 约束也不考虑）
 					const exists = await env.DATABASE.prepare(
-						`SELECT overhead_id FROM MonthlyOverheadCosts WHERE cost_type_id = ? AND year = ? AND month = ? AND is_deleted = 0`
+						`SELECT overhead_id, is_deleted FROM MonthlyOverheadCosts WHERE cost_type_id = ? AND year = ? AND month = ?`
 					).bind(t.cost_type_id, year, month).first();
 					
 					if (exists) {
-						console.log(`[Generate] 記錄已存在: cost_type_id=${t.cost_type_id}, year=${year}, month=${month}`);
-						duplicates++;
+						if (exists.is_deleted === 1) {
+							// 记录存在但已删除，恢复并更新
+							console.log(`[Generate] 恢復已刪除記錄: overhead_id=${exists.overhead_id}, cost_type_id=${t.cost_type_id}`);
+							await env.DATABASE.prepare(
+								`UPDATE MonthlyOverheadCosts SET amount = ?, notes = ?, is_deleted = 0, recorded_by = ?, created_at = datetime('now') WHERE overhead_id = ?`
+							).bind(Number(t.amount||0), t.notes || '[auto]', String(me.user_id), exists.overhead_id).run();
+							created++;
+							records.push({
+								overhead_id: exists.overhead_id,
+								cost_type_id: t.cost_type_id,
+								year, month,
+								amount: Number(t.amount||0)
+							});
+						} else {
+							// 记录存在且未删除，跳过
+							console.log(`[Generate] 記錄已存在: overhead_id=${exists.overhead_id}, cost_type_id=${t.cost_type_id}`);
+							duplicates++;
+						}
 						continue;
 					}
 					
+					// 记录不存在，插入新记录
 					const result = await env.DATABASE.prepare(
 						`INSERT INTO MonthlyOverheadCosts (cost_type_id, year, month, amount, notes, recorded_by)
 						 VALUES (?, ?, ?, ?, ?, ?)`
@@ -422,8 +439,15 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						amount: Number(t.amount||0)
 					});
 				} catch (err) {
-					console.error('[overhead-generate] insert failed', err, err.stack);
-					skipped++;
+					// 检查是否是 UNIQUE 约束错误
+					const errMsg = String(err);
+					if (errMsg.includes('UNIQUE constraint failed') || errMsg.includes('SQLITE_CONSTRAINT')) {
+						console.error(`[Generate] UNIQUE 約束失敗（記錄重複）: cost_type_id=${t.cost_type_id}, year=${year}, month=${month}`);
+						duplicates++;
+					} else {
+						console.error('[Generate] 插入失敗:', err, err.stack);
+						skipped++;
+					}
 				}
 			}
 			console.log(`[Generate] 完成: created=${created}, skipped=${skipped}, duplicates=${duplicates}, total templates=${templates.length}`);
