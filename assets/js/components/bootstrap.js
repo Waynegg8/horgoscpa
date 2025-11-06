@@ -72,7 +72,7 @@
     // 特殊路径映射：将详情页/新增页映射到列表页
     const pathMapping = {
       'client-detail': 'clients',
-      'client-new': 'clients',
+      'client-add': 'clients',
       'task-detail': 'tasks',
       'task-new': 'tasks'
     };
