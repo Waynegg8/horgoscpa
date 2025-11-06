@@ -96,14 +96,15 @@
             <button type="button" class="btn" id="btn-refresh-emp" disabled>刷新</button>
           </div>
           <div class="info-box" style="margin-bottom: 12px; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 14px; color: #1e40af;">
-            <strong>計算說明（與薪資頁面完全一致）：</strong><br>
+            <strong>計算說明（完全成本法）：</strong><br>
             • <strong>薪資成本</strong> = 應發工資（底薪 + 固定津貼 + 非固定津貼 + 固定獎金 + 績效獎金 + 年終獎金 + 加班費 + 伙食津貼 + 交通補貼）<br>
+            • <strong>分攤管理費</strong>：根據各成本項目設定的分攤方式（按員工數/按工時/按營收）計算<br>
+            • <strong>總成本</strong> = 薪資成本 + 分攤管理費用<br>
+            • <strong style="color:#0ea5e9;">實際時薪</strong> = 總成本 ÷ 實際工時（含直接成本+間接成本，用於任務成本分析）<br>
+            <hr style="margin: 8px 0; border: none; border-top: 1px solid #bfdbfe;">
             • <strong>補休規則</strong>：加班先全部轉為補休，本月未使用的補休才轉為加班費<br>
             • <strong>產生補休</strong>：一般加班 1:1 產生補休；國定假日/例假日不給補休，直接雙倍工資<br>
-            • <strong>未使用補休</strong> = 本月產生補休 - 本月使用補休<br>
-            • <strong>補休轉加班費</strong> = 未使用補休 × 時薪 × 原倍率（已包含在薪資成本中）<br>
-            • <strong>分攤管理費</strong>：根據各成本項目設定的分攤方式（按員工數/按工時/按營收）計算<br>
-            • <strong>總成本</strong> = 薪資成本 + 分攤管理費用
+            • <strong>未使用補休</strong> = 本月產生補休 - 本月使用補休
           </div>
           <table class="table" aria-label="員工成本列表">
             <thead>
@@ -118,10 +119,11 @@
                 <th>薪資成本</th>
                 <th>分攤管理費</th>
                 <th>本月總成本</th>
+                <th>實際時薪</th>
               </tr>
             </thead>
             <tbody id="tbody-employee">
-              <tr><td colspan="10" class="muted">載入中…</td></tr>
+              <tr><td colspan="11" class="muted">載入中…</td></tr>
             </tbody>
           </table>
           <div class="summary-row" style="margin-top: 12px; padding: 12px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px;">
@@ -630,11 +632,11 @@
           params.set('month', String(ym.month));
           params.set('_t', String(Date.now())); // 强制绕过缓存
           try {
-            tbodyEmployee.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
+            tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/costs/employee?${params.toString()}`, { credentials:'include', cache: 'no-store' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             if (res.status === 501) {
-              tbodyEmployee.innerHTML = '<tr><td colspan="10" class="muted">功能尚未實作，敬請期待</td></tr>';
+              tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">功能尚未實作，敬請期待</td></tr>';
               empTotalCost.textContent = '—';
               return;
             }
@@ -643,7 +645,7 @@
             const data = json.data || {};
             const employees = data.employees || [];
             if (employees.length === 0) {
-              tbodyEmployee.innerHTML = '<tr><td colspan="10" class="muted">尚無資料</td></tr>';
+              tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">尚無資料</td></tr>';
               empTotalCost.textContent = formatCurrency(0);
               return;
             }
@@ -661,6 +663,7 @@
               const laborCost = Number(emp.laborCost || 0);
               const overheadAllocation = Number(emp.overheadAllocation || 0);
               const empTotalCost = Number(emp.totalCost || 0);
+              const actualHourlyRate = Number(emp.actualHourlyRate || 0);
               
               totalCost += empTotalCost;
               tr.innerHTML = `
@@ -674,12 +677,13 @@
                 <td style="font-weight:600;">${formatCurrency(laborCost)}</td>
                 <td>${formatCurrency(overheadAllocation)}</td>
                 <td style="font-weight:600;color:#16a34a;">${formatCurrency(empTotalCost)}</td>
+                <td style="font-weight:600;color:#0ea5e9;">${formatCurrency(actualHourlyRate)}</td>
               `;
               tbodyEmployee.appendChild(tr);
             });
             empTotalCost.textContent = formatCurrency(totalCost);
           } catch (err) {
-            tbodyEmployee.innerHTML = '<tr><td colspan="10" style="color:#c0392b;">載入失敗</td></tr>';
+            tbodyEmployee.innerHTML = '<tr><td colspan="11" style="color:#c0392b;">載入失敗</td></tr>';
             empTotalCost.textContent = '—';
           }
         }

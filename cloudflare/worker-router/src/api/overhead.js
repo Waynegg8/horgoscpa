@@ -1,6 +1,45 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 import { invalidateCacheByType } from "../cache-helper.js";
-import { calculateEmployeePayroll } from "./payroll.js";
+
+/**
+ * 判断薪资项目是否应该在指定月份发放
+ */
+function shouldPayInMonth(recurringType, recurringMonths, effectiveDate, expiryDate, targetMonth) {
+	const [targetYear, targetMonthNum] = targetMonth.split('-');
+	const currentMonthInt = parseInt(targetMonthNum);
+	
+	// 检查是否在有效期内
+	const firstDay = `${targetYear}-${targetMonthNum}-01`;
+	const lastDay = new Date(parseInt(targetYear), parseInt(targetMonthNum), 0).getDate();
+	const lastDayStr = `${targetYear}-${targetMonthNum}-${String(lastDay).padStart(2, '0')}`;
+	
+	if (effectiveDate > lastDayStr) return false; // 还未生效
+	if (expiryDate && expiryDate < firstDay) return false; // 已过期
+	
+	// 根据循环类型判断
+	if (recurringType === 'monthly') {
+		return true; // 每月都发放
+	}
+	
+	if (recurringType === 'once') {
+		// 仅一次：只在生效月份发放
+		const [effYear, effMonth] = effectiveDate.split('-');
+		return effYear === targetYear && effMonth === targetMonthNum;
+	}
+	
+	if (recurringType === 'yearly') {
+		// 每年指定月份：检查当前月份是否在列表中
+		if (!recurringMonths) return false;
+		try {
+			const months = JSON.parse(recurringMonths);
+			return Array.isArray(months) && months.includes(currentMonthInt);
+		} catch (e) {
+			return false;
+		}
+	}
+	
+	return false;
+}
 
 export async function handleOverhead(request, env, me, requestId, url, path) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -764,26 +803,60 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				const userId = user.user_id;
 				const monthlySalary = Number(user.base_salary || 0);
 				
-				// 2. 調用薪資計算函數獲取完整的應發工資
-				const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
-				let payrollData;
-				try {
-					payrollData = await calculateEmployeePayroll(env, userId, yearMonth);
-				} catch (err) {
-					console.error(`[Overhead] 計算 ${user.name} 薪資失敗:`, err, err.stack);
-					// 如果薪資計算失敗，使用基本數據
-					payrollData = {
-						grossSalaryCents: monthlySalary * 100, // 至少使用底薪
-						baseSalaryCents: monthlySalary * 100,
-						expiredCompPayCents: 0,
-						totalCompHoursGenerated: 0,
-						totalCompHoursUsed: 0,
-						unusedCompHours: 0
-					};
-				}
+				// 2. 查詢已保存的薪資快照數據
+				const payrollSnapshot = await env.DATABASE.prepare(
+					`SELECT gross_salary_cents, overtime_cents, 
+					        total_comp_hours_generated, total_comp_hours_used, unused_comp_hours
+					 FROM PayrollSnapshots 
+					 WHERE user_id = ? AND month = ? 
+					 ORDER BY created_at DESC LIMIT 1`
+				).bind(userId, yearMonth).first();
 				
-				// 3. 薪資成本 = 應發工資（包括底薪、津贴、奖金、加班费等所有项目）
-				const totalLaborCost = Math.round(payrollData.grossSalaryCents / 100);
+				// 3. 查詢固定薪資項目（津貼、獎金等）- 用於沒有快照時估算
+				const salaryItems = await env.DATABASE.prepare(
+					`SELECT item_type, amount_cents, recurring_type, recurring_months, effective_date, expiry_date
+					 FROM SalaryItems
+					 WHERE user_id = ? AND is_deleted = 0`
+				).bind(userId).all();
+				
+				// 4. 薪資成本計算
+				let totalLaborCost, expiredCompPay, totalCompHoursGenerated, totalCompHoursUsed, unusedCompHours;
+				
+				if (payrollSnapshot) {
+					// 使用已確認的薪資快照數據（最準確）
+					totalLaborCost = Math.round(payrollSnapshot.gross_salary_cents / 100);
+					expiredCompPay = Math.round((payrollSnapshot.overtime_cents || 0) / 100);
+					totalCompHoursGenerated = payrollSnapshot.total_comp_hours_generated || 0;
+					totalCompHoursUsed = payrollSnapshot.total_comp_hours_used || 0;
+					unusedCompHours = payrollSnapshot.unused_comp_hours || 0;
+				} else {
+					// 沒有薪資快照，估算本月薪資成本
+					let estimatedSalaryCents = monthlySalary * 100; // 從底薪開始
+					
+					// 加上固定津貼和每月獎金
+					const items = salaryItems?.results || [];
+					for (const item of items) {
+						const itemType = item.item_type;
+						const amountCents = Number(item.amount_cents || 0);
+						const recurringType = item.recurring_type;
+						const recurringMonths = item.recurring_months;
+						const effectiveDate = item.effective_date;
+						const expiryDate = item.expiry_date;
+						
+						// 判斷該項目是否在本月發放
+						const shouldPay = shouldPayInMonth(recurringType, recurringMonths, effectiveDate, expiryDate, yearMonth);
+						
+						if (shouldPay && (itemType === 'allowance' || itemType === 'bonus')) {
+							estimatedSalaryCents += amountCents;
+						}
+					}
+					
+					totalLaborCost = Math.round(estimatedSalaryCents / 100);
+					expiredCompPay = 0; // 無法準確估算
+					totalCompHoursGenerated = 0;
+					totalCompHoursUsed = 0;
+					unusedCompHours = 0;
+				}
 				
 				// 4. 獲取本月實際工時記錄（用於計算工時分攤）
 				const timesheetRows = await env.DATABASE.prepare(
@@ -792,12 +865,6 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					 WHERE user_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
 				).bind(userId, yearMonth).all();
 				const monthHours = Number(timesheetRows?.results?.[0]?.total || 0);
-				
-				// 5. 提取补休相关数据（用于前端显示）
-				const totalCompHoursGenerated = payrollData.totalCompHoursGenerated || 0;
-				const totalCompHoursUsed = payrollData.totalCompHoursUsed || 0;
-				const unusedCompHours = payrollData.unusedCompHours || 0;
-				const expiredCompPay = Math.round((payrollData.expiredCompPayCents || 0) / 100);
 				
 				// 10. 計算分攤管理費用（根據各成本項目的分攤方式）
 				let overheadAllocation = 0;
@@ -819,6 +886,10 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					// overheadAllocation += Math.round(totalPerRevenue * (employeeRevenue / totalMonthRevenue));
 				}
 				
+				// 計算實際時薪（包含管理費分攤）
+				const totalCost = totalLaborCost + overheadAllocation;
+				const actualHourlyRate = monthHours > 0 ? Math.round(totalCost / monthHours) : 0;
+				
 				employees.push({
 					userId,
 					name: user.name,
@@ -830,7 +901,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					monthHours: Math.round(monthHours * 10) / 10, // 本月總工時
 					laborCost: totalLaborCost, // 薪資成本（包括底薪、津贴、奖金、加班费等所有项目）
 					overheadAllocation, // 分攤管理費用
-					totalCost: totalLaborCost + overheadAllocation // 總成本
+					totalCost, // 總成本（薪資 + 管理費）
+					actualHourlyRate // 實際時薪（包含管理費分攤）= 總成本 / 工時
 				});
 			}
 
@@ -842,7 +914,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				meta:{ requestId, count: employees.length } 
 			}, corsHeaders);
 		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			console.error(`[Overhead] 員工成本分析錯誤:`, err);
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
 		}
 	}
