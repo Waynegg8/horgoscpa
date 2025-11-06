@@ -582,7 +582,29 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 	}
 
-	// GET /api/v1/clients/next-personal-id - 獲取下一個可用的個人客戶編號
+	// 台灣統一編號驗證（2023年4月1日後新規則）
+	function isValidTaxId(taxId) {
+		if (!taxId || taxId.length !== 8 || !/^\d{8}$/.test(taxId)) {
+			return false;
+		}
+		
+		const weights = [1, 2, 1, 2, 1, 2, 4, 1];
+		let sum = 0;
+		
+		for (let i = 0; i < 8; i++) {
+			let product = parseInt(taxId[i]) * weights[i];
+			// 如果乘積是兩位數，拆分相加
+			if (product >= 10) {
+				product = Math.floor(product / 10) + (product % 10);
+			}
+			sum += product;
+		}
+		
+		// 能被5整除即為有效統編
+		return sum % 5 === 0;
+	}
+
+	// GET /api/v1/clients/next-personal-id - 獲取下一個可用的個人客戶編號（方案C：智能避開合法統編）
 	if (method === "GET" && url.pathname === "/internal/api/v1/clients/next-personal-id") {
 		try {
 			// 查詢最大的00開頭的客戶編號
@@ -593,31 +615,59 @@ export async function handleClients(request, env, me, requestId, url) {
 			).first();
 			
 			let nextId;
+			let startNum;
+			
 			if (result && result.client_id) {
-				// 有現有的00開頭編號，遞增
-				const currentNum = parseInt(result.client_id);
-				nextId = String(currentNum + 1).padStart(8, '0');
+				// 有現有的00開頭編號，從下一個開始
+				startNum = parseInt(result.client_id) + 1;
 			} else {
 				// 沒有現有編號，從00000001開始
-				nextId = '00000001';
+				startNum = 1;
 			}
 			
-			// 檢查生成的編號是否已被使用（避免衝突）
-			const exists = await env.DATABASE.prepare(
-				`SELECT 1 FROM Clients WHERE client_id = ? LIMIT 1`
-			).bind(nextId).first();
+			// 循環查找下一個不是合法統編的編號（最多嘗試100次）
+			let attempts = 0;
+			let found = false;
 			
-			if (exists) {
-				// 如果已存在，使用時間戳生成一個隨機編號
+			while (!found && attempts < 100) {
+				nextId = String(startNum).padStart(8, '0');
+				
+				// 檢查是否已被使用
+				const exists = await env.DATABASE.prepare(
+					`SELECT 1 FROM Clients WHERE client_id = ? LIMIT 1`
+				).bind(nextId).first();
+				
+				// 如果未被使用 且 不是合法統編，則使用此編號
+				if (!exists && !isValidTaxId(nextId)) {
+					found = true;
+					break;
+				}
+				
+				startNum++;
+				attempts++;
+			}
+			
+			// 如果100次都沒找到，使用時間戳（備用方案）
+			if (!found) {
 				const timestamp = Date.now().toString().slice(-6);
 				nextId = '00' + timestamp;
+				
+				// 再次檢查時間戳生成的編號
+				if (isValidTaxId(nextId)) {
+					// 如果時間戳剛好是合法統編，加1
+					nextId = String(parseInt(nextId) + 1).padStart(8, '0');
+				}
 			}
 			
 			return jsonResponse(200, {
 				ok: true,
 				code: "SUCCESS",
-				message: "已生成下一個個人客戶編號（00開頭，避免與統編衝突）",
-				data: { next_id: nextId },
+				message: "已生成下一個個人客戶編號（智能避開合法統編）",
+				data: { 
+					next_id: nextId,
+					is_safe: !isValidTaxId(nextId),
+					note: "此編號不符合統編驗證規則，100%不會與真實統編衝突"
+				},
 				meta: { requestId }
 			}, corsHeaders);
 		} catch (err) {

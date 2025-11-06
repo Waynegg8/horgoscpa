@@ -389,15 +389,20 @@
             const description = descInput.value.trim();
             const isActive = activeChk.checked ? 1 : 0;
             if (!name) { alert('請輸入成本名稱'); return; }
-            const res = await fetch(`${apiBase}/admin/overhead-types/${item.id}`, {
-              method: 'PUT', credentials: 'include', headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ cost_name: name, category, allocation_method: allocationMethod, description, is_active: isActive })
-            });
-            const json = await res.json().catch(()=>({}));
-            if (!res.ok || !json || json.ok !== true) { alert(json?.message||'更新失敗'); return; }
-            close();
-            if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
-            loadItems();
+            try {
+              const res = await fetch(`${apiBase}/admin/overhead-types/${item.id}`, {
+                method: 'PUT', credentials: 'include', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ cost_name: name, category, allocation_method: allocationMethod, description, is_active: isActive })
+              });
+              const json = await res.json().catch(()=>({}));
+              if (!res.ok || !json || json.ok !== true) { alert(json?.message||'更新失敗'); return; }
+              close();
+              if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+              await loadItems();
+            } catch (err) {
+              console.error('更新項目失敗:', err);
+              alert('更新失敗：' + (err?.message || String(err)));
+            }
           });
         }
         
@@ -413,15 +418,20 @@
             const amount = Number(amountInput.value);
             const notes = notesInput.value.trim();
             if (!Number.isFinite(amount) || amount <= 0) { alert('金額無效'); return; }
-            const res = await fetch(`${apiBase}/admin/overhead-costs/${record.id}`, {
-              method: 'PUT', credentials: 'include', headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ amount, notes })
-            });
-            const json = await res.json().catch(()=>({}));
-            if (!res.ok || !json || json.ok !== true) { alert(json?.message||'更新失敗'); return; }
-            close();
-            if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
-            loadRecords();
+            try {
+              const res = await fetch(`${apiBase}/admin/overhead-costs/${record.id}`, {
+                method: 'PUT', credentials: 'include', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ amount, notes })
+              });
+              const json = await res.json().catch(()=>({}));
+              if (!res.ok || !json || json.ok !== true) { alert(json?.message||'更新失敗'); return; }
+              close();
+              if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+              await loadRecords();
+            } catch (err) {
+              console.error('更新記錄失敗:', err);
+              alert('更新失敗：' + (err?.message || String(err)));
+            }
           });
         }
         
@@ -443,11 +453,16 @@
             const body = { is_active };
             if (amount>0) body.amount = amount;
             if (/^\d{4}-\d{2}$/.test(efv)) body.effective_from = efv;
-            const res = await fetch(`${apiBase}/admin/overhead-templates/by-type/${costTypeId}`, { method:'PUT', credentials:'include', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
-            const json = await res.json().catch(()=>({}));
-            if (!res.ok || !json || json.ok !== true) { alert(json?.message||'儲存失敗'); return; }
-            close();
-            alert('已儲存');
+            try {
+              const res = await fetch(`${apiBase}/admin/overhead-templates/by-type/${costTypeId}`, { method:'PUT', credentials:'include', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+              const json = await res.json().catch(()=>({}));
+              if (!res.ok || !json || json.ok !== true) { alert(json?.message||'儲存失敗'); return; }
+              close();
+              alert('已儲存');
+            } catch (err) {
+              console.error('儲存模板失敗:', err);
+              alert('儲存失敗：' + (err?.message || String(err)));
+            }
           });
         }
 
@@ -854,35 +869,42 @@
             const allocationMethod = allocSel.value;
             const description = descInput.value.trim();
             if (!name) { alert('請輸入成本名稱'); return; }
-            const res = await fetch(`${apiBase}/admin/overhead-types`, {
-              method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ cost_name: name, category, allocation_method: allocationMethod, description })
-            });
-            const json = await res.json().catch(()=>({}));
-            if (!res.ok || !json || json.ok !== true) { alert(json?.message||'建立失敗'); return; }
-            
-            // 若勾選自動生成，建立模板
-            const costTypeId = json.data?.id;
-            if (enableChk.checked && costTypeId) {
-              const is_active = true;
-              const amount = Number(amountInput.value||0);
-              const efv = String(effInput.value||'');
-              const tplBody = { is_active };
-              if (amount>0) tplBody.amount = amount;
-              if (/^\d{4}-\d{2}$/.test(efv)) tplBody.effective_from = efv;
-              try {
-                await fetch(`${apiBase}/admin/overhead-templates/by-type/${costTypeId}`, { 
-                  method:'PUT', 
-                  credentials:'include', 
-                  headers:{'content-type':'application/json'}, 
-                  body: JSON.stringify(tplBody) 
-                });
-              } catch (_) {}
+            try {
+              const res = await fetch(`${apiBase}/admin/overhead-types`, {
+                method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ cost_name: name, category, allocation_method: allocationMethod, description })
+              });
+              const json = await res.json().catch(()=>({}));
+              if (!res.ok || !json || json.ok !== true) { alert(json?.message||'建立失敗'); return; }
+              
+              // 若勾選自動生成，建立模板
+              const costTypeId = json.data?.id;
+              if (enableChk.checked && costTypeId) {
+                const is_active = true;
+                const amount = Number(amountInput.value||0);
+                const efv = String(effInput.value||'');
+                const tplBody = { is_active };
+                if (amount>0) tplBody.amount = amount;
+                if (/^\d{4}-\d{2}$/.test(efv)) tplBody.effective_from = efv;
+                try {
+                  await fetch(`${apiBase}/admin/overhead-templates/by-type/${costTypeId}`, { 
+                    method:'PUT', 
+                    credentials:'include', 
+                    headers:{'content-type':'application/json'}, 
+                    body: JSON.stringify(tplBody) 
+                  });
+                } catch (err) {
+                  console.error('建立模板失敗:', err);
+                }
+              }
+              
+              close();
+              if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+              await loadItems();
+            } catch (err) {
+              console.error('新增項目失敗:', err);
+              alert('新增失敗：' + (err?.message || String(err)));
             }
-            
-            close();
-            if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
-            loadItems();
           });
         }
 
@@ -913,15 +935,20 @@
             const mMatch = mVal.match(/^(\d{4})-(\d{2})$/);
             if (!mMatch) { alert('月份無效'); return; }
             const y = parseInt(mMatch[1], 10); const m = parseInt(mMatch[2], 10);
-            const res = await fetch(`${apiBase}/admin/overhead-costs`, {
-              method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ cost_type_id, year: y, month: m, amount, notes })
-            });
-            const json = await res.json().catch(()=>({}));
-            if (!res.ok || !json || json.ok !== true) { alert(json?.message||'建立失敗'); return; }
-            close();
-            if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
-            loadRecords();
+            try {
+              const res = await fetch(`${apiBase}/admin/overhead-costs`, {
+                method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ cost_type_id, year: y, month: m, amount, notes })
+              });
+              const json = await res.json().catch(()=>({}));
+              if (!res.ok || !json || json.ok !== true) { alert(json?.message||'建立失敗'); return; }
+              close();
+              if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+              await loadRecords();
+            } catch (err) {
+              console.error('新增記錄失敗:', err);
+              alert('新增失敗：' + (err?.message || String(err)));
+            }
           });
         }
 
@@ -955,13 +982,23 @@
             openModal('本月自動生成（預覽）', form, async (close)=>{
               const selected = Array.from(list.querySelectorAll('input[type="checkbox"]')).filter(x=>x.checked).map(x=>parseInt(x.value,10));
               if (selected.length === 0) { alert('請至少勾選一項'); return; }
-              const res = await fetch(`${apiBase}/admin/overhead-costs/generate?year=${ym.year}&month=${ym.month}` , { method:'POST', credentials:'include', headers:{'content-type':'application/json'}, body: JSON.stringify({ template_ids: selected }) });
-              const json = await res.json().catch(()=>({}));
-              if (!res.ok || !json || json.ok !== true) { alert(json?.message||'自動生成失敗'); return; }
-              close();
-              if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
-              loadRecords();
-              alert('已自動生成');
+              try {
+                const res = await fetch(`${apiBase}/admin/overhead-costs/generate?year=${ym.year}&month=${ym.month}` , { method:'POST', credentials:'include', headers:{'content-type':'application/json'}, body: JSON.stringify({ template_ids: selected }) });
+                const json = await res.json().catch(()=>({}));
+                if (!res.ok || !json || json.ok !== true) { 
+                  alert(json?.message||'自動生成失敗'); 
+                  return; 
+                }
+                close();
+                // 使缓存失效
+                if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+                // 等待刷新完成
+                await loadRecords();
+                alert(`已自動生成 ${json.data?.created || 0} 筆記錄`);
+              } catch (err) {
+                console.error('生成失敗:', err);
+                alert('自動生成失敗：' + (err?.message || String(err)));
+              }
             });
           } catch (err) {
             alert('自動生成失敗：' + (err?.message||String(err)));

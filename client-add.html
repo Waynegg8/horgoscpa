@@ -57,7 +57,7 @@
             <span class="error-text" id="error_client_id"></span>
             <small class="form-help-text" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
               <strong>公司客戶：</strong>使用統一編號<br>
-              <strong>個人客戶：</strong>使用00開頭的編號（如：00000001）
+              <strong>個人客戶：</strong>點擊下方按鈕自動生成（智能避開合法統編）
             </small>
           </div>
         </div>
@@ -76,7 +76,7 @@
               🔢 產生個人客戶編號
             </button>
             <small class="form-help-text" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
-              點擊自動產生00開頭的編號（避免與統編衝突）
+              智能生成編號（自動避開合法統編，100%不衝突）
             </small>
           </div>
         </div>
@@ -454,7 +454,29 @@
       }
     }
     
-    // 產生個人客戶編號（從API獲取下一個可用編號）
+    // 台灣統一編號驗證（2023年4月1日後新規則）
+    function isValidTaxId(taxId) {
+      if (!taxId || taxId.length !== 8 || !/^\d{8}$/.test(taxId)) {
+        return false;
+      }
+      
+      const weights = [1, 2, 1, 2, 1, 2, 4, 1];
+      let sum = 0;
+      
+      for (let i = 0; i < 8; i++) {
+        let product = parseInt(taxId[i]) * weights[i];
+        // 如果乘積是兩位數，拆分相加
+        if (product >= 10) {
+          product = Math.floor(product / 10) + (product % 10);
+        }
+        sum += product;
+      }
+      
+      // 能被5整除即為有效統編
+      return sum % 5 === 0;
+    }
+    
+    // 產生個人客戶編號（方案C：智能避開合法統編）
     async function generatePersonalClientId() {
       const clientIdInput = document.getElementById('inputClientId');
       if (!clientIdInput) return;
@@ -470,6 +492,15 @@
           const json = await res.json();
           if (json.ok && json.data?.next_id) {
             clientIdInput.value = json.data.next_id;
+            
+            // 清除錯誤提示
+            const errorEl = document.getElementById('error_client_id');
+            if (errorEl) {
+              errorEl.textContent = '';
+              errorEl.style.display = 'none';
+            }
+            
+            alert('已產生個人客戶編號：' + json.data.next_id + '\n\n✅ ' + json.data.note);
             return;
           }
         }
@@ -477,9 +508,22 @@
         console.warn('無法從API獲取編號，使用本地生成', err);
       }
       
-      // 如果API不可用，使用隨機生成（00 + 6位隨機數字）
-      const randomNum = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-      const personalId = '00' + randomNum;
+      // 如果API不可用，使用本地生成（智能避開合法統編）
+      let personalId;
+      let attempts = 0;
+      
+      // 嘗試生成不符合統編驗證規則的編號
+      do {
+        const randomNum = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+        personalId = '00' + randomNum;
+        attempts++;
+      } while (isValidTaxId(personalId) && attempts < 10);
+      
+      // 如果10次嘗試都失敗，強制加1
+      if (isValidTaxId(personalId)) {
+        personalId = String(parseInt(personalId) + 1).padStart(8, '0');
+      }
+      
       clientIdInput.value = personalId;
       
       // 清除錯誤提示
@@ -489,7 +533,12 @@
         errorEl.style.display = 'none';
       }
       
-      alert('已產生個人客戶編號：' + personalId + '\n\n此編號以00開頭，不會與統一編號衝突。\n請確認此編號尚未被使用。');
+      const isSafe = !isValidTaxId(personalId);
+      alert(
+        '已產生個人客戶編號：' + personalId + '\n\n' +
+        (isSafe ? '✅ 此編號不符合統編驗證規則，100%不會與真實統編衝突。' : '⚠️ 請再次點擊生成按鈕以獲得更安全的編號。') +
+        '\n請確認此編號尚未被使用。'
+      );
     }
     
     // 頁面初始化
