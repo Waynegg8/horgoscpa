@@ -454,6 +454,8 @@ export async function handleClients(request, env, me, requestId, url) {
 					 WHERE cta.client_id IN (${placeholders})`
 				).bind(...clientIds).all();
 				
+				// 主路徑：逐筆指派資料
+				console.log('[CLIENTS][LIST] tagsRows count =', (tagsRows.results?.length || 0));
 				tagsRows.results?.forEach(row => {
 					if (!tagsMap[row.client_id]) {
 						tagsMap[row.client_id] = [];
@@ -464,6 +466,30 @@ export async function handleClients(request, env, me, requestId, url) {
 						tag_color: row.tag_color || null
 					});
 				});
+
+				// 後備：若沒有任何標籤，改用 LEFT JOIN + GROUP_CONCAT 一次撈回
+				if ((tagsRows.results?.length || 0) === 0) {
+					console.log('[CLIENTS][LIST] tagsRows empty, running fallback GROUP_CONCAT query');
+					const aggRows = await env.DATABASE.prepare(
+						`SELECT c.client_id,
+						        GROUP_CONCAT(t.tag_id || ':' || t.tag_name || ':' || COALESCE(t.tag_color, ''), '|') AS tags
+						 FROM Clients c
+						 LEFT JOIN ClientTagAssignments cta ON cta.client_id = c.client_id
+						 LEFT JOIN CustomerTags t ON t.tag_id = cta.tag_id
+						 WHERE c.client_id IN (${placeholders})
+						 GROUP BY c.client_id`
+					).bind(...clientIds).all();
+					
+					aggRows.results?.forEach(r => {
+						if (!r.tags) return;
+						const items = String(r.tags).split('|').map(part => {
+							const [id, name, color] = part.split(':');
+							return { tag_id: Number(id), tag_name: name, tag_color: color || null };
+						});
+						tagsMap[r.client_id] = items;
+					});
+					console.log('[CLIENTS][LIST] fallback tag mapping keys =', Object.keys(tagsMap).length);
+				}
 			}
 			
 			// 映射数据
