@@ -322,13 +322,41 @@
                 <td>${allocationText}</td>
                 <td>${item.description||''}</td>
                 <td>${item.isActive ? '啟用' : '停用'}</td>
-                <td><button class="btn-link" data-edit-id="${item.id}">編輯</button></td>
+                <td>
+                  <button class="btn-link" data-edit-item-id="${item.id}">編輯</button>
+                  <button class="btn-link" data-template-id="${item.id}">自動生成</button>
+                  <button class="btn-link" style="color:#dc2626;" data-delete-id="${item.id}">刪除</button>
+                </td>
               `;
               tbodyItems.appendChild(tr);
             });
-            // 綁定編輯：設定每月自動生成模板
-            tbodyItems.querySelectorAll('button[data-edit-id]').forEach(btn => {
-              btn.addEventListener('click', ()=> openEditTemplateModal(parseInt(btn.getAttribute('data-edit-id'),10)) );
+            // 綁定編輯成本項目
+            tbodyItems.querySelectorAll('button[data-edit-item-id]').forEach(btn => {
+              btn.addEventListener('click', ()=> {
+                const id = parseInt(btn.getAttribute('data-edit-item-id'),10);
+                const item = items.find(x => x.id === id);
+                openEditItemModal(item);
+              });
+            });
+            // 綁定自動生成設定
+            tbodyItems.querySelectorAll('button[data-template-id]').forEach(btn => {
+              btn.addEventListener('click', ()=> openEditTemplateModal(parseInt(btn.getAttribute('data-template-id'),10)) );
+            });
+            // 綁定刪除
+            tbodyItems.querySelectorAll('button[data-delete-id]').forEach(btn => {
+              btn.addEventListener('click', async ()=> {
+                const id = parseInt(btn.getAttribute('data-delete-id'),10);
+                if (!confirm('確定要刪除此成本項目嗎？')) return;
+                try {
+                  const res = await fetch(`${apiBase}/admin/overhead-types/${id}`, { method: 'DELETE', credentials:'include' });
+                  const json = await res.json().catch(()=>({}));
+                  if (!res.ok || !json || json.ok !== true) { alert(json?.message||'刪除失敗'); return; }
+                  if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+                  loadItems();
+                } catch (err) {
+                  alert('刪除失敗：' + String(err));
+                }
+              });
             });
           } catch (_) {
             tbodyItems.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
@@ -654,6 +682,8 @@
           header.textContent = title;
           const body = document.createElement('div');
           body.style.padding = '14px 16px';
+          body.style.overflow = 'auto';
+          body.style.flex = '1';
           body.appendChild(contentEl);
           const footer = document.createElement('div');
           footer.style.display = 'flex';
@@ -661,6 +691,7 @@
           footer.style.justifyContent = 'flex-end';
           footer.style.padding = '12px 16px';
           footer.style.borderTop = '1px solid #eee';
+          footer.style.flexShrink = '0';
           const btnCancel = document.createElement('button');
           btnCancel.className = 'btn';
           btnCancel.textContent = '取消';
