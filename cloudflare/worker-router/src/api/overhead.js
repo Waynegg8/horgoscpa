@@ -693,7 +693,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 
 			// 1. 獲取所有員工（含月薪）
 			const usersRows = await env.DATABASE.prepare(
-				"SELECT user_id, full_name, hire_date, base_salary FROM Users WHERE is_deleted = 0 ORDER BY full_name ASC"
+				"SELECT user_id, name, start_date as hire_date, base_salary FROM Users WHERE is_deleted = 0 ORDER BY name ASC"
 			).all();
 			const users = usersRows?.results || [];
 
@@ -808,7 +808,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				
 				employees.push({
 					userId,
-					name: user.full_name,
+					name: user.name,
 					annualSalary,
 					annualHours,
 					annualLeaveHours,
@@ -1037,8 +1037,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					t.client_id,
 					c.company_name,
 					t.assigned_to,
-					u.full_name as assignee_name
-				 FROM Tasks t
+					u.name as assignee_name
+				 FROM ClientTasks t
 				 JOIN Clients c ON c.client_id = t.client_id
 				 LEFT JOIN Users u ON u.user_id = t.assigned_to
 				 JOIN Timesheets ts ON ts.task_id = t.task_id AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
