@@ -888,13 +888,11 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			for (const client of clientsList) {
 				const clientId = client.client_id;
 				
-				// 2. 獲取該客戶本月所有任務的工時記錄（包含work_type）
+				// 2. 獲取該客戶本月所有工時記錄（包含work_type）
 				const timesheetRows = await env.DATABASE.prepare(
-					`SELECT ts.user_id, ts.work_type, ts.hours, ts.task_id
-					 FROM Timesheets ts
-					 JOIN ClientTasks t ON t.task_id = ts.task_id
-					 WHERE t.client_id = ? AND substr(ts.work_date, 1, 7) = ? 
-					   AND ts.is_deleted = 0 AND t.is_deleted = 0`
+					`SELECT user_id, work_type, hours
+					 FROM Timesheets
+					 WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
 				).bind(clientId, yearMonth).all();
 				const timesheets = timesheetRows?.results || [];
 				
