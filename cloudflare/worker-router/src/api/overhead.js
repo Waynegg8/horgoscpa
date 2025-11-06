@@ -280,8 +280,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						 notes = COALESCE(?, notes),
 						 recurring_type = ?,
 						 recurring_months = COALESCE(?, recurring_months),
-						 effective_from = ?,
-						 effective_to = ?,
+						 effective_from = COALESCE(?, effective_from),
+						 effective_to = COALESCE(?, effective_to),
 						 is_active = ?,
 						 updated_at = datetime('now')
 						WHERE cost_type_id = ?`
@@ -316,22 +316,52 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			const ym = `${year}-${String(month).padStart(2,'0')}`;
 
 			function withinRange(from, to, target) {
-				if (from && String(from) > target) return false;
-				if (to && String(to) < target) return false;
+				console.log(`[withinRange] 檢查範圍: from=${from}, to=${to}, target=${target}`);
+				if (from && String(from) > target) {
+					console.log(`[withinRange] 失敗: from(${from}) > target(${target})`);
+					return false;
+				}
+				if (to && String(to) < target) {
+					console.log(`[withinRange] 失敗: to(${to}) < target(${target})`);
+					return false;
+				}
+				console.log(`[withinRange] 通過`);
 				return true;
 			}
 			function shouldApply(recurringType, recurringMonths, effFrom, effTo, y, m) {
 				const target = `${y}-${String(m).padStart(2,'0')}`;
-				if (!withinRange(effFrom, effTo, target)) return false;
-				if (recurringType === 'monthly') return true;
-				if (recurringType === 'once') return true; // 一次性模板：允許手動生成使用一次
+				console.log(`[shouldApply] 開始檢查: recurringType=${recurringType}, target=${target}`);
+				
+				const rangeOk = withinRange(effFrom, effTo, target);
+				if (!rangeOk) {
+					console.log(`[shouldApply] withinRange 失敗`);
+					return false;
+				}
+				
+				if (recurringType === 'monthly') {
+					console.log(`[shouldApply] monthly 類型，通過`);
+					return true;
+				}
+				if (recurringType === 'once') {
+					console.log(`[shouldApply] once 類型，通過`);
+					return true;
+				}
 				if (recurringType === 'yearly') {
-					if (!recurringMonths) return false;
+					if (!recurringMonths) {
+						console.log(`[shouldApply] yearly 類型但無 recurringMonths，失敗`);
+						return false;
+					}
 					try {
 						const arr = Array.isArray(recurringMonths) ? recurringMonths : JSON.parse(String(recurringMonths));
-						return arr.includes(m);
-					} catch (_) { return false; }
+						const includes = arr.includes(m);
+						console.log(`[shouldApply] yearly 類型，月份檢查: ${m} in ${JSON.stringify(arr)} = ${includes}`);
+						return includes;
+					} catch (err) {
+						console.log(`[shouldApply] yearly 類型，解析失敗:`, err);
+						return false;
+					}
 				}
+				console.log(`[shouldApply] 未知類型，失敗`);
 				return false;
 			}
 
@@ -350,6 +380,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			let created = 0, skipped = 0, duplicates = 0;
 			const records = [];
 			console.log(`[Generate] 總共 ${templates.length} 個模板待處理`);
+			console.log(`[Generate] 目標年月: ${year}-${String(month).padStart(2,'0')}`);
 			for (const t of templates) {
 				console.log(`[Generate] 檢查模板 ${t.template_id}:`, {
 					cost_type_id: t.cost_type_id,

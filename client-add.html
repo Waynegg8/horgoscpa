@@ -3813,11 +3813,16 @@
           for (let i = 0; i < tempServices.length; i++) {
             const svc = tempServices[i];
             const serviceProgress = 20 + Math.floor((i / totalServices) * 60);
-            showProgress(`正在創建服務 ${i + 1}/${totalServices}: ${svc.service_name}`, serviceProgress);
+            
+            // 從 allServices 查找服務名稱
+            const service = allServices.find(s => s.service_id == svc.service_id);
+            const serviceName = service ? service.service_name : `服務${i+1}`;
+            
+            showProgress(`正在創建服務 ${i + 1}/${totalServices}: ${serviceName}`, serviceProgress);
             
             console.log(`創建服務 ${i + 1}:`, {
               service_id: svc.service_id,
-              service_name: svc.service_name,
+              service_name: serviceName,
               status: svc.status
             });
             
@@ -3837,7 +3842,7 @@
             
             if (!resSvc.ok || !jsonSvc?.ok) {
               console.error(`服務 ${i + 1} 創建失敗:`, jsonSvc);
-              alert(`警告：服務「${svc.service_name}」創建失敗：${jsonSvc?.message || '未知錯誤'}\n\n將繼續創建其他服務...`);
+              alert(`警告：服務「${serviceName}」創建失敗：${jsonSvc?.message || '未知錯誤'}\n\n將繼續創建其他服務...`);
               continue;
             }
             
@@ -3847,7 +3852,7 @@
             if (clientServiceId && Array.isArray(svc.billings) && svc.billings.length > 0) {
               const totalBillings = svc.billings.length;
               console.log(`  為服務 ${i + 1} 創建 ${totalBillings} 條收費記錄...`);
-              showProgress(`正在為服務「${svc.service_name}」創建收費設定 (${totalBillings}條)...`, serviceProgress + 5);
+              showProgress(`正在為服務「${serviceName}」創建收費設定 (${totalBillings}條)...`, serviceProgress + 5);
               
               for (let j = 0; j < svc.billings.length; j++) {
                 const b = svc.billings[j];
@@ -3891,13 +3896,13 @@
                     } else {
                       console.error(`    收費 ${j + 1} 創建失敗 (嘗試 ${retryCount + 1}/3):`, jsonBilling);
                       if (retryCount === 2) {
-                        alert(`警告：服務「${svc.service_name}」的收費記錄 ${j + 1} 創建失敗：${jsonBilling?.message || '未知錯誤'}\n\n將繼續創建其他收費記錄...`);
+                        alert(`警告：服務「${serviceName}」的收費記錄 ${j + 1} 創建失敗：${jsonBilling?.message || '未知錯誤'}\n\n將繼續創建其他收費記錄...`);
                       }
                     }
                   } catch (fetchError) {
                     console.error(`    收費 ${j + 1} 網絡錯誤 (嘗試 ${retryCount + 1}/3):`, fetchError);
                     if (retryCount === 2) {
-                      alert(`警告：服務「${svc.service_name}」的收費記錄 ${j + 1} 創建失敗：網絡錯誤\n\n將繼續創建其他收費記錄...`);
+                      alert(`警告：服務「${serviceName}」的收費記錄 ${j + 1} 創建失敗：網絡錯誤\n\n將繼續創建其他收費記錄...`);
                     }
                   }
                   
@@ -3919,7 +3924,7 @@
             if (clientServiceId && Array.isArray(svc.components) && svc.components.length > 0) {
               const totalComponents = svc.components.length;
               console.log(`  為服務 ${i + 1} 創建 ${totalComponents} 個組件配置...`);
-              showProgress(`正在為服務「${svc.service_name}」配置任務組件 (${totalComponents}個)...`, serviceProgress + 10);
+              showProgress(`正在為服務「${serviceName}」配置任務組件 (${totalComponents}個)...`, serviceProgress + 10);
               
               for (let k = 0; k < svc.components.length; k++) {
                 const comp = svc.components[k];
@@ -3958,13 +3963,13 @@
                     } else {
                       console.error(`    組件 ${k + 1} 創建失敗 (嘗試 ${retryCount + 1}/3):`, jsonComp);
                       if (retryCount === 2) {
-                        alert(`警告：服務「${svc.service_name}」的組件配置創建失敗：${jsonComp?.message || '未知錯誤'}\n\n將繼續創建其他組件...`);
+                        alert(`警告：服務「${serviceName}」的組件配置創建失敗：${jsonComp?.message || '未知錯誤'}\n\n將繼續創建其他組件...`);
                       }
                     }
                   } catch (fetchError) {
                     console.error(`    組件 ${k + 1} 網絡錯誤 (嘗試 ${retryCount + 1}/3):`, fetchError);
                     if (retryCount === 2) {
-                      alert(`警告：服務「${svc.service_name}」的組件配置創建失敗：網絡錯誤\n\n將繼續創建其他組件...`);
+                      alert(`警告：服務「${serviceName}」的組件配置創建失敗：網絡錯誤\n\n將繼續創建其他組件...`);
                     }
                   }
                   
