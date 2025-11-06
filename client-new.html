@@ -220,7 +220,7 @@
   <div id="globalBillingModal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
     <div style="background:white; border-radius:8px; padding:20px; width:90%; max-width:780px; max-height:80vh; overflow:auto;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0;">集中新增收費</h3>
+        <h3 style="margin:0;">新增收費</h3>
         <button onclick="closeGlobalBillingModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280">×</button>
       </div>
       <div style="margin-top:12px; display:grid; grid-template-columns: 1fr 2fr; gap:12px;">
@@ -482,6 +482,11 @@
               <button type="button" class="table-btn table-btn-danger" onclick="deleteService(${index}, '${serviceName}')">刪除</button>
             </td>
           </tr>
+          <tr class="component-detail-row" id="components-row-${index}" style="display:none;">
+            <td colspan="5" class="component-detail-cell">
+              <div class="components-content" id="components-content-${index}"></div>
+            </td>
+          </tr>
         `;
       }).join('');
       
@@ -554,6 +559,8 @@
       const svc = tempServices[serviceIndex];
       const container = document.getElementById(`components-content-${serviceIndex}`);
       if (!svc || !container) return;
+      const row = document.getElementById(`components-row-${serviceIndex}`);
+      if (row) row.style.display = 'table-row';
       const currentServiceId = svc.service_id;
       const items = allServiceItems.filter(it => String(it.service_id) === String(currentServiceId));
       const itemsOptions = items.length > 0
@@ -603,6 +610,8 @@
     function cancelComponentForm(serviceIndex) {
       const container = document.getElementById(`components-content-${serviceIndex}`);
       if (container) container.innerHTML = '';
+      const row = document.getElementById(`components-row-${serviceIndex}`);
+      if (row) row.style.display = 'none';
     }
 
     function renderComponentTasks(serviceIndex) {
@@ -995,6 +1004,43 @@
       }
     }
 
+    // ===== 標籤管理（與詳情頁一致的行為） =====
+    function showTagsModal() {
+      const modal = document.getElementById('tagsModal');
+      renderTagsSelect();
+      renderSelectedTagsInModal();
+      modal.style.display = 'flex';
+    }
+    function closeTagsModal() {
+      const modal = document.getElementById('tagsModal');
+      modal.style.display = 'none';
+      const form = document.getElementById('newTagForm');
+      if (form) form.style.display = 'none';
+      const btn = document.getElementById('btnShowNewTag');
+      if (btn) btn.textContent = '+ 新增標籤';
+    }
+    function toggleNewTagForm() {
+      const form = document.getElementById('newTagForm');
+      const btn = document.getElementById('btnShowNewTag');
+      if (!form) return;
+      const showing = form.style.display !== 'none';
+      form.style.display = showing ? 'none' : 'block';
+      if (btn) btn.textContent = showing ? '+ 新增標籤' : '取消新增';
+    }
+    function renderSelectedTagsInModal() {
+      const container = document.getElementById('selectedTagsList');
+      if (!container) return;
+      const tags = allTags.filter(t => selectedTagIds.has(t.tag_id));
+      container.innerHTML = tags.length === 0
+        ? '<span style="color:#9ca3af;">尚未選擇標籤</span>'
+        : tags.map(t => `<span class="chip" style="display:inline-flex;align-items:center;gap:6px;background:${t.tag_color||'#6b7280'};color:#fff;">${t.tag_name}<button type="button" style="background:none;border:none;color:#fff;cursor:pointer;" onclick="toggleTag(${t.tag_id}); renderSelectedTagsInModal();">×</button></span>`).join('');
+    }
+    function saveNewTag() { createNewTag(); }
+    function saveTags() {
+      renderTagsDisplay();
+      closeTagsModal();
+    }
+
     async function createNewTag() {
       const name = (document.getElementById('newTagName').value||'').trim();
       const color = document.getElementById('newTagColor').value||'#3b82f6';
@@ -1305,6 +1351,23 @@
     window.cancelEditService = cancelEditService;
     window.deleteService = deleteService;
 
+    // 收費設定（列表）導出
+    window.toggleSelectAll = toggleSelectAll;
+    window.batchDeleteBilling = batchDeleteBilling;
+    window.onMasterSelectChange = onMasterSelectChange;
+    window.showAddBillingModal = showAddBillingModal;
+    window.editBillingRow = editBillingRow;
+    window.deleteBillingRow = deleteBillingRow;
+    window.modalSelectAllMonths = modalSelectAllMonths;
+    window.switchBillingType = switchBillingType;
+    window.saveBillingFromModal = saveBillingFromModal;
+
+    // 標籤管理導出
+    window.showTagsModal = showTagsModal;
+    window.closeTagsModal = closeTagsModal;
+    window.toggleNewTagForm = toggleNewTagForm;
+    window.saveNewTag = saveNewTag;
+    window.saveTags = saveTags;
 
 
     // 取消編輯
