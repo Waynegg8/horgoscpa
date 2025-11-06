@@ -15,17 +15,9 @@
     <script src="/assets/js/prerender.js"></script>
     <script src="/assets/js/page-prerender.js"></script>
     <script>
-    // ⚡ 预渲染：准备在 main 后立即执行
-    window._leavesPrerender = (function() {
-      if (!window.Prerender) return null;
-      const pageKey = 'leaves';
-      const cachedHTML = window.Prerender.load(pageKey);
-      if (cachedHTML && cachedHTML.length > 500) {
-        console.log('[Leaves] ⚡ 预渲染已就绪');
-        return cachedHTML;
-      }
-      return null;
-    })();
+    // 关闭本页的预渲染（避免布局结构变动导致的重复/错位）
+    window._leavesPrerender = null;
+    window._needSaveLeavesPrerender = false;
     </script>
     
     <style>
@@ -243,23 +235,7 @@
     </div>
 
     <main style="padding:24px; display:grid; gap:16px;" id="leavesMain">
-      <script>
-      // ⚡ 立即插入预渲染内容（同步执行，无需等待）
-      (function() {
-        if (window._leavesPrerender) {
-          var main = document.getElementById('leavesMain');
-          if (main) {
-            main.innerHTML = window._leavesPrerender;
-            main.dataset.prerendered = 'true';
-            console.log('[Leaves] ⚡ 预渲染内容已同步插入');
-            delete window._leavesPrerender; // 清理
-          }
-        } else {
-          // 无缓存：稍后保存预渲染
-          window._needSaveLeavesPrerender = true;
-        }
-      })();
-      </script>
+      <script>/* 本頁預渲染已停用，使用正常渲染流程 */</script>
       <section class="leaves-card">
         <h2 style="margin:0 0 8px 0; font-size:16px;">餘額總覽</h2>
         <div class="balance-grid" id="balances">
@@ -1130,55 +1106,7 @@
       })();
     </script>
     
-    <!-- ⚡ 保存预渲染 -->
-    <script>
-    (function() {
-      console.log('[Leaves] 检查预渲染保存条件:', {
-        needSave: window._needSaveLeavesPrerender,
-        hasPrerender: !!window.Prerender
-      });
-      
-      if (window._needSaveLeavesPrerender && window.Prerender) {
-        console.log('[Leaves] 启动预渲染保存监听器');
-        var saveAttempts = 0;
-        var saved = false;
-        
-        var tryToSave = function() {
-          if (saved) return;
-          saveAttempts++;
-          
-          var main = document.getElementById('leavesMain');
-          var tbody = document.getElementById('tbody');
-          var balances = document.getElementById('balances');
-          
-          console.log('[Leaves] 尝试保存 #' + saveAttempts + ':', {
-            main: !!main,
-            tbody: !!tbody,
-            tbodyChildren: tbody ? tbody.children.length : 0,
-            balances: !!balances,
-            balancesChildren: balances ? balances.children.length : 0,
-            htmlLength: main ? main.innerHTML.length : 0
-          });
-          
-          if (main && tbody && tbody.children.length > 0 && balances && balances.children.length > 0) {
-            window.Prerender.save('leaves', main.innerHTML);
-            saved = true;
-            console.log('[Leaves] ✅ 预渲染已保存 (' + main.innerHTML.length + ' 字符)');
-          } else if (saveAttempts < 20) {
-            // 每秒重试一次，最多 20 次
-            setTimeout(tryToSave, 1000);
-          } else {
-            console.warn('[Leaves] ⚠ 预渲染保存失败（超时）');
-          }
-        };
-        
-        // 首次尝试（1秒后）
-        setTimeout(tryToSave, 1000);
-      } else {
-        console.log('[Leaves] 跳过预渲染保存（已有缓存或系统未就绪）');
-      }
-    })();
-    </script>
+    <!-- 本頁預渲染已停用：不保存預渲染 -->
     
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
   </body>
