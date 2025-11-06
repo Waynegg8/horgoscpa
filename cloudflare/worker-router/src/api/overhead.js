@@ -1453,28 +1453,64 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				6: 2.67, 7: 2.0, 8: 1.34, 9: 1.67, 10: 2.0, 11: 2.0
 			};
 			const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
-			
-			// 構建員工時薪快取（以 Users.base_salary 與年度特休計算）
-			const usersRateRows = await env.DATABASE.prepare(
-				"SELECT user_id, base_salary FROM Users WHERE is_deleted = 0"
-			).all();
-			const leaveRows = await env.DATABASE.prepare(
-				"SELECT user_id, total FROM LeaveBalances WHERE year = ? AND leave_type = 'annual'"
-			).bind(year).all();
-			const leavesMap = new Map();
-			(leaveRows?.results || []).forEach(r => { leavesMap.set(r.user_id, Number(r.total || 0)); });
-			const hourlyRatesMap = {};
-			(usersRateRows?.results || []).forEach(u => {
-				const monthlySalary = Number(u.base_salary || 0);
-				const annualHours = 2080;
-				const annualLeaveDays = Number(leavesMap.get(u.user_id) || 0);
-				const annualLeaveHours = annualLeaveDays * 8;
-				const actualHours = Math.max(0, annualHours - annualLeaveHours);
-				const monthlyBaseHours = actualHours / 12;
-				hourlyRatesMap[u.user_id] = monthlyBaseHours > 0 ? (monthlySalary / monthlyBaseHours) : 0;
-			});
 
-			// 1. 獲取所有有工時記錄的客戶（按客戶分組，因為 Timesheets 沒有 task_id）
+			// 1. 獲取所有員工並計算實際時薪（包含薪資成本 + 管理費分攤）
+			const usersRows = await env.DATABASE.prepare(
+				"SELECT user_id, name, base_salary FROM Users WHERE is_deleted = 0"
+			).all();
+			const usersList = usersRows?.results || [];
+			
+			// 构建员工实际时薪映射表（与员工成本分析逻辑一致）
+			const employeeActualHourlyRates = {};
+			
+			for (const user of usersList) {
+				const userId = user.user_id;
+				const baseSalaryCents = Math.round(Number(user.base_salary || 0) * 100);
+				
+				// 计算本月工时
+				const [y, m] = yearMonth.split('-');
+				const firstDay = `${y}-${m}-01`;
+				const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+				const lastDayStr = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
+				
+				const timesheetHoursResult = await env.DATABASE.prepare(
+					`SELECT SUM(hours) as total FROM Timesheets 
+					 WHERE user_id = ? AND work_date >= ? AND work_date <= ? AND is_deleted = 0`
+				).bind(userId, firstDay, lastDayStr).first();
+				const monthHours = Number(timesheetHoursResult?.total || 0);
+				
+				if (monthHours === 0) {
+					employeeActualHourlyRates[userId] = 0;
+					continue;
+				}
+				
+				// 简化计算：使用底薪估算总成本（详细逻辑与员工成本分析一致，这里简化以提高性能）
+				const totalLaborCost = Math.round(baseSalaryCents / 100);
+				
+				// 计算管理费分摊（简化：按工时比例分摊）
+				const totalHoursRow = await env.DATABASE.prepare(
+					`SELECT SUM(hours) as total FROM Timesheets 
+					 WHERE substr(work_date, 1, 7) = ? AND is_deleted = 0`
+				).bind(yearMonth).first();
+				const totalMonthHours = Number(totalHoursRow?.total || 0);
+				
+				const overheadRow = await env.DATABASE.prepare(
+					`SELECT SUM(m.amount) as total FROM MonthlyOverheadCosts m
+					 WHERE m.year = ? AND m.month = ? AND m.is_deleted = 0`
+				).bind(year, month).first();
+				const totalOverhead = Number(overheadRow?.total || 0);
+				
+				const overheadAllocation = totalMonthHours > 0 
+					? Math.round(totalOverhead * (monthHours / totalMonthHours))
+					: 0;
+				
+				const totalCost = totalLaborCost + overheadAllocation;
+				const actualHourlyRate = monthHours > 0 ? Math.round(totalCost / monthHours) : 0;
+				
+				employeeActualHourlyRates[userId] = actualHourlyRate;
+			}
+
+			// 2. 獲取所有有工時記錄的客戶
 			const clientRows = await env.DATABASE.prepare(
 				`SELECT DISTINCT
 					c.client_id,
@@ -1485,19 +1521,6 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				 ORDER BY c.company_name ASC`
 			).bind(yearMonth).all();
 			const clientList = clientRows?.results || [];
-
-			// 2. 獲取總工時和總管理費用用於分攤
-			const totalHoursRow = await env.DATABASE.prepare(
-				`SELECT SUM(hours) as total FROM Timesheets 
-				 WHERE substr(work_date, 1, 7) = ? AND is_deleted = 0`
-			).bind(yearMonth).first();
-			const totalMonthHours = Number(totalHoursRow?.total || 0);
-			
-			const overheadRow = await env.DATABASE.prepare(
-				`SELECT SUM(m.amount) as total FROM MonthlyOverheadCosts m
-				 WHERE m.year = ? AND m.month = ? AND m.is_deleted = 0`
-			).bind(year, month).first();
-			const totalOverhead = Number(overheadRow?.total || 0);
 			
 			// 3. 為每個客戶計算成本，並按服務子項目（任務）分組顯示
 			const tasks = [];
@@ -1579,8 +1602,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						}
 					}
 					
-					// 第二遍：计算人力成本
-					let laborCost = 0;
+					// 第二遍：使用实际时薪计算总成本（实际时薪已包含薪资+管理费）
+					let totalCost = 0;
 					processedFixedKeys.clear();
 					
 					for (const ts of group.timesheets) {
@@ -1599,14 +1622,10 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						} else {
 							tsWeightedHours = Number(ts.hours || 0) * (WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0);
 						}
-						const rate = Number(hourlyRatesMap[ts.user_id] || 0);
-						laborCost += Math.round(rate * tsWeightedHours);
+						// 使用员工的实际时薪（已包含薪资成本+管理费分摊）
+						const actualHourlyRate = Number(employeeActualHourlyRates[ts.user_id] || 0);
+						totalCost += Math.round(actualHourlyRate * tsWeightedHours);
 					}
-					
-					// 按工時比例分攤管理費用
-					const overheadAllocation = totalMonthHours > 0 
-						? Math.round(totalOverhead * (hours / totalMonthHours))
-						: 0;
 					
 					// 生成任務記錄（按服務子項目）
 					const assigneeNames = Array.from(group.userNames).join(', ') || '未指定';
@@ -1619,9 +1638,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						assigneeName: assigneeNames,
 						hours: hours,
 						weightedHours: weightedHours,
-						laborCost: laborCost,
-						overheadAllocation: overheadAllocation,
-						totalCost: laborCost + overheadAllocation
+						totalCost: totalCost
 					});
 				}
 			}

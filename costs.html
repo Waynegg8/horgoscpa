@@ -179,6 +179,10 @@
           </div>
 
           <div id="task-view" style="display: none;">
+            <div class="info-box" style="margin-bottom: 12px; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 14px; color: #1e40af;">
+              <strong>計算說明：</strong><br>
+              • <strong>總成本</strong> = 加權工時 × 實際時薪（實際時薪已包含薪資成本 + 管理費分攤）
+            </div>
             <table class="table" aria-label="任務成本明細">
               <thead>
                 <tr>
@@ -188,13 +192,11 @@
                   <th>負責人</th>
                   <th>工時</th>
                   <th>加權工時</th>
-                  <th>人力成本</th>
-                  <th>分攤管理費</th>
                   <th>總成本</th>
                 </tr>
               </thead>
               <tbody id="tbody-tasks">
-                <tr><td colspan="9" class="muted">載入中…</td></tr>
+                <tr><td colspan="7" class="muted">載入中…</td></tr>
               </tbody>
             </table>
           </div>
@@ -793,11 +795,11 @@
           params.set('month', String(ym.month));
           params.set('_t', String(Date.now())); // 强制绕过缓存
           try {
-            tbodyTasks.innerHTML = '<tr><td colspan="9" class="muted">載入中…</td></tr>';
+            tbodyTasks.innerHTML = '<tr><td colspan="7" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/costs/task?${params.toString()}`, { credentials:'include', cache: 'no-store' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             if (res.status === 501) {
-              tbodyTasks.innerHTML = '<tr><td colspan="9" class="muted">功能尚未實作，敬請期待</td></tr>';
+              tbodyTasks.innerHTML = '<tr><td colspan="7" class="muted">功能尚未實作，敬請期待</td></tr>';
               return;
             }
             const json = await res.json();
@@ -805,7 +807,7 @@
             const data = json.data || {};
             const tasks = data.tasks || [];
             if (tasks.length === 0) {
-              tbodyTasks.innerHTML = '<tr><td colspan="9" class="muted">尚無資料</td></tr>';
+              tbodyTasks.innerHTML = '<tr><td colspan="7" class="muted">尚無資料</td></tr>';
               return;
             }
             tbodyTasks.innerHTML = '';
@@ -818,14 +820,12 @@
                 <td>${task.assigneeName||''}</td>
                 <td>${Number(task.hours||0).toFixed(1)}</td>
                 <td>${Number(task.weightedHours||0).toFixed(1)}</td>
-                <td>${formatCurrency(task.laborCost)}</td>
-                <td>${formatCurrency(task.overheadAllocation)}</td>
-                <td>${formatCurrency(task.totalCost)}</td>
+                <td style="font-weight:600;color:#16a34a;">${formatCurrency(task.totalCost)}</td>
               `;
               tbodyTasks.appendChild(tr);
             });
           } catch (_) {
-            tbodyTasks.innerHTML = '<tr><td colspan="9" style="color:#c0392b;">載入失敗</td></tr>';
+            tbodyTasks.innerHTML = '<tr><td colspan="7" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
 
