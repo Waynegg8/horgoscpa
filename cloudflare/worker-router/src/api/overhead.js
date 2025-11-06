@@ -806,17 +806,20 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				// 2. 實際計算本月薪資成本
 				let totalLaborCostCents = monthlySalary * 100; // 底薪
 				
-				// 2.1 查詢並計算固定薪資項目（津貼、獎金等）
+				// 2.1 查詢並計算所有薪資項目（津貼、獎金、全勤等）
 				const salaryItems = await env.DATABASE.prepare(
-					`SELECT item_type, amount_cents, recurring_type, recurring_months, effective_date, expiry_date
-					 FROM SalaryItems
-					 WHERE user_id = ? AND is_deleted = 0`
+					`SELECT t.category as item_type, e.amount_cents, e.recurring_type, e.recurring_months, 
+					        e.effective_date, e.expiry_date
+					 FROM EmployeeSalaryItems e
+					 LEFT JOIN SalaryItemTypes t ON e.item_type_id = t.item_type_id
+					 WHERE e.user_id = ? AND e.is_active = 1`
 				).bind(userId).all();
 				
 				const items = salaryItems?.results || [];
 				for (const item of items) {
 					const shouldPay = shouldPayInMonth(item.recurring_type, item.recurring_months, item.effective_date, item.expiry_date, yearMonth);
-					if (shouldPay && (item.item_type === 'allowance' || item.item_type === 'bonus')) {
+					// 所有類型的薪資項目都計入成本（津貼、獎金、全勤等），扣款除外
+					if (shouldPay && item.item_type !== 'deduction') {
 						totalLaborCostCents += Number(item.amount_cents || 0);
 					}
 				}
@@ -828,10 +831,21 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				const lastDayStr = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
 				
 				const compGrantsRows = await env.DATABASE.prepare(
-					`SELECT hours_generated FROM CompensatoryLeaveGrants
+					`SELECT hours_generated, original_rate FROM CompensatoryLeaveGrants
 					 WHERE user_id = ? AND generated_date >= ? AND generated_date <= ?`
 				).bind(userId, firstDay, lastDayStr).all();
-				const totalCompHoursGenerated = (compGrantsRows?.results || []).reduce((sum, g) => sum + Number(g.hours_generated || 0), 0);
+				
+				// 記錄補休產生明細（用於計算轉加班費）
+				const compGenerationDetails = [];
+				let totalCompHoursGenerated = 0;
+				for (const grant of (compGrantsRows?.results || [])) {
+					const hours = Number(grant.hours_generated || 0);
+					totalCompHoursGenerated += hours;
+					compGenerationDetails.push({
+						hours: hours,
+						rate: Number(grant.original_rate || 1.0)
+					});
+				}
 				
 				// 2.3 計算本月使用的補休時數
 				const compUsedRows = await env.DATABASE.prepare(
@@ -844,12 +858,47 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					totalCompHoursUsed += leave.unit === 'days' ? Number(leave.amount) * 8 : Number(leave.amount);
 				}
 				
-				// 2.4 計算未使用補休轉加班費（簡化：使用時薪240基準）
+				// 2.4 計算未使用補休轉加班費（使用實際的原始倍率）
 				const unusedCompHours = Math.max(0, totalCompHoursGenerated - totalCompHoursUsed);
 				const hourlyRateCents = Math.round(monthlySalary / 240 * 100);
-				const expiredCompPayCents = Math.round(unusedCompHours * hourlyRateCents * 1.34); // 簡化使用平均倍率
+				
+				let expiredCompPayCents = 0;
+				let remainingToConvert = unusedCompHours;
+				for (const detail of compGenerationDetails) {
+					if (remainingToConvert <= 0) break;
+					const hoursToConvert = Math.min(detail.hours, remainingToConvert);
+					expiredCompPayCents += Math.round(hoursToConvert * hourlyRateCents * detail.rate);
+					remainingToConvert -= hoursToConvert;
+				}
 				
 				totalLaborCostCents += expiredCompPayCents;
+				
+				// 2.5 計算請假扣款（減少公司實際支付成本）
+				const leaveDeductionRows = await env.DATABASE.prepare(
+					`SELECT leave_type, amount, unit
+					 FROM LeaveRequests
+					 WHERE user_id = ? AND status = 'approved' 
+					   AND start_date >= ? AND start_date <= ?
+					   AND leave_type IN ('sick', 'personal')
+					   AND is_deleted = 0`
+				).bind(userId, firstDay, lastDayStr).all();
+				
+				let leaveDeductionCents = 0;
+				const dailySalary = monthlySalary / 30; // 日薪 = 月薪 / 30
+				
+				for (const leave of (leaveDeductionRows?.results || [])) {
+					const leaveDays = leave.unit === 'days' ? Number(leave.amount) : Number(leave.amount) / 8;
+					if (leave.leave_type === 'sick') {
+						// 病假扣50%
+						leaveDeductionCents += Math.round(leaveDays * dailySalary * 0.5 * 100);
+					} else if (leave.leave_type === 'personal') {
+						// 事假扣100%
+						leaveDeductionCents += Math.round(leaveDays * dailySalary * 1.0 * 100);
+					}
+				}
+				
+				// 公司實際成本 = 應發工資 - 請假扣款（公司少付的部分）
+				totalLaborCostCents -= leaveDeductionCents;
 				
 				const totalLaborCost = Math.round(totalLaborCostCents / 100);
 				const expiredCompPay = Math.round(expiredCompPayCents / 100);
