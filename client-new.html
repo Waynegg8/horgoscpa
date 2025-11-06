@@ -8,6 +8,32 @@
   <link rel="stylesheet" href="/assets/css/internal-system.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-components.css?v=3">
   <link rel="stylesheet" href="/assets/css/client-detail-page.css?v=30">
+  
+  <!-- ⚡ 禁用緩存系統（新增客戶後需要更新列表） -->
+  <script>
+  // ❌ 新增客戶頁面禁用緩存系統
+  console.log('[Client-New] ℹ️ 新增客戶頁面已禁用所有緩存功能');
+  
+  // 禁用 DataCache 预加载
+  window.__DISABLE_DATA_CACHE__ = true;
+  
+  // 禁用 fetch-interceptor 拦截
+  window.__DISABLE_FETCH_INTERCEPTOR__ = true;
+  
+  // 页面加载时清除客户列表缓存
+  document.addEventListener('DOMContentLoaded', function() {
+    const clientsCacheKeys = [
+      'clients_page1', 'clients_page2', 'clients_page3', 
+      'clients_page4', 'clients_page5', 'clients_all'
+    ];
+    
+    clientsCacheKeys.forEach(key => {
+      localStorage.removeItem(`cache_${key}`);
+    });
+    
+    console.log('[Client-New] ✓ 已清除客户列表缓存');
+  });
+  </script>
 </head>
 <body>
   <div id="navbar-placeholder"></div>

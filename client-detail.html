@@ -8,6 +8,40 @@
   <link rel="stylesheet" href="/assets/css/internal-system.css?v=3">
   <link rel="stylesheet" href="/assets/css/internal-components.css?v=3">
   <link rel="stylesheet" href="/assets/css/client-detail-page.css?v=30">
+  
+  <!-- ⚡ 禁用緩存系統（客戶詳情頁需要實時數據） -->
+  <script>
+  // ❌ 客戶詳情頁面完全禁用緩存系統
+  // 原因：客户数据经常变更，缓存会导致看不到最新数据
+  console.log('[Client-Detail] ℹ️ 客戶詳情頁面已禁用所有緩存功能');
+  
+  // 禁用 DataCache 预加载
+  window.__DISABLE_DATA_CACHE__ = true;
+  
+  // 禁用 fetch-interceptor 拦截
+  window.__DISABLE_FETCH_INTERCEPTOR__ = true;
+  
+  // 页面加载时清除客户相关缓存
+  document.addEventListener('DOMContentLoaded', function() {
+    // 获取当前客户ID
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientId = urlParams.get('id');
+    
+    // 清除客户相关的缓存
+    const clientsCacheKeys = [
+      'clients_page1', 'clients_page2', 'clients_page3', 
+      'clients_page4', 'clients_page5', 'clients_all',
+      `client_detail_${clientId}`,
+      `client_services_${clientId}`
+    ];
+    
+    clientsCacheKeys.forEach(key => {
+      localStorage.removeItem(`cache_${key}`);
+    });
+    
+    console.log('[Client-Detail] ✓ 已清除客户缓存');
+  });
+  </script>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
