@@ -30,39 +30,39 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 			let targetUserId = me.is_admin && userId ? userId : String(me.user_id);
 			
 			// 構建查詢條件
-			const conditions = ["is_deleted = 0"];
+			const conditions = ["t.is_deleted = 0"];
 			const bindings = [];
 			
 			if (!me.is_admin || !userId) {
-				conditions.push("user_id = ?");
+				conditions.push("t.user_id = ?");
 				bindings.push(targetUserId);
 			} else if (userId) {
-				conditions.push("user_id = ?");
+				conditions.push("t.user_id = ?");
 				bindings.push(userId);
 			}
 			
 			if (clientId) {
-				conditions.push("client_id = ?");
+				conditions.push("t.client_id = ?");
 				bindings.push(clientId);
 			}
 			
 			if (startDate) {
-				conditions.push("trip_date >= ?");
+				conditions.push("t.trip_date >= ?");
 				bindings.push(startDate);
 			}
 			
 			if (endDate) {
-				conditions.push("trip_date <= ?");
+				conditions.push("t.trip_date <= ?");
 				bindings.push(endDate);
 			}
 			
 			if (month) {
-				conditions.push("strftime('%Y-%m', trip_date) = ?");
+				conditions.push("strftime('%Y-%m', t.trip_date) = ?");
 				bindings.push(month);
 			}
 			
 			if (status) {
-				conditions.push("status = ?");
+				conditions.push("t.status = ?");
 				bindings.push(status);
 			}
 			
