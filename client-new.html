@@ -87,9 +87,9 @@
             <span class="error-text" id="error_email"></span>
           </div>
           <div class="form-field">
-            <label>標籤</label>
-            <div id="tagsDisplay" style="min-height:36px; display:flex; gap:8px; flex-wrap:wrap; padding: 8px 0;"><span style="color:#9ca3af;">尚未選擇標籤</span></div>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="showTagsModal()">管理標籤</button>
+            <label>標籤管理</label>
+            <div id="tagsDisplay" style="min-height:36px; display:flex; gap:8px; flex-wrap:wrap; padding: 8px 0;"><span style="color:#9ca3af;">載入中...</span></div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="showTagsModal()">+ 管理標籤</button>
           </div>
         </div>
         <div class="form-row-1col">
@@ -115,19 +115,14 @@
     <div class="content-card">
       <div class="card-header-with-action">
         <h2 class="card-title">客戶服務</h2>
-        <div style="display:flex; gap:10px; align-items:center;">
-          <button class="btn btn-secondary" onclick="showGlobalBillingModal()">集中新增收費</button>
-          <button class="btn btn-primary" onclick="showAddServiceRow()">+ 新增服務</button>
-        </div>
+        <button class="btn btn-primary" onclick="showAddServiceRow()">+ 新增服務</button>
       </div>
       <div class="table-wrapper">
         <table class="services-table" id="servicesTable">
           <thead>
             <tr>
-              <th style="width: 30px;"></th>
               <th>服務名稱</th>
               <th>狀態</th>
-              <th>服務週期</th>
               <th>年度總額</th>
               <th>開始日期</th>
               <th>操作</th>
@@ -135,7 +130,43 @@
           </thead>
           <tbody id="servicesList">
             <tr>
-              <td colspan="7" class="no-data">尚未新增服務</td>
+              <td colspan="5" class="no-data">尚未新增服務</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- 收費設定 -->
+    <div class="content-card">
+      <div class="card-header-with-action">
+        <h2 class="card-title">💰 收費設定</h2>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <select id="billing-service-filter" style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+            <option value="">全部服務</option>
+          </select>
+          <button id="btn-billing-select-all" class="btn btn-secondary" onclick="toggleSelectAll(true)" title="選取目前清單全部">全選</button>
+          <button id="btn-billing-clear-all" class="btn btn-secondary" onclick="toggleSelectAll(false)" title="取消目前清單全部">全不選</button>
+          <button id="btn-batch-delete" class="btn btn-danger" onclick="batchDeleteBilling()" disabled>批量刪除</button>
+          <button class="btn btn-primary" onclick="showAddBillingModal()">+ 新增收費</button>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="billing-table" id="billingTable">
+          <thead>
+            <tr>
+              <th style="width: 44px; text-align:center;"><input type="checkbox" id="billing-master" onchange="onMasterSelectChange(this)"></th>
+              <th>服務名稱</th>
+              <th style="width: 80px;">月份</th>
+              <th style="width: 120px;">金額</th>
+              <th style="width: 100px;">付款期限</th>
+              <th>備註</th>
+              <th style="width: 130px;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="billingList">
+            <tr>
+              <td colspan="7" class="no-data">尚未設定收費</td>
             </tr>
           </tbody>
         </table>
@@ -373,7 +404,6 @@
       
       const addServiceRowHtml = `
         <tr id="add-service-row" style="display: none;">
-          <td></td>
           <td>
             <select id="new-service-id" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
               <option value="">請選擇服務</option>
@@ -389,29 +419,6 @@
             </select>
           </td>
           <td>
-            <select id="new-service-cycle" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
-              <option value="monthly">每月</option>
-              <option value="quarterly">每季</option>
-              <option value="yearly">每年</option>
-              <option value="one-time">一次性</option>
-            </select>
-          </td>
-          <td>
-            <select id="new-service-template" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
-              <option value="">不使用模板</option>
-              ${(allTemplates||[]).map(t => `<option value="${t.template_id}">${t.template_name}</option>`).join('')}
-            </select>
-            <div style="margin-top:6px;">
-              <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
-                <input type="checkbox" id="new-service-autogen" checked> 自動產生任務
-              </label>
-            </div>
-            <div style="margin-top:6px;">
-              <label>服務備註</label>
-              <input type="text" id="new-service-notes" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;" />
-            </div>
-          </td>
-          <td>
             <input type="date" id="new-service-start-date" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;" />
           </td>
           <td>
@@ -422,7 +429,7 @@
       `;
       
       if (!services || services.length === 0) {
-        tbody.innerHTML = addServiceRowHtml + '<tr><td colspan="7" class="no-data">尚未新增服務</td></tr>';
+        tbody.innerHTML = addServiceRowHtml + '<tr><td colspan="5" class="no-data">尚未新增服務</td></tr>';
         return;
       }
 
@@ -456,29 +463,14 @@
 
         return `
           <tr class="service-main-row">
-            <td class="expand-cell">
-              <button class="expand-btn" onclick="toggleBilling(${index})">
-                <span class="expand-icon" id="expand-icon-${index}">▶</span>
-              </button>
-            </td>
             <td><strong>${serviceName}</strong></td>
             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-            <td>${cycleText}</td>
             <td class="amount">$${yearTotal.toLocaleString('zh-TW')}</td>
             <td>${svc.start_date || '-'}</td>
             <td class="actions-cell">
-              <button type="button" class="table-btn table-btn-primary" onclick="showAddBillingRow(${index})">新增收費</button>
-              <button type="button" class="table-btn" onclick="showAddComponentForm(${index})">配置任務</button>
+              <button type="button" class="table-btn table-btn-primary" onclick="showAddComponentForm(${index})">配置服務內容</button>
               <button type="button" class="table-btn table-btn-secondary" onclick="editService(${index})">編輯</button>
               <button type="button" class="table-btn table-btn-danger" onclick="deleteService(${index}, '${serviceName}')">刪除</button>
-            </td>
-          </tr>
-          <tr class="billing-detail-row" id="billing-row-${index}" style="display: none;">
-            <td colspan="7" class="billing-detail-cell">
-              <div class="billing-content" id="billing-content-${index}">
-                ${renderBillingTable(index)}
-              </div>
-              <div class="components-content" id="components-content-${index}" style="margin-top:14px;"></div>
             </td>
           </tr>
         `;

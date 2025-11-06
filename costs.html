@@ -633,68 +633,131 @@
         document.getElementById('btn-refresh-emp')?.addEventListener('click', loadEmployeeCosts);
         document.getElementById('btn-refresh-client')?.addEventListener('click', loadClientCosts);
 
-        // ============ 新增/匯出功能 ============
-        async function createOverheadType(){
-          try {
-            const code = (prompt('請輸入成本代碼（如 RENT）：')||'').trim().toUpperCase();
-            if (!code) return;
-            const name = (prompt('請輸入成本名稱：')||'').trim();
-            if (!name) return;
-            const category = (prompt('請輸入類別（fixed/variable）：')||'').trim();
-            if (!category) return;
-            const allocationMethod = (prompt('請輸入分攤方式（per_employee/per_hour/per_revenue）：')||'').trim();
-            if (!allocationMethod) return;
-            const description = (prompt('描述（可留空）：')||'').trim();
-            const res = await fetch(`${apiBase}/admin/overhead-types`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ cost_code: code, cost_name: name, category, allocation_method: allocationMethod, description })
-            });
-            const json = await res.json().catch(()=>({}));
-            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message||'建立失敗');
-            alert('已建立成本項目');
-            if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
-            loadItems();
-          } catch (err) {
-            alert('建立失敗：' + (err?.message||String(err)));
-          }
+        // ============ 新增/匯出功能（改用表單與下拉選單） ============
+        function openModal(title, contentEl, onSubmit){
+          const overlay = document.createElement('div');
+          overlay.style.position = 'fixed';
+          overlay.style.inset = '0';
+          overlay.style.background = 'rgba(0,0,0,0.3)';
+          overlay.style.display = 'flex';
+          overlay.style.alignItems = 'center';
+          overlay.style.justifyContent = 'center';
+          overlay.style.zIndex = '1000';
+          const modal = document.createElement('div');
+          modal.style.background = '#fff';
+          modal.style.border = '1px solid #e5e7eb';
+          modal.style.borderRadius = '10px';
+          modal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
+          modal.style.width = 'min(520px, 92vw)';
+          modal.style.maxHeight = '85vh';
+          modal.style.display = 'flex';
+          modal.style.flexDirection = 'column';
+          const header = document.createElement('div');
+          header.style.padding = '14px 16px';
+          header.style.borderBottom = '1px solid #eee';
+          header.style.fontWeight = '600';
+          header.textContent = title;
+          const body = document.createElement('div');
+          body.style.padding = '14px 16px';
+          body.appendChild(contentEl);
+          const footer = document.createElement('div');
+          footer.style.display = 'flex';
+          footer.style.gap = '8px';
+          footer.style.justifyContent = 'flex-end';
+          footer.style.padding = '12px 16px';
+          footer.style.borderTop = '1px solid #eee';
+          const btnCancel = document.createElement('button');
+          btnCancel.className = 'btn';
+          btnCancel.textContent = '取消';
+          const btnOk = document.createElement('button');
+          btnOk.className = 'btn primary';
+          btnOk.textContent = '儲存';
+          footer.appendChild(btnCancel); footer.appendChild(btnOk);
+          modal.appendChild(header); modal.appendChild(body); modal.appendChild(footer);
+          overlay.appendChild(modal);
+          function close(){ document.body.removeChild(overlay); }
+          btnCancel.addEventListener('click', close);
+          btnOk.addEventListener('click', async ()=>{ await onSubmit?.(close); });
+          document.body.appendChild(overlay);
         }
 
-        async function createMonthlyRecord(){
-          const ym = parseYearMonth();
-          if (!ym) { alert('請先選擇有效月份'); return; }
-          try {
-            // 讀取可用成本項目
-            const typesRes = await fetch(`${apiBase}/admin/overhead-types?is_active=1&perPage=100`, { credentials:'include' });
-            if (typesRes.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
-            const typesJson = await typesRes.json();
-            const types = (typesJson?.data)||[];
-            if (!Array.isArray(types) || types.length === 0) { alert('尚無啟用的成本項目，請先建立'); return; }
-            const availableCodes = types.map(t=>t.code).join(', ');
-            const input = (prompt(`請輸入成本代碼或名稱（可用：${availableCodes}）：`)||'').trim();
-            if (!input) return;
-            const found = types.find(t => String(t.code).toLowerCase() === input.toLowerCase())
-              || types.find(t => String(t.name).toLowerCase().includes(input.toLowerCase()));
-            if (!found) { alert('找不到相符的成本項目'); return; }
-            const amtStr = (prompt('請輸入金額（正數）：')||'').trim();
-            const amount = Number(amtStr);
-            if (!Number.isFinite(amount) || amount <= 0) { alert('金額無效'); return; }
-            const notes = (prompt('備註（可留空）：')||'').trim();
-            const res = await fetch(`${apiBase}/admin/overhead-costs`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ cost_type_id: found.id, year: ym.year, month: ym.month, amount, notes })
+        function buildField(labelText, inputEl){
+          const wrap = document.createElement('div');
+          wrap.style.marginBottom = '10px';
+          const label = document.createElement('label');
+          label.style.display = 'block';
+          label.style.fontSize = '12px';
+          label.style.color = '#64748b';
+          label.style.marginBottom = '6px';
+          label.textContent = labelText;
+          inputEl.style.width = '100%';
+          inputEl.style.boxSizing = 'border-box';
+          inputEl.style.padding = '8px 10px';
+          inputEl.style.border = '1px solid #e5e7eb';
+          inputEl.style.borderRadius = '8px';
+          wrap.appendChild(label); wrap.appendChild(inputEl);
+          return wrap;
+        }
+
+        function openAddTypeModal(){
+          const form = document.createElement('div');
+          const nameInput = document.createElement('input'); nameInput.type = 'text'; nameInput.placeholder = '例如：辦公室租金';
+          const catSel = document.createElement('select'); catSel.innerHTML = '<option value="fixed">固定</option><option value="variable">變動</option>';
+          const allocSel = document.createElement('select'); allocSel.innerHTML = '<option value="per_employee">按員工數</option><option value="per_hour">按工時</option><option value="per_revenue">按收入</option>';
+          const descInput = document.createElement('input'); descInput.type = 'text'; descInput.placeholder = '描述（可留空）';
+          form.appendChild(buildField('成本名稱', nameInput));
+          form.appendChild(buildField('類別', catSel));
+          form.appendChild(buildField('分攤方式', allocSel));
+          form.appendChild(buildField('描述', descInput));
+          openModal('新增成本項目', form, async (close)=>{
+            const name = nameInput.value.trim();
+            const category = catSel.value;
+            const allocationMethod = allocSel.value;
+            const description = descInput.value.trim();
+            if (!name) { alert('請輸入成本名稱'); return; }
+            const res = await fetch(`${apiBase}/admin/overhead-types`, {
+              method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ cost_name: name, category, allocation_method: allocationMethod, description })
             });
             const json = await res.json().catch(()=>({}));
-            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message||'建立失敗');
-            alert('已新增月度記錄');
+            if (!res.ok || !json || json.ok !== true) { alert(json?.message||'建立失敗'); return; }
+            close();
+            if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+            loadItems();
+          });
+        }
+
+        async function openAddRecordModal(){
+          const ym = parseYearMonth();
+          if (!ym) { alert('請先選擇有效月份'); return; }
+          const typesRes = await fetch(`${apiBase}/admin/overhead-types?is_active=1&perPage=200`, { credentials:'include' });
+          if (typesRes.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
+          const typesJson = await typesRes.json();
+          const types = (typesJson?.data)||[];
+          if (!Array.isArray(types) || types.length === 0) { alert('尚無啟用的成本項目，請先建立'); return; }
+          const form = document.createElement('div');
+          const typeSel = document.createElement('select');
+          typeSel.innerHTML = types.map(t => `<option value="${t.id}">${t.name}（${t.category==='fixed'?'固定':'變動'}）</option>`).join('');
+          const amtInput = document.createElement('input'); amtInput.type = 'number'; amtInput.placeholder = '請輸入金額'; amtInput.min = '1';
+          const notesInput = document.createElement('input'); notesInput.type = 'text'; notesInput.placeholder = '備註（可留空）';
+          form.appendChild(buildField('成本項目', typeSel));
+          form.appendChild(buildField('金額', amtInput));
+          form.appendChild(buildField('備註', notesInput));
+          openModal('新增月度記錄', form, async (close)=>{
+            const cost_type_id = parseInt(typeSel.value, 10);
+            const amount = Number(amtInput.value);
+            const notes = notesInput.value.trim();
+            if (!Number.isFinite(amount) || amount <= 0) { alert('金額無效'); return; }
+            const res = await fetch(`${apiBase}/admin/overhead-costs`, {
+              method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ cost_type_id, year: ym.year, month: ym.month, amount, notes })
+            });
+            const json = await res.json().catch(()=>({}));
+            if (!res.ok || !json || json.ok !== true) { alert(json?.message||'建立失敗'); return; }
+            close();
             if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
             loadRecords();
-          } catch (err) {
-            alert('建立失敗：' + (err?.message||String(err)));
-          }
+          });
         }
 
         function exportActiveTableToCsv(){
@@ -725,8 +788,8 @@
           setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
         }
 
-        document.getElementById('btn-add-item')?.addEventListener('click', createOverheadType);
-        document.getElementById('btn-add-record')?.addEventListener('click', createMonthlyRecord);
+        document.getElementById('btn-add-item')?.addEventListener('click', openAddTypeModal);
+        document.getElementById('btn-add-record')?.addEventListener('click', openAddRecordModal);
         document.getElementById('btn-export-csv')?.addEventListener('click', exportActiveTableToCsv);
         document.getElementById('btn-export-pdf')?.addEventListener('click', ()=>{
           alert('PDF 匯出尚未實作，請先使用 CSV 匯出');
