@@ -1375,29 +1375,51 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					totalWeightedHours += tsWeightedHours;
 				}
 				
-				// 5. 使用员工实际时薪计算客户总成本，并拆分薪资成本和管理成本
+				// 5. 使用员工实际时薪计算客户总成本，并收集员工明细
 				let laborCost = 0;
 				let overheadAllocation = 0;
+				const employeeDetails = []; // 员工明细列表
 				
 				for (const userId in userWeightedHours) {
 					const weightedHours = userWeightedHours[userId];
 					const actualHourlyRate = employeeActualHourlyRates[userId] || 0;
 					
-					// 获取员工底薪
+					// 获取员工信息
 					const userInfo = usersList.find(u => u.user_id === userId);
+					const userName = userInfo?.name || '未知';
 					const baseSalary = Number(userInfo?.base_salary || 0);
 					const baseSalaryHourly = baseSalary / 240;
+					
+					// 计算该员工在此客户的实际工时
+					const empActualHours = timesheets
+						.filter(ts => ts.user_id === userId)
+						.reduce((sum, ts) => sum + Number(ts.hours || 0), 0);
+					
+					// 员工成本 = 加权工时 × 实际时薪
+					const empTotalCost = Math.round(weightedHours * actualHourlyRate);
+					totalCost += empTotalCost;
 					
 					// 薪资成本 = 加权工时 × 底薪时薪率
 					const empLaborCost = Math.round(weightedHours * baseSalaryHourly);
 					laborCost += empLaborCost;
 					
-					// 管理成本 = 加权工时 × (实际时薪率 - 底薪时薪率)
-					const empOverheadCost = Math.round(weightedHours * actualHourlyRate) - empLaborCost;
+					// 管理成本 = 总成本 - 薪资成本
+					const empOverheadCost = empTotalCost - empLaborCost;
 					overheadAllocation += empOverheadCost;
 					
-					totalCost += Math.round(weightedHours * actualHourlyRate);
+					// 添加员工明细
+					employeeDetails.push({
+						userId: userId,
+						userName: userName,
+						hours: Math.round(empActualHours * 10) / 10,
+						weightedHours: Math.round(weightedHours * 10) / 10,
+						actualHourlyRate: actualHourlyRate,
+						totalCost: empTotalCost
+					});
 				}
+				
+				// 按成本降序排列员工明细
+				employeeDetails.sort((a, b) => b.totalCost - a.totalCost);
 				
 				// 6. 获取本月收入
 				const revenueRow = await env.DATABASE.prepare(
@@ -1418,7 +1440,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						overheadAllocation,
 						totalCost,
 						revenue,
-						profit: revenue - totalCost
+						profit: revenue - totalCost,
+						employees: employeeDetails // 员工明细列表
 					});
 				}
 			}

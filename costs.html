@@ -157,7 +157,8 @@
               • <strong>客戶總成本</strong> = Σ(每位員工在該客戶的加權工時 × 該員工的實際時薪)<br>
               • <strong>實際時薪</strong>：已包含薪資成本 + 管理費分攤（與員工成本分析一致）<br>
               • <strong>利潤</strong> = 本月收入 - 總成本<br>
-              • <strong>利潤率</strong> = 利潤 ÷ 本月收入 × 100%
+              • <strong>利潤率</strong> = 利潤 ÷ 本月收入 × 100%<br>
+              • 💡 點擊客戶名稱可展開/收起員工明細
             </div>
             <table class="table" aria-label="客戶成本彙總">
               <thead>
@@ -757,8 +758,7 @@
             }
             tbodyClients.innerHTML = '';
             let totalCost = 0, totalRevenue = 0, totalProfit = 0;
-            clients.forEach(client => {
-              const tr = document.createElement('tr');
+            clients.forEach((client, index) => {
               const cost = Number(client.totalCost || 0);
               const revenue = Number(client.revenue || 0);
               const profit = Number(client.profit || 0);
@@ -768,8 +768,18 @@
               totalCost += cost;
               totalRevenue += revenue;
               totalProfit += profit;
+              
+              // 客户主行（可点击展开）
+              const tr = document.createElement('tr');
+              tr.className = 'client-row';
+              tr.style.cursor = 'pointer';
+              tr.dataset.clientIndex = index;
               tr.innerHTML = `
-                <td>${client.clientName||''}</td>
+                <td>
+                  <span class="toggle-icon" style="display:inline-block;width:16px;margin-right:4px;">▶</span>
+                  <strong>${client.clientName||''}</strong>
+                  ${client.employees && client.employees.length > 0 ? `<span style="color:#64748b;font-size:12px;margin-left:8px;">(${client.employees.length}位員工)</span>` : ''}
+                </td>
                 <td>${Number(client.totalHours||0).toFixed(1)}</td>
                 <td>${weightedHours.toFixed(1)}</td>
                 <td style="color:#0ea5e9;font-weight:600;">${formatCurrency(avgHourlyRate)}</td>
@@ -779,6 +789,43 @@
                 <td style="font-weight:600;">${margin.toFixed(1)}%</td>
               `;
               tbodyClients.appendChild(tr);
+              
+              // 员工明细行（初始隐藏）
+              if (client.employees && client.employees.length > 0) {
+                client.employees.forEach(emp => {
+                  const empTr = document.createElement('tr');
+                  empTr.className = 'employee-detail-row';
+                  empTr.dataset.clientIndex = index;
+                  empTr.style.display = 'none';
+                  empTr.style.backgroundColor = '#f8fafc';
+                  empTr.innerHTML = `
+                    <td style="padding-left:32px;color:#64748b;">
+                      └ ${emp.userName||'未知員工'}
+                    </td>
+                    <td>${Number(emp.hours||0).toFixed(1)}</td>
+                    <td>${Number(emp.weightedHours||0).toFixed(1)}</td>
+                    <td style="color:#0ea5e9;">${formatCurrency(emp.actualHourlyRate)}</td>
+                    <td style="color:#16a34a;">${formatCurrency(emp.totalCost)}</td>
+                    <td colspan="3" style="color:#94a3b8;font-size:12px;">加權工時 × 實際時薪 = ${Number(emp.weightedHours||0).toFixed(1)} × ${formatCurrency(emp.actualHourlyRate)}</td>
+                  `;
+                  tbodyClients.appendChild(empTr);
+                });
+              }
+              
+              // 绑定点击事件
+              tr.addEventListener('click', () => {
+                const detailRows = tbodyClients.querySelectorAll(`tr.employee-detail-row[data-client-index="${index}"]`);
+                const toggleIcon = tr.querySelector('.toggle-icon');
+                const isExpanded = detailRows[0]?.style.display === 'table-row';
+                
+                detailRows.forEach(row => {
+                  row.style.display = isExpanded ? 'none' : 'table-row';
+                });
+                
+                if (toggleIcon) {
+                  toggleIcon.textContent = isExpanded ? '▶' : '▼';
+                }
+              });
             });
             const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue * 100) : 0;
             updateClientSummary(totalCost, totalRevenue, totalProfit, avgMargin);
