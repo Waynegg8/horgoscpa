@@ -319,9 +319,17 @@
             const url = `${apiBase}/trips?${params.toString()}`;
             console.log('[loadTrips] API URL:', url);
             
+            const headers = {};
+            // 强制绕过KV缓存
+            if (bypassCache) {
+              headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+              headers['Pragma'] = 'no-cache';
+            }
+            
             const res = await fetch(url, { 
               credentials: 'include',
-              cache: bypassCache ? 'no-store' : 'default'
+              cache: bypassCache ? 'no-store' : 'default',
+              headers
             });
 
             console.log('[loadTrips] Response status:', res.status);

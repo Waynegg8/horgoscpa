@@ -68,7 +68,10 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 			
 			const whereClause = conditions.join(" AND ");
 			
-			// ⚡ 嘗試從KV緩存讀取
+			// 檢查是否強制跳過緩存
+			const bypassCache = params.get("_t");
+			
+			// ⚡ 嘗試從KV緩存讀取（除非強制跳過）
 			const cacheKey = generateCacheKey('trips_list', { 
 				userId: targetUserId, 
 				clientId, 
@@ -78,15 +81,17 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 				status 
 			});
 			
-			const kvCached = await getKVCache(env, cacheKey);
-			if (kvCached && kvCached.data) {
-				return jsonResponse(200, { 
-					ok: true, 
-					code: "OK", 
-					message: "成功（KV緩存）⚡", 
-					data: kvCached.data, 
-					meta: { requestId, ...kvCached.meta, cache_source: 'kv' } 
-				}, corsHeaders);
+			if (!bypassCache) {
+				const kvCached = await getKVCache(env, cacheKey);
+				if (kvCached && kvCached.data) {
+					return jsonResponse(200, { 
+						ok: true, 
+						code: "OK", 
+						message: "成功（KV緩存）⚡", 
+						data: kvCached.data, 
+						meta: { requestId, ...kvCached.meta, cache_source: 'kv' } 
+					}, corsHeaders);
+				}
 			}
 			
 			// 查詢數據

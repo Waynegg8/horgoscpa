@@ -159,10 +159,7 @@
           </div>
 
           <div class="employee-hours-list" aria-label="員工工時一覽">
-            <div class="employee-hours-item">
-              <div class="employee-hours-name">範例員工</div>
-              <div class="employee-hours-value">— <span class="employee-hours-unit">小時</span></div>
-            </div>
+            <div class="muted" style="padding:10px;">載入中...</div>
           </div>
         </div>
       </section>
@@ -491,7 +488,12 @@
           const month = document.getElementById('cc-month').value;
           const client = document.getElementById('cc-client').value;
           
-          if (!year) { alert('請選擇年度'); return; }
+          if (!year) { 
+            console.log('[客戶成本] 年度未設定，跳過自動載入');
+            return; 
+          }
+          
+          console.log('[客戶成本] 開始載入', { year, month, client });
           
           let startDate, endDate;
           if (month) {
@@ -511,10 +513,14 @@
           if (client) params.set('client_id', client);
           try {
             tbody.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
-            const res = await fetch(`${apiBase}/reports/client-cost-analysis?${params.toString()}`, { credentials:'include' });
+            const url = `${apiBase}/reports/client-cost-analysis?${params.toString()}`;
+            console.log('[客戶成本] API請求:', url);
+            const res = await fetch(url, { credentials:'include' });
+            console.log('[客戶成本] API回應狀態:', res.status);
             if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
             const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error();
+            console.log('[客戶成本] API回應數據:', json);
+            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
             const rows = Array.isArray(json.data) ? json.data : [];
             let totalCostAll = 0;
             tbody.innerHTML = '';
@@ -595,8 +601,10 @@
             totalCostEl.textContent = formatNumber(totalCostAll);
             const hasWarn = Array.isArray(json.warnings) && json.warnings.length > 0;
             overheadStatusEl.textContent = hasWarn ? '警示' : '正常';
-          } catch (_) {
-            tbody.innerHTML = '<tr><td colspan="10" style="color:#c0392b;">查詢失敗</td></tr>';
+            console.log('[客戶成本] 載入完成', { totalCost: totalCostAll, rowCount: rows.length });
+          } catch (err) {
+            console.error('[客戶成本] 查詢失敗:', err);
+            tbody.innerHTML = `<tr><td colspan="10" style="color:#c0392b;">查詢失敗: ${err.message || '未知錯誤'}</td></tr>`;
           }
         }
 
@@ -660,38 +668,39 @@
               // Render client distribution pie chart
               ehClientDistChart = destroyChart(ehClientDistChart);
               if (rows[0].client_distribution && rows[0].client_distribution.length > 0) {
-              const ctx = document.getElementById('eh-client-dist-chart');
-              const dist = rows[0].client_distribution;
-              const colors = generateColors(dist.length);
-              ehClientDistChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                  labels: dist.map(d => d.company_name),
-                  datasets: [{
-                    data: dist.map(d => d.hours),
-                    backgroundColor: colors,
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                  }]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { position: 'right' },
-                    tooltip: {
-                      callbacks: {
-                        label: (context) => {
-                          const label = context.label || '';
-                          const value = context.parsed || 0;
-                          const pct = dist[context.dataIndex]?.percentage || 0;
-                          return `${label}: ${value.toFixed(1)}h (${pct}%)`;
+                const ctx = document.getElementById('eh-client-dist-chart');
+                const dist = rows[0].client_distribution;
+                const colors = generateColors(dist.length);
+                ehClientDistChart = new Chart(ctx, {
+                  type: 'pie',
+                  data: {
+                    labels: dist.map(d => d.company_name),
+                    datasets: [{
+                      data: dist.map(d => d.hours),
+                      backgroundColor: colors,
+                      borderWidth: 2,
+                      borderColor: '#fff'
+                    }]
+                  },
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { position: 'right' },
+                      tooltip: {
+                        callbacks: {
+                          label: (context) => {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const pct = dist[context.dataIndex]?.percentage || 0;
+                            return `${label}: ${value.toFixed(1)}h (${pct}%)`;
+                          }
                         }
                       }
                     }
                   }
-                }
-              });
+                });
+              }
             }
 
           } catch (err) {
@@ -706,7 +715,12 @@
           const month = document.getElementById('pr-month').value;
           const userId = document.getElementById('pr-employee').value;
           
-          if (!year || !month) { alert('請選擇年度和月份'); return; }
+          if (!year || !month) { 
+            console.log('[薪資報表] 年度或月份未設定，跳過自動載入');
+            return; 
+          }
+          
+          console.log('[薪資報表] 開始載入', { year, month, userId });
           
           const params = new URLSearchParams();
           params.set('year', year);
@@ -716,10 +730,14 @@
           const tbody = panel.querySelector('.report-table tbody');
           try {
             tbody.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
-            const res = await fetch(`${apiBase}/reports/payroll-summary?${params.toString()}`, { credentials:'include' });
+            const url = `${apiBase}/reports/payroll-summary?${params.toString()}`;
+            console.log('[薪資報表] API請求:', url);
+            const res = await fetch(url, { credentials:'include' });
+            console.log('[薪資報表] API回應狀態:', res.status);
             if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
             const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error();
+            console.log('[薪資報表] API回應數據:', json);
+            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
             const data = json.data || { summary:{}, by_employee:[] };
             const byEmp = Array.isArray(data.by_employee) ? data.by_employee : [];
             totalSalaryEl.textContent = formatNumber(data.summary?.total_gross_salary || 0);
@@ -744,8 +762,10 @@
                 tbody.appendChild(tr);
               });
             }
-          } catch (_) {
-            tbody.innerHTML = '<tr><td colspan="8" style="color:#c0392b;">查詢失敗</td></tr>';
+            console.log('[薪資報表] 載入完成', { employeeCount: byEmp.length });
+          } catch (err) {
+            console.error('[薪資報表] 查詢失敗:', err);
+            tbody.innerHTML = `<tr><td colspan="10" style="color:#c0392b;">查詢失敗: ${err.message || '未知錯誤'}</td></tr>`;
           }
         }
 
@@ -754,7 +774,12 @@
           const year = document.getElementById('rc-year').value;
           const month = document.getElementById('rc-month').value;
           
-          if (!year) { alert('請選擇年度'); return; }
+          if (!year) { 
+            console.log('[收款分析] 年度未設定，跳過自動載入');
+            return; 
+          }
+          
+          console.log('[收款分析] 開始載入', { year, month });
           
           // 计算日期范围
           let startDate, endDate;
@@ -779,10 +804,14 @@
           const tbody = panel.querySelector('.report-table tbody');
           try {
             tbody.innerHTML = '<tr><td colspan="4" class="muted">載入中…</td></tr>';
-            const res = await fetch(`${apiBase}/reports/revenue?${params.toString()}`, { credentials:'include' });
+            const url = `${apiBase}/reports/revenue?${params.toString()}`;
+            console.log('[收款分析] API請求:', url);
+            const res = await fetch(url, { credentials:'include' });
+            console.log('[收款分析] API回應狀態:', res.status);
             if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
             const json = await res.json();
-            if (!res.ok || !json || json.ok !== true) throw new Error();
+            console.log('[收款分析] API回應數據:', json);
+            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
             const d = json.data || { summary:{}, monthly_trend:[], by_client:[] };
             totalReceiptsEl.textContent = formatNumber(d.summary?.total_receipts || 0);
             totalPaidEl.textContent = formatNumber(d.summary?.total_paid || 0);
@@ -862,8 +891,10 @@
                 }
               });
             }
-          } catch (_) {
-            tbody.innerHTML = '<tr><td colspan="4" style="color:#c0392b;">查詢失敗</td></tr>';
+            console.log('[收款分析] 載入完成', { clientCount: list.length, totalReceipts: d.summary?.total_receipts || 0 });
+          } catch (err) {
+            console.error('[收款分析] 查詢失敗:', err);
+            tbody.innerHTML = `<tr><td colspan="4" style="color:#c0392b;">查詢失敗: ${err.message || '未知錯誤'}</td></tr>`;
           }
         }
 
@@ -900,9 +931,13 @@
 
           attachValidation();
           
-          // 等待一小段時間確保所有依賴都已載入，然後自動載入預設報表
+          // 等待一小段時間確保所有依賴都已載入，然後自動載入所有報表
           setTimeout(() => {
+            console.log('[報表系統] 開始自動載入所有報表');
             loadEmployeeHours();
+            loadClientCost();
+            loadPayroll();
+            loadRevenue();
           }, 100);
         }
 
