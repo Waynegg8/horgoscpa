@@ -49,31 +49,53 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 		}
 		if (method === "POST") {
 			let body; try { body = await request.json(); } catch (_) { return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders); }
-			const code = String(body?.cost_code || body?.code || "").trim();
+			const codeInput = String(body?.cost_code || body?.code || "").trim().toUpperCase();
 			const name = String(body?.cost_name || body?.name || "").trim();
 			const category = String(body?.category || "").trim();
 			const methodVal = String(body?.allocation_method || body?.allocationMethod || "").trim();
 			const description = (body?.description || "").trim();
 			const errors = [];
-			if (!/^[A-Z0-9_]{1,20}$/.test(code)) errors.push({ field:"cost_code", message:"格式需為 A-Z0-9_，≤20" });
 			if (!name || name.length > 50) errors.push({ field:"cost_name", message:"必填且 ≤ 50" });
 			if (!["fixed","variable"].includes(category)) errors.push({ field:"category", message:"不合法" });
 			if (!["per_employee","per_hour","per_revenue"].includes(methodVal)) errors.push({ field:"allocation_method", message:"不合法" });
 			if (errors.length) return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"輸入有誤", errors, meta:{ requestId } }, corsHeaders);
-			try {
-				await env.DATABASE.prepare(
-					"INSERT INTO OverheadCostTypes (cost_code, cost_name, category, allocation_method, description, is_active) VALUES (?, ?, ?, ?, ?, 1)"
-				).bind(code, name, category, methodVal, description).run();
-				const row = await env.DATABASE.prepare("SELECT cost_type_id FROM OverheadCostTypes WHERE cost_code = ?").bind(code).first();
-				return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data:{ id: row?.cost_type_id, code, name, category, allocationMethod: methodVal }, meta:{ requestId } }, corsHeaders);
-			} catch (err) {
-				const msg = String(err || "");
-				if (msg.includes("UNIQUE") && msg.includes("cost_code")) {
-					return jsonResponse(409, { ok:false, code:"CONFLICT", message:"代碼已存在", meta:{ requestId } }, corsHeaders);
-				}
-				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
-				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+
+			function generateCodeFromName(n, attempt) {
+				let base = String(n || "").toUpperCase().replace(/[^A-Z0-9]/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "");
+				if (!base) base = "COST";
+				const rand = Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+				// 確保總長度 ≤ 20
+				const maxBaseLen = Math.max(1, 20 - 1 - rand.length);
+				base = base.slice(0, maxBaseLen);
+				return `${base}_${rand}${attempt ? String(attempt) : ""}`.slice(0, 20);
 			}
+
+			let code = /^[A-Z0-9_]{1,20}$/.test(codeInput) ? codeInput : "";
+			let inserted = false; let newId = null; let lastErr = null;
+			for (let i = 0; i < 6 && !inserted; i++) {
+				const candidate = code || generateCodeFromName(name, i || "");
+				try {
+					await env.DATABASE.prepare(
+						"INSERT INTO OverheadCostTypes (cost_code, cost_name, category, allocation_method, description, is_active) VALUES (?, ?, ?, ?, ?, 1)"
+					).bind(candidate, name, category, methodVal, description).run();
+					const row = await env.DATABASE.prepare("SELECT cost_type_id FROM OverheadCostTypes WHERE cost_code = ?").bind(candidate).first();
+					newId = row?.cost_type_id; code = candidate; inserted = true;
+				} catch (err) {
+					lastErr = err;
+					const msg = String(err || "");
+					if (msg.includes("UNIQUE") && msg.includes("cost_code")) {
+						// 碰撞則清空 code，重試生成
+						code = "";
+						continue;
+					}
+					break;
+				}
+			}
+			if (!inserted) {
+				console.error(JSON.stringify({ level:"error", requestId, path, err:String(lastErr) }));
+				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"建立失敗", meta:{ requestId } }, corsHeaders);
+			}
+			return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data:{ id: newId, code, name, category, allocationMethod: methodVal }, meta:{ requestId } }, corsHeaders);
 		}
 	}
 
