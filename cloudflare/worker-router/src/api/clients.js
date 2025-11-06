@@ -744,9 +744,17 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 		
 		try {
+			// 調試日志
+			console.log('[BATCH-ASSIGN] 收到請求:', {
+				clientIds,
+				assigneeUserId,
+				clientIdsCount: clientIds.length
+			});
+			
 			// 檢查負責人員是否存在
 			const assExist = await env.DATABASE.prepare("SELECT 1 FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1").bind(assigneeUserId).first();
 			if (!assExist) {
+				console.log('[BATCH-ASSIGN] 負責人不存在:', assigneeUserId);
 				return jsonResponse(422, { 
 					ok: false, 
 					code: "VALIDATION_ERROR", 
@@ -756,15 +764,24 @@ export async function handleClients(request, env, me, requestId, url) {
 				}, corsHeaders);
 			}
 			
+			console.log('[BATCH-ASSIGN] 負責人檢查通過');
+			
 			const now = new Date().toISOString();
 			const placeholders = clientIds.map(() => "?").join(",");
 			
+			const sql = `UPDATE Clients SET assignee_user_id = ?, updated_at = ? WHERE client_id IN (${placeholders}) AND is_deleted = 0`;
+			console.log('[BATCH-ASSIGN] SQL:', sql);
+			console.log('[BATCH-ASSIGN] 參數:', [assigneeUserId, now, ...clientIds]);
+			
 			// 批量更新
-			const result = await env.DATABASE.prepare(
-				`UPDATE Clients SET assignee_user_id = ?, updated_at = ? WHERE client_id IN (${placeholders}) AND is_deleted = 0`
-			).bind(assigneeUserId, now, ...clientIds).run();
+			const result = await env.DATABASE.prepare(sql).bind(assigneeUserId, now, ...clientIds).run();
 			
 			const updatedCount = result?.meta?.changes || 0;
+			console.log('[BATCH-ASSIGN] 更新結果:', {
+				updatedCount,
+				meta: result?.meta,
+				success: result?.success
+			});
 			
 			return jsonResponse(200, { 
 				ok: true, 

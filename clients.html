@@ -105,6 +105,7 @@
           <form id="batchAssignForm" class="form-grid">
             <div class="field" style="grid-column:1 / -1;">
               <label>已選擇 <strong id="batch-count">0</strong> 個客戶</label>
+              <div id="batch-clients-list" style="margin-top:8px;padding:12px;background:#f8f9fa;border-radius:6px;max-height:200px;overflow-y:auto;"></div>
             </div>
             <div class="field" style="grid-column:1 / -1;">
               <label for="batch_assignee">新的負責人員（必填）</label>
@@ -450,6 +451,28 @@
             return;
           }
           document.getElementById('batch-count').textContent = selectedClientIds.length;
+          
+          // 显示选中客户的列表和当前负责人
+          const clientsList = document.getElementById('batch-clients-list');
+          clientsList.innerHTML = '';
+          
+          selectedClientIds.forEach(clientId => {
+            const checkbox = document.querySelector(`.client-checkbox[data-client-id="${clientId}"]`);
+            if (checkbox) {
+              const row = checkbox.closest('tr');
+              const companyName = row.cells[1]?.textContent?.trim() || '';
+              const currentAssignee = row.cells[4]?.textContent?.trim() || '未分配';
+              
+              const item = document.createElement('div');
+              item.style.cssText = 'padding:6px 0;border-bottom:1px solid #e0e0e0;';
+              item.innerHTML = `
+                <div style="font-weight:500;color:#1a1a1a;">${companyName}</div>
+                <div style="font-size:13px;color:#666;margin-top:2px;">當前負責人：<span style="color:#2563eb;">${currentAssignee}</span></div>
+              `;
+              clientsList.appendChild(item);
+            }
+          });
+          
           openBatchAssignModal();
         });
 
@@ -475,6 +498,8 @@
           }
 
           const payload = { client_ids: selectedClientIds, assignee_user_id };
+          console.log('[批量分配] 發送請求:', payload);
+          
           const submitBtn = document.getElementById('btn-batch-assign-submit');
           submitBtn.disabled = true;
           submitBtn.textContent = '分配中…';
@@ -486,6 +511,7 @@
               credentials: 'include',
               body: JSON.stringify(payload)
             });
+            console.log('[批量分配] 響應狀態:', res.status);
             const json = await res.json().catch(() => null);
             if (res.status === 401) {
               location.assign('/login?redirect=/internal/clients');
@@ -495,11 +521,16 @@
               alert('權限不足，僅管理員可執行批量分配');
               return;
             }
+            console.log('[批量分配] API響應:', json);
+            
             if (!res.ok || !json || json.ok !== true) {
               const msg = (json && json.message) || '分配失敗';
+              console.error('[批量分配] 失敗:', msg, json);
               alert(msg);
               return;
             }
+            
+            console.log('[批量分配] 成功！更新數量:', json.data?.updated_count);
             alert(json.message || '已完成批量分配');
             closeBatchAssignModal();
             
