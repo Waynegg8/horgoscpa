@@ -1,18 +1,5 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 
-// 确保用户有基本假期余额记录
-async function ensureBasicLeaveBalances(env, userId, year) {
-	// 病假：30天/年
-	await env.DATABASE.prepare(
-		"INSERT OR IGNORE INTO LeaveBalances (user_id, leave_type, year, total, used, remain, updated_at) VALUES (?, 'sick', ?, 30, 0, 30, datetime('now'))"
-	).bind(userId, year).run();
-	
-	// 事假：14天/年
-	await env.DATABASE.prepare(
-		"INSERT OR IGNORE INTO LeaveBalances (user_id, leave_type, year, total, used, remain, updated_at) VALUES (?, 'personal', ?, 14, 0, 14, datetime('now'))"
-	).bind(userId, year).run();
-}
-
 export async function handleOverhead(request, env, me, requestId, url, path) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
@@ -562,9 +549,6 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			
 			for (const user of users) {
 				const userId = user.user_id;
-				
-				// 确保用户有基本假期余额记录
-				await ensureBasicLeaveBalances(env, userId, year);
 				
 				// 2. 取得月薪（以 Users.base_salary 為主）
 				const monthlySalary = Number(user.base_salary || 0);

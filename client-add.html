@@ -52,8 +52,10 @@
             <span class="error-text" id="error_company_name"></span>
           </div>
           <div class="form-field">
-            <label for="inputTaxId">統一編號</label>
-            <input type="text" id="inputTaxId" maxlength="8" />
+            <label for="inputTaxId">統一編號（選填，個人客戶可不填）</label>
+            <input type="text" id="inputTaxId" maxlength="8" placeholder="8位數字" />
+            <span class="error-text" id="error_tax_registration_number"></span>
+            <small class="form-help-text" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">個人客戶可不填寫統一編號</small>
           </div>
         </div>
         <div class="form-row-2col">
@@ -1314,16 +1316,24 @@
     // 顯示新增服務行
     function showAddServiceRow() {
       const addRow = document.getElementById('add-service-row');
-      addRow.style.display = 'table-row';
+      if (addRow) {
+        addRow.style.display = 'table-row';
+      }
     }
 
     // 取消新增服務
     function cancelAddService() {
       const addRow = document.getElementById('add-service-row');
-      addRow.style.display = 'none';
-      document.getElementById('new-service-id').value = '';
-      document.getElementById('new-service-status').value = 'active';
-      document.getElementById('new-service-start-date').value = '';
+      if (addRow) {
+        addRow.style.display = 'none';
+      }
+      const serviceIdInput = document.getElementById('new-service-id');
+      const statusInput = document.getElementById('new-service-status');
+      const startDateInput = document.getElementById('new-service-start-date');
+      
+      if (serviceIdInput) serviceIdInput.value = '';
+      if (statusInput) statusInput.value = 'active';
+      if (startDateInput) startDateInput.value = '';
     }
 
     // 儲存新服務（新增模式：添加到 tempServices）
@@ -3274,106 +3284,6 @@
       }
     }
 
-    // 儲存新服務組成部分
-    async function saveNewComponent(clientServiceId) {
-      // 獲取當前客戶服務的 service_id（自动填充）
-      const currentService = clientDetail.services.find(s => s.client_service_id === clientServiceId);
-      const serviceId = currentService?.service_id;
-      
-      if (!serviceId) {
-        alert('無法獲取服務信息，請重新載入頁面');
-        return;
-      }
-      
-      // 獲取自定義任務配置
-      const tasks = window[`customTasks${clientServiceId}`] || [];
-      
-      // 收集选中的服务级别SOP（支持多选）
-      const sopCheckboxes = document.querySelectorAll(`#new-comp-sop-list-${clientServiceId} .comp-sop-checkbox:checked`);
-      const component_sop_ids = Array.from(sopCheckboxes)
-        .map(cb => parseInt(cb.value))
-        .filter(id => !isNaN(id) && id > 0);
-
-      // 验证：至少要有任务配置
-      if (tasks.length === 0) {
-        alert('請至少新增一個任務');
-        return;
-      }
-
-      const data = {
-        component_name: '任務配置',  // 固定名称
-        service_id: parseInt(serviceId),
-        service_item_id: null,  // 不需要服务项目
-        delivery_frequency: 'monthly',  // 默认每月
-        task_template_id: null,
-        due_date_rule: 'end_of_month',  // 默认月底
-        due_date_value: null,
-        estimated_hours: null,
-        advance_days: 7,
-        component_sop_ids: component_sop_ids,  // 服务层级SOP（多选）
-        auto_generate_task: true,
-        tasks: tasks.map(task => ({
-          task_name: task.name,
-          due_rule: task.due_rule,
-          due_value: task.due_value ? parseInt(task.due_value) : null,
-          estimated_hours: task.estimated_hours ? parseFloat(task.estimated_hours) : null,
-          advance_days: task.advance_days ? parseInt(task.advance_days) : 7,
-          assignee_user_id: task.assignee_user_id ? parseInt(task.assignee_user_id) : null,
-          sop_ids: (task.sop_ids || []).filter(id => !isNaN(id) && id > 0),  // 任务层级SOP（多选），过滤无效ID
-          notes: task.notes || ''
-        }))
-      };
-
-      try {
-        // 检查是否为编辑模式
-        const form = document.getElementById(`add-component-form-${clientServiceId}`);
-        const editId = form.getAttribute('data-edit-id');
-        
-        console.log('準備提交數據:', data);
-        
-        let res, successMsg;
-        if (editId) {
-          // 编辑模式：使用PUT
-          res = await fetch(`/internal/api/v1/service-components/${editId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
-          successMsg = '任務配置已更新';
-        } else {
-          // 新增模式：使用POST
-          res = await fetch(`/internal/api/v1/client-services/${clientServiceId}/components`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
-          successMsg = '任務配置已儲存';
-        }
-
-        const json = await res.json();
-        console.log('服務器響應:', json);
-
-        if (!json.ok) {
-          console.error('創建失敗詳情:', json);
-          alert(json.message || (editId ? '更新失敗' : '新增失敗'));
-          return;
-        }
-
-        alert(successMsg);
-        cancelAddComponent(clientServiceId);
-        
-        // 重新載入組成部分列表
-        const services = (await (await fetch(`/internal/api/v1/clients/${currentClientId}`)).json()).data.services;
-        const index = services.findIndex(s => s.client_service_id === clientServiceId);
-        if (index !== -1) {
-          await loadComponentsInline(index, clientServiceId);
-        }
-
-      } catch (err) {
-        console.error('新增服務組成部分失敗:', err);
-        alert('操作失敗');
-      }
-    }
 
     // 刪除任務配置
     async function deleteComponent(componentId, componentName) {
@@ -3593,9 +3503,11 @@
       const assigneeValue = document.getElementById('inputAssignee').value;
       const assigneeUserId = assigneeValue ? parseInt(assigneeValue) : 0;
       
+      const taxId = document.getElementById('inputTaxId').value.trim();
+      
       const payload = {
         company_name: document.getElementById('inputCompanyName').value.trim(),
-        tax_registration_number: document.getElementById('inputTaxId').value.trim() || null,
+        tax_registration_number: taxId || null,
         contact_person_1: document.getElementById('inputContactPerson1').value.trim() || null,
         contact_person_2: document.getElementById('inputContactPerson2').value.trim() || null,
         assignee_user_id: assigneeUserId,
@@ -3614,6 +3526,15 @@
       }
       if (!assigneeUserId || assigneeUserId <= 0) {
         showFieldError('assignee', '請選擇負責人員');
+        hasError = true;
+      }
+      // 驗證統編格式（如果有填的話）
+      if (taxId && taxId.length !== 8) {
+        showFieldError('tax_registration_number', '統一編號必須為8位數字');
+        hasError = true;
+      }
+      if (taxId && !/^\d+$/.test(taxId)) {
+        showFieldError('tax_registration_number', '統一編號只能包含數字');
         hasError = true;
       }
       
