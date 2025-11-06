@@ -362,7 +362,9 @@ export async function handleClients(request, env, me, requestId, url) {
 		const tagId = params.get("tag_id") || "";
 		const noCacheParam = (params.get("no_cache") === "1");
 		const noCacheHeader = (request.headers.get('x-no-cache') === '1');
-		const noCache = noCacheParam || noCacheHeader;
+		// 預設在客戶列表全面禁用伺服器端快取，確保即時顯示最新資料
+		const bypassDefault = true;
+		const noCache = bypassDefault || noCacheParam || noCacheHeader;
 		console.log('[CLIENTS][LIST] flags:', { noCache, noCacheParam, noCacheHeader, q: searchQuery, tagId });
 		
 			// ⚡ 优先尝试从KV缓存读取（极快<50ms）

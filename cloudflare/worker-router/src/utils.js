@@ -101,7 +101,7 @@ export function getCorsHeadersForRequest(request, env) {
 export function corsPreflightResponse(request, env) {
 	const headers = {
 		...getCorsHeadersForRequest(request, env),
-		"Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+		"Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
 		"Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, X-Request-Id",
 		"Access-Control-Max-Age": "600",
 	};
