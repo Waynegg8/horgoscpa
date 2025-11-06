@@ -9,6 +9,12 @@
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/leaves-page.css" />
     
+    <!-- 本頁全面停用快取與攔截器，所有資料直接走即時請求 -->
+    <script>
+      window.__DISABLE_DATA_CACHE__ = true;
+      window.__DISABLE_FETCH_INTERCEPTOR__ = true;
+    </script>
+    
     <!-- ⚡ 預加載系統（必須在所有其他腳本之前加載） -->
     <script src="/assets/js/data-cache.js"></script>
     <script src="/assets/js/fetch-interceptor.js"></script>
