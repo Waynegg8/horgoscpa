@@ -655,15 +655,20 @@
               const tr = document.createElement('tr');
               
               const baseSalary = Number(emp.baseSalary || 0);
+              const salaryItemsAmount = Number(emp.salaryItemsAmount || 0);
+              const expiredCompPay = Number(emp.expiredCompPay || 0);
+              const leaveDeduction = Number(emp.leaveDeduction || 0);
               const monthHours = Number(emp.monthHours || 0);
               const totalCompHoursGenerated = Number(emp.totalCompHoursGenerated || 0);
               const totalCompHoursUsed = Number(emp.totalCompHoursUsed || 0);
               const unusedCompHours = Number(emp.unusedCompHours || 0);
-              const expiredCompPay = Number(emp.expiredCompPay || 0);
               const laborCost = Number(emp.laborCost || 0);
               const overheadAllocation = Number(emp.overheadAllocation || 0);
               const empTotalCost = Number(emp.totalCost || 0);
               const actualHourlyRate = Number(emp.actualHourlyRate || 0);
+              
+              // 計算說明
+              const calcDetail = `底薪 ${formatCurrency(baseSalary)} + 津貼獎金 ${formatCurrency(salaryItemsAmount)} + 補休轉加班費 ${formatCurrency(expiredCompPay)}${leaveDeduction > 0 ? ` - 請假扣款 ${formatCurrency(leaveDeduction)}` : ''} = ${formatCurrency(laborCost)}`;
               
               totalCost += empTotalCost;
               tr.innerHTML = `
@@ -674,7 +679,7 @@
                 <td>${totalCompHoursUsed.toFixed(1)}</td>
                 <td style="color:#dc2626;">${unusedCompHours.toFixed(1)}</td>
                 <td style="color:#dc2626;">${formatCurrency(expiredCompPay)}</td>
-                <td style="font-weight:600;">${formatCurrency(laborCost)}</td>
+                <td style="font-weight:600;" title="${calcDetail}">${formatCurrency(laborCost)}</td>
                 <td>${formatCurrency(overheadAllocation)}</td>
                 <td style="font-weight:600;color:#16a34a;">${formatCurrency(empTotalCost)}</td>
                 <td style="font-weight:600;color:#0ea5e9;">${formatCurrency(actualHourlyRate)}</td>

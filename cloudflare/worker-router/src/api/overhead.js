@@ -455,7 +455,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						if (exists.is_deleted === 1) {
 							// 记录存在但已删除，恢复并更新
 							console.log(`[Generate] 恢復已刪除記錄: overhead_id=${exists.overhead_id}, cost_type_id=${t.cost_type_id}`);
-							await env.DATABASE.prepare(
+					await env.DATABASE.prepare(
 								`UPDATE MonthlyOverheadCosts SET amount = ?, notes = ?, is_deleted = 0, recorded_by = ?, recorded_at = datetime('now'), updated_at = datetime('now') WHERE overhead_id = ?`
 							).bind(Number(t.amount||0), t.notes || '[auto]', String(me.user_id), exists.overhead_id).run();
 							created++;
@@ -540,20 +540,20 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			const candidates = [];
 			for (const r of (rows?.results||[])) {
 				try {
-					const exists = await env.DATABASE.prepare(
-						`SELECT 1 FROM MonthlyOverheadCosts WHERE cost_type_id = ? AND year = ? AND month = ? AND is_deleted = 0 LIMIT 1`
-					).bind(r.cost_type_id, year, month).first();
-					candidates.push({
-						templateId: r.template_id,
-						costTypeId: r.cost_type_id,
+				const exists = await env.DATABASE.prepare(
+					`SELECT 1 FROM MonthlyOverheadCosts WHERE cost_type_id = ? AND year = ? AND month = ? AND is_deleted = 0 LIMIT 1`
+				).bind(r.cost_type_id, year, month).first();
+				candidates.push({
+					templateId: r.template_id,
+					costTypeId: r.cost_type_id,
 						costName: r.cost_name || `[ID:${r.cost_type_id}]`,
-						amount: Number(r.amount||0),
-						notes: r.notes||'',
-						alreadyExists: !!exists
-					});
+					amount: Number(r.amount||0),
+					notes: r.notes||'',
+					alreadyExists: !!exists
+				});
 				} catch (err) {
 					console.error(`[Preview] 检查模板 ${r.template_id} 失败:`, err);
-				}
+			}
 			}
 			
 			console.log(`[Preview] 返回 ${candidates.length} 个候选项`);
@@ -824,27 +824,81 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					}
 				}
 				
-				// 2.2 計算本月產生的補休時數
+				// 2.2 從工時記錄實時計算本月產生的補休時數
 				const [y, m] = yearMonth.split('-');
 				const firstDay = `${y}-${m}-01`;
 				const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
 				const lastDayStr = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
 				
-				const compGrantsRows = await env.DATABASE.prepare(
-					`SELECT hours_generated, original_rate FROM CompensatoryLeaveGrants
-					 WHERE user_id = ? AND generated_date >= ? AND generated_date <= ?`
+				const timesheetsRows = await env.DATABASE.prepare(
+					`SELECT work_date, work_type, hours 
+					 FROM Timesheets 
+					 WHERE user_id = ? AND work_date >= ? AND work_date <= ? AND is_deleted = 0`
 				).bind(userId, firstDay, lastDayStr).all();
 				
-				// 記錄補休產生明細（用於計算轉加班費）
+				// 工時類型定義（與 payroll.js 一致）
+				const WORK_TYPES = {
+					1: { multiplier: 1.0, isOvertime: false },
+					2: { multiplier: 1.34, isOvertime: true },
+					3: { multiplier: 1.67, isOvertime: true },
+					4: { multiplier: 1.34, isOvertime: true },
+					5: { multiplier: 1.67, isOvertime: true },
+					6: { multiplier: 2.67, isOvertime: true },
+					7: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },  // 國定假日8h內：固定8h補休
+					8: { multiplier: 1.34, isOvertime: true },
+					9: { multiplier: 1.67, isOvertime: true },
+					10: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' }, // 例假日8h內：固定8h補休
+					11: { multiplier: 1.34, isOvertime: true },
+					12: { multiplier: 1.67, isOvertime: true },
+				};
+				
+				// 先統計 fixed_8h 類型的每日總工時（用於分配補休）
+				const dailyFixedTypeMap = {};
+				for (const ts of (timesheetsRows?.results || [])) {
+					const workTypeId = parseInt(ts.work_type);
+					const workType = WORK_TYPES[workTypeId];
+					const hours = Number(ts.hours || 0);
+					
+					if (workType && workType.special === 'fixed_8h') {
+						const key = `${ts.work_date}:${workTypeId}`;
+						if (!dailyFixedTypeMap[key]) {
+							dailyFixedTypeMap[key] = 0;
+						}
+						dailyFixedTypeMap[key] += hours;
+					}
+				}
+				
+				// 計算補休產生（所有加班都先產生補休）
 				const compGenerationDetails = [];
 				let totalCompHoursGenerated = 0;
-				for (const grant of (compGrantsRows?.results || [])) {
-					const hours = Number(grant.hours_generated || 0);
-					totalCompHoursGenerated += hours;
-					compGenerationDetails.push({
-						hours: hours,
-						rate: Number(grant.original_rate || 1.0)
-					});
+				
+				for (const ts of (timesheetsRows?.results || [])) {
+					const workTypeId = parseInt(ts.work_type);
+					const workType = WORK_TYPES[workTypeId];
+					const hours = Number(ts.hours || 0);
+					
+					if (!workType || !workType.isOvertime || hours === 0) continue;
+					
+					// 特殊類型：國定假日/例假日 8h 內，固定產生 8h 補休
+					if (workType.special === 'fixed_8h') {
+						const key = `${ts.work_date}:${workTypeId}`;
+						const totalDailyHours = dailyFixedTypeMap[key];
+						const ratio = hours / totalDailyHours;
+						const compHours = 8 * ratio; // 固定8h按比例分配
+						
+						totalCompHoursGenerated += compHours;
+						compGenerationDetails.push({
+							hours: compHours,
+							rate: workType.multiplier
+						});
+					} else {
+						// 一般加班：1:1 產生補休
+						totalCompHoursGenerated += hours;
+						compGenerationDetails.push({
+							hours: hours,
+							rate: workType.multiplier
+						});
+					}
 				}
 				
 				// 2.3 計算本月使用的補休時數
@@ -935,16 +989,21 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				const totalCost = totalLaborCost + overheadAllocation;
 				const actualHourlyRate = monthHours > 0 ? Math.round(totalCost / monthHours) : 0;
 				
+				// 計算薪資成本細節（用於前端顯示）
+				const salaryItemsTotal = totalLaborCostCents - monthlySalary * 100 - expiredCompPayCents + leaveDeductionCents;
+				
 				employees.push({
 					userId,
 					name: user.name,
 					baseSalary: monthlySalary, // 底薪
+					salaryItemsAmount: Math.round(salaryItemsTotal / 100), // 津貼+獎金等
+					expiredCompPay, // 補休轉加班費
+					leaveDeduction: Math.round(leaveDeductionCents / 100), // 請假扣款
 					totalCompHoursGenerated: Math.round(totalCompHoursGenerated * 10) / 10, // 本月產生補休
 					totalCompHoursUsed: Math.round(totalCompHoursUsed * 10) / 10, // 本月使用補休
 					unusedCompHours: Math.round(unusedCompHours * 10) / 10, // 未使用補休
-					expiredCompPay, // 未使用補休轉加班費
 					monthHours: Math.round(monthHours * 10) / 10, // 本月總工時
-					laborCost: totalLaborCost, // 薪資成本（包括底薪、津贴、奖金、加班费等所有项目）
+					laborCost: totalLaborCost, // 薪資成本（底薪+津貼獎金+加班費-請假扣款）
 					overheadAllocation, // 分攤管理費用
 					totalCost, // 總成本（薪資 + 管理費）
 					actualHourlyRate // 實際時薪（包含管理費分攤）= 總成本 / 工時
