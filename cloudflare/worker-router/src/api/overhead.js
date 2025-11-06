@@ -51,8 +51,14 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			let body; try { body = await request.json(); } catch (_) { return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders); }
 			const codeInput = String(body?.cost_code || body?.code || "").trim().toUpperCase();
 			const name = String(body?.cost_name || body?.name || "").trim();
-			const category = String(body?.category || "").trim();
-			const methodVal = String(body?.allocation_method || body?.allocationMethod || "").trim();
+			let category = String(body?.category || "").trim();
+			let methodVal = String(body?.allocation_method || body?.allocationMethod || "").trim();
+
+			// 寬鬆映射：允許傳中文或駝峰鍵名，統一轉為有效值
+			const catMap = { 'fixed':'fixed', 'variable':'variable', '固定':'fixed', '變動':'variable' };
+			const methodMap = { 'per_employee':'per_employee', 'per_hour':'per_hour', 'per_revenue':'per_revenue', '按員工數':'per_employee', '按工時':'per_hour', '按收入':'per_revenue' };
+			category = catMap[category] || category;
+			methodVal = methodMap[methodVal] || methodVal;
 			const description = (body?.description || "").trim();
 			const errors = [];
 			if (!name || name.length > 50) errors.push({ field:"cost_name", message:"必填且 ≤ 50" });
@@ -253,11 +259,12 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				// 3. 計算年度總工時（2080小時 = 40小時/週 × 52週）
 				const annualHours = 2080;
 				
-				// 4. 計算年度特休時數
-				const leaveBalanceRow = await env.DATABASE.prepare(
-					"SELECT annual_leave_balance FROM LeaveBalances WHERE user_id = ? AND year = ?"
+				// 4. 計算年度特休時數（若無資料則為 0）
+				const annualRow = await env.DATABASE.prepare(
+					"SELECT total FROM LeaveBalances WHERE user_id = ? AND year = ? AND leave_type = 'annual'"
 				).bind(userId, year).first();
-				const annualLeaveHours = Number(leaveBalanceRow?.annual_leave_balance || 0);
+				const annualLeaveDays = Number(annualRow?.total || 0);
+				const annualLeaveHours = Math.max(0, annualLeaveDays * 8);
 				
 				// 5. 計算實際工時
 				const actualHours = annualHours - annualLeaveHours;

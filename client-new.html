@@ -88,7 +88,7 @@
           </div>
           <div class="form-field">
             <label>標籤管理</label>
-            <div id="tagsDisplay" style="min-height:36px; display:flex; gap:8px; flex-wrap:wrap; padding: 8px 0;"><span style="color:#9ca3af;">載入中...</span></div>
+            <div id="tagsDisplay" style="min-height:36px; display:flex; gap:8px; flex-wrap:wrap; padding:8px 0;"><span style="color:#9ca3af;">尚未設定標籤</span></div>
             <button type="button" class="btn btn-sm btn-secondary" onclick="showTagsModal()">+ 管理標籤</button>
           </div>
         </div>
@@ -216,63 +216,93 @@
     </div>
   </div>
   
-  <!-- 集中新增收費彈窗 -->
-  <div id="globalBillingModal" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
-    <div style="background:white; border-radius:8px; padding:20px; width:90%; max-width:780px; max-height:80vh; overflow:auto;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:0;">新增收費</h3>
-        <button onclick="closeGlobalBillingModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280">×</button>
+  <!-- 新增/編輯收費彈窗（與詳情頁一致） -->
+  <div id="billingModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 8px; padding: 24px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0;" id="billingModalTitle">新增收費</h3>
+        <button onclick="closeBillingModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">&times;</button>
       </div>
-      <div style="margin-top:12px; display:grid; grid-template-columns: 1fr 2fr; gap:12px;">
-        <div>
-          <label>選擇服務</label>
-          <select id="gb-service-select" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></select>
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500;">選擇服務 *</label>
+        <select id="modal-service-select" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+          <option value="">請選擇服務</option>
+        </select>
+      </div>
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500;">收費類型 *</label>
+        <div style="display: flex; gap: 12px;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 10px 16px; border: 2px solid #d1d5db; border-radius: 6px; flex: 1;">
+            <input type="radio" name="billing-type" value="monthly" checked onchange="switchBillingType('monthly')" style="cursor: pointer;" />
+            <div>
+              <div style="font-weight: 500; font-size: 14px;">按月收費</div>
+              <div style="font-size: 12px; color: #6b7280;">每月固定金額</div>
+            </div>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 10px 16px; border: 2px solid #d1d5db; border-radius: 6px; flex: 1;">
+            <input type="radio" name="billing-type" value="one-time" onchange="switchBillingType('one-time')" style="cursor: pointer;" />
+            <div>
+              <div style="font-weight: 500; font-size: 14px;">一次性收費</div>
+              <div style="font-size: 12px; color: #6b7280;">設立費、顧問費等</div>
+            </div>
+          </label>
         </div>
-        <div>
-          <label>收費類型</label>
-          <div style="display:flex; gap:12px; align-items:center;">
-            <label style="display:flex; align-items:center; gap:6px;">
-              <input type="radio" name="gb-type" value="monthly" checked> 按月
-            </label>
-            <label style="display:flex; align-items:center; gap:6px;">
-              <input type="radio" name="gb-type" value="one-time"> 一次性
-            </label>
+      </div>
+      <div id="monthly-billing-form" style="margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+          <div>
+            <label style="display: block; margin-bottom: 8px;">每月金額 *</label>
+            <input id="modal-batch-amount" type="number" step="0.01" min="0" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" />
           </div>
-        </div>
-      </div>
-      <div id="gb-monthly" style="margin-top:10px;">
-        <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:12px;">
-          <div><label>每月金額 *</label><input id="gb-amount" type="number" step="0.01" min="0" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
-          <div><label>付款期限（天）</label><input id="gb-due" type="number" value="30" min="1" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
-          <div><label>月份範圍</label>
-            <select id="gb-range" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;">
+          <div>
+            <label style="display: block; margin-bottom: 8px;">付款期限（天）</label>
+            <input id="modal-batch-due" type="number" value="30" min="1" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 8px;">月份範圍</label>
+            <select id="modal-batch-range" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
               <option value="all">全年（1-12月）</option>
               <option value="custom">自選月份</option>
             </select>
           </div>
         </div>
-        <div id="gb-months" style="display:none; margin-top:8px;">
-          ${Array.from({length:12},(_,i)=>`<label style=\"display:inline-flex;align-items:center;gap:6px;margin:4px 8px;\"><input type=\"checkbox\" class=\"gb-month\" value=\"${i+1}\" checked> ${i+1}月</label>`).join('')}
-          <div style="margin-top:6px;"><button class="btn btn-sm btn-secondary" type="button" onclick="gbToggleMonths(true)">全選</button> <button class="btn btn-sm btn-secondary" type="button" onclick="gbToggleMonths(false)">全不選</button></div>
+        <div id="modal-month-checkboxes" style="display: none; margin-top: 10px;">
+          ${Array.from({length:12},(_,i)=>`<label style=\"display:inline-flex;align-items:center;gap:6px;margin:4px 8px;\"><input type=\"checkbox\" class=\"modal-month-checkbox\" value=\"${i+1}\" checked> ${i+1}月</label>`).join('')}
+          <div style="margin-top: 8px;">
+            <button class="btn btn-sm btn-secondary" onclick="modalSelectAllMonths(true)" type="button">全選</button>
+            <button class="btn btn-sm btn-secondary" onclick="modalSelectAllMonths(false)" type="button">全不選</button>
+          </div>
         </div>
       </div>
-      <div id="gb-onetime" style="margin-top:10px; display:none;">
-        <div style="display:grid; grid-template-columns: repeat(2,1fr); gap:12px;">
-          <div><label>項目名稱 *</label><input id="gb-ot-desc" type="text" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
-          <div><label>收費日期 *</label><input id="gb-ot-date" type="date" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
+      <div id="onetime-billing-form" style="display: none; margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="display: block; margin-bottom: 8px;">項目名稱 *</label>
+            <input id="modal-onetime-description" type="text" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 8px;">收費日期 *</label>
+            <input id="modal-onetime-date" type="date" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
         </div>
-        <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-top:8px;">
-          <div><label>金額 *</label><input id="gb-ot-amount" type="number" step="0.01" min="0" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
-          <div><label>付款期限（天）</label><input id="gb-ot-due" type="number" value="30" min="1" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
-          <div><label>備註</label><input id="gb-ot-notes" type="text" style="width:100%; padding:8px; border:1px solid #d1d5db; border-radius:6px;"></div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px;">
+          <div>
+            <label style="display: block; margin-bottom: 8px;">金額 *</label>
+            <input id="modal-onetime-amount" type="number" step="0.01" min="0" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 8px;">付款期限（天）</label>
+            <input id="modal-onetime-due" type="number" value="30" min="1" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 8px;">備註</label>
+            <input id="modal-onetime-notes" type="text" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;" />
+          </div>
         </div>
       </div>
-      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
-        <label style="display:inline-flex; align-items:center; gap:6px; margin-right:auto;">
-          <input type="checkbox" id="generate-now"> 保存後立即產生任務（管理員）
-        </label>
-        <button class="btn btn-secondary" onclick="closeGlobalBillingModal()">取消</button>
-        <button class="btn btn-primary" onclick="saveGlobalBillingFromModal()">確認新增</button>
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="closeBillingModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveBillingFromModal()">確認新增</button>
       </div>
     </div>
   </div>
@@ -377,27 +407,33 @@
       if (!container) return;
       const tags = allTags.filter(t => selectedTagIds.has(t.tag_id));
       if (tags.length === 0) {
-        container.innerHTML = '<span style="color:#9ca3af;">尚未選擇標籤</span>';
+        container.innerHTML = '<span style="color: #9ca3af;">尚未設定標籤</span>';
         return;
       }
-      container.innerHTML = tags.map(t => `<span class="chip" style="background:${t.tag_color || '#6b7280'}">${t.tag_name}</span>`).join('');
+      container.innerHTML = tags.map(t => (
+        `<span style="display:inline-flex;align-items:center;padding:4px 12px;background:${t.tag_color || '#6b7280'};color:#fff;border-radius:4px;font-size:13px;">${t.tag_name}</span>`
+      )).join('');
     }
 
-    function renderTagsSelect() {
-      // 改為在 modal 中渲染
+    function renderAllTags() {
       const container = document.getElementById('allTagsList');
       if (!container) return;
-      if (!allTags || allTags.length === 0) { container.innerHTML = '<span style="color:#9ca3af;">尚無標籤</span>'; return; }
+      if (!allTags || allTags.length === 0) { container.innerHTML = '<span style="color: #9ca3af;">暫無標籤</span>'; return; }
       container.innerHTML = allTags.map(tag => {
         const isSelected = selectedTagIds.has(tag.tag_id);
-        return `<button type="button" onclick="toggleTag(${tag.tag_id})" style="display:inline-flex;align-items:center;padding:6px 14px; background:${isSelected ? (tag.tag_color||'#3b82f6') : '#f3f4f6'}; color:${isSelected ? '#fff' : '#374151'}; border:${isSelected ? 'none' : '1px solid #d1d5db'}; border-radius:4px; font-size:13px; cursor:pointer; transition:all .2s;">${isSelected ? '✓ ' : ''}${tag.tag_name}</button>`;
+        return `
+          <button type="button" onclick="toggleTag(${tag.tag_id})"
+                  style="display:inline-flex;align-items:center;padding:6px 14px;background:${isSelected ? (tag.tag_color||'#3b82f6') : '#f3f4f6'};color:${isSelected ? '#fff' : '#374151'};border:${isSelected ? 'none' : '1px solid #d1d5db'};border-radius:4px;font-size:13px;cursor:pointer;transition:all .2s;">
+            ${isSelected ? '✓ ' : ''}${tag.tag_name}
+          </button>`;
       }).join('');
     }
 
     function toggleTag(tagId) {
       if (selectedTagIds.has(tagId)) selectedTagIds.delete(tagId); else selectedTagIds.add(tagId);
       renderTagsDisplay();
-      renderTagsSelect();
+      renderAllTags();
+      renderSelectedTags();
     }
     window.toggleTag = toggleTag;
 
@@ -1007,8 +1043,8 @@
     // ===== 標籤管理（與詳情頁一致的行為） =====
     function showTagsModal() {
       const modal = document.getElementById('tagsModal');
-      renderTagsSelect();
-      renderSelectedTagsInModal();
+      renderAllTags();
+      renderSelectedTags();
       modal.style.display = 'flex';
     }
     function closeTagsModal() {
@@ -1027,13 +1063,13 @@
       form.style.display = showing ? 'none' : 'block';
       if (btn) btn.textContent = showing ? '+ 新增標籤' : '取消新增';
     }
-    function renderSelectedTagsInModal() {
+    function renderSelectedTags() {
       const container = document.getElementById('selectedTagsList');
       if (!container) return;
       const tags = allTags.filter(t => selectedTagIds.has(t.tag_id));
       container.innerHTML = tags.length === 0
         ? '<span style="color:#9ca3af;">尚未選擇標籤</span>'
-        : tags.map(t => `<span class="chip" style="display:inline-flex;align-items:center;gap:6px;background:${t.tag_color||'#6b7280'};color:#fff;">${t.tag_name}<button type="button" style="background:none;border:none;color:#fff;cursor:pointer;" onclick="toggleTag(${t.tag_id}); renderSelectedTagsInModal();">×</button></span>`).join('');
+        : tags.map(t => `<span style=\"display:inline-flex;align-items:center;padding:4px 12px;background:${t.tag_color||'#6b7280'};color:#fff;border-radius:4px;font-size:13px;\">${t.tag_name}</span>`).join('');
     }
     function saveNewTag() { createNewTag(); }
     function saveTags() {
