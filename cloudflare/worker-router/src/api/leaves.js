@@ -673,7 +673,8 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 	if (path.startsWith("/internal/api/v1/leaves/") && method === "DELETE") {
 		const leaveId = path.replace("/internal/api/v1/leaves/", "").trim();
 		
-		if (!leaveId) {
+		// 排除其他子路由
+		if (!leaveId || leaveId.includes('/') || leaveId === 'balances' || leaveId === 'life-events') {
 			return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"缺少請假記錄 ID", meta:{ requestId } }, corsHeaders);
 		}
 		

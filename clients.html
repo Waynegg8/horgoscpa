@@ -531,20 +531,30 @@
             }
             
             console.log('[批量分配] 成功！更新數量:', json.data?.updated_count);
-            alert(json.message || '已完成批量分配');
+            console.log('[批量分配] 完整響應:', JSON.stringify(json, null, 2));
+            
+            // 暂时不自动刷新，让用户能看到日志
             closeBatchAssignModal();
             
             // 清除客户列表缓存（确保显示最新数据）
             if (window.DataCache) {
-              // 清除所有客户列表相关的缓存
               ['clients_page1', 'clients_page2', 'clients_page3', 'clients_all'].forEach(key => {
                 localStorage.removeItem(`cache_${key}`);
               });
               console.log('[Clients] ✓ 已清除客户列表缓存');
             }
             
-            // 刷新页面以显示最新数据
-            location.reload();
+            // 显示提示，让用户查看日志后手动刷新
+            alert(`✅ ${json.message || '已完成批量分配'}\n\n📊 更新數量: ${json.data?.updated_count}\n\n⚠️ 請查看 Console 日志，然後手動刷新頁面（按F5）`);
+            
+            console.log('='.repeat(50));
+            console.log('✅ 批量分配完成！');
+            console.log('📊 請檢查上面的日志，特別是：');
+            console.log('   1. [批量分配] 發送請求 - 確認 client_ids 是否正確');
+            console.log('   2. [批量分配] API響應 - 確認 updated_count 的值');
+            console.log('   3. 如果 updated_count = 0，說明數據庫更新失敗');
+            console.log('⚠️ 查看完日志後，請按 F5 刷新頁面');
+            console.log('='.repeat(50));
           } catch (err) {
             alert('分配失敗，請稍後再試');
           } finally {
