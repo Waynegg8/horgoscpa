@@ -33,9 +33,9 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			if (!me.is_admin && String(row.user_id) !== String(me.user_id)) {
 				return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
 			}
-			// 標記為刪除（不再計入餘額）
+			// 直接刪除事件
 			await env.DATABASE.prepare(
-				`UPDATE LifeEventLeaveGrants SET status = 'deleted' WHERE grant_id = ?`
+				`DELETE FROM LifeEventLeaveGrants WHERE grant_id = ?`
 			).bind(grantId).run();
 			// 清除相關快取
 			Promise.all([
