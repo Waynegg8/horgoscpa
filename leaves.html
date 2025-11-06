@@ -690,6 +690,8 @@
             }
             alert(json.message || '登記成功');
             closeEventModal();
+            // 清除前端 leaves_balances 緩存，確保餘額立即刷新
+            try { if (window.DataCache && window.DataCache.clearCache) { window.DataCache.clearCache('leaves_balances'); } } catch(_) {}
             await loadBalances();
             // 重新載入可用假期選項
             const meRes = await fetch(`${apiBase}/auth/me`, { credentials:'include' });

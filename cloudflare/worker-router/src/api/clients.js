@@ -490,12 +490,35 @@ export async function handleClients(request, env, me, requestId, url) {
 					});
 					console.log('[CLIENTS][LIST] fallback tag mapping keys =', Object.keys(tagsMap).length);
 				}
+
+				// 批量獲取服務數量
+				const svcCountRows = await env.DATABASE.prepare(
+					`SELECT cs.client_id, COUNT(1) AS svc_count
+					 FROM ClientServices cs
+					 WHERE cs.client_id IN (${placeholders}) AND cs.is_deleted = 0
+					 GROUP BY cs.client_id`
+				).bind(...clientIds).all();
+				const serviceCountMap = {};
+				svcCountRows.results?.forEach(r => { serviceCountMap[r.client_id] = Number(r.svc_count || 0); });
+
+				// 批量彙總全年收費總額（所有明細加總）
+				const yearTotalRows = await env.DATABASE.prepare(
+					`SELECT cs.client_id, SUM(COALESCE(sbs.billing_amount, 0)) AS total_amount
+					 FROM ClientServices cs
+					 LEFT JOIN ServiceBillingSchedule sbs ON sbs.client_service_id = cs.client_service_id
+					 WHERE cs.client_id IN (${placeholders}) AND cs.is_deleted = 0
+					 GROUP BY cs.client_id`
+				).bind(...clientIds).all();
+				const yearTotalMap = {};
+				yearTotalRows.results?.forEach(r => { yearTotalMap[r.client_id] = Number(r.total_amount || 0); });
 			}
 			
 			// 映射数据
 			const data = (rows?.results || []).map(r => {
 				const assigneeName = r.assignee_user_id ? (usersMap[r.assignee_user_id] || "未分配") : "未分配";
 				const tags = tagsMap[r.client_id] || [];
+				const servicesCount = Number((typeof serviceCountMap !== 'undefined' && serviceCountMap[r.client_id]) || 0);
+				const yearTotal = Number((typeof yearTotalMap !== 'undefined' && yearTotalMap[r.client_id]) || 0);
 				
 				return {
 					clientId: r.client_id,
@@ -504,11 +527,11 @@ export async function handleClients(request, env, me, requestId, url) {
 					contact_person_1: r.contact_person_1 || "",
 					assigneeName: assigneeName,
 					tags: tags,
-					services: [], // 暂时返回空数组
+					services_count: servicesCount,
 					phone: r.phone || "",
 					email: r.email || "",
 					createdAt: r.created_at,
-					year_total: 0 // 暂时返回0
+					year_total: yearTotal
 				};
 			});
 			

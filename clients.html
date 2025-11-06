@@ -257,13 +257,13 @@
               if (tagsArr.length > 3) tagsHtml += `<span class="chip" style="background:#ccc">+${tagsArr.length - 3}</span>`;
             }
             
-            const serviceCount = (r.services && Array.isArray(r.services)) ? r.services.length : 0;
+            const serviceCount = Number(r.services_count || r.servicesCount || (Array.isArray(r.services) ? r.services.length : 0)) || 0;
             const serviceCountHtml = serviceCount > 0 
               ? `<span class="service-count" style="background:#2563eb;color:#fff;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;">${serviceCount}</span>`
               : '<span class="text-muted">無</span>';
             
             // 全年收费总额（需要从后端API返回）
-            const yearTotal = r.year_total || r.yearTotal || 0;
+            const yearTotal = Number(r.year_total || r.yearTotal || 0) || 0;
             const yearTotalHtml = yearTotal > 0 
               ? `<span class="text-success">NT$ ${yearTotal.toLocaleString()}</span>`
               : '<span class="text-muted">-</span>';
