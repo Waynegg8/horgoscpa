@@ -1789,3 +1789,8 @@ async function downloadPayrollSnapshot(env, snapshotId, requestId, corsHeaders) 
 	});
 }
 
+/**
+ * 导出薪资计算函数供报表使用
+ */
+export { calculateEmployeePayroll as calculateEmployeePayrollForReport };
+

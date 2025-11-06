@@ -747,8 +747,8 @@
             totalSalaryEl.textContent = formatNumber(data.summary?.total_gross_salary || 0);
             tbody.innerHTML = '';
             if (!byEmp.length) {
-              tbody.innerHTML = '<tr><td colspan="10" class="muted">尚無資料（可能未產製月結或該月份無薪資數據）</td></tr>';
-              console.warn('[薪資報表] 無員工數據 - 請先到【薪資】頁面點擊"產製月結"按鈕');
+              tbody.innerHTML = '<tr><td colspan="10" class="muted">尚無資料（該月份無員工或薪資數據）</td></tr>';
+              console.warn('[薪資報表] 無員工數據');
             } else {
               byEmp.forEach(r => {
                 const tr = document.createElement('tr');

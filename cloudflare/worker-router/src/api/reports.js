@@ -399,27 +399,40 @@ export async function handleReports(request, env, me, requestId, url, path) {
 			}
 			const ym = `${y}-${String(m).padStart(2,'0')}`;
 		
-		// 从最新的 PayrollSnapshot 读取数据
-		const snapshot = await env.DATABASE.prepare(
-			"SELECT snapshot_data FROM PayrollSnapshots WHERE month = ? ORDER BY version DESC LIMIT 1"
-		).bind(ym).first();
+		// 直接从数据库实时计算薪资（不依赖PayrollSnapshots）
+		// 导入薪资计算函数
+		const { calculateEmployeePayrollForReport } = await import('./payroll.js');
 		
-		if (!snapshot || !snapshot.snapshot_data) {
-			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data:{ summary:{ total_base_salary:0, total_allowances:0, total_bonuses:0, total_overtime_pay:0, total_transport_subsidy:0, total_meal_allowance:0, total_gross_salary:0, total_net_salary:0 }, by_employee:[] }, meta:{ requestId, month:ym } }, corsHeaders);
+		// 获取所有活跃员工
+		const usersQuery = await env.DATABASE.prepare(
+			`SELECT user_id FROM Users WHERE is_deleted = 0 ORDER BY user_id`
+		).all();
+		const allUsers = usersQuery.results || [];
+		
+		// 如果指定了userId，只计算该用户
+		const usersToCalculate = userId 
+			? allUsers.filter(u => String(u.user_id) === String(userId))
+			: allUsers;
+		
+		// 实时计算每个员工的薪资
+		const results = [];
+		for (const user of usersToCalculate) {
+			try {
+				const payroll = await calculateEmployeePayrollForReport(env, user.user_id, ym);
+				if (payroll) {
+					results.push(payroll);
+				}
+			} catch (error) {
+				console.error(`[Reports] 计算员工 ${user.user_id} 薪资失败:`, error);
+			}
 		}
-		
-		const snapshotData = JSON.parse(snapshot.snapshot_data);
-		const users = snapshotData.users || [];
-		
-		// 筛选特定用户（如果有userId参数）
-		const filteredUsers = userId ? users.filter(u => String(u.userId) === String(userId)) : users;
 		
 		const cents = (v)=> Number(v||0);
 		const toAmt = (c)=> Math.round(c/100);
 		
-		const byEmployee = filteredUsers.map(u => ({
+		const byEmployee = results.map(u => ({
 			user_id: u.userId,
-			username: u.name || u.username, // 显示姓名，如果没有则显示用户名
+			username: u.name || u.username,
 			base_salary: toAmt(cents(u.baseSalaryCents)),
 			// 津贴 = 加给 + 不定期津贴
 			total_allowances: toAmt(cents(u.totalRegularAllowanceCents) + cents(u.totalIrregularAllowanceCents)),
