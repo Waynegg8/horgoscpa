@@ -694,51 +694,71 @@
           
           console.log('[薪資報表] 開始載入', { year, month, userId });
           
-          const params = new URLSearchParams();
-          params.set('year', year);
-          params.set('month', month);
-          if (userId) params.set('user_id', userId);
+          // 直接使用薪资页面的API（与薪资页面完全相同）
+          const monthStr = `${year}-${String(month).padStart(2, '0')}`;
           const totalSalaryEl = document.getElementById('pr-total-salary');
           const tbody = panel.querySelector('.report-table tbody');
           try {
             tbody.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
-            const url = `${apiBase}/reports/payroll-summary?${params.toString()}`;
+            const url = `${apiBase}/admin/payroll/preview?month=${encodeURIComponent(monthStr)}`;
             console.log('[薪資報表] API請求:', url);
             const res = await fetch(url, { credentials:'include' });
             console.log('[薪資報表] API回應狀態:', res.status);
             if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
             const json = await res.json();
             console.log('[薪資報表] API回應數據:', json);
-            console.log('[薪資報表] 完整響應:', JSON.stringify(json, null, 2));
             if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
-            const data = json.data || { summary:{}, by_employee:[] };
-            const byEmp = Array.isArray(data.by_employee) ? data.by_employee : [];
-            console.log('[薪資報表] 員工數據數組長度:', byEmp.length);
-            console.log('[薪資報表] 員工數據:', byEmp);
-            totalSalaryEl.textContent = formatNumber(data.summary?.total_gross_salary || 0);
+            
+            // 薪资页面返回格式：{ data: { users: [...] } }
+            let users = json.data?.users || [];
+            
+            // 如果指定了员工，只显示该员工
+            if (userId) {
+              users = users.filter(u => String(u.userId) === String(userId));
+            }
+            
+            console.log('[薪資報表] 員工數據數組長度:', users.length);
+            
+            // 计算汇总
+            let totalGrossSalary = 0;
+            users.forEach(u => {
+              totalGrossSalary += Math.floor((u.grossSalaryCents || 0) / 100);
+            });
+            
+            totalSalaryEl.textContent = formatNumber(totalGrossSalary);
             tbody.innerHTML = '';
-            if (!byEmp.length) {
+            
+            if (!users.length) {
               tbody.innerHTML = '<tr><td colspan="10" class="muted">尚無資料（該月份無員工或薪資數據）</td></tr>';
               console.warn('[薪資報表] 無員工數據');
             } else {
-              byEmp.forEach(r => {
+              users.forEach(u => {
                 const tr = document.createElement('tr');
+                const baseSalary = Math.floor((u.baseSalaryCents || 0) / 100);
+                const totalAllowances = Math.floor((u.totalRegularAllowanceCents || 0) / 100) + Math.floor((u.totalIrregularAllowanceCents || 0) / 100);
+                const totalBonuses = Math.floor((u.totalRegularBonusCents || 0) / 100);
+                const overtimePay = Math.floor((u.overtimeCents || 0) / 100);
+                const transportSubsidy = Math.floor((u.transportCents || 0) / 100);
+                const mealAllowance = Math.floor((u.mealAllowanceCents || 0) / 100);
+                const grossSalary = Math.floor((u.grossSalaryCents || 0) / 100);
+                const netSalary = Math.floor((u.netSalaryCents || 0) / 100);
+                
                 tr.innerHTML = `
-                  <td>${r.username||r.user_id}</td>
-                  <td class="text-right">${formatNumber(r.base_salary)}</td>
-                  <td class="text-right">${formatNumber(r.total_allowances)}</td>
-                  <td class="text-right">${formatNumber(r.total_bonuses)}</td>
-                  <td class="text-right">${formatNumber(r.overtime_pay)}</td>
-                  <td class="text-right">${formatNumber(r.transport_subsidy || 0)}</td>
-                  <td class="text-right">${formatNumber(r.meal_allowance || 0)}</td>
-                  <td class="text-right">${formatNumber(r.gross_salary)}</td>
-                  <td class="text-right">${formatNumber(r.net_salary)}</td>
-                  <td>${r.has_full_attendance ? '是' : '否'}</td>
+                  <td>${u.name || u.username || u.userId}</td>
+                  <td class="text-right">${formatNumber(baseSalary)}</td>
+                  <td class="text-right">${formatNumber(totalAllowances)}</td>
+                  <td class="text-right">${formatNumber(totalBonuses)}</td>
+                  <td class="text-right">${formatNumber(overtimePay)}</td>
+                  <td class="text-right">${formatNumber(transportSubsidy)}</td>
+                  <td class="text-right">${formatNumber(mealAllowance)}</td>
+                  <td class="text-right">${formatNumber(grossSalary)}</td>
+                  <td class="text-right">${formatNumber(netSalary)}</td>
+                  <td>${u.isFullAttendance ? '是' : '否'}</td>
                 `;
                 tbody.appendChild(tr);
               });
             }
-            console.log('[薪資報表] 載入完成', { employeeCount: byEmp.length });
+            console.log('[薪資報表] 載入完成', { employeeCount: users.length });
           } catch (err) {
             console.error('[薪資報表] 查詢失敗:', err);
             tbody.innerHTML = `<tr><td colspan="10" style="color:#c0392b;">查詢失敗: ${err.message || '未知錯誤'}</td></tr>`;
