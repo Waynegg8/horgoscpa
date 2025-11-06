@@ -92,6 +92,8 @@
       <section id="panel-employee" class="panel" role="tabpanel" aria-labelledby="tab-employee">
         <div class="card">
           <div class="section-toolbar">
+            <label for="month-emp">月份</label>
+            <input id="month-emp" type="month" aria-label="員工成本月份" />
             <div class="toolbar-spacer"></div>
             <button type="button" class="btn" id="btn-refresh-emp" disabled>刷新</button>
           </div>
@@ -139,6 +141,8 @@
       <section id="panel-client" class="panel" role="tabpanel" aria-labelledby="tab-client">
         <div class="card">
           <div class="section-toolbar">
+            <label for="month-client">月份</label>
+            <input id="month-client" type="month" aria-label="客戶成本月份" />
             <select id="viewType">
               <option value="client">按客戶彙總</option>
               <option value="task">按任務明細</option>
@@ -148,15 +152,18 @@
           </div>
           
           <div id="client-view">
+            <div class="info-box" style="margin-bottom: 12px; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 14px; color: #1e40af;">
+              <strong>計算說明：</strong><br>
+              • <strong>客戶總成本</strong> = Σ(每位員工在該客戶的加權工時 × 該員工的實際時薪)<br>
+              • <strong>實際時薪</strong>：已包含薪資成本 + 管理費分攤（與員工成本分析一致）<br>
+              • <strong>利潤</strong> = 本月收入 - 總成本<br>
+              • <strong>利潤率</strong> = 利潤 ÷ 本月收入 × 100%
+            </div>
             <table class="table" aria-label="客戶成本彙總">
               <thead>
                 <tr>
                   <th>客戶名稱</th>
-                  <th>任務數</th>
                   <th>總工時</th>
-                  <th>加權工時</th>
-                  <th>人力成本</th>
-                  <th>分攤管理費</th>
                   <th>總成本</th>
                   <th>本月收入</th>
                   <th>利潤</th>
@@ -164,7 +171,7 @@
                 </tr>
               </thead>
               <tbody id="tbody-clients">
-                <tr><td colspan="10" class="muted">載入中…</td></tr>
+                <tr><td colspan="6" class="muted">載入中…</td></tr>
               </tbody>
             </table>
           </div>
@@ -227,6 +234,8 @@
         };
 
         const monthInput = document.getElementById('month');
+        const monthInputEmp = document.getElementById('month-emp');
+        const monthInputClient = document.getElementById('month-client');
 
         // 成本項目設定
         const tbodyItems = document.getElementById('tbody-items');
@@ -286,7 +295,17 @@
         });
 
         function parseYearMonth(){
-          const v = String(monthInput.value || '');
+          // 根据当前标签页选择对应的月份输入框
+          let input;
+          if (currentCostsTab === 'employee') {
+            input = monthInputEmp;
+          } else if (currentCostsTab === 'client') {
+            input = monthInputClient;
+          } else {
+            input = monthInput;
+          }
+          
+          const v = String(input?.value || '');
           const m = v.match(/^(\d{4})-(\d{2})$/);
           if (!m) return null;
           const year = parseInt(m[1], 10);
@@ -737,29 +756,25 @@
               const tr = document.createElement('tr');
               const cost = Number(client.totalCost || 0);
               const revenue = Number(client.revenue || 0);
-              const profit = revenue - cost;
+              const profit = Number(client.profit || 0);
               const margin = revenue > 0 ? (profit / revenue * 100) : 0;
               totalCost += cost;
               totalRevenue += revenue;
               totalProfit += profit;
               tr.innerHTML = `
                 <td>${client.clientName||''}</td>
-                <td>${client.taskCount||0}</td>
                 <td>${Number(client.totalHours||0).toFixed(1)}</td>
-                <td>${Number(client.weightedHours||0).toFixed(1)}</td>
-                <td>${formatCurrency(client.laborCost)}</td>
-                <td>${formatCurrency(client.overheadAllocation)}</td>
-                <td>${formatCurrency(cost)}</td>
+                <td style="font-weight:600;">${formatCurrency(cost)}</td>
                 <td>${formatCurrency(revenue)}</td>
-                <td style="color:${profit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(profit)}</td>
-                <td>${margin.toFixed(1)}%</td>
+                <td style="color:${profit >= 0 ? '#16a34a' : '#dc2626'};font-weight:600;">${formatCurrency(profit)}</td>
+                <td style="font-weight:600;">${margin.toFixed(1)}%</td>
               `;
               tbodyClients.appendChild(tr);
             });
             const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue * 100) : 0;
             updateClientSummary(totalCost, totalRevenue, totalProfit, avgMargin);
           } catch (_) {
-            tbodyClients.innerHTML = '<tr><td colspan="10" style="color:#c0392b;">載入失敗</td></tr>';
+            tbodyClients.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
 
@@ -836,16 +851,28 @@
 
         // 預設月份為本月
         const now = new Date();
-        monthInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        monthInput.value = currentMonth;
+        monthInputEmp.value = currentMonth;
+        monthInputClient.value = currentMonth;
 
         // 事件
         let searchTimer = null;
         viewType.addEventListener('change', loadClientCosts);
+        
+        // 各标签页的月份选择器变化事件
         monthInput.addEventListener('change', ()=>{ 
           loadItems(); 
-          loadRecords(); 
-          if (currentCostsTab === 'employee') loadEmployeeCosts();
-          if (currentCostsTab === 'client') loadClientCosts();
+          loadRecords();
+          updateButtonState();
+        });
+        
+        monthInputEmp.addEventListener('change', ()=>{
+          loadEmployeeCosts();
+        });
+        
+        monthInputClient.addEventListener('change', ()=>{
+          loadClientCosts();
         });
 
         document.getElementById('btn-refresh-emp')?.addEventListener('click', loadEmployeeCosts);
@@ -1147,26 +1174,31 @@
 
         // 初始化月份选择器为当前月份
         function initMonthSelector() {
-          if (!monthInput) {
-            console.error('[initMonthSelector] monthInput 不存在！');
-            return;
-          }
           const now = new Date();
           const year = now.getFullYear();
           const month = String(now.getMonth() + 1).padStart(2, '0');
           const value = `${year}-${month}`;
-          monthInput.value = value;
-          console.log('[initMonthSelector] 已設置月份:', value);
-          console.log('[initMonthSelector] 驗證設置結果，monthInput.value =', monthInput.value);
           
-          // 如果设置失败，强制延迟再次设置
-          if (monthInput.value !== value) {
-            console.warn('[initMonthSelector] 首次設置失敗，將延遲重試...');
-            setTimeout(() => {
-              monthInput.value = value;
-              console.log('[initMonthSelector] 重試後 monthInput.value =', monthInput.value);
-            }, 100);
+          // 初始化所有三个月份选择器
+          if (monthInput) {
+            monthInput.value = value;
+          } else {
+            console.error('[initMonthSelector] monthInput 不存在！');
           }
+          
+          if (monthInputEmp) {
+            monthInputEmp.value = value;
+          } else {
+            console.error('[initMonthSelector] monthInputEmp 不存在！');
+          }
+          
+          if (monthInputClient) {
+            monthInputClient.value = value;
+          } else {
+            console.error('[initMonthSelector] monthInputClient 不存在！');
+          }
+          
+          console.log('[initMonthSelector] 已設置所有月份選擇器:', value);
         }
 
         // 更新按钮状态
@@ -1178,16 +1210,7 @@
           console.log('[updateButtonState] 月份有效:', isValid, '值:', monthInput?.value);
         }
 
-        // 监听月份变化
-        if (monthInput) {
-          monthInput.addEventListener('change', () => {
-            console.log('[Event] 月份已變更:', monthInput.value);
-            loadRecords();
-            updateButtonState();
-          });
-        } else {
-          console.error('[Event] 無法添加月份監聽器：monthInput 不存在');
-        }
+        // 监听月份变化（已在上面统一设置）
 
         // ⚡ 清除 costs 页面的预渲染缓存（排查问题）
         if (window.PagePrerender && window.PagePrerender.clear) {

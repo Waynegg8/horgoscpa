@@ -48,15 +48,9 @@
             </div>
           </div>
           <div class="summary-item">
-            <div class="summary-label">已核准補貼</div>
+            <div class="summary-label">交通補貼總額</div>
             <div class="summary-value">
-              NT$ <span id="summaryApprovedSubsidy">0</span>
-            </div>
-          </div>
-          <div class="summary-item">
-            <div class="summary-label">待審核補貼</div>
-            <div class="summary-value">
-              NT$ <span id="summaryPendingSubsidy">0</span>
+              NT$ <span id="summaryTotalSubsidy">0</span>
             </div>
           </div>
         </div>
@@ -65,25 +59,16 @@
       <!-- 篩選器 -->
       <div class="trips-filters">
         <div class="filter-row">
-          <div class="filter-field">
-            <label>狀態</label>
-            <select id="statusFilter">
-              <option value="">全部狀態</option>
-              <option value="pending">待審核</option>
-              <option value="approved">已核准</option>
-              <option value="rejected">已拒絕</option>
+          <div class="filter-field" id="userFilterField" style="display: none;">
+            <label>員工</label>
+            <select id="userFilter">
+              <option value="">全部員工</option>
             </select>
           </div>
           <div class="filter-field">
             <label>客戶</label>
             <select id="clientFilter">
               <option value="">全部客戶</option>
-            </select>
-          </div>
-          <div class="filter-field" id="userFilterField" style="display: none;">
-            <label>員工</label>
-            <select id="userFilter">
-              <option value="">全部員工</option>
             </select>
           </div>
           <div class="filter-field" style="display: flex; align-items: flex-end;">
@@ -103,13 +88,12 @@
               <th>目的地</th>
               <th>距離</th>
               <th>交通補貼</th>
-              <th>狀態</th>
               <th>操作</th>
             </tr>
           </thead>
           <tbody id="tripsTableBody">
             <tr>
-              <td colspan="8" class="loading">
+              <td colspan="7" class="loading">
                 <div class="spinner"></div>
               </td>
             </tr>
@@ -193,7 +177,6 @@
 
         // DOM 元素
         const monthFilter = document.getElementById('monthFilter');
-        const statusFilter = document.getElementById('statusFilter');
         const clientFilter = document.getElementById('clientFilter');
         const userFilter = document.getElementById('userFilter');
         const userFilterField = document.getElementById('userFilterField');
@@ -210,8 +193,7 @@
         const summaryBar = document.getElementById('summaryBar');
         const summaryTripCount = document.getElementById('summaryTripCount');
         const summaryTotalDistance = document.getElementById('summaryTotalDistance');
-        const summaryApprovedSubsidy = document.getElementById('summaryApprovedSubsidy');
-        const summaryPendingSubsidy = document.getElementById('summaryPendingSubsidy');
+        const summaryTotalSubsidy = document.getElementById('summaryTotalSubsidy');
 
         // 模態框
         const tripModal = document.getElementById('tripModal');
@@ -319,9 +301,6 @@
             if (monthFilter.value) {
               params.set('month', monthFilter.value);
             }
-            if (statusFilter.value) {
-              params.set('status', statusFilter.value);
-            }
             if (clientFilter.value) {
               params.set('client_id', clientFilter.value);
             }
@@ -373,8 +352,7 @@
 
             summaryTripCount.textContent = data.trip_count || 0;
             summaryTotalDistance.textContent = (data.total_distance_km || 0).toFixed(1);
-            summaryApprovedSubsidy.textContent = (data.approved_subsidy_twd || 0).toLocaleString();
-            summaryPendingSubsidy.textContent = (data.pending_subsidy_twd || 0).toLocaleString();
+            summaryTotalSubsidy.textContent = (data.total_subsidy_twd || 0).toLocaleString();
             
             summaryBar.style.display = 'block';
           } catch (err) {
