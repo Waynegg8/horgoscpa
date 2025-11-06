@@ -733,8 +733,8 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			
 			// 軟刪除請假記錄
 			await env.DATABASE.prepare(
-				"UPDATE LeaveRequests SET is_deleted = 1, deleted_at = datetime('now'), deleted_by = ? WHERE leave_id = ?"
-			).bind(String(me.user_id), leaveId).run();
+				"UPDATE LeaveRequests SET is_deleted = 1 WHERE leave_id = ?"
+			).bind(leaveId).run();
 			
 			// ⚡ 失效該用戶的請假列表和余額緩存
 			Promise.all([

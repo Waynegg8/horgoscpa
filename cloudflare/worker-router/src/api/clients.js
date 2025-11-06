@@ -744,11 +744,16 @@ export async function handleClients(request, env, me, requestId, url) {
 		}
 		
 		try {
+			// 确保 clientIds 都是字符串类型（数据库 client_id 是 TEXT）
+			const clientIdsAsStrings = clientIds.map(id => String(id));
+			
 			// 調試日志
 			console.log('[BATCH-ASSIGN] 收到請求:', {
-				clientIds,
+				clientIds原始: clientIds,
+				clientIds转换后: clientIdsAsStrings,
 				assigneeUserId,
-				clientIdsCount: clientIds.length
+				clientIdsCount: clientIds.length,
+				clientIdsDetail: clientIds.map(id => ({ value: id, type: typeof id, toString: String(id) }))
 			});
 			
 			// 檢查負責人員是否存在
@@ -767,14 +772,19 @@ export async function handleClients(request, env, me, requestId, url) {
 			console.log('[BATCH-ASSIGN] 負責人檢查通過');
 			
 			const now = new Date().toISOString();
-			const placeholders = clientIds.map(() => "?").join(",");
+			const placeholders = clientIdsAsStrings.map(() => "?").join(",");
 			
 			const sql = `UPDATE Clients SET assignee_user_id = ?, updated_at = ? WHERE client_id IN (${placeholders}) AND is_deleted = 0`;
 			console.log('[BATCH-ASSIGN] SQL:', sql);
-			console.log('[BATCH-ASSIGN] 參數:', [assigneeUserId, now, ...clientIds]);
+			console.log('[BATCH-ASSIGN] 參數:', [assigneeUserId, now, ...clientIdsAsStrings]);
+			
+			// 先查询要更新的客户是否存在
+			const checkSql = `SELECT client_id, company_name, assignee_user_id FROM Clients WHERE client_id IN (${placeholders}) AND is_deleted = 0`;
+			const existingClients = await env.DATABASE.prepare(checkSql).bind(...clientIdsAsStrings).all();
+			console.log('[BATCH-ASSIGN] 數據庫中的客戶:', existingClients.results);
 			
 			// 批量更新
-			const result = await env.DATABASE.prepare(sql).bind(assigneeUserId, now, ...clientIds).run();
+			const result = await env.DATABASE.prepare(sql).bind(assigneeUserId, now, ...clientIdsAsStrings).run();
 			
 			const updatedCount = result?.meta?.changes || 0;
 			console.log('[BATCH-ASSIGN] 更新結果:', {

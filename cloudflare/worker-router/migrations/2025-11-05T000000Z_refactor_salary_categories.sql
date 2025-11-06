@@ -16,19 +16,14 @@ CREATE TABLE IF NOT EXISTS SalaryItemTypes_new (
   updated_at TEXT DEFAULT (datetime('now'))
 );
 
--- Step 2: 复制数据（如果有的话）
+-- Step 2: 复制数据（如果有的话，并且表存在）
 INSERT INTO SalaryItemTypes_new (item_type_id, item_code, item_name, category, description, is_active, display_order, created_at, updated_at)
-SELECT item_type_id, item_code, item_name, 
-  CASE 
-    WHEN category = 'allowance' AND is_regular_payment = 1 THEN 'regular_allowance'
-    WHEN category = 'allowance' AND is_regular_payment = 0 THEN 'irregular_allowance'
-    ELSE category
-  END as category,
-  description, is_active, display_order, created_at, updated_at
-FROM SalaryItemTypes;
+SELECT item_type_id, item_code, item_name, category, description, is_active, display_order, created_at, updated_at
+FROM SalaryItemTypes
+WHERE EXISTS (SELECT 1 FROM SalaryItemTypes LIMIT 1);
 
--- Step 3: 删除旧表
-DROP TABLE SalaryItemTypes;
+-- Step 3: 删除旧表（如果存在）
+DROP TABLE IF EXISTS SalaryItemTypes;
 
 -- Step 4: 重命名新表
 ALTER TABLE SalaryItemTypes_new RENAME TO SalaryItemTypes;

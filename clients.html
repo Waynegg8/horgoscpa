@@ -499,6 +499,8 @@
 
           const payload = { client_ids: selectedClientIds, assignee_user_id };
           console.log('[批量分配] 發送請求:', payload);
+          console.log('[批量分配] selectedClientIds 详细值:', selectedClientIds);
+          console.log('[批量分配] 第一个ID的类型:', typeof selectedClientIds[0], '值:', selectedClientIds[0]);
           
           const submitBtn = document.getElementById('btn-batch-assign-submit');
           submitBtn.disabled = true;
