@@ -738,13 +738,17 @@
             if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
             const json = await res.json();
             console.log('[薪資報表] API回應數據:', json);
+            console.log('[薪資報表] 完整響應:', JSON.stringify(json, null, 2));
             if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
             const data = json.data || { summary:{}, by_employee:[] };
             const byEmp = Array.isArray(data.by_employee) ? data.by_employee : [];
+            console.log('[薪資報表] 員工數據數組長度:', byEmp.length);
+            console.log('[薪資報表] 員工數據:', byEmp);
             totalSalaryEl.textContent = formatNumber(data.summary?.total_gross_salary || 0);
             tbody.innerHTML = '';
             if (!byEmp.length) {
-              tbody.innerHTML = '<tr><td colspan="10" class="muted">尚無資料</td></tr>';
+              tbody.innerHTML = '<tr><td colspan="10" class="muted">尚無資料（可能未產製月結或該月份無薪資數據）</td></tr>';
+              console.warn('[薪資報表] 無員工數據 - 請先到【薪資】頁面點擊"產製月結"按鈕');
             } else {
               byEmp.forEach(r => {
                 const tr = document.createElement('tr');

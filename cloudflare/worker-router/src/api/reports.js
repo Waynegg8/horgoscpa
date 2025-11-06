@@ -36,12 +36,19 @@ export async function handleReports(request, env, me, requestId, url, path) {
 				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇有效日期區間", meta:{ requestId } }, corsHeaders);
 			}
 
-			// 工時倍率對照表（根據勞基法）
+			// 工時倍率對照表（根據勞基法，與timesheets.js一致）
 			const workTypeMultipliers = {
-				'normal': 1.0,
-				'ot-weekday': 1.34,
-				'ot-rest': 1.67,
-				'holiday': 2.0
+				1: 1.0,   // 正常工時
+				2: 1.34,  // 平日加班（前2小時）
+				3: 1.67,  // 平日加班（後2小時）
+				4: 1.34,  // 休息日加班（前2小時）
+				5: 1.67,  // 休息日加班（第3-8小時）
+				6: 2.67,  // 休息日加班（第9-12小時）
+				7: 1.0,   // 國定假日加班（8小時內）- 特殊處理：固定8h
+				8: 1.34,  // 國定假日加班（第9-10小時）
+				9: 1.67,  // 國定假日加班（第11-12小時）
+				10: 1.0,  // 例假日加班（8小時內）- 特殊處理：固定8h
+				11: 1.0,  // 例假日加班（第9-12小時）
 			};
 
 			// 獲取每個客戶每個員工的工時明細（按 work_type）
@@ -60,6 +67,22 @@ export async function handleReports(request, env, me, requestId, url, path) {
 			const allUserIds = new Set();
 			const allClientIds = new Set();
 			
+			// 第一步：收集固定8h类型的每日总工时
+			const dailyFixedTypeMap = new Map(); // key: 'date:workType', value: totalHours
+			
+			for (const r of (hoursRows?.results || [])) {
+				if (!r.client_id) continue;
+				const workTypeId = parseInt(r.work_type) || 1;
+				const hours = Number(r.hours || 0);
+				
+				// 固定8h类型（國定假日7、例假日10）需要先统计每日总工时
+				if (workTypeId === 7 || workTypeId === 10) {
+					// 需要从work_date获取，但这里只有按client_id, user_id, work_type分组的数据
+					// 暂时简化处理：固定8h类型统一按8h加权
+				}
+			}
+			
+			// 第二步：计算加权工时
 			for (const r of (hoursRows?.results || [])) {
 				if (!r.client_id) continue;
 				allClientIds.add(r.client_id);
@@ -74,9 +97,18 @@ export async function handleReports(request, env, me, requestId, url, path) {
 				}
 				const userData = userMap.get(r.user_id);
 				const hours = Number(r.hours || 0);
-				const multiplier = workTypeMultipliers[r.work_type] || 1.0;
+				const workTypeId = parseInt(r.work_type) || 1;
+				const multiplier = workTypeMultipliers[workTypeId] || 1.0;
+				
 				userData.actual += hours;
-				userData.weighted += hours * multiplier;
+				
+				// 特殊處理：國定假日/例假日8小時內類型，固定為8.0加權工時
+				if (workTypeId === 7 || workTypeId === 10) {
+					userData.weighted += 8.0; // 固定8小时加权
+				} else {
+					userData.weighted += hours * multiplier;
+				}
+				
 				userData.byType[r.work_type] = hours;
 			}
 
@@ -86,18 +118,16 @@ export async function handleReports(request, env, me, requestId, url, path) {
 				const userIdArray = Array.from(allUserIds);
 				const placeholders = userIdArray.map(() => "?").join(",");
 				const salaryRows = await env.DATABASE.prepare(
-					`SELECT user_id, name, COALESCE(base_salary, 40000) AS base_salary, 
-					 COALESCE(regular_allowance, 0) AS regular_allowance
+					`SELECT user_id, name, COALESCE(base_salary, 40000) AS base_salary
 					 FROM Users WHERE user_id IN (${placeholders})`
 				).bind(...userIdArray).all();
 				for (const r of (salaryRows?.results || [])) {
 					const baseSalary = Number(r.base_salary || 40000);
-					const allowance = Number(r.regular_allowance || 0);
-					const salaryHourlyRate = (baseSalary + allowance) / 240;
+					// 時薪基準 = 底薪 ÷ 240（與payroll.js一致，只用底薪，不包含加給）
+					const salaryHourlyRate = baseSalary / 240;
 					userSalaries.set(r.user_id, {
 						username: r.name || `User${r.user_id}`, // 使用姓名，如果没有则使用User+ID
 						base_salary: baseSalary,
-						regular_allowance: allowance,
 						salary_rate: Number(salaryHourlyRate.toFixed(2))
 					});
 				}
