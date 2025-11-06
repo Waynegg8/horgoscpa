@@ -457,16 +457,57 @@
         }
         
         async function openEditTemplateModal(costTypeId){
-          // 讀目前模板（若需要可擴充：目前直接新建/覆蓋）
-          const form = document.createElement('div');
-          const enableChk = document.createElement('input'); enableChk.type='checkbox'; enableChk.id='tplEnable'; enableChk.checked = true;
-          const enableLbl = document.createElement('label'); enableLbl.htmlFor='tplEnable'; enableLbl.textContent='啟用每月自動生成'; enableLbl.style.marginLeft='6px';
-          const enWrap = document.createElement('div'); enWrap.appendChild(enableChk); enWrap.appendChild(enableLbl); enWrap.style.marginBottom='8px';
-          const amountInput = document.createElement('input'); amountInput.type='number'; amountInput.placeholder='預設金額'; amountInput.min='1';
-          const effInput = document.createElement('input'); effInput.type='month';
-          form.appendChild(enWrap);
-          form.appendChild(buildField('預設金額', amountInput));
-          form.appendChild(buildField('生效起始月', effInput));
+          try {
+            // 读取现有模板数据
+            console.log('[EditTemplate] 加載模板數據，cost_type_id:', costTypeId);
+            const res = await fetch(`${apiBase}/admin/overhead-templates/by-type/${costTypeId}?_t=${Date.now()}`, { 
+              credentials:'include',
+              cache: 'no-store'
+            });
+            let existingTemplate = null;
+            if (res.ok) {
+              const json = await res.json();
+              console.log('[EditTemplate] 模板數據:', json);
+              if (json.ok && json.data) {
+                existingTemplate = json.data;
+              }
+            } else {
+              console.log('[EditTemplate] 模板不存在或加載失敗:', res.status);
+            }
+            
+            const form = document.createElement('div');
+            const enableChk = document.createElement('input'); 
+            enableChk.type='checkbox'; 
+            enableChk.id='tplEnable'; 
+            enableChk.checked = existingTemplate ? (existingTemplate.isActive !== false) : true;
+            
+            const enableLbl = document.createElement('label'); 
+            enableLbl.htmlFor='tplEnable'; 
+            enableLbl.textContent='啟用每月自動生成'; 
+            enableLbl.style.marginLeft='6px';
+            
+            const enWrap = document.createElement('div'); 
+            enWrap.appendChild(enableChk); 
+            enWrap.appendChild(enableLbl); 
+            enWrap.style.marginBottom='8px';
+            
+            const amountInput = document.createElement('input'); 
+            amountInput.type='number'; 
+            amountInput.placeholder='預設金額'; 
+            amountInput.min='1';
+            if (existingTemplate && existingTemplate.amount) {
+              amountInput.value = existingTemplate.amount;
+            }
+            
+            const effInput = document.createElement('input'); 
+            effInput.type='month';
+            if (existingTemplate && existingTemplate.effectiveFrom) {
+              effInput.value = existingTemplate.effectiveFrom;
+            }
+            
+            form.appendChild(enWrap);
+            form.appendChild(buildField('預設金額', amountInput));
+            form.appendChild(buildField('生效起始月', effInput));
           openModal('自動生成設定', form, async (close)=>{
             const is_active = enableChk.checked;
             const amount = Number(amountInput.value||0);
@@ -485,6 +526,10 @@
               alert('儲存失敗：' + (err?.message || String(err)));
             }
           });
+          } catch (err) {
+            console.error('[EditTemplate] 加載模板失敗:', err);
+            alert('加載模板失敗：' + (err?.message || String(err)));
+          }
         }
 
         async function loadRecords(){

@@ -218,38 +218,82 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 		}
 	}
 	
-	// Upsert by cost_type_id - PUT /admin/overhead-templates/by-type/:id
+	// GET /admin/overhead-templates/by-type/:id - 获取模板
+	// PUT /admin/overhead-templates/by-type/:id - 创建或更新模板
 	if (path.match(/^\/internal\/api\/v1\/admin\/overhead-templates\/by-type\/\d+$/)) {
+		const costTypeId = parseInt(path.split("/").pop());
+		
+		if (method === "GET") {
+			try {
+				const row = await env.DATABASE.prepare(
+					`SELECT template_id, cost_type_id, amount, notes, recurring_type, recurring_months, 
+					 effective_from, effective_to, is_active, created_at, updated_at
+					 FROM OverheadRecurringTemplates WHERE cost_type_id = ? LIMIT 1`
+				).bind(costTypeId).first();
+				
+				if (!row) {
+					return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"模板不存在", meta:{ requestId } }, corsHeaders);
+				}
+				
+				const data = {
+					templateId: row.template_id,
+					costTypeId: row.cost_type_id,
+					amount: Number(row.amount || 0),
+					notes: row.notes || '',
+					recurringType: row.recurring_type || 'monthly',
+					recurringMonths: row.recurring_months,
+					effectiveFrom: row.effective_from,
+					effectiveTo: row.effective_to,
+					isActive: row.is_active === 1,
+					createdAt: row.created_at,
+					updatedAt: row.updated_at
+				};
+				
+				console.log(`[Template GET] cost_type_id=${costTypeId}, template=`, data);
+				return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+			} catch (err) {
+				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+			}
+		}
+		
 		if (method === "PUT") {
 			try {
-				const costTypeId = parseInt(path.split("/").pop());
 				let body; try { body = await request.json(); } catch (_) { body = {}; }
 				const amount = body.amount != null ? Number(body.amount) : null;
 				const notes = body.notes != null ? String(body.notes) : null;
-				const recurring_type = body.recurring_type ? String(body.recurring_type) : null;
+				// 确保 recurring_type 有默认值 'monthly'
+				const recurring_type = body.recurring_type ? String(body.recurring_type) : 'monthly';
 				const recurring_months = body.recurring_months != null ? String(body.recurring_months) : null;
 				const effective_from = body.effective_from != null ? String(body.effective_from) : null;
 				const effective_to = body.effective_to != null ? String(body.effective_to) : null;
 				const is_active = body.is_active == null ? 1 : (body.is_active ? 1 : 0);
-				const row = await env.DATABASE.prepare("SELECT template_id FROM OverheadRecurringTemplates WHERE cost_type_id = ? LIMIT 1").bind(costTypeId).first();
+				
+				console.log(`[Template UPSERT] cost_type_id=${costTypeId}, recurring_type=${recurring_type}, amount=${amount}, effective_from=${effective_from}`);
+				
+				const row = await env.DATABASE.prepare("SELECT template_id, recurring_type FROM OverheadRecurringTemplates WHERE cost_type_id = ? LIMIT 1").bind(costTypeId).first();
 				if (row) {
+					console.log(`[Template UPSERT] 更新現有模板 ${row.template_id}, 原 recurring_type=${row.recurring_type}`);
 					await env.DATABASE.prepare(
 						`UPDATE OverheadRecurringTemplates SET 
 						 amount = COALESCE(?, amount),
 						 notes = COALESCE(?, notes),
-						 recurring_type = COALESCE(?, recurring_type),
+						 recurring_type = ?,
 						 recurring_months = COALESCE(?, recurring_months),
-						 effective_from = COALESCE(?, effective_from),
-						 effective_to = COALESCE(?, effective_to),
+						 effective_from = ?,
+						 effective_to = ?,
 						 is_active = ?,
 						 updated_at = datetime('now')
 						WHERE cost_type_id = ?`
 					).bind(amount, notes, recurring_type, recurring_months, effective_from, effective_to, is_active, costTypeId).run();
+					console.log(`[Template UPSERT] 模板已更新，recurring_type=${recurring_type}`);
 				} else {
+					console.log(`[Template UPSERT] 創建新模板，recurring_type=${recurring_type}`);
 					await env.DATABASE.prepare(
 						`INSERT INTO OverheadRecurringTemplates (cost_type_id, amount, notes, recurring_type, recurring_months, effective_from, effective_to, is_active, created_by)
 						 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-					).bind(costTypeId, amount||0, notes||'', recurring_type||'monthly', recurring_months, effective_from, effective_to, is_active, String(me.user_id)).run();
+					).bind(costTypeId, amount||0, notes||'', recurring_type, recurring_months, effective_from, effective_to, is_active, String(me.user_id)).run();
+					console.log(`[Template UPSERT] 新模板已創建`);
 				}
 				return jsonResponse(200, { ok:true, code:"OK", message:"已保存", meta:{ requestId } }, corsHeaders);
 			} catch (err) {
@@ -305,8 +349,19 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			}
 			let created = 0, skipped = 0, duplicates = 0;
 			const records = [];
+			console.log(`[Generate] 總共 ${templates.length} 個模板待處理`);
 			for (const t of templates) {
-				if (!shouldApply(t.recurring_type, t.recurring_months, t.effective_from, t.effective_to, year, month)) { 
+				console.log(`[Generate] 檢查模板 ${t.template_id}:`, {
+					cost_type_id: t.cost_type_id,
+					recurring_type: t.recurring_type,
+					effective_from: t.effective_from,
+					effective_to: t.effective_to,
+					target_month: `${year}-${String(month).padStart(2,'0')}`
+				});
+				const shouldApplyResult = shouldApply(t.recurring_type, t.recurring_months, t.effective_from, t.effective_to, year, month);
+				console.log(`[Generate] 模板 ${t.template_id} shouldApply 結果:`, shouldApplyResult);
+				if (!shouldApplyResult) { 
+					console.log(`[Generate] 跳過模板 ${t.template_id}`);
 					skipped++; 
 					continue; 
 				}
