@@ -341,7 +341,14 @@
 
             if (!res.ok) {
               console.error('[loadTrips] API錯誤:', res.status);
-              // API錯誤時顯示錯誤訊息
+              // 嘗試讀取錯誤詳情
+              try {
+                const errorJson = await res.json();
+                console.error('[loadTrips] 錯誤詳情:', errorJson);
+                alert('載入失敗: ' + (errorJson.message || '未知錯誤'));
+              } catch (e) {
+                console.error('[loadTrips] 無法解析錯誤響應:', e);
+              }
               allTrips = [];
               filteredTrips = [];
               renderTripsTable();

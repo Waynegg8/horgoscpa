@@ -86,7 +86,7 @@ export async function handleReports(request, env, me, requestId, url, path) {
 				const userIdArray = Array.from(allUserIds);
 				const placeholders = userIdArray.map(() => "?").join(",");
 				const salaryRows = await env.DATABASE.prepare(
-					`SELECT user_id, username, COALESCE(base_salary, 40000) AS base_salary, 
+					`SELECT user_id, name, COALESCE(base_salary, 40000) AS base_salary, 
 					 COALESCE(regular_allowance, 0) AS regular_allowance
 					 FROM Users WHERE user_id IN (${placeholders})`
 				).bind(...userIdArray).all();
@@ -95,7 +95,7 @@ export async function handleReports(request, env, me, requestId, url, path) {
 					const allowance = Number(r.regular_allowance || 0);
 					const salaryHourlyRate = (baseSalary + allowance) / 240;
 					userSalaries.set(r.user_id, {
-						username: r.username,
+						username: r.name || `User${r.user_id}`, // 使用姓名，如果没有则使用User+ID
 						base_salary: baseSalary,
 						regular_allowance: allowance,
 						salary_rate: Number(salaryHourlyRate.toFixed(2))
@@ -289,8 +289,8 @@ export async function handleReports(request, env, me, requestId, url, path) {
 			let usersMap = new Map();
 			if (userIds.length) {
 				const placeholders = userIds.map(()=>"?").join(",");
-				const uRows = await env.DATABASE.prepare(`SELECT user_id, username FROM Users WHERE user_id IN (${placeholders})`).bind(...userIds).all();
-				usersMap = new Map((uRows?.results || []).map(r => [String(r.user_id), r.username]));
+				const uRows = await env.DATABASE.prepare(`SELECT user_id, name FROM Users WHERE user_id IN (${placeholders})`).bind(...userIds).all();
+				usersMap = new Map((uRows?.results || []).map(r => [String(r.user_id), r.name || r.username]));
 			}
 
 			// 客戶名稱
@@ -368,30 +368,41 @@ export async function handleReports(request, env, me, requestId, url, path) {
 				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢月份", meta:{ requestId } }, corsHeaders);
 			}
 			const ym = `${y}-${String(m).padStart(2,'0')}`;
-		const run = await env.DATABASE.prepare("SELECT run_id FROM PayrollRuns WHERE month = ? LIMIT 1").bind(ym).first();
-		if (!run) {
+		
+		// 从最新的 PayrollSnapshot 读取数据
+		const snapshot = await env.DATABASE.prepare(
+			"SELECT snapshot_data FROM PayrollSnapshots WHERE month = ? ORDER BY version DESC LIMIT 1"
+		).bind(ym).first();
+		
+		if (!snapshot || !snapshot.snapshot_data) {
 			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data:{ summary:{ total_base_salary:0, total_allowances:0, total_bonuses:0, total_overtime_pay:0, total_transport_subsidy:0, total_meal_allowance:0, total_gross_salary:0, total_net_salary:0 }, by_employee:[] }, meta:{ requestId, month:ym } }, corsHeaders);
 		}
-		let q = "SELECT mp.user_id, u.username, mp.base_salary_cents, mp.regular_allowance_cents, mp.bonus_cents, mp.overtime_cents, mp.transport_subsidy_cents, mp.meal_allowance_cents, mp.total_cents, mp.is_full_attendance FROM MonthlyPayroll mp JOIN Users u ON u.user_id = mp.user_id WHERE mp.run_id = ?";
-		const binds = [run.run_id];
-		if (userId) { q += " AND mp.user_id = ?"; binds.push(String(parseInt(userId,10))); }
-		const rows = await env.DATABASE.prepare(q).bind(...binds).all();
-		const list = rows?.results || [];
+		
+		const snapshotData = JSON.parse(snapshot.snapshot_data);
+		const users = snapshotData.users || [];
+		
+		// 筛选特定用户（如果有userId参数）
+		const filteredUsers = userId ? users.filter(u => String(u.userId) === String(userId)) : users;
+		
 		const cents = (v)=> Number(v||0);
 		const toAmt = (c)=> Math.round(c/100);
-		const byEmployee = list.map(r => ({
-			user_id: r.user_id,
-			username: r.username,
-			base_salary: toAmt(cents(r.base_salary_cents)),
-			total_allowances: toAmt(cents(r.regular_allowance_cents)),
-			total_bonuses: toAmt(cents(r.bonus_cents)),
-			overtime_pay: toAmt(cents(r.overtime_cents)),
-			transport_subsidy: toAmt(cents(r.transport_subsidy_cents)),
-			meal_allowance: toAmt(cents(r.meal_allowance_cents)),
-			gross_salary: toAmt(cents(r.total_cents)),
-			net_salary: toAmt(cents(r.total_cents)),
-			has_full_attendance: r.is_full_attendance === 1,
+		
+		const byEmployee = filteredUsers.map(u => ({
+			user_id: u.userId,
+			username: u.name || u.username, // 显示姓名，如果没有则显示用户名
+			base_salary: toAmt(cents(u.baseSalaryCents)),
+			// 津贴 = 加给 + 不定期津贴
+			total_allowances: toAmt(cents(u.totalRegularAllowanceCents) + cents(u.totalIrregularAllowanceCents)),
+			// 奖金 = 月度奖金 + 年终奖金 + 绩效奖金
+			total_bonuses: toAmt(cents(u.totalRegularBonusCents) + cents(u.totalYearEndBonusCents) + cents(u.performanceBonusCents)),
+			overtime_pay: toAmt(cents(u.overtimeCents)),
+			transport_subsidy: toAmt(cents(u.transportCents)),
+			meal_allowance: toAmt(cents(u.mealAllowanceCents)),
+			gross_salary: toAmt(cents(u.grossSalaryCents)),
+			net_salary: toAmt(cents(u.netSalaryCents)),
+			has_full_attendance: u.isFullAttendance === true,
 		}));
+		
 		const sum = (k)=> byEmployee.reduce((s,x)=> s + Number(x[k]||0), 0);
 		const summary = {
 			total_base_salary: sum('base_salary'),
@@ -403,7 +414,7 @@ export async function handleReports(request, env, me, requestId, url, path) {
 			total_gross_salary: sum('gross_salary'),
 			total_net_salary: sum('net_salary'),
 		};
-			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data:{ summary, by_employee: byEmployee }, meta:{ requestId, month:ym } }, corsHeaders);
+		return jsonResponse(200, { ok:true, code:"OK", message:"成功", data:{ summary, by_employee: byEmployee }, meta:{ requestId, month:ym } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);

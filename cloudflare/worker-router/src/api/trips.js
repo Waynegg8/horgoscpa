@@ -143,12 +143,12 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 				notes: r.notes
 			}));
 			
-			// 保存到緩存（30分鐘）
-			await saveKVCache(env, cacheKey, 'trips_list', data, {
+			// 保存到緩存（30分鐘）- 不阻塞响应
+			saveKVCache(env, cacheKey, 'trips_list', data, {
 				userId: targetUserId,
 				scopeParams: { userId: targetUserId, clientId, startDate, endDate, month, status },
 				ttl: 1800
-			});
+			}).catch(err => console.error('[TRIPS] 缓存保存失败:', err));
 			
 			return jsonResponse(200, { 
 				ok: true, 
@@ -163,8 +163,8 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 			return jsonResponse(500, { 
 				ok: false, 
 				code: "INTERNAL_ERROR", 
-				message: "取得外出登記列表失敗", 
-				meta: { requestId } 
+				message: "取得外出登記列表失敗: " + (err.message || err.toString()), 
+				meta: { requestId, error: err.message, stack: err.stack } 
 			}, corsHeaders);
 		}
 	}
