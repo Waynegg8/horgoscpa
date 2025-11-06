@@ -401,6 +401,30 @@
           });
         }
         
+        async function openEditRecordModal(record){
+          const form = document.createElement('div');
+          const amountInput = document.createElement('input'); amountInput.type = 'number'; amountInput.value = record.amount||''; amountInput.min = '1';
+          const notesInput = document.createElement('input'); notesInput.type = 'text'; notesInput.value = record.notes||'';
+          
+          form.appendChild(buildField('金額', amountInput));
+          form.appendChild(buildField('備註', notesInput));
+          
+          openModal('編輯月度記錄', form, async (close)=>{
+            const amount = Number(amountInput.value);
+            const notes = notesInput.value.trim();
+            if (!Number.isFinite(amount) || amount <= 0) { alert('金額無效'); return; }
+            const res = await fetch(`${apiBase}/admin/overhead-costs/${record.id}`, {
+              method: 'PUT', credentials: 'include', headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ amount, notes })
+            });
+            const json = await res.json().catch(()=>({}));
+            if (!res.ok || !json || json.ok !== true) { alert(json?.message||'更新失敗'); return; }
+            close();
+            if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+            loadRecords();
+          });
+        }
+        
         async function openEditTemplateModal(costTypeId){
           // 讀目前模板（若需要可擴充：目前直接新建/覆蓋）
           const form = document.createElement('div');
@@ -453,9 +477,36 @@
                   <td>${r.notes||''}</td>
                   <td>${r.recordedBy||''}</td>
                   <td>${r.recordedAt||''}</td>
-                  <td><button class="btn-link" disabled>編輯</button></td>
+                  <td>
+                    <button class="btn-link" data-edit-record-id="${r.id}">編輯</button>
+                    <button class="btn-link" style="color:#dc2626;" data-delete-record-id="${r.id}">刪除</button>
+                  </td>
                 `;
                 tbodyRecords.appendChild(tr);
+              });
+              // 綁定編輯月度記錄
+              tbodyRecords.querySelectorAll('button[data-edit-record-id]').forEach(btn => {
+                btn.addEventListener('click', ()=> {
+                  const id = parseInt(btn.getAttribute('data-edit-record-id'),10);
+                  const record = items.find(x => x.id === id);
+                  openEditRecordModal(record);
+                });
+              });
+              // 綁定刪除月度記錄
+              tbodyRecords.querySelectorAll('button[data-delete-record-id]').forEach(btn => {
+                btn.addEventListener('click', async ()=> {
+                  const id = parseInt(btn.getAttribute('data-delete-record-id'),10);
+                  if (!confirm('確定要刪除此記錄嗎？')) return;
+                  try {
+                    const res = await fetch(`${apiBase}/admin/overhead-costs/${id}`, { method: 'DELETE', credentials:'include' });
+                    const json = await res.json().catch(()=>({}));
+                    if (!res.ok || !json || json.ok !== true) { alert(json?.message||'刪除失敗'); return; }
+                    if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+                    loadRecords();
+                  } catch (err) {
+                    alert('刪除失敗：' + String(err));
+                  }
+                });
               });
             }
             const total = Number(data.total||0);

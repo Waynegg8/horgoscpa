@@ -117,6 +117,57 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data:{ id: newId, code, name, category, allocationMethod: methodVal }, meta:{ requestId } }, corsHeaders);
 		}
 	}
+	
+	// PUT /admin/overhead-types/:id - 更新成本項目
+	if (path.match(/^\/internal\/api\/v1\/admin\/overhead-types\/\d+$/)) {
+		const id = parseInt(path.split('/').pop(), 10);
+		if (method === "PUT") {
+			let body; try { body = await request.json(); } catch (_) { return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders); }
+			const name = String(body?.cost_name || body?.name || "").trim();
+			const category = String(body?.category || "").trim();
+			const methodVal = String(body?.allocation_method || body?.allocationMethod || "").trim();
+			const description = (body?.description || "").trim();
+			const isActive = body?.is_active != null ? (body.is_active ? 1 : 0) : undefined;
+			
+			const updates = [];
+			const binds = [];
+			if (name) { updates.push("cost_name = ?"); binds.push(name); }
+			if (["fixed","variable"].includes(category)) { updates.push("category = ?"); binds.push(category); }
+			if (["per_employee","per_hour","per_revenue"].includes(methodVal)) { updates.push("allocation_method = ?"); binds.push(methodVal); }
+			if (description !== undefined) { updates.push("description = ?"); binds.push(description); }
+			if (isActive !== undefined) { updates.push("is_active = ?"); binds.push(isActive); }
+			
+			if (updates.length === 0) {
+				return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"沒有可更新的欄位", meta:{ requestId } }, corsHeaders);
+			}
+			
+			updates.push("updated_at = datetime('now')");
+			binds.push(id);
+			
+			try {
+				await env.DATABASE.prepare(
+					`UPDATE OverheadCostTypes SET ${updates.join(", ")} WHERE cost_type_id = ?`
+				).bind(...binds).run();
+				return jsonResponse(200, { ok:true, code:"OK", message:"已更新", meta:{ requestId } }, corsHeaders);
+			} catch (err) {
+				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"更新失敗", meta:{ requestId } }, corsHeaders);
+			}
+		}
+		
+		// DELETE /admin/overhead-types/:id - 刪除成本項目（軟刪除）
+		if (method === "DELETE") {
+			try {
+				await env.DATABASE.prepare(
+					"UPDATE OverheadCostTypes SET is_active = 0, updated_at = datetime('now') WHERE cost_type_id = ?"
+				).bind(id).run();
+				return jsonResponse(200, { ok:true, code:"OK", message:"已刪除", meta:{ requestId } }, corsHeaders);
+			} catch (err) {
+				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"刪除失敗", meta:{ requestId } }, corsHeaders);
+			}
+		}
+	}
 
 	// ============ 成本項目模板（循環） ============
 	if (path === "/internal/api/v1/admin/overhead-templates") {
@@ -394,6 +445,51 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			}
 		}
 	}
+	
+	// PUT /admin/overhead-costs/:id - 更新月度記錄
+	if (path.match(/^\/internal\/api\/v1\/admin\/overhead-costs\/\d+$/)) {
+		const id = parseInt(path.split('/').pop(), 10);
+		if (method === "PUT") {
+			let body; try { body = await request.json(); } catch (_) { return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"請求格式錯誤", meta:{ requestId } }, corsHeaders); }
+			const amount = body?.amount != null ? Number(body.amount) : null;
+			const notes = body?.notes != null ? String(body.notes).trim() : null;
+			
+			const updates = [];
+			const binds = [];
+			if (amount != null && Number.isFinite(amount) && amount > 0) { updates.push("amount = ?"); binds.push(amount); }
+			if (notes != null) { updates.push("notes = ?"); binds.push(notes); }
+			
+			if (updates.length === 0) {
+				return jsonResponse(400, { ok:false, code:"BAD_REQUEST", message:"沒有可更新的欄位", meta:{ requestId } }, corsHeaders);
+			}
+			
+			updates.push("updated_at = datetime('now')");
+			binds.push(id);
+			
+			try {
+				await env.DATABASE.prepare(
+					`UPDATE MonthlyOverheadCosts SET ${updates.join(", ")} WHERE overhead_id = ?`
+				).bind(...binds).run();
+				return jsonResponse(200, { ok:true, code:"OK", message:"已更新", meta:{ requestId } }, corsHeaders);
+			} catch (err) {
+				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"更新失敗", meta:{ requestId } }, corsHeaders);
+			}
+		}
+		
+		// DELETE /admin/overhead-costs/:id - 刪除月度記錄（軟刪除）
+		if (method === "DELETE") {
+			try {
+				await env.DATABASE.prepare(
+					"UPDATE MonthlyOverheadCosts SET is_deleted = 1, updated_at = datetime('now') WHERE overhead_id = ?"
+				).bind(id).run();
+				return jsonResponse(200, { ok:true, code:"OK", message:"已刪除", meta:{ requestId } }, corsHeaders);
+			} catch (err) {
+				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"刪除失敗", meta:{ requestId } }, corsHeaders);
+			}
+		}
+	}
 
 	if (path === "/internal/api/v1/admin/overhead-summary" || path === "/internal/api/v1/admin/overhead-analysis") {
 		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
@@ -466,6 +562,9 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			
 			for (const user of users) {
 				const userId = user.user_id;
+				
+				// 确保用户有基本假期余额记录
+				await ensureBasicLeaveBalances(env, userId, year);
 				
 				// 2. 取得月薪（以 Users.base_salary 為主）
 				const monthlySalary = Number(user.base_salary || 0);
