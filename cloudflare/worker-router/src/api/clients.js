@@ -744,6 +744,7 @@ export async function handleClients(request, env, me, requestId, url) {
 		const errors = [];
 		const clientId = String(body?.client_id || "").trim();
 		const companyName = String(body?.company_name || "").trim();
+		const taxRegistrationNumber = body?.tax_registration_number ? String(body.tax_registration_number).trim() : null;
 		const assigneeUserId = Number(body?.assignee_user_id || 0);
 		const phone = (body?.phone || "").trim();
 		const email = (body?.email || "").trim();
@@ -753,6 +754,7 @@ export async function handleClients(request, env, me, requestId, url) {
 
 		if (!/^\d{8}$/.test(clientId)) errors.push({ field: "client_id", message: "必填且須為8位數字" });
 		if (companyName.length < 1 || companyName.length > 100) errors.push({ field: "company_name", message: "長度需 1–100" });
+		if (taxRegistrationNumber && !/^\d{8}$/.test(taxRegistrationNumber)) errors.push({ field: "tax_registration_number", message: "統一編號須為8位數字" });
 		if (!Number.isInteger(assigneeUserId) || assigneeUserId <= 0) errors.push({ field: "assignee_user_id", message: "必填" });
 		if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push({ field: "email", message: "Email 格式錯誤" });
 		if (phone && !/^[-+()\s0-9]{6,}$/.test(phone)) errors.push({ field: "phone", message: "電話格式錯誤" });
@@ -776,16 +778,16 @@ export async function handleClients(request, env, me, requestId, url) {
 					return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "標籤不存在", meta: { requestId } }, corsHeaders);
 				}
 			}
-			const contactPerson1 = (body?.contact_person_1 || "").trim();
-			const contactPerson2 = (body?.contact_person_2 || "").trim();
-			const now = new Date().toISOString();
-			await env.DATABASE.prepare(
-				"INSERT INTO Clients (client_id, company_name, contact_person_1, contact_person_2, assignee_user_id, phone, email, client_notes, payment_notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-			).bind(clientId, companyName, contactPerson1, contactPerson2, assigneeUserId, phone, email, clientNotes, paymentNotes, now, now).run();
-			for (const tagId of tagIds) {
-				await env.DATABASE.prepare("INSERT OR IGNORE INTO ClientTagAssignments (client_id, tag_id, assigned_at) VALUES (?, ?, ?)").bind(clientId, tagId, now).run();
-			}
-			const data = { clientId, companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, tags: tagIds };
+		const contactPerson1 = (body?.contact_person_1 || "").trim();
+		const contactPerson2 = (body?.contact_person_2 || "").trim();
+		const now = new Date().toISOString();
+		await env.DATABASE.prepare(
+			"INSERT INTO Clients (client_id, company_name, tax_registration_number, contact_person_1, contact_person_2, assignee_user_id, phone, email, client_notes, payment_notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+		).bind(clientId, companyName, taxRegistrationNumber, contactPerson1, contactPerson2, assigneeUserId, phone, email, clientNotes, paymentNotes, now, now).run();
+		for (const tagId of tagIds) {
+			await env.DATABASE.prepare("INSERT OR IGNORE INTO ClientTagAssignments (client_id, tag_id, assigned_at) VALUES (?, ?, ?)").bind(clientId, tagId, now).run();
+		}
+		const data = { clientId, companyName, taxId: taxRegistrationNumber, assigneeUserId, phone, email, clientNotes, paymentNotes, tags: tagIds };
 			
 			// ⚡ 失效客户列表缓存（KV+D1）
 			Promise.all([
@@ -814,6 +816,7 @@ export async function handleClients(request, env, me, requestId, url) {
 		
 		const errors = [];
 		const companyName = String(body?.company_name || "").trim();
+		const taxRegistrationNumber = body?.tax_registration_number ? String(body.tax_registration_number).trim() : null;
 		const contactPerson1 = (body?.contact_person_1 || "").trim();
 		const contactPerson2 = (body?.contact_person_2 || "").trim();
 		const assigneeUserId = Number(body?.assignee_user_id || 0);
@@ -828,6 +831,7 @@ export async function handleClients(request, env, me, requestId, url) {
 
 		// 驗證
 		if (companyName.length < 1 || companyName.length > 100) errors.push({ field: "company_name", message: "長度需 1–100" });
+		if (taxRegistrationNumber && !/^\d{8}$/.test(taxRegistrationNumber)) errors.push({ field: "tax_registration_number", message: "統一編號須為8位數字" });
 		if (!Number.isInteger(assigneeUserId) || assigneeUserId <= 0) errors.push({ field: "assignee_user_id", message: "必填" });
 		if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push({ field: "email", message: "Email 格式錯誤" });
 		if (phone && !/^[-+()\s0-9]{6,}$/.test(phone)) errors.push({ field: "phone", message: "電話格式錯誤" });
@@ -857,24 +861,24 @@ export async function handleClients(request, env, me, requestId, url) {
 				}
 			}
 			
-			const now = new Date().toISOString();
-			
-			// 更新客戶資料
-			await env.DATABASE.prepare(
-				"UPDATE Clients SET company_name = ?, contact_person_1 = ?, contact_person_2 = ?, assignee_user_id = ?, phone = ?, email = ?, client_notes = ?, payment_notes = ?, updated_at = ? WHERE client_id = ?"
-			).bind(companyName, contactPerson1, contactPerson2, assigneeUserId, phone, email, clientNotes, paymentNotes, now, clientId).run();
-			
-			// 僅在請求帶有 tag_ids 時更新標籤關聯；未帶入時保持不變
-			if (hasTagIdsField) {
-				await env.DATABASE.prepare("DELETE FROM ClientTagAssignments WHERE client_id = ?").bind(clientId).run();
-				if (Array.isArray(tagIds)) {
-					for (const tagId of tagIds) {
-						await env.DATABASE.prepare("INSERT INTO ClientTagAssignments (client_id, tag_id, assigned_at) VALUES (?, ?, ?)").bind(clientId, tagId, now).run();
-					}
+		const now = new Date().toISOString();
+		
+		// 更新客戶資料
+		await env.DATABASE.prepare(
+			"UPDATE Clients SET company_name = ?, tax_registration_number = ?, contact_person_1 = ?, contact_person_2 = ?, assignee_user_id = ?, phone = ?, email = ?, client_notes = ?, payment_notes = ?, updated_at = ? WHERE client_id = ?"
+		).bind(companyName, taxRegistrationNumber, contactPerson1, contactPerson2, assigneeUserId, phone, email, clientNotes, paymentNotes, now, clientId).run();
+		
+		// 僅在請求帶有 tag_ids 時更新標籤關聯；未帶入時保持不變
+		if (hasTagIdsField) {
+			await env.DATABASE.prepare("DELETE FROM ClientTagAssignments WHERE client_id = ?").bind(clientId).run();
+			if (Array.isArray(tagIds)) {
+				for (const tagId of tagIds) {
+					await env.DATABASE.prepare("INSERT INTO ClientTagAssignments (client_id, tag_id, assigned_at) VALUES (?, ?, ?)").bind(clientId, tagId, now).run();
 				}
 			}
-			
-			const data = { clientId, companyName, assigneeUserId, phone, email, clientNotes, paymentNotes, tags: hasTagIdsField ? (tagIds || []) : undefined, updatedAt: now };
+		}
+		
+		const data = { clientId, companyName, taxId: taxRegistrationNumber, assigneeUserId, phone, email, clientNotes, paymentNotes, tags: hasTagIdsField ? (tagIds || []) : undefined, updatedAt: now };
 			
 			// ⚡ 失效缓存：客户列表 + 客户詳情（KV）
 			invalidateCacheByType(env, 'clients_list').catch(err => 

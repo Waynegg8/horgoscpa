@@ -60,8 +60,10 @@
             <span class="error-text" id="error_company_name"></span>
           </div>
           <div class="form-field">
-            <label for="inputTaxId">統一編號</label>
-            <input type="text" id="inputTaxId" maxlength="8" />
+            <label for="inputTaxId">統一編號（選填，個人客戶可不填）</label>
+            <input type="text" id="inputTaxId" maxlength="8" placeholder="8位數字" />
+            <span class="error-text" id="error_tax_id"></span>
+            <small class="form-help-text" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">個人客戶可不填寫統一編號</small>
           </div>
         </div>
         <div class="form-row-2col">
@@ -2945,9 +2947,11 @@
       
       const assigneeValue = document.getElementById('inputAssignee').value;
       const assigneeUserId = assigneeValue ? parseInt(assigneeValue) : 0;
+      const taxId = document.getElementById('inputTaxId').value.trim();
       
       const payload = {
         company_name: document.getElementById('inputCompanyName').value.trim(),
+        tax_registration_number: taxId || null,
         contact_person_1: document.getElementById('inputContactPerson1').value.trim() || null,
         contact_person_2: document.getElementById('inputContactPerson2').value.trim() || null,
         assignee_user_id: assigneeUserId,
@@ -2961,6 +2965,14 @@
       let hasError = false;
       if (!payload.company_name) {
         showFieldError('company_name', '公司名稱為必填');
+        hasError = true;
+      }
+      if (taxId && taxId.length !== 8) {
+        showFieldError('tax_id', '統一編號必須為8位數字');
+        hasError = true;
+      }
+      if (taxId && !/^\d+$/.test(taxId)) {
+        showFieldError('tax_id', '統一編號只能包含數字');
         hasError = true;
       }
       if (!assigneeUserId || assigneeUserId <= 0) {

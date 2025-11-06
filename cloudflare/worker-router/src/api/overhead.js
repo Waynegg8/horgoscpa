@@ -216,10 +216,13 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
 			}
 		}
-		// Upsert by cost_type_id
-		if (method === "PUT" && url.pathname.match(/^\/internal\/api\/v1\/admin\/overhead-templates\/by-type\/(\d+)$/)) {
+	}
+	
+	// Upsert by cost_type_id - PUT /admin/overhead-templates/by-type/:id
+	if (path.match(/^\/internal\/api\/v1\/admin\/overhead-templates\/by-type\/\d+$/)) {
+		if (method === "PUT") {
 			try {
-				const costTypeId = parseInt(url.pathname.split("/").pop());
+				const costTypeId = parseInt(path.split("/").pop());
 				let body; try { body = await request.json(); } catch (_) { body = {}; }
 				const amount = body.amount != null ? Number(body.amount) : null;
 				const notes = body.notes != null ? String(body.notes) : null;
@@ -331,30 +334,44 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"year/month 不合法", meta:{ requestId } }, corsHeaders);
 			}
 			const ym = `${year}-${String(month).padStart(2,'0')}`;
+			
+			console.log(`[Preview] 查询模板，year=${year}, month=${month}`);
+			
 			const rows = await env.DATABASE.prepare(
 				`SELECT t.template_id, t.cost_type_id, t.amount, t.notes, t.recurring_type, t.recurring_months, t.effective_from, t.effective_to,
 				 c.cost_name
-				 FROM OverheadRecurringTemplates t JOIN OverheadCostTypes c ON c.cost_type_id = t.cost_type_id
+				 FROM OverheadRecurringTemplates t 
+				 LEFT JOIN OverheadCostTypes c ON c.cost_type_id = t.cost_type_id
 				 WHERE t.is_active = 1`
 			).all();
+			
+			console.log(`[Preview] 找到 ${rows?.results?.length || 0} 个模板`);
+			
 			const candidates = [];
 			for (const r of (rows?.results||[])) {
-				const exists = await env.DATABASE.prepare(
-					`SELECT 1 FROM MonthlyOverheadCosts WHERE cost_type_id = ? AND year = ? AND month = ? AND is_deleted = 0 LIMIT 1`
-				).bind(r.cost_type_id, year, month).first();
-				candidates.push({
-					templateId: r.template_id,
-					costTypeId: r.cost_type_id,
-					costName: r.cost_name,
-					amount: Number(r.amount||0),
-					notes: r.notes||'',
-					alreadyExists: !!exists
-				});
+				try {
+					const exists = await env.DATABASE.prepare(
+						`SELECT 1 FROM MonthlyOverheadCosts WHERE cost_type_id = ? AND year = ? AND month = ? AND is_deleted = 0 LIMIT 1`
+					).bind(r.cost_type_id, year, month).first();
+					candidates.push({
+						templateId: r.template_id,
+						costTypeId: r.cost_type_id,
+						costName: r.cost_name || `[ID:${r.cost_type_id}]`,
+						amount: Number(r.amount||0),
+						notes: r.notes||'',
+						alreadyExists: !!exists
+					});
+				} catch (err) {
+					console.error(`[Preview] 检查模板 ${r.template_id} 失败:`, err);
+				}
 			}
+			
+			console.log(`[Preview] 返回 ${candidates.length} 个候选项`);
+			
 			return jsonResponse(200, { ok:true, code:"OK", data:{ year, month, items:candidates }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
-			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err), stack: err.stack }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤: " + String(err), meta:{ requestId } }, corsHeaders);
 		}
 	}
 
