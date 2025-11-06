@@ -132,7 +132,10 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
         ).bind(String(me.user_id)).first();
         bal.compHours = Number(compRow?.total || 0);
         const recentRows = await env.DATABASE.prepare(
-          `SELECT leave_type AS type, start_date, end_date, amount, status FROM LeaveRequests WHERE user_id = ? ORDER BY submitted_at DESC LIMIT 3`
+          `SELECT leave_type AS type, start_date, end_date, amount, status 
+           FROM LeaveRequests 
+           WHERE user_id = ? AND is_deleted = 0 
+           ORDER BY submitted_at DESC LIMIT 3`
         ).bind(String(me.user_id)).all();
         const recent = (recentRows?.results || []).map(r => ({ type: r.type, startDate: r.start_date, days: Number(r.amount || 0), status: r.status }));
         res.myLeaves = { balances: bal, recent };
@@ -452,7 +455,7 @@ export async function handleDashboard(request, env, me, requestId, url, path) {
             u.name as user_name
           FROM LeaveRequests l
           LEFT JOIN Users u ON u.user_id = l.user_id
-          WHERE l.submitted_at >= datetime('now', '-${days} days')
+          WHERE l.is_deleted = 0 AND l.submitted_at >= datetime('now', '-${days} days')
             ${userFilter3}
           ORDER BY l.submitted_at DESC
           LIMIT 30

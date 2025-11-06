@@ -42,6 +42,8 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				invalidateCacheByType(env, 'leaves_balances', { userId: String(row.user_id) })
 			]).catch(()=>{});
 			await deleteKVCacheByPrefix(env, 'leaves_');
+			// 同步清除儀表板緩存（近期動態與我的假期區塊）
+			await deleteKVCacheByPrefix(env, 'dashboard:');
 			return jsonResponse(200, { ok:true, code:"OK", message:"事件已刪除", meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
@@ -89,6 +91,8 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 				invalidateCacheByType(env, 'leaves_balances', { userId: String(row.user_id) })
 			]).catch(()=>{});
 			await deleteKVCacheByPrefix(env, 'leaves_');
+			// 同步清除儀表板緩存（近期動態與我的假期區塊）
+			await deleteKVCacheByPrefix(env, 'dashboard:');
 			return jsonResponse(200, { ok:true, code:"OK", message:"已更新請假紀錄", meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
@@ -171,6 +175,8 @@ export async function handleLeaves(request, env, me, requestId, url, path) {
 			
 			// ⚡ 清除KV緩存
 			await deleteKVCacheByPrefix(env, 'leaves_');
+			// 同步清除儀表板緩存（近期動態與我的假期區塊）
+			await deleteKVCacheByPrefix(env, 'dashboard:');
 			
 			return jsonResponse(200, { ok:true, code:"OK", message:"已刪除請假記錄", meta:{ requestId } }, corsHeaders);
 			

@@ -865,6 +865,7 @@ export async function handleClients(request, env, me, requestId, url) {
 			invalidateCacheByType(env, 'clients_list').catch(err => 
 				console.error('[CLIENTS] 失效缓存失败:', err)
 			);
+			deleteKVCacheByPrefix(env, 'clients_list').catch(err => console.error('[CLIENTS] 刪除 KV 列表快取失敗:', err));
 			try {
 				const detailKey = generateCacheKey('client_detail', { clientId });
 				await deleteKVCache(env, detailKey);
@@ -920,6 +921,7 @@ export async function handleClients(request, env, me, requestId, url) {
 
 			// 失效快取：列表與詳情
 			invalidateCacheByType(env, 'clients_list').catch(err => console.error('[CLIENTS] 失效列表快取失敗:', err));
+			deleteKVCacheByPrefix(env, 'clients_list').catch(err => console.error('[CLIENTS] 刪除 KV 列表快取失敗:', err));
 			try {
 				const detailKey = generateCacheKey('client_detail', { clientId });
 				await deleteKVCache(env, detailKey);
