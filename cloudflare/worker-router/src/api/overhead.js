@@ -1557,15 +1557,14 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						ts.work_type, 
 						ts.work_date, 
 						ts.hours, 
-						ts.service_name,
 						ts.service_id,
 						ts.service_item_id,
-						s.service_name as service_name_full,
-						si.item_name as service_item_name
+						COALESCE(s.service_name, ts.service_name) as service_name_full,
+						COALESCE(si.item_name, '未指定') as service_item_name
 					 FROM Timesheets ts
 					 LEFT JOIN Users u ON ts.user_id = u.user_id
-					 LEFT JOIN Services s ON ts.service_id = s.service_id
-					 LEFT JOIN ServiceItems si ON ts.service_item_id = si.item_id
+					 LEFT JOIN Services s ON CAST(ts.service_id AS INTEGER) = s.service_id
+					 LEFT JOIN ServiceItems si ON CAST(ts.service_item_id AS INTEGER) = si.item_id
 					 WHERE ts.client_id = ? AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
 					 ORDER BY ts.service_id, ts.service_item_id, u.name`
 				).bind(client.client_id, yearMonth).all();
@@ -1581,11 +1580,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						: `name_${ts.service_name || 'general'}`;
 					
 					if (!taskGroups[taskKey]) {
-						// 優先使用 ServiceItems 的名稱，否則用文字服務名稱
-						const taskTitle = ts.service_item_name 
-							|| ts.service_name 
-							|| ts.service_name_full 
-							|| '一般服務';
+						// SQL查询已经用COALESCE处理了，直接使用即可
+						const taskTitle = ts.service_item_name || '一般服務';
 						
 						taskGroups[taskKey] = {
 							taskTitle: taskTitle,
@@ -1657,14 +1653,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					
 					// 生成任務記錄（按服務子項目）
 					const assigneeNames = Array.from(group.userNames).join(', ') || '未指定';
-					// 获取服务项目名称，优先从关联表获取
-					const firstTs = group.timesheets[0];
-					let serviceName = '未分類';
-					if (firstTs?.service_name_full) {
-						serviceName = firstTs.service_name_full;
-					} else if (firstTs?.service_name) {
-						serviceName = firstTs.service_name;
-					}
+					// 从第一笔工时记录获取服务项目名称（已在SQL中处理COALESCE）
+					const serviceName = group.timesheets[0]?.service_name_full || '未分類';
 					
 					tasks.push({
 						clientName: client.company_name,
