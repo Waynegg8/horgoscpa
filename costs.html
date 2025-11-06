@@ -230,23 +230,18 @@
         const monthInput = document.getElementById('month');
 
         // 成本項目設定
-        const itemSearch = document.getElementById('itemSearch');
-        const itemCategory = document.getElementById('itemCategory');
         const tbodyItems = document.getElementById('tbody-items');
 
         // 月度管理費用記錄
-        const recordSearch = document.getElementById('recordSearch');
         const tbodyRecords = document.getElementById('tbody-records');
         const statTotal = document.getElementById('stat-total');
         const statBreakdown = document.getElementById('stat-breakdown');
 
         // 員工成本分析
-        const empSearch = document.getElementById('empSearch');
         const tbodyEmployee = document.getElementById('tbody-employee');
         const empTotalCost = document.getElementById('emp-total-cost');
 
         // 客戶任務成本
-        const clientSearch = document.getElementById('clientSearch');
         const viewType = document.getElementById('viewType');
         const clientView = document.getElementById('client-view');
         const taskView = document.getElementById('task-view');
@@ -308,19 +303,15 @@
         // ============ 成本項目設定 ============
         async function loadItems(){
           const params = new URLSearchParams();
-          const q = itemSearch.value.trim();
-          if (q) params.set('q', q);
-          const cat = itemCategory.value;
-          if (cat && cat !== 'all') params.set('category', cat);
           try {
-            tbodyItems.innerHTML = '<tr><td colspan="7" class="muted">載入中…</td></tr>';
+            tbodyItems.innerHTML = '<tr><td colspan="6" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/overhead-types?${params.toString()}`, { credentials:'include' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             const json = await res.json();
             if (!res.ok || !json || json.ok !== true) throw new Error();
             const items = json.data || [];
             if (items.length === 0) {
-              tbodyItems.innerHTML = '<tr><td colspan="7" class="muted">尚無資料</td></tr>';
+              tbodyItems.innerHTML = '<tr><td colspan="6" class="muted">尚無資料</td></tr>';
               return;
             }
             tbodyItems.innerHTML = '';
@@ -328,7 +319,6 @@
               const tr = document.createElement('tr');
               const allocationText = { per_employee: '按員工數', per_hour: '按工時', per_revenue: '按收入' }[item.allocationMethod] || item.allocationMethod;
               tr.innerHTML = `
-                <td>${item.code||''}</td>
                 <td>${item.name||''}</td>
                 <td>${item.category === 'fixed' ? '固定' : '變動'}</td>
                 <td>${allocationText}</td>
@@ -339,7 +329,7 @@
               tbodyItems.appendChild(tr);
             });
           } catch (_) {
-            tbodyItems.innerHTML = '<tr><td colspan="7" style="color:#c0392b;">載入失敗</td></tr>';
+            tbodyItems.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
           }
         }
 
@@ -349,8 +339,6 @@
           const params = new URLSearchParams();
           params.set('year', String(ym.year));
           params.set('month', String(ym.month));
-          const q = recordSearch.value.trim();
-          if (q) params.set('q', q);
           try {
             tbodyRecords.innerHTML = '<tr><td colspan="6" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/overhead-costs?${params.toString()}`, { credentials:'include' });
@@ -395,8 +383,6 @@
           const params = new URLSearchParams();
           params.set('year', String(ym.year));
           params.set('month', String(ym.month));
-          const q = empSearch.value.trim();
-          if (q) params.set('q', q);
           try {
             tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/costs/employee?${params.toString()}`, { credentials:'include' });
@@ -479,8 +465,6 @@
           const params = new URLSearchParams();
           params.set('year', String(ym.year));
           params.set('month', String(ym.month));
-          const q = clientSearch.value.trim();
-          if (q) params.set('q', q);
           try {
             tbodyClients.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/costs/client?${params.toString()}`, { credentials:'include' });
@@ -536,8 +520,6 @@
           const params = new URLSearchParams();
           params.set('year', String(ym.year));
           params.set('month', String(ym.month));
-          const q = clientSearch.value.trim();
-          if (q) params.set('q', q);
           try {
             tbodyTasks.innerHTML = '<tr><td colspan="8" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/costs/task?${params.toString()}`, { credentials:'include' });
@@ -608,11 +590,6 @@
 
         // 事件
         let searchTimer = null;
-        itemSearch.addEventListener('input', ()=>{ clearTimeout(searchTimer); searchTimer = setTimeout(loadItems, 300); });
-        itemCategory.addEventListener('change', loadItems);
-        recordSearch.addEventListener('input', ()=>{ clearTimeout(searchTimer); searchTimer = setTimeout(loadRecords, 300); });
-        empSearch.addEventListener('input', ()=>{ clearTimeout(searchTimer); searchTimer = setTimeout(loadEmployeeCosts, 300); });
-        clientSearch.addEventListener('input', ()=>{ clearTimeout(searchTimer); searchTimer = setTimeout(loadClientCosts, 300); });
         viewType.addEventListener('change', loadClientCosts);
         monthInput.addEventListener('change', ()=>{ 
           loadItems(); 
