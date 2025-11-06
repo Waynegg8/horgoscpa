@@ -1,5 +1,6 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
 import { invalidateCacheByType } from "../cache-helper.js";
+import { calculateEmployeePayroll } from "./payroll.js";
 
 export async function handleOverhead(request, env, me, requestId, url, path) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -719,220 +720,100 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				"SELECT user_id, name, start_date as hire_date, base_salary FROM Users WHERE is_deleted = 0 ORDER BY name ASC"
 			).all();
 			const users = usersRows?.results || [];
+			const employeeCount = users.length;
+
+			// 2. 獲取本月管理費用明細（按分攤方式分組）
+			const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
+			const overheadDetailsRows = await env.DATABASE.prepare(
+				`SELECT m.cost_type_id, m.amount, t.allocation_method
+				 FROM MonthlyOverheadCosts m
+				 LEFT JOIN OverheadCostTypes t ON m.cost_type_id = t.cost_type_id
+				 WHERE m.year = ? AND m.month = ? AND m.is_deleted = 0 AND t.is_deleted = 0`
+			).bind(year, month).all();
+			const overheadDetails = overheadDetailsRows?.results || [];
+			
+			// 計算各分攤方式的總金額
+			let totalPerEmployee = 0;
+			let totalPerHour = 0;
+			let totalPerRevenue = 0;
+			
+			for (const detail of overheadDetails) {
+				const amount = Number(detail.amount || 0);
+				if (detail.allocation_method === 'per_employee') {
+					totalPerEmployee += amount;
+				} else if (detail.allocation_method === 'per_hour') {
+					totalPerHour += amount;
+				} else if (detail.allocation_method === 'per_revenue') {
+					totalPerRevenue += amount;
+				}
+			}
+			
+			// 3. 計算本月總工時（用於按工時分攤）
+			const totalMonthHoursRow = await env.DATABASE.prepare(
+				`SELECT SUM(hours) as total FROM Timesheets 
+				 WHERE substr(work_date, 1, 7) = ? AND is_deleted = 0`
+			).bind(yearMonth).first();
+			const totalMonthHours = Number(totalMonthHoursRow?.total || 0);
+			
+			// 4. 計算本月總營收（用於按營收分攤）- 暫時設為 0，待收據系統完善後實作
+			const totalMonthRevenue = 0;
 
 			const employees = [];
 			
 			for (const user of users) {
 				const userId = user.user_id;
-				
-				// 2. 取得月薪（以 Users.base_salary 為主）
 				const monthlySalary = Number(user.base_salary || 0);
-				const annualSalary = monthlySalary * 12;
 				
-				// 3. 計算年度總工時（2080小時 = 40小時/週 × 52週）
-				const annualHours = 2080;
-				
-				// 4. 計算年度特休時數（若無資料則為 0）
-				const annualRow = await env.DATABASE.prepare(
-					"SELECT total FROM LeaveBalances WHERE user_id = ? AND year = ? AND leave_type = 'annual' LIMIT 1"
-				).bind(userId, year).first();
-				const annualLeaveDays = Number(annualRow?.total || 0);
-				const annualLeaveHours = Math.max(0, annualLeaveDays * 8);
-				
-				// 5. 計算實際工時
-				const actualHours = annualHours - annualLeaveHours;
-				
-				// 6. 計算員工時薪（以月薪 / 月工時基準）
-				const monthlyBaseHours = actualHours / 12;
-				const hourlyRate = monthlyBaseHours > 0 ? monthlySalary / monthlyBaseHours : 0;
-				
-				// 7. 獲取本月實際工時記錄
+				// 2. 調用薪資計算函數獲取完整的應發工資
 				const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
+				let payrollData;
+				try {
+					payrollData = await calculateEmployeePayroll(env, userId, yearMonth);
+				} catch (err) {
+					console.error(`[Overhead] 計算 ${user.name} 薪資失敗:`, err);
+					payrollData = {
+						grossSalaryCents: monthlySalary * 100, // 至少使用底薪
+						baseSalaryCents: monthlySalary * 100,
+						overtimeCents: 0
+					};
+				}
+				
+				// 3. 薪資成本 = 應發工資（包括底薪、津贴、奖金、加班费等所有项目）
+				const totalLaborCost = Math.round(payrollData.grossSalaryCents / 100);
+				
+				// 4. 獲取本月實際工時記錄（用於計算工時分攤）
 				const timesheetRows = await env.DATABASE.prepare(
-					`SELECT work_type, hours
+					`SELECT SUM(hours) as total
 					 FROM Timesheets 
 					 WHERE user_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
 				).bind(userId, yearMonth).all();
-				const timesheets = timesheetRows?.results || [];
+				const monthHours = Number(timesheetRows?.results?.[0]?.total || 0);
 				
-				// 工時類型倍率對照表
-				const WORK_TYPE_MULTIPLIERS = {
-					1: 1.0,   // 正常工時
-					2: 1.34,  // 平日加班（前2小時）
-					3: 1.67,  // 平日加班（後2小時）
-					4: 1.34,  // 休息日加班（前2小時）
-					5: 1.67,  // 休息日加班（第3-8小時）
-					6: 2.67,  // 休息日加班（第9-12小時）
-					7: 1.0,   // 國定假日加班（8小時內）- 雙倍工資，不給補休
-					8: 1.34,  // 國定假日加班（第9-10小時）
-					9: 1.67,  // 國定假日加班（第11-12小時）
-					10: 1.0,  // 例假日加班（8小時內）- 雙倍工資 + 16小時補休
-					11: 1.0   // 例假日加班（第9-12小時）
-				};
+				// 5. 提取补休相关数据（用于前端显示）
+				const totalCompHoursGenerated = payrollData.totalCompHoursGenerated || 0;
+				const totalCompHoursUsed = payrollData.totalCompHoursUsed || 0;
+				const unusedCompHours = payrollData.unusedCompHours || 0;
+				const expiredCompPay = Math.round(payrollData.overtimeCents / 100);
 				
-				// 8. 計算總工時和加權工時
-				let monthHours = 0;
-				let weightedHours = 0;
-				const processedFixedKeys = new Set(); // 追踪已处理的 fixed_8h 类型（国定假日/例假日）
+				// 10. 計算分攤管理費用（根據各成本項目的分攤方式）
+				let overheadAllocation = 0;
 				
-				// 第一步：统计每天每类型的 fixed_8h 工时（用于去重）
-				const dailyFixedTypeMap = {};
-				for (const ts of timesheets) {
-					const date = ts.work_date || '';
-					const workTypeId = parseInt(ts.work_type) || 1;
-					if (workTypeId === 7 || workTypeId === 10) {
-						const key = `${date}:${workTypeId}`;
-						dailyFixedTypeMap[key] = true;
-					}
+				// 10.1 按員工數分攤（每人平均）
+				if (totalPerEmployee > 0 && employeeCount > 0) {
+					overheadAllocation += Math.round(totalPerEmployee / employeeCount);
 				}
 				
-				// 第二步：计算加权工时
-				for (const ts of timesheets) {
-					const hours = Number(ts.hours || 0);
-					const date = ts.work_date || '';
-					const workTypeId = parseInt(ts.work_type) || 1;
-					const multiplier = WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0;
-					
-					monthHours += hours;
-					
-					// 特殊情況：國定假日和例假日 8小時內
-					if (workTypeId === 7 || workTypeId === 10) {
-						// 同一天同类型的fixed_8h，只计算一次固定8h加权（与薪资页面逻辑一致）
-						const key = `${date}:${workTypeId}`;
-						if (!processedFixedKeys.has(key)) {
-							weightedHours += 8.0;
-							processedFixedKeys.add(key);
-						}
-					} else {
-						// 一般情況：實際工時 × 倍率
-						weightedHours += hours * multiplier;
-					}
+				// 10.2 按工時比例分攤
+				if (totalPerHour > 0 && totalMonthHours > 0) {
+					overheadAllocation += Math.round(totalPerHour * (monthHours / totalMonthHours));
 				}
 				
-				// 9. 計算本月實際成本（與薪資頁面邏輯一致）
-				// 實際支付成本 = 底薪 + 本月未使用補休轉加班費
-				
-				// 9.1 計算本月產生的補休明細
-				const WORK_TYPES = {
-					1: { multiplier: 1.0, isOvertime: false },
-					2: { multiplier: 1.34, isOvertime: true },
-					3: { multiplier: 1.67, isOvertime: true },
-					4: { multiplier: 1.34, isOvertime: true },
-					5: { multiplier: 1.67, isOvertime: true },
-					6: { multiplier: 2.67, isOvertime: true },
-					7: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },
-					8: { multiplier: 1.34, isOvertime: true },
-					9: { multiplier: 1.67, isOvertime: true },
-					10: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },
-					11: { multiplier: 1.34, isOvertime: true },
-					12: { multiplier: 1.67, isOvertime: true },
-				};
-				
-				// 重新查詢帶 work_date 的工時記錄
-				const fullTimesheetRows = await env.DATABASE.prepare(
-					`SELECT work_date, work_type, hours
-					 FROM Timesheets 
-					 WHERE user_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0
-					 ORDER BY work_date, work_type`
-				).bind(userId, yearMonth).all();
-				const fullTimesheets = fullTimesheetRows?.results || [];
-				
-				let totalCompHoursGenerated = 0;
-				const compGenerationDetails = [];
-				const processedFixedKeysForComp = new Set();
-				
-				for (const ts of fullTimesheets) {
-					const date = ts.work_date || '';
-					const hours = Number(ts.hours || 0);
-					const workTypeId = parseInt(ts.work_type) || 1;
-					const workType = WORK_TYPES[workTypeId];
-					
-					if (workType && workType.isOvertime) {
-						let compHours = 0;
-						if (workType.special === 'fixed_8h') {
-							// 國定假日/例假日：同一天同類型只產生一次8h補休（目前已改為0）
-							const key = `${date}:${workTypeId}`;
-							if (!processedFixedKeysForComp.has(key)) {
-								compHours = 0; // 國定假日/例假日不給補休
-								processedFixedKeysForComp.add(key);
-							}
-						} else {
-							// 一般加班：實際工時 1:1 產生補休
-							compHours = hours;
-						}
-						
-						if (compHours > 0) {
-							totalCompHoursGenerated += compHours;
-							compGenerationDetails.push({
-								date: date,
-								workTypeId: workTypeId,
-								hours: compHours,
-								multiplier: workType.multiplier
-							});
-						}
-					}
+				// 10.3 按營收比例分攤（待實作）
+				if (totalPerRevenue > 0 && totalMonthRevenue > 0) {
+					// TODO: 計算該員工的營收貢獻，按比例分攤
+					// const employeeRevenue = ...;
+					// overheadAllocation += Math.round(totalPerRevenue * (employeeRevenue / totalMonthRevenue));
 				}
-				
-				// 9.2 查詢本月使用的補休
-				const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
-				const lastDay = new Date(year, month, 0).getDate();
-				const lastDayStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-				
-				const compLeavesRows = await env.DATABASE.prepare(
-					`SELECT amount, unit
-					 FROM LeaveRequests
-					 WHERE user_id = ? AND leave_type = 'compensatory' AND status = 'approved'
-					   AND start_date >= ? AND start_date <= ? AND is_deleted = 0`
-				).bind(userId, firstDay, lastDayStr).all();
-				const compLeaves = compLeavesRows?.results || [];
-				
-				let totalCompHoursUsed = 0;
-				for (const leave of compLeaves) {
-					const amount = Number(leave.amount || 0);
-					if (leave.unit === 'days') {
-						totalCompHoursUsed += amount * 8;
-					} else {
-						totalCompHoursUsed += amount;
-					}
-				}
-				
-				// 9.3 計算未使用補休轉加班費
-				const unusedCompHours = Math.max(0, totalCompHoursGenerated - totalCompHoursUsed);
-				const hourlyRateCents = Math.round(monthlySalary / 240 * 100);
-				
-				let expiredCompPayCents = 0;
-				let remainingToConvert = unusedCompHours;
-				
-				for (const detail of compGenerationDetails) {
-					if (remainingToConvert <= 0) break;
-					
-					const hoursToConvert = Math.min(detail.hours, remainingToConvert);
-					const amountCents = Math.round(hoursToConvert * hourlyRateCents * detail.multiplier);
-					
-					expiredCompPayCents += amountCents;
-					remainingToConvert -= hoursToConvert;
-				}
-				
-				// 9.4 最終薪資成本 = 底薪 + 未使用補休轉加班費
-				const totalLaborCost = monthlySalary + Math.round(expiredCompPayCents / 100);
-				
-				// 11. 計算分攤管理費用
-				// 按工時比例分攤
-				const overheadRow = await env.DATABASE.prepare(
-					`SELECT SUM(m.amount) as total FROM MonthlyOverheadCosts m
-					 WHERE m.year = ? AND m.month = ? AND m.is_deleted = 0`
-				).bind(year, month).first();
-				const totalOverhead = Number(overheadRow?.total || 0);
-				
-				const totalMonthHoursRow = await env.DATABASE.prepare(
-					`SELECT SUM(hours) as total FROM Timesheets 
-					 WHERE substr(work_date, 1, 7) = ? AND is_deleted = 0`
-				).bind(yearMonth).first();
-				const totalMonthHours = Number(totalMonthHoursRow?.total || 0);
-				
-				const overheadAllocation = totalMonthHours > 0 
-					? Math.round(totalOverhead * (monthHours / totalMonthHours))
-					: 0;
 				
 				employees.push({
 					userId,
@@ -941,9 +822,9 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					totalCompHoursGenerated: Math.round(totalCompHoursGenerated * 10) / 10, // 本月產生補休
 					totalCompHoursUsed: Math.round(totalCompHoursUsed * 10) / 10, // 本月使用補休
 					unusedCompHours: Math.round(unusedCompHours * 10) / 10, // 未使用補休
-					expiredCompPay: Math.round(expiredCompPayCents / 100), // 未使用補休轉加班費
+					expiredCompPay, // 未使用補休轉加班費
 					monthHours: Math.round(monthHours * 10) / 10, // 本月總工時
-					laborCost: totalLaborCost, // 薪資成本（底薪+補休轉加班費）
+					laborCost: totalLaborCost, // 薪資成本（包括底薪、津贴、奖金、加班费等所有项目）
 					overheadAllocation, // 分攤管理費用
 					totalCost: totalLaborCost + overheadAllocation // 總成本
 				});

@@ -96,12 +96,13 @@
             <button type="button" class="btn" id="btn-refresh-emp" disabled>刷新</button>
           </div>
           <div class="info-box" style="margin-bottom: 12px; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 14px; color: #1e40af;">
-            <strong>計算說明（與薪資頁面一致）：</strong><br>
+            <strong>計算說明（與薪資頁面完全一致）：</strong><br>
+            • <strong>薪資成本</strong> = 應發工資（底薪 + 固定津貼 + 非固定津貼 + 固定獎金 + 績效獎金 + 年終獎金 + 加班費 + 伙食津貼 + 交通補貼）<br>
             • <strong>補休規則</strong>：加班先全部轉為補休，本月未使用的補休才轉為加班費<br>
             • <strong>產生補休</strong>：一般加班 1:1 產生補休；國定假日/例假日不給補休，直接雙倍工資<br>
             • <strong>未使用補休</strong> = 本月產生補休 - 本月使用補休<br>
-            • <strong>補休轉加班費</strong> = 未使用補休 × 時薪 × 原倍率（按原加班類型計算）<br>
-            • <strong>薪資成本</strong> = 底薪 + 本月未使用補休轉加班費（實際支付成本）<br>
+            • <strong>補休轉加班費</strong> = 未使用補休 × 時薪 × 原倍率（已包含在薪資成本中）<br>
+            • <strong>分攤管理費</strong>：根據各成本項目設定的分攤方式（按員工數/按工時/按營收）計算<br>
             • <strong>總成本</strong> = 薪資成本 + 分攤管理費用
           </div>
           <table class="table" aria-label="員工成本列表">

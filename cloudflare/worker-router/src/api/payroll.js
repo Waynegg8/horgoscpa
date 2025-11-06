@@ -746,7 +746,7 @@ async function checkFullAttendance(env, userId, month) {
 /**
  * 计算单个员工的月度薪资
  */
-async function calculateEmployeePayroll(env, userId, month) {
+export async function calculateEmployeePayroll(env, userId, month) {
 	// 1. 读取员工基本信息
 	const user = await env.DATABASE.prepare(
 		`SELECT user_id, username, name, base_salary FROM Users WHERE user_id = ? AND is_deleted = 0`
