@@ -638,8 +638,8 @@
             }
 
             showSuccess('外出登記已刪除');
-            await loadTrips();
-            await loadSummary();
+            await loadTrips(true);
+            await loadSummary(true);
           } catch (err) {
             console.error('刪除失敗:', err);
             showError('刪除失敗，請稍後再試');

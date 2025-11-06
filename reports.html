@@ -56,8 +56,8 @@
               </select>
             </div>
             <div class="filter-group filter-actions">
-              <button id="cc-query" class="btn primary" type="button">查詢</button>
-              <button id="cc-reset" class="btn" type="button">重置</button>
+              <button id="cc-query" class="btn primary" type="button" style="background:#0ea5e9;border-color:#0ea5e9;color:#fff;">查詢</button>
+              <button id="cc-reset" class="btn" type="button" style="background:#fff;border:1px solid #e5e7eb;color:#334155;">重置</button>
             </div>
           </div>
         </div>
@@ -70,8 +70,9 @@
               <div class="stat-value" id="cc-total-cost">—</div>
             </div>
             <div class="stat-item">
-              <div class="stat-label">管理成本</div>
+              <div class="stat-label">管理成本狀態</div>
               <div class="stat-value" id="cc-overhead-status">—</div>
+              <div class="stat-sub" style="font-size:11px;color:#64748b;margin-top:4px;">需在「成本」頁面輸入管理成本</div>
             </div>
           </div>
 
@@ -131,8 +132,8 @@
               </select>
             </div>
             <div class="filter-group filter-actions">
-              <button id="eh-query" class="btn primary" type="button">查詢</button>
-              <button id="eh-reset" class="btn" type="button">重置</button>
+              <button id="eh-query" class="btn primary" type="button" style="background:#0ea5e9;border-color:#0ea5e9;color:#fff;">查詢</button>
+              <button id="eh-reset" class="btn" type="button" style="background:#fff;border:1px solid #e5e7eb;color:#334155;">重置</button>
             </div>
           </div>
         </div>
@@ -196,8 +197,8 @@
               </select>
             </div>
             <div class="filter-group filter-actions">
-              <button id="pr-query" class="btn primary" type="button">查詢</button>
-              <button id="pr-reset" class="btn" type="button">重置</button>
+              <button id="pr-query" class="btn primary" type="button" style="background:#0ea5e9;border-color:#0ea5e9;color:#fff;">查詢</button>
+              <button id="pr-reset" class="btn" type="button" style="background:#fff;border:1px solid #e5e7eb;color:#334155;">重置</button>
             </div>
           </div>
         </div>
@@ -262,9 +263,9 @@
               </select>
             </div>
             <div class="filter-group filter-actions">
-              <button id="rc-query" class="btn primary" type="button">查詢</button>
-              <button id="rc-reset" class="btn" type="button">重置</button>
-              <a href="/internal/receivables-report" class="btn" style="text-decoration:none;">帳齡分析</a>
+              <button id="rc-query" class="btn primary" type="button" style="background:#0ea5e9;border-color:#0ea5e9;color:#fff;">查詢</button>
+              <button id="rc-reset" class="btn" type="button" style="background:#fff;border:1px solid #e5e7eb;color:#334155;">重置</button>
+              <a href="/internal/receivables-report" class="btn" style="text-decoration:none;background:#fff;border:1px solid #e5e7eb;color:#334155;">帳齡分析</a>
             </div>
           </div>
         </div>
@@ -813,11 +814,17 @@
             console.log('[收款分析] API回應數據:', json);
             if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
             const d = json.data || { summary:{}, monthly_trend:[], by_client:[] };
-            totalReceiptsEl.textContent = formatNumber(d.summary?.total_receipts || 0);
-            totalPaidEl.textContent = formatNumber(d.summary?.total_paid || 0);
-            totalOutstandingEl.textContent = formatNumber(d.summary?.total_outstanding || 0);
-            const rate = Number(d.summary?.collection_rate||0);
-            collectionRateEl.textContent = rate === 0 ? '—' : `${rate.toFixed(1)}%`;
+            const totalReceipts = Number(d.summary?.total_receipts || 0);
+            const totalPaid = Number(d.summary?.total_paid || 0);
+            const totalOutstanding = Number(d.summary?.total_outstanding || 0);
+            
+            totalReceiptsEl.textContent = formatNumber(totalReceipts);
+            totalPaidEl.textContent = formatNumber(totalPaid);
+            totalOutstandingEl.textContent = formatNumber(totalOutstanding);
+            
+            // 计算收款率：已收款 / 總開立 * 100
+            const collectionRate = totalReceipts > 0 ? (totalPaid / totalReceipts * 100) : 0;
+            collectionRateEl.textContent = collectionRate === 0 ? '—' : `${collectionRate.toFixed(1)}%`;
             
             const list = Array.isArray(d.by_client) ? d.by_client : [];
             tbody.innerHTML = '';
