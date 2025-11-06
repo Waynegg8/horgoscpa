@@ -803,60 +803,56 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				const userId = user.user_id;
 				const monthlySalary = Number(user.base_salary || 0);
 				
-				// 2. 查詢已保存的薪資快照數據
-				const payrollSnapshot = await env.DATABASE.prepare(
-					`SELECT gross_salary_cents, overtime_cents, 
-					        total_comp_hours_generated, total_comp_hours_used, unused_comp_hours
-					 FROM PayrollSnapshots 
-					 WHERE user_id = ? AND month = ? 
-					 ORDER BY created_at DESC LIMIT 1`
-				).bind(userId, yearMonth).first();
+				// 2. 實際計算本月薪資成本
+				let totalLaborCostCents = monthlySalary * 100; // 底薪
 				
-				// 3. 查詢固定薪資項目（津貼、獎金等）- 用於沒有快照時估算
+				// 2.1 查詢並計算固定薪資項目（津貼、獎金等）
 				const salaryItems = await env.DATABASE.prepare(
 					`SELECT item_type, amount_cents, recurring_type, recurring_months, effective_date, expiry_date
 					 FROM SalaryItems
 					 WHERE user_id = ? AND is_deleted = 0`
 				).bind(userId).all();
 				
-				// 4. 薪資成本計算
-				let totalLaborCost, expiredCompPay, totalCompHoursGenerated, totalCompHoursUsed, unusedCompHours;
-				
-				if (payrollSnapshot) {
-					// 使用已確認的薪資快照數據（最準確）
-					totalLaborCost = Math.round(payrollSnapshot.gross_salary_cents / 100);
-					expiredCompPay = Math.round((payrollSnapshot.overtime_cents || 0) / 100);
-					totalCompHoursGenerated = payrollSnapshot.total_comp_hours_generated || 0;
-					totalCompHoursUsed = payrollSnapshot.total_comp_hours_used || 0;
-					unusedCompHours = payrollSnapshot.unused_comp_hours || 0;
-				} else {
-					// 沒有薪資快照，估算本月薪資成本
-					let estimatedSalaryCents = monthlySalary * 100; // 從底薪開始
-					
-					// 加上固定津貼和每月獎金
-					const items = salaryItems?.results || [];
-					for (const item of items) {
-						const itemType = item.item_type;
-						const amountCents = Number(item.amount_cents || 0);
-						const recurringType = item.recurring_type;
-						const recurringMonths = item.recurring_months;
-						const effectiveDate = item.effective_date;
-						const expiryDate = item.expiry_date;
-						
-						// 判斷該項目是否在本月發放
-						const shouldPay = shouldPayInMonth(recurringType, recurringMonths, effectiveDate, expiryDate, yearMonth);
-						
-						if (shouldPay && (itemType === 'allowance' || itemType === 'bonus')) {
-							estimatedSalaryCents += amountCents;
-						}
+				const items = salaryItems?.results || [];
+				for (const item of items) {
+					const shouldPay = shouldPayInMonth(item.recurring_type, item.recurring_months, item.effective_date, item.expiry_date, yearMonth);
+					if (shouldPay && (item.item_type === 'allowance' || item.item_type === 'bonus')) {
+						totalLaborCostCents += Number(item.amount_cents || 0);
 					}
-					
-					totalLaborCost = Math.round(estimatedSalaryCents / 100);
-					expiredCompPay = 0; // 無法準確估算
-					totalCompHoursGenerated = 0;
-					totalCompHoursUsed = 0;
-					unusedCompHours = 0;
 				}
+				
+				// 2.2 計算本月產生的補休時數
+				const [y, m] = yearMonth.split('-');
+				const firstDay = `${y}-${m}-01`;
+				const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+				const lastDayStr = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
+				
+				const compGrantsRows = await env.DATABASE.prepare(
+					`SELECT hours FROM CompensatoryLeaveGrants
+					 WHERE user_id = ? AND generated_date >= ? AND generated_date <= ? AND is_deleted = 0`
+				).bind(userId, firstDay, lastDayStr).all();
+				const totalCompHoursGenerated = (compGrantsRows?.results || []).reduce((sum, g) => sum + Number(g.hours || 0), 0);
+				
+				// 2.3 計算本月使用的補休時數
+				const compUsedRows = await env.DATABASE.prepare(
+					`SELECT amount, unit FROM LeaveRequests
+					 WHERE user_id = ? AND leave_type = 'compensatory' AND status = 'approved'
+					   AND start_date >= ? AND start_date <= ? AND is_deleted = 0`
+				).bind(userId, firstDay, lastDayStr).all();
+				let totalCompHoursUsed = 0;
+				for (const leave of (compUsedRows?.results || [])) {
+					totalCompHoursUsed += leave.unit === 'days' ? Number(leave.amount) * 8 : Number(leave.amount);
+				}
+				
+				// 2.4 計算未使用補休轉加班費（簡化：使用時薪240基準）
+				const unusedCompHours = Math.max(0, totalCompHoursGenerated - totalCompHoursUsed);
+				const hourlyRateCents = Math.round(monthlySalary / 240 * 100);
+				const expiredCompPayCents = Math.round(unusedCompHours * hourlyRateCents * 1.34); // 簡化使用平均倍率
+				
+				totalLaborCostCents += expiredCompPayCents;
+				
+				const totalLaborCost = Math.round(totalLaborCostCents / 100);
+				const expiredCompPay = Math.round(expiredCompPayCents / 100);
 				
 				// 4. 獲取本月實際工時記錄（用於計算工時分攤）
 				const timesheetRows = await env.DATABASE.prepare(
