@@ -728,6 +728,9 @@
         document.getElementById('btn-add-item')?.addEventListener('click', createOverheadType);
         document.getElementById('btn-add-record')?.addEventListener('click', createMonthlyRecord);
         document.getElementById('btn-export-csv')?.addEventListener('click', exportActiveTableToCsv);
+        document.getElementById('btn-export-pdf')?.addEventListener('click', ()=>{
+          alert('PDF 匯出尚未實作，請先使用 CSV 匯出');
+        });
 
         // ⚡ 预渲染初始化
         if (window.PagePrerender) {
