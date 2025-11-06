@@ -1029,23 +1029,17 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				hourlyRatesMap[u.user_id] = monthlyBaseHours > 0 ? (monthlySalary / monthlyBaseHours) : 0;
 			});
 
-			// 1. 獲取所有有工時記錄的任務
-			const taskRows = await env.DATABASE.prepare(
+			// 1. 獲取所有有工時記錄的客戶（按客戶分組，因為 Timesheets 沒有 task_id）
+			const clientRows = await env.DATABASE.prepare(
 				`SELECT DISTINCT
-					t.task_id, 
-					t.title, 
-					t.client_id,
-					c.company_name,
-					t.assigned_to,
-					u.name as assignee_name
-				 FROM ClientTasks t
-				 JOIN Clients c ON c.client_id = t.client_id
-				 LEFT JOIN Users u ON u.user_id = t.assigned_to
-				 JOIN Timesheets ts ON ts.task_id = t.task_id AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
-				 WHERE t.is_deleted = 0 AND c.is_deleted = 0
-				 ORDER BY c.company_name ASC, t.title ASC`
+					c.client_id,
+					c.company_name
+				 FROM Clients c
+				 JOIN Timesheets ts ON ts.client_id = c.client_id AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
+				 WHERE c.is_deleted = 0
+				 ORDER BY c.company_name ASC`
 			).bind(yearMonth).all();
-			const taskList = taskRows?.results || [];
+			const clientList = clientRows?.results || [];
 
 			// 2. 獲取總工時和總管理費用用於分攤
 			const totalHoursRow = await env.DATABASE.prepare(
@@ -1060,16 +1054,16 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			).bind(year, month).first();
 			const totalOverhead = Number(overheadRow?.total || 0);
 
-			const tasks = [];
+			const clients = [];
 			
-			// 3. 為每個任務計算成本
-			for (const task of taskList) {
-				// 獲取該任務的所有工時記錄
+			// 3. 為每個客戶計算成本
+			for (const client of clientList) {
+				// 獲取該客戶的所有工時記錄
 				const timesheetRows = await env.DATABASE.prepare(
 					`SELECT user_id, work_type, hours
 					 FROM Timesheets 
-					 WHERE task_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
-				).bind(task.task_id, yearMonth).all();
+					 WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
+				).bind(client.client_id, yearMonth).all();
 				const timesheets = timesheetRows?.results || [];
 				
 				let hours = 0;
@@ -1110,18 +1104,16 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					? Math.round(totalOverhead * (hours / totalMonthHours))
 					: 0;
 				
-				tasks.push({
-					taskId: task.task_id,
-					taskTitle: task.title,
-					clientId: task.client_id,
-					clientName: task.company_name,
-					assigneeId: task.assigned_to,
-					assigneeName: task.assignee_name || '未指派',
-					hours,
+				clients.push({
+					clientId: client.client_id,
+					clientName: client.company_name,
+					totalHours: hours,
 					weightedHours,
 					laborCost,
 					overheadAllocation,
-					totalCost: laborCost + overheadAllocation
+					totalCost: laborCost + overheadAllocation,
+					taskCount: 0,  // 由于没有 task_id，无法统计任务数
+					revenue: 0      // 需要从其他地方获取收入数据
 				});
 			}
 
@@ -1129,8 +1121,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				ok:true, 
 				code:"OK", 
 				message:"成功", 
-				data:{ year, month, tasks }, 
-				meta:{ requestId, count: tasks.length } 
+				data:{ year, month, clients }, 
+				meta:{ requestId, count: clients.length } 
 			}, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
