@@ -770,11 +770,15 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				try {
 					payrollData = await calculateEmployeePayroll(env, userId, yearMonth);
 				} catch (err) {
-					console.error(`[Overhead] 計算 ${user.name} 薪資失敗:`, err);
+					console.error(`[Overhead] 計算 ${user.name} 薪資失敗:`, err, err.stack);
+					// 如果薪資計算失敗，使用基本數據
 					payrollData = {
 						grossSalaryCents: monthlySalary * 100, // 至少使用底薪
 						baseSalaryCents: monthlySalary * 100,
-						overtimeCents: 0
+						expiredCompPayCents: 0,
+						totalCompHoursGenerated: 0,
+						totalCompHoursUsed: 0,
+						unusedCompHours: 0
 					};
 				}
 				
@@ -793,7 +797,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				const totalCompHoursGenerated = payrollData.totalCompHoursGenerated || 0;
 				const totalCompHoursUsed = payrollData.totalCompHoursUsed || 0;
 				const unusedCompHours = payrollData.unusedCompHours || 0;
-				const expiredCompPay = Math.round(payrollData.overtimeCents / 100);
+				const expiredCompPay = Math.round((payrollData.expiredCompPayCents || 0) / 100);
 				
 				// 10. 計算分攤管理費用（根據各成本項目的分攤方式）
 				let overheadAllocation = 0;
