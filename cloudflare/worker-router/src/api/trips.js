@@ -217,9 +217,13 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 				notes || null
 			).run();
 			
-			// 清除相關緩存
-			await deleteKVCacheByPrefix(env, 'trips_list');
-			await invalidateCacheByType(env, 'trips_list');
+			// 清除相關緩存（包含列表和統計）
+			await Promise.all([
+				deleteKVCacheByPrefix(env, 'trips_list'),
+				deleteKVCacheByPrefix(env, 'trips_summary'),
+				invalidateCacheByType(env, 'trips_list'),
+				invalidateCacheByType(env, 'trips_summary')
+			]);
 			
 			return jsonResponse(201, { 
 				ok: true, 
@@ -347,9 +351,13 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 				WHERE trip_id = ?
 			`).bind(...bindings).run();
 			
-			// 清除相關緩存
-			await deleteKVCacheByPrefix(env, 'trips_list');
-			await invalidateCacheByType(env, 'trips_list');
+			// 清除相關緩存（包含列表和統計）
+			await Promise.all([
+				deleteKVCacheByPrefix(env, 'trips_list'),
+				deleteKVCacheByPrefix(env, 'trips_summary'),
+				invalidateCacheByType(env, 'trips_list'),
+				invalidateCacheByType(env, 'trips_summary')
+			]);
 			
 			return jsonResponse(200, { 
 				ok: true, 
@@ -404,9 +412,13 @@ export async function handleTrips(request, env, me, requestId, url, path) {
 				"UPDATE BusinessTrips SET is_deleted = 1, updated_at = datetime('now') WHERE trip_id = ?"
 			).bind(tripId).run();
 			
-			// 清除相關緩存
-			await deleteKVCacheByPrefix(env, 'trips_list');
-			await invalidateCacheByType(env, 'trips_list');
+			// 清除相關緩存（包含列表和統計）
+			await Promise.all([
+				deleteKVCacheByPrefix(env, 'trips_list'),
+				deleteKVCacheByPrefix(env, 'trips_summary'),
+				invalidateCacheByType(env, 'trips_list'),
+				invalidateCacheByType(env, 'trips_summary')
+			]);
 			
 			return jsonResponse(200, { 
 				ok: true, 

@@ -424,7 +424,7 @@ export async function handleReports(request, env, me, requestId, url, path) {
 			const rows = await env.DATABASE.prepare(
 				`SELECT strftime('%Y-%m', receipt_date) AS ym,
 					SUM(total_amount) AS receipts,
-					SUM(CASE WHEN status = 'paid' THEN total_amount ELSE 0 END) AS paid
+					SUM(COALESCE(paid_amount, 0)) AS paid
 				 FROM Receipts
 				 WHERE is_deleted = 0 AND status != 'cancelled' AND receipt_date >= ? AND receipt_date <= ?
 				 GROUP BY ym
@@ -438,7 +438,7 @@ export async function handleReports(request, env, me, requestId, url, path) {
 
 			const byClientRows = await env.DATABASE.prepare(
 				`SELECT r.client_id, c.company_name, SUM(r.total_amount) AS total_receipts,
-					SUM(CASE WHEN r.status = 'paid' THEN r.total_amount ELSE 0 END) AS total_paid
+					SUM(COALESCE(r.paid_amount, 0)) AS total_paid
 				 FROM Receipts r LEFT JOIN Clients c ON c.client_id = r.client_id
 				 WHERE r.is_deleted = 0 AND r.status != 'cancelled' AND r.receipt_date >= ? AND r.receipt_date <= ?
 				 GROUP BY r.client_id, c.company_name`

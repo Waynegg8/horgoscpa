@@ -9,9 +9,13 @@
     <link rel="stylesheet" href="/assets/css/common.css" />
     <link rel="stylesheet" href="/assets/css/internal-components.css" />
     <link rel="stylesheet" href="/assets/css/trips-page.css" />
+    
+    <!-- ⚡ 预加载与缓存系统 -->
+    <script src="/assets/js/data-cache.js"></script>
+    <script src="/assets/js/fetch-interceptor.js"></script>
+    <script src="/assets/js/components/bootstrap.js"></script>
   </head>
   <body>
-    <div id="internal-navbar"></div>
 
     <div class="container" style="max-width: 1400px; margin: 0 auto; padding: 32px 20px;">
       <!-- 頁面標題 -->
@@ -168,8 +172,6 @@
       </div>
     </div>
 
-    <div id="internal-footer"></div>
-
     <script>
       (function() {
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
@@ -228,12 +230,6 @@
             }
             const userData = await userRes.json();
             currentUser = userData.data;
-
-            // 設定 navbar 用戶名稱
-            const userNameEl = document.getElementById('internalUserName');
-            if (userNameEl && currentUser) {
-              userNameEl.textContent = currentUser.name || currentUser.username || '用戶';
-            }
 
             // 顯示用戶篩選器（僅管理員）
             if (currentUser.is_admin) {
@@ -300,7 +296,7 @@
         }
 
         // 載入外出登記列表
-        async function loadTrips() {
+        async function loadTrips(bypassCache = false) {
           try {
             const params = new URLSearchParams();
             
@@ -313,9 +309,15 @@
             if (currentUser.is_admin && userFilter.value) {
               params.set('user_id', userFilter.value);
             }
+            
+            // 繞過緩存
+            if (bypassCache) {
+              params.set('_t', Date.now());
+            }
 
             const res = await fetch(`${apiBase}/trips?${params.toString()}`, { 
-              credentials: 'include' 
+              credentials: 'include',
+              cache: bypassCache ? 'no-store' : 'default'
             });
 
             if (res.status === 401) {
@@ -336,7 +338,7 @@
         }
 
         // 載入統計摘要
-        async function loadSummary() {
+        async function loadSummary(bypassCache = false) {
           if (!monthFilter.value) return;
 
           try {
@@ -346,9 +348,15 @@
             if (currentUser.is_admin && userFilter.value) {
               params.set('user_id', userFilter.value);
             }
+            
+            // 繞過緩存
+            if (bypassCache) {
+              params.set('_t', Date.now());
+            }
 
             const res = await fetch(`${apiBase}/trips/summary?${params.toString()}`, { 
-              credentials: 'include' 
+              credentials: 'include',
+              cache: bypassCache ? 'no-store' : 'default'
             });
 
             if (!res.ok) return;
@@ -385,7 +393,8 @@
           }
 
           tripsTableBody.innerHTML = pageTrips.map(trip => {
-            const canEdit = trip.user_id === currentUser.user_id || currentUser.is_admin;
+            // 使用宽松比较，因为user_id可能是数字或字符串
+            const canEdit = (trip.user_id == currentUser.user_id) || currentUser.is_admin;
 
             return `
               <tr>
@@ -569,8 +578,13 @@
 
             showSuccess(editingTripId ? '外出登記已更新' : '外出登記已新增');
             closeTripModal();
-            await loadTrips();
-            await loadSummary();
+            
+            // 等待一下讓後端清除緩存完成
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // 重新加載數據（繞過緩存）
+            await loadTrips(true);
+            await loadSummary(true);
           } catch (err) {
             console.error('提交失敗:', err);
             showError('操作失敗，請稍後再試');
@@ -613,41 +627,12 @@
           alert(message); // 可以改用更好的通知組件
         }
 
-        // 載入導航欄和頁腳
-        async function loadNavbarFooter() {
-          try {
-            const [navbarRes, footerRes] = await Promise.all([
-              fetch('/templates/partials/internal-navbar.html'),
-              fetch('/templates/partials/internal-footer.html')
-            ]);
-
-            if (navbarRes.ok) {
-              const navbarHtml = await navbarRes.text();
-              const navbarContainer = document.getElementById('internal-navbar');
-              navbarContainer.innerHTML = navbarHtml;
-              
-              // 手動執行 navbar 中的 script
-              const scripts = navbarContainer.querySelectorAll('script');
-              scripts.forEach(oldScript => {
-                const newScript = document.createElement('script');
-                if (oldScript.src) {
-                  newScript.src = oldScript.src;
-                } else {
-                  newScript.textContent = oldScript.textContent;
-                }
-                oldScript.parentNode.replaceChild(newScript, oldScript);
-              });
-            }
-            if (footerRes.ok) {
-              document.getElementById('internal-footer').innerHTML = await footerRes.text();
-            }
-          } catch (err) {
-            console.error('載入導航欄/頁腳失敗:', err);
-          }
+        // 啟動（bootstrap.js會自動處理navbar和footer）
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
         }
-
-        // 啟動
-        loadNavbarFooter().then(init);
       })();
     </script>
   </body>

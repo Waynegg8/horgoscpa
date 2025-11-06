@@ -7,8 +7,10 @@
     <title>應收帳款報表｜內部系統</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/navbar.css" />
     <link rel="stylesheet" href="/assets/css/reports-page.css" />
     <style>
+      body { padding-top: 0; }
       .report-container {
         max-width: 1400px;
         margin: 0 auto;
@@ -221,8 +223,12 @@
     </style>
   </head>
   <body>
+    <div id="navbar-container"></div>
     <div class="report-container">
       <div class="report-header">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+          <a href="/internal/reports" style="color:#64748b;text-decoration:none;font-size:14px;">← 返回報表</a>
+        </div>
         <h1 class="report-title">應收帳款報表</h1>
         <p class="report-subtitle">帳齡分析與收款統計</p>
       </div>
@@ -395,6 +401,20 @@
         // 初始化
         loadStatistics();
         loadAgingReport();
+      })();
+    </script>
+    <script>
+      // 載入導航欄
+      (async function() {
+        try {
+          const res = await fetch('/templates/partials/internal-navbar.html');
+          if (res.ok) {
+            const html = await res.text();
+            document.getElementById('navbar-container').innerHTML = html;
+          }
+        } catch (err) {
+          console.error('載入導航欄失敗:', err);
+        }
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>

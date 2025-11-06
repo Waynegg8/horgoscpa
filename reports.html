@@ -7,10 +7,12 @@
     <title>報表分析｜首頁</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/navbar.css" />
     <link rel="stylesheet" href="/assets/css/reports-page.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   </head>
   <body class="reports-page">
+    <div id="navbar-container"></div>
     <div style="padding:16px 20px;">
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此報表</div>
       <nav class="reports-tabs" role="tablist" aria-label="報表分頁" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
@@ -265,6 +267,7 @@
             <div class="filter-group filter-actions">
               <button id="rc-query" class="btn primary" type="button">查詢</button>
               <button id="rc-reset" class="btn" type="button">重置</button>
+              <a href="/internal/receivables-report" class="btn" style="text-decoration:none;">帳齡分析</a>
             </div>
           </div>
         </div>
@@ -322,7 +325,7 @@
         const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
 
         const permBar = document.getElementById('permBar');
-        const tabs = Array.from(document.querySelectorAll('.reports-tab-header .tab'));
+        const tabs = Array.from(document.querySelectorAll('.reports-tabs .tab'));
         const panels = {
           'client-cost': document.getElementById('panel-client-cost'),
           'employee-hours': document.getElementById('panel-employee-hours'),
@@ -354,8 +357,12 @@
 
         tabs.forEach(btn => {
           btn.addEventListener('click', ()=>{
-            tabs.forEach(b => b.classList.remove('active'));
+            tabs.forEach(b => {
+              b.classList.remove('active');
+              b.setAttribute('aria-selected', 'false');
+            });
             btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
             const key = btn.getAttribute('data-tab');
             Object.entries(panels).forEach(([k,el])=>{
               if (!el) return;
@@ -845,7 +852,22 @@
           }
         }
 
+        async function loadNavbar() {
+          try {
+            const res = await fetch('/templates/partials/internal-navbar.html');
+            if (res.ok) {
+              const html = await res.text();
+              document.getElementById('navbar-container').innerHTML = html;
+            }
+          } catch (err) {
+            console.error('載入導航欄失敗:', err);
+          }
+        }
+
         async function bootstrap(){
+          // 載入導航欄
+          await loadNavbar();
+          
           // 初始化年度选择器
           initializeYearSelects();
           
