@@ -96,33 +96,31 @@
             <button type="button" class="btn" id="btn-refresh-emp" disabled>刷新</button>
           </div>
           <div class="info-box" style="margin-bottom: 12px; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 14px; color: #1e40af;">
-            <strong>計算說明：</strong><br>
-            • <strong>月工時基準</strong> = (2080小時 - 特休時數) ÷ 12個月<br>
-            • <strong>員工時薪</strong> = 月薪 ÷ 月工時基準<br>
-            • <strong>加權工時</strong> = 考慮加班費倍率的等效工時<br>
-            &nbsp;&nbsp;- 平日加班：實際工時 × 倍率（1.34或1.67）<br>
-            &nbsp;&nbsp;- <span style="color:#dc2626;">國定假日/例假日（8小時內）：16.0加權工時（含加班費8小時+強制補休8小時）</span><br>
-            • <strong>薪資成本</strong> = 員工時薪 × 加權工時 + 補休到期轉加班費<br>
+            <strong>計算說明（與薪資頁面一致）：</strong><br>
+            • <strong>補休規則</strong>：加班先全部轉為補休，本月未使用的補休才轉為加班費<br>
+            • <strong>產生補休</strong>：一般加班 1:1 產生補休；國定假日/例假日不給補休，直接雙倍工資<br>
+            • <strong>未使用補休</strong> = 本月產生補休 - 本月使用補休<br>
+            • <strong>補休轉加班費</strong> = 未使用補休 × 時薪 × 原倍率（按原加班類型計算）<br>
+            • <strong>薪資成本</strong> = 底薪 + 本月未使用補休轉加班費（實際支付成本）<br>
             • <strong>總成本</strong> = 薪資成本 + 分攤管理費用
           </div>
           <table class="table" aria-label="員工成本列表">
             <thead>
               <tr>
                 <th>姓名</th>
-                <th>月薪</th>
-                <th>月工時基準</th>
-                <th>員工時薪</th>
+                <th>底薪</th>
                 <th>本月工時</th>
-                <th>加權工時</th>
-                <th>工時成本</th>
+                <th>產生補休</th>
+                <th>使用補休</th>
+                <th>未使用補休</th>
                 <th>補休轉加班費</th>
-                <th>薪資小計</th>
+                <th>薪資成本</th>
                 <th>分攤管理費</th>
                 <th>本月總成本</th>
               </tr>
             </thead>
             <tbody id="tbody-employee">
-              <tr><td colspan="11" class="muted">載入中…</td></tr>
+              <tr><td colspan="10" class="muted">載入中…</td></tr>
             </tbody>
           </table>
           <div class="summary-row" style="margin-top: 12px; padding: 12px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px;">
@@ -631,11 +629,11 @@
           params.set('month', String(ym.month));
           params.set('_t', String(Date.now())); // 强制绕过缓存
           try {
-            tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">載入中…</td></tr>';
+            tbodyEmployee.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/costs/employee?${params.toString()}`, { credentials:'include', cache: 'no-store' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             if (res.status === 501) {
-              tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">功能尚未實作，敬請期待</td></tr>';
+              tbodyEmployee.innerHTML = '<tr><td colspan="10" class="muted">功能尚未實作，敬請期待</td></tr>';
               empTotalCost.textContent = '—';
               return;
             }
@@ -644,7 +642,7 @@
             const data = json.data || {};
             const employees = data.employees || [];
             if (employees.length === 0) {
-              tbodyEmployee.innerHTML = '<tr><td colspan="11" class="muted">尚無資料</td></tr>';
+              tbodyEmployee.innerHTML = '<tr><td colspan="10" class="muted">尚無資料</td></tr>';
               empTotalCost.textContent = formatCurrency(0);
               return;
             }
@@ -652,33 +650,26 @@
             let totalCost = 0;
             employees.forEach(emp => {
               const tr = document.createElement('tr');
-              const annualSalary = Number(emp.annualSalary || 0);
-              const annualHours = Number(emp.annualHours || 0);
-              const annualLeaveHours = Number(emp.annualLeaveHours || 0);
-              const actualHours = annualHours - annualLeaveHours;
               
-              // 用月薪和月工時基準計算時薪（更直觀）
-              const monthlySalary = annualSalary / 12;
-              const monthlyBaseHours = actualHours / 12;
-              const hourlyRate = monthlyBaseHours > 0 ? monthlySalary / monthlyBaseHours : 0;
-              
+              const baseSalary = Number(emp.baseSalary || 0);
               const monthHours = Number(emp.monthHours || 0);
-              const weightedHours = Number(emp.weightedHours || 0);
+              const totalCompHoursGenerated = Number(emp.totalCompHoursGenerated || 0);
+              const totalCompHoursUsed = Number(emp.totalCompHoursUsed || 0);
+              const unusedCompHours = Number(emp.unusedCompHours || 0);
+              const expiredCompPay = Number(emp.expiredCompPay || 0);
               const laborCost = Number(emp.laborCost || 0);
-              const expiredCompCost = Number(emp.expiredCompCost || 0);
               const overheadAllocation = Number(emp.overheadAllocation || 0);
-              const empTotalCost = laborCost + overheadAllocation;
-              const workTimeCost = laborCost - expiredCompCost;
+              const empTotalCost = Number(emp.totalCost || 0);
+              
               totalCost += empTotalCost;
               tr.innerHTML = `
                 <td>${emp.name||''}</td>
-                <td>${formatCurrency(monthlySalary)}</td>
-                <td>${monthlyBaseHours.toFixed(1)} hrs</td>
-                <td style="font-weight:600;">${formatCurrency(hourlyRate)}</td>
+                <td>${formatCurrency(baseSalary)}</td>
                 <td>${monthHours.toFixed(1)}</td>
-                <td style="font-weight:600;color:#0ea5e9;">${weightedHours.toFixed(1)}</td>
-                <td>${formatCurrency(workTimeCost)}</td>
-                <td style="color:#dc2626;">${formatCurrency(expiredCompCost)}</td>
+                <td>${totalCompHoursGenerated.toFixed(1)}</td>
+                <td>${totalCompHoursUsed.toFixed(1)}</td>
+                <td style="color:#dc2626;">${unusedCompHours.toFixed(1)}</td>
+                <td style="color:#dc2626;">${formatCurrency(expiredCompPay)}</td>
                 <td style="font-weight:600;">${formatCurrency(laborCost)}</td>
                 <td>${formatCurrency(overheadAllocation)}</td>
                 <td style="font-weight:600;color:#16a34a;">${formatCurrency(empTotalCost)}</td>
@@ -687,7 +678,7 @@
             });
             empTotalCost.textContent = formatCurrency(totalCost);
           } catch (err) {
-            tbodyEmployee.innerHTML = '<tr><td colspan="11" style="color:#c0392b;">載入失敗</td></tr>';
+            tbodyEmployee.innerHTML = '<tr><td colspan="10" style="color:#c0392b;">載入失敗</td></tr>';
             empTotalCost.textContent = '—';
           }
         }

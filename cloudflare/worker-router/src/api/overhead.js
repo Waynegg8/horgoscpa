@@ -1,4 +1,5 @@
 import { jsonResponse, getCorsHeadersForRequest } from "../utils.js";
+import { invalidateCacheByType } from "../cache-helper.js";
 
 export async function handleOverhead(request, env, me, requestId, url, path) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -135,6 +136,10 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				await env.DATABASE.prepare(
 					`UPDATE OverheadCostTypes SET ${updates.join(", ")} WHERE cost_type_id = ?`
 				).bind(...binds).run();
+				
+				// 失效成本相关缓存
+				invalidateCacheByType(env, 'overhead', {}).catch(err => console.warn('[Overhead] 缓存失效失败:', err));
+				
 				return jsonResponse(200, { ok:true, code:"OK", message:"已更新", meta:{ requestId } }, corsHeaders);
 			} catch (err) {
 				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
@@ -148,6 +153,10 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				await env.DATABASE.prepare(
 					"UPDATE OverheadCostTypes SET is_active = 0, updated_at = datetime('now') WHERE cost_type_id = ?"
 				).bind(id).run();
+				
+				// 失效成本相关缓存
+				invalidateCacheByType(env, 'overhead', {}).catch(err => console.warn('[Overhead] 缓存失效失败:', err));
+				
 				return jsonResponse(200, { ok:true, code:"OK", message:"已刪除", meta:{ requestId } }, corsHeaders);
 			} catch (err) {
 				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
@@ -451,6 +460,12 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				}
 			}
 			console.log(`[Generate] 完成: created=${created}, skipped=${skipped}, duplicates=${duplicates}, total templates=${templates.length}`);
+			
+			// 如果有创建新记录，失效成本相关缓存
+			if (created > 0) {
+				invalidateCacheByType(env, 'overhead', {}).catch(err => console.warn('[Overhead] 缓存失效失败:', err));
+			}
+			
 			return jsonResponse(200, { ok:true, code:"OK", message:"已生成", data:{ year, month, created, skipped, duplicates, records }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
@@ -609,6 +624,10 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				await env.DATABASE.prepare(
 					`UPDATE MonthlyOverheadCosts SET ${updates.join(", ")} WHERE overhead_id = ?`
 				).bind(...binds).run();
+				
+				// 失效成本相关缓存
+				invalidateCacheByType(env, 'overhead', {}).catch(err => console.warn('[Overhead] 缓存失效失败:', err));
+				
 				return jsonResponse(200, { ok:true, code:"OK", message:"已更新", meta:{ requestId } }, corsHeaders);
 			} catch (err) {
 				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
@@ -622,6 +641,10 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				await env.DATABASE.prepare(
 					"UPDATE MonthlyOverheadCosts SET is_deleted = 1, updated_at = datetime('now') WHERE overhead_id = ?"
 				).bind(id).run();
+				
+				// 失效成本相关缓存
+				invalidateCacheByType(env, 'overhead', {}).catch(err => console.warn('[Overhead] 缓存失效失败:', err));
+				
 				return jsonResponse(200, { ok:true, code:"OK", message:"已刪除", meta:{ requestId } }, corsHeaders);
 			} catch (err) {
 				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
@@ -740,53 +763,158 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					4: 1.34,  // 休息日加班（前2小時）
 					5: 1.67,  // 休息日加班（第3-8小時）
 					6: 2.67,  // 休息日加班（第9-12小時）
-					7: 1.0,   // 國定假日加班（8小時內）- 月薪已含原本1日，加班费只算额外1日
+					7: 1.0,   // 國定假日加班（8小時內）- 雙倍工資，不給補休
 					8: 1.34,  // 國定假日加班（第9-10小時）
 					9: 1.67,  // 國定假日加班（第11-12小時）
-					10: 1.0,  // 例假日加班（8小時內）- 月薪已含原本1日，加班费只算额外1日
-					11: 1.0   // 例假日加班（第9-12小時）- 例假日全时段都只算额外1日
+					10: 1.0,  // 例假日加班（8小時內）- 雙倍工資 + 16小時補休
+					11: 1.0   // 例假日加班（第9-12小時）
 				};
-				
-				// 必須給補休的工時類型（需要雙重計算成本）
-				const MANDATORY_COMP_LEAVE_TYPES = [7, 10]; // 國定假日和例假日8小時內
 				
 				// 8. 計算總工時和加權工時
 				let monthHours = 0;
 				let weightedHours = 0;
+				const processedFixedKeys = new Set(); // 追踪已处理的 fixed_8h 类型（国定假日/例假日）
 				
+				// 第一步：统计每天每类型的 fixed_8h 工时（用于去重）
+				const dailyFixedTypeMap = {};
+				for (const ts of timesheets) {
+					const date = ts.work_date || '';
+					const workTypeId = parseInt(ts.work_type) || 1;
+					if (workTypeId === 7 || workTypeId === 10) {
+						const key = `${date}:${workTypeId}`;
+						dailyFixedTypeMap[key] = true;
+					}
+				}
+				
+				// 第二步：计算加权工时
 				for (const ts of timesheets) {
 					const hours = Number(ts.hours || 0);
+					const date = ts.work_date || '';
 					const workTypeId = parseInt(ts.work_type) || 1;
 					const multiplier = WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0;
 					
 					monthHours += hours;
 					
-					// 特殊情況：國定假日/例假日 8小時內類型
-					// 需要支付加班費 + 強制給補休，所以成本是雙倍
-					if (MANDATORY_COMP_LEAVE_TYPES.includes(workTypeId)) {
-						// 加班費成本（固定8小時加權）+ 強制補休成本（8小時）
-						weightedHours += 8.0 + 8.0; // = 16.0
+					// 特殊情況：國定假日和例假日 8小時內
+					if (workTypeId === 7 || workTypeId === 10) {
+						// 同一天同类型的fixed_8h，只计算一次固定8h加权（与薪资页面逻辑一致）
+						const key = `${date}:${workTypeId}`;
+						if (!processedFixedKeys.has(key)) {
+							weightedHours += 8.0;
+							processedFixedKeys.add(key);
+						}
 					} else {
 						// 一般情況：實際工時 × 倍率
 						weightedHours += hours * multiplier;
 					}
 				}
 				
-				// 9. 計算本月實際成本
-				// 注意：使用補休不減少加權工時成本，因為補休是用之前加班的成本抵銷
-				// 補休使用只影響實際工作時數，不影響成本計算
-				const laborCost = Math.round(hourlyRate * weightedHours);
+				// 9. 計算本月實際成本（與薪資頁面邏輯一致）
+				// 實際支付成本 = 底薪 + 本月未使用補休轉加班費
 				
-				// 10. 獲取本月補休到期轉加班費（需要額外計入成本）
-				const expiredCompRow = await env.DATABASE.prepare(
-					`SELECT SUM(amount_cents) as expired_amount 
-					 FROM CompensatoryOvertimePay 
-					 WHERE user_id = ? AND year_month = ?`
-				).bind(userId, `${year}-${String(month).padStart(2, '0')}`).first();
-				const expiredCompCost = Math.round(Number(expiredCompRow?.expired_amount || 0) / 100);
+				// 9.1 計算本月產生的補休明細
+				const WORK_TYPES = {
+					1: { multiplier: 1.0, isOvertime: false },
+					2: { multiplier: 1.34, isOvertime: true },
+					3: { multiplier: 1.67, isOvertime: true },
+					4: { multiplier: 1.34, isOvertime: true },
+					5: { multiplier: 1.67, isOvertime: true },
+					6: { multiplier: 2.67, isOvertime: true },
+					7: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },
+					8: { multiplier: 1.34, isOvertime: true },
+					9: { multiplier: 1.67, isOvertime: true },
+					10: { multiplier: 1.0, isOvertime: true, special: 'fixed_8h' },
+					11: { multiplier: 1.34, isOvertime: true },
+					12: { multiplier: 1.67, isOvertime: true },
+				};
 				
-				// 最終薪資成本 = 本月工時成本 + 補休到期轉加班費
-				const totalLaborCost = laborCost + expiredCompCost;
+				// 重新查詢帶 work_date 的工時記錄
+				const fullTimesheetRows = await env.DATABASE.prepare(
+					`SELECT work_date, work_type, hours
+					 FROM Timesheets 
+					 WHERE user_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0
+					 ORDER BY work_date, work_type`
+				).bind(userId, yearMonth).all();
+				const fullTimesheets = fullTimesheetRows?.results || [];
+				
+				let totalCompHoursGenerated = 0;
+				const compGenerationDetails = [];
+				const processedFixedKeysForComp = new Set();
+				
+				for (const ts of fullTimesheets) {
+					const date = ts.work_date || '';
+					const hours = Number(ts.hours || 0);
+					const workTypeId = parseInt(ts.work_type) || 1;
+					const workType = WORK_TYPES[workTypeId];
+					
+					if (workType && workType.isOvertime) {
+						let compHours = 0;
+						if (workType.special === 'fixed_8h') {
+							// 國定假日/例假日：同一天同類型只產生一次8h補休（目前已改為0）
+							const key = `${date}:${workTypeId}`;
+							if (!processedFixedKeysForComp.has(key)) {
+								compHours = 0; // 國定假日/例假日不給補休
+								processedFixedKeysForComp.add(key);
+							}
+						} else {
+							// 一般加班：實際工時 1:1 產生補休
+							compHours = hours;
+						}
+						
+						if (compHours > 0) {
+							totalCompHoursGenerated += compHours;
+							compGenerationDetails.push({
+								date: date,
+								workTypeId: workTypeId,
+								hours: compHours,
+								multiplier: workType.multiplier
+							});
+						}
+					}
+				}
+				
+				// 9.2 查詢本月使用的補休
+				const firstDay = `${year}-${String(month).padStart(2, '0')}-01`;
+				const lastDay = new Date(year, month, 0).getDate();
+				const lastDayStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+				
+				const compLeavesRows = await env.DATABASE.prepare(
+					`SELECT amount, unit
+					 FROM LeaveRequests
+					 WHERE user_id = ? AND leave_type = 'compensatory' AND status = 'approved'
+					   AND start_date >= ? AND start_date <= ? AND is_deleted = 0`
+				).bind(userId, firstDay, lastDayStr).all();
+				const compLeaves = compLeavesRows?.results || [];
+				
+				let totalCompHoursUsed = 0;
+				for (const leave of compLeaves) {
+					const amount = Number(leave.amount || 0);
+					if (leave.unit === 'days') {
+						totalCompHoursUsed += amount * 8;
+					} else {
+						totalCompHoursUsed += amount;
+					}
+				}
+				
+				// 9.3 計算未使用補休轉加班費
+				const unusedCompHours = Math.max(0, totalCompHoursGenerated - totalCompHoursUsed);
+				const hourlyRateCents = Math.round(monthlySalary / 240 * 100);
+				
+				let expiredCompPayCents = 0;
+				let remainingToConvert = unusedCompHours;
+				
+				for (const detail of compGenerationDetails) {
+					if (remainingToConvert <= 0) break;
+					
+					const hoursToConvert = Math.min(detail.hours, remainingToConvert);
+					const amountCents = Math.round(hoursToConvert * hourlyRateCents * detail.multiplier);
+					
+					expiredCompPayCents += amountCents;
+					remainingToConvert -= hoursToConvert;
+				}
+				
+				// 9.4 最終薪資成本 = 底薪 + 未使用補休轉加班費
+				const totalLaborCost = monthlySalary + Math.round(expiredCompPayCents / 100);
 				
 				// 11. 計算分攤管理費用
 				// 按工時比例分攤
@@ -809,17 +937,15 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				employees.push({
 					userId,
 					name: user.name,
-					annualSalary,
-					annualHours,
-					annualLeaveHours,
-					actualHours,
-					hourlyRate: Math.round(hourlyRate),
-					monthHours,
-					weightedHours,
-					laborCost: totalLaborCost,
-					expiredCompCost, // 補休到期轉加班費
-					overheadAllocation,
-					totalCost: totalLaborCost + overheadAllocation
+					baseSalary: monthlySalary, // 底薪
+					totalCompHoursGenerated: Math.round(totalCompHoursGenerated * 10) / 10, // 本月產生補休
+					totalCompHoursUsed: Math.round(totalCompHoursUsed * 10) / 10, // 本月使用補休
+					unusedCompHours: Math.round(unusedCompHours * 10) / 10, // 未使用補休
+					expiredCompPay: Math.round(expiredCompPayCents / 100), // 未使用補休轉加班費
+					monthHours: Math.round(monthHours * 10) / 10, // 本月總工時
+					laborCost: totalLaborCost, // 薪資成本（底薪+補休轉加班費）
+					overheadAllocation, // 分攤管理費用
+					totalCost: totalLaborCost + overheadAllocation // 總成本
 				});
 			}
 
@@ -853,9 +979,6 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				6: 2.67, 7: 2.0, 8: 1.34, 9: 1.67, 10: 2.0, 11: 2.0
 			};
 
-			// 必須給補休的工時類型（國定假日/例假日8小時內）
-			const MANDATORY_COMP_LEAVE_TYPES = [7, 10];
-
 			// 構建員工時薪快取（以 Users.base_salary 與年度特休計算）
 			const usersRateRows = await env.DATABASE.prepare(
 				"SELECT user_id, base_salary FROM Users WHERE is_deleted = 0"
@@ -888,9 +1011,9 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			for (const client of clientsList) {
 				const clientId = client.client_id;
 				
-				// 2. 獲取該客戶本月所有工時記錄（包含work_type）
+				// 2. 獲取該客戶本月所有工時記錄（包含work_type和work_date）
 				const timesheetRows = await env.DATABASE.prepare(
-					`SELECT user_id, work_type, hours
+					`SELECT user_id, work_type, work_date, hours
 					 FROM Timesheets
 					 WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
 				).bind(clientId, yearMonth).all();
@@ -903,6 +1026,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				let laborCost = 0;
 				const taskCount = new Set();
 				const userHourlyRates = {}; // 快取員工時薪
+				const processedFixedKeys = new Set(); // 追踪已处理的 fixed_8h 类型（国定假日/例假日）
 				
 				// 3. 計算每筆工時的成本
 				for (const ts of timesheets) {
@@ -910,6 +1034,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					taskCount.add(ts.task_id);
 					
 					const hours = Number(ts.hours || 0);
+					const date = ts.work_date || '';
 					const workTypeId = parseInt(ts.work_type) || 1;
 					const multiplier = WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0;
 					
@@ -917,10 +1042,15 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					
 					// 計算加權工時
 					let tsWeightedHours;
-					if (MANDATORY_COMP_LEAVE_TYPES.includes(workTypeId)) {
-						// 特殊情況：國定假日/例假日 8小時內（強制補休）
-						// 成本 = 加班費 + 強制補休
-						tsWeightedHours = 8.0 + 8.0; // = 16.0
+					if (workTypeId === 7 || workTypeId === 10) {
+						// 國定假日和例假日：同一天同类型只计算一次8h加权（与薪资页面逻辑一致）
+						const key = `${date}:${workTypeId}`;
+						if (!processedFixedKeys.has(key)) {
+							tsWeightedHours = 8.0;
+							processedFixedKeys.add(key);
+						} else {
+							tsWeightedHours = 0; // 同一天同类型的后续记录不计入加权
+						}
 					} else {
 						tsWeightedHours = hours * multiplier;
 					}
@@ -1001,10 +1131,6 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				1: 1.0, 2: 1.34, 3: 1.67, 4: 1.34, 5: 1.67, 
 				6: 2.67, 7: 2.0, 8: 1.34, 9: 1.67, 10: 2.0, 11: 2.0
 			};
-			
-			// 必須給補休的工時類型
-			const MANDATORY_COMP_LEAVE_TYPES = [7, 10];
-
 			const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
 			
 			// 構建員工時薪快取（以 Users.base_salary 與年度特休計算）
@@ -1056,9 +1182,9 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			
 			// 3. 為每個客戶計算成本
 			for (const client of clientList) {
-				// 獲取該客戶的所有工時記錄
+				// 獲取該客戶的所有工時記錄（包含work_date用于去重）
 				const timesheetRows = await env.DATABASE.prepare(
-					`SELECT user_id, work_type, hours
+					`SELECT user_id, work_type, work_date, hours
 					 FROM Timesheets 
 					 WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
 				).bind(client.client_id, yearMonth).all();
@@ -1066,30 +1192,48 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				
 				let hours = 0;
 				let weightedHours = 0;
+				const processedFixedKeys = new Set(); // 追踪已处理的 fixed_8h 类型（国定假日/例假日）
 				
+				// 第一遍：计算加权工时
 				for (const ts of timesheets) {
 					const tsHours = Number(ts.hours || 0);
+					const date = ts.work_date || '';
 					const workTypeId = parseInt(ts.work_type) || 1;
 					const multiplier = WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0;
 					
 					hours += tsHours;
 					
 					// 計算加權工時
-					if (MANDATORY_COMP_LEAVE_TYPES.includes(workTypeId)) {
-						// 國定假日/例假日8小時內：加班費 + 強制補休
-						weightedHours += 8.0 + 8.0; // = 16.0
+					if (workTypeId === 7 || workTypeId === 10) {
+						// 國定假日和例假日：同一天同类型只计算一次8h加权（与薪资页面逻辑一致）
+						const key = `${date}:${workTypeId}`;
+						if (!processedFixedKeys.has(key)) {
+							weightedHours += 8.0;
+							processedFixedKeys.add(key);
+						}
 					} else {
 						weightedHours += tsHours * multiplier;
 					}
 				}
 				
-				// 使用每筆時錄對應員工之時薪計算人力成本
+				// 第二遍：使用每筆時錄對應員工之時薪計算人力成本
 				let laborCost = 0;
+				processedFixedKeys.clear(); // 重置，用于第二遍计算
+				
 				for (const ts of timesheets) {
+					const date = ts.work_date || '';
 					const workTypeId = parseInt(ts.work_type) || 1;
 					let tsWeightedHours;
-					if (MANDATORY_COMP_LEAVE_TYPES.includes(workTypeId)) {
-						tsWeightedHours = 8.0 + 8.0;
+					
+					if (workTypeId === 7 || workTypeId === 10) {
+						// 國定假日和例假日：同一天同类型只计算一次8h加权
+						const key = `${date}:${workTypeId}`;
+						if (!processedFixedKeys.has(key)) {
+							tsWeightedHours = 8.0;
+							processedFixedKeys.add(key);
+						} else {
+							tsWeightedHours = 0; // 同一天同类型的后续记录不计入
+						}
 					} else {
 						tsWeightedHours = Number(ts.hours || 0) * (WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0);
 					}
