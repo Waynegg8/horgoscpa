@@ -422,7 +422,7 @@
 
         async function loadEmployeesList() {
           try {
-            const res = await fetch(`${apiBase}/admin/settings/users`, { credentials: 'include' });
+            const res = await fetch(`${apiBase}/settings/users`, { credentials: 'include' });
             console.log('[員工列表] API回應狀態:', res.status);
             if (!res.ok) {
               console.error('[員工列表] API請求失敗');
@@ -884,12 +884,13 @@
           // 初始化年度选择器
           initializeYearSelects();
           
-          // 設置預設月份
-          const now = new Date();
-          const currentMonth = String(now.getMonth() + 1);
-          document.getElementById('eh-month').value = currentMonth;
-          document.getElementById('pr-month').value = currentMonth;
-          document.getElementById('rc-month').value = currentMonth;
+        // 設置預設月份
+        const now = new Date();
+        const currentMonth = String(now.getMonth() + 1);
+        document.getElementById('eh-month').value = currentMonth;
+        document.getElementById('pr-month').value = currentMonth;
+        document.getElementById('rc-month').value = currentMonth;
+        document.getElementById('cc-month').value = currentMonth;
 
           // 載入客戶和員工列表
           await Promise.all([loadClientsList(), loadEmployeesList()]);

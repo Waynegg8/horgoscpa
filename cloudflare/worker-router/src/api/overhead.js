@@ -1375,10 +1375,27 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					totalWeightedHours += tsWeightedHours;
 				}
 				
-				// 5. 使用员工实际时薪计算客户总成本
+				// 5. 使用员工实际时薪计算客户总成本，并拆分薪资成本和管理成本
+				let laborCost = 0;
+				let overheadAllocation = 0;
+				
 				for (const userId in userWeightedHours) {
 					const weightedHours = userWeightedHours[userId];
 					const actualHourlyRate = employeeActualHourlyRates[userId] || 0;
+					
+					// 获取员工底薪
+					const userInfo = usersList.find(u => u.user_id === userId);
+					const baseSalary = Number(userInfo?.base_salary || 0);
+					const baseSalaryHourly = baseSalary / 240;
+					
+					// 薪资成本 = 加权工时 × 底薪时薪率
+					const empLaborCost = Math.round(weightedHours * baseSalaryHourly);
+					laborCost += empLaborCost;
+					
+					// 管理成本 = 加权工时 × (实际时薪率 - 底薪时薪率)
+					const empOverheadCost = Math.round(weightedHours * actualHourlyRate) - empLaborCost;
+					overheadAllocation += empOverheadCost;
+					
 					totalCost += Math.round(weightedHours * actualHourlyRate);
 				}
 				
@@ -1397,6 +1414,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						totalHours: Math.round(totalHours * 10) / 10,
 						weightedHours: Math.round(totalWeightedHours * 10) / 10,
 						avgHourlyRate,
+						laborCost,
+						overheadAllocation,
 						totalCost,
 						revenue,
 						profit: revenue - totalCost
