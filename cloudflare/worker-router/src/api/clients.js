@@ -793,6 +793,18 @@ export async function handleClients(request, env, me, requestId, url) {
 				success: result?.success
 			});
 			
+			// ⚠️ 关键验证：立即查询数据库确认数据是否真的改变了
+			const verifyClients = await env.DATABASE.prepare(checkSql).bind(...clientIdsAsStrings).all();
+			console.log('[BATCH-ASSIGN] ⚠️ 更新后验证 - 数据库中的客户:', verifyClients.results);
+			
+			// 检查是否真的更新了
+			const actuallyUpdated = verifyClients.results?.filter(c => c.assignee_user_id === assigneeUserId).length || 0;
+			console.log('[BATCH-ASSIGN] ⚠️ 实际更新确认:', {
+				预期更新: updatedCount,
+				实际验证: actuallyUpdated,
+				匹配: actuallyUpdated === updatedCount
+			});
+			
 			return jsonResponse(200, { 
 				ok: true, 
 				code: "SUCCESS", 
