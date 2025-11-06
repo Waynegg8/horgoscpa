@@ -407,7 +407,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 							// 记录存在但已删除，恢复并更新
 							console.log(`[Generate] 恢復已刪除記錄: overhead_id=${exists.overhead_id}, cost_type_id=${t.cost_type_id}`);
 							await env.DATABASE.prepare(
-								`UPDATE MonthlyOverheadCosts SET amount = ?, notes = ?, is_deleted = 0, recorded_by = ?, created_at = datetime('now') WHERE overhead_id = ?`
+								`UPDATE MonthlyOverheadCosts SET amount = ?, notes = ?, is_deleted = 0, recorded_by = ?, recorded_at = datetime('now'), updated_at = datetime('now') WHERE overhead_id = ?`
 							).bind(Number(t.amount||0), t.notes || '[auto]', String(me.user_id), exists.overhead_id).run();
 							created++;
 							records.push({
