@@ -41,6 +41,247 @@ function shouldPayInMonth(recurringType, recurringMonths, effectiveDate, expiryD
 	return false;
 }
 
+/**
+ * 计算所有员工的实际时薪（包含完整薪资成本 + 管理费分摊）
+ * 返回 Map<userId: string, actualHourlyRate: number>
+ */
+async function calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth) {
+	const WORK_TYPES = {
+		1: { name: '正常工作', multiplier: 1.0, comp: 0 },
+		2: { name: '平日加班（2小時內）', multiplier: 1.34, comp: 1 },
+		3: { name: '平日加班（2小時後）', multiplier: 1.67, comp: 1 },
+		4: { name: '休息日加班（2小時內）', multiplier: 1.34, comp: 1 },
+		5: { name: '休息日加班（2小時後）', multiplier: 1.67, comp: 1 },
+		6: { name: '休息日加班（8小時後）', multiplier: 2.67, comp: 1 },
+		7: { name: '國定假日', multiplier: 1.0, comp: 'fixed_8h' },
+		8: { name: '國定假日加班（8小時後）（2小時內）', multiplier: 1.34, comp: 1 },
+		9: { name: '國定假日加班（8小時後）（2小時後）', multiplier: 1.67, comp: 1 },
+		10: { name: '例假日', multiplier: 1.0, comp: 'fixed_8h' },
+		11: { name: '例假日加班（8小時後）', multiplier: 2.0, comp: 1 }
+	};
+	
+	const [y, m] = yearMonth.split('-');
+	const firstDay = `${y}-${m}-01`;
+	const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+	const lastDayStr = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
+	
+	// 获取所有员工
+	const usersRows = await env.DATABASE.prepare(
+		"SELECT user_id, name, base_salary FROM Users WHERE is_deleted = 0"
+	).all();
+	const usersList = usersRows?.results || [];
+	
+	// 获取全局数据（用于管理费分摊）
+	const totalMonthHoursResult = await env.DATABASE.prepare(
+		`SELECT SUM(hours) as total FROM Timesheets 
+		 WHERE substr(work_date, 1, 7) = ? AND is_deleted = 0`
+	).bind(yearMonth).first();
+	const totalMonthHours = Number(totalMonthHoursResult?.total || 0);
+	
+	const totalRevenueResult = await env.DATABASE.prepare(
+		`SELECT SUM(total_amount) as total FROM Receipts 
+		 WHERE substr(receipt_date, 1, 7) = ? AND is_deleted = 0`
+	).bind(yearMonth).first();
+	const totalRevenue = Number(totalRevenueResult?.total || 0);
+	
+	const costTypesRows = await env.DATABASE.prepare(
+		`SELECT cost_type_id, allocation_method FROM OverheadCostTypes WHERE is_active = 1`
+	).all();
+	const costTypes = costTypesRows?.results || [];
+	
+	const allUsersCount = usersList.length;
+	const employeeActualHourlyRates = {};
+	
+	// 为每个员工计算实际时薪
+	for (const user of usersList) {
+		const userId = String(user.user_id);
+		const baseSalaryCents = Math.round(Number(user.base_salary || 0) * 100);
+		
+		// 计算本月工时
+		const timesheetHoursResult = await env.DATABASE.prepare(
+			`SELECT SUM(hours) as total FROM Timesheets 
+			 WHERE user_id = ? AND work_date >= ? AND work_date <= ? AND is_deleted = 0`
+		).bind(userId, firstDay, lastDayStr).first();
+		const monthHours = Number(timesheetHoursResult?.total || 0);
+		
+		if (monthHours === 0) {
+			employeeActualHourlyRates[userId] = 0;
+			continue;
+		}
+		
+		// 计算完整的薪资成本
+		let totalLaborCostCents = baseSalaryCents;
+		
+		// 判定全勤
+		const leaveCheckResult = await env.DATABASE.prepare(
+			`SELECT COUNT(*) as count
+			 FROM LeaveRequests
+			 WHERE user_id = ? AND start_date <= ? AND end_date >= ?
+			 AND status = 'approved' AND leave_type IN ('sick', 'personal')`
+		).bind(userId, lastDayStr, firstDay).first();
+		const isFullAttendance = (leaveCheckResult?.count || 0) === 0;
+		
+		// 查询薪资项目
+		const salaryItems = await env.DATABASE.prepare(
+			`SELECT t.category as item_type, t.item_name, t.item_code, 
+					e.amount_cents, e.recurring_type, e.recurring_months, 
+					e.effective_date, e.expiry_date
+			 FROM EmployeeSalaryItems e
+			 LEFT JOIN SalaryItemTypes t ON e.item_type_id = t.item_type_id
+			 WHERE e.user_id = ? AND e.is_active = 1`
+		).bind(userId).all();
+		
+		const items = salaryItems?.results || [];
+		for (const item of items) {
+			const shouldPay = shouldPayInMonth(item.recurring_type, item.recurring_months, item.effective_date, item.expiry_date, yearMonth);
+			if (shouldPay && item.item_type !== 'deduction') {
+				const isFullAttendanceBonus = (item.item_code === 'FULL_ATTENDANCE' || (item.item_name && item.item_name.includes('全勤')));
+				if (isFullAttendanceBonus) {
+					if (isFullAttendance) {
+						totalLaborCostCents += Number(item.amount_cents || 0);
+					}
+				} else {
+					totalLaborCostCents += Number(item.amount_cents || 0);
+				}
+			}
+		}
+		
+		// 计算补休转加班费
+		const hourlyRateForOvertime = Math.round(baseSalaryCents / 240);
+		
+		const timesheetsRows = await env.DATABASE.prepare(
+			`SELECT work_date, work_type, hours 
+			 FROM Timesheets 
+			 WHERE user_id = ? AND work_date >= ? AND work_date <= ? AND is_deleted = 0`
+		).bind(userId, firstDay, lastDayStr).all();
+		
+		const dailyFixedTypeMap = {};
+		for (const ts of (timesheetsRows?.results || [])) {
+			const wt = parseInt(ts.work_type);
+			if (wt === 7 || wt === 10) {
+				const dateKey = ts.work_date;
+				if (!dailyFixedTypeMap[dateKey]) dailyFixedTypeMap[dateKey] = {};
+				if (!dailyFixedTypeMap[dateKey][wt]) dailyFixedTypeMap[dateKey][wt] = 0;
+				dailyFixedTypeMap[dateKey][wt] += Number(ts.hours || 0);
+			}
+		}
+		
+		const compGenerationDetails = [];
+		let totalCompHoursGenerated = 0;
+		for (const ts of (timesheetsRows?.results || [])) {
+			const wt = parseInt(ts.work_type);
+			const h = Number(ts.hours || 0);
+			const info = WORK_TYPES[wt] || WORK_TYPES[1];
+			if (info.comp === 'fixed_8h') {
+				const dateKey = ts.work_date;
+				const dayTotal = dailyFixedTypeMap[dateKey]?.[wt] || 0;
+				if (dayTotal <= 8) {
+					compGenerationDetails.push({ hours: h, multiplier: 1.0, compHours: h });
+					totalCompHoursGenerated += h;
+				} else {
+					compGenerationDetails.push({ hours: h, multiplier: 1.0, compHours: h });
+					totalCompHoursGenerated += h;
+				}
+			} else if (info.comp > 0) {
+				const compHours = h * info.comp;
+				compGenerationDetails.push({ hours: h, multiplier: info.comp, compHours });
+				totalCompHoursGenerated += compHours;
+			}
+		}
+		
+		const compUsedRows = await env.DATABASE.prepare(
+			`SELECT amount, unit FROM LeaveRequests
+			 WHERE user_id = ? AND leave_type = 'compensatory' AND status = 'approved'
+			   AND start_date >= ? AND start_date <= ? AND is_deleted = 0`
+		).bind(userId, firstDay, lastDayStr).all();
+		let totalCompHoursUsed = 0;
+		for (const lr of (compUsedRows?.results || [])) {
+			const amt = Number(lr.amount || 0);
+			if (lr.unit === 'days') {
+				totalCompHoursUsed += amt * 8;
+			} else {
+				totalCompHoursUsed += amt;
+			}
+		}
+		
+		const unusedCompHours = Math.max(0, totalCompHoursGenerated - totalCompHoursUsed);
+		let expiredCompPayCents = 0;
+		let remainingToConvert = unusedCompHours;
+		for (let i = compGenerationDetails.length - 1; i >= 0 && remainingToConvert > 0; i--) {
+			const detail = compGenerationDetails[i];
+			const hoursToConvert = Math.min(remainingToConvert, detail.compHours);
+			const payCents = Math.round(hoursToConvert * detail.multiplier * hourlyRateForOvertime);
+			expiredCompPayCents += payCents;
+			remainingToConvert -= hoursToConvert;
+		}
+		totalLaborCostCents += expiredCompPayCents;
+		
+		// 计算请假扣款
+		const hourlyRateForLeave = hourlyRateForOvertime;
+		const leaveDeductionRows = await env.DATABASE.prepare(
+			`SELECT leave_type, unit, SUM(amount) as total_amount
+			 FROM LeaveRequests
+			 WHERE user_id = ? AND status = 'approved' 
+			   AND start_date <= ? AND end_date >= ?
+			   AND leave_type IN ('sick', 'personal', 'menstrual')
+			 GROUP BY leave_type, unit`
+		).bind(userId, lastDayStr, firstDay).all();
+		
+		let sickHours = 0, personalHours = 0, menstrualHours = 0;
+		for (const lr of (leaveDeductionRows?.results || [])) {
+			const amt = Number(lr.total_amount || 0);
+			let hours = 0;
+			if (lr.unit === 'days') {
+				hours = amt * 8;
+			} else {
+				hours = amt;
+			}
+			if (lr.leave_type === 'sick') sickHours += hours;
+			else if (lr.leave_type === 'personal') personalHours += hours;
+			else if (lr.leave_type === 'menstrual') menstrualHours += hours;
+		}
+		
+		let leaveDeductionCents = 0;
+		leaveDeductionCents += Math.floor(sickHours * 0.5 * hourlyRateForLeave);
+		leaveDeductionCents += Math.floor(personalHours * hourlyRateForLeave);
+		leaveDeductionCents += Math.floor(menstrualHours * 0.5 * hourlyRateForLeave);
+		totalLaborCostCents -= leaveDeductionCents;
+		
+		const totalLaborCost = Math.round(totalLaborCostCents / 100);
+		
+		// 计算管理费分摊
+		let overheadAllocation = 0;
+		for (const ct of costTypes) {
+			const costRow = await env.DATABASE.prepare(
+				`SELECT amount FROM MonthlyOverheadCosts 
+				 WHERE cost_type_id = ? AND year = ? AND month = ? AND is_deleted = 0`
+			).bind(ct.cost_type_id, year, month).first();
+			const costAmount = Number(costRow?.amount || 0);
+			
+			if (ct.allocation_method === 'per_employee') {
+				overheadAllocation += allUsersCount > 0 ? Math.round(costAmount / allUsersCount) : 0;
+			} else if (ct.allocation_method === 'per_hour') {
+				overheadAllocation += totalMonthHours > 0 ? Math.round(costAmount * (monthHours / totalMonthHours)) : 0;
+			} else if (ct.allocation_method === 'per_revenue') {
+				const userRevenueResult = await env.DATABASE.prepare(
+					`SELECT SUM(total_amount) as total FROM Receipts r
+					 INNER JOIN Timesheets t ON r.client_id = t.client_id
+					 WHERE t.user_id = ? AND substr(r.receipt_date, 1, 7) = ? AND r.is_deleted = 0`
+				).bind(userId, yearMonth).first();
+				const userRevenue = Number(userRevenueResult?.total || 0);
+				overheadAllocation += totalRevenue > 0 ? Math.round(costAmount * (userRevenue / totalRevenue)) : 0;
+			}
+		}
+		
+		const totalCost = totalLaborCost + overheadAllocation;
+		const actualHourlyRate = monthHours > 0 ? Math.round(totalCost / monthHours) : 0;
+		
+		employeeActualHourlyRates[userId] = actualHourlyRate;
+	}
+	
+	return employeeActualHourlyRates;
+}
+
 export async function handleOverhead(request, env, me, requestId, url, path) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
@@ -1477,241 +1718,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			};
 			const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
 
-			// 1. 获取所有员工并计算准确的实际时薪（与员工成本分析完全一致）
-			// 复用客户成本汇总API中已有的完整计算逻辑
-			const usersRows = await env.DATABASE.prepare(
-				"SELECT user_id, name, base_salary FROM Users WHERE is_deleted = 0"
-			).all();
-			const usersList = usersRows?.results || [];
-			
-			// 构建员工实际时薪映射表
-			const employeeActualHourlyRates = {};
-			
-			// 获取成本类型配置
-			const costTypesRows = await env.DATABASE.prepare(
-				`SELECT cost_type_id, allocation_method FROM OverheadCostTypes WHERE is_active = 1`
-			).all();
-			const costTypes = costTypesRows?.results || [];
-			
-			// 获取总月度工时和总收入（用于管理费分摊）
-			const totalMonthHoursResult = await env.DATABASE.prepare(
-				`SELECT SUM(hours) as total FROM Timesheets 
-				 WHERE substr(work_date, 1, 7) = ? AND is_deleted = 0`
-			).bind(yearMonth).first();
-			const totalMonthHours = Number(totalMonthHoursResult?.total || 0);
-			
-			const totalRevenueResult = await env.DATABASE.prepare(
-				`SELECT SUM(total_amount) as total FROM Receipts 
-				 WHERE substr(receipt_date, 1, 7) = ? AND is_deleted = 0`
-			).bind(yearMonth).first();
-			const totalRevenue = Number(totalRevenueResult?.total || 0);
-			
-			const allUsersCount = usersList.length;
-			
-			// 为每个员工计算实际时薪
-			for (const user of usersList) {
-				const userId = user.user_id;
-				const baseSalaryCents = Math.round(Number(user.base_salary || 0) * 100);
-				
-				// 计算本月工时
-				const [y, m] = yearMonth.split('-');
-				const firstDay = `${y}-${m}-01`;
-				const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
-				const lastDayStr = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
-				
-				const timesheetHoursResult = await env.DATABASE.prepare(
-					`SELECT SUM(hours) as total FROM Timesheets 
-					 WHERE user_id = ? AND work_date >= ? AND work_date <= ? AND is_deleted = 0`
-				).bind(userId, firstDay, lastDayStr).first();
-				const monthHours = Number(timesheetHoursResult?.total || 0);
-				
-				if (monthHours === 0) {
-					employeeActualHourlyRates[userId] = 0;
-					continue;
-				}
-				
-				// 计算完整的薪资成本（与客户成本汇总API完全一致）
-				let totalLaborCostCents = baseSalaryCents;
-				
-				// 判定全勤
-				const leaveCheckResult = await env.DATABASE.prepare(
-					`SELECT COUNT(*) as count
-					 FROM LeaveRequests
-					 WHERE user_id = ? AND start_date <= ? AND end_date >= ?
-					 AND status = 'approved' AND leave_type IN ('sick', 'personal')`
-				).bind(userId, lastDayStr, firstDay).first();
-				const isFullAttendance = (leaveCheckResult?.count || 0) === 0;
-				
-				// 查询薪资项目
-				const salaryItems = await env.DATABASE.prepare(
-					`SELECT t.category as item_type, t.item_name, t.item_code, 
-							e.amount_cents, e.recurring_type, e.recurring_months, 
-							e.effective_date, e.expiry_date
-					 FROM EmployeeSalaryItems e
-					 LEFT JOIN SalaryItemTypes t ON e.item_type_id = t.item_type_id
-					 WHERE e.user_id = ? AND e.is_active = 1`
-				).bind(userId).all();
-				
-				const items = salaryItems?.results || [];
-				for (const item of items) {
-					const shouldPay = shouldPayInMonth(item.recurring_type, item.recurring_months, item.effective_date, item.expiry_date, yearMonth);
-					if (shouldPay && item.item_type !== 'deduction') {
-						const isFullAttendanceBonus = (item.item_code === 'FULL_ATTENDANCE' || (item.item_name && item.item_name.includes('全勤')));
-						if (isFullAttendanceBonus) {
-							if (isFullAttendance) {
-								totalLaborCostCents += Number(item.amount_cents || 0);
-							}
-						} else {
-							totalLaborCostCents += Number(item.amount_cents || 0);
-						}
-					}
-				}
-				
-				// 计算补休转加班费
-				const hourlyRateForOvertime = Math.round(baseSalaryCents / 240);
-				const WORK_TYPES = {
-					1: { name: '正常工作', multiplier: 1.0, comp: 0 },
-					2: { name: '平日加班（2小時內）', multiplier: 1.34, comp: 1 },
-					3: { name: '平日加班（2小時後）', multiplier: 1.67, comp: 1 },
-					4: { name: '休息日加班（2小時內）', multiplier: 1.34, comp: 1 },
-					5: { name: '休息日加班（2小時後）', multiplier: 1.67, comp: 1 },
-					6: { name: '休息日加班（8小時後）', multiplier: 2.67, comp: 1 },
-					7: { name: '國定假日', multiplier: 1.0, comp: 'fixed_8h' },
-					8: { name: '國定假日加班（8小時後）（2小時內）', multiplier: 1.34, comp: 1 },
-					9: { name: '國定假日加班（8小時後）（2小時後）', multiplier: 1.67, comp: 1 },
-					10: { name: '例假日', multiplier: 1.0, comp: 'fixed_8h' },
-					11: { name: '例假日加班（8小時後）', multiplier: 2.0, comp: 1 }
-				};
-				
-				const timesheetsRows = await env.DATABASE.prepare(
-					`SELECT work_date, work_type, hours 
-					 FROM Timesheets 
-					 WHERE user_id = ? AND work_date >= ? AND work_date <= ? AND is_deleted = 0`
-				).bind(userId, firstDay, lastDayStr).all();
-				
-				const dailyFixedTypeMap = {};
-				for (const ts of (timesheetsRows?.results || [])) {
-					const wt = parseInt(ts.work_type);
-					if (wt === 7 || wt === 10) {
-						const dateKey = ts.work_date;
-						if (!dailyFixedTypeMap[dateKey]) dailyFixedTypeMap[dateKey] = {};
-						if (!dailyFixedTypeMap[dateKey][wt]) dailyFixedTypeMap[dateKey][wt] = 0;
-						dailyFixedTypeMap[dateKey][wt] += Number(ts.hours || 0);
-					}
-				}
-				
-				const compGenerationDetails = [];
-				let totalCompHoursGenerated = 0;
-				for (const ts of (timesheetsRows?.results || [])) {
-					const wt = parseInt(ts.work_type);
-					const h = Number(ts.hours || 0);
-					const info = WORK_TYPES[wt] || WORK_TYPES[1];
-					if (info.comp === 'fixed_8h') {
-						const dateKey = ts.work_date;
-						const dayTotal = dailyFixedTypeMap[dateKey]?.[wt] || 0;
-						if (dayTotal <= 8) {
-							compGenerationDetails.push({ hours: h, multiplier: 1.0, compHours: h });
-							totalCompHoursGenerated += h;
-						} else {
-							compGenerationDetails.push({ hours: h, multiplier: 1.0, compHours: h });
-							totalCompHoursGenerated += h;
-						}
-					} else if (info.comp > 0) {
-						const compHours = h * info.comp;
-						compGenerationDetails.push({ hours: h, multiplier: info.comp, compHours });
-						totalCompHoursGenerated += compHours;
-					}
-				}
-				
-				const compUsedRows = await env.DATABASE.prepare(
-					`SELECT amount, unit FROM LeaveRequests
-					 WHERE user_id = ? AND leave_type = 'compensatory' AND status = 'approved'
-					   AND start_date >= ? AND start_date <= ? AND is_deleted = 0`
-				).bind(userId, firstDay, lastDayStr).all();
-				let totalCompHoursUsed = 0;
-				for (const lr of (compUsedRows?.results || [])) {
-					const amt = Number(lr.amount || 0);
-					if (lr.unit === 'days') {
-						totalCompHoursUsed += amt * 8;
-					} else {
-						totalCompHoursUsed += amt;
-					}
-				}
-				
-				const unusedCompHours = Math.max(0, totalCompHoursGenerated - totalCompHoursUsed);
-				let expiredCompPayCents = 0;
-				let remainingToConvert = unusedCompHours;
-				for (let i = compGenerationDetails.length - 1; i >= 0 && remainingToConvert > 0; i--) {
-					const detail = compGenerationDetails[i];
-					const hoursToConvert = Math.min(remainingToConvert, detail.compHours);
-					const payCents = Math.round(hoursToConvert * detail.multiplier * hourlyRateForOvertime);
-					expiredCompPayCents += payCents;
-					remainingToConvert -= hoursToConvert;
-				}
-				totalLaborCostCents += expiredCompPayCents;
-				
-				// 计算请假扣款
-				const hourlyRateForLeave = hourlyRateForOvertime;
-				const leaveDeductionRows = await env.DATABASE.prepare(
-					`SELECT leave_type, unit, SUM(amount) as total_amount
-					 FROM LeaveRequests
-					 WHERE user_id = ? AND status = 'approved' 
-					   AND start_date <= ? AND end_date >= ?
-					   AND leave_type IN ('sick', 'personal', 'menstrual')
-					 GROUP BY leave_type, unit`
-				).bind(userId, lastDayStr, firstDay).all();
-				
-				let sickHours = 0, personalHours = 0, menstrualHours = 0;
-				for (const lr of (leaveDeductionRows?.results || [])) {
-					const amt = Number(lr.total_amount || 0);
-					let hours = 0;
-					if (lr.unit === 'days') {
-						hours = amt * 8;
-					} else {
-						hours = amt;
-					}
-					if (lr.leave_type === 'sick') sickHours += hours;
-					else if (lr.leave_type === 'personal') personalHours += hours;
-					else if (lr.leave_type === 'menstrual') menstrualHours += hours;
-				}
-				
-				let leaveDeductionCents = 0;
-				leaveDeductionCents += Math.floor(sickHours * 0.5 * hourlyRateForLeave);
-				leaveDeductionCents += Math.floor(personalHours * hourlyRateForLeave);
-				leaveDeductionCents += Math.floor(menstrualHours * 0.5 * hourlyRateForLeave);
-				totalLaborCostCents -= leaveDeductionCents;
-				
-				const totalLaborCost = Math.round(totalLaborCostCents / 100);
-				
-				// 计算管理费分摊（按照成本类型配置）
-				let overheadAllocation = 0;
-				for (const ct of costTypes) {
-					const costRow = await env.DATABASE.prepare(
-						`SELECT amount FROM MonthlyOverheadCosts 
-						 WHERE cost_type_id = ? AND year = ? AND month = ? AND is_deleted = 0`
-					).bind(ct.cost_type_id, year, month).first();
-					const costAmount = Number(costRow?.amount || 0);
-					
-					if (ct.allocation_method === 'per_employee') {
-						overheadAllocation += allUsersCount > 0 ? Math.round(costAmount / allUsersCount) : 0;
-					} else if (ct.allocation_method === 'per_hour') {
-						overheadAllocation += totalMonthHours > 0 ? Math.round(costAmount * (monthHours / totalMonthHours)) : 0;
-					} else if (ct.allocation_method === 'per_revenue') {
-						const userRevenueResult = await env.DATABASE.prepare(
-							`SELECT SUM(total_amount) as total FROM Receipts r
-							 INNER JOIN Timesheets t ON r.client_id = t.client_id
-							 WHERE t.user_id = ? AND substr(r.receipt_date, 1, 7) = ? AND r.is_deleted = 0`
-						).bind(userId, yearMonth).first();
-						const userRevenue = Number(userRevenueResult?.total || 0);
-						overheadAllocation += totalRevenue > 0 ? Math.round(costAmount * (userRevenue / totalRevenue)) : 0;
-					}
-				}
-				
-				const totalCost = totalLaborCost + overheadAllocation;
-				const actualHourlyRate = monthHours > 0 ? Math.round(totalCost / monthHours) : 0;
-				
-				employeeActualHourlyRates[userId] = actualHourlyRate;
-			}
+			// 1. 调用共享函数计算所有员工的实际时薪
+			const employeeActualHourlyRates = await calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth);
 
 			// 2. 獲取所有有工時記錄的客戶
 			const clientRows = await env.DATABASE.prepare(
@@ -1739,8 +1747,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						ts.hours, 
 						ts.service_id,
 						ts.service_item_id,
-						COALESCE(s.service_name, ts.service_name) as service_name_full,
-						COALESCE(si.item_name, '未指定') as service_item_name
+						COALESCE(s.service_name, ts.service_name, '未分類') as service_name_full,
+						COALESCE(si.item_name, ts.service_name, '未指定') as service_item_name
 					 FROM Timesheets ts
 					 LEFT JOIN Users u ON ts.user_id = u.user_id
 					 LEFT JOIN Services s ON CAST(ts.service_id AS INTEGER) = s.service_id
@@ -1823,7 +1831,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 							tsWeightedHours = Number(ts.hours || 0) * (WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0);
 						}
 						// 使用员工的实际时薪（已包含薪资成本+管理费分摊）
-						const actualHourlyRate = Number(employeeActualHourlyRates[ts.user_id] || 0);
+						const empUserId = String(ts.user_id); // 确保类型一致
+						const actualHourlyRate = Number(employeeActualHourlyRates[empUserId] || 0);
 						totalCost += Math.round(actualHourlyRate * tsWeightedHours);
 						totalWeightedHoursForAvg += tsWeightedHours;
 					}
