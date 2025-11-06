@@ -23,243 +23,14 @@ export async function handleReports(request, env, me, requestId, url, path) {
 	};
 
 	// /internal/api/v1/reports/client-cost-analysis (GET, admin only)
+	// 直接使用成本页面的API逻辑
 	if (path === "/internal/api/v1/reports/client-cost-analysis") {
 		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 		if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
-		try {
-			const p = url.searchParams;
-			const start = parseDate(p.get("start_date"));
-			const end = parseDate(p.get("end_date"));
-			const clientId = (p.get("client_id") || "").trim() || null;
-			const includeBonus = (p.get("include_year_end_bonus") || "").toLowerCase() === "true";
-			if (!start || !end || start > end) {
-				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇有效日期區間", meta:{ requestId } }, corsHeaders);
-			}
-
-			// 工時倍率對照表（根據勞基法，與timesheets.js一致）
-			const workTypeMultipliers = {
-				1: 1.0,   // 正常工時
-				2: 1.34,  // 平日加班（前2小時）
-				3: 1.67,  // 平日加班（後2小時）
-				4: 1.34,  // 休息日加班（前2小時）
-				5: 1.67,  // 休息日加班（第3-8小時）
-				6: 2.67,  // 休息日加班（第9-12小時）
-				7: 1.0,   // 國定假日加班（8小時內）- 特殊處理：固定8h
-				8: 1.34,  // 國定假日加班（第9-10小時）
-				9: 1.67,  // 國定假日加班（第11-12小時）
-				10: 1.0,  // 例假日加班（8小時內）- 特殊處理：固定8h
-				11: 1.0,  // 例假日加班（第9-12小時）
-			};
-
-			// 獲取每個客戶每個員工的工時明細（按 work_type）
-			const binds = [start, end];
-			let where = "t.is_deleted = 0 AND t.work_date >= ? AND t.work_date <= ?";
-			if (clientId) { where += " AND t.client_id = ?"; binds.push(clientId); }
-			const hoursRows = await env.DATABASE.prepare(
-				`SELECT t.client_id, t.user_id, t.work_type, SUM(t.hours) AS hours
-				 FROM Timesheets t
-				 WHERE ${where}
-				 GROUP BY t.client_id, t.user_id, t.work_type`
-			).bind(...binds).all();
-			
-			// 按客戶和員工組織數據
-			const clientUserHours = new Map(); // Map<client_id, Map<user_id, {actual, weighted, byType}>>
-			const allUserIds = new Set();
-			const allClientIds = new Set();
-			
-			// 第一步：收集固定8h类型的每日总工时
-			const dailyFixedTypeMap = new Map(); // key: 'date:workType', value: totalHours
-			
-			for (const r of (hoursRows?.results || [])) {
-				if (!r.client_id) continue;
-				const workTypeId = parseInt(r.work_type) || 1;
-				const hours = Number(r.hours || 0);
-				
-				// 固定8h类型（國定假日7、例假日10）需要先统计每日总工时
-				if (workTypeId === 7 || workTypeId === 10) {
-					// 需要从work_date获取，但这里只有按client_id, user_id, work_type分组的数据
-					// 暂时简化处理：固定8h类型统一按8h加权
-				}
-			}
-			
-			// 第二步：计算加权工时
-			for (const r of (hoursRows?.results || [])) {
-				if (!r.client_id) continue;
-				allClientIds.add(r.client_id);
-				allUserIds.add(r.user_id);
-				
-				if (!clientUserHours.has(r.client_id)) {
-					clientUserHours.set(r.client_id, new Map());
-				}
-				const userMap = clientUserHours.get(r.client_id);
-				if (!userMap.has(r.user_id)) {
-					userMap.set(r.user_id, { actual: 0, weighted: 0, byType: {} });
-				}
-				const userData = userMap.get(r.user_id);
-				const hours = Number(r.hours || 0);
-				const workTypeId = parseInt(r.work_type) || 1;
-				const multiplier = workTypeMultipliers[workTypeId] || 1.0;
-				
-				userData.actual += hours;
-				
-				// 特殊處理：國定假日/例假日8小時內類型，固定為8.0加權工時
-				if (workTypeId === 7 || workTypeId === 10) {
-					userData.weighted += 8.0; // 固定8小时加权
-				} else {
-					userData.weighted += hours * multiplier;
-				}
-				
-				userData.byType[r.work_type] = hours;
-			}
-
-			// 獲取所有涉及用戶的薪資信息
-			const userSalaries = new Map();
-			if (allUserIds.size > 0) {
-				const userIdArray = Array.from(allUserIds);
-				const placeholders = userIdArray.map(() => "?").join(",");
-				const salaryRows = await env.DATABASE.prepare(
-					`SELECT user_id, name, COALESCE(base_salary, 40000) AS base_salary
-					 FROM Users WHERE user_id IN (${placeholders})`
-				).bind(...userIdArray).all();
-				for (const r of (salaryRows?.results || [])) {
-					const baseSalary = Number(r.base_salary || 40000);
-					// 時薪基準 = 底薪 ÷ 240（與payroll.js一致，只用底薪，不包含加給）
-					const salaryHourlyRate = baseSalary / 240;
-					userSalaries.set(r.user_id, {
-						username: r.name || `User${r.user_id}`, // 使用姓名，如果没有则使用User+ID
-						base_salary: baseSalary,
-						salary_rate: Number(salaryHourlyRate.toFixed(2))
-					});
-				}
-			}
-
-			// 計算管理成本率（每小時）
-			const startYm = parseInt(start.slice(0,4) + start.slice(5,7), 10);
-			const endYm = parseInt(end.slice(0,4) + end.slice(5,7), 10);
-			const ohRows = await env.DATABASE.prepare(
-				`SELECT (year*100+month) AS ym, SUM(amount) AS amt
-				 FROM MonthlyOverheadCosts
-				 WHERE is_deleted = 0 AND (year*100+month) >= ? AND (year*100+month) <= ?
-				 GROUP BY ym`
-			).bind(startYm, endYm).all();
-			const totalOverhead = (ohRows?.results || []).reduce((s, r) => s + Number(r.amt || 0), 0);
-			
-			// 計算總工時以得出每小時管理成本
-			const totalActualHours = Array.from(clientUserHours.values())
-				.reduce((sum, userMap) => {
-					return sum + Array.from(userMap.values()).reduce((s, u) => s + u.actual, 0);
-				}, 0);
-			const overheadPerHour = totalActualHours > 0 ? totalOverhead / totalActualHours : 0;
-
-			const warnings = [];
-			if (totalOverhead <= 0) warnings.push({ type: "overhead_missing", message: "本期間管理成本未輸入" });
-
-			// 營收（Receipts：排除 cancelled）
-			const recBinds = [start, end];
-			let recWhere = "is_deleted = 0 AND status != 'cancelled' AND receipt_date >= ? AND receipt_date <= ?";
-			if (clientId) { recWhere += " AND client_id = ?"; recBinds.push(clientId); }
-			const recRows = await env.DATABASE.prepare(
-				`SELECT client_id, SUM(total_amount) AS total_receipts
-				 FROM Receipts
-				 WHERE ${recWhere}
-				 GROUP BY client_id`
-			).bind(...recBinds).all();
-			const revenueByClient = new Map();
-			for (const r of (recRows?.results || [])) {
-				revenueByClient.set(r.client_id, Number(r.total_receipts || 0));
-				allClientIds.add(r.client_id);
-			}
-
-			// 取公司名稱
-			const nameMap = new Map();
-			if (allClientIds.size > 0) {
-				const clientIdArray = Array.from(allClientIds);
-				const placeholders = clientIdArray.map(() => "?").join(",");
-				const nameRows = await env.DATABASE.prepare(
-					`SELECT client_id, company_name FROM Clients WHERE client_id IN (${placeholders})`
-				).bind(...clientIdArray).all();
-				for (const r of (nameRows?.results || [])) nameMap.set(r.client_id, r.company_name);
-			}
-
-			// 組裝結果
-			const data = [];
-			for (const cid of allClientIds) {
-				const userMap = clientUserHours.get(cid) || new Map();
-				let totalActual = 0;
-				let totalWeighted = 0;
-				let totalSalaryCost = 0;
-				let totalOverheadCost = 0;
-				const userBreakdown = [];
-
-				for (const [uid, userData] of userMap.entries()) {
-					const userInfo = userSalaries.get(uid) || { username: `User${uid}`, salary_rate: 167 };
-					const actual = userData.actual;
-					const weighted = userData.weighted;
-					const overheadRate = Number(overheadPerHour.toFixed(2));
-					const hourlyCostRate = userInfo.salary_rate + overheadRate;
-					
-					// 成本計算：使用加權工時 × 薪資時薪 + 實際工時 × 管理成本時薪
-					const salaryCost = Math.round(weighted * userInfo.salary_rate);
-					const overheadCost = Math.round(actual * overheadRate);
-					const userTotalCost = salaryCost + overheadCost;
-					
-					totalActual += actual;
-					totalWeighted += weighted;
-					totalSalaryCost += salaryCost;
-					totalOverheadCost += overheadCost;
-
-					userBreakdown.push({
-						user_id: uid,
-						username: userInfo.username,
-						actual_hours: Number(actual.toFixed(2)),
-						weighted_hours: Number(weighted.toFixed(2)),
-						hourly_cost_rate: Number(hourlyCostRate.toFixed(2)),
-						salary_rate: userInfo.salary_rate,
-						overhead_rate: overheadRate,
-						total_cost: userTotalCost,
-						salary_cost: salaryCost,
-						overhead_cost: overheadCost,
-						year_end_bonus_allocated: 0, // 暫時未實現年終分攤
-						year_end_bonus_ratio: 0
-					});
-				}
-
-				const revenue = revenueByClient.get(cid) || 0;
-				const totalCost = totalSalaryCost + totalOverheadCost;
-				const grossProfit = revenue - totalCost;
-				const margin = revenue > 0 ? Number(((grossProfit / revenue) * 100).toFixed(1)) : 0;
-
-				data.push({
-					client_id: cid,
-					company_name: nameMap.get(cid) || cid,
-					total_actual_hours: Number(totalActual.toFixed(2)),
-					total_weighted_hours: Number(totalWeighted.toFixed(2)),
-					cost_breakdown: {
-						salary_cost: totalSalaryCost,
-						overhead_cost: totalOverheadCost,
-						year_end_bonus: 0,
-						total_cost: totalCost,
-					},
-					labor_cost: totalCost,
-					revenue,
-					gross_profit: grossProfit,
-					profit_margin: margin,
-					cost_percentage: totalCost > 0 ? { 
-						salary: Number(((totalSalaryCost/totalCost)*100).toFixed(1)), 
-						overhead: Number(((totalOverheadCost/totalCost)*100).toFixed(1)) 
-					} : { salary: 0, overhead: 0 },
-					user_breakdown: userBreakdown,
-				});
-			}
-
-			// 按毛利率排序
-			data.sort((a, b) => b.profit_margin - a.profit_margin);
-
-			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, warnings, meta:{ requestId } }, corsHeaders);
-		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
-			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
-		}
+		
+		// 调用成本页面的/admin/costs/client API（同样的计算逻辑）
+		const { handleOverhead } = await import('./overhead.js');
+		return await handleOverhead(request, env, me, requestId, url, '/internal/api/v1/admin/costs/client');
 	}
 
 	// /internal/api/v1/reports/employee-hours (GET)
@@ -386,6 +157,7 @@ export async function handleReports(request, env, me, requestId, url, path) {
 	}
 
 	// /internal/api/v1/reports/payroll-summary (GET, admin only)
+	// 直接使用薪资页面的preview API逻辑
 	if (path === "/internal/api/v1/reports/payroll-summary") {
 		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 		if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
@@ -399,9 +171,8 @@ export async function handleReports(request, env, me, requestId, url, path) {
 			}
 			const ym = `${y}-${String(m).padStart(2,'0')}`;
 		
-		// 直接从数据库实时计算薪资（不依赖PayrollSnapshots）
-		// 导入薪资计算函数
-		const { calculateEmployeePayrollForReport } = await import('./payroll.js');
+		// 调用薪资预览API（与薪资页面使用完全相同的逻辑）
+		const { calculateEmployeePayroll } = await import('./payroll.js');
 		
 		// 获取所有活跃员工
 		const usersQuery = await env.DATABASE.prepare(
@@ -414,11 +185,11 @@ export async function handleReports(request, env, me, requestId, url, path) {
 			? allUsers.filter(u => String(u.user_id) === String(userId))
 			: allUsers;
 		
-		// 实时计算每个员工的薪资
+		// 实时计算每个员工的薪资（与payroll.js的preview完全一致）
 		const results = [];
 		for (const user of usersToCalculate) {
 			try {
-				const payroll = await calculateEmployeePayrollForReport(env, user.user_id, ym);
+				const payroll = await calculateEmployeePayroll(env, user.user_id, ym);
 				if (payroll) {
 					results.push(payroll);
 				}
