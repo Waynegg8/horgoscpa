@@ -268,7 +268,6 @@
               <th>事件</th>
               <th>日期</th>
               <th>假別</th>
-              <th>有效期</th>
               <th style="width:80px;text-align:center;">操作</th>
             </tr>
           </thead>
@@ -549,8 +548,14 @@
             
             const actionTd = document.createElement('td');
             actionTd.style.textAlign = 'center';
-            actionTd.appendChild(editBtn);
-            actionTd.appendChild(deleteBtn);
+            actionTd.style.whiteSpace = 'nowrap';
+            const actionBox = document.createElement('div');
+            actionBox.style.display = 'inline-flex';
+            actionBox.style.gap = '8px';
+            actionBox.style.alignItems = 'center';
+            actionBox.appendChild(editBtn);
+            actionBox.appendChild(deleteBtn);
+            actionTd.appendChild(actionBox);
             
             tr.innerHTML = `<td>${typeText}</td><td>${dateTimeText}</td><td>${hours}</td><td>${r.submittedAt?.slice(0,10) || ''}</td>`;
             tr.appendChild(actionTd);
@@ -590,8 +595,8 @@
                 console.error(err); alert('刪除失敗'); delBtn.disabled=false; delBtn.textContent='刪除';
               }
             });
-            const actionTd = document.createElement('td'); actionTd.style.textAlign='center'; actionTd.appendChild(delBtn);
-            tr.innerHTML = `<td>${evName}</td><td>${ev.date}</td><td>${leaveName}</td><td>${valid}</td>`;
+            const actionTd = document.createElement('td'); actionTd.style.textAlign='center'; actionTd.style.whiteSpace='nowrap'; actionTd.appendChild(delBtn);
+            tr.innerHTML = `<td>${evName}</td><td>${ev.date}</td><td>${leaveName}</td>`;
             tr.appendChild(actionTd);
             eventsTbody.appendChild(tr);
           });
