@@ -583,6 +583,7 @@
                 const json = await res.json().catch(()=>null);
                 if (!res.ok || !json || json.ok !== true) { alert(json?.message || '刪除失敗'); delBtn.disabled=false; delBtn.textContent='刪除'; return; }
                 alert('事件已刪除');
+                try { if (window.DataCache && window.DataCache.clearCache) { window.DataCache.clearCache('leaves_balances'); } } catch(_) {}
                 await loadBalances();
                 await loadLifeEvents();
                 // 重新計算可請的生活事件假
