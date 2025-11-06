@@ -158,6 +158,11 @@
    * 攔截的 fetch 函數
    */
   window.fetch = async function(url, options = {}) {
+    // 檢查是否禁用攔截器
+    if (window.__DISABLE_FETCH_INTERCEPTOR__) {
+      return originalFetch.call(this, url, options);
+    }
+    
     const method = (options.method || 'GET').toUpperCase();
     
     // 只在內部頁面攔截（不在登入頁面攔截）
@@ -200,6 +205,10 @@
     }
   }
 
-  console.log('[FetchInterceptor] Fetch 攔截器已啟動 - 自動使用緩存');
+  if (window.__DISABLE_FETCH_INTERCEPTOR__) {
+    console.log('[FetchInterceptor] ⚠️ Fetch 攔截器已禁用（頁面要求）');
+  } else {
+    console.log('[FetchInterceptor] Fetch 攔截器已啟動 - 自動使用緩存');
+  }
 })();
 

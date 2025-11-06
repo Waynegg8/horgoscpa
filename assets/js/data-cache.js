@@ -706,6 +706,21 @@
   // 初始化：清理舊版本緩存
   clearOldCache();
 
+  // 檢查是否禁用緩存
+  if (window.__DISABLE_DATA_CACHE__) {
+    console.log('[DataCache] ⚠️ 緩存系統已禁用（頁面要求）');
+    window.DataCache = {
+      preloadCritical: () => console.log('[DataCache] 已禁用'),
+      preloadAll: () => console.log('[DataCache] 已禁用'),
+      getPreloadStatus: () => ({ isPreloading: false, completed: [], total: 0 }),
+      fetchWithCache: (url, cacheKey, options) => fetch(url, options),
+      clearCache: () => {},
+      clearAll: () => {},
+      apiBase
+    };
+    return;
+  }
+
   // 暴露全局 API
   window.DataCache = {
     // 預加載

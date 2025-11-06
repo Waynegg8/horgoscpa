@@ -11,30 +11,20 @@
     <link rel="stylesheet" href="/assets/css/internal-components.css?v=3" />
     <link rel="stylesheet" href="/assets/css/clients-page.css?v=9" />
     
-    <!-- ⚡ 預加載系統（必須在所有其他腳本之前加載） -->
-    <script src="/assets/js/data-cache.js"></script>
-    <script src="/assets/js/fetch-interceptor.js"></script>
-    <script src="/assets/js/prerender.js"></script>
-    <script src="/assets/js/page-prerender.js"></script>
+    <!-- ⚡ 預加載系統（客户页面禁用缓存） -->
     <script>
-    // 立即啟動預加載（如果尚未啟動）
-    if (window.DataCache && !window.DataCache.getPreloadStatus().isPreloading) {
-      const status = window.DataCache.getPreloadStatus();
-      if (status.completed.length === 0) {
-        console.log('[Clients] 🚀 啟動背景預加載');
-        window.DataCache.preloadAll({ adminMode: true });
-      } else {
-        console.log(`[Clients] ✅ 預加載已完成 ${status.completed.length}/${status.total} 項`);
-      }
-    }
+    // ❌ 客户列表页面完全禁用缓存系统
+    // 原因：客户数据经常变更，缓存会导致看不到最新数据
+    console.log('[Clients] ℹ️ 客户列表页面已禁用所有缓存功能');
     
-    // ⚡ 页面加载完成后初始化预渲染
+    // 禁用 DataCache 预加载
+    window.__DISABLE_DATA_CACHE__ = true;
+    
+    // 禁用 fetch-interceptor 拦截
+    window.__DISABLE_FETCH_INTERCEPTOR__ = true;
+    
+    // 页面加载时清除所有客户相关缓存
     document.addEventListener('DOMContentLoaded', function() {
-      // ❌ 禁用预渲染缓存（客户页面需要实时更新）
-      // 客户数据经常变更，使用缓存会导致修改后看不到更新
-      console.log('[Clients] ℹ️ 预渲染缓存已禁用（确保数据实时性）');
-      
-      // 清除所有客户列表相关的缓存（确保显示最新数据）
       const clientsCacheKeys = [
         'clients_page1', 'clients_page2', 'clients_page3', 
         'clients_page4', 'clients_page5', 'clients_all'
@@ -44,7 +34,7 @@
         localStorage.removeItem(`cache_${key}`);
       });
       
-      console.log('[Clients] ✓ 已清除客户列表缓存，确保显示最新数据');
+      console.log('[Clients] ✓ 已清除所有客户缓存');
     });
     </script>
   </head>
