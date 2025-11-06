@@ -165,6 +165,44 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
 			}
 		}
+		// Upsert by cost_type_id
+		if (method === "PUT" && url.pathname.match(/^\/internal\/api\/v1\/admin\/overhead-templates\/by-type\/(\d+)$/)) {
+			try {
+				const costTypeId = parseInt(url.pathname.split("/").pop());
+				let body; try { body = await request.json(); } catch (_) { body = {}; }
+				const amount = body.amount != null ? Number(body.amount) : null;
+				const notes = body.notes != null ? String(body.notes) : null;
+				const recurring_type = body.recurring_type ? String(body.recurring_type) : null;
+				const recurring_months = body.recurring_months != null ? String(body.recurring_months) : null;
+				const effective_from = body.effective_from != null ? String(body.effective_from) : null;
+				const effective_to = body.effective_to != null ? String(body.effective_to) : null;
+				const is_active = body.is_active == null ? 1 : (body.is_active ? 1 : 0);
+				const row = await env.DATABASE.prepare("SELECT template_id FROM OverheadRecurringTemplates WHERE cost_type_id = ? LIMIT 1").bind(costTypeId).first();
+				if (row) {
+					await env.DATABASE.prepare(
+						`UPDATE OverheadRecurringTemplates SET 
+						 amount = COALESCE(?, amount),
+						 notes = COALESCE(?, notes),
+						 recurring_type = COALESCE(?, recurring_type),
+						 recurring_months = COALESCE(?, recurring_months),
+						 effective_from = COALESCE(?, effective_from),
+						 effective_to = COALESCE(?, effective_to),
+						 is_active = ?,
+						 updated_at = datetime('now')
+						WHERE cost_type_id = ?`
+					).bind(amount, notes, recurring_type, recurring_months, effective_from, effective_to, is_active, costTypeId).run();
+				} else {
+					await env.DATABASE.prepare(
+						`INSERT INTO OverheadRecurringTemplates (cost_type_id, amount, notes, recurring_type, recurring_months, effective_from, effective_to, is_active, created_by)
+						 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+					).bind(costTypeId, amount||0, notes||'', recurring_type||'monthly', recurring_months, effective_from, effective_to, is_active, String(me.user_id)).run();
+				}
+				return jsonResponse(200, { ok:true, code:"OK", message:"已保存", meta:{ requestId } }, corsHeaders);
+			} catch (err) {
+				console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+				return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+			}
+		}
 	}
 
 	// ============ 依模板自動生成當月記錄 ============
@@ -204,7 +242,13 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				`SELECT template_id, cost_type_id, amount, notes, recurring_type, recurring_months, effective_from, effective_to
 				 FROM OverheadRecurringTemplates WHERE is_active = 1`
 			).all();
-			const templates = tplRows?.results || [];
+			let templates = tplRows?.results || [];
+			// 可選擇特定模板
+			let body; try { body = await request.json(); } catch (_) { body = null; }
+			if (body && Array.isArray(body.template_ids) && body.template_ids.length) {
+				const set = new Set(body.template_ids.map(x => parseInt(x,10)));
+				templates = templates.filter(t => set.has(t.template_id));
+			}
 			let created = 0, skipped = 0;
 			for (const t of templates) {
 				if (!shouldApply(t.recurring_type, t.recurring_months, t.effective_from, t.effective_to, year, month)) { skipped++; continue; }
@@ -219,6 +263,44 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				}
 			}
 			return jsonResponse(200, { ok:true, code:"OK", message:"已生成", data:{ year, month, created, skipped }, meta:{ requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+		}
+	}
+
+	// 預覽：列出本月符合模板的候選清單
+	if (path === "/internal/api/v1/admin/overhead-costs/generate/preview") {
+		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
+		try {
+			const params = url.searchParams;
+			const year = parseInt(params.get("year") || String((new Date()).getUTCFullYear()), 10);
+			const month = parseInt(params.get("month") || String((new Date()).getUTCMonth()+1), 10);
+			if (!Number.isFinite(year) || year < 2000 || month < 1 || month > 12) {
+				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"year/month 不合法", meta:{ requestId } }, corsHeaders);
+			}
+			const ym = `${year}-${String(month).padStart(2,'0')}`;
+			const rows = await env.DATABASE.prepare(
+				`SELECT t.template_id, t.cost_type_id, t.amount, t.notes, t.recurring_type, t.recurring_months, t.effective_from, t.effective_to,
+				 c.cost_name
+				 FROM OverheadRecurringTemplates t JOIN OverheadCostTypes c ON c.cost_type_id = t.cost_type_id
+				 WHERE t.is_active = 1`
+			).all();
+			const candidates = [];
+			for (const r of (rows?.results||[])) {
+				const exists = await env.DATABASE.prepare(
+					`SELECT 1 FROM MonthlyOverheadCosts WHERE cost_type_id = ? AND year = ? AND month = ? AND is_deleted = 0 LIMIT 1`
+				).bind(r.cost_type_id, year, month).first();
+				candidates.push({
+					templateId: r.template_id,
+					costTypeId: r.cost_type_id,
+					costName: r.cost_name,
+					amount: Number(r.amount||0),
+					notes: r.notes||'',
+					alreadyExists: !!exists
+				});
+			}
+			return jsonResponse(200, { ok:true, code:"OK", data:{ year, month, items:candidates }, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);

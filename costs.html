@@ -20,8 +20,6 @@
     <div style="padding:16px 20px;">
       <div id="infoBar" class="info-bar" style="display:none;" role="alert">您沒有權限存取此模組</div>
       <div class="costs-toolbar" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
-        <label for="month">月份</label>
-        <input id="month" type="month" aria-label="月份" />
         <div class="toolbar-spacer" style="flex:1;"></div>
         <button id="btn-export-csv" type="button" class="btn" disabled>匯出 CSV</button>
         <button id="btn-export-pdf" type="button" class="btn" disabled>匯出 PDF</button>
@@ -61,6 +59,8 @@
         <div class="card" style="margin-top: 16px;">
           <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600;">月度管理費用記錄</h3>
           <div class="section-toolbar">
+            <label for="month">月份</label>
+            <input id="month" type="month" aria-label="月份" />
             <div class="toolbar-spacer"></div>
             <button id="btn-generate-month" type="button" class="btn" disabled>本月自動生成</button>
             <button id="btn-add-record" type="button" class="btn primary" disabled>新增記錄</button>
@@ -324,13 +324,42 @@
                 <td>${allocationText}</td>
                 <td>${item.description||''}</td>
                 <td>${item.isActive ? '啟用' : '停用'}</td>
-                <td><button class="btn-link" disabled>編輯</button></td>
+                <td><button class="btn-link" data-edit-id="${item.id}">編輯</button></td>
               `;
               tbodyItems.appendChild(tr);
+            });
+            // 綁定編輯：設定每月自動生成模板
+            tbodyItems.querySelectorAll('button[data-edit-id]').forEach(btn => {
+              btn.addEventListener('click', ()=> openEditTemplateModal(parseInt(btn.getAttribute('data-edit-id'),10)) );
             });
           } catch (_) {
             tbodyItems.innerHTML = '<tr><td colspan="6" style="color:#c0392b;">載入失敗</td></tr>';
           }
+        }
+        async function openEditTemplateModal(costTypeId){
+          // 讀目前模板（若需要可擴充：目前直接新建/覆蓋）
+          const form = document.createElement('div');
+          const enableChk = document.createElement('input'); enableChk.type='checkbox'; enableChk.id='tplEnable'; enableChk.checked = true;
+          const enableLbl = document.createElement('label'); enableLbl.htmlFor='tplEnable'; enableLbl.textContent='啟用每月自動生成'; enableLbl.style.marginLeft='6px';
+          const enWrap = document.createElement('div'); enWrap.appendChild(enableChk); enWrap.appendChild(enableLbl); enWrap.style.marginBottom='8px';
+          const amountInput = document.createElement('input'); amountInput.type='number'; amountInput.placeholder='預設金額'; amountInput.min='1';
+          const effInput = document.createElement('input'); effInput.type='month';
+          form.appendChild(enWrap);
+          form.appendChild(buildField('預設金額', amountInput));
+          form.appendChild(buildField('生效起始月', effInput));
+          openModal('自動生成設定', form, async (close)=>{
+            const is_active = enableChk.checked;
+            const amount = Number(amountInput.value||0);
+            const efv = String(effInput.value||'');
+            const body = { is_active };
+            if (amount>0) body.amount = amount;
+            if (/^\d{4}-\d{2}$/.test(efv)) body.effective_from = efv;
+            const res = await fetch(`${apiBase}/admin/overhead-templates/by-type/${costTypeId}`, { method:'PUT', credentials:'include', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+            const json = await res.json().catch(()=>({}));
+            if (!res.ok || !json || json.ok !== true) { alert(json?.message||'儲存失敗'); return; }
+            close();
+            alert('已儲存');
+          });
         }
 
         async function loadRecords(){
@@ -788,12 +817,35 @@
           const ym = parseYearMonth();
           if (!ym) { alert('請先選擇有效月份'); return; }
           try {
-            const res = await fetch(`${apiBase}/admin/overhead-costs/generate?year=${ym.year}&month=${ym.month}` , { method:'POST', credentials:'include' });
-            const json = await res.json().catch(()=>({}));
-            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message||'自動生成失敗');
-            if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
-            loadRecords();
-            alert('已自動生成');
+            // 先預覽
+            const prevRes = await fetch(`${apiBase}/admin/overhead-costs/generate/preview?year=${ym.year}&month=${ym.month}`, { credentials:'include' });
+            const prevJson = await prevRes.json();
+            if (!prevRes.ok || !prevJson || prevJson.ok !== true) throw new Error(prevJson?.message||'預覽失敗');
+            const items = (prevJson.data?.items)||[];
+            if (items.length === 0) { alert('沒有可生成的項目'); return; }
+            // 彈窗勾選
+            const form = document.createElement('div');
+            const list = document.createElement('div');
+            list.style.maxHeight = '50vh'; list.style.overflow='auto'; list.style.border='1px solid #e5e7eb'; list.style.borderRadius='8px'; list.style.padding='8px';
+            items.forEach(it => {
+              const row = document.createElement('label');
+              row.style.display='flex'; row.style.alignItems='center'; row.style.gap='8px'; row.style.padding='6px 4px';
+              const cb = document.createElement('input'); cb.type='checkbox'; cb.checked = !it.alreadyExists; cb.value = String(it.templateId);
+              const span = document.createElement('span'); span.textContent = `${it.costName}：${formatCurrency(it.amount)}${it.alreadyExists?'（本月已存在）':''}`;
+              row.appendChild(cb); row.appendChild(span); list.appendChild(row);
+            });
+            form.appendChild(list);
+            openModal('本月自動生成（預覽）', form, async (close)=>{
+              const selected = Array.from(list.querySelectorAll('input[type="checkbox"]')).filter(x=>x.checked).map(x=>parseInt(x.value,10));
+              if (selected.length === 0) { alert('請至少勾選一項'); return; }
+              const res = await fetch(`${apiBase}/admin/overhead-costs/generate?year=${ym.year}&month=${ym.month}` , { method:'POST', credentials:'include', headers:{'content-type':'application/json'}, body: JSON.stringify({ template_ids: selected }) });
+              const json = await res.json().catch(()=>({}));
+              if (!res.ok || !json || json.ok !== true) { alert(json?.message||'自動生成失敗'); return; }
+              close();
+              if (window.DataInvalidation) window.DataInvalidation.invalidate('costs');
+              loadRecords();
+              alert('已自動生成');
+            });
           } catch (err) {
             alert('自動生成失敗：' + (err?.message||String(err)));
           }
