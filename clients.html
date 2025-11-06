@@ -63,8 +63,13 @@
         <p id="clients-error" style="color:#c0392b;min-height:1.25rem;margin:0 0 8px 0;"></p>
         <!-- 🧪 調試面板（預設隱藏） -->
         <div id="debug-panel" hidden style="margin:8px 0 16px 0;padding:12px 14px;border:1px dashed #c9a227;border-radius:8px;background:#fff8e1;color:#4d3b00;">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+            <div style="font-weight:600;">🧪 調試資訊</div>
+            <button id="btn-debug-clear" class="clients-btn btn-secondary" type="button">清除服務端客戶快取</button>
+            <button id="btn-debug-reload" class="clients-btn btn-secondary" type="button">重新載入</button>
+          </div>
           <div id="debug-summary" style="font-size:13px;line-height:1.6;white-space:pre-wrap;"></div>
-          <div id="debug-list" style="margin-top:8px;max-height:150px;overflow:auto;font-size:13px;background:#fff;border:1px solid #ecd9a3;border-radius:6px;padding:8px;"></div>
+          <div id="debug-list" style="margin-top:8px;max-height:200px;overflow:auto;font-size:13px;background:#fff;border:1px solid #ecd9a3;border-radius:6px;padding:8px;"></div>
         </div>
         <div id="empty" class="clients-empty" hidden>
           <p>尚無客戶</p>
@@ -141,6 +146,8 @@
         const debugPanel = document.getElementById('debug-panel');
         const debugSummaryEl = document.getElementById('debug-summary');
         const debugListEl = document.getElementById('debug-list');
+        const debugClearBtn = document.getElementById('btn-debug-clear');
+        const debugReloadBtn = document.getElementById('btn-debug-reload');
 
         function setError(msg){ if (errEl) errEl.textContent = msg || ''; }
 
@@ -151,8 +158,13 @@
           if (!debugPanel) return;
           const { loadedAt, durationMs, cacheSource, requestId, total, list } = lastDebug;
           const cacheText = cacheSource ? cacheSource : 'db';
-          debugSummaryEl.textContent = `載入時間: ${loadedAt}\n耗時: ${durationMs} ms\n來源: ${cacheText}${requestId ? `\n請求ID: ${requestId}` : ''}\n筆數: ${total}`;
-          const lines = list.map(item => `• ${item.companyName}（${item.clientId}）→ ${item.assigneeName || '未分配'}`);
+          const totalYear = list.reduce((s, i) => s + (Number(i.year_total || 0) || 0), 0);
+          const totalSvc = list.reduce((s, i) => s + (Number(i.services_count || 0) || 0), 0);
+          debugSummaryEl.textContent = `載入時間: ${loadedAt}\n耗時: ${durationMs} ms\n來源: ${cacheText}${requestId ? `\n請求ID: ${requestId}` : ''}\n筆數: ${total}\n合計服務數: ${totalSvc}\n全年收費合計: ${totalYear.toLocaleString()}`;
+          const lines = list.map(item => {
+            const tags = Array.isArray(item.tags) ? item.tags.filter(Boolean).join(', ') : '';
+            return `• ${item.companyName}（${item.clientId}）→ ${item.assigneeName || '未分配'} | 標籤: ${tags || '無'} | 服務: ${item.services_count || 0} | 年額: ${Number(item.year_total||0).toLocaleString()}`;
+          });
           debugListEl.textContent = lines.join('\n');
         }
 
@@ -331,12 +343,16 @@
               cacheSource: meta.cache_source || '',
               requestId: meta.requestId || '',
               total: rows.length,
-            list: rows.map(r => ({ 
-              clientId: r.clientId, 
-              companyName: r.companyName, 
-              assigneeName: r.assigneeName || r.assignee_name || '未分配',
-              tags: Array.isArray(r.tags) ? r.tags : (typeof r.tags === 'string' ? r.tags : null)
-            }))
+              list: rows.map(r => ({ 
+                clientId: r.clientId, 
+                companyName: r.companyName, 
+                assigneeName: r.assigneeName || r.assignee_name || '未分配',
+                tags: (Array.isArray(r.tags)
+                  ? r.tags.map(t => typeof t === 'string' ? t : (t.tag_name || t.tagName || ''))
+                  : (typeof r.tags === 'string' ? r.tags.split('|').map(p => (p.split(':')[1] || '')) : [])),
+                services_count: Number(r.services_count || r.servicesCount || 0) || 0,
+                year_total: Number(r.year_total || r.yearTotal || 0) || 0
+              }))
             };
             console.log('[Clients][🧪 調試] 載入完成:', lastDebug);
             if (!debugPanel.hidden) renderDebugPanel();
@@ -389,6 +405,34 @@
           debugPanel.hidden = !debugPanel.hidden;
           if (!debugPanel.hidden) renderDebugPanel();
         });
+
+        // 清除服務端快取（clients_list）
+        if (debugClearBtn) {
+          debugClearBtn.addEventListener('click', async function(){
+            try {
+              const res = await fetch(`${apiBase}/cache-clear`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ cache_type: 'clients_list' })
+              });
+              const json = await res.json().catch(()=>null);
+              if (res.ok && json && json.ok) {
+                alert('已清除客戶列表快取');
+                load();
+              } else {
+                alert((json && json.message) || '清除失敗');
+              }
+            } catch (e) {
+              alert('清除失敗，請稍後再試');
+            }
+          });
+        }
+
+        // 重新載入
+        if (debugReloadBtn) {
+          debugReloadBtn.addEventListener('click', function(){ load(); });
+        }
         
         // 綁定操作按鈕事件（全局绑定一次，避免重复）
         tbody.addEventListener('click', function(e) {
