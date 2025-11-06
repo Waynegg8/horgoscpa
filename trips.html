@@ -232,10 +232,10 @@
             currentUser = userData.data;
             
             console.log('[初始化] currentUser:', currentUser);
-            console.log('[初始化] is_admin:', currentUser.is_admin, typeof currentUser.is_admin);
+            console.log('[初始化] isAdmin:', currentUser.isAdmin, typeof currentUser.isAdmin);
 
-            // 顯示用戶篩選器（僅管理員）- 明確轉換為布尔值
-            if (currentUser.is_admin === 1 || currentUser.is_admin === true) {
+            // 顯示用戶篩選器（僅管理員）
+            if (currentUser.isAdmin) {
               userFilterField.style.display = 'block';
               await loadUsers();
             }
@@ -310,7 +310,7 @@
             if (clientFilter.value) {
               params.set('client_id', clientFilter.value);
             }
-            const isAdmin = currentUser.is_admin === 1 || currentUser.is_admin === true;
+            const isAdmin = currentUser.isAdmin;
             if (isAdmin && userFilter.value) {
               params.set('user_id', userFilter.value);
             }
@@ -382,7 +382,7 @@
             const params = new URLSearchParams();
             params.set('month', monthFilter.value);
             
-            const isAdmin = currentUser.is_admin === 1 || currentUser.is_admin === true;
+            const isAdmin = currentUser.isAdmin;
             if (isAdmin && userFilter.value) {
               params.set('user_id', userFilter.value);
             }
@@ -432,7 +432,7 @@
 
           tripsTableBody.innerHTML = pageTrips.map(trip => {
             // 使用宽松比较，因为user_id可能是数字或字符串
-            const isAdmin = currentUser.is_admin === 1 || currentUser.is_admin === true;
+            const isAdmin = currentUser.isAdmin;
             const canEdit = (trip.user_id == currentUser.user_id) || isAdmin;
 
             return `
@@ -492,7 +492,7 @@
           });
           btnResetFilters.addEventListener('click', () => {
             clientFilter.value = '';
-            const isAdmin = currentUser.is_admin === 1 || currentUser.is_admin === true;
+            const isAdmin = currentUser.isAdmin;
             if (isAdmin) {
               userFilter.value = '';
             }
