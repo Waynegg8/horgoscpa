@@ -230,9 +230,12 @@
             }
             const userData = await userRes.json();
             currentUser = userData.data;
+            
+            console.log('[初始化] currentUser:', currentUser);
+            console.log('[初始化] is_admin:', currentUser.is_admin, typeof currentUser.is_admin);
 
-            // 顯示用戶篩選器（僅管理員）
-            if (currentUser.is_admin) {
+            // 顯示用戶篩選器（僅管理員）- 明確轉換為布尔值
+            if (currentUser.is_admin === 1 || currentUser.is_admin === true) {
               userFilterField.style.display = 'block';
               await loadUsers();
             }
@@ -307,7 +310,8 @@
             if (clientFilter.value) {
               params.set('client_id', clientFilter.value);
             }
-            if (currentUser.is_admin && userFilter.value) {
+            const isAdmin = currentUser.is_admin === 1 || currentUser.is_admin === true;
+            if (isAdmin && userFilter.value) {
               params.set('user_id', userFilter.value);
             }
             
@@ -378,7 +382,8 @@
             const params = new URLSearchParams();
             params.set('month', monthFilter.value);
             
-            if (currentUser.is_admin && userFilter.value) {
+            const isAdmin = currentUser.is_admin === 1 || currentUser.is_admin === true;
+            if (isAdmin && userFilter.value) {
               params.set('user_id', userFilter.value);
             }
             
@@ -427,7 +432,8 @@
 
           tripsTableBody.innerHTML = pageTrips.map(trip => {
             // 使用宽松比较，因为user_id可能是数字或字符串
-            const canEdit = (trip.user_id == currentUser.user_id) || currentUser.is_admin;
+            const isAdmin = currentUser.is_admin === 1 || currentUser.is_admin === true;
+            const canEdit = (trip.user_id == currentUser.user_id) || isAdmin;
 
             return `
               <tr>
@@ -486,7 +492,8 @@
           });
           btnResetFilters.addEventListener('click', () => {
             clientFilter.value = '';
-            if (currentUser.is_admin) {
+            const isAdmin = currentUser.is_admin === 1 || currentUser.is_admin === true;
+            if (isAdmin) {
               userFilter.value = '';
             }
             loadTrips(true);
