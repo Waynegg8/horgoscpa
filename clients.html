@@ -237,17 +237,24 @@
             const tr = document.createElement('tr');
             // 修復：負責人顯示（使用 assigneeName，若無則顯示「未分配」）
             const assigneeName = r.assigneeName || r.assignee_name || '未分配';
-            // 修復：標籤顯示（檢查是否為字串或陣列）
+            // 修復：標籤顯示（兼容陣列或GROUP_CONCAT字串）
             let tagsHtml = '';
-            if (r.tags && Array.isArray(r.tags) && r.tags.length > 0) {
-              tagsHtml = r.tags.slice(0,3).map(t => {
-                const tagName = typeof t === 'string' ? t : (t.tag_name || t.tagName || '');
-                const tagColor = typeof t === 'object' ? (t.tag_color || t.tagColor || '#999') : '#999';
-                return `<span class="chip" style="background:${tagColor}">${tagName}</span>`;
-              }).join('');
-              if (r.tags.length > 3) {
-                tagsHtml += `<span class="chip" style="background:#ccc">+${r.tags.length - 3}</span>`;
-              }
+            let tagsArr = [];
+            if (Array.isArray(r.tags)) {
+              tagsArr = r.tags.map(t => {
+                if (typeof t === 'string') return { tag_name: t, tag_color: '#999' };
+                return { tag_name: t.tag_name || t.tagName || '', tag_color: t.tag_color || t.tagColor || '#999' };
+              });
+            } else if (typeof r.tags === 'string' && r.tags.trim() !== '') {
+              // 兼容後端以 "id:name:color|id:name:color" 傳回的格式
+              tagsArr = r.tags.split('|').map(part => {
+                const [id, name, color] = part.split(':');
+                return { tag_name: name || '', tag_color: color || '#999' };
+              });
+            }
+            if (tagsArr.length > 0) {
+              tagsHtml = tagsArr.slice(0, 3).map(t => `<span class="chip" style="background:${t.tag_color}">${t.tag_name}</span>`).join('');
+              if (tagsArr.length > 3) tagsHtml += `<span class="chip" style="background:#ccc">+${tagsArr.length - 3}</span>`;
             }
             
             const serviceCount = (r.services && Array.isArray(r.services)) ? r.services.length : 0;
@@ -324,7 +331,12 @@
               cacheSource: meta.cache_source || '',
               requestId: meta.requestId || '',
               total: rows.length,
-              list: rows.map(r => ({ clientId: r.clientId, companyName: r.companyName, assigneeName: r.assigneeName || r.assignee_name || '未分配' }))
+            list: rows.map(r => ({ 
+              clientId: r.clientId, 
+              companyName: r.companyName, 
+              assigneeName: r.assigneeName || r.assignee_name || '未分配',
+              tags: Array.isArray(r.tags) ? r.tags : (typeof r.tags === 'string' ? r.tags : null)
+            }))
             };
             console.log('[Clients][🧪 調試] 載入完成:', lastDebug);
             if (!debugPanel.hidden) renderDebugPanel();
