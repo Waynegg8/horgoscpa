@@ -1499,36 +1499,62 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			).bind(year, month).first();
 			const totalOverhead = Number(overheadRow?.total || 0);
 			
-			// 3. 為每個客戶計算成本，並按員工分組顯示（模擬任務明細）
+			// 3. 為每個客戶計算成本，並按服務子項目（任務）分組顯示
 			const tasks = [];
 			
 			for (const client of clientList) {
-				// 獲取該客戶的所有工時記錄，按員工分組
+				// 獲取該客戶的所有工時記錄，包含服務子項目信息
 				const timesheetRows = await env.DATABASE.prepare(
-					`SELECT ts.user_id, u.name as user_name, ts.work_type, ts.work_date, ts.hours, ts.service_name
+					`SELECT 
+						ts.user_id, 
+						u.name as user_name, 
+						ts.work_type, 
+						ts.work_date, 
+						ts.hours, 
+						ts.service_name,
+						ts.service_id,
+						ts.service_item_id,
+						s.service_name as service_name_full,
+						si.item_name as service_item_name
 					 FROM Timesheets ts
 					 LEFT JOIN Users u ON ts.user_id = u.user_id
+					 LEFT JOIN Services s ON ts.service_id = s.service_id
+					 LEFT JOIN ServiceItems si ON ts.service_item_id = si.item_id
 					 WHERE ts.client_id = ? AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
-					 ORDER BY u.name, ts.work_date`
+					 ORDER BY ts.service_id, ts.service_item_id, u.name`
 				).bind(client.client_id, yearMonth).all();
 				const timesheets = timesheetRows?.results || [];
 				
-				// 按員工分組計算
-				const userGroups = {};
+				// 按服務子項目分組計算（這才是真正的"任務"）
+				const taskGroups = {};
 				for (const ts of timesheets) {
-					const userId = ts.user_id;
-					if (!userGroups[userId]) {
-						userGroups[userId] = {
-							userName: ts.user_name || '未知員工',
-							serviceName: ts.service_name || '',
-							timesheets: []
+					// 使用 service_item_id 作為任務的唯一標識
+					// 如果沒有 service_item_id，則用 service_name 作為後備
+					const taskKey = ts.service_item_id 
+						? `item_${ts.service_item_id}` 
+						: `name_${ts.service_name || 'general'}`;
+					
+					if (!taskGroups[taskKey]) {
+						// 優先使用 ServiceItems 的名稱，否則用文字服務名稱
+						const taskTitle = ts.service_item_name 
+							|| ts.service_name 
+							|| ts.service_name_full 
+							|| '一般服務';
+						
+						taskGroups[taskKey] = {
+							taskTitle: taskTitle,
+							timesheets: [],
+							userNames: new Set() // 追蹤參與的員工
 						};
 					}
-					userGroups[userId].timesheets.push(ts);
+					taskGroups[taskKey].timesheets.push(ts);
+					if (ts.user_name) {
+						taskGroups[taskKey].userNames.add(ts.user_name);
+					}
 				}
 				
-				// 為每個員工生成一筆"任務"記錄
-				for (const [userId, group] of Object.entries(userGroups)) {
+				// 為每個服務子項目（任務）生成一筆記錄
+				for (const [taskKey, group] of Object.entries(taskGroups)) {
 					let hours = 0;
 					let weightedHours = 0;
 					const processedFixedKeys = new Set();
@@ -1582,12 +1608,12 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						? Math.round(totalOverhead * (hours / totalMonthHours))
 						: 0;
 					
-					// 生成任務記錄（用客戶+員工作為"任務"）
-					const taskTitle = group.serviceName || '一般服務';
+					// 生成任務記錄（按服務子項目）
+					const assigneeNames = Array.from(group.userNames).join(', ') || '未指定';
 					tasks.push({
 						clientName: client.company_name,
-						taskTitle: taskTitle,
-						assigneeName: group.userName,
+						taskTitle: group.taskTitle,
+						assigneeName: assigneeNames,
 						hours: hours,
 						weightedHours: weightedHours,
 						laborCost: laborCost,
