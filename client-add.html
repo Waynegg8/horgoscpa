@@ -57,7 +57,7 @@
             <span class="error-text" id="error_client_id"></span>
             <small class="form-help-text" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
               <strong>公司客戶：</strong>使用統一編號<br>
-              <strong>個人客戶：</strong>使用99開頭的編號（如：99000001）
+              <strong>個人客戶：</strong>使用00開頭的編號（如：00000001）
             </small>
           </div>
         </div>
@@ -76,7 +76,7 @@
               🔢 產生個人客戶編號
             </button>
             <small class="form-help-text" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
-              點擊自動產生99開頭的編號
+              點擊自動產生00開頭的編號（避免與統編衝突）
             </small>
           </div>
         </div>
@@ -447,7 +447,7 @@
           const taxId = taxIdInput.value.trim();
           
           // 如果有統編且客戶編號與統編不一致，給出提示
-          if (taxId && clientId && clientId !== taxId && !clientId.startsWith('99')) {
+          if (taxId && clientId && clientId !== taxId && !clientId.startsWith('00')) {
             showFieldError('client_id', '提示：公司客戶建議使用統一編號作為客戶編號');
           }
         });
@@ -477,9 +477,9 @@
         console.warn('無法從API獲取編號，使用本地生成', err);
       }
       
-      // 如果API不可用，使用隨機生成（99 + 6位隨機數字）
+      // 如果API不可用，使用隨機生成（00 + 6位隨機數字）
       const randomNum = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-      const personalId = '99' + randomNum;
+      const personalId = '00' + randomNum;
       clientIdInput.value = personalId;
       
       // 清除錯誤提示
@@ -489,7 +489,7 @@
         errorEl.style.display = 'none';
       }
       
-      alert('已產生個人客戶編號：' + personalId + '\n\n請確認此編號尚未被使用。');
+      alert('已產生個人客戶編號：' + personalId + '\n\n此編號以00開頭，不會與統一編號衝突。\n請確認此編號尚未被使用。');
     }
     
     // 頁面初始化
@@ -3657,7 +3657,7 @@
       }
       
       // 邏輯一致性檢查
-      if (taxId && clientId && taxId !== clientId && !clientId.startsWith('99')) {
+      if (taxId && clientId && taxId !== clientId && !clientId.startsWith('00')) {
         const confirmed = confirm(
           '提醒：您的客戶編號與統一編號不一致。\n\n' +
           '客戶編號：' + clientId + '\n' +
@@ -3666,6 +3666,12 @@
           '是否繼續？'
         );
         if (!confirmed) return;
+      }
+      
+      // 防止個人客戶編號與統編格式衝突
+      if (clientId.startsWith('00') && taxId) {
+        alert('錯誤：個人客戶編號（00開頭）不應填寫統一編號。\n\n如果是公司客戶，請使用統一編號作為客戶編號。');
+        return;
       }
       
       if (hasError) return;
