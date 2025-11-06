@@ -33,6 +33,18 @@
       // ❌ 禁用预渲染缓存（客户页面需要实时更新）
       // 客户数据经常变更，使用缓存会导致修改后看不到更新
       console.log('[Clients] ℹ️ 预渲染缓存已禁用（确保数据实时性）');
+      
+      // 清除所有客户列表相关的缓存（确保显示最新数据）
+      const clientsCacheKeys = [
+        'clients_page1', 'clients_page2', 'clients_page3', 
+        'clients_page4', 'clients_page5', 'clients_all'
+      ];
+      
+      clientsCacheKeys.forEach(key => {
+        localStorage.removeItem(`cache_${key}`);
+      });
+      
+      console.log('[Clients] ✓ 已清除客户列表缓存，确保显示最新数据');
     });
     </script>
   </head>
