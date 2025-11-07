@@ -536,6 +536,22 @@
         function formatPercent(val) {
           return Number(val || 0).toFixed(2) + '%';
         }
+        
+        // 切换客户服务明细显示
+        window.toggleClientServices = function(clientId) {
+          const rows = document.querySelectorAll(`.client-service-${clientId}`);
+          const toggleIcon = document.getElementById(`toggle-${clientId}`);
+          const isHidden = rows[0]?.style.display === 'none';
+          
+          rows.forEach(row => {
+            row.style.display = isHidden ? 'table-row' : 'none';
+          });
+          
+          if (toggleIcon) {
+            toggleIcon.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+            toggleIcon.textContent = isHidden ? '▼' : '▶';
+          }
+        };
 
         // ============================================================
         // 月度报表加载
@@ -588,17 +604,85 @@
           if (data.clientDetails.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="muted">本月無收款記錄</td></tr>';
           } else {
-            tbody.innerHTML = data.clientDetails.map(r => `
-              <tr>
-                <td>${r.clientName}</td>
-                <td>${r.serviceName}</td>
-                <td class="text-right">${formatCurrency(r.totalAmount)}</td>
-                <td class="text-right">${formatCurrency(r.paidAmount)}</td>
-                <td class="text-right">${formatCurrency(r.unpaidAmount)}</td>
-                <td class="text-right">${formatPercent(r.collectionRate)}</td>
-                <td>${r.isOverdue ? '<span style="color:#dc2626;">是</span>' : '否'}</td>
-              </tr>
-            `).join('');
+            // 按客户+服务分组并合并
+            const grouped = {};
+            for (const r of data.clientDetails) {
+              const key = `${r.clientId}_${r.serviceName}`;
+              if (!grouped[key]) {
+                grouped[key] = {
+                  clientId: r.clientId,
+                  clientName: r.clientName,
+                  serviceName: r.serviceName,
+                  totalAmount: 0,
+                  paidAmount: 0,
+                  unpaidAmount: 0,
+                  hasOverdue: false,
+                  receipts: []
+                };
+              }
+              grouped[key].totalAmount += r.totalAmount;
+              grouped[key].paidAmount += r.paidAmount;
+              grouped[key].unpaidAmount += r.unpaidAmount;
+              grouped[key].hasOverdue = grouped[key].hasOverdue || r.isOverdue;
+              grouped[key].receipts.push(r);
+            }
+            
+            // 按客户再分组
+            const byClient = {};
+            for (const item of Object.values(grouped)) {
+              if (!byClient[item.clientId]) {
+                byClient[item.clientId] = {
+                  clientName: item.clientName,
+                  services: []
+                };
+              }
+              byClient[item.clientId].services.push(item);
+            }
+            
+            // 渲染可折叠的客户分组
+            let html = '';
+            for (const clientId in byClient) {
+              const client = byClient[clientId];
+              const totalAmount = client.services.reduce((sum, s) => sum + s.totalAmount, 0);
+              const totalPaid = client.services.reduce((sum, s) => sum + s.paidAmount, 0);
+              const totalUnpaid = client.services.reduce((sum, s) => sum + s.unpaidAmount, 0);
+              const collectionRate = totalAmount > 0 ? (totalPaid / totalAmount * 100) : 0;
+              const hasOverdue = client.services.some(s => s.hasOverdue);
+              
+              // 客户汇总行（可点击展开）
+              html += `
+                <tr style="background:#f8fafc;font-weight:600;cursor:pointer;" onclick="toggleClientServices('${clientId}')">
+                  <td>
+                    <span id="toggle-${clientId}" style="display:inline-block;width:16px;transition:transform 0.2s;">▶</span>
+                    ${client.clientName}
+                  </td>
+                  <td style="color:#64748b;">${client.services.length}項服務</td>
+                  <td class="text-right">${formatCurrency(totalAmount)}</td>
+                  <td class="text-right">${formatCurrency(totalPaid)}</td>
+                  <td class="text-right">${formatCurrency(totalUnpaid)}</td>
+                  <td class="text-right">${formatPercent(collectionRate)}</td>
+                  <td>${hasOverdue ? '<span style="color:#dc2626;">是</span>' : '否'}</td>
+                </tr>
+              `;
+              
+              // 服务明细行（默认折叠）
+              for (const service of client.services) {
+                const serviceRate = service.totalAmount > 0 ? (service.paidAmount / service.totalAmount * 100) : 0;
+                html += `
+                  <tr class="client-service-${clientId}" style="display:none;background:#ffffff;">
+                    <td style="padding-left:32px;">└ ${service.serviceName}</td>
+                    <td></td>
+                    <td class="text-right">${formatCurrency(service.totalAmount)}</td>
+                    <td class="text-right">${formatCurrency(service.paidAmount)}</td>
+                    <td class="text-right">${formatCurrency(service.unpaidAmount)}</td>
+                    <td class="text-right">${formatPercent(serviceRate)}</td>
+                    <td>${service.hasOverdue ? '<span style="color:#dc2626;">是</span>' : '否'}</td>
+                  </tr>
+                `;
+              }
+            }
+            
+            tbody.innerHTML = html;
           }
         }
 
