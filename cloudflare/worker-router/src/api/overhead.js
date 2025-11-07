@@ -1314,14 +1314,17 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 	if (path === "/internal/api/v1/admin/costs/client") {
 		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
 		try {
-			const params = url.searchParams;
-			const year = parseInt(params.get("year") || "0", 10);
-			const month = parseInt(params.get("month") || "0", 10);
-			if (!Number.isFinite(year) || year < 2000 || month < 1 || month > 12) {
-				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"year/month 不合法", meta:{ requestId } }, corsHeaders);
-			}
+		const params = url.searchParams;
+		const year = parseInt(params.get("year") || "0", 10);
+		const month = parseInt(params.get("month") || "0", 10);
+		
+		// month=0 表示全年查询
+		if (!Number.isFinite(year) || year < 2000 || month < 0 || month > 12) {
+			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"year/month 不合法", meta:{ requestId } }, corsHeaders);
+		}
 
-		const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
+	const isAnnual = (month === 0);
+	const yearMonth = isAnnual ? `${year}` : `${year}-${String(month).padStart(2, '0')}`;
 
 		// 工時類型定義（用于加权计算）
 		const WORK_TYPES = {
@@ -1335,17 +1338,28 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			8: { name: '國定假日加班（8小時後）（2小時內）', multiplier: 1.34 },
 			9: { name: '國定假日加班（8小時後）（2小時後）', multiplier: 1.67 },
 			10: { name: '例假日', multiplier: 1.0 },
-			11: { name: '例假日加班（8小時後）', multiplier: 2.0 }
-		};
+		11: { name: '例假日加班（8小時後）', multiplier: 2.0 }
+	};
 
-		// 1. 调用共享函数计算所有员工的实际时薪
-		const employeeActualHourlyRates = await calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth);
-		
-		// 获取用户列表（用于后续查询员工信息）
-		const usersRows = await env.DATABASE.prepare(
-			"SELECT user_id, name, base_salary FROM Users WHERE is_deleted = 0"
-		).all();
-		const usersList = usersRows?.results || [];
+	// 1. 计算所有员工的时薪（年度查询时使用简化计算）
+	let employeeActualHourlyRates = {};
+	
+	// 获取用户列表（用于后续查询员工信息）
+	const usersRows = await env.DATABASE.prepare(
+		"SELECT user_id, name, base_salary FROM Users WHERE is_deleted = 0"
+	).all();
+	const usersList = usersRows?.results || [];
+	
+	if (isAnnual) {
+		// 年度查询：直接使用底薪时薪，避免复杂计算
+		for (const user of usersList) {
+			const baseSalary = Number(user.base_salary || 0);
+			employeeActualHourlyRates[String(user.user_id)] = Math.round(baseSalary / 240);
+		}
+	} else {
+		// 月度查询：使用完整的实际时薪计算
+		employeeActualHourlyRates = await calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth);
+	}
 
 		// 2. 获取所有客户
 		const clientsRows = await env.DATABASE.prepare(
@@ -1358,12 +1372,13 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 		for (const client of clientsList) {
 			const clientId = client.client_id;
 			
-			// 3. 获取该客户本月所有工时记录
-			const timesheetRows = await env.DATABASE.prepare(
-				`SELECT task_id, user_id, work_type, work_date, hours
-				 FROM Timesheets
-				 WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
-			).bind(clientId, yearMonth).all();
+		// 3. 获取该客户工时记录（月度或年度）
+		const dateLength = isAnnual ? 4 : 7;
+		const timesheetRows = await env.DATABASE.prepare(
+			`SELECT task_id, user_id, work_type, work_date, hours
+			 FROM Timesheets
+			 WHERE client_id = ? AND substr(work_date, 1, ${dateLength}) = ? AND is_deleted = 0`
+		).bind(clientId, yearMonth).all();
 			const timesheets = timesheetRows?.results || [];
 			
 			if (timesheets.length === 0) continue;
@@ -1456,11 +1471,11 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			
 			console.log(`[Client ${clientId}] ${client.company_name}: employeeDetails =`, employeeDetails.length, employeeDetails);
 			
-			// 6. 获取本月收入
-			const revenueRow = await env.DATABASE.prepare(
-				`SELECT SUM(total_amount) as total FROM Receipts 
-				 WHERE client_id = ? AND substr(receipt_date, 1, 7) = ? AND is_deleted = 0`
-			).bind(clientId, yearMonth).first();
+		// 6. 获取收入（月度或年度）
+		const revenueRow = await env.DATABASE.prepare(
+			`SELECT SUM(total_amount) as total FROM Receipts 
+			 WHERE client_id = ? AND substr(receipt_date, 1, ${dateLength}) = ? AND is_deleted = 0`
+		).bind(clientId, yearMonth).first();
 			const revenue = Number(revenueRow?.total || 0);
 			
 			if (totalHours > 0 || revenue > 0) {

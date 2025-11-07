@@ -3238,10 +3238,11 @@ async function handleOverhead(request, env, me, requestId, url, path) {
       const params = url.searchParams;
       const year = parseInt(params.get("year") || "0", 10);
       const month = parseInt(params.get("month") || "0", 10);
-      if (!Number.isFinite(year) || year < 2e3 || month < 1 || month > 12) {
+      if (!Number.isFinite(year) || year < 2e3 || month < 0 || month > 12) {
         return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "year/month \u4E0D\u5408\u6CD5", meta: { requestId } }, corsHeaders);
       }
-      const yearMonth = `${year}-${String(month).padStart(2, "0")}`;
+      const isAnnual = month === 0;
+      const yearMonth = isAnnual ? `${year}` : `${year}-${String(month).padStart(2, "0")}`;
       const WORK_TYPES3 = {
         1: { name: "\u6B63\u5E38\u5DE5\u4F5C", multiplier: 1 },
         2: { name: "\u5E73\u65E5\u52A0\u73ED\uFF082\u5C0F\u6642\u5167\uFF09", multiplier: 1.34 },
@@ -3255,11 +3256,19 @@ async function handleOverhead(request, env, me, requestId, url, path) {
         10: { name: "\u4F8B\u5047\u65E5", multiplier: 1 },
         11: { name: "\u4F8B\u5047\u65E5\u52A0\u73ED\uFF088\u5C0F\u6642\u5F8C\uFF09", multiplier: 2 }
       };
-      const employeeActualHourlyRates = await calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth);
+      let employeeActualHourlyRates = {};
       const usersRows = await env.DATABASE.prepare(
         "SELECT user_id, name, base_salary FROM Users WHERE is_deleted = 0"
       ).all();
       const usersList = usersRows?.results || [];
+      if (isAnnual) {
+        for (const user of usersList) {
+          const baseSalary = Number(user.base_salary || 0);
+          employeeActualHourlyRates[String(user.user_id)] = Math.round(baseSalary / 240);
+        }
+      } else {
+        employeeActualHourlyRates = await calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth);
+      }
       const clientsRows = await env.DATABASE.prepare(
         "SELECT client_id, company_name FROM Clients WHERE is_deleted = 0 ORDER BY company_name ASC"
       ).all();
@@ -3267,10 +3276,11 @@ async function handleOverhead(request, env, me, requestId, url, path) {
       const clients = [];
       for (const client of clientsList) {
         const clientId = client.client_id;
+        const dateLength = isAnnual ? 4 : 7;
         const timesheetRows = await env.DATABASE.prepare(
           `SELECT task_id, user_id, work_type, work_date, hours
-				 FROM Timesheets
-				 WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
+			 FROM Timesheets
+			 WHERE client_id = ? AND substr(work_date, 1, ${dateLength}) = ? AND is_deleted = 0`
         ).bind(clientId, yearMonth).all();
         const timesheets = timesheetRows?.results || [];
         if (timesheets.length === 0) continue;
@@ -3336,7 +3346,7 @@ async function handleOverhead(request, env, me, requestId, url, path) {
         console.log(`[Client ${clientId}] ${client.company_name}: employeeDetails =`, employeeDetails.length, employeeDetails);
         const revenueRow = await env.DATABASE.prepare(
           `SELECT SUM(total_amount) as total FROM Receipts 
-				 WHERE client_id = ? AND substr(receipt_date, 1, 7) = ? AND is_deleted = 0`
+			 WHERE client_id = ? AND substr(receipt_date, 1, ${dateLength}) = ? AND is_deleted = 0`
         ).bind(clientId, yearMonth).first();
         const revenue = Number(revenueRow?.total || 0);
         if (totalHours > 0 || revenue > 0) {
@@ -10509,15 +10519,38 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 			ORDER BY name
 		`).all();
     const users = usersResult?.results || [];
+    const payrollCache = {};
     const monthlyTrend = [];
+    const employeeSummary = [];
+    for (const user of users) {
+      payrollCache[user.user_id] = {};
+      employeeSummary.push({
+        userId: user.user_id,
+        name: user.name || user.username,
+        annualGross: 0,
+        annualNet: 0,
+        totalOvertime: 0,
+        totalPerformance: 0,
+        totalYearEnd: 0
+      });
+    }
     for (let month = 1; month <= 12; month++) {
       const ym = `${year}-${String(month).padStart(2, "0")}`;
       let monthTotal = 0;
       let monthNetTotal = 0;
-      for (const user of users) {
+      for (let i = 0; i < users.length; i++) {
+        const user = users[i];
         const payroll = await calculateEmployeePayroll2(env, user.user_id, ym);
-        monthTotal += payroll.grossSalaryCents / 100;
-        monthNetTotal += payroll.netSalaryCents / 100;
+        payrollCache[user.user_id][month] = payroll;
+        const grossSalary = payroll.grossSalaryCents / 100;
+        const netSalary = payroll.netSalaryCents / 100;
+        monthTotal += grossSalary;
+        monthNetTotal += netSalary;
+        employeeSummary[i].annualGross += grossSalary;
+        employeeSummary[i].annualNet += netSalary;
+        employeeSummary[i].totalOvertime += payroll.overtimeCents / 100;
+        employeeSummary[i].totalPerformance += payroll.performanceBonusCents / 100;
+        employeeSummary[i].totalYearEnd += payroll.totalYearEndBonusCents / 100;
       }
       monthlyTrend.push({
         month,
@@ -10527,32 +10560,12 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
         avgGrossSalary: users.length > 0 ? monthTotal / users.length : 0
       });
     }
-    const employeeSummary = [];
-    for (const user of users) {
-      let annualGross = 0;
-      let annualNet = 0;
-      let totalOvertime = 0;
-      let totalPerformance = 0;
-      let totalYearEnd = 0;
-      for (let month = 1; month <= 12; month++) {
-        const ym = `${year}-${String(month).padStart(2, "0")}`;
-        const payroll = await calculateEmployeePayroll2(env, user.user_id, ym);
-        totalPerformance += payroll.performanceBonusCents / 100;
-        totalYearEnd += payroll.totalYearEndBonusCents / 100;
-        annualGross += payroll.grossSalaryCents / 100;
-        annualNet += payroll.netSalaryCents / 100;
-        totalOvertime += payroll.overtimeCents / 100;
-      }
-      employeeSummary.push({
-        userId: user.user_id,
-        name: user.name || user.username,
-        annualGrossSalary: annualGross,
-        annualNetSalary: annualNet,
-        avgMonthlySalary: annualGross / 12,
-        totalOvertimePay: totalOvertime,
-        totalPerformanceBonus: totalPerformance,
-        totalYearEndBonus: totalYearEnd
-      });
+    for (const emp of employeeSummary) {
+      emp.annualGrossSalary = emp.annualGross;
+      emp.annualNetSalary = emp.annualNet;
+      emp.avgMonthlySalary = emp.annualGross / 12;
+      delete emp.annualGross;
+      delete emp.annualNet;
     }
     const totalGross = monthlyTrend.reduce((sum, m) => sum + m.totalGrossSalary, 0);
     const totalNet = monthlyTrend.reduce((sum, m) => sum + m.totalNetSalary, 0);
@@ -10980,59 +10993,54 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
     if (!Number.isFinite(year) || year < 2e3) {
       return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u8ACB\u9078\u64C7\u67E5\u8A62\u5E74\u5EA6", meta: { requestId } }, corsHeaders);
     }
-    const clientsRows = await env.DATABASE.prepare(`
-			SELECT client_id, company_name
-			FROM Clients
-			WHERE is_deleted = 0
-			ORDER BY company_name
-		`).all();
-    const clients = clientsRows?.results || [];
-    const clientSummary = [];
-    for (const client of clients) {
-      let annualHours = 0;
-      let annualWeightedHours = 0;
-      let annualCost = 0;
-      let annualRevenue = 0;
-      for (let month = 1; month <= 12; month++) {
-        const monthUrl = new URL(url);
-        monthUrl.pathname = "/internal/api/v1/reports/monthly/client-profitability";
-        monthUrl.searchParams.set("year", String(year));
-        monthUrl.searchParams.set("month", String(month));
-        const monthResponse = await handleMonthlyClientProfitability(
-          new Request(monthUrl, request),
-          env,
-          me,
-          requestId,
-          monthUrl,
-          corsHeaders
-        );
-        const monthData = await monthResponse.json();
-        if (monthData.ok) {
-          const clientData = monthData.data?.clients?.find((c) => c.clientId === client.client_id);
-          if (clientData) {
-            annualHours += clientData.totalHours;
-            annualWeightedHours += clientData.weightedHours;
-            annualCost += clientData.totalCost;
-            annualRevenue += clientData.revenue;
-          }
-        }
-      }
-      if (annualHours > 0 || annualRevenue > 0) {
-        const annualProfit = annualRevenue - annualCost;
-        const annualProfitMargin = annualRevenue > 0 ? annualProfit / annualRevenue * 100 : 0;
-        clientSummary.push({
-          clientId: client.client_id,
-          clientName: client.company_name,
-          annualHours: Number(annualHours.toFixed(1)),
-          annualWeightedHours: Number(annualWeightedHours.toFixed(1)),
-          annualCost: Number(annualCost.toFixed(2)),
-          annualRevenue: Number(annualRevenue.toFixed(2)),
-          annualProfit: Number(annualProfit.toFixed(2)),
-          annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
-          avgMonthlyRevenue: Number((annualRevenue / 12).toFixed(2))
-        });
-      }
+    const overheadUrl = new URL(url);
+    overheadUrl.pathname = "/internal/api/v1/admin/costs/client";
+    overheadUrl.searchParams.set("year", String(year));
+    overheadUrl.searchParams.set("month", "0");
+    const { handleOverhead: handleOverhead2 } = await Promise.resolve().then(() => (init_overhead(), overhead_exports));
+    const costResponse = await handleOverhead2(
+      new Request(overheadUrl, request),
+      env,
+      me,
+      requestId,
+      overheadUrl,
+      "/internal/api/v1/admin/costs/client"
+    );
+    if (!costResponse.ok) {
+      throw new Error("\u65E0\u6CD5\u83B7\u53D6\u5BA2\u6237\u6210\u672C\u6570\u636E");
     }
+    const costJson = await costResponse.json();
+    const costData = costJson.data?.clients || [];
+    const revenueRows = await env.DATABASE.prepare(`
+		SELECT 
+			r.client_id,
+			SUM(r.total_amount) as total_revenue
+		FROM Receipts r
+		WHERE r.is_deleted = 0 
+			AND r.status != 'cancelled'
+			AND substr(r.service_month, 1, 4) = ?
+		GROUP BY r.client_id
+	`).bind(String(year)).all();
+    const revenueMap = /* @__PURE__ */ new Map();
+    for (const r of revenueRows?.results || []) {
+      revenueMap.set(r.client_id, Number(r.total_revenue || 0));
+    }
+    const clientSummary = costData.map((client) => {
+      const annualRevenue = revenueMap.get(client.clientId) || 0;
+      const annualProfit = annualRevenue - client.totalCost;
+      const annualProfitMargin = annualRevenue > 0 ? annualProfit / annualRevenue * 100 : 0;
+      return {
+        clientId: client.clientId,
+        clientName: client.clientName,
+        annualHours: Number(client.totalHours.toFixed(1)),
+        annualWeightedHours: Number(client.weightedHours.toFixed(1)),
+        annualCost: Number(client.totalCost.toFixed(2)),
+        annualRevenue: Number(annualRevenue.toFixed(2)),
+        annualProfit: Number(annualProfit.toFixed(2)),
+        annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
+        avgMonthlyRevenue: Number((annualRevenue / 12).toFixed(2))
+      };
+    }).filter((c) => c.annualHours > 0 || c.annualRevenue > 0);
     const serviceTypeSummary = await env.DATABASE.prepare(`
 		SELECT 
 			s.service_name,

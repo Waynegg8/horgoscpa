@@ -408,59 +408,74 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 			ORDER BY name
 		`).all();
 
-		const users = usersResult?.results || [];
+	const users = usersResult?.results || [];
+	
+	// 优化：一次循环完成所有计算，避免重复调用 calculateEmployeePayroll
+	// 创建缓存存储：payrollCache[userId][month] = payrollData
+	const payrollCache = {};
+	
+	// 初始化月度趋势和员工汇总
+	const monthlyTrend = [];
+	const employeeSummary = [];
+	
+	// 为每个员工初始化汇总数据
+	for (const user of users) {
+		payrollCache[user.user_id] = {};
+		employeeSummary.push({
+			userId: user.user_id,
+			name: user.name || user.username,
+			annualGross: 0,
+			annualNet: 0,
+			totalOvertime: 0,
+			totalPerformance: 0,
+			totalYearEnd: 0
+		});
+	}
+	
+	// 按月循环，一次性计算所有员工
+	for (let month = 1; month <= 12; month++) {
+		const ym = `${year}-${String(month).padStart(2,'0')}`;
+		let monthTotal = 0;
+		let monthNetTotal = 0;
 		
-		// 月度薪资趋势
-		const monthlyTrend = [];
-		for (let month = 1; month <= 12; month++) {
-			const ym = `${year}-${String(month).padStart(2,'0')}`;
-			let monthTotal = 0;
-			let monthNetTotal = 0;
-		for (const user of users) {
-			const payroll = await calculateEmployeePayroll(env, user.user_id, ym);
-			monthTotal += payroll.grossSalaryCents / 100;
-			monthNetTotal += payroll.netSalaryCents / 100;
-		}
-			monthlyTrend.push({
-				month,
-				totalGrossSalary: monthTotal,
-				totalNetSalary: monthNetTotal,
-				employeeCount: users.length,
-				avgGrossSalary: users.length > 0 ? monthTotal / users.length : 0
-			});
-		}
-
-		// 按员工年度汇总
-		const employeeSummary = [];
-		for (const user of users) {
-			let annualGross = 0;
-			let annualNet = 0;
-			let totalOvertime = 0;
-			let totalPerformance = 0;
-			let totalYearEnd = 0;
-
-		for (let month = 1; month <= 12; month++) {
-			const ym = `${year}-${String(month).padStart(2,'0')}`;
+		for (let i = 0; i < users.length; i++) {
+			const user = users[i];
 			const payroll = await calculateEmployeePayroll(env, user.user_id, ym);
 			
-			totalPerformance += payroll.performanceBonusCents / 100;
-			totalYearEnd += payroll.totalYearEndBonusCents / 100;
-			annualGross += payroll.grossSalaryCents / 100;
-			annualNet += payroll.netSalaryCents / 100;
-			totalOvertime += payroll.overtimeCents / 100;
+			// 缓存结果
+			payrollCache[user.user_id][month] = payroll;
+			
+			// 累加月度总计
+			const grossSalary = payroll.grossSalaryCents / 100;
+			const netSalary = payroll.netSalaryCents / 100;
+			monthTotal += grossSalary;
+			monthNetTotal += netSalary;
+			
+			// 累加员工年度数据
+			employeeSummary[i].annualGross += grossSalary;
+			employeeSummary[i].annualNet += netSalary;
+			employeeSummary[i].totalOvertime += payroll.overtimeCents / 100;
+			employeeSummary[i].totalPerformance += payroll.performanceBonusCents / 100;
+			employeeSummary[i].totalYearEnd += payroll.totalYearEndBonusCents / 100;
 		}
-
-			employeeSummary.push({
-				userId: user.user_id,
-				name: user.name || user.username,
-				annualGrossSalary: annualGross,
-				annualNetSalary: annualNet,
-				avgMonthlySalary: annualGross / 12,
-				totalOvertimePay: totalOvertime,
-				totalPerformanceBonus: totalPerformance,
-				totalYearEndBonus: totalYearEnd
-			});
-		}
+		
+		monthlyTrend.push({
+			month,
+			totalGrossSalary: monthTotal,
+			totalNetSalary: monthNetTotal,
+			employeeCount: users.length,
+			avgGrossSalary: users.length > 0 ? monthTotal / users.length : 0
+		});
+	}
+	
+	// 计算员工平均月薪
+	for (const emp of employeeSummary) {
+		emp.annualGrossSalary = emp.annualGross;
+		emp.annualNetSalary = emp.annualNet;
+		emp.avgMonthlySalary = emp.annualGross / 12;
+		delete emp.annualGross;
+		delete emp.annualNet;
+	}
 
 		const totalGross = monthlyTrend.reduce((sum, m) => sum + m.totalGrossSalary, 0);
 		const totalNet = monthlyTrend.reduce((sum, m) => sum + m.totalNetSalary, 0);
@@ -984,66 +999,62 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
 			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢年度", meta:{ requestId } }, corsHeaders);
 		}
 
-		// 获取所有客户
-		const clientsRows = await env.DATABASE.prepare(`
-			SELECT client_id, company_name
-			FROM Clients
-			WHERE is_deleted = 0
-			ORDER BY company_name
-		`).all();
-
-		const clients = clientsRows?.results || [];
-		const clientSummary = [];
-
-		for (const client of clients) {
-			let annualHours = 0;
-			let annualWeightedHours = 0;
-			let annualCost = 0;
-			let annualRevenue = 0;
-
-			for (let month = 1; month <= 12; month++) {
-				// 调用月度API
-				const monthUrl = new URL(url);
-				monthUrl.pathname = '/internal/api/v1/reports/monthly/client-profitability';
-				monthUrl.searchParams.set('year', String(year));
-				monthUrl.searchParams.set('month', String(month));
-				
-				const monthResponse = await handleMonthlyClientProfitability(
-					new Request(monthUrl, request),
-					env, me, requestId, monthUrl, corsHeaders
-				);
-				
-				const monthData = await monthResponse.json();
-
-				if (monthData.ok) {
-					const clientData = monthData.data?.clients?.find(c => c.clientId === client.client_id);
-					if (clientData) {
-						annualHours += clientData.totalHours;
-						annualWeightedHours += clientData.weightedHours;
-						annualCost += clientData.totalCost;
-						annualRevenue += clientData.revenue;
-					}
-				}
-			}
-
-			// 只包含有数据的客户
-			if (annualHours > 0 || annualRevenue > 0) {
-				const annualProfit = annualRevenue - annualCost;
-				const annualProfitMargin = annualRevenue > 0 ? (annualProfit / annualRevenue * 100) : 0;
-
-				clientSummary.push({
-					clientId: client.client_id,
-					clientName: client.company_name,
-					annualHours: Number(annualHours.toFixed(1)),
-					annualWeightedHours: Number(annualWeightedHours.toFixed(1)),
-					annualCost: Number(annualCost.toFixed(2)),
-					annualRevenue: Number(annualRevenue.toFixed(2)),
-					annualProfit: Number(annualProfit.toFixed(2)),
-					annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
-					avgMonthlyRevenue: Number((annualRevenue / 12).toFixed(2))
-				});
-			}
-		}
+	// 优化：直接从数据库聚合年度数据，避免240次API调用
+	// 获取年度工时和成本数据（直接调用 overhead API 一次）
+	const overheadUrl = new URL(url);
+	overheadUrl.pathname = '/internal/api/v1/admin/costs/client';
+	overheadUrl.searchParams.set('year', String(year));
+	overheadUrl.searchParams.set('month', '0'); // 特殊值：表示全年
+	
+	// 直接调用 overhead.js 的客户成本API
+	const { handleOverhead } = await import('./overhead.js');
+	const costResponse = await handleOverhead(
+		new Request(overheadUrl, request),
+		env, me, requestId, overheadUrl, '/internal/api/v1/admin/costs/client'
+	);
+	
+	if (!costResponse.ok) {
+		throw new Error('无法获取客户成本数据');
+	}
+	
+	const costJson = await costResponse.json();
+	const costData = costJson.data?.clients || [];
+	
+	// 获取年度收入数据
+	const revenueRows = await env.DATABASE.prepare(`
+		SELECT 
+			r.client_id,
+			SUM(r.total_amount) as total_revenue
+		FROM Receipts r
+		WHERE r.is_deleted = 0 
+			AND r.status != 'cancelled'
+			AND substr(r.service_month, 1, 4) = ?
+		GROUP BY r.client_id
+	`).bind(String(year)).all();
+	
+	const revenueMap = new Map();
+	for (const r of (revenueRows?.results || [])) {
+		revenueMap.set(r.client_id, Number(r.total_revenue || 0));
+	}
+	
+	// 组合数据
+	const clientSummary = costData.map(client => {
+		const annualRevenue = revenueMap.get(client.clientId) || 0;
+		const annualProfit = annualRevenue - client.totalCost;
+		const annualProfitMargin = annualRevenue > 0 ? (annualProfit / annualRevenue * 100) : 0;
+		
+		return {
+			clientId: client.clientId,
+			clientName: client.clientName,
+			annualHours: Number(client.totalHours.toFixed(1)),
+			annualWeightedHours: Number(client.weightedHours.toFixed(1)),
+			annualCost: Number(client.totalCost.toFixed(2)),
+			annualRevenue: Number(annualRevenue.toFixed(2)),
+			annualProfit: Number(annualProfit.toFixed(2)),
+			annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
+			avgMonthlyRevenue: Number((annualRevenue / 12).toFixed(2))
+		};
+	}).filter(c => c.annualHours > 0 || c.annualRevenue > 0);
 
 		// 按服务类型年度汇总
 		const serviceTypeSummary = await env.DATABASE.prepare(`
