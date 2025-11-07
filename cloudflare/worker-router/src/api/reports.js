@@ -4,280 +4,883 @@ export async function handleReports(request, env, me, requestId, url, path) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
 
-	const parseDate = (s) => {
-		if (!s || typeof s !== "string") return null;
-		const m = s.match(/^\d{4}-\d{2}-\d{2}$/);
-		if (!m) return null;
-		const d = new Date(s);
-		return Number.isNaN(d.getTime()) ? null : s; // keep original yyyy-mm-dd
-	};
-
-	const parseYearMonth = (s) => {
-		if (!s || typeof s !== "string") return null;
-		const m = s.match(/^(\d{4})-(\d{2})$/);
-		if (!m) return null;
-		const y = parseInt(m[1], 10);
-		const mo = parseInt(m[2], 10);
-		if (!Number.isFinite(y) || !Number.isFinite(mo) || mo < 1 || mo > 12) return null;
-		return { year: y, month: mo };
-	};
-
-	// /internal/api/v1/reports/client-cost-analysis (GET, admin only)
-	// 直接使用成本页面的API逻辑
-	if (path === "/internal/api/v1/reports/client-cost-analysis") {
-		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
-		if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
-		
-		// 调用成本页面的/admin/costs/client API（同样的计算逻辑）
-		const { handleOverhead } = await import('./overhead.js');
-		return await handleOverhead(request, env, me, requestId, url, '/internal/api/v1/admin/costs/client');
+	// 只有管理员可以访问报表
+	if (!me.is_admin) {
+		return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
 	}
 
-	// /internal/api/v1/reports/employee-hours (GET)
-	if (path === "/internal/api/v1/reports/employee-hours") {
-		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
-		try {
-			const p = url.searchParams;
-			const y = parseInt(p.get("year") || "0", 10);
-			const m = parseInt(p.get("month") || "0", 10);
-			let qUserId = p.get("user_id");
-			if (!Number.isFinite(y) || y < 2000 || !Number.isFinite(m) || m < 1 || m > 12) {
-				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢月份", meta:{ requestId } }, corsHeaders);
-			}
-			// 權限：員工僅能看自己
-			let userFilterId = null;
-			if (!me.is_admin) userFilterId = String(me.user_id);
-			else if (qUserId) userFilterId = String(parseInt(qUserId, 10));
+	// ============================================================
+	// 月度报表 APIs
+	// ============================================================
 
-			const ym = `${y}-${String(m).padStart(2,'0')}`;
-			const whereBase = "t.is_deleted = 0 AND substr(t.work_date,1,7) = ?";
-			let where = whereBase;
-			const binds = [ym];
-			if (userFilterId) { where += " AND t.user_id = ?"; binds.push(userFilterId); }
-
-			// 彙總（每人）- 區分可計費/非計費工時
-			const aggRows = await env.DATABASE.prepare(
-				`SELECT t.user_id, 
-					SUM(t.hours) AS total_hours,
-					SUM(CASE WHEN t.work_type = 'normal' THEN t.hours ELSE 0 END) AS normal_hours,
-					SUM(CASE WHEN t.work_type LIKE 'ot-%' OR t.work_type = 'holiday' THEN t.hours ELSE 0 END) AS overtime_hours,
-					SUM(CASE WHEN t.client_id IS NOT NULL THEN t.hours ELSE 0 END) AS billable_hours,
-					SUM(CASE WHEN t.client_id IS NULL THEN t.hours ELSE 0 END) AS non_billable_hours
-				 FROM Timesheets t
-				 WHERE ${where}
-				 GROUP BY t.user_id`
-			).bind(...binds).all();
-
-			// 每日工時
-			const dailyRows = await env.DATABASE.prepare(
-				`SELECT t.user_id, t.work_date, SUM(t.hours) AS hours
-				 FROM Timesheets t
-				 WHERE ${where}
-				 GROUP BY t.user_id, t.work_date
-				 ORDER BY t.work_date ASC`
-			).bind(...binds).all();
-
-			// 客戶分布
-			const distRows = await env.DATABASE.prepare(
-				`SELECT t.user_id, t.client_id, SUM(t.hours) AS hours
-				 FROM Timesheets t
-				 WHERE ${where} AND t.client_id IS NOT NULL
-				 GROUP BY t.user_id, t.client_id`
-			).bind(...binds).all();
-
-			// 使用者名稱
-			const userIds = (aggRows?.results || []).map(r => r.user_id);
-			let usersMap = new Map();
-			if (userIds.length) {
-				const placeholders = userIds.map(()=>"?").join(",");
-				const uRows = await env.DATABASE.prepare(`SELECT user_id, name FROM Users WHERE user_id IN (${placeholders})`).bind(...userIds).all();
-				usersMap = new Map((uRows?.results || []).map(r => [String(r.user_id), r.name || r.username]));
-			}
-
-			// 客戶名稱
-			const clientIds = Array.from(new Set((distRows?.results || []).map(r => r.client_id).filter(Boolean)));
-			let clientMap = new Map();
-			if (clientIds.length) {
-				const placeholders = clientIds.map(()=>"?").join(",");
-				const cRows = await env.DATABASE.prepare(`SELECT client_id, company_name FROM Clients WHERE client_id IN (${placeholders})`).bind(...clientIds).all();
-				clientMap = new Map((cRows?.results || []).map(r => [r.client_id, r.company_name]));
-			}
-
-			const dailyByUser = new Map();
-			for (const r of (dailyRows?.results || [])) {
-				const arr = dailyByUser.get(String(r.user_id)) || [];
-				arr.push({ date: r.work_date, hours: Number(r.hours || 0) });
-				dailyByUser.set(String(r.user_id), arr);
-			}
-
-			const distByUser = new Map();
-			for (const r of (distRows?.results || [])) {
-				const arr = distByUser.get(String(r.user_id)) || [];
-				const hours = Number(r.hours || 0);
-				arr.push({ client_id: r.client_id, company_name: clientMap.get(r.client_id) || r.client_id, hours });
-				distByUser.set(String(r.user_id), arr);
-			}
-
-			// 計算工作天數（簡化：取該月份的工作日數，假設每月 22 天）
-			const workingDays = 22;
-
-			const data = [];
-			for (const r of (aggRows?.results || [])) {
-				const uid = String(r.user_id);
-				const total = Number(r.total_hours || 0);
-				const normal = Number(r.normal_hours || 0);
-				const ot = Number(r.overtime_hours || 0);
-				const billable = Number(r.billable_hours || 0);
-				const nonBillable = Number(r.non_billable_hours || 0);
-				// 使用率：可計費工時 / (工作天數 × 8)
-				const utilization = (workingDays * 8) > 0 ? Number(((billable / (workingDays * 8)) * 100).toFixed(2)) : 0;
-				let dist = distByUser.get(uid) || [];
-				const distTotal = dist.reduce((s,x)=> s + x.hours, 0) || 1;
-				dist = dist.map(x => ({ client_id: x.client_id, company_name: x.company_name, hours: x.hours, percentage: Number(((x.hours/distTotal)*100).toFixed(2)) }));
-				const daily = dailyByUser.get(uid) || [];
-				data.push({
-					user_id: Number(uid),
-					username: usersMap.get(uid) || uid,
-					total_hours: Number(total.toFixed(2)),
-					normal_hours: Number(normal.toFixed(2)),
-					overtime_hours: Number(ot.toFixed(2)),
-					billable_hours: Number(billable.toFixed(2)),
-					non_billable_hours: Number(nonBillable.toFixed(2)),
-					utilization_rate: utilization,
-					client_distribution: dist,
-					daily_hours: daily,
-				});
-			}
-
-			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId, year:y, month:m } }, corsHeaders);
-		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
-			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
-		}
+	// 月度收款报表
+	if (path === "/internal/api/v1/reports/monthly/revenue") {
+		return await handleMonthlyRevenue(request, env, me, requestId, url, corsHeaders);
 	}
 
-	// /internal/api/v1/reports/payroll-summary (GET, admin only)
-	// 直接使用薪资页面的preview API逻辑
-	if (path === "/internal/api/v1/reports/payroll-summary") {
-		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
-		if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
-		try {
-			const p = url.searchParams;
-			const y = parseInt(p.get("year") || "0", 10);
-			const m = parseInt(p.get("month") || "0", 10);
-			let userId = p.get("user_id");
-			if (!Number.isFinite(y) || y < 2000 || !Number.isFinite(m) || m < 1 || m > 12) {
-				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢月份", meta:{ requestId } }, corsHeaders);
-			}
-			const ym = `${y}-${String(m).padStart(2,'0')}`;
-		
-		// 调用薪资预览API（与薪资页面使用完全相同的逻辑）
-		const { calculateEmployeePayroll } = await import('./payroll.js');
-		
-		// 获取所有活跃员工
-		const usersQuery = await env.DATABASE.prepare(
-			`SELECT user_id FROM Users WHERE is_deleted = 0 ORDER BY user_id`
-		).all();
-		const allUsers = usersQuery.results || [];
-		
-		// 如果指定了userId，只计算该用户
-		const usersToCalculate = userId 
-			? allUsers.filter(u => String(u.user_id) === String(userId))
-			: allUsers;
-		
-		// 实时计算每个员工的薪资（与payroll.js的preview完全一致）
-		const results = [];
-		for (const user of usersToCalculate) {
-			try {
-				const payroll = await calculateEmployeePayroll(env, user.user_id, ym);
-				if (payroll) {
-					results.push(payroll);
-				}
-			} catch (error) {
-				console.error(`[Reports] 计算员工 ${user.user_id} 薪资失败:`, error);
-			}
-		}
-		
-		const cents = (v)=> Number(v||0);
-		const toAmt = (c)=> Math.round(c/100);
-		
-		const byEmployee = results.map(u => ({
-			user_id: u.userId,
-			username: u.name || u.username,
-			base_salary: toAmt(cents(u.baseSalaryCents)),
-			// 津贴 = 加给 + 不定期津贴
-			total_allowances: toAmt(cents(u.totalRegularAllowanceCents) + cents(u.totalIrregularAllowanceCents)),
-			// 奖金 = 月度奖金 + 年终奖金 + 绩效奖金
-			total_bonuses: toAmt(cents(u.totalRegularBonusCents) + cents(u.totalYearEndBonusCents) + cents(u.performanceBonusCents)),
-			overtime_pay: toAmt(cents(u.overtimeCents)),
-			transport_subsidy: toAmt(cents(u.transportCents)),
-			meal_allowance: toAmt(cents(u.mealAllowanceCents)),
-			gross_salary: toAmt(cents(u.grossSalaryCents)),
-			net_salary: toAmt(cents(u.netSalaryCents)),
-			has_full_attendance: u.isFullAttendance === true,
-		}));
-		
-		const sum = (k)=> byEmployee.reduce((s,x)=> s + Number(x[k]||0), 0);
-		const summary = {
-			total_base_salary: sum('base_salary'),
-			total_allowances: sum('total_allowances'),
-			total_bonuses: sum('total_bonuses'),
-			total_overtime_pay: sum('overtime_pay'),
-			total_transport_subsidy: sum('transport_subsidy'),
-			total_meal_allowance: sum('meal_allowance'),
-			total_gross_salary: sum('gross_salary'),
-			total_net_salary: sum('net_salary'),
-		};
-		return jsonResponse(200, { ok:true, code:"OK", message:"成功", data:{ summary, by_employee: byEmployee }, meta:{ requestId, month:ym } }, corsHeaders);
-		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
-			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
-		}
+	// 月度薪资报表
+	if (path === "/internal/api/v1/reports/monthly/payroll") {
+		return await handleMonthlyPayroll(request, env, me, requestId, url, corsHeaders);
 	}
 
-	// /internal/api/v1/reports/revenue (GET, admin only)
-	if (path === "/internal/api/v1/reports/revenue") {
-		if (method !== "GET") return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
-		if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
-		try {
-			const p = url.searchParams;
-			const start = parseDate(p.get("start_date"));
-			const end = parseDate(p.get("end_date"));
-			if (!start || !end || start > end) {
-				return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇有效日期區間", meta:{ requestId } }, corsHeaders);
-			}
-			const rows = await env.DATABASE.prepare(
-				`SELECT strftime('%Y-%m', receipt_date) AS ym,
-					SUM(total_amount) AS receipts,
-					SUM(COALESCE(paid_amount, 0)) AS paid
-				 FROM Receipts
-				 WHERE is_deleted = 0 AND status != 'cancelled' AND receipt_date >= ? AND receipt_date <= ?
-				 GROUP BY ym
-				 ORDER BY ym`
-			).bind(start, end).all();
-			const monthly_trend = (rows?.results || []).map(r => ({ month: r.ym, receipts: Number(r.receipts||0), paid: Number(r.paid||0), outstanding: Math.max(0, Number(r.receipts||0) - Number(r.paid||0)) }));
-			const total_receipts = monthly_trend.reduce((s,x)=> s + x.receipts, 0);
-			const total_paid = monthly_trend.reduce((s,x)=> s + x.paid, 0);
-			const total_outstanding = Math.max(0, total_receipts - total_paid);
-			const collection_rate = total_receipts > 0 ? Number(((total_paid/total_receipts)*100).toFixed(1)) : 0;
-
-			const byClientRows = await env.DATABASE.prepare(
-				`SELECT r.client_id, c.company_name, SUM(r.total_amount) AS total_receipts,
-					SUM(COALESCE(r.paid_amount, 0)) AS total_paid
-				 FROM Receipts r LEFT JOIN Clients c ON c.client_id = r.client_id
-				 WHERE r.is_deleted = 0 AND r.status != 'cancelled' AND r.receipt_date >= ? AND r.receipt_date <= ?
-				 GROUP BY r.client_id, c.company_name`
-			).bind(start, end).all();
-			const by_client = (byClientRows?.results || []).map(r => ({ client_id: r.client_id, company_name: r.company_name || r.client_id, total_receipts: Number(r.total_receipts||0), total_paid: Number(r.total_paid||0), total_outstanding: Math.max(0, Number(r.total_receipts||0) - Number(r.total_paid||0)) }));
-
-			return jsonResponse(200, { ok:true, code:"OK", message:"成功", data:{ summary:{ total_receipts, total_paid, total_outstanding, collection_rate }, monthly_trend, by_client }, meta:{ requestId } }, corsHeaders);
-		} catch (err) {
-			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
-			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
-		}
+	// 月度员工产值报表
+	if (path === "/internal/api/v1/reports/monthly/employee-performance") {
+		return await handleMonthlyEmployeePerformance(request, env, me, requestId, url, corsHeaders);
 	}
 
-	return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"不存在", meta:{ requestId } }, corsHeaders);
+	// 月度客户毛利报表
+	if (path === "/internal/api/v1/reports/monthly/client-profitability") {
+		return await handleMonthlyClientProfitability(request, env, me, requestId, url, corsHeaders);
+	}
+
+	// ============================================================
+	// 年度报表 APIs
+	// ============================================================
+
+	// 年度收款报表
+	if (path === "/internal/api/v1/reports/annual/revenue") {
+		return await handleAnnualRevenue(request, env, me, requestId, url, corsHeaders);
+	}
+
+	// 年度薪资报表
+	if (path === "/internal/api/v1/reports/annual/payroll") {
+		return await handleAnnualPayroll(request, env, me, requestId, url, corsHeaders);
+	}
+
+	// 年度员工产值报表
+	if (path === "/internal/api/v1/reports/annual/employee-performance") {
+		return await handleAnnualEmployeePerformance(request, env, me, requestId, url, corsHeaders);
+	}
+
+	// 年度客户毛利报表
+	if (path === "/internal/api/v1/reports/annual/client-profitability") {
+		return await handleAnnualClientProfitability(request, env, me, requestId, url, corsHeaders);
+	}
+
+	return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "找不到此報表", meta: { requestId } }, corsHeaders);
 }
 
+// ============================================================
+// 月度收款报表
+// ============================================================
+async function handleMonthlyRevenue(request, env, me, requestId, url, corsHeaders) {
+	try {
+		const p = url.searchParams;
+		const year = parseInt(p.get("year") || "0", 10);
+		const month = parseInt(p.get("month") || "0", 10);
 
+		if (!Number.isFinite(year) || year < 2000 || !Number.isFinite(month) || month < 1 || month > 12) {
+			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢月份", meta:{ requestId } }, corsHeaders);
+		}
+
+		const ym = `${year}-${String(month).padStart(2,'0')}`;
+
+		// 1. 月度收款概况
+		const summaryRow = await env.DATABASE.prepare(`
+			SELECT 
+				SUM(r.total_amount) as total_receivable,
+				SUM(COALESCE(r.paid_amount, 0)) as total_received,
+				SUM(CASE WHEN r.status IN ('unpaid', 'partial') AND r.due_date < date('now') 
+					THEN r.total_amount - COALESCE(r.paid_amount, 0) 
+					ELSE 0 END) as overdue_amount
+			FROM Receipts r
+			WHERE r.is_deleted = 0 
+				AND r.status != 'cancelled'
+				AND substr(r.receipt_date, 1, 7) = ?
+		`).bind(ym).first();
+
+		const totalReceivable = Number(summaryRow?.total_receivable || 0);
+		const totalReceived = Number(summaryRow?.total_received || 0);
+		const overdueAmount = Number(summaryRow?.overdue_amount || 0);
+		const collectionRate = totalReceivable > 0 ? (totalReceived / totalReceivable * 100) : 0;
+
+		// 2. 按客户明细（包含服务类型）
+		const clientDetails = await env.DATABASE.prepare(`
+			SELECT 
+				c.client_id,
+				c.company_name as client_name,
+				s.service_name,
+				r.receipt_id,
+				r.total_amount,
+				COALESCE(r.paid_amount, 0) as paid_amount,
+				(r.total_amount - COALESCE(r.paid_amount, 0)) as unpaid_amount,
+				r.due_date,
+				CASE 
+					WHEN r.status IN ('unpaid', 'partial') AND r.due_date < date('now') THEN 1
+					ELSE 0
+				END as is_overdue
+			FROM Receipts r
+			LEFT JOIN Clients c ON c.client_id = r.client_id
+			LEFT JOIN ClientServices cs ON cs.client_service_id = r.client_service_id
+			LEFT JOIN Services s ON s.service_id = cs.service_id
+			WHERE r.is_deleted = 0 
+				AND r.status != 'cancelled'
+				AND substr(r.receipt_date, 1, 7) = ?
+			ORDER BY c.company_name, s.service_name
+		`).bind(ym).all();
+
+		const data = {
+			summary: {
+				totalReceivable,
+				totalReceived,
+				collectionRate: Number(collectionRate.toFixed(2)),
+				overdueAmount
+			},
+			clientDetails: (clientDetails?.results || []).map(r => ({
+				clientId: r.client_id,
+				clientName: r.client_name || '未知客户',
+				serviceName: r.service_name || '未分类',
+				receiptId: r.receipt_id,
+				totalAmount: Number(r.total_amount || 0),
+				paidAmount: Number(r.paid_amount || 0),
+				unpaidAmount: Number(r.unpaid_amount || 0),
+				collectionRate: r.total_amount > 0 ? Number((r.paid_amount / r.total_amount * 100).toFixed(2)) : 0,
+				dueDate: r.due_date,
+				isOverdue: Boolean(r.is_overdue)
+			}))
+		};
+
+		return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
+	} catch (err) {
+		console.error("[MonthlyRevenue] Error:", err);
+		return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: err.message, meta: { requestId } }, corsHeaders);
+	}
+}
+
+// ============================================================
+// 年度收款报表
+// ============================================================
+async function handleAnnualRevenue(request, env, me, requestId, url, corsHeaders) {
+	try {
+		const p = url.searchParams;
+		const year = parseInt(p.get("year") || "0", 10);
+
+		if (!Number.isFinite(year) || year < 2000) {
+			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢年度", meta:{ requestId } }, corsHeaders);
+		}
+
+		// 1. 年度收款概况
+		const summaryRow = await env.DATABASE.prepare(`
+			SELECT 
+				SUM(r.total_amount) as total_receivable,
+				SUM(COALESCE(r.paid_amount, 0)) as total_received,
+				SUM(CASE WHEN r.status IN ('unpaid', 'partial') AND r.due_date < date('now') 
+					THEN r.total_amount - COALESCE(r.paid_amount, 0) 
+					ELSE 0 END) as overdue_amount
+			FROM Receipts r
+			WHERE r.is_deleted = 0 
+				AND r.status != 'cancelled'
+				AND substr(r.receipt_date, 1, 4) = ?
+		`).bind(String(year)).first();
+
+		const totalReceivable = Number(summaryRow?.total_receivable || 0);
+		const totalReceived = Number(summaryRow?.total_received || 0);
+		const overdueAmount = Number(summaryRow?.overdue_amount || 0);
+		const collectionRate = totalReceivable > 0 ? (totalReceived / totalReceivable * 100) : 0;
+
+		// 2. 月度收款趋势
+		const monthlyTrend = await env.DATABASE.prepare(`
+			SELECT 
+				substr(r.receipt_date, 6, 2) as month,
+				SUM(r.total_amount) as total_receivable,
+				SUM(COALESCE(r.paid_amount, 0)) as total_received,
+				SUM(CASE WHEN r.status IN ('unpaid', 'partial') AND r.due_date < date('now') 
+					THEN r.total_amount - COALESCE(r.paid_amount, 0) 
+					ELSE 0 END) as overdue_amount
+			FROM Receipts r
+			WHERE r.is_deleted = 0 
+				AND r.status != 'cancelled'
+				AND substr(r.receipt_date, 1, 4) = ?
+			GROUP BY month
+			ORDER BY month
+		`).bind(String(year)).all();
+
+		// 3. 按客户年度汇总
+		const clientSummary = await env.DATABASE.prepare(`
+			SELECT 
+				c.client_id,
+				c.company_name as client_name,
+				SUM(r.total_amount) as total_receivable,
+				SUM(COALESCE(r.paid_amount, 0)) as total_received,
+				SUM(r.total_amount - COALESCE(r.paid_amount, 0)) as unpaid_amount
+			FROM Receipts r
+			LEFT JOIN Clients c ON c.client_id = r.client_id
+			WHERE r.is_deleted = 0 
+				AND r.status != 'cancelled'
+				AND substr(r.receipt_date, 1, 4) = ?
+			GROUP BY c.client_id, c.company_name
+			ORDER BY total_receivable DESC
+		`).bind(String(year)).all();
+
+		// 4. 按服务类型年度汇总
+		const serviceTypeSummary = await env.DATABASE.prepare(`
+			SELECT 
+				s.service_name,
+				SUM(r.total_amount) as total_receivable,
+				SUM(COALESCE(r.paid_amount, 0)) as total_received,
+				SUM(r.total_amount - COALESCE(r.paid_amount, 0)) as unpaid_amount
+			FROM Receipts r
+			LEFT JOIN ClientServices cs ON cs.client_service_id = r.client_service_id
+			LEFT JOIN Services s ON s.service_id = cs.service_id
+			WHERE r.is_deleted = 0 
+				AND r.status != 'cancelled'
+				AND substr(r.receipt_date, 1, 4) = ?
+			GROUP BY s.service_name
+			ORDER BY total_receivable DESC
+		`).bind(String(year)).all();
+
+		const data = {
+			summary: {
+				totalReceivable,
+				totalReceived,
+				collectionRate: Number(collectionRate.toFixed(2)),
+				overdueAmount
+			},
+			monthlyTrend: (monthlyTrend?.results || []).map(r => ({
+				month: parseInt(r.month, 10),
+				totalReceivable: Number(r.total_receivable || 0),
+				totalReceived: Number(r.total_received || 0),
+				collectionRate: r.total_receivable > 0 ? Number((r.total_received / r.total_receivable * 100).toFixed(2)) : 0,
+				overdueAmount: Number(r.overdue_amount || 0)
+			})),
+			clientSummary: (clientSummary?.results || []).map(r => ({
+				clientId: r.client_id,
+				clientName: r.client_name || '未知客户',
+				totalReceivable: Number(r.total_receivable || 0),
+				totalReceived: Number(r.total_received || 0),
+				unpaidAmount: Number(r.unpaid_amount || 0),
+				collectionRate: r.total_receivable > 0 ? Number((r.total_received / r.total_receivable * 100).toFixed(2)) : 0,
+				avgMonthlyRevenue: Number((r.total_receivable / 12).toFixed(2))
+			})),
+			serviceTypeSummary: (serviceTypeSummary?.results || []).map(r => ({
+				serviceName: r.service_name || '未分类',
+				totalReceivable: Number(r.total_receivable || 0),
+				totalReceived: Number(r.total_received || 0),
+				unpaidAmount: Number(r.unpaid_amount || 0),
+				collectionRate: r.total_receivable > 0 ? Number((r.total_received / r.total_receivable * 100).toFixed(2)) : 0
+			}))
+		};
+
+		return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
+	} catch (err) {
+		console.error("[AnnualRevenue] Error:", err);
+		return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: err.message, meta: { requestId } }, corsHeaders);
+	}
+}
+
+// ============================================================
+// 月度薪资报表
+// ============================================================
+async function handleMonthlyPayroll(request, env, me, requestId, url, corsHeaders) {
+	try {
+		const p = url.searchParams;
+		const year = parseInt(p.get("year") || "0", 10);
+		const month = parseInt(p.get("month") || "0", 10);
+
+		if (!Number.isFinite(year) || year < 2000 || !Number.isFinite(month) || month < 1 || month > 12) {
+			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢月份", meta:{ requestId } }, corsHeaders);
+		}
+
+		// 调用薪资计算逻辑
+		const { calculateEmployeePayroll } = await import('./payroll.js');
+		
+		// 获取所有用户
+		const usersResult = await env.DATABASE.prepare(`
+			SELECT user_id, username, name, base_salary
+			FROM Users
+			WHERE is_deleted = 0
+			ORDER BY name
+		`).all();
+
+		const users = usersResult?.results || [];
+		const payrollData = [];
+		let totalGrossSalary = 0;
+		let totalNetSalary = 0;
+
+		for (const user of users) {
+			const payroll = await calculateEmployeePayroll(env, user.user_id, year, month);
+			
+			payrollData.push({
+				userId: user.user_id,
+				username: user.username,
+				name: user.name || user.username,
+				baseSalary: payroll.baseSalaryCents / 100,
+				regularAllowance: payroll.totalRegularAllowanceCents / 100,
+				irregularAllowance: payroll.totalIrregularAllowanceCents / 100,
+				bonusAmount: payroll.totalBonusCents / 100,
+				fullAttendanceBonus: payroll.isFullAttendance ? (payroll.fullAttendanceBonusCents / 100) : 0,
+				overtimePay: payroll.overtimeCents / 100,
+				mealAllowance: payroll.mealAllowanceCents / 100,
+				transportSubsidy: payroll.transportSubsidyCents / 100,
+				performanceBonus: 0, // 从月度绩效奖金表获取
+				yearEndBonus: 0, // 从年终奖金表获取
+				fixedDeduction: payroll.totalFixedDeductionCents / 100,
+				leaveDeduction: payroll.leaveDeductionCents / 100,
+				grossSalary: payroll.grossSalaryCents / 100,
+				netSalary: payroll.netSalaryCents / 100
+			});
+
+			totalGrossSalary += payroll.grossSalaryCents / 100;
+			totalNetSalary += payroll.netSalaryCents / 100;
+		}
+
+		// 薪资构成分析
+		const composition = {
+			baseSalary: payrollData.reduce((sum, p) => sum + p.baseSalary, 0),
+			regularAllowance: payrollData.reduce((sum, p) => sum + p.regularAllowance, 0),
+			irregularAllowance: payrollData.reduce((sum, p) => sum + p.irregularAllowance, 0),
+			bonusAmount: payrollData.reduce((sum, p) => sum + p.bonusAmount, 0),
+			fullAttendanceBonus: payrollData.reduce((sum, p) => sum + p.fullAttendanceBonus, 0),
+			overtimePay: payrollData.reduce((sum, p) => sum + p.overtimePay, 0),
+			mealAllowance: payrollData.reduce((sum, p) => sum + p.mealAllowance, 0),
+			transportSubsidy: payrollData.reduce((sum, p) => sum + p.transportSubsidy, 0),
+			performanceBonus: payrollData.reduce((sum, p) => sum + p.performanceBonus, 0),
+			yearEndBonus: payrollData.reduce((sum, p) => sum + p.yearEndBonus, 0),
+			fixedDeduction: payrollData.reduce((sum, p) => sum + p.fixedDeduction, 0),
+			leaveDeduction: payrollData.reduce((sum, p) => sum + p.leaveDeduction, 0)
+		};
+
+		const data = {
+			summary: {
+				totalGrossSalary,
+				totalNetSalary,
+				employeeCount: users.length,
+				avgGrossSalary: users.length > 0 ? totalGrossSalary / users.length : 0,
+				avgNetSalary: users.length > 0 ? totalNetSalary / users.length : 0
+			},
+			payrollDetails: payrollData,
+			composition
+		};
+
+		return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
+	} catch (err) {
+		console.error("[MonthlyPayroll] Error:", err);
+		return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: err.message, meta: { requestId } }, corsHeaders);
+	}
+}
+
+// ============================================================
+// 年度薪资报表
+// ============================================================
+async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders) {
+	try {
+		const p = url.searchParams;
+		const year = parseInt(p.get("year") || "0", 10);
+
+		if (!Number.isFinite(year) || year < 2000) {
+			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢年度", meta:{ requestId } }, corsHeaders);
+		}
+
+		const { calculateEmployeePayroll } = await import('./payroll.js');
+
+		// 获取所有用户
+		const usersResult = await env.DATABASE.prepare(`
+			SELECT user_id, username, name, base_salary
+			FROM Users
+			WHERE is_deleted = 0
+			ORDER BY name
+		`).all();
+
+		const users = usersResult?.results || [];
+		
+		// 月度薪资趋势
+		const monthlyTrend = [];
+		for (let month = 1; month <= 12; month++) {
+			let monthTotal = 0;
+			let monthNetTotal = 0;
+			for (const user of users) {
+				const payroll = await calculateEmployeePayroll(env, user.user_id, year, month);
+				monthTotal += payroll.grossSalaryCents / 100;
+				monthNetTotal += payroll.netSalaryCents / 100;
+			}
+			monthlyTrend.push({
+				month,
+				totalGrossSalary: monthTotal,
+				totalNetSalary: monthNetTotal,
+				employeeCount: users.length,
+				avgGrossSalary: users.length > 0 ? monthTotal / users.length : 0
+			});
+		}
+
+		// 按员工年度汇总
+		const employeeSummary = [];
+		for (const user of users) {
+			let annualGross = 0;
+			let annualNet = 0;
+			let totalOvertime = 0;
+			let totalPerformance = 0;
+			let totalYearEnd = 0;
+
+			for (let month = 1; month <= 12; month++) {
+				const payroll = await calculateEmployeePayroll(env, user.user_id, year, month);
+				annualGross += payroll.grossSalaryCents / 100;
+				annualNet += payroll.netSalaryCents / 100;
+				totalOvertime += payroll.overtimeCents / 100;
+			}
+
+			employeeSummary.push({
+				userId: user.user_id,
+				name: user.name || user.username,
+				annualGrossSalary: annualGross,
+				annualNetSalary: annualNet,
+				avgMonthlySalary: annualGross / 12,
+				totalOvertimePay: totalOvertime,
+				totalPerformanceBonus: totalPerformance,
+				totalYearEndBonus: totalYearEnd
+			});
+		}
+
+		// 年度薪资构成分析
+		const totalGross = monthlyTrend.reduce((sum, m) => sum + m.totalGrossSalary, 0);
+		const totalNet = monthlyTrend.reduce((sum, m) => sum + m.totalNetSalary, 0);
+
+		const data = {
+			summary: {
+				annualGrossSalary: totalGross,
+				annualNetSalary: totalNet,
+				avgMonthlySalary: totalGross / 12,
+				avgEmployeeCount: users.length
+			},
+			monthlyTrend,
+			employeeSummary
+		};
+
+		return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
+	} catch (err) {
+		console.error("[AnnualPayroll] Error:", err);
+		return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: err.message, meta: { requestId } }, corsHeaders);
+	}
+}
+
+// ============================================================
+// 月度员工产值报表
+// ============================================================
+async function handleMonthlyEmployeePerformance(request, env, me, requestId, url, corsHeaders) {
+	try {
+		const p = url.searchParams;
+		const year = parseInt(p.get("year") || "0", 10);
+		const month = parseInt(p.get("month") || "0", 10);
+
+		if (!Number.isFinite(year) || year < 2000 || !Number.isFinite(month) || month < 1 || month > 12) {
+			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢月份", meta:{ requestId } }, corsHeaders);
+		}
+
+		const ym = `${year}-${String(month).padStart(2,'0')}`;
+
+		// 获取员工成本数据（从成本API）
+		const { handleOverhead } = await import('./overhead.js');
+		const employeeCostUrl = new URL(url);
+		employeeCostUrl.pathname = '/internal/api/v1/admin/costs/employee';
+		employeeCostUrl.searchParams.set('year', String(year));
+		employeeCostUrl.searchParams.set('month', String(month));
+		const costRequest = new Request(employeeCostUrl, request);
+		const costResponse = await handleOverhead(costRequest, env, me, requestId, employeeCostUrl, '/internal/api/v1/admin/costs/employee');
+		const costData = await costResponse.json();
+
+		if (!costData.ok) {
+			throw new Error('无法获取员工成本数据');
+		}
+
+		const employees = costData.data?.employees || [];
+		
+		// 获取每个员工的产生收入（基于工时占比）
+		const employeePerformance = [];
+		
+		for (const emp of employees) {
+			// 获取员工的工时表记录
+			const timesheets = await env.DATABASE.prepare(`
+				SELECT 
+					t.timesheet_id,
+					t.client_id,
+					t.hours,
+					t.weighted_hours,
+					c.company_name as client_name,
+					s.service_name,
+					r.total_amount as receipt_amount,
+					task_total.total_hours,
+					task_total.task_id
+				FROM Timesheets t
+				LEFT JOIN Clients c ON c.client_id = t.client_id
+				LEFT JOIN Tasks task ON task.task_id = t.task_id
+				LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
+				LEFT JOIN Services s ON s.service_id = cs.service_id
+				LEFT JOIN Receipts r ON r.client_service_id = task.client_service_id 
+					AND substr(r.receipt_date, 1, 7) = substr(t.work_date, 1, 7)
+					AND r.is_deleted = 0
+					AND r.status != 'cancelled'
+				LEFT JOIN (
+					SELECT task_id, SUM(hours) as total_hours
+					FROM Timesheets
+					WHERE is_deleted = 0 AND substr(work_date, 1, 7) = ?
+					GROUP BY task_id
+				) task_total ON task_total.task_id = t.task_id
+				WHERE t.user_id = ?
+					AND t.is_deleted = 0
+					AND substr(t.work_date, 1, 7) = ?
+			`).bind(ym, emp.userId, ym).all();
+
+			// 计算产生收入（按工时占比分配）
+			let generatedRevenue = 0;
+			const clientDistribution = new Map();
+
+			for (const ts of (timesheets?.results || [])) {
+				const receiptAmount = Number(ts.receipt_amount || 0);
+				const taskTotalHours = Number(ts.total_hours || 0);
+				const empHours = Number(ts.hours || 0);
+
+				if (receiptAmount > 0 && taskTotalHours > 0) {
+					const empRevenue = receiptAmount * (empHours / taskTotalHours);
+					generatedRevenue += empRevenue;
+
+					// 客户分布
+					const clientKey = `${ts.client_id}_${ts.service_name}`;
+					if (!clientDistribution.has(clientKey)) {
+						clientDistribution.set(clientKey, {
+							clientId: ts.client_id,
+							clientName: ts.client_name || '未知客户',
+							serviceName: ts.service_name || '未分类',
+							hours: 0,
+							weightedHours: 0,
+							generatedRevenue: 0
+						});
+					}
+					const dist = clientDistribution.get(clientKey);
+					dist.hours += empHours;
+					dist.weightedHours += Number(ts.weighted_hours || empHours);
+					dist.generatedRevenue += empRevenue;
+				}
+			}
+
+			const standardHours = Number(emp.monthHours || 0);
+			const weightedHours = Number(emp.monthHours || 0); // 需要从工时表计算加权工时
+			const laborCost = Number(emp.laborCost || 0);
+			const totalCost = Number(emp.totalCost || 0);
+			const profit = generatedRevenue - totalCost;
+			const profitMargin = generatedRevenue > 0 ? (profit / generatedRevenue * 100) : 0;
+			const hourlyRate = weightedHours > 0 ? (generatedRevenue / weightedHours) : 0;
+
+			employeePerformance.push({
+				userId: emp.userId,
+				name: emp.name,
+				standardHours,
+				weightedHours,
+				hoursDifference: weightedHours - standardHours,
+				generatedRevenue,
+				laborCost,
+				totalCost,
+				profit,
+				profitMargin: Number(profitMargin.toFixed(2)),
+				hourlyRate: Number(hourlyRate.toFixed(2)),
+				clientDistribution: Array.from(clientDistribution.values())
+			});
+		}
+
+		const data = {
+			employeePerformance
+		};
+
+		return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
+	} catch (err) {
+		console.error("[MonthlyEmployeePerformance] Error:", err);
+		return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: err.message, meta: { requestId } }, corsHeaders);
+	}
+}
+
+// ============================================================
+// 年度员工产值报表
+// ============================================================
+async function handleAnnualEmployeePerformance(request, env, me, requestId, url, corsHeaders) {
+	try {
+		const p = url.searchParams;
+		const year = parseInt(p.get("year") || "0", 10);
+
+		if (!Number.isFinite(year) || year < 2000) {
+			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢年度", meta:{ requestId } }, corsHeaders);
+		}
+
+		// 获取所有员工
+		const usersResult = await env.DATABASE.prepare(`
+			SELECT user_id, username, name
+			FROM Users
+			WHERE is_deleted = 0
+			ORDER BY name
+		`).all();
+
+		const users = usersResult?.results || [];
+		const employeeSummary = [];
+
+		for (const user of users) {
+			let annualStandardHours = 0;
+			let annualWeightedHours = 0;
+			let annualRevenue = 0;
+			let annualCost = 0;
+			const monthlyTrend = [];
+			const clientDistribution = new Map();
+
+			for (let month = 1; month <= 12; month++) {
+				// 调用月度API获取数据
+				const monthUrl = new URL(url);
+				monthUrl.pathname = '/internal/api/v1/reports/monthly/employee-performance';
+				monthUrl.searchParams.set('year', String(year));
+				monthUrl.searchParams.set('month', String(month));
+				const monthRequest = new Request(monthUrl, request);
+				const monthResponse = await handleMonthlyEmployeePerformance(monthRequest, env, me, requestId, monthUrl, corsHeaders);
+				const monthData = await monthResponse.json();
+
+				if (monthData.ok) {
+					const empData = monthData.data?.employeePerformance?.find(e => e.userId === user.user_id);
+					if (empData) {
+						annualStandardHours += empData.standardHours;
+						annualWeightedHours += empData.weightedHours;
+						annualRevenue += empData.generatedRevenue;
+						annualCost += empData.totalCost;
+
+						monthlyTrend.push({
+							month,
+							standardHours: empData.standardHours,
+							weightedHours: empData.weightedHours,
+							generatedRevenue: empData.generatedRevenue,
+							totalCost: empData.totalCost,
+							profit: empData.profit,
+							profitMargin: empData.profitMargin,
+							hourlyRate: empData.hourlyRate
+						});
+
+						// 累积客户分布
+						for (const dist of empData.clientDistribution) {
+							const key = `${dist.clientId}_${dist.serviceName}`;
+							if (!clientDistribution.has(key)) {
+								clientDistribution.set(key, {
+									clientId: dist.clientId,
+									clientName: dist.clientName,
+									serviceName: dist.serviceName,
+									annualHours: 0,
+									generatedRevenue: 0
+								});
+							}
+							const annual = clientDistribution.get(key);
+							annual.annualHours += dist.hours;
+							annual.generatedRevenue += dist.generatedRevenue;
+						}
+					}
+				}
+			}
+
+			const annualProfit = annualRevenue - annualCost;
+			const annualProfitMargin = annualRevenue > 0 ? (annualProfit / annualRevenue * 100) : 0;
+			const avgHourlyRate = annualWeightedHours > 0 ? (annualRevenue / annualWeightedHours) : 0;
+
+			const clientDistArray = Array.from(clientDistribution.values()).map(d => ({
+				...d,
+				revenuePercentage: annualRevenue > 0 ? Number((d.generatedRevenue / annualRevenue * 100).toFixed(2)) : 0
+			}));
+
+			employeeSummary.push({
+				userId: user.user_id,
+				name: user.name || user.username,
+				annualStandardHours,
+				annualWeightedHours,
+				hoursDifference: annualWeightedHours - annualStandardHours,
+				annualRevenue,
+				annualCost,
+				annualProfit,
+				annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
+				avgHourlyRate: Number(avgHourlyRate.toFixed(2)),
+				monthlyTrend,
+				clientDistribution: clientDistArray
+			});
+		}
+
+		const data = {
+			employeeSummary
+		};
+
+		return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
+	} catch (err) {
+		console.error("[AnnualEmployeePerformance] Error:", err);
+		return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: err.message, meta: { requestId } }, corsHeaders);
+	}
+}
+
+// ============================================================
+// 月度客户毛利报表
+// ============================================================
+async function handleMonthlyClientProfitability(request, env, me, requestId, url, corsHeaders) {
+	try {
+		const p = url.searchParams;
+		const year = parseInt(p.get("year") || "0", 10);
+		const month = parseInt(p.get("month") || "0", 10);
+
+		if (!Number.isFinite(year) || year < 2000 || !Number.isFinite(month) || month < 1 || month > 12) {
+			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢月份", meta:{ requestId } }, corsHeaders);
+		}
+
+		// 直接调用成本页面的客户成本API
+		const { handleOverhead } = await import('./overhead.js');
+		const costUrl = new URL(url);
+		costUrl.pathname = '/internal/api/v1/admin/costs/client';
+		costUrl.searchParams.set('year', String(year));
+		costUrl.searchParams.set('month', String(month));
+		const costRequest = new Request(costUrl, request);
+		const costResponse = await handleOverhead(costRequest, env, me, requestId, costUrl, '/internal/api/v1/admin/costs/client');
+		const costData = await costResponse.json();
+
+		if (!costData.ok) {
+			throw new Error('无法获取客户成本数据');
+		}
+
+		const clients = costData.data?.clients || [];
+		
+		// 获取收入数据
+		const ym = `${year}-${String(month).padStart(2,'0')}`;
+		const receipts = await env.DATABASE.prepare(`
+			SELECT 
+				r.client_id,
+				cs.service_id,
+				s.service_name,
+				SUM(r.total_amount) as revenue
+			FROM Receipts r
+			LEFT JOIN ClientServices cs ON cs.client_service_id = r.client_service_id
+			LEFT JOIN Services s ON s.service_id = cs.service_id
+			WHERE r.is_deleted = 0 
+				AND r.status != 'cancelled'
+				AND substr(r.receipt_date, 1, 7) = ?
+			GROUP BY r.client_id, cs.service_id, s.service_name
+		`).bind(ym).all();
+
+		const revenueMap = new Map();
+		for (const r of (receipts?.results || [])) {
+			const key = `${r.client_id}_${r.service_name}`;
+			revenueMap.set(key, Number(r.revenue || 0));
+		}
+
+		// 组织数据为三层结构
+		const clientData = [];
+		for (const client of clients) {
+			const totalRevenue = revenueMap.get(`${client.clientId}_all`) || 0;
+			const profit = totalRevenue - client.totalCost;
+			const profitMargin = totalRevenue > 0 ? (profit / totalRevenue * 100) : 0;
+
+			clientData.push({
+				clientId: client.clientId,
+				clientName: client.clientName,
+				totalHours: client.totalHours,
+				weightedHours: client.weightedHours,
+				avgHourlyRate: client.avgActualHourlyRate,
+				totalCost: client.totalCost,
+				revenue: totalRevenue,
+				profit,
+				profitMargin: Number(profitMargin.toFixed(2)),
+				// 服务类型明细会在前端展开时再加载
+			});
+		}
+
+		const data = {
+			clients: clientData
+		};
+
+		return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
+	} catch (err) {
+		console.error("[MonthlyClientProfitability] Error:", err);
+		return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: err.message, meta: { requestId } }, corsHeaders);
+	}
+}
+
+// ============================================================
+// 年度客户毛利报表
+// ============================================================
+async function handleAnnualClientProfitability(request, env, me, requestId, url, corsHeaders) {
+	try {
+		const p = url.searchParams;
+		const year = parseInt(p.get("year") || "0", 10);
+
+		if (!Number.isFinite(year) || year < 2000) {
+			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢年度", meta:{ requestId } }, corsHeaders);
+		}
+
+		// 获取年度客户汇总
+		const clients = await env.DATABASE.prepare(`
+			SELECT 
+				c.client_id,
+				c.company_name as client_name
+			FROM Clients c
+			WHERE c.is_deleted = 0
+			ORDER BY c.company_name
+		`).all();
+
+		const clientSummary = [];
+
+		for (const client of (clients?.results || [])) {
+			let annualHours = 0;
+			let annualWeightedHours = 0;
+			let annualCost = 0;
+			let annualRevenue = 0;
+
+			for (let month = 1; month <= 12; month++) {
+				// 获取月度数据
+				const monthUrl = new URL(url);
+				monthUrl.pathname = '/internal/api/v1/reports/monthly/client-profitability';
+				monthUrl.searchParams.set('year', String(year));
+				monthUrl.searchParams.set('month', String(month));
+				const monthRequest = new Request(monthUrl, request);
+				const monthResponse = await handleMonthlyClientProfitability(monthRequest, env, me, requestId, monthUrl, corsHeaders);
+				const monthData = await monthResponse.json();
+
+				if (monthData.ok) {
+					const clientData = monthData.data?.clients?.find(c => c.clientId === client.client_id);
+					if (clientData) {
+						annualHours += clientData.totalHours;
+						annualWeightedHours += clientData.weightedHours;
+						annualCost += clientData.totalCost;
+						annualRevenue += clientData.revenue;
+					}
+				}
+			}
+
+			const annualProfit = annualRevenue - annualCost;
+			const annualProfitMargin = annualRevenue > 0 ? (annualProfit / annualRevenue * 100) : 0;
+			const avgMonthlyRevenue = annualRevenue / 12;
+
+			clientSummary.push({
+				clientId: client.client_id,
+				clientName: client.client_name,
+				annualHours,
+				annualWeightedHours,
+				annualCost,
+				annualRevenue,
+				annualProfit,
+				annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
+				avgMonthlyRevenue
+			});
+		}
+
+		// 按服务类型年度汇总
+		const serviceTypeSummary = await env.DATABASE.prepare(`
+			SELECT 
+				s.service_name,
+				SUM(t.hours) as total_hours,
+				SUM(t.weighted_hours) as weighted_hours
+			FROM Timesheets t
+			LEFT JOIN Tasks task ON task.task_id = t.task_id
+			LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
+			LEFT JOIN Services s ON s.service_id = cs.service_id
+			WHERE t.is_deleted = 0
+				AND substr(t.work_date, 1, 4) = ?
+			GROUP BY s.service_name
+		`).bind(String(year)).all();
+
+		const data = {
+			clientSummary,
+			serviceTypeSummary: (serviceTypeSummary?.results || []).map(s => ({
+				serviceName: s.service_name || '未分类',
+				totalHours: Number(s.total_hours || 0),
+				weightedHours: Number(s.weighted_hours || 0)
+			}))
+		};
+
+		return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
+	} catch (err) {
+		console.error("[AnnualClientProfitability] Error:", err);
+		return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: err.message, meta: { requestId } }, corsHeaders);
+	}
+}

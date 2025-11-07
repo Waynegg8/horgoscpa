@@ -4,325 +4,436 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="報表分析中心" />
-    <title>報表分析｜首頁</title>
+    <title>報表分析｜內部系統</title>
     <link rel="icon" href="/favicon.ico" />
     <link rel="stylesheet" href="/assets/css/common.css" />
-    <link rel="stylesheet" href="/assets/css/navbar.css" />
     <link rel="stylesheet" href="/assets/css/reports-page.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- 预加载与缓存系统 -->
+    <script src="/assets/js/data-cache.js"></script>
+    <script src="/assets/js/fetch-interceptor.js"></script>
   </head>
   <body class="reports-page">
     <div style="padding:16px 20px;">
       <div id="permBar" class="info-bar" style="display:none;" role="alert">您沒有權限檢視此報表</div>
-      <nav class="reports-tabs" role="tablist" aria-label="報表分頁" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;">
-        <button class="tab active" role="tab" aria-selected="true" data-tab="employee-hours">員工工時分析</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="client-cost" data-admin-only="true">客戶成本分析</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="payroll" data-admin-only="true">薪資報表</button>
-        <button class="tab" role="tab" aria-selected="false" data-tab="receivables" data-admin-only="true">收款分析</button>
+      
+      <nav class="reports-tabs" role="tablist" aria-label="報表分頁" style="display:flex;gap:8px;border-bottom:2px solid #e5e7eb;margin-bottom:20px;">
+        <button class="tab active" role="tab" aria-selected="true" data-tab="monthly">月度報表</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="annual">年度報表</button>
       </nav>
     </div>
 
-    <main class="reports-content">
-      <!-- 客戶成本分析（管理員） -->
-      <section id="panel-client-cost" class="reports-section panel" role="tabpanel" aria-labelledby="tab-client-cost">
-        <div class="report-filters" aria-label="客戶成本分析篩選">
-          <div class="filter-row">
-            <div class="filter-group">
-              <label for="cc-year">年度</label>
-              <select id="cc-year" class="form-select"></select>
+    <main class="reports-content" style="padding:0 20px 40px;">
+      <!-- ========================================== -->
+      <!-- 月度报表 -->
+      <!-- ========================================== -->
+      <section id="panel-monthly" class="reports-section panel show" role="tabpanel">
+        <div class="report-filters" style="margin-bottom:24px;display:flex;gap:12px;align-items:center;">
+          <label for="monthly-year" style="font-weight:600;">選擇月份：</label>
+          <select id="monthly-year" class="form-select" style="width:120px;"></select>
+          <select id="monthly-month" class="form-select" style="width:100px;">
+            <option value="1">1月</option>
+            <option value="2">2月</option>
+            <option value="3">3月</option>
+            <option value="4">4月</option>
+            <option value="5">5月</option>
+            <option value="6">6月</option>
+            <option value="7">7月</option>
+            <option value="8">8月</option>
+            <option value="9">9月</option>
+            <option value="10">10月</option>
+            <option value="11">11月</option>
+            <option value="12">12月</option>
+          </select>
+          <button id="monthly-load" class="btn primary" style="margin-left:12px;">載入報表</button>
+        </div>
+
+        <!-- Section 1: 收款报表 -->
+        <div class="card" style="margin-bottom:24px;">
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">📊 月度收款報表</h3>
+          
+          <div class="stats-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+            <div class="stat-item">
+              <div class="stat-label">本月應收金額</div>
+              <div class="stat-value" id="m-rev-receivable">—</div>
             </div>
-            <div class="filter-group">
-              <label for="cc-month">月份</label>
-              <select id="cc-month" class="form-select">
-                <option value="">全年</option>
-                <option value="1">1月</option>
-                <option value="2">2月</option>
-                <option value="3">3月</option>
-                <option value="4">4月</option>
-                <option value="5">5月</option>
-                <option value="6">6月</option>
-                <option value="7">7月</option>
-                <option value="8">8月</option>
-                <option value="9">9月</option>
-                <option value="10">10月</option>
-                <option value="11">11月</option>
-                <option value="12">12月</option>
-              </select>
+            <div class="stat-item">
+              <div class="stat-label">本月實收金額</div>
+              <div class="stat-value" id="m-rev-received">—</div>
             </div>
-            <div class="filter-group">
-              <label for="cc-client">客戶</label>
-              <select id="cc-client" class="form-select">
-                <option value="">全部客戶</option>
-              </select>
+            <div class="stat-item">
+              <div class="stat-label">本月收款率</div>
+              <div class="stat-value" id="m-rev-rate">—</div>
             </div>
-            <div class="filter-group filter-actions">
-              <button id="cc-query" class="btn primary" type="button" style="background:#0ea5e9;border-color:#0ea5e9;color:#fff;">查詢</button>
-              <button id="cc-reset" class="btn" type="button" style="background:#fff;border:1px solid #e5e7eb;color:#334155;">重置</button>
+            <div class="stat-item">
+              <div class="stat-label">逾期未收</div>
+              <div class="stat-value" id="m-rev-overdue" style="color:#dc2626;">—</div>
             </div>
+          </div>
+
+          <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">按客戶明細</h4>
+          <div class="report-table-wrapper">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>客戶名稱</th>
+                  <th>服務類型</th>
+                  <th class="text-right">應收金額</th>
+                  <th class="text-right">實收金額</th>
+                  <th class="text-right">未收金額</th>
+                  <th class="text-right">收款率</th>
+                  <th>逾期</th>
+                </tr>
+              </thead>
+              <tbody id="m-rev-details">
+                <tr><td colspan="7" class="muted">請選擇月份後載入資料</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div class="card">
-          <h3 class="card-title">客戶成本分析</h3>
-          <div class="stats-row">
+        <!-- Section 2: 薪资报表 -->
+        <div class="card" style="margin-bottom:24px;">
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">💰 月度薪資報表</h3>
+          
+          <div class="stats-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:20px;">
             <div class="stat-item">
-              <div class="stat-label">總成本</div>
-              <div class="stat-value" id="cc-total-cost">—</div>
+              <div class="stat-label">總應發</div>
+              <div class="stat-value" id="m-pay-gross">—</div>
             </div>
             <div class="stat-item">
-              <div class="stat-label">管理成本狀態</div>
-              <div class="stat-value" id="cc-overhead-status">—</div>
-              <div class="stat-sub" style="font-size:11px;color:#64748b;margin-top:4px;">需在「成本」頁面輸入管理成本</div>
+              <div class="stat-label">總實發</div>
+              <div class="stat-value" id="m-pay-net">—</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">人數</div>
+              <div class="stat-value" id="m-pay-count">—</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">平均應發</div>
+              <div class="stat-value" id="m-pay-avg-gross">—</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">平均實發</div>
+              <div class="stat-value" id="m-pay-avg-net">—</div>
             </div>
           </div>
 
-          <div class="report-table-wrapper">
-            <table class="report-table" aria-label="客戶成本明細">
+          <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">薪資明細</h4>
+          <div class="report-table-wrapper" style="overflow-x:auto;">
+            <table class="report-table" style="font-size:12px;">
               <thead>
                 <tr>
-                  <th>客戶</th>
-                  <th class="text-right">實際工時</th>
+                  <th>姓名</th>
+                  <th class="text-right">底薪</th>
+                  <th class="text-right">津貼</th>
+                  <th class="text-right">獎金</th>
+                  <th class="text-right">全勤</th>
+                  <th class="text-right">加班費</th>
+                  <th class="text-right">伙食</th>
+                  <th class="text-right">交通</th>
+                  <th class="text-right">績效</th>
+                  <th class="text-right">年終</th>
+                  <th class="text-right">扣款</th>
+                  <th class="text-right" style="background:#f0f9ff;font-weight:600;">應發</th>
+                  <th class="text-right" style="background:#dbeafe;font-weight:600;">實發</th>
+                </tr>
+              </thead>
+              <tbody id="m-pay-details">
+                <tr><td colspan="13" class="muted">請選擇月份後載入資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">薪資構成分析</h4>
+          <div class="report-table-wrapper">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>項目</th>
+                  <th class="text-right">金額</th>
+                  <th class="text-right">占比（應發）</th>
+                </tr>
+              </thead>
+              <tbody id="m-pay-composition">
+                <tr><td colspan="3" class="muted">請選擇月份後載入資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 3: 员工产值报表 -->
+        <div class="card" style="margin-bottom:24px;">
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">👥 月度員工產值分析</h3>
+          
+          <div class="report-table-wrapper" style="overflow-x:auto;">
+            <table class="report-table" style="font-size:12px;">
+              <thead>
+                <tr>
+                  <th>姓名</th>
+                  <th class="text-right">標準工時</th>
                   <th class="text-right">加權工時</th>
+                  <th class="text-right">工時差異</th>
+                  <th class="text-right">產生收入</th>
                   <th class="text-right">薪資成本</th>
-                  <th class="text-right">管理成本</th>
-                  <th class="text-right">年終分攤</th>
                   <th class="text-right">總成本</th>
-                  <th class="text-right">收據金額</th>
+                  <th class="text-right">毛利</th>
+                  <th class="text-right">毛利率</th>
+                  <th class="text-right">時薪</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="m-emp-performance">
+                <tr><td colspan="11" class="muted">請選擇月份後載入資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 4: 客户毛利报表 -->
+        <div class="card" style="margin-bottom:24px;">
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">💼 月度客戶毛利分析</h3>
+          
+          <div class="report-table-wrapper">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>客戶名稱</th>
+                  <th class="text-right">總工時</th>
+                  <th class="text-right">加權工時</th>
+                  <th class="text-right">平均時薪</th>
+                  <th class="text-right">總成本</th>
+                  <th class="text-right">本月收入</th>
                   <th class="text-right">毛利</th>
                   <th class="text-right">毛利率</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr><td colspan="10" class="muted">尚無資料</td></tr>
+              <tbody id="m-client-profit">
+                <tr><td colspan="8" class="muted">請選擇月份後載入資料</td></tr>
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- 年度报表 -->
+      <!-- ========================================== -->
+      <section id="panel-annual" class="reports-section panel" role="tabpanel">
+        <div class="report-filters" style="margin-bottom:24px;display:flex;gap:12px;align-items:center;">
+          <label for="annual-year" style="font-weight:600;">選擇年度：</label>
+          <select id="annual-year" class="form-select" style="width:120px;"></select>
+          <button id="annual-load" class="btn primary" style="margin-left:12px;">載入報表</button>
+          <span id="annual-loading" style="margin-left:12px;color:#64748b;display:none;">
+            ⏳ 載入中，請稍候...（年度報表需要較長時間）
+          </span>
+        </div>
+
+        <!-- Section 1: 年度收款报表 -->
+        <div class="card" style="margin-bottom:24px;">
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">📊 年度收款報表</h3>
           
-          <div style="margin-top:20px;padding:15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
-            <div style="font-weight:700;margin-bottom:10px;color:#334155;">計算說明</div>
-            <div style="font-size:13px;color:#64748b;line-height:1.8;">
-              <strong style="color:#0ea5e9;">實際工時：</strong>員工在該客戶任務上的總工時<br>
-              <strong style="color:#0ea5e9;">加權工時：</strong>實際工時 × 工時類型倍率（平日1.0、平日加班1.34、休息日1.67、國定假日2.67等）<br>
-              <strong style="color:#0ea5e9;">薪資成本：</strong>加權工時 × (員工底薪 / 240)<br>
-              <strong style="color:#0ea5e9;">管理成本：</strong>加權工時 × 管理成本時薪率（總管理成本 / 全公司總加權工時）<br>
-              <strong style="color:#0ea5e9;">總成本：</strong>薪資成本 + 管理成本<br>
-              <strong style="color:#0ea5e9;">毛利：</strong>收據金額 - 總成本<br>
-              <strong style="color:#0ea5e9;">毛利率：</strong>(毛利 / 收據金額) × 100%
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 員工工時分析（管理員；員工看到精簡版「我的工時」） -->
-      <section id="panel-employee-hours" class="reports-section panel show" role="tabpanel" aria-labelledby="tab-employee-hours">
-        <div class="report-filters" aria-label="員工工時分析篩選">
-          <div class="filter-row">
-            <div class="filter-group">
-              <label for="eh-year">年度</label>
-              <select id="eh-year" class="form-select"></select>
-            </div>
-            <div class="filter-group">
-              <label for="eh-month">月份</label>
-              <select id="eh-month" class="form-select">
-                <option value="1">1月</option>
-                <option value="2">2月</option>
-                <option value="3">3月</option>
-                <option value="4">4月</option>
-                <option value="5">5月</option>
-                <option value="6">6月</option>
-                <option value="7">7月</option>
-                <option value="8">8月</option>
-                <option value="9">9月</option>
-                <option value="10">10月</option>
-                <option value="11">11月</option>
-                <option value="12">12月</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label for="eh-employee">員工</label>
-              <select id="eh-employee" class="form-select">
-                <option value="">全部員工</option>
-              </select>
-            </div>
-            <div class="filter-group filter-actions">
-              <button id="eh-query" class="btn primary" type="button" style="background:#0ea5e9;border-color:#0ea5e9;color:#fff;">查詢</button>
-              <button id="eh-reset" class="btn" type="button" style="background:#fff;border:1px solid #e5e7eb;color:#334155;">重置</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 class="card-title">員工工時分析</h3>
-          <div class="stats-row">
+          <div class="stats-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
             <div class="stat-item">
-              <div class="stat-label">總工時</div>
-              <div class="stat-value" id="eh-total-hours">—</div>
+              <div class="stat-label">全年應收金額</div>
+              <div class="stat-value" id="a-rev-receivable">—</div>
             </div>
             <div class="stat-item">
-              <div class="stat-label">使用率</div>
-              <div class="stat-value" id="eh-utilization">—</div>
-              <div class="stat-sub" style="font-size:12px;color:#64748b;margin-top:4px;">可計費工時 / (工作天數 × 8)</div>
+              <div class="stat-label">全年實收金額</div>
+              <div class="stat-value" id="a-rev-received">—</div>
             </div>
-          </div>
-
-          <div class="chart-container">
-            <div class="chart-title">客戶工時分布</div>
-            <div class="chart-wrapper">
-              <canvas id="eh-client-dist-chart"></canvas>
-            </div>
-          </div>
-
-          <div class="employee-hours-list" aria-label="員工工時一覽">
-            <div class="muted" style="padding:10px;">載入中...</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 薪資報表（管理員） -->
-      <section id="panel-payroll" class="reports-section panel" role="tabpanel" aria-labelledby="tab-payroll">
-        <div class="report-filters" aria-label="薪資報表篩選">
-          <div class="filter-row">
-            <div class="filter-group">
-              <label for="pr-year">年度</label>
-              <select id="pr-year" class="form-select"></select>
-            </div>
-            <div class="filter-group">
-              <label for="pr-month">月份</label>
-              <select id="pr-month" class="form-select">
-                <option value="1">1月</option>
-                <option value="2">2月</option>
-                <option value="3">3月</option>
-                <option value="4">4月</option>
-                <option value="5">5月</option>
-                <option value="6">6月</option>
-                <option value="7">7月</option>
-                <option value="8">8月</option>
-                <option value="9">9月</option>
-                <option value="10">10月</option>
-                <option value="11">11月</option>
-                <option value="12">12月</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label for="pr-employee">員工</label>
-              <select id="pr-employee" class="form-select">
-                <option value="">全部員工</option>
-              </select>
-            </div>
-            <div class="filter-group filter-actions">
-              <button id="pr-query" class="btn primary" type="button" style="background:#0ea5e9;border-color:#0ea5e9;color:#fff;">查詢</button>
-              <button id="pr-reset" class="btn" type="button" style="background:#fff;border:1px solid #e5e7eb;color:#334155;">重置</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3 class="card-title">薪資報表</h3>
-          <div class="stats-row">
             <div class="stat-item">
-              <div class="stat-label">總薪資</div>
-              <div class="stat-value" id="pr-total-salary">—</div>
+              <div class="stat-label">全年收款率</div>
+              <div class="stat-value" id="a-rev-rate">—</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">年度逾期未收</div>
+              <div class="stat-value" id="a-rev-overdue" style="color:#dc2626;">—</div>
             </div>
           </div>
 
+          <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">月度收款趨勢</h4>
           <div class="report-table-wrapper">
-            <table class="report-table" aria-label="薪資明細">
+            <table class="report-table">
               <thead>
                 <tr>
-                  <th>員工</th>
-                  <th class="text-right">底薪</th>
-                  <th class="text-right">津貼</th>
-                  <th class="text-right">獎金</th>
-                  <th class="text-right">加班費</th>
-                  <th class="text-right">交通補貼</th>
-                  <th class="text-right">誤餐費</th>
-                  <th class="text-right">應發</th>
-                  <th class="text-right">淨發</th>
-                  <th>全勤</th>
+                  <th>月份</th>
+                  <th class="text-right">應收金額</th>
+                  <th class="text-right">實收金額</th>
+                  <th class="text-right">收款率</th>
+                  <th class="text-right">逾期金額</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr><td colspan="10" class="muted">尚無資料</td></tr>
+              <tbody id="a-rev-trend">
+                <tr><td colspan="5" class="muted">請選擇年度後載入資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">按客戶年度彙總</h4>
+          <div class="report-table-wrapper">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>客戶名稱</th>
+                  <th class="text-right">全年應收</th>
+                  <th class="text-right">全年實收</th>
+                  <th class="text-right">收款率</th>
+                  <th class="text-right">未收金額</th>
+                  <th class="text-right">月均收入</th>
+                </tr>
+              </thead>
+              <tbody id="a-rev-client">
+                <tr><td colspan="6" class="muted">請選擇年度後載入資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">按服務類型年度彙總</h4>
+          <div class="report-table-wrapper">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>服務類型</th>
+                  <th class="text-right">全年應收</th>
+                  <th class="text-right">全年實收</th>
+                  <th class="text-right">收款率</th>
+                  <th class="text-right">未收金額</th>
+                </tr>
+              </thead>
+              <tbody id="a-rev-service">
+                <tr><td colspan="5" class="muted">請選擇年度後載入資料</td></tr>
               </tbody>
             </table>
           </div>
         </div>
-      </section>
 
-      <!-- 收款分析（管理員） -->
-      <section id="panel-receivables" class="reports-section panel" role="tabpanel" aria-labelledby="tab-receivables">
-        <div class="report-filters" aria-label="收款分析篩選">
-          <div class="filter-row">
-            <div class="filter-group">
-              <label for="rc-year">年度</label>
-              <select id="rc-year" class="form-select"></select>
+        <!-- Section 2: 年度薪资报表 -->
+        <div class="card" style="margin-bottom:24px;">
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">💰 年度薪資報表</h3>
+          
+          <div class="stats-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+            <div class="stat-item">
+              <div class="stat-label">全年總應發</div>
+              <div class="stat-value" id="a-pay-gross">—</div>
             </div>
-            <div class="filter-group">
-              <label for="rc-month">月份</label>
-              <select id="rc-month" class="form-select">
-                <option value="">全年</option>
-                <option value="1">1月</option>
-                <option value="2">2月</option>
-                <option value="3">3月</option>
-                <option value="4">4月</option>
-                <option value="5">5月</option>
-                <option value="6">6月</option>
-                <option value="7">7月</option>
-                <option value="8">8月</option>
-                <option value="9">9月</option>
-                <option value="10">10月</option>
-                <option value="11">11月</option>
-                <option value="12">12月</option>
-              </select>
+            <div class="stat-item">
+              <div class="stat-label">全年總實發</div>
+              <div class="stat-value" id="a-pay-net">—</div>
             </div>
-            <div class="filter-group filter-actions">
-              <button id="rc-query" class="btn primary" type="button" style="background:#0ea5e9;border-color:#0ea5e9;color:#fff;">查詢</button>
-              <button id="rc-reset" class="btn" type="button" style="background:#fff;border:1px solid #e5e7eb;color:#334155;">重置</button>
-              <a href="/internal/receivables-report" class="btn" style="text-decoration:none;background:#fff;border:1px solid #e5e7eb;color:#334155;">帳齡分析</a>
+            <div class="stat-item">
+              <div class="stat-label">月均應發</div>
+              <div class="stat-value" id="a-pay-avg">—</div>
             </div>
+            <div class="stat-item">
+              <div class="stat-label">平均人數</div>
+              <div class="stat-value" id="a-pay-count">—</div>
+            </div>
+          </div>
+
+          <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">月度薪資趨勢</h4>
+          <div class="report-table-wrapper">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>月份</th>
+                  <th class="text-right">總應發</th>
+                  <th class="text-right">總實發</th>
+                  <th class="text-right">人數</th>
+                  <th class="text-right">平均應發</th>
+                </tr>
+              </thead>
+              <tbody id="a-pay-trend">
+                <tr><td colspan="5" class="muted">請選擇年度後載入資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">按員工年度彙總</h4>
+          <div class="report-table-wrapper" style="overflow-x:auto;">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>姓名</th>
+                  <th class="text-right">全年應發</th>
+                  <th class="text-right">全年實發</th>
+                  <th class="text-right">月均應發</th>
+                  <th class="text-right">加班費總計</th>
+                  <th class="text-right">績效總計</th>
+                  <th class="text-right">年終獎</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="a-pay-employee">
+                <tr><td colspan="8" class="muted">請選擇年度後載入資料</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div class="card">
-          <h3 class="card-title">收款分析</h3>
-          <div class="stats-row">
-            <div class="stat-item">
-              <div class="stat-label">總開立</div>
-              <div class="stat-value" id="rc-total-receipts">—</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">已收</div>
-              <div class="stat-value" id="rc-total-paid">—</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">應收</div>
-              <div class="stat-value" id="rc-total-outstanding">—</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-label">收款率</div>
-              <div class="stat-value" id="rc-collection-rate">—</div>
-            </div>
-          </div>
-
-          <div class="chart-container">
-            <div class="chart-title">月度趨勢：開立 vs 收款</div>
-            <div class="chart-wrapper">
-              <canvas id="rc-trend-chart"></canvas>
-            </div>
-          </div>
-
-          <div class="report-table-wrapper">
-            <table class="report-table" aria-label="客戶收款明細">
+        <!-- Section 3: 年度员工产值报表 -->
+        <div class="card" style="margin-bottom:24px;">
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">👥 年度員工產值分析</h3>
+          
+          <div class="report-table-wrapper" style="overflow-x:auto;">
+            <table class="report-table" style="font-size:12px;">
               <thead>
                 <tr>
-                  <th>客戶</th>
-                  <th class="text-right">開立</th>
-                  <th class="text-right">已收</th>
-                  <th class="text-right">應收</th>
+                  <th>姓名</th>
+                  <th class="text-right">全年標準工時</th>
+                  <th class="text-right">全年加權工時</th>
+                  <th class="text-right">工時差異</th>
+                  <th class="text-right">產生收入</th>
+                  <th class="text-right">年度成本</th>
+                  <th class="text-right">年度毛利</th>
+                  <th class="text-right">毛利率</th>
+                  <th class="text-right">年均時薪</th>
+                  <th>操作</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr><td colspan="4" class="muted">尚無資料</td></tr>
+              <tbody id="a-emp-performance">
+                <tr><td colspan="10" class="muted">請選擇年度後載入資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 4: 年度客户毛利报表 -->
+        <div class="card" style="margin-bottom:24px;">
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">💼 年度客戶毛利分析</h3>
+          
+          <h4 style="font-size:14px;font-weight:600;margin:0 0 12px 0;color:#64748b;">按客戶年度彙總</h4>
+          <div class="report-table-wrapper">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>客戶名稱</th>
+                  <th class="text-right">全年工時</th>
+                  <th class="text-right">加權工時</th>
+                  <th class="text-right">總成本</th>
+                  <th class="text-right">全年收入</th>
+                  <th class="text-right">毛利</th>
+                  <th class="text-right">毛利率</th>
+                  <th class="text-right">月均收入</th>
+                </tr>
+              </thead>
+              <tbody id="a-client-profit">
+                <tr><td colspan="8" class="muted">請選擇年度後載入資料</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">按服務類型年度彙總</h4>
+          <div class="report-table-wrapper">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>服務類型</th>
+                  <th class="text-right">全年工時</th>
+                  <th class="text-right">加權工時</th>
+                </tr>
+              </thead>
+              <tbody id="a-client-service">
+                <tr><td colspan="3" class="muted">請選擇年度後載入資料</td></tr>
               </tbody>
             </table>
           </div>
@@ -331,629 +442,597 @@
     </main>
 
     <script>
-      (function(){
+      (function() {
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
         const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
 
-        const permBar = document.getElementById('permBar');
-        const tabs = Array.from(document.querySelectorAll('.reports-tabs .tab'));
+        const tabs = document.querySelectorAll('.reports-tabs .tab');
         const panels = {
-          'client-cost': document.getElementById('panel-client-cost'),
-          'employee-hours': document.getElementById('panel-employee-hours'),
-          'payroll': document.getElementById('panel-payroll'),
-          'receivables': document.getElementById('panel-receivables'),
+          monthly: document.getElementById('panel-monthly'),
+          annual: document.getElementById('panel-annual')
         };
 
-        // Chart instances
-        let ehClientDistChart = null;
-        let rcTrendChart = null;
+        let currentTab = 'monthly';
 
-        // Helper function to destroy chart if exists
-        function destroyChart(chartInstance) {
-          if (chartInstance) {
-            chartInstance.destroy();
-          }
-          return null;
-        }
-
-        // Generate colors for charts
-        function generateColors(count) {
-          const colors = [
-            '#2c5f7c', '#3498db', '#27ae60', '#f39c12', '#e74c3c', 
-            '#9b59b6', '#1abc9c', '#34495e', '#16a085', '#c0392b',
-            '#8e44ad', '#2980b9', '#d35400', '#c0392b', '#7f8c8d'
-          ];
-          return Array.from({length: count}, (_, i) => colors[i % colors.length]);
-        }
-
+        // Tab 切换
         tabs.forEach(btn => {
-          btn.addEventListener('click', ()=>{
-            tabs.forEach(b => {
-              b.classList.remove('active');
-              b.setAttribute('aria-selected', 'false');
+          btn.addEventListener('click', () => {
+            const targetTab = btn.getAttribute('data-tab');
+            currentTab = targetTab;
+            
+            tabs.forEach(t => {
+              t.classList.remove('active');
+              t.setAttribute('aria-selected', 'false');
             });
             btn.classList.add('active');
             btn.setAttribute('aria-selected', 'true');
-            const key = btn.getAttribute('data-tab');
-            Object.entries(panels).forEach(([k,el])=>{
-              if (!el) return;
-              if (k === key) el.classList.add('show'); else el.classList.remove('show');
+
+            Object.entries(panels).forEach(([key, panel]) => {
+              if (key === targetTab) {
+                panel.classList.add('show');
+              } else {
+                panel.classList.remove('show');
+              }
             });
           });
         });
 
-        function validateDateRange(fromEl, toEl){
-          const a = fromEl.value, b = toEl.value;
-          if (!a || !b) return false;
-          try { return new Date(a) <= new Date(b); } catch(_) { return false; }
-        }
-
-        function initializeYearSelects() {
+        // 初始化年份选择器
+        function initYearSelectors() {
           const currentYear = new Date().getFullYear();
-          const years = [];
-          for (let y = currentYear; y >= currentYear - 5; y--) {
-            years.push(y);
-          }
+          const monthlyYearSelect = document.getElementById('monthly-year');
+          const annualYearSelect = document.getElementById('annual-year');
           
-          ['cc-year', 'eh-year', 'pr-year', 'rc-year'].forEach(id => {
-            const select = document.getElementById(id);
-            if (select) {
-              select.innerHTML = years.map(y => `<option value="${y}">${y}年</option>`).join('');
-              select.value = currentYear;
-            }
-          });
+          for (let year = currentYear; year >= 2020; year--) {
+            const option1 = document.createElement('option');
+            option1.value = year;
+            option1.textContent = `${year}年`;
+            monthlyYearSelect.appendChild(option1);
+
+            const option2 = document.createElement('option');
+            option2.value = year;
+            option2.textContent = `${year}年`;
+            annualYearSelect.appendChild(option2);
+          }
+
+          // 设置默认为当前年月
+          const currentMonth = new Date().getMonth() + 1;
+          document.getElementById('monthly-month').value = currentMonth;
         }
 
-        async function loadClientsList() {
+        // 格式化金额
+        function formatCurrency(val) {
+          const num = Number(val || 0);
+          return 'NT$ ' + num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        // 格式化百分比
+        function formatPercent(val) {
+          return Number(val || 0).toFixed(2) + '%';
+        }
+
+        // ============================================================
+        // 月度报表加载
+        // ============================================================
+        async function loadMonthlyReports() {
+          const year = document.getElementById('monthly-year').value;
+          const month = document.getElementById('monthly-month').value;
+
+          if (!year || !month) {
+            alert('請選擇年份和月份');
+            return;
+          }
+
           try {
-            const res = await fetch(`${apiBase}/clients`, { credentials: 'include' });
-            if (!res.ok) return;
-            const json = await res.json();
-            const clients = (json.data || []).filter(c => c && c.client_id && c.company_name);
-            const select = document.getElementById('cc-client');
-            if (select) {
-              select.innerHTML = '<option value="">全部客戶</option>' + 
-                clients.map(c => `<option value="${c.client_id}">${c.company_name || c.client_id}</option>`).join('');
-            }
-          } catch (e) {
-            console.error('Failed to load clients:', e);
+            await Promise.all([
+              loadMonthlyRevenue(year, month),
+              loadMonthlyPayroll(year, month),
+              loadMonthlyEmployeePerformance(year, month),
+              loadMonthlyClientProfitability(year, month)
+            ]);
+          } catch (err) {
+            console.error('載入月度報表失敗:', err);
+            alert('載入報表失敗：' + err.message);
           }
         }
 
-        async function loadEmployeesList() {
+        async function loadMonthlyRevenue(year, month) {
+          const res = await fetch(`${apiBase}/reports/monthly/revenue?year=${year}&month=${month}`, {
+            credentials: 'include'
+          });
+          const json = await res.json();
+
+          if (!res.ok || !json.ok) {
+            throw new Error(json.message || '載入收款報表失敗');
+          }
+
+          const data = json.data;
+          document.getElementById('m-rev-receivable').textContent = formatCurrency(data.summary.totalReceivable);
+          document.getElementById('m-rev-received').textContent = formatCurrency(data.summary.totalReceived);
+          document.getElementById('m-rev-rate').textContent = formatPercent(data.summary.collectionRate);
+          document.getElementById('m-rev-overdue').textContent = formatCurrency(data.summary.overdueAmount);
+
+          const tbody = document.getElementById('m-rev-details');
+          if (data.clientDetails.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="muted">本月無收款記錄</td></tr>';
+          } else {
+            tbody.innerHTML = data.clientDetails.map(r => `
+              <tr>
+                <td>${r.clientName}</td>
+                <td>${r.serviceName}</td>
+                <td class="text-right">${formatCurrency(r.totalAmount)}</td>
+                <td class="text-right">${formatCurrency(r.paidAmount)}</td>
+                <td class="text-right">${formatCurrency(r.unpaidAmount)}</td>
+                <td class="text-right">${formatPercent(r.collectionRate)}</td>
+                <td>${r.isOverdue ? '<span style="color:#dc2626;">是</span>' : '否'}</td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        async function loadMonthlyPayroll(year, month) {
+          const res = await fetch(`${apiBase}/reports/monthly/payroll?year=${year}&month=${month}`, {
+            credentials: 'include'
+          });
+          const json = await res.json();
+
+          if (!res.ok || !json.ok) {
+            throw new Error(json.message || '載入薪資報表失敗');
+          }
+
+          const data = json.data;
+          document.getElementById('m-pay-gross').textContent = formatCurrency(data.summary.totalGrossSalary);
+          document.getElementById('m-pay-net').textContent = formatCurrency(data.summary.totalNetSalary);
+          document.getElementById('m-pay-count').textContent = data.summary.employeeCount;
+          document.getElementById('m-pay-avg-gross').textContent = formatCurrency(data.summary.avgGrossSalary);
+          document.getElementById('m-pay-avg-net').textContent = formatCurrency(data.summary.avgNetSalary);
+
+          const tbody = document.getElementById('m-pay-details');
+          if (data.payrollDetails.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="13" class="muted">本月無薪資記錄</td></tr>';
+          } else {
+            tbody.innerHTML = data.payrollDetails.map(p => `
+              <tr>
+                <td>${p.name}</td>
+                <td class="text-right">${formatCurrency(p.baseSalary)}</td>
+                <td class="text-right">${formatCurrency(p.regularAllowance + p.irregularAllowance)}</td>
+                <td class="text-right">${formatCurrency(p.bonusAmount)}</td>
+                <td class="text-right">${formatCurrency(p.fullAttendanceBonus)}</td>
+                <td class="text-right">${formatCurrency(p.overtimePay)}</td>
+                <td class="text-right">${formatCurrency(p.mealAllowance)}</td>
+                <td class="text-right">${formatCurrency(p.transportSubsidy)}</td>
+                <td class="text-right">${formatCurrency(p.performanceBonus)}</td>
+                <td class="text-right">${formatCurrency(p.yearEndBonus)}</td>
+                <td class="text-right">${formatCurrency(-(p.fixedDeduction + p.leaveDeduction))}</td>
+                <td class="text-right" style="background:#f0f9ff;font-weight:600;">${formatCurrency(p.grossSalary)}</td>
+                <td class="text-right" style="background:#dbeafe;font-weight:600;">${formatCurrency(p.netSalary)}</td>
+              </tr>
+            `).join('');
+          }
+
+          // 薪资构成分析
+          const comp = data.composition;
+          const total = data.summary.totalGrossSalary;
+          const items = [
+            { label: '底薪', value: comp.baseSalary },
+            { label: '津貼', value: comp.regularAllowance + comp.irregularAllowance },
+            { label: '獎金', value: comp.bonusAmount },
+            { label: '全勤獎金', value: comp.fullAttendanceBonus },
+            { label: '加班費', value: comp.overtimePay },
+            { label: '伙食津貼', value: comp.mealAllowance },
+            { label: '交通補貼', value: comp.transportSubsidy },
+            { label: '績效獎金', value: comp.performanceBonus },
+            { label: '年終獎金', value: comp.yearEndBonus },
+            { label: '扣款合計', value: -(comp.fixedDeduction + comp.leaveDeduction) }
+          ];
+
+          const compTbody = document.getElementById('m-pay-composition');
+          compTbody.innerHTML = items.map(item => `
+            <tr>
+              <td>${item.label}</td>
+              <td class="text-right">${formatCurrency(item.value)}</td>
+              <td class="text-right">${total > 0 ? formatPercent(item.value / total * 100) : '0%'}</td>
+            </tr>
+          `).join('');
+        }
+
+        async function loadMonthlyEmployeePerformance(year, month) {
+          const res = await fetch(`${apiBase}/reports/monthly/employee-performance?year=${year}&month=${month}`, {
+            credentials: 'include'
+          });
+          const json = await res.json();
+
+          if (!res.ok || !json.ok) {
+            throw new Error(json.message || '載入員工產值報表失敗');
+          }
+
+          const data = json.data;
+          const tbody = document.getElementById('m-emp-performance');
+          
+          if (data.employeePerformance.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" class="muted">本月無工時記錄</td></tr>';
+          } else {
+            tbody.innerHTML = data.employeePerformance.map(e => `
+              <tr>
+                <td>${e.name}</td>
+                <td class="text-right">${e.standardHours.toFixed(1)}h</td>
+                <td class="text-right">${e.weightedHours.toFixed(1)}h</td>
+                <td class="text-right" style="color:${e.hoursDifference >= 0 ? '#dc2626' : '#16a34a'};">${e.hoursDifference >= 0 ? '+' : ''}${e.hoursDifference.toFixed(1)}h</td>
+                <td class="text-right">${formatCurrency(e.generatedRevenue)}</td>
+                <td class="text-right">${formatCurrency(e.laborCost)}</td>
+                <td class="text-right">${formatCurrency(e.totalCost)}</td>
+                <td class="text-right" style="color:${e.profit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(e.profit)}</td>
+                <td class="text-right">${formatPercent(e.profitMargin)}</td>
+                <td class="text-right">${formatCurrency(e.hourlyRate)}</td>
+                <td><button class="btn-link" onclick="showClientDistribution(${e.userId}, '${e.name}', ${JSON.stringify(e.clientDistribution).replace(/"/g, '&quot;')})">查看客戶分布</button></td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        async function loadMonthlyClientProfitability(year, month) {
+          const res = await fetch(`${apiBase}/reports/monthly/client-profitability?year=${year}&month=${month}`, {
+            credentials: 'include'
+          });
+          const json = await res.json();
+
+          if (!res.ok || !json.ok) {
+            throw new Error(json.message || '載入客戶毛利報表失敗');
+          }
+
+          const data = json.data;
+          const tbody = document.getElementById('m-client-profit');
+          
+          if (data.clients.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="muted">本月無客戶成本記錄</td></tr>';
+          } else {
+            tbody.innerHTML = data.clients.map(c => `
+              <tr>
+                <td>${c.clientName}</td>
+                <td class="text-right">${c.totalHours.toFixed(1)}h</td>
+                <td class="text-right">${c.weightedHours.toFixed(1)}h</td>
+                <td class="text-right">${formatCurrency(c.avgHourlyRate)}</td>
+                <td class="text-right">${formatCurrency(c.totalCost)}</td>
+                <td class="text-right">${formatCurrency(c.revenue)}</td>
+                <td class="text-right" style="color:${c.profit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(c.profit)}</td>
+                <td class="text-right">${formatPercent(c.profitMargin)}</td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        // ============================================================
+        // 年度报表加载
+        // ============================================================
+        async function loadAnnualReports() {
+          const year = document.getElementById('annual-year').value;
+
+          if (!year) {
+            alert('請選擇年度');
+            return;
+          }
+
+          const loadingIndicator = document.getElementById('annual-loading');
+          loadingIndicator.style.display = 'inline';
+
           try {
-            const res = await fetch(`${apiBase}/settings/users`, { credentials: 'include' });
-            console.log('[員工列表] API回應狀態:', res.status);
-            if (!res.ok) {
-              console.error('[員工列表] API請求失敗');
+            await Promise.all([
+              loadAnnualRevenue(year),
+              loadAnnualPayroll(year),
+              loadAnnualEmployeePerformance(year),
+              loadAnnualClientProfitability(year)
+            ]);
+          } catch (err) {
+            console.error('載入年度報表失敗:', err);
+            alert('載入報表失敗：' + err.message);
+          } finally {
+            loadingIndicator.style.display = 'none';
+          }
+        }
+
+        async function loadAnnualRevenue(year) {
+          const res = await fetch(`${apiBase}/reports/annual/revenue?year=${year}`, {
+            credentials: 'include'
+          });
+          const json = await res.json();
+
+          if (!res.ok || !json.ok) {
+            throw new Error(json.message || '載入年度收款報表失敗');
+          }
+
+          const data = json.data;
+          document.getElementById('a-rev-receivable').textContent = formatCurrency(data.summary.totalReceivable);
+          document.getElementById('a-rev-received').textContent = formatCurrency(data.summary.totalReceived);
+          document.getElementById('a-rev-rate').textContent = formatPercent(data.summary.collectionRate);
+          document.getElementById('a-rev-overdue').textContent = formatCurrency(data.summary.overdueAmount);
+
+          // 月度趋势
+          const trendTbody = document.getElementById('a-rev-trend');
+          if (data.monthlyTrend.length === 0) {
+            trendTbody.innerHTML = '<tr><td colspan="5" class="muted">本年無收款記錄</td></tr>';
+          } else {
+            trendTbody.innerHTML = data.monthlyTrend.map(m => `
+              <tr>
+                <td>${m.month}月</td>
+                <td class="text-right">${formatCurrency(m.totalReceivable)}</td>
+                <td class="text-right">${formatCurrency(m.totalReceived)}</td>
+                <td class="text-right">${formatPercent(m.collectionRate)}</td>
+                <td class="text-right">${formatCurrency(m.overdueAmount)}</td>
+              </tr>
+            `).join('');
+          }
+
+          // 按客户汇总
+          const clientTbody = document.getElementById('a-rev-client');
+          if (data.clientSummary.length === 0) {
+            clientTbody.innerHTML = '<tr><td colspan="6" class="muted">本年無客戶記錄</td></tr>';
+          } else {
+            clientTbody.innerHTML = data.clientSummary.map(c => `
+              <tr>
+                <td>${c.clientName}</td>
+                <td class="text-right">${formatCurrency(c.totalReceivable)}</td>
+                <td class="text-right">${formatCurrency(c.totalReceived)}</td>
+                <td class="text-right">${formatPercent(c.collectionRate)}</td>
+                <td class="text-right">${formatCurrency(c.unpaidAmount)}</td>
+                <td class="text-right">${formatCurrency(c.avgMonthlyRevenue)}</td>
+              </tr>
+            `).join('');
+          }
+
+          // 按服务类型汇总
+          const serviceTbody = document.getElementById('a-rev-service');
+          if (data.serviceTypeSummary.length === 0) {
+            serviceTbody.innerHTML = '<tr><td colspan="5" class="muted">本年無服務記錄</td></tr>';
+          } else {
+            serviceTbody.innerHTML = data.serviceTypeSummary.map(s => `
+              <tr>
+                <td>${s.serviceName}</td>
+                <td class="text-right">${formatCurrency(s.totalReceivable)}</td>
+                <td class="text-right">${formatCurrency(s.totalReceived)}</td>
+                <td class="text-right">${formatPercent(s.collectionRate)}</td>
+                <td class="text-right">${formatCurrency(s.unpaidAmount)}</td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        async function loadAnnualPayroll(year) {
+          const res = await fetch(`${apiBase}/reports/annual/payroll?year=${year}`, {
+            credentials: 'include'
+          });
+          const json = await res.json();
+
+          if (!res.ok || !json.ok) {
+            throw new Error(json.message || '載入年度薪資報表失敗');
+          }
+
+          const data = json.data;
+          document.getElementById('a-pay-gross').textContent = formatCurrency(data.summary.annualGrossSalary);
+          document.getElementById('a-pay-net').textContent = formatCurrency(data.summary.annualNetSalary);
+          document.getElementById('a-pay-avg').textContent = formatCurrency(data.summary.avgMonthlySalary);
+          document.getElementById('a-pay-count').textContent = data.summary.avgEmployeeCount;
+
+          // 月度趋势
+          const trendTbody = document.getElementById('a-pay-trend');
+          trendTbody.innerHTML = data.monthlyTrend.map(m => `
+            <tr>
+              <td>${m.month}月</td>
+              <td class="text-right">${formatCurrency(m.totalGrossSalary)}</td>
+              <td class="text-right">${formatCurrency(m.totalNetSalary)}</td>
+              <td class="text-right">${m.employeeCount}</td>
+              <td class="text-right">${formatCurrency(m.avgGrossSalary)}</td>
+            </tr>
+          `).join('');
+
+          // 按员工汇总
+          const empTbody = document.getElementById('a-pay-employee');
+          if (data.employeeSummary.length === 0) {
+            empTbody.innerHTML = '<tr><td colspan="8" class="muted">本年無員工記錄</td></tr>';
+          } else {
+            empTbody.innerHTML = data.employeeSummary.map(e => `
+              <tr>
+                <td>${e.name}</td>
+                <td class="text-right">${formatCurrency(e.annualGrossSalary)}</td>
+                <td class="text-right">${formatCurrency(e.annualNetSalary)}</td>
+                <td class="text-right">${formatCurrency(e.avgMonthlySalary)}</td>
+                <td class="text-right">${formatCurrency(e.totalOvertimePay)}</td>
+                <td class="text-right">${formatCurrency(e.totalPerformanceBonus)}</td>
+                <td class="text-right">${formatCurrency(e.totalYearEndBonus)}</td>
+                <td><button class="btn-link" onclick="alert('查看月度明細功能開發中')">查看明細</button></td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        async function loadAnnualEmployeePerformance(year) {
+          const res = await fetch(`${apiBase}/reports/annual/employee-performance?year=${year}`, {
+            credentials: 'include'
+          });
+          const json = await res.json();
+
+          if (!res.ok || !json.ok) {
+            throw new Error(json.message || '載入年度員工產值報表失敗');
+          }
+
+          const data = json.data;
+          const tbody = document.getElementById('a-emp-performance');
+          
+          if (data.employeeSummary.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="muted">本年無員工工時記錄</td></tr>';
+          } else {
+            tbody.innerHTML = data.employeeSummary.map(e => `
+              <tr>
+                <td>${e.name}</td>
+                <td class="text-right">${e.annualStandardHours.toFixed(1)}h</td>
+                <td class="text-right">${e.annualWeightedHours.toFixed(1)}h</td>
+                <td class="text-right" style="color:${e.hoursDifference >= 0 ? '#dc2626' : '#16a34a'};">${e.hoursDifference >= 0 ? '+' : ''}${e.hoursDifference.toFixed(1)}h</td>
+                <td class="text-right">${formatCurrency(e.annualRevenue)}</td>
+                <td class="text-right">${formatCurrency(e.annualCost)}</td>
+                <td class="text-right" style="color:${e.annualProfit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(e.annualProfit)}</td>
+                <td class="text-right">${formatPercent(e.annualProfitMargin)}</td>
+                <td class="text-right">${formatCurrency(e.avgHourlyRate)}</td>
+                <td>
+                  <button class="btn-link" onclick="alert('查看月度趨勢功能開發中')">趨勢</button>
+                  <button class="btn-link" onclick="showAnnualClientDistribution(${e.userId}, '${e.name}', ${JSON.stringify(e.clientDistribution).replace(/"/g, '&quot;')})">客戶分布</button>
+                </td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        async function loadAnnualClientProfitability(year) {
+          const res = await fetch(`${apiBase}/reports/annual/client-profitability?year=${year}`, {
+            credentials: 'include'
+          });
+          const json = await res.json();
+
+          if (!res.ok || !json.ok) {
+            throw new Error(json.message || '載入年度客戶毛利報表失敗');
+          }
+
+          const data = json.data;
+          const tbody = document.getElementById('a-client-profit');
+          
+          if (data.clientSummary.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="muted">本年無客戶成本記錄</td></tr>';
+          } else {
+            tbody.innerHTML = data.clientSummary.map(c => `
+              <tr>
+                <td>${c.clientName}</td>
+                <td class="text-right">${c.annualHours.toFixed(1)}h</td>
+                <td class="text-right">${c.annualWeightedHours.toFixed(1)}h</td>
+                <td class="text-right">${formatCurrency(c.annualCost)}</td>
+                <td class="text-right">${formatCurrency(c.annualRevenue)}</td>
+                <td class="text-right" style="color:${c.annualProfit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(c.annualProfit)}</td>
+                <td class="text-right">${formatPercent(c.annualProfitMargin)}</td>
+                <td class="text-right">${formatCurrency(c.avgMonthlyRevenue)}</td>
+              </tr>
+            `).join('');
+          }
+
+          // 按服务类型汇总
+          const serviceTbody = document.getElementById('a-client-service');
+          if (data.serviceTypeSummary.length === 0) {
+            serviceTbody.innerHTML = '<tr><td colspan="3" class="muted">本年無服務記錄</td></tr>';
+          } else {
+            serviceTbody.innerHTML = data.serviceTypeSummary.map(s => `
+              <tr>
+                <td>${s.serviceName}</td>
+                <td class="text-right">${s.totalHours.toFixed(1)}h</td>
+                <td class="text-right">${s.weightedHours.toFixed(1)}h</td>
+              </tr>
+            `).join('');
+          }
+        }
+
+        // 显示客户分布弹窗
+        window.showClientDistribution = function(userId, userName, distribution) {
+          if (!distribution || distribution.length === 0) {
+            alert(userName + ' 本月無客戶分布資料');
+            return;
+          }
+
+          const html = `
+            <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
+              <div style="background:#fff;border-radius:12px;padding:24px;max-width:800px;width:90%;max-height:80vh;overflow:auto;">
+                <h3 style="margin:0 0 16px 0;">${userName} - 客戶分布明細</h3>
+                <table class="report-table" style="margin-bottom:16px;">
+                  <thead>
+                    <tr>
+                      <th>客戶名稱</th>
+                      <th>服務類型</th>
+                      <th class="text-right">工時</th>
+                      <th class="text-right">加權工時</th>
+                      <th class="text-right">產生收入</th>
+                      <th class="text-right">占比</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${distribution.map(d => `
+                      <tr>
+                        <td>${d.clientName}</td>
+                        <td>${d.serviceName}</td>
+                        <td class="text-right">${d.hours.toFixed(1)}h</td>
+                        <td class="text-right">${d.weightedHours.toFixed(1)}h</td>
+                        <td class="text-right">${formatCurrency(d.generatedRevenue)}</td>
+                        <td class="text-right">${d.revenuePercentage ? formatPercent(d.revenuePercentage) : '—'}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+                <button class="btn primary" onclick="this.closest('div[style*=fixed]').remove()">關閉</button>
+              </div>
+            </div>
+          `;
+          document.body.insertAdjacentHTML('beforeend', html);
+        };
+
+        window.showAnnualClientDistribution = function(userId, userName, distribution) {
+          if (!distribution || distribution.length === 0) {
+            alert(userName + ' 本年無客戶分布資料');
+            return;
+          }
+
+          const html = `
+            <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
+              <div style="background:#fff;border-radius:12px;padding:24px;max-width:800px;width:90%;max-height:80vh;overflow:auto;">
+                <h3 style="margin:0 0 16px 0;">${userName} - 年度客戶分布</h3>
+                <table class="report-table" style="margin-bottom:16px;">
+                  <thead>
+                    <tr>
+                      <th>客戶名稱</th>
+                      <th>服務類型</th>
+                      <th class="text-right">全年工時</th>
+                      <th class="text-right">產生收入</th>
+                      <th class="text-right">占比</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${distribution.map(d => `
+                      <tr>
+                        <td>${d.clientName}</td>
+                        <td>${d.serviceName}</td>
+                        <td class="text-right">${d.annualHours.toFixed(1)}h</td>
+                        <td class="text-right">${formatCurrency(d.generatedRevenue)}</td>
+                        <td class="text-right">${formatPercent(d.revenuePercentage)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+                <button class="btn primary" onclick="this.closest('div[style*=fixed]').remove()">關閉</button>
+              </div>
+            </div>
+          `;
+          document.body.insertAdjacentHTML('beforeend', html);
+        };
+
+        // 事件监听
+        document.getElementById('monthly-load').addEventListener('click', loadMonthlyReports);
+        document.getElementById('annual-load').addEventListener('click', loadAnnualReports);
+
+        // 权限检查
+        async function checkPermission() {
+          try {
+            const res = await fetch(`${apiBase}/auth/me`, { credentials: 'include' });
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/reports');
               return;
             }
             const json = await res.json();
-            console.log('[員工列表] API回應數據:', json);
-            const users = json.data || [];
-            ['eh-employee', 'pr-employee'].forEach(id => {
-              const select = document.getElementById(id);
-              if (select) {
-                select.innerHTML = '<option value="">全部員工</option>' + 
-                  users.map(u => `<option value="${u.user_id}">${u.name || u.username}</option>`).join('');
-              }
-            });
-            console.log('[員工列表] 載入完成，共', users.length, '位員工');
-          } catch (e) {
-            console.error('[員工列表] 載入失敗:', e);
-          }
-        }
-
-        function attachValidation(){
-          const ccQuery = document.getElementById('cc-query');
-          const ccReset = document.getElementById('cc-reset');
-
-          const rcQuery = document.getElementById('rc-query');
-          const rcReset = document.getElementById('rc-reset');
-
-          const ehQuery = document.getElementById('eh-query');
-          const ehReset = document.getElementById('eh-reset');
-
-          const prQuery = document.getElementById('pr-query');
-          const prReset = document.getElementById('pr-reset');
-
-          ccQuery?.addEventListener('click', loadClientCost);
-          ccReset?.addEventListener('click', ()=>{ 
-            document.getElementById('cc-year').value = new Date().getFullYear();
-            document.getElementById('cc-month').value = '';
-            document.getElementById('cc-client').value = '';
-          });
-
-          rcQuery?.addEventListener('click', loadRevenue);
-          rcReset?.addEventListener('click', ()=>{ 
-            document.getElementById('rc-year').value = new Date().getFullYear();
-            document.getElementById('rc-month').value = '';
-          });
-
-          ehQuery?.addEventListener('click', loadEmployeeHours);
-          ehReset?.addEventListener('click', ()=>{ 
-            const now = new Date();
-            document.getElementById('eh-year').value = now.getFullYear();
-            document.getElementById('eh-month').value = String(now.getMonth() + 1);
-            document.getElementById('eh-employee').value = '';
-          });
-
-          prQuery?.addEventListener('click', loadPayroll);
-          prReset?.addEventListener('click', ()=>{ 
-            const now = new Date();
-            document.getElementById('pr-year').value = now.getFullYear();
-            document.getElementById('pr-month').value = String(now.getMonth() + 1);
-            document.getElementById('pr-employee').value = '';
-          });
-        }
-
-        function formatNumber(n){ 
-          const num = Number(n||0);
-          if (num === 0) return '—';
-          try { return num.toLocaleString(); } catch(_) { return String(n||0); } 
-        }
-        
-        function formatValue(n){
-          const num = Number(n||0);
-          if (num === 0) return '—';
-          return num.toFixed(1);
-        }
-
-        async function loadClientCost(){
-          const panel = document.getElementById('panel-client-cost');
-          const tbody = panel.querySelector('.report-table tbody');
-          const totalCostEl = document.getElementById('cc-total-cost');
-          const overheadStatusEl = document.getElementById('cc-overhead-status');
-          const year = document.getElementById('cc-year').value;
-          const month = document.getElementById('cc-month').value;
-          const client = document.getElementById('cc-client').value;
-          
-          if (!year) { 
-            console.log('[客戶成本] 年度未設定，跳過自動載入');
-            return; 
-          }
-          
-          console.log('[客戶成本] 開始載入', { year, month, client });
-          
-          // 必须选择月份
-          if (!month) {
-            tbody.innerHTML = '<tr><td colspan="10" class="muted">請選擇月份</td></tr>';
-            totalCostEl.textContent = '—';
-            overheadStatusEl.textContent = '—';
-            return;
-          }
-          
-          // 使用与成本页面相同的API和参数格式
-          const params = new URLSearchParams();
-          params.set('year', year);
-          params.set('month', month);
-          try {
-            tbody.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
-            const url = `${apiBase}/admin/costs/client?${params.toString()}`;
-            console.log('[客戶成本] API請求:', url);
-            const res = await fetch(url, { credentials:'include' });
-            console.log('[客戶成本] API回應狀態:', res.status);
-            if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
-            const json = await res.json();
-            console.log('[客戶成本] API回應數據:', json);
-            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
-            // 成本API返回的格式：{ data: { clients: [...] } }
-            const rows = Array.isArray(json.data?.clients) ? json.data.clients : [];
-            let totalCostAll = 0;
-            tbody.innerHTML = '';
-            if (!rows.length) {
-              tbody.innerHTML = '<tr><td colspan="10" class="muted">尚無資料</td></tr>';
-            } else {
-              rows.forEach((r, idx) => {
-                // 使用成本API返回的数据结构
-                const laborCost = Number(r.laborCost || 0);
-                const overheadCost = Number(r.overheadAllocation || 0);
-                const totalCost = Number(r.totalCost || 0);
-                const revenue = Number(r.revenue || 0);
-                const profit = Number(r.profit || 0);
-                const margin = revenue > 0 ? (profit / revenue * 100) : 0;
-                totalCostAll += totalCost;
-                
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                  <td>${r.clientName || r.clientId || ''}</td>
-                  <td class="text-right">${formatValue(r.totalHours || 0)}</td>
-                  <td class="text-right">${formatValue(r.weightedHours || 0)}</td>
-                  <td class="text-right">${formatNumber(laborCost)}</td>
-                  <td class="text-right">${formatNumber(overheadCost)}</td>
-                  <td class="text-right">—</td>
-                  <td class="text-right">${formatNumber(totalCost)}</td>
-                  <td class="text-right">${formatNumber(revenue)}</td>
-                  <td class="text-right">${formatNumber(profit)}</td>
-                  <td class="text-right ${margin >= 0 ? 'positive-value':'negative-value'}">${margin === 0 ? '—' : margin.toFixed(1)+'%'}</td>
-                `;
-                tbody.appendChild(tr);
-              });
+            if (!json.ok || !json.data.isAdmin) {
+              document.getElementById('permBar').style.display = 'block';
+              return;
             }
-            totalCostEl.textContent = formatNumber(totalCostAll);
-            const hasWarn = Array.isArray(json.warnings) && json.warnings.length > 0;
-            overheadStatusEl.textContent = hasWarn ? '警示' : '正常';
-            console.log('[客戶成本] 載入完成', { totalCost: totalCostAll, rowCount: rows.length });
           } catch (err) {
-            console.error('[客戶成本] 查詢失敗:', err);
-            tbody.innerHTML = `<tr><td colspan="10" style="color:#c0392b;">查詢失敗: ${err.message || '未知錯誤'}</td></tr>`;
+            console.error('權限檢查失敗:', err);
           }
         }
 
-        async function loadEmployeeHours(){
-          const panel = document.getElementById('panel-employee-hours');
-          const year = document.getElementById('eh-year').value;
-          const month = document.getElementById('eh-month').value;
-          const userId = document.getElementById('eh-employee').value;
-          
-          if (!year || !month) { 
-            console.log('[員工工時] 缺少年度或月份參數', { year, month });
-            return; 
-          }
-          
-          console.log('[員工工時] 開始載入', { year, month, userId });
-          
-          const params = new URLSearchParams();
-          params.set('year', year);
-          params.set('month', month);
-          if (userId) params.set('user_id', userId);
-          const totalHoursEl = document.getElementById('eh-total-hours');
-          const utilizationEl = document.getElementById('eh-utilization');
-          const listEl = panel.querySelector('.employee-hours-list');
-          try {
-            listEl.innerHTML = '<div class="muted" style="padding:10px;">載入中…</div>';
-            const url = `${apiBase}/reports/employee-hours?${params.toString()}`;
-            console.log('[員工工時] API請求:', url);
-            const res = await fetch(url, { credentials:'include' });
-            console.log('[員工工時] API回應狀態:', res.status);
-            if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
-            const json = await res.json();
-            console.log('[員工工時] API回應數據:', json);
-            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
-            const rows = Array.isArray(json.data) ? json.data : [];
-            let totalHours = 0; let utilSum = 0;
-            listEl.innerHTML = '';
-            
-            console.log('[員工工時] 處理數據', { rowCount: rows.length, rows });
-            
-            if (!rows.length) {
-              listEl.innerHTML = '<div class="muted" style="padding:10px;">尚無資料</div>';
-              totalHoursEl.textContent = '—';
-              utilizationEl.textContent = '—';
-            } else {
-              rows.forEach(r => {
-                totalHours += Number(r.total_hours||0);
-                utilSum += Number(r.utilization_rate||0);
-                const item = document.createElement('div');
-                item.className = 'employee-hours-item';
-                item.innerHTML = `
-                  <div class="employee-hours-name">${r.username||r.user_id}</div>
-                  <div class="employee-hours-value">${formatNumber(r.total_hours||0)} <span class="employee-hours-unit">小時</span></div>
-                `;
-                listEl.appendChild(item);
-              });
-              
-              const avgUtil = rows.length ? (utilSum/rows.length) : 0;
-              totalHoursEl.textContent = totalHours === 0 ? '—' : formatNumber(totalHours);
-              utilizationEl.textContent = avgUtil === 0 ? '—' : `${avgUtil.toFixed(1)}%`;
-              
-              // Render client distribution pie chart
-              ehClientDistChart = destroyChart(ehClientDistChart);
-              if (rows[0].client_distribution && rows[0].client_distribution.length > 0) {
-                const ctx = document.getElementById('eh-client-dist-chart');
-                const dist = rows[0].client_distribution;
-                const colors = generateColors(dist.length);
-                ehClientDistChart = new Chart(ctx, {
-                  type: 'pie',
-                  data: {
-                    labels: dist.map(d => d.company_name),
-                    datasets: [{
-                      data: dist.map(d => d.hours),
-                      backgroundColor: colors,
-                      borderWidth: 2,
-                      borderColor: '#fff'
-                    }]
-                  },
-                  options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: { position: 'right' },
-                      tooltip: {
-                        callbacks: {
-                          label: (context) => {
-                            const label = context.label || '';
-                            const value = context.parsed || 0;
-                            const pct = dist[context.dataIndex]?.percentage || 0;
-                            return `${label}: ${value.toFixed(1)}h (${pct}%)`;
-                          }
-                        }
-                      }
-                    }
-                  }
-                });
-              }
-            }
-
-          } catch (err) {
-            console.error('[員工工時] 查詢失敗:', err);
-            listEl.innerHTML = `<div style="color:#c0392b;padding:10px;">查詢失敗: ${err.message || '未知錯誤'}</div>`;
-          }
-        }
-
-        async function loadPayroll(){
-          const panel = document.getElementById('panel-payroll');
-          const year = document.getElementById('pr-year').value;
-          const month = document.getElementById('pr-month').value;
-          const userId = document.getElementById('pr-employee').value;
-          
-          if (!year || !month) { 
-            console.log('[薪資報表] 年度或月份未設定，跳過自動載入');
-            return; 
-          }
-          
-          console.log('[薪資報表] 開始載入', { year, month, userId });
-          
-          // 直接使用薪资页面的API（与薪资页面完全相同）
-          const monthStr = `${year}-${String(month).padStart(2, '0')}`;
-          const totalSalaryEl = document.getElementById('pr-total-salary');
-          const tbody = panel.querySelector('.report-table tbody');
-          try {
-            tbody.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
-            const url = `${apiBase}/admin/payroll/preview?month=${encodeURIComponent(monthStr)}`;
-            console.log('[薪資報表] API請求:', url);
-            const res = await fetch(url, { credentials:'include' });
-            console.log('[薪資報表] API回應狀態:', res.status);
-            if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
-            const json = await res.json();
-            console.log('[薪資報表] API回應數據:', json);
-            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
-            
-            // 薪资页面返回格式：{ data: { users: [...] } }
-            let users = json.data?.users || [];
-            
-            // 如果指定了员工，只显示该员工
-            if (userId) {
-              users = users.filter(u => String(u.userId) === String(userId));
-            }
-            
-            console.log('[薪資報表] 員工數據數組長度:', users.length);
-            
-            // 计算汇总
-            let totalGrossSalary = 0;
-            users.forEach(u => {
-              totalGrossSalary += Math.floor((u.grossSalaryCents || 0) / 100);
-            });
-            
-            totalSalaryEl.textContent = formatNumber(totalGrossSalary);
-            tbody.innerHTML = '';
-            
-            if (!users.length) {
-              tbody.innerHTML = '<tr><td colspan="10" class="muted">尚無資料（該月份無員工或薪資數據）</td></tr>';
-              console.warn('[薪資報表] 無員工數據');
-            } else {
-              users.forEach(u => {
-                const tr = document.createElement('tr');
-                const baseSalary = Math.floor((u.baseSalaryCents || 0) / 100);
-                const totalAllowances = Math.floor((u.totalRegularAllowanceCents || 0) / 100) + Math.floor((u.totalIrregularAllowanceCents || 0) / 100);
-                const totalBonuses = Math.floor((u.totalRegularBonusCents || 0) / 100);
-                const overtimePay = Math.floor((u.overtimeCents || 0) / 100);
-                const transportSubsidy = Math.floor((u.transportCents || 0) / 100);
-                const mealAllowance = Math.floor((u.mealAllowanceCents || 0) / 100);
-                const grossSalary = Math.floor((u.grossSalaryCents || 0) / 100);
-                const netSalary = Math.floor((u.netSalaryCents || 0) / 100);
-                
-                tr.innerHTML = `
-                  <td>${u.name || u.username || u.userId}</td>
-                  <td class="text-right">${formatNumber(baseSalary)}</td>
-                  <td class="text-right">${formatNumber(totalAllowances)}</td>
-                  <td class="text-right">${formatNumber(totalBonuses)}</td>
-                  <td class="text-right">${formatNumber(overtimePay)}</td>
-                  <td class="text-right">${formatNumber(transportSubsidy)}</td>
-                  <td class="text-right">${formatNumber(mealAllowance)}</td>
-                  <td class="text-right">${formatNumber(grossSalary)}</td>
-                  <td class="text-right">${formatNumber(netSalary)}</td>
-                  <td>${u.isFullAttendance ? '是' : '否'}</td>
-                `;
-                tbody.appendChild(tr);
-              });
-            }
-            console.log('[薪資報表] 載入完成', { employeeCount: users.length });
-          } catch (err) {
-            console.error('[薪資報表] 查詢失敗:', err);
-            tbody.innerHTML = `<tr><td colspan="10" style="color:#c0392b;">查詢失敗: ${err.message || '未知錯誤'}</td></tr>`;
-          }
-        }
-
-        async function loadRevenue(){
-          const panel = document.getElementById('panel-receivables');
-          const year = document.getElementById('rc-year').value;
-          const month = document.getElementById('rc-month').value;
-          
-          if (!year) { 
-            console.log('[收款分析] 年度未設定，跳過自動載入');
-            return; 
-          }
-          
-          console.log('[收款分析] 開始載入', { year, month });
-          
-          // 计算日期范围
-          let startDate, endDate;
-          if (month) {
-            const y = parseInt(year);
-            const m = parseInt(month);
-            startDate = `${y}-${String(m).padStart(2,'0')}-01`;
-            const lastDay = new Date(y, m, 0).getDate();
-            endDate = `${y}-${String(m).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
-          } else {
-            startDate = `${year}-01-01`;
-            endDate = `${year}-12-31`;
-          }
-          
-          const params = new URLSearchParams();
-          params.set('start_date', startDate);
-          params.set('end_date', endDate);
-          const totalReceiptsEl = document.getElementById('rc-total-receipts');
-          const totalPaidEl = document.getElementById('rc-total-paid');
-          const totalOutstandingEl = document.getElementById('rc-total-outstanding');
-          const collectionRateEl = document.getElementById('rc-collection-rate');
-          const tbody = panel.querySelector('.report-table tbody');
-          try {
-            tbody.innerHTML = '<tr><td colspan="4" class="muted">載入中…</td></tr>';
-            const url = `${apiBase}/reports/revenue?${params.toString()}`;
-            console.log('[收款分析] API請求:', url);
-            const res = await fetch(url, { credentials:'include' });
-            console.log('[收款分析] API回應狀態:', res.status);
-            if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
-            const json = await res.json();
-            console.log('[收款分析] API回應數據:', json);
-            if (!res.ok || !json || json.ok !== true) throw new Error(json?.message || '查詢失敗');
-            const d = json.data || { summary:{}, monthly_trend:[], by_client:[] };
-            const totalReceipts = Number(d.summary?.total_receipts || 0);
-            const totalPaid = Number(d.summary?.total_paid || 0);
-            const totalOutstanding = Number(d.summary?.total_outstanding || 0);
-            
-            totalReceiptsEl.textContent = formatNumber(totalReceipts);
-            totalPaidEl.textContent = formatNumber(totalPaid);
-            totalOutstandingEl.textContent = formatNumber(totalOutstanding);
-            
-            // 计算收款率：已收款 / 總開立 * 100
-            const collectionRate = totalReceipts > 0 ? (totalPaid / totalReceipts * 100) : 0;
-            collectionRateEl.textContent = collectionRate === 0 ? '—' : `${collectionRate.toFixed(1)}%`;
-            
-            const list = Array.isArray(d.by_client) ? d.by_client : [];
-            tbody.innerHTML = '';
-            if (!list.length) {
-              tbody.innerHTML = '<tr><td colspan="4" class="muted">尚無資料</td></tr>';
-            } else {
-              list.forEach(r => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                  <td>${r.company_name||r.client_id}</td>
-                  <td class="text-right">${formatNumber(r.total_receipts)}</td>
-                  <td class="text-right">${formatNumber(r.total_paid)}</td>
-                  <td class="text-right">${formatNumber(r.total_outstanding)}</td>
-                `;
-                tbody.appendChild(tr);
-              });
-            }
-            // Render monthly trend chart
-            rcTrendChart = destroyChart(rcTrendChart);
-            if (d.monthly_trend && d.monthly_trend.length > 0) {
-              const ctx = document.getElementById('rc-trend-chart');
-              const trend = d.monthly_trend;
-              rcTrendChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                  labels: trend.map(t => t.month),
-                  datasets: [
-                    {
-                      label: '開立金額',
-                      data: trend.map(t => t.receipts),
-                      borderColor: '#3498db',
-                      backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                      tension: 0.3,
-                      fill: true
-                    },
-                    {
-                      label: '收款金額',
-                      data: trend.map(t => t.paid),
-                      borderColor: '#27ae60',
-                      backgroundColor: 'rgba(39, 174, 96, 0.1)',
-                      tension: 0.3,
-                      fill: true
-                    }
-                  ]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { position: 'top' },
-                    tooltip: {
-                      mode: 'index',
-                      intersect: false,
-                      callbacks: {
-                        label: (context) => `${context.dataset.label}: ${formatNumber(context.parsed.y)}`
-                      }
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      title: { display: true, text: '金額 (元)' },
-                      ticks: {
-                        callback: (value) => formatNumber(value)
-                      }
-                    },
-                    x: {
-                      title: { display: true, text: '月份' }
-                    }
-                  }
-                }
-              });
-            }
-            console.log('[收款分析] 載入完成', { clientCount: list.length, totalReceipts: d.summary?.total_receipts || 0 });
-          } catch (err) {
-            console.error('[收款分析] 查詢失敗:', err);
-            tbody.innerHTML = `<tr><td colspan="4" style="color:#c0392b;">查詢失敗: ${err.message || '未知錯誤'}</td></tr>`;
-          }
-        }
-
-        async function bootstrap(){
-          // 初始化年度选择器
-          initializeYearSelects();
-          
-        // 設置預設月份
-        const now = new Date();
-        const currentMonth = String(now.getMonth() + 1);
-        document.getElementById('eh-month').value = currentMonth;
-        document.getElementById('pr-month').value = currentMonth;
-        document.getElementById('rc-month').value = currentMonth;
-        document.getElementById('cc-month').value = currentMonth;
-
-          // 載入客戶和員工列表
-          await Promise.all([loadClientsList(), loadEmployeesList()]);
-
-          // 權限：根據 /auth/me 決定可見的分頁
-          try {
-            const res = await fetch(`${apiBase}/auth/me`, { credentials:'include' });
-            if (res.status === 401) { location.assign('/login?redirect=/internal/reports'); return; }
-            const json = await res.json();
-            const isAdmin = !!(json && json.ok && json.data && json.data.isAdmin);
-            tabs.forEach(btn => {
-              const adminOnly = btn.getAttribute('data-admin-only') === 'true';
-              if (adminOnly && !isAdmin) btn.style.display = 'none';
-            });
-            permBar.style.display = 'none';
-          } catch (_) {
-            tabs.forEach(btn => { if (btn.getAttribute('data-admin-only') === 'true') btn.style.display = 'none'; });
-            permBar.textContent = '載入使用者資訊失敗，僅顯示個人報表';
-            permBar.style.display = 'block';
-          }
-
-          attachValidation();
-          
-          // 等待一小段時間確保所有依賴都已載入，然後自動載入所有報表
-          setTimeout(() => {
-            console.log('[報表系統] 開始自動載入所有報表');
-            loadEmployeeHours();
-            loadClientCost();
-            loadPayroll();
-            loadRevenue();
-          }, 100);
-        }
-
-        // 確保DOM完全載入後再執行
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', bootstrap);
-        } else {
-          bootstrap();
-        }
+        // 初始化
+        initYearSelectors();
+        checkPermission();
       })();
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
   </body>
-  </html>
-
-
+</html>
