@@ -1677,8 +1677,19 @@
                 });
                 const json = await res.json();
                 
+                // 调试：打印API返回的数据
+                console.log('API 回應:', json);
+                console.log('數據數量:', json.data?.length);
+                console.log('詳細數據:', json.data);
+                
                 if (!json.ok || !json.data || json.data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#6b7280;">尚未設定任何自動生成任務的服務<br><small style="font-size:12px;margin-top:8px;display:block;">請前往「客戶詳情頁」為服務啟用自動生成任務</small></td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#6b7280;">
+                        尚未設定任何自動生成任務的服務<br>
+                        <small style="font-size:12px;margin-top:8px;display:block;">請前往「客戶詳情頁」為服務啟用自動生成任務</small>
+                        <br><small style="font-size:11px;margin-top:8px;display:block;color:#ef4444;">
+                            調試信息：API ok=${json.ok}, 數據長度=${json.data?.length || 0}
+                        </small>
+                    </td></tr>`;
                     countEl.textContent = '共 0 個服務';
                     return;
                 }

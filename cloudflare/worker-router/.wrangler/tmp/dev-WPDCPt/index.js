@@ -17875,6 +17875,15 @@ async function deleteServiceComponent(env, corsHeaders, componentId) {
 __name(deleteServiceComponent, "deleteServiceComponent");
 async function listAutoGenerateComponents(env, corsHeaders) {
   try {
+    console.log("[listAutoGenerateComponents] \u5F00\u59CB\u67E5\u8BE2\u81EA\u52A8\u751F\u6210\u7EC4\u4EF6");
+    const allComponents = await env.DATABASE.prepare(`
+      SELECT COUNT(*) as total FROM ServiceComponents WHERE is_active = 1
+    `).first();
+    console.log("[listAutoGenerateComponents] \u603B\u5171\u6709", allComponents?.total, "\u4E2A\u6D3B\u8DC3\u7684ServiceComponents");
+    const autoGenCount = await env.DATABASE.prepare(`
+      SELECT COUNT(*) as total FROM ServiceComponents WHERE is_active = 1 AND auto_generate_task = 1
+    `).first();
+    console.log("[listAutoGenerateComponents] \u5176\u4E2D", autoGenCount?.total, "\u4E2A\u542F\u7528\u4E86auto_generate_task");
     const components = await env.DATABASE.prepare(`
       SELECT 
         sc.component_id,
@@ -17883,8 +17892,11 @@ async function listAutoGenerateComponents(env, corsHeaders) {
         sc.due_date_rule,
         sc.due_date_value,
         sc.advance_days,
+        sc.auto_generate_task,
         cs.client_id,
+        cs.status as cs_status,
         c.company_name,
+        c.is_deleted as c_is_deleted,
         s.service_name,
         u.username as assignee_name
       FROM ServiceComponents sc
@@ -17899,9 +17911,16 @@ async function listAutoGenerateComponents(env, corsHeaders) {
         AND c.is_deleted = 0
       ORDER BY c.company_name, sc.component_id
     `).all();
+    console.log("[listAutoGenerateComponents] \u67E5\u8BE2\u7ED3\u679C\u6570\u91CF:", components.results?.length);
+    console.log("[listAutoGenerateComponents] \u67E5\u8BE2\u7ED3\u679C\u8BE6\u60C5:", JSON.stringify(components.results?.slice(0, 3)));
     return jsonResponse(200, {
       ok: true,
-      data: components.results || []
+      data: components.results || [],
+      debug: {
+        total_components: allComponents?.total,
+        auto_generate_enabled: autoGenCount?.total,
+        filtered_result: components.results?.length
+      }
     }, corsHeaders);
   } catch (err) {
     console.error("\u83B7\u53D6\u81EA\u52A8\u751F\u6210\u7EC4\u4EF6\u5931\u8D25:", err);

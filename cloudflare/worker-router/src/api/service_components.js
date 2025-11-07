@@ -478,6 +478,20 @@ async function deleteServiceComponent(env, corsHeaders, componentId) {
 // 获取所有启用自动生成任务的服务组成部分
 async function listAutoGenerateComponents(env, corsHeaders) {
   try {
+    console.log('[listAutoGenerateComponents] 开始查询自动生成组件');
+    
+    // 先查询所有ServiceComponents，看看有多少条数据
+    const allComponents = await env.DATABASE.prepare(`
+      SELECT COUNT(*) as total FROM ServiceComponents WHERE is_active = 1
+    `).first();
+    console.log('[listAutoGenerateComponents] 总共有', allComponents?.total, '个活跃的ServiceComponents');
+    
+    // 查看有多少启用了auto_generate_task
+    const autoGenCount = await env.DATABASE.prepare(`
+      SELECT COUNT(*) as total FROM ServiceComponents WHERE is_active = 1 AND auto_generate_task = 1
+    `).first();
+    console.log('[listAutoGenerateComponents] 其中', autoGenCount?.total, '个启用了auto_generate_task');
+    
     const components = await env.DATABASE.prepare(`
       SELECT 
         sc.component_id,
@@ -486,8 +500,11 @@ async function listAutoGenerateComponents(env, corsHeaders) {
         sc.due_date_rule,
         sc.due_date_value,
         sc.advance_days,
+        sc.auto_generate_task,
         cs.client_id,
+        cs.status as cs_status,
         c.company_name,
+        c.is_deleted as c_is_deleted,
         s.service_name,
         u.username as assignee_name
       FROM ServiceComponents sc
@@ -503,9 +520,17 @@ async function listAutoGenerateComponents(env, corsHeaders) {
       ORDER BY c.company_name, sc.component_id
     `).all();
 
+    console.log('[listAutoGenerateComponents] 查询结果数量:', components.results?.length);
+    console.log('[listAutoGenerateComponents] 查询结果详情:', JSON.stringify(components.results?.slice(0, 3)));
+
     return jsonResponse(200, {
       ok: true,
-      data: components.results || []
+      data: components.results || [],
+      debug: {
+        total_components: allComponents?.total,
+        auto_generate_enabled: autoGenCount?.total,
+        filtered_result: components.results?.length
+      }
     }, corsHeaders);
   } catch (err) {
     console.error('获取自动生成组件失败:', err);
