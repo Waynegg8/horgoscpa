@@ -7013,9 +7013,16 @@ async function handleReceipts(request, env, me, requestId, url) {
 				       AND t.is_deleted = 0
 				       AND t.status != 'completed'
 				   )
+				   -- \u6392\u9664\u5DF2\u6682\u7F13\u7684\u63D0\u9192
+				   AND NOT EXISTS (
+				     SELECT 1 FROM BillingReminders br
+				     WHERE br.client_service_id = cs.client_service_id
+				       AND br.service_month = ?
+				       AND br.status = 'postponed'
+				   )
 				 ORDER BY c.company_name, s.service_name
 				 LIMIT 20`
-      ).bind(serviceMonth, serviceMonth, currentMonth, serviceMonth, serviceMonth).all();
+      ).bind(serviceMonth, serviceMonth, currentMonth, serviceMonth, serviceMonth, serviceMonth).all();
       const data = (reminders?.results || []).map((r) => ({
         client_id: r.client_id,
         client_name: r.client_name,
@@ -7127,16 +7134,54 @@ async function handleReceipts(request, env, me, requestId, url) {
       console.log(`[\u6536\u636E\u5217\u8868] \u603B\u8BB0\u5F55\u6570:`, total);
       const rows = await env.DATABASE.prepare(
         `SELECT r.receipt_id, r.client_id, c.company_name AS client_name, c.tax_registration_number AS client_tax_id, 
-				        r.total_amount, r.receipt_date, r.due_date, r.status, r.receipt_type
-				 FROM Receipts r LEFT JOIN Clients c ON c.client_id = r.client_id
-				 ${whereSql}
-				 ORDER BY r.receipt_date DESC, r.receipt_id DESC
-				 LIMIT ? OFFSET ?`
+			        r.total_amount, r.receipt_date, r.due_date, r.status, r.receipt_type,
+			        r.service_start_month, r.service_end_month
+			 FROM Receipts r LEFT JOIN Clients c ON c.client_id = r.client_id
+			 ${whereSql}
+			 ORDER BY r.receipt_date DESC, r.receipt_id DESC
+			 LIMIT ? OFFSET ?`
       ).bind(...binds, perPage, offset).all();
       console.log(`[\u6536\u636E\u5217\u8868] \u67E5\u8BE2\u5230 ${rows?.results?.length || 0} \u6761\u8BB0\u5F55`);
-      const data = (rows?.results || []).map((r, index) => {
+      const receiptsData = [];
+      for (const r of rows?.results || []) {
         try {
-          return {
+          let serviceTypes = [];
+          try {
+            const serviceTypesRows = await env.DATABASE.prepare(`
+						SELECT s.service_id, s.service_name
+						FROM ReceiptServiceTypes rst
+						JOIN Services s ON s.service_id = rst.service_id
+						WHERE rst.receipt_id = ?
+						ORDER BY s.service_name
+					`).bind(r.receipt_id).all();
+            serviceTypes = (serviceTypesRows?.results || []).map((st) => ({
+              serviceId: st.service_id,
+              serviceName: st.service_name
+            }));
+          } catch (err) {
+            console.warn("[\u6536\u636E\u5217\u8868] \u67E5\u8BE2\u670D\u52A1\u7C7B\u578B\u5173\u8054\u5931\u8D25\uFF08\u8868\u53EF\u80FD\u4E0D\u5B58\u5728\uFF09:", err.message);
+          }
+          if (serviceTypes.length === 0 && r.service_start_month) {
+            try {
+              const autoServiceTypesRows = await env.DATABASE.prepare(`
+							SELECT DISTINCT s.service_id, s.service_name
+							FROM Timesheets t
+							JOIN Services s ON s.service_id = t.service_id
+							WHERE t.client_id = ?
+								AND substr(t.work_date, 1, 7) >= ?
+								AND substr(t.work_date, 1, 7) <= ?
+								AND t.is_deleted = 0
+							ORDER BY s.service_name
+						`).bind(r.client_id, r.service_start_month, r.service_end_month || r.service_start_month).all();
+              serviceTypes = (autoServiceTypesRows?.results || []).map((st) => ({
+                serviceId: st.service_id,
+                serviceName: st.service_name
+              }));
+            } catch (err) {
+              console.warn("[\u6536\u636E\u5217\u8868] \u81EA\u52A8\u63A8\u65AD\u670D\u52A1\u7C7B\u578B\u5931\u8D25:", err.message);
+            }
+          }
+          receiptsData.push({
             receiptId: r.receipt_id,
             clientId: r.client_id,
             clientName: r.client_name || "",
@@ -7145,17 +7190,20 @@ async function handleReceipts(request, env, me, requestId, url) {
             receiptDate: r.receipt_date,
             dueDate: r.due_date || null,
             status: r.status,
-            receiptType: r.receipt_type || "normal"
-          };
+            receiptType: r.receipt_type || "normal",
+            serviceStartMonth: r.service_start_month || null,
+            serviceEndMonth: r.service_end_month || null,
+            serviceTypes
+          });
         } catch (mapErr) {
-          console.error(`[\u6536\u636E\u5217\u8868] \u6620\u5C04\u7B2C${index}\u6761\u8BB0\u5F55\u5931\u8D25:`, JSON.stringify({
+          console.error(`[\u6536\u636E\u5217\u8868] \u5904\u7406\u6536\u636E\u5931\u8D25:`, {
             receipt_id: r.receipt_id,
             error: String(mapErr),
-            raw: r
-          }));
-          return null;
+            stack: mapErr.stack
+          });
         }
-      }).filter((r) => r !== null);
+      }
+      const data = receiptsData;
       console.log(`[\u6536\u636E\u5217\u8868] \u6210\u529F\u8FD4\u56DE ${data.length} \u6761\u8BB0\u5F55`);
       const meta = { requestId, page, perPage, total, hasNext: offset + perPage < total };
       return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta }, corsHeaders);
@@ -7493,6 +7541,7 @@ async function handleReceipts(request, env, me, requestId, url) {
     const billingMonth = body?.billing_month ? parseInt(body.billing_month, 10) : null;
     const manualServiceStartMonth = body?.service_start_month ? String(body.service_start_month).trim() : null;
     const manualServiceEndMonth = body?.service_end_month ? String(body.service_end_month).trim() : null;
+    const serviceTypeIds = Array.isArray(body?.service_type_ids) ? body.service_type_ids : [];
     const errors = [];
     if (!client_id) errors.push({ field: "client_id", message: "\u5FC5\u586B" });
     if (!/^\d{4}-\d{2}-\d{2}$/.test(receipt_date)) errors.push({ field: "receipt_date", message: "\u65E5\u671F\u683C\u5F0F YYYY-MM-DD" });
@@ -7677,6 +7726,21 @@ async function handleReceipts(request, env, me, requestId, url) {
           }
         }
       }
+      if (serviceTypeIds.length > 0) {
+        for (const serviceId of serviceTypeIds) {
+          const sid = parseInt(serviceId, 10);
+          if (Number.isFinite(sid) && sid > 0) {
+            try {
+              await env.DATABASE.prepare(
+                `INSERT INTO ReceiptServiceTypes (receipt_id, service_id, created_at)
+							 VALUES (?, ?, ?)`
+              ).bind(receipt_id, sid, (/* @__PURE__ */ new Date()).toISOString()).run();
+            } catch (err) {
+              console.warn("[ReceiptServiceTypes] \u63D2\u5165\u5931\u8D25\uFF08\u53EF\u80FD\u662F\u8868\u4E0D\u5B58\u5728\u6216\u91CD\u590D\uFF09:", err.message);
+            }
+          }
+        }
+      }
       const data = {
         receiptId: receipt_id,
         clientId: client_id,
@@ -7688,7 +7752,8 @@ async function handleReceipts(request, env, me, requestId, url) {
         relatedTaskId,
         clientServiceId,
         billingMonth,
-        itemsCount: items.length
+        itemsCount: items.length,
+        serviceTypeIds
       };
       return jsonResponse(201, { ok: true, code: "CREATED", message: "\u5DF2\u5EFA\u7ACB", data, meta: { requestId } }, corsHeaders);
     } catch (err) {
@@ -7765,6 +7830,88 @@ async function handleReceipts(request, env, me, requestId, url) {
         "UPDATE Receipts SET status = 'cancelled', is_deleted = 1, updated_at = ? WHERE receipt_id = ?"
       ).bind((/* @__PURE__ */ new Date()).toISOString(), receiptId).run();
       return jsonResponse(200, { ok: true, code: "OK", message: "\u5DF2\u4F5C\u5EE2", meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (method === "POST" && path === "/internal/api/v1/receipts/reminders/postpone") {
+    try {
+      const body = await request.json();
+      const client_service_id = body?.client_service_id ? parseInt(body.client_service_id, 10) : null;
+      const service_month = body?.service_month ? String(body.service_month).trim() : null;
+      const postpone_reason = body?.postpone_reason ? String(body.postpone_reason).trim() : "";
+      if (!client_service_id || !service_month) {
+        return jsonResponse(400, {
+          ok: false,
+          code: "BAD_REQUEST",
+          message: "\u8ACB\u63D0\u4F9B client_service_id \u548C service_month",
+          meta: { requestId }
+        }, corsHeaders);
+      }
+      if (!/^\d{4}-\d{2}$/.test(service_month)) {
+        return jsonResponse(422, {
+          ok: false,
+          code: "VALIDATION_ERROR",
+          message: "service_month \u683C\u5F0F\u932F\u8AA4\uFF0C\u61C9\u70BA YYYY-MM",
+          meta: { requestId }
+        }, corsHeaders);
+      }
+      const serviceInfo = await env.DATABASE.prepare(`
+				SELECT cs.client_id, sbs.billing_amount
+				FROM ClientServices cs
+				LEFT JOIN ServiceBillingSchedule sbs ON sbs.client_service_id = cs.client_service_id
+					AND sbs.billing_month = ?
+				WHERE cs.client_service_id = ?
+			`).bind(parseInt(service_month.split("-")[1], 10), client_service_id).first();
+      if (!serviceInfo) {
+        return jsonResponse(404, {
+          ok: false,
+          code: "NOT_FOUND",
+          message: "\u670D\u52D9\u4E0D\u5B58\u5728",
+          meta: { requestId }
+        }, corsHeaders);
+      }
+      const existing = await env.DATABASE.prepare(`
+				SELECT reminder_id, status FROM BillingReminders
+				WHERE client_service_id = ? AND service_month = ?
+			`).bind(client_service_id, service_month).first();
+      if (existing) {
+        await env.DATABASE.prepare(`
+					UPDATE BillingReminders
+					SET status = 'postponed',
+						postpone_reason = ?,
+						updated_at = ?
+					WHERE reminder_id = ?
+				`).bind(postpone_reason, (/* @__PURE__ */ new Date()).toISOString(), existing.reminder_id).run();
+        return jsonResponse(200, {
+          ok: true,
+          code: "OK",
+          message: "\u5DF2\u66AB\u7DE9\u958B\u7968\u63D0\u9192",
+          meta: { requestId }
+        }, corsHeaders);
+      }
+      await env.DATABASE.prepare(`
+				INSERT INTO BillingReminders (
+					client_id, client_service_id, service_month,
+					suggested_amount, status, postpone_reason,
+					created_at, updated_at
+				) VALUES (?, ?, ?, ?, 'postponed', ?, ?, ?)
+			`).bind(
+        serviceInfo.client_id,
+        client_service_id,
+        service_month,
+        serviceInfo.billing_amount || null,
+        postpone_reason,
+        (/* @__PURE__ */ new Date()).toISOString(),
+        (/* @__PURE__ */ new Date()).toISOString()
+      ).run();
+      return jsonResponse(201, {
+        ok: true,
+        code: "CREATED",
+        message: "\u5DF2\u66AB\u7DE9\u958B\u7968\u63D0\u9192",
+        meta: { requestId }
+      }, corsHeaders);
     } catch (err) {
       console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
       return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
