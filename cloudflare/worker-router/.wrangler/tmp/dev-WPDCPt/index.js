@@ -3307,17 +3307,21 @@ async function handleOverhead(request, env, me, requestId, url, path) {
 			WHERE pc.year_month LIKE ?
 			GROUP BY pc.user_id
 		`).bind(`${year}-%`).all();
+        console.log(`[Overhead Annual] PayrollCache\u67E5\u8BE2\u7ED3\u679C: ${cacheResult?.results?.length || 0}\u6761\u8BB0\u5F55`);
         for (const row of cacheResult?.results || []) {
           const totalSalary = (row.total_salary_cents || 0) / 100;
           const totalHours = Number(row.total_work_hours || 0);
           const avgHourlyRate = totalHours > 0 ? Math.round(totalSalary / totalHours) : 0;
           employeeActualHourlyRates[String(row.user_id)] = avgHourlyRate;
+          console.log(`[Overhead Annual] User ${row.user_id}: \u603B\u85AA\u8D44=${totalSalary}, \u603B\u5DE5\u65F6=${totalHours}, \u5E73\u5747\u65F6\u85AA=${avgHourlyRate}`);
         }
         for (const user of usersList) {
           const userId = String(user.user_id);
           if (!employeeActualHourlyRates[userId]) {
             const baseSalary = Number(user.base_salary || 0);
-            employeeActualHourlyRates[userId] = Math.round(baseSalary / 240);
+            const fallbackRate = Math.round(baseSalary / 240);
+            employeeActualHourlyRates[userId] = fallbackRate;
+            console.log(`[Overhead Annual] User ${userId} \u65E0\u7F13\u5B58\uFF0C\u4F7F\u7528\u5E95\u85AA\u65F6\u85AA: ${fallbackRate}`);
           }
         }
       } else {
@@ -3383,6 +3387,7 @@ async function handleOverhead(request, env, me, requestId, url, path) {
           const empActualHours = timesheets.filter((ts) => String(ts.user_id) === String(userId)).reduce((sum, ts) => sum + Number(ts.hours || 0), 0);
           const empTotalCost = Math.round(weightedHours * actualHourlyRate);
           totalCost += empTotalCost;
+          console.log(`[Client ${clientId}] ${userName}: \u5B9E\u9645\u5DE5\u65F6=${empActualHours}, \u52A0\u6743\u5DE5\u65F6=${weightedHours.toFixed(1)}, \u65F6\u85AA=${actualHourlyRate}, \u6210\u672C=${empTotalCost}`);
           const empLaborCost = Math.round(weightedHours * baseSalaryHourly);
           laborCost += empLaborCost;
           const empOverheadCost = empTotalCost - empLaborCost;
@@ -3396,6 +3401,7 @@ async function handleOverhead(request, env, me, requestId, url, path) {
             totalCost: empTotalCost
           });
         }
+        console.log(`[Client ${clientId}] ${client.company_name} \u603B\u6210\u672C\u6C47\u603B: totalCost=${totalCost}, laborCost=${laborCost}, overheadAllocation=${overheadAllocation}`);
         employeeDetails.sort((a, b) => b.totalCost - a.totalCost);
         console.log(`[Client ${clientId}] ${client.company_name}: employeeDetails =`, employeeDetails.length, employeeDetails);
         const revenueRow = await env.DATABASE.prepare(
@@ -10975,17 +10981,39 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
           monthStandardHours += hours;
           monthWeightedHours += weighted;
         }
-        const monthRevenueRows = await env.DATABASE.prepare(`
-			SELECT SUM(r.total_amount) as revenue
-			FROM Receipts r
-			JOIN Timesheets t ON t.client_id = r.client_id
-			WHERE t.user_id = ?
-				AND r.is_deleted = 0
-				AND r.status != 'cancelled'
-				AND substr(r.service_month, 1, 7) = ?
-			GROUP BY r.client_id
+        let monthRevenue = 0;
+        const employeeClientHoursRows = await env.DATABASE.prepare(`
+			SELECT client_id, SUM(hours) as emp_hours
+			FROM Timesheets
+			WHERE user_id = ? 
+				AND substr(work_date, 1, 7) = ?
+				AND is_deleted = 0
+			GROUP BY client_id
 		`).bind(user.user_id, ym).all();
-        const monthRevenue = (monthRevenueRows?.results || []).reduce((sum, r) => sum + Number(r.revenue || 0), 0);
+        for (const row of employeeClientHoursRows?.results || []) {
+          const clientId = row.client_id;
+          if (!clientId) continue;
+          const empHours = Number(row.emp_hours || 0);
+          const clientTotalHoursRow = await env.DATABASE.prepare(`
+				SELECT SUM(hours) as total_hours
+				FROM Timesheets
+				WHERE client_id = ? 
+					AND substr(work_date, 1, 7) = ?
+					AND is_deleted = 0
+			`).bind(clientId, ym).first();
+          const clientTotalHours = Number(clientTotalHoursRow?.total_hours || 0);
+          if (clientTotalHours === 0) continue;
+          const clientRevenueRow = await env.DATABASE.prepare(`
+				SELECT SUM(total_amount) as revenue
+				FROM Receipts
+				WHERE client_id = ?
+					AND is_deleted = 0
+					AND status != 'cancelled'
+					AND substr(service_month, 1, 7) = ?
+			`).bind(clientId, ym).first();
+          const clientRevenue = Number(clientRevenueRow?.revenue || 0);
+          monthRevenue += clientRevenue * (empHours / clientTotalHours);
+        }
         const monthCost = baseSalary;
         const monthProfit = monthRevenue - monthCost;
         monthlyTrend.push({

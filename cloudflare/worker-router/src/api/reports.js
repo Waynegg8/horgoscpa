@@ -924,19 +924,52 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
 			monthWeightedHours += weighted;
 		}
 		
-		// 获取该月收入（简化：从Receipts按月分配）
-		const monthRevenueRows = await env.DATABASE.prepare(`
-			SELECT SUM(r.total_amount) as revenue
-			FROM Receipts r
-			JOIN Timesheets t ON t.client_id = r.client_id
-			WHERE t.user_id = ?
-				AND r.is_deleted = 0
-				AND r.status != 'cancelled'
-				AND substr(r.service_month, 1, 7) = ?
-			GROUP BY r.client_id
+		// 获取该月收入（按该员工在各客户的工时比例分配）
+		let monthRevenue = 0;
+		
+		// 获取该员工该月在各客户的工时
+		const employeeClientHoursRows = await env.DATABASE.prepare(`
+			SELECT client_id, SUM(hours) as emp_hours
+			FROM Timesheets
+			WHERE user_id = ? 
+				AND substr(work_date, 1, 7) = ?
+				AND is_deleted = 0
+			GROUP BY client_id
 		`).bind(user.user_id, ym).all();
 		
-		const monthRevenue = (monthRevenueRows?.results || []).reduce((sum, r) => sum + Number(r.revenue || 0), 0);
+		for (const row of (employeeClientHoursRows?.results || [])) {
+			const clientId = row.client_id;
+			if (!clientId) continue;
+			
+			const empHours = Number(row.emp_hours || 0);
+			
+			// 获取该客户该月的总工时（所有员工）
+			const clientTotalHoursRow = await env.DATABASE.prepare(`
+				SELECT SUM(hours) as total_hours
+				FROM Timesheets
+				WHERE client_id = ? 
+					AND substr(work_date, 1, 7) = ?
+					AND is_deleted = 0
+			`).bind(clientId, ym).first();
+			
+			const clientTotalHours = Number(clientTotalHoursRow?.total_hours || 0);
+			if (clientTotalHours === 0) continue;
+			
+			// 获取该客户该月的收入
+			const clientRevenueRow = await env.DATABASE.prepare(`
+				SELECT SUM(total_amount) as revenue
+				FROM Receipts
+				WHERE client_id = ?
+					AND is_deleted = 0
+					AND status != 'cancelled'
+					AND substr(service_month, 1, 7) = ?
+			`).bind(clientId, ym).first();
+			
+			const clientRevenue = Number(clientRevenueRow?.revenue || 0);
+			
+			// 按工时比例分配收入
+			monthRevenue += clientRevenue * (empHours / clientTotalHours);
+		}
 		const monthCost = baseSalary;
 		const monthProfit = monthRevenue - monthCost;
 		

@@ -1364,6 +1364,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			GROUP BY pc.user_id
 		`).bind(`${year}-%`).all();
 		
+		console.log(`[Overhead Annual] PayrollCache查询结果: ${cacheResult?.results?.length || 0}条记录`);
+		
 		for (const row of (cacheResult?.results || [])) {
 			const totalSalary = (row.total_salary_cents || 0) / 100;
 			const totalHours = Number(row.total_work_hours || 0);
@@ -1371,6 +1373,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			// 年度平均时薪 = 年度总薪资 / 年度总工时
 			const avgHourlyRate = totalHours > 0 ? Math.round(totalSalary / totalHours) : 0;
 			employeeActualHourlyRates[String(row.user_id)] = avgHourlyRate;
+			
+			console.log(`[Overhead Annual] User ${row.user_id}: 总薪资=${totalSalary}, 总工时=${totalHours}, 平均时薪=${avgHourlyRate}`);
 		}
 		
 		// 对于没有缓存数据的员工，使用底薪时薪作为后备
@@ -1378,7 +1382,9 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			const userId = String(user.user_id);
 			if (!employeeActualHourlyRates[userId]) {
 				const baseSalary = Number(user.base_salary || 0);
-				employeeActualHourlyRates[userId] = Math.round(baseSalary / 240);
+				const fallbackRate = Math.round(baseSalary / 240);
+				employeeActualHourlyRates[userId] = fallbackRate;
+				console.log(`[Overhead Annual] User ${userId} 无缓存，使用底薪时薪: ${fallbackRate}`);
 			}
 		}
 	} else {
@@ -1472,6 +1478,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				const empTotalCost = Math.round(weightedHours * actualHourlyRate);
 				totalCost += empTotalCost;
 				
+				console.log(`[Client ${clientId}] ${userName}: 实际工时=${empActualHours}, 加权工时=${weightedHours.toFixed(1)}, 时薪=${actualHourlyRate}, 成本=${empTotalCost}`);
+				
 				// 薪资成本 = 加权工时 × 底薪时薪率
 				const empLaborCost = Math.round(weightedHours * baseSalaryHourly);
 				laborCost += empLaborCost;
@@ -1490,6 +1498,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					totalCost: empTotalCost
 				});
 			}
+			
+			console.log(`[Client ${clientId}] ${client.company_name} 总成本汇总: totalCost=${totalCost}, laborCost=${laborCost}, overheadAllocation=${overheadAllocation}`);
 			
 			// 按成本降序排列员工明细
 			employeeDetails.sort((a, b) => b.totalCost - a.totalCost);
