@@ -1351,40 +1351,70 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 	const usersList = usersRows?.results || [];
 	
 	if (isAnnual) {
-		// 年度查询：从PayrollCache获取完整的年度平均成本时薪
-		console.log(`[Overhead Annual] 从PayrollCache计算年度平均时薪: ${year}`);
+		// 年度查询：直接使用成本页面的逻辑，逐月计算实际时薪，然后加权平均
+		console.log(`[Overhead Annual] 使用成本页面逻辑计算${year}年度平均时薪...`);
 		
-		const cacheResult = await env.DATABASE.prepare(`
-			SELECT 
-				pc.user_id,
-				SUM(pc.gross_salary_cents) as total_salary_cents,
-				SUM(pc.total_work_hours) as total_hours
-			FROM PayrollCache pc
-			WHERE pc.year_month LIKE ?
-			GROUP BY pc.user_id
-		`).bind(`${year}-%`).all();
+		// 1. 查询该年度哪些月份有工时记录
+		const monthsWithTimesheetsResult = await env.DATABASE.prepare(`
+			SELECT DISTINCT substr(work_date, 1, 7) as year_month
+			FROM Timesheets
+			WHERE substr(work_date, 1, 4) = ?
+				AND is_deleted = 0
+			ORDER BY year_month
+		`).bind(String(year)).all();
 		
-		console.log(`[Overhead Annual] PayrollCache查询结果: ${cacheResult?.results?.length || 0}条记录`);
+		const monthsWithTimesheets = (monthsWithTimesheetsResult?.results || []).map(r => r.year_month);
+		console.log(`[Overhead Annual] 发现${monthsWithTimesheets.length}个月份有工时:`, monthsWithTimesheets);
 		
-		for (const row of (cacheResult?.results || [])) {
-			const totalSalary = (row.total_salary_cents || 0) / 100;
-			const totalHours = Number(row.total_work_hours || 0);
-			
-			// 年度平均时薪 = 年度总薪资 / 年度总工时
-			const avgHourlyRate = totalHours > 0 ? Math.round(totalSalary / totalHours) : 0;
-			employeeActualHourlyRates[String(row.user_id)] = avgHourlyRate;
-			
-			console.log(`[Overhead Annual] User ${row.user_id}: 总薪资=${totalSalary}, 总工时=${totalHours}, 平均时薪=${avgHourlyRate}`);
-		}
+		// 2. 为每个员工逐月计算实际时薪（与成本页面完全一致）
+		const userMonthlyCosts = {}; // { userId: { totalCost, totalHours } }
 		
-		// 对于没有缓存数据的员工，使用底薪时薪作为后备
 		for (const user of usersList) {
 			const userId = String(user.user_id);
-			if (!employeeActualHourlyRates[userId]) {
+			userMonthlyCosts[userId] = { totalCost: 0, totalHours: 0 };
+		}
+		
+		for (const ym of monthsWithTimesheets) {
+			const [y, m] = ym.split('-');
+			console.log(`[Overhead Annual] 计算 ${ym} 的实际时薪...`);
+			
+			// 调用成本页面的实际时薪计算函数
+			const monthlyRates = await calculateAllEmployeesActualHourlyRate(env, parseInt(y), parseInt(m), ym);
+			
+			// 查询每个员工该月的工时
+			for (const user of usersList) {
+				const userId = String(user.user_id);
+				const monthlyRate = monthlyRates[userId] || 0;
+				
+				const hoursResult = await env.DATABASE.prepare(`
+					SELECT SUM(hours) as total FROM Timesheets
+					WHERE user_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0
+				`).bind(user.user_id, ym).first();
+				
+				const monthHours = Number(hoursResult?.total || 0);
+				
+				if (monthHours > 0) {
+					userMonthlyCosts[userId].totalHours += monthHours;
+					userMonthlyCosts[userId].totalCost += monthlyRate * monthHours;
+					console.log(`[Overhead Annual] ${user.name} ${ym}: 工时=${monthHours}h, 时薪=${monthlyRate}, 成本=${(monthlyRate * monthHours).toFixed(0)}`);
+				}
+			}
+		}
+		
+		// 3. 计算每个员工的年度加权平均时薪
+		for (const user of usersList) {
+			const userId = String(user.user_id);
+			const { totalCost, totalHours } = userMonthlyCosts[userId];
+			
+			if (totalHours > 0) {
+				const avgHourlyRate = Math.round(totalCost / totalHours);
+				employeeActualHourlyRates[userId] = avgHourlyRate;
+				console.log(`[Overhead Annual] ${user.name} 年度平均时薪: ${avgHourlyRate} (总成本=${totalCost.toFixed(0)}, 总工时=${totalHours.toFixed(1)})`);
+			} else {
+				// 没有工时的员工使用底薪时薪
 				const baseSalary = Number(user.base_salary || 0);
-				const fallbackRate = Math.round(baseSalary / 240);
-				employeeActualHourlyRates[userId] = fallbackRate;
-				console.log(`[Overhead Annual] User ${userId} 无缓存，使用底薪时薪: ${fallbackRate}`);
+				employeeActualHourlyRates[userId] = Math.round(baseSalary / 240);
+				console.log(`[Overhead Annual] ${user.name} 无工时，使用底薪时薪: ${employeeActualHourlyRates[userId]}`);
 			}
 		}
 	} else {

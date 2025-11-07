@@ -9,20 +9,6 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// wrangler-modules-watch:wrangler:modules-watch
-var init_wrangler_modules_watch = __esm({
-  "wrangler-modules-watch:wrangler:modules-watch"() {
-    init_modules_watch_stub();
-  }
-});
-
-// ../../../../AppData/Roaming/npm/node_modules/wrangler/templates/modules-watch-stub.js
-var init_modules_watch_stub = __esm({
-  "../../../../AppData/Roaming/npm/node_modules/wrangler/templates/modules-watch-stub.js"() {
-    init_wrangler_modules_watch();
-  }
-});
-
 // src/utils.js
 function jsonResponse(status, body, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
@@ -141,7 +127,6 @@ async function getSessionUser(request, env) {
 }
 var init_utils = __esm({
   "src/utils.js"() {
-    init_modules_watch_stub();
     __name(jsonResponse, "jsonResponse");
     __name(generateRequestId, "generateRequestId");
     __name(verifyPasswordPBKDF2, "verifyPasswordPBKDF2");
@@ -294,7 +279,6 @@ async function getCacheStats(env) {
 }
 var init_cache_helper = __esm({
   "src/cache-helper.js"() {
-    init_modules_watch_stub();
     __name(generateCacheKey, "generateCacheKey");
     __name(getCache, "getCache");
     __name(saveCache, "saveCache");
@@ -452,7 +436,6 @@ async function getHybridCache(env, cacheKey, fetchData, options = {}) {
 }
 var init_kv_cache_helper = __esm({
   "src/kv-cache-helper.js"() {
-    init_modules_watch_stub();
     __name(generateCacheKey2, "generateCacheKey");
     __name(getKVCache, "getKVCache");
     __name(saveKVCache, "saveKVCache");
@@ -598,7 +581,6 @@ async function getSettingValue(env, settingKey, defaultValue) {
 }
 var init_payroll_settings = __esm({
   "src/api/payroll-settings.js"() {
-    init_modules_watch_stub();
     init_utils();
     __name(handlePayrollSettings, "handlePayrollSettings");
     __name(getPayrollSettings, "getPayrollSettings");
@@ -2054,7 +2036,6 @@ async function downloadPayrollSnapshot(env, snapshotId, requestId, corsHeaders) 
 }
 var init_payroll = __esm({
   "src/api/payroll.js"() {
-    init_modules_watch_stub();
     init_utils();
     init_payroll_settings();
     __name(shouldPayInMonth, "shouldPayInMonth");
@@ -3297,7 +3278,7 @@ async function handleOverhead(request, env, me, requestId, url, path) {
       ).all();
       const usersList = usersRows?.results || [];
       if (isAnnual) {
-        console.log(`[Overhead Annual] \u4F7F\u7528\u6210\u672C\u9875\u9762\u903B\u8F91\u8BA1\u7B97${year}\u5E74\u5EA6\u5E73\u5747\u65F6\u85AA...`);
+        console.log(`[Overhead Annual] \u68C0\u67E5${year}\u5E74\u7684PayrollCache\u6570\u636E...`);
         const monthsWithTimesheetsResult = await env.DATABASE.prepare(`
 			SELECT DISTINCT substr(work_date, 1, 7) as year_month
 			FROM Timesheets
@@ -3306,42 +3287,71 @@ async function handleOverhead(request, env, me, requestId, url, path) {
 			ORDER BY year_month
 		`).bind(String(year)).all();
         const monthsWithTimesheets = (monthsWithTimesheetsResult?.results || []).map((r) => r.year_month);
-        console.log(`[Overhead Annual] \u53D1\u73B0${monthsWithTimesheets.length}\u4E2A\u6708\u4EFD\u6709\u5DE5\u65F6:`, monthsWithTimesheets);
-        const userMonthlyCosts = {};
-        for (const user of usersList) {
-          const userId = String(user.user_id);
-          userMonthlyCosts[userId] = { totalCost: 0, totalHours: 0 };
-        }
-        for (const ym of monthsWithTimesheets) {
-          const [y, m] = ym.split("-");
-          console.log(`[Overhead Annual] \u8BA1\u7B97 ${ym} \u7684\u5B9E\u9645\u65F6\u85AA...`);
-          const monthlyRates = await calculateAllEmployeesActualHourlyRate(env, parseInt(y), parseInt(m), ym);
-          for (const user of usersList) {
-            const userId = String(user.user_id);
-            const monthlyRate = monthlyRates[userId] || 0;
-            const hoursResult = await env.DATABASE.prepare(`
-					SELECT SUM(hours) as total FROM Timesheets
-					WHERE user_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0
-				`).bind(user.user_id, ym).first();
-            const monthHours = Number(hoursResult?.total || 0);
-            if (monthHours > 0) {
-              userMonthlyCosts[userId].totalHours += monthHours;
-              userMonthlyCosts[userId].totalCost += monthlyRate * monthHours;
-              console.log(`[Overhead Annual] ${user.name} ${ym}: \u5DE5\u65F6=${monthHours}h, \u65F6\u85AA=${monthlyRate}, \u6210\u672C=${(monthlyRate * monthHours).toFixed(0)}`);
+        console.log(`[Overhead Annual] \u53D1\u73B0${monthsWithTimesheets.length}\u4E2A\u6708\u4EFD\u6709\u5DE5\u65F6\u8BB0\u5F55:`, monthsWithTimesheets);
+        const existingCacheResult = await env.DATABASE.prepare(`
+			SELECT DISTINCT year_month
+			FROM PayrollCache
+			WHERE year_month LIKE ?
+		`).bind(`${year}-%`).all();
+        const monthsWithCache = new Set((existingCacheResult?.results || []).map((r) => r.year_month));
+        console.log(`[Overhead Annual] \u5DF2\u6709\u7F13\u5B58\u7684\u6708\u4EFD:`, Array.from(monthsWithCache));
+        const { calculateEmployeePayroll: calculateEmployeePayroll2 } = await Promise.resolve().then(() => (init_payroll(), payroll_exports));
+        const missingMonths = monthsWithTimesheets.filter((m) => !monthsWithCache.has(m));
+        if (missingMonths.length > 0) {
+          console.log(`[Overhead Annual] \u53D1\u73B0${missingMonths.length}\u4E2A\u6708\u4EFD\u7F3A\u5C11\u7F13\u5B58\uFF0C\u5F00\u59CB\u81EA\u52A8\u751F\u6210...`);
+          for (const missingMonth of missingMonths) {
+            console.log(`[Overhead Annual] \u6B63\u5728\u751F\u6210 ${missingMonth} \u7684\u85AA\u8D44\u7F13\u5B58...`);
+            for (const user of usersList) {
+              try {
+                await calculateEmployeePayroll2(env, user.user_id, missingMonth);
+                console.log(`[Overhead Annual] \u2713 \u5DF2\u751F\u6210 ${user.name} ${missingMonth} \u7684\u7F13\u5B58`);
+              } catch (err) {
+                console.error(`[Overhead Annual] \u2717 \u751F\u6210 ${user.name} ${missingMonth} \u7F13\u5B58\u5931\u8D25:`, err.message);
+              }
             }
           }
+          console.log(`[Overhead Annual] \u7F13\u5B58\u751F\u6210\u5B8C\u6210`);
+        }
+        const cacheResult = await env.DATABASE.prepare(`
+			SELECT 
+				pc.user_id,
+				SUM(pc.gross_salary_cents) as total_salary_cents,
+				SUM(pc.total_work_hours) as total_hours
+			FROM PayrollCache pc
+			WHERE pc.year_month LIKE ?
+			GROUP BY pc.user_id
+		`).bind(`${year}-%`).all();
+        console.log(`[Overhead Annual] PayrollCache\u67E5\u8BE2\u7ED3\u679C: ${cacheResult?.results?.length || 0}\u6761\u8BB0\u5F55`);
+        for (const row of cacheResult?.results || []) {
+          const totalSalary = (row.total_salary_cents || 0) / 100;
+          const totalHours = Number(row.total_work_hours || 0);
+          const avgHourlyRate = totalHours > 0 ? Math.round(totalSalary / totalHours) : 0;
+          employeeActualHourlyRates[String(row.user_id)] = avgHourlyRate;
+          console.log(`[Overhead Annual] User ${row.user_id}: \u603B\u85AA\u8D44=${totalSalary}, \u603B\u5DE5\u65F6=${totalHours}, \u5E73\u5747\u65F6\u85AA=${avgHourlyRate}`);
         }
         for (const user of usersList) {
           const userId = String(user.user_id);
-          const { totalCost, totalHours } = userMonthlyCosts[userId];
-          if (totalHours > 0) {
-            const avgHourlyRate = Math.round(totalCost / totalHours);
-            employeeActualHourlyRates[userId] = avgHourlyRate;
-            console.log(`[Overhead Annual] ${user.name} \u5E74\u5EA6\u5E73\u5747\u65F6\u85AA: ${avgHourlyRate} (\u603B\u6210\u672C=${totalCost.toFixed(0)}, \u603B\u5DE5\u65F6=${totalHours.toFixed(1)})`);
-          } else {
-            const baseSalary = Number(user.base_salary || 0);
-            employeeActualHourlyRates[userId] = Math.round(baseSalary / 240);
-            console.log(`[Overhead Annual] ${user.name} \u65E0\u5DE5\u65F6\uFF0C\u4F7F\u7528\u5E95\u85AA\u65F6\u85AA: ${employeeActualHourlyRates[userId]}`);
+          if (!employeeActualHourlyRates[userId]) {
+            console.log(`[Overhead Annual] User ${userId} \u65E0\u7F13\u5B58\uFF0C\u9010\u6708\u8BA1\u7B97\u5B9E\u9645\u65F6\u85AA...`);
+            let totalCost = 0;
+            let totalHours = 0;
+            for (let m = 1; m <= 12; m++) {
+              const ym = `${year}-${String(m).padStart(2, "0")}`;
+              const monthlyRates = await calculateAllEmployeesActualHourlyRate(env, year, m, ym);
+              const monthlyRate = monthlyRates[userId] || 0;
+              const hoursResult = await env.DATABASE.prepare(`
+						SELECT SUM(hours) as total FROM Timesheets
+						WHERE user_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0
+					`).bind(parseInt(userId), ym).first();
+              const monthHours = Number(hoursResult?.total || 0);
+              if (monthHours > 0) {
+                totalHours += monthHours;
+                totalCost += monthlyRate * monthHours;
+              }
+            }
+            const avgRate = totalHours > 0 ? Math.round(totalCost / totalHours) : Math.round(Number(user.base_salary || 0) / 240);
+            employeeActualHourlyRates[userId] = avgRate;
+            console.log(`[Overhead Annual] User ${userId} \u8BA1\u7B97\u5B8C\u6210: \u5E73\u5747\u65F6\u85AA=${avgRate}`);
           }
         }
       } else {
@@ -3612,7 +3622,6 @@ async function handleOverhead(request, env, me, requestId, url, path) {
 }
 var init_overhead = __esm({
   "src/api/overhead.js"() {
-    init_modules_watch_stub();
     init_utils();
     init_cache_helper();
     __name(shouldPayInMonth2, "shouldPayInMonth");
@@ -3621,18 +3630,10 @@ var init_overhead = __esm({
   }
 });
 
-// .wrangler/tmp/bundle-RYD43g/middleware-loader.entry.ts
-init_modules_watch_stub();
-
-// .wrangler/tmp/bundle-RYD43g/middleware-insertion-facade.js
-init_modules_watch_stub();
-
 // src/index.js
-init_modules_watch_stub();
 init_utils();
 
 // src/auth.js
-init_modules_watch_stub();
 init_utils();
 async function handleLogin(request, env, requestId) {
   if (request.method.toUpperCase() !== "POST") {
@@ -3763,7 +3764,6 @@ async function handleLogout(request, env, requestId) {
 __name(handleLogout, "handleLogout");
 
 // src/api/clients.js
-init_modules_watch_stub();
 init_utils();
 init_cache_helper();
 init_kv_cache_helper();
@@ -4910,11 +4910,9 @@ async function handleClients(request, env, me, requestId, url) {
 __name(handleClients, "handleClients");
 
 // src/api/tasks.js
-init_modules_watch_stub();
 init_utils();
 
 // src/api/task_adjustments.js
-init_modules_watch_stub();
 function daysBetween(date1Str, date2Str) {
   const d1 = new Date(date1Str);
   const d2 = new Date(date2Str);
@@ -5831,7 +5829,6 @@ async function handleTasks(request, env, me, requestId, url) {
 __name(handleTasks, "handleTasks");
 
 // src/api/timesheets.js
-init_modules_watch_stub();
 init_utils();
 init_cache_helper();
 init_kv_cache_helper();
@@ -6684,7 +6681,6 @@ async function handleTimesheets(request, env, me, requestId, url) {
 __name(handleTimesheets, "handleTimesheets");
 
 // src/api/receipts.js
-init_modules_watch_stub();
 init_utils();
 async function handleReceipts(request, env, me, requestId, url) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -7445,7 +7441,6 @@ __name(handleReceipts, "handleReceipts");
 init_payroll();
 
 // src/api/salary-items.js
-init_modules_watch_stub();
 init_utils();
 async function handleSalaryItemTypes(request, env, me, requestId, url, path) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -7824,7 +7819,6 @@ async function deleteSalaryItemType(env, me, requestId, corsHeaders, itemTypeId)
 __name(deleteSalaryItemType, "deleteSalaryItemType");
 
 // src/api/employee-salary.js
-init_modules_watch_stub();
 init_utils();
 async function handleEmployeeSalary(request, env, me, requestId, url, path) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -8047,7 +8041,6 @@ async function updateUserSalary(request, env, me, requestId, corsHeaders, userId
 __name(updateUserSalary, "updateUserSalary");
 
 // src/api/bonus.js
-init_modules_watch_stub();
 init_utils();
 async function handleBonus(request, env, me, requestId, url, path) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -8341,7 +8334,6 @@ async function saveYearlyBonus(request, env, me, requestId, corsHeaders, year) {
 __name(saveYearlyBonus, "saveYearlyBonus");
 
 // src/api/yearend.js
-init_modules_watch_stub();
 init_utils();
 async function handleYearEnd(request, env, me, requestId, url, path) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -8499,7 +8491,6 @@ __name(saveYearEndBonus, "saveYearEndBonus");
 init_payroll_settings();
 
 // src/api/punch-records.js
-init_modules_watch_stub();
 init_utils();
 async function handlePunchRecords(request, env, me, requestId, url, path) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -8756,7 +8747,6 @@ async function deletePunchRecord(env, me, requestId, corsHeaders, recordId) {
 __name(deletePunchRecord, "deletePunchRecord");
 
 // src/api/leaves.js
-init_modules_watch_stub();
 init_utils();
 init_cache_helper();
 init_kv_cache_helper();
@@ -9497,7 +9487,6 @@ async function handleLeaves(request, env, me, requestId, url, path) {
 __name(handleLeaves, "handleLeaves");
 
 // src/api/trips.js
-init_modules_watch_stub();
 init_utils();
 init_cache_helper();
 init_kv_cache_helper();
@@ -9939,7 +9928,6 @@ async function handleTrips(request, env, me, requestId, url, path) {
 __name(handleTrips, "handleTrips");
 
 // src/api/meal-allowance.js
-init_modules_watch_stub();
 init_utils();
 init_cache_helper();
 init_kv_cache_helper();
@@ -10118,7 +10106,6 @@ async function handleMealAllowance(request, env, me, requestId, url, path) {
 __name(handleMealAllowance, "handleMealAllowance");
 
 // src/api/dev.js
-init_modules_watch_stub();
 init_utils();
 async function handleDevSeeding(request, env, requestId, path) {
   if (env.APP_ENV === "prod") {
@@ -10264,7 +10251,6 @@ __name(handleDevSeeding, "handleDevSeeding");
 init_overhead();
 
 // src/api/reports.js
-init_modules_watch_stub();
 init_utils();
 async function handleReports(request, env, me, requestId, url, path) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -11238,7 +11224,6 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
 __name(handleAnnualClientProfitability, "handleAnnualClientProfitability");
 
 // src/api/attachments.js
-init_modules_watch_stub();
 init_utils();
 function b64urlEncode(u8) {
   const b64 = btoa(String.fromCharCode(...u8));
@@ -11599,7 +11584,6 @@ async function handleAttachments(request, env, me, requestId, url, path) {
 __name(handleAttachments, "handleAttachments");
 
 // src/api/sop.js
-init_modules_watch_stub();
 init_utils();
 init_kv_cache_helper();
 init_kv_cache_helper();
@@ -11818,7 +11802,6 @@ async function handleSOP(request, env, me, requestId, url, path) {
 __name(handleSOP, "handleSOP");
 
 // src/api/faq.js
-init_modules_watch_stub();
 init_kv_cache_helper();
 init_kv_cache_helper();
 async function handleFAQRequest(request, env, ctx, pathname, me) {
@@ -12219,7 +12202,6 @@ async function deleteFAQ(env, faqId, me) {
 __name(deleteFAQ, "deleteFAQ");
 
 // src/api/documents.js
-init_modules_watch_stub();
 init_utils();
 init_kv_cache_helper();
 init_kv_cache_helper();
@@ -12904,7 +12886,6 @@ async function deleteDocument(env, docId, me, corsHeaders) {
 __name(deleteDocument, "deleteDocument");
 
 // src/api/client_services.js
-init_modules_watch_stub();
 init_utils();
 function parseId(s) {
   const n = parseInt(String(s || ""), 10);
@@ -13141,7 +13122,6 @@ async function handleClientServices(request, env, me, requestId, url, path) {
 __name(handleClientServices, "handleClientServices");
 
 // src/api/cms.js
-init_modules_watch_stub();
 init_utils();
 async function handleCMS(request, env, me, requestId, url, path) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -13326,7 +13306,6 @@ async function handleCMS(request, env, me, requestId, url, path) {
 __name(handleCMS, "handleCMS");
 
 // src/api/settings.js
-init_modules_watch_stub();
 init_utils();
 var DANGEROUS_KEYS = /* @__PURE__ */ new Set(["rule_comp_hours_expiry"]);
 var ALLOWED_KEYS = /* @__PURE__ */ new Set([
@@ -13442,7 +13421,6 @@ async function handleSettings(request, env, me, requestId, url, path) {
 __name(handleSettings, "handleSettings");
 
 // src/api/dashboard.js
-init_modules_watch_stub();
 init_utils();
 init_kv_cache_helper();
 function ymToday() {
@@ -14128,7 +14106,6 @@ async function handleDashboard(request, env, me, requestId, url, path) {
 __name(handleDashboard, "handleDashboard");
 
 // src/api/automation.js
-init_modules_watch_stub();
 init_utils();
 function isValidSchedule(type, value) {
   if (!["daily", "weekly", "monthly", "cron"].includes(type)) return false;
@@ -14298,7 +14275,6 @@ async function handleAutomation(request, env, me, requestId, url, path) {
 __name(handleAutomation, "handleAutomation");
 
 // src/api/holidays.js
-init_modules_watch_stub();
 init_utils();
 init_cache_helper();
 init_kv_cache_helper();
@@ -14401,7 +14377,6 @@ async function handleHolidays(request, env, me, requestId, url) {
 __name(handleHolidays, "handleHolidays");
 
 // src/api/tags.js
-init_modules_watch_stub();
 init_utils();
 async function handleTags(request, env, me, requestId, url) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
@@ -14590,7 +14565,6 @@ async function handleTags(request, env, me, requestId, url) {
 __name(handleTags, "handleTags");
 
 // src/api/billing.js
-init_modules_watch_stub();
 init_utils();
 init_cache_helper();
 init_kv_cache_helper();
@@ -14988,7 +14962,6 @@ async function handleBilling(request, env, me, requestId, url, path) {
 __name(handleBilling, "handleBilling");
 
 // src/api/task_templates.js
-init_modules_watch_stub();
 init_utils();
 function parseId3(s) {
   const n = parseInt(String(s || ""), 10);
@@ -15412,7 +15385,6 @@ async function handleTaskTemplates(request, env, me, requestId, url, path) {
 __name(handleTaskTemplates, "handleTaskTemplates");
 
 // src/api/services.js
-init_modules_watch_stub();
 init_utils();
 function parseId4(s) {
   const n = parseInt(String(s || ""), 10);
@@ -15885,7 +15857,6 @@ async function handleServices(request, env, me, requestId, url, path) {
 __name(handleServices, "handleServices");
 
 // src/api/service_components.js
-init_modules_watch_stub();
 init_utils();
 async function handleServiceComponents(request, env, path) {
   const url = new URL(request.url);
@@ -16272,7 +16243,6 @@ async function deleteServiceComponent(env, corsHeaders, componentId) {
 __name(deleteServiceComponent, "deleteServiceComponent");
 
 // src/api/task_generator.js
-init_modules_watch_stub();
 function calculateDueDate(component, targetYear, targetMonth) {
   const dueRule = component.due_date_rule;
   const dueValue = component.due_date_value;
@@ -16599,7 +16569,6 @@ async function handleManualGeneration(request, env) {
 __name(handleManualGeneration, "handleManualGeneration");
 
 // src/api/timesheet_stats.js
-init_modules_watch_stub();
 init_utils();
 async function getMyStats(request, env, userId) {
   const url = new URL(request.url);
@@ -16801,7 +16770,7 @@ async function handleTimesheetStats(request, env, path) {
 __name(handleTimesheetStats, "handleTimesheetStats");
 
 // src/index.js
-var src_default = {
+var index_default = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
@@ -17409,181 +17378,7 @@ var src_default = {
     }
   }
 };
-
-// ../../../../AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
-init_modules_watch_stub();
-var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env);
-  } finally {
-    try {
-      if (request.body !== null && !request.bodyUsed) {
-        const reader = request.body.getReader();
-        while (!(await reader.read()).done) {
-        }
-      }
-    } catch (e) {
-      console.error("Failed to drain the unused request body.", e);
-    }
-  }
-}, "drainBody");
-var middleware_ensure_req_body_drained_default = drainBody;
-
-// ../../../../AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
-init_modules_watch_stub();
-function reduceError(e) {
-  return {
-    name: e?.name,
-    message: e?.message ?? String(e),
-    stack: e?.stack,
-    cause: e?.cause === void 0 ? void 0 : reduceError(e.cause)
-  };
-}
-__name(reduceError, "reduceError");
-var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
-  try {
-    return await middlewareCtx.next(request, env);
-  } catch (e) {
-    const error = reduceError(e);
-    return Response.json(error, {
-      status: 500,
-      headers: { "MF-Experimental-Error-Stack": "true" }
-    });
-  }
-}, "jsonError");
-var middleware_miniflare3_json_error_default = jsonError;
-
-// .wrangler/tmp/bundle-RYD43g/middleware-insertion-facade.js
-var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
-  middleware_ensure_req_body_drained_default,
-  middleware_miniflare3_json_error_default
-];
-var middleware_insertion_facade_default = src_default;
-
-// ../../../../AppData/Roaming/npm/node_modules/wrangler/templates/middleware/common.ts
-init_modules_watch_stub();
-var __facade_middleware__ = [];
-function __facade_register__(...args) {
-  __facade_middleware__.push(...args.flat());
-}
-__name(__facade_register__, "__facade_register__");
-function __facade_invokeChain__(request, env, ctx, dispatch, middlewareChain) {
-  const [head, ...tail] = middlewareChain;
-  const middlewareCtx = {
-    dispatch,
-    next(newRequest, newEnv) {
-      return __facade_invokeChain__(newRequest, newEnv, ctx, dispatch, tail);
-    }
-  };
-  return head(request, env, ctx, middlewareCtx);
-}
-__name(__facade_invokeChain__, "__facade_invokeChain__");
-function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
-  return __facade_invokeChain__(request, env, ctx, dispatch, [
-    ...__facade_middleware__,
-    finalMiddleware
-  ]);
-}
-__name(__facade_invoke__, "__facade_invoke__");
-
-// .wrangler/tmp/bundle-RYD43g/middleware-loader.entry.ts
-var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
-  constructor(scheduledTime, cron, noRetry) {
-    this.scheduledTime = scheduledTime;
-    this.cron = cron;
-    this.#noRetry = noRetry;
-  }
-  static {
-    __name(this, "__Facade_ScheduledController__");
-  }
-  #noRetry;
-  noRetry() {
-    if (!(this instanceof ___Facade_ScheduledController__)) {
-      throw new TypeError("Illegal invocation");
-    }
-    this.#noRetry();
-  }
-};
-function wrapExportedHandler(worker) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0) {
-    return worker;
-  }
-  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
-    __facade_register__(middleware);
-  }
-  const fetchDispatcher = /* @__PURE__ */ __name(function(request, env, ctx) {
-    if (worker.fetch === void 0) {
-      throw new Error("Handler does not export a fetch() function.");
-    }
-    return worker.fetch(request, env, ctx);
-  }, "fetchDispatcher");
-  return {
-    ...worker,
-    fetch(request, env, ctx) {
-      const dispatcher = /* @__PURE__ */ __name(function(type, init) {
-        if (type === "scheduled" && worker.scheduled !== void 0) {
-          const controller = new __Facade_ScheduledController__(
-            Date.now(),
-            init.cron ?? "",
-            () => {
-            }
-          );
-          return worker.scheduled(controller, env, ctx);
-        }
-      }, "dispatcher");
-      return __facade_invoke__(request, env, ctx, dispatcher, fetchDispatcher);
-    }
-  };
-}
-__name(wrapExportedHandler, "wrapExportedHandler");
-function wrapWorkerEntrypoint(klass) {
-  if (__INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0) {
-    return klass;
-  }
-  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
-    __facade_register__(middleware);
-  }
-  return class extends klass {
-    #fetchDispatcher = /* @__PURE__ */ __name((request, env, ctx) => {
-      this.env = env;
-      this.ctx = ctx;
-      if (super.fetch === void 0) {
-        throw new Error("Entrypoint class does not define a fetch() function.");
-      }
-      return super.fetch(request);
-    }, "#fetchDispatcher");
-    #dispatcher = /* @__PURE__ */ __name((type, init) => {
-      if (type === "scheduled" && super.scheduled !== void 0) {
-        const controller = new __Facade_ScheduledController__(
-          Date.now(),
-          init.cron ?? "",
-          () => {
-          }
-        );
-        return super.scheduled(controller);
-      }
-    }, "#dispatcher");
-    fetch(request) {
-      return __facade_invoke__(
-        request,
-        this.env,
-        this.ctx,
-        this.#dispatcher,
-        this.#fetchDispatcher
-      );
-    }
-  };
-}
-__name(wrapWorkerEntrypoint, "wrapWorkerEntrypoint");
-var WRAPPED_ENTRY;
-if (typeof middleware_insertion_facade_default === "object") {
-  WRAPPED_ENTRY = wrapExportedHandler(middleware_insertion_facade_default);
-} else if (typeof middleware_insertion_facade_default === "function") {
-  WRAPPED_ENTRY = wrapWorkerEntrypoint(middleware_insertion_facade_default);
-}
-var middleware_loader_entry_default = WRAPPED_ENTRY;
 export {
-  __INTERNAL_WRANGLER_MIDDLEWARE__,
-  middleware_loader_entry_default as default
+  index_default as default
 };
 //# sourceMappingURL=index.js.map
