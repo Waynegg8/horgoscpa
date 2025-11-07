@@ -1348,66 +1348,66 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 		const usersList = usersRows?.results || [];
 
 		// 2. 获取所有客户
-			const clientsRows = await env.DATABASE.prepare(
-				"SELECT client_id, company_name FROM Clients WHERE is_deleted = 0 ORDER BY company_name ASC"
-			).all();
-			const clientsList = clientsRows?.results || [];
+		const clientsRows = await env.DATABASE.prepare(
+			"SELECT client_id, company_name FROM Clients WHERE is_deleted = 0 ORDER BY company_name ASC"
+		).all();
+		const clientsList = clientsRows?.results || [];
 
-			const clients = [];
+		const clients = [];
 
-			for (const client of clientsList) {
-				const clientId = client.client_id;
+		for (const client of clientsList) {
+			const clientId = client.client_id;
+			
+			// 3. 获取该客户本月所有工时记录
+			const timesheetRows = await env.DATABASE.prepare(
+				`SELECT user_id, work_type, work_date, hours
+				 FROM Timesheets
+				 WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
+			).bind(clientId, yearMonth).all();
+			const timesheets = timesheetRows?.results || [];
+			
+			if (timesheets.length === 0) continue;
+			
+			let totalHours = 0;
+			let totalWeightedHours = 0;
+			let totalCost = 0;
+			const taskCount = new Set();
+			const userWeightedHours = {}; // 每位员工的加权工时
+			const userProcessedFixed = {}; // 追踪每位员工的fixed_8h类型
+			
+			// 4. 计算每位员工在该客户的加权工时
+			for (const ts of timesheets) {
+				if (!ts.user_id) continue;
+				taskCount.add(ts.task_id);
 				
-				// 3. 获取该客户本月所有工时记录
-				const timesheetRows = await env.DATABASE.prepare(
-					`SELECT user_id, work_type, work_date, hours
-					 FROM Timesheets
-					 WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
-				).bind(clientId, yearMonth).all();
-				const timesheets = timesheetRows?.results || [];
+				const userId = ts.user_id;
+				const hours = Number(ts.hours || 0);
+				const date = ts.work_date || '';
+				const workTypeId = parseInt(ts.work_type) || 1;
+				const info = WORK_TYPES[workTypeId] || WORK_TYPES[1];
 				
-				if (timesheets.length === 0) continue;
+				totalHours += hours;
 				
-				let totalHours = 0;
-				let totalWeightedHours = 0;
-				let totalCost = 0;
-				const taskCount = new Set();
-				const userWeightedHours = {}; // 每位员工的加权工时
-				const userProcessedFixed = {}; // 追踪每位员工的fixed_8h类型
+				if (!userWeightedHours[userId]) userWeightedHours[userId] = 0;
+				if (!userProcessedFixed[userId]) userProcessedFixed[userId] = new Set();
 				
-				// 4. 计算每位员工在该客户的加权工时
-				for (const ts of timesheets) {
-					if (!ts.user_id) continue;
-					taskCount.add(ts.task_id);
-					
-					const userId = ts.user_id;
-					const hours = Number(ts.hours || 0);
-					const date = ts.work_date || '';
-					const workTypeId = parseInt(ts.work_type) || 1;
-					const info = WORK_TYPES[workTypeId] || WORK_TYPES[1];
-					
-					totalHours += hours;
-					
-					if (!userWeightedHours[userId]) userWeightedHours[userId] = 0;
-					if (!userProcessedFixed[userId]) userProcessedFixed[userId] = new Set();
-					
-					// 计算加权工时
-					let tsWeightedHours;
-					if (workTypeId === 7 || workTypeId === 10) {
-						const key = `${date}:${workTypeId}`;
-						if (!userProcessedFixed[userId].has(key)) {
-							tsWeightedHours = 8.0;
-							userProcessedFixed[userId].add(key);
-						} else {
-							tsWeightedHours = 0;
-						}
+				// 计算加权工时
+				let tsWeightedHours;
+				if (workTypeId === 7 || workTypeId === 10) {
+					const key = `${date}:${workTypeId}`;
+					if (!userProcessedFixed[userId].has(key)) {
+						tsWeightedHours = 8.0;
+						userProcessedFixed[userId].add(key);
 					} else {
-						tsWeightedHours = hours * info.multiplier;
+						tsWeightedHours = 0;
 					}
-					userWeightedHours[userId] += tsWeightedHours;
-					totalWeightedHours += tsWeightedHours;
+				} else {
+					tsWeightedHours = hours * info.multiplier;
 				}
-				
+				userWeightedHours[userId] += tsWeightedHours;
+				totalWeightedHours += tsWeightedHours;
+			}
+			
 			// 5. 使用员工实际时薪计算客户总成本，并收集员工明细
 			let laborCost = 0;
 			let overheadAllocation = 0;
@@ -1450,42 +1450,42 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					totalCost: empTotalCost
 				});
 			}
-				
-				// 按成本降序排列员工明细
-				employeeDetails.sort((a, b) => b.totalCost - a.totalCost);
-				
-				// 6. 获取本月收入
-				const revenueRow = await env.DATABASE.prepare(
-					`SELECT SUM(total_amount) as total FROM Receipts 
-					 WHERE client_id = ? AND substr(receipt_date, 1, 7) = ? AND is_deleted = 0`
-				).bind(clientId, yearMonth).first();
-				const revenue = Number(revenueRow?.total || 0);
-				
-				if (totalHours > 0 || revenue > 0) {
-					const avgHourlyRate = totalWeightedHours > 0 ? Math.round(totalCost / totalWeightedHours) : 0;
-					clients.push({
-						clientId,
-						clientName: client.company_name,
-						totalHours: Math.round(totalHours * 10) / 10,
-						weightedHours: Math.round(totalWeightedHours * 10) / 10,
-						avgHourlyRate,
-						laborCost,
-						overheadAllocation,
-						totalCost,
-						revenue,
-						profit: revenue - totalCost,
-						employees: employeeDetails // 员工明细列表
-					});
-				}
+			
+			// 按成本降序排列员工明细
+			employeeDetails.sort((a, b) => b.totalCost - a.totalCost);
+			
+			// 6. 获取本月收入
+			const revenueRow = await env.DATABASE.prepare(
+				`SELECT SUM(total_amount) as total FROM Receipts 
+				 WHERE client_id = ? AND substr(receipt_date, 1, 7) = ? AND is_deleted = 0`
+			).bind(clientId, yearMonth).first();
+			const revenue = Number(revenueRow?.total || 0);
+			
+			if (totalHours > 0 || revenue > 0) {
+				const avgHourlyRate = totalWeightedHours > 0 ? Math.round(totalCost / totalWeightedHours) : 0;
+				clients.push({
+					clientId,
+					clientName: client.company_name,
+					totalHours: Math.round(totalHours * 10) / 10,
+					weightedHours: Math.round(totalWeightedHours * 10) / 10,
+					avgHourlyRate,
+					laborCost,
+					overheadAllocation,
+					totalCost,
+					revenue,
+					profit: revenue - totalCost,
+					employees: employeeDetails // 员工明细列表
+				});
 			}
+		}
 
-			return jsonResponse(200, { 
-				ok:true, 
-				code:"OK", 
-				message:"成功", 
-				data:{ year, month, clients }, 
-				meta:{ requestId, count: clients.length } 
-			}, corsHeaders);
+		return jsonResponse(200, { 
+			ok:true, 
+			code:"OK", 
+			message:"成功", 
+			data:{ year, month, clients }, 
+			meta:{ requestId, count: clients.length } 
+		}, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
 			return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
