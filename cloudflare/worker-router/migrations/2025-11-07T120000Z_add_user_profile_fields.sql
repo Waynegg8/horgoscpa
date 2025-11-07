@@ -1,11 +1,5 @@
--- 添加用户个人资料字段（到职日、性别）
--- 这些字段用于计算假期额度和判断性别专属假期
-
--- 添加到职日字段
-ALTER TABLE Users ADD COLUMN hire_date TEXT;
-
--- 添加性别字段
-ALTER TABLE Users ADD COLUMN gender TEXT CHECK(gender IN ('male', 'female', NULL));
+-- 为Settings表添加分类字段
+-- 注意：Users表中已经包含了gender和start_date字段，无需重复添加
 
 -- 为Settings表添加分类字段
 ALTER TABLE Settings ADD COLUMN setting_category TEXT DEFAULT 'general';

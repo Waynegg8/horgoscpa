@@ -186,7 +186,7 @@ textarea { resize: vertical; }
 
 /* 表格 */
 .data-table-container {
-    overflow-x: auto;
+    overflow-x: visible;
     border: 1px solid var(--gray-200);
     border-radius: 8px;
     min-height: 200px;
@@ -194,7 +194,6 @@ textarea { resize: vertical; }
 
 .data-table {
     width: 100%;
-    min-width: 800px;
     border-collapse: collapse;
 }
 
