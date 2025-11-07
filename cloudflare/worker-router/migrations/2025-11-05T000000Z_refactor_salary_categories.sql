@@ -3,6 +3,9 @@
 -- 2. 移除 is_regular_payment 和 is_fixed 字段（已废弃）
 
 -- SQLite 不支持直接修改 CHECK 约束，需要重建表
+-- Step 0: 禁用外键约束（重建表时需要）
+PRAGMA foreign_keys = OFF;
+
 -- Step 1: 创建新表结构
 CREATE TABLE IF NOT EXISTS SalaryItemTypes_new (
   item_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,4 +42,7 @@ INSERT INTO SalaryItemTypes (item_code, item_name, category, description, displa
   ('PERFORMANCE', '績效獎金', 'bonus', '每月變動的績效獎金', 3, 1, datetime('now'), datetime('now')),
   ('LABOR_INSURANCE', '勞保(個人負擔)', 'deduction', '勞工保險個人負擔部分', 10, 1, datetime('now'), datetime('now')),
   ('HEALTH_INSURANCE', '健保(個人負擔)', 'deduction', '健康保險個人負擔部分', 11, 1, datetime('now'), datetime('now'));
+
+-- Step 7: 重新启用外键约束
+PRAGMA foreign_keys = ON;
 
