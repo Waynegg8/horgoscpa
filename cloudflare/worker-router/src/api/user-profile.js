@@ -56,7 +56,7 @@ async function getUserProfile(env, me, userId, requestId, corsHeaders) {
 		}
 
 		const user = await env.DATABASE.prepare(
-			`SELECT user_id, username, name, email, is_admin, hire_date, gender, 
+			`SELECT user_id, username, name, email, is_admin, start_date as hire_date, gender, 
 			        created_at, last_login
 			 FROM Users 
 			 WHERE user_id = ? AND is_deleted = 0`
@@ -159,7 +159,7 @@ async function updateUserProfile(request, env, me, userId, requestId, corsHeader
 		const binds = [];
 
 		if (hire_date !== undefined) {
-			updates.push("hire_date = ?");
+			updates.push("start_date = ?");
 			binds.push(hire_date || null);
 		}
 		if (gender !== undefined) {
@@ -373,7 +373,7 @@ async function recalculateLeaveBalances(env, me, userId, requestId, corsHeaders)
 
 		// 获取用户信息
 		const user = await env.DATABASE.prepare(
-			"SELECT hire_date, gender FROM Users WHERE user_id = ? AND is_deleted = 0"
+			"SELECT start_date as hire_date, gender FROM Users WHERE user_id = ? AND is_deleted = 0"
 		).bind(userId).first();
 
 		if (!user) {
