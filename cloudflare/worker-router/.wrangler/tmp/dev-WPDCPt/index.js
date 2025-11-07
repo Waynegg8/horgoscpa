@@ -7835,6 +7835,73 @@ async function handleReceipts(request, env, me, requestId, url) {
       return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
     }
   }
+  const addServiceTypesMatch = path.match(/^\/internal\/api\/v1\/receipts\/([^/]+)\/service-types$/);
+  if (method === "POST" && addServiceTypesMatch) {
+    const receiptId = decodeURIComponent(addServiceTypesMatch[1]);
+    try {
+      const body = await request.json();
+      const serviceTypeIds = Array.isArray(body?.service_type_ids) ? body.service_type_ids : [];
+      if (serviceTypeIds.length === 0) {
+        return jsonResponse(400, {
+          ok: false,
+          code: "BAD_REQUEST",
+          message: "\u8ACB\u63D0\u4F9B\u670D\u52D9\u985E\u578BID\u5217\u8868",
+          meta: { requestId }
+        }, corsHeaders);
+      }
+      const receipt = await env.DATABASE.prepare(
+        "SELECT receipt_id FROM Receipts WHERE receipt_id = ? AND is_deleted = 0"
+      ).bind(receiptId).first();
+      if (!receipt) {
+        return jsonResponse(404, {
+          ok: false,
+          code: "NOT_FOUND",
+          message: "\u6536\u64DA\u4E0D\u5B58\u5728",
+          meta: { requestId }
+        }, corsHeaders);
+      }
+      for (const serviceId of serviceTypeIds) {
+        const sid = parseInt(serviceId, 10);
+        if (Number.isFinite(sid) && sid > 0) {
+          try {
+            await env.DATABASE.prepare(`
+							INSERT OR IGNORE INTO ReceiptServiceTypes (receipt_id, service_id, created_at)
+							VALUES (?, ?, ?)
+						`).bind(receiptId, sid, (/* @__PURE__ */ new Date()).toISOString()).run();
+          } catch (err) {
+            console.warn("[ReceiptServiceTypes] \u63D2\u5165\u5931\u6557:", err.message);
+          }
+        }
+      }
+      return jsonResponse(200, {
+        ok: true,
+        code: "OK",
+        message: "\u670D\u52D9\u985E\u578B\u5DF2\u66F4\u65B0",
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  const deleteServiceTypesMatch = path.match(/^\/internal\/api\/v1\/receipts\/([^/]+)\/service-types$/);
+  if (method === "DELETE" && deleteServiceTypesMatch) {
+    const receiptId = decodeURIComponent(deleteServiceTypesMatch[1]);
+    try {
+      await env.DATABASE.prepare(`
+				DELETE FROM ReceiptServiceTypes WHERE receipt_id = ?
+			`).bind(receiptId).run();
+      return jsonResponse(200, {
+        ok: true,
+        code: "OK",
+        message: "\u670D\u52D9\u985E\u578B\u95DC\u806F\u5DF2\u6E05\u9664",
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
   if (method === "POST" && path === "/internal/api/v1/receipts/reminders/postpone") {
     try {
       const body = await request.json();
