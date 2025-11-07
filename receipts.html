@@ -817,17 +817,26 @@
         }
 
         // 加載所有收據
-        async function loadAllReceipts() {
+        async function loadAllReceipts(bypassCache = false) {
           try {
             const params = new URLSearchParams({ perPage: '1000' });
-            const res = await fetch(`${apiBase}/receipts?${params}`, { credentials:'include' });
+            
+            // 绕过缓存：添加时间戳或使用 cache: 'no-cache'
+            const fetchOptions = { 
+              credentials: 'include',
+              cache: bypassCache ? 'no-cache' : 'default'
+            };
+            
+            const res = await fetch(`${apiBase}/receipts?${params}`, fetchOptions);
             if (res.status === 401) { location.assign('/login?redirect=/internal/receipts'); return; }
             const json = await res.json();
             if (json.ok) {
               allReceipts = json.data || [];
               console.log('[收據列表] 載入', allReceipts.length, '筆收據');
               if (allReceipts.length > 0) {
-                console.log('[收據範例]', allReceipts[0]);
+                console.log('[收據範例 - 完整結構]', JSON.stringify(allReceipts[0], null, 2));
+                console.log('[服務期間]', allReceipts[0].serviceStartMonth, '至', allReceipts[0].serviceEndMonth);
+                console.log('[服務類型]', allReceipts[0].serviceTypes);
               }
               render();
             }
@@ -1211,9 +1220,9 @@
             
             closeModal();
             
-            // 刷新列表和提醒
+            // 刷新列表和提醒（强制绕过缓存）
             await Promise.all([
-              loadAllReceipts(),
+              loadAllReceipts(true),  // bypassCache = true
               loadReceiptReminders()
             ]);
           } catch (err) {
