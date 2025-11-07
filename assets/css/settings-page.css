@@ -234,26 +234,115 @@ textarea { resize: vertical; }
 .hidden { display: none !important; }
 
 /* 表格按钮链接 */
+/* 表格按钮样式（与客户详情页统一） */
+.table-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-right: 6px;
+}
+
+.table-btn:last-child {
+    margin-right: 0;
+}
+
+.table-btn-primary {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+.table-btn-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+.table-btn-secondary {
+    background: white;
+    border-color: #d1d5db;
+    color: #374151;
+}
+
+.table-btn-secondary:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.table-btn-danger {
+    background: white;
+    border-color: #fca5a5;
+    color: #dc2626;
+}
+
+.table-btn-danger:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
+/* 表格内文字链接按钮 */
 .table-btn-link {
     background: none;
     border: none;
-    color: var(--primary);
-    font-size: 13px;
+    color: #2563eb;
+    text-decoration: none;
     cursor: pointer;
     padding: 4px 8px;
-    text-decoration: underline;
+    font-size: 13px;
 }
 
 .table-btn-link:hover {
-    color: #2563eb;
+    background: #eff6ff;
+    color: #1d4ed8;
 }
 
 .table-btn-link.danger {
-    color: var(--red);
+    color: #dc2626;
 }
 
 .table-btn-link.danger:hover {
-    color: #dc2626;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+/* 服务分组表格样式 */
+.service-group-header {
+    background: #f0f9ff;
+    cursor: pointer;
+    user-select: none;
+}
+
+.service-group-header:hover {
+    background: #e0f2fe;
+}
+
+.service-group-header td {
+    font-weight: 600;
+    color: #1e40af;
+    font-size: 15px;
+}
+
+.service-main-row:hover {
+    background-color: #f9fafb;
+}
+
+.component-detail-row {
+    background-color: #fafafa;
+}
+
+.component-detail-cell {
+    padding: 0 !important;
+}
+
+.component-content {
+    padding: 0;
+}
+
+.actions-cell {
+    white-space: nowrap;
 }
 
 /* 公司资料切换按钮 */
