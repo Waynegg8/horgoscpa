@@ -141,9 +141,8 @@
   </div>
 
   <script>
-    const apiBase = location.hostname.endsWith('horgoscpa.com') 
-      ? '/internal/api/v1' 
-      : 'https://www.horgoscpa.com/internal/api/v1';
+    // 强制使用完整URL以确保正确路由
+    const apiBase = 'https://www.horgoscpa.com/internal/api/v1';
 
     let allReceipts = [];
     let allServiceTypes = [];
@@ -151,19 +150,46 @@
 
     async function init() {
       try {
+        // 先检查登录状态
+        const authCheck = await fetch(`${apiBase}/me`, { credentials: 'include' });
+        if (authCheck.status === 401) {
+          console.log('[Auth] 未登录，跳转到登录页');
+          location.assign('https://www.horgoscpa.com/login.html?redirect=' + encodeURIComponent(location.href));
+          return;
+        }
+
+        console.log('[Init] 开始加载数据...');
+
         // 并行加载收据和服务类型
         const [receiptsRes, servicesRes] = await Promise.all([
-          fetch(`${apiBase}/receipts?perPage=1000`, { credentials: 'include', cache: 'no-cache' }),
-          fetch(`${apiBase}/services/types`, { credentials: 'include' })
+          fetch(`${apiBase}/receipts?perPage=1000`, { 
+            credentials: 'include', 
+            cache: 'no-cache',
+            headers: {
+              'Accept': 'application/json'
+            }
+          }),
+          fetch(`${apiBase}/services/types`, { 
+            credentials: 'include',
+            headers: {
+              'Accept': 'application/json'
+            }
+          })
         ]);
 
+        console.log('[Init] 收据响应状态:', receiptsRes.status);
+        console.log('[Init] 服务类型响应状态:', servicesRes.status);
+
         if (receiptsRes.status === 401 || servicesRes.status === 401) {
-          location.assign('/login?redirect=' + encodeURIComponent(location.pathname));
+          location.assign('https://www.horgoscpa.com/login.html?redirect=' + encodeURIComponent(location.href));
           return;
         }
 
         const receiptsData = await receiptsRes.json();
         const servicesData = await servicesRes.json();
+
+        console.log('[Init] 收据数据:', receiptsData);
+        console.log('[Init] 服务类型数据:', servicesData);
 
         if (receiptsData.ok) {
           allReceipts = receiptsData.data || [];
