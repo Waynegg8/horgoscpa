@@ -1457,6 +1457,41 @@ async function calculateEmployeePayroll(env, userId, month) {
   });
   const totalDeductionCents = deductionCents + leaveDeductionCents;
   const netSalaryCents = grossSalaryCents - totalDeductionCents;
+  try {
+    await env.DATABASE.prepare(`
+			INSERT INTO PayrollCache (
+				user_id, year_month,
+				base_salary_cents, gross_salary_cents, net_salary_cents,
+				overtime_cents, performance_bonus_cents, year_end_bonus_cents,
+				total_work_hours, total_overtime_hours,
+				last_calculated_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+			ON CONFLICT(user_id, year_month) DO UPDATE SET
+				base_salary_cents = excluded.base_salary_cents,
+				gross_salary_cents = excluded.gross_salary_cents,
+				net_salary_cents = excluded.net_salary_cents,
+				overtime_cents = excluded.overtime_cents,
+				performance_bonus_cents = excluded.performance_bonus_cents,
+				year_end_bonus_cents = excluded.year_end_bonus_cents,
+				total_work_hours = excluded.total_work_hours,
+				total_overtime_hours = excluded.total_overtime_hours,
+				last_calculated_at = datetime('now')
+		`).bind(
+      user.user_id,
+      month,
+      baseSalaryCents,
+      grossSalaryCents,
+      netSalaryCents,
+      overtimeCents,
+      performanceBonusCents,
+      totalYearEndBonusCents,
+      timesheetStats?.total_hours || 0,
+      overtimeDetails?.totalOvertimeHours || 0
+    ).run();
+    console.log(`[PayrollCache] \u5DF2\u4FDD\u5B58\u7F13\u5B58: user=${user.user_id}, month=${month}`);
+  } catch (cacheErr) {
+    console.error("[PayrollCache] \u4FDD\u5B58\u7F13\u5B58\u5931\u8D25:", cacheErr);
+  }
   return {
     userId: user.user_id,
     username: user.username,
@@ -10519,8 +10554,29 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 			ORDER BY name
 		`).all();
     const users = usersResult?.results || [];
-    const monthlyTrend = [];
-    const employeeSummary = [];
+    console.log(`[AnnualPayroll] \u4ECE PayrollCache \u8BFB\u53D6\u5E74\u5EA6\u6570\u636E: ${year}`);
+    const cacheResult = await env.DATABASE.prepare(`
+		SELECT 
+			pc.user_id,
+			pc.year_month,
+			pc.gross_salary_cents,
+			pc.net_salary_cents,
+			pc.overtime_cents,
+			pc.performance_bonus_cents,
+			pc.year_end_bonus_cents,
+			u.name,
+			u.username
+		FROM PayrollCache pc
+		JOIN Users u ON u.user_id = pc.user_id
+		WHERE pc.year_month LIKE ?
+			AND u.is_deleted = 0
+		ORDER BY pc.year_month, u.name
+	`).bind(`${year}-%`).all();
+    const cacheRows = cacheResult?.results || [];
+    console.log(`[AnnualPayroll] \u4ECE\u7F13\u5B58\u8BFB\u53D6\u5230 ${cacheRows.length} \u6761\u8BB0\u5F55`);
+    if (cacheRows.length === 0) {
+      console.warn(`[AnnualPayroll] \u65E0\u7F13\u5B58\u6570\u636E\uFF0C\u9700\u8981\u5148\u8BBF\u95EE\u85AA\u8D44\u9875\u9762\u751F\u6210\u6570\u636E`);
+    }
     const empMap = /* @__PURE__ */ new Map();
     for (const user of users) {
       empMap.set(user.user_id, {
@@ -10533,48 +10589,60 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
         totalYearEnd: 0
       });
     }
-    for (let month = 1; month <= 12; month++) {
-      const ym = `${year}-${String(month).padStart(2, "0")}`;
-      let monthGross = 0;
-      let monthNet = 0;
-      for (const user of users) {
-        try {
-          const payroll = await calculateEmployeePayroll2(env, user.user_id, ym);
-          if (!payroll) continue;
-          const gross = payroll.grossSalaryCents / 100;
-          const net = payroll.netSalaryCents / 100;
-          monthGross += gross;
-          monthNet += net;
-          const emp = empMap.get(user.user_id);
-          emp.annualGross += gross;
-          emp.annualNet += net;
-          emp.totalOvertime += (payroll.overtimeCents || 0) / 100;
-          emp.totalPerformance += (payroll.performanceBonusCents || 0) / 100;
-          emp.totalYearEnd += (payroll.totalYearEndBonusCents || 0) / 100;
-        } catch (err) {
-          console.error(`[AnnualPayroll] Error calculating ${user.name} ${ym}:`, err);
-        }
+    const monthlyMap = /* @__PURE__ */ new Map();
+    for (let m = 1; m <= 12; m++) {
+      monthlyMap.set(m, {
+        month: m,
+        totalGrossSalary: 0,
+        totalNetSalary: 0,
+        employeeCount: 0
+      });
+    }
+    for (const row of cacheRows) {
+      const [y, m] = row.year_month.split("-");
+      const month = parseInt(m);
+      const gross = (row.gross_salary_cents || 0) / 100;
+      const net = (row.net_salary_cents || 0) / 100;
+      const overtime = (row.overtime_cents || 0) / 100;
+      const performance = (row.performance_bonus_cents || 0) / 100;
+      const yearEnd = (row.year_end_bonus_cents || 0) / 100;
+      if (empMap.has(row.user_id)) {
+        const emp = empMap.get(row.user_id);
+        emp.annualGross += gross;
+        emp.annualNet += net;
+        emp.totalOvertime += overtime;
+        emp.totalPerformance += performance;
+        emp.totalYearEnd += yearEnd;
       }
-      monthlyTrend.push({
-        month,
-        totalGrossSalary: monthGross,
-        totalNetSalary: monthNet,
-        employeeCount: users.length,
-        avgGrossSalary: users.length > 0 ? monthGross / users.length : 0
-      });
+      if (monthlyMap.has(month)) {
+        const monthData = monthlyMap.get(month);
+        monthData.totalGrossSalary += gross;
+        monthData.totalNetSalary += net;
+        monthData.employeeCount = users.length;
+      }
     }
+    const employeeSummary = [];
     for (const emp of empMap.values()) {
-      employeeSummary.push({
-        userId: emp.userId,
-        name: emp.name,
-        annualGrossSalary: emp.annualGross,
-        annualNetSalary: emp.annualNet,
-        avgMonthlySalary: emp.annualGross / 12,
-        totalOvertimePay: emp.totalOvertime,
-        totalPerformanceBonus: emp.totalPerformance,
-        totalYearEndBonus: emp.totalYearEnd
-      });
+      if (emp.annualGross > 0 || emp.annualNet > 0) {
+        employeeSummary.push({
+          userId: emp.userId,
+          name: emp.name,
+          annualGrossSalary: emp.annualGross,
+          annualNetSalary: emp.annualNet,
+          avgMonthlySalary: emp.annualGross / 12,
+          totalOvertimePay: emp.totalOvertime,
+          totalPerformanceBonus: emp.totalPerformance,
+          totalYearEndBonus: emp.totalYearEnd
+        });
+      }
     }
+    const monthlyTrend = Array.from(monthlyMap.values()).map((m) => ({
+      month: m.month,
+      totalGrossSalary: m.totalGrossSalary,
+      totalNetSalary: m.totalNetSalary,
+      employeeCount: m.employeeCount,
+      avgGrossSalary: m.employeeCount > 0 ? m.totalGrossSalary / m.employeeCount : 0
+    }));
     const totalGross = monthlyTrend.reduce((sum, m) => sum + m.totalGrossSalary, 0);
     const totalNet = monthlyTrend.reduce((sum, m) => sum + m.totalNetSalary, 0);
     const data = {
@@ -10677,74 +10745,49 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
       let weightedHours = 0;
       let generatedRevenue = 0;
       const clientDistribution = /* @__PURE__ */ new Map();
-      const serviceHoursMap = /* @__PURE__ */ new Map();
+      const clientHoursMap = /* @__PURE__ */ new Map();
       for (const ts of timesheets) {
         const hours = Number(ts.hours || 0);
         const workTypeId = parseInt(ts.work_type) || 1;
         const weighted = calculateWeightedHours2(workTypeId, hours);
         standardHours += hours;
         weightedHours += weighted;
-        const clientServiceId = ts.client_service_id;
-        if (!clientServiceId) {
+        const clientId = ts.client_id;
+        if (!clientId) {
           continue;
         }
-        if (!serviceHoursMap.has(clientServiceId)) {
-          serviceHoursMap.set(clientServiceId, {
+        if (!clientHoursMap.has(clientId)) {
+          clientHoursMap.set(clientId, {
+            clientId,
+            clientName: ts.client_name || "\u672A\u77E5\u5BA2\u6237",
+            serviceName: ts.service_name || "\u7EFC\u5408\u670D\u52A1",
             hours: 0,
-            weightedHours: 0,
-            timesheets: []
+            weightedHours: 0
           });
         }
-        const service = serviceHoursMap.get(clientServiceId);
-        service.hours += hours;
-        service.weightedHours += weighted;
-        service.timesheets.push({
-          ...ts,
-          hours,
-          weighted
-        });
+        const client = clientHoursMap.get(clientId);
+        client.hours += hours;
+        client.weightedHours += weighted;
       }
-      const clientHoursTotal = /* @__PURE__ */ new Map();
-      for (const ts of timesheets) {
-        const clientId = ts.client_id;
-        if (!clientId) continue;
-        if (!clientHoursTotal.has(clientId)) {
-          clientHoursTotal.set(clientId, { totalHours: 0, clientName: ts.client_name });
-        }
-      }
-      for (const clientId of clientHoursTotal.keys()) {
+      for (const [clientId, clientData] of clientHoursMap) {
         const totalRow = await env.DATABASE.prepare(`
 				SELECT SUM(hours) as total_hours
 				FROM Timesheets
 				WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0
 			`).bind(clientId, ym).first();
-        clientHoursTotal.get(clientId).totalHours = Number(totalRow?.total_hours || 0);
-      }
-      for (const [clientServiceId, serviceData] of serviceHoursMap) {
-        const firstTs = serviceData.timesheets[0];
-        const clientId = firstTs.client_id;
+        const clientTotalHours = Number(totalRow?.total_hours || 0);
+        if (clientTotalHours === 0) continue;
         const clientRevenue = clientRevenueMap.get(clientId) || 0;
-        const clientTotal = clientHoursTotal.get(clientId);
-        if (!clientTotal || clientTotal.totalHours === 0) continue;
-        const serviceRevenue = clientRevenue * (serviceData.hours / clientTotal.totalHours);
-        if (serviceRevenue > 0) {
-          generatedRevenue += serviceRevenue;
-          const clientKey = clientId;
-          if (!clientDistribution.has(clientKey)) {
-            clientDistribution.set(clientKey, {
-              clientId,
-              clientName: firstTs.client_name || "\u672A\u77E5\u5BA2\u6237",
-              serviceName: firstTs.service_name || "\u7EFC\u5408\u670D\u52A1",
-              hours: 0,
-              weightedHours: 0,
-              generatedRevenue: 0
-            });
-          }
-          const dist = clientDistribution.get(clientKey);
-          dist.hours += serviceData.hours;
-          dist.weightedHours += serviceData.weightedHours;
-          dist.generatedRevenue += serviceRevenue;
-        }
+        const employeeRevenue = clientRevenue * (clientData.hours / clientTotalHours);
+        generatedRevenue += employeeRevenue;
+        clientDistribution.set(clientId, {
+          clientId: clientData.clientId,
+          clientName: clientData.clientName,
+          serviceName: clientData.serviceName,
+          hours: clientData.hours,
+          weightedHours: clientData.weightedHours,
+          generatedRevenue: employeeRevenue
+        });
       }
       const profit = generatedRevenue - totalCost;
       const profitMargin = generatedRevenue > 0 ? profit / generatedRevenue * 100 : 0;
@@ -10969,37 +11012,38 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
     const serviceTypeSummary = await env.DATABASE.prepare(`
 	SELECT 
 		COALESCE(s.service_name, '\u65E0\u5173\u8054\u670D\u52A1') as service_name,
-		SUM(t.hours) as total_hours
+		SUM(t.hours) as total_hours,
+		t.work_type
 	FROM Timesheets t
-	LEFT JOIN Clients c ON c.client_id = t.client_id
-	LEFT JOIN Services s ON s.service_id = c.primary_service_id
+	LEFT JOIN ActiveTasks task ON task.task_id = t.task_id
+	LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
+	LEFT JOIN Services s ON s.service_id = cs.service_id
 	WHERE t.is_deleted = 0
 		AND substr(t.work_date, 1, 4) = ?
-	GROUP BY s.service_name
+	GROUP BY s.service_name, t.work_type
 	`).bind(String(year)).all();
-    const serviceTypeData = [];
-    for (const s of serviceTypeSummary?.results || []) {
-      const timesheetsRows = await env.DATABASE.prepare(`
-		SELECT t.work_type, t.hours
-		FROM Timesheets t
-		LEFT JOIN Clients c ON c.client_id = t.client_id
-		LEFT JOIN Services serv ON serv.service_id = c.primary_service_id
-		WHERE t.is_deleted = 0
-			AND substr(t.work_date, 1, 4) = ?
-			AND COALESCE(serv.service_name, '\u65E0\u5173\u8054\u670D\u52A1') = ?
-		`).bind(String(year), s.service_name).all();
-      let weightedHours = 0;
-      for (const ts of timesheetsRows?.results || []) {
-        const workTypeId = parseInt(ts.work_type) || 1;
-        const hours = Number(ts.hours || 0);
-        weightedHours += calculateWeightedHours2(workTypeId, hours);
+    const serviceMap = /* @__PURE__ */ new Map();
+    for (const row of serviceTypeSummary?.results || []) {
+      const serviceName = row.service_name || "\u65E0\u5173\u8054\u670D\u52A1";
+      const hours = Number(row.total_hours || 0);
+      const workTypeId = parseInt(row.work_type) || 1;
+      const weighted = calculateWeightedHours2(workTypeId, hours);
+      if (!serviceMap.has(serviceName)) {
+        serviceMap.set(serviceName, {
+          serviceName,
+          totalHours: 0,
+          weightedHours: 0
+        });
       }
-      serviceTypeData.push({
-        serviceName: s.service_name,
-        totalHours: Number(s.total_hours || 0),
-        weightedHours: Number(weightedHours.toFixed(1))
-      });
+      const service = serviceMap.get(serviceName);
+      service.totalHours += hours;
+      service.weightedHours += weighted;
     }
+    const serviceTypeData = Array.from(serviceMap.values()).map((s) => ({
+      serviceName: s.serviceName,
+      totalHours: Number(s.totalHours.toFixed(1)),
+      weightedHours: Number(s.weightedHours.toFixed(1))
+    }));
     const data = {
       clientSummary,
       serviceTypeSummary: serviceTypeData

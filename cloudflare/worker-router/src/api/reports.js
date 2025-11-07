@@ -410,11 +410,37 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 
 	const users = usersResult?.results || [];
 	
-	// 年度薪资报表：使用完整计算逻辑（批量优化版本）
-	const monthlyTrend = [];
-	const employeeSummary = [];
+	// 年度薪资报表：使用缓存表一次查询（极速加载）
+	console.log(`[AnnualPayroll] 从 PayrollCache 读取年度数据: ${year}`);
 	
-	// 初始化员工年度数据
+	// 一次查询获取全年所有员工的薪资缓存
+	const cacheResult = await env.DATABASE.prepare(`
+		SELECT 
+			pc.user_id,
+			pc.year_month,
+			pc.gross_salary_cents,
+			pc.net_salary_cents,
+			pc.overtime_cents,
+			pc.performance_bonus_cents,
+			pc.year_end_bonus_cents,
+			u.name,
+			u.username
+		FROM PayrollCache pc
+		JOIN Users u ON u.user_id = pc.user_id
+		WHERE pc.year_month LIKE ?
+			AND u.is_deleted = 0
+		ORDER BY pc.year_month, u.name
+	`).bind(`${year}-%`).all();
+	
+	const cacheRows = cacheResult?.results || [];
+	console.log(`[AnnualPayroll] 从缓存读取到 ${cacheRows.length} 条记录`);
+	
+	// 如果缓存为空，提示用户先访问薪资页面
+	if (cacheRows.length === 0) {
+		console.warn(`[AnnualPayroll] 无缓存数据，需要先访问薪资页面生成数据`);
+	}
+	
+	// 按员工聚合年度数据
 	const empMap = new Map();
 	for (const user of users) {
 		empMap.set(user.user_id, {
@@ -428,57 +454,72 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 		});
 	}
 	
-	// 按月计算（使用真实薪资计算逻辑）
-	for (let month = 1; month <= 12; month++) {
-		const ym = `${year}-${String(month).padStart(2,'0')}`;
-		let monthGross = 0;
-		let monthNet = 0;
-		
-		// 为每个员工计算该月薪资
-		for (const user of users) {
-			try {
-				const payroll = await calculateEmployeePayroll(env, user.user_id, ym);
-				if (!payroll) continue;
-				
-				const gross = payroll.grossSalaryCents / 100;
-				const net = payroll.netSalaryCents / 100;
-				
-				monthGross += gross;
-				monthNet += net;
-				
-				const emp = empMap.get(user.user_id);
-				emp.annualGross += gross;
-				emp.annualNet += net;
-				emp.totalOvertime += (payroll.overtimeCents || 0) / 100;
-				emp.totalPerformance += (payroll.performanceBonusCents || 0) / 100;
-				emp.totalYearEnd += (payroll.totalYearEndBonusCents || 0) / 100;
-			} catch (err) {
-				console.error(`[AnnualPayroll] Error calculating ${user.name} ${ym}:`, err);
-			}
-		}
-		
-		monthlyTrend.push({
-			month,
-			totalGrossSalary: monthGross,
-			totalNetSalary: monthNet,
-			employeeCount: users.length,
-			avgGrossSalary: users.length > 0 ? monthGross / users.length : 0
+	// 按月聚合数据
+	const monthlyMap = new Map();
+	for (let m = 1; m <= 12; m++) {
+		monthlyMap.set(m, {
+			month: m,
+			totalGrossSalary: 0,
+			totalNetSalary: 0,
+			employeeCount: 0
 		});
 	}
 	
-	// 转换为数组
-	for (const emp of empMap.values()) {
-		employeeSummary.push({
-			userId: emp.userId,
-			name: emp.name,
-			annualGrossSalary: emp.annualGross,
-			annualNetSalary: emp.annualNet,
-			avgMonthlySalary: emp.annualGross / 12,
-			totalOvertimePay: emp.totalOvertime,
-			totalPerformanceBonus: emp.totalPerformance,
-			totalYearEndBonus: emp.totalYearEnd
-		});
+	// 处理缓存数据
+	for (const row of cacheRows) {
+		const [y, m] = row.year_month.split('-');
+		const month = parseInt(m);
+		
+		const gross = (row.gross_salary_cents || 0) / 100;
+		const net = (row.net_salary_cents || 0) / 100;
+		const overtime = (row.overtime_cents || 0) / 100;
+		const performance = (row.performance_bonus_cents || 0) / 100;
+		const yearEnd = (row.year_end_bonus_cents || 0) / 100;
+		
+		// 员工年度汇总
+		if (empMap.has(row.user_id)) {
+			const emp = empMap.get(row.user_id);
+			emp.annualGross += gross;
+			emp.annualNet += net;
+			emp.totalOvertime += overtime;
+			emp.totalPerformance += performance;
+			emp.totalYearEnd += yearEnd;
+		}
+		
+		// 月度趋势
+		if (monthlyMap.has(month)) {
+			const monthData = monthlyMap.get(month);
+			monthData.totalGrossSalary += gross;
+			monthData.totalNetSalary += net;
+			monthData.employeeCount = users.length;
+		}
 	}
+	
+	// 转换为数组
+	const employeeSummary = [];
+	for (const emp of empMap.values()) {
+		// 只显示有数据的员工
+		if (emp.annualGross > 0 || emp.annualNet > 0) {
+			employeeSummary.push({
+				userId: emp.userId,
+				name: emp.name,
+				annualGrossSalary: emp.annualGross,
+				annualNetSalary: emp.annualNet,
+				avgMonthlySalary: emp.annualGross / 12,
+				totalOvertimePay: emp.totalOvertime,
+				totalPerformanceBonus: emp.totalPerformance,
+				totalYearEndBonus: emp.totalYearEnd
+			});
+		}
+	}
+	
+	const monthlyTrend = Array.from(monthlyMap.values()).map(m => ({
+		month: m.month,
+		totalGrossSalary: m.totalGrossSalary,
+		totalNetSalary: m.totalNetSalary,
+		employeeCount: m.employeeCount,
+		avgGrossSalary: m.employeeCount > 0 ? m.totalGrossSalary / m.employeeCount : 0
+	}));
 
 		const totalGross = monthlyTrend.reduce((sum, m) => sum + m.totalGrossSalary, 0);
 		const totalNet = monthlyTrend.reduce((sum, m) => sum + m.totalNetSalary, 0);
@@ -606,98 +647,67 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
 			let generatedRevenue = 0;
 			const clientDistribution = new Map();
 
-			// 按client_service_id分组
-			const serviceHoursMap = new Map();
+		// 按client_id直接分组（不依赖任务关联）
+		const clientHoursMap = new Map();
+		
+		for (const ts of timesheets) {
+			const hours = Number(ts.hours || 0);
+			const workTypeId = parseInt(ts.work_type) || 1;
+			const weighted = calculateWeightedHours(workTypeId, hours);
 			
-			for (const ts of timesheets) {
-				const hours = Number(ts.hours || 0);
-				const workTypeId = parseInt(ts.work_type) || 1;
-				const weighted = calculateWeightedHours(workTypeId, hours);
-				
-				standardHours += hours;
-				weightedHours += weighted;
+			standardHours += hours;
+			weightedHours += weighted;
 
-				const clientServiceId = ts.client_service_id;
-				
-				// 如果没有任务关联（task_id = NULL），计入工时但不计入产值
-				if (!clientServiceId) {
-					continue;
-				}
+			const clientId = ts.client_id;
+			
+			// 跳过没有客户ID的记录
+			if (!clientId) {
+				continue;
+			}
 
-				if (!serviceHoursMap.has(clientServiceId)) {
-					serviceHoursMap.set(clientServiceId, {
-						hours: 0,
-						weightedHours: 0,
-						timesheets: []
-					});
-				}
-				
-				const service = serviceHoursMap.get(clientServiceId);
-				service.hours += hours;
-				service.weightedHours += weighted;
-				service.timesheets.push({
-					...ts,
-					hours,
-					weighted
+			if (!clientHoursMap.has(clientId)) {
+				clientHoursMap.set(clientId, {
+					clientId: clientId,
+					clientName: ts.client_name || '未知客户',
+					serviceName: ts.service_name || '综合服务',
+					hours: 0,
+					weightedHours: 0
 				});
 			}
-
-		// 分配收入（改为按client_id分配，因为client_service_id可能为null）
-		const clientHoursTotal = new Map();
-		
-		// 先计算每个客户的全部员工总工时
-		for (const ts of timesheets) {
-			const clientId = ts.client_id;
-			if (!clientId) continue;
-			if (!clientHoursTotal.has(clientId)) {
-				clientHoursTotal.set(clientId, { totalHours: 0, clientName: ts.client_name });
-			}
+			
+			const client = clientHoursMap.get(clientId);
+			client.hours += hours;
+			client.weightedHours += weighted;
 		}
-		
-		for (const clientId of clientHoursTotal.keys()) {
+
+		// 分配收入：按客户的工时比例
+		for (const [clientId, clientData] of clientHoursMap) {
+			// 获取该客户的总工时（所有员工）
 			const totalRow = await env.DATABASE.prepare(`
 				SELECT SUM(hours) as total_hours
 				FROM Timesheets
 				WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0
 			`).bind(clientId, ym).first();
-			clientHoursTotal.get(clientId).totalHours = Number(totalRow?.total_hours || 0);
-		}
-		
-		for (const [clientServiceId, serviceData] of serviceHoursMap) {
-			const firstTs = serviceData.timesheets[0];
-			const clientId = firstTs.client_id;
 			
+			const clientTotalHours = Number(totalRow?.total_hours || 0);
+			if (clientTotalHours === 0) continue;
+			
+			// 获取该客户的收入
 			const clientRevenue = clientRevenueMap.get(clientId) || 0;
-			const clientTotal = clientHoursTotal.get(clientId);
 			
-			if (!clientTotal || clientTotal.totalHours === 0) continue;
+			// 按工时比例分配收入给该员工
+			const employeeRevenue = clientRevenue * (clientData.hours / clientTotalHours);
+			generatedRevenue += employeeRevenue;
 			
-			// 按工时比例分配客户收入
-			const serviceRevenue = clientRevenue * (serviceData.hours / clientTotal.totalHours);
-				
-			if (serviceRevenue > 0) {
-				// 直接分配收入（已按工时比例计算）
-				generatedRevenue += serviceRevenue;
-
-				// 客户分布
-				const clientKey = clientId;
-				
-				if (!clientDistribution.has(clientKey)) {
-					clientDistribution.set(clientKey, {
-						clientId: clientId,
-						clientName: firstTs.client_name || '未知客户',
-						serviceName: firstTs.service_name || '综合服务',
-						hours: 0,
-						weightedHours: 0,
-						generatedRevenue: 0
-					});
-				}
-				
-				const dist = clientDistribution.get(clientKey);
-				dist.hours += serviceData.hours;
-				dist.weightedHours += serviceData.weightedHours;
-				dist.generatedRevenue += serviceRevenue;
-			}
+			// 客户分布
+			clientDistribution.set(clientId, {
+				clientId: clientData.clientId,
+				clientName: clientData.clientName,
+				serviceName: clientData.serviceName,
+				hours: clientData.hours,
+				weightedHours: clientData.weightedHours,
+				generatedRevenue: employeeRevenue
+			});
 		}
 
 			const profit = generatedRevenue - totalCost;
@@ -975,45 +985,47 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
 		};
 	}).filter(c => c.annualHours > 0 || c.annualRevenue > 0);
 
-	// 按服务类型年度汇总（简化：直接从客户获取服务类型）
+	// 按服务类型年度汇总（通过任务关联）
 	const serviceTypeSummary = await env.DATABASE.prepare(`
 	SELECT 
 		COALESCE(s.service_name, '无关联服务') as service_name,
-		SUM(t.hours) as total_hours
+		SUM(t.hours) as total_hours,
+		t.work_type
 	FROM Timesheets t
-	LEFT JOIN Clients c ON c.client_id = t.client_id
-	LEFT JOIN Services s ON s.service_id = c.primary_service_id
+	LEFT JOIN ActiveTasks task ON task.task_id = t.task_id
+	LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
+	LEFT JOIN Services s ON s.service_id = cs.service_id
 	WHERE t.is_deleted = 0
 		AND substr(t.work_date, 1, 4) = ?
-	GROUP BY s.service_name
+	GROUP BY s.service_name, t.work_type
 	`).bind(String(year)).all();
 
-	// 计算加权工时
-	const serviceTypeData = [];
-	for (const s of (serviceTypeSummary?.results || [])) {
-		const timesheetsRows = await env.DATABASE.prepare(`
-		SELECT t.work_type, t.hours
-		FROM Timesheets t
-		LEFT JOIN Clients c ON c.client_id = t.client_id
-		LEFT JOIN Services serv ON serv.service_id = c.primary_service_id
-		WHERE t.is_deleted = 0
-			AND substr(t.work_date, 1, 4) = ?
-			AND COALESCE(serv.service_name, '无关联服务') = ?
-		`).bind(String(year), s.service_name).all();
-
-		let weightedHours = 0;
-		for (const ts of (timesheetsRows?.results || [])) {
-			const workTypeId = parseInt(ts.work_type) || 1;
-			const hours = Number(ts.hours || 0);
-			weightedHours += calculateWeightedHours(workTypeId, hours);
+	// 按服务类型聚合并计算加权工时
+	const serviceMap = new Map();
+	for (const row of (serviceTypeSummary?.results || [])) {
+		const serviceName = row.service_name || '无关联服务';
+		const hours = Number(row.total_hours || 0);
+		const workTypeId = parseInt(row.work_type) || 1;
+		const weighted = calculateWeightedHours(workTypeId, hours);
+		
+		if (!serviceMap.has(serviceName)) {
+			serviceMap.set(serviceName, {
+				serviceName,
+				totalHours: 0,
+				weightedHours: 0
+			});
 		}
-
-		serviceTypeData.push({
-			serviceName: s.service_name,
-			totalHours: Number(s.total_hours || 0),
-			weightedHours: Number(weightedHours.toFixed(1))
-		});
+		
+		const service = serviceMap.get(serviceName);
+		service.totalHours += hours;
+		service.weightedHours += weighted;
 	}
+	
+	const serviceTypeData = Array.from(serviceMap.values()).map(s => ({
+		serviceName: s.serviceName,
+		totalHours: Number(s.totalHours.toFixed(1)),
+		weightedHours: Number(s.weightedHours.toFixed(1))
+	}));
 
 		const data = {
 			clientSummary,

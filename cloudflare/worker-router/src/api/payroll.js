@@ -1139,6 +1139,44 @@ async function calculateEmployeePayroll(env, userId, month) {
 	// 实发 = 应发 - 总扣款
 	const netSalaryCents = grossSalaryCents - totalDeductionCents;
 
+	// 保存到缓存表（自动更新）
+	try {
+		await env.DATABASE.prepare(`
+			INSERT INTO PayrollCache (
+				user_id, year_month,
+				base_salary_cents, gross_salary_cents, net_salary_cents,
+				overtime_cents, performance_bonus_cents, year_end_bonus_cents,
+				total_work_hours, total_overtime_hours,
+				last_calculated_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+			ON CONFLICT(user_id, year_month) DO UPDATE SET
+				base_salary_cents = excluded.base_salary_cents,
+				gross_salary_cents = excluded.gross_salary_cents,
+				net_salary_cents = excluded.net_salary_cents,
+				overtime_cents = excluded.overtime_cents,
+				performance_bonus_cents = excluded.performance_bonus_cents,
+				year_end_bonus_cents = excluded.year_end_bonus_cents,
+				total_work_hours = excluded.total_work_hours,
+				total_overtime_hours = excluded.total_overtime_hours,
+				last_calculated_at = datetime('now')
+		`).bind(
+			user.user_id,
+			month,
+			baseSalaryCents,
+			grossSalaryCents,
+			netSalaryCents,
+			overtimeCents,
+			performanceBonusCents,
+			totalYearEndBonusCents,
+			timesheetStats?.total_hours || 0,
+			overtimeDetails?.totalOvertimeHours || 0
+		).run();
+		console.log(`[PayrollCache] 已保存缓存: user=${user.user_id}, month=${month}`);
+	} catch (cacheErr) {
+		console.error('[PayrollCache] 保存缓存失败:', cacheErr);
+		// 缓存失败不影响主流程，继续返回结果
+	}
+
 	return {
 		userId: user.user_id,
 		username: user.username,
