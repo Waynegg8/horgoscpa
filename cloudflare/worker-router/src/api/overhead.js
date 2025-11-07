@@ -1360,7 +1360,7 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			
 			// 3. 获取该客户本月所有工时记录
 			const timesheetRows = await env.DATABASE.prepare(
-				`SELECT user_id, work_type, work_date, hours
+				`SELECT task_id, user_id, work_type, work_date, hours
 				 FROM Timesheets
 				 WHERE client_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0`
 			).bind(clientId, yearMonth).all();
@@ -1474,7 +1474,9 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					totalCost,
 					revenue,
 					profit: revenue - totalCost,
-					employees: employeeDetails // 员工明细列表
+					// 員工明細列表（同時輸出兩個鍵以兼容舊前端）
+					employees: employeeDetails,
+					employeeDetails: employeeDetails
 				});
 			}
 		}
@@ -1541,7 +1543,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						ts.service_id,
 						ts.service_item_id,
 						si.item_name as service_item_name,
-						COALESCE(s.service_name, s2.service_name, '未分類') as service_name_full
+						-- 兼容舊欄位 ts.service_name，確保服務項目能正確顯示
+						COALESCE(s.service_name, s2.service_name, ts.service_name, '未分類') as service_name_full
 					 FROM Timesheets ts
 					 LEFT JOIN Users u ON ts.user_id = u.user_id
 					 LEFT JOIN ServiceItems si ON ts.service_item_id = si.item_id
@@ -1645,6 +1648,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 						hours: hours,
 						weightedHours: weightedHours,
 						avgActualHourlyRate: avgActualHourlyRate,
+						// 兼容舊前端欄位名稱
+						avgHourlyRate: avgActualHourlyRate,
 						totalCost: totalCost
 					});
 				}

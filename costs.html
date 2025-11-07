@@ -742,11 +742,11 @@
           params.set('month', String(ym.month));
           params.set('_t', String(Date.now())); // 强制绕过缓存
           try {
-            tbodyClients.innerHTML = '<tr><td colspan="10" class="muted">載入中…</td></tr>';
+            tbodyClients.innerHTML = '<tr><td colspan="8" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/costs/client?${params.toString()}`, { credentials:'include', cache: 'no-store' });
             if (res.status === 401) { location.assign('/login?redirect=/internal/costs'); return; }
             if (res.status === 501) {
-              tbodyClients.innerHTML = '<tr><td colspan="10" class="muted">功能尚未實作，敬請期待</td></tr>';
+              tbodyClients.innerHTML = '<tr><td colspan="8" class="muted">功能尚未實作，敬請期待</td></tr>';
               return;
             }
             const json = await res.json();
@@ -754,7 +754,7 @@
             const data = json.data || {};
             const clients = data.clients || [];
             if (clients.length === 0) {
-              tbodyClients.innerHTML = '<tr><td colspan="10" class="muted">尚無資料</td></tr>';
+              tbodyClients.innerHTML = '<tr><td colspan="8" class="muted">尚無資料</td></tr>';
               updateClientSummary(0, 0, 0, 0);
               return;
             }
@@ -771,6 +771,8 @@
               totalRevenue += revenue;
               totalProfit += profit;
               
+              const empList = Array.isArray(client.employees) ? client.employees : (client.employeeDetails || []);
+              const hasEmp = Array.isArray(empList) && empList.length > 0;
               // 客户主行（可点击展开）
               const tr = document.createElement('tr');
               tr.className = 'client-row';
@@ -778,9 +780,9 @@
               tr.dataset.clientIndex = index;
               tr.innerHTML = `
                 <td>
-                  <span class="toggle-icon" style="display:inline-block;width:16px;margin-right:4px;">▶</span>
+                  <span class="toggle-icon" style="display:inline-block;width:16px;margin-right:4px;${hasEmp ? '' : 'visibility:hidden;'}">▶</span>
                   <strong>${client.clientName||''}</strong>
-                  ${client.employees && client.employees.length > 0 ? `<span style="color:#64748b;font-size:12px;margin-left:8px;">(${client.employees.length}位員工)</span>` : ''}
+                  ${hasEmp ? `<span style="color:#64748b;font-size:12px;margin-left:8px;">(${empList.length}位員工)</span>` : ''}
                 </td>
                 <td>${Number(client.totalHours||0).toFixed(1)}</td>
                 <td>${weightedHours.toFixed(1)}</td>
@@ -793,8 +795,8 @@
               tbodyClients.appendChild(tr);
               
               // 员工明细行（初始隐藏）
-              if (client.employees && client.employees.length > 0) {
-                client.employees.forEach(emp => {
+              if (hasEmp) {
+                empList.forEach(emp => {
                   const empTr = document.createElement('tr');
                   empTr.className = 'employee-detail-row';
                   empTr.dataset.clientIndex = index;
@@ -817,6 +819,7 @@
               // 绑定点击事件
               tr.addEventListener('click', () => {
                 const detailRows = tbodyClients.querySelectorAll(`tr.employee-detail-row[data-client-index="${index}"]`);
+                if (!detailRows || detailRows.length === 0) return;
                 const toggleIcon = tr.querySelector('.toggle-icon');
                 const isExpanded = detailRows[0]?.style.display === 'table-row';
                 
@@ -864,12 +867,12 @@
               const tr = document.createElement('tr');
               tr.innerHTML = `
                 <td>${task.clientName||''}</td>
-                <td>${task.serviceName||'未分類'}</td>
+                <td>${task.serviceName ?? task.service ?? task.service_name_full ?? '未分類'}</td>
                 <td>${task.taskTitle||''}</td>
                 <td>${task.assigneeName||''}</td>
                 <td>${Number(task.hours||0).toFixed(1)}</td>
                 <td>${Number(task.weightedHours||0).toFixed(1)}</td>
-                <td style="color:#0ea5e9;font-weight:600;">${formatCurrency(task.avgActualHourlyRate||0)}</td>
+                <td style="color:#0ea5e9;font-weight:600;">${formatCurrency((task.avgActualHourlyRate ?? task.avgHourlyRate ?? task.actualHourlyRate ?? 0))}</td>
                 <td style="font-weight:600;color:#16a34a;">${formatCurrency(task.totalCost)}</td>
               `;
               tbodyTasks.appendChild(tr);
