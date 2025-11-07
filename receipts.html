@@ -483,6 +483,8 @@
                         <strong>${r.client_name}</strong> - ${r.service_name}
                         （${r.billing_month}月，金額：$${(r.amount || 0).toLocaleString()}${r.total_tasks ? `，${r.completed_tasks}/${r.total_tasks} 任務已完成` : ''}）
                         <a onclick="createReceiptFromReminder('${r.client_id}', ${r.client_service_id}, ${r.billing_month}, ${r.amount})">立即開收據</a>
+                        <span style="color:#d1d5db;margin:0 4px;">|</span>
+                        <a onclick="postponeReminder(${r.client_service_id}, '${r.billing_month}', '${r.service_name}')" style="color:#f59e0b;">暫緩</a>
                       </li>
                     `).join('')}
                   </ul>
@@ -524,6 +526,49 @@
               inputClientService.dispatchEvent(new Event('change'));
             }
           }, 1000);
+        };
+        
+        // 暫緩開票提醒
+        window.postponeReminder = async function(clientServiceId, billingMonth, serviceName) {
+          const reason = prompt(`確定要暫緩「${serviceName}」的開票提醒嗎？\n\n可選填原因（例如：等其他服務完成後一起開收據）：`);
+          
+          // 用户点击取消
+          if (reason === null) return;
+          
+          try {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const serviceMonth = `${currentYear}-${String(billingMonth).padStart(2, '0')}`;
+            
+            const res = await fetch(`${apiBase}/receipts/reminders/postpone`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                client_service_id: clientServiceId,
+                service_month: serviceMonth,
+                postpone_reason: reason.trim()
+              })
+            });
+            
+            if (res.status === 401) {
+              location.assign('/login?redirect=/internal/receipts');
+              return;
+            }
+            
+            const json = await res.json();
+            
+            if (json.ok) {
+              alert('已暫緩開票提醒');
+              // 重新載入提醒列表
+              await loadReceiptReminders();
+            } else {
+              alert(`暫緩失敗：${json.message || '未知錯誤'}`);
+            }
+          } catch (err) {
+            console.error('暫緩提醒失敗:', err);
+            alert('操作失敗，請稍後再試');
+          }
         };
 
         // 載入客戶列表

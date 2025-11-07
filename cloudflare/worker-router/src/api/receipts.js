@@ -62,9 +62,16 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				       AND t.is_deleted = 0
 				       AND t.status != 'completed'
 				   )
+				   -- 排除已暂缓的提醒
+				   AND NOT EXISTS (
+				     SELECT 1 FROM BillingReminders br
+				     WHERE br.client_service_id = cs.client_service_id
+				       AND br.service_month = ?
+				       AND br.status = 'postponed'
+				   )
 				 ORDER BY c.company_name, s.service_name
 				 LIMIT 20`
-			).bind(serviceMonth, serviceMonth, currentMonth, serviceMonth, serviceMonth).all();
+			).bind(serviceMonth, serviceMonth, currentMonth, serviceMonth, serviceMonth, serviceMonth).all();
 			
 			const data = (reminders?.results || []).map(r => ({
 				client_id: r.client_id,
@@ -178,39 +185,90 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			const total = Number(countRow?.total || 0);
 			console.log(`[收据列表] 总记录数:`, total);
 			
-			const rows = await env.DATABASE.prepare(
-				`SELECT r.receipt_id, r.client_id, c.company_name AS client_name, c.tax_registration_number AS client_tax_id, 
-				        r.total_amount, r.receipt_date, r.due_date, r.status, r.receipt_type
-				 FROM Receipts r LEFT JOIN Clients c ON c.client_id = r.client_id
-				 ${whereSql}
-				 ORDER BY r.receipt_date DESC, r.receipt_id DESC
-				 LIMIT ? OFFSET ?`
-			).bind(...binds, perPage, offset).all();
-			
-			console.log(`[收据列表] 查询到 ${rows?.results?.length || 0} 条记录`);
-			
-			const data = (rows?.results || []).map((r, index) => {
+		const rows = await env.DATABASE.prepare(
+			`SELECT r.receipt_id, r.client_id, c.company_name AS client_name, c.tax_registration_number AS client_tax_id, 
+			        r.total_amount, r.receipt_date, r.due_date, r.status, r.receipt_type,
+			        r.service_start_month, r.service_end_month
+			 FROM Receipts r LEFT JOIN Clients c ON c.client_id = r.client_id
+			 ${whereSql}
+			 ORDER BY r.receipt_date DESC, r.receipt_id DESC
+			 LIMIT ? OFFSET ?`
+		).bind(...binds, perPage, offset).all();
+		
+		console.log(`[收据列表] 查询到 ${rows?.results?.length || 0} 条记录`);
+		
+		// 为每条收据查询服务类型
+		const receiptsData = [];
+		for (const r of (rows?.results || [])) {
+			try {
+				// 查询服务类型（优先使用手动标记，无标记时自动推断）
+				let serviceTypes = [];
+				
+				// 1. 尝试从ReceiptServiceTypes表获取手动标记的服务类型
 				try {
-					return {
-						receiptId: r.receipt_id,
-						clientId: r.client_id,
-						clientName: r.client_name || "",
-						clientTaxId: r.client_tax_id || "",
-						totalAmount: Number(r.total_amount || 0),
-						receiptDate: r.receipt_date,
-						dueDate: r.due_date || null,
-						status: r.status,
-						receiptType: r.receipt_type || "normal",
-					};
-				} catch (mapErr) {
-					console.error(`[收据列表] 映射第${index}条记录失败:`, JSON.stringify({ 
-						receipt_id: r.receipt_id, 
-						error: String(mapErr),
-						raw: r 
+					const serviceTypesRows = await env.DATABASE.prepare(`
+						SELECT s.service_id, s.service_name
+						FROM ReceiptServiceTypes rst
+						JOIN Services s ON s.service_id = rst.service_id
+						WHERE rst.receipt_id = ?
+						ORDER BY s.service_name
+					`).bind(r.receipt_id).all();
+					
+					serviceTypes = (serviceTypesRows?.results || []).map(st => ({
+						serviceId: st.service_id,
+						serviceName: st.service_name
 					}));
-					return null;
+				} catch (err) {
+					console.warn('[收据列表] 查询服务类型关联失败（表可能不存在）:', err.message);
 				}
-			}).filter(r => r !== null);
+				
+				// 2. 如果没有手动标记，从工时记录自动推断
+				if (serviceTypes.length === 0 && r.service_start_month) {
+					try {
+						const autoServiceTypesRows = await env.DATABASE.prepare(`
+							SELECT DISTINCT s.service_id, s.service_name
+							FROM Timesheets t
+							JOIN Services s ON s.service_id = t.service_id
+							WHERE t.client_id = ?
+								AND substr(t.work_date, 1, 7) >= ?
+								AND substr(t.work_date, 1, 7) <= ?
+								AND t.is_deleted = 0
+							ORDER BY s.service_name
+						`).bind(r.client_id, r.service_start_month, r.service_end_month || r.service_start_month).all();
+						
+						serviceTypes = (autoServiceTypesRows?.results || []).map(st => ({
+							serviceId: st.service_id,
+							serviceName: st.service_name
+						}));
+					} catch (err) {
+						console.warn('[收据列表] 自动推断服务类型失败:', err.message);
+					}
+				}
+				
+				receiptsData.push({
+					receiptId: r.receipt_id,
+					clientId: r.client_id,
+					clientName: r.client_name || "",
+					clientTaxId: r.client_tax_id || "",
+					totalAmount: Number(r.total_amount || 0),
+					receiptDate: r.receipt_date,
+					dueDate: r.due_date || null,
+					status: r.status,
+					receiptType: r.receipt_type || "normal",
+					serviceStartMonth: r.service_start_month || null,
+					serviceEndMonth: r.service_end_month || null,
+					serviceTypes: serviceTypes
+				});
+			} catch (mapErr) {
+				console.error(`[收据列表] 处理收据失败:`, {
+					receipt_id: r.receipt_id, 
+					error: String(mapErr),
+					stack: mapErr.stack
+				});
+			}
+		}
+		
+		const data = receiptsData;
 			
 			console.log(`[收据列表] 成功返回 ${data.length} 条记录`);
 			
@@ -596,6 +654,9 @@ export async function handleReceipts(request, env, me, requestId, url) {
 		const manualServiceStartMonth = body?.service_start_month ? String(body.service_start_month).trim() : null;
 		const manualServiceEndMonth = body?.service_end_month ? String(body.service_end_month).trim() : null;
 		
+		// 服务类型列表（用户手动选择）
+		const serviceTypeIds = Array.isArray(body?.service_type_ids) ? body.service_type_ids : [];
+		
 		const errors = [];
 		if (!client_id) errors.push({ field:"client_id", message:"必填" });
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(receipt_date)) errors.push({ field:"receipt_date", message:"日期格式 YYYY-MM-DD" });
@@ -810,23 +871,41 @@ export async function handleReceipts(request, env, me, requestId, url) {
 							`INSERT INTO ReceiptItems (receipt_id, service_name, quantity, unit_price, subtotal, notes, created_at)
 							 VALUES (?, ?, ?, ?, ?, ?, ?)`
 						).bind(receipt_id, service_name, quantity, unit_price, subtotal, item_notes, new Date().toISOString()).run();
+				}
+			}
+		}
+		
+		// 插入服务类型关联（如果用户手动选择了）
+		if (serviceTypeIds.length > 0) {
+			for (const serviceId of serviceTypeIds) {
+				const sid = parseInt(serviceId, 10);
+				if (Number.isFinite(sid) && sid > 0) {
+					try {
+						await env.DATABASE.prepare(
+							`INSERT INTO ReceiptServiceTypes (receipt_id, service_id, created_at)
+							 VALUES (?, ?, ?)`
+						).bind(receipt_id, sid, new Date().toISOString()).run();
+					} catch (err) {
+						console.warn('[ReceiptServiceTypes] 插入失败（可能是表不存在或重复）:', err.message);
 					}
 				}
 			}
-			
-			const data = { 
-				receiptId: receipt_id, 
-				clientId: client_id, 
-				totalAmount: total_amount, 
-				receiptDate: receipt_date, 
-				dueDate: due_date, 
-				status: statusVal,
-				receiptType: receiptType,
-				relatedTaskId: relatedTaskId,
-				clientServiceId: clientServiceId,
-				billingMonth: billingMonth,
-				itemsCount: items.length
-			};
+		}
+		
+		const data = { 
+			receiptId: receipt_id, 
+			clientId: client_id, 
+			totalAmount: total_amount, 
+			receiptDate: receipt_date, 
+			dueDate: due_date, 
+			status: statusVal,
+			receiptType: receiptType,
+			relatedTaskId: relatedTaskId,
+			clientServiceId: clientServiceId,
+			billingMonth: billingMonth,
+			itemsCount: items.length,
+			serviceTypeIds: serviceTypeIds
+		};
 			return jsonResponse(201, { ok:true, code:"CREATED", message:"已建立", data, meta:{ requestId } }, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level:"error", requestId, path: url.pathname, err:String(err) }));
@@ -923,6 +1002,104 @@ export async function handleReceipts(request, env, me, requestId, url) {
 			).bind(new Date().toISOString(), receiptId).run();
 			
 			return jsonResponse(200, { ok: true, code: "OK", message: "已作廢", meta: { requestId } }, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
+		}
+	}
+
+	// POST /internal/api/v1/receipts/reminders/postpone - 暂缓开票提醒
+	if (method === "POST" && path === "/internal/api/v1/receipts/reminders/postpone") {
+		try {
+			const body = await request.json();
+			const client_service_id = body?.client_service_id ? parseInt(body.client_service_id, 10) : null;
+			const service_month = body?.service_month ? String(body.service_month).trim() : null;
+			const postpone_reason = body?.postpone_reason ? String(body.postpone_reason).trim() : '';
+			
+			if (!client_service_id || !service_month) {
+				return jsonResponse(400, { 
+					ok: false, 
+					code: "BAD_REQUEST", 
+					message: "請提供 client_service_id 和 service_month", 
+					meta: { requestId } 
+				}, corsHeaders);
+			}
+			
+			// 验证 service_month 格式 (YYYY-MM)
+			if (!/^\d{4}-\d{2}$/.test(service_month)) {
+				return jsonResponse(422, { 
+					ok: false, 
+					code: "VALIDATION_ERROR", 
+					message: "service_month 格式錯誤，應為 YYYY-MM", 
+					meta: { requestId } 
+				}, corsHeaders);
+			}
+			
+			// 获取客户ID和建议金额
+			const serviceInfo = await env.DATABASE.prepare(`
+				SELECT cs.client_id, sbs.billing_amount
+				FROM ClientServices cs
+				LEFT JOIN ServiceBillingSchedule sbs ON sbs.client_service_id = cs.client_service_id
+					AND sbs.billing_month = ?
+				WHERE cs.client_service_id = ?
+			`).bind(parseInt(service_month.split('-')[1], 10), client_service_id).first();
+			
+			if (!serviceInfo) {
+				return jsonResponse(404, { 
+					ok: false, 
+					code: "NOT_FOUND", 
+					message: "服務不存在", 
+					meta: { requestId } 
+				}, corsHeaders);
+			}
+			
+			// 检查是否已存在该记录
+			const existing = await env.DATABASE.prepare(`
+				SELECT reminder_id, status FROM BillingReminders
+				WHERE client_service_id = ? AND service_month = ?
+			`).bind(client_service_id, service_month).first();
+			
+			if (existing) {
+				// 更新状态为暂缓
+				await env.DATABASE.prepare(`
+					UPDATE BillingReminders
+					SET status = 'postponed',
+						postpone_reason = ?,
+						updated_at = ?
+					WHERE reminder_id = ?
+				`).bind(postpone_reason, new Date().toISOString(), existing.reminder_id).run();
+				
+				return jsonResponse(200, { 
+					ok: true, 
+					code: "OK", 
+					message: "已暫緩開票提醒", 
+					meta: { requestId } 
+				}, corsHeaders);
+			}
+			
+			// 创建新的暂缓记录
+			await env.DATABASE.prepare(`
+				INSERT INTO BillingReminders (
+					client_id, client_service_id, service_month,
+					suggested_amount, status, postpone_reason,
+					created_at, updated_at
+				) VALUES (?, ?, ?, ?, 'postponed', ?, ?, ?)
+			`).bind(
+				serviceInfo.client_id,
+				client_service_id,
+				service_month,
+				serviceInfo.billing_amount || null,
+				postpone_reason,
+				new Date().toISOString(),
+				new Date().toISOString()
+			).run();
+			
+			return jsonResponse(201, { 
+				ok: true, 
+				code: "CREATED", 
+				message: "已暫緩開票提醒", 
+				meta: { requestId } 
+			}, corsHeaders);
 		} catch (err) {
 			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
 			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
