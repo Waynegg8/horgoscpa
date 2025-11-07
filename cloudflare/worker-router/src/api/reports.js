@@ -1377,6 +1377,7 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
 		return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
 	} catch (err) {
 		console.error("[AnnualClientProfitability] Error:", err);
-		return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: err.message, meta: { requestId } }, corsHeaders);
+		console.error("[AnnualClientProfitability] Stack:", err.stack);
+		return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: err.message || String(err), meta: { requestId } }, corsHeaders);
 	}
 }
