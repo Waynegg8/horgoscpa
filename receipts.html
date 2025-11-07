@@ -1149,30 +1149,51 @@
       }
       
       // 显示公司资料选择对话框
-      function showCompanySelector(callback) {
+      async function showCompanySelector(callback) {
+        // 先加载两组公司资料的名称
+        const company1Info = await loadCompanyInfo(1);
+        const company2Info = await loadCompanyInfo(2);
+        
+        const company1Name = company1Info && company1Info.name ? company1Info.name : '未設定';
+        const company2Name = company2Info && company2Info.name ? company2Info.name : '未設定';
+        
+        const company1Disabled = !company1Info || !company1Info.name;
+        const company2Disabled = !company2Info || !company2Info.name;
+        
         const modal = document.createElement('div');
         modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
         modal.innerHTML = `
-          <div style="background:white;border-radius:12px;padding:32px;max-width:400px;width:90%;">
+          <div style="background:white;border-radius:12px;padding:32px;max-width:500px;width:90%;">
             <h3 style="margin:0 0 20px 0;font-size:20px;font-weight:600;">選擇公司資料</h3>
             <p style="color:#666;margin-bottom:24px;font-size:14px;">請選擇要用於此文件的公司資料</p>
-            <div style="display:flex;gap:12px;">
-              <button id="selectCompany1" style="flex:1;padding:16px;border:2px solid #3b82f6;background:#3b82f6;color:white;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">公司資料 1</button>
-              <button id="selectCompany2" style="flex:1;padding:16px;border:2px solid #3b82f6;background:white;color:#3b82f6;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">公司資料 2</button>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <button id="selectCompany1" ${company1Disabled ? 'disabled' : ''} style="flex:1;padding:16px;border:2px solid #3b82f6;background:${company1Disabled ? '#e5e7eb' : '#3b82f6'};color:${company1Disabled ? '#9ca3af' : 'white'};border-radius:8px;font-size:15px;font-weight:600;cursor:${company1Disabled ? 'not-allowed' : 'pointer'};text-align:left;">
+                <div style="font-size:13px;font-weight:400;margin-bottom:4px;opacity:0.8;">公司資料 1</div>
+                <div style="font-size:16px;">${company1Name}</div>
+              </button>
+              <button id="selectCompany2" ${company2Disabled ? 'disabled' : ''} style="flex:1;padding:16px;border:2px solid #3b82f6;background:${company2Disabled ? '#e5e7eb' : 'white'};color:${company2Disabled ? '#9ca3af' : '#3b82f6'};border-radius:8px;font-size:15px;font-weight:600;cursor:${company2Disabled ? 'not-allowed' : 'pointer'};text-align:left;">
+                <div style="font-size:13px;font-weight:400;margin-bottom:4px;opacity:0.8;">公司資料 2</div>
+                <div style="font-size:16px;">${company2Name}</div>
+              </button>
             </div>
+            ${company1Disabled && company2Disabled ? '<p style="color:#ef4444;margin-top:16px;font-size:13px;text-align:center;">⚠️ 請先至「設定」頁面設定公司資料</p>' : ''}
             <button id="cancelSelect" style="width:100%;margin-top:12px;padding:12px;border:1px solid #d1d5db;background:white;color:#666;border-radius:8px;font-size:14px;cursor:pointer;">取消</button>
           </div>
         `;
         document.body.appendChild(modal);
         
-        document.getElementById('selectCompany1').onclick = () => {
-          document.body.removeChild(modal);
-          callback(1);
-        };
-        document.getElementById('selectCompany2').onclick = () => {
-          document.body.removeChild(modal);
-          callback(2);
-        };
+        if (!company1Disabled) {
+          document.getElementById('selectCompany1').onclick = () => {
+            document.body.removeChild(modal);
+            callback(1);
+          };
+        }
+        if (!company2Disabled) {
+          document.getElementById('selectCompany2').onclick = () => {
+            document.body.removeChild(modal);
+            callback(2);
+          };
+        }
         document.getElementById('cancelSelect').onclick = () => {
           document.body.removeChild(modal);
         };
