@@ -94,7 +94,8 @@ async function calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth
 	
 	// 为每个员工计算实际时薪
 	for (const user of usersList) {
-		const userId = String(user.user_id);
+		const userId = user.user_id; // 保持原始类型用于SQL查询
+		const userIdStr = String(userId); // String类型用于Map的key
 		const baseSalaryCents = Math.round(Number(user.base_salary || 0) * 100);
 		
 		// 计算本月工时
@@ -105,7 +106,7 @@ async function calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth
 		const monthHours = Number(timesheetHoursResult?.total || 0);
 		
 		if (monthHours === 0) {
-			employeeActualHourlyRates[userId] = 0;
+			employeeActualHourlyRates[userIdStr] = 0;
 			continue;
 		}
 		
@@ -276,7 +277,7 @@ async function calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth
 		const totalCost = totalLaborCost + overheadAllocation;
 		const actualHourlyRate = monthHours > 0 ? Math.round(totalCost / monthHours) : 0;
 		
-		employeeActualHourlyRates[userId] = actualHourlyRate;
+		employeeActualHourlyRates[userIdStr] = actualHourlyRate;
 	}
 	
 	return employeeActualHourlyRates;
@@ -1507,147 +1508,147 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 				1: 1.0, 2: 1.34, 3: 1.67, 4: 1.34, 5: 1.67, 
 				6: 2.67, 7: 2.0, 8: 1.34, 9: 1.67, 10: 2.0, 11: 2.0
 			};
-		const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
+			const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
 
-		// 1. 调用共享函数计算所有员工的实际时薪
-		const employeeActualHourlyRates = await calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth);
+			// 1. 调用共享函数计算所有员工的实际时薪
+			const employeeActualHourlyRates = await calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth);
 
-		// 2. 獲取所有有工時記錄的客戶
-		const clientRows = await env.DATABASE.prepare(
-			`SELECT DISTINCT
-				c.client_id,
-				c.company_name
-			 FROM Clients c
-			 JOIN Timesheets ts ON ts.client_id = c.client_id AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
-			 WHERE c.is_deleted = 0
-			 ORDER BY c.company_name ASC`
-		).bind(yearMonth).all();
-		const clientList = clientRows?.results || [];
-		
-		// 3. 為每個客戶計算成本，並按服務子項目（任務）分組顯示
-		const tasks = [];
-		
-		for (const client of clientList) {
-			// 獲取該客戶的所有工時記錄，包含服務子項目信息
-			// 通过ServiceItems反查Services（处理service_id为NULL但service_item_id有值的情况）
-			const timesheetRows = await env.DATABASE.prepare(
-				`SELECT 
-					ts.user_id, 
-					u.name as user_name, 
-					ts.work_type, 
-					ts.work_date, 
-					ts.hours, 
-					ts.service_id,
-					ts.service_item_id,
-					si.item_name as service_item_name,
-					COALESCE(s.service_name, s2.service_name, '未分類') as service_name_full
-				 FROM Timesheets ts
-				 LEFT JOIN Users u ON ts.user_id = u.user_id
-				 LEFT JOIN ServiceItems si ON ts.service_item_id = si.item_id
-				 LEFT JOIN Services s ON ts.service_id = s.service_id
-				 LEFT JOIN Services s2 ON si.service_id = s2.service_id
-				 WHERE ts.client_id = ? AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
-				 ORDER BY COALESCE(s.service_id, s2.service_id, 0), ts.service_item_id, u.name`
-			).bind(client.client_id, yearMonth).all();
-			const timesheets = timesheetRows?.results || [];
+			// 2. 獲取所有有工時記錄的客戶
+			const clientRows = await env.DATABASE.prepare(
+				`SELECT DISTINCT
+					c.client_id,
+					c.company_name
+				 FROM Clients c
+				 JOIN Timesheets ts ON ts.client_id = c.client_id AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
+				 WHERE c.is_deleted = 0
+				 ORDER BY c.company_name ASC`
+			).bind(yearMonth).all();
+			const clientList = clientRows?.results || [];
 			
-			// 按服務子項目分組計算（這才是真正的"任務"）
-			const taskGroups = {};
-			for (const ts of timesheets) {
-				// 使用 service_item_id 作為任務的唯一標識
-				// 如果沒有 service_item_id，則用 service_name 作為後備
-				const taskKey = ts.service_item_id 
-					? `item_${ts.service_item_id}` 
-					: `name_${ts.service_name || 'general'}`;
-				
-				if (!taskGroups[taskKey]) {
-					// SQL查询已经用COALESCE处理了，直接使用即可
-					const taskTitle = ts.service_item_name || '一般服務';
-					
-					taskGroups[taskKey] = {
-						taskTitle: taskTitle,
-						timesheets: [],
-						userNames: new Set() // 追蹤參與的員工
-					};
-				}
-				taskGroups[taskKey].timesheets.push(ts);
-				if (ts.user_name) {
-					taskGroups[taskKey].userNames.add(ts.user_name);
-				}
-			}
+			// 3. 為每個客戶計算成本，並按服務子項目（任務）分組顯示
+			const tasks = [];
 			
-			// 為每個服務子項目（任務）生成一筆記錄
-			for (const [taskKey, group] of Object.entries(taskGroups)) {
-				let hours = 0;
-				let weightedHours = 0;
-				const processedFixedKeys = new Set();
+			for (const client of clientList) {
+				// 獲取該客戶的所有工時記錄，包含服務子項目信息
+				// 通过ServiceItems反查Services（处理service_id为NULL但service_item_id有值的情况）
+				const timesheetRows = await env.DATABASE.prepare(
+					`SELECT 
+						ts.user_id, 
+						u.name as user_name, 
+						ts.work_type, 
+						ts.work_date, 
+						ts.hours, 
+						ts.service_id,
+						ts.service_item_id,
+						si.item_name as service_item_name,
+						COALESCE(s.service_name, s2.service_name, '未分類') as service_name_full
+					 FROM Timesheets ts
+					 LEFT JOIN Users u ON ts.user_id = u.user_id
+					 LEFT JOIN ServiceItems si ON ts.service_item_id = si.item_id
+					 LEFT JOIN Services s ON ts.service_id = s.service_id
+					 LEFT JOIN Services s2 ON si.service_id = s2.service_id
+					 WHERE ts.client_id = ? AND substr(ts.work_date, 1, 7) = ? AND ts.is_deleted = 0
+					 ORDER BY COALESCE(s.service_id, s2.service_id, 0), ts.service_item_id, u.name`
+				).bind(client.client_id, yearMonth).all();
+				const timesheets = timesheetRows?.results || [];
 				
-				// 第一遍：计算加权工时
-				for (const ts of group.timesheets) {
-					const tsHours = Number(ts.hours || 0);
-					const date = ts.work_date || '';
-					const workTypeId = parseInt(ts.work_type) || 1;
-					const multiplier = WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0;
+				// 按服務子項目分組計算（這才是真正的"任務"）
+				const taskGroups = {};
+				for (const ts of timesheets) {
+					// 使用 service_item_id 作為任務的唯一標識
+					// 如果沒有 service_item_id，則用 service_name 作為後備
+					const taskKey = ts.service_item_id 
+						? `item_${ts.service_item_id}` 
+						: `name_${ts.service_name || 'general'}`;
 					
-					hours += tsHours;
-					
-					if (workTypeId === 7 || workTypeId === 10) {
-						const key = `${date}:${workTypeId}`;
-						if (!processedFixedKeys.has(key)) {
-							weightedHours += 8.0;
-							processedFixedKeys.add(key);
-						}
-					} else {
-						weightedHours += tsHours * multiplier;
+					if (!taskGroups[taskKey]) {
+						// SQL查询已经用COALESCE处理了，直接使用即可
+						const taskTitle = ts.service_item_name || '一般服務';
+						
+						taskGroups[taskKey] = {
+							taskTitle: taskTitle,
+							timesheets: [],
+							userNames: new Set() // 追蹤參與的員工
+						};
+					}
+					taskGroups[taskKey].timesheets.push(ts);
+					if (ts.user_name) {
+						taskGroups[taskKey].userNames.add(ts.user_name);
 					}
 				}
 				
-				// 第二遍：使用实际时薪计算总成本（实际时薪已包含薪资+管理费）
-				let totalCost = 0;
-				processedFixedKeys.clear();
-				
-				for (const ts of group.timesheets) {
-					const date = ts.work_date || '';
-					const workTypeId = parseInt(ts.work_type) || 1;
-					let tsWeightedHours;
+				// 為每個服務子項目（任務）生成一筆記錄
+				for (const [taskKey, group] of Object.entries(taskGroups)) {
+					let hours = 0;
+					let weightedHours = 0;
+					const processedFixedKeys = new Set();
 					
-					if (workTypeId === 7 || workTypeId === 10) {
-						const key = `${date}:${workTypeId}`;
-						if (!processedFixedKeys.has(key)) {
-							tsWeightedHours = 8.0;
-							processedFixedKeys.add(key);
+					// 第一遍：计算加权工时
+					for (const ts of group.timesheets) {
+						const tsHours = Number(ts.hours || 0);
+						const date = ts.work_date || '';
+						const workTypeId = parseInt(ts.work_type) || 1;
+						const multiplier = WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0;
+						
+						hours += tsHours;
+						
+						if (workTypeId === 7 || workTypeId === 10) {
+							const key = `${date}:${workTypeId}`;
+							if (!processedFixedKeys.has(key)) {
+								weightedHours += 8.0;
+								processedFixedKeys.add(key);
+							}
 						} else {
-							tsWeightedHours = 0;
+							weightedHours += tsHours * multiplier;
 						}
-					} else {
-						tsWeightedHours = Number(ts.hours || 0) * (WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0);
 					}
-					// 使用员工的实际时薪（已包含薪资成本+管理费分摊）
-					const empUserId = String(ts.user_id);
-					const actualHourlyRate = Number(employeeActualHourlyRates[empUserId] || 0);
-					totalCost += Math.round(actualHourlyRate * tsWeightedHours);
+					
+					// 第二遍：使用实际时薪计算总成本（实际时薪已包含薪资+管理费）
+					let totalCost = 0;
+					processedFixedKeys.clear();
+					
+					for (const ts of group.timesheets) {
+						const date = ts.work_date || '';
+						const workTypeId = parseInt(ts.work_type) || 1;
+						let tsWeightedHours;
+						
+						if (workTypeId === 7 || workTypeId === 10) {
+							const key = `${date}:${workTypeId}`;
+							if (!processedFixedKeys.has(key)) {
+								tsWeightedHours = 8.0;
+								processedFixedKeys.add(key);
+							} else {
+								tsWeightedHours = 0;
+							}
+						} else {
+							tsWeightedHours = Number(ts.hours || 0) * (WORK_TYPE_MULTIPLIERS[workTypeId] || 1.0);
+						}
+						// 使用员工的实际时薪（已包含薪资成本+管理费分摊）
+						const empUserId = String(ts.user_id);
+						const actualHourlyRate = Number(employeeActualHourlyRates[empUserId] || 0);
+						totalCost += Math.round(actualHourlyRate * tsWeightedHours);
+					}
+					
+					// 计算平均实际时薪（使用第一遍计算的weightedHours，与客户汇总逻辑一致）
+					const avgActualHourlyRate = weightedHours > 0 ? Math.round(totalCost / weightedHours) : 0;
+					
+					// 生成任務記錄（按服務子項目）
+					const assigneeNames = Array.from(group.userNames).join(', ') || '未指定';
+					// 从第一笔工时记录获取服务项目名称（已在SQL中处理COALESCE）
+					const serviceName = group.timesheets[0]?.service_name_full || '未分類';
+					
+					tasks.push({
+						clientName: client.company_name,
+						serviceName: serviceName,
+						taskTitle: group.taskTitle,
+						assigneeName: assigneeNames,
+						hours: hours,
+						weightedHours: weightedHours,
+						avgActualHourlyRate: avgActualHourlyRate,
+						totalCost: totalCost
+					});
 				}
-				
-				// 计算平均实际时薪（使用第一遍计算的weightedHours，与客户汇总逻辑一致）
-				const avgActualHourlyRate = weightedHours > 0 ? Math.round(totalCost / weightedHours) : 0;
-				
-				// 生成任務記錄（按服務子項目）
-				const assigneeNames = Array.from(group.userNames).join(', ') || '未指定';
-				// 从第一笔工时记录获取服务项目名称（已在SQL中处理COALESCE）
-				const serviceName = group.timesheets[0]?.service_name_full || '未分類';
-				
-				tasks.push({
-					clientName: client.company_name,
-					serviceName: serviceName,
-					taskTitle: group.taskTitle,
-					assigneeName: assigneeNames,
-					hours: hours,
-					weightedHours: weightedHours,
-					avgActualHourlyRate: avgActualHourlyRate,
-					totalCost: totalCost
-				});
 			}
-		}
 
 		return jsonResponse(200, { 
 			ok:true, 
