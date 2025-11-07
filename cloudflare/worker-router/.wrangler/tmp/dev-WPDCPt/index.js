@@ -10630,26 +10630,26 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
       }
       const totalCost = laborCost + overheadAllocation;
       const timesheetsRows = await env.DATABASE.prepare(`
-				SELECT 
-					t.timesheet_id,
-					t.task_id,
-					t.client_id,
-					t.work_type,
-					t.hours,
-					t.work_date,
-					task.client_service_id,
-					task.status as task_status,
-					c.company_name as client_name,
-					s.service_name
-				FROM Timesheets t
-				LEFT JOIN Tasks task ON task.task_id = t.task_id
-				LEFT JOIN Clients c ON c.client_id = t.client_id
-				LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
-				LEFT JOIN Services s ON s.service_id = cs.service_id
-				WHERE t.user_id = ?
-					AND t.is_deleted = 0
-					AND substr(t.work_date, 1, 7) = ?
-				ORDER BY t.work_date
+			SELECT 
+				t.timesheet_id,
+				t.task_id,
+				t.client_id,
+				t.work_type,
+				t.hours,
+				t.work_date,
+				task.client_service_id,
+				task.status as task_status,
+				c.company_name as client_name,
+				s.service_name
+			FROM Timesheets t
+			LEFT JOIN ActiveTasks task ON task.task_id = t.task_id
+			LEFT JOIN Clients c ON c.client_id = t.client_id
+			LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
+			LEFT JOIN Services s ON s.service_id = cs.service_id
+			WHERE t.user_id = ?
+				AND t.is_deleted = 0
+				AND substr(t.work_date, 1, 7) = ?
+			ORDER BY t.work_date
 			`).bind(user.user_id, ym).all();
       const timesheets = timesheetsRows?.results || [];
       let standardHours = 0;
@@ -10692,7 +10692,7 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
 							status,
 							estimated_hours,
 							(SELECT SUM(hours) FROM Timesheets WHERE task_id = t.task_id AND is_deleted = 0) as actual_hours
-						FROM Tasks t
+						FROM ActiveTasks t
 						WHERE t.client_service_id = ?
 							AND t.is_deleted = 0
 							AND t.service_month = ?
@@ -10708,11 +10708,11 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
           }
           if (serviceTotalHours === 0) {
             const actualTotalRow = await env.DATABASE.prepare(`
-							SELECT SUM(t.hours) as total_hours
-							FROM Timesheets t
-							LEFT JOIN Tasks task ON task.task_id = t.task_id
-							WHERE task.client_service_id = ?
-								AND t.is_deleted = 0
+						SELECT SUM(t.hours) as total_hours
+						FROM Timesheets t
+						LEFT JOIN ActiveTasks task ON task.task_id = t.task_id
+						WHERE task.client_service_id = ?
+							AND t.is_deleted = 0
 								AND substr(t.work_date, 1, 7) = ?
 						`).bind(clientServiceId, ym).first();
             serviceTotalHours = Number(actualTotalRow?.total_hours || 0);
@@ -11034,28 +11034,28 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
       }
     }
     const serviceTypeSummary = await env.DATABASE.prepare(`
-			SELECT 
-				s.service_name,
-				SUM(t.hours) as total_hours
-			FROM Timesheets t
-			LEFT JOIN Tasks task ON task.task_id = t.task_id
-			LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
-			LEFT JOIN Services s ON s.service_id = cs.service_id
-			WHERE t.is_deleted = 0
-				AND substr(t.work_date, 1, 4) = ?
-			GROUP BY s.service_name
+		SELECT 
+			s.service_name,
+			SUM(t.hours) as total_hours
+		FROM Timesheets t
+		LEFT JOIN ActiveTasks task ON task.task_id = t.task_id
+		LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
+		LEFT JOIN Services s ON s.service_id = cs.service_id
+		WHERE t.is_deleted = 0
+			AND substr(t.work_date, 1, 4) = ?
+		GROUP BY s.service_name
 		`).bind(String(year)).all();
     const serviceTypeData = [];
     for (const s of serviceTypeSummary?.results || []) {
       const timesheetsRows = await env.DATABASE.prepare(`
-				SELECT t.work_type, t.hours
-				FROM Timesheets t
-				LEFT JOIN Tasks task ON task.task_id = t.task_id
-				LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
-				LEFT JOIN Services serv ON serv.service_id = cs.service_id
-				WHERE t.is_deleted = 0
-					AND substr(t.work_date, 1, 4) = ?
-					AND serv.service_name = ?
+			SELECT t.work_type, t.hours
+			FROM Timesheets t
+			LEFT JOIN ActiveTasks task ON task.task_id = t.task_id
+			LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
+			LEFT JOIN Services serv ON serv.service_id = cs.service_id
+			WHERE t.is_deleted = 0
+				AND substr(t.work_date, 1, 4) = ?
+				AND serv.service_name = ?
 			`).bind(String(year), s.service_name).all();
       let weightedHours = 0;
       for (const ts of timesheetsRows?.results || []) {

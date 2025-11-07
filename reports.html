@@ -536,15 +536,21 @@
           }
         }
 
-        async function loadMonthlyRevenue(year, month) {
-          const res = await fetch(`${apiBase}/reports/monthly/revenue?year=${year}&month=${month}`, {
-            credentials: 'include'
-          });
-          const json = await res.json();
-
-          if (!res.ok || !json.ok) {
-            throw new Error(json.message || '載入收款報表失敗');
-          }
+      async function loadMonthlyRevenue(year, month) {
+        const res = await fetch(`${apiBase}/reports/monthly/revenue?year=${year}&month=${month}`, {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('API Error:', text);
+          throw new Error(`載入收款報表失敗 (${res.status}): ${text.substring(0, 200)}`);
+        }
+        
+        const json = await res.json();
+        if (!json.ok) {
+          throw new Error(json.message || '載入收款報表失敗');
+        }
 
           const data = json.data;
           document.getElementById('m-rev-receivable').textContent = formatCurrency(data.summary.totalReceivable);
@@ -570,15 +576,21 @@
           }
         }
 
-        async function loadMonthlyPayroll(year, month) {
-          const res = await fetch(`${apiBase}/reports/monthly/payroll?year=${year}&month=${month}`, {
-            credentials: 'include'
-          });
-          const json = await res.json();
-
-          if (!res.ok || !json.ok) {
-            throw new Error(json.message || '載入薪資報表失敗');
-          }
+      async function loadMonthlyPayroll(year, month) {
+        const res = await fetch(`${apiBase}/reports/monthly/payroll?year=${year}&month=${month}`, {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('API Error:', text);
+          throw new Error(`載入薪資報表失敗 (${res.status}): ${text.substring(0, 200)}`);
+        }
+        
+        const json = await res.json();
+        if (!json.ok) {
+          throw new Error(json.message || '載入薪資報表失敗');
+        }
 
           const data = json.data;
           document.getElementById('m-pay-gross').textContent = formatCurrency(data.summary.totalGrossSalary);
@@ -636,15 +648,21 @@
           `).join('');
         }
 
-        async function loadMonthlyEmployeePerformance(year, month) {
-          const res = await fetch(`${apiBase}/reports/monthly/employee-performance?year=${year}&month=${month}`, {
-            credentials: 'include'
-          });
-          const json = await res.json();
-
-          if (!res.ok || !json.ok) {
-            throw new Error(json.message || '載入員工產值報表失敗');
-          }
+      async function loadMonthlyEmployeePerformance(year, month) {
+        const res = await fetch(`${apiBase}/reports/monthly/employee-performance?year=${year}&month=${month}`, {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('API Error:', text);
+          throw new Error(`載入員工產值報表失敗 (${res.status}): ${text.substring(0, 200)}`);
+        }
+        
+        const json = await res.json();
+        if (!json.ok) {
+          throw new Error(json.message || '載入員工產值報表失敗');
+        }
 
           const data = json.data;
           const tbody = document.getElementById('m-emp-performance');
@@ -670,15 +688,21 @@
           }
         }
 
-        async function loadMonthlyClientProfitability(year, month) {
-          const res = await fetch(`${apiBase}/reports/monthly/client-profitability?year=${year}&month=${month}`, {
-            credentials: 'include'
-          });
-          const json = await res.json();
-
-          if (!res.ok || !json.ok) {
-            throw new Error(json.message || '載入客戶毛利報表失敗');
-          }
+      async function loadMonthlyClientProfitability(year, month) {
+        const res = await fetch(`${apiBase}/reports/monthly/client-profitability?year=${year}&month=${month}`, {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('API Error:', text);
+          throw new Error(`載入客戶毛利報表失敗 (${res.status}): ${text.substring(0, 200)}`);
+        }
+        
+        const json = await res.json();
+        if (!json.ok) {
+          throw new Error(json.message || '載入客戶毛利報表失敗');
+        }
 
           const data = json.data;
           const tbody = document.getElementById('m-client-profit');
@@ -730,15 +754,21 @@
           }
         }
 
-        async function loadAnnualRevenue(year) {
-          const res = await fetch(`${apiBase}/reports/annual/revenue?year=${year}`, {
-            credentials: 'include'
-          });
-          const json = await res.json();
-
-          if (!res.ok || !json.ok) {
-            throw new Error(json.message || '載入年度收款報表失敗');
-          }
+      async function loadAnnualRevenue(year) {
+        const res = await fetch(`${apiBase}/reports/annual/revenue?year=${year}`, {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('API Error:', text);
+          throw new Error(`載入年度收款報表失敗 (${res.status}): ${text.substring(0, 200)}`);
+        }
+        
+        const json = await res.json();
+        if (!json.ok) {
+          throw new Error(json.message || '載入年度收款報表失敗');
+        }
 
           const data = json.data;
           document.getElementById('a-rev-receivable').textContent = formatCurrency(data.summary.totalReceivable);
@@ -796,15 +826,21 @@
           }
         }
 
-        async function loadAnnualPayroll(year) {
-          const res = await fetch(`${apiBase}/reports/annual/payroll?year=${year}`, {
-            credentials: 'include'
-          });
-          const json = await res.json();
-
-          if (!res.ok || !json.ok) {
-            throw new Error(json.message || '載入年度薪資報表失敗');
-          }
+      async function loadAnnualPayroll(year) {
+        const res = await fetch(`${apiBase}/reports/annual/payroll?year=${year}`, {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('API Error:', text);
+          throw new Error(`載入年度薪資報表失敗 (${res.status}): ${text.substring(0, 200)}`);
+        }
+        
+        const json = await res.json();
+        if (!json.ok) {
+          throw new Error(json.message || '載入年度薪資報表失敗');
+        }
 
           const data = json.data;
           document.getElementById('a-pay-gross').textContent = formatCurrency(data.summary.annualGrossSalary);
@@ -844,15 +880,21 @@
           }
         }
 
-        async function loadAnnualEmployeePerformance(year) {
-          const res = await fetch(`${apiBase}/reports/annual/employee-performance?year=${year}`, {
-            credentials: 'include'
-          });
-          const json = await res.json();
-
-          if (!res.ok || !json.ok) {
-            throw new Error(json.message || '載入年度員工產值報表失敗');
-          }
+      async function loadAnnualEmployeePerformance(year) {
+        const res = await fetch(`${apiBase}/reports/annual/employee-performance?year=${year}`, {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('API Error:', text);
+          throw new Error(`載入年度員工產值報表失敗 (${res.status}): ${text.substring(0, 200)}`);
+        }
+        
+        const json = await res.json();
+        if (!json.ok) {
+          throw new Error(json.message || '載入年度員工產值報表失敗');
+        }
 
           const data = json.data;
           const tbody = document.getElementById('a-emp-performance');
@@ -880,15 +922,21 @@
           }
         }
 
-        async function loadAnnualClientProfitability(year) {
-          const res = await fetch(`${apiBase}/reports/annual/client-profitability?year=${year}`, {
-            credentials: 'include'
-          });
-          const json = await res.json();
-
-          if (!res.ok || !json.ok) {
-            throw new Error(json.message || '載入年度客戶毛利報表失敗');
-          }
+      async function loadAnnualClientProfitability(year) {
+        const res = await fetch(`${apiBase}/reports/annual/client-profitability?year=${year}`, {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('API Error:', text);
+          throw new Error(`載入年度客戶毛利報表失敗 (${res.status}): ${text.substring(0, 200)}`);
+        }
+        
+        const json = await res.json();
+        if (!json.ok) {
+          throw new Error(json.message || '載入年度客戶毛利報表失敗');
+        }
 
           const data = json.data;
           const tbody = document.getElementById('a-client-profit');
