@@ -616,29 +616,25 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
 
 			const totalCost = laborCost + overheadAllocation;
 
-			// 获取员工的工时记录
-			const timesheetsRows = await env.DATABASE.prepare(`
-			SELECT 
-				t.timesheet_id,
-				t.task_id,
-				t.client_id,
-				t.work_type,
-				t.hours,
-				t.work_date,
-				task.client_service_id,
-				task.status as task_status,
-				c.company_name as client_name,
-				s.service_name
-			FROM Timesheets t
-			LEFT JOIN ActiveTasks task ON task.task_id = t.task_id
-			LEFT JOIN Clients c ON c.client_id = t.client_id
-			LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
-			LEFT JOIN Services s ON s.service_id = cs.service_id
-			WHERE t.user_id = ?
-				AND t.is_deleted = 0
-				AND substr(t.work_date, 1, 7) = ?
-			ORDER BY t.work_date
-			`).bind(user.user_id, ym).all();
+		// 获取员工的工时记录（直接从 Timesheets 获取服务类型）
+		const timesheetsRows = await env.DATABASE.prepare(`
+		SELECT 
+			t.timesheet_id,
+			t.task_id,
+			t.client_id,
+			t.work_type,
+			t.hours,
+			t.work_date,
+			c.company_name as client_name,
+			COALESCE(s.service_name, '綜合服務') as service_name
+		FROM Timesheets t
+		LEFT JOIN Clients c ON c.client_id = t.client_id
+		LEFT JOIN Services s ON s.service_id = t.service_id
+		WHERE t.user_id = ?
+			AND t.is_deleted = 0
+			AND substr(t.work_date, 1, 7) = ?
+		ORDER BY t.work_date
+		`).bind(user.user_id, ym).all();
 
 			const timesheets = timesheetsRows?.results || [];
 
@@ -710,29 +706,35 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
 			});
 		}
 
-			const profit = generatedRevenue - totalCost;
-			const profitMargin = generatedRevenue > 0 ? (profit / generatedRevenue * 100) : 0;
-			const hourlyRate = weightedHours > 0 ? (generatedRevenue / weightedHours) : 0;
+		const profit = generatedRevenue - totalCost;
+		const profitMargin = generatedRevenue > 0 ? (profit / generatedRevenue * 100) : 0;
+		
+		// 正确的定义：
+		// 时薪 = 成本 / 加权工时
+		// 时均产值 = 收入 / 加权工时
+		const hourlyRate = weightedHours > 0 ? (totalCost / weightedHours) : 0;
+		const revenuePerHour = weightedHours > 0 ? (generatedRevenue / weightedHours) : 0;
 
-			const clientDistArray = Array.from(clientDistribution.values()).map(d => ({
-				...d,
-				revenuePercentage: generatedRevenue > 0 ? Number((d.generatedRevenue / generatedRevenue * 100).toFixed(2)) : 0
-			}));
+		const clientDistArray = Array.from(clientDistribution.values()).map(d => ({
+			...d,
+			revenuePercentage: generatedRevenue > 0 ? Number((d.generatedRevenue / generatedRevenue * 100).toFixed(2)) : 0
+		}));
 
-			employeePerformance.push({
-				userId: user.user_id,
-				name: user.name || user.username,
-				standardHours: Number(standardHours.toFixed(1)),
-				weightedHours: Number(weightedHours.toFixed(1)),
-				hoursDifference: Number((weightedHours - standardHours).toFixed(1)),
-				generatedRevenue: Number(generatedRevenue.toFixed(2)),
-				laborCost: Number(laborCost.toFixed(2)),
-				totalCost: Number(totalCost.toFixed(2)),
-				profit: Number(profit.toFixed(2)),
-				profitMargin: Number(profitMargin.toFixed(2)),
-				hourlyRate: Number(hourlyRate.toFixed(2)),
-				clientDistribution: clientDistArray
-			});
+		employeePerformance.push({
+			userId: user.user_id,
+			name: user.name || user.username,
+			standardHours: Number(standardHours.toFixed(1)),
+			weightedHours: Number(weightedHours.toFixed(1)),
+			hoursDifference: Number((weightedHours - standardHours).toFixed(1)),
+			generatedRevenue: Number(generatedRevenue.toFixed(2)),
+			laborCost: Number(laborCost.toFixed(2)),
+			totalCost: Number(totalCost.toFixed(2)),
+			profit: Number(profit.toFixed(2)),
+			profitMargin: Number(profitMargin.toFixed(2)),
+			hourlyRate: Number(hourlyRate.toFixed(2)),  // 时薪 = 成本/工时
+			revenuePerHour: Number(revenuePerHour.toFixed(2)),  // 时均产值 = 收入/工时
+			clientDistribution: clientDistArray
+		});
 		}
 
 		const data = {
@@ -768,57 +770,142 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
 	const users = usersResult?.results || [];
 	const employeeSummary = [];
 
-	// 恢复完整计算：每次只加载一个报表，有时间进行详细计算
-	// 但为避免超时，不调用月度API，直接聚合数据
+	// 获取全年所有客户的收入（按client_id）
+	const clientRevenueRows = await env.DATABASE.prepare(`
+		SELECT 
+			r.client_id,
+			SUM(r.total_amount) as revenue
+		FROM Receipts r
+		WHERE r.is_deleted = 0 
+			AND r.status != 'cancelled'
+			AND substr(r.service_month, 1, 4) = ?
+		GROUP BY r.client_id
+	`).bind(String(year)).all();
+
+	const clientRevenueMap = new Map();
+	for (const row of (clientRevenueRows?.results || [])) {
+		clientRevenueMap.set(row.client_id, Number(row.revenue || 0));
+	}
+
+	// 为每个员工计算年度产值
 	for (const user of users) {
 		let annualStandardHours = 0;
 		let annualWeightedHours = 0;
-		let annualCost = 0;
+		let annualRevenue = 0;
+		const clientDistribution = new Map();
 		
-		// 获取全年工时并计算加权
-		const hoursResult = await env.DATABASE.prepare(`
-			SELECT 
-				work_type,
-				SUM(hours) as total_hours
-			FROM Timesheets
-			WHERE user_id = ? 
-				AND substr(work_date, 1, 4) = ?
-				AND is_deleted = 0
-			GROUP BY work_type
-		`).bind(user.user_id, String(year)).all();
+	// 获取该员工全年的工时记录（按客户分组，直接从 Timesheets 获取服务类型）
+	const clientHoursRows = await env.DATABASE.prepare(`
+		SELECT 
+			t.client_id,
+			c.company_name as client_name,
+			COALESCE(s.service_name, '綜合服務') as service_name,
+			t.work_type,
+			SUM(t.hours) as total_hours
+		FROM Timesheets t
+		LEFT JOIN Clients c ON c.client_id = t.client_id
+		LEFT JOIN Services s ON s.service_id = t.service_id
+		WHERE t.user_id = ? 
+			AND substr(t.work_date, 1, 4) = ?
+			AND t.is_deleted = 0
+		GROUP BY t.client_id, t.work_type
+	`).bind(user.user_id, String(year)).all();
 		
-		// 计算加权工时
-		for (const row of (hoursResult?.results || [])) {
+		// 按客户聚合工时
+		const clientHoursMap = new Map();
+		for (const row of (clientHoursRows?.results || [])) {
+			const clientId = row.client_id;
+			if (!clientId) continue;
+			
 			const hours = Number(row.total_hours || 0);
+			const workTypeId = parseInt(row.work_type) || 1;
+			const weighted = calculateWeightedHours(workTypeId, hours);
+			
 			annualStandardHours += hours;
-			const weighted = calculateWeightedHours(parseInt(row.work_type) || 1, hours);
 			annualWeightedHours += weighted;
+			
+			if (!clientHoursMap.has(clientId)) {
+				clientHoursMap.set(clientId, {
+					clientId: clientId,
+					clientName: row.client_name || '未知客戶',
+					serviceName: row.service_name || '綜合服務',
+					hours: 0,
+					weightedHours: 0
+				});
+			}
+			
+			const client = clientHoursMap.get(clientId);
+			client.hours += hours;
+			client.weightedHours += weighted;
 		}
 		
-		// 成本：底薪×12（简化）
-		const baseSalary = Number(user.base_salary || 0);
-		annualCost = baseSalary * 12;
+		// 为每个客户分配收入
+		for (const [clientId, clientData] of clientHoursMap) {
+			// 获取该客户的全年总工时（所有员工）
+			const totalRow = await env.DATABASE.prepare(`
+				SELECT SUM(hours) as total_hours
+				FROM Timesheets
+				WHERE client_id = ? 
+					AND substr(work_date, 1, 4) = ? 
+					AND is_deleted = 0
+			`).bind(clientId, String(year)).first();
+			
+			const clientTotalHours = Number(totalRow?.total_hours || 0);
+			if (clientTotalHours === 0) continue;
+			
+			// 获取该客户的全年收入
+			const clientRevenue = clientRevenueMap.get(clientId) || 0;
+			
+			// 按工时比例分配收入给该员工
+			const employeeRevenue = clientRevenue * (clientData.hours / clientTotalHours);
+			annualRevenue += employeeRevenue;
+			
+			// 客户分布
+			clientDistribution.set(clientId, {
+				clientId: clientData.clientId,
+				clientName: clientData.clientName,
+				serviceName: clientData.serviceName,
+				hours: clientData.hours,
+				weightedHours: clientData.weightedHours,
+				generatedRevenue: employeeRevenue,
+				revenuePercentage: 0 // 后面计算
+			});
+		}
 		
-		// 收入：暂不计算（需要复杂的任务收入分配）
-		const annualRevenue = 0;
-		const annualProfit = annualRevenue - annualCost;
-		const annualProfitMargin = 0;
-		const avgHourlyRate = annualWeightedHours > 0 ? (annualRevenue / annualWeightedHours) : 0;
+		// 计算客户分布的收入占比
+		const clientDistArray = Array.from(clientDistribution.values()).map(d => ({
+			...d,
+			revenuePercentage: annualRevenue > 0 ? Number((d.generatedRevenue / annualRevenue * 100).toFixed(2)) : 0
+		}));
+		
+	// 成本：底薪×12
+	const baseSalary = Number(user.base_salary || 0);
+	const annualCost = baseSalary * 12;
+	
+	const annualProfit = annualRevenue - annualCost;
+	const annualProfitMargin = annualRevenue > 0 ? (annualProfit / annualRevenue * 100) : 0;
+	
+	// 正确的定义：
+	// 时薪 = 成本 / 加权工时
+	// 时均产值 = 收入 / 加权工时
+	const avgHourlyRate = annualWeightedHours > 0 ? (annualCost / annualWeightedHours) : 0;
+	const avgRevenuePerHour = annualWeightedHours > 0 ? (annualRevenue / annualWeightedHours) : 0;
 
-		employeeSummary.push({
-			userId: user.user_id,
-			name: user.name || user.username,
-			annualStandardHours: Number(annualStandardHours.toFixed(1)),
-			annualWeightedHours: Number(annualWeightedHours.toFixed(1)),
-			hoursDifference: Number((annualWeightedHours - annualStandardHours).toFixed(1)),
-			annualRevenue: 0,
-			annualCost: Number(annualCost.toFixed(2)),
-			annualProfit: Number(annualProfit.toFixed(2)),
-			annualProfitMargin: 0,
-			avgHourlyRate: 0,
-			monthlyTrend: [],
-			clientDistribution: []
-		});
+	employeeSummary.push({
+		userId: user.user_id,
+		name: user.name || user.username,
+		annualStandardHours: Number(annualStandardHours.toFixed(1)),
+		annualWeightedHours: Number(annualWeightedHours.toFixed(1)),
+		hoursDifference: Number((annualWeightedHours - annualStandardHours).toFixed(1)),
+		annualRevenue: Number(annualRevenue.toFixed(2)),
+		annualCost: Number(annualCost.toFixed(2)),
+		annualProfit: Number(annualProfit.toFixed(2)),
+		annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
+		avgHourlyRate: Number(avgHourlyRate.toFixed(2)),  // 时薪 = 成本/工时
+		avgRevenuePerHour: Number(avgRevenuePerHour.toFixed(2)),  // 时均产值 = 收入/工时
+		monthlyTrend: [],
+		clientDistribution: clientDistArray
+	});
 	}
 
 		const data = {

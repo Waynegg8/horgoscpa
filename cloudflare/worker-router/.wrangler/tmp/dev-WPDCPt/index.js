@@ -10719,27 +10719,23 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
       }
       const totalCost = laborCost + overheadAllocation;
       const timesheetsRows = await env.DATABASE.prepare(`
-			SELECT 
-				t.timesheet_id,
-				t.task_id,
-				t.client_id,
-				t.work_type,
-				t.hours,
-				t.work_date,
-				task.client_service_id,
-				task.status as task_status,
-				c.company_name as client_name,
-				s.service_name
-			FROM Timesheets t
-			LEFT JOIN ActiveTasks task ON task.task_id = t.task_id
-			LEFT JOIN Clients c ON c.client_id = t.client_id
-			LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
-			LEFT JOIN Services s ON s.service_id = cs.service_id
-			WHERE t.user_id = ?
-				AND t.is_deleted = 0
-				AND substr(t.work_date, 1, 7) = ?
-			ORDER BY t.work_date
-			`).bind(user.user_id, ym).all();
+		SELECT 
+			t.timesheet_id,
+			t.task_id,
+			t.client_id,
+			t.work_type,
+			t.hours,
+			t.work_date,
+			c.company_name as client_name,
+			COALESCE(s.service_name, '\u7D9C\u5408\u670D\u52D9') as service_name
+		FROM Timesheets t
+		LEFT JOIN Clients c ON c.client_id = t.client_id
+		LEFT JOIN Services s ON s.service_id = t.service_id
+		WHERE t.user_id = ?
+			AND t.is_deleted = 0
+			AND substr(t.work_date, 1, 7) = ?
+		ORDER BY t.work_date
+		`).bind(user.user_id, ym).all();
       const timesheets = timesheetsRows?.results || [];
       let standardHours = 0;
       let weightedHours = 0;
@@ -10791,7 +10787,8 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
       }
       const profit = generatedRevenue - totalCost;
       const profitMargin = generatedRevenue > 0 ? profit / generatedRevenue * 100 : 0;
-      const hourlyRate = weightedHours > 0 ? generatedRevenue / weightedHours : 0;
+      const hourlyRate = weightedHours > 0 ? totalCost / weightedHours : 0;
+      const revenuePerHour = weightedHours > 0 ? generatedRevenue / weightedHours : 0;
       const clientDistArray = Array.from(clientDistribution.values()).map((d) => ({
         ...d,
         revenuePercentage: generatedRevenue > 0 ? Number((d.generatedRevenue / generatedRevenue * 100).toFixed(2)) : 0
@@ -10808,6 +10805,9 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
         profit: Number(profit.toFixed(2)),
         profitMargin: Number(profitMargin.toFixed(2)),
         hourlyRate: Number(hourlyRate.toFixed(2)),
+        // 时薪 = 成本/工时
+        revenuePerHour: Number(revenuePerHour.toFixed(2)),
+        // 时均产值 = 收入/工时
         clientDistribution: clientDistArray
       });
     }
@@ -10836,45 +10836,112 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
 	`).all();
     const users = usersResult?.results || [];
     const employeeSummary = [];
+    const clientRevenueRows = await env.DATABASE.prepare(`
+		SELECT 
+			r.client_id,
+			SUM(r.total_amount) as revenue
+		FROM Receipts r
+		WHERE r.is_deleted = 0 
+			AND r.status != 'cancelled'
+			AND substr(r.service_month, 1, 4) = ?
+		GROUP BY r.client_id
+	`).bind(String(year)).all();
+    const clientRevenueMap = /* @__PURE__ */ new Map();
+    for (const row of clientRevenueRows?.results || []) {
+      clientRevenueMap.set(row.client_id, Number(row.revenue || 0));
+    }
     for (const user of users) {
       let annualStandardHours = 0;
       let annualWeightedHours = 0;
-      let annualCost = 0;
-      const hoursResult = await env.DATABASE.prepare(`
-			SELECT 
-				work_type,
-				SUM(hours) as total_hours
-			FROM Timesheets
-			WHERE user_id = ? 
-				AND substr(work_date, 1, 4) = ?
-				AND is_deleted = 0
-			GROUP BY work_type
-		`).bind(user.user_id, String(year)).all();
-      for (const row of hoursResult?.results || []) {
+      let annualRevenue = 0;
+      const clientDistribution = /* @__PURE__ */ new Map();
+      const clientHoursRows = await env.DATABASE.prepare(`
+		SELECT 
+			t.client_id,
+			c.company_name as client_name,
+			COALESCE(s.service_name, '\u7D9C\u5408\u670D\u52D9') as service_name,
+			t.work_type,
+			SUM(t.hours) as total_hours
+		FROM Timesheets t
+		LEFT JOIN Clients c ON c.client_id = t.client_id
+		LEFT JOIN Services s ON s.service_id = t.service_id
+		WHERE t.user_id = ? 
+			AND substr(t.work_date, 1, 4) = ?
+			AND t.is_deleted = 0
+		GROUP BY t.client_id, t.work_type
+	`).bind(user.user_id, String(year)).all();
+      const clientHoursMap = /* @__PURE__ */ new Map();
+      for (const row of clientHoursRows?.results || []) {
+        const clientId = row.client_id;
+        if (!clientId) continue;
         const hours = Number(row.total_hours || 0);
+        const workTypeId = parseInt(row.work_type) || 1;
+        const weighted = calculateWeightedHours2(workTypeId, hours);
         annualStandardHours += hours;
-        const weighted = calculateWeightedHours2(parseInt(row.work_type) || 1, hours);
         annualWeightedHours += weighted;
+        if (!clientHoursMap.has(clientId)) {
+          clientHoursMap.set(clientId, {
+            clientId,
+            clientName: row.client_name || "\u672A\u77E5\u5BA2\u6236",
+            serviceName: row.service_name || "\u7D9C\u5408\u670D\u52D9",
+            hours: 0,
+            weightedHours: 0
+          });
+        }
+        const client = clientHoursMap.get(clientId);
+        client.hours += hours;
+        client.weightedHours += weighted;
       }
+      for (const [clientId, clientData] of clientHoursMap) {
+        const totalRow = await env.DATABASE.prepare(`
+				SELECT SUM(hours) as total_hours
+				FROM Timesheets
+				WHERE client_id = ? 
+					AND substr(work_date, 1, 4) = ? 
+					AND is_deleted = 0
+			`).bind(clientId, String(year)).first();
+        const clientTotalHours = Number(totalRow?.total_hours || 0);
+        if (clientTotalHours === 0) continue;
+        const clientRevenue = clientRevenueMap.get(clientId) || 0;
+        const employeeRevenue = clientRevenue * (clientData.hours / clientTotalHours);
+        annualRevenue += employeeRevenue;
+        clientDistribution.set(clientId, {
+          clientId: clientData.clientId,
+          clientName: clientData.clientName,
+          serviceName: clientData.serviceName,
+          hours: clientData.hours,
+          weightedHours: clientData.weightedHours,
+          generatedRevenue: employeeRevenue,
+          revenuePercentage: 0
+          // 后面计算
+        });
+      }
+      const clientDistArray = Array.from(clientDistribution.values()).map((d) => ({
+        ...d,
+        revenuePercentage: annualRevenue > 0 ? Number((d.generatedRevenue / annualRevenue * 100).toFixed(2)) : 0
+      }));
       const baseSalary = Number(user.base_salary || 0);
-      annualCost = baseSalary * 12;
-      const annualRevenue = 0;
+      const annualCost = baseSalary * 12;
       const annualProfit = annualRevenue - annualCost;
-      const annualProfitMargin = 0;
-      const avgHourlyRate = annualWeightedHours > 0 ? annualRevenue / annualWeightedHours : 0;
+      const annualProfitMargin = annualRevenue > 0 ? annualProfit / annualRevenue * 100 : 0;
+      const avgHourlyRate = annualWeightedHours > 0 ? annualCost / annualWeightedHours : 0;
+      const avgRevenuePerHour = annualWeightedHours > 0 ? annualRevenue / annualWeightedHours : 0;
       employeeSummary.push({
         userId: user.user_id,
         name: user.name || user.username,
         annualStandardHours: Number(annualStandardHours.toFixed(1)),
         annualWeightedHours: Number(annualWeightedHours.toFixed(1)),
         hoursDifference: Number((annualWeightedHours - annualStandardHours).toFixed(1)),
-        annualRevenue: 0,
+        annualRevenue: Number(annualRevenue.toFixed(2)),
         annualCost: Number(annualCost.toFixed(2)),
         annualProfit: Number(annualProfit.toFixed(2)),
-        annualProfitMargin: 0,
-        avgHourlyRate: 0,
+        annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
+        avgHourlyRate: Number(avgHourlyRate.toFixed(2)),
+        // 时薪 = 成本/工时
+        avgRevenuePerHour: Number(avgRevenuePerHour.toFixed(2)),
+        // 时均产值 = 收入/工时
         monthlyTrend: [],
-        clientDistribution: []
+        clientDistribution: clientDistArray
       });
     }
     const data = {
