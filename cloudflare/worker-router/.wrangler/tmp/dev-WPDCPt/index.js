@@ -10521,32 +10521,58 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
     const users = usersResult?.results || [];
     const monthlyTrend = [];
     const employeeSummary = [];
+    const empMap = /* @__PURE__ */ new Map();
     for (const user of users) {
-      const baseSalary = Number(user.base_salary || 0);
-      const annualBaseSalary = baseSalary * 12;
-      employeeSummary.push({
+      empMap.set(user.user_id, {
         userId: user.user_id,
         name: user.name || user.username,
-        annualGrossSalary: annualBaseSalary,
-        annualNetSalary: annualBaseSalary * 0.85,
-        // 简化：假设扣款15%
-        avgMonthlySalary: baseSalary,
-        totalOvertimePay: 0,
-        totalPerformanceBonus: 0,
-        totalYearEndBonus: 0
+        annualGross: 0,
+        annualNet: 0,
+        totalOvertime: 0,
+        totalPerformance: 0,
+        totalYearEnd: 0
       });
     }
     for (let month = 1; month <= 12; month++) {
+      const ym = `${year}-${String(month).padStart(2, "0")}`;
       let monthGross = 0;
+      let monthNet = 0;
       for (const user of users) {
-        monthGross += Number(user.base_salary || 0);
+        try {
+          const payroll = await calculateEmployeePayroll2(env, user.user_id, ym);
+          if (!payroll) continue;
+          const gross = payroll.grossSalaryCents / 100;
+          const net = payroll.netSalaryCents / 100;
+          monthGross += gross;
+          monthNet += net;
+          const emp = empMap.get(user.user_id);
+          emp.annualGross += gross;
+          emp.annualNet += net;
+          emp.totalOvertime += (payroll.overtimeCents || 0) / 100;
+          emp.totalPerformance += (payroll.performanceBonusCents || 0) / 100;
+          emp.totalYearEnd += (payroll.totalYearEndBonusCents || 0) / 100;
+        } catch (err) {
+          console.error(`[AnnualPayroll] Error calculating ${user.name} ${ym}:`, err);
+        }
       }
       monthlyTrend.push({
         month,
         totalGrossSalary: monthGross,
-        totalNetSalary: monthGross * 0.85,
+        totalNetSalary: monthNet,
         employeeCount: users.length,
         avgGrossSalary: users.length > 0 ? monthGross / users.length : 0
+      });
+    }
+    for (const emp of empMap.values()) {
+      employeeSummary.push({
+        userId: emp.userId,
+        name: emp.name,
+        annualGrossSalary: emp.annualGross,
+        annualNetSalary: emp.annualNet,
+        avgMonthlySalary: emp.annualGross / 12,
+        totalOvertimePay: emp.totalOvertime,
+        totalPerformanceBonus: emp.totalPerformance,
+        totalYearEndBonus: emp.totalYearEnd
       });
     }
     const totalGross = monthlyTrend.reduce((sum, m) => sum + m.totalGrossSalary, 0);

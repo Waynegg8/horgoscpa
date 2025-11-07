@@ -410,41 +410,73 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 
 	const users = usersResult?.results || [];
 	
-	// 年度薪资报表：简化计算，避免API请求超限（Cloudflare限制50次subrequest）
-	// 策略：只统计底薪 × 12，不包含加班费、请假、奖金等（这些需要60次复杂计算）
+	// 年度薪资报表：使用完整计算逻辑（批量优化版本）
 	const monthlyTrend = [];
 	const employeeSummary = [];
 	
-	// 为每个员工计算年度薪资
+	// 初始化员工年度数据
+	const empMap = new Map();
 	for (const user of users) {
-		const baseSalary = Number(user.base_salary || 0);
-		const annualBaseSalary = baseSalary * 12;
-		
-		employeeSummary.push({
+		empMap.set(user.user_id, {
 			userId: user.user_id,
 			name: user.name || user.username,
-			annualGrossSalary: annualBaseSalary,
-			annualNetSalary: annualBaseSalary * 0.85, // 简化：假设扣款15%
-			avgMonthlySalary: baseSalary,
-			totalOvertimePay: 0,
-			totalPerformanceBonus: 0,
-			totalYearEndBonus: 0
+			annualGross: 0,
+			annualNet: 0,
+			totalOvertime: 0,
+			totalPerformance: 0,
+			totalYearEnd: 0
 		});
 	}
 	
-	// 月度趋势：使用简化数据
+	// 按月计算（使用真实薪资计算逻辑）
 	for (let month = 1; month <= 12; month++) {
+		const ym = `${year}-${String(month).padStart(2,'0')}`;
 		let monthGross = 0;
+		let monthNet = 0;
+		
+		// 为每个员工计算该月薪资
 		for (const user of users) {
-			monthGross += Number(user.base_salary || 0);
+			try {
+				const payroll = await calculateEmployeePayroll(env, user.user_id, ym);
+				if (!payroll) continue;
+				
+				const gross = payroll.grossSalaryCents / 100;
+				const net = payroll.netSalaryCents / 100;
+				
+				monthGross += gross;
+				monthNet += net;
+				
+				const emp = empMap.get(user.user_id);
+				emp.annualGross += gross;
+				emp.annualNet += net;
+				emp.totalOvertime += (payroll.overtimeCents || 0) / 100;
+				emp.totalPerformance += (payroll.performanceBonusCents || 0) / 100;
+				emp.totalYearEnd += (payroll.totalYearEndBonusCents || 0) / 100;
+			} catch (err) {
+				console.error(`[AnnualPayroll] Error calculating ${user.name} ${ym}:`, err);
+			}
 		}
 		
 		monthlyTrend.push({
 			month,
 			totalGrossSalary: monthGross,
-			totalNetSalary: monthGross * 0.85,
+			totalNetSalary: monthNet,
 			employeeCount: users.length,
 			avgGrossSalary: users.length > 0 ? monthGross / users.length : 0
+		});
+	}
+	
+	// 转换为数组
+	for (const emp of empMap.values()) {
+		employeeSummary.push({
+			userId: emp.userId,
+			name: emp.name,
+			annualGrossSalary: emp.annualGross,
+			annualNetSalary: emp.annualNet,
+			avgMonthlySalary: emp.annualGross / 12,
+			totalOvertimePay: emp.totalOvertime,
+			totalPerformanceBonus: emp.totalPerformance,
+			totalYearEndBonus: emp.totalYearEnd
 		});
 	}
 
