@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>批量更新收據服務類型</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f8fafc;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #64748b;
+      margin-bottom: 32px;
+    }
+    .receipt-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      background: #f8fafc;
+    }
+    .receipt-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .receipt-id {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .receipt-info {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+    .service-types-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .service-type-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .service-type-checkbox:hover {
+      background: #eff6ff;
+      border-color: #3b82f6;
+    }
+    .service-type-checkbox input {
+      cursor: pointer;
+    }
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+    }
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #64748b;
+    }
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+    .current-service-types {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .service-tag {
+      background: #eff6ff;
+      color: #1e40af;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>批量更新收據服務類型</h1>
+    <p class="subtitle">為已開立的收據補充服務類型信息</p>
+
+    <div id="loading" class="loading">載入中...</div>
+    <div id="receipts-container"></div>
+    <div id="message"></div>
+  </div>
+
+  <script>
+    const apiBase = location.hostname.endsWith('horgoscpa.com') 
+      ? '/internal/api/v1' 
+      : 'https://www.horgoscpa.com/internal/api/v1';
+
+    let allReceipts = [];
+    let allServiceTypes = [];
+    let selectedServiceTypes = {}; // { receiptId: [serviceId1, serviceId2] }
+
+    async function init() {
+      try {
+        // 并行加载收据和服务类型
+        const [receiptsRes, servicesRes] = await Promise.all([
+          fetch(`${apiBase}/receipts?perPage=1000`, { credentials: 'include', cache: 'no-cache' }),
+          fetch(`${apiBase}/services/types`, { credentials: 'include' })
+        ]);
+
+        if (receiptsRes.status === 401 || servicesRes.status === 401) {
+          location.assign('/login?redirect=' + encodeURIComponent(location.pathname));
+          return;
+        }
+
+        const receiptsData = await receiptsRes.json();
+        const servicesData = await servicesRes.json();
+
+        if (receiptsData.ok) {
+          allReceipts = receiptsData.data || [];
+        }
+
+        if (servicesData.ok) {
+          allServiceTypes = servicesData.data || [];
+        }
+
+        // 初始化已选择的服务类型
+        allReceipts.forEach(r => {
+          if (r.serviceTypes && r.serviceTypes.length > 0) {
+            selectedServiceTypes[r.receiptId] = r.serviceTypes.map(st => st.serviceId);
+          } else {
+            selectedServiceTypes[r.receiptId] = [];
+          }
+        });
+
+        render();
+      } catch (err) {
+        console.error('載入失敗:', err);
+        document.getElementById('loading').innerHTML = '<p class="error">載入失敗：' + err.message + '</p>';
+      }
+    }
+
+    function render() {
+      const loading = document.getElementById('loading');
+      const container = document.getElementById('receipts-container');
+      
+      loading.style.display = 'none';
+
+      if (allReceipts.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:#64748b;padding:40px;">暫無收據記錄</p>';
+        return;
+      }
+
+      container.innerHTML = allReceipts.map(receipt => {
+        const currentServiceTypes = selectedServiceTypes[receipt.receiptId] || [];
+        
+        return `
+          <div class="receipt-item">
+            <div class="receipt-header">
+              <div>
+                <div class="receipt-id">${receipt.receiptId}</div>
+                <div class="receipt-info">
+                  客戶：${receipt.clientName} | 
+                  金額：$${receipt.totalAmount.toLocaleString()} | 
+                  服務期間：${receipt.serviceStartMonth || '—'} ${receipt.serviceEndMonth && receipt.serviceEndMonth !== receipt.serviceStartMonth ? '至 ' + receipt.serviceEndMonth : ''}
+                </div>
+                ${receipt.serviceTypes && receipt.serviceTypes.length > 0 ? `
+                  <div class="current-service-types">
+                    <span style="font-size:12px;color:#64748b;">當前服務類型：</span>
+                    ${receipt.serviceTypes.map(st => `<span class="service-tag">${st.serviceName}</span>`).join('')}
+                  </div>
+                ` : '<div style="font-size:12px;color:#f59e0b;margin-top:8px;">⚠️ 尚未設置服務類型</div>'}
+              </div>
+            </div>
+            
+            <div class="service-types-container">
+              ${allServiceTypes.map(st => `
+                <label class="service-type-checkbox">
+                  <input 
+                    type="checkbox" 
+                    value="${st.service_id}"
+                    ${currentServiceTypes.includes(st.service_id) ? 'checked' : ''}
+                    onchange="toggleServiceType('${receipt.receiptId}', ${st.service_id})"
+                  />
+                  <span>${st.service_name}</span>
+                </label>
+              `).join('')}
+            </div>
+            
+            <div style="margin-top:16px;display:flex;gap:12px;">
+              <button class="btn btn-primary" onclick="updateReceipt('${receipt.receiptId}')">
+                更新此收據
+              </button>
+              <button class="btn btn-secondary" onclick="clearSelection('${receipt.receiptId}')">
+                清除選擇
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleServiceType(receiptId, serviceId) {
+      if (!selectedServiceTypes[receiptId]) {
+        selectedServiceTypes[receiptId] = [];
+      }
+
+      const index = selectedServiceTypes[receiptId].indexOf(serviceId);
+      if (index > -1) {
+        selectedServiceTypes[receiptId].splice(index, 1);
+      } else {
+        selectedServiceTypes[receiptId].push(serviceId);
+      }
+    }
+
+    function clearSelection(receiptId) {
+      selectedServiceTypes[receiptId] = [];
+      render();
+    }
+
+    async function updateReceipt(receiptId) {
+      const serviceTypeIds = selectedServiceTypes[receiptId] || [];
+      const message = document.getElementById('message');
+
+      try {
+        message.innerHTML = '<p style="color:#64748b;">更新中...</p>';
+
+        // 先删除现有关联
+        await fetch(`${apiBase}/receipts/${receiptId}/service-types`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        // 插入新关联
+        if (serviceTypeIds.length > 0) {
+          const res = await fetch(`${apiBase}/receipts/${receiptId}/service-types`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ service_type_ids: serviceTypeIds })
+          });
+
+          const data = await res.json();
+          if (!data.ok) {
+            throw new Error(data.message || '更新失敗');
+          }
+        }
+
+        message.innerHTML = `<p class="success">✅ 收據 ${receiptId} 更新成功！</p>`;
+        setTimeout(() => { message.innerHTML = ''; }, 3000);
+
+        // 重新加载数据
+        init();
+
+      } catch (err) {
+        console.error('更新失敗:', err);
+        message.innerHTML = `<p class="error">❌ 更新失敗：${err.message}</p>`;
+      }
+    }
+
+    // 批量更新所有收據
+    async function updateAll() {
+      const message = document.getElementById('message');
+      let successCount = 0;
+      let failCount = 0;
+
+      message.innerHTML = '<p style="color:#64748b;">批量更新中，請稍候...</p>';
+
+      for (const receipt of allReceipts) {
+        try {
+          await updateReceipt(receipt.receiptId);
+          successCount++;
+        } catch (err) {
+          console.error(`更新 ${receipt.receiptId} 失敗:`, err);
+          failCount++;
+        }
+      }
+
+      message.innerHTML = `
+        <p class="success">
+          ✅ 批量更新完成！成功：${successCount}，失敗：${failCount}
+        </p>
+      `;
+    }
+
+    // 暴露到全局
+    window.toggleServiceType = toggleServiceType;
+    window.clearSelection = clearSelection;
+    window.updateReceipt = updateReceipt;
+    window.updateAll = updateAll;
+
+    // 初始化
+    init();
+  </script>
+</body>
+</html>
+

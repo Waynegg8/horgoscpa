@@ -1008,6 +1008,87 @@ export async function handleReceipts(request, env, me, requestId, url) {
 		}
 	}
 
+	// POST /internal/api/v1/receipts/:id/service-types - 为收据添加服务类型
+	const addServiceTypesMatch = path.match(/^\/internal\/api\/v1\/receipts\/([^/]+)\/service-types$/);
+	if (method === "POST" && addServiceTypesMatch) {
+		const receiptId = decodeURIComponent(addServiceTypesMatch[1]);
+		
+		try {
+			const body = await request.json();
+			const serviceTypeIds = Array.isArray(body?.service_type_ids) ? body.service_type_ids : [];
+			
+			if (serviceTypeIds.length === 0) {
+				return jsonResponse(400, { 
+					ok: false, 
+					code: "BAD_REQUEST", 
+					message: "請提供服務類型ID列表", 
+					meta: { requestId } 
+				}, corsHeaders);
+			}
+			
+			// 验证收据是否存在
+			const receipt = await env.DATABASE.prepare(
+				"SELECT receipt_id FROM Receipts WHERE receipt_id = ? AND is_deleted = 0"
+			).bind(receiptId).first();
+			
+			if (!receipt) {
+				return jsonResponse(404, { 
+					ok: false, 
+					code: "NOT_FOUND", 
+					message: "收據不存在", 
+					meta: { requestId } 
+				}, corsHeaders);
+			}
+			
+			// 插入服务类型关联
+			for (const serviceId of serviceTypeIds) {
+				const sid = parseInt(serviceId, 10);
+				if (Number.isFinite(sid) && sid > 0) {
+					try {
+						await env.DATABASE.prepare(`
+							INSERT OR IGNORE INTO ReceiptServiceTypes (receipt_id, service_id, created_at)
+							VALUES (?, ?, ?)
+						`).bind(receiptId, sid, new Date().toISOString()).run();
+					} catch (err) {
+						console.warn('[ReceiptServiceTypes] 插入失敗:', err.message);
+					}
+				}
+			}
+			
+			return jsonResponse(200, { 
+				ok: true, 
+				code: "OK", 
+				message: "服務類型已更新", 
+				meta: { requestId } 
+			}, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
+		}
+	}
+	
+	// DELETE /internal/api/v1/receipts/:id/service-types - 删除收据的所有服务类型关联
+	const deleteServiceTypesMatch = path.match(/^\/internal\/api\/v1\/receipts\/([^/]+)\/service-types$/);
+	if (method === "DELETE" && deleteServiceTypesMatch) {
+		const receiptId = decodeURIComponent(deleteServiceTypesMatch[1]);
+		
+		try {
+			await env.DATABASE.prepare(`
+				DELETE FROM ReceiptServiceTypes WHERE receipt_id = ?
+			`).bind(receiptId).run();
+			
+			return jsonResponse(200, { 
+				ok: true, 
+				code: "OK", 
+				message: "服務類型關聯已清除", 
+				meta: { requestId } 
+			}, corsHeaders);
+		} catch (err) {
+			console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+			return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "伺服器錯誤", meta: { requestId } }, corsHeaders);
+		}
+	}
+
 	// POST /internal/api/v1/receipts/reminders/postpone - 暂缓开票提醒
 	if (method === "POST" && path === "/internal/api/v1/receipts/reminders/postpone") {
 		try {
