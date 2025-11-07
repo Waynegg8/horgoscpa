@@ -15019,6 +15019,35 @@ async function handleAutomation(request, env, me, requestId, url, path) {
       return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
     }
   }
+  const getMatch = path.match(/^\/internal\/api\/v1\/admin\/automation-rules\/(\d+)$/);
+  if (getMatch && method === "GET") {
+    const id = parseInt(getMatch[1], 10);
+    try {
+      const row = await env.DATABASE.prepare(
+        `SELECT rule_id, rule_name, schedule_type, schedule_value, condition_json, action_json, is_enabled, last_run_at, created_at, updated_at
+         FROM AutomationRules WHERE rule_id = ? AND is_deleted = 0`
+      ).bind(id).first();
+      if (!row) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u898F\u5247\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      const data = {
+        id: row.rule_id,
+        name: row.rule_name,
+        scheduleType: row.schedule_type,
+        scheduleValue: row.schedule_value,
+        condition: parseJsonSafe(row.condition_json, {}),
+        action: parseJsonSafe(row.action_json, {}),
+        isEnabled: row.is_enabled === 1,
+        lastRunAt: row.last_run_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      };
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
   const updateMatch = path.match(/^\/internal\/api\/v1\/admin\/automation-rules\/(\d+)$/);
   if (updateMatch) {
     if (!["PUT", "DELETE"].includes(method)) return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "\u65B9\u6CD5\u4E0D\u5141\u8A31", meta: { requestId } }, corsHeaders);

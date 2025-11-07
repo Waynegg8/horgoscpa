@@ -63,6 +63,40 @@ export async function handleAutomation(request, env, me, requestId, url, path) {
     }
   }
 
+  // Get single rule
+  const getMatch = path.match(/^\/internal\/api\/v1\/admin\/automation-rules\/(\d+)$/);
+  if (getMatch && method === 'GET') {
+    const id = parseInt(getMatch[1], 10);
+    try {
+      const row = await env.DATABASE.prepare(
+        `SELECT rule_id, rule_name, schedule_type, schedule_value, condition_json, action_json, is_enabled, last_run_at, created_at, updated_at
+         FROM AutomationRules WHERE rule_id = ? AND is_deleted = 0`
+      ).bind(id).first();
+      
+      if (!row) {
+        return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"規則不存在", meta:{ requestId } }, corsHeaders);
+      }
+      
+      const data = {
+        id: row.rule_id,
+        name: row.rule_name,
+        scheduleType: row.schedule_type,
+        scheduleValue: row.schedule_value,
+        condition: parseJsonSafe(row.condition_json, {}),
+        action: parseJsonSafe(row.action_json, {}),
+        isEnabled: row.is_enabled === 1,
+        lastRunAt: row.last_run_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      };
+      
+      return jsonResponse(200, { ok:true, code:"OK", message:"成功", data, meta:{ requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+      return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+    }
+  }
+
   // Update
   const updateMatch = path.match(/^\/internal\/api\/v1\/admin\/automation-rules\/(\d+)$/);
   if (updateMatch) {
