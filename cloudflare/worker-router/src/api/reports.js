@@ -82,6 +82,95 @@ function calculateWeightedHours(workTypeId, hours) {
 	return hours * workType.multiplier;
 }
 
+// 获取年度服务类型明细（按加权工时汇总）
+async function getAnnualServiceTypeDetails(clientId, year, totalRevenue, env) {
+	const WORK_TYPE_MULTIPLIERS = {
+		1: 1.0, 2: 1.34, 3: 1.67, 4: 1.34, 5: 1.67, 6: 2.67,
+		7: 1.0, 8: 1.34, 9: 1.67, 10: 1.0, 11: 1.34, 12: 1.67
+	};
+	
+	// 获取该客户全年的工时记录（按服务类型和工作类型分组）
+	const timesheetsResult = await env.DATABASE.prepare(`
+		SELECT 
+			t.service_id,
+			t.work_type,
+			t.work_date,
+			SUM(t.hours) as total_hours,
+			COALESCE(s.service_name, '未分类') as service_name
+		FROM Timesheets t
+		LEFT JOIN Services s ON t.service_id = s.service_id
+		WHERE t.client_id = ?
+			AND substr(t.work_date, 1, 4) = ?
+			AND t.is_deleted = 0
+		GROUP BY t.service_id, t.work_type, t.work_date
+	`).bind(clientId, String(year)).all();
+	
+	const timesheets = timesheetsResult?.results || [];
+	
+	// 按服务类型汇总加权工时
+	const serviceMap = new Map();
+	const processedFixed = new Set();
+	let totalWeightedHours = 0;
+	
+	for (const ts of timesheets) {
+		const serviceId = ts.service_id || 0;
+		const serviceName = ts.service_name;
+		const hours = Number(ts.total_hours || 0);
+		const workType = parseInt(ts.work_type) || 1;
+		const workDate = ts.work_date;
+		
+		// 计算加权工时
+		let weightedHours;
+		if (workType === 7 || workType === 10) {
+			const key = `${workDate}:${workType}`;
+			if (!processedFixed.has(key)) {
+				weightedHours = 8.0;
+				processedFixed.add(key);
+			} else {
+				weightedHours = 0;
+			}
+		} else {
+			const multiplier = WORK_TYPE_MULTIPLIERS[workType] || 1.0;
+			weightedHours = hours * multiplier;
+		}
+		
+		if (!serviceMap.has(serviceId)) {
+			serviceMap.set(serviceId, {
+				serviceId,
+				serviceName,
+				hours: 0,
+				weightedHours: 0
+			});
+		}
+		
+		const service = serviceMap.get(serviceId);
+		service.hours += hours;
+		service.weightedHours += weightedHours;
+		totalWeightedHours += weightedHours;
+	}
+	
+	// 按加权工时比例分摊收入
+	const serviceDetails = [];
+	if (totalWeightedHours === 0) return serviceDetails;
+	
+	for (const [serviceId, service] of serviceMap) {
+		const ratio = service.weightedHours / totalWeightedHours;
+		const revenue = totalRevenue * ratio;
+		
+		serviceDetails.push({
+			serviceId,
+			serviceName: service.serviceName,
+			hours: Number(service.hours.toFixed(1)),
+			weightedHours: Number(service.weightedHours.toFixed(1)),
+			revenue: Number(revenue.toFixed(2)),
+			revenuePercentage: Number((ratio * 100).toFixed(1))
+		});
+	}
+	
+	serviceDetails.sort((a, b) => b.revenue - a.revenue);
+	return serviceDetails;
+}
+
 // ============================================================
 // 月度收款报表
 // ============================================================
@@ -1050,13 +1139,20 @@ async function handleMonthlyClientProfitability(request, env, me, requestId, url
 		revenueMap.set(r.client_id, Number(r.revenue || 0));
 	}
 
-	// 转换数据格式
-	const clientData = clients.map(client => {
+	// 导入收入分摊函数
+	const { allocateRevenueByServiceType } = await import('../revenue-allocation.js');
+	
+	// 转换数据格式并获取服务类型明细
+	const clientData = [];
+	for (const client of clients) {
 		const revenue = revenueMap.get(client.clientId) || client.revenue || 0;
 		const profit = revenue - client.totalCost;
 		const profitMargin = revenue > 0 ? (profit / revenue * 100) : 0;
+		
+		// 获取服务类型明细（使用加权工时分摊收入）
+		const serviceDetails = await allocateRevenueByServiceType(client.clientId, ym, revenue, env);
 
-		return {
+		clientData.push({
 			clientId: client.clientId,
 			clientName: client.clientName,
 			totalHours: Number(client.totalHours || 0),
@@ -1065,9 +1161,10 @@ async function handleMonthlyClientProfitability(request, env, me, requestId, url
 			totalCost: Number(client.totalCost || 0),
 			revenue: Number(revenue),
 			profit: Number(profit.toFixed(2)),
-			profitMargin: Number(profitMargin.toFixed(2))
-		};
-	});
+			profitMargin: Number(profitMargin.toFixed(2)),
+			serviceDetails: serviceDetails // 添加服务类型明细
+		});
+	}
 
 		const data = {
 			clients: clientData
@@ -1130,13 +1227,17 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
 		revenueMap.set(r.client_id, Number(r.total_revenue || 0));
 	}
 	
-	// 组合数据
-	const clientSummary = costData.map(client => {
+	// 组合数据并获取服务类型明细
+	const clientSummary = [];
+	for (const client of costData) {
 		const annualRevenue = revenueMap.get(client.clientId) || 0;
 		const annualProfit = annualRevenue - client.totalCost;
 		const annualProfitMargin = annualRevenue > 0 ? (annualProfit / annualRevenue * 100) : 0;
 		
-		return {
+		// 获取年度服务类型明细（按加权工时汇总）
+		const serviceDetails = await getAnnualServiceTypeDetails(client.clientId, year, annualRevenue, env);
+		
+		clientSummary.push({
 			clientId: client.clientId,
 			clientName: client.clientName,
 			annualHours: Number(client.totalHours.toFixed(1)),
@@ -1145,9 +1246,13 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
 			annualRevenue: Number(annualRevenue.toFixed(2)),
 			annualProfit: Number(annualProfit.toFixed(2)),
 			annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
-			avgMonthlyRevenue: Number((annualRevenue / 12).toFixed(2))
-		};
-	}).filter(c => c.annualHours > 0 || c.annualRevenue > 0);
+			avgMonthlyRevenue: Number((annualRevenue / 12).toFixed(2)),
+			serviceDetails: serviceDetails // 添加服务类型明细
+		});
+	}
+	
+	// 过滤掉没有数据的客户
+	const filteredClientSummary = clientSummary.filter(c => c.annualHours > 0 || c.annualRevenue > 0);
 
 	// 按服务类型年度汇总（直接从Timesheets的service_id获取）
 	const serviceTypeSummary = await env.DATABASE.prepare(`
@@ -1190,7 +1295,7 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
 	}));
 
 		const data = {
-			clientSummary,
+			clientSummary: filteredClientSummary,
 			serviceTypeSummary: serviceTypeData
 		};
 

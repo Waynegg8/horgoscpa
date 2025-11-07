@@ -738,12 +738,15 @@
           const data = json.data;
           const tbody = document.getElementById('m-client-profit');
           
+          // 存储客户详细数据供展开使用
+          window.monthlyClientDetails = data.clients;
+          
           if (data.clients.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" class="muted">本月無客戶成本記錄</td></tr>';
-                    } else {
-            tbody.innerHTML = data.clients.map(c => `
-              <tr>
-                <td>${c.clientName}</td>
+          } else {
+            tbody.innerHTML = data.clients.map((c, index) => `
+              <tr style="cursor:pointer;" onclick="toggleServiceDetails('monthly', ${index})" title="點擊查看服務類型明細">
+                <td>${c.clientName} ${c.serviceDetails && c.serviceDetails.length > 0 ? '▶' : ''}</td>
                 <td class="text-right">${c.totalHours.toFixed(1)}h</td>
                 <td class="text-right">${c.weightedHours.toFixed(1)}h</td>
                 <td class="text-right">${formatCurrency(c.avgHourlyRate)}</td>
@@ -751,10 +754,84 @@
                 <td class="text-right">${formatCurrency(c.revenue)}</td>
                 <td class="text-right" style="color:${c.profit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(c.profit)}</td>
                 <td class="text-right">${formatPercent(c.profitMargin)}</td>
-                                </tr>
+              </tr>
+              <tr id="monthly-service-detail-${index}" style="display:none;">
+                <td colspan="8" style="background:#f9fafb;padding:12px;">
+                  <div id="monthly-service-content-${index}"></div>
+                </td>
+              </tr>
             `).join('');
           }
         }
+
+      // ============================================================
+      // 服务类型明细展开功能
+      // ============================================================
+      
+      function toggleServiceDetails(reportType, clientIndex) {
+        const detailRow = document.getElementById(`${reportType}-service-detail-${clientIndex}`);
+        const contentDiv = document.getElementById(`${reportType}-service-content-${clientIndex}`);
+        
+        if (!detailRow || !contentDiv) return;
+        
+        // 切换显示状态
+        if (detailRow.style.display === 'none') {
+          // 展开：渲染服务类型明细
+          const clientData = reportType === 'monthly' 
+            ? window.monthlyClientDetails[clientIndex]
+            : window.annualClientDetails[clientIndex];
+          
+          if (!clientData || !clientData.serviceDetails || clientData.serviceDetails.length === 0) {
+            contentDiv.innerHTML = '<p style="color:#6b7280;margin:0;">暂无服务类型明细</p>';
+          } else {
+            const serviceTable = `
+              <div style="background:white;border-radius:8px;padding:16px;">
+                <h4 style="margin:0 0 12px 0;font-size:14px;font-weight:600;color:#1f2937;">
+                  ${clientData.clientName} - 服務類型明細（按加權工時分攤）
+                </h4>
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                  <thead>
+                    <tr style="background:#f3f4f6;border-bottom:2px solid #e5e7eb;">
+                      <th style="padding:8px;text-align:left;">服務類型</th>
+                      <th style="padding:8px;text-align:right;">實際工時</th>
+                      <th style="padding:8px;text-align:right;">加權工時</th>
+                      <th style="padding:8px;text-align:right;">收入</th>
+                      <th style="padding:8px;text-align:right;">佔比</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${clientData.serviceDetails.map(s => `
+                      <tr style="border-bottom:1px solid #e5e7eb;">
+                        <td style="padding:8px;">${s.serviceName}</td>
+                        <td style="padding:8px;text-align:right;">${s.hours}h</td>
+                        <td style="padding:8px;text-align:right;color:#6366f1;font-weight:500;">${s.weightedHours}h</td>
+                        <td style="padding:8px;text-align:right;font-weight:600;">${formatCurrency(s.revenue)}</td>
+                        <td style="padding:8px;text-align:right;">${s.revenuePercentage}%</td>
+                      </tr>
+                    `).join('')}
+                    <tr style="background:#f9fafb;font-weight:600;">
+                      <td style="padding:8px;">合計</td>
+                      <td style="padding:8px;text-align:right;">${(reportType === 'monthly' ? clientData.totalHours : clientData.annualHours).toFixed(1)}h</td>
+                      <td style="padding:8px;text-align:right;color:#6366f1;">${(reportType === 'monthly' ? clientData.weightedHours : clientData.annualWeightedHours).toFixed(1)}h</td>
+                      <td style="padding:8px;text-align:right;">${formatCurrency(reportType === 'monthly' ? clientData.revenue : clientData.annualRevenue)}</td>
+                      <td style="padding:8px;text-align:right;">100%</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p style="margin:12px 0 0 0;font-size:12px;color:#6b7280;">
+                  💡 收入按加權工時比例分攤（包含加班倍率），準確反映各服務類型的價值貢獻
+                </p>
+              </div>
+            `;
+            contentDiv.innerHTML = serviceTable;
+          }
+          
+          detailRow.style.display = 'table-row';
+        } else {
+          // 收起
+          detailRow.style.display = 'none';
+        }
+      }
 
       // ============================================================
       // 年度报表加载 - 独立按钮
@@ -1120,12 +1197,15 @@
           const data = json.data;
           const tbody = document.getElementById('a-client-profit');
           
+          // 存储客户详细数据供展开使用
+          window.annualClientDetails = data.clientSummary;
+          
           if (data.clientSummary.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" class="muted">本年無客戶成本記錄</td></tr>';
           } else {
-            tbody.innerHTML = data.clientSummary.map(c => `
-              <tr>
-                <td>${c.clientName}</td>
+            tbody.innerHTML = data.clientSummary.map((c, index) => `
+              <tr style="cursor:pointer;" onclick="toggleServiceDetails('annual', ${index})" title="點擊查看服務類型明細">
+                <td>${c.clientName} ${c.serviceDetails && c.serviceDetails.length > 0 ? '▶' : ''}</td>
                 <td class="text-right">${c.annualHours.toFixed(1)}h</td>
                 <td class="text-right">${c.annualWeightedHours.toFixed(1)}h</td>
                 <td class="text-right">${formatCurrency(c.annualCost)}</td>
@@ -1133,6 +1213,11 @@
                 <td class="text-right" style="color:${c.annualProfit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(c.annualProfit)}</td>
                 <td class="text-right">${formatPercent(c.annualProfitMargin)}</td>
                 <td class="text-right">${formatCurrency(c.avgMonthlyRevenue)}</td>
+              </tr>
+              <tr id="annual-service-detail-${index}" style="display:none;">
+                <td colspan="8" style="background:#f9fafb;padding:12px;">
+                  <div id="annual-service-content-${index}"></div>
+                </td>
               </tr>
             `).join('');
           }

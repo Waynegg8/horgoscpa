@@ -700,21 +700,44 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				serviceEndMonth = manualServiceEndMonth || manualServiceStartMonth;
 			}
 			
-			// 优先级1：从关联任务获取service_month
-			if (relatedTaskId) {
-				const taskRow = await env.DATABASE.prepare(
-					`SELECT service_month FROM ActiveTasks WHERE task_id = ?`
-				).bind(relatedTaskId).first();
+			// 优先级1：从客户服务周期推断（最核心的业务逻辑）
+			if (!serviceStartMonth && clientServiceId && billingMonth) {
+				const clientServiceRow = await env.DATABASE.prepare(
+					`SELECT service_cycle FROM ClientServices WHERE client_service_id = ?`
+				).bind(clientServiceId).first();
 				
-				if (taskRow && taskRow.service_month) {
-					serviceStartMonth = taskRow.service_month;
-					serviceEndMonth = taskRow.service_month;
+				if (clientServiceRow) {
+					const year = receipt_date.split('-')[0];
+					const cycle = clientServiceRow.service_cycle || 'monthly';
+					
+					if (cycle === 'monthly') {
+						// 月度服务：单月
+						serviceStartMonth = `${year}-${String(billingMonth).padStart(2, '0')}`;
+						serviceEndMonth = serviceStartMonth;
+					} else if (cycle === 'quarterly') {
+						// 季度服务：根据billing_month确定季度
+						let startM, endM;
+						if (billingMonth >= 1 && billingMonth <= 3) {
+							startM = 1; endM = 3; // Q1
+						} else if (billingMonth >= 4 && billingMonth <= 6) {
+							startM = 4; endM = 6; // Q2
+						} else if (billingMonth >= 7 && billingMonth <= 9) {
+							startM = 7; endM = 9; // Q3
+						} else {
+							startM = 10; endM = 12; // Q4
+						}
+						serviceStartMonth = `${year}-${String(startM).padStart(2, '0')}`;
+						serviceEndMonth = `${year}-${String(endM).padStart(2, '0')}`;
+					} else if (cycle === 'annual') {
+						// 年度服务：整年
+						serviceStartMonth = `${year}-01`;
+						serviceEndMonth = `${year}-12`;
+					}
 				}
 			}
 			
 			// 优先级2：从客户工时记录推断（查找最近的工时记录）
 			if (!serviceStartMonth && client_id) {
-				// 查询该客户最近3个月的工时记录
 				const recentHoursRow = await env.DATABASE.prepare(`
 					SELECT 
 						MIN(substr(work_date, 1, 7)) as start_month,
@@ -732,7 +755,7 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				}
 			}
 			
-			// 优先级3：使用billing_month
+			// 优先级3：使用billing_month（单月fallback）
 			if (!serviceStartMonth && billingMonth) {
 				const year = receipt_date.split('-')[0];
 				serviceStartMonth = `${year}-${String(billingMonth).padStart(2, '0')}`;

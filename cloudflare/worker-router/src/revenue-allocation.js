@@ -200,6 +200,124 @@ export async function getAnnualRevenueByClient(year, env) {
 }
 
 /**
+ * 按服务类型分摊客户收入（使用加权工时）
+ * 
+ * @param {string} clientId - 客户ID
+ * @param {string} targetMonth - 目标月份 (YYYY-MM)
+ * @param {number} totalRevenue - 客户该月总收入
+ * @param {Object} env - Cloudflare环境对象
+ * @returns {Array} 服务类型明细 [{ serviceId, serviceName, hours, weightedHours, revenue }, ...]
+ */
+export async function allocateRevenueByServiceType(clientId, targetMonth, totalRevenue, env) {
+	// 工时类型定义（与reports.js保持一致）
+	const WORK_TYPE_MULTIPLIERS = {
+		1: 1.0,    // 正常工时
+		2: 1.34,   // 平日加班（前2h）
+		3: 1.67,   // 平日加班（后2h）
+		4: 1.34,   // 休息日（前2h）
+		5: 1.67,   // 休息日（3-8h）
+		6: 2.67,   // 休息日（9-12h）
+		7: 1.0,    // 国定假日（8h内，特殊处理）
+		8: 1.34,   // 国定假日（9-10h）
+		9: 1.67,   // 国定假日（11-12h）
+		10: 1.0,   // 例假日（8h内，特殊处理）
+		11: 1.34,  // 例假日（9-10h）
+		12: 1.67   // 例假日（11-12h）
+	};
+	
+	// 获取该客户该月的所有工时记录（按服务类型分组）
+	const timesheetsResult = await env.DATABASE.prepare(`
+		SELECT 
+			t.service_id,
+			t.work_type,
+			t.work_date,
+			SUM(t.hours) as total_hours,
+			COALESCE(s.service_name, '未分类') as service_name
+		FROM Timesheets t
+		LEFT JOIN Services s ON t.service_id = s.service_id
+		WHERE t.client_id = ?
+			AND substr(t.work_date, 1, 7) = ?
+			AND t.is_deleted = 0
+		GROUP BY t.service_id, t.work_type, t.work_date
+	`).bind(clientId, targetMonth).all();
+	
+	const timesheets = timesheetsResult?.results || [];
+	
+	// 按服务类型汇总加权工时
+	const serviceMap = new Map();
+	const processedFixed = new Set(); // 追踪fixed_8h类型
+	let totalWeightedHours = 0;
+	
+	for (const ts of timesheets) {
+		const serviceId = ts.service_id || 0;
+		const serviceName = ts.service_name;
+		const hours = Number(ts.total_hours || 0);
+		const workType = parseInt(ts.work_type) || 1;
+		const workDate = ts.work_date;
+		
+		// 计算加权工时
+		let weightedHours;
+		if (workType === 7 || workType === 10) {
+			// 国定假日/例假日：每天固定8小时（不重复计算）
+			const key = `${workDate}:${workType}`;
+			if (!processedFixed.has(key)) {
+				weightedHours = 8.0;
+				processedFixed.add(key);
+			} else {
+				weightedHours = 0;
+			}
+		} else {
+			// 其他类型：按倍率计算
+			const multiplier = WORK_TYPE_MULTIPLIERS[workType] || 1.0;
+			weightedHours = hours * multiplier;
+		}
+		
+		// 汇总到服务类型
+		if (!serviceMap.has(serviceId)) {
+			serviceMap.set(serviceId, {
+				serviceId,
+				serviceName,
+				hours: 0,
+				weightedHours: 0,
+				revenue: 0
+			});
+		}
+		
+		const service = serviceMap.get(serviceId);
+		service.hours += hours;
+		service.weightedHours += weightedHours;
+		totalWeightedHours += weightedHours;
+	}
+	
+	// 按加权工时比例分摊收入
+	const serviceDetails = [];
+	
+	if (totalWeightedHours === 0) {
+		// 如果没有工时记录，返回空数组
+		return serviceDetails;
+	}
+	
+	for (const [serviceId, service] of serviceMap) {
+		const ratio = service.weightedHours / totalWeightedHours;
+		const revenue = totalRevenue * ratio;
+		
+		serviceDetails.push({
+			serviceId,
+			serviceName: service.serviceName,
+			hours: Number(service.hours.toFixed(1)),
+			weightedHours: Number(service.weightedHours.toFixed(1)),
+			revenue: Number(revenue.toFixed(2)),
+			revenuePercentage: Number((ratio * 100).toFixed(1))
+		});
+	}
+	
+	// 按收入降序排序
+	serviceDetails.sort((a, b) => b.revenue - a.revenue);
+	
+	return serviceDetails;
+}
+
+/**
  * 辅助函数：获取两个月份之间的所有月份（含首尾）
  * 
  * @param {string} startMonth - 开始月份 (YYYY-MM)

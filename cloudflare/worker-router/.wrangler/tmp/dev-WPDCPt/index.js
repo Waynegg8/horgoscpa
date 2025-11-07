@@ -2081,6 +2081,7 @@ var init_payroll = __esm({
 var revenue_allocation_exports = {};
 __export(revenue_allocation_exports, {
   allocateReceiptRevenue: () => allocateReceiptRevenue,
+  allocateRevenueByServiceType: () => allocateRevenueByServiceType,
   getAnnualRevenueByClient: () => getAnnualRevenueByClient,
   getMonthlyRevenueByClient: () => getMonthlyRevenueByClient
 });
@@ -2219,6 +2220,103 @@ async function getAnnualRevenueByClient(year, env) {
   }
   return clientRevenue;
 }
+async function allocateRevenueByServiceType(clientId, targetMonth, totalRevenue, env) {
+  const WORK_TYPE_MULTIPLIERS = {
+    1: 1,
+    // 正常工时
+    2: 1.34,
+    // 平日加班（前2h）
+    3: 1.67,
+    // 平日加班（后2h）
+    4: 1.34,
+    // 休息日（前2h）
+    5: 1.67,
+    // 休息日（3-8h）
+    6: 2.67,
+    // 休息日（9-12h）
+    7: 1,
+    // 国定假日（8h内，特殊处理）
+    8: 1.34,
+    // 国定假日（9-10h）
+    9: 1.67,
+    // 国定假日（11-12h）
+    10: 1,
+    // 例假日（8h内，特殊处理）
+    11: 1.34,
+    // 例假日（9-10h）
+    12: 1.67
+    // 例假日（11-12h）
+  };
+  const timesheetsResult = await env.DATABASE.prepare(`
+		SELECT 
+			t.service_id,
+			t.work_type,
+			t.work_date,
+			SUM(t.hours) as total_hours,
+			COALESCE(s.service_name, '\u672A\u5206\u7C7B') as service_name
+		FROM Timesheets t
+		LEFT JOIN Services s ON t.service_id = s.service_id
+		WHERE t.client_id = ?
+			AND substr(t.work_date, 1, 7) = ?
+			AND t.is_deleted = 0
+		GROUP BY t.service_id, t.work_type, t.work_date
+	`).bind(clientId, targetMonth).all();
+  const timesheets = timesheetsResult?.results || [];
+  const serviceMap = /* @__PURE__ */ new Map();
+  const processedFixed = /* @__PURE__ */ new Set();
+  let totalWeightedHours = 0;
+  for (const ts of timesheets) {
+    const serviceId = ts.service_id || 0;
+    const serviceName = ts.service_name;
+    const hours = Number(ts.total_hours || 0);
+    const workType = parseInt(ts.work_type) || 1;
+    const workDate = ts.work_date;
+    let weightedHours;
+    if (workType === 7 || workType === 10) {
+      const key = `${workDate}:${workType}`;
+      if (!processedFixed.has(key)) {
+        weightedHours = 8;
+        processedFixed.add(key);
+      } else {
+        weightedHours = 0;
+      }
+    } else {
+      const multiplier = WORK_TYPE_MULTIPLIERS[workType] || 1;
+      weightedHours = hours * multiplier;
+    }
+    if (!serviceMap.has(serviceId)) {
+      serviceMap.set(serviceId, {
+        serviceId,
+        serviceName,
+        hours: 0,
+        weightedHours: 0,
+        revenue: 0
+      });
+    }
+    const service = serviceMap.get(serviceId);
+    service.hours += hours;
+    service.weightedHours += weightedHours;
+    totalWeightedHours += weightedHours;
+  }
+  const serviceDetails = [];
+  if (totalWeightedHours === 0) {
+    return serviceDetails;
+  }
+  for (const [serviceId, service] of serviceMap) {
+    const ratio = service.weightedHours / totalWeightedHours;
+    const revenue = totalRevenue * ratio;
+    serviceDetails.push({
+      serviceId,
+      serviceName: service.serviceName,
+      hours: Number(service.hours.toFixed(1)),
+      weightedHours: Number(service.weightedHours.toFixed(1)),
+      revenue: Number(revenue.toFixed(2)),
+      revenuePercentage: Number((ratio * 100).toFixed(1))
+    });
+  }
+  serviceDetails.sort((a, b) => b.revenue - a.revenue);
+  return serviceDetails;
+}
 function getMonthsBetween(startMonth, endMonth) {
   const months = [];
   const [startYear, startM] = startMonth.split("-").map(Number);
@@ -2241,6 +2339,7 @@ var init_revenue_allocation = __esm({
     __name(allocateReceiptRevenue, "allocateReceiptRevenue");
     __name(getMonthlyRevenueByClient, "getMonthlyRevenueByClient");
     __name(getAnnualRevenueByClient, "getAnnualRevenueByClient");
+    __name(allocateRevenueByServiceType, "allocateRevenueByServiceType");
     __name(getMonthsBetween, "getMonthsBetween");
   }
 });
@@ -7470,13 +7569,37 @@ async function handleReceipts(request, env, me, requestId, url) {
         serviceStartMonth = manualServiceStartMonth;
         serviceEndMonth = manualServiceEndMonth || manualServiceStartMonth;
       }
-      if (relatedTaskId) {
-        const taskRow = await env.DATABASE.prepare(
-          `SELECT service_month FROM ActiveTasks WHERE task_id = ?`
-        ).bind(relatedTaskId).first();
-        if (taskRow && taskRow.service_month) {
-          serviceStartMonth = taskRow.service_month;
-          serviceEndMonth = taskRow.service_month;
+      if (!serviceStartMonth && clientServiceId && billingMonth) {
+        const clientServiceRow = await env.DATABASE.prepare(
+          `SELECT service_cycle FROM ClientServices WHERE client_service_id = ?`
+        ).bind(clientServiceId).first();
+        if (clientServiceRow) {
+          const year = receipt_date.split("-")[0];
+          const cycle = clientServiceRow.service_cycle || "monthly";
+          if (cycle === "monthly") {
+            serviceStartMonth = `${year}-${String(billingMonth).padStart(2, "0")}`;
+            serviceEndMonth = serviceStartMonth;
+          } else if (cycle === "quarterly") {
+            let startM, endM;
+            if (billingMonth >= 1 && billingMonth <= 3) {
+              startM = 1;
+              endM = 3;
+            } else if (billingMonth >= 4 && billingMonth <= 6) {
+              startM = 4;
+              endM = 6;
+            } else if (billingMonth >= 7 && billingMonth <= 9) {
+              startM = 7;
+              endM = 9;
+            } else {
+              startM = 10;
+              endM = 12;
+            }
+            serviceStartMonth = `${year}-${String(startM).padStart(2, "0")}`;
+            serviceEndMonth = `${year}-${String(endM).padStart(2, "0")}`;
+          } else if (cycle === "annual") {
+            serviceStartMonth = `${year}-01`;
+            serviceEndMonth = `${year}-12`;
+          }
         }
       }
       if (!serviceStartMonth && client_id) {
@@ -10532,6 +10655,89 @@ function calculateWeightedHours2(workTypeId, hours) {
   return hours * workType.multiplier;
 }
 __name(calculateWeightedHours2, "calculateWeightedHours");
+async function getAnnualServiceTypeDetails(clientId, year, totalRevenue, env) {
+  const WORK_TYPE_MULTIPLIERS = {
+    1: 1,
+    2: 1.34,
+    3: 1.67,
+    4: 1.34,
+    5: 1.67,
+    6: 2.67,
+    7: 1,
+    8: 1.34,
+    9: 1.67,
+    10: 1,
+    11: 1.34,
+    12: 1.67
+  };
+  const timesheetsResult = await env.DATABASE.prepare(`
+		SELECT 
+			t.service_id,
+			t.work_type,
+			t.work_date,
+			SUM(t.hours) as total_hours,
+			COALESCE(s.service_name, '\u672A\u5206\u7C7B') as service_name
+		FROM Timesheets t
+		LEFT JOIN Services s ON t.service_id = s.service_id
+		WHERE t.client_id = ?
+			AND substr(t.work_date, 1, 4) = ?
+			AND t.is_deleted = 0
+		GROUP BY t.service_id, t.work_type, t.work_date
+	`).bind(clientId, String(year)).all();
+  const timesheets = timesheetsResult?.results || [];
+  const serviceMap = /* @__PURE__ */ new Map();
+  const processedFixed = /* @__PURE__ */ new Set();
+  let totalWeightedHours = 0;
+  for (const ts of timesheets) {
+    const serviceId = ts.service_id || 0;
+    const serviceName = ts.service_name;
+    const hours = Number(ts.total_hours || 0);
+    const workType = parseInt(ts.work_type) || 1;
+    const workDate = ts.work_date;
+    let weightedHours;
+    if (workType === 7 || workType === 10) {
+      const key = `${workDate}:${workType}`;
+      if (!processedFixed.has(key)) {
+        weightedHours = 8;
+        processedFixed.add(key);
+      } else {
+        weightedHours = 0;
+      }
+    } else {
+      const multiplier = WORK_TYPE_MULTIPLIERS[workType] || 1;
+      weightedHours = hours * multiplier;
+    }
+    if (!serviceMap.has(serviceId)) {
+      serviceMap.set(serviceId, {
+        serviceId,
+        serviceName,
+        hours: 0,
+        weightedHours: 0
+      });
+    }
+    const service = serviceMap.get(serviceId);
+    service.hours += hours;
+    service.weightedHours += weightedHours;
+    totalWeightedHours += weightedHours;
+  }
+  const serviceDetails = [];
+  if (totalWeightedHours === 0) return serviceDetails;
+  for (const [serviceId, service] of serviceMap) {
+    const ratio = service.weightedHours / totalWeightedHours;
+    const revenue = totalRevenue * ratio;
+    serviceDetails.push({
+      serviceId,
+      serviceName: service.serviceName,
+      hours: Number(service.hours.toFixed(1)),
+      weightedHours: Number(service.weightedHours.toFixed(1)),
+      revenue: Number(revenue.toFixed(2)),
+      revenuePercentage: Number((ratio * 100).toFixed(1))
+    });
+  }
+  serviceDetails.sort((a, b) => b.revenue - a.revenue);
+  return serviceDetails;
+}
+__name(getAnnualServiceTypeDetails, "getAnnualServiceTypeDetails");
 async function handleMonthlyRevenue(request, env, me, requestId, url, corsHeaders) {
   try {
     const p = url.searchParams;
@@ -11307,11 +11513,14 @@ async function handleMonthlyClientProfitability(request, env, me, requestId, url
     for (const r of revenueRows?.results || []) {
       revenueMap.set(r.client_id, Number(r.revenue || 0));
     }
-    const clientData = clients.map((client) => {
+    const { allocateRevenueByServiceType: allocateRevenueByServiceType2 } = await Promise.resolve().then(() => (init_revenue_allocation(), revenue_allocation_exports));
+    const clientData = [];
+    for (const client of clients) {
       const revenue = revenueMap.get(client.clientId) || client.revenue || 0;
       const profit = revenue - client.totalCost;
       const profitMargin = revenue > 0 ? profit / revenue * 100 : 0;
-      return {
+      const serviceDetails = await allocateRevenueByServiceType2(client.clientId, ym, revenue, env);
+      clientData.push({
         clientId: client.clientId,
         clientName: client.clientName,
         totalHours: Number(client.totalHours || 0),
@@ -11320,9 +11529,11 @@ async function handleMonthlyClientProfitability(request, env, me, requestId, url
         totalCost: Number(client.totalCost || 0),
         revenue: Number(revenue),
         profit: Number(profit.toFixed(2)),
-        profitMargin: Number(profitMargin.toFixed(2))
-      };
-    });
+        profitMargin: Number(profitMargin.toFixed(2)),
+        serviceDetails
+        // 添加服务类型明细
+      });
+    }
     const data = {
       clients: clientData
     };
@@ -11372,11 +11583,13 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
     for (const r of revenueRows?.results || []) {
       revenueMap.set(r.client_id, Number(r.total_revenue || 0));
     }
-    const clientSummary = costData.map((client) => {
+    const clientSummary = [];
+    for (const client of costData) {
       const annualRevenue = revenueMap.get(client.clientId) || 0;
       const annualProfit = annualRevenue - client.totalCost;
       const annualProfitMargin = annualRevenue > 0 ? annualProfit / annualRevenue * 100 : 0;
-      return {
+      const serviceDetails = await getAnnualServiceTypeDetails(client.clientId, year, annualRevenue, env);
+      clientSummary.push({
         clientId: client.clientId,
         clientName: client.clientName,
         annualHours: Number(client.totalHours.toFixed(1)),
@@ -11385,9 +11598,12 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
         annualRevenue: Number(annualRevenue.toFixed(2)),
         annualProfit: Number(annualProfit.toFixed(2)),
         annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
-        avgMonthlyRevenue: Number((annualRevenue / 12).toFixed(2))
-      };
-    }).filter((c) => c.annualHours > 0 || c.annualRevenue > 0);
+        avgMonthlyRevenue: Number((annualRevenue / 12).toFixed(2)),
+        serviceDetails
+        // 添加服务类型明细
+      });
+    }
+    const filteredClientSummary = clientSummary.filter((c) => c.annualHours > 0 || c.annualRevenue > 0);
     const serviceTypeSummary = await env.DATABASE.prepare(`
 	SELECT 
 		s.service_name,
@@ -11422,7 +11638,7 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
       weightedHours: Number(s.weightedHours.toFixed(1))
     }));
     const data = {
-      clientSummary,
+      clientSummary: filteredClientSummary,
       serviceTypeSummary: serviceTypeData
     };
     return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
