@@ -233,6 +233,29 @@ textarea { resize: vertical; }
 /* 工具类 */
 .hidden { display: none !important; }
 
+/* 表格按钮链接 */
+.table-btn-link {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+    text-decoration: underline;
+}
+
+.table-btn-link:hover {
+    color: #2563eb;
+}
+
+.table-btn-link.danger {
+    color: var(--red);
+}
+
+.table-btn-link.danger:hover {
+    color: #dc2626;
+}
+
 /* 公司资料切换按钮 */
 .company-tab-btn {
     background: white;
