@@ -668,7 +668,7 @@ async function getTimesheetMonthlyStats(env, userId, month) {
 		  AND is_deleted = 0
 		ORDER BY work_date, work_type
 	`).bind(userId, firstDay, lastDayStr).all();
-  const WORK_TYPES2 = {
+  const WORK_TYPES3 = {
     1: { multiplier: 1, isOvertime: false },
     2: { multiplier: 1.34, isOvertime: true },
     3: { multiplier: 1.67, isOvertime: true },
@@ -690,7 +690,7 @@ async function getTimesheetMonthlyStats(env, userId, month) {
   for (const log of timelogs.results || []) {
     const date = log.work_date;
     const workTypeId = parseInt(log.work_type) || 1;
-    const workType = WORK_TYPES2[workTypeId];
+    const workType = WORK_TYPES3[workTypeId];
     const hours = parseFloat(log.hours) || 0;
     if (workType && workType.special === "fixed_8h") {
       const key = `${date}:${workTypeId}`;
@@ -708,7 +708,7 @@ async function getTimesheetMonthlyStats(env, userId, month) {
     const date = log.work_date;
     const hours = parseFloat(log.hours) || 0;
     const workTypeId = parseInt(log.work_type) || 1;
-    const workType = WORK_TYPES2[workTypeId];
+    const workType = WORK_TYPES3[workTypeId];
     if (workType) {
       totalHours += hours;
       if (workType.isOvertime) {
@@ -746,7 +746,7 @@ async function getOvertimeDetails(env, userId, month) {
   for (const h of holidays.results || []) {
     holidayMap[h.holiday_date] = h.name;
   }
-  const WORK_TYPES2 = {
+  const WORK_TYPES3 = {
     1: { name: "\u6B63\u5E38\u5DE5\u6642", multiplier: 1, isOvertime: false },
     2: { name: "\u5E73\u65E5\u52A0\u73ED\uFF08\u524D2h\uFF09", multiplier: 1.34, isOvertime: true },
     3: { name: "\u5E73\u65E5\u52A0\u73ED\uFF08\u5F8C2h\uFF09", multiplier: 1.67, isOvertime: true },
@@ -794,7 +794,7 @@ async function getOvertimeDetails(env, userId, month) {
   for (const log of timelogs.results || []) {
     const date = log.work_date;
     const workTypeId = parseInt(log.work_type) || 1;
-    const workType = WORK_TYPES2[workTypeId];
+    const workType = WORK_TYPES3[workTypeId];
     const hours = parseFloat(log.hours) || 0;
     if (!workType || !workType.isOvertime || hours === 0) continue;
     if (workType.special === "fixed_8h") {
@@ -811,7 +811,7 @@ async function getOvertimeDetails(env, userId, month) {
   for (const log of timelogs.results || []) {
     const date = log.work_date;
     const workTypeId = parseInt(log.work_type) || 1;
-    const workType = WORK_TYPES2[workTypeId];
+    const workType = WORK_TYPES3[workTypeId];
     const hours = parseFloat(log.hours) || 0;
     if (!workType || !workType.isOvertime || hours === 0) continue;
     if (workType.special === "fixed_8h") {
@@ -2073,7 +2073,7 @@ function shouldPayInMonth2(recurringType, recurringMonths, effectiveDate, expiry
   return false;
 }
 async function calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth) {
-  const WORK_TYPES2 = {
+  const WORK_TYPES3 = {
     1: { name: "\u6B63\u5E38\u5DE5\u4F5C", multiplier: 1, comp: 0 },
     2: { name: "\u5E73\u65E5\u52A0\u73ED\uFF082\u5C0F\u6642\u5167\uFF09", multiplier: 1.34, comp: 1 },
     3: { name: "\u5E73\u65E5\u52A0\u73ED\uFF082\u5C0F\u6642\u5F8C\uFF09", multiplier: 1.67, comp: 1 },
@@ -2174,7 +2174,7 @@ async function calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth
     for (const ts of timesheetsRows?.results || []) {
       const wt = parseInt(ts.work_type);
       const h = Number(ts.hours || 0);
-      const info = WORK_TYPES2[wt] || WORK_TYPES2[1];
+      const info = WORK_TYPES3[wt] || WORK_TYPES3[1];
       if (info.comp === "fixed_8h") {
         const dateKey = ts.work_date;
         const dayTotal = dailyFixedTypeMap[dateKey]?.[wt] || 0;
@@ -3060,7 +3060,7 @@ async function handleOverhead(request, env, me, requestId, url, path) {
 					 FROM Timesheets 
 					 WHERE user_id = ? AND work_date >= ? AND work_date <= ? AND is_deleted = 0`
         ).bind(userId, firstDay, lastDayStr).all();
-        const WORK_TYPES2 = {
+        const WORK_TYPES3 = {
           1: { multiplier: 1, isOvertime: false },
           2: { multiplier: 1.34, isOvertime: true },
           3: { multiplier: 1.67, isOvertime: true },
@@ -3079,7 +3079,7 @@ async function handleOverhead(request, env, me, requestId, url, path) {
         const dailyFixedTypeMap = {};
         for (const ts of timesheetsRows?.results || []) {
           const workTypeId = parseInt(ts.work_type);
-          const workType = WORK_TYPES2[workTypeId];
+          const workType = WORK_TYPES3[workTypeId];
           const hours = Number(ts.hours || 0);
           if (workType && workType.special === "fixed_8h") {
             const key = `${ts.work_date}:${workTypeId}`;
@@ -3093,7 +3093,7 @@ async function handleOverhead(request, env, me, requestId, url, path) {
         let totalCompHoursGenerated = 0;
         for (const ts of timesheetsRows?.results || []) {
           const workTypeId = parseInt(ts.work_type);
-          const workType = WORK_TYPES2[workTypeId];
+          const workType = WORK_TYPES3[workTypeId];
           const hours = Number(ts.hours || 0);
           if (!workType || !workType.isOvertime || hours === 0) continue;
           if (workType.special === "fixed_8h") {
@@ -3241,7 +3241,7 @@ async function handleOverhead(request, env, me, requestId, url, path) {
         return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "year/month \u4E0D\u5408\u6CD5", meta: { requestId } }, corsHeaders);
       }
       const yearMonth = `${year}-${String(month).padStart(2, "0")}`;
-      const WORK_TYPES2 = {
+      const WORK_TYPES3 = {
         1: { name: "\u6B63\u5E38\u5DE5\u4F5C", multiplier: 1 },
         2: { name: "\u5E73\u65E5\u52A0\u73ED\uFF082\u5C0F\u6642\u5167\uFF09", multiplier: 1.34 },
         3: { name: "\u5E73\u65E5\u52A0\u73ED\uFF082\u5C0F\u6642\u5F8C\uFF09", multiplier: 1.67 },
@@ -3286,7 +3286,7 @@ async function handleOverhead(request, env, me, requestId, url, path) {
           const hours = Number(ts.hours || 0);
           const date = ts.work_date || "";
           const workTypeId = parseInt(ts.work_type) || 1;
-          const info = WORK_TYPES2[workTypeId] || WORK_TYPES2[1];
+          const info = WORK_TYPES3[workTypeId] || WORK_TYPES3[1];
           totalHours += hours;
           if (!userWeightedHours[userId]) userWeightedHours[userId] = 0;
           if (!userProcessedFixed[userId]) userProcessedFixed[userId] = /* @__PURE__ */ new Set();
@@ -10208,6 +10208,29 @@ async function handleReports(request, env, me, requestId, url, path) {
   return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u627E\u4E0D\u5230\u6B64\u5831\u8868", meta: { requestId } }, corsHeaders);
 }
 __name(handleReports, "handleReports");
+var WORK_TYPES2 = {
+  1: { name: "\u6B63\u5E38\u5DE5\u6642", multiplier: 1, isOvertime: false },
+  2: { name: "\u5E73\u65E5\u52A0\u73ED\uFF08\u524D2h\uFF09", multiplier: 1.34, isOvertime: true },
+  3: { name: "\u5E73\u65E5\u52A0\u73ED\uFF08\u5F8C2h\uFF09", multiplier: 1.67, isOvertime: true },
+  4: { name: "\u4F11\u606F\u65E5\uFF08\u524D2h\uFF09", multiplier: 1.34, isOvertime: true },
+  5: { name: "\u4F11\u606F\u65E5\uFF083-8h\uFF09", multiplier: 1.67, isOvertime: true },
+  6: { name: "\u4F11\u606F\u65E5\uFF089-12h\uFF09", multiplier: 2.67, isOvertime: true },
+  7: { name: "\u570B\u5B9A\u5047\u65E5\uFF088h\u5167\uFF09", multiplier: 1, isOvertime: true, special: "fixed_8h" },
+  8: { name: "\u570B\u5B9A\u5047\u65E5\uFF089-10h\uFF09", multiplier: 1.34, isOvertime: true },
+  9: { name: "\u570B\u5B9A\u5047\u65E5\uFF0811-12h\uFF09", multiplier: 1.67, isOvertime: true },
+  10: { name: "\u4F8B\u5047\u65E5\uFF088h\u5167\uFF09", multiplier: 1, isOvertime: true, special: "fixed_8h" },
+  11: { name: "\u4F8B\u5047\u65E5\uFF089-10h\uFF09", multiplier: 1.34, isOvertime: true },
+  12: { name: "\u4F8B\u5047\u65E5\uFF0811-12h\uFF09", multiplier: 1.67, isOvertime: true }
+};
+function calculateWeightedHours2(workTypeId, hours) {
+  const workType = WORK_TYPES2[workTypeId];
+  if (!workType) return hours;
+  if (workType.special === "fixed_8h") {
+    return 8;
+  }
+  return hours * workType.multiplier;
+}
+__name(calculateWeightedHours2, "calculateWeightedHours");
 async function handleMonthlyRevenue(request, env, me, requestId, url, corsHeaders) {
   try {
     const p = url.searchParams;
@@ -10227,7 +10250,7 @@ async function handleMonthlyRevenue(request, env, me, requestId, url, corsHeader
 			FROM Receipts r
 			WHERE r.is_deleted = 0 
 				AND r.status != 'cancelled'
-				AND substr(r.receipt_date, 1, 7) = ?
+				AND r.service_month = ?
 		`).bind(ym).first();
     const totalReceivable = Number(summaryRow?.total_receivable || 0);
     const totalReceived = Number(summaryRow?.total_received || 0);
@@ -10239,10 +10262,12 @@ async function handleMonthlyRevenue(request, env, me, requestId, url, corsHeader
 				c.company_name as client_name,
 				s.service_name,
 				r.receipt_id,
+				r.receipt_date,
 				r.total_amount,
 				COALESCE(r.paid_amount, 0) as paid_amount,
 				(r.total_amount - COALESCE(r.paid_amount, 0)) as unpaid_amount,
 				r.due_date,
+				r.status,
 				CASE 
 					WHEN r.status IN ('unpaid', 'partial') AND r.due_date < date('now') THEN 1
 					ELSE 0
@@ -10253,7 +10278,7 @@ async function handleMonthlyRevenue(request, env, me, requestId, url, corsHeader
 			LEFT JOIN Services s ON s.service_id = cs.service_id
 			WHERE r.is_deleted = 0 
 				AND r.status != 'cancelled'
-				AND substr(r.receipt_date, 1, 7) = ?
+				AND r.service_month = ?
 			ORDER BY c.company_name, s.service_name
 		`).bind(ym).all();
     const data = {
@@ -10268,11 +10293,13 @@ async function handleMonthlyRevenue(request, env, me, requestId, url, corsHeader
         clientName: r.client_name || "\u672A\u77E5\u5BA2\u6237",
         serviceName: r.service_name || "\u672A\u5206\u7C7B",
         receiptId: r.receipt_id,
+        receiptDate: r.receipt_date,
         totalAmount: Number(r.total_amount || 0),
         paidAmount: Number(r.paid_amount || 0),
         unpaidAmount: Number(r.unpaid_amount || 0),
         collectionRate: r.total_amount > 0 ? Number((r.paid_amount / r.total_amount * 100).toFixed(2)) : 0,
         dueDate: r.due_date,
+        status: r.status,
         isOverdue: Boolean(r.is_overdue)
       }))
     };
@@ -10300,7 +10327,7 @@ async function handleAnnualRevenue(request, env, me, requestId, url, corsHeaders
 			FROM Receipts r
 			WHERE r.is_deleted = 0 
 				AND r.status != 'cancelled'
-				AND substr(r.receipt_date, 1, 4) = ?
+				AND substr(r.service_month, 1, 4) = ?
 		`).bind(String(year)).first();
     const totalReceivable = Number(summaryRow?.total_receivable || 0);
     const totalReceived = Number(summaryRow?.total_received || 0);
@@ -10308,7 +10335,7 @@ async function handleAnnualRevenue(request, env, me, requestId, url, corsHeaders
     const collectionRate = totalReceivable > 0 ? totalReceived / totalReceivable * 100 : 0;
     const monthlyTrend = await env.DATABASE.prepare(`
 			SELECT 
-				substr(r.receipt_date, 6, 2) as month,
+				CAST(substr(r.service_month, 6, 2) AS INTEGER) as month,
 				SUM(r.total_amount) as total_receivable,
 				SUM(COALESCE(r.paid_amount, 0)) as total_received,
 				SUM(CASE WHEN r.status IN ('unpaid', 'partial') AND r.due_date < date('now') 
@@ -10317,7 +10344,7 @@ async function handleAnnualRevenue(request, env, me, requestId, url, corsHeaders
 			FROM Receipts r
 			WHERE r.is_deleted = 0 
 				AND r.status != 'cancelled'
-				AND substr(r.receipt_date, 1, 4) = ?
+				AND substr(r.service_month, 1, 4) = ?
 			GROUP BY month
 			ORDER BY month
 		`).bind(String(year)).all();
@@ -10332,7 +10359,7 @@ async function handleAnnualRevenue(request, env, me, requestId, url, corsHeaders
 			LEFT JOIN Clients c ON c.client_id = r.client_id
 			WHERE r.is_deleted = 0 
 				AND r.status != 'cancelled'
-				AND substr(r.receipt_date, 1, 4) = ?
+				AND substr(r.service_month, 1, 4) = ?
 			GROUP BY c.client_id, c.company_name
 			ORDER BY total_receivable DESC
 		`).bind(String(year)).all();
@@ -10347,7 +10374,7 @@ async function handleAnnualRevenue(request, env, me, requestId, url, corsHeaders
 			LEFT JOIN Services s ON s.service_id = cs.service_id
 			WHERE r.is_deleted = 0 
 				AND r.status != 'cancelled'
-				AND substr(r.receipt_date, 1, 4) = ?
+				AND substr(r.service_month, 1, 4) = ?
 			GROUP BY s.service_name
 			ORDER BY total_receivable DESC
 		`).bind(String(year)).all();
@@ -10359,7 +10386,7 @@ async function handleAnnualRevenue(request, env, me, requestId, url, corsHeaders
         overdueAmount
       },
       monthlyTrend: (monthlyTrend?.results || []).map((r) => ({
-        month: parseInt(r.month, 10),
+        month: r.month,
         totalReceivable: Number(r.total_receivable || 0),
         totalReceived: Number(r.total_received || 0),
         collectionRate: r.total_receivable > 0 ? Number((r.total_received / r.total_receivable * 100).toFixed(2)) : 0,
@@ -10410,6 +10437,23 @@ async function handleMonthlyPayroll(request, env, me, requestId, url, corsHeader
     let totalNetSalary = 0;
     for (const user of users) {
       const payroll = await calculateEmployeePayroll2(env, user.user_id, year, month);
+      const monthlyBonusRow = await env.DATABASE.prepare(`
+				SELECT amount_cents 
+				FROM MonthlyBonus 
+				WHERE user_id = ? AND year = ? AND month = ? AND is_deleted = 0
+			`).bind(user.user_id, year, month).first();
+      const performanceBonus = (monthlyBonusRow?.amount_cents || 0) / 100;
+      let yearEndBonus = 0;
+      if (month === 12) {
+        const yearEndBonusRow = await env.DATABASE.prepare(`
+					SELECT amount_cents 
+					FROM YearEndBonus 
+					WHERE user_id = ? AND year = ? AND is_deleted = 0
+				`).bind(user.user_id, year).first();
+        yearEndBonus = (yearEndBonusRow?.amount_cents || 0) / 100;
+      }
+      const grossSalary = payroll.grossSalaryCents / 100 + performanceBonus + yearEndBonus;
+      const netSalary = payroll.netSalaryCents / 100 + performanceBonus + yearEndBonus;
       payrollData.push({
         userId: user.user_id,
         username: user.username,
@@ -10422,17 +10466,15 @@ async function handleMonthlyPayroll(request, env, me, requestId, url, corsHeader
         overtimePay: payroll.overtimeCents / 100,
         mealAllowance: payroll.mealAllowanceCents / 100,
         transportSubsidy: payroll.transportSubsidyCents / 100,
-        performanceBonus: 0,
-        // 从月度绩效奖金表获取
-        yearEndBonus: 0,
-        // 从年终奖金表获取
+        performanceBonus,
+        yearEndBonus,
         fixedDeduction: payroll.totalFixedDeductionCents / 100,
         leaveDeduction: payroll.leaveDeductionCents / 100,
-        grossSalary: payroll.grossSalaryCents / 100,
-        netSalary: payroll.netSalaryCents / 100
+        grossSalary,
+        netSalary
       });
-      totalGrossSalary += payroll.grossSalaryCents / 100;
-      totalNetSalary += payroll.netSalaryCents / 100;
+      totalGrossSalary += grossSalary;
+      totalNetSalary += netSalary;
     }
     const composition = {
       baseSalary: payrollData.reduce((sum, p2) => sum + p2.baseSalary, 0),
@@ -10487,8 +10529,21 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
       let monthNetTotal = 0;
       for (const user of users) {
         const payroll = await calculateEmployeePayroll2(env, user.user_id, year, month);
-        monthTotal += payroll.grossSalaryCents / 100;
-        monthNetTotal += payroll.netSalaryCents / 100;
+        const monthlyBonusRow = await env.DATABASE.prepare(`
+					SELECT amount_cents FROM MonthlyBonus 
+					WHERE user_id = ? AND year = ? AND month = ? AND is_deleted = 0
+				`).bind(user.user_id, year, month).first();
+        const performanceBonus = (monthlyBonusRow?.amount_cents || 0) / 100;
+        let yearEndBonus = 0;
+        if (month === 12) {
+          const yearEndBonusRow = await env.DATABASE.prepare(`
+						SELECT amount_cents FROM YearEndBonus 
+						WHERE user_id = ? AND year = ? AND is_deleted = 0
+					`).bind(user.user_id, year).first();
+          yearEndBonus = (yearEndBonusRow?.amount_cents || 0) / 100;
+        }
+        monthTotal += payroll.grossSalaryCents / 100 + performanceBonus + yearEndBonus;
+        monthNetTotal += payroll.netSalaryCents / 100 + performanceBonus + yearEndBonus;
       }
       monthlyTrend.push({
         month,
@@ -10507,10 +10562,23 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
       let totalYearEnd = 0;
       for (let month = 1; month <= 12; month++) {
         const payroll = await calculateEmployeePayroll2(env, user.user_id, year, month);
-        annualGross += payroll.grossSalaryCents / 100;
-        annualNet += payroll.netSalaryCents / 100;
+        const monthlyBonusRow = await env.DATABASE.prepare(`
+					SELECT amount_cents FROM MonthlyBonus 
+					WHERE user_id = ? AND year = ? AND month = ? AND is_deleted = 0
+				`).bind(user.user_id, year, month).first();
+        const perfBonus = (monthlyBonusRow?.amount_cents || 0) / 100;
+        totalPerformance += perfBonus;
+        annualGross += payroll.grossSalaryCents / 100 + perfBonus;
+        annualNet += payroll.netSalaryCents / 100 + perfBonus;
         totalOvertime += payroll.overtimeCents / 100;
       }
+      const yearEndBonusRow = await env.DATABASE.prepare(`
+				SELECT amount_cents FROM YearEndBonus 
+				WHERE user_id = ? AND year = ? AND is_deleted = 0
+			`).bind(user.user_id, year).first();
+      totalYearEnd = (yearEndBonusRow?.amount_cents || 0) / 100;
+      annualGross += totalYearEnd;
+      annualNet += totalYearEnd;
       employeeSummary.push({
         userId: user.user_id,
         name: user.name || user.username,
@@ -10550,96 +10618,183 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
       return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u8ACB\u9078\u64C7\u67E5\u8A62\u6708\u4EFD", meta: { requestId } }, corsHeaders);
     }
     const ym = `${year}-${String(month).padStart(2, "0")}`;
-    const { handleOverhead: handleOverhead2 } = await Promise.resolve().then(() => (init_overhead(), overhead_exports));
-    const employeeCostUrl = new URL(url);
-    employeeCostUrl.pathname = "/internal/api/v1/admin/costs/employee";
-    employeeCostUrl.searchParams.set("year", String(year));
-    employeeCostUrl.searchParams.set("month", String(month));
-    const costRequest = new Request(employeeCostUrl, request);
-    const costResponse = await handleOverhead2(costRequest, env, me, requestId, employeeCostUrl, "/internal/api/v1/admin/costs/employee");
-    const costData = await costResponse.json();
-    if (!costData.ok) {
-      throw new Error("\u65E0\u6CD5\u83B7\u53D6\u5458\u5DE5\u6210\u672C\u6570\u636E");
+    const usersResult = await env.DATABASE.prepare(`
+			SELECT user_id, username, name, base_salary
+			FROM Users
+			WHERE is_deleted = 0
+			ORDER BY name
+		`).all();
+    const users = usersResult?.results || [];
+    const { calculateEmployeePayroll: calculateEmployeePayroll2 } = await Promise.resolve().then(() => (init_payroll(), payroll_exports));
+    const serviceRevenueRows = await env.DATABASE.prepare(`
+			SELECT 
+				r.client_service_id,
+				SUM(r.total_amount) as revenue
+			FROM Receipts r
+			WHERE r.is_deleted = 0 
+				AND r.status != 'cancelled'
+				AND r.service_month = ?
+			GROUP BY r.client_service_id
+		`).bind(ym).all();
+    const serviceRevenueMap = /* @__PURE__ */ new Map();
+    for (const row of serviceRevenueRows?.results || []) {
+      serviceRevenueMap.set(row.client_service_id, Number(row.revenue || 0));
     }
-    const employees = costData.data?.employees || [];
     const employeePerformance = [];
-    for (const emp of employees) {
-      const timesheets = await env.DATABASE.prepare(`
+    for (const user of users) {
+      const payroll = await calculateEmployeePayroll2(env, user.user_id, year, month);
+      const laborCost = payroll.grossSalaryCents / 100;
+      let overheadAllocation = 0;
+      try {
+        const costRows = await env.DATABASE.prepare(`
+					SELECT SUM(oc.amount * 
+						CASE 
+							WHEN ot.allocation_method = 'per_employee' THEN 1.0 / (SELECT COUNT(*) FROM Users WHERE is_deleted = 0)
+							WHEN ot.allocation_method = 'per_hour' THEN 
+								(SELECT SUM(hours) FROM Timesheets WHERE user_id = ? AND substr(work_date, 1, 7) = ? AND is_deleted = 0) / 
+								(SELECT SUM(hours) FROM Timesheets WHERE substr(work_date, 1, 7) = ? AND is_deleted = 0)
+							ELSE 0
+						END
+					) as overhead
+					FROM OverheadCosts oc
+					JOIN OverheadTypes ot ON ot.id = oc.cost_type_id
+					WHERE oc.year = ? AND oc.month = ? AND oc.is_deleted = 0
+				`).bind(user.user_id, ym, ym, year, month).first();
+        overheadAllocation = Number(costRows?.overhead || 0);
+      } catch (err) {
+        console.warn("[EmployeePerformance] \u83B7\u53D6\u7BA1\u7406\u8D39\u5931\u8D25:", err);
+      }
+      const totalCost = laborCost + overheadAllocation;
+      const timesheetsRows = await env.DATABASE.prepare(`
 				SELECT 
 					t.timesheet_id,
+					t.task_id,
 					t.client_id,
+					t.work_type,
 					t.hours,
-					t.weighted_hours,
+					t.work_date,
+					task.client_service_id,
+					task.status as task_status,
 					c.company_name as client_name,
-					s.service_name,
-					r.total_amount as receipt_amount,
-					task_total.total_hours,
-					task_total.task_id
+					s.service_name
 				FROM Timesheets t
-				LEFT JOIN Clients c ON c.client_id = t.client_id
 				LEFT JOIN Tasks task ON task.task_id = t.task_id
+				LEFT JOIN Clients c ON c.client_id = t.client_id
 				LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
 				LEFT JOIN Services s ON s.service_id = cs.service_id
-				LEFT JOIN Receipts r ON r.client_service_id = task.client_service_id 
-					AND substr(r.receipt_date, 1, 7) = substr(t.work_date, 1, 7)
-					AND r.is_deleted = 0
-					AND r.status != 'cancelled'
-				LEFT JOIN (
-					SELECT task_id, SUM(hours) as total_hours
-					FROM Timesheets
-					WHERE is_deleted = 0 AND substr(work_date, 1, 7) = ?
-					GROUP BY task_id
-				) task_total ON task_total.task_id = t.task_id
 				WHERE t.user_id = ?
 					AND t.is_deleted = 0
 					AND substr(t.work_date, 1, 7) = ?
-			`).bind(ym, emp.userId, ym).all();
+				ORDER BY t.work_date
+			`).bind(user.user_id, ym).all();
+      const timesheets = timesheetsRows?.results || [];
+      let standardHours = 0;
+      let weightedHours = 0;
       let generatedRevenue = 0;
       const clientDistribution = /* @__PURE__ */ new Map();
-      for (const ts of timesheets?.results || []) {
-        const receiptAmount = Number(ts.receipt_amount || 0);
-        const taskTotalHours = Number(ts.total_hours || 0);
-        const empHours = Number(ts.hours || 0);
-        if (receiptAmount > 0 && taskTotalHours > 0) {
-          const empRevenue = receiptAmount * (empHours / taskTotalHours);
-          generatedRevenue += empRevenue;
-          const clientKey = `${ts.client_id}_${ts.service_name}`;
-          if (!clientDistribution.has(clientKey)) {
-            clientDistribution.set(clientKey, {
-              clientId: ts.client_id,
-              clientName: ts.client_name || "\u672A\u77E5\u5BA2\u6237",
-              serviceName: ts.service_name || "\u672A\u5206\u7C7B",
-              hours: 0,
-              weightedHours: 0,
-              generatedRevenue: 0
-            });
+      const serviceHoursMap = /* @__PURE__ */ new Map();
+      for (const ts of timesheets) {
+        const hours = Number(ts.hours || 0);
+        const workTypeId = parseInt(ts.work_type) || 1;
+        const weighted = calculateWeightedHours2(workTypeId, hours);
+        standardHours += hours;
+        weightedHours += weighted;
+        const clientServiceId = ts.client_service_id;
+        if (!clientServiceId) {
+          continue;
+        }
+        if (!serviceHoursMap.has(clientServiceId)) {
+          serviceHoursMap.set(clientServiceId, {
+            hours: 0,
+            weightedHours: 0,
+            timesheets: []
+          });
+        }
+        const service = serviceHoursMap.get(clientServiceId);
+        service.hours += hours;
+        service.weightedHours += weighted;
+        service.timesheets.push({
+          ...ts,
+          hours,
+          weighted
+        });
+      }
+      for (const [clientServiceId, serviceData] of serviceHoursMap) {
+        const serviceRevenue = serviceRevenueMap.get(clientServiceId) || 0;
+        if (serviceRevenue > 0 && serviceData.hours > 0) {
+          const tasksRows = await env.DATABASE.prepare(`
+						SELECT 
+							task_id,
+							status,
+							estimated_hours,
+							(SELECT SUM(hours) FROM Timesheets WHERE task_id = t.task_id AND is_deleted = 0) as actual_hours
+						FROM Tasks t
+						WHERE t.client_service_id = ?
+							AND t.is_deleted = 0
+							AND t.service_month = ?
+					`).bind(clientServiceId, ym).all();
+          const tasks = tasksRows?.results || [];
+          let serviceTotalHours = 0;
+          for (const task of tasks) {
+            if (task.status === "completed" && task.actual_hours > 0) {
+              serviceTotalHours += Number(task.actual_hours);
+            } else if (task.estimated_hours > 0) {
+              serviceTotalHours += Number(task.estimated_hours);
+            }
           }
-          const dist = clientDistribution.get(clientKey);
-          dist.hours += empHours;
-          dist.weightedHours += Number(ts.weighted_hours || empHours);
-          dist.generatedRevenue += empRevenue;
+          if (serviceTotalHours === 0) {
+            const actualTotalRow = await env.DATABASE.prepare(`
+							SELECT SUM(t.hours) as total_hours
+							FROM Timesheets t
+							LEFT JOIN Tasks task ON task.task_id = t.task_id
+							WHERE task.client_service_id = ?
+								AND t.is_deleted = 0
+								AND substr(t.work_date, 1, 7) = ?
+						`).bind(clientServiceId, ym).first();
+            serviceTotalHours = Number(actualTotalRow?.total_hours || 0);
+          }
+          if (serviceTotalHours > 0) {
+            const employeeRevenue = serviceRevenue * (serviceData.hours / serviceTotalHours);
+            generatedRevenue += employeeRevenue;
+            const firstTs = serviceData.timesheets[0];
+            const clientKey = `${firstTs.client_id}_${clientServiceId}`;
+            if (!clientDistribution.has(clientKey)) {
+              clientDistribution.set(clientKey, {
+                clientId: firstTs.client_id,
+                clientName: firstTs.client_name || "\u672A\u77E5\u5BA2\u6237",
+                serviceName: firstTs.service_name || "\u672A\u5206\u7C7B",
+                hours: 0,
+                weightedHours: 0,
+                generatedRevenue: 0
+              });
+            }
+            const dist = clientDistribution.get(clientKey);
+            dist.hours += serviceData.hours;
+            dist.weightedHours += serviceData.weightedHours;
+            dist.generatedRevenue += employeeRevenue;
+          }
         }
       }
-      const standardHours = Number(emp.monthHours || 0);
-      const weightedHours = Number(emp.monthHours || 0);
-      const laborCost = Number(emp.laborCost || 0);
-      const totalCost = Number(emp.totalCost || 0);
       const profit = generatedRevenue - totalCost;
       const profitMargin = generatedRevenue > 0 ? profit / generatedRevenue * 100 : 0;
       const hourlyRate = weightedHours > 0 ? generatedRevenue / weightedHours : 0;
+      const clientDistArray = Array.from(clientDistribution.values()).map((d) => ({
+        ...d,
+        revenuePercentage: generatedRevenue > 0 ? Number((d.generatedRevenue / generatedRevenue * 100).toFixed(2)) : 0
+      }));
       employeePerformance.push({
-        userId: emp.userId,
-        name: emp.name,
-        standardHours,
-        weightedHours,
-        hoursDifference: weightedHours - standardHours,
-        generatedRevenue,
-        laborCost,
-        totalCost,
-        profit,
+        userId: user.user_id,
+        name: user.name || user.username,
+        standardHours: Number(standardHours.toFixed(1)),
+        weightedHours: Number(weightedHours.toFixed(1)),
+        hoursDifference: Number((weightedHours - standardHours).toFixed(1)),
+        generatedRevenue: Number(generatedRevenue.toFixed(2)),
+        laborCost: Number(laborCost.toFixed(2)),
+        totalCost: Number(totalCost.toFixed(2)),
+        profit: Number(profit.toFixed(2)),
         profitMargin: Number(profitMargin.toFixed(2)),
         hourlyRate: Number(hourlyRate.toFixed(2)),
-        clientDistribution: Array.from(clientDistribution.values())
+        clientDistribution: clientDistArray
       });
     }
     const data = {
@@ -10679,8 +10834,14 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
         monthUrl.pathname = "/internal/api/v1/reports/monthly/employee-performance";
         monthUrl.searchParams.set("year", String(year));
         monthUrl.searchParams.set("month", String(month));
-        const monthRequest = new Request(monthUrl, request);
-        const monthResponse = await handleMonthlyEmployeePerformance(monthRequest, env, me, requestId, monthUrl, corsHeaders);
+        const monthResponse = await handleMonthlyEmployeePerformance(
+          new Request(monthUrl, request),
+          env,
+          me,
+          requestId,
+          monthUrl,
+          corsHeaders
+        );
         const monthData = await monthResponse.json();
         if (monthData.ok) {
           const empData = monthData.data?.employeePerformance?.find((e) => e.userId === user.user_id);
@@ -10727,12 +10888,12 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
       employeeSummary.push({
         userId: user.user_id,
         name: user.name || user.username,
-        annualStandardHours,
-        annualWeightedHours,
-        hoursDifference: annualWeightedHours - annualStandardHours,
-        annualRevenue,
-        annualCost,
-        annualProfit,
+        annualStandardHours: Number(annualStandardHours.toFixed(1)),
+        annualWeightedHours: Number(annualWeightedHours.toFixed(1)),
+        hoursDifference: Number((annualWeightedHours - annualStandardHours).toFixed(1)),
+        annualRevenue: Number(annualRevenue.toFixed(2)),
+        annualCost: Number(annualCost.toFixed(2)),
+        annualProfit: Number(annualProfit.toFixed(2)),
         annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
         avgHourlyRate: Number(avgHourlyRate.toFixed(2)),
         monthlyTrend,
@@ -10757,56 +10918,55 @@ async function handleMonthlyClientProfitability(request, env, me, requestId, url
     if (!Number.isFinite(year) || year < 2e3 || !Number.isFinite(month) || month < 1 || month > 12) {
       return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u8ACB\u9078\u64C7\u67E5\u8A62\u6708\u4EFD", meta: { requestId } }, corsHeaders);
     }
+    const ym = `${year}-${String(month).padStart(2, "0")}`;
     const { handleOverhead: handleOverhead2 } = await Promise.resolve().then(() => (init_overhead(), overhead_exports));
     const costUrl = new URL(url);
     costUrl.pathname = "/internal/api/v1/admin/costs/client";
     costUrl.searchParams.set("year", String(year));
     costUrl.searchParams.set("month", String(month));
-    const costRequest = new Request(costUrl, request);
-    const costResponse = await handleOverhead2(costRequest, env, me, requestId, costUrl, "/internal/api/v1/admin/costs/client");
+    const costResponse = await handleOverhead2(
+      new Request(costUrl, request),
+      env,
+      me,
+      requestId,
+      costUrl,
+      "/internal/api/v1/admin/costs/client"
+    );
     const costData = await costResponse.json();
     if (!costData.ok) {
       throw new Error("\u65E0\u6CD5\u83B7\u53D6\u5BA2\u6237\u6210\u672C\u6570\u636E");
     }
     const clients = costData.data?.clients || [];
-    const ym = `${year}-${String(month).padStart(2, "0")}`;
-    const receipts = await env.DATABASE.prepare(`
+    const revenueRows = await env.DATABASE.prepare(`
 			SELECT 
 				r.client_id,
-				cs.service_id,
-				s.service_name,
 				SUM(r.total_amount) as revenue
 			FROM Receipts r
-			LEFT JOIN ClientServices cs ON cs.client_service_id = r.client_service_id
-			LEFT JOIN Services s ON s.service_id = cs.service_id
 			WHERE r.is_deleted = 0 
 				AND r.status != 'cancelled'
-				AND substr(r.receipt_date, 1, 7) = ?
-			GROUP BY r.client_id, cs.service_id, s.service_name
+				AND r.service_month = ?
+			GROUP BY r.client_id
 		`).bind(ym).all();
     const revenueMap = /* @__PURE__ */ new Map();
-    for (const r of receipts?.results || []) {
-      const key = `${r.client_id}_${r.service_name}`;
-      revenueMap.set(key, Number(r.revenue || 0));
+    for (const r of revenueRows?.results || []) {
+      revenueMap.set(r.client_id, Number(r.revenue || 0));
     }
-    const clientData = [];
-    for (const client of clients) {
-      const totalRevenue = revenueMap.get(`${client.clientId}_all`) || 0;
-      const profit = totalRevenue - client.totalCost;
-      const profitMargin = totalRevenue > 0 ? profit / totalRevenue * 100 : 0;
-      clientData.push({
+    const clientData = clients.map((client) => {
+      const revenue = revenueMap.get(client.clientId) || 0;
+      const profit = revenue - client.totalCost;
+      const profitMargin = revenue > 0 ? profit / revenue * 100 : 0;
+      return {
         clientId: client.clientId,
         clientName: client.clientName,
-        totalHours: client.totalHours,
-        weightedHours: client.weightedHours,
-        avgHourlyRate: client.avgActualHourlyRate,
-        totalCost: client.totalCost,
-        revenue: totalRevenue,
-        profit,
+        totalHours: Number(client.totalHours || 0),
+        weightedHours: Number(client.weightedHours || 0),
+        avgHourlyRate: Number(client.avgActualHourlyRate || 0),
+        totalCost: Number(client.totalCost || 0),
+        revenue: Number(revenue),
+        profit: Number(profit.toFixed(2)),
         profitMargin: Number(profitMargin.toFixed(2))
-        // 服务类型明细会在前端展开时再加载
-      });
-    }
+      };
+    });
     const data = {
       clients: clientData
     };
@@ -10824,16 +10984,15 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
     if (!Number.isFinite(year) || year < 2e3) {
       return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u8ACB\u9078\u64C7\u67E5\u8A62\u5E74\u5EA6", meta: { requestId } }, corsHeaders);
     }
-    const clients = await env.DATABASE.prepare(`
-			SELECT 
-				c.client_id,
-				c.company_name as client_name
-			FROM Clients c
-			WHERE c.is_deleted = 0
-			ORDER BY c.company_name
+    const clientsRows = await env.DATABASE.prepare(`
+			SELECT client_id, company_name
+			FROM Clients
+			WHERE is_deleted = 0
+			ORDER BY company_name
 		`).all();
+    const clients = clientsRows?.results || [];
     const clientSummary = [];
-    for (const client of clients?.results || []) {
+    for (const client of clients) {
       let annualHours = 0;
       let annualWeightedHours = 0;
       let annualCost = 0;
@@ -10843,8 +11002,14 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
         monthUrl.pathname = "/internal/api/v1/reports/monthly/client-profitability";
         monthUrl.searchParams.set("year", String(year));
         monthUrl.searchParams.set("month", String(month));
-        const monthRequest = new Request(monthUrl, request);
-        const monthResponse = await handleMonthlyClientProfitability(monthRequest, env, me, requestId, monthUrl, corsHeaders);
+        const monthResponse = await handleMonthlyClientProfitability(
+          new Request(monthUrl, request),
+          env,
+          me,
+          requestId,
+          monthUrl,
+          corsHeaders
+        );
         const monthData = await monthResponse.json();
         if (monthData.ok) {
           const clientData = monthData.data?.clients?.find((c) => c.clientId === client.client_id);
@@ -10856,26 +11021,26 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
           }
         }
       }
-      const annualProfit = annualRevenue - annualCost;
-      const annualProfitMargin = annualRevenue > 0 ? annualProfit / annualRevenue * 100 : 0;
-      const avgMonthlyRevenue = annualRevenue / 12;
-      clientSummary.push({
-        clientId: client.client_id,
-        clientName: client.client_name,
-        annualHours,
-        annualWeightedHours,
-        annualCost,
-        annualRevenue,
-        annualProfit,
-        annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
-        avgMonthlyRevenue
-      });
+      if (annualHours > 0 || annualRevenue > 0) {
+        const annualProfit = annualRevenue - annualCost;
+        const annualProfitMargin = annualRevenue > 0 ? annualProfit / annualRevenue * 100 : 0;
+        clientSummary.push({
+          clientId: client.client_id,
+          clientName: client.company_name,
+          annualHours: Number(annualHours.toFixed(1)),
+          annualWeightedHours: Number(annualWeightedHours.toFixed(1)),
+          annualCost: Number(annualCost.toFixed(2)),
+          annualRevenue: Number(annualRevenue.toFixed(2)),
+          annualProfit: Number(annualProfit.toFixed(2)),
+          annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
+          avgMonthlyRevenue: Number((annualRevenue / 12).toFixed(2))
+        });
+      }
     }
     const serviceTypeSummary = await env.DATABASE.prepare(`
 			SELECT 
 				s.service_name,
-				SUM(t.hours) as total_hours,
-				SUM(t.weighted_hours) as weighted_hours
+				SUM(t.hours) as total_hours
 			FROM Timesheets t
 			LEFT JOIN Tasks task ON task.task_id = t.task_id
 			LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
@@ -10884,13 +11049,33 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
 				AND substr(t.work_date, 1, 4) = ?
 			GROUP BY s.service_name
 		`).bind(String(year)).all();
-    const data = {
-      clientSummary,
-      serviceTypeSummary: (serviceTypeSummary?.results || []).map((s) => ({
+    const serviceTypeData = [];
+    for (const s of serviceTypeSummary?.results || []) {
+      const timesheetsRows = await env.DATABASE.prepare(`
+				SELECT t.work_type, t.hours
+				FROM Timesheets t
+				LEFT JOIN Tasks task ON task.task_id = t.task_id
+				LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
+				LEFT JOIN Services serv ON serv.service_id = cs.service_id
+				WHERE t.is_deleted = 0
+					AND substr(t.work_date, 1, 4) = ?
+					AND serv.service_name = ?
+			`).bind(String(year), s.service_name).all();
+      let weightedHours = 0;
+      for (const ts of timesheetsRows?.results || []) {
+        const workTypeId = parseInt(ts.work_type) || 1;
+        const hours = Number(ts.hours || 0);
+        weightedHours += calculateWeightedHours2(workTypeId, hours);
+      }
+      serviceTypeData.push({
         serviceName: s.service_name || "\u672A\u5206\u7C7B",
         totalHours: Number(s.total_hours || 0),
-        weightedHours: Number(s.weighted_hours || 0)
-      }))
+        weightedHours: Number(weightedHours.toFixed(1))
+      });
+    }
+    const data = {
+      clientSummary,
+      serviceTypeSummary: serviceTypeData
     };
     return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
   } catch (err) {
