@@ -759,12 +759,21 @@
             }
         }
         
-        // 填充SOP和附件下拉选单（根据服务类型过滤）
-        function populateSOPAndAttachments(templateId, serviceId) {
-            const sopSelect = document.getElementById(`task-sop-${templateId}`);
+        // 存储每个模板任务表单的已选SOP
+        const templateTaskSelectedSOPs = {};
+        
+        // 填充SOP复选框列表和附件下拉选单（根据服务类型过滤）
+        function populateSOPAndAttachments(templateId, serviceId, existingSOPIds = []) {
+            const sopListContainer = document.getElementById(`task-sop-list-${templateId}`);
             const attachmentSelect = document.getElementById(`task-attachment-${templateId}`);
             
-            if (sopSelect && allSOPs.length > 0) {
+            // 初始化已选SOP
+            if (!templateTaskSelectedSOPs[templateId]) {
+                templateTaskSelectedSOPs[templateId] = [];
+            }
+            templateTaskSelectedSOPs[templateId] = existingSOPIds;
+            
+            if (sopListContainer && allSOPs.length > 0) {
                 // 根据服务类型过滤SOP
                 let filteredSOPs = allSOPs;
                 
@@ -791,11 +800,17 @@
                 // 按标题排序
                 const sortedSOPs = filteredSOPs.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
                 
-                sopSelect.innerHTML = '<option value="">無</option>' + 
-                    sortedSOPs.map(s => `<option value="${s.sop_id}">${s.title}</option>`).join('');
+                // 存储过滤后的SOPs供搜索使用
+                window[`filteredSOPs${templateId}`] = sortedSOPs;
+                
+                // 渲染SOP复选框
+                renderSOPCheckboxes(templateId, sortedSOPs, existingSOPIds);
+                
+                // 更新已选标签显示
+                updateSelectedSOPTags(templateId);
                 
                 if (serviceId && sortedSOPs.length === 0) {
-                    sopSelect.innerHTML = '<option value="">無適用於此服務的SOP</option>';
+                    sopListContainer.innerHTML = '<div style="color:#9ca3af;text-align:center;padding:20px;font-size:13px;">暫無適用於此服務的任務層級SOP</div>';
                 }
             }
             
@@ -803,6 +818,121 @@
                 attachmentSelect.innerHTML = '<option value="">無</option>' + 
                     allAttachments.map(a => `<option value="${a.attachment_id}">${a.file_name || a.attachment_id}</option>`).join('');
             }
+        }
+        
+        // 渲染SOP复选框
+        function renderSOPCheckboxes(templateId, sops, selectedIds = []) {
+            const sopListContainer = document.getElementById(`task-sop-list-${templateId}`);
+            if (!sopListContainer) return;
+            
+            if (sops.length === 0) {
+                sopListContainer.innerHTML = '<div style="color:#9ca3af;text-align:center;padding:20px;font-size:13px;">暫無SOP</div>';
+                return;
+            }
+            
+            const html = sops.map(sop => {
+                const isChecked = selectedIds.includes(parseInt(sop.sop_id));
+                return `
+                    <label class="sop-option" data-sop-id="${sop.sop_id}" data-sop-title="${(sop.title || '').toLowerCase()}"
+                           style="display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;font-size:13px;margin-bottom:4px;border-radius:4px;border:1px solid ${isChecked ? '#3b82f6' : '#e5e7eb'};background:${isChecked ? '#eff6ff' : 'white'};" 
+                           onmouseover="if(!this.querySelector('input').checked) this.style.background='#f3f4f6'" 
+                           onmouseout="if(!this.querySelector('input').checked) this.style.background='white'">
+                        <input type="checkbox" value="${sop.sop_id}" 
+                               ${isChecked ? 'checked' : ''}
+                               onchange="updateTaskSOPs${templateId}(this)"
+                               style="cursor:pointer;flex-shrink:0;width:16px;height:16px;" />
+                        <span style="color:#374151;">${sop.title}</span>
+                    </label>
+                `;
+            }).join('');
+            
+            sopListContainer.innerHTML = html;
+        }
+        
+        // 更新已选SOP标签显示
+        function updateSelectedSOPTags(templateId) {
+            const selectedContainer = document.getElementById(`selected-sops-${templateId}`);
+            if (!selectedContainer) return;
+            
+            const selectedIds = templateTaskSelectedSOPs[templateId] || [];
+            
+            if (selectedIds.length === 0) {
+                selectedContainer.innerHTML = '<span style="color:#9ca3af;font-size:12px;">尚未選擇SOP</span>';
+                return;
+            }
+            
+            const html = selectedIds.map(sopId => {
+                const sop = allSOPs.find(s => parseInt(s.sop_id) === parseInt(sopId));
+                if (!sop) return '';
+                
+                return `
+                    <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#3b82f6;color:white;border-radius:4px;font-size:12px;">
+                        📖 ${sop.title}
+                        <button type="button" onclick="removeSOPFromTask${templateId}(${sopId})" 
+                                style="background:none;border:none;color:white;cursor:pointer;padding:0;margin-left:4px;font-size:14px;">×</button>
+                    </span>
+                `;
+            }).join('');
+            
+            selectedContainer.innerHTML = html;
+        }
+        
+        // 为每个模板动态创建更新和移除函数
+        function createTaskSOPFunctions(templateId) {
+            // 更新SOP选择
+            window[`updateTaskSOPs${templateId}`] = function(checkbox) {
+                const sopId = parseInt(checkbox.value);
+                
+                if (!templateTaskSelectedSOPs[templateId]) {
+                    templateTaskSelectedSOPs[templateId] = [];
+                }
+                
+                if (checkbox.checked) {
+                    if (!templateTaskSelectedSOPs[templateId].includes(sopId)) {
+                        templateTaskSelectedSOPs[templateId].push(sopId);
+                    }
+                    // 更新复选框样式
+                    checkbox.parentElement.style.border = '1px solid #3b82f6';
+                    checkbox.parentElement.style.background = '#eff6ff';
+                } else {
+                    templateTaskSelectedSOPs[templateId] = templateTaskSelectedSOPs[templateId].filter(id => id !== sopId);
+                    // 更新复选框样式
+                    checkbox.parentElement.style.border = '1px solid #e5e7eb';
+                    checkbox.parentElement.style.background = 'white';
+                }
+                
+                updateSelectedSOPTags(templateId);
+            };
+            
+            // 从标签中移除SOP
+            window[`removeSOPFromTask${templateId}`] = function(sopId) {
+                templateTaskSelectedSOPs[templateId] = templateTaskSelectedSOPs[templateId].filter(id => id !== sopId);
+                
+                // 更新复选框状态
+                const checkbox = document.querySelector(`#task-sop-list-${templateId} input[value="${sopId}"]`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.parentElement.style.border = '1px solid #e5e7eb';
+                    checkbox.parentElement.style.background = 'white';
+                }
+                
+                updateSelectedSOPTags(templateId);
+            };
+            
+            // 搜索过滤SOP
+            window[`filterTaskSOPs${templateId}`] = function(searchText) {
+                const searchLower = searchText.toLowerCase().trim();
+                const sopOptions = document.querySelectorAll(`#task-sop-list-${templateId} .sop-option`);
+                
+                sopOptions.forEach(option => {
+                    const title = option.getAttribute('data-sop-title') || '';
+                    if (title.includes(searchLower)) {
+                        option.style.display = 'flex';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+            };
         }
 
         // 任务模板 - 加载列表
@@ -844,10 +974,25 @@
                                     <input type="number" id="task-order-${t.template_id}" class="form-control" value="1">
                                 </div>
                                 <div class="form-group">
-                                    <label>任務層級 SOP（可選）<small style="color:#666;margin-left:8px;">僅顯示適用於此服務的SOP</small></label>
-                                    <select id="task-sop-${t.template_id}" class="form-control">
-                                        <option value="">無</option>
-                                    </select>
+                                    <label>📖 任務層級 SOP（可選，可多選）<small style="color:#666;margin-left:8px;">僅顯示適用於此服務的SOP</small></label>
+                                    
+                                    <!-- 已選擇的SOP標籤 -->
+                                    <div id="selected-sops-${t.template_id}" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:28px;padding:8px;background:#fff;border:1px solid #d1d5db;border-radius:4px;">
+                                        <span style="color:#9ca3af;font-size:12px;">尚未選擇SOP</span>
+                                    </div>
+                                    
+                                    <!-- 搜索框 -->
+                                    <input type="text" 
+                                           id="sop-search-${t.template_id}"
+                                           placeholder="🔍 搜尋SOP..." 
+                                           class="form-control"
+                                           style="margin-bottom:8px;font-size:13px;"
+                                           onkeyup="filterTaskSOPs${t.template_id}(this.value)" />
+                                    
+                                    <!-- SOP複選框列表 -->
+                                    <div id="task-sop-list-${t.template_id}" style="max-height:200px;overflow-y:auto;border:1px solid #d1d5db;border-radius:4px;padding:8px;background:#fff;">
+                                        <div style="color:#9ca3af;text-align:center;padding:20px;font-size:13px;">載入中...</div>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label>任務層級附件（可選）</label>
@@ -864,6 +1009,11 @@
                         </div>
                     </div>
                 `).join('');
+                
+                // 为每个模板创建SOP管理函数
+                json.data.forEach(t => {
+                    createTaskSOPFunctions(t.template_id);
+                });
             } catch (e) {
                 container.innerHTML = '<div class="card"><div class="card-body" style="text-align:center;color:#f44">載入失敗</div></div>';
             }
@@ -880,7 +1030,7 @@
             }
         }
 
-        // 加载某个模板的任务
+        // 加载某个模板的任务（卡片式布局）
         async function loadTasksForTemplate(templateId) {
             const listDiv = document.getElementById(`task-list-${templateId}`);
             try {
@@ -888,28 +1038,66 @@
                 const json = await res.json();
                 
                 if (!json.data || json.data.length === 0) {
-                    listDiv.innerHTML = '<div style="color:#999;font-size:13px">尚無任務</div>';
+                    listDiv.innerHTML = `
+                        <div style="padding:20px;text-align:center;background:#fef3c7;border-radius:8px;border:2px dashed #fbbf24;">
+                            <p style="color:#92400e;font-size:14px;margin:0 0 10px 0;font-weight:500;">⚠️ 尚未配置任何任務</p>
+                            <p style="color:#92400e;font-size:13px;margin:0;">點擊上方「<strong>+ 新增任務</strong>」按鈕開始配置</p>
+                        </div>
+                    `;
                     return;
                 }
                 
-                listDiv.innerHTML = '<table class="data-table"><thead><tr><th>順序</th><th>任務名稱</th><th>任務層級 SOP</th><th>任務層級附件</th><th>操作</th></tr></thead><tbody>' +
-                    json.data.map(task => {
-                        const sopDisplay = task.sop_id ? `📖 SOP #${task.sop_id}` : '-';
-                        const attachmentDisplay = task.attachment_id ? `📎 附件 #${task.attachment_id}` : '-';
-                        return `
-                        <tr>
-                            <td>${task.stage_order}</td>
-                            <td>${task.stage_name || '未命名'}</td>
-                            <td>${sopDisplay}</td>
-                            <td>${attachmentDisplay}</td>
-                            <td>
-                                <button class="btn btn-sm btn-secondary" onclick="editTask(${templateId}, ${JSON.stringify(task).replace(/"/g, '&quot;')})">編輯</button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteTask(${templateId}, ${task.stage_id})">刪除</button>
-                            </td>
-                        </tr>
-                    `}).join('') + '</tbody></table>';
+                // 卡片式任务列表
+                listDiv.innerHTML = json.data.map(task => {
+                    // 处理多个SOP显示（兼容旧的单一SOP）
+                    let sopIds = [];
+                    if (task.sop_ids && Array.isArray(task.sop_ids)) {
+                        sopIds = task.sop_ids;
+                    } else if (task.sop_id) {
+                        sopIds = [task.sop_id];
+                    }
+                    
+                    const sopDisplay = sopIds.length > 0 
+                        ? sopIds.map(sopId => {
+                            const sop = allSOPs.find(s => parseInt(s.sop_id) === parseInt(sopId));
+                            const sopTitle = sop ? sop.title : `SOP #${sopId}`;
+                            return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#3b82f6;color:white;border-radius:4px;font-size:11px;margin-right:4px;margin-bottom:4px;">📖 ${sopTitle}</span>`;
+                        }).join('')
+                        : '<span style="color:#9ca3af;font-size:12px;">未設定</span>';
+                    
+                    const attachmentDisplay = task.attachment_id ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#10b981;color:white;border-radius:4px;font-size:12px;">📎 附件 #${task.attachment_id}</span>` : '<span style="color:#9ca3af;font-size:12px;">未設定</span>';
+                    
+                    return `
+                        <div style="background:white;padding:16px;border-radius:8px;margin-bottom:12px;border:1px solid #e5e7eb;box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                            <div style="display:flex;align-items:start;gap:15px;">
+                                <div style="flex-shrink:0;width:36px;height:36px;background:#6b7280;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;">
+                                    ${task.stage_order}
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
+                                        <h4 style="margin:0;font-size:15px;font-weight:600;color:#111827;">${task.stage_name || '未命名'}</h4>
+                                        <div style="display:flex;gap:6px;flex-shrink:0;">
+                                            <button class="btn btn-sm btn-secondary" onclick="editTask(${templateId}, ${JSON.stringify(task).replace(/"/g, '&quot;')})">編輯</button>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteTask(${templateId}, ${task.stage_id})">刪除</button>
+                                        </div>
+                                    </div>
+                                    <div style="display:grid;grid-template-columns:1fr;gap:12px;font-size:13px;">
+                                        <div>
+                                            <span style="color:#6b7280;display:block;margin-bottom:6px;font-size:12px;">📖 任務層級 SOP</span>
+                                            <div style="display:flex;flex-wrap:wrap;">${sopDisplay}</div>
+                                        </div>
+                                        <div>
+                                            <span style="color:#6b7280;display:block;margin-bottom:4px;font-size:12px;">📎 任務層級附件</span>
+                                            ${attachmentDisplay}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             } catch (e) {
-                listDiv.innerHTML = '<div style="color:#f44">載入失敗</div>';
+                listDiv.innerHTML = '<div style="color:#ef4444;padding:20px;text-align:center;">載入失敗</div>';
             }
         }
 
@@ -927,9 +1115,10 @@
             document.getElementById(`task-form-${templateId}`).classList.remove('hidden');
             document.getElementById(`task-name-${templateId}`).value = '';
             document.getElementById(`task-order-${templateId}`).value = '1';
+            document.getElementById(`sop-search-${templateId}`).value = '';
             
             const serviceId = getTemplateServiceId(templateId);
-            populateSOPAndAttachments(templateId, serviceId);
+            populateSOPAndAttachments(templateId, serviceId, []);
         }
         
         function editTask(templateId, task) {
@@ -939,15 +1128,23 @@
             
             document.getElementById(`task-name-${templateId}`).value = task.stage_name || '';
             document.getElementById(`task-order-${templateId}`).value = task.stage_order || 1;
+            document.getElementById(`sop-search-${templateId}`).value = '';
             
             const serviceId = getTemplateServiceId(templateId);
-            populateSOPAndAttachments(templateId, serviceId);
             
-            // 设置SOP和附件的值
+            // 兼容旧的单一SOP字段和新的多SOP字段
+            let existingSOPIds = [];
+            if (task.sop_ids && Array.isArray(task.sop_ids)) {
+                existingSOPIds = task.sop_ids.map(id => parseInt(id));
+            } else if (task.sop_id) {
+                existingSOPIds = [parseInt(task.sop_id)];
+            }
+            
+            populateSOPAndAttachments(templateId, serviceId, existingSOPIds);
+            
+            // 设置附件的值
             setTimeout(() => {
-                const sopSelect = document.getElementById(`task-sop-${templateId}`);
                 const attachmentSelect = document.getElementById(`task-attachment-${templateId}`);
-                if (sopSelect) sopSelect.value = task.sop_id || '';
                 if (attachmentSelect) attachmentSelect.value = task.attachment_id || '';
             }, 100);
             
@@ -959,14 +1156,16 @@
             document.getElementById(`task-form-${templateId}`).classList.add('hidden');
         }
 
-        // 保存任务
+        // 保存任务（支持多个SOP）
         async function saveTask(templateId) {
             const name = document.getElementById(`task-name-${templateId}`).value;
             const order = document.getElementById(`task-order-${templateId}`).value;
-            const sopId = document.getElementById(`task-sop-${templateId}`).value;
             const attachmentId = document.getElementById(`task-attachment-${templateId}`).value;
             
             if (!name) return alert('請輸入任務名稱');
+            
+            // 获取已选择的SOP IDs
+            const selectedSOPIds = templateTaskSelectedSOPs[templateId] || [];
             
             try {
                 const url = editingStageId 
@@ -974,26 +1173,41 @@
                     : `/internal/api/v1/task-templates/${templateId}/stages`;
                 const method = editingStageId ? 'PUT' : 'POST';
                 
+                const payload = {
+                    stage_name: name,
+                    stage_order: parseInt(order) || 1,
+                    attachment_id: attachmentId ? parseInt(attachmentId) : null
+                };
+                
+                // 兼容后端：如果有多个SOP，使用sop_ids数组；如果只有一个，使用sop_id字段
+                if (selectedSOPIds.length > 1) {
+                    payload.sop_ids = selectedSOPIds;
+                } else if (selectedSOPIds.length === 1) {
+                    payload.sop_id = selectedSOPIds[0];
+                } else {
+                    payload.sop_id = null;
+                }
+                
+                console.log('[Save Task] Payload:', payload);
+                
                 const res = await fetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({
-                        stage_name: name,
-                        stage_order: parseInt(order) || 1,
-                        sop_id: sopId ? parseInt(sopId) : null,
-                        attachment_id: attachmentId ? parseInt(attachmentId) : null
-                    })
+                    body: JSON.stringify(payload)
                 });
                 
-                if (!res.ok) throw new Error();
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || '保存失敗');
+                }
                 
-                alert(editingStageId ? '更新成功' : '新增成功');
+                alert(editingStageId ? '✅ 更新成功' : '✅ 新增成功');
                 cancelTask(templateId);
                 loadTasksForTemplate(templateId);
             } catch (e) {
                 console.error('保存任務失敗:', e);
-                alert(editingStageId ? '更新失敗' : '新增失敗');
+                alert((editingStageId ? '❌ 更新失敗: ' : '❌ 新增失敗: ') + e.message);
             }
         }
 
