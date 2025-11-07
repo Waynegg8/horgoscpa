@@ -13,6 +13,40 @@ export async function handleServices(request, env, me, requestId, url, path) {
   // 服务项目（Services）管理
   // ========================================
 
+  // GET /internal/api/v1/services/types - 获取服务类型列表（简化版，用于下拉选择）
+  if (method === "GET" && path === "/internal/api/v1/services/types") {
+    try {
+      const rows = await env.DATABASE.prepare(`
+        SELECT service_id, service_name
+        FROM Services
+        WHERE is_active = 1
+        ORDER BY sort_order ASC, service_id ASC
+      `).all();
+
+      const data = (rows?.results || []).map(r => ({
+        service_id: r.service_id,
+        service_name: r.service_name || ""
+      }));
+
+      return jsonResponse(200, {
+        ok: true,
+        code: "SUCCESS",
+        message: "查询成功",
+        data,
+        meta: { requestId }
+      }, corsHeaders);
+
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, {
+        ok: false,
+        code: "INTERNAL_ERROR",
+        message: "服务器错误",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+  }
+
   // GET /internal/api/v1/services - 获取所有服务项目
   if (method === "GET" && path === "/internal/api/v1/services") {
     try {
