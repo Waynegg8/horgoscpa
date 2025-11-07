@@ -46,15 +46,61 @@ export async function handleSettings(request, env, me, requestId, url, path){
   
   if (!me?.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, corsHeaders);
 
-  // GET all settings
-  if (path === "/internal/api/v1/admin/settings" && method === "GET"){
+  // GET settings with optional category filter
+  // Support both /internal/api/v1/admin/settings and /internal/api/v1/settings
+  if ((path === "/internal/api/v1/admin/settings" || path === "/internal/api/v1/settings") && method === "GET"){
     try {
-      const rows = await env.DATABASE.prepare(
-        "SELECT setting_key AS key, setting_value AS value, is_dangerous AS isDangerous, description, updated_at AS updatedAt, updated_by AS updatedBy FROM Settings ORDER BY setting_key"
-      ).all();
+      const category = url.searchParams.get("category") || null;
+      
+      let query = "SELECT setting_key AS settingKey, setting_value AS settingValue, setting_category AS category, is_dangerous AS isDangerous, description, updated_at AS updatedAt, updated_by AS updatedBy FROM Settings";
+      const binds = [];
+      
+      if (category) {
+        query += " WHERE setting_category = ?";
+        binds.push(category);
+      }
+      
+      query += " ORDER BY setting_key";
+      
+      const stmt = binds.length > 0 ? env.DATABASE.prepare(query).bind(...binds) : env.DATABASE.prepare(query);
+      const rows = await stmt.all();
+      
       const map = {};
-      for (const r of (rows?.results||[])) map[r.key] = r.value;
-      return jsonResponse(200, { ok:true, code:"OK", message:"成功", data:{ items: rows?.results||[], map }, meta:{ requestId } }, corsHeaders);
+      for (const r of (rows?.results||[])) map[r.settingKey] = r.settingValue;
+      return jsonResponse(200, { ok:true, code:"OK", message:"成功", data: rows?.results||[], map, meta:{ requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+      return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+    }
+  }
+  
+  // POST /internal/api/v1/settings/batch - 批量保存设置
+  if (path === "/internal/api/v1/settings/batch" && method === "POST"){
+    try {
+      const payload = await request.json();
+      const { category, settings } = payload;
+      
+      if (!category || !Array.isArray(settings)) {
+        return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"參數錯誤", meta:{ requestId } }, corsHeaders);
+      }
+      
+      const nowIso = new Date().toISOString();
+      const userId = String(me.user_id||me.userId||"1");
+      
+      // 批量插入或更新
+      for (const setting of settings) {
+        const { settingKey, settingValue } = setting;
+        if (!settingKey) continue;
+        
+        await env.DATABASE.prepare(
+          `INSERT INTO Settings(setting_key, setting_value, setting_category, updated_at, updated_by) 
+           VALUES(?, ?, ?, ?, ?) 
+           ON CONFLICT(setting_key) 
+           DO UPDATE SET setting_value=excluded.setting_value, setting_category=excluded.setting_category, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
+        ).bind(settingKey, settingValue || "", category, nowIso, userId).run();
+      }
+      
+      return jsonResponse(200, { ok:true, code:"OK", message:"批量更新成功", meta:{ requestId } }, corsHeaders);
     } catch (err) {
       console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
       return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);

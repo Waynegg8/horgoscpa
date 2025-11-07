@@ -23,7 +23,8 @@
         <button class="nav-tab active" data-tab="services">服務項目</button>
         <button class="nav-tab" data-tab="templates">任務模板</button>
         <button class="nav-tab" data-tab="users">用戶</button>
-        <button class="nav-tab" data-tab="leaves">假期</button>
+        <button class="nav-tab" data-tab="leaves">假期類型</button>
+        <button class="nav-tab" data-tab="company">公司資訊</button>
         <button class="nav-tab" data-tab="lifecycle">服務生命週期</button>
         <button class="nav-tab" data-tab="automation">自動化規則</button>
         <button class="nav-tab" data-tab="holidays">國定假日</button>
@@ -140,36 +141,73 @@
             </div>
         </div>
 
-        <!-- 假期 -->
+        <!-- 假期類型設定 -->
         <div class="tab-panel" id="tab-leaves">
-            <div class="search-bar">
-                <select id="filterLeaveStatus" class="form-control" style="max-width:200px">
-                    <option value="">全部狀態</option>
-                    <option value="pending">待審核</option>
-                    <option value="approved">已批准</option>
-                    <option value="rejected">已拒絕</option>
-            </select>
-                <button class="btn btn-secondary" onclick="loadLeaves()">查詢</button>
-            </div>
             <div class="card">
+                <div class="card-header">
+                    <h2>假期類型與額度設定</h2>
+                    <p style="color:#666;font-size:14px;margin:8px 0 0 0;">設定系統中可用的假期類型及其額度規則</p>
+                </div>
                 <div class="card-body">
-                    <div class="data-table-container">
-                        <table class="data-table" id="leavesTable">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>員工</th>
-                                    <th>假期類型</th>
-                                    <th>開始日期</th>
-                                    <th>結束日期</th>
-                                    <th>狀態</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="7" class="loading">載入中...</td></tr>
-                            </tbody>
-                        </table>
+                    <div style="background:#f0f9ff;border:1px solid #0ea5e9;padding:16px;border-radius:8px;margin-bottom:20px;">
+                        <h3 style="margin:0 0 12px 0;font-size:16px;color:#0369a1;">📋 假期類型說明</h3>
+                        <ul style="margin:0;padding-left:20px;color:#334155;">
+                            <li><strong>特休：</strong>依到職日自動計算（滿6個月3天、滿1年7天等）</li>
+                            <li><strong>病假：</strong>每年30天</li>
+                            <li><strong>事假：</strong>每年14天</li>
+                            <li><strong>補休：</strong>加班換補休，當月有效</li>
+                            <li><strong>生理假：</strong>每月1天（女性專屬）</li>
+                            <li><strong>產假、產檢假、陪產檢及陪產假：</strong>依生活事件登記給予</li>
+                            <li><strong>婚假、喪假：</strong>依生活事件登記給予</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background:#fef3c7;border:1px solid #f59e0b;padding:16px;border-radius:8px;">
+                        <p style="margin:0;color:#92400e;"><strong>⚠️ 提示：</strong>假期額度由系統根據勞基法自動計算，無需手動設定。員工的到職日和性別請在個人資料中設定。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 公司資訊 -->
+        <div class="tab-panel" id="tab-company">
+            <div class="card">
+                <div class="card-header">
+                    <h2>公司資訊設定</h2>
+                    <p style="color:#666;font-size:14px;margin:8px 0 0 0;">設定公司基本資訊，用於收據、報表等文件</p>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>公司中文名稱 *</label>
+                        <input type="text" id="company_name_zh" class="form-control" placeholder="例如：霍爾果斯會計師事務所">
+                    </div>
+                    <div class="form-group">
+                        <label>公司英文名稱 *</label>
+                        <input type="text" id="company_name_en" class="form-control" placeholder="例如：Horgos CPA Firm">
+                    </div>
+                    <div class="form-group">
+                        <label>統一編號</label>
+                        <input type="text" id="company_tax_id" class="form-control" placeholder="例如：12345678">
+                    </div>
+                    <div class="form-group">
+                        <label>公司地址</label>
+                        <input type="text" id="company_address" class="form-control" placeholder="例如：台北市中正區...">
+                    </div>
+                    <div class="form-group">
+                        <label>聯絡電話</label>
+                        <input type="text" id="company_phone" class="form-control" placeholder="例如：02-12345678">
+                    </div>
+                    <div class="form-group">
+                        <label>電子信箱</label>
+                        <input type="email" id="company_email" class="form-control" placeholder="例如：info@horgoscpa.com">
+                    </div>
+                    <div class="form-group">
+                        <label>公司網址</label>
+                        <input type="url" id="company_website" class="form-control" placeholder="例如：https://www.horgoscpa.com">
+                    </div>
+                    
+                    <div class="action-btns">
+                        <button class="btn btn-primary" onclick="saveCompanyInfo()">儲存</button>
                     </div>
                 </div>
             </div>
@@ -345,7 +383,7 @@
         // ⚡ Tab 缓存系统初始化
         let currentSettingsTab = 'services';
         if (window.TabCache) {
-            window.TabCache.init(['services', 'templates', 'users', 'leaves', 'lifecycle', 'automation', 'holidays']);
+            window.TabCache.init(['services', 'templates', 'users', 'leaves', 'company', 'lifecycle', 'automation', 'holidays']);
         }
         
         // Tab切换
@@ -368,7 +406,7 @@
                     if (tab === 'services') loadServices();
                     else if (tab === 'templates') { loadTemplates(); loadTemplateOptions(); }
                     else if (tab === 'users') loadUsers();
-                    else if (tab === 'leaves') loadLeaves();
+                    else if (tab === 'company') loadCompanyInfo();
                     else if (tab === 'lifecycle') loadLifecycle();
                     else if (tab === 'automation') loadAutomation();
                     else if (tab === 'holidays') loadHolidays();
@@ -737,40 +775,114 @@
                         <td>${u.username}</td>
                         <td>${u.is_admin ? '管理員' : '員工'}</td>
                         <td><span class="status-badge status-active">啟用</span></td>
-                        <td><button class="btn btn-sm btn-secondary">編輯</button></td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="window.location.href='/internal/profile?user_id=${u.user_id}'">檢視</button>
+                            <button class="btn btn-sm btn-warning" onclick="resetUserPassword(${u.user_id}, '${u.name}')">重置密碼</button>
+                        </td>
                     </tr>
                 `).join('');
             } catch (e) {
                 tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
             }
         }
-
-        // 假期管理
-        async function loadLeaves() {
-            const tbody = document.querySelector('#leavesTable tbody');
-            const status = document.getElementById('filterLeaveStatus').value;
-            try {
-                const url = status ? `/internal/api/v1/leaves?status=${status}` : '/internal/api/v1/leaves';
-                const res = await fetch(url, { credentials: 'include' });
-                const json = await res.json();
-                if (!json.data || json.data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="loading">暫無資料</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = json.data.map(l => `
-                    <tr>
-                        <td>${l.leave_id}</td>
-                        <td>${l.user_name}</td>
-                        <td>${l.leave_type_name}</td>
-                        <td>${l.start_date}</td>
-                        <td>${l.end_date}</td>
-                        <td>${l.status}</td>
-                        <td><button class="btn btn-sm btn-secondary">審核</button></td>
-                    </tr>
-                `).join('');
-            } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="7" class="loading">載入失敗</td></tr>';
+        
+        async function resetUserPassword(userId, userName) {
+            const newPassword = prompt(`請輸入 ${userName} 的新密碼：`);
+            if (!newPassword) return;
+            
+            if (newPassword.length < 6) {
+                alert('密碼長度至少需要 6 個字元');
+                return;
             }
+            
+            if (!confirm(`確定要將 ${userName} 的密碼重置為新密碼嗎？`)) {
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/internal/api/v1/admin/users/${userId}/reset-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ new_password: newPassword })
+                });
+                
+                const json = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(json.message || '重置失敗');
+                }
+                
+                alert(`✅ 密碼重置成功！\n用戶：${userName}\n請通知該用戶使用新密碼登入。`);
+            } catch (e) {
+                console.error('重置密碼失敗:', e);
+                alert('❌ 重置密碼失敗: ' + e.message);
+            }
+        }
+
+        // 公司資訊管理
+        async function loadCompanyInfo() {
+            try {
+                const res = await fetch('/internal/api/v1/settings?category=company', { credentials: 'include' });
+                const json = await res.json();
+                
+                if (json.ok && json.data) {
+                    json.data.forEach(setting => {
+                        const input = document.getElementById(`company_${setting.settingKey}`);
+                        if (input) {
+                            input.value = setting.settingValue || '';
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('載入公司資訊失敗:', e);
+            }
+        }
+        
+        async function saveCompanyInfo() {
+            const settings = [
+                { settingKey: 'name_zh', settingValue: document.getElementById('company_name_zh').value },
+                { settingKey: 'name_en', settingValue: document.getElementById('company_name_en').value },
+                { settingKey: 'tax_id', settingValue: document.getElementById('company_tax_id').value },
+                { settingKey: 'address', settingValue: document.getElementById('company_address').value },
+                { settingKey: 'phone', settingValue: document.getElementById('company_phone').value },
+                { settingKey: 'email', settingValue: document.getElementById('company_email').value },
+                { settingKey: 'website', settingValue: document.getElementById('company_website').value }
+            ];
+            
+            if (!settings[0].settingValue || !settings[1].settingValue) {
+                alert('公司中文名稱和英文名稱為必填項');
+                return;
+            }
+            
+            try {
+                const res = await fetch('/internal/api/v1/settings/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        category: 'company',
+                        settings: settings
+                    })
+                });
+                
+                const json = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(json.message || '儲存失敗');
+                }
+                
+                alert('✅ 公司資訊儲存成功！');
+            } catch (e) {
+                console.error('儲存公司資訊失敗:', e);
+                alert('❌ 儲存失敗: ' + e.message);
+            }
+        }
+
+        // 假期管理（已簡化為說明頁面）
+        async function loadLeaves() {
+            // 假期類型頁面已改為純說明頁面，無需載入數據
+            // 員工的到職日和性別請在個人資料頁面設定
         }
 
         // 服务生命周期
@@ -1124,8 +1236,8 @@
                 case 'users':
                     loadUsers();
                     break;
-                case 'leaves':
-                    loadLeaves();
+                case 'company':
+                    loadCompanyInfo();
                     break;
                 case 'automation':
                     loadAutomation();

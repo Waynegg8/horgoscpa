@@ -29,6 +29,7 @@ import { handleAutomation } from "./api/automation.js";
 import { handleHolidays } from "./api/holidays.js";
 import { handleTags } from "./api/tags.js";
 import { handleBilling } from "./api/billing.js";
+import { handleUserProfile } from "./api/user-profile.js";
 import { handleTaskTemplates } from "./api/task_templates.js";
 import { handleServices } from "./api/services.js";
 import { handleServiceComponents } from "./api/service_components.js";
@@ -623,14 +624,27 @@ export default {
 		}
 
 		// 用戶列表（所有登录用户可访问）
-		if (path === "/internal/api/v1/users") {
+		if (path === "/internal/api/v1/users" && request.method === "GET") {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			return handleSettings(request, env, me, requestId, url, path);
 		}
 		
+		// 用戶個人資料相關 API
+		if (path.match(/^\/internal\/api\/v1\/users\/\d+/) || 
+		    path === "/internal/api/v1/auth/change-password" ||
+		    path.match(/^\/internal\/api\/v1\/admin\/users\/\d+\/reset-password$/) ||
+		    path.match(/^\/internal\/api\/v1\/leaves\/recalculate-balances\/\d+$/)) {
+			const me = await getSessionUser(request, env);
+			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
+			const result = await handleUserProfile(request, env, me, requestId, url, path);
+			if (result) return result;
+		}
+		
 		// 系統設定（管理員）
-		if (path === "/internal/api/v1/admin/settings" || path.startsWith("/internal/api/v1/admin/settings/")) {
+		if ((path === "/internal/api/v1/admin/settings" || path.startsWith("/internal/api/v1/admin/settings/") || 
+		     path === "/internal/api/v1/settings" || path === "/internal/api/v1/settings/batch") && 
+		    !(path === "/internal/api/v1/users" && request.method === "GET")) {
 			const me = await getSessionUser(request, env);
 			if (!me) return jsonResponse(401, { ok:false, code:"UNAUTHORIZED", message:"未登入", meta:{ requestId } }, getCorsHeadersForRequest(request, env));
 			if (!me.is_admin) return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"沒有權限", meta:{ requestId } }, getCorsHeadersForRequest(request, env));

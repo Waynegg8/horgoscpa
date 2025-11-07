@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="個人資料" />
+    <title>個人資料｜員工資訊</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/assets/css/common.css" />
+    <link rel="stylesheet" href="/assets/css/internal-system.css" />
+    <link rel="stylesheet" href="/assets/css/internal-components.css" />
+    <link rel="stylesheet" href="/assets/css/settings-page.css" />
+  </head>
+  <body>
+    <div id="permBar" class="alert alert-danger" style="display:none">您沒有權限</div>
+    
+    <main class="internal-container" style="max-width:800px;margin:40px auto;padding:20px;">
+      <div style="margin-bottom:24px;">
+        <button class="btn btn-secondary" onclick="window.history.back()">← 返回</button>
+      </div>
+      
+      <!-- 基本資訊卡片 -->
+      <div class="card">
+        <div class="card-header">
+          <h2>個人資料</h2>
+          <p style="color:#666;font-size:14px;margin:8px 0 0 0;">管理您的個人資訊</p>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>姓名</label>
+            <input type="text" id="userName" class="form-control" readonly style="background:#f5f5f5;">
+          </div>
+          
+          <div class="form-group">
+            <label>帳號</label>
+            <input type="text" id="userUsername" class="form-control" readonly style="background:#f5f5f5;">
+          </div>
+          
+          <div class="form-group">
+            <label>角色</label>
+            <input type="text" id="userRole" class="form-control" readonly style="background:#f5f5f5;">
+          </div>
+          
+          <div class="form-group">
+            <label>到職日 *</label>
+            <input type="date" id="hireDate" class="form-control" required>
+            <small style="color:#666;display:block;margin-top:4px;">用於計算特休假額度</small>
+          </div>
+          
+          <div class="form-group">
+            <label>性別 *</label>
+            <select id="gender" class="form-control" required>
+              <option value="">請選擇</option>
+              <option value="male">男性</option>
+              <option value="female">女性</option>
+            </select>
+            <small style="color:#666;display:block;margin-top:4px;">用於判斷性別專屬假期（如生理假、產假等）</small>
+          </div>
+          
+          <div class="action-btns">
+            <button class="btn btn-primary" onclick="saveProfile()">儲存資料</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 修改密碼卡片 -->
+      <div class="card" style="margin-top:24px;">
+        <div class="card-header">
+          <h2>修改密碼</h2>
+          <p style="color:#666;font-size:14px;margin:8px 0 0 0;">定期更新密碼以確保帳號安全</p>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>目前密碼 *</label>
+            <input type="password" id="currentPassword" class="form-control" required>
+          </div>
+          
+          <div class="form-group">
+            <label>新密碼 *</label>
+            <input type="password" id="newPassword" class="form-control" required minlength="6">
+            <small style="color:#666;display:block;margin-top:4px;">密碼長度至少 6 個字元</small>
+          </div>
+          
+          <div class="form-group">
+            <label>確認新密碼 *</label>
+            <input type="password" id="confirmPassword" class="form-control" required minlength="6">
+          </div>
+          
+          <div class="action-btns">
+            <button class="btn btn-warning" onclick="changePassword()">修改密碼</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/assets/js/components/bootstrap.js?v=3"></script>
+    <script>
+      const onProdHost = location.hostname.endsWith('horgoscpa.com');
+      const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+      
+      let currentUser = null;
+      let isViewingOwnProfile = true;
+      let targetUserId = null;
+      
+      // 初始化
+      async function init() {
+        try {
+          // 獲取當前用戶信息
+          const meRes = await fetch(`${apiBase}/auth/me`, { credentials: 'include' });
+          if (meRes.status === 401) {
+            location.href = '/login?redirect=/internal/profile';
+            return;
+          }
+          const meJson = await meRes.json();
+          if (!meJson.ok || !meJson.data) {
+            throw new Error('無法獲取用戶信息');
+          }
+          
+          currentUser = meJson.data;
+          
+          // 檢查是否查看其他用戶的資料（僅管理員）
+          const urlParams = new URLSearchParams(window.location.search);
+          const userIdParam = urlParams.get('user_id');
+          
+          if (userIdParam && currentUser.isAdmin) {
+            targetUserId = parseInt(userIdParam);
+            isViewingOwnProfile = (targetUserId === currentUser.user_id);
+            
+            // 如果查看其他用戶，隱藏修改密碼區塊
+            if (!isViewingOwnProfile) {
+              document.querySelectorAll('.card')[1].style.display = 'none';
+            }
+          } else {
+            targetUserId = currentUser.user_id;
+            isViewingOwnProfile = true;
+          }
+          
+          // 載入用戶資料
+          await loadUserProfile();
+          
+        } catch (err) {
+          console.error('初始化失敗:', err);
+          alert('載入失敗: ' + err.message);
+        }
+      }
+      
+      // 載入用戶資料
+      async function loadUserProfile() {
+        try {
+          const res = await fetch(`${apiBase}/users/${targetUserId}`, { credentials: 'include' });
+          const json = await res.json();
+          
+          if (!json.ok || !json.data) {
+            throw new Error('無法載入用戶資料');
+          }
+          
+          const user = json.data;
+          
+          document.getElementById('userName').value = user.name || '';
+          document.getElementById('userUsername').value = user.username || '';
+          document.getElementById('userRole').value = user.is_admin ? '管理員' : '員工';
+          document.getElementById('hireDate').value = user.hire_date || '';
+          document.getElementById('gender').value = user.gender || '';
+          
+        } catch (err) {
+          console.error('載入用戶資料失敗:', err);
+          alert('載入用戶資料失敗: ' + err.message);
+        }
+      }
+      
+      // 儲存個人資料
+      async function saveProfile() {
+        const hireDate = document.getElementById('hireDate').value;
+        const gender = document.getElementById('gender').value;
+        
+        if (!hireDate || !gender) {
+          alert('請填寫所有必填欄位');
+          return;
+        }
+        
+        try {
+          const res = await fetch(`${apiBase}/users/${targetUserId}/profile`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              hire_date: hireDate,
+              gender: gender
+            })
+          });
+          
+          const json = await res.json();
+          
+          if (!res.ok) {
+            throw new Error(json.message || '儲存失敗');
+          }
+          
+          alert('✅ 個人資料儲存成功！');
+          
+          // 如果更新了性別或到職日，建議重新計算假期額度
+          if (confirm('個人資料已更新。是否要重新計算假期額度？')) {
+            await recalculateLeaveBalances();
+          }
+          
+        } catch (err) {
+          console.error('儲存失敗:', err);
+          alert('❌ 儲存失敗: ' + err.message);
+        }
+      }
+      
+      // 重新計算假期額度
+      async function recalculateLeaveBalances() {
+        try {
+          const res = await fetch(`${apiBase}/leaves/recalculate-balances/${targetUserId}`, {
+            method: 'POST',
+            credentials: 'include'
+          });
+          
+          const json = await res.json();
+          
+          if (res.ok) {
+            alert('✅ 假期額度已重新計算！');
+          }
+        } catch (err) {
+          console.error('重新計算失敗:', err);
+        }
+      }
+      
+      // 修改密碼
+      async function changePassword() {
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        
+        if (!currentPassword || !newPassword || !confirmPassword) {
+          alert('請填寫所有密碼欄位');
+          return;
+        }
+        
+        if (newPassword.length < 6) {
+          alert('新密碼長度至少需要 6 個字元');
+          return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+          alert('新密碼與確認密碼不符');
+          return;
+        }
+        
+        if (!confirm('確定要修改密碼嗎？')) {
+          return;
+        }
+        
+        try {
+          const res = await fetch(`${apiBase}/auth/change-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              current_password: currentPassword,
+              new_password: newPassword
+            })
+          });
+          
+          const json = await res.json();
+          
+          if (!res.ok) {
+            throw new Error(json.message || '修改失敗');
+          }
+          
+          alert('✅ 密碼修改成功！下次登入請使用新密碼。');
+          
+          // 清空密碼欄位
+          document.getElementById('currentPassword').value = '';
+          document.getElementById('newPassword').value = '';
+          document.getElementById('confirmPassword').value = '';
+          
+        } catch (err) {
+          console.error('修改密碼失敗:', err);
+          alert('❌ 修改密碼失敗: ' + err.message);
+        }
+      }
+      
+      // 頁面載入時初始化
+      init();
+    </script>
+  </body>
+</html>
+

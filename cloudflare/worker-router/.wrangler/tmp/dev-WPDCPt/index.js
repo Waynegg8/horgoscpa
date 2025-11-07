@@ -14036,14 +14036,46 @@ async function handleSettings(request, env, me, requestId, url, path) {
     }
   }
   if (!me?.is_admin) return jsonResponse(403, { ok: false, code: "FORBIDDEN", message: "\u6C92\u6709\u6B0A\u9650", meta: { requestId } }, corsHeaders);
-  if (path === "/internal/api/v1/admin/settings" && method === "GET") {
+  if ((path === "/internal/api/v1/admin/settings" || path === "/internal/api/v1/settings") && method === "GET") {
     try {
-      const rows = await env.DATABASE.prepare(
-        "SELECT setting_key AS key, setting_value AS value, is_dangerous AS isDangerous, description, updated_at AS updatedAt, updated_by AS updatedBy FROM Settings ORDER BY setting_key"
-      ).all();
+      const category = url.searchParams.get("category") || null;
+      let query = "SELECT setting_key AS settingKey, setting_value AS settingValue, setting_category AS category, is_dangerous AS isDangerous, description, updated_at AS updatedAt, updated_by AS updatedBy FROM Settings";
+      const binds = [];
+      if (category) {
+        query += " WHERE setting_category = ?";
+        binds.push(category);
+      }
+      query += " ORDER BY setting_key";
+      const stmt = binds.length > 0 ? env.DATABASE.prepare(query).bind(...binds) : env.DATABASE.prepare(query);
+      const rows = await stmt.all();
       const map = {};
-      for (const r of rows?.results || []) map[r.key] = r.value;
-      return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data: { items: rows?.results || [], map }, meta: { requestId } }, corsHeaders);
+      for (const r of rows?.results || []) map[r.settingKey] = r.settingValue;
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data: rows?.results || [], map, meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path === "/internal/api/v1/settings/batch" && method === "POST") {
+    try {
+      const payload = await request.json();
+      const { category, settings } = payload;
+      if (!category || !Array.isArray(settings)) {
+        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u53C3\u6578\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+      }
+      const nowIso = (/* @__PURE__ */ new Date()).toISOString();
+      const userId = String(me.user_id || me.userId || "1");
+      for (const setting of settings) {
+        const { settingKey, settingValue } = setting;
+        if (!settingKey) continue;
+        await env.DATABASE.prepare(
+          `INSERT INTO Settings(setting_key, setting_value, setting_category, updated_at, updated_by) 
+           VALUES(?, ?, ?, ?, ?) 
+           ON CONFLICT(setting_key) 
+           DO UPDATE SET setting_value=excluded.setting_value, setting_category=excluded.setting_category, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
+        ).bind(settingKey, settingValue || "", category, nowIso, userId).run();
+      }
+      return jsonResponse(200, { ok: true, code: "OK", message: "\u6279\u91CF\u66F4\u65B0\u6210\u529F", meta: { requestId } }, corsHeaders);
     } catch (err) {
       console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
       return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
@@ -15802,6 +15834,385 @@ async function handleBilling(request, env, me, requestId, url, path) {
   return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u8DEF\u7531\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
 }
 __name(handleBilling, "handleBilling");
+
+// src/api/user-profile.js
+init_modules_watch_stub();
+init_utils();
+async function handleUserProfile(request, env, me, requestId, url, path) {
+  const corsHeaders = getCorsHeadersForRequest(request, env);
+  const method = request.method.toUpperCase();
+  if (method === "GET" && path.match(/^\/internal\/api\/v1\/users\/\d+$/)) {
+    const userId = parseInt(path.split("/")[5]);
+    return await getUserProfile(env, me, userId, requestId, corsHeaders);
+  }
+  if (method === "PUT" && path.match(/^\/internal\/api\/v1\/users\/\d+\/profile$/)) {
+    const userId = parseInt(path.split("/")[5]);
+    return await updateUserProfile(request, env, me, userId, requestId, corsHeaders);
+  }
+  if (method === "POST" && path === "/internal/api/v1/auth/change-password") {
+    return await changePassword(request, env, me, requestId, corsHeaders);
+  }
+  if (method === "POST" && path.match(/^\/internal\/api\/v1\/admin\/users\/\d+\/reset-password$/)) {
+    const userId = parseInt(path.split("/")[6]);
+    return await resetUserPassword(request, env, me, userId, requestId, corsHeaders);
+  }
+  if (method === "POST" && path.match(/^\/internal\/api\/v1\/leaves\/recalculate-balances\/\d+$/)) {
+    const userId = parseInt(path.split("/")[6]);
+    return await recalculateLeaveBalances(env, me, userId, requestId, corsHeaders);
+  }
+  return null;
+}
+__name(handleUserProfile, "handleUserProfile");
+async function getUserProfile(env, me, userId, requestId, corsHeaders) {
+  try {
+    if (!me.is_admin && me.user_id !== userId) {
+      return jsonResponse(403, {
+        ok: false,
+        code: "FORBIDDEN",
+        message: "\u6C92\u6709\u6B0A\u9650\u67E5\u770B\u6B64\u7528\u6236\u8CC7\u6599",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const user = await env.DATABASE.prepare(
+      `SELECT user_id, username, name, email, is_admin, hire_date, gender, 
+			        created_at, last_login
+			 FROM Users 
+			 WHERE user_id = ? AND is_deleted = 0`
+    ).bind(userId).first();
+    if (!user) {
+      return jsonResponse(404, {
+        ok: false,
+        code: "NOT_FOUND",
+        message: "\u7528\u6236\u4E0D\u5B58\u5728",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const data = {
+      user_id: user.user_id,
+      username: user.username,
+      name: user.name || user.username,
+      email: user.email,
+      is_admin: Boolean(user.is_admin),
+      hire_date: user.hire_date || null,
+      gender: user.gender || null,
+      created_at: user.created_at,
+      last_login: user.last_login
+    };
+    return jsonResponse(200, {
+      ok: true,
+      code: "SUCCESS",
+      message: "\u67E5\u8A62\u6210\u529F",
+      data,
+      meta: { requestId }
+    }, corsHeaders);
+  } catch (err) {
+    console.error(JSON.stringify({ level: "error", requestId, path: "getUserProfile", err: String(err) }));
+    return jsonResponse(500, {
+      ok: false,
+      code: "INTERNAL_ERROR",
+      message: "\u4F3A\u670D\u5668\u932F\u8AA4",
+      meta: { requestId }
+    }, corsHeaders);
+  }
+}
+__name(getUserProfile, "getUserProfile");
+async function updateUserProfile(request, env, me, userId, requestId, corsHeaders) {
+  try {
+    if (!me.is_admin && me.user_id !== userId) {
+      return jsonResponse(403, {
+        ok: false,
+        code: "FORBIDDEN",
+        message: "\u6C92\u6709\u6B0A\u9650\u4FEE\u6539\u6B64\u7528\u6236\u8CC7\u6599",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const body = await request.json();
+    const { hire_date, gender } = body;
+    const errors = [];
+    if (hire_date && !/^\d{4}-\d{2}-\d{2}$/.test(hire_date)) {
+      errors.push({ field: "hire_date", message: "\u65E5\u671F\u683C\u5F0F\u932F\u8AA4\uFF08\u61C9\u70BA YYYY-MM-DD\uFF09" });
+    }
+    if (gender && !["male", "female"].includes(gender)) {
+      errors.push({ field: "gender", message: "\u6027\u5225\u5FC5\u9808\u70BA male \u6216 female" });
+    }
+    if (errors.length > 0) {
+      return jsonResponse(422, {
+        ok: false,
+        code: "VALIDATION_ERROR",
+        message: "\u8F38\u5165\u6709\u8AA4",
+        errors,
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const existing = await env.DATABASE.prepare(
+      "SELECT 1 FROM Users WHERE user_id = ? AND is_deleted = 0"
+    ).bind(userId).first();
+    if (!existing) {
+      return jsonResponse(404, {
+        ok: false,
+        code: "NOT_FOUND",
+        message: "\u7528\u6236\u4E0D\u5B58\u5728",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const updates = [];
+    const binds = [];
+    if (hire_date !== void 0) {
+      updates.push("hire_date = ?");
+      binds.push(hire_date || null);
+    }
+    if (gender !== void 0) {
+      updates.push("gender = ?");
+      binds.push(gender || null);
+    }
+    if (updates.length > 0) {
+      updates.push("updated_at = ?");
+      binds.push(now);
+      binds.push(userId);
+      await env.DATABASE.prepare(
+        `UPDATE Users SET ${updates.join(", ")} WHERE user_id = ?`
+      ).bind(...binds).run();
+    }
+    return jsonResponse(200, {
+      ok: true,
+      code: "SUCCESS",
+      message: "\u66F4\u65B0\u6210\u529F",
+      meta: { requestId }
+    }, corsHeaders);
+  } catch (err) {
+    console.error(JSON.stringify({ level: "error", requestId, path: "updateUserProfile", err: String(err) }));
+    return jsonResponse(500, {
+      ok: false,
+      code: "INTERNAL_ERROR",
+      message: "\u4F3A\u670D\u5668\u932F\u8AA4",
+      meta: { requestId }
+    }, corsHeaders);
+  }
+}
+__name(updateUserProfile, "updateUserProfile");
+async function changePassword(request, env, me, requestId, corsHeaders) {
+  try {
+    const body = await request.json();
+    const { current_password, new_password } = body;
+    const errors = [];
+    if (!current_password) {
+      errors.push({ field: "current_password", message: "\u8ACB\u8F38\u5165\u7576\u524D\u5BC6\u78BC" });
+    }
+    if (!new_password) {
+      errors.push({ field: "new_password", message: "\u8ACB\u8F38\u5165\u65B0\u5BC6\u78BC" });
+    }
+    if (new_password && new_password.length < 6) {
+      errors.push({ field: "new_password", message: "\u5BC6\u78BC\u9577\u5EA6\u81F3\u5C11\u9700\u8981 6 \u500B\u5B57\u5143" });
+    }
+    if (errors.length > 0) {
+      return jsonResponse(422, {
+        ok: false,
+        code: "VALIDATION_ERROR",
+        message: "\u8F38\u5165\u6709\u8AA4",
+        errors,
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const user = await env.DATABASE.prepare(
+      "SELECT password_hash FROM Users WHERE user_id = ? AND is_deleted = 0"
+    ).bind(me.user_id).first();
+    if (!user) {
+      return jsonResponse(404, {
+        ok: false,
+        code: "NOT_FOUND",
+        message: "\u7528\u6236\u4E0D\u5B58\u5728",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const isValid = await verifyPasswordPBKDF2(current_password, user.password_hash);
+    if (!isValid) {
+      return jsonResponse(401, {
+        ok: false,
+        code: "UNAUTHORIZED",
+        message: "\u7576\u524D\u5BC6\u78BC\u932F\u8AA4",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const newHash = await hashPasswordPBKDF2(new_password);
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    await env.DATABASE.prepare(
+      "UPDATE Users SET password_hash = ?, updated_at = ? WHERE user_id = ?"
+    ).bind(newHash, now, me.user_id).run();
+    return jsonResponse(200, {
+      ok: true,
+      code: "SUCCESS",
+      message: "\u5BC6\u78BC\u4FEE\u6539\u6210\u529F",
+      meta: { requestId }
+    }, corsHeaders);
+  } catch (err) {
+    console.error(JSON.stringify({ level: "error", requestId, path: "changePassword", err: String(err) }));
+    return jsonResponse(500, {
+      ok: false,
+      code: "INTERNAL_ERROR",
+      message: "\u4F3A\u670D\u5668\u932F\u8AA4",
+      meta: { requestId }
+    }, corsHeaders);
+  }
+}
+__name(changePassword, "changePassword");
+async function resetUserPassword(request, env, me, userId, requestId, corsHeaders) {
+  try {
+    if (!me.is_admin) {
+      return jsonResponse(403, {
+        ok: false,
+        code: "FORBIDDEN",
+        message: "\u6B64\u529F\u80FD\u50C5\u9650\u7BA1\u7406\u54E1\u4F7F\u7528",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const body = await request.json();
+    const { new_password } = body;
+    const errors = [];
+    if (!new_password) {
+      errors.push({ field: "new_password", message: "\u8ACB\u8F38\u5165\u65B0\u5BC6\u78BC" });
+    }
+    if (new_password && new_password.length < 6) {
+      errors.push({ field: "new_password", message: "\u5BC6\u78BC\u9577\u5EA6\u81F3\u5C11\u9700\u8981 6 \u500B\u5B57\u5143" });
+    }
+    if (errors.length > 0) {
+      return jsonResponse(422, {
+        ok: false,
+        code: "VALIDATION_ERROR",
+        message: "\u8F38\u5165\u6709\u8AA4",
+        errors,
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const user = await env.DATABASE.prepare(
+      "SELECT user_id, name FROM Users WHERE user_id = ? AND is_deleted = 0"
+    ).bind(userId).first();
+    if (!user) {
+      return jsonResponse(404, {
+        ok: false,
+        code: "NOT_FOUND",
+        message: "\u7528\u6236\u4E0D\u5B58\u5728",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const newHash = await hashPasswordPBKDF2(new_password);
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    await env.DATABASE.prepare(
+      "UPDATE Users SET password_hash = ?, updated_at = ? WHERE user_id = ?"
+    ).bind(newHash, now, userId).run();
+    return jsonResponse(200, {
+      ok: true,
+      code: "SUCCESS",
+      message: `\u5DF2\u91CD\u7F6E ${user.name} \u7684\u5BC6\u78BC`,
+      meta: { requestId }
+    }, corsHeaders);
+  } catch (err) {
+    console.error(JSON.stringify({ level: "error", requestId, path: "resetUserPassword", err: String(err) }));
+    return jsonResponse(500, {
+      ok: false,
+      code: "INTERNAL_ERROR",
+      message: "\u4F3A\u670D\u5668\u932F\u8AA4",
+      meta: { requestId }
+    }, corsHeaders);
+  }
+}
+__name(resetUserPassword, "resetUserPassword");
+async function recalculateLeaveBalances(env, me, userId, requestId, corsHeaders) {
+  try {
+    if (!me.is_admin && me.user_id !== userId) {
+      return jsonResponse(403, {
+        ok: false,
+        code: "FORBIDDEN",
+        message: "\u6C92\u6709\u6B0A\u9650",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const user = await env.DATABASE.prepare(
+      "SELECT hire_date, gender FROM Users WHERE user_id = ? AND is_deleted = 0"
+    ).bind(userId).first();
+    if (!user) {
+      return jsonResponse(404, {
+        ok: false,
+        code: "NOT_FOUND",
+        message: "\u7528\u6236\u4E0D\u5B58\u5728",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    if (!user.hire_date) {
+      return jsonResponse(422, {
+        ok: false,
+        code: "VALIDATION_ERROR",
+        message: "\u7528\u6236\u5C1A\u672A\u8A2D\u5B9A\u5230\u8077\u65E5\uFF0C\u7121\u6CD5\u8A08\u7B97\u5047\u671F\u984D\u5EA6",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    const hireDate = new Date(user.hire_date);
+    const today = /* @__PURE__ */ new Date();
+    const monthsWorked = (today.getFullYear() - hireDate.getFullYear()) * 12 + (today.getMonth() - hireDate.getMonth());
+    let annualLeaveDays = 0;
+    if (monthsWorked >= 6 && monthsWorked < 12) {
+      annualLeaveDays = 3;
+    } else if (monthsWorked >= 12) {
+      const years = Math.floor(monthsWorked / 12);
+      if (years < 1) annualLeaveDays = 3;
+      else if (years === 1) annualLeaveDays = 7;
+      else if (years === 2) annualLeaveDays = 10;
+      else if (years >= 3 && years <= 5) annualLeaveDays = 14;
+      else if (years >= 6 && years <= 10) annualLeaveDays = 15;
+      else annualLeaveDays = 15 + Math.min(years - 10, 20);
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const currentYear = today.getFullYear();
+    await env.DATABASE.prepare(
+      `INSERT INTO LeaveBalances (user_id, leave_type, balance_days, balance_hours, year, created_at, updated_at)
+			 VALUES (?, 'annual', ?, ?, ?, ?, ?)
+			 ON CONFLICT(user_id, leave_type, year) 
+			 DO UPDATE SET balance_days = ?, balance_hours = ?, updated_at = ?`
+    ).bind(
+      userId,
+      annualLeaveDays,
+      annualLeaveDays * 8,
+      currentYear,
+      now,
+      now,
+      annualLeaveDays,
+      annualLeaveDays * 8,
+      now
+    ).run();
+    await env.DATABASE.prepare(
+      `INSERT INTO LeaveBalances (user_id, leave_type, balance_days, balance_hours, year, created_at, updated_at)
+			 VALUES (?, 'sick', 30, 240, ?, ?, ?)
+			 ON CONFLICT(user_id, leave_type, year) 
+			 DO UPDATE SET balance_days = 30, balance_hours = 240, updated_at = ?`
+    ).bind(userId, currentYear, now, now, now).run();
+    await env.DATABASE.prepare(
+      `INSERT INTO LeaveBalances (user_id, leave_type, balance_days, balance_hours, year, created_at, updated_at)
+			 VALUES (?, 'personal', 14, 112, ?, ?, ?)
+			 ON CONFLICT(user_id, leave_type, year) 
+			 DO UPDATE SET balance_days = 14, balance_hours = 112, updated_at = ?`
+    ).bind(userId, currentYear, now, now, now).run();
+    return jsonResponse(200, {
+      ok: true,
+      code: "SUCCESS",
+      message: "\u5047\u671F\u984D\u5EA6\u5DF2\u91CD\u65B0\u8A08\u7B97",
+      data: {
+        annual_leave: annualLeaveDays,
+        sick_leave: 30,
+        personal_leave: 14
+      },
+      meta: { requestId }
+    }, corsHeaders);
+  } catch (err) {
+    console.error(JSON.stringify({ level: "error", requestId, path: "recalculateLeaveBalances", err: String(err) }));
+    return jsonResponse(500, {
+      ok: false,
+      code: "INTERNAL_ERROR",
+      message: "\u4F3A\u670D\u5668\u932F\u8AA4",
+      meta: { requestId }
+    }, corsHeaders);
+  }
+}
+__name(recalculateLeaveBalances, "recalculateLeaveBalances");
 
 // src/api/task_templates.js
 init_modules_watch_stub();
@@ -18133,12 +18544,18 @@ var src_default = {
       if (!me.is_admin) return jsonResponse(403, { ok: false, code: "FORBIDDEN", message: "\u6C92\u6709\u6B0A\u9650", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       return handleAutomation(request, env, me, requestId, url, path);
     }
-    if (path === "/internal/api/v1/users") {
+    if (path === "/internal/api/v1/users" && request.method === "GET") {
       const me = await getSessionUser(request, env);
       if (!me) return jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u672A\u767B\u5165", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       return handleSettings(request, env, me, requestId, url, path);
     }
-    if (path === "/internal/api/v1/admin/settings" || path.startsWith("/internal/api/v1/admin/settings/")) {
+    if (path.match(/^\/internal\/api\/v1\/users\/\d+/) || path === "/internal/api/v1/auth/change-password" || path.match(/^\/internal\/api\/v1\/admin\/users\/\d+\/reset-password$/) || path.match(/^\/internal\/api\/v1\/leaves\/recalculate-balances\/\d+$/)) {
+      const me = await getSessionUser(request, env);
+      if (!me) return jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u672A\u767B\u5165", meta: { requestId } }, getCorsHeadersForRequest(request, env));
+      const result = await handleUserProfile(request, env, me, requestId, url, path);
+      if (result) return result;
+    }
+    if ((path === "/internal/api/v1/admin/settings" || path.startsWith("/internal/api/v1/admin/settings/") || path === "/internal/api/v1/settings" || path === "/internal/api/v1/settings/batch") && !(path === "/internal/api/v1/users" && request.method === "GET")) {
       const me = await getSessionUser(request, env);
       if (!me) return jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u672A\u767B\u5165", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       if (!me.is_admin) return jsonResponse(403, { ok: false, code: "FORBIDDEN", message: "\u6C92\u6709\u6B0A\u9650", meta: { requestId } }, getCorsHeadersForRequest(request, env));
