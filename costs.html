@@ -1019,6 +1019,12 @@
             if (!res.ok || !json || json.ok !== true) throw new Error();
             const data = json.data || {};
             const clients = data.clients || [];
+            console.log('[loadClientSummary] 收到客戶資料:', clients.length, '筆');
+            if (clients.length > 0) {
+              console.log('[loadClientSummary] 第一筆客戶範例:', clients[0]);
+              const empDetails = resolveEmployeeDetails(clients[0]);
+              console.log('[loadClientSummary] 第一筆員工明細:', empDetails);
+            }
             hydrateClientSummaryCache(cacheKey, clients);
             if (clients.length === 0) {
               tbodyClients.innerHTML = '<tr><td colspan="8" class="muted">尚無資料</td></tr>';
@@ -1042,7 +1048,13 @@
               totalProfit += profit;
 
               const empList = resolveEmployeeDetails(client);
-              const hasEmp = empList.length > 0;
+              console.log(`[Client ${index}] ${client.clientName}:`, {
+                empList: empList.length,
+                rawEmployees: client.employees,
+                rawEmployeeDetails: client.employeeDetails
+              });
+              // 始終顯示展開圖示，即使只有一個員工
+              const hasEmp = true;
 
               const buildEmployeeRow = (emp) => {
                 const employeeName = emp.userName || emp.name || emp.employeeName || '未知員工';
@@ -1070,7 +1082,7 @@
 
               const tr = document.createElement('tr');
               tr.className = 'client-row';
-              tr.style.cursor = hasEmp ? 'pointer' : 'default';
+              tr.style.cursor = 'pointer';
               tr.dataset.clientIndex = index;
               tr.innerHTML = `
                 <td>
@@ -1087,35 +1099,41 @@
               `;
               tbodyClients.appendChild(tr);
 
-              if (hasEmp) {
+              // 始終建立員工明細列（即使列表為空）
+              if (empList.length > 0) {
                 const frag = document.createDocumentFragment();
                 empList.forEach(emp => {
                   frag.appendChild(buildEmployeeRow(emp));
                 });
                 tbodyClients.insertBefore(frag, tr.nextSibling);
-
-                const toggleIcon = tr.querySelector('.toggle-icon');
-                tr.addEventListener('click', () => {
-                  let detailRows = tbodyClients.querySelectorAll(`tr.employee-detail-row[data-client-index="${index}"]`);
-                  if ((!detailRows || detailRows.length === 0) && empList.length > 0) {
-                    const fragLazy = document.createDocumentFragment();
-                    empList.forEach(emp => fragLazy.appendChild(buildEmployeeRow(emp)));
-                    tbodyClients.insertBefore(fragLazy, tr.nextSibling);
-                    detailRows = tbodyClients.querySelectorAll(`tr.employee-detail-row[data-client-index="${index}"]`);
-                  }
-                  if (!detailRows || detailRows.length === 0) return;
-                  const isExpanded = detailRows[0].style.display === 'table-row';
-                  detailRows.forEach(row => {
-                    row.style.display = isExpanded ? 'none' : 'table-row';
-                  });
-                  if (toggleIcon) {
-                    toggleIcon.textContent = isExpanded ? '▶' : '▼';
-                  }
-                });
-              } else {
-                const toggleIcon = tr.querySelector('.toggle-icon');
-                if (toggleIcon) toggleIcon.style.visibility = 'hidden';
               }
+
+              const toggleIcon = tr.querySelector('.toggle-icon');
+              tr.addEventListener('click', () => {
+                let detailRows = tbodyClients.querySelectorAll(`tr.employee-detail-row[data-client-index="${index}"]`);
+                
+                // 懶載入：若尚未建立明細列但有資料，現場建立
+                if ((!detailRows || detailRows.length === 0) && empList.length > 0) {
+                  const fragLazy = document.createDocumentFragment();
+                  empList.forEach(emp => fragLazy.appendChild(buildEmployeeRow(emp)));
+                  tr.parentNode.insertBefore(fragLazy, tr.nextSibling);
+                  detailRows = tbodyClients.querySelectorAll(`tr.employee-detail-row[data-client-index="${index}"]`);
+                }
+                
+                if (!detailRows || detailRows.length === 0) {
+                  console.warn(`[展開] 客戶 ${client.clientName} 沒有員工明細資料`, { empList, client });
+                  return;
+                }
+                
+                const isExpanded = detailRows[0].style.display === 'table-row';
+                detailRows.forEach(row => {
+                  row.style.display = isExpanded ? 'none' : 'table-row';
+                });
+                
+                if (toggleIcon) {
+                  toggleIcon.textContent = isExpanded ? '▶' : '▼';
+                }
+              });
             });
             const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue * 100) : 0;
             updateClientSummary(totalCost, totalRevenue, totalProfit, avgMargin);
@@ -1155,6 +1173,11 @@
             }
             await ensureClientSummaryCache(ym);
 
+            console.log('[loadTaskDetails] 收到任務資料:', tasks.length, '筆');
+            if (tasks.length > 0) {
+              console.log('[loadTaskDetails] 第一筆任務範例:', tasks[0]);
+            }
+            
             tbodyTasks.innerHTML = '';
             const groupLookup = new Map();
             const groupOrder = [];
@@ -1190,7 +1213,8 @@
               group.tasks.forEach((task, taskIndex) => {
                 const hours = toNumber(task.hours);
                 const weightedHours = toNumber(task.weightedHours);
-                const serviceText = getServiceProjectName(task);
+                // 直接使用 API 返回的 serviceName（已包含完整服務名稱）
+                const serviceText = task.serviceName || task.service_name_full || task.service_name || '未分類';
                 const taskTitle = task.taskTitle || task.service_item_name || '';
                 let hourly; 
                 let totalCost;
