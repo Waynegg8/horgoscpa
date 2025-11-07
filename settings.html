@@ -20,54 +20,19 @@
     <div id="permBar" class="alert alert-danger" style="display:none">您沒有權限</div>
     
     <nav class="settings-nav">
-        <button class="nav-tab active" data-tab="system">系統參數</button>
-        <button class="nav-tab" data-tab="services">服務項目</button>
+        <button class="nav-tab active" data-tab="services">服務項目</button>
         <button class="nav-tab" data-tab="templates">任務模板</button>
         <button class="nav-tab" data-tab="users">用戶</button>
-        <button class="nav-tab" data-tab="clients">客戶</button>
         <button class="nav-tab" data-tab="leaves">假期</button>
-        <button class="nav-tab" data-tab="attachments">附件</button>
         <button class="nav-tab" data-tab="lifecycle">服務生命週期</button>
-        <button class="nav-tab" data-tab="cms">CMS內容</button>
         <button class="nav-tab" data-tab="automation">自動化規則</button>
         <button class="nav-tab" data-tab="holidays">國定假日</button>
     </nav>
 
     <main class="settings-content">
         
-        <!-- 系统参数 -->
-        <div class="tab-panel active" id="tab-system">
-            <div class="card">
-                <div class="card-header"><h2>危險設定</h2></div>
-        <div class="card-body">
-          <div class="form-group">
-                        <label>補休有效期規則</label>
-            <select id="rule_comp_hours_expiry" disabled>
-                            <option>當月到期</option>
-            </select>
-          </div>
-          <div class="form-group">
-                        <label>每日工時上限</label>
-                        <input type="text" value="12" readonly>
-                    </div>
-                    <button class="btn btn-danger" disabled>儲存</button>
-                </div>
-          </div>
-
-            <div class="card">
-                <div class="card-header"><h2>薪資參數</h2></div>
-                <div class="card-body">
-          <div class="form-group">
-                        <label>全勤獎金（元）</label>
-                        <input type="number" id="attendance_bonus_amount" disabled>
-                    </div>
-                    <button class="btn btn-primary" disabled>儲存</button>
-          </div>
-          </div>
-        </div>
-
         <!-- 服务项目 -->
-        <div class="tab-panel" id="tab-services">
+        <div class="tab-panel active" id="tab-services">
             <div class="search-bar">
                 <button class="btn btn-primary" id="btnAddService">+ 新增</button>
         </div>
@@ -175,34 +140,6 @@
             </div>
         </div>
 
-        <!-- 客户 -->
-        <div class="tab-panel" id="tab-clients">
-            <div class="search-bar">
-                <input type="text" placeholder="搜尋客戶" id="searchClients" class="form-control" style="max-width:300px">
-                <button class="btn btn-primary" id="btnAddClient">+ 新增</button>
-            </div>
-            <div class="card">
-                <div class="card-body">
-                    <div class="data-table-container">
-                        <table class="data-table" id="clientsTable">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>客戶名稱</th>
-                                    <th>負責人</th>
-                                    <th>狀態</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="5" class="loading">載入中...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-          </div>
-          </div>
-        </div>
-
         <!-- 假期 -->
         <div class="tab-panel" id="tab-leaves">
             <div class="search-bar">
@@ -238,33 +175,6 @@
             </div>
         </div>
 
-        <!-- 附件 -->
-        <div class="tab-panel" id="tab-attachments">
-            <div class="search-bar">
-                <input type="text" placeholder="搜尋附件" id="searchAttachments" class="form-control" style="max-width:300px">
-            </div>
-            <div class="card">
-                <div class="card-body">
-                    <div class="data-table-container">
-                        <table class="data-table" id="attachmentsTable">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>檔案名稱</th>
-                                    <th>大小</th>
-                                    <th>上傳時間</th>
-                                    <th>上傳者</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="5" class="loading">載入中...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- 服务生命周期 -->
         <div class="tab-panel" id="tab-lifecycle">
             <div class="search-bar">
@@ -285,34 +195,6 @@
                             </thead>
                             <tbody>
                                 <tr><td colspan="5" class="loading">載入中...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- CMS内容 -->
-        <div class="tab-panel" id="tab-cms">
-            <div class="search-bar">
-                <button class="btn btn-primary" id="btnAddCMS">+ 新增</button>
-            </div>
-            <div class="card">
-                <div class="card-body">
-                    <div class="data-table-container">
-                        <table class="data-table" id="cmsTable">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>標題</th>
-                                    <th>類型</th>
-                                    <th>狀態</th>
-                                    <th>發佈時間</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="6" class="loading">載入中...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -461,9 +343,9 @@
     <script src="/assets/js/components/bootstrap.js?v=3"></script>
     <script>
         // ⚡ Tab 缓存系统初始化
-        let currentSettingsTab = 'system';
+        let currentSettingsTab = 'services';
         if (window.TabCache) {
-            window.TabCache.init(['system', 'templates', 'users', 'clients', 'leaves', 'attachments', 'lifecycle', 'cms', 'automation', 'holidays']);
+            window.TabCache.init(['services', 'templates', 'users', 'leaves', 'lifecycle', 'automation', 'holidays']);
         }
         
         // Tab切换
@@ -483,13 +365,11 @@
                 // ⚡ 只在需要时加载数据
                 if (shouldLoad) {
                     // 加载对应数据
-                    if (tab === 'templates') { loadTemplates(); loadTemplateOptions(); }
+                    if (tab === 'services') loadServices();
+                    else if (tab === 'templates') { loadTemplates(); loadTemplateOptions(); }
                     else if (tab === 'users') loadUsers();
-                    else if (tab === 'clients') loadClients();
                     else if (tab === 'leaves') loadLeaves();
-                    else if (tab === 'attachments') loadAttachments();
                     else if (tab === 'lifecycle') loadLifecycle();
-                    else if (tab === 'cms') loadCMS();
                     else if (tab === 'automation') loadAutomation();
                     else if (tab === 'holidays') loadHolidays();
                     
@@ -512,13 +392,8 @@
             alert('請透過管理員工具新增用戶');
         });
 
-        // 客户 - 新增
-        document.getElementById('btnAddClient')?.addEventListener('click', () => {
-            window.location.href = '/internal/client-add';
-        });
-
-        // 生命周期、CMS、自动化 - 新增
-        ['btnAddLifecycle', 'btnAddCMS', 'btnAddAutomation'].forEach(id => {
+        // 生命周期、自动化 - 新增
+        ['btnAddLifecycle', 'btnAddAutomation'].forEach(id => {
             document.getElementById(id)?.addEventListener('click', () => alert('此功能開發中'));
         });
 
@@ -870,30 +745,6 @@
             }
         }
 
-        // 客户管理
-        async function loadClients() {
-            const tbody = document.querySelector('#clientsTable tbody');
-            try {
-                const res = await fetch('/internal/api/v1/clients?perPage=50', { credentials: 'include' });
-                const json = await res.json();
-                if (!json.data || json.data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = json.data.map(c => `
-                    <tr>
-                        <td>${c.clientId}</td>
-                        <td>${c.companyName}</td>
-                        <td>${c.assigneeName || '-'}</td>
-                        <td><span class="status-badge status-active">活躍</span></td>
-                        <td><button class="btn btn-sm btn-secondary">檢視</button></td>
-                    </tr>
-                `).join('');
-            } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="5" class="loading">載入失敗</td></tr>';
-            }
-        }
-
         // 假期管理
         async function loadLeaves() {
             const tbody = document.querySelector('#leavesTable tbody');
@@ -922,41 +773,10 @@
             }
         }
 
-        // 附件系统
-        async function loadAttachments() {
-            const tbody = document.querySelector('#attachmentsTable tbody');
-            tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
-        }
-
         // 服务生命周期
         async function loadLifecycle() {
             const tbody = document.querySelector('#lifecycleTable tbody');
             tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
-        }
-
-        // CMS内容
-        async function loadCMS() {
-            const tbody = document.querySelector('#cmsTable tbody');
-            try {
-                const res = await fetch('/internal/api/v1/admin/articles', { credentials: 'include' });
-                const json = await res.json();
-                if (!json.data || json.data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = json.data.map(a => `
-                    <tr>
-                        <td>${a.article_id}</td>
-                        <td>${a.title}</td>
-                        <td>${a.category || '-'}</td>
-                        <td>${a.is_published ? '已發布' : '草稿'}</td>
-                        <td>${a.published_at || '-'}</td>
-                        <td><button class="btn btn-sm btn-secondary">編輯</button></td>
-                    </tr>
-                `).join('');
-          } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
-            }
         }
 
         // 自动化规则
@@ -1299,9 +1119,13 @@
                     break;
                 case 'templates':
                     loadTemplates();
+                    loadTemplateOptions();
                     break;
                 case 'users':
                     loadUsers();
+                    break;
+                case 'leaves':
+                    loadLeaves();
                     break;
                 case 'automation':
                     loadAutomation();
@@ -1328,7 +1152,7 @@
                 return;
             }
             // 默认加载第一个tab的数据
-            switchTab('system');
+            switchTab('services');
         })();
     </script>
   </body>
