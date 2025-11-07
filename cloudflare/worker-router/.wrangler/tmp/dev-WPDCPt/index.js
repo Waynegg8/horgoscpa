@@ -10439,23 +10439,8 @@ async function handleMonthlyPayroll(request, env, me, requestId, url, corsHeader
     let totalNetSalary = 0;
     for (const user of users) {
       const payroll = await calculateEmployeePayroll2(env, user.user_id, ym);
-      const monthlyBonusRow = await env.DATABASE.prepare(`
-				SELECT amount_cents 
-				FROM MonthlyBonus 
-				WHERE user_id = ? AND year = ? AND month = ? AND is_deleted = 0
-			`).bind(user.user_id, year, month).first();
-      const performanceBonus = (monthlyBonusRow?.amount_cents || 0) / 100;
-      let yearEndBonus = 0;
-      if (month === 12) {
-        const yearEndBonusRow = await env.DATABASE.prepare(`
-					SELECT amount_cents 
-					FROM YearEndBonus 
-					WHERE user_id = ? AND year = ? AND is_deleted = 0
-				`).bind(user.user_id, year).first();
-        yearEndBonus = (yearEndBonusRow?.amount_cents || 0) / 100;
-      }
-      const grossSalary = payroll.grossSalaryCents / 100 + performanceBonus + yearEndBonus;
-      const netSalary = payroll.netSalaryCents / 100 + performanceBonus + yearEndBonus;
+      const grossSalary = payroll.grossSalaryCents / 100;
+      const netSalary = payroll.netSalaryCents / 100;
       payrollData.push({
         userId: user.user_id,
         username: user.username,
@@ -10463,14 +10448,13 @@ async function handleMonthlyPayroll(request, env, me, requestId, url, corsHeader
         baseSalary: payroll.baseSalaryCents / 100,
         regularAllowance: payroll.totalRegularAllowanceCents / 100,
         irregularAllowance: payroll.totalIrregularAllowanceCents / 100,
-        bonusAmount: payroll.totalBonusCents / 100,
-        fullAttendanceBonus: payroll.isFullAttendance ? payroll.fullAttendanceBonusCents / 100 : 0,
+        regularBonus: payroll.totalRegularBonusCents / 100,
+        yearEndBonus: payroll.totalYearEndBonusCents / 100,
+        performanceBonus: payroll.performanceBonusCents / 100,
         overtimePay: payroll.overtimeCents / 100,
         mealAllowance: payroll.mealAllowanceCents / 100,
-        transportSubsidy: payroll.transportSubsidyCents / 100,
-        performanceBonus,
-        yearEndBonus,
-        fixedDeduction: payroll.totalFixedDeductionCents / 100,
+        transportSubsidy: payroll.transportCents / 100,
+        fixedDeduction: payroll.deductionCents / 100,
         leaveDeduction: payroll.leaveDeductionCents / 100,
         grossSalary,
         netSalary
@@ -10532,21 +10516,8 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
       let monthNetTotal = 0;
       for (const user of users) {
         const payroll = await calculateEmployeePayroll2(env, user.user_id, ym);
-        const monthlyBonusRow = await env.DATABASE.prepare(`
-					SELECT amount_cents FROM MonthlyBonus 
-					WHERE user_id = ? AND year = ? AND month = ? AND is_deleted = 0
-				`).bind(user.user_id, year, month).first();
-        const performanceBonus = (monthlyBonusRow?.amount_cents || 0) / 100;
-        let yearEndBonus = 0;
-        if (month === 12) {
-          const yearEndBonusRow = await env.DATABASE.prepare(`
-						SELECT amount_cents FROM YearEndBonus 
-						WHERE user_id = ? AND year = ? AND is_deleted = 0
-					`).bind(user.user_id, year).first();
-          yearEndBonus = (yearEndBonusRow?.amount_cents || 0) / 100;
-        }
-        monthTotal += payroll.grossSalaryCents / 100 + performanceBonus + yearEndBonus;
-        monthNetTotal += payroll.netSalaryCents / 100 + performanceBonus + yearEndBonus;
+        monthTotal += payroll.grossSalaryCents / 100;
+        monthNetTotal += payroll.netSalaryCents / 100;
       }
       monthlyTrend.push({
         month,
@@ -10566,23 +10537,12 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
       for (let month = 1; month <= 12; month++) {
         const ym = `${year}-${String(month).padStart(2, "0")}`;
         const payroll = await calculateEmployeePayroll2(env, user.user_id, ym);
-        const monthlyBonusRow = await env.DATABASE.prepare(`
-					SELECT amount_cents FROM MonthlyBonus 
-					WHERE user_id = ? AND year = ? AND month = ? AND is_deleted = 0
-				`).bind(user.user_id, year, month).first();
-        const perfBonus = (monthlyBonusRow?.amount_cents || 0) / 100;
-        totalPerformance += perfBonus;
-        annualGross += payroll.grossSalaryCents / 100 + perfBonus;
-        annualNet += payroll.netSalaryCents / 100 + perfBonus;
+        totalPerformance += payroll.performanceBonusCents / 100;
+        totalYearEnd += payroll.totalYearEndBonusCents / 100;
+        annualGross += payroll.grossSalaryCents / 100;
+        annualNet += payroll.netSalaryCents / 100;
         totalOvertime += payroll.overtimeCents / 100;
       }
-      const yearEndBonusRow = await env.DATABASE.prepare(`
-				SELECT amount_cents FROM YearEndBonus 
-				WHERE user_id = ? AND year = ? AND is_deleted = 0
-			`).bind(user.user_id, year).first();
-      totalYearEnd = (yearEndBonusRow?.amount_cents || 0) / 100;
-      annualGross += totalYearEnd;
-      annualNet += totalYearEnd;
       employeeSummary.push({
         userId: user.user_id,
         name: user.name || user.username,
