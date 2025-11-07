@@ -196,6 +196,8 @@
                 <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">收據號</th>
                 <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">客戶</th>
                 <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">統編</th>
+                <th style="padding:12px;text-align:center;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">服務期間</th>
+                <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">服務類型</th>
                 <th style="padding:12px;text-align:right;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">金額</th>
                 <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">開立日期</th>
                 <th style="padding:12px;text-align:left;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">到期日</th>
@@ -323,6 +325,28 @@
             </div>
           </div>
           
+          <!-- 服务类型多选（选填） -->
+          <div style="background:#fef2f2;border:2px solid #fca5a5;border-radius:8px;padding:16px;margin:8px 0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+              <span style="font-size:20px;">🏷️</span>
+              <label style="font-weight:600;font-size:14px;color:#991b1b;margin:0;">服務類型（選填）</label>
+            </div>
+            
+            <div id="serviceTypesContainer" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:8px;">
+              <!-- 服务类型复选框将动态加载 -->
+            </div>
+            
+            <div style="background:#fee2e2;padding:10px;border-radius:6px;font-size:12px;color:#991b1b;line-height:1.6;">
+              <strong>💡 填寫說明：</strong>
+              <ul style="margin:4px 0 0 20px;padding:0;">
+                <li>如果是<strong>套餐收據</strong>，請勾選包含的服務類型（可多選）</li>
+                <li>如果是<strong>單一服務</strong>，勾選對應的服務類型</li>
+                <li>留空時，系統會自動從工時記錄推斷服務類型</li>
+                <li>手動選擇的服務類型優先於自動推斷</li>
+              </ul>
+            </div>
+          </div>
+          
           <div style="display: grid; gap: 6px;">
             <label style="font-weight: 500; font-size: 14px;">收據明細（選填）</label>
             
@@ -422,10 +446,12 @@
         let allClients = [];
         let currentClientServices = [];
         let receiptItems = []; // 收据明细项目
+        let allServiceTypes = []; // 所有服务类型
         const tbody = document.getElementById('tbody');
         const receiptItemsContainer = document.getElementById('receiptItems');
         const btnAddItem = document.getElementById('btn-add-item');
         const itemsTotalInfo = document.getElementById('itemsTotalInfo');
+        const serviceTypesContainer = document.getElementById('serviceTypesContainer');
 
         // 載入應開收據提醒
         async function loadReceiptReminders() {
@@ -522,6 +548,45 @@
           } catch (err) {
             console.error('載入客戶列表失敗:', err);
           }
+        }
+        
+        // 載入所有服務類型
+        async function loadServiceTypes() {
+          try {
+            const res = await fetch(`${apiBase}/services/types`, { credentials:'include' });
+            if (res.status === 401) return;
+            const json = await res.json();
+            
+            if (json.ok && json.data) {
+              allServiceTypes = json.data;
+              renderServiceTypeCheckboxes();
+            }
+          } catch (err) {
+            console.error('載入服務類型失敗:', err);
+          }
+        }
+        
+        // 渲染服務類型複選框
+        function renderServiceTypeCheckboxes() {
+          if (!serviceTypesContainer || allServiceTypes.length === 0) {
+            if (serviceTypesContainer) {
+              serviceTypesContainer.innerHTML = '<p style="color:#6b7280;margin:0;font-size:13px;">暫無可用服務類型</p>';
+            }
+            return;
+          }
+          
+          serviceTypesContainer.innerHTML = allServiceTypes.map(st => `
+            <label style="display:flex;align-items:center;gap:6px;padding:8px;background:white;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-size:13px;">
+              <input type="checkbox" name="serviceType" value="${st.service_id}" style="cursor:pointer;" />
+              <span>${st.service_name}</span>
+            </label>
+          `).join('');
+        }
+        
+        // 獲取選中的服務類型ID
+        function getSelectedServiceTypeIds() {
+          const checkboxes = document.querySelectorAll('input[name="serviceType"]:checked');
+          return Array.from(checkboxes).map(cb => parseInt(cb.value, 10));
         }
         
         // 監聽客戶選擇變化
@@ -623,7 +688,7 @@
           tbody.innerHTML = '';
           
           if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:48px;font-size:14px;">沒有符合條件的收據</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#9ca3af;padding:48px;font-size:14px;">沒有符合條件的收據</td></tr>';
             return;
           }
           
@@ -653,10 +718,32 @@
               txt = '未收款';
             }
             
+            // 服务期间显示
+            let servicePeriod = '—';
+            if (r.serviceStartMonth && r.serviceEndMonth) {
+              if (r.serviceStartMonth === r.serviceEndMonth) {
+                servicePeriod = r.serviceStartMonth;
+              } else {
+                servicePeriod = `${r.serviceStartMonth}<br/>至<br/>${r.serviceEndMonth}`;
+              }
+            } else if (r.serviceStartMonth) {
+              servicePeriod = r.serviceStartMonth;
+            }
+            
+            // 服务类型显示
+            let serviceTypesHTML = '—';
+            if (r.serviceTypes && r.serviceTypes.length > 0) {
+              serviceTypesHTML = r.serviceTypes.map(st => 
+                `<span style="background:#eff6ff;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:12px;display:inline-block;margin:2px;">${st.serviceName}</span>`
+              ).join(' ');
+            }
+            
             tr.innerHTML = `
               <td style="padding:12px;font-size:14px;color:#1f2937;">${r.receiptId || '—'}</td>
               <td style="padding:12px;font-size:14px;color:#1f2937;">${r.clientName || '—'}</td>
               <td style="padding:12px;font-size:14px;color:#6b7280;">${r.clientTaxId || '—'}</td>
+              <td style="padding:12px;text-align:center;font-size:13px;color:#6b7280;line-height:1.4;">${servicePeriod}</td>
+              <td style="padding:12px;font-size:14px;">${serviceTypesHTML}</td>
               <td style="padding:12px;text-align:right;font-size:14px;font-weight:600;color:#1f2937;">$${(r.totalAmount||0).toLocaleString()}</td>
               <td style="padding:12px;font-size:14px;color:#6b7280;">${r.receiptDate || '—'}</td>
               <td style="padding:12px;font-size:14px;color:#6b7280;">${r.dueDate || '—'}</td>
@@ -1057,6 +1144,12 @@
               }
             }
             
+            // 添加服务类型（如果用户手动选择了）
+            const selectedServiceTypeIds = getSelectedServiceTypeIds();
+            if (selectedServiceTypeIds.length > 0) {
+              payload.service_type_ids = selectedServiceTypeIds;
+            }
+            
             console.log('發送請求:', payload); // Debug
             
             const res = await fetch(`${apiBase}/receipts`, {
@@ -1099,6 +1192,7 @@
           await Promise.all([
             loadReceiptReminders(),
             loadClients(),
+            loadServiceTypes(),
             loadAllReceipts()
           ]);
           
