@@ -10787,8 +10787,8 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
       }
       const profit = generatedRevenue - totalCost;
       const profitMargin = generatedRevenue > 0 ? profit / generatedRevenue * 100 : 0;
-      const hourlyRate = weightedHours > 0 ? totalCost / weightedHours : 0;
-      const revenuePerHour = weightedHours > 0 ? generatedRevenue / weightedHours : 0;
+      const hourlyRate = standardHours > 0 ? totalCost / standardHours : 0;
+      const revenuePerHour = standardHours > 0 ? generatedRevenue / standardHours : 0;
       const clientDistArray = Array.from(clientDistribution.values()).map((d) => ({
         ...d,
         revenuePercentage: generatedRevenue > 0 ? Number((d.generatedRevenue / generatedRevenue * 100).toFixed(2)) : 0
@@ -10924,8 +10924,8 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
       const annualCost = baseSalary * 12;
       const annualProfit = annualRevenue - annualCost;
       const annualProfitMargin = annualRevenue > 0 ? annualProfit / annualRevenue * 100 : 0;
-      const avgHourlyRate = annualWeightedHours > 0 ? annualCost / annualWeightedHours : 0;
-      const avgRevenuePerHour = annualWeightedHours > 0 ? annualRevenue / annualWeightedHours : 0;
+      const avgHourlyRate = annualStandardHours > 0 ? annualCost / annualStandardHours : 0;
+      const avgRevenuePerHour = annualStandardHours > 0 ? annualRevenue / annualStandardHours : 0;
       employeeSummary.push({
         userId: user.user_id,
         name: user.name || user.username,

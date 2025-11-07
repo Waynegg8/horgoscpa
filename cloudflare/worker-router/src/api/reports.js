@@ -710,10 +710,10 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
 		const profitMargin = generatedRevenue > 0 ? (profit / generatedRevenue * 100) : 0;
 		
 		// 正确的定义：
-		// 时薪 = 成本 / 加权工时
-		// 时均产值 = 收入 / 加权工时
-		const hourlyRate = weightedHours > 0 ? (totalCost / weightedHours) : 0;
-		const revenuePerHour = weightedHours > 0 ? (generatedRevenue / weightedHours) : 0;
+		// 时薪 = 成本 / 实际工时（与成本页面一致）
+		// 时均产值 = 收入 / 实际工时
+		const hourlyRate = standardHours > 0 ? (totalCost / standardHours) : 0;
+		const revenuePerHour = standardHours > 0 ? (generatedRevenue / standardHours) : 0;
 
 		const clientDistArray = Array.from(clientDistribution.values()).map(d => ({
 			...d,
@@ -886,10 +886,10 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
 	const annualProfitMargin = annualRevenue > 0 ? (annualProfit / annualRevenue * 100) : 0;
 	
 	// 正确的定义：
-	// 时薪 = 成本 / 加权工时
-	// 时均产值 = 收入 / 加权工时
-	const avgHourlyRate = annualWeightedHours > 0 ? (annualCost / annualWeightedHours) : 0;
-	const avgRevenuePerHour = annualWeightedHours > 0 ? (annualRevenue / annualWeightedHours) : 0;
+	// 时薪 = 成本 / 实际工时（与成本页面一致）
+	// 时均产值 = 收入 / 实际工时
+	const avgHourlyRate = annualStandardHours > 0 ? (annualCost / annualStandardHours) : 0;
+	const avgRevenuePerHour = annualStandardHours > 0 ? (annualRevenue / annualStandardHours) : 0;
 
 	employeeSummary.push({
 		userId: user.user_id,
