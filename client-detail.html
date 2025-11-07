@@ -1287,7 +1287,12 @@
     // 載入服務類型選項
     async function loadServices() {
       try {
-        const res = await fetch('/internal/api/v1/services');
+        // ⚡ 添加時間戳參數繞過緩存，確保獲取最新數據
+        const timestamp = Date.now();
+        const res = await fetch(`/internal/api/v1/services?_t=${timestamp}`, {
+          credentials: 'include',
+          cache: 'no-cache'
+        });
         const json = await res.json();
         
         if (json.ok && json.data) {

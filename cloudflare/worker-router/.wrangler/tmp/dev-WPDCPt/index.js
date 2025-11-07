@@ -17897,13 +17897,14 @@ async function listAutoGenerateComponents(env, corsHeaders) {
         cs.status as cs_status,
         c.company_name,
         c.is_deleted as c_is_deleted,
+        c.assignee_user_id,
         s.service_name,
         u.username as assignee_name
       FROM ServiceComponents sc
       JOIN ClientServices cs ON sc.client_service_id = cs.client_service_id
       JOIN Clients c ON cs.client_id = c.client_id
       LEFT JOIN Services s ON sc.service_id = s.service_id
-      LEFT JOIN Users u ON sc.assignee_user_id = u.user_id
+      LEFT JOIN Users u ON c.assignee_user_id = u.user_id
       WHERE sc.auto_generate_task = 1 
         AND sc.is_active = 1
         AND cs.is_deleted = 0

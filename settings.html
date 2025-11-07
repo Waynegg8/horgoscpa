@@ -511,7 +511,12 @@
         // 编辑服务
         async function editService(serviceId) {
             try {
-                const res = await fetch(`/internal/api/v1/services/${serviceId}`, { credentials: 'include' });
+                // ⚡ 添加時間戳參數確保獲取最新數據
+                const timestamp = Date.now();
+                const res = await fetch(`/internal/api/v1/services/${serviceId}?_t=${timestamp}`, { 
+                    credentials: 'include',
+                    cache: 'no-cache'
+                });
                 const json = await res.json();
                 
                 if (!json.ok || !json.data) {
@@ -575,7 +580,23 @@
                 
                 alert(serviceId ? '更新成功' : '新增成功');
                 cancelService();
-                loadServices();
+                
+                // 重新加載服務列表
+                await loadServices();
+                
+                // ⚡ 如果 allServices 已被初始化（用戶訪問過任務模板標籤），也更新它
+                if (allServices && allServices.length > 0) {
+                    const timestamp = Date.now();
+                    const res = await fetch(`/internal/api/v1/services?_t=${timestamp}`, { 
+                        credentials: 'include',
+                        cache: 'no-cache'
+                    });
+                    const json = await res.json();
+                    if (json.ok && json.data) {
+                        allServices = json.data;
+                        console.log('[Settings] 已更新全局服務列表');
+                    }
+                }
             } catch (e) {
                 alert('失敗: ' + e.message);
             }
@@ -654,8 +675,13 @@
         // 任务模板 - 加载服务、客户、SOP、附件下拉选项
         async function loadTemplateOptions() {
             try {
+                // ⚡ 添加時間戳參數繞過緩存，確保獲取最新數據
+                const timestamp = Date.now();
                 const [servicesRes, clientsRes, sopRes, attachmentRes] = await Promise.all([
-                    fetch('/internal/api/v1/services', { credentials: 'include' }),
+                    fetch(`/internal/api/v1/services?_t=${timestamp}`, { 
+                        credentials: 'include',
+                        cache: 'no-cache'
+                    }),
                     fetch('/internal/api/v1/clients?perPage=200', { credentials: 'include' }),
                     fetch('/internal/api/v1/sop?scope=task', { credentials: 'include' }).catch(() => ({json: () => ({data:[]})})),
                     fetch('/internal/api/v1/attachments', { credentials: 'include' }).catch(() => ({json: () => ({data:[]})}))
