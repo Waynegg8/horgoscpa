@@ -17796,7 +17796,7 @@ var src_default = {
       if (!me) return jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u672A\u767B\u5165", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       return handleTaskTemplates(request, env, me, requestId, url, path);
     }
-    if (path === "/internal/api/v1/services" || path === "/internal/api/v1/services/items" || /^\/internal\/api\/v1\/services\/\d+(\/|$)/.test(path) || /^\/internal\/api\/v1\/services\/\d+\/items/.test(path)) {
+    if (path === "/internal/api/v1/services" || path === "/internal/api/v1/services/types" || path === "/internal/api/v1/services/items" || /^\/internal\/api\/v1\/services\/\d+(\/|$)/.test(path) || /^\/internal\/api\/v1\/services\/\d+\/items/.test(path)) {
       const me = await getSessionUser(request, env);
       if (!me) return jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u672A\u767B\u5165", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       return handleServices(request, env, me, requestId, url, path);
