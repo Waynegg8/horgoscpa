@@ -947,18 +947,23 @@
                     return;
                 }
                 
-                container.innerHTML = json.data.map(t => `
-                    <div class="card" style="margin-bottom:24px" data-template-id="${t.template_id}" data-service-id="${t.service_id || ''}">
+                container.innerHTML = json.data.map(t => {
+                    // 获取服务的service_sop_id
+                    const service = allServices.find(s => s.service_id === t.service_id);
+                    const serviceSopId = service?.service_sop_id;
+                    
+                    return `
+                    <div class="card" style="margin-bottom:24px" data-template-id="${t.template_id}" data-service-id="${t.service_id || ''}" data-service-sop-id="${serviceSopId || ''}">
                         <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
                             <div>
                                 <h3 style="margin:0;font-size:16px">${t.template_name}</h3>
                                 <div style="font-size:13px;color:#666;margin-top:4px">
-                                    服務：${t.service_name || '-'} | 客戶：${t.client_name || '通用'} | ${t.stages_count || 0} 個任務
+                                    服務：${t.service_name || '-'} | 客戶：${t.client_name || '通用'} | ${t.stages_count || 0} 個任務階段
                                 </div>
                             </div>
                             <div style="display:flex;gap:8px">
                                 <button class="btn btn-sm btn-primary" onclick="editTemplate(${t.template_id})">編輯</button>
-                                <button class="btn btn-sm btn-secondary" onclick="toggleTasks(${t.template_id})">▼ 任務</button>
+                                <button class="btn btn-sm btn-secondary" onclick="toggleTasks(${t.template_id})">▼ 任務階段</button>
                                 <button class="btn btn-sm btn-danger" onclick="deleteTemplate(${t.template_id})">刪除</button>
                             </div>
                         </div>
@@ -1035,7 +1040,8 @@
                             <div id="task-list-${t.template_id}" style="margin-top:15px;">載入中...</div>
                         </div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
                 
                 // 为每个模板创建SOP管理函数
                 json.data.forEach(t => {
@@ -1057,78 +1063,122 @@
             }
         }
 
-        // 加载某个模板的任务（卡片式布局）
+        // 加载某个模板的任务（类似服务组成部分的展示）
         async function loadTasksForTemplate(templateId) {
             const listDiv = document.getElementById(`task-list-${templateId}`);
             try {
                 const res = await fetch(`/internal/api/v1/task-templates/${templateId}/stages`, { credentials: 'include' });
                 const json = await res.json();
                 
+                // 获取服务层级SOP
+                const templateCard = document.querySelector(`[data-template-id="${templateId}"]`);
+                const serviceSopId = templateCard ? templateCard.getAttribute('data-service-sop-id') : null;
+                let serviceSOP = null;
+                if (serviceSopId) {
+                    serviceSOP = allSOPs.find(s => parseInt(s.sop_id) === parseInt(serviceSopId));
+                }
+                
                 if (!json.data || json.data.length === 0) {
-                    listDiv.innerHTML = `
+                    // 仍然显示服务层级SOP（如果有）
+                    let html = '';
+                    
+                    if (serviceSOP) {
+                        html += `
+                            <div style="background:white;padding:15px;border-radius:8px;margin-bottom:10px;border-left:4px solid #3b82f6;">
+                                <div style="padding:8px 12px;background:#f0f9ff;border-radius:4px;border-left:3px solid #3b82f6;">
+                                    <div style="font-size:12px;font-weight:600;color:#1e40af;margin-bottom:4px;">📖 服務層級SOP（自動繼承）</div>
+                                    <div style="font-size:13px;color:#374151;padding:2px 0;">
+                                        • ${serviceSOP.title}
+                                        ${serviceSOP.category ? `<span style="font-size:11px;color:#6b7280;margin-left:4px;">[${serviceSOP.category}]</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    html += `
                         <div style="padding:20px;text-align:center;background:#fef3c7;border-radius:8px;border:2px dashed #fbbf24;">
                             <p style="color:#92400e;font-size:14px;margin:0 0 10px 0;font-weight:500;">⚠️ 尚未配置任何任務階段</p>
                             <p style="color:#92400e;font-size:13px;margin:0;">點擊上方「<strong>+ 新增任務</strong>」按鈕開始配置</p>
                         </div>
                     `;
+                    
+                    listDiv.innerHTML = html;
                     return;
                 }
                 
-                // 類似服務組成部分的任务列表
-                listDiv.innerHTML = json.data.map((task, idx) => {
-                    // 处理多个SOP显示（兼容旧的单一SOP）
-                    let sopIds = [];
-                    if (task.sop_ids && Array.isArray(task.sop_ids)) {
-                        sopIds = task.sop_ids;
-                    } else if (task.sop_id) {
-                        sopIds = [task.sop_id];
-                    }
-                    
-                    return `
-                        <div style="background:white;padding:15px;border-radius:8px;margin-bottom:10px;border-left:4px solid #3b82f6;">
-                            <div style="display:flex;justify-content:space-between;align-items:start;">
-                                <div style="flex:1;">
-                                    <h5 style="margin:0 0 12px 0;color:#1f2937;font-size:15px;">
-                                        ${task.stage_order}. ${task.stage_name || '未命名任務'}
-                                    </h5>
-                                    
-                                    ${sopIds.length > 0 ? `
-                                        <div style="padding:8px 12px;background:#ecfdf5;border-radius:4px;border-left:2px solid #10b981;margin-bottom:8px;">
-                                            <div style="font-size:11px;font-weight:600;color:#047857;margin-bottom:4px;">📖 任務層級SOP（${sopIds.length}個）</div>
-                                            ${sopIds.map(sopId => {
-                                                const sop = allSOPs.find(s => parseInt(s.sop_id) === parseInt(sopId));
-                                                const sopTitle = sop ? sop.title : `SOP #${sopId}`;
-                                                const sopCategory = sop && sop.category ? sop.category : '';
-                                                return `
-                                                    <div style="font-size:12px;color:#065f46;padding:2px 0;">
-                                                        • ${sopTitle}
-                                                        ${sopCategory ? `<span style="font-size:10px;color:#6b7280;margin-left:4px;">[${sopCategory}]</span>` : ''}
-                                                    </div>
-                                                `;
-                                            }).join('')}
-                                        </div>
-                                    ` : `
-                                        <div style="padding:8px 12px;background:#f9fafb;border-radius:4px;margin-bottom:8px;">
-                                            <div style="font-size:12px;color:#9ca3af;">📖 未設定任務SOP</div>
-                                        </div>
-                                    `}
-                                    
-                                    ${task.attachment_id ? `
-                                        <div style="padding:8px 12px;background:#f0f9ff;border-radius:4px;border-left:2px solid #3b82f6;">
-                                            <div style="font-size:12px;color:#1e40af;">
-                                                📎 附件 #${task.attachment_id}
-                                            </div>
-                                        </div>
-                                    ` : ''}
+                // 显示完整的任务配置（类似服务组成部分）
+                let html = `
+                    <div style="background:white;padding:15px;border-radius:8px;margin-bottom:10px;border-left:4px solid #3b82f6;">
+                        <div style="flex:1;">
+                            <h5 style="margin:0 0 12px 0;color:#1f2937;font-size:15px;">模板配置</h5>
+                            
+                            ${serviceSOP ? `
+                                <div style="padding:8px 12px;background:#f0f9ff;border-radius:4px;border-left:3px solid #3b82f6;margin-bottom:12px;">
+                                    <div style="font-size:12px;font-weight:600;color:#1e40af;margin-bottom:4px;">📖 服務層級SOP（自動繼承）</div>
+                                    <div style="font-size:13px;color:#374151;padding:2px 0;">
+                                        • ${serviceSOP.title}
+                                        ${serviceSOP.category ? `<span style="font-size:11px;color:#6b7280;margin-left:4px;">[${serviceSOP.category}]</span>` : ''}
+                                    </div>
                                 </div>
-                                <div style="display:flex;gap:5px;">
-                                    <button class="table-btn-link" onclick="editTask(${templateId}, ${JSON.stringify(task).replace(/"/g, '&quot;')})">編輯</button>
-                                    <button class="table-btn-link danger" onclick="deleteTask(${templateId}, ${task.stage_id})">刪除</button>
+                            ` : ''}
+                            
+                            <div style="${serviceSOP ? 'padding-top:12px;border-top:1px solid #e5e7eb;' : ''}">
+                                <strong style="font-size:13px;color:#374151;">📋 任務階段列表（${json.data.length}個）</strong>
+                                <div style="margin-top:8px;">
+                                    ${json.data.map((task, taskIdx) => {
+                                        // 处理多个SOP显示（兼容旧的单一SOP）
+                                        let sopIds = [];
+                                        if (task.sop_ids && Array.isArray(task.sop_ids)) {
+                                            sopIds = task.sop_ids;
+                                        } else if (task.sop_id) {
+                                            sopIds = [task.sop_id];
+                                        }
+                                        
+                                        return `
+                                            <div style="background:#f9fafb;padding:10px;border-radius:6px;margin-bottom:6px;border-left:3px solid #10b981;">
+                                                <div style="display:flex;justify-content:space-between;align-items:start;">
+                                                    <div style="flex:1;">
+                                                        <div style="font-size:13px;color:#1f2937;font-weight:500;margin-bottom:4px;">
+                                                            ${task.stage_order}. ${task.stage_name || '未命名任務'}
+                                                        </div>
+                                                        ${sopIds.length > 0 ? `
+                                                            <div style="margin-top:6px;padding:6px 8px;background:#ecfdf5;border-radius:4px;border-left:2px solid #10b981;">
+                                                                <div style="font-size:11px;font-weight:600;color:#047857;margin-bottom:2px;">📖 任務SOP：</div>
+                                                                ${sopIds.map(sopId => {
+                                                                    const sop = allSOPs.find(s => parseInt(s.sop_id) === parseInt(sopId));
+                                                                    const sopTitle = sop ? sop.title : `SOP #${sopId}`;
+                                                                    return `
+                                                                        <div style="font-size:12px;color:#065f46;">
+                                                                            • ${sopTitle}
+                                                                        </div>
+                                                                    `;
+                                                                }).join('')}
+                                                            </div>
+                                                        ` : ''}
+                                                        ${task.attachment_id ? `
+                                                            <div style="margin-top:6px;padding:6px 8px;background:#f0f9ff;border-radius:4px;border-left:2px solid #3b82f6;">
+                                                                <div style="font-size:11px;color:#1e40af;">
+                                                                    📎 附件 #${task.attachment_id}
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+                                                    </div>
+                                                    <div style="display:flex;gap:5px;margin-left:10px;">
+                                                        <button class="table-btn-link" onclick="editTask(${templateId}, ${JSON.stringify(task).replace(/"/g, '&quot;')})">編輯</button>
+                                                        <button class="table-btn-link danger" onclick="deleteTask(${templateId}, ${task.stage_id})">刪除</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                 </div>
                             </div>
                         </div>
-                    `;
-                }).join('');
+                    </div>
+                `;
+                
+                listDiv.innerHTML = html;
             } catch (e) {
                 listDiv.innerHTML = '<div style="color:#ef4444;padding:20px;text-align:center;">載入失敗</div>';
             }
