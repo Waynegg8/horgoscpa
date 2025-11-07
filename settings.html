@@ -23,7 +23,6 @@
         <button class="nav-tab active" data-tab="services">服務項目</button>
         <button class="nav-tab" data-tab="templates">任務模板</button>
         <button class="nav-tab" data-tab="users">用戶</button>
-        <button class="nav-tab" data-tab="leaves">假期類型</button>
         <button class="nav-tab" data-tab="company">公司資訊</button>
         <button class="nav-tab" data-tab="lifecycle">服務生命週期</button>
         <button class="nav-tab" data-tab="automation">自動化規則</button>
@@ -116,8 +115,42 @@
         <!-- 用户 -->
         <div class="tab-panel" id="tab-users">
             <div class="search-bar">
-                <button class="btn btn-primary" id="btnAddUser">+ 新增</button>
+                <button class="btn btn-primary" onclick="showAddUserForm()">+ 新增</button>
             </div>
+            
+            <!-- 新增/编辑用户表单 -->
+            <div class="card hidden" id="userForm">
+                <div class="card-header">
+                    <h3 id="userFormTitle">新增用戶</h3>
+                </div>
+                <div class="card-body">
+                    <input type="hidden" id="edit_user_id">
+                    <div class="form-group">
+                        <label>姓名 *</label>
+                        <input type="text" id="user_name" class="form-control" placeholder="請輸入姓名" required>
+                    </div>
+                    <div class="form-group">
+                        <label>帳號（用戶名）*</label>
+                        <input type="text" id="user_username" class="form-control" placeholder="請輸入帳號" required>
+                    </div>
+                    <div class="form-group" id="passwordGroup">
+                        <label>密碼 *</label>
+                        <input type="password" id="user_password" class="form-control" placeholder="至少6個字元" required>
+                    </div>
+                    <div class="form-group">
+                        <label>角色</label>
+                        <select id="user_is_admin" class="form-control">
+                            <option value="0">員工</option>
+                            <option value="1">管理員</option>
+                        </select>
+                    </div>
+                    <div class="action-btns">
+                        <button class="btn btn-primary" onclick="saveUser()">儲存</button>
+                        <button class="btn btn-secondary" onclick="cancelUserForm()">取消</button>
+                    </div>
+                </div>
+            </div>
+            
             <div class="card">
                 <div class="card-body">
                     <div class="data-table-container">
@@ -436,10 +469,7 @@
             loadTemplateOptions();
         });
 
-        // 用户 - 新增
-        document.getElementById('btnAddUser')?.addEventListener('click', () => {
-            alert('請透過管理員工具新增用戶');
-        });
+        // 用户管理功能已移至函数中
 
         // 生命周期、自动化 - 新增
         ['btnAddLifecycle', 'btnAddAutomation'].forEach(id => {
@@ -588,6 +618,7 @@
                                 </div>
                             </div>
                             <div style="display:flex;gap:8px">
+                                <button class="btn btn-sm btn-primary" onclick="editTemplate(${t.template_id})">編輯</button>
                                 <button class="btn btn-sm btn-secondary" onclick="toggleTasks(${t.template_id})">▼ 任務</button>
                                 <button class="btn btn-sm btn-danger" onclick="deleteTemplate(${t.template_id})">刪除</button>
                             </div>
@@ -773,7 +804,43 @@
             }
         }
 
-        // 保存模板
+        // 全局变量：记录当前正在编辑的模板ID
+        let editingTemplateId = null;
+
+        // 编辑模板
+        async function editTemplate(templateId) {
+            editingTemplateId = templateId;
+            
+            // 加载模板数据
+            try {
+                const res = await fetch(`/internal/api/v1/task-templates/${templateId}`, { credentials: 'include' });
+                const json = await res.json();
+                
+                if (!json.ok || !json.data) {
+                    throw new Error('載入模板失敗');
+                }
+                
+                const template = json.data;
+                
+                // 填充表单
+                document.getElementById('newTemplateName').value = template.template_name || '';
+                document.getElementById('newTemplateService').value = template.service_id || '';
+                document.getElementById('newTemplateClient').value = template.client_id || '';
+                document.getElementById('newTemplateDesc').value = template.description || '';
+                
+                // 修改表单标题
+                document.querySelector('#addTemplateForm .card-header h3').textContent = '編輯任務模板';
+                
+                // 显示表单
+                document.getElementById('addTemplateForm').classList.remove('hidden');
+                document.getElementById('addTemplateForm').scrollIntoView({ behavior: 'smooth' });
+            } catch (e) {
+                console.error('載入模板失敗:', e);
+                alert('載入模板失敗: ' + e.message);
+            }
+        }
+
+        // 保存模板（新增或编辑）
         async function saveTemplate() {
             const name = document.getElementById('newTemplateName').value;
             const serviceId = document.getElementById('newTemplateService').value;
@@ -783,8 +850,13 @@
             if (!name || !serviceId) return alert('請輸入模板名稱並選擇服務項目');
             
             try {
-                const res = await fetch('/internal/api/v1/task-templates', {
-                    method: 'POST',
+                const url = editingTemplateId 
+                    ? `/internal/api/v1/task-templates/${editingTemplateId}`
+                    : '/internal/api/v1/task-templates';
+                const method = editingTemplateId ? 'PUT' : 'POST';
+                
+                const res = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({
@@ -794,21 +866,26 @@
                         description: desc
                     })
                 });
+                
                 if (!res.ok) throw new Error();
-                alert('新增成功');
+                
+                alert(editingTemplateId ? '更新成功' : '新增成功');
                 cancelTemplate();
                 loadTemplates();
             } catch (e) {
-                alert('新增失敗');
+                alert(editingTemplateId ? '更新失敗' : '新增失敗');
             }
         }
 
         function cancelTemplate() {
+            editingTemplateId = null;
             document.getElementById('addTemplateForm').classList.add('hidden');
             document.getElementById('newTemplateName').value = '';
             document.getElementById('newTemplateService').value = '';
             document.getElementById('newTemplateClient').value = '';
             document.getElementById('newTemplateDesc').value = '';
+            // 恢复表单标题
+            document.querySelector('#addTemplateForm .card-header h3').textContent = '新增任務模板';
         }
 
         // 用户管理
@@ -830,12 +907,121 @@
                         <td><span class="status-badge status-active">啟用</span></td>
                         <td>
                             <button class="btn btn-sm btn-secondary" onclick="window.location.href='/internal/profile?user_id=${u.user_id}'">檢視</button>
+                            <button class="btn btn-sm btn-primary" onclick="editUser(${JSON.stringify(u).replace(/"/g, '&quot;')})">編輯</button>
                             <button class="btn btn-sm btn-warning" onclick="resetUserPassword(${u.user_id}, '${u.name}')">重置密碼</button>
+                            ${u.user_id !== 1 ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.user_id}, '${u.name}')">刪除</button>` : ''}
                         </td>
                     </tr>
                 `).join('');
             } catch (e) {
                 tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
+            }
+        }
+        
+        function showAddUserForm() {
+            document.getElementById('edit_user_id').value = '';
+            document.getElementById('userFormTitle').textContent = '新增用戶';
+            document.getElementById('user_name').value = '';
+            document.getElementById('user_username').value = '';
+            document.getElementById('user_password').value = '';
+            document.getElementById('user_is_admin').value = '0';
+            document.getElementById('passwordGroup').style.display = 'block';
+            document.getElementById('userForm').classList.remove('hidden');
+        }
+        
+        function editUser(user) {
+            document.getElementById('edit_user_id').value = user.user_id;
+            document.getElementById('userFormTitle').textContent = '編輯用戶';
+            document.getElementById('user_name').value = user.name || '';
+            document.getElementById('user_username').value = user.username || '';
+            document.getElementById('user_is_admin').value = user.is_admin ? '1' : '0';
+            document.getElementById('passwordGroup').style.display = 'none';
+            document.getElementById('userForm').classList.remove('hidden');
+            document.getElementById('userForm').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function cancelUserForm() {
+            document.getElementById('userForm').classList.add('hidden');
+        }
+        
+        async function saveUser() {
+            const userId = document.getElementById('edit_user_id').value;
+            const name = document.getElementById('user_name').value.trim();
+            const username = document.getElementById('user_username').value.trim();
+            const password = document.getElementById('user_password').value;
+            const isAdmin = document.getElementById('user_is_admin').value === '1';
+            
+            if (!name || !username) {
+                alert('請填寫姓名和帳號');
+                return;
+            }
+            
+            if (!userId && (!password || password.length < 6)) {
+                alert('密碼長度至少需要 6 個字元');
+                return;
+            }
+            
+            try {
+                const payload = {
+                    name: name,
+                    username: username,
+                    is_admin: isAdmin
+                };
+                
+                if (!userId) {
+                    // 新增用户
+                    payload.password = password;
+                }
+                
+                const url = userId 
+                    ? `/internal/api/v1/admin/users/${userId}`
+                    : '/internal/api/v1/admin/users';
+                const method = userId ? 'PUT' : 'POST';
+                
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+                
+                const json = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(json.message || '操作失敗');
+                }
+                
+                alert(userId ? '✅ 更新成功！' : '✅ 新增成功！');
+                cancelUserForm();
+                loadUsers();
+            } catch (e) {
+                console.error('儲存用戶失敗:', e);
+                alert('❌ 儲存失敗: ' + e.message);
+            }
+        }
+        
+        async function deleteUser(userId, userName) {
+            if (!confirm(`確定要刪除用戶「${userName}」嗎？此操作無法復原。`)) {
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/internal/api/v1/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                const json = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(json.message || '刪除失敗');
+                }
+                
+                alert('✅ 刪除成功！');
+                loadUsers();
+            } catch (e) {
+                console.error('刪除用戶失敗:', e);
+                alert('❌ 刪除失敗: ' + e.message);
             }
         }
         

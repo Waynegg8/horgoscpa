@@ -160,6 +160,137 @@ export async function handleSettings(request, env, me, requestId, url, path){
     }
   }
 
+  // POST /internal/api/v1/admin/users - 创建新用户（仅管理员）
+  if (path === "/internal/api/v1/admin/users" && method === "POST") {
+    try {
+      const payload = await request.json();
+      const { name, username, password, is_admin } = payload;
+      
+      if (!name || !username || !password) {
+        return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"姓名、帳號和密碼為必填項", meta:{ requestId } }, corsHeaders);
+      }
+      
+      if (password.length < 6) {
+        return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"密碼長度至少需要 6 個字元", meta:{ requestId } }, corsHeaders);
+      }
+      
+      // 检查用户名是否已存在
+      const existing = await env.DATABASE.prepare(
+        "SELECT user_id FROM Users WHERE username = ?"
+      ).bind(username).first();
+      
+      if (existing) {
+        return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"此帳號已存在", meta:{ requestId } }, corsHeaders);
+      }
+      
+      // 导入密码哈希函数
+      const { hashPasswordPBKDF2 } = await import("../auth.js");
+      const hashedPassword = await hashPasswordPBKDF2(password);
+      
+      const result = await env.DATABASE.prepare(
+        `INSERT INTO Users (username, password, name, is_admin, is_deleted) 
+         VALUES (?, ?, ?, ?, 0)`
+      ).bind(username, hashedPassword, name, is_admin ? 1 : 0).run();
+      
+      return jsonResponse(201, { 
+        ok:true, 
+        code:"CREATED", 
+        message:"用戶已創建", 
+        data: { user_id: result.meta.last_row_id },
+        meta:{ requestId } 
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+      return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+    }
+  }
+  
+  // PUT /internal/api/v1/admin/users/:id - 更新用户信息（仅管理员）
+  const matchUpdateUser = path.match(/^\/internal\/api\/v1\/admin\/users\/(\d+)$/);
+  if (matchUpdateUser && method === "PUT") {
+    const userId = parseInt(matchUpdateUser[1], 10);
+    
+    try {
+      const payload = await request.json();
+      const { name, username, is_admin } = payload;
+      
+      if (!name || !username) {
+        return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"姓名和帳號為必填項", meta:{ requestId } }, corsHeaders);
+      }
+      
+      // 检查用户是否存在
+      const user = await env.DATABASE.prepare(
+        "SELECT user_id FROM Users WHERE user_id = ? AND is_deleted = 0"
+      ).bind(userId).first();
+      
+      if (!user) {
+        return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"用戶不存在", meta:{ requestId } }, corsHeaders);
+      }
+      
+      // 检查用户名是否被其他用户占用
+      const existing = await env.DATABASE.prepare(
+        "SELECT user_id FROM Users WHERE username = ? AND user_id != ?"
+      ).bind(username, userId).first();
+      
+      if (existing) {
+        return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"此帳號已被其他用戶使用", meta:{ requestId } }, corsHeaders);
+      }
+      
+      await env.DATABASE.prepare(
+        `UPDATE Users 
+         SET name = ?, username = ?, is_admin = ? 
+         WHERE user_id = ?`
+      ).bind(name, username, is_admin ? 1 : 0, userId).run();
+      
+      return jsonResponse(200, { 
+        ok:true, 
+        code:"OK", 
+        message:"用戶已更新", 
+        meta:{ requestId } 
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+      return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+    }
+  }
+  
+  // DELETE /internal/api/v1/admin/users/:id - 删除用户（软删除，仅管理员）
+  const matchDeleteUser = path.match(/^\/internal\/api\/v1\/admin\/users\/(\d+)$/);
+  if (matchDeleteUser && method === "DELETE") {
+    const userId = parseInt(matchDeleteUser[1], 10);
+    
+    // 不允许删除admin用户（user_id = 1）
+    if (userId === 1) {
+      return jsonResponse(403, { ok:false, code:"FORBIDDEN", message:"不能刪除管理員帳號", meta:{ requestId } }, corsHeaders);
+    }
+    
+    try {
+      // 检查用户是否存在
+      const user = await env.DATABASE.prepare(
+        "SELECT user_id FROM Users WHERE user_id = ? AND is_deleted = 0"
+      ).bind(userId).first();
+      
+      if (!user) {
+        return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"用戶不存在", meta:{ requestId } }, corsHeaders);
+      }
+      
+      // 软删除
+      await env.DATABASE.prepare(
+        `UPDATE Users SET is_deleted = 1 WHERE user_id = ?`
+      ).bind(userId).run();
+      
+      return jsonResponse(200, { 
+        ok:true, 
+        code:"OK", 
+        message:"用戶已刪除", 
+        meta:{ requestId } 
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level:"error", requestId, path, err:String(err) }));
+      return jsonResponse(500, { ok:false, code:"INTERNAL_ERROR", message:"伺服器錯誤", meta:{ requestId } }, corsHeaders);
+    }
+  }
+
   return jsonResponse(404, { ok:false, code:"NOT_FOUND", message:"無此端點", meta:{ requestId } }, corsHeaders);
 }
 

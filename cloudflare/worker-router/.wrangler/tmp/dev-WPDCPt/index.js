@@ -154,6 +154,147 @@ var init_utils = __esm({
   }
 });
 
+// src/auth.js
+var auth_exports = {};
+__export(auth_exports, {
+  handleAuthMe: () => handleAuthMe,
+  handleLogin: () => handleLogin,
+  handleLogout: () => handleLogout
+});
+async function handleLogin(request, env, requestId) {
+  if (request.method.toUpperCase() !== "POST") {
+    return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "\u65B9\u6CD5\u4E0D\u5141\u8A31", meta: { requestId } }, getCorsHeadersForRequest(request, env));
+  }
+  let payload;
+  try {
+    payload = await request.json();
+  } catch (_) {
+    return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "\u8ACB\u6C42\u683C\u5F0F\u932F\u8AA4", meta: { requestId } }, getCorsHeadersForRequest(request, env));
+  }
+  const username = (payload?.username || "").trim().toLowerCase();
+  const password = payload?.password || "";
+  const errors = [];
+  if (!username) errors.push({ field: "username", message: "\u5FC5\u586B" });
+  if (!password) errors.push({ field: "password", message: "\u5FC5\u586B" });
+  if (errors.length > 0) {
+    return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u8F38\u5165\u6709\u8AA4", errors, meta: { requestId } }, getCorsHeadersForRequest(request, env));
+  }
+  if (!env.DATABASE) {
+    return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u8CC7\u6599\u5EAB\u672A\u7D81\u5B9A", meta: { requestId } }, getCorsHeadersForRequest(request, env));
+  }
+  try {
+    const userRow = await env.DATABASE.prepare(
+      "SELECT user_id, username, password_hash, name, email, is_admin, is_deleted FROM Users WHERE LOWER(username) = ? LIMIT 1"
+    ).bind(username).first();
+    const corsHeaders = getCorsHeadersForRequest(request, env);
+    const unauthorized = /* @__PURE__ */ __name(() => jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u5E33\u865F\u6216\u5BC6\u78BC\u932F\u8AA4", meta: { requestId } }, corsHeaders), "unauthorized");
+    if (!userRow || userRow.is_deleted === 1) {
+      return unauthorized();
+    }
+    const hash = userRow.password_hash || "";
+    const passOk = await verifyPasswordPBKDF2(password, hash);
+    if (!passOk) {
+      return unauthorized();
+    }
+    await env.DATABASE.prepare(
+      "UPDATE Users SET last_login = ? WHERE user_id = ?"
+    ).bind((/* @__PURE__ */ new Date()).toISOString(), userRow.user_id).run();
+    const sessionId = generateSessionId();
+    const ttlSec = parseInt(env.SESSION_TTL_SECONDS || "2592000", 10);
+    const createdAt = /* @__PURE__ */ new Date();
+    const expiresAt = new Date(createdAt.getTime() + ttlSec * 1e3);
+    await env.DATABASE.prepare(
+      "INSERT INTO sessions (id, user_id, created_at, expires_at, meta_json) VALUES (?, ?, ?, ?, ?)"
+    ).bind(sessionId, String(userRow.user_id), createdAt.toISOString(), expiresAt.toISOString(), JSON.stringify({ ua: request.headers.get("User-Agent") || "" })).run();
+    const cookieName = String(env.SESSION_COOKIE_NAME || "session");
+    const cookie = [
+      `${cookieName}=${sessionId}`,
+      "Domain=horgoscpa.com",
+      "Path=/",
+      "HttpOnly",
+      "Secure",
+      "SameSite=Lax",
+      `Max-Age=${ttlSec}`
+    ].join("; ");
+    const data = {
+      userId: String(userRow.user_id),
+      username: userRow.username,
+      name: userRow.name,
+      email: userRow.email,
+      isAdmin: userRow.is_admin === 1
+    };
+    return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, { "Set-Cookie": cookie, ...corsHeaders });
+  } catch (err) {
+    console.error(JSON.stringify({ level: "error", requestId, path: "/internal/api/v1/auth/login", err: String(err) }));
+    const body = { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } };
+    if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+    return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
+  }
+}
+async function handleAuthMe(request, env, requestId) {
+  if (request.method.toUpperCase() !== "GET") {
+    return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "\u65B9\u6CD5\u4E0D\u5141\u8A31", meta: { requestId } }, getCorsHeadersForRequest(request, env));
+  }
+  try {
+    const row = await getSessionUser(request, env);
+    if (!row) {
+      return jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u672A\u767B\u5165", meta: { requestId } }, getCorsHeadersForRequest(request, env));
+    }
+    const data = {
+      userId: String(row.user_id),
+      username: row.username,
+      name: row.name,
+      email: row.email,
+      isAdmin: row.is_admin === 1,
+      gender: row.gender || "M"
+    };
+    return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, getCorsHeadersForRequest(request, env));
+  } catch (err) {
+    console.error(JSON.stringify({ level: "error", requestId, path: "/internal/api/v1/auth/me", err: String(err) }));
+    const body = { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } };
+    if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+    return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
+  }
+}
+async function handleLogout(request, env, requestId) {
+  if (request.method.toUpperCase() !== "POST") {
+    return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "\u65B9\u6CD5\u4E0D\u5141\u8A31", meta: { requestId } }, getCorsHeadersForRequest(request, env));
+  }
+  try {
+    const cookieName = String(env.SESSION_COOKIE_NAME || "session");
+    const cookie = request.headers.get("Cookie") || "";
+    const sessionId = cookie.split(";").map((s) => s.trim()).find((s) => s.startsWith(`${cookieName}=`))?.split("=")[1];
+    if (sessionId && env.DATABASE) {
+      await env.DATABASE.prepare("DELETE FROM sessions WHERE id = ?").bind(sessionId).run();
+    }
+    const clearCookie = [
+      `${cookieName}=`,
+      "Domain=horgoscpa.com",
+      "Path=/",
+      "HttpOnly",
+      "Secure",
+      "SameSite=Lax",
+      "Max-Age=0"
+    ].join("; ");
+    const corsHeaders = getCorsHeadersForRequest(request, env);
+    return jsonResponse(200, { ok: true, code: "OK", message: "\u5DF2\u767B\u51FA", meta: { requestId } }, { "Set-Cookie": clearCookie, ...corsHeaders });
+  } catch (err) {
+    console.error(JSON.stringify({ level: "error", requestId, path: "/internal/api/v1/auth/logout", err: String(err) }));
+    const body = { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } };
+    if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+    return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
+  }
+}
+var init_auth = __esm({
+  "src/auth.js"() {
+    init_modules_watch_stub();
+    init_utils();
+    __name(handleLogin, "handleLogin");
+    __name(handleAuthMe, "handleAuthMe");
+    __name(handleLogout, "handleLogout");
+  }
+});
+
 // src/cache-helper.js
 var cache_helper_exports = {};
 __export(cache_helper_exports, {
@@ -3901,137 +4042,7 @@ init_modules_watch_stub();
 // src/index.js
 init_modules_watch_stub();
 init_utils();
-
-// src/auth.js
-init_modules_watch_stub();
-init_utils();
-async function handleLogin(request, env, requestId) {
-  if (request.method.toUpperCase() !== "POST") {
-    return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "\u65B9\u6CD5\u4E0D\u5141\u8A31", meta: { requestId } }, getCorsHeadersForRequest(request, env));
-  }
-  let payload;
-  try {
-    payload = await request.json();
-  } catch (_) {
-    return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "\u8ACB\u6C42\u683C\u5F0F\u932F\u8AA4", meta: { requestId } }, getCorsHeadersForRequest(request, env));
-  }
-  const username = (payload?.username || "").trim().toLowerCase();
-  const password = payload?.password || "";
-  const errors = [];
-  if (!username) errors.push({ field: "username", message: "\u5FC5\u586B" });
-  if (!password) errors.push({ field: "password", message: "\u5FC5\u586B" });
-  if (errors.length > 0) {
-    return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u8F38\u5165\u6709\u8AA4", errors, meta: { requestId } }, getCorsHeadersForRequest(request, env));
-  }
-  if (!env.DATABASE) {
-    return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u8CC7\u6599\u5EAB\u672A\u7D81\u5B9A", meta: { requestId } }, getCorsHeadersForRequest(request, env));
-  }
-  try {
-    const userRow = await env.DATABASE.prepare(
-      "SELECT user_id, username, password_hash, name, email, is_admin, is_deleted FROM Users WHERE LOWER(username) = ? LIMIT 1"
-    ).bind(username).first();
-    const corsHeaders = getCorsHeadersForRequest(request, env);
-    const unauthorized = /* @__PURE__ */ __name(() => jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u5E33\u865F\u6216\u5BC6\u78BC\u932F\u8AA4", meta: { requestId } }, corsHeaders), "unauthorized");
-    if (!userRow || userRow.is_deleted === 1) {
-      return unauthorized();
-    }
-    const hash = userRow.password_hash || "";
-    const passOk = await verifyPasswordPBKDF2(password, hash);
-    if (!passOk) {
-      return unauthorized();
-    }
-    await env.DATABASE.prepare(
-      "UPDATE Users SET last_login = ? WHERE user_id = ?"
-    ).bind((/* @__PURE__ */ new Date()).toISOString(), userRow.user_id).run();
-    const sessionId = generateSessionId();
-    const ttlSec = parseInt(env.SESSION_TTL_SECONDS || "2592000", 10);
-    const createdAt = /* @__PURE__ */ new Date();
-    const expiresAt = new Date(createdAt.getTime() + ttlSec * 1e3);
-    await env.DATABASE.prepare(
-      "INSERT INTO sessions (id, user_id, created_at, expires_at, meta_json) VALUES (?, ?, ?, ?, ?)"
-    ).bind(sessionId, String(userRow.user_id), createdAt.toISOString(), expiresAt.toISOString(), JSON.stringify({ ua: request.headers.get("User-Agent") || "" })).run();
-    const cookieName = String(env.SESSION_COOKIE_NAME || "session");
-    const cookie = [
-      `${cookieName}=${sessionId}`,
-      "Domain=horgoscpa.com",
-      "Path=/",
-      "HttpOnly",
-      "Secure",
-      "SameSite=Lax",
-      `Max-Age=${ttlSec}`
-    ].join("; ");
-    const data = {
-      userId: String(userRow.user_id),
-      username: userRow.username,
-      name: userRow.name,
-      email: userRow.email,
-      isAdmin: userRow.is_admin === 1
-    };
-    return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, { "Set-Cookie": cookie, ...corsHeaders });
-  } catch (err) {
-    console.error(JSON.stringify({ level: "error", requestId, path: "/internal/api/v1/auth/login", err: String(err) }));
-    const body = { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } };
-    if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
-    return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
-  }
-}
-__name(handleLogin, "handleLogin");
-async function handleAuthMe(request, env, requestId) {
-  if (request.method.toUpperCase() !== "GET") {
-    return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "\u65B9\u6CD5\u4E0D\u5141\u8A31", meta: { requestId } }, getCorsHeadersForRequest(request, env));
-  }
-  try {
-    const row = await getSessionUser(request, env);
-    if (!row) {
-      return jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u672A\u767B\u5165", meta: { requestId } }, getCorsHeadersForRequest(request, env));
-    }
-    const data = {
-      userId: String(row.user_id),
-      username: row.username,
-      name: row.name,
-      email: row.email,
-      isAdmin: row.is_admin === 1,
-      gender: row.gender || "M"
-    };
-    return jsonResponse(200, { ok: true, code: "OK", message: "\u6210\u529F", data, meta: { requestId } }, getCorsHeadersForRequest(request, env));
-  } catch (err) {
-    console.error(JSON.stringify({ level: "error", requestId, path: "/internal/api/v1/auth/me", err: String(err) }));
-    const body = { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } };
-    if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
-    return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
-  }
-}
-__name(handleAuthMe, "handleAuthMe");
-async function handleLogout(request, env, requestId) {
-  if (request.method.toUpperCase() !== "POST") {
-    return jsonResponse(405, { ok: false, code: "METHOD_NOT_ALLOWED", message: "\u65B9\u6CD5\u4E0D\u5141\u8A31", meta: { requestId } }, getCorsHeadersForRequest(request, env));
-  }
-  try {
-    const cookieName = String(env.SESSION_COOKIE_NAME || "session");
-    const cookie = request.headers.get("Cookie") || "";
-    const sessionId = cookie.split(";").map((s) => s.trim()).find((s) => s.startsWith(`${cookieName}=`))?.split("=")[1];
-    if (sessionId && env.DATABASE) {
-      await env.DATABASE.prepare("DELETE FROM sessions WHERE id = ?").bind(sessionId).run();
-    }
-    const clearCookie = [
-      `${cookieName}=`,
-      "Domain=horgoscpa.com",
-      "Path=/",
-      "HttpOnly",
-      "Secure",
-      "SameSite=Lax",
-      "Max-Age=0"
-    ].join("; ");
-    const corsHeaders = getCorsHeadersForRequest(request, env);
-    return jsonResponse(200, { ok: true, code: "OK", message: "\u5DF2\u767B\u51FA", meta: { requestId } }, { "Set-Cookie": clearCookie, ...corsHeaders });
-  } catch (err) {
-    console.error(JSON.stringify({ level: "error", requestId, path: "/internal/api/v1/auth/logout", err: String(err) }));
-    const body = { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } };
-    if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
-    return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
-  }
-}
-__name(handleLogout, "handleLogout");
+init_auth();
 
 // src/api/clients.js
 init_modules_watch_stub();
@@ -14131,6 +14142,104 @@ async function handleSettings(request, env, me, requestId, url, path) {
         "INSERT INTO Settings(setting_key, setting_value, updated_at, updated_by) VALUES(?, ?, ?, ?) ON CONFLICT(setting_key) DO UPDATE SET setting_value=excluded.setting_value, updated_at=excluded.updated_at, updated_by=excluded.updated_by"
       ).bind(key, value, nowIso, String(me.user_id || me.userId || "1")).run();
       return jsonResponse(200, { ok: true, code: "OK", message: "\u5DF2\u66F4\u65B0", data: { key, value }, meta: { requestId } }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  if (path === "/internal/api/v1/admin/users" && method === "POST") {
+    try {
+      const payload = await request.json();
+      const { name, username, password, is_admin } = payload;
+      if (!name || !username || !password) {
+        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u59D3\u540D\u3001\u5E33\u865F\u548C\u5BC6\u78BC\u70BA\u5FC5\u586B\u9805", meta: { requestId } }, corsHeaders);
+      }
+      if (password.length < 6) {
+        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u5BC6\u78BC\u9577\u5EA6\u81F3\u5C11\u9700\u8981 6 \u500B\u5B57\u5143", meta: { requestId } }, corsHeaders);
+      }
+      const existing = await env.DATABASE.prepare(
+        "SELECT user_id FROM Users WHERE username = ?"
+      ).bind(username).first();
+      if (existing) {
+        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u6B64\u5E33\u865F\u5DF2\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      const { hashPasswordPBKDF2: hashPasswordPBKDF22 } = await Promise.resolve().then(() => (init_auth(), auth_exports));
+      const hashedPassword = await hashPasswordPBKDF22(password);
+      const result = await env.DATABASE.prepare(
+        `INSERT INTO Users (username, password, name, is_admin, is_deleted) 
+         VALUES (?, ?, ?, ?, 0)`
+      ).bind(username, hashedPassword, name, is_admin ? 1 : 0).run();
+      return jsonResponse(201, {
+        ok: true,
+        code: "CREATED",
+        message: "\u7528\u6236\u5DF2\u5275\u5EFA",
+        data: { user_id: result.meta.last_row_id },
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  const matchUpdateUser = path.match(/^\/internal\/api\/v1\/admin\/users\/(\d+)$/);
+  if (matchUpdateUser && method === "PUT") {
+    const userId = parseInt(matchUpdateUser[1], 10);
+    try {
+      const payload = await request.json();
+      const { name, username, is_admin } = payload;
+      if (!name || !username) {
+        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u59D3\u540D\u548C\u5E33\u865F\u70BA\u5FC5\u586B\u9805", meta: { requestId } }, corsHeaders);
+      }
+      const user = await env.DATABASE.prepare(
+        "SELECT user_id FROM Users WHERE user_id = ? AND is_deleted = 0"
+      ).bind(userId).first();
+      if (!user) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u7528\u6236\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      const existing = await env.DATABASE.prepare(
+        "SELECT user_id FROM Users WHERE username = ? AND user_id != ?"
+      ).bind(username, userId).first();
+      if (existing) {
+        return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u6B64\u5E33\u865F\u5DF2\u88AB\u5176\u4ED6\u7528\u6236\u4F7F\u7528", meta: { requestId } }, corsHeaders);
+      }
+      await env.DATABASE.prepare(
+        `UPDATE Users 
+         SET name = ?, username = ?, is_admin = ? 
+         WHERE user_id = ?`
+      ).bind(name, username, is_admin ? 1 : 0, userId).run();
+      return jsonResponse(200, {
+        ok: true,
+        code: "OK",
+        message: "\u7528\u6236\u5DF2\u66F4\u65B0",
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
+    }
+  }
+  const matchDeleteUser = path.match(/^\/internal\/api\/v1\/admin\/users\/(\d+)$/);
+  if (matchDeleteUser && method === "DELETE") {
+    const userId = parseInt(matchDeleteUser[1], 10);
+    if (userId === 1) {
+      return jsonResponse(403, { ok: false, code: "FORBIDDEN", message: "\u4E0D\u80FD\u522A\u9664\u7BA1\u7406\u54E1\u5E33\u865F", meta: { requestId } }, corsHeaders);
+    }
+    try {
+      const user = await env.DATABASE.prepare(
+        "SELECT user_id FROM Users WHERE user_id = ? AND is_deleted = 0"
+      ).bind(userId).first();
+      if (!user) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u7528\u6236\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      await env.DATABASE.prepare(
+        `UPDATE Users SET is_deleted = 1 WHERE user_id = ?`
+      ).bind(userId).run();
+      return jsonResponse(200, {
+        ok: true,
+        code: "OK",
+        message: "\u7528\u6236\u5DF2\u522A\u9664",
+        meta: { requestId }
+      }, corsHeaders);
     } catch (err) {
       console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
       return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u4F3A\u670D\u5668\u932F\u8AA4", meta: { requestId } }, corsHeaders);
