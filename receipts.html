@@ -294,6 +294,35 @@
             <small style="color:#6b7280;margin-top:4px;display:block;font-size:12px;">根據服務收費明細或預設30天</small>
           </div>
           
+          <!-- 服务期间选择器（应计制） -->
+          <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:16px;margin:8px 0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+              <span style="font-size:20px;">💡</span>
+              <label style="font-weight:600;font-size:14px;color:#166534;margin:0;">服務期間（應計制收入確認）</label>
+            </div>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;">
+              <div>
+                <label for="serviceStartMonth" style="font-size:13px;color:#166534;display:block;margin-bottom:4px;">服務開始月份</label>
+                <input id="serviceStartMonth" type="month" style="width:100%;padding:8px;border:1px solid #86efac;border-radius:6px;font-size:14px;" />
+              </div>
+              <div>
+                <label for="serviceEndMonth" style="font-size:13px;color:#166534;display:block;margin-bottom:4px;">服務結束月份</label>
+                <input id="serviceEndMonth" type="month" style="width:100%;padding:8px;border:1px solid #86efac;border-radius:6px;font-size:14px;" />
+              </div>
+            </div>
+            
+            <div style="background:#dcfce7;padding:10px;border-radius:6px;font-size:12px;color:#166534;line-height:1.6;">
+              <strong>📌 說明：</strong>
+              <ul style="margin:4px 0 0 20px;padding:0;">
+                <li>如果是<strong>單月服務</strong>，兩個月份選擇相同即可</li>
+                <li>如果是<strong>跨月服務</strong>（如季度服務），選擇起迄月份</li>
+                <li>系統會自動按工時比例將收入分攤到各服務月份</li>
+                <li>留空則自動從關聯任務或工時記錄推斷</li>
+              </ul>
+            </div>
+          </div>
+          
           <div style="display: grid; gap: 6px;">
             <label style="font-weight: 500; font-size: 14px;">收據明細（選填）</label>
             
@@ -971,6 +1000,10 @@
           const client_service_id = inputClientService.value ? parseInt(inputClientService.value, 10) : null;
           const billing_month = inputBillingMonth.value ? parseInt(inputBillingMonth.value, 10) : null;
           
+          // 服务期间（应计制）
+          const service_start_month = document.getElementById('serviceStartMonth').value || null;
+          const service_end_month = document.getElementById('serviceEndMonth').value || null;
+          
           // 所有收據創建時統一為"未收款"，後續透過收款記錄來更新狀態
           const status = 'unpaid';
           
@@ -1001,6 +1034,8 @@
             // 只在有值時添加可選字段
             if (client_service_id) payload.client_service_id = client_service_id;
             if (billing_month) payload.billing_month = billing_month;
+            if (service_start_month) payload.service_start_month = service_start_month;
+            if (service_end_month) payload.service_end_month = service_end_month;
             
             // 添加明细项目（如果有）
             if (receiptItems.length > 0) {

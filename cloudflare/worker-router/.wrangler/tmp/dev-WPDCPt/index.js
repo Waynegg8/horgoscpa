@@ -2077,6 +2077,174 @@ var init_payroll = __esm({
   }
 });
 
+// src/revenue-allocation.js
+var revenue_allocation_exports = {};
+__export(revenue_allocation_exports, {
+  allocateReceiptRevenue: () => allocateReceiptRevenue,
+  getAnnualRevenueByClient: () => getAnnualRevenueByClient,
+  getMonthlyRevenueByClient: () => getMonthlyRevenueByClient
+});
+async function allocateReceiptRevenue(receipt, env) {
+  const { client_id, total_amount, service_start_month, service_end_month } = receipt;
+  if (!service_start_month) {
+    return [];
+  }
+  if (!service_end_month || service_start_month === service_end_month) {
+    return [{
+      month: service_start_month,
+      amount: Number(total_amount),
+      hours: 0
+      // 稍后填充
+    }];
+  }
+  const months = getMonthsBetween(service_start_month, service_end_month);
+  const monthlyHours = {};
+  let totalHours = 0;
+  for (const month of months) {
+    const hoursResult = await env.DATABASE.prepare(`
+			SELECT SUM(hours) as total
+			FROM Timesheets
+			WHERE client_id = ?
+				AND substr(work_date, 1, 7) = ?
+				AND is_deleted = 0
+		`).bind(client_id, month).first();
+    const hours = Number(hoursResult?.total || 0);
+    monthlyHours[month] = hours;
+    totalHours += hours;
+  }
+  const allocations = [];
+  if (totalHours === 0) {
+    const avgAmount = total_amount / months.length;
+    for (const month of months) {
+      allocations.push({
+        month,
+        amount: Number(avgAmount.toFixed(2)),
+        hours: 0,
+        allocationMethod: "average"
+      });
+    }
+  } else {
+    for (const month of months) {
+      const hours = monthlyHours[month] || 0;
+      const ratio = hours / totalHours;
+      const amount = total_amount * ratio;
+      allocations.push({
+        month,
+        amount: Number(amount.toFixed(2)),
+        hours,
+        allocationMethod: "hours_based"
+      });
+    }
+  }
+  return allocations;
+}
+async function getMonthlyRevenueByClient(targetMonth, env) {
+  const clientRevenue = {};
+  const receiptsResult = await env.DATABASE.prepare(`
+		SELECT 
+			receipt_id,
+			client_id,
+			total_amount,
+			service_start_month,
+			service_end_month,
+			service_month
+		FROM Receipts
+		WHERE is_deleted = 0
+			AND status != 'cancelled'
+			AND (
+				(service_start_month IS NOT NULL AND service_start_month <= ? AND (service_end_month IS NULL OR service_end_month >= ?))
+				OR (service_start_month IS NULL AND service_month = ?)
+			)
+	`).bind(targetMonth, targetMonth, targetMonth).all();
+  const receipts = receiptsResult?.results || [];
+  for (const receipt of receipts) {
+    const startMonth = receipt.service_start_month || receipt.service_month;
+    const endMonth = receipt.service_end_month || receipt.service_month;
+    if (!startMonth) continue;
+    const allocations = await allocateReceiptRevenue({
+      client_id: receipt.client_id,
+      total_amount: receipt.total_amount,
+      service_start_month: startMonth,
+      service_end_month: endMonth
+    }, env);
+    const targetAllocation = allocations.find((a) => a.month === targetMonth);
+    if (targetAllocation) {
+      const clientId = receipt.client_id;
+      if (!clientRevenue[clientId]) {
+        clientRevenue[clientId] = 0;
+      }
+      clientRevenue[clientId] += targetAllocation.amount;
+    }
+  }
+  return clientRevenue;
+}
+async function getAnnualRevenueByClient(year, env) {
+  const clientRevenue = {};
+  const receiptsResult = await env.DATABASE.prepare(`
+		SELECT 
+			receipt_id,
+			client_id,
+			total_amount,
+			service_start_month,
+			service_end_month,
+			service_month
+		FROM Receipts
+		WHERE is_deleted = 0
+			AND status != 'cancelled'
+			AND (
+				(service_start_month LIKE ? OR service_end_month LIKE ?)
+				OR (service_start_month IS NULL AND service_month LIKE ?)
+			)
+	`).bind(`${year}-%`, `${year}-%`, `${year}-%`).all();
+  const receipts = receiptsResult?.results || [];
+  for (const receipt of receipts) {
+    const startMonth = receipt.service_start_month || receipt.service_month;
+    const endMonth = receipt.service_end_month || receipt.service_month;
+    if (!startMonth) continue;
+    const allocations = await allocateReceiptRevenue({
+      client_id: receipt.client_id,
+      total_amount: receipt.total_amount,
+      service_start_month: startMonth,
+      service_end_month: endMonth
+    }, env);
+    for (const allocation of allocations) {
+      if (allocation.month.startsWith(`${year}-`)) {
+        const clientId = receipt.client_id;
+        if (!clientRevenue[clientId]) {
+          clientRevenue[clientId] = 0;
+        }
+        clientRevenue[clientId] += allocation.amount;
+      }
+    }
+  }
+  return clientRevenue;
+}
+function getMonthsBetween(startMonth, endMonth) {
+  const months = [];
+  const [startYear, startM] = startMonth.split("-").map(Number);
+  const [endYear, endM] = endMonth.split("-").map(Number);
+  let year = startYear;
+  let month = startM;
+  while (year < endYear || year === endYear && month <= endM) {
+    months.push(`${year}-${String(month).padStart(2, "0")}`);
+    month++;
+    if (month > 12) {
+      month = 1;
+      year++;
+    }
+  }
+  return months;
+}
+var init_revenue_allocation = __esm({
+  "src/revenue-allocation.js"() {
+    init_modules_watch_stub();
+    __name(allocateReceiptRevenue, "allocateReceiptRevenue");
+    __name(getMonthlyRevenueByClient, "getMonthlyRevenueByClient");
+    __name(getAnnualRevenueByClient, "getAnnualRevenueByClient");
+    __name(getMonthsBetween, "getMonthsBetween");
+  }
+});
+
 // src/api/overhead.js
 var overhead_exports = {};
 __export(overhead_exports, {
@@ -3424,11 +3592,15 @@ async function handleOverhead(request, env, me, requestId, url, path) {
         console.log(`[Client ${clientId}] ${client.company_name} \u603B\u6210\u672C\u6C47\u603B: totalCost=${totalCost}, laborCost=${laborCost}, overheadAllocation=${overheadAllocation}`);
         employeeDetails.sort((a, b) => b.totalCost - a.totalCost);
         console.log(`[Client ${clientId}] ${client.company_name}: employeeDetails =`, employeeDetails.length, employeeDetails);
-        const revenueRow = await env.DATABASE.prepare(
-          `SELECT SUM(total_amount) as total FROM Receipts 
-			 WHERE client_id = ? AND substr(receipt_date, 1, ${dateLength}) = ? AND is_deleted = 0`
-        ).bind(clientId, yearMonth).first();
-        const revenue = Number(revenueRow?.total || 0);
+        const { getMonthlyRevenueByClient: getMonthlyRevenueByClient2, getAnnualRevenueByClient: getAnnualRevenueByClient2 } = await Promise.resolve().then(() => (init_revenue_allocation(), revenue_allocation_exports));
+        let revenue = 0;
+        if (isAnnual) {
+          const annualRevenues = await getAnnualRevenueByClient2(year, env);
+          revenue = Number(annualRevenues[clientId] || 0);
+        } else {
+          const monthlyRevenues = await getMonthlyRevenueByClient2(yearMonth, env);
+          revenue = Number(monthlyRevenues[clientId] || 0);
+        }
         if (totalHours > 0 || revenue > 0) {
           const avgHourlyRate = totalWeightedHours > 0 ? Math.round(totalCost / totalWeightedHours) : 0;
           const clientData = {
@@ -7220,6 +7392,8 @@ async function handleReceipts(request, env, me, requestId, url) {
     const relatedTaskId = body?.related_task_id ? parseInt(body.related_task_id, 10) : null;
     const clientServiceId = body?.client_service_id ? parseInt(body.client_service_id, 10) : null;
     const billingMonth = body?.billing_month ? parseInt(body.billing_month, 10) : null;
+    const manualServiceStartMonth = body?.service_start_month ? String(body.service_start_month).trim() : null;
+    const manualServiceEndMonth = body?.service_end_month ? String(body.service_end_month).trim() : null;
     const errors = [];
     if (!client_id) errors.push({ field: "client_id", message: "\u5FC5\u586B" });
     if (!/^\d{4}-\d{2}-\d{2}$/.test(receipt_date)) errors.push({ field: "receipt_date", message: "\u65E5\u671F\u683C\u5F0F YYYY-MM-DD" });
@@ -7290,18 +7464,52 @@ async function handleReceipts(request, env, me, requestId, url) {
         const day = String(d.getUTCDate()).padStart(2, "0");
         due_date = `${y}-${m2}-${day}`;
       }
-      let serviceMonth = null;
-      if (billingMonth) {
-        const year = receipt_date.split("-")[0];
-        serviceMonth = `${year}-${String(billingMonth).padStart(2, "0")}`;
-      } else {
-        serviceMonth = receipt_date.substring(0, 7);
+      let serviceStartMonth = null;
+      let serviceEndMonth = null;
+      if (manualServiceStartMonth) {
+        serviceStartMonth = manualServiceStartMonth;
+        serviceEndMonth = manualServiceEndMonth || manualServiceStartMonth;
       }
+      if (relatedTaskId) {
+        const taskRow = await env.DATABASE.prepare(
+          `SELECT service_month FROM ActiveTasks WHERE task_id = ?`
+        ).bind(relatedTaskId).first();
+        if (taskRow && taskRow.service_month) {
+          serviceStartMonth = taskRow.service_month;
+          serviceEndMonth = taskRow.service_month;
+        }
+      }
+      if (!serviceStartMonth && client_id) {
+        const recentHoursRow = await env.DATABASE.prepare(`
+					SELECT 
+						MIN(substr(work_date, 1, 7)) as start_month,
+						MAX(substr(work_date, 1, 7)) as end_month
+					FROM Timesheets
+					WHERE client_id = ?
+						AND is_deleted = 0
+						AND work_date >= date('now', '-90 days')
+					LIMIT 1
+				`).bind(client_id).first();
+        if (recentHoursRow && recentHoursRow.start_month) {
+          serviceStartMonth = recentHoursRow.start_month;
+          serviceEndMonth = recentHoursRow.end_month || recentHoursRow.start_month;
+        }
+      }
+      if (!serviceStartMonth && billingMonth) {
+        const year = receipt_date.split("-")[0];
+        serviceStartMonth = `${year}-${String(billingMonth).padStart(2, "0")}`;
+        serviceEndMonth = serviceStartMonth;
+      }
+      if (!serviceStartMonth) {
+        serviceStartMonth = receipt_date.substring(0, 7);
+        serviceEndMonth = serviceStartMonth;
+      }
+      const serviceMonth = serviceStartMonth;
       await env.DATABASE.prepare(
         `INSERT INTO Receipts (receipt_id, client_id, receipt_date, due_date, total_amount, withholding_amount, paid_amount, status, 
-				 receipt_type, related_task_id, client_service_id, billing_month, service_month,
+				 receipt_type, related_task_id, client_service_id, billing_month, service_month, service_start_month, service_end_month,
 				 is_auto_generated, notes, created_by, created_at, updated_at) 
-				 VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
+				 VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
       ).bind(
         receipt_id,
         client_id,
@@ -7315,6 +7523,8 @@ async function handleReceipts(request, env, me, requestId, url) {
         clientServiceId,
         billingMonth,
         serviceMonth,
+        serviceStartMonth,
+        serviceEndMonth,
         notes,
         String(me.user_id),
         (/* @__PURE__ */ new Date()).toISOString(),
@@ -10736,19 +10946,11 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
 		`).all();
     const users = usersResult?.results || [];
     const { calculateEmployeePayroll: calculateEmployeePayroll2 } = await Promise.resolve().then(() => (init_payroll(), payroll_exports));
-    const clientRevenueRows = await env.DATABASE.prepare(`
-		SELECT 
-			r.client_id,
-			SUM(r.total_amount) as revenue
-		FROM Receipts r
-		WHERE r.is_deleted = 0 
-			AND r.status != 'cancelled'
-			AND r.service_month = ?
-		GROUP BY r.client_id
-	`).bind(ym).all();
+    const { getMonthlyRevenueByClient: getMonthlyRevenueByClient2 } = await Promise.resolve().then(() => (init_revenue_allocation(), revenue_allocation_exports));
+    const clientRevenues = await getMonthlyRevenueByClient2(ym, env);
     const clientRevenueMap = /* @__PURE__ */ new Map();
-    for (const row of clientRevenueRows?.results || []) {
-      clientRevenueMap.set(row.client_id, Number(row.revenue || 0));
+    for (const [clientId, revenue] of Object.entries(clientRevenues)) {
+      clientRevenueMap.set(clientId, revenue);
     }
     const employeePerformance = [];
     for (const user of users) {
@@ -11001,6 +11203,8 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
           monthStandardHours += hours;
           monthWeightedHours += weighted;
         }
+        const { getMonthlyRevenueByClient: getMonthlyRevenueByClient2 } = await Promise.resolve().then(() => (init_revenue_allocation(), revenue_allocation_exports));
+        const monthlyClientRevenues = await getMonthlyRevenueByClient2(ym, env);
         let monthRevenue = 0;
         const employeeClientHoursRows = await env.DATABASE.prepare(`
 			SELECT client_id, SUM(hours) as emp_hours
@@ -11023,15 +11227,7 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
 			`).bind(clientId, ym).first();
           const clientTotalHours = Number(clientTotalHoursRow?.total_hours || 0);
           if (clientTotalHours === 0) continue;
-          const clientRevenueRow = await env.DATABASE.prepare(`
-				SELECT SUM(total_amount) as revenue
-				FROM Receipts
-				WHERE client_id = ?
-					AND is_deleted = 0
-					AND status != 'cancelled'
-					AND substr(service_month, 1, 7) = ?
-			`).bind(clientId, ym).first();
-          const clientRevenue = Number(clientRevenueRow?.revenue || 0);
+          const clientRevenue = Number(monthlyClientRevenues[clientId] || 0);
           monthRevenue += clientRevenue * (empHours / clientTotalHours);
         }
         const monthCost = baseSalary;

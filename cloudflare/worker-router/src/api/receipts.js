@@ -592,6 +592,10 @@ export async function handleReceipts(request, env, me, requestId, url) {
 		const clientServiceId = body?.client_service_id ? parseInt(body.client_service_id, 10) : null;
 		const billingMonth = body?.billing_month ? parseInt(body.billing_month, 10) : null;
 		
+		// 服务期间（应计制，用户手动指定）
+		const manualServiceStartMonth = body?.service_start_month ? String(body.service_start_month).trim() : null;
+		const manualServiceEndMonth = body?.service_end_month ? String(body.service_end_month).trim() : null;
+		
 		const errors = [];
 		if (!client_id) errors.push({ field:"client_id", message:"必填" });
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(receipt_date)) errors.push({ field:"receipt_date", message:"日期格式 YYYY-MM-DD" });
@@ -686,26 +690,73 @@ export async function handleReceipts(request, env, me, requestId, url) {
 				due_date = `${y}-${m2}-${day}`;
 			}
 
-			// 计算 service_month (YYYY-MM格式，用于关联任务)
-			let serviceMonth = null;
-			if (billingMonth) {
-				// 如果有 billing_month，使用 receipt_date 的年份 + billing_month
-				const year = receipt_date.split('-')[0];
-				serviceMonth = `${year}-${String(billingMonth).padStart(2, '0')}`;
-			} else {
-				// 否则使用 receipt_date 的年月
-				serviceMonth = receipt_date.substring(0, 7);
+			// 智能推断服务期间（应计制）
+			let serviceStartMonth = null;
+			let serviceEndMonth = null;
+			
+			// 优先级0：用户手动指定（最高优先级）
+			if (manualServiceStartMonth) {
+				serviceStartMonth = manualServiceStartMonth;
+				serviceEndMonth = manualServiceEndMonth || manualServiceStartMonth;
 			}
+			
+			// 优先级1：从关联任务获取service_month
+			if (relatedTaskId) {
+				const taskRow = await env.DATABASE.prepare(
+					`SELECT service_month FROM ActiveTasks WHERE task_id = ?`
+				).bind(relatedTaskId).first();
+				
+				if (taskRow && taskRow.service_month) {
+					serviceStartMonth = taskRow.service_month;
+					serviceEndMonth = taskRow.service_month;
+				}
+			}
+			
+			// 优先级2：从客户工时记录推断（查找最近的工时记录）
+			if (!serviceStartMonth && client_id) {
+				// 查询该客户最近3个月的工时记录
+				const recentHoursRow = await env.DATABASE.prepare(`
+					SELECT 
+						MIN(substr(work_date, 1, 7)) as start_month,
+						MAX(substr(work_date, 1, 7)) as end_month
+					FROM Timesheets
+					WHERE client_id = ?
+						AND is_deleted = 0
+						AND work_date >= date('now', '-90 days')
+					LIMIT 1
+				`).bind(client_id).first();
+				
+				if (recentHoursRow && recentHoursRow.start_month) {
+					serviceStartMonth = recentHoursRow.start_month;
+					serviceEndMonth = recentHoursRow.end_month || recentHoursRow.start_month;
+				}
+			}
+			
+			// 优先级3：使用billing_month
+			if (!serviceStartMonth && billingMonth) {
+				const year = receipt_date.split('-')[0];
+				serviceStartMonth = `${year}-${String(billingMonth).padStart(2, '0')}`;
+				serviceEndMonth = serviceStartMonth;
+			}
+			
+			// 优先级4：fallback到receipt_date的年月
+			if (!serviceStartMonth) {
+				serviceStartMonth = receipt_date.substring(0, 7);
+				serviceEndMonth = serviceStartMonth;
+			}
+			
+			// 兼容性：保留service_month字段（使用start_month）
+			const serviceMonth = serviceStartMonth;
 			
 			// 插入收据
 			await env.DATABASE.prepare(
 				`INSERT INTO Receipts (receipt_id, client_id, receipt_date, due_date, total_amount, withholding_amount, paid_amount, status, 
-				 receipt_type, related_task_id, client_service_id, billing_month, service_month,
+				 receipt_type, related_task_id, client_service_id, billing_month, service_month, service_start_month, service_end_month,
 				 is_auto_generated, notes, created_by, created_at, updated_at) 
-				 VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
+				 VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
 			).bind(
 				receipt_id, client_id, receipt_date, due_date, total_amount, withholding_amount, statusVal, 
-				receiptType, relatedTaskId, clientServiceId, billingMonth, serviceMonth,
+				receiptType, relatedTaskId, clientServiceId, billingMonth, serviceMonth, serviceStartMonth, serviceEndMonth,
 				notes, String(me.user_id), new Date().toISOString(), new Date().toISOString()
 			).run();
 			

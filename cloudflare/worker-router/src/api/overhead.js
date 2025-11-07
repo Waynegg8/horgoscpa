@@ -1536,12 +1536,20 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 			
 			console.log(`[Client ${clientId}] ${client.company_name}: employeeDetails =`, employeeDetails.length, employeeDetails);
 			
-		// 6. 获取收入（月度或年度）
-		const revenueRow = await env.DATABASE.prepare(
-			`SELECT SUM(total_amount) as total FROM Receipts 
-			 WHERE client_id = ? AND substr(receipt_date, 1, ${dateLength}) = ? AND is_deleted = 0`
-		).bind(clientId, yearMonth).first();
-			const revenue = Number(revenueRow?.total || 0);
+		// 6. 获取收入（使用应计制，按服务月份确认）
+		// 导入收入分摊函数
+		const { getMonthlyRevenueByClient, getAnnualRevenueByClient } = await import('../revenue-allocation.js');
+		
+		let revenue = 0;
+		if (isAnnual) {
+			// 年度：获取全年收入
+			const annualRevenues = await getAnnualRevenueByClient(year, env);
+			revenue = Number(annualRevenues[clientId] || 0);
+		} else {
+			// 月度：获取该月收入
+			const monthlyRevenues = await getMonthlyRevenueByClient(yearMonth, env);
+			revenue = Number(monthlyRevenues[clientId] || 0);
+		}
 			
 			if (totalHours > 0 || revenue > 0) {
 				const avgHourlyRate = totalWeightedHours > 0 ? Math.round(totalCost / totalWeightedHours) : 0;

@@ -581,21 +581,13 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
 		const users = usersResult?.results || [];
 		const { calculateEmployeePayroll } = await import('./payroll.js');
 		
-	// 获取该月所有客户的收入（按client_id，因为client_service_id可能为null）
-	const clientRevenueRows = await env.DATABASE.prepare(`
-		SELECT 
-			r.client_id,
-			SUM(r.total_amount) as revenue
-		FROM Receipts r
-		WHERE r.is_deleted = 0 
-			AND r.status != 'cancelled'
-			AND r.service_month = ?
-		GROUP BY r.client_id
-	`).bind(ym).all();
-
+	// 获取该月所有客户的收入（使用应计制，含跨月分摊）
+	const { getMonthlyRevenueByClient } = await import('../revenue-allocation.js');
+	const clientRevenues = await getMonthlyRevenueByClient(ym, env);
+	
 	const clientRevenueMap = new Map();
-	for (const row of (clientRevenueRows?.results || [])) {
-		clientRevenueMap.set(row.client_id, Number(row.revenue || 0));
+	for (const [clientId, revenue] of Object.entries(clientRevenues)) {
+		clientRevenueMap.set(clientId, revenue);
 	}
 
 		const employeePerformance = [];
@@ -924,7 +916,10 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
 			monthWeightedHours += weighted;
 		}
 		
-		// 获取该月收入（按该员工在各客户的工时比例分配）
+		// 获取该月收入（使用应计制，按该员工在各客户的工时比例分配）
+		const { getMonthlyRevenueByClient } = await import('../revenue-allocation.js');
+		const monthlyClientRevenues = await getMonthlyRevenueByClient(ym, env);
+		
 		let monthRevenue = 0;
 		
 		// 获取该员工该月在各客户的工时
@@ -955,17 +950,8 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
 			const clientTotalHours = Number(clientTotalHoursRow?.total_hours || 0);
 			if (clientTotalHours === 0) continue;
 			
-			// 获取该客户该月的收入
-			const clientRevenueRow = await env.DATABASE.prepare(`
-				SELECT SUM(total_amount) as revenue
-				FROM Receipts
-				WHERE client_id = ?
-					AND is_deleted = 0
-					AND status != 'cancelled'
-					AND substr(service_month, 1, 7) = ?
-			`).bind(clientId, ym).first();
-			
-			const clientRevenue = Number(clientRevenueRow?.revenue || 0);
+			// 使用应计制收入（含跨月分摊）
+			const clientRevenue = Number(monthlyClientRevenues[clientId] || 0);
 			
 			// 按工时比例分配收入
 			monthRevenue += clientRevenue * (empHours / clientTotalHours);
