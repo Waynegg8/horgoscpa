@@ -759,14 +759,44 @@
             }
         }
         
-        // 填充SOP和附件下拉选单
-        function populateSOPAndAttachments(templateId) {
+        // 填充SOP和附件下拉选单（根据服务类型过滤）
+        function populateSOPAndAttachments(templateId, serviceId) {
             const sopSelect = document.getElementById(`task-sop-${templateId}`);
             const attachmentSelect = document.getElementById(`task-attachment-${templateId}`);
             
             if (sopSelect && allSOPs.length > 0) {
+                // 根据服务类型过滤SOP
+                let filteredSOPs = allSOPs;
+                
+                if (serviceId) {
+                    // 找到当前服务的service_code
+                    const currentService = allServices.find(s => s.service_id === serviceId);
+                    const serviceCode = currentService?.service_code || '';
+                    
+                    console.log('[Task SOP Filter] serviceId:', serviceId, 'serviceCode:', serviceCode);
+                    
+                    if (serviceCode) {
+                        // 筛选：只显示scope=task且category匹配的SOP
+                        filteredSOPs = allSOPs.filter(sop => 
+                            sop.scope === 'task' && 
+                            (sop.category === serviceCode || 
+                             sop.category === serviceCode.toLowerCase() || 
+                             sop.category === serviceCode.toUpperCase())
+                        );
+                        
+                        console.log('[Task SOP Filter] Filtered SOPs:', filteredSOPs.length, '/', allSOPs.length);
+                    }
+                }
+                
+                // 按标题排序
+                const sortedSOPs = filteredSOPs.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+                
                 sopSelect.innerHTML = '<option value="">無</option>' + 
-                    allSOPs.map(s => `<option value="${s.sop_id}">${s.title}</option>`).join('');
+                    sortedSOPs.map(s => `<option value="${s.sop_id}">${s.title}</option>`).join('');
+                
+                if (serviceId && sortedSOPs.length === 0) {
+                    sopSelect.innerHTML = '<option value="">無適用於此服務的SOP</option>';
+                }
             }
             
             if (attachmentSelect && allAttachments.length > 0) {
@@ -788,7 +818,7 @@
                 }
                 
                 container.innerHTML = json.data.map(t => `
-                    <div class="card" style="margin-bottom:24px">
+                    <div class="card" style="margin-bottom:24px" data-template-id="${t.template_id}" data-service-id="${t.service_id || ''}">
                         <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
                             <div>
                                 <h3 style="margin:0;font-size:16px">${t.template_name}</h3>
@@ -814,7 +844,7 @@
                                     <input type="number" id="task-order-${t.template_id}" class="form-control" value="1">
                                 </div>
                                 <div class="form-group">
-                                    <label>任務層級 SOP（可選）</label>
+                                    <label>任務層級 SOP（可選）<small style="color:#666;margin-left:8px;">僅顯示適用於此服務的SOP</small></label>
                                     <select id="task-sop-${t.template_id}" class="form-control">
                                         <option value="">無</option>
                                     </select>
@@ -886,12 +916,20 @@
         // 显示新增任务表单
         let editingStageId = null;
         
+        // 获取模板的serviceId
+        function getTemplateServiceId(templateId) {
+            const templateCard = document.querySelector(`[data-template-id="${templateId}"]`);
+            return templateCard ? parseInt(templateCard.getAttribute('data-service-id')) : null;
+        }
+        
         function showAddTask(templateId) {
             editingStageId = null;
             document.getElementById(`task-form-${templateId}`).classList.remove('hidden');
             document.getElementById(`task-name-${templateId}`).value = '';
             document.getElementById(`task-order-${templateId}`).value = '1';
-            populateSOPAndAttachments(templateId);
+            
+            const serviceId = getTemplateServiceId(templateId);
+            populateSOPAndAttachments(templateId, serviceId);
         }
         
         function editTask(templateId, task) {
@@ -902,7 +940,8 @@
             document.getElementById(`task-name-${templateId}`).value = task.stage_name || '';
             document.getElementById(`task-order-${templateId}`).value = task.stage_order || 1;
             
-            populateSOPAndAttachments(templateId);
+            const serviceId = getTemplateServiceId(templateId);
+            populateSOPAndAttachments(templateId, serviceId);
             
             // 设置SOP和附件的值
             setTimeout(() => {
