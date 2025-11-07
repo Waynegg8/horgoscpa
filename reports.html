@@ -832,6 +832,9 @@
           detailRow.style.display = 'none';
         }
       }
+      
+      // 暴露到全局作用域，供 onclick 调用
+      window.toggleServiceDetails = toggleServiceDetails;
 
       // ============================================================
       // 年度报表加载 - 独立按钮
