@@ -264,6 +264,15 @@
         const tbodyClients = document.getElementById('tbody-clients');
         const tbodyTasks = document.getElementById('tbody-tasks');
 
+        let serviceItemMap = null;
+        let serviceItemMapLoading = null;
+        const clientSummaryCache = {
+          key: '',
+          clients: [],
+          byId: new Map(),
+          byName: new Map()
+        };
+
         function setTabsEnabled(enabled){
           tabs.forEach(b=>{ b.disabled = !enabled; });
           document.querySelectorAll('.costs-toolbar .btn, .section-toolbar input, .section-toolbar select, .section-toolbar button').forEach(el=>{ el.disabled = !enabled; });
@@ -376,6 +385,35 @@
           return '未分類';
         }
 
+        function coerceEmployeeList(source){
+          if (!source) return null;
+          if (Array.isArray(source)) return source;
+          if (typeof source === 'string') {
+            try {
+              const parsed = JSON.parse(source);
+              if (Array.isArray(parsed)) return parsed;
+            } catch (_) {
+              /* ignore */
+            }
+          }
+          if (typeof source === 'object') {
+            const objectCandidates = [
+              source.list,
+              source.items,
+              source.data,
+              source.results
+            ];
+            for (const candidate of objectCandidates) {
+              if (Array.isArray(candidate)) return candidate;
+            }
+            const values = Object.values(source);
+            if (values.length > 0 && values.every(item => typeof item === 'object')) {
+              return values;
+            }
+          }
+          return null;
+        }
+
         function resolveEmployeeDetails(client){
           if (!client || typeof client !== 'object') return [];
           const candidates = [
@@ -384,13 +422,155 @@
             client.employee_details,
             client.employee_details_list
           ];
-          for (const list of candidates) {
+          for (const candidate of candidates) {
+            const list = coerceEmployeeList(candidate);
             if (Array.isArray(list) && list.length > 0) return list;
           }
-          for (const list of candidates) {
+          for (const candidate of candidates) {
+            const list = coerceEmployeeList(candidate);
             if (Array.isArray(list)) return list;
           }
           return [];
+        }
+
+        function normalizeClientName(name){
+          return String(name || '').trim().toLowerCase();
+        }
+
+        function hydrateClientSummaryCache(key, clients){
+          clientSummaryCache.key = key;
+          clientSummaryCache.clients = Array.isArray(clients) ? clients : [];
+          clientSummaryCache.byId = new Map();
+          clientSummaryCache.byName = new Map();
+          (clientSummaryCache.clients || []).forEach(client => {
+            const id = client.clientId ?? client.client_id;
+            if (id !== undefined && id !== null) {
+              clientSummaryCache.byId.set(String(id), client);
+            }
+            const nameKey = normalizeClientName(client.clientName || client.client_name || client.name);
+            if (nameKey) {
+              clientSummaryCache.byName.set(nameKey, client);
+            }
+          });
+        }
+
+        async function fetchClientSummaryData(year, month){
+          const params = new URLSearchParams();
+          params.set('year', String(year));
+          params.set('month', String(month));
+          params.set('_t', String(Date.now()));
+          const res = await fetch(`${apiBase}/admin/costs/client?${params.toString()}`, { credentials:'include', cache: 'no-store' });
+          if (res.status === 401) {
+            location.assign('/login?redirect=/internal/costs');
+            throw new Error('UNAUTHORIZED');
+          }
+          if (res.status === 501) {
+            return [];
+          }
+          const json = await res.json();
+          if (!res.ok || !json || json.ok !== true) {
+            throw new Error(json?.message || 'LOAD_FAILED');
+          }
+          return json.data?.clients || [];
+        }
+
+        async function ensureClientSummaryCache(ym){
+          const key = `${ym.year}-${String(ym.month).padStart(2,'0')}`;
+          if (clientSummaryCache.key === key && Array.isArray(clientSummaryCache.clients) && clientSummaryCache.clients.length > 0) {
+            return clientSummaryCache;
+          }
+          try {
+            const clients = await fetchClientSummaryData(ym.year, ym.month);
+            hydrateClientSummaryCache(key, clients);
+          } catch (err) {
+            console.warn('[ClientSummaryCache] 載入失敗:', err);
+            hydrateClientSummaryCache(key, []);
+          }
+          return clientSummaryCache;
+        }
+
+        function getClientSummaryForTask(task){
+          if (!task) return null;
+          const id = task.clientId ?? task.client_id;
+          if (id !== undefined && id !== null) {
+            const foundById = clientSummaryCache.byId.get(String(id));
+            if (foundById) return foundById;
+          }
+          const nameKey = normalizeClientName(task.clientName || task.client_name || task.name);
+          if (nameKey && clientSummaryCache.byName.has(nameKey)) {
+            return clientSummaryCache.byName.get(nameKey);
+          }
+          return null;
+        }
+
+        function computeAvgHourlyFromSummary(summary){
+          if (!summary || typeof summary !== 'object') return 0;
+          const totalCost = toNumber(summary.totalCost ?? summary.total_cost);
+          const weightedHours = toNumber(summary.weightedHours ?? summary.weighted_hours);
+          if (weightedHours > 0 && totalCost > 0) {
+            return totalCost / weightedHours;
+          }
+          const fallback = toNumber(summary.avgHourlyRate ?? summary.avgActualHourlyRate ?? summary.avg_hourly_rate);
+          return fallback > 0 ? fallback : 0;
+        }
+
+        async function ensureServiceItemMap(){
+          if (serviceItemMap) {
+            return serviceItemMap;
+          }
+          if (serviceItemMapLoading) {
+            return serviceItemMapLoading;
+          }
+          serviceItemMapLoading = (async () => {
+            try {
+              const res = await fetch(`${apiBase}/services/items?_t=${Date.now()}`, { credentials:'include', cache: 'no-store' });
+              if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+              }
+              const json = await res.json();
+              if (!json || json.ok !== true) {
+                throw new Error(json?.message || 'LOAD_FAILED');
+              }
+              const data = Array.isArray(json.data) ? json.data : [];
+              const map = new Map();
+              data.forEach(item => {
+                const itemId = item.item_id ?? item.id ?? item.itemId;
+                if (itemId === undefined || itemId === null) return;
+                const key = String(itemId);
+                const serviceName = String(item.service_name || item.serviceName || '').trim();
+                const serviceId = item.service_id ?? item.serviceId ?? null;
+                map.set(key, { serviceName, serviceId });
+              });
+              serviceItemMap = map;
+            } catch (err) {
+              console.warn('[ServiceItems] 載入失敗:', err);
+              serviceItemMap = new Map();
+            } finally {
+              serviceItemMapLoading = null;
+            }
+            return serviceItemMap;
+          })();
+          return serviceItemMapLoading;
+        }
+
+        function lookupServiceNameByItemId(itemId){
+          if (itemId === undefined || itemId === null) return '';
+          const key = String(itemId);
+          const entry = serviceItemMap?.get(key);
+          if (entry && entry.serviceName) {
+            return entry.serviceName;
+          }
+          return '';
+        }
+
+        function getServiceProjectName(task){
+          const resolved = resolveServiceName(task);
+          if (resolved && resolved !== '未分類') return resolved;
+          const fromMap = lookupServiceNameByItemId(task?.serviceItemId ?? task?.service_item_id);
+          if (fromMap) return fromMap;
+          const alt = task?.serviceCategoryName || task?.service_category || task?.serviceGroupName || task?.service_group_name;
+          if (typeof alt === 'string' && alt.trim()) return alt.trim();
+          return resolved || '未分類';
         }
 
         function computeActualHourlyRate(rawRate, totalCost, weightedHours){
@@ -826,6 +1006,7 @@
           params.set('year', String(ym.year));
           params.set('month', String(ym.month));
           params.set('_t', String(Date.now())); // 强制绕过缓存
+          const cacheKey = `${ym.year}-${String(ym.month).padStart(2,'0')}`;
           try {
             tbodyClients.innerHTML = '<tr><td colspan="8" class="muted">載入中…</td></tr>';
             const res = await fetch(`${apiBase}/admin/costs/client?${params.toString()}`, { credentials:'include', cache: 'no-store' });
@@ -838,6 +1019,7 @@
             if (!res.ok || !json || json.ok !== true) throw new Error();
             const data = json.data || {};
             const clients = data.clients || [];
+            hydrateClientSummaryCache(cacheKey, clients);
             if (clients.length === 0) {
               tbodyClients.innerHTML = '<tr><td colspan="8" class="muted">尚無資料</td></tr>';
               updateClientSummary(0, 0, 0, 0);
@@ -939,6 +1121,7 @@
             updateClientSummary(totalCost, totalRevenue, totalProfit, avgMargin);
           } catch (_) {
             tbodyClients.innerHTML = '<tr><td colspan="8" style="color:#c0392b;">載入失敗</td></tr>';
+            hydrateClientSummaryCache(cacheKey, []);
           }
         }
 
@@ -965,28 +1148,92 @@
               tbodyTasks.innerHTML = '<tr><td colspan="8" class="muted">尚無資料</td></tr>';
               return;
             }
+            try {
+              await ensureServiceItemMap();
+            } catch (err) {
+              console.warn('[ServiceItems] 載入失敗，改用原始資料:', err);
+            }
+            await ensureClientSummaryCache(ym);
+
             tbodyTasks.innerHTML = '';
-            tasks.forEach(task => {
-              const serviceText = resolveServiceName(task);
-              const hours = toNumber(task.hours);
-              const weightedHours = toNumber(task.weightedHours);
-              const totalCost = toNumber(task.totalCost);
-              const rawHourly = task.avgActualHourlyRate ?? task.avgHourlyRate ?? task.actualHourlyRate;
-              const hourly = computeActualHourlyRate(rawHourly, totalCost, weightedHours);
-              const taskTitle = task.taskTitle || task.service_item_name || '';
-              const tr = document.createElement('tr');
-              tr.innerHTML = `
-                <td>${task.clientName || ''}</td>
-                <td>${serviceText}</td>
-                <td>${taskTitle}</td>
-                <td>${task.assigneeName || ''}</td>
-                <td>${hours.toFixed(1)}</td>
-                <td>${weightedHours.toFixed(1)}</td>
-                <td style="color:#0ea5e9;font-weight:600;">${formatHourlyRate(hourly)}</td>
-                <td style="font-weight:600;color:#16a34a;">${formatCurrency(totalCost)}</td>
-              `;
-              tbodyTasks.appendChild(tr);
+            const groupLookup = new Map();
+            const groupOrder = [];
+
+            tasks.forEach((task, idx) => {
+              const id = task.clientId ?? task.client_id;
+              const normalizedName = normalizeClientName(task.clientName || task.client_name || task.name);
+              const key = id !== undefined && id !== null ? `id:${id}` : `name:${normalizedName || `__index_${idx}`}`;
+              if (!groupLookup.has(key)) {
+                groupLookup.set(key, {
+                  key,
+                  summary: getClientSummaryForTask(task),
+                  tasks: []
+                });
+                groupOrder.push(key);
+              }
+              groupLookup.get(key).tasks.push(task);
             });
+
+            const fragment = document.createDocumentFragment();
+
+            groupOrder.forEach(key => {
+              const group = groupLookup.get(key);
+              if (!group) return;
+              const summary = group.summary ?? getClientSummaryForTask(group.tasks[0]);
+              const summaryTotalCost = toNumber(summary?.totalCost ?? summary?.total_cost);
+              const summaryWeighted = toNumber(summary?.weightedHours ?? summary?.weighted_hours);
+              const avgHourlyRaw = computeAvgHourlyFromSummary(summary);
+              const avgHourlyFromSummary = avgHourlyRaw > 0 ? Math.round(avgHourlyRaw * 100) / 100 : 0;
+              const useSummaryDistribution = avgHourlyFromSummary > 0 && summaryTotalCost > 0;
+              let remainingCost = summaryTotalCost;
+
+              group.tasks.forEach((task, taskIndex) => {
+                const hours = toNumber(task.hours);
+                const weightedHours = toNumber(task.weightedHours);
+                const serviceText = getServiceProjectName(task);
+                const taskTitle = task.taskTitle || task.service_item_name || '';
+                let hourly; 
+                let totalCost;
+
+                if (useSummaryDistribution) {
+                  hourly = avgHourlyFromSummary;
+                  if (taskIndex === group.tasks.length - 1) {
+                    totalCost = Math.max(Math.round(remainingCost), 0);
+                    remainingCost = 0;
+                  } else {
+                    totalCost = Math.round(weightedHours * hourly);
+                    remainingCost -= totalCost;
+                    if (!Number.isFinite(remainingCost)) {
+                      remainingCost = 0;
+                    } else if (remainingCost < 0) {
+                      remainingCost = 0;
+                    }
+                  }
+                } else {
+                  totalCost = toNumber(task.totalCost);
+                  const rawHourly = task.avgActualHourlyRate ?? task.avgHourlyRate ?? task.actualHourlyRate;
+                  hourly = computeActualHourlyRate(rawHourly, totalCost, weightedHours);
+                }
+
+                if (!Number.isFinite(totalCost)) totalCost = 0;
+                if (!Number.isFinite(hourly)) hourly = 0;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                  <td>${task.clientName || task.client_name || ''}</td>
+                  <td>${serviceText}</td>
+                  <td>${taskTitle}</td>
+                  <td>${task.assigneeName || task.assignee_name || ''}</td>
+                  <td>${hours.toFixed(1)}</td>
+                  <td>${weightedHours.toFixed(1)}</td>
+                  <td style="color:#0ea5e9;font-weight:600;">${formatHourlyRate(hourly)}</td>
+                  <td style="font-weight:600;color:#16a34a;">${formatCurrency(totalCost)}</td>
+                `;
+                fragment.appendChild(tr);
+              });
+            });
+
+            tbodyTasks.appendChild(fragment);
           } catch (_) {
             tbodyTasks.innerHTML = '<tr><td colspan="8" style="color:#c0392b;">載入失敗</td></tr>';
           }
