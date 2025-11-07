@@ -178,12 +178,11 @@
                   <th class="text-right">總成本</th>
                   <th class="text-right">毛利</th>
                   <th class="text-right">毛利率</th>
-                  <th class="text-right">時薪</th>
                   <th>操作</th>
                 </tr>
               </thead>
               <tbody id="m-emp-performance">
-                <tr><td colspan="11" class="muted">請選擇月份後載入資料</td></tr>
+                <tr><td colspan="10" class="muted">請選擇月份後載入資料</td></tr>
               </tbody>
             </table>
             </div>
@@ -401,12 +400,11 @@
                   <th class="text-right">年度成本</th>
                   <th class="text-right">年度毛利</th>
                   <th class="text-right">毛利率</th>
-                  <th class="text-right">年均時薪</th>
                   <th>操作</th>
                 </tr>
               </thead>
               <tbody id="a-emp-performance">
-                <tr><td colspan="10" class="muted">請選擇年度後載入資料</td></tr>
+                <tr><td colspan="9" class="muted">請選擇年度後載入資料</td></tr>
               </tbody>
             </table>
           </div>
@@ -463,6 +461,9 @@
       (function() {
         const onProdHost = location.hostname.endsWith('horgoscpa.com');
         const apiBase = onProdHost ? '/internal/api/v1' : 'https://www.horgoscpa.com/internal/api/v1';
+
+        // 存储客户分布数据
+        const clientDistributionData = {};
 
         const tabs = document.querySelectorAll('.reports-tabs .tab');
         const panels = {
@@ -687,9 +688,14 @@
           const tbody = document.getElementById('m-emp-performance');
           
           if (data.employeePerformance.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" class="muted">本月無工時記錄</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="muted">本月無工時記錄</td></tr>';
           } else {
-            tbody.innerHTML = data.employeePerformance.map(e => `
+            tbody.innerHTML = data.employeePerformance.map(e => {
+              // 存储客户分布数据
+              const key = `monthly_${e.userId}`;
+              clientDistributionData[key] = { name: e.name, distribution: e.clientDistribution };
+              
+              return `
               <tr>
                 <td>${e.name}</td>
                 <td class="text-right">${e.standardHours.toFixed(1)}h</td>
@@ -700,10 +706,10 @@
                 <td class="text-right">${formatCurrency(e.totalCost)}</td>
                 <td class="text-right" style="color:${e.profit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(e.profit)}</td>
                 <td class="text-right">${formatPercent(e.profitMargin)}</td>
-                <td class="text-right">${formatCurrency(e.hourlyRate)}</td>
-                <td><button class="btn-link" onclick="showClientDistribution(${e.userId}, '${e.name}', ${JSON.stringify(e.clientDistribution).replace(/"/g, '&quot;')})">查看客戶分布</button></td>
+                <td><button class="btn-link" onclick="showClientDistribution('monthly_${e.userId}')">查看客戶分布</button></td>
               </tr>
-            `).join('');
+              `;
+            }).join('');
           }
         }
 
@@ -1052,9 +1058,14 @@
           const tbody = document.getElementById('a-emp-performance');
           
           if (data.employeeSummary.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="muted">本年無員工工時記錄</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="muted">本年無員工工時記錄</td></tr>';
             } else {
-            tbody.innerHTML = data.employeeSummary.map(e => `
+            tbody.innerHTML = data.employeeSummary.map(e => {
+              // 存储客户分布数据
+              const key = `annual_${e.userId}`;
+              clientDistributionData[key] = { name: e.name, distribution: e.clientDistribution };
+              
+              return `
               <tr>
                 <td>${e.name}</td>
                 <td class="text-right">${e.annualStandardHours.toFixed(1)}h</td>
@@ -1064,13 +1075,13 @@
                 <td class="text-right">${formatCurrency(e.annualCost)}</td>
                 <td class="text-right" style="color:${e.annualProfit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(e.annualProfit)}</td>
                 <td class="text-right">${formatPercent(e.annualProfitMargin)}</td>
-                <td class="text-right">${formatCurrency(e.avgHourlyRate)}</td>
                 <td>
                   <button class="btn-link" onclick="alert('查看月度趨勢功能開發中')">趨勢</button>
-                  <button class="btn-link" onclick="showAnnualClientDistribution(${e.userId}, '${e.name}', ${JSON.stringify(e.clientDistribution).replace(/"/g, '&quot;')})">客戶分布</button>
+                  <button class="btn-link" onclick="showAnnualClientDistribution('annual_${e.userId}')">客戶分布</button>
                 </td>
               </tr>
-            `).join('');
+              `;
+            }).join('');
           }
         }
 
@@ -1125,17 +1136,18 @@
           }
         }
 
-        // 显示客户分布弹窗
-        window.showClientDistribution = function(userId, userName, distribution) {
-          if (!distribution || distribution.length === 0) {
-            alert(userName + ' 本月無客戶分布資料');
+        // 显示客户分布弹窗（月度）
+        window.showClientDistribution = function(key) {
+          const data = clientDistributionData[key];
+          if (!data || !data.distribution || data.distribution.length === 0) {
+            alert((data?.name || '該員工') + ' 本月無客戶分布資料');
             return;
           }
 
           const html = `
             <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
               <div style="background:#fff;border-radius:12px;padding:24px;max-width:800px;width:90%;max-height:80vh;overflow:auto;">
-                <h3 style="margin:0 0 16px 0;">${userName} - 客戶分布明細</h3>
+                <h3 style="margin:0 0 16px 0;">${data.name} - 客戶分布明細</h3>
                 <table class="report-table" style="margin-bottom:16px;">
                   <thead>
                     <tr>
@@ -1148,7 +1160,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    ${distribution.map(d => `
+                    ${data.distribution.map(d => `
                       <tr>
                         <td>${d.clientName}</td>
                         <td>${d.serviceName}</td>
@@ -1167,16 +1179,18 @@
           document.body.insertAdjacentHTML('beforeend', html);
         };
 
-        window.showAnnualClientDistribution = function(userId, userName, distribution) {
-          if (!distribution || distribution.length === 0) {
-            alert(userName + ' 本年無客戶分布資料');
+        // 显示客户分布弹窗（年度）
+        window.showAnnualClientDistribution = function(key) {
+          const data = clientDistributionData[key];
+          if (!data || !data.distribution || data.distribution.length === 0) {
+            alert((data?.name || '該員工') + ' 本年無客戶分布資料');
             return;
           }
 
           const html = `
             <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
               <div style="background:#fff;border-radius:12px;padding:24px;max-width:800px;width:90%;max-height:80vh;overflow:auto;">
-                <h3 style="margin:0 0 16px 0;">${userName} - 年度客戶分布</h3>
+                <h3 style="margin:0 0 16px 0;">${data.name} - 年度客戶分布</h3>
                 <table class="report-table" style="margin-bottom:16px;">
                   <thead>
                     <tr>
@@ -1188,11 +1202,11 @@
                     </tr>
                   </thead>
                   <tbody>
-                    ${distribution.map(d => `
+                    ${data.distribution.map(d => `
                       <tr>
                         <td>${d.clientName}</td>
                         <td>${d.serviceName}</td>
-                        <td class="text-right">${d.annualHours.toFixed(1)}h</td>
+                        <td class="text-right">${d.hours.toFixed(1)}h</td>
                         <td class="text-right">${formatCurrency(d.generatedRevenue)}</td>
                         <td class="text-right">${formatPercent(d.revenuePercentage)}</td>
                       </tr>

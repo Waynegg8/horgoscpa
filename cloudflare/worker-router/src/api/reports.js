@@ -1072,16 +1072,14 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
 		};
 	}).filter(c => c.annualHours > 0 || c.annualRevenue > 0);
 
-	// 按服务类型年度汇总（通过任务关联）
+	// 按服务类型年度汇总（直接从Timesheets的service_id获取）
 	const serviceTypeSummary = await env.DATABASE.prepare(`
 	SELECT 
-		COALESCE(s.service_name, '无关联服务') as service_name,
+		s.service_name,
 		SUM(t.hours) as total_hours,
 		t.work_type
 	FROM Timesheets t
-	LEFT JOIN ActiveTasks task ON task.task_id = t.task_id
-	LEFT JOIN ClientServices cs ON cs.client_service_id = task.client_service_id
-	LEFT JOIN Services s ON s.service_id = cs.service_id
+	JOIN Services s ON s.service_id = t.service_id
 	WHERE t.is_deleted = 0
 		AND substr(t.work_date, 1, 4) = ?
 	GROUP BY s.service_name, t.work_type
@@ -1090,7 +1088,7 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
 	// 按服务类型聚合并计算加权工时
 	const serviceMap = new Map();
 	for (const row of (serviceTypeSummary?.results || [])) {
-		const serviceName = row.service_name || '无关联服务';
+		const serviceName = row.service_name;
 		const hours = Number(row.total_hours || 0);
 		const workTypeId = parseInt(row.work_type) || 1;
 		const weighted = calculateWeightedHours(workTypeId, hours);
