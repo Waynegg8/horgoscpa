@@ -771,7 +771,7 @@
               totalRevenue += revenue;
               totalProfit += profit;
               
-              const empList = Array.isArray(client.employees) ? client.employees : (client.employeeDetails || []);
+              const empList = Array.isArray(client.employeeDetails) ? client.employeeDetails : (client.employees || []);
               const hasEmp = Array.isArray(empList) && empList.length > 0;
               // 客户主行（可点击展开）
               const tr = document.createElement('tr');
@@ -780,9 +780,8 @@
               tr.dataset.clientIndex = index;
               tr.innerHTML = `
                 <td>
-                  <span class="toggle-icon" style="display:inline-block;width:16px;margin-right:4px;${hasEmp ? '' : 'visibility:hidden;'}">▶</span>
+                  <span class="toggle-icon" style="display:inline-block;width:16px;margin-right:4px;">▶</span>
                   <strong>${client.clientName||''}</strong>
-                  ${hasEmp ? `<span style="color:#64748b;font-size:12px;margin-left:8px;">(${empList.length}位員工)</span>` : ''}
                 </td>
                 <td>${Number(client.totalHours||0).toFixed(1)}</td>
                 <td>${weightedHours.toFixed(1)}</td>
@@ -818,7 +817,30 @@
               
               // 绑定点击事件
               tr.addEventListener('click', () => {
-                const detailRows = tbodyClients.querySelectorAll(`tr.employee-detail-row[data-client-index="${index}"]`);
+                let detailRows = tbodyClients.querySelectorAll(`tr.employee-detail-row[data-client-index="${index}"]`);
+                // 懶載入：若尚未建立明細列但有資料，現場建立
+                if ((!detailRows || detailRows.length === 0) && Array.isArray(empList) && empList.length > 0) {
+                  empList.forEach(emp => {
+                    const empTr = document.createElement('tr');
+                    empTr.className = 'employee-detail-row';
+                    empTr.dataset.clientIndex = index;
+                    empTr.style.display = 'none';
+                    empTr.style.backgroundColor = '#f8fafc';
+                    empTr.innerHTML = `
+                      <td style="padding-left:32px;color:#64748b;">
+                        └ ${emp.userName||'未知員工'}
+                      </td>
+                      <td>${Number(emp.hours||0).toFixed(1)}</td>
+                      <td>${Number(emp.weightedHours||0).toFixed(1)}</td>
+                      <td style="color:#0ea5e9;">${formatCurrency(emp.actualHourlyRate)}</td>
+                      <td style="color:#16a34a;">${formatCurrency(emp.totalCost)}</td>
+                      <td colspan="3" style="color:#94a3b8;font-size:12px;">加權工時 × 實際時薪 = ${Number(emp.weightedHours||0).toFixed(1)} × ${formatCurrency(emp.actualHourlyRate)}</td>
+                    `;
+                    // 插在主行之後
+                    tbodyClients.insertBefore(empTr, tr.nextSibling);
+                  });
+                  detailRows = tbodyClients.querySelectorAll(`tr.employee-detail-row[data-client-index="${index}"]`);
+                }
                 if (!detailRows || detailRows.length === 0) return;
                 const toggleIcon = tr.querySelector('.toggle-icon');
                 const isExpanded = detailRows[0]?.style.display === 'table-row';
@@ -864,15 +886,24 @@
             }
             tbodyTasks.innerHTML = '';
             tasks.forEach(task => {
+              // 安全回退：若 API 未提供時薪，改用 總成本 ÷ 加權工時
+              const serviceText = task.serviceName ?? task.service ?? task.service_name_full ?? '未分類';
+              const hourlyRaw = (task.avgActualHourlyRate ?? task.avgHourlyRate ?? task.actualHourlyRate);
+              let hourly = Number(hourlyRaw);
+              if (!Number.isFinite(hourly) || hourly <= 0) {
+                const wh = Number(task.weightedHours || 0);
+                const tc = Number(task.totalCost || 0);
+                hourly = wh > 0 ? Math.round(tc / wh) : 0;
+              }
               const tr = document.createElement('tr');
               tr.innerHTML = `
                 <td>${task.clientName||''}</td>
-                <td>${task.serviceName ?? task.service ?? task.service_name_full ?? '未分類'}</td>
+                <td>${serviceText}</td>
                 <td>${task.taskTitle||''}</td>
                 <td>${task.assigneeName||''}</td>
                 <td>${Number(task.hours||0).toFixed(1)}</td>
                 <td>${Number(task.weightedHours||0).toFixed(1)}</td>
-                <td style="color:#0ea5e9;font-weight:600;">${formatCurrency((task.avgActualHourlyRate ?? task.avgHourlyRate ?? task.actualHourlyRate ?? 0))}</td>
+                <td style="color:#0ea5e9;font-weight:600;">${formatCurrency(hourly)}</td>
                 <td style="font-weight:600;color:#16a34a;">${formatCurrency(task.totalCost)}</td>
               `;
               tbodyTasks.appendChild(tr);
