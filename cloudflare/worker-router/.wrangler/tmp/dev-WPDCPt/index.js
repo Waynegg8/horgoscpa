@@ -11713,41 +11713,53 @@ async function handleMonthlyClientProfitability(request, env, me, requestId, url
       throw new Error("\u65E0\u6CD5\u83B7\u53D6\u5BA2\u6237\u6210\u672C\u6570\u636E");
     }
     const clients = costData.data?.clients || [];
-    const revenueRows = await env.DATABASE.prepare(`
-		SELECT 
-			r.client_id,
-			SUM(r.total_amount) as revenue
-		FROM Receipts r
-		WHERE r.is_deleted = 0 
-			AND r.status != 'cancelled'
-			AND r.service_month = ?
-		GROUP BY r.client_id
-	`).bind(ym).all();
-    const revenueMap = /* @__PURE__ */ new Map();
-    for (const r of revenueRows?.results || []) {
-      revenueMap.set(r.client_id, Number(r.revenue || 0));
+    const { getMonthlyRevenueByClient: getMonthlyRevenueByClient2 } = await Promise.resolve().then(() => (init_revenue_allocation(), revenue_allocation_exports));
+    const revenueMap = await getMonthlyRevenueByClient2(ym, env);
+    const revenueClientIds = Object.keys(revenueMap);
+    const allClientIds = [.../* @__PURE__ */ new Set([
+      ...clients.map((c) => c.clientId),
+      ...revenueClientIds
+    ])];
+    const clientNames = /* @__PURE__ */ new Map();
+    if (allClientIds.length > 0) {
+      const placeholders = allClientIds.map(() => "?").join(",");
+      const clientRows = await env.DATABASE.prepare(`
+			SELECT client_id, company_name
+			FROM Clients
+			WHERE client_id IN (${placeholders})
+		`).bind(...allClientIds).all();
+      for (const row of clientRows?.results || []) {
+        clientNames.set(row.client_id, row.company_name);
+      }
+    }
+    const costMap = /* @__PURE__ */ new Map();
+    for (const client of clients) {
+      costMap.set(client.clientId, client);
     }
     const { allocateRevenueByServiceType: allocateRevenueByServiceType2 } = await Promise.resolve().then(() => (init_revenue_allocation(), revenue_allocation_exports));
     const clientData = [];
-    for (const client of clients) {
-      const revenue = revenueMap.get(client.clientId) || client.revenue || 0;
-      const profit = revenue - client.totalCost;
+    for (const clientId of allClientIds) {
+      const costData2 = costMap.get(clientId);
+      const revenue = Number(revenueMap[clientId] || 0);
+      const totalCost = Number(costData2?.totalCost || 0);
+      const profit = revenue - totalCost;
       const profitMargin = revenue > 0 ? profit / revenue * 100 : 0;
-      const serviceDetails = await allocateRevenueByServiceType2(client.clientId, ym, revenue, env);
+      const serviceDetails = await allocateRevenueByServiceType2(clientId, ym, revenue, env);
       clientData.push({
-        clientId: client.clientId,
-        clientName: client.clientName,
-        totalHours: Number(client.totalHours || 0),
-        weightedHours: Number(client.weightedHours || 0),
-        avgHourlyRate: Number(client.avgHourlyRate || 0),
-        totalCost: Number(client.totalCost || 0),
-        revenue: Number(revenue),
+        clientId,
+        clientName: clientNames.get(clientId) || costData2?.clientName || "\u672A\u77E5\u5BA2\u6237",
+        totalHours: Number(costData2?.totalHours || 0),
+        weightedHours: Number(costData2?.weightedHours || 0),
+        avgHourlyRate: Number(costData2?.avgHourlyRate || 0),
+        totalCost,
+        revenue,
         profit: Number(profit.toFixed(2)),
         profitMargin: Number(profitMargin.toFixed(2)),
         serviceDetails
         // 添加服务类型明细
       });
     }
+    clientData.sort((a, b) => b.revenue - a.revenue);
     const data = {
       clients: clientData
     };
@@ -11783,32 +11795,43 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
     }
     const costJson = await costResponse.json();
     const costData = costJson.data?.clients || [];
-    const revenueRows = await env.DATABASE.prepare(`
-		SELECT 
-			r.client_id,
-			SUM(r.total_amount) as total_revenue
-		FROM Receipts r
-		WHERE r.is_deleted = 0 
-			AND r.status != 'cancelled'
-			AND substr(r.service_month, 1, 4) = ?
-		GROUP BY r.client_id
-	`).bind(String(year)).all();
-    const revenueMap = /* @__PURE__ */ new Map();
-    for (const r of revenueRows?.results || []) {
-      revenueMap.set(r.client_id, Number(r.total_revenue || 0));
+    const { getAnnualRevenueByClient: getAnnualRevenueByClient2 } = await Promise.resolve().then(() => (init_revenue_allocation(), revenue_allocation_exports));
+    const revenueMap = await getAnnualRevenueByClient2(year, env);
+    const revenueClientIds = Object.keys(revenueMap);
+    const allClientIds = [.../* @__PURE__ */ new Set([
+      ...costData.map((c) => c.clientId),
+      ...revenueClientIds
+    ])];
+    const clientNames = /* @__PURE__ */ new Map();
+    if (allClientIds.length > 0) {
+      const placeholders = allClientIds.map(() => "?").join(",");
+      const clientRows = await env.DATABASE.prepare(`
+			SELECT client_id, company_name
+			FROM Clients
+			WHERE client_id IN (${placeholders})
+		`).bind(...allClientIds).all();
+      for (const row of clientRows?.results || []) {
+        clientNames.set(row.client_id, row.company_name);
+      }
+    }
+    const costMap = /* @__PURE__ */ new Map();
+    for (const client of costData) {
+      costMap.set(client.clientId, client);
     }
     const clientSummary = [];
-    for (const client of costData) {
-      const annualRevenue = revenueMap.get(client.clientId) || 0;
-      const annualProfit = annualRevenue - client.totalCost;
+    for (const clientId of allClientIds) {
+      const client = costMap.get(clientId);
+      const annualRevenue = Number(revenueMap[clientId] || 0);
+      const annualCost = Number(client?.totalCost || 0);
+      const annualProfit = annualRevenue - annualCost;
       const annualProfitMargin = annualRevenue > 0 ? annualProfit / annualRevenue * 100 : 0;
-      const serviceDetails = await getAnnualServiceTypeDetails(client.clientId, year, annualRevenue, env);
+      const serviceDetails = await getAnnualServiceTypeDetails(clientId, year, annualRevenue, env);
       clientSummary.push({
-        clientId: client.clientId,
-        clientName: client.clientName,
-        annualHours: Number(client.totalHours.toFixed(1)),
-        annualWeightedHours: Number(client.weightedHours.toFixed(1)),
-        annualCost: Number(client.totalCost.toFixed(2)),
+        clientId,
+        clientName: clientNames.get(clientId) || client?.clientName || "\u672A\u77E5\u5BA2\u6237",
+        annualHours: Number((client?.totalHours || 0).toFixed(1)),
+        annualWeightedHours: Number((client?.weightedHours || 0).toFixed(1)),
+        annualCost: Number(annualCost.toFixed(2)),
         annualRevenue: Number(annualRevenue.toFixed(2)),
         annualProfit: Number(annualProfit.toFixed(2)),
         annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
@@ -11817,7 +11840,7 @@ async function handleAnnualClientProfitability(request, env, me, requestId, url,
         // 添加服务类型明细
       });
     }
-    const filteredClientSummary = clientSummary.filter((c) => c.annualHours > 0 || c.annualRevenue > 0);
+    const filteredClientSummary = clientSummary.filter((c) => c.annualHours > 0 || c.annualRevenue > 0).sort((a, b) => b.annualRevenue - a.annualRevenue);
     const serviceTypeSummary = await env.DATABASE.prepare(`
 	SELECT 
 		s.service_name,
