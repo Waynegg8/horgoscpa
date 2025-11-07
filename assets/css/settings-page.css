@@ -204,3 +204,26 @@ textarea { resize: vertical; }
 
 /* 工具类 */
 .hidden { display: none !important; }
+
+/* 公司资料切换按钮 */
+.company-tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--gray-600);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.company-tab-btn:hover {
+    color: var(--primary);
+    background: var(--gray-50);
+}
+
+.company-tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}

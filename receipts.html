@@ -1105,24 +1105,95 @@
       })();
       
       // === 公司信息配置 ===
-        const COMPANY_INFO = {
-          name: '霍爾果斯會計師事務所',
-          nameEn: 'HorgosCPA',
-          address: '臺中市西區建國路21號',
-          addressLine2: '3樓之1',
-          phone: '04-22205606',
-          taxId: '92254178',
-          bank: '永豐銀行台中分行',
-          bankCode: '807',
-          accountNumber: '003-018-0019011-7'
+      let COMPANY_INFO = {
+        name: '霍爾果斯會計師事務所',
+        nameEn: 'HorgosCPA',
+        address: '臺中市西區建國路21號',
+        addressLine2: '3樓之1',
+        phone: '04-22205606',
+        taxId: '92254178',
+        bank: '永豐銀行台中分行',
+        bankCode: '807',
+        accountNumber: '003-018-0019011-7'
+      };
+      
+      // 加载公司资料
+      async function loadCompanyInfo(setNumber) {
+        try {
+          const category = `company${setNumber}`;
+          const res = await fetch(`/internal/api/v1/settings?category=${category}`, { credentials: 'include' });
+          const json = await res.json();
+          
+          if (json.ok && json.data) {
+            const companyInfo = {};
+            json.data.forEach(setting => {
+              if (setting.settingKey === 'name') companyInfo.name = setting.settingValue;
+              if (setting.settingKey === 'name_en') companyInfo.nameEn = setting.settingValue;
+              if (setting.settingKey === 'address') companyInfo.address = setting.settingValue;
+              if (setting.settingKey === 'address_line2') companyInfo.addressLine2 = setting.settingValue;
+              if (setting.settingKey === 'phone') companyInfo.phone = setting.settingValue;
+              if (setting.settingKey === 'tax_id') companyInfo.taxId = setting.settingValue;
+              if (setting.settingKey === 'bank') companyInfo.bank = setting.settingValue;
+              if (setting.settingKey === 'bank_code') companyInfo.bankCode = setting.settingValue;
+              if (setting.settingKey === 'account_number') companyInfo.accountNumber = setting.settingValue;
+            });
+            return companyInfo;
+          }
+          return null;
+        } catch (e) {
+          console.error('載入公司資料失敗:', e);
+          return null;
+        }
+      }
+      
+      // 显示公司资料选择对话框
+      function showCompanySelector(callback) {
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+        modal.innerHTML = `
+          <div style="background:white;border-radius:12px;padding:32px;max-width:400px;width:90%;">
+            <h3 style="margin:0 0 20px 0;font-size:20px;font-weight:600;">選擇公司資料</h3>
+            <p style="color:#666;margin-bottom:24px;font-size:14px;">請選擇要用於此文件的公司資料</p>
+            <div style="display:flex;gap:12px;">
+              <button id="selectCompany1" style="flex:1;padding:16px;border:2px solid #3b82f6;background:#3b82f6;color:white;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">公司資料 1</button>
+              <button id="selectCompany2" style="flex:1;padding:16px;border:2px solid #3b82f6;background:white;color:#3b82f6;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">公司資料 2</button>
+            </div>
+            <button id="cancelSelect" style="width:100%;margin-top:12px;padding:12px;border:1px solid #d1d5db;background:white;color:#666;border-radius:8px;font-size:14px;cursor:pointer;">取消</button>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        
+        document.getElementById('selectCompany1').onclick = () => {
+          document.body.removeChild(modal);
+          callback(1);
         };
+        document.getElementById('selectCompany2').onclick = () => {
+          document.body.removeChild(modal);
+          callback(2);
+        };
+        document.getElementById('cancelSelect').onclick = () => {
+          document.body.removeChild(modal);
+        };
+      }
       
       // === 打印功能 ===
       async function printInvoice(receiptId) {
+        showCompanySelector(async (setNumber) => {
+          const companyInfo = await loadCompanyInfo(setNumber);
+          if (!companyInfo || !companyInfo.name) {
+            alert(`公司資料 ${setNumber} 尚未設定，請先至設定頁面設定公司資料`);
+            return;
+          }
+          await printInvoiceWithCompany(receiptId, companyInfo);
+        });
+      }
+      
+      async function printInvoiceWithCompany(receiptId, companyInfo) {
+        try {
         const printWindow = window.open('', '_blank');
         printWindow.document.write('<html><head><title>列印請款單</title>');
         printWindow.document.write('<meta charset="utf-8">');
-        printWindow.document.write('<!-- v20251103-2 -->');
+        printWindow.document.write('<!-- v20251107 -->');
         printWindow.document.write(`<style>
           @page { size: A4; margin: 20mm 25mm; }
           * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1286,8 +1357,8 @@
           
           printWindow.document.write(`
             <div class="company-header">
-              <div class="company-name-zh"><span>${COMPANY_INFO.name}</span></div>
-              <div class="company-name-en"><span>${COMPANY_INFO.nameEn}</span></div>
+              <div class="company-name-zh"><span>${companyInfo.name}</span></div>
+              <div class="company-name-en"><span>${companyInfo.nameEn || ''}</span></div>
             </div>
             
             <div class="doc-title">請款單</div>
@@ -1356,10 +1427,10 @@
             <div class="bank-section">款項請匯入下列帳戶，謝謝！</div>
             
             <div class="bank-info">
-              戶名：${COMPANY_INFO.name}<br>
-              銀行：${COMPANY_INFO.bank}<br>
-              銀行代號：${COMPANY_INFO.bankCode}<br>
-              帳號：${COMPANY_INFO.accountNumber}
+              戶名：${companyInfo.name}<br>
+              銀行：${companyInfo.bank}<br>
+              銀行代號：${companyInfo.bankCode}<br>
+              帳號：${companyInfo.accountNumber}
             </div>
             <div class="stamp-area">
               <!-- 印章区域 -->
@@ -1379,10 +1450,22 @@
       }
       
       async function printReceipt(receiptId) {
+        showCompanySelector(async (setNumber) => {
+          const companyInfo = await loadCompanyInfo(setNumber);
+          if (!companyInfo || !companyInfo.name) {
+            alert(`公司資料 ${setNumber} 尚未設定，請先至設定頁面設定公司資料`);
+            return;
+          }
+          await printReceiptWithCompany(receiptId, companyInfo);
+        });
+      }
+      
+      async function printReceiptWithCompany(receiptId, companyInfo) {
+        try {
         const printWindow = window.open('', '_blank');
         printWindow.document.write('<html><head><title>列印收據</title>');
         printWindow.document.write('<meta charset="utf-8">');
-        printWindow.document.write('<!-- v20251103-2 -->');
+        printWindow.document.write('<!-- v20251107 -->');
         printWindow.document.write(`<style>
           @page { size: A4; margin: 12mm 20mm; }
           * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1561,12 +1644,12 @@
               <div class="receipt-copy">
                 <div class="copy-label">${copyLabel}</div>
                 
-                <div class="company-name"><span>${COMPANY_INFO.name}</span></div>
+                <div class="company-name"><span>${companyInfo.name}</span></div>
                 
                 <div class="company-info">
-                  ${COMPANY_INFO.address}${COMPANY_INFO.addressLine2}<br>
-                  電話：${COMPANY_INFO.phone}<br>
-                  統一編號：${COMPANY_INFO.taxId}<br>
+                  ${companyInfo.address}${companyInfo.addressLine2 || ''}<br>
+                  電話：${companyInfo.phone}<br>
+                  統一編號：${companyInfo.taxId}<br>
                   收據編號：${receiptId}
                 </div>
                 

@@ -177,33 +177,53 @@
                     <p style="color:#666;font-size:14px;margin:8px 0 0 0;">設定公司基本資訊，用於收據、報表等文件</p>
                 </div>
                 <div class="card-body">
+                    <!-- 公司資料切換 -->
+                    <div style="margin-bottom:24px;border-bottom:2px solid #e5e7eb;">
+                        <button class="company-tab-btn active" onclick="switchCompanyTab(1)" id="companyTab1">
+                            公司資料 1
+                        </button>
+                        <button class="company-tab-btn" onclick="switchCompanyTab(2)" id="companyTab2">
+                            公司資料 2
+                        </button>
+                    </div>
+
+                    <input type="hidden" id="current_company_set" value="1">
+
                     <div class="form-group">
                         <label>公司中文名稱 *</label>
-                        <input type="text" id="company_name_zh" class="form-control" placeholder="例如：霍爾果斯會計師事務所">
+                        <input type="text" id="company_name" class="form-control" placeholder="例如：霍爾果斯會計師事務所">
                     </div>
                     <div class="form-group">
-                        <label>公司英文名稱 *</label>
-                        <input type="text" id="company_name_en" class="form-control" placeholder="例如：Horgos CPA Firm">
+                        <label>公司英文名稱</label>
+                        <input type="text" id="company_name_en" class="form-control" placeholder="例如：HorgosCPA">
                     </div>
                     <div class="form-group">
-                        <label>統一編號</label>
-                        <input type="text" id="company_tax_id" class="form-control" placeholder="例如：12345678">
+                        <label>統一編號 *</label>
+                        <input type="text" id="company_tax_id" class="form-control" placeholder="例如：92254178">
                     </div>
                     <div class="form-group">
-                        <label>公司地址</label>
-                        <input type="text" id="company_address" class="form-control" placeholder="例如：台北市中正區...">
+                        <label>公司地址（第一行）*</label>
+                        <input type="text" id="company_address" class="form-control" placeholder="例如：臺中市西區建國路21號">
                     </div>
                     <div class="form-group">
-                        <label>聯絡電話</label>
-                        <input type="text" id="company_phone" class="form-control" placeholder="例如：02-12345678">
+                        <label>公司地址（第二行）</label>
+                        <input type="text" id="company_address_line2" class="form-control" placeholder="例如：3樓之1">
                     </div>
                     <div class="form-group">
-                        <label>電子信箱</label>
-                        <input type="email" id="company_email" class="form-control" placeholder="例如：info@horgoscpa.com">
+                        <label>聯絡電話 *</label>
+                        <input type="text" id="company_phone" class="form-control" placeholder="例如：04-22205606">
                     </div>
                     <div class="form-group">
-                        <label>公司網址</label>
-                        <input type="url" id="company_website" class="form-control" placeholder="例如：https://www.horgoscpa.com">
+                        <label>銀行名稱 *</label>
+                        <input type="text" id="company_bank" class="form-control" placeholder="例如：永豐銀行台中分行">
+                    </div>
+                    <div class="form-group">
+                        <label>銀行代號 *</label>
+                        <input type="text" id="company_bank_code" class="form-control" placeholder="例如：807">
+                    </div>
+                    <div class="form-group">
+                        <label>銀行帳號 *</label>
+                        <input type="text" id="company_account_number" class="form-control" placeholder="例如：003-018-0019011-7">
                     </div>
                     
                     <div class="action-btns">
@@ -854,10 +874,35 @@
         }
 
         // 公司資訊管理
+        function switchCompanyTab(setNumber) {
+            document.getElementById('current_company_set').value = setNumber;
+            
+            // 更新标签样式
+            document.getElementById('companyTab1').classList.toggle('active', setNumber === 1);
+            document.getElementById('companyTab2').classList.toggle('active', setNumber === 2);
+            
+            // 加载对应的公司资料
+            loadCompanyInfo();
+        }
+        
         async function loadCompanyInfo() {
+            const setNumber = document.getElementById('current_company_set').value;
+            const category = `company${setNumber}`;
+            
             try {
-                const res = await fetch('/internal/api/v1/settings?category=company', { credentials: 'include' });
+                const res = await fetch(`/internal/api/v1/settings?category=${category}`, { credentials: 'include' });
                 const json = await res.json();
+                
+                // 清空所有字段
+                document.getElementById('company_name').value = '';
+                document.getElementById('company_name_en').value = '';
+                document.getElementById('company_tax_id').value = '';
+                document.getElementById('company_address').value = '';
+                document.getElementById('company_address_line2').value = '';
+                document.getElementById('company_phone').value = '';
+                document.getElementById('company_bank').value = '';
+                document.getElementById('company_bank_code').value = '';
+                document.getElementById('company_account_number').value = '';
                 
                 if (json.ok && json.data) {
                     json.data.forEach(setting => {
@@ -873,18 +918,23 @@
         }
         
         async function saveCompanyInfo() {
+            const setNumber = document.getElementById('current_company_set').value;
+            const category = `company${setNumber}`;
+            
             const settings = [
-                { settingKey: 'name_zh', settingValue: document.getElementById('company_name_zh').value },
+                { settingKey: 'name', settingValue: document.getElementById('company_name').value },
                 { settingKey: 'name_en', settingValue: document.getElementById('company_name_en').value },
                 { settingKey: 'tax_id', settingValue: document.getElementById('company_tax_id').value },
                 { settingKey: 'address', settingValue: document.getElementById('company_address').value },
+                { settingKey: 'address_line2', settingValue: document.getElementById('company_address_line2').value },
                 { settingKey: 'phone', settingValue: document.getElementById('company_phone').value },
-                { settingKey: 'email', settingValue: document.getElementById('company_email').value },
-                { settingKey: 'website', settingValue: document.getElementById('company_website').value }
+                { settingKey: 'bank', settingValue: document.getElementById('company_bank').value },
+                { settingKey: 'bank_code', settingValue: document.getElementById('company_bank_code').value },
+                { settingKey: 'account_number', settingValue: document.getElementById('company_account_number').value }
             ];
             
-            if (!settings[0].settingValue || !settings[1].settingValue) {
-                alert('公司中文名稱和英文名稱為必填項');
+            if (!settings[0].settingValue) {
+                alert('公司中文名稱為必填項');
                 return;
             }
             
@@ -894,7 +944,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({
-                        category: 'company',
+                        category: category,
                         settings: settings
                     })
                 });
@@ -905,7 +955,7 @@
                     throw new Error(json.message || '儲存失敗');
                 }
                 
-                alert('✅ 公司資訊儲存成功！');
+                alert(`✅ 公司資料 ${setNumber} 儲存成功！`);
             } catch (e) {
                 console.error('儲存公司資訊失敗:', e);
                 alert('❌ 儲存失敗: ' + e.message);
