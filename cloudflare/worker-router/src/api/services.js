@@ -52,7 +52,7 @@ export async function handleServices(request, env, me, requestId, url, path) {
     try {
       const rows = await env.DATABASE.prepare(`
         SELECT service_id, service_name, service_code, description, 
-               is_active, sort_order, created_at, updated_at
+               service_sop_id, is_active, sort_order, created_at, updated_at
         FROM Services
         WHERE is_active = 1
         ORDER BY sort_order ASC, service_id ASC
@@ -63,11 +63,73 @@ export async function handleServices(request, env, me, requestId, url, path) {
         service_name: r.service_name || "",
         service_code: r.service_code || "",
         description: r.description || "",
+        service_sop_id: r.service_sop_id || null,
         is_active: Boolean(r.is_active),
         sort_order: r.sort_order || 0,
         created_at: r.created_at,
         updated_at: r.updated_at
       }));
+
+      return jsonResponse(200, {
+        ok: true,
+        code: "SUCCESS",
+        message: "查询成功",
+        data,
+        meta: { requestId }
+      }, corsHeaders);
+
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, {
+        ok: false,
+        code: "INTERNAL_ERROR",
+        message: "服务器错误",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+  }
+
+  // GET /internal/api/v1/services/:id - 获取单个服务项目详情
+  const matchGetOne = path.match(/^\/internal\/api\/v1\/services\/(\d+)$/);
+  if (method === "GET" && matchGetOne) {
+    const serviceId = parseId(matchGetOne[1]);
+    if (!serviceId) {
+      return jsonResponse(400, {
+        ok: false,
+        code: "BAD_REQUEST",
+        message: "无效的服务ID",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+
+    try {
+      const service = await env.DATABASE.prepare(`
+        SELECT service_id, service_name, service_code, description, 
+               service_sop_id, is_active, sort_order, created_at, updated_at
+        FROM Services
+        WHERE service_id = ?
+      `).bind(serviceId).first();
+
+      if (!service) {
+        return jsonResponse(404, {
+          ok: false,
+          code: "NOT_FOUND",
+          message: "服务不存在",
+          meta: { requestId }
+        }, corsHeaders);
+      }
+
+      const data = {
+        service_id: service.service_id,
+        service_name: service.service_name || "",
+        service_code: service.service_code || "",
+        description: service.description || "",
+        service_sop_id: service.service_sop_id || null,
+        is_active: Boolean(service.is_active),
+        sort_order: service.sort_order || 0,
+        created_at: service.created_at,
+        updated_at: service.updated_at
+      };
 
       return jsonResponse(200, {
         ok: true,
@@ -114,6 +176,7 @@ export async function handleServices(request, env, me, requestId, url, path) {
     const serviceName = String(body?.service_name || "").trim();
     const serviceCode = String(body?.service_code || "").trim();
     const description = String(body?.description || "").trim();
+    const serviceSopId = body?.service_sop_id ? parseInt(body.service_sop_id, 10) : null;
     const sortOrder = parseInt(body?.sort_order || "0", 10);
 
     if (!serviceName) {
@@ -127,9 +190,9 @@ export async function handleServices(request, env, me, requestId, url, path) {
 
     try {
       const result = await env.DATABASE.prepare(`
-        INSERT INTO Services (service_name, service_code, description, sort_order, is_active)
-        VALUES (?, ?, ?, ?, 1)
-      `).bind(serviceName, serviceCode || null, description || null, sortOrder).run();
+        INSERT INTO Services (service_name, service_code, description, service_sop_id, sort_order, is_active)
+        VALUES (?, ?, ?, ?, ?, 1)
+      `).bind(serviceName, serviceCode || null, description || null, serviceSopId, sortOrder).run();
 
       return jsonResponse(201, {
         ok: true,
@@ -187,6 +250,7 @@ export async function handleServices(request, env, me, requestId, url, path) {
     const serviceName = String(body?.service_name || "").trim();
     const serviceCode = String(body?.service_code || "").trim();
     const description = String(body?.description || "").trim();
+    const serviceSopId = body?.service_sop_id ? parseInt(body.service_sop_id, 10) : null;
     const sortOrder = parseInt(body?.sort_order || "0", 10);
 
     if (!serviceName) {
@@ -202,9 +266,9 @@ export async function handleServices(request, env, me, requestId, url, path) {
       await env.DATABASE.prepare(`
         UPDATE Services 
         SET service_name = ?, service_code = ?, description = ?, 
-            sort_order = ?, updated_at = datetime('now')
+            service_sop_id = ?, sort_order = ?, updated_at = datetime('now')
         WHERE service_id = ?
-      `).bind(serviceName, serviceCode || null, description || null, sortOrder, serviceId).run();
+      `).bind(serviceName, serviceCode || null, description || null, serviceSopId, sortOrder, serviceId).run();
 
       return jsonResponse(200, {
         ok: true,

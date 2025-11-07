@@ -52,12 +52,12 @@ export async function handleSettings(request, env, me, requestId, url, path){
     try {
       const category = url.searchParams.get("category") || null;
       
-      let query = "SELECT setting_key AS settingKey, setting_value AS settingValue, setting_category AS category, is_dangerous AS isDangerous, description, updated_at AS updatedAt, updated_by AS updatedBy FROM Settings";
+      let query = "SELECT setting_key AS settingKey, setting_value AS settingValue, is_dangerous AS isDangerous, description, updated_at AS updatedAt, updated_by AS updatedBy FROM Settings";
       const binds = [];
       
       if (category) {
-        query += " WHERE setting_category = ?";
-        binds.push(category);
+        query += " WHERE setting_key LIKE ?";
+        binds.push(`${category}_%`);
       }
       
       query += " ORDER BY setting_key";
@@ -92,12 +92,15 @@ export async function handleSettings(request, env, me, requestId, url, path){
         const { settingKey, settingValue } = setting;
         if (!settingKey) continue;
         
+        // 为每个setting生成描述
+        const description = `${category} - ${settingKey}`;
+        
         await env.DATABASE.prepare(
-          `INSERT INTO Settings(setting_key, setting_value, setting_category, updated_at, updated_by) 
+          `INSERT INTO Settings(setting_key, setting_value, description, updated_at, updated_by) 
            VALUES(?, ?, ?, ?, ?) 
            ON CONFLICT(setting_key) 
-           DO UPDATE SET setting_value=excluded.setting_value, setting_category=excluded.setting_category, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
-        ).bind(settingKey, settingValue || "", category, nowIso, userId).run();
+           DO UPDATE SET setting_value=excluded.setting_value, description=excluded.description, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
+        ).bind(settingKey, settingValue || "", description, nowIso, userId).run();
       }
       
       return jsonResponse(200, { ok:true, code:"OK", message:"批量更新成功", meta:{ requestId } }, corsHeaders);

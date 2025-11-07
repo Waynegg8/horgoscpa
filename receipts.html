@@ -1127,15 +1127,17 @@
           if (json.ok && json.data) {
             const companyInfo = {};
             json.data.forEach(setting => {
-              if (setting.settingKey === 'name') companyInfo.name = setting.settingValue;
-              if (setting.settingKey === 'name_en') companyInfo.nameEn = setting.settingValue;
-              if (setting.settingKey === 'address') companyInfo.address = setting.settingValue;
-              if (setting.settingKey === 'address_line2') companyInfo.addressLine2 = setting.settingValue;
-              if (setting.settingKey === 'phone') companyInfo.phone = setting.settingValue;
-              if (setting.settingKey === 'tax_id') companyInfo.taxId = setting.settingValue;
-              if (setting.settingKey === 'bank') companyInfo.bank = setting.settingValue;
-              if (setting.settingKey === 'bank_code') companyInfo.bankCode = setting.settingValue;
-              if (setting.settingKey === 'account_number') companyInfo.accountNumber = setting.settingValue;
+              // 移除category前缀
+              const key = setting.settingKey.replace(`${category}_`, '');
+              if (key === 'name') companyInfo.name = setting.settingValue;
+              if (key === 'name_en') companyInfo.nameEn = setting.settingValue;
+              if (key === 'address') companyInfo.address = setting.settingValue;
+              if (key === 'address_line2') companyInfo.addressLine2 = setting.settingValue;
+              if (key === 'phone') companyInfo.phone = setting.settingValue;
+              if (key === 'tax_id') companyInfo.taxId = setting.settingValue;
+              if (key === 'bank') companyInfo.bank = setting.settingValue;
+              if (key === 'bank_code') companyInfo.bankCode = setting.settingValue;
+              if (key === 'account_number') companyInfo.accountNumber = setting.settingValue;
             });
             return companyInfo;
           }

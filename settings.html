@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/assets/css/common.css">
     <link rel="stylesheet" href="/assets/css/internal-system.css">
     <link rel="stylesheet" href="/assets/css/internal-components.css">
-    <link rel="stylesheet" href="/assets/css/settings-page.css?v=202">
+    <link rel="stylesheet" href="/assets/css/settings-page.css?v=203">
     
     <!-- ⚡ 预加载与缓存系统 -->
     <script src="/assets/js/data-cache.js"></script>
@@ -24,7 +24,6 @@
         <button class="nav-tab" data-tab="templates">任務模板</button>
         <button class="nav-tab" data-tab="users">用戶</button>
         <button class="nav-tab" data-tab="company">公司資訊</button>
-        <button class="nav-tab" data-tab="lifecycle">服務生命週期</button>
         <button class="nav-tab" data-tab="automation">自動化規則</button>
         <button class="nav-tab" data-tab="holidays">國定假日</button>
     </nav>
@@ -38,11 +37,21 @@
         </div>
 
             <div class="card hidden" id="addServiceForm">
-                <div class="card-header"><h3>新增服務項目</h3></div>
+                <div class="card-header"><h3 id="serviceFormTitle">新增服務項目</h3></div>
         <div class="card-body">
+                    <input type="hidden" id="editServiceId">
           <div class="form-group">
                         <label>服務名稱 *</label>
-                        <input type="text" id="newServiceName">
+                        <input type="text" id="newServiceName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>服務層級 SOP（可選）</label>
+                        <select id="newServiceSOP" class="form-control">
+                            <option value="">無</option>
+                        </select>
+                        <small style="color:#666;font-size:12px;display:block;margin-top:4px;">
+                            💡 服務層級 SOP 代表整個服務的通用流程，使用此服務的任務模板會自動繼承。
+                        </small>
                     </div>
                     <div class="action-btns">
                         <button class="btn btn-primary" onclick="saveService()">儲存</button>
@@ -59,11 +68,12 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>服務名稱</th>
+                                    <th>服務層級 SOP</th>
                                     <th>操作</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><td colspan="3" class="loading">載入中...</td></tr>
+                                <tr><td colspan="4" class="loading">載入中...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -87,9 +97,18 @@
                     </div>
                     <div class="form-group">
                         <label>服務項目 *</label>
-                        <select id="newTemplateService" class="form-control">
+                        <select id="newTemplateService" class="form-control" onchange="onTemplateServiceChange()">
                             <option value="">請選擇服務項目</option>
                         </select>
+                    </div>
+                    <div id="serviceSOPDisplay" class="form-group" style="display:none;">
+                        <label>服務層級 SOP（自動繼承自服務項目）</label>
+                        <div style="background:#f0f9ff;border:1px solid #bae6fd;padding:12px;border-radius:6px;">
+                            <span id="serviceSOPText" style="color:#0369a1;font-weight:500;">-</span>
+                        </div>
+                        <small style="color:#666;font-size:12px;display:block;margin-top:4px;">
+                            💡 此 SOP 從服務項目自動繼承。如需修改，請到服務項目設定中編輯。
+                        </small>
                     </div>
                     <div class="form-group">
                         <label>綁定客戶（可選）</label>
@@ -183,12 +202,12 @@
                 </div>
                 <div class="card-body">
                     <!-- 公司資料切換 -->
-                    <div style="margin-bottom:24px;border-bottom:2px solid #e5e7eb;">
+                    <div style="margin-bottom:32px;background:#f9fafb;padding:8px;border-radius:12px;display:inline-flex;gap:8px;">
                         <button class="company-tab-btn active" onclick="switchCompanyTab(1)" id="companyTab1">
-                            公司資料 1
+                            🏢 公司資料 1
                         </button>
                         <button class="company-tab-btn" onclick="switchCompanyTab(2)" id="companyTab2">
-                            公司資料 2
+                            🏢 公司資料 2
                         </button>
                     </div>
 
@@ -233,33 +252,6 @@
                     
                     <div class="action-btns">
                         <button class="btn btn-primary" onclick="saveCompanyInfo()">儲存</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 服务生命周期 -->
-        <div class="tab-panel" id="tab-lifecycle">
-            <div class="search-bar">
-                <button class="btn btn-primary" id="btnAddLifecycle">+ 新增</button>
-            </div>
-            <div class="card">
-                <div class="card-body">
-                    <div class="data-table-container">
-                        <table class="data-table" id="lifecycleTable">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>狀態名稱</th>
-                                    <th>顏色</th>
-                                    <th>排序</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="5" class="loading">載入中...</td></tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
@@ -399,7 +391,7 @@
         // ⚡ Tab 缓存系统初始化
         let currentSettingsTab = 'services';
         if (window.TabCache) {
-            window.TabCache.init(['services', 'templates', 'users', 'company', 'lifecycle', 'automation', 'holidays']);
+            window.TabCache.init(['services', 'templates', 'users', 'company', 'automation', 'holidays']);
         }
         
         // Tab切换
@@ -423,7 +415,6 @@
                     else if (tab === 'templates') { loadTemplates(); loadTemplateOptions(); }
                     else if (tab === 'users') loadUsers();
                     else if (tab === 'company') loadCompanyInfo();
-                    else if (tab === 'lifecycle') loadLifecycle();
                     else if (tab === 'automation') loadAutomation();
                     else if (tab === 'holidays') loadHolidays();
                     
@@ -442,6 +433,7 @@
             document.getElementById('newTemplateService').value = '';
             document.getElementById('newTemplateClient').value = '';
             document.getElementById('newTemplateDesc').value = '';
+            document.getElementById('serviceSOPDisplay').style.display = 'none';
             document.querySelector('#addTemplateForm .card-header h3').textContent = '新增任務模板';
             document.getElementById('addTemplateForm').classList.remove('hidden');
             loadTemplateOptions();
@@ -449,33 +441,95 @@
 
         // 用户管理功能已移至函数中
 
-        // 生命周期、自动化 - 新增
-        ['btnAddLifecycle', 'btnAddAutomation'].forEach(id => {
-            document.getElementById(id)?.addEventListener('click', () => alert('此功能開發中'));
-        });
+        // 自动化 - 新增
+        document.getElementById('btnAddAutomation')?.addEventListener('click', () => alert('此功能開發中'));
 
         // 新增服务
-        document.getElementById('btnAddService').onclick = () => {
+        document.getElementById('btnAddService').onclick = async () => {
+            document.getElementById('editServiceId').value = '';
+            document.getElementById('newServiceName').value = '';
+            document.getElementById('newServiceSOP').value = '';
+            document.getElementById('serviceFormTitle').textContent = '新增服務項目';
             document.getElementById('addServiceForm').classList.remove('hidden');
+            await loadServiceSOPOptions();
         };
+
+        // 加载服务SOP选项
+        async function loadServiceSOPOptions() {
+            try {
+                const sopRes = await fetch('/internal/api/v1/sop?scope=service', { credentials: 'include' });
+                const sops = await sopRes.json();
+                
+                const sopSelect = document.getElementById('newServiceSOP');
+                if (sops.data && sops.data.length > 0) {
+                    sopSelect.innerHTML = '<option value="">無</option>' + 
+                        sops.data.map(s => `<option value="${s.sop_id}">${s.title}</option>`).join('');
+                } else {
+                    sopSelect.innerHTML = '<option value="">無</option>';
+                }
+            } catch (e) {
+                console.error('加載SOP失敗:', e);
+            }
+        }
+
+        // 编辑服务
+        async function editService(serviceId) {
+            try {
+                const res = await fetch(`/internal/api/v1/services/${serviceId}`, { credentials: 'include' });
+                const json = await res.json();
+                
+                if (!json.ok || !json.data) {
+                    throw new Error('載入服務失敗');
+                }
+                
+                const service = json.data;
+                
+                await loadServiceSOPOptions();
+                
+                document.getElementById('editServiceId').value = service.service_id;
+                document.getElementById('newServiceName').value = service.service_name || '';
+                document.getElementById('newServiceSOP').value = service.service_sop_id || '';
+                document.getElementById('serviceFormTitle').textContent = '編輯服務項目';
+                document.getElementById('addServiceForm').classList.remove('hidden');
+                document.getElementById('addServiceForm').scrollIntoView({ behavior: 'smooth' });
+            } catch (e) {
+                console.error('載入服務失敗:', e);
+                alert('載入服務失敗: ' + e.message);
+            }
+        }
 
         function cancelService() {
             document.getElementById('addServiceForm').classList.add('hidden');
+            document.getElementById('editServiceId').value = '';
+            document.getElementById('newServiceName').value = '';
+            document.getElementById('newServiceSOP').value = '';
+            document.getElementById('serviceFormTitle').textContent = '新增服務項目';
         }
 
         async function saveService() {
+            const serviceId = document.getElementById('editServiceId').value;
             const name = document.getElementById('newServiceName').value;
+            const sopId = document.getElementById('newServiceSOP').value;
+            
             if (!name) return alert('請輸入服務名稱');
             
             try {
-                const res = await fetch('/internal/api/v1/services', {
-                    method: 'POST',
+                const url = serviceId 
+                    ? `/internal/api/v1/services/${serviceId}`
+                    : '/internal/api/v1/services';
+                const method = serviceId ? 'PUT' : 'POST';
+                
+                const res = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ service_name: name })
+                    body: JSON.stringify({ 
+                        service_name: name,
+                        service_sop_id: sopId ? parseInt(sopId) : null
+                    })
                 });
                 if (!res.ok) throw new Error('失敗');
-                alert('新增成功');
+                alert(serviceId ? '更新成功' : '新增成功');
                 cancelService();
                 loadServices();
             } catch (e) {
@@ -491,21 +545,25 @@
             const json = await res.json();
                 
                 if (!json.data || json.data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="loading">暫無資料</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="loading">暫無資料</td></tr>';
                     return;
                 }
                 
-                tbody.innerHTML = json.data.map(s => `
+                tbody.innerHTML = json.data.map(s => {
+                    const sopDisplay = s.service_sop_id ? `📖 SOP #${s.service_sop_id}` : '-';
+                    return `
                     <tr>
                         <td>${s.service_id}</td>
                         <td>${s.service_name}</td>
+                        <td>${sopDisplay}</td>
                         <td>
+                            <button class="btn btn-sm btn-primary" onclick="editService(${s.service_id})">編輯</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteService(${s.service_id})">刪除</button>
                         </td>
                     </tr>
-                `).join('');
+                `}).join('');
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="3" class="loading">載入失敗</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="loading">載入失敗</td></tr>';
             }
         }
 
@@ -522,9 +580,10 @@
             }
         }
 
-        // 全局存储SOP和附件列表
+        // 全局存储SOP、附件和服务列表
         let allSOPs = [];
         let allAttachments = [];
+        let allServices = [];
 
         // 任务模板 - 加载服务、客户、SOP、附件下拉选项
         async function loadTemplateOptions() {
@@ -532,7 +591,7 @@
                 const [servicesRes, clientsRes, sopRes, attachmentRes] = await Promise.all([
                     fetch('/internal/api/v1/services', { credentials: 'include' }),
                     fetch('/internal/api/v1/clients?perPage=200', { credentials: 'include' }),
-                    fetch('/internal/api/v1/sop', { credentials: 'include' }).catch(() => ({json: () => ({data:[]})})),
+                    fetch('/internal/api/v1/sop?scope=task', { credentials: 'include' }).catch(() => ({json: () => ({data:[]})})),
                     fetch('/internal/api/v1/attachments', { credentials: 'include' }).catch(() => ({json: () => ({data:[]})}))
                 ]);
                 const services = await servicesRes.json();
@@ -541,6 +600,7 @@
                 const attachments = await attachmentRes.json();
                 
                 // 保存到全局
+                allServices = services.data || [];
                 allSOPs = sops.data || [];
                 allAttachments = attachments.data || [];
                 
@@ -556,6 +616,27 @@
                         clients.data.map(c => `<option value="${c.clientId}">${c.companyName}</option>`).join('');
                 }
             } catch (e) {}
+        }
+        
+        // 当选择服务项目时，自动显示该服务的服务层级SOP
+        function onTemplateServiceChange() {
+            const serviceId = parseInt(document.getElementById('newTemplateService').value);
+            const displayDiv = document.getElementById('serviceSOPDisplay');
+            const sopText = document.getElementById('serviceSOPText');
+            
+            if (!serviceId) {
+                displayDiv.style.display = 'none';
+                return;
+            }
+            
+            const service = allServices.find(s => s.service_id === serviceId);
+            if (service && service.service_sop_id) {
+                sopText.textContent = `📖 SOP #${service.service_sop_id}`;
+                displayDiv.style.display = 'block';
+            } else {
+                sopText.textContent = '此服務尚未設定服務層級 SOP';
+                displayDiv.style.display = 'block';
+            }
         }
         
         // 填充SOP和附件下拉选单
@@ -613,13 +694,13 @@
                                     <input type="number" id="task-order-${t.template_id}" class="form-control" value="1">
                                 </div>
                                 <div class="form-group">
-                                    <label>連結SOP（可選）</label>
+                                    <label>任務層級 SOP（可選）</label>
                                     <select id="task-sop-${t.template_id}" class="form-control">
                                         <option value="">無</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>連結附件（可選）</label>
+                                    <label>任務層級附件（可選）</label>
                                     <select id="task-attachment-${t.template_id}" class="form-control">
                                         <option value="">無</option>
                                     </select>
@@ -661,10 +742,10 @@
                     return;
                 }
                 
-                listDiv.innerHTML = '<table class="data-table"><thead><tr><th>順序</th><th>任務名稱</th><th>SOP</th><th>附件</th><th>操作</th></tr></thead><tbody>' +
+                listDiv.innerHTML = '<table class="data-table"><thead><tr><th>順序</th><th>任務名稱</th><th>任務層級 SOP</th><th>任務層級附件</th><th>操作</th></tr></thead><tbody>' +
                     json.data.map(task => {
-                        const sopDisplay = task.sop_id ? `SOP #${task.sop_id}` : '-';
-                        const attachmentDisplay = task.attachment_id ? `附件 #${task.attachment_id}` : '-';
+                        const sopDisplay = task.sop_id ? `📖 SOP #${task.sop_id}` : '-';
+                        const attachmentDisplay = task.attachment_id ? `📎 附件 #${task.attachment_id}` : '-';
                         return `
                         <tr>
                             <td>${task.stage_order}</td>
@@ -800,11 +881,17 @@
                 
                 const template = json.data;
                 
+                // 先加载选项
+                await loadTemplateOptions();
+                
                 // 填充表单
                 document.getElementById('newTemplateName').value = template.template_name || '';
                 document.getElementById('newTemplateService').value = template.service_id || '';
                 document.getElementById('newTemplateClient').value = template.client_id || '';
                 document.getElementById('newTemplateDesc').value = template.description || '';
+                
+                // 触发服务变更，显示服务层级SOP
+                onTemplateServiceChange();
                 
                 // 修改表单标题
                 document.querySelector('#addTemplateForm .card-header h3').textContent = '編輯任務模板';
@@ -862,6 +949,7 @@
             document.getElementById('newTemplateService').value = '';
             document.getElementById('newTemplateClient').value = '';
             document.getElementById('newTemplateDesc').value = '';
+            document.getElementById('serviceSOPDisplay').style.display = 'none';
             // 恢复表单标题
             document.querySelector('#addTemplateForm .card-header h3').textContent = '新增任務模板';
         }
@@ -1070,7 +1158,9 @@
                 
                 if (json.ok && json.data) {
                     json.data.forEach(setting => {
-                        const input = document.getElementById(`company_${setting.settingKey}`);
+                        // 移除前缀来匹配表单字段
+                        const key = setting.settingKey.replace(`${category}_`, '');
+                        const input = document.getElementById(`company_${key}`);
                         if (input) {
                             input.value = setting.settingValue || '';
                         }
@@ -1085,16 +1175,17 @@
             const setNumber = document.getElementById('current_company_set').value;
             const category = `company${setNumber}`;
             
+            // 使用category作为前缀来确保setting_key的唯一性
             const settings = [
-                { settingKey: 'name', settingValue: document.getElementById('company_name').value },
-                { settingKey: 'name_en', settingValue: document.getElementById('company_name_en').value },
-                { settingKey: 'tax_id', settingValue: document.getElementById('company_tax_id').value },
-                { settingKey: 'address', settingValue: document.getElementById('company_address').value },
-                { settingKey: 'address_line2', settingValue: document.getElementById('company_address_line2').value },
-                { settingKey: 'phone', settingValue: document.getElementById('company_phone').value },
-                { settingKey: 'bank', settingValue: document.getElementById('company_bank').value },
-                { settingKey: 'bank_code', settingValue: document.getElementById('company_bank_code').value },
-                { settingKey: 'account_number', settingValue: document.getElementById('company_account_number').value }
+                { settingKey: `${category}_name`, settingValue: document.getElementById('company_name').value },
+                { settingKey: `${category}_name_en`, settingValue: document.getElementById('company_name_en').value },
+                { settingKey: `${category}_tax_id`, settingValue: document.getElementById('company_tax_id').value },
+                { settingKey: `${category}_address`, settingValue: document.getElementById('company_address').value },
+                { settingKey: `${category}_address_line2`, settingValue: document.getElementById('company_address_line2').value },
+                { settingKey: `${category}_phone`, settingValue: document.getElementById('company_phone').value },
+                { settingKey: `${category}_bank`, settingValue: document.getElementById('company_bank').value },
+                { settingKey: `${category}_bank_code`, settingValue: document.getElementById('company_bank_code').value },
+                { settingKey: `${category}_account_number`, settingValue: document.getElementById('company_account_number').value }
             ];
             
             if (!settings[0].settingValue) {
@@ -1113,6 +1204,14 @@
                     })
                 });
                 
+                // 检查响应内容类型
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await res.text();
+                    console.error('非JSON響應:', text);
+                    throw new Error('服務器返回了非JSON響應，請檢查後端配置');
+                }
+                
                 const json = await res.json();
                 
                 if (!res.ok) {
@@ -1124,12 +1223,6 @@
                 console.error('儲存公司資訊失敗:', e);
                 alert('❌ 儲存失敗: ' + e.message);
             }
-        }
-
-        // 服务生命周期
-        async function loadLifecycle() {
-            const tbody = document.querySelector('#lifecycleTable tbody');
-            tbody.innerHTML = '<tr><td colspan="5" class="loading">暫無資料</td></tr>';
         }
 
         // 自动化规则

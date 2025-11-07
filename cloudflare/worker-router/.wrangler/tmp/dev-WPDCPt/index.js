@@ -14050,11 +14050,11 @@ async function handleSettings(request, env, me, requestId, url, path) {
   if ((path === "/internal/api/v1/admin/settings" || path === "/internal/api/v1/settings") && method === "GET") {
     try {
       const category = url.searchParams.get("category") || null;
-      let query = "SELECT setting_key AS settingKey, setting_value AS settingValue, setting_category AS category, is_dangerous AS isDangerous, description, updated_at AS updatedAt, updated_by AS updatedBy FROM Settings";
+      let query = "SELECT setting_key AS settingKey, setting_value AS settingValue, is_dangerous AS isDangerous, description, updated_at AS updatedAt, updated_by AS updatedBy FROM Settings";
       const binds = [];
       if (category) {
-        query += " WHERE setting_category = ?";
-        binds.push(category);
+        query += " WHERE setting_key LIKE ?";
+        binds.push(`${category}_%`);
       }
       query += " ORDER BY setting_key";
       const stmt = binds.length > 0 ? env.DATABASE.prepare(query).bind(...binds) : env.DATABASE.prepare(query);
@@ -14079,12 +14079,13 @@ async function handleSettings(request, env, me, requestId, url, path) {
       for (const setting of settings) {
         const { settingKey, settingValue } = setting;
         if (!settingKey) continue;
+        const description = `${category} - ${settingKey}`;
         await env.DATABASE.prepare(
-          `INSERT INTO Settings(setting_key, setting_value, setting_category, updated_at, updated_by) 
+          `INSERT INTO Settings(setting_key, setting_value, description, updated_at, updated_by) 
            VALUES(?, ?, ?, ?, ?) 
            ON CONFLICT(setting_key) 
-           DO UPDATE SET setting_value=excluded.setting_value, setting_category=excluded.setting_category, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
-        ).bind(settingKey, settingValue || "", category, nowIso, userId).run();
+           DO UPDATE SET setting_value=excluded.setting_value, description=excluded.description, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
+        ).bind(settingKey, settingValue || "", description, nowIso, userId).run();
       }
       return jsonResponse(200, { ok: true, code: "OK", message: "\u6279\u91CF\u66F4\u65B0\u6210\u529F", meta: { requestId } }, corsHeaders);
     } catch (err) {
@@ -16838,7 +16839,7 @@ async function handleServices(request, env, me, requestId, url, path) {
     try {
       const rows = await env.DATABASE.prepare(`
         SELECT service_id, service_name, service_code, description, 
-               is_active, sort_order, created_at, updated_at
+               service_sop_id, is_active, sort_order, created_at, updated_at
         FROM Services
         WHERE is_active = 1
         ORDER BY sort_order ASC, service_id ASC
@@ -16848,11 +16849,66 @@ async function handleServices(request, env, me, requestId, url, path) {
         service_name: r.service_name || "",
         service_code: r.service_code || "",
         description: r.description || "",
+        service_sop_id: r.service_sop_id || null,
         is_active: Boolean(r.is_active),
         sort_order: r.sort_order || 0,
         created_at: r.created_at,
         updated_at: r.updated_at
       }));
+      return jsonResponse(200, {
+        ok: true,
+        code: "SUCCESS",
+        message: "\u67E5\u8BE2\u6210\u529F",
+        data,
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, {
+        ok: false,
+        code: "INTERNAL_ERROR",
+        message: "\u670D\u52A1\u5668\u9519\u8BEF",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+  }
+  const matchGetOne = path.match(/^\/internal\/api\/v1\/services\/(\d+)$/);
+  if (method === "GET" && matchGetOne) {
+    const serviceId = parseId4(matchGetOne[1]);
+    if (!serviceId) {
+      return jsonResponse(400, {
+        ok: false,
+        code: "BAD_REQUEST",
+        message: "\u65E0\u6548\u7684\u670D\u52A1ID",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+    try {
+      const service = await env.DATABASE.prepare(`
+        SELECT service_id, service_name, service_code, description, 
+               service_sop_id, is_active, sort_order, created_at, updated_at
+        FROM Services
+        WHERE service_id = ?
+      `).bind(serviceId).first();
+      if (!service) {
+        return jsonResponse(404, {
+          ok: false,
+          code: "NOT_FOUND",
+          message: "\u670D\u52A1\u4E0D\u5B58\u5728",
+          meta: { requestId }
+        }, corsHeaders);
+      }
+      const data = {
+        service_id: service.service_id,
+        service_name: service.service_name || "",
+        service_code: service.service_code || "",
+        description: service.description || "",
+        service_sop_id: service.service_sop_id || null,
+        is_active: Boolean(service.is_active),
+        sort_order: service.sort_order || 0,
+        created_at: service.created_at,
+        updated_at: service.updated_at
+      };
       return jsonResponse(200, {
         ok: true,
         code: "SUCCESS",
@@ -16893,6 +16949,7 @@ async function handleServices(request, env, me, requestId, url, path) {
     const serviceName = String(body?.service_name || "").trim();
     const serviceCode = String(body?.service_code || "").trim();
     const description = String(body?.description || "").trim();
+    const serviceSopId = body?.service_sop_id ? parseInt(body.service_sop_id, 10) : null;
     const sortOrder = parseInt(body?.sort_order || "0", 10);
     if (!serviceName) {
       return jsonResponse(422, {
@@ -16904,9 +16961,9 @@ async function handleServices(request, env, me, requestId, url, path) {
     }
     try {
       const result = await env.DATABASE.prepare(`
-        INSERT INTO Services (service_name, service_code, description, sort_order, is_active)
-        VALUES (?, ?, ?, ?, 1)
-      `).bind(serviceName, serviceCode || null, description || null, sortOrder).run();
+        INSERT INTO Services (service_name, service_code, description, service_sop_id, sort_order, is_active)
+        VALUES (?, ?, ?, ?, ?, 1)
+      `).bind(serviceName, serviceCode || null, description || null, serviceSopId, sortOrder).run();
       return jsonResponse(201, {
         ok: true,
         code: "CREATED",
@@ -16957,6 +17014,7 @@ async function handleServices(request, env, me, requestId, url, path) {
     const serviceName = String(body?.service_name || "").trim();
     const serviceCode = String(body?.service_code || "").trim();
     const description = String(body?.description || "").trim();
+    const serviceSopId = body?.service_sop_id ? parseInt(body.service_sop_id, 10) : null;
     const sortOrder = parseInt(body?.sort_order || "0", 10);
     if (!serviceName) {
       return jsonResponse(422, {
@@ -16970,9 +17028,9 @@ async function handleServices(request, env, me, requestId, url, path) {
       await env.DATABASE.prepare(`
         UPDATE Services 
         SET service_name = ?, service_code = ?, description = ?, 
-            sort_order = ?, updated_at = datetime('now')
+            service_sop_id = ?, sort_order = ?, updated_at = datetime('now')
         WHERE service_id = ?
-      `).bind(serviceName, serviceCode || null, description || null, sortOrder, serviceId).run();
+      `).bind(serviceName, serviceCode || null, description || null, serviceSopId, sortOrder, serviceId).run();
       return jsonResponse(200, {
         ok: true,
         code: "SUCCESS",
