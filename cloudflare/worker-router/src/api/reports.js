@@ -626,10 +626,10 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
 			t.hours,
 			t.work_date,
 			c.company_name as client_name,
-			COALESCE(s.service_name, '綜合服務') as service_name
+			s.service_name
 		FROM Timesheets t
 		LEFT JOIN Clients c ON c.client_id = t.client_id
-		LEFT JOIN Services s ON s.service_id = t.service_id
+		JOIN Services s ON s.service_id = t.service_id
 		WHERE t.user_id = ?
 			AND t.is_deleted = 0
 			AND substr(t.work_date, 1, 7) = ?
@@ -799,12 +799,12 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
 		SELECT 
 			t.client_id,
 			c.company_name as client_name,
-			COALESCE(s.service_name, '綜合服務') as service_name,
+			s.service_name,
 			t.work_type,
 			SUM(t.hours) as total_hours
 		FROM Timesheets t
 		LEFT JOIN Clients c ON c.client_id = t.client_id
-		LEFT JOIN Services s ON s.service_id = t.service_id
+		JOIN Services s ON s.service_id = t.service_id
 		WHERE t.user_id = ? 
 			AND substr(t.work_date, 1, 4) = ?
 			AND t.is_deleted = 0
