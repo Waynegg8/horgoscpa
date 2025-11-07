@@ -15981,6 +15981,35 @@ __name(parseId4, "parseId");
 async function handleServices(request, env, me, requestId, url, path) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
   const method = request.method.toUpperCase();
+  if (method === "GET" && path === "/internal/api/v1/services/types") {
+    try {
+      const rows = await env.DATABASE.prepare(`
+        SELECT service_id, service_name
+        FROM Services
+        WHERE is_active = 1
+        ORDER BY sort_order ASC, service_id ASC
+      `).all();
+      const data = (rows?.results || []).map((r) => ({
+        service_id: r.service_id,
+        service_name: r.service_name || ""
+      }));
+      return jsonResponse(200, {
+        ok: true,
+        code: "SUCCESS",
+        message: "\u67E5\u8BE2\u6210\u529F",
+        data,
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, {
+        ok: false,
+        code: "INTERNAL_ERROR",
+        message: "\u670D\u52A1\u5668\u9519\u8BEF",
+        meta: { requestId }
+      }, corsHeaders);
+    }
+  }
   if (method === "GET" && path === "/internal/api/v1/services") {
     try {
       const rows = await env.DATABASE.prepare(`
