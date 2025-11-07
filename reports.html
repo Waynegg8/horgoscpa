@@ -519,10 +519,11 @@
         }
 
         // 格式化金额
-        function formatCurrency(val) {
-          const num = Number(val || 0);
-          return 'NT$ ' + num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-        }
+      function formatCurrency(val) {
+        const num = Number(val || 0);
+        if (num === 0) return '—';
+        return num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      }
 
         // 格式化百分比
         function formatPercent(val) {
