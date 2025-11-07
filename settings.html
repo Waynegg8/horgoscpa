@@ -962,50 +962,77 @@
                                 <button class="btn btn-sm btn-danger" onclick="deleteTemplate(${t.template_id})">刪除</button>
                             </div>
                         </div>
-                        <div class="card-body hidden" id="tasks-${t.template_id}">
-                            <button class="btn btn-sm btn-primary" onclick="showAddTask(${t.template_id})" style="margin-bottom:16px">+ 新增任務</button>
-                            <div id="task-form-${t.template_id}" class="hidden" style="background:#f9f9f9;padding:16px;border-radius:8px;margin-bottom:16px">
-                                <div class="form-group">
-                                    <label>任務名稱 *</label>
-                                    <input type="text" id="task-name-${t.template_id}" class="form-control">
+                        <div class="card-body hidden" id="tasks-${t.template_id}" style="padding:20px;background:#f9fafb;border-radius:8px;">
+                            <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:15px;">
+                                <button class="btn btn-sm btn-primary" onclick="showAddTask(${t.template_id})">+ 新增任務</button>
+                            </div>
+                            
+                            <!-- 任務表單（類似服務組成部分） -->
+                            <div id="task-form-${t.template_id}" class="hidden" style="background:white;padding:20px;border-radius:8px;margin-bottom:15px;border:2px solid #3b82f6;">
+                                <h5 style="margin-top:0;color:#1e40af;">📝 配置任務階段</h5>
+                                
+                                <!-- 基本信息 -->
+                                <div style="display:grid;grid-template-columns:3fr 1fr;gap:15px;margin-bottom:15px;">
+                                    <div>
+                                        <label style="display:block;margin-bottom:4px;font-size:13px;color:#374151;">任務名稱 *</label>
+                                        <input type="text" id="task-name-${t.template_id}" 
+                                               style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:14px;"
+                                               placeholder="請輸入任務名稱">
+                                    </div>
+                                    <div>
+                                        <label style="display:block;margin-bottom:4px;font-size:13px;color:#374151;">排序順序</label>
+                                        <input type="number" id="task-order-${t.template_id}" 
+                                               style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:14px;"
+                                               value="1" min="1">
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label>排序順序</label>
-                                    <input type="number" id="task-order-${t.template_id}" class="form-control" value="1">
-                                </div>
-                                <div class="form-group">
-                                    <label>📖 任務層級 SOP（可選，可多選）<small style="color:#666;margin-left:8px;">僅顯示適用於此服務的SOP</small></label>
+                                
+                                <!-- SOP選擇區域 -->
+                                <div style="margin-bottom:15px;">
+                                    <label style="display:block;margin-bottom:6px;font-size:13px;color:#374151;">
+                                        📖 任務層級 SOP（可選，可多選）
+                                        <small style="color:#6b7280;margin-left:8px;">僅顯示適用於此服務的SOP</small>
+                                    </label>
                                     
                                     <!-- 已選擇的SOP標籤 -->
-                                    <div id="selected-sops-${t.template_id}" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:28px;padding:8px;background:#fff;border:1px solid #d1d5db;border-radius:4px;">
-                                        <span style="color:#9ca3af;font-size:12px;">尚未選擇SOP</span>
+                                    <div id="selected-sops-${t.template_id}" 
+                                         style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:32px;padding:8px;background:#f9fafb;border:1px solid #d1d5db;border-radius:4px;">
+                                        <span style="color:#9ca3af;font-size:11px;">尚未選擇SOP</span>
                                     </div>
                                     
                                     <!-- 搜索框 -->
                                     <input type="text" 
                                            id="sop-search-${t.template_id}"
                                            placeholder="🔍 搜尋SOP..." 
-                                           class="form-control"
-                                           style="margin-bottom:8px;font-size:13px;"
+                                           style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;margin-bottom:6px;"
                                            onkeyup="filterTaskSOPs${t.template_id}(this.value)" />
                                     
                                     <!-- SOP複選框列表 -->
-                                    <div id="task-sop-list-${t.template_id}" style="max-height:200px;overflow-y:auto;border:1px solid #d1d5db;border-radius:4px;padding:8px;background:#fff;">
-                                        <div style="color:#9ca3af;text-align:center;padding:20px;font-size:13px;">載入中...</div>
+                                    <div id="task-sop-list-${t.template_id}" 
+                                         style="max-height:150px;overflow-y:auto;border:1px solid #d1d5db;border-radius:4px;padding:6px;background:white;">
+                                        <div style="color:#9ca3af;text-align:center;padding:20px;font-size:12px;">載入中...</div>
                                     </div>
+                                    <small style="display:block;margin-top:5px;color:#6b7280;font-size:11px;">💡 選擇SOP作為任務參考文件（可多選）</small>
                                 </div>
-                                <div class="form-group">
-                                    <label>任務層級附件（可選）</label>
-                                    <select id="task-attachment-${t.template_id}" class="form-control">
+                                
+                                <!-- 附件選擇 -->
+                                <div style="margin-bottom:15px;">
+                                    <label style="display:block;margin-bottom:4px;font-size:13px;color:#374151;">📎 任務層級附件（可選）</label>
+                                    <select id="task-attachment-${t.template_id}" 
+                                            style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;">
                                         <option value="">無</option>
                                     </select>
                                 </div>
-                                <div class="action-btns">
-                                    <button class="btn btn-sm btn-primary" onclick="saveTask(${t.template_id})">儲存</button>
-                                    <button class="btn btn-sm btn-secondary" onclick="cancelTask(${t.template_id})">取消</button>
+                                
+                                <!-- 操作按鈕 -->
+                                <div style="display:flex;gap:10px;margin-top:20px;">
+                                    <button class="btn btn-primary" onclick="saveTask(${t.template_id})">儲存</button>
+                                    <button class="btn btn-secondary" onclick="cancelTask(${t.template_id})">取消</button>
                                 </div>
                             </div>
-                            <div id="task-list-${t.template_id}">載入中...</div>
+                            
+                            <!-- 任務列表 -->
+                            <div id="task-list-${t.template_id}" style="margin-top:15px;">載入中...</div>
                         </div>
                     </div>
                 `).join('');
@@ -1040,15 +1067,15 @@
                 if (!json.data || json.data.length === 0) {
                     listDiv.innerHTML = `
                         <div style="padding:20px;text-align:center;background:#fef3c7;border-radius:8px;border:2px dashed #fbbf24;">
-                            <p style="color:#92400e;font-size:14px;margin:0 0 10px 0;font-weight:500;">⚠️ 尚未配置任何任務</p>
+                            <p style="color:#92400e;font-size:14px;margin:0 0 10px 0;font-weight:500;">⚠️ 尚未配置任何任務階段</p>
                             <p style="color:#92400e;font-size:13px;margin:0;">點擊上方「<strong>+ 新增任務</strong>」按鈕開始配置</p>
                         </div>
                     `;
                     return;
                 }
                 
-                // 卡片式任务列表
-                listDiv.innerHTML = json.data.map(task => {
+                // 類似服務組成部分的任务列表
+                listDiv.innerHTML = json.data.map((task, idx) => {
                     // 处理多个SOP显示（兼容旧的单一SOP）
                     let sopIds = [];
                     if (task.sop_ids && Array.isArray(task.sop_ids)) {
@@ -1057,40 +1084,46 @@
                         sopIds = [task.sop_id];
                     }
                     
-                    const sopDisplay = sopIds.length > 0 
-                        ? sopIds.map(sopId => {
-                            const sop = allSOPs.find(s => parseInt(s.sop_id) === parseInt(sopId));
-                            const sopTitle = sop ? sop.title : `SOP #${sopId}`;
-                            return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#3b82f6;color:white;border-radius:4px;font-size:11px;margin-right:4px;margin-bottom:4px;">📖 ${sopTitle}</span>`;
-                        }).join('')
-                        : '<span style="color:#9ca3af;font-size:12px;">未設定</span>';
-                    
-                    const attachmentDisplay = task.attachment_id ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#10b981;color:white;border-radius:4px;font-size:12px;">📎 附件 #${task.attachment_id}</span>` : '<span style="color:#9ca3af;font-size:12px;">未設定</span>';
-                    
                     return `
-                        <div style="background:white;padding:16px;border-radius:8px;margin-bottom:12px;border:1px solid #e5e7eb;box-shadow:0 1px 2px rgba(0,0,0,0.05);">
-                            <div style="display:flex;align-items:start;gap:15px;">
-                                <div style="flex-shrink:0;width:36px;height:36px;background:#6b7280;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;">
-                                    ${task.stage_order}
-                                </div>
+                        <div style="background:white;padding:15px;border-radius:8px;margin-bottom:10px;border-left:4px solid #3b82f6;">
+                            <div style="display:flex;justify-content:space-between;align-items:start;">
                                 <div style="flex:1;">
-                                    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">
-                                        <h4 style="margin:0;font-size:15px;font-weight:600;color:#111827;">${task.stage_name || '未命名'}</h4>
-                                        <div style="display:flex;gap:6px;flex-shrink:0;">
-                                            <button class="btn btn-sm btn-secondary" onclick="editTask(${templateId}, ${JSON.stringify(task).replace(/"/g, '&quot;')})">編輯</button>
-                                            <button class="btn btn-sm btn-danger" onclick="deleteTask(${templateId}, ${task.stage_id})">刪除</button>
+                                    <h5 style="margin:0 0 12px 0;color:#1f2937;font-size:15px;">
+                                        ${task.stage_order}. ${task.stage_name || '未命名任務'}
+                                    </h5>
+                                    
+                                    ${sopIds.length > 0 ? `
+                                        <div style="padding:8px 12px;background:#ecfdf5;border-radius:4px;border-left:2px solid #10b981;margin-bottom:8px;">
+                                            <div style="font-size:11px;font-weight:600;color:#047857;margin-bottom:4px;">📖 任務層級SOP（${sopIds.length}個）</div>
+                                            ${sopIds.map(sopId => {
+                                                const sop = allSOPs.find(s => parseInt(s.sop_id) === parseInt(sopId));
+                                                const sopTitle = sop ? sop.title : `SOP #${sopId}`;
+                                                const sopCategory = sop && sop.category ? sop.category : '';
+                                                return `
+                                                    <div style="font-size:12px;color:#065f46;padding:2px 0;">
+                                                        • ${sopTitle}
+                                                        ${sopCategory ? `<span style="font-size:10px;color:#6b7280;margin-left:4px;">[${sopCategory}]</span>` : ''}
+                                                    </div>
+                                                `;
+                                            }).join('')}
                                         </div>
-                                    </div>
-                                    <div style="display:grid;grid-template-columns:1fr;gap:12px;font-size:13px;">
-                                        <div>
-                                            <span style="color:#6b7280;display:block;margin-bottom:6px;font-size:12px;">📖 任務層級 SOP</span>
-                                            <div style="display:flex;flex-wrap:wrap;">${sopDisplay}</div>
+                                    ` : `
+                                        <div style="padding:8px 12px;background:#f9fafb;border-radius:4px;margin-bottom:8px;">
+                                            <div style="font-size:12px;color:#9ca3af;">📖 未設定任務SOP</div>
                                         </div>
-                                        <div>
-                                            <span style="color:#6b7280;display:block;margin-bottom:4px;font-size:12px;">📎 任務層級附件</span>
-                                            ${attachmentDisplay}
+                                    `}
+                                    
+                                    ${task.attachment_id ? `
+                                        <div style="padding:8px 12px;background:#f0f9ff;border-radius:4px;border-left:2px solid #3b82f6;">
+                                            <div style="font-size:12px;color:#1e40af;">
+                                                📎 附件 #${task.attachment_id}
+                                            </div>
                                         </div>
-                                    </div>
+                                    ` : ''}
+                                </div>
+                                <div style="display:flex;gap:5px;">
+                                    <button class="table-btn-link" onclick="editTask(${templateId}, ${JSON.stringify(task).replace(/"/g, '&quot;')})">編輯</button>
+                                    <button class="table-btn-link danger" onclick="deleteTask(${templateId}, ${task.stage_id})">刪除</button>
                                 </div>
                             </div>
                         </div>
