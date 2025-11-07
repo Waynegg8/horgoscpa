@@ -565,6 +565,14 @@
                     })
                 });
                 if (!res.ok) throw new Error('失敗');
+                
+                // ⚡ 清除服務列表緩存，確保獲取最新數據
+                if (window.DataCache) {
+                    window.DataCache.clearCache('services_types');
+                    window.DataCache.clearCache('services');
+                    console.log('[Settings] 已清除服務列表緩存');
+                }
+                
                 alert(serviceId ? '更新成功' : '新增成功');
                 cancelService();
                 loadServices();
@@ -577,7 +585,12 @@
         async function loadServices() {
             const tbody = document.querySelector('#servicesTable tbody');
             try {
-                const res = await fetch('/internal/api/v1/services', { credentials: 'include' });
+                // ⚡ 添加時間戳參數繞過緩存，確保獲取最新數據
+                const timestamp = Date.now();
+                const res = await fetch(`/internal/api/v1/services?_t=${timestamp}`, { 
+                    credentials: 'include',
+                    cache: 'no-cache' // 禁用瀏覽器緩存
+                });
                 const json = await res.json();
                 
                 console.log('服務項目API響應:', json);
@@ -619,6 +632,14 @@
                     method: 'DELETE',
                     credentials: 'include'
                 });
+                
+                // ⚡ 清除服務列表緩存，確保獲取最新數據
+                if (window.DataCache) {
+                    window.DataCache.clearCache('services_types');
+                    window.DataCache.clearCache('services');
+                    console.log('[Settings] 已清除服務列表緩存');
+                }
+                
                 loadServices();
             } catch (e) {
                 alert('刪除失敗');
