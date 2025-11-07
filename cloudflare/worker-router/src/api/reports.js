@@ -410,8 +410,8 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 
 	const users = usersResult?.results || [];
 	
-	// 年度报表：直接从数据库聚合，避免调用calculateEmployeePayroll（太慢）
-	// 简化计算：只统计底薪，不包含复杂的加班、请假、奖金计算
+	// 恢复完整计算：单独加载时有足够时间
+	const { calculateEmployeePayroll } = await import('./payroll.js');
 	
 	const monthlyTrend = [];
 	const employeeSummary = [];
@@ -422,7 +422,6 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 		empMap.set(user.user_id, {
 			userId: user.user_id,
 			name: user.name || user.username,
-			baseSalary: Number(user.base_salary || 0),
 			annualGross: 0,
 			annualNet: 0,
 			totalOvertime: 0,
@@ -431,22 +430,32 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 		});
 	}
 	
-	// 按月统计（简化版）
+	// 按月计算（完整版）
 	for (let month = 1; month <= 12; month++) {
 		const ym = `${year}-${String(month).padStart(2,'0')}`;
-		
-		// 简化计算：底薪 × 员工数
 		let monthGross = 0;
-		for (const emp of empMap.values()) {
-			monthGross += emp.baseSalary;
-			emp.annualGross += emp.baseSalary;
-			emp.annualNet += emp.baseSalary * 0.85; // 简化：假设扣款15%
+		let monthNet = 0;
+		
+		for (const user of users) {
+			const payroll = await calculateEmployeePayroll(env, user.user_id, ym);
+			const gross = payroll.grossSalaryCents / 100;
+			const net = payroll.netSalaryCents / 100;
+			
+			monthGross += gross;
+			monthNet += net;
+			
+			const emp = empMap.get(user.user_id);
+			emp.annualGross += gross;
+			emp.annualNet += net;
+			emp.totalOvertime += payroll.overtimeCents / 100;
+			emp.totalPerformance += payroll.performanceBonusCents / 100;
+			emp.totalYearEnd += payroll.totalYearEndBonusCents / 100;
 		}
 		
 		monthlyTrend.push({
 			month,
 			totalGrossSalary: monthGross,
-			totalNetSalary: monthGross * 0.85,
+			totalNetSalary: monthNet,
 			employeeCount: users.length,
 			avgGrossSalary: users.length > 0 ? monthGross / users.length : 0
 		});
@@ -460,9 +469,9 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 			annualGrossSalary: emp.annualGross,
 			annualNetSalary: emp.annualNet,
 			avgMonthlySalary: emp.annualGross / 12,
-			totalOvertimePay: 0, // 年度报表不计算详细数据
-			totalPerformanceBonus: 0,
-			totalYearEndBonus: 0
+			totalOvertimePay: emp.totalOvertime,
+			totalPerformanceBonus: emp.totalPerformance,
+			totalYearEndBonus: emp.totalYearEnd
 		});
 	}
 
@@ -758,41 +767,49 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
 	const users = usersResult?.results || [];
 	const employeeSummary = [];
 
-	// 简化年度报表：直接从数据库聚合全年工时
+	// 恢复完整计算：每次只加载一个报表，有时间进行详细计算
+	// 但为避免超时，不调用月度API，直接聚合数据
 	for (const user of users) {
-		// 获取全年工时
+		let annualStandardHours = 0;
+		let annualWeightedHours = 0;
+		let annualCost = 0;
+		
+		// 获取全年工时并计算加权
 		const hoursResult = await env.DATABASE.prepare(`
 			SELECT 
-				SUM(hours) as total_hours,
-				COUNT(DISTINCT client_id) as client_count
+				work_type,
+				SUM(hours) as total_hours
 			FROM Timesheets
 			WHERE user_id = ? 
 				AND substr(work_date, 1, 4) = ?
 				AND is_deleted = 0
-		`).bind(user.user_id, String(year)).first();
+			GROUP BY work_type
+		`).bind(user.user_id, String(year)).all();
 		
-		const annualHours = Number(hoursResult?.total_hours || 0);
-		const clientCount = Number(hoursResult?.client_count || 0);
+		// 计算加权工时
+		for (const row of (hoursResult?.results || [])) {
+			const hours = Number(row.total_hours || 0);
+			annualStandardHours += hours;
+			const weighted = calculateWeightedHours(parseInt(row.work_type) || 1, hours);
+			annualWeightedHours += weighted;
+		}
 		
-		// 简化：假设加权工时=标准工时×1.1
-		const annualWeightedHours = annualHours * 1.1;
-		
-		// 简化：成本=底薪×12（不计算详细薪资）
+		// 成本：底薪×12（简化）
 		const baseSalary = Number(user.base_salary || 0);
-		const annualCost = baseSalary * 12;
+		annualCost = baseSalary * 12;
 		
-		// 简化：收入=0（年度报表不计算收入分配，太复杂）
+		// 收入：暂不计算（需要复杂的任务收入分配）
 		const annualRevenue = 0;
 		const annualProfit = annualRevenue - annualCost;
 		const annualProfitMargin = 0;
-		const avgHourlyRate = 0;
+		const avgHourlyRate = annualWeightedHours > 0 ? (annualRevenue / annualWeightedHours) : 0;
 
 		employeeSummary.push({
 			userId: user.user_id,
 			name: user.name || user.username,
-			annualStandardHours: Number(annualHours.toFixed(1)),
+			annualStandardHours: Number(annualStandardHours.toFixed(1)),
 			annualWeightedHours: Number(annualWeightedHours.toFixed(1)),
-			hoursDifference: Number((annualWeightedHours - annualHours).toFixed(1)),
+			hoursDifference: Number((annualWeightedHours - annualStandardHours).toFixed(1)),
 			annualRevenue: 0,
 			annualCost: Number(annualCost.toFixed(2)),
 			annualProfit: Number(annualProfit.toFixed(2)),

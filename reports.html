@@ -31,21 +31,21 @@
           <label for="monthly-year" style="font-weight:600;">選擇月份：</label>
           <select id="monthly-year" class="form-select" style="width:120px;"></select>
           <select id="monthly-month" class="form-select" style="width:100px;">
-            <option value="1">1月</option>
-            <option value="2">2月</option>
-            <option value="3">3月</option>
-            <option value="4">4月</option>
-            <option value="5">5月</option>
-            <option value="6">6月</option>
-            <option value="7">7月</option>
-            <option value="8">8月</option>
-            <option value="9">9月</option>
-            <option value="10">10月</option>
-            <option value="11">11月</option>
-            <option value="12">12月</option>
-          </select>
+                <option value="1">1月</option>
+                <option value="2">2月</option>
+                <option value="3">3月</option>
+                <option value="4">4月</option>
+                <option value="5">5月</option>
+                <option value="6">6月</option>
+                <option value="7">7月</option>
+                <option value="8">8月</option>
+                <option value="9">9月</option>
+                <option value="10">10月</option>
+                <option value="11">11月</option>
+                <option value="12">12月</option>
+              </select>
           <button id="monthly-load" class="btn primary" style="margin-left:12px;">載入報表</button>
-        </div>
+            </div>
 
         <!-- Section 1: 收款报表 -->
         <div class="card" style="margin-bottom:24px;">
@@ -115,8 +115,8 @@
             <div class="stat-item">
               <div class="stat-label">平均實發</div>
               <div class="stat-value" id="m-pay-avg-net">—</div>
-            </div>
           </div>
+        </div>
 
           <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">薪資明細</h4>
           <div class="report-table-wrapper" style="overflow-x:auto;">
@@ -142,7 +142,7 @@
                 <tr><td colspan="13" class="muted">請選擇月份後載入資料</td></tr>
               </tbody>
             </table>
-          </div>
+            </div>
 
           <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">薪資構成分析</h4>
           <div class="report-table-wrapper">
@@ -158,8 +158,8 @@
                 <tr><td colspan="3" class="muted">請選擇月份後載入資料</td></tr>
               </tbody>
             </table>
+            </div>
           </div>
-        </div>
 
         <!-- Section 3: 员工产值报表 -->
         <div class="card" style="margin-bottom:24px;">
@@ -186,8 +186,8 @@
                 <tr><td colspan="11" class="muted">請選擇月份後載入資料</td></tr>
               </tbody>
             </table>
+            </div>
           </div>
-        </div>
 
         <!-- Section 4: 客户毛利报表 -->
         <div class="card" style="margin-bottom:24px;">
@@ -219,18 +219,27 @@
       <!-- 年度报表 -->
       <!-- ========================================== -->
       <section id="panel-annual" class="reports-section panel" role="tabpanel">
-        <div class="report-filters" style="margin-bottom:24px;display:flex;gap:12px;align-items:center;">
-          <label for="annual-year" style="font-weight:600;">選擇年度：</label>
-          <select id="annual-year" class="form-select" style="width:120px;"></select>
-          <button id="annual-load" class="btn primary" style="margin-left:12px;">載入報表</button>
-          <span id="annual-loading" style="margin-left:12px;color:#64748b;display:none;">
-            ⏳ 載入中，請稍候...（年度報表需要較長時間）
-          </span>
-        </div>
+        <div class="report-filters" style="margin-bottom:24px;">
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
+            <label for="annual-year" style="font-weight:600;">選擇年度：</label>
+            <select id="annual-year" class="form-select" style="width:120px;"></select>
+            </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button id="annual-load-revenue" class="btn primary">📊 收款報表</button>
+            <button id="annual-load-payroll" class="btn primary">💰 薪資報表</button>
+            <button id="annual-load-performance" class="btn primary">👥 員工產值</button>
+            <button id="annual-load-profit" class="btn primary">📈 客戶毛利</button>
+            <button id="annual-load-all" class="btn" style="background:#64748b;margin-left:auto;">🔄 全部載入</button>
+            </div>
+          <span id="annual-loading" style="margin-top:12px;color:#64748b;display:none;font-size:14px;"></span>
+            </div>
 
         <!-- Section 1: 年度收款报表 -->
         <div class="card" style="margin-bottom:24px;">
-          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">📊 年度收款報表</h3>
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">
+            📊 年度收款報表
+            <span id="revenue-status" style="font-size:14px;font-weight:normal;color:#64748b;margin-left:12px;"></span>
+          </h3>
           
           <div class="stats-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
             <div class="stat-item">
@@ -240,11 +249,11 @@
             <div class="stat-item">
               <div class="stat-label">全年實收金額</div>
               <div class="stat-value" id="a-rev-received">—</div>
-            </div>
+          </div>
             <div class="stat-item">
               <div class="stat-label">全年收款率</div>
               <div class="stat-value" id="a-rev-rate">—</div>
-            </div>
+        </div>
             <div class="stat-item">
               <div class="stat-label">年度逾期未收</div>
               <div class="stat-value" id="a-rev-overdue" style="color:#dc2626;">—</div>
@@ -286,7 +295,7 @@
                 <tr><td colspan="6" class="muted">請選擇年度後載入資料</td></tr>
               </tbody>
             </table>
-          </div>
+        </div>
 
           <h4 style="font-size:14px;font-weight:600;margin:20px 0 12px 0;color:#64748b;">按服務類型年度彙總</h4>
           <div class="report-table-wrapper">
@@ -309,7 +318,10 @@
 
         <!-- Section 2: 年度薪资报表 -->
         <div class="card" style="margin-bottom:24px;">
-          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">💰 年度薪資報表</h3>
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">
+            💰 年度薪資報表
+            <span id="payroll-status" style="font-size:14px;font-weight:normal;color:#64748b;margin-left:12px;"></span>
+          </h3>
           
           <div class="stats-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
             <div class="stat-item">
@@ -367,12 +379,15 @@
                 <tr><td colspan="8" class="muted">請選擇年度後載入資料</td></tr>
               </tbody>
             </table>
+            </div>
           </div>
-        </div>
 
         <!-- Section 3: 年度员工产值报表 -->
         <div class="card" style="margin-bottom:24px;">
-          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">👥 年度員工產值分析</h3>
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">
+            👥 年度員工產值分析
+            <span id="performance-status" style="font-size:14px;font-weight:normal;color:#64748b;margin-left:12px;"></span>
+          </h3>
           
           <div class="report-table-wrapper" style="overflow-x:auto;">
             <table class="report-table" style="font-size:12px;">
@@ -399,7 +414,10 @@
 
         <!-- Section 4: 年度客户毛利报表 -->
         <div class="card" style="margin-bottom:24px;">
-          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">💼 年度客戶毛利分析</h3>
+          <h3 class="card-title" style="margin:0 0 16px 0;font-size:18px;font-weight:600;border-bottom:2px solid #e5e7eb;padding-bottom:12px;">
+            💼 年度客戶毛利分析
+            <span id="profit-status" style="font-size:14px;font-weight:normal;color:#64748b;margin-left:12px;"></span>
+          </h3>
           
           <h4 style="font-size:14px;font-weight:600;margin:0 0 12px 0;color:#64748b;">按客戶年度彙總</h4>
           <div class="report-table-wrapper">
@@ -547,7 +565,7 @@
           throw new Error(`載入收款報表失敗 (${res.status}): ${text.substring(0, 200)}`);
         }
         
-        const json = await res.json();
+            const json = await res.json();
         if (!json.ok) {
           throw new Error(json.message || '載入收款報表失敗');
         }
@@ -699,7 +717,7 @@
           throw new Error(`載入客戶毛利報表失敗 (${res.status}): ${text.substring(0, 200)}`);
         }
         
-        const json = await res.json();
+            const json = await res.json();
         if (!json.ok) {
           throw new Error(json.message || '載入客戶毛利報表失敗');
         }
@@ -709,7 +727,7 @@
           
           if (data.clients.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" class="muted">本月無客戶成本記錄</td></tr>';
-          } else {
+                    } else {
             tbody.innerHTML = data.clients.map(c => `
               <tr>
                 <td>${c.clientName}</td>
@@ -720,40 +738,160 @@
                 <td class="text-right">${formatCurrency(c.revenue)}</td>
                 <td class="text-right" style="color:${c.profit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(c.profit)}</td>
                 <td class="text-right">${formatPercent(c.profitMargin)}</td>
-              </tr>
+                                </tr>
             `).join('');
           }
         }
 
-        // ============================================================
-        // 年度报表加载
-        // ============================================================
-      async function loadAnnualReports() {
+      // ============================================================
+      // 年度报表加载 - 独立按钮
+      // ============================================================
+      
+      // 辅助函数：显示状态
+      function updateStatus(elementId, status, color = '#64748b') {
+        const el = document.getElementById(elementId);
+        if (el) {
+          el.textContent = status;
+          el.style.color = color;
+        }
+      }
+      
+      // 单独加载：收款报表
+      async function loadAnnualRevenueOnly() {
         const year = document.getElementById('annual-year').value;
-
+        if (!year) {
+          alert('請選擇年度');
+          return;
+        }
+        
+        const loadingIndicator = document.getElementById('annual-loading');
+        loadingIndicator.style.display = 'block';
+        loadingIndicator.innerHTML = '⏳ 正在載入收款報表...';
+        updateStatus('revenue-status', '載入中...', '#f59e0b');
+        
+        try {
+          await loadAnnualRevenue(year);
+          updateStatus('revenue-status', '✅ 已載入', '#16a34a');
+          loadingIndicator.innerHTML = '✅ 收款報表載入完成';
+          setTimeout(() => { loadingIndicator.style.display = 'none'; }, 2000);
+        } catch (err) {
+          console.error('載入收款報表失敗:', err);
+          updateStatus('revenue-status', '❌ 載入失敗', '#dc2626');
+          loadingIndicator.innerHTML = '❌ 收款報表載入失敗';
+          alert('載入失敗：' + err.message);
+          setTimeout(() => { loadingIndicator.style.display = 'none'; }, 3000);
+        }
+      }
+      
+      // 单独加载：薪资报表
+      async function loadAnnualPayrollOnly() {
+        const year = document.getElementById('annual-year').value;
+        if (!year) {
+          alert('請選擇年度');
+          return;
+        }
+        
+        const loadingIndicator = document.getElementById('annual-loading');
+        loadingIndicator.style.display = 'block';
+        loadingIndicator.innerHTML = '⏳ 正在載入薪資報表...（可能需要20-30秒）';
+        updateStatus('payroll-status', '載入中...', '#f59e0b');
+        
+        try {
+          await loadAnnualPayroll(year);
+          updateStatus('payroll-status', '✅ 已載入', '#16a34a');
+          loadingIndicator.innerHTML = '✅ 薪資報表載入完成';
+          setTimeout(() => { loadingIndicator.style.display = 'none'; }, 2000);
+        } catch (err) {
+          console.error('載入薪資報表失敗:', err);
+          updateStatus('payroll-status', '❌ 載入失敗', '#dc2626');
+          loadingIndicator.innerHTML = '❌ 薪資報表載入失敗';
+          alert('載入失敗：' + err.message);
+          setTimeout(() => { loadingIndicator.style.display = 'none'; }, 3000);
+        }
+      }
+      
+      // 单独加载：员工产值
+      async function loadAnnualPerformanceOnly() {
+        const year = document.getElementById('annual-year').value;
+        if (!year) {
+          alert('請選擇年度');
+          return;
+        }
+        
+        const loadingIndicator = document.getElementById('annual-loading');
+        loadingIndicator.style.display = 'block';
+        loadingIndicator.innerHTML = '⏳ 正在載入員工產值報表...（可能需要30-60秒）';
+        updateStatus('performance-status', '載入中...', '#f59e0b');
+        
+        try {
+          await loadAnnualEmployeePerformance(year);
+          updateStatus('performance-status', '✅ 已載入', '#16a34a');
+          loadingIndicator.innerHTML = '✅ 員工產值報表載入完成';
+          setTimeout(() => { loadingIndicator.style.display = 'none'; }, 2000);
+        } catch (err) {
+          console.error('載入員工產值報表失敗:', err);
+          updateStatus('performance-status', '❌ 載入失敗', '#dc2626');
+          loadingIndicator.innerHTML = '❌ 員工產值報表載入失敗';
+          alert('載入失敗：' + err.message);
+          setTimeout(() => { loadingIndicator.style.display = 'none'; }, 3000);
+        }
+      }
+      
+      // 单独加载：客户毛利
+      async function loadAnnualProfitOnly() {
+        const year = document.getElementById('annual-year').value;
+        if (!year) {
+          alert('請選擇年度');
+          return;
+        }
+        
+        const loadingIndicator = document.getElementById('annual-loading');
+        loadingIndicator.style.display = 'block';
+        loadingIndicator.innerHTML = '⏳ 正在載入客戶毛利報表...';
+        updateStatus('profit-status', '載入中...', '#f59e0b');
+        
+        try {
+          await loadAnnualClientProfitability(year);
+          updateStatus('profit-status', '✅ 已載入', '#16a34a');
+          loadingIndicator.innerHTML = '✅ 客戶毛利報表載入完成';
+          setTimeout(() => { loadingIndicator.style.display = 'none'; }, 2000);
+        } catch (err) {
+          console.error('載入客戶毛利報表失敗:', err);
+          updateStatus('profit-status', '❌ 載入失敗', '#dc2626');
+          loadingIndicator.innerHTML = '❌ 客戶毛利報表載入失敗';
+          alert('載入失敗：' + err.message);
+          setTimeout(() => { loadingIndicator.style.display = 'none'; }, 3000);
+        }
+      }
+      
+      // 全部加载
+      async function loadAnnualReportsAll() {
+        const year = document.getElementById('annual-year').value;
         if (!year) {
           alert('請選擇年度');
           return;
         }
 
         const loadingIndicator = document.getElementById('annual-loading');
-        loadingIndicator.style.display = 'inline';
-        loadingIndicator.innerHTML = '⏳ 載入中 (0/4)...';
+        loadingIndicator.style.display = 'block';
+        loadingIndicator.innerHTML = '⏳ 載入中 (0/4)...（預計需要1-2分鐘）';
 
         try {
           const tasks = [
-            { name: '收款報表', fn: () => loadAnnualRevenue(year) },
-            { name: '薪資報表', fn: () => loadAnnualPayroll(year) },
-            { name: '員工產值報表', fn: () => loadAnnualEmployeePerformance(year) },
-            { name: '客戶毛利報表', fn: () => loadAnnualClientProfitability(year) }
+            { name: '收款報表', fn: () => loadAnnualRevenue(year), status: 'revenue-status' },
+            { name: '薪資報表', fn: () => loadAnnualPayroll(year), status: 'payroll-status' },
+            { name: '員工產值報表', fn: () => loadAnnualEmployeePerformance(year), status: 'performance-status' },
+            { name: '客戶毛利報表', fn: () => loadAnnualClientProfitability(year), status: 'profit-status' }
           ];
           
           for (let i = 0; i < tasks.length; i++) {
             loadingIndicator.innerHTML = `⏳ 正在載入${tasks[i].name} (${i + 1}/4)...`;
+            updateStatus(tasks[i].status, '載入中...', '#f59e0b');
             await tasks[i].fn();
+            updateStatus(tasks[i].status, '✅ 已載入', '#16a34a');
           }
           
-          loadingIndicator.innerHTML = '✅ 載入完成';
+          loadingIndicator.innerHTML = '✅ 全部載入完成';
           setTimeout(() => {
             loadingIndicator.style.display = 'none';
           }, 2000);
@@ -778,7 +916,7 @@
           throw new Error(`載入年度收款報表失敗 (${res.status}): ${text.substring(0, 200)}`);
         }
         
-        const json = await res.json();
+            const json = await res.json();
         if (!json.ok) {
           throw new Error(json.message || '載入年度收款報表失敗');
         }
@@ -793,7 +931,7 @@
           const trendTbody = document.getElementById('a-rev-trend');
           if (data.monthlyTrend.length === 0) {
             trendTbody.innerHTML = '<tr><td colspan="5" class="muted">本年無收款記錄</td></tr>';
-          } else {
+            } else {
             trendTbody.innerHTML = data.monthlyTrend.map(m => `
               <tr>
                 <td>${m.month}月</td>
@@ -877,7 +1015,7 @@
           const empTbody = document.getElementById('a-pay-employee');
           if (data.employeeSummary.length === 0) {
             empTbody.innerHTML = '<tr><td colspan="8" class="muted">本年無員工記錄</td></tr>';
-          } else {
+            } else {
             empTbody.innerHTML = data.employeeSummary.map(e => `
               <tr>
                 <td>${e.name}</td>
@@ -904,7 +1042,7 @@
           throw new Error(`載入年度員工產值報表失敗 (${res.status}): ${text.substring(0, 200)}`);
         }
         
-        const json = await res.json();
+            const json = await res.json();
         if (!json.ok) {
           throw new Error(json.message || '載入年度員工產值報表失敗');
         }
@@ -914,7 +1052,7 @@
           
           if (data.employeeSummary.length === 0) {
             tbody.innerHTML = '<tr><td colspan="10" class="muted">本年無員工工時記錄</td></tr>';
-          } else {
+            } else {
             tbody.innerHTML = data.employeeSummary.map(e => `
               <tr>
                 <td>${e.name}</td>
@@ -1069,7 +1207,13 @@
 
         // 事件监听
         document.getElementById('monthly-load').addEventListener('click', loadMonthlyReports);
-        document.getElementById('annual-load').addEventListener('click', loadAnnualReports);
+        
+        // 年度报表 - 独立按钮
+        document.getElementById('annual-load-revenue').addEventListener('click', loadAnnualRevenueOnly);
+        document.getElementById('annual-load-payroll').addEventListener('click', loadAnnualPayrollOnly);
+        document.getElementById('annual-load-performance').addEventListener('click', loadAnnualPerformanceOnly);
+        document.getElementById('annual-load-profit').addEventListener('click', loadAnnualProfitOnly);
+        document.getElementById('annual-load-all').addEventListener('click', loadAnnualReportsAll);
 
         // 权限检查
         async function checkPermission() {
@@ -1096,4 +1240,4 @@
     </script>
     <script defer type="module" src="/assets/js/components/bootstrap.js"></script>
   </body>
-</html>
+  </html>
