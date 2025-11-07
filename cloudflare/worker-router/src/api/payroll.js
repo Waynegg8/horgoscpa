@@ -1789,3 +1789,5 @@ async function downloadPayrollSnapshot(env, snapshotId, requestId, corsHeaders) 
 	});
 }
 
+// 导出函数供其他模块使用
+export { calculateEmployeePayroll };

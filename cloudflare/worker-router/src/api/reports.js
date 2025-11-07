@@ -307,6 +307,7 @@ async function handleMonthlyPayroll(request, env, me, requestId, url, corsHeader
 			return jsonResponse(422, { ok:false, code:"VALIDATION_ERROR", message:"請選擇查詢月份", meta:{ requestId } }, corsHeaders);
 		}
 
+		const ym = `${year}-${String(month).padStart(2,'0')}`;
 		const { calculateEmployeePayroll } = await import('./payroll.js');
 		
 		const usersResult = await env.DATABASE.prepare(`
@@ -322,7 +323,7 @@ async function handleMonthlyPayroll(request, env, me, requestId, url, corsHeader
 		let totalNetSalary = 0;
 
 		for (const user of users) {
-			const payroll = await calculateEmployeePayroll(env, user.user_id, year, month);
+			const payroll = await calculateEmployeePayroll(env, user.user_id, ym);
 			
 			// 获取月度绩效奖金
 			const monthlyBonusRow = await env.DATABASE.prepare(`
@@ -431,10 +432,11 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 		// 月度薪资趋势
 		const monthlyTrend = [];
 		for (let month = 1; month <= 12; month++) {
+			const ym = `${year}-${String(month).padStart(2,'0')}`;
 			let monthTotal = 0;
 			let monthNetTotal = 0;
 			for (const user of users) {
-				const payroll = await calculateEmployeePayroll(env, user.user_id, year, month);
+				const payroll = await calculateEmployeePayroll(env, user.user_id, ym);
 				
 				const monthlyBonusRow = await env.DATABASE.prepare(`
 					SELECT amount_cents FROM MonthlyBonus 
@@ -473,7 +475,8 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 			let totalYearEnd = 0;
 
 			for (let month = 1; month <= 12; month++) {
-				const payroll = await calculateEmployeePayroll(env, user.user_id, year, month);
+				const ym = `${year}-${String(month).padStart(2,'0')}`;
+				const payroll = await calculateEmployeePayroll(env, user.user_id, ym);
 				
 				const monthlyBonusRow = await env.DATABASE.prepare(`
 					SELECT amount_cents FROM MonthlyBonus 
@@ -574,7 +577,7 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
 
 		for (const user of users) {
 			// 计算薪资成本
-			const payroll = await calculateEmployeePayroll(env, user.user_id, year, month);
+			const payroll = await calculateEmployeePayroll(env, user.user_id, ym);
 			const laborCost = payroll.grossSalaryCents / 100;
 
 			// 获取管理费分摊
@@ -930,7 +933,7 @@ async function handleMonthlyClientProfitability(request, env, me, requestId, url
 			throw new Error('无法获取客户成本数据');
 		}
 
-		const clients = costData.data?.clients || [];
+		const tasks = costData.data?.tasks || [];
 		
 		// 获取收入数据
 		const revenueRows = await env.DATABASE.prepare(`
@@ -949,22 +952,60 @@ async function handleMonthlyClientProfitability(request, env, me, requestId, url
 			revenueMap.set(r.client_id, Number(r.revenue || 0));
 		}
 
+		// 将tasks聚合成clients
+		const clientsMap = new Map();
+		for (const task of tasks) {
+			if (!clientsMap.has(task.clientId)) {
+				clientsMap.set(task.clientId, {
+					clientId: task.clientId,
+					clientName: task.clientName,
+					totalHours: 0,
+					weightedHours: 0,
+					totalCost: 0,
+					totalWeightedCost: 0, // 用于计算加权平均时薪
+					services: [] // 保存服务类型明细
+				});
+			}
+			
+			const client = clientsMap.get(task.clientId);
+			client.totalHours += Number(task.hours || 0);
+			client.weightedHours += Number(task.weightedHours || 0);
+			client.totalCost += Number(task.totalCost || 0);
+			client.totalWeightedCost += (task.weightedHours * task.avgActualHourlyRate);
+			
+			// 保存服务类型明细（用于展示）
+			client.services.push({
+				serviceName: task.serviceName,
+				taskTitle: task.taskTitle,
+				hours: task.hours,
+				weightedHours: task.weightedHours,
+				avgHourlyRate: task.avgActualHourlyRate,
+				totalCost: task.totalCost
+			});
+		}
+
 		// 组合数据
-		const clientData = clients.map(client => {
+		const clientData = Array.from(clientsMap.values()).map(client => {
 			const revenue = revenueMap.get(client.clientId) || 0;
 			const profit = revenue - client.totalCost;
 			const profitMargin = revenue > 0 ? (profit / revenue * 100) : 0;
+			
+			// 计算加权平均时薪
+			const avgHourlyRate = client.weightedHours > 0 
+				? (client.totalWeightedCost / client.weightedHours) 
+				: 0;
 
 			return {
 				clientId: client.clientId,
 				clientName: client.clientName,
-				totalHours: Number(client.totalHours || 0),
-				weightedHours: Number(client.weightedHours || 0),
-				avgHourlyRate: Number(client.avgActualHourlyRate || 0),
-				totalCost: Number(client.totalCost || 0),
+				totalHours: Number(client.totalHours.toFixed(1)),
+				weightedHours: Number(client.weightedHours.toFixed(1)),
+				avgHourlyRate: Number(avgHourlyRate.toFixed(2)),
+				totalCost: Number(client.totalCost.toFixed(2)),
 				revenue: Number(revenue),
 				profit: Number(profit.toFixed(2)),
-				profitMargin: Number(profitMargin.toFixed(2))
+				profitMargin: Number(profitMargin.toFixed(2)),
+				services: client.services // 包含服务类型明细
 			};
 		});
 

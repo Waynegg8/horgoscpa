@@ -610,6 +610,7 @@ var init_payroll_settings = __esm({
 // src/api/payroll.js
 var payroll_exports = {};
 __export(payroll_exports, {
+  calculateEmployeePayroll: () => calculateEmployeePayroll,
   handlePayroll: () => handlePayroll
 });
 function shouldPayInMonth(recurringType, recurringMonths, effectiveDate, expiryDate, targetMonth) {
@@ -10424,6 +10425,7 @@ async function handleMonthlyPayroll(request, env, me, requestId, url, corsHeader
     if (!Number.isFinite(year) || year < 2e3 || !Number.isFinite(month) || month < 1 || month > 12) {
       return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u8ACB\u9078\u64C7\u67E5\u8A62\u6708\u4EFD", meta: { requestId } }, corsHeaders);
     }
+    const ym = `${year}-${String(month).padStart(2, "0")}`;
     const { calculateEmployeePayroll: calculateEmployeePayroll2 } = await Promise.resolve().then(() => (init_payroll(), payroll_exports));
     const usersResult = await env.DATABASE.prepare(`
 			SELECT user_id, username, name, base_salary
@@ -10436,7 +10438,7 @@ async function handleMonthlyPayroll(request, env, me, requestId, url, corsHeader
     let totalGrossSalary = 0;
     let totalNetSalary = 0;
     for (const user of users) {
-      const payroll = await calculateEmployeePayroll2(env, user.user_id, year, month);
+      const payroll = await calculateEmployeePayroll2(env, user.user_id, ym);
       const monthlyBonusRow = await env.DATABASE.prepare(`
 				SELECT amount_cents 
 				FROM MonthlyBonus 
@@ -10525,10 +10527,11 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
     const users = usersResult?.results || [];
     const monthlyTrend = [];
     for (let month = 1; month <= 12; month++) {
+      const ym = `${year}-${String(month).padStart(2, "0")}`;
       let monthTotal = 0;
       let monthNetTotal = 0;
       for (const user of users) {
-        const payroll = await calculateEmployeePayroll2(env, user.user_id, year, month);
+        const payroll = await calculateEmployeePayroll2(env, user.user_id, ym);
         const monthlyBonusRow = await env.DATABASE.prepare(`
 					SELECT amount_cents FROM MonthlyBonus 
 					WHERE user_id = ? AND year = ? AND month = ? AND is_deleted = 0
@@ -10561,7 +10564,8 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
       let totalPerformance = 0;
       let totalYearEnd = 0;
       for (let month = 1; month <= 12; month++) {
-        const payroll = await calculateEmployeePayroll2(env, user.user_id, year, month);
+        const ym = `${year}-${String(month).padStart(2, "0")}`;
+        const payroll = await calculateEmployeePayroll2(env, user.user_id, ym);
         const monthlyBonusRow = await env.DATABASE.prepare(`
 					SELECT amount_cents FROM MonthlyBonus 
 					WHERE user_id = ? AND year = ? AND month = ? AND is_deleted = 0
@@ -10642,7 +10646,7 @@ async function handleMonthlyEmployeePerformance(request, env, me, requestId, url
     }
     const employeePerformance = [];
     for (const user of users) {
-      const payroll = await calculateEmployeePayroll2(env, user.user_id, year, month);
+      const payroll = await calculateEmployeePayroll2(env, user.user_id, ym);
       const laborCost = payroll.grossSalaryCents / 100;
       let overheadAllocation = 0;
       try {
@@ -10936,7 +10940,7 @@ async function handleMonthlyClientProfitability(request, env, me, requestId, url
     if (!costData.ok) {
       throw new Error("\u65E0\u6CD5\u83B7\u53D6\u5BA2\u6237\u6210\u672C\u6570\u636E");
     }
-    const clients = costData.data?.clients || [];
+    const tasks = costData.data?.tasks || [];
     const revenueRows = await env.DATABASE.prepare(`
 			SELECT 
 				r.client_id,
@@ -10951,20 +10955,52 @@ async function handleMonthlyClientProfitability(request, env, me, requestId, url
     for (const r of revenueRows?.results || []) {
       revenueMap.set(r.client_id, Number(r.revenue || 0));
     }
-    const clientData = clients.map((client) => {
+    const clientsMap = /* @__PURE__ */ new Map();
+    for (const task of tasks) {
+      if (!clientsMap.has(task.clientId)) {
+        clientsMap.set(task.clientId, {
+          clientId: task.clientId,
+          clientName: task.clientName,
+          totalHours: 0,
+          weightedHours: 0,
+          totalCost: 0,
+          totalWeightedCost: 0,
+          // 用于计算加权平均时薪
+          services: []
+          // 保存服务类型明细
+        });
+      }
+      const client = clientsMap.get(task.clientId);
+      client.totalHours += Number(task.hours || 0);
+      client.weightedHours += Number(task.weightedHours || 0);
+      client.totalCost += Number(task.totalCost || 0);
+      client.totalWeightedCost += task.weightedHours * task.avgActualHourlyRate;
+      client.services.push({
+        serviceName: task.serviceName,
+        taskTitle: task.taskTitle,
+        hours: task.hours,
+        weightedHours: task.weightedHours,
+        avgHourlyRate: task.avgActualHourlyRate,
+        totalCost: task.totalCost
+      });
+    }
+    const clientData = Array.from(clientsMap.values()).map((client) => {
       const revenue = revenueMap.get(client.clientId) || 0;
       const profit = revenue - client.totalCost;
       const profitMargin = revenue > 0 ? profit / revenue * 100 : 0;
+      const avgHourlyRate = client.weightedHours > 0 ? client.totalWeightedCost / client.weightedHours : 0;
       return {
         clientId: client.clientId,
         clientName: client.clientName,
-        totalHours: Number(client.totalHours || 0),
-        weightedHours: Number(client.weightedHours || 0),
-        avgHourlyRate: Number(client.avgActualHourlyRate || 0),
-        totalCost: Number(client.totalCost || 0),
+        totalHours: Number(client.totalHours.toFixed(1)),
+        weightedHours: Number(client.weightedHours.toFixed(1)),
+        avgHourlyRate: Number(avgHourlyRate.toFixed(2)),
+        totalCost: Number(client.totalCost.toFixed(2)),
         revenue: Number(revenue),
         profit: Number(profit.toFixed(2)),
-        profitMargin: Number(profitMargin.toFixed(2))
+        profitMargin: Number(profitMargin.toFixed(2)),
+        services: client.services
+        // 包含服务类型明细
       };
     });
     const data = {
