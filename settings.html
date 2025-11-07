@@ -173,34 +173,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- 假期類型設定 -->
-        <div class="tab-panel" id="tab-leaves">
-            <div class="card">
-                <div class="card-header">
-                    <h2>假期類型與額度設定</h2>
-                    <p style="color:#666;font-size:14px;margin:8px 0 0 0;">設定系統中可用的假期類型及其額度規則</p>
-                </div>
-                <div class="card-body">
-                    <div style="background:#f0f9ff;border:1px solid #0ea5e9;padding:16px;border-radius:8px;margin-bottom:20px;">
-                        <h3 style="margin:0 0 12px 0;font-size:16px;color:#0369a1;">📋 假期類型說明</h3>
-                        <ul style="margin:0;padding-left:20px;color:#334155;">
-                            <li><strong>特休：</strong>依到職日自動計算（滿6個月3天、滿1年7天等）</li>
-                            <li><strong>病假：</strong>每年30天</li>
-                            <li><strong>事假：</strong>每年14天</li>
-                            <li><strong>補休：</strong>加班換補休，當月有效</li>
-                            <li><strong>生理假：</strong>每月1天（女性專屬）</li>
-                            <li><strong>產假、產檢假、陪產檢及陪產假：</strong>依生活事件登記給予</li>
-                            <li><strong>婚假、喪假：</strong>依生活事件登記給予</li>
-                        </ul>
-                    </div>
-                    
-                    <div style="background:#fef3c7;border:1px solid #f59e0b;padding:16px;border-radius:8px;">
-                        <p style="margin:0;color:#92400e;"><strong>⚠️ 提示：</strong>假期額度由系統根據勞基法自動計算，無需手動設定。員工的到職日和性別請在個人資料中設定。</p>
-                    </div>
-                </div>
-            </div>
-        </div>
         
         <!-- 公司資訊 -->
         <div class="tab-panel" id="tab-company">
@@ -427,7 +399,7 @@
         // ⚡ Tab 缓存系统初始化
         let currentSettingsTab = 'services';
         if (window.TabCache) {
-            window.TabCache.init(['services', 'templates', 'users', 'leaves', 'company', 'lifecycle', 'automation', 'holidays']);
+            window.TabCache.init(['services', 'templates', 'users', 'company', 'lifecycle', 'automation', 'holidays']);
         }
         
         // Tab切换
@@ -465,6 +437,12 @@
         
         // 任务模板 - 新增
         document.getElementById('btnAddTemplate')?.addEventListener('click', () => {
+            editingTemplateId = null;
+            document.getElementById('newTemplateName').value = '';
+            document.getElementById('newTemplateService').value = '';
+            document.getElementById('newTemplateClient').value = '';
+            document.getElementById('newTemplateDesc').value = '';
+            document.querySelector('#addTemplateForm .card-header h3').textContent = '新增任務模板';
             document.getElementById('addTemplateForm').classList.remove('hidden');
             loadTemplateOptions();
         });
@@ -1146,12 +1124,6 @@
                 console.error('儲存公司資訊失敗:', e);
                 alert('❌ 儲存失敗: ' + e.message);
             }
-        }
-
-        // 假期管理（已簡化為說明頁面）
-        async function loadLeaves() {
-            // 假期類型頁面已改為純說明頁面，無需載入數據
-            // 員工的到職日和性別請在個人資料頁面設定
         }
 
         // 服务生命周期
