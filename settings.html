@@ -257,138 +257,44 @@
             </div>
         </div>
 
-        <!-- 自动化规则 -->
+        <!-- 自动化规则 - 任务自动生成概览 -->
         <div class="tab-panel" id="tab-automation">
-            <div class="search-bar">
-                <button class="btn btn-primary" onclick="showAddAutomationForm()">+ 新增規則</button>
+            <div style="background:#f0f9ff;border:1px solid #bfdbfe;padding:16px;border-radius:8px;margin-bottom:20px;">
+                <h3 style="margin:0 0 8px 0;font-size:16px;color:#1e40af;">💡 關於自動化任務生成</h3>
+                <p style="margin:0;font-size:14px;color:#1e40af;line-height:1.6;">
+                    系統每月初會自動檢查所有客戶的服務設定，為啟用了「自動生成任務」的服務創建當月任務。<br>
+                    您可以在「<strong>客戶詳情頁</strong>」中為每個服務設定是否自動生成任務及任務內容。
+                </p>
             </div>
             
-            <!-- 新增/编辑表单 -->
-            <div class="card hidden" id="automationForm">
-                <div class="card-header">
-                    <h3 id="automationFormTitle">新增自動化規則</h3>
+            <div class="search-bar" style="margin-bottom:20px;">
+                <input type="text" id="autoSearchClient" class="form-control" placeholder="搜尋客戶名稱..." style="max-width:300px;margin-right:12px;">
+                <button class="btn btn-primary" onclick="loadAutoTasksOverview()">🔄 重新整理</button>
+                <button class="btn btn-success" onclick="previewNextMonthTasks()">👁️ 預覽下月任務</button>
                 </div>
-                <div class="card-body">
-                    <input type="hidden" id="edit_rule_id">
-                    
-                    <div class="form-group">
-                        <label>規則名稱 *</label>
-                        <input type="text" id="rule_name" class="form-control" placeholder="例如：每日任務提醒" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>排程類型 *</label>
-                        <select id="schedule_type" class="form-control" onchange="onScheduleTypeChange()" required>
-                            <option value="">請選擇</option>
-                            <option value="daily">每日執行</option>
-                            <option value="weekly">每週執行</option>
-                            <option value="monthly">每月執行</option>
-                            <option value="cron">自訂 Cron 表達式</option>
-                        </select>
-                    </div>
-                    
-                    <!-- 每日排程 -->
-                    <div class="form-group hidden" id="daily_schedule">
-                        <label>執行時間 *</label>
-                        <input type="time" id="daily_time" class="form-control" value="00:00">
-                        <small style="color:#666;display:block;margin-top:4px;">每天在指定時間執行</small>
-                    </div>
-                    
-                    <!-- 每週排程 -->
-                    <div class="form-group hidden" id="weekly_schedule">
-                        <label>星期與時間 *</label>
-                        <div style="display:flex;gap:12px;">
-                            <select id="weekly_day" class="form-control" style="flex:1;">
-                                <option value="Mon">星期一</option>
-                                <option value="Tue">星期二</option>
-                                <option value="Wed">星期三</option>
-                                <option value="Thu">星期四</option>
-                                <option value="Fri">星期五</option>
-                                <option value="Sat">星期六</option>
-                                <option value="Sun">星期日</option>
-                            </select>
-                            <input type="time" id="weekly_time" class="form-control" value="00:00" style="flex:1;">
-                        </div>
-                        <small style="color:#666;display:block;margin-top:4px;">每週在指定星期和時間執行</small>
-                    </div>
-                    
-                    <!-- 每月排程 -->
-                    <div class="form-group hidden" id="monthly_schedule">
-                        <label>日期與時間 *</label>
-                        <div style="display:flex;gap:12px;">
-                            <input type="number" id="monthly_day" class="form-control" min="1" max="31" value="1" placeholder="日期" style="flex:1;">
-                            <input type="time" id="monthly_time" class="form-control" value="00:00" style="flex:1;">
-                        </div>
-                        <small style="color:#666;display:block;margin-top:4px;">每月在指定日期和時間執行（1-31）</small>
-                    </div>
-                    
-                    <!-- Cron表達式 -->
-                    <div class="form-group hidden" id="cron_schedule">
-                        <label>Cron 表達式 *</label>
-                        <input type="text" id="cron_expression" class="form-control" placeholder="例如：0 2 * * *">
-                        <small style="color:#666;display:block;margin-top:4px;">
-                            格式：分 時 日 月 星期。<a href="https://crontab.guru/" target="_blank">參考 Cron 語法</a>
-                        </small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>執行動作 *</label>
-                        <select id="action_type" class="form-control" required>
-                            <option value="">請選擇動作</option>
-                            <option value="task_reminder">任務到期提醒</option>
-                            <option value="invoice_reminder">收據逾期提醒</option>
-                            <option value="backup_data">數據備份</option>
-                            <option value="generate_report">生成報表</option>
-                            <option value="cleanup">清理過期數據</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>動作參數（JSON格式，可選）</label>
-                        <textarea id="action_params" class="form-control" rows="4" placeholder='例如：{"days_before": 3, "notify_users": [1, 2]}'></textarea>
-                        <small style="color:#666;display:block;margin-top:4px;">
-                            根據動作類型設定相關參數，留空使用預設值
-                        </small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>條件過濾（JSON格式，可選）</label>
-                        <textarea id="condition_params" class="form-control" rows="4" placeholder='例如：{"status": "pending", "priority": "high"}'></textarea>
-                        <small style="color:#666;display:block;margin-top:4px;">
-                            設定篩選條件，留空表示不篩選
-                        </small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                            <input type="checkbox" id="is_enabled" checked style="width:20px;height:20px;">
-                            <span>啟用此規則</span>
-                        </label>
-                    </div>
-                    
-                    <div class="action-btns">
-                        <button class="btn btn-primary" onclick="saveAutomationRule()">儲存</button>
-                        <button class="btn btn-secondary" onclick="cancelAutomationForm()">取消</button>
-                    </div>
-                </div>
-            </div>
             
+            <!-- 自动生成任务概览 -->
             <div class="card">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <h3 style="margin:0;">已啟用自動生成任務的服務</h3>
+                    <span id="autoTaskCount" style="font-size:14px;color:#6b7280;">載入中...</span>
+                </div>
                 <div class="card-body">
                     <div class="data-table-container">
-                        <table class="data-table" id="automationTable">
+                        <table class="data-table" id="autoTasksTable">
                             <thead>
                                 <tr>
-                                    <th>規則名稱</th>
-                                    <th>排程類型</th>
-                                    <th>排程設定</th>
-                                    <th>上次執行</th>
-                                    <th>狀態</th>
-                                    <th>操作</th>
+                                    <th style="width:180px;">客戶名稱</th>
+                                    <th style="width:150px;">服務名稱</th>
+                                    <th style="width:200px;">組成部分</th>
+                                    <th>將生成的任務</th>
+                                    <th style="width:120px;">生成規則</th>
+                                    <th style="width:100px;">負責人</th>
+                                    <th style="width:120px;">操作</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr><td colspan="6" class="loading">載入中...</td></tr>
+                            <tbody id="autoTasksBody">
+                                <tr><td colspan="7" class="loading">載入中...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -527,7 +433,7 @@
                     else if (tab === 'templates') { loadTemplates(); loadTemplateOptions(); }
                     else if (tab === 'users') loadUsers();
                     else if (tab === 'company') loadCompanyInfo();
-                    else if (tab === 'automation') loadAutomation();
+                    else if (tab === 'automation') loadAutoTasksOverview();
                     else if (tab === 'holidays') loadHolidays();
                     
                     // ⚡ 标记为已加载
@@ -1684,296 +1590,279 @@
         // 自动化规则管理
         let editingRuleId = null;
         
-        // 顯示新增表單
-        function showAddAutomationForm() {
-            editingRuleId = null;
-            document.getElementById('automationFormTitle').textContent = '新增自動化規則';
-            document.getElementById('edit_rule_id').value = '';
-            document.getElementById('rule_name').value = '';
-            document.getElementById('schedule_type').value = '';
-            document.getElementById('action_type').value = '';
-            document.getElementById('action_params').value = '';
-            document.getElementById('condition_params').value = '';
-            document.getElementById('is_enabled').checked = true;
+        // 自動化任務概覽 - 顯示所有啟用自動生成的服務
+        async function loadAutoTasksOverview() {
+            const tbody = document.getElementById('autoTasksBody');
+            const countEl = document.getElementById('autoTaskCount');
+            const searchQuery = document.getElementById('autoSearchClient').value.trim().toLowerCase();
             
-            // 隱藏所有排程選項
-            document.getElementById('daily_schedule').classList.add('hidden');
-            document.getElementById('weekly_schedule').classList.add('hidden');
-            document.getElementById('monthly_schedule').classList.add('hidden');
-            document.getElementById('cron_schedule').classList.add('hidden');
-            
-            document.getElementById('automationForm').classList.remove('hidden');
-            document.getElementById('automationForm').scrollIntoView({ behavior: 'smooth' });
-        }
-        
-        // 排程類型變更
-        function onScheduleTypeChange() {
-            const type = document.getElementById('schedule_type').value;
-            
-            // 隱藏所有排程選項
-            document.getElementById('daily_schedule').classList.add('hidden');
-            document.getElementById('weekly_schedule').classList.add('hidden');
-            document.getElementById('monthly_schedule').classList.add('hidden');
-            document.getElementById('cron_schedule').classList.add('hidden');
-            
-            // 顯示對應的排程選項
-            if (type === 'daily') {
-                document.getElementById('daily_schedule').classList.remove('hidden');
-            } else if (type === 'weekly') {
-                document.getElementById('weekly_schedule').classList.remove('hidden');
-            } else if (type === 'monthly') {
-                document.getElementById('monthly_schedule').classList.remove('hidden');
-            } else if (type === 'cron') {
-                document.getElementById('cron_schedule').classList.remove('hidden');
-            }
-        }
-        
-        // 編輯規則
-        async function editAutomationRule(ruleId) {
-            try {
-                const res = await fetch(`/internal/api/v1/admin/automation-rules/${ruleId}`, { credentials: 'include' });
-                const json = await res.json();
-                
-                if (!json.ok || !json.data) {
-                    throw new Error('載入規則失敗');
-                }
-                
-                const rule = json.data;
-                editingRuleId = ruleId;
-                
-                document.getElementById('automationFormTitle').textContent = '編輯自動化規則';
-                document.getElementById('edit_rule_id').value = ruleId;
-                document.getElementById('rule_name').value = rule.name || '';
-                document.getElementById('schedule_type').value = rule.scheduleType || '';
-                
-                // 解析action
-                let actionData = {};
-                try {
-                    actionData = typeof rule.action === 'string' ? JSON.parse(rule.action) : rule.action;
-                } catch (e) {}
-                document.getElementById('action_type').value = actionData.type || '';
-                document.getElementById('action_params').value = actionData.params ? JSON.stringify(actionData.params, null, 2) : '';
-                
-                // 解析condition
-                let conditionData = {};
-                try {
-                    conditionData = typeof rule.condition === 'string' ? JSON.parse(rule.condition) : rule.condition;
-                } catch (e) {}
-                document.getElementById('condition_params').value = Object.keys(conditionData).length ? JSON.stringify(conditionData, null, 2) : '';
-                
-                document.getElementById('is_enabled').checked = rule.isEnabled;
-                
-                // 顯示對應的排程選項並設置值
-                onScheduleTypeChange();
-                
-                if (rule.scheduleType === 'daily') {
-                    document.getElementById('daily_time').value = rule.scheduleValue || '00:00';
-                } else if (rule.scheduleType === 'weekly') {
-                    const parts = (rule.scheduleValue || 'Mon 00:00').split(' ');
-                    document.getElementById('weekly_day').value = parts[0] || 'Mon';
-                    document.getElementById('weekly_time').value = parts[1] || '00:00';
-                } else if (rule.scheduleType === 'monthly') {
-                    const parts = (rule.scheduleValue || '1 00:00').split(' ');
-                    document.getElementById('monthly_day').value = parts[0] || '1';
-                    document.getElementById('monthly_time').value = parts[1] || '00:00';
-                } else if (rule.scheduleType === 'cron') {
-                    document.getElementById('cron_expression').value = rule.scheduleValue || '';
-                }
-                
-                document.getElementById('automationForm').classList.remove('hidden');
-                document.getElementById('automationForm').scrollIntoView({ behavior: 'smooth' });
-            } catch (e) {
-                console.error('載入規則失敗:', e);
-                alert('載入規則失敗: ' + e.message);
-            }
-        }
-        
-        // 取消表單
-        function cancelAutomationForm() {
-            editingRuleId = null;
-            document.getElementById('automationForm').classList.add('hidden');
-        }
-        
-        // 儲存規則
-        async function saveAutomationRule() {
-            const ruleName = document.getElementById('rule_name').value.trim();
-            const scheduleType = document.getElementById('schedule_type').value;
-            const actionType = document.getElementById('action_type').value;
-            const actionParamsText = document.getElementById('action_params').value.trim();
-            const conditionParamsText = document.getElementById('condition_params').value.trim();
-            const isEnabled = document.getElementById('is_enabled').checked;
-            
-            if (!ruleName) {
-                alert('請輸入規則名稱');
-                return;
-            }
-            
-            if (!scheduleType) {
-                alert('請選擇排程類型');
-                return;
-            }
-            
-            if (!actionType) {
-                alert('請選擇執行動作');
-                return;
-            }
-            
-            // 獲取排程值
-            let scheduleValue = '';
-            if (scheduleType === 'daily') {
-                scheduleValue = document.getElementById('daily_time').value;
-            } else if (scheduleType === 'weekly') {
-                const day = document.getElementById('weekly_day').value;
-                const time = document.getElementById('weekly_time').value;
-                scheduleValue = `${day} ${time}`;
-            } else if (scheduleType === 'monthly') {
-                const day = document.getElementById('monthly_day').value;
-                const time = document.getElementById('monthly_time').value;
-                scheduleValue = `${day} ${time}`;
-            } else if (scheduleType === 'cron') {
-                scheduleValue = document.getElementById('cron_expression').value.trim();
-                if (!scheduleValue) {
-                    alert('請輸入 Cron 表達式');
-                    return;
-                }
-            }
-            
-            // 解析動作參數
-            let actionParams = {};
-            if (actionParamsText) {
-                try {
-                    actionParams = JSON.parse(actionParamsText);
-                } catch (e) {
-                    alert('動作參數格式錯誤，請使用有效的 JSON 格式');
-                    return;
-                }
-            }
-            
-            // 解析條件參數
-            let conditionParams = {};
-            if (conditionParamsText) {
-                try {
-                    conditionParams = JSON.parse(conditionParamsText);
-                } catch (e) {
-                    alert('條件參數格式錯誤，請使用有效的 JSON 格式');
-                    return;
-                }
-            }
-            
-            // 構建請求數據
-            const payload = {
-                rule_name: ruleName,
-                schedule_type: scheduleType,
-                schedule_value: scheduleValue,
-                action_json: {
-                    type: actionType,
-                    params: actionParams
-                },
-                condition_json: conditionParams,
-                is_enabled: isEnabled ? 1 : 0
-            };
+            tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
             
             try {
-                const url = editingRuleId 
-                    ? `/internal/api/v1/admin/automation-rules/${editingRuleId}`
-                    : '/internal/api/v1/admin/automation-rules';
-                const method = editingRuleId ? 'PUT' : 'POST';
-                
-                const res = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify(payload)
+                // 獲取所有啟用自動生成的服務組成部分
+                const res = await fetch('/internal/api/v1/service-components?auto_generate=1', { 
+                    credentials: 'include' 
                 });
-                
                 const json = await res.json();
                 
-                if (!res.ok) {
-                    throw new Error(json.message || '儲存失敗');
-                }
-                
-                alert(editingRuleId ? '✅ 規則更新成功！' : '✅ 規則新增成功！');
-                cancelAutomationForm();
-                loadAutomation();
-            } catch (e) {
-                console.error('儲存規則失敗:', e);
-                alert('❌ 儲存失敗: ' + e.message);
-            }
-        }
-        
-        // 載入自動化規則列表
-        async function loadAutomation() {
-            const tbody = document.querySelector('#automationTable tbody');
-            try {
-                const res = await fetch('/internal/api/v1/admin/automation-rules', { credentials: 'include' });
-                const json = await res.json();
-                
-                if (!json.data || json.data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="loading">暫無資料</td></tr>';
+                if (!json.ok || !json.data || json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#6b7280;">尚未設定任何自動生成任務的服務<br><small style="font-size:12px;margin-top:8px;display:block;">請前往「客戶詳情頁」為服務啟用自動生成任務</small></td></tr>';
+                    countEl.textContent = '共 0 個服務';
                     return;
                 }
                 
-                // 排程類型翻譯
-                const scheduleTypeText = {
-                    'daily': '每日',
-                    'weekly': '每週',
-                    'monthly': '每月',
-                    'cron': 'Cron'
-                };
+                // 過濾搜尋結果
+                let filteredData = json.data;
+                if (searchQuery) {
+                    filteredData = json.data.filter(item => 
+                        (item.company_name || '').toLowerCase().includes(searchQuery)
+                    );
+                }
                 
-                tbody.innerHTML = json.data.map(r => {
-                    const statusBadge = r.isEnabled 
-                        ? '<span class="status-badge status-active">啟用</span>'
-                        : '<span class="status-badge status-inactive">停用</span>';
+                if (filteredData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#6b7280;">找不到符合的客戶</td></tr>';
+                    countEl.textContent = `共 0 個服務（搜尋：${searchQuery}）`;
+                    return;
+                }
+                
+                countEl.textContent = `共 ${filteredData.length} 個服務${searchQuery ? '（已過濾）' : ''}`;
+                
+                tbody.innerHTML = filteredData.map(item => {
+                    const frequency = item.delivery_frequency === 'monthly' ? '每月' : 
+                                    item.delivery_frequency === 'quarterly' ? '每季' : 
+                                    item.delivery_frequency === 'yearly' ? '每年' : '自訂';
                     
-                    const lastRunText = r.lastRunAt 
-                        ? new Date(r.lastRunAt).toLocaleString('zh-TW')
-                        : '未執行';
+                    const dueDateRule = item.due_date_rule === 'end_of_month' ? '月底' : 
+                                       item.due_date_rule === 'day_of_month' ? `每月${item.due_date_value}號` :
+                                       item.due_date_rule === 'days_from_start' ? `服務開始後${item.due_date_value}天` : '-';
+                    
+                    const assigneeName = item.assignee_name || '未指派';
                     
                     return `
                         <tr>
-                            <td style="font-weight:600;">${r.name}</td>
-                            <td>${scheduleTypeText[r.scheduleType] || r.scheduleType}</td>
-                            <td>${r.scheduleValue || '-'}</td>
-                            <td>${lastRunText}</td>
-                            <td>${statusBadge}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary" onclick="editAutomationRule(${r.id})">編輯</button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteAutomationRule(${r.id})">刪除</button>
+                                <a href="/internal/client-detail?id=${item.client_id}" style="color:#2563eb;text-decoration:none;font-weight:500;">
+                                    ${item.company_name || '未命名'}
+                                </a>
+                            </td>
+                            <td>${item.service_name || '-'}</td>
+                            <td>
+                                <div style="font-weight:500;">${item.component_name}</div>
+                                <small style="color:#6b7280;">${frequency}</small>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary" onclick="viewComponentTasks(${item.component_id}, '${item.component_name}', '${item.company_name}')">
+                                    檢視任務配置
+                                </button>
+                            </td>
+                            <td>
+                                <div>${dueDateRule}</div>
+                                <small style="color:#6b7280;">提前${item.advance_days || 7}天</small>
+                            </td>
+                            <td>${assigneeName}</td>
+                            <td>
+                                <a href="/internal/client-detail?id=${item.client_id}" class="btn btn-sm btn-primary">前往設定</a>
                             </td>
                         </tr>
                     `;
                 }).join('');
             } catch (e) {
-                console.error('載入自動化規則失敗:', e);
-                tbody.innerHTML = '<tr><td colspan="6" class="loading">載入失敗</td></tr>';
+                console.error('載入自動任務概覽失敗:', e);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#ef4444;">載入失敗</td></tr>';
+                countEl.textContent = '載入失敗';
             }
         }
         
-        // 刪除規則
-        async function deleteAutomationRule(ruleId) {
-            if (!confirm('確定要刪除此自動化規則嗎？此操作無法復原。')) {
-                return;
-            }
-            
+        // 查看組成部分的任務配置
+        async function viewComponentTasks(componentId, componentName, companyName) {
             try {
-                const res = await fetch(`/internal/api/v1/admin/automation-rules/${ruleId}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
+                const res = await fetch(`/internal/api/v1/service-components/${componentId}/tasks`, { 
+                    credentials: 'include' 
                 });
-                
                 const json = await res.json();
                 
-                if (!res.ok) {
-                    throw new Error(json.message || '刪除失敗');
+                const tasks = json.ok && json.data ? json.data : [];
+                
+                let content = `
+                    <div style="padding:20px;">
+                        <h3 style="margin:0 0 8px 0;font-size:18px;">
+                            ${companyName} - ${componentName}
+                        </h3>
+                        <p style="margin:0 0 20px 0;color:#6b7280;font-size:14px;">
+                            將生成的任務列表：
+                        </p>
+                `;
+                
+                if (tasks.length === 0) {
+                    content += `
+                        <div style="padding:20px;background:#f9fafb;border-radius:8px;text-align:center;color:#6b7280;">
+                            此服務組成部分使用預設任務生成<br>
+                            <small style="font-size:12px;margin-top:4px;display:block;">將根據組成部分名稱自動生成一個任務</small>
+                        </div>
+                    `;
+                } else {
+                    content += '<div style="display:flex;flex-direction:column;gap:12px;">';
+                    tasks.forEach((task, idx) => {
+                        const dueRuleText = task.due_rule === 'end_of_month' ? '月底' : 
+                                          task.due_rule === 'day_of_month' ? `每月${task.due_value}號` :
+                                          task.due_rule === 'days_from_start' ? `開始後${task.due_value}天` : '-';
+                        
+                        content += `
+                            <div style="padding:16px;background:#f9fafb;border-radius:8px;border-left:4px solid #3b82f6;">
+                                <div style="font-weight:600;margin-bottom:4px;">
+                                    ${idx + 1}. ${task.task_name}
+                                </div>
+                                <div style="font-size:13px;color:#6b7280;">
+                                    到期：${dueRuleText} | 
+                                    負責人：${task.assignee_name || '未指派'} | 
+                                    預估時數：${task.estimated_hours || '-'}
+                                </div>
+                                ${task.notes ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;">備註：${task.notes}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                    content += '</div>';
                 }
                 
-                alert('✅ 規則已刪除！');
-                loadAutomation();
-            } catch (e) {
-                console.error('刪除規則失敗:', e);
-                alert('❌ 刪除失敗: ' + e.message);
+                content += `
+                        <div style="margin-top:20px;text-align:right;">
+                            <button class="btn btn-primary" onclick="closeModal()">關閉</button>
+                        </div>
+                    </div>
+                `;
+                
+                showModal(content);
+                } catch (e) {
+                console.error('載入任務配置失敗:', e);
+                alert('載入任務配置失敗');
             }
+        }
+        
+        // 預覽下月任務
+        async function previewNextMonthTasks() {
+            const now = new Date();
+            const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            const yearMonth = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+            
+            try {
+                const res = await fetch(`/internal/api/v1/tasks/preview?target_month=${yearMonth}`, { 
+                    credentials: 'include' 
+                });
+                const json = await res.json();
+                
+                if (!json.ok) {
+                    throw new Error(json.message || '預覽失敗');
+                }
+                
+                const tasks = json.data || [];
+                
+                let content = `
+                    <div style="padding:20px;">
+                        <h3 style="margin:0 0 8px 0;font-size:18px;">
+                            ${yearMonth} 預計生成任務預覽
+                        </h3>
+                        <p style="margin:0 0 20px 0;color:#6b7280;font-size:14px;">
+                            共將生成 <strong style="color:#2563eb;">${tasks.length}</strong> 個任務
+                        </p>
+                `;
+                
+                if (tasks.length === 0) {
+                    content += `
+                        <div style="padding:40px;background:#f9fafb;border-radius:8px;text-align:center;color:#6b7280;">
+                            下個月不會生成任何任務<br>
+                            <small style="font-size:12px;margin-top:4px;display:block;">請檢查服務設定</small>
+                        </div>
+                    `;
+                } else {
+                    // 按客戶分組
+                    const byClient = {};
+                    tasks.forEach(task => {
+                        if (!byClient[task.company_name]) {
+                            byClient[task.company_name] = [];
+                        }
+                        byClient[task.company_name].push(task);
+                    });
+                    
+                    content += '<div style="display:flex;flex-direction:column;gap:16px;max-height:500px;overflow-y:auto;">';
+                    
+                    Object.keys(byClient).forEach(companyName => {
+                        const clientTasks = byClient[companyName];
+                        content += `
+                            <div style="padding:16px;background:#f9fafb;border-radius:8px;">
+                                <div style="font-weight:600;margin-bottom:12px;color:#1e40af;font-size:15px;">
+                                    ${companyName} (${clientTasks.length} 個任務)
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:8px;">
+                        `;
+                        
+                        clientTasks.forEach(task => {
+                            content += `
+                                <div style="padding:12px;background:white;border-radius:6px;border:1px solid #e5e7eb;">
+                                    <div style="font-weight:500;margin-bottom:4px;">${task.task_name}</div>
+                                    <div style="font-size:12px;color:#6b7280;">
+                                        到期：${task.due_date} | 
+                                        負責人：${task.assignee_name || '未指派'}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        content += `
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    content += '</div>';
+                }
+                
+                content += `
+                        <div style="margin-top:20px;text-align:right;">
+                            <button class="btn btn-primary" onclick="closeModal()">關閉</button>
+                        </div>
+                    </div>
+                `;
+                
+                showModal(content);
+            } catch (e) {
+                console.error('預覽下月任務失敗:', e);
+                alert('預覽失敗: ' + e.message);
+            }
+        }
+        
+        // 搜尋功能
+        document.getElementById('autoSearchClient')?.addEventListener('input', function() {
+            // 延遲搜尋，避免輸入時過於頻繁
+            clearTimeout(window.autoSearchTimeout);
+            window.autoSearchTimeout = setTimeout(() => {
+                loadAutoTasksOverview();
+            }, 300);
+        });
+        
+        // 簡單的模態框功能
+        function showModal(content) {
+            let modal = document.getElementById('taskPreviewModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'taskPreviewModal';
+                modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+                document.body.appendChild(modal);
+            }
+            
+            modal.innerHTML = `
+                <div style="background:white;border-radius:12px;max-width:800px;width:90%;max-height:90vh;overflow:auto;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);">
+                    ${content}
+                </div>
+            `;
+            modal.style.display = 'flex';
+            modal.onclick = function(e) {
+                if (e.target === modal) closeModal();
+            };
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('taskPreviewModal');
+            if (modal) modal.style.display = 'none';
         }
 
         // 国定假日
@@ -2276,7 +2165,7 @@
                     loadCompanyInfo();
                     break;
                 case 'automation':
-                    loadAutomation();
+                    loadAutoTasksOverview();
                     break;
                 case 'holidays':
                     loadHolidays();
@@ -2305,3 +2194,4 @@
     </script>
   </body>
   </html>
+

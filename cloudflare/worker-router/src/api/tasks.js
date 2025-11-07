@@ -7,6 +7,11 @@ export async function handleTasks(request, env, me, requestId, url) {
 	const corsHeaders = getCorsHeadersForRequest(request, env);
 	const method = request.method.toUpperCase();
 	
+	// GET /api/v1/tasks/preview?target_month=YYYY-MM - 預覽指定月份的任務
+	if (method === "GET" && url.pathname === "/internal/api/v1/tasks/preview") {
+		return await previewMonthTasks(env, corsHeaders, url.searchParams.get('target_month'));
+	}
+	
 	// GET /api/v1/tasks/:id - 獲取任務詳情（必须在列表查询之前检查）
 	if (method === "GET" && url.pathname.match(/\/tasks\/\d+$/)) {
 		const taskId = url.pathname.split("/").pop();
@@ -749,6 +754,118 @@ export async function handleTasks(request, env, me, requestId, url) {
 	}
 
 	return jsonResponse(405, { ok:false, code:"METHOD_NOT_ALLOWED", message:"方法不允許", meta:{ requestId } }, corsHeaders);
+}
+
+// 預覽指定月份將生成的任務
+async function previewMonthTasks(env, corsHeaders, targetMonth) {
+	try {
+		if (!targetMonth || !/^\d{4}-\d{2}$/.test(targetMonth)) {
+			return jsonResponse(400, {
+				ok: false,
+				message: '請提供有效的目標月份（格式：YYYY-MM）'
+			}, corsHeaders);
+		}
+
+		const [year, month] = targetMonth.split('-').map(Number);
+		const targetDate = new Date(year, month - 1, 1);
+		
+		// 獲取所有啟用自動生成的服務組成部分
+		const components = await env.DATABASE.prepare(`
+			SELECT 
+				sc.*,
+				cs.client_id,
+				c.company_name,
+				c.assignee_user_id,
+				s.service_name,
+				u.username as assignee_name
+			FROM ServiceComponents sc
+			JOIN ClientServices cs ON sc.client_service_id = cs.client_service_id
+			JOIN Clients c ON cs.client_id = c.client_id
+			LEFT JOIN Services s ON sc.service_id = s.service_id
+			LEFT JOIN Users u ON sc.assignee_user_id = u.user_id
+			WHERE sc.is_active = 1 
+				AND cs.is_deleted = 0
+				AND c.is_deleted = 0
+				AND sc.auto_generate_task = 1
+				AND cs.status = 'active'
+		`).all();
+		
+		const previewTasks = [];
+		
+		for (const component of (components.results || [])) {
+			// 計算截止日期
+			let dueDate = null;
+			if (component.due_date_rule === 'end_of_month') {
+				const lastDay = new Date(year, month, 0);
+				dueDate = lastDay;
+			} else if (component.due_date_rule === 'day_of_month' && component.due_date_value) {
+				dueDate = new Date(year, month - 1, component.due_date_value);
+			} else if (component.due_date_rule === 'days_from_start' && component.due_date_value) {
+				dueDate = new Date(targetDate);
+				dueDate.setDate(dueDate.getDate() + component.due_date_value);
+			}
+			
+			if (!dueDate) continue;
+			
+			const dueDateStr = dueDate.toISOString().split('T')[0];
+			
+			// 檢查該月是否已有任務
+			const existing = await env.DATABASE.prepare(
+				`SELECT COUNT(*) as count FROM ActiveTasks 
+				WHERE component_id = ? AND service_month = ? AND is_deleted = 0`
+			).bind(component.component_id, targetMonth).first();
+			
+			if (existing && existing.count > 0) {
+				continue; // 已存在，跳過
+			}
+			
+			// 查詢任務配置
+			const taskConfigs = await env.DATABASE.prepare(`
+				SELECT task_name, assignee_user_id, u.username as assignee_name
+				FROM ServiceComponentTasks sct
+				LEFT JOIN Users u ON sct.assignee_user_id = u.user_id
+				WHERE component_id = ?
+				ORDER BY task_order
+			`).bind(component.component_id).all();
+			
+			if (!taskConfigs.results || taskConfigs.results.length === 0) {
+				// 使用預設任務名稱
+				const taskName = `${component.company_name} - ${component.component_name} (${targetMonth})`;
+				previewTasks.push({
+					company_name: component.company_name,
+					service_name: component.service_name,
+					component_name: component.component_name,
+					task_name: taskName,
+					due_date: dueDateStr,
+					assignee_name: component.assignee_name || '未指派'
+				});
+			} else {
+				// 有配置的任務
+				for (const taskConfig of taskConfigs.results) {
+					previewTasks.push({
+						company_name: component.company_name,
+						service_name: component.service_name,
+						component_name: component.component_name,
+						task_name: taskConfig.task_name,
+						due_date: dueDateStr,
+						assignee_name: taskConfig.assignee_name || component.assignee_name || '未指派'
+					});
+				}
+			}
+		}
+		
+		return jsonResponse(200, {
+			ok: true,
+			data: previewTasks
+		}, corsHeaders);
+	} catch (err) {
+		console.error('預覽任務失敗:', err);
+		return jsonResponse(500, { 
+			ok: false, 
+			message: '預覽失敗', 
+			error: String(err)
+		}, corsHeaders);
+	}
 }
 
 

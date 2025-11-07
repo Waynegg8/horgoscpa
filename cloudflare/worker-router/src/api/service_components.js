@@ -17,6 +17,17 @@ export async function handleServiceComponents(request, env, path) {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // GET /internal/api/v1/service-components?auto_generate=1 - 获取所有启用自动生成的服务组成
+  if (method === 'GET' && path === '/internal/api/v1/service-components' && url.searchParams.get('auto_generate') === '1') {
+    return await listAutoGenerateComponents(env, corsHeaders);
+  }
+
+  // GET /internal/api/v1/service-components/:id/tasks - 获取组成部分的任务配置
+  if (method === 'GET' && path.match(/^\/internal\/api\/v1\/service-components\/(\d+)\/tasks$/)) {
+    const componentId = parseInt(path.match(/\/service-components\/(\d+)\/tasks$/)[1]);
+    return await getComponentTasks(env, corsHeaders, componentId);
+  }
+
   // GET /internal/api/v1/client-services/:id/components
   if (method === 'GET' && path.match(/^\/internal\/api\/v1\/client-services\/(\d+)\/components$/)) {
     const clientServiceId = parseInt(path.match(/\/client-services\/(\d+)\/components$/)[1]);
@@ -461,5 +472,82 @@ async function deleteServiceComponent(env, corsHeaders, componentId) {
   } catch (err) {
     console.error('删除服务组成部分失败:', err);
     return jsonResponse(500, { ok: false, message: '删除失败' }, corsHeaders);
+  }
+}
+
+// 获取所有启用自动生成任务的服务组成部分
+async function listAutoGenerateComponents(env, corsHeaders) {
+  try {
+    const components = await env.DATABASE.prepare(`
+      SELECT 
+        sc.component_id,
+        sc.component_name,
+        sc.delivery_frequency,
+        sc.due_date_rule,
+        sc.due_date_value,
+        sc.advance_days,
+        cs.client_id,
+        c.company_name,
+        s.service_name,
+        u.username as assignee_name
+      FROM ServiceComponents sc
+      JOIN ClientServices cs ON sc.client_service_id = cs.client_service_id
+      JOIN Clients c ON cs.client_id = c.client_id
+      LEFT JOIN Services s ON sc.service_id = s.service_id
+      LEFT JOIN Users u ON sc.assignee_user_id = u.user_id
+      WHERE sc.auto_generate_task = 1 
+        AND sc.is_active = 1
+        AND cs.is_deleted = 0
+        AND cs.status = 'active'
+        AND c.is_deleted = 0
+      ORDER BY c.company_name, sc.component_id
+    `).all();
+
+    return jsonResponse(200, {
+      ok: true,
+      data: components.results || []
+    }, corsHeaders);
+  } catch (err) {
+    console.error('获取自动生成组件失败:', err);
+    return jsonResponse(500, { 
+      ok: false, 
+      message: '获取失败', 
+      error: String(err)
+    }, corsHeaders);
+  }
+}
+
+// 获取组成部分的任务配置
+async function getComponentTasks(env, corsHeaders, componentId) {
+  try {
+    const tasks = await env.DATABASE.prepare(`
+      SELECT 
+        sct.config_id,
+        sct.task_name,
+        sct.task_order,
+        sct.assignee_user_id,
+        sct.notes,
+        sct.due_rule,
+        sct.due_value,
+        sct.estimated_hours,
+        sct.advance_days,
+        u.username as assignee_name
+      FROM ServiceComponentTasks sct
+      LEFT JOIN Users u ON sct.assignee_user_id = u.user_id
+      WHERE sct.component_id = ?
+      ORDER BY sct.task_order
+    `).bind(componentId).all();
+
+    return jsonResponse(200, {
+      ok: true,
+      data: tasks.results || []
+    }, corsHeaders);
+  } catch (err) {
+    console.error('获取任务配置失败:', err);
+    return jsonResponse(500, { 
+      ok: false, 
+      message: '获取失败', 
+      error: String(err)
+    }, corsHeaders);
   }
 }
