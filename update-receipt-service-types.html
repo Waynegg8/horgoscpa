@@ -178,15 +178,38 @@
         ]);
 
         console.log('[Init] 收据响应状态:', receiptsRes.status);
+        console.log('[Init] 收据响应URL:', receiptsRes.url);
+        console.log('[Init] 收据Content-Type:', receiptsRes.headers.get('content-type'));
         console.log('[Init] 服务类型响应状态:', servicesRes.status);
+        console.log('[Init] 服务类型响应URL:', servicesRes.url);
+        console.log('[Init] 服务类型Content-Type:', servicesRes.headers.get('content-type'));
 
         if (receiptsRes.status === 401 || servicesRes.status === 401) {
           location.assign('https://www.horgoscpa.com/login.html?redirect=' + encodeURIComponent(location.href));
           return;
         }
 
-        const receiptsData = await receiptsRes.json();
-        const servicesData = await servicesRes.json();
+        // 检查Content-Type，如果不是JSON则读取文本查看错误
+        const receiptsContentType = receiptsRes.headers.get('content-type');
+        const servicesContentType = servicesRes.headers.get('content-type');
+
+        let receiptsData, servicesData;
+
+        if (receiptsContentType && receiptsContentType.includes('application/json')) {
+          receiptsData = await receiptsRes.json();
+        } else {
+          const text = await receiptsRes.text();
+          console.error('[Init] 收据API返回非JSON:', text.substring(0, 500));
+          throw new Error('收據API返回格式錯誤');
+        }
+
+        if (servicesContentType && servicesContentType.includes('application/json')) {
+          servicesData = await servicesRes.json();
+        } else {
+          const text = await servicesRes.text();
+          console.error('[Init] 服务类型API返回非JSON:', text.substring(0, 500));
+          throw new Error('服務類型API返回格式錯誤');
+        }
 
         console.log('[Init] 收据数据:', receiptsData);
         console.log('[Init] 服务类型数据:', servicesData);
