@@ -410,9 +410,7 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 
 	const users = usersResult?.results || [];
 	
-	// 恢复完整计算：单独加载时有足够时间
-	const { calculateEmployeePayroll } = await import('./payroll.js');
-	
+	// 恢复完整计算：单独加载时有足够时间（已在上方import）
 	const monthlyTrend = [];
 	const employeeSummary = [];
 	
