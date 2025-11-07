@@ -18822,7 +18822,7 @@ var src_default = {
       if (!me) return jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u672A\u767B\u5165", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       return handleServices(request, env, me, requestId, url, path);
     }
-    if (path.includes("/client-services/") && path.includes("/components") || path.includes("/service-components/")) {
+    if (path.includes("/client-services/") && path.includes("/components") || path.includes("/service-components")) {
       const me = await getSessionUser(request, env);
       if (!me) return jsonResponse(401, { ok: false, code: "UNAUTHORIZED", message: "\u672A\u767B\u5165", meta: { requestId } }, getCorsHeadersForRequest(request, env));
       const result = await handleServiceComponents(request, env, path);
