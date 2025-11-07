@@ -5,8 +5,7 @@
 --    - 月費：客戶+月份唯一（僅限 billing_type='monthly'）
 --    - 一次性：客戶+日期+說明 唯一（僅限 billing_type='one-time'）
 -- 3) 兼容舊資料：保留既有 schedule_id 與時間戳
-
-BEGIN TRANSACTION;
+-- 注意：Cloudflare D1 會自動處理事務，不需要 BEGIN/COMMIT
 
 -- 建立新表（避免直接 ALTER 造成限制無法移除）
 CREATE TABLE IF NOT EXISTS ServiceBillingSchedule_new (
@@ -64,7 +63,4 @@ WHERE billing_type = 'one-time';
 CREATE INDEX IF NOT EXISTS idx_billing_schedule_service ON ServiceBillingSchedule(client_service_id);
 CREATE INDEX IF NOT EXISTS idx_billing_schedule_type ON ServiceBillingSchedule(billing_type);
 CREATE INDEX IF NOT EXISTS idx_billing_schedule_month ON ServiceBillingSchedule(billing_month);
-
-COMMIT;
-
 
