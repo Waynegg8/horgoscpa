@@ -793,7 +793,7 @@
               `;
               tbodyClients.appendChild(tr);
               
-              // 员工明细行（初始隐藏）
+              // 預先建立員工明細列（初始隱藏），確保點擊可直接展開
               if (hasEmp) {
                 empList.forEach(emp => {
                   const empTr = document.createElement('tr');

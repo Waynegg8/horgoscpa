@@ -1642,7 +1642,8 @@ export async function handleOverhead(request, env, me, requestId, url, path) {
 					
 					tasks.push({
 						clientName: client.company_name,
-						serviceName: serviceName,
+						// 服務項目：若取不到上層服務名稱，退回使用子項目名稱避免顯示「未分類」
+						serviceName: (serviceName && serviceName !== '未分類') ? serviceName : (group.taskTitle || '未分類'),
 						taskTitle: group.taskTitle,
 						assigneeName: assigneeNames,
 						hours: hours,

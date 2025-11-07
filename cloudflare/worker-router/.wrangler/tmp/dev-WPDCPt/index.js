@@ -3488,7 +3488,8 @@ async function handleOverhead(request, env, me, requestId, url, path) {
           const serviceName = group.timesheets[0]?.service_name_full || "\u672A\u5206\u985E";
           tasks.push({
             clientName: client.company_name,
-            serviceName,
+            // 服務項目：若取不到上層服務名稱，退回使用子項目名稱避免顯示「未分類」
+            serviceName: serviceName && serviceName !== "\u672A\u5206\u985E" ? serviceName : group.taskTitle || "\u672A\u5206\u985E",
             taskTitle: group.taskTitle,
             assigneeName: assigneeNames,
             hours,
