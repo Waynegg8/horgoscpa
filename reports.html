@@ -728,31 +728,44 @@
         // ============================================================
         // 年度报表加载
         // ============================================================
-        async function loadAnnualReports() {
-          const year = document.getElementById('annual-year').value;
+      async function loadAnnualReports() {
+        const year = document.getElementById('annual-year').value;
 
-          if (!year) {
-            alert('請選擇年度');
-            return;
-          }
-
-          const loadingIndicator = document.getElementById('annual-loading');
-          loadingIndicator.style.display = 'inline';
-
-          try {
-            await Promise.all([
-              loadAnnualRevenue(year),
-              loadAnnualPayroll(year),
-              loadAnnualEmployeePerformance(year),
-              loadAnnualClientProfitability(year)
-            ]);
-          } catch (err) {
-            console.error('載入年度報表失敗:', err);
-            alert('載入報表失敗：' + err.message);
-          } finally {
-            loadingIndicator.style.display = 'none';
-          }
+        if (!year) {
+          alert('請選擇年度');
+          return;
         }
+
+        const loadingIndicator = document.getElementById('annual-loading');
+        loadingIndicator.style.display = 'inline';
+        loadingIndicator.innerHTML = '⏳ 載入中 (0/4)...';
+
+        try {
+          const tasks = [
+            { name: '收款報表', fn: () => loadAnnualRevenue(year) },
+            { name: '薪資報表', fn: () => loadAnnualPayroll(year) },
+            { name: '員工產值報表', fn: () => loadAnnualEmployeePerformance(year) },
+            { name: '客戶毛利報表', fn: () => loadAnnualClientProfitability(year) }
+          ];
+          
+          for (let i = 0; i < tasks.length; i++) {
+            loadingIndicator.innerHTML = `⏳ 正在載入${tasks[i].name} (${i + 1}/4)...`;
+            await tasks[i].fn();
+          }
+          
+          loadingIndicator.innerHTML = '✅ 載入完成';
+          setTimeout(() => {
+            loadingIndicator.style.display = 'none';
+          }, 2000);
+        } catch (err) {
+          console.error('載入年度報表失敗:', err);
+          loadingIndicator.innerHTML = '❌ 載入失敗';
+          alert('載入報表失敗：' + err.message);
+          setTimeout(() => {
+            loadingIndicator.style.display = 'none';
+          }, 3000);
+        }
+      }
 
       async function loadAnnualRevenue(year) {
         const res = await fetch(`${apiBase}/reports/annual/revenue?year=${year}`, {
