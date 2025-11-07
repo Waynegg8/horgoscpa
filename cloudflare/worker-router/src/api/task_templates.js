@@ -245,6 +245,7 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
     const errors = [];
     const templateName = String(body?.template_name || "").trim();
     const serviceId = body?.service_id ? parseInt(body.service_id, 10) : null;
+    const clientId = body?.client_id ? parseInt(body.client_id, 10) : null;
     const description = String(body?.description || "").trim();
     const sopId = body?.sop_id ? parseInt(body.sop_id, 10) : null;
     const isActive = body?.is_active !== false; // 默认true
@@ -272,9 +273,9 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
       // 更新模板基本信息
       await env.DATABASE.prepare(
         `UPDATE TaskTemplates 
-         SET template_name = ?, service_id = ?, description = ?, sop_id = ?, is_active = ?
+         SET template_name = ?, service_id = ?, client_id = ?, description = ?, sop_id = ?, is_active = ?
          WHERE template_id = ?`
-      ).bind(templateName, serviceId, description, sopId, isActive ? 1 : 0, templateId).run();
+      ).bind(templateName, serviceId, clientId, description, sopId, isActive ? 1 : 0, templateId).run();
 
       // 更新阶段（如果提供了stages数组）
       if (stages !== null) {
