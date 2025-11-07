@@ -525,7 +525,89 @@
             <div class="search-bar">
                 <input type="number" placeholder="年份" id="filterYear" class="form-control" style="max-width:150px">
                 <button class="btn btn-secondary" onclick="loadHolidays()">查詢</button>
+                <button class="btn btn-primary" onclick="showAddHolidayForm()">+ 新增假日</button>
+                <button class="btn btn-success" onclick="showBatchUploadForm()">📤 批量上傳</button>
           </div>
+          
+            <!-- 批量上傳表單 -->
+            <div class="card hidden" id="batchUploadForm">
+                <div class="card-header">
+                    <h3>批量上傳假日</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>上傳方式</label>
+                        <div style="margin-bottom:12px">
+                            <label style="margin-right:20px;font-weight:normal">
+                                <input type="radio" name="uploadMethod" value="csv" checked onchange="toggleUploadMethod()"> CSV 檔案
+                            </label>
+                            <label style="font-weight:normal">
+                                <input type="radio" name="uploadMethod" value="text" onchange="toggleUploadMethod()"> 文字貼上
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- CSV 上傳 -->
+                    <div id="csvUploadArea">
+                        <div class="form-group">
+                            <label>選擇 CSV 檔案</label>
+                            <input type="file" id="csvFile" accept=".csv" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <!-- 文字貼上 -->
+                    <div id="textUploadArea" style="display:none">
+                        <div class="form-group">
+                            <label>貼上 CSV 內容（每行一筆，格式：日期,名稱,類型）</label>
+                            <textarea id="csvText" class="form-control" rows="10" placeholder="2025-01-01,元旦,國定假日&#10;2025-01-27,農曆除夕補假,國定假日&#10;2025-01-28,農曆除夕,國定假日"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div style="background:#f0f9ff;border:1px solid #bfdbfe;padding:12px;border-radius:6px;margin:16px 0;font-size:13px">
+                        <strong>📋 格式說明：</strong><br>
+                        <code>日期,名稱,類型</code><br>
+                        類型可選：<code>國定假日</code>、<code>例假日</code>、<code>補班日</code><br><br>
+                        <strong>範例：</strong><br>
+                        <code>2025-01-01,元旦,國定假日</code><br>
+                        <code>2025-02-28,和平紀念日,國定假日</code>
+                    </div>
+                    
+                    <div class="action-btns">
+                        <button class="btn btn-success" onclick="processBatchUpload()">開始上傳</button>
+                        <button class="btn btn-secondary" onclick="cancelBatchUpload()">取消</button>
+                    </div>
+                </div>
+            </div>
+          
+          <!-- 新增/編輯假日表單 -->
+            <div class="card hidden" id="holidayForm">
+                <div class="card-header">
+                    <h3 id="holidayFormTitle">新增假日</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>日期 *</label>
+                        <input type="date" id="holiday_date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>假日名稱 *</label>
+                        <input type="text" id="holiday_name" class="form-control" placeholder="例如：元旦、春節" required>
+                    </div>
+                    <div class="form-group">
+                        <label>類型</label>
+                        <select id="holiday_type" class="form-control">
+                            <option value="national">國定假日</option>
+                            <option value="weekly">例假日</option>
+                            <option value="makeup">補班日</option>
+                        </select>
+                    </div>
+                    <div class="action-btns">
+                        <button class="btn btn-primary" onclick="saveHoliday()">儲存</button>
+                        <button class="btn btn-secondary" onclick="cancelHolidayForm()">取消</button>
+                    </div>
+                </div>
+            </div>
+          
             <div class="card">
                 <div class="card-body">
                     <div class="data-table-container">
@@ -535,10 +617,11 @@
                                     <th>日期</th>
                                     <th>假日名稱</th>
                                     <th>類型</th>
+                                    <th>操作</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><td colspan="3" class="loading">載入中...</td></tr>
+                                <tr><td colspan="4" class="loading">載入中...</td></tr>
                             </tbody>
                         </table>
           </div>
@@ -1212,25 +1295,286 @@
         }
 
         // 国定假日
+        let editingHolidayDate = null; // 用於記錄正在編輯的假日日期
+        
         async function loadHolidays() {
             const tbody = document.querySelector('#holidaysTable tbody');
             const year = document.getElementById('filterYear').value || new Date().getFullYear();
             try {
-                const res = await fetch(`/internal/api/v1/holidays?year=${year}`, { credentials: 'include' });
+                // 構建年份的開始和結束日期
+                const startDate = `${year}-01-01`;
+                const endDate = `${year}-12-31`;
+                const res = await fetch(`/internal/api/v1/holidays?start_date=${startDate}&end_date=${endDate}`, { credentials: 'include' });
                 const json = await res.json();
                 if (!json.data || json.data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="loading">暫無資料</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="loading">暫無資料</td></tr>';
                     return;
                 }
-                tbody.innerHTML = json.data.map(h => `
-                    <tr>
-                        <td>${h.holiday_date}</td>
-                        <td>${h.holiday_name}</td>
-                        <td>${h.holiday_type || '國定假日'}</td>
-                    </tr>
-                `).join('');
+                tbody.innerHTML = json.data.map(h => {
+                    // 判斷假日類型
+                    let type = '一般假日';
+                    if (h.is_national_holiday) type = '國定假日';
+                    else if (h.is_weekly_restday) type = '例假日';
+                    else if (h.is_makeup_workday) type = '補班日';
+                    
+                    return `
+                        <tr>
+                            <td>${h.holiday_date}</td>
+                            <td>${h.name || '未命名'}</td>
+                            <td>${type}</td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary" onclick='editHoliday(${JSON.stringify(h)})'>編輯</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteHoliday('${h.holiday_date}')">刪除</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
           } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="3" class="loading">載入失敗</td></tr>';
+                console.error('載入假日失敗:', e);
+                tbody.innerHTML = '<tr><td colspan="4" class="loading">載入失敗</td></tr>';
+            }
+        }
+        
+        function showAddHolidayForm() {
+            editingHolidayDate = null;
+            document.getElementById('holidayFormTitle').textContent = '新增假日';
+            document.getElementById('holiday_date').value = '';
+            document.getElementById('holiday_date').disabled = false;
+            document.getElementById('holiday_name').value = '';
+            document.getElementById('holiday_type').value = 'national';
+            document.getElementById('holidayForm').classList.remove('hidden');
+        }
+        
+        function editHoliday(holiday) {
+            editingHolidayDate = holiday.holiday_date;
+            document.getElementById('holidayFormTitle').textContent = '編輯假日';
+            document.getElementById('holiday_date').value = holiday.holiday_date;
+            document.getElementById('holiday_date').disabled = true; // 編輯時不能修改日期（主鍵）
+            document.getElementById('holiday_name').value = holiday.name || '';
+            
+            // 設置類型
+            if (holiday.is_national_holiday) {
+                document.getElementById('holiday_type').value = 'national';
+            } else if (holiday.is_weekly_restday) {
+                document.getElementById('holiday_type').value = 'weekly';
+            } else if (holiday.is_makeup_workday) {
+                document.getElementById('holiday_type').value = 'makeup';
+            }
+            
+            document.getElementById('holidayForm').classList.remove('hidden');
+            document.getElementById('holidayForm').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function cancelHolidayForm() {
+            document.getElementById('holidayForm').classList.add('hidden');
+            editingHolidayDate = null;
+        }
+        
+        async function saveHoliday() {
+            const date = document.getElementById('holiday_date').value;
+            const name = document.getElementById('holiday_name').value;
+            const type = document.getElementById('holiday_type').value;
+            
+            if (!date || !name) {
+                alert('請填寫日期和名稱');
+                return;
+            }
+            
+            const holidayData = {
+                holiday_date: date,
+                name: name,
+                is_national_holiday: type === 'national',
+                is_weekly_restday: type === 'weekly',
+                is_makeup_workday: type === 'makeup'
+            };
+            
+            try {
+                const method = editingHolidayDate ? 'PUT' : 'POST';
+                const res = await fetch('/internal/api/v1/holidays', {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(holidayData)
+                });
+                
+                const json = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(json.message || '操作失敗');
+                }
+                
+                alert(editingHolidayDate ? '更新成功' : '新增成功');
+                cancelHolidayForm();
+                loadHolidays();
+            } catch (e) {
+                console.error('儲存假日失敗:', e);
+                alert('儲存失敗: ' + e.message);
+            }
+        }
+        
+        async function deleteHoliday(date) {
+            if (!confirm(`確定要刪除 ${date} 的假日嗎？`)) {
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/internal/api/v1/holidays?holiday_date=${date}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                const json = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(json.message || '刪除失敗');
+                }
+                
+                alert('刪除成功');
+                loadHolidays();
+            } catch (e) {
+                console.error('刪除假日失敗:', e);
+                alert('刪除失敗: ' + e.message);
+            }
+        }
+        
+        // 批量上傳功能
+        function showBatchUploadForm() {
+            document.getElementById('batchUploadForm').classList.remove('hidden');
+            document.getElementById('batchUploadForm').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function cancelBatchUpload() {
+            document.getElementById('batchUploadForm').classList.add('hidden');
+            document.getElementById('csvFile').value = '';
+            document.getElementById('csvText').value = '';
+        }
+        
+        function toggleUploadMethod() {
+            const method = document.querySelector('input[name="uploadMethod"]:checked').value;
+            if (method === 'csv') {
+                document.getElementById('csvUploadArea').style.display = 'block';
+                document.getElementById('textUploadArea').style.display = 'none';
+            } else {
+                document.getElementById('csvUploadArea').style.display = 'none';
+                document.getElementById('textUploadArea').style.display = 'block';
+            }
+        }
+        
+        function parseCSVLine(line) {
+            const parts = line.split(',').map(p => p.trim());
+            if (parts.length < 2) return null;
+            
+            const [date, name, typeStr] = parts;
+            if (!date || !name) return null;
+            
+            // 解析類型
+            let is_national_holiday = false;
+            let is_weekly_restday = false;
+            let is_makeup_workday = false;
+            
+            if (typeStr) {
+                const type = typeStr.trim();
+                if (type.includes('國定') || type.includes('national')) {
+                    is_national_holiday = true;
+                } else if (type.includes('例假') || type.includes('weekly')) {
+                    is_weekly_restday = true;
+                } else if (type.includes('補班') || type.includes('makeup')) {
+                    is_makeup_workday = true;
+                } else {
+                    is_national_holiday = true; // 默認為國定假日
+                }
+            } else {
+                is_national_holiday = true; // 默認為國定假日
+            }
+            
+            return {
+                holiday_date: date,
+                name: name,
+                is_national_holiday,
+                is_weekly_restday,
+                is_makeup_workday
+            };
+        }
+        
+        async function processBatchUpload() {
+            const method = document.querySelector('input[name="uploadMethod"]:checked').value;
+            let csvContent = '';
+            
+            if (method === 'csv') {
+                const fileInput = document.getElementById('csvFile');
+                if (!fileInput.files || !fileInput.files[0]) {
+                    alert('請選擇 CSV 檔案');
+                    return;
+                }
+                
+                try {
+                    csvContent = await fileInput.files[0].text();
+                } catch (e) {
+                    alert('讀取檔案失敗');
+                    return;
+                }
+            } else {
+                csvContent = document.getElementById('csvText').value;
+            }
+            
+            if (!csvContent.trim()) {
+                alert('請輸入內容');
+                return;
+            }
+            
+            // 解析 CSV
+            const lines = csvContent.split('\n').filter(line => line.trim());
+            const holidays = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                // 跳過標題行（如果有）
+                if (i === 0 && (line.includes('日期') || line.includes('date'))) {
+                    continue;
+                }
+                
+                const holiday = parseCSVLine(line);
+                if (holiday) {
+                    holidays.push(holiday);
+                }
+            }
+            
+            if (holidays.length === 0) {
+                alert('沒有有效的假日資料');
+                return;
+            }
+            
+            if (!confirm(`即將上傳 ${holidays.length} 筆假日資料，確定繼續？`)) {
+                return;
+            }
+            
+            try {
+                const res = await fetch('/internal/api/v1/holidays', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(holidays)
+                });
+                
+                const json = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(json.message || '上傳失敗');
+                }
+                
+                let message = json.message || '上傳成功';
+                if (json.data && json.data.errors && json.data.errors.length > 0) {
+                    message += '\n\n部分錯誤：\n' + json.data.errors.join('\n');
+                }
+                
+                alert(message);
+                cancelBatchUpload();
+                loadHolidays();
+            } catch (e) {
+                console.error('批量上傳失敗:', e);
+                alert('批量上傳失敗: ' + e.message);
             }
         }
 

@@ -15058,6 +15058,155 @@ async function handleHolidays(request, env, me, requestId, url) {
       return jsonResponse(500, body, getCorsHeadersForRequest(request, env));
     }
   }
+  if (method === "POST") {
+    try {
+      const body = await request.json();
+      if (Array.isArray(body)) {
+        let successCount = 0;
+        let failCount = 0;
+        const errors = [];
+        for (const holiday of body) {
+          const { holiday_date, name, is_national_holiday, is_weekly_restday, is_makeup_workday } = holiday;
+          if (!holiday_date || !name) {
+            failCount++;
+            errors.push(`\u65E5\u671F ${holiday_date || "\u672A\u77E5"} \u7F3A\u5C11\u5FC5\u586B\u6B04\u4F4D`);
+            continue;
+          }
+          try {
+            await env.DATABASE.prepare(
+              `INSERT OR REPLACE INTO Holidays (holiday_date, name, is_national_holiday, is_weekly_restday, is_makeup_workday)
+							 VALUES (?, ?, ?, ?, ?)`
+            ).bind(
+              holiday_date,
+              name,
+              is_national_holiday ? 1 : 0,
+              is_weekly_restday ? 1 : 0,
+              is_makeup_workday ? 1 : 0
+            ).run();
+            successCount++;
+          } catch (err) {
+            failCount++;
+            errors.push(`\u65E5\u671F ${holiday_date}: ${String(err)}`);
+          }
+        }
+        await env.DATABASE.prepare(
+          `DELETE FROM UniversalCache WHERE cache_category = 'holidays_all'`
+        ).run();
+        return jsonResponse(200, {
+          ok: true,
+          code: "SUCCESS",
+          message: `\u6279\u91CF\u5C0E\u5165\u5B8C\u6210\uFF1A\u6210\u529F ${successCount} \u7B46\uFF0C\u5931\u6557 ${failCount} \u7B46`,
+          data: { successCount, failCount, errors: errors.slice(0, 10) },
+          // 只返回前10個錯誤
+          meta: { requestId }
+        }, corsHeaders);
+      } else {
+        const { holiday_date, name, is_national_holiday, is_weekly_restday, is_makeup_workday } = body;
+        if (!holiday_date || !name) {
+          return jsonResponse(400, {
+            ok: false,
+            code: "VALIDATION_ERROR",
+            message: "\u65E5\u671F\u548C\u540D\u7A31\u70BA\u5FC5\u586B\u9805",
+            meta: { requestId }
+          }, corsHeaders);
+        }
+        await env.DATABASE.prepare(
+          `INSERT INTO Holidays (holiday_date, name, is_national_holiday, is_weekly_restday, is_makeup_workday)
+					 VALUES (?, ?, ?, ?, ?)`
+        ).bind(
+          holiday_date,
+          name,
+          is_national_holiday ? 1 : 0,
+          is_weekly_restday ? 1 : 0,
+          is_makeup_workday ? 1 : 0
+        ).run();
+        await env.DATABASE.prepare(
+          `DELETE FROM UniversalCache WHERE cache_category = 'holidays_all'`
+        ).run();
+        return jsonResponse(201, {
+          ok: true,
+          code: "SUCCESS",
+          message: "\u65B0\u589E\u6210\u529F",
+          meta: { requestId }
+        }, corsHeaders);
+      }
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+      const body = { ok: false, code: "INTERNAL_ERROR", message: "\u65B0\u589E\u5931\u6557", meta: { requestId } };
+      if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+      return jsonResponse(500, body, corsHeaders);
+    }
+  }
+  if (method === "PUT") {
+    try {
+      const body = await request.json();
+      const { holiday_date, name, is_national_holiday, is_weekly_restday, is_makeup_workday } = body;
+      if (!holiday_date || !name) {
+        return jsonResponse(400, {
+          ok: false,
+          code: "VALIDATION_ERROR",
+          message: "\u65E5\u671F\u548C\u540D\u7A31\u70BA\u5FC5\u586B\u9805",
+          meta: { requestId }
+        }, corsHeaders);
+      }
+      await env.DATABASE.prepare(
+        `UPDATE Holidays 
+				 SET name = ?, is_national_holiday = ?, is_weekly_restday = ?, is_makeup_workday = ?, updated_at = datetime('now')
+				 WHERE holiday_date = ?`
+      ).bind(
+        name,
+        is_national_holiday ? 1 : 0,
+        is_weekly_restday ? 1 : 0,
+        is_makeup_workday ? 1 : 0,
+        holiday_date
+      ).run();
+      await env.DATABASE.prepare(
+        `DELETE FROM UniversalCache WHERE cache_category = 'holidays_all'`
+      ).run();
+      return jsonResponse(200, {
+        ok: true,
+        code: "SUCCESS",
+        message: "\u66F4\u65B0\u6210\u529F",
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+      const body = { ok: false, code: "INTERNAL_ERROR", message: "\u66F4\u65B0\u5931\u6557", meta: { requestId } };
+      if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+      return jsonResponse(500, body, corsHeaders);
+    }
+  }
+  if (method === "DELETE") {
+    try {
+      const params = url.searchParams;
+      const holiday_date = params.get("holiday_date");
+      if (!holiday_date) {
+        return jsonResponse(400, {
+          ok: false,
+          code: "VALIDATION_ERROR",
+          message: "\u65E5\u671F\u70BA\u5FC5\u586B\u9805",
+          meta: { requestId }
+        }, corsHeaders);
+      }
+      await env.DATABASE.prepare(
+        `DELETE FROM Holidays WHERE holiday_date = ?`
+      ).bind(holiday_date).run();
+      await env.DATABASE.prepare(
+        `DELETE FROM UniversalCache WHERE cache_category = 'holidays_all'`
+      ).run();
+      return jsonResponse(200, {
+        ok: true,
+        code: "SUCCESS",
+        message: "\u522A\u9664\u6210\u529F",
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path: url.pathname, err: String(err) }));
+      const body = { ok: false, code: "INTERNAL_ERROR", message: "\u522A\u9664\u5931\u6557", meta: { requestId } };
+      if (env.APP_ENV && env.APP_ENV !== "prod") body.error = String(err);
+      return jsonResponse(500, body, corsHeaders);
+    }
+  }
   return jsonResponse(405, {
     ok: false,
     code: "METHOD_NOT_ALLOWED",
