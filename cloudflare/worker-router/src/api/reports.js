@@ -186,73 +186,105 @@ async function handleMonthlyRevenue(request, env, me, requestId, url, corsHeader
 
 		const ym = `${year}-${String(month).padStart(2,'0')}`;
 
-		// 1. 月度收款概况（按服务月份统计）
-		const summaryRow = await env.DATABASE.prepare(`
+		// 获取该月所有收据（权责发生制：服务期间覆盖该月的所有收据）
+		const allReceipts = await env.DATABASE.prepare(`
 			SELECT 
-				SUM(r.total_amount) as total_receivable,
-				SUM(COALESCE(r.paid_amount, 0)) as total_received,
-				SUM(CASE WHEN r.status IN ('unpaid', 'partial') AND r.due_date < date('now') 
-					THEN r.total_amount - COALESCE(r.paid_amount, 0) 
-					ELSE 0 END) as overdue_amount
-			FROM Receipts r
-			WHERE r.is_deleted = 0 
-				AND r.status != 'cancelled'
-				AND r.service_month = ?
-		`).bind(ym).first();
-
-		const totalReceivable = Number(summaryRow?.total_receivable || 0);
-		const totalReceived = Number(summaryRow?.total_received || 0);
-		const overdueAmount = Number(summaryRow?.overdue_amount || 0);
-		const collectionRate = totalReceivable > 0 ? (totalReceived / totalReceivable * 100) : 0;
-
-		// 2. 按客户明细
-		const clientDetails = await env.DATABASE.prepare(`
-			SELECT 
-				c.client_id,
-				c.company_name as client_name,
-				s.service_name,
 				r.receipt_id,
-				r.receipt_date,
+				r.client_id,
+				r.client_service_id,
 				r.total_amount,
-				COALESCE(r.paid_amount, 0) as paid_amount,
-				(r.total_amount - COALESCE(r.paid_amount, 0)) as unpaid_amount,
+				r.paid_amount,
+				r.receipt_date,
 				r.due_date,
 				r.status,
-				CASE 
-					WHEN r.status IN ('unpaid', 'partial') AND r.due_date < date('now') THEN 1
-					ELSE 0
-				END as is_overdue
+				r.service_start_month,
+				r.service_end_month,
+				r.service_month,
+				c.company_name as client_name,
+				s.service_name
 			FROM Receipts r
 			LEFT JOIN Clients c ON c.client_id = r.client_id
 			LEFT JOIN ClientServices cs ON cs.client_service_id = r.client_service_id
 			LEFT JOIN Services s ON s.service_id = cs.service_id
 			WHERE r.is_deleted = 0 
 				AND r.status != 'cancelled'
-				AND r.service_month = ?
+				AND (
+					(r.service_start_month IS NOT NULL AND r.service_start_month <= ? AND (r.service_end_month IS NULL OR r.service_end_month >= ?))
+					OR (r.service_start_month IS NULL AND r.service_month = ?)
+				)
 			ORDER BY c.company_name, s.service_name
-		`).bind(ym).all();
+		`).bind(ym, ym, ym).all();
+
+		const receipts = allReceipts?.results || [];
+		
+		// 导入收入分摊函数
+		const { allocateReceiptRevenue } = await import('../revenue-allocation.js');
+		
+		// 为每张收据计算在该月的分摊金额
+		let totalReceivable = 0;
+		let totalReceived = 0;
+		let overdueAmount = 0;
+		const clientDetailsData = [];
+		
+		for (const receipt of receipts) {
+			// 计算该收据在目标月份的分摊金额
+			const startMonth = receipt.service_start_month || receipt.service_month;
+			const endMonth = receipt.service_end_month || receipt.service_month;
+			
+			if (!startMonth) continue;
+			
+			const allocations = await allocateReceiptRevenue({
+				client_id: receipt.client_id,
+				total_amount: receipt.total_amount,
+				service_start_month: startMonth,
+				service_end_month: endMonth
+			}, env);
+			
+			const targetAllocation = allocations.find(a => a.month === ym);
+			if (!targetAllocation) continue;
+			
+			const allocatedAmount = targetAllocation.amount;
+			const allocationRatio = allocatedAmount / receipt.total_amount;
+			const allocatedPaid = (receipt.paid_amount || 0) * allocationRatio;
+			const allocatedUnpaid = allocatedAmount - allocatedPaid;
+			
+			totalReceivable += allocatedAmount;
+			totalReceived += allocatedPaid;
+			
+			// 检查是否逾期
+			const isOverdue = (receipt.status === 'unpaid' || receipt.status === 'partial') && 
+				receipt.due_date && new Date(receipt.due_date) < new Date();
+			
+			if (isOverdue) {
+				overdueAmount += allocatedUnpaid;
+			}
+			
+			clientDetailsData.push({
+				clientId: receipt.client_id,
+				clientName: receipt.client_name || '未知客户',
+				serviceName: receipt.service_name || '未分类',
+				receiptId: receipt.receipt_id,
+				receiptDate: receipt.receipt_date,
+				totalAmount: Number(allocatedAmount.toFixed(2)),
+				paidAmount: Number(allocatedPaid.toFixed(2)),
+				unpaidAmount: Number(allocatedUnpaid.toFixed(2)),
+				collectionRate: allocatedAmount > 0 ? Number((allocatedPaid / allocatedAmount * 100).toFixed(2)) : 0,
+				dueDate: receipt.due_date,
+				status: receipt.status,
+				isOverdue: isOverdue
+			});
+		}
+
+		const collectionRate = totalReceivable > 0 ? (totalReceived / totalReceivable * 100) : 0;
 
 		const data = {
 			summary: {
-				totalReceivable,
-				totalReceived,
+				totalReceivable: Number(totalReceivable.toFixed(2)),
+				totalReceived: Number(totalReceived.toFixed(2)),
 				collectionRate: Number(collectionRate.toFixed(2)),
-				overdueAmount
+				overdueAmount: Number(overdueAmount.toFixed(2))
 			},
-			clientDetails: (clientDetails?.results || []).map(r => ({
-				clientId: r.client_id,
-				clientName: r.client_name || '未知客户',
-				serviceName: r.service_name || '未分类',
-				receiptId: r.receipt_id,
-				receiptDate: r.receipt_date,
-				totalAmount: Number(r.total_amount || 0),
-				paidAmount: Number(r.paid_amount || 0),
-				unpaidAmount: Number(r.unpaid_amount || 0),
-				collectionRate: r.total_amount > 0 ? Number((r.paid_amount / r.total_amount * 100).toFixed(2)) : 0,
-				dueDate: r.due_date,
-				status: r.status,
-				isOverdue: Boolean(r.is_overdue)
-			}))
+			clientDetails: clientDetailsData
 		};
 
 		return jsonResponse(200, { ok: true, data, meta: { requestId } }, corsHeaders);
