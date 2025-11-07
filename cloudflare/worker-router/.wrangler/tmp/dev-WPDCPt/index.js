@@ -3332,6 +3332,7 @@ async function handleOverhead(request, env, me, requestId, url, path) {
           });
         }
         employeeDetails.sort((a, b) => b.totalCost - a.totalCost);
+        console.log(`[Client ${clientId}] ${client.company_name}: employeeDetails =`, employeeDetails.length, employeeDetails);
         const revenueRow = await env.DATABASE.prepare(
           `SELECT SUM(total_amount) as total FROM Receipts 
 				 WHERE client_id = ? AND substr(receipt_date, 1, 7) = ? AND is_deleted = 0`
@@ -3339,7 +3340,7 @@ async function handleOverhead(request, env, me, requestId, url, path) {
         const revenue = Number(revenueRow?.total || 0);
         if (totalHours > 0 || revenue > 0) {
           const avgHourlyRate = totalWeightedHours > 0 ? Math.round(totalCost / totalWeightedHours) : 0;
-          clients.push({
+          const clientData = {
             clientId,
             clientName: client.company_name,
             totalHours: Math.round(totalHours * 10) / 10,
@@ -3353,9 +3354,12 @@ async function handleOverhead(request, env, me, requestId, url, path) {
             // 員工明細列表（同時輸出兩個鍵以兼容舊前端）
             employees: employeeDetails,
             employeeDetails
-          });
+          };
+          console.log(`[Client API] Pushing client:`, clientData.clientName, "with", employeeDetails.length, "employees");
+          clients.push(clientData);
         }
       }
+      console.log(`[Client API] Returning ${clients.length} clients, first client:`, clients[0]);
       return jsonResponse(200, {
         ok: true,
         code: "OK",
