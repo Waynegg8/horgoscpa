@@ -868,42 +868,54 @@
           if (!clientData || !clientData.serviceDetails || clientData.serviceDetails.length === 0) {
             contentDiv.innerHTML = '<p style="color:#6b7280;margin:0;">暂无服务类型明细</p>';
           } else {
+            // 计算总成本用于分摊
+            const totalCost = reportType === 'monthly' ? clientData.totalCost : clientData.annualCost;
+            
             const serviceTable = `
               <div style="background:white;border-radius:8px;padding:16px;">
-                <h4 style="margin:0 0 12px 0;font-size:14px;font-weight:600;color:#1f2937;">
-                  ${clientData.clientName} - 服務類型明細（按加權工時分攤）
-                </h4>
                 <table style="width:100%;border-collapse:collapse;font-size:13px;">
                   <thead>
                     <tr style="background:#f3f4f6;border-bottom:2px solid #e5e7eb;">
                       <th style="padding:8px;text-align:left;">服務類型</th>
                       <th style="padding:8px;text-align:right;">實際工時</th>
                       <th style="padding:8px;text-align:right;">加權工時</th>
+                      <th style="padding:8px;text-align:right;">成本</th>
                       <th style="padding:8px;text-align:right;">收入</th>
+                      <th style="padding:8px;text-align:right;">毛利</th>
                       <th style="padding:8px;text-align:right;">佔比</th>
                     </tr>
                   </thead>
                   <tbody>
-                    ${clientData.serviceDetails.map(s => `
-                      <tr style="border-bottom:1px solid #e5e7eb;">
-                        <td style="padding:8px;">${s.serviceName}</td>
-                        <td style="padding:8px;text-align:right;">${s.hours}h</td>
-                        <td style="padding:8px;text-align:right;color:#6366f1;font-weight:500;">${s.weightedHours}h</td>
-                        <td style="padding:8px;text-align:right;font-weight:600;">${formatCurrency(s.revenue)}</td>
-                        <td style="padding:8px;text-align:right;">${s.revenuePercentage}%</td>
-                      </tr>
-                    `).join('')}
+                    ${clientData.serviceDetails.map(s => {
+                      // 按加权工时比例分摊成本
+                      const serviceCost = totalCost * (s.revenuePercentage / 100);
+                      const serviceProfit = s.revenue - serviceCost;
+                      
+                      return `
+                        <tr style="border-bottom:1px solid #e5e7eb;">
+                          <td style="padding:8px;">${s.serviceName}</td>
+                          <td style="padding:8px;text-align:right;">${s.hours}h</td>
+                          <td style="padding:8px;text-align:right;color:#6366f1;font-weight:500;">${s.weightedHours}h</td>
+                          <td style="padding:8px;text-align:right;">${formatCurrency(serviceCost)}</td>
+                          <td style="padding:8px;text-align:right;font-weight:600;">${formatCurrency(s.revenue)}</td>
+                          <td style="padding:8px;text-align:right;color:${serviceProfit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(serviceProfit)}</td>
+                          <td style="padding:8px;text-align:right;">${s.revenuePercentage}%</td>
+                        </tr>
+                      `;
+                    }).join('')}
                     <tr style="background:#f9fafb;font-weight:600;">
                       <td style="padding:8px;">合計</td>
                       <td style="padding:8px;text-align:right;">${(reportType === 'monthly' ? clientData.totalHours : clientData.annualHours).toFixed(1)}h</td>
                       <td style="padding:8px;text-align:right;color:#6366f1;">${(reportType === 'monthly' ? clientData.weightedHours : clientData.annualWeightedHours).toFixed(1)}h</td>
+                      <td style="padding:8px;text-align:right;">${formatCurrency(totalCost)}</td>
                       <td style="padding:8px;text-align:right;">${formatCurrency(reportType === 'monthly' ? clientData.revenue : clientData.annualRevenue)}</td>
+                      <td style="padding:8px;text-align:right;color:${(reportType === 'monthly' ? clientData.profit : clientData.annualProfit) >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(reportType === 'monthly' ? clientData.profit : clientData.annualProfit)}</td>
                       <td style="padding:8px;text-align:right;">100%</td>
                     </tr>
                   </tbody>
                 </table>
                 <p style="margin:12px 0 0 0;font-size:12px;color:#6b7280;">
-                  💡 收入按加權工時比例分攤（包含加班倍率），準確反映各服務類型的價值貢獻
+                  💡 成本和收入均按加權工時比例分攤，準確反映各服務類型的價值貢獻和盈利能力
                 </p>
               </div>
             `;
