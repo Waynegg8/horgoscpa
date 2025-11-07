@@ -16555,9 +16555,6 @@ async function handleTaskTemplates(request, env, me, requestId, url, path) {
     if (!templateId) {
       return jsonResponse(400, { ok: false, code: "INVALID_ID", message: "\u6A21\u677FID\u65E0\u6548", meta: { requestId } }, corsHeaders);
     }
-    if (!me.is_admin) {
-      return jsonResponse(403, { ok: false, code: "FORBIDDEN", message: "\u4EC5\u7BA1\u7406\u5458\u53EF\u6DFB\u52A0\u9636\u6BB5", meta: { requestId } }, corsHeaders);
-    }
     let body;
     try {
       body = await request.json();
@@ -16603,15 +16600,64 @@ async function handleTaskTemplates(request, env, me, requestId, url, path) {
       return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u670D\u52A1\u5668\u9519\u8BEF", meta: { requestId } }, corsHeaders);
     }
   }
+  const matchUpdateStage = path.match(/^\/internal\/api\/v1\/task-templates\/(\d+)\/stages\/(\d+)$/);
+  if (method === "PUT" && matchUpdateStage) {
+    const templateId = parseId3(matchUpdateStage[1]);
+    const stageId = parseId3(matchUpdateStage[2]);
+    if (!templateId || !stageId) {
+      return jsonResponse(400, { ok: false, code: "INVALID_ID", message: "ID\u65E0\u6548", meta: { requestId } }, corsHeaders);
+    }
+    let body;
+    try {
+      body = await request.json();
+    } catch (_) {
+      return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "\u8BF7\u6C42\u683C\u5F0F\u9519\u8BEF", meta: { requestId } }, corsHeaders);
+    }
+    const errors = [];
+    const stageName = String(body?.stage_name || "").trim();
+    const stageOrder = body?.stage_order ? parseInt(body.stage_order, 10) : null;
+    const description = String(body?.description || "").trim();
+    const estimatedHours = body?.estimated_hours ? parseFloat(body.estimated_hours) : null;
+    const sopId = body?.sop_id ? parseInt(body.sop_id, 10) : null;
+    const attachmentId = body?.attachment_id ? parseInt(body.attachment_id, 10) : null;
+    if (!stageName) {
+      errors.push({ field: "stage_name", message: "\u8BF7\u8F93\u5165\u4EFB\u52A1\u540D\u79F0" });
+    }
+    if (!stageOrder || stageOrder < 1) {
+      errors.push({ field: "stage_order", message: "\u8BF7\u8F93\u5165\u6709\u6548\u7684\u987A\u5E8F" });
+    }
+    if (errors.length) {
+      return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "\u8F93\u5165\u6709\u8BEF", errors, meta: { requestId } }, corsHeaders);
+    }
+    try {
+      const stage = await env.DATABASE.prepare(
+        "SELECT stage_id FROM TaskTemplateStages WHERE stage_id = ? AND template_id = ?"
+      ).bind(stageId, templateId).first();
+      if (!stage) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "\u4EFB\u52A1\u4E0D\u5B58\u5728", meta: { requestId } }, corsHeaders);
+      }
+      await env.DATABASE.prepare(
+        `UPDATE TaskTemplateStages 
+         SET stage_name = ?, stage_order = ?, description = ?, estimated_hours = ?, sop_id = ?, attachment_id = ?
+         WHERE stage_id = ? AND template_id = ?`
+      ).bind(stageName, stageOrder, description, estimatedHours, sopId, attachmentId, stageId, templateId).run();
+      return jsonResponse(200, {
+        ok: true,
+        code: "OK",
+        message: "\u4EFB\u52A1\u5DF2\u66F4\u65B0",
+        meta: { requestId }
+      }, corsHeaders);
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "\u670D\u52A1\u5668\u9519\u8BEF", meta: { requestId } }, corsHeaders);
+    }
+  }
   const matchDeleteStage = path.match(/^\/internal\/api\/v1\/task-templates\/(\d+)\/stages\/(\d+)$/);
   if (method === "DELETE" && matchDeleteStage) {
     const templateId = parseId3(matchDeleteStage[1]);
     const stageId = parseId3(matchDeleteStage[2]);
     if (!templateId || !stageId) {
       return jsonResponse(400, { ok: false, code: "INVALID_ID", message: "ID\u65E0\u6548", meta: { requestId } }, corsHeaders);
-    }
-    if (!me.is_admin) {
-      return jsonResponse(403, { ok: false, code: "FORBIDDEN", message: "\u4EC5\u7BA1\u7406\u5458\u53EF\u5220\u9664\u9636\u6BB5", meta: { requestId } }, corsHeaders);
     }
     try {
       const stage = await env.DATABASE.prepare(

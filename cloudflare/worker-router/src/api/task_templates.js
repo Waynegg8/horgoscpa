@@ -425,10 +425,7 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
       return jsonResponse(400, { ok: false, code: "INVALID_ID", message: "模板ID无效", meta: { requestId } }, corsHeaders);
     }
 
-    // 仅管理员可添加阶段
-    if (!me.is_admin) {
-      return jsonResponse(403, { ok: false, code: "FORBIDDEN", message: "仅管理员可添加阶段", meta: { requestId } }, corsHeaders);
-    }
+    // 已登录用户即可添加阶段
 
     let body;
     try {
@@ -487,6 +484,75 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
     }
   }
 
+  // PUT /internal/api/v1/task-templates/:templateId/stages/:stageId - 更新阶段
+  const matchUpdateStage = path.match(/^\/internal\/api\/v1\/task-templates\/(\d+)\/stages\/(\d+)$/);
+  if (method === "PUT" && matchUpdateStage) {
+    const templateId = parseId(matchUpdateStage[1]);
+    const stageId = parseId(matchUpdateStage[2]);
+    
+    if (!templateId || !stageId) {
+      return jsonResponse(400, { ok: false, code: "INVALID_ID", message: "ID无效", meta: { requestId } }, corsHeaders);
+    }
+
+    // 已登录用户即可更新阶段
+
+    let body;
+    try {
+      body = await request.json();
+    } catch (_) {
+      return jsonResponse(400, { ok: false, code: "BAD_REQUEST", message: "请求格式错误", meta: { requestId } }, corsHeaders);
+    }
+
+    const errors = [];
+    const stageName = String(body?.stage_name || "").trim();
+    const stageOrder = body?.stage_order ? parseInt(body.stage_order, 10) : null;
+    const description = String(body?.description || "").trim();
+    const estimatedHours = body?.estimated_hours ? parseFloat(body.estimated_hours) : null;
+    const sopId = body?.sop_id ? parseInt(body.sop_id, 10) : null;
+    const attachmentId = body?.attachment_id ? parseInt(body.attachment_id, 10) : null;
+
+    // 验证
+    if (!stageName) {
+      errors.push({ field: "stage_name", message: "请输入任务名称" });
+    }
+    if (!stageOrder || stageOrder < 1) {
+      errors.push({ field: "stage_order", message: "请输入有效的顺序" });
+    }
+
+    if (errors.length) {
+      return jsonResponse(422, { ok: false, code: "VALIDATION_ERROR", message: "输入有误", errors, meta: { requestId } }, corsHeaders);
+    }
+
+    try {
+      // 检查阶段是否存在
+      const stage = await env.DATABASE.prepare(
+        "SELECT stage_id FROM TaskTemplateStages WHERE stage_id = ? AND template_id = ?"
+      ).bind(stageId, templateId).first();
+
+      if (!stage) {
+        return jsonResponse(404, { ok: false, code: "NOT_FOUND", message: "任务不存在", meta: { requestId } }, corsHeaders);
+      }
+
+      // 更新阶段
+      await env.DATABASE.prepare(
+        `UPDATE TaskTemplateStages 
+         SET stage_name = ?, stage_order = ?, description = ?, estimated_hours = ?, sop_id = ?, attachment_id = ?
+         WHERE stage_id = ? AND template_id = ?`
+      ).bind(stageName, stageOrder, description, estimatedHours, sopId, attachmentId, stageId, templateId).run();
+
+      return jsonResponse(200, {
+        ok: true,
+        code: "OK",
+        message: "任务已更新",
+        meta: { requestId }
+      }, corsHeaders);
+
+    } catch (err) {
+      console.error(JSON.stringify({ level: "error", requestId, path, err: String(err) }));
+      return jsonResponse(500, { ok: false, code: "INTERNAL_ERROR", message: "服务器错误", meta: { requestId } }, corsHeaders);
+    }
+  }
+
   // DELETE /internal/api/v1/task-templates/:templateId/stages/:stageId - 删除阶段
   const matchDeleteStage = path.match(/^\/internal\/api\/v1\/task-templates\/(\d+)\/stages\/(\d+)$/);
   if (method === "DELETE" && matchDeleteStage) {
@@ -497,10 +563,7 @@ export async function handleTaskTemplates(request, env, me, requestId, url, path
       return jsonResponse(400, { ok: false, code: "INVALID_ID", message: "ID无效", meta: { requestId } }, corsHeaders);
     }
 
-    // 仅管理员可删除阶段
-    if (!me.is_admin) {
-      return jsonResponse(403, { ok: false, code: "FORBIDDEN", message: "仅管理员可删除阶段", meta: { requestId } }, corsHeaders);
-    }
+    // 已登录用户即可删除阶段
 
     try {
       // 检查阶段是否存在
