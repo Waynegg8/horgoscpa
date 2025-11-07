@@ -450,7 +450,8 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 			annualNet: 0,
 			totalOvertime: 0,
 			totalPerformance: 0,
-			totalYearEnd: 0
+			totalYearEnd: 0,
+			monthlyDetails: [] // 添加月度明细
 		});
 	}
 	
@@ -484,6 +485,15 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 			emp.totalOvertime += overtime;
 			emp.totalPerformance += performance;
 			emp.totalYearEnd += yearEnd;
+			// 添加月度明细
+			emp.monthlyDetails.push({
+				month,
+				grossSalary: gross,
+				netSalary: net,
+				overtimePay: overtime,
+				performanceBonus: performance,
+				yearEndBonus: yearEnd
+			});
 		}
 		
 		// 月度趋势
@@ -500,6 +510,9 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 	for (const emp of empMap.values()) {
 		// 只显示有数据的员工
 		if (emp.annualGross > 0 || emp.annualNet > 0) {
+			// 确保月度明细按月份排序
+			emp.monthlyDetails.sort((a, b) => a.month - b.month);
+			
 			employeeSummary.push({
 				userId: emp.userId,
 				name: emp.name,
@@ -508,7 +521,8 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
 				avgMonthlySalary: emp.annualGross / 12,
 				totalOvertimePay: emp.totalOvertime,
 				totalPerformanceBonus: emp.totalPerformance,
-				totalYearEndBonus: emp.totalYearEnd
+				totalYearEndBonus: emp.totalYearEnd,
+				monthlyDetails: emp.monthlyDetails
 			});
 		}
 	}
@@ -885,11 +899,57 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
 	const annualProfit = annualRevenue - annualCost;
 	const annualProfitMargin = annualRevenue > 0 ? (annualProfit / annualRevenue * 100) : 0;
 	
-	// 正确的定义：
-	// 时薪 = 成本 / 实际工时（与成本页面一致）
-	// 时均产值 = 收入 / 实际工时
-	const avgHourlyRate = annualStandardHours > 0 ? (annualCost / annualStandardHours) : 0;
-	const avgRevenuePerHour = annualStandardHours > 0 ? (annualRevenue / annualStandardHours) : 0;
+	// 计算月度趋势（为每个员工计算12个月的数据）
+	const monthlyTrend = [];
+	for (let m = 1; m <= 12; m++) {
+		const ym = `${year}-${String(m).padStart(2, '0')}`;
+		
+		// 获取该月工时
+		const monthHoursRows = await env.DATABASE.prepare(`
+			SELECT t.work_type, SUM(t.hours) as total_hours
+			FROM Timesheets t
+			WHERE t.user_id = ? 
+				AND substr(t.work_date, 1, 7) = ?
+				AND t.is_deleted = 0
+			GROUP BY t.work_type
+		`).bind(user.user_id, ym).all();
+		
+		let monthStandardHours = 0;
+		let monthWeightedHours = 0;
+		for (const row of (monthHoursRows?.results || [])) {
+			const hours = Number(row.total_hours || 0);
+			const workTypeId = parseInt(row.work_type) || 1;
+			const weighted = calculateWeightedHours(workTypeId, hours);
+			monthStandardHours += hours;
+			monthWeightedHours += weighted;
+		}
+		
+		// 获取该月收入（简化：从Receipts按月分配）
+		const monthRevenueRows = await env.DATABASE.prepare(`
+			SELECT SUM(r.total_amount) as revenue
+			FROM Receipts r
+			JOIN Timesheets t ON t.client_id = r.client_id
+			WHERE t.user_id = ?
+				AND r.is_deleted = 0
+				AND r.status != 'cancelled'
+				AND substr(r.service_month, 1, 7) = ?
+			GROUP BY r.client_id
+		`).bind(user.user_id, ym).all();
+		
+		const monthRevenue = (monthRevenueRows?.results || []).reduce((sum, r) => sum + Number(r.revenue || 0), 0);
+		const monthCost = baseSalary;
+		const monthProfit = monthRevenue - monthCost;
+		
+		monthlyTrend.push({
+			month: m,
+			standardHours: Number(monthStandardHours.toFixed(1)),
+			weightedHours: Number(monthWeightedHours.toFixed(1)),
+			revenue: Number(monthRevenue.toFixed(2)),
+			cost: Number(monthCost.toFixed(2)),
+			profit: Number(monthProfit.toFixed(2)),
+			profitMargin: monthRevenue > 0 ? Number((monthProfit / monthRevenue * 100).toFixed(2)) : 0
+		});
+	}
 
 	employeeSummary.push({
 		userId: user.user_id,
@@ -901,9 +961,7 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
 		annualCost: Number(annualCost.toFixed(2)),
 		annualProfit: Number(annualProfit.toFixed(2)),
 		annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
-		avgHourlyRate: Number(avgHourlyRate.toFixed(2)),  // 时薪 = 成本/工时
-		avgRevenuePerHour: Number(avgRevenuePerHour.toFixed(2)),  // 时均产值 = 收入/工时
-		monthlyTrend: [],
+		monthlyTrend,
 		clientDistribution: clientDistArray
 	});
 	}

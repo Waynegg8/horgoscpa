@@ -1023,7 +1023,12 @@
           if (data.employeeSummary.length === 0) {
             empTbody.innerHTML = '<tr><td colspan="8" class="muted">本年無員工記錄</td></tr>';
             } else {
-            empTbody.innerHTML = data.employeeSummary.map(e => `
+            empTbody.innerHTML = data.employeeSummary.map(e => {
+              // 存储月度明细数据
+              const key = `payroll_${e.userId}`;
+              clientDistributionData[key] = { name: e.name, monthlyDetails: e.monthlyDetails || [] };
+              
+              return `
               <tr>
                 <td>${e.name}</td>
                 <td class="text-right">${formatCurrency(e.annualGrossSalary)}</td>
@@ -1032,9 +1037,10 @@
                 <td class="text-right">${formatCurrency(e.totalOvertimePay)}</td>
                 <td class="text-right">${formatCurrency(e.totalPerformanceBonus)}</td>
                 <td class="text-right">${formatCurrency(e.totalYearEndBonus)}</td>
-                <td><button class="btn-link" onclick="alert('查看月度明細功能開發中')">查看明細</button></td>
+                <td><button class="btn-link" onclick="showPayrollDetails('payroll_${e.userId}')">查看明細</button></td>
               </tr>
-            `).join('');
+              `;
+            }).join('');
           }
         }
 
@@ -1061,9 +1067,13 @@
             tbody.innerHTML = '<tr><td colspan="9" class="muted">本年無員工工時記錄</td></tr>';
             } else {
             tbody.innerHTML = data.employeeSummary.map(e => {
-              // 存储客户分布数据
+              // 存储客户分布和趋势数据
               const key = `annual_${e.userId}`;
-              clientDistributionData[key] = { name: e.name, distribution: e.clientDistribution };
+              clientDistributionData[key] = { 
+                name: e.name, 
+                distribution: e.clientDistribution,
+                monthlyTrend: e.monthlyTrend || []
+              };
               
               return `
               <tr>
@@ -1076,7 +1086,7 @@
                 <td class="text-right" style="color:${e.annualProfit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(e.annualProfit)}</td>
                 <td class="text-right">${formatPercent(e.annualProfitMargin)}</td>
                 <td>
-                  <button class="btn-link" onclick="alert('查看月度趨勢功能開發中')">趨勢</button>
+                  <button class="btn-link" onclick="showEmployeePerformanceTrend('annual_${e.userId}')">趨勢</button>
                   <button class="btn-link" onclick="showAnnualClientDistribution('annual_${e.userId}')">客戶分布</button>
                 </td>
               </tr>
@@ -1209,6 +1219,94 @@
                         <td class="text-right">${d.hours.toFixed(1)}h</td>
                         <td class="text-right">${formatCurrency(d.generatedRevenue)}</td>
                         <td class="text-right">${formatPercent(d.revenuePercentage)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+                <button class="btn primary" onclick="this.closest('div[style*=fixed]').remove()">關閉</button>
+              </div>
+            </div>
+          `;
+          document.body.insertAdjacentHTML('beforeend', html);
+        };
+
+        // 显示薪资月度明细弹窗
+        window.showPayrollDetails = function(key) {
+          const data = clientDistributionData[key];
+          if (!data || !data.monthlyDetails || data.monthlyDetails.length === 0) {
+            alert((data?.name || '該員工') + ' 本年無薪資記錄');
+            return;
+          }
+
+          const html = `
+            <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
+              <div style="background:#fff;border-radius:12px;padding:24px;max-width:900px;width:90%;max-height:80vh;overflow:auto;">
+                <h3 style="margin:0 0 16px 0;">${data.name} - 月度薪資明細</h3>
+                <table class="report-table" style="margin-bottom:16px;">
+                  <thead>
+                    <tr>
+                      <th>月份</th>
+                      <th class="text-right">應發薪資</th>
+                      <th class="text-right">實發薪資</th>
+                      <th class="text-right">加班費</th>
+                      <th class="text-right">績效獎金</th>
+                      <th class="text-right">年終獎金</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${data.monthlyDetails.map(d => `
+                      <tr>
+                        <td>${d.month}月</td>
+                        <td class="text-right">${formatCurrency(d.grossSalary)}</td>
+                        <td class="text-right">${formatCurrency(d.netSalary)}</td>
+                        <td class="text-right">${formatCurrency(d.overtimePay)}</td>
+                        <td class="text-right">${formatCurrency(d.performanceBonus)}</td>
+                        <td class="text-right">${formatCurrency(d.yearEndBonus)}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+                <button class="btn primary" onclick="this.closest('div[style*=fixed]').remove()">關閉</button>
+              </div>
+            </div>
+          `;
+          document.body.insertAdjacentHTML('beforeend', html);
+        };
+
+        // 显示员工产值月度趋势弹窗
+        window.showEmployeePerformanceTrend = function(key) {
+          const data = clientDistributionData[key];
+          if (!data || !data.monthlyTrend || data.monthlyTrend.length === 0) {
+            alert((data?.name || '該員工') + ' 本年無產值記錄');
+            return;
+          }
+
+          const html = `
+            <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;">
+              <div style="background:#fff;border-radius:12px;padding:24px;max-width:1000px;width:90%;max-height:80vh;overflow:auto;">
+                <h3 style="margin:0 0 16px 0;">${data.name} - 月度產值趨勢</h3>
+                <table class="report-table" style="margin-bottom:16px;">
+                  <thead>
+                    <tr>
+                      <th>月份</th>
+                      <th class="text-right">標準工時</th>
+                      <th class="text-right">加權工時</th>
+                      <th class="text-right">產生收入</th>
+                      <th class="text-right">成本</th>
+                      <th class="text-right">毛利</th>
+                      <th class="text-right">毛利率</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${data.monthlyTrend.map(d => `
+                      <tr>
+                        <td>${d.month}月</td>
+                        <td class="text-right">${d.standardHours.toFixed(1)}h</td>
+                        <td class="text-right">${d.weightedHours.toFixed(1)}h</td>
+                        <td class="text-right">${formatCurrency(d.revenue)}</td>
+                        <td class="text-right">${formatCurrency(d.cost)}</td>
+                        <td class="text-right" style="color:${d.profit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(d.profit)}</td>
+                        <td class="text-right">${formatPercent(d.profitMargin)}</td>
                       </tr>
                     `).join('')}
                   </tbody>

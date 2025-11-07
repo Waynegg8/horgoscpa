@@ -3297,9 +3297,28 @@ async function handleOverhead(request, env, me, requestId, url, path) {
       ).all();
       const usersList = usersRows?.results || [];
       if (isAnnual) {
+        console.log(`[Overhead Annual] \u4ECEPayrollCache\u8BA1\u7B97\u5E74\u5EA6\u5E73\u5747\u65F6\u85AA: ${year}`);
+        const cacheResult = await env.DATABASE.prepare(`
+			SELECT 
+				pc.user_id,
+				SUM(pc.gross_salary_cents) as total_salary_cents,
+				SUM(pc.total_work_hours) as total_hours
+			FROM PayrollCache pc
+			WHERE pc.year_month LIKE ?
+			GROUP BY pc.user_id
+		`).bind(`${year}-%`).all();
+        for (const row of cacheResult?.results || []) {
+          const totalSalary = (row.total_salary_cents || 0) / 100;
+          const totalHours = Number(row.total_work_hours || 0);
+          const avgHourlyRate = totalHours > 0 ? Math.round(totalSalary / totalHours) : 0;
+          employeeActualHourlyRates[String(row.user_id)] = avgHourlyRate;
+        }
         for (const user of usersList) {
-          const baseSalary = Number(user.base_salary || 0);
-          employeeActualHourlyRates[String(user.user_id)] = Math.round(baseSalary / 240);
+          const userId = String(user.user_id);
+          if (!employeeActualHourlyRates[userId]) {
+            const baseSalary = Number(user.base_salary || 0);
+            employeeActualHourlyRates[userId] = Math.round(baseSalary / 240);
+          }
         }
       } else {
         employeeActualHourlyRates = await calculateAllEmployeesActualHourlyRate(env, year, month, yearMonth);
@@ -10586,7 +10605,9 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
         annualNet: 0,
         totalOvertime: 0,
         totalPerformance: 0,
-        totalYearEnd: 0
+        totalYearEnd: 0,
+        monthlyDetails: []
+        // 添加月度明细
       });
     }
     const monthlyMap = /* @__PURE__ */ new Map();
@@ -10613,6 +10634,14 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
         emp.totalOvertime += overtime;
         emp.totalPerformance += performance;
         emp.totalYearEnd += yearEnd;
+        emp.monthlyDetails.push({
+          month,
+          grossSalary: gross,
+          netSalary: net,
+          overtimePay: overtime,
+          performanceBonus: performance,
+          yearEndBonus: yearEnd
+        });
       }
       if (monthlyMap.has(month)) {
         const monthData = monthlyMap.get(month);
@@ -10624,6 +10653,7 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
     const employeeSummary = [];
     for (const emp of empMap.values()) {
       if (emp.annualGross > 0 || emp.annualNet > 0) {
+        emp.monthlyDetails.sort((a, b) => a.month - b.month);
         employeeSummary.push({
           userId: emp.userId,
           name: emp.name,
@@ -10632,7 +10662,8 @@ async function handleAnnualPayroll(request, env, me, requestId, url, corsHeaders
           avgMonthlySalary: emp.annualGross / 12,
           totalOvertimePay: emp.totalOvertime,
           totalPerformanceBonus: emp.totalPerformance,
-          totalYearEndBonus: emp.totalYearEnd
+          totalYearEndBonus: emp.totalYearEnd,
+          monthlyDetails: emp.monthlyDetails
         });
       }
     }
@@ -10924,8 +10955,49 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
       const annualCost = baseSalary * 12;
       const annualProfit = annualRevenue - annualCost;
       const annualProfitMargin = annualRevenue > 0 ? annualProfit / annualRevenue * 100 : 0;
-      const avgHourlyRate = annualStandardHours > 0 ? annualCost / annualStandardHours : 0;
-      const avgRevenuePerHour = annualStandardHours > 0 ? annualRevenue / annualStandardHours : 0;
+      const monthlyTrend = [];
+      for (let m = 1; m <= 12; m++) {
+        const ym = `${year}-${String(m).padStart(2, "0")}`;
+        const monthHoursRows = await env.DATABASE.prepare(`
+			SELECT t.work_type, SUM(t.hours) as total_hours
+			FROM Timesheets t
+			WHERE t.user_id = ? 
+				AND substr(t.work_date, 1, 7) = ?
+				AND t.is_deleted = 0
+			GROUP BY t.work_type
+		`).bind(user.user_id, ym).all();
+        let monthStandardHours = 0;
+        let monthWeightedHours = 0;
+        for (const row of monthHoursRows?.results || []) {
+          const hours = Number(row.total_hours || 0);
+          const workTypeId = parseInt(row.work_type) || 1;
+          const weighted = calculateWeightedHours2(workTypeId, hours);
+          monthStandardHours += hours;
+          monthWeightedHours += weighted;
+        }
+        const monthRevenueRows = await env.DATABASE.prepare(`
+			SELECT SUM(r.total_amount) as revenue
+			FROM Receipts r
+			JOIN Timesheets t ON t.client_id = r.client_id
+			WHERE t.user_id = ?
+				AND r.is_deleted = 0
+				AND r.status != 'cancelled'
+				AND substr(r.service_month, 1, 7) = ?
+			GROUP BY r.client_id
+		`).bind(user.user_id, ym).all();
+        const monthRevenue = (monthRevenueRows?.results || []).reduce((sum, r) => sum + Number(r.revenue || 0), 0);
+        const monthCost = baseSalary;
+        const monthProfit = monthRevenue - monthCost;
+        monthlyTrend.push({
+          month: m,
+          standardHours: Number(monthStandardHours.toFixed(1)),
+          weightedHours: Number(monthWeightedHours.toFixed(1)),
+          revenue: Number(monthRevenue.toFixed(2)),
+          cost: Number(monthCost.toFixed(2)),
+          profit: Number(monthProfit.toFixed(2)),
+          profitMargin: monthRevenue > 0 ? Number((monthProfit / monthRevenue * 100).toFixed(2)) : 0
+        });
+      }
       employeeSummary.push({
         userId: user.user_id,
         name: user.name || user.username,
@@ -10936,11 +11008,7 @@ async function handleAnnualEmployeePerformance(request, env, me, requestId, url,
         annualCost: Number(annualCost.toFixed(2)),
         annualProfit: Number(annualProfit.toFixed(2)),
         annualProfitMargin: Number(annualProfitMargin.toFixed(2)),
-        avgHourlyRate: Number(avgHourlyRate.toFixed(2)),
-        // 时薪 = 成本/工时
-        avgRevenuePerHour: Number(avgRevenuePerHour.toFixed(2)),
-        // 时均产值 = 收入/工时
-        monthlyTrend: [],
+        monthlyTrend,
         clientDistribution: clientDistArray
       });
     }
