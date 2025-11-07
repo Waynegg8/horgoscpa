@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/assets/css/common.css">
     <link rel="stylesheet" href="/assets/css/internal-system.css">
     <link rel="stylesheet" href="/assets/css/internal-components.css">
-    <link rel="stylesheet" href="/assets/css/settings-page.css?v=203">
+    <link rel="stylesheet" href="/assets/css/settings-page.css?v=204">
     
     <!-- ⚡ 预加载与缓存系统 -->
     <script src="/assets/js/data-cache.js"></script>
@@ -34,13 +34,13 @@
         <div class="tab-panel active" id="tab-services">
             <div class="search-bar">
                 <button class="btn btn-primary" id="btnAddService">+ 新增</button>
-        </div>
+            </div>
 
             <div class="card hidden" id="addServiceForm">
                 <div class="card-header"><h3 id="serviceFormTitle">新增服務項目</h3></div>
-        <div class="card-body">
+                <div class="card-body">
                     <input type="hidden" id="editServiceId">
-          <div class="form-group">
+                    <div class="form-group">
                         <label>服務名稱 *</label>
                         <input type="text" id="newServiceName" class="form-control">
                     </div>
@@ -653,7 +653,15 @@
             const tbody = document.querySelector('#servicesTable tbody');
             try {
                 const res = await fetch('/internal/api/v1/services', { credentials: 'include' });
-            const json = await res.json();
+                const json = await res.json();
+                
+                console.log('服務項目API響應:', json);
+                
+                if (!res.ok) {
+                    console.error('API錯誤:', json);
+                    tbody.innerHTML = `<tr><td colspan="4" class="loading">載入失敗: ${json.message || '未知錯誤'}</td></tr>`;
+                    return;
+                }
                 
                 if (!json.data || json.data.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" class="loading">暫無資料</td></tr>';
@@ -674,7 +682,8 @@
                     </tr>
                 `}).join('');
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="4" class="loading">載入失敗</td></tr>';
+                console.error('載入服務失敗:', e);
+                tbody.innerHTML = `<tr><td colspan="4" class="loading">載入失敗: ${e.message}</td></tr>`;
             }
         }
 

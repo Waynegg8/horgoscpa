@@ -189,10 +189,12 @@ textarea { resize: vertical; }
     overflow-x: auto;
     border: 1px solid var(--gray-200);
     border-radius: 8px;
+    min-height: 200px;
 }
 
 .data-table {
     width: 100%;
+    min-width: 800px;
     border-collapse: collapse;
 }
 
