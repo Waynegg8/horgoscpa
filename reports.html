@@ -879,8 +879,8 @@
                       <th style="padding:8px;text-align:left;">服務類型</th>
                       <th style="padding:8px;text-align:right;">實際工時</th>
                       <th style="padding:8px;text-align:right;">加權工時</th>
-                      <th style="padding:8px;text-align:right;">成本</th>
                       <th style="padding:8px;text-align:right;">收入</th>
+                      <th style="padding:8px;text-align:right;">成本</th>
                       <th style="padding:8px;text-align:right;">毛利</th>
                       <th style="padding:8px;text-align:right;">佔比</th>
                     </tr>
@@ -896,22 +896,13 @@
                           <td style="padding:8px;">${s.serviceName}</td>
                           <td style="padding:8px;text-align:right;">${s.hours}h</td>
                           <td style="padding:8px;text-align:right;color:#6366f1;font-weight:500;">${s.weightedHours}h</td>
-                          <td style="padding:8px;text-align:right;">${formatCurrency(serviceCost)}</td>
                           <td style="padding:8px;text-align:right;font-weight:600;">${formatCurrency(s.revenue)}</td>
+                          <td style="padding:8px;text-align:right;">${formatCurrency(serviceCost)}</td>
                           <td style="padding:8px;text-align:right;color:${serviceProfit >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(serviceProfit)}</td>
                           <td style="padding:8px;text-align:right;">${s.revenuePercentage}%</td>
                         </tr>
                       `;
                     }).join('')}
-                    <tr style="background:#f9fafb;font-weight:600;">
-                      <td style="padding:8px;">合計</td>
-                      <td style="padding:8px;text-align:right;">${(reportType === 'monthly' ? clientData.totalHours : clientData.annualHours).toFixed(1)}h</td>
-                      <td style="padding:8px;text-align:right;color:#6366f1;">${(reportType === 'monthly' ? clientData.weightedHours : clientData.annualWeightedHours).toFixed(1)}h</td>
-                      <td style="padding:8px;text-align:right;">${formatCurrency(totalCost)}</td>
-                      <td style="padding:8px;text-align:right;">${formatCurrency(reportType === 'monthly' ? clientData.revenue : clientData.annualRevenue)}</td>
-                      <td style="padding:8px;text-align:right;color:${(reportType === 'monthly' ? clientData.profit : clientData.annualProfit) >= 0 ? '#16a34a' : '#dc2626'};">${formatCurrency(reportType === 'monthly' ? clientData.profit : clientData.annualProfit)}</td>
-                      <td style="padding:8px;text-align:right;">100%</td>
-                    </tr>
                   </tbody>
                 </table>
                 <p style="margin:12px 0 0 0;font-size:12px;color:#6b7280;">
