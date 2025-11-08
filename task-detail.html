@@ -502,7 +502,7 @@
     // 載入任務文檔（使用知識庫 API）
     async function loadTaskDocuments() {
       try {
-        const url = `${apiBase}/knowledge/documents?related_entity_type=task&related_entity_id=${currentTaskId}&category=attachment`;
+        const url = `${apiBase}/documents?related_entity_type=task&related_entity_id=${currentTaskId}&category=attachment`;
         console.log('載入附件 URL:', url);
         
         const res = await fetch(url, { credentials: 'include' });
@@ -1065,7 +1065,7 @@
             xhr.addEventListener('error', () => reject(new Error('網路錯誤')));
             xhr.addEventListener('abort', () => reject(new Error('上傳已取消')));
             
-            xhr.open('POST', `${apiBase}/knowledge/documents/upload`);
+            xhr.open('POST', `${apiBase}/documents/upload`);
             xhr.withCredentials = true;
             xhr.send(formData);
           });
@@ -1091,7 +1091,7 @@
     // 下載文檔（使用知識庫 API）
     async function downloadDocument(fileUrl, filename) {
       try {
-        const res = await fetch(`${apiBase}/knowledge/documents/download?file_url=${encodeURIComponent(fileUrl)}`, { 
+        const res = await fetch(`${apiBase}/documents/download?file_url=${encodeURIComponent(fileUrl)}`, { 
           credentials: 'include' 
         });
         
@@ -1126,7 +1126,7 @@
       if (!confirm('確定要刪除此文檔嗎？')) return;
       
       try {
-        const res = await fetch(`${apiBase}/knowledge/documents/${documentId}`, {
+        const res = await fetch(`${apiBase}/documents/${documentId}`, {
           method: 'DELETE',
           credentials: 'include'
         });

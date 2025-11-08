@@ -732,7 +732,7 @@
                     }),
                     fetch('/internal/api/v1/clients?perPage=200', { credentials: 'include' }),
                     fetch('/internal/api/v1/sop?scope=task', { credentials: 'include' }).catch(() => ({json: () => ({data:[]})})),
-                    fetch('/internal/api/v1/knowledge/documents?category=resource&perPage=200', { credentials: 'include' }).catch(() => ({json: () => ({items:[]})}))
+                    fetch('/internal/api/v1/documents?category=resource&perPage=200', { credentials: 'include' }).catch(() => ({json: () => ({items:[]})}))
                 ]);
                 const services = await servicesRes.json();
                 const clients = await clientsRes.json();
