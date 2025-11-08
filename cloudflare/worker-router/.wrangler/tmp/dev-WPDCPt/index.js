@@ -16181,8 +16181,10 @@ init_utils();
 async function handleUserProfile(request, env, me, requestId, url, path) {
   const corsHeaders = getCorsHeadersForRequest(request, env);
   const method = request.method.toUpperCase();
+  console.log(`[UserProfile] method=${method}, path=${path}`);
   if (method === "GET" && path.match(/^\/internal\/api\/v1\/users\/\d+$/)) {
     const userId = parseInt(path.split("/")[5]);
+    console.log(`[UserProfile] \u5339\u914D GET \u8DEF\u7531, userId=${userId}`);
     return await getUserProfile(env, me, userId, requestId, corsHeaders);
   }
   if (method === "PUT" && path.match(/^\/internal\/api\/v1\/users\/\d+\/profile$/)) {
