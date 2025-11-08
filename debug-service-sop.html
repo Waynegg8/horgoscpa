@@ -132,6 +132,13 @@
         <div id="apiResult" style="margin-top: 15px;"></div>
     </div>
 
+    <!-- 步驟 2.5: 檢查 SOP 列表 -->
+    <div class="panel">
+        <h2>步驟 2.5: 檢查可用的服務層級 SOP</h2>
+        <button onclick="checkServiceSOPs()">查詢服務層級 SOP</button>
+        <div id="sopCheckResult" style="margin-top: 15px;"></div>
+    </div>
+
     <!-- 步驟 3: 測試保存功能 -->
     <div class="panel">
         <h2>步驟 3: 測試保存服務項目（綁定 SOP）</h2>
@@ -341,6 +348,59 @@
             }
         }
         
+        // 步驟 2.5: 檢查服務層級 SOP
+        async function checkServiceSOPs() {
+            const result = document.getElementById('sopCheckResult');
+            result.innerHTML = '<p>查詢中...</p>';
+            
+            try {
+                const timestamp = Date.now();
+                const response = await fetch(`${API_BASE}/sop?scope=service&_t=${timestamp}`, {
+                    credentials: 'include',
+                    cache: 'no-cache'
+                });
+                
+                const json = await response.json();
+                console.log('📥 服務層級 SOP 響應:', json);
+                
+                let html = '<h3>服務層級 SOP 列表：</h3>';
+                
+                if (json.ok && json.data) {
+                    if (json.data.length === 0) {
+                        html += '<p class="error">❌ <strong>沒有找到任何 scope=service 的 SOP！</strong></p>';
+                        html += '<p>這就是問題所在！您需要先創建服務層級的 SOP。</p>';
+                        html += '<h4>解決方案：</h4>';
+                        html += '<ol>';
+                        html += '<li>前往「知識庫」→「SOP 文檔」</li>';
+                        html += '<li>新增 SOP，<strong>在「適用層級」中選擇「服務層級 (service)」</strong></li>';
+                        html += '<li>保存後回到這裡重新測試</li>';
+                        html += '</ol>';
+                    } else {
+                        html += `<p class="success">✅ 找到 ${json.data.length} 個服務層級 SOP</p>`;
+                        html += '<table><tr><th>SOP ID</th><th>標題</th><th>分類</th><th>創建時間</th></tr>';
+                        json.data.forEach(sop => {
+                            html += `<tr>
+                                <td>${sop.sop_id}</td>
+                                <td>${sop.title}</td>
+                                <td>${sop.category || '-'}</td>
+                                <td>${sop.created_at || '-'}</td>
+                            </tr>`;
+                        });
+                        html += '</table>';
+                    }
+                } else {
+                    html += `<p class="error">❌ 查詢失敗: ${json.message || '未知錯誤'}</p>`;
+                }
+                
+                html += '<h4>完整響應：</h4><pre>' + JSON.stringify(json, null, 2) + '</pre>';
+                result.innerHTML = html;
+                
+            } catch (error) {
+                console.error('❌ 查詢 SOP 失敗:', error);
+                result.innerHTML = `<p class="error">❌ 請求失敗: ${error.message}</p>`;
+            }
+        }
+        
         // 步驟 3: 測試保存
         async function loadServiceData() {
             const serviceId = document.getElementById('testServiceSelect').value;
@@ -365,17 +425,29 @@
         async function testSaveService() {
             const serviceId = document.getElementById('testServiceSelect').value;
             const serviceName = document.getElementById('testServiceName').value;
-            const sopId = document.getElementById('testSopSelect').value;
+            const sopIdStr = document.getElementById('testSopSelect').value;
             
             if (!serviceId || !serviceName) {
                 alert('請選擇服務並填寫名稱');
                 return;
             }
             
+            // ⚡ 修復：正確處理空值和轉換
+            let sopId = null;
+            if (sopIdStr && sopIdStr.trim() !== '') {
+                const parsed = parseInt(sopIdStr, 10);
+                if (!isNaN(parsed) && parsed > 0) {
+                    sopId = parsed;
+                }
+            }
+            
+            console.log('🔧 SOP ID 處理:', { 原始值: sopIdStr, 解析後: sopId });
+            
             const result = document.getElementById('saveResult');
             result.innerHTML = '<p>保存中...</p>';
             
             let html = '<h3>保存測試流程：</h3>';
+            html += `<p>📋 即將保存的數據：service_name="${serviceName}", service_sop_id=${sopId}</p>`;
             
             try {
                 // 1. 保存
@@ -386,7 +458,7 @@
                     credentials: 'include',
                     body: JSON.stringify({
                         service_name: serviceName,
-                        service_sop_id: sopId ? parseInt(sopId) : null
+                        service_sop_id: sopId
                     })
                 });
                 

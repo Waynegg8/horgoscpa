@@ -286,20 +286,7 @@
                 </p>
             </div>
             
-            <!-- 子标签页导航 -->
-            <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:2px solid #e5e7eb;">
-                <button class="automation-subtab active" data-subtab="config" onclick="switchAutomationTab('config')" 
-                        style="padding:12px 24px;border:none;background:none;cursor:pointer;font-weight:500;border-bottom:3px solid #3b82f6;">
-                    📊 配置概覽
-                </button>
-                <button class="automation-subtab" data-subtab="overview" onclick="switchAutomationTab('overview')"
-                        style="padding:12px 24px;border:none;background:none;cursor:pointer;font-weight:500;border-bottom:3px solid transparent;">
-                    📅 任務總覽
-                </button>
-            </div>
-            
-            <!-- Tab 1: 配置概览 -->
-            <div id="automation-config" class="automation-subtab-content">
+            <!-- 配置概览 -->
                 <div class="search-bar" style="margin-bottom:20px;">
                     <input type="text" id="autoSearchClient" class="form-control" placeholder="搜尋客戶名稱..." style="max-width:300px;margin-right:12px;">
                     <button class="btn btn-primary" onclick="loadAutoTasksOverview()">🔄 重新整理</button>
@@ -333,103 +320,14 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Tab 2: 任务总览 -->
-            <div id="automation-overview" class="automation-subtab-content" style="display:none;">
-                <!-- 筛选区域 -->
-                <div class="card" style="margin-bottom:20px;">
-                    <div class="card-body">
-                        <!-- 月份筛选 -->
-                        <div style="margin-bottom:16px;">
-                            <label style="display:block;margin-bottom:8px;font-weight:600;">📅 服務月份</label>
-                            <div id="monthSelector" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-                                <!-- 动态生成月份标签 -->
-                            </div>
-                            <div style="display:flex;gap:8px;">
-                                <button class="btn btn-sm btn-secondary" onclick="selectQuickMonths('current')">本月</button>
-                                <button class="btn btn-sm btn-secondary" onclick="selectQuickMonths('last')">上月</button>
-                                <button class="btn btn-sm btn-secondary" onclick="selectQuickMonths('recent3')">最近3個月</button>
-                                <button class="btn btn-sm btn-secondary" onclick="selectQuickMonths('clear')">清除</button>
-                            </div>
-                        </div>
-                        
-                        <!-- 搜索 + 状态 + 来源 -->
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;">
-                            <div>
-                                <label style="display:block;margin-bottom:8px;font-weight:600;">🔍 搜索客戶</label>
-                                <input type="text" id="taskOverviewSearch" class="form-control" placeholder="輸入客戶名稱...">
-                            </div>
-                            
-                            <div>
-                                <label style="display:block;margin-bottom:8px;font-weight:600;">📊 任務狀態</label>
-                                <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                                    <label style="cursor:pointer;"><input type="checkbox" value="pending" checked> 待處理</label>
-                                    <label style="cursor:pointer;"><input type="checkbox" value="in_progress" checked> 進行中</label>
-                                    <label style="cursor:pointer;"><input type="checkbox" value="completed"> 已完成</label>
-                                    <label style="cursor:pointer;"><input type="checkbox" value="cancelled"> 已取消</label>
-                                </div>
-                                <div style="display:flex;gap:8px;margin-top:8px;">
-                                    <button class="btn btn-sm btn-secondary" onclick="quickSelectStatus('unfinished')">未完成的</button>
-                                    <button class="btn btn-sm btn-secondary" onclick="quickSelectStatus('all')">全部</button>
-                                    <button class="btn btn-sm btn-secondary" onclick="quickSelectStatus('overdue')">只看逾期</button>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label style="display:block;margin-bottom:8px;font-weight:600;">🏷️ 任務來源</label>
-                                <div style="display:flex;gap:12px;">
-                                    <label style="cursor:pointer;"><input type="checkbox" value="auto" checked> 自動生成</label>
-                                    <label style="cursor:pointer;"><input type="checkbox" value="manual" checked> 手動建立</label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 操作按钮 -->
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <div style="display:flex;gap:8px;">
-                                <button class="btn btn-primary" onclick="loadTaskOverview()">🔄 套用篩選</button>
-                                <button class="btn btn-secondary" onclick="expandAllClients(true)">全部展開</button>
-                                <button class="btn btn-secondary" onclick="expandAllClients(false)">全部折疊</button>
-                            </div>
-                            <div>
-                                <label style="cursor:pointer;">
-                                    <input type="checkbox" id="enableBatchMode" onchange="toggleBatchMode()"> 批量操作模式
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <!-- 批量操作栏 -->
-                        <div id="batchActionsBar" style="display:none;margin-top:16px;padding:12px;background:#f0f9ff;border-radius:6px;border:1px solid #bfdbfe;">
-                            <span style="margin-right:12px;font-weight:600;">已選擇 <span id="batchCount">0</span> 個任務</span>
-                            <button class="btn btn-sm btn-primary" onclick="batchChangeStatus()">批量變更狀態</button>
-                            <button class="btn btn-sm btn-primary" onclick="batchChangeDueDate()">批量調整到期日</button>
-                            <button class="btn btn-sm btn-primary" onclick="batchChangeAssignee()">批量分配負責人</button>
-                            <button class="btn btn-sm btn-secondary" onclick="clearBatchSelection()">清除選擇</button>
-                        </div>
-                    </div>
-                </div>
                 
-                <!-- 统计摘要 -->
-                <div class="card" style="margin-bottom:20px;">
-                    <div class="card-body">
-                        <div id="taskOverviewStats" style="display:flex;gap:24px;flex-wrap:wrap;font-size:14px;">
-                            <div>📊 共 <strong id="stat-total">0</strong> 個任務</div>
-                            <div>⏰ 未完成: <strong id="stat-unfinished">0</strong></div>
-                            <div>✅ 已完成: <strong id="stat-completed">0</strong></div>
-                            <div>🔴 逾期: <strong id="stat-overdue" style="color:#ef4444;">0</strong></div>
-                            <div>🤖 自動生成: <strong id="stat-auto">0</strong></div>
-                            <div>👤 手動建立: <strong id="stat-manual">0</strong></div>
-                            <div id="stat-months" style="color:#6b7280;"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 任务列表 -->
-                <div id="taskOverviewList">
-                    <div style="text-align:center;padding:40px;color:#6b7280;">
-                        點擊「套用篩選」載入任務
-                    </div>
+                <div style="margin-top:20px;padding:16px;background:#f9fafb;border-radius:8px;text-align:center;">
+                    <p style="margin:0 0 12px 0;font-size:14px;color:#6b7280;">
+                        想查看按客戶和服務分組的任務總覽？
+                    </p>
+                    <a href="/internal/task-overview" class="btn btn-primary">
+                        📊 前往任務總覽頁面
+                    </a>
                 </div>
             </div>
           </div>
@@ -663,9 +561,20 @@
         async function saveService() {
             const serviceId = document.getElementById('editServiceId').value;
             const name = document.getElementById('newServiceName').value;
-            const sopId = document.getElementById('newServiceSOP').value;
+            const sopIdStr = document.getElementById('newServiceSOP').value;
             
             if (!name) return alert('請輸入服務名稱');
+            
+            // ⚡ 修復：正確處理 SOP ID 轉換，避免 NaN
+            let sopId = null;
+            if (sopIdStr && sopIdStr.trim() !== '') {
+                const parsed = parseInt(sopIdStr, 10);
+                if (!isNaN(parsed) && parsed > 0) {
+                    sopId = parsed;
+                }
+            }
+            
+            console.log('🔧 準備保存的 SOP ID:', { 原始值: sopIdStr, 解析後: sopId });
             
             try {
                 const url = serviceId 
@@ -679,7 +588,7 @@
                     credentials: 'include',
                     body: JSON.stringify({ 
                         service_name: name,
-                        service_sop_id: sopId ? parseInt(sopId) : null
+                        service_sop_id: sopId
                     })
                 });
                 if (!res.ok) throw new Error('失敗');
