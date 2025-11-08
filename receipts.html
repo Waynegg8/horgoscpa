@@ -923,11 +923,18 @@
           const clientSelectEl = document.getElementById('clientSelect');
           if (clientSelectEl) clientSelectEl.value = '';
           inputClientId.value = '';
-          inputClientService.innerHTML = '<option value="">請選擇服務</option>';
           inputBillingMonth.value = '';
           inputAmount.value = '';
+          inputWithholdingAmount.value = '0';
           inputNotes.value = '';
-          currentClientServices = [];
+          
+          // 重置服務期間
+          document.getElementById('serviceStartMonth').value = '';
+          document.getElementById('serviceEndMonth').value = '';
+          
+          // 取消勾選所有服務類型
+          const checkboxes = document.querySelectorAll('input[name="serviceType"]:checked');
+          checkboxes.forEach(cb => cb.checked = false);
           
           // 重置明细项目
           receiptItems = [];
@@ -983,7 +990,6 @@
           
           // 新字段
           const receipt_type = inputReceiptType.value;
-          const client_service_id = inputClientService.value ? parseInt(inputClientService.value, 10) : null;
           const billing_month = inputBillingMonth.value ? parseInt(inputBillingMonth.value, 10) : null;
           
           // 服务期间（应计制）
@@ -1023,7 +1029,6 @@
             };
             
             // 只在有值時添加可選字段
-            if (client_service_id) payload.client_service_id = client_service_id;
             if (billing_month) payload.billing_month = billing_month;
             if (service_start_month) payload.service_start_month = service_start_month;
             if (service_end_month) payload.service_end_month = service_end_month;
