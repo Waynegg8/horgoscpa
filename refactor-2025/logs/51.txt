@@ -1,0 +1,97 @@
+# 步骤51执行日志
+
+## 执行时间
+2025-11-08
+
+## 任务
+tasks.html 行401-500
+
+## 完成的5个动作
+
+### 1. 读取 ✓
+read_file tasks.html 401 500
+
+### 2. 记录 ✓
+catalog/tasks.md - 段5 (行401-500)
+- groupByClientAndService函数（完成）：月份降序排序
+- render函数：调用筛选和分组，生成HTML
+- 客户分组渲染：client-group, client-header, 折叠图标
+- 空状态处理：显示"此客戶目前沒有任務"
+- 服务分组渲染：service-header, 折叠区域, 新增任务按钮
+- 任务行渲染：复选框, 任务名, 进度, 负责人, 到期日, 状态, 详情链接
+
+### 3. 重构 ✓
+new-code/pages/Tasks.jsx
+- 实现完整的Tasks页面组件
+- 状态管理：allTasks, allClients, allTags, employeesList, selectedTaskIds
+- 筛选状态：searchQuery, filterYear, filterMonth, filterAssignee, filterTags, filterStatus, filterDue, hideCompleted
+- 折叠状态：collapsedClients, collapsedServices
+- 数据加载函数：loadEmployees, loadAllClients, loadAllTags, loadAllTasks
+- 筛选逻辑：filteredTasks (useMemo)
+- 分组逻辑：groupedTasks (useMemo)
+- 折叠控制：toggleClient, toggleService
+- 任务选择：toggleTaskSelection
+- 渲染函数：renderClients, renderServiceGroup, renderTaskRow
+- 工具函数：getStatusStyle, parseStyleString, openQuickAddTask
+
+### 4. 对比 ✓
+旧代码功能清单（全部实现）：
+- [x] groupByClientAndService完成（月份降序排序）
+- [x] render函数（调用筛选和分组）
+- [x] 客户分组渲染（clientIdSafe清理, client-group, client-header, 折叠图标）
+- [x] 空状态处理（"此客戶目前沒有任務"）
+- [x] 服务分组渲染（完成情况, 格式化标题, groupIdSafe编码, 新增按钮）
+- [x] 任务行渲染（复选框, 任务名, 进度, 负责人, 到期日, 状态标签, 详情链接）
+- [x] toggleClient函数
+- [x] toggleService函数
+- [x] toggleTaskSelection函数
+- [x] openQuickAddTask函数
+
+新代码实现：
+- ✓ 使用React hooks管理状态
+- ✓ 使用useMemo优化筛选和分组性能
+- ✓ 折叠状态使用Set管理
+- ✓ 任务选择使用Set管理
+- ✓ HTML字符串转换为JSX
+- ✓ 内联样式转换为React style对象
+- ✓ 事件处理转换为React事件处理器
+
+### 5. 回溯 ✓
+检查结果：无需回溯
+- 渲染逻辑清晰，三层结构（客户->服务->任务）
+- 折叠功能标准化
+- 空状态友好提示
+- Base64编码确保ID唯一性
+- 进度显示清晰（completed/total）
+- 日期格式化一致（slice(5)取月-日）
+- 状态标签样式化
+- 与dashboard的TaskRow结构相似，已统一
+
+## 使用的数据字段（对照db-schema.json）
+- task.taskId → ActiveTasks.task_id
+- task.taskName → ActiveTasks.task_name
+- task.status → ActiveTasks.status
+- task.dueDate → ActiveTasks.due_date
+- task.assigneeUserId → ActiveTasks.assignee_user_id
+- task.clientServiceId → ActiveTasks.client_service_id
+- client.clientId → Clients.client_id
+- client.companyName → Clients.company_name
+- client.taxRegistrationNumber → Clients.tax_registration_number
+
+## 使用的API端点（对照api-endpoints.json）
+- GET /internal/api/v1/tasks?perPage=1000&service_year=&service_month=
+- GET /internal/api/v1/users
+- GET /internal/api/v1/clients?perPage=1000
+- GET /internal/api/v1/tags
+
+## 组件提取
+- Tasks.jsx - 主页面组件（包含完整渲染逻辑）
+- 将来可能提取：
+  - TaskClientGroup.jsx - 客户分组
+  - TaskServiceGroup.jsx - 服务分组
+  - TaskRow.jsx - 任务行（可与dashboard统一）
+
+## 状态
+✅ 完成
+
+

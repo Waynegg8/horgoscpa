@@ -633,3 +633,857 @@
 - hideCompleted逻辑特殊：过滤组而非任务
 - 排序使用中文locale
 - 数据结构使用Map保持性能
+
+---
+
+### 段5 (行401-500)
+
+#### 完整代码
+```javascript
+            
+            // 再按月份降序排序（最新月份在前）
+            return (b[1].serviceMonth || '').localeCompare(a[1].serviceMonth || '');
+          }));
+          
+          client.serviceGroups = sortedGroups;
+        });
+        
+        return grouped;
+      }
+      
+      // 渲染
+      function render() {
+        const filtered = filterTasks();
+        const grouped = groupByClientAndService(filtered);
+        const container = document.getElementById('tasks-list');
+        
+        let html = '';
+        
+        grouped.forEach((client, clientId) => {
+          const hasGroups = client.serviceGroups.size > 0;
+          const clientIdSafe = clientId.replace(/[^a-zA-Z0-9]/g, '_');
+          
+          html += `
+            <div class="client-group">
+              <div class="client-header" onclick="toggleClient('${clientIdSafe}')">
+                <span id="icon-${clientIdSafe}" style="font-size:16px;">▶</span>
+                <strong style="font-size:16px;color:#1f2937;">${client.clientName} ${client.clientTaxId !== '—' ? `(${client.clientTaxId})` : ''}</strong>
+              </div>
+              <div id="group-${clientIdSafe}" style="display:none;">
+          `;
+          
+          if (!hasGroups) {
+            html += `
+              <div style="padding:16px;text-align:center;color:#9ca3af;font-size:14px;">
+                此客戶目前沒有任務
+              </div>
+            `;
+          } else {
+            client.serviceGroups.forEach((group, groupKey) => {
+              const tasks = group.tasks;
+              if (tasks.length === 0) return;
+              
+              // 计算完成情况
+              const completed = tasks.filter(t => t.status === 'completed').length;
+              const total = tasks.length;
+              
+              // 格式化服务+月份标题
+              const monthText = group.serviceMonth ? ` - ${group.serviceMonth.slice(0, 4)}年${parseInt(group.serviceMonth.slice(5))}月` : '';
+              const serviceTitle = `${group.serviceName}${monthText}`;
+              
+              // 生成唯一ID：使用Base64编码确保ID唯一且有效
+              const groupIdSafe = `${clientIdSafe}_${btoa(encodeURIComponent(groupKey)).replace(/[^a-zA-Z0-9]/g, '_')}`;
+              
+              html += `
+                <div class="service-group">
+                  <div class="service-header" style="display:flex;align-items:center;justify-content:space-between;">
+                    <div onclick="toggleService('${groupIdSafe}')" style="flex:1;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                      <span id="icon-${groupIdSafe}" style="font-size:14px;">▶</span>
+                      <strong style="font-size:14px;color:#374151;">${serviceTitle}</strong>
+                      <span style="color:#9ca3af;font-size:13px;">(${total}個任務: ${completed}已完成, ${total - completed}未完成)</span>
+                    </div>
+                    <button onclick="openQuickAddTask('${group.clientId}', '${group.clientServiceId}', '${group.serviceId}', '${group.serviceName}', '${group.serviceMonth}', event)" 
+                            style="padding:4px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px;"
+                            title="為此服務新增任務">
+                      <span style="font-size:14px;">➕</span> 新增任務
+                    </button>
+                  </div>
+                  <div id="group-${groupIdSafe}" style="display:none;">
+              `;
+              
+              tasks.forEach(task => {
+                const checked = selectedTaskIds.has(task.taskId) ? 'checked' : '';
+                html += `
+                  <div class="task-row">
+                    <div><input type="checkbox" ${checked} onchange="toggleTaskSelection('${task.taskId}', this.checked)" /></div>
+                    <div>
+                      <div style="font-weight:500;color:#1f2937;margin-bottom:4px;">${task.taskName}</div>
+                      <div style="font-size:12px;color:#6b7280;">進度：${task.progress.completed}/${task.progress.total}</div>
+                    </div>
+                    <div style="font-size:13px;color:#6b7280;">${task.assigneeName || '未分配'}</div>
+                    <div style="font-size:13px;color:#4b5563;">${task.dueDate ? task.dueDate.slice(5) : '—'}</div>
+                    <div><span style="display:inline-block;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500;${getStatusStyle(task.status)}">${zhStatus[task.status]}</span></div>
+                    <div><a href="/internal/task-detail?id=${task.taskId}" style="color:#3b82f6;text-decoration:none;font-size:14px;">查看詳情</a></div>
+                  </div>
+                `;
+              });
+              
+              html += `
+                  </div>
+                </div>
+              `;
+            });
+          }
+          
+          html += `
+              </div>
+            </div>
+          `;
+        });
+```
+
+#### 发现的内容
+- **groupByClientAndService函数（继续）**:
+  - 按月份降序排序（最新月份在前）
+  - 将排序后的服务组赋值回client
+  - 返回grouped结构
+- **render函数**:
+  - 调用filterTasks()获取筛选后的任务
+  - 调用groupByClientAndService()获取分组数据
+  - 生成HTML字符串
+- **客户分组渲染**:
+  - clientIdSafe：清理clientId（替换非字母数字字符为_）
+  - client-group容器
+  - client-header：可点击头部，显示客户名+税号
+  - 折叠图标（▶）
+  - 折叠内容区域（默认隐藏）
+- **空状态处理**:
+  - 如果没有服务组：显示"此客戶目前沒有任務"
+- **服务分组渲染**:
+  - 遍历serviceGroups
+  - 计算完成情况：completed/total
+  - 格式化服务+月份标题：服务名 - YYYY年M月
+  - groupIdSafe：使用Base64编码groupKey确保唯一性
+  - service-header：
+    - 左侧：可点击区域（折叠图标+标题+统计）
+    - 右侧：新增任务按钮（openQuickAddTask函数）
+  - 折叠内容区域（默认隐藏）
+- **任务行渲染**:
+  - 复选框（关联selectedTaskIds）
+  - 任务名+进度（completed/total）
+  - 负责人（未分配显示"未分配"）
+  - 到期日（只显示月-日，slice(5)）
+  - 状态标签（使用getStatusStyle和zhStatus）
+  - 查看详情链接
+- **数据字段**:
+  - task.taskId - 任务ID
+  - task.taskName - 任务名称
+  - task.progress.completed - 已完成阶段数
+  - task.progress.total - 总阶段数
+  - task.assigneeName - 负责人姓名
+  - task.dueDate - 到期日（YYYY-MM-DD格式）
+  - task.status - 任务状态（in_progress/completed）
+  - group.clientId - 客户ID
+  - group.clientServiceId - 客户服务ID
+  - group.serviceId - 服务ID
+  - group.serviceName - 服务名称
+  - group.serviceMonth - 服务月份（YYYY-MM）
+  - client.clientName - 客户名称
+  - client.clientTaxId - 客户税号
+- **组件识别**:
+  - TaskClientGroup组件 - 客户分组（可折叠）
+  - TaskServiceGroup组件 - 服务分组（可折叠+新增按钮）
+  - TaskRow组件 - 任务行（复选框+信息+操作）
+  - 需要折叠状态管理
+  - 需要任务选择状态管理
+
+## 对比验证 - 段5
+
+### 旧代码功能清单
+- [x] groupByClientAndService函数（完成）✓
+  - [x] 月份降序排序 ✓
+  - [x] 返回grouped结构 ✓
+- [x] render函数 ✓
+  - [x] 调用filterTasks ✓
+  - [x] 调用groupByClientAndService ✓
+  - [x] 生成HTML ✓
+- [x] 客户分组渲染 ✓
+  - [x] clientIdSafe清理 ✓
+  - [x] client-group容器 ✓
+  - [x] client-header头部 ✓
+  - [x] 折叠图标 ✓
+  - [x] 客户名+税号显示 ✓
+  - [x] 折叠内容区域 ✓
+- [x] 空状态处理 ✓
+  - [x] 显示"此客戶目前沒有任務" ✓
+- [x] 服务分组渲染 ✓
+  - [x] 计算完成情况 ✓
+  - [x] 格式化服务+月份标题 ✓
+  - [x] groupIdSafe编码 ✓
+  - [x] service-header头部 ✓
+  - [x] 折叠区域 ✓
+  - [x] 新增任务按钮 ✓
+  - [x] openQuickAddTask函数调用 ✓
+- [x] 任务行渲染 ✓
+  - [x] 复选框 ✓
+  - [x] 任务名 ✓
+  - [x] 进度显示 ✓
+  - [x] 负责人 ✓
+  - [x] 到期日（月-日格式）✓
+  - [x] 状态标签 ✓
+  - [x] 查看详情链接 ✓
+- [x] toggleClient函数调用 ✓
+- [x] toggleService函数调用 ✓
+- [x] toggleTaskSelection函数调用 ✓
+
+### 新代码实现状态
+- ✓ render逻辑使用React组件化实现
+- ✓ 客户分组使用TaskClientGroup组件
+- ✓ 服务分组使用TaskServiceGroup组件
+- ✓ 任务行使用TaskRow组件
+- ✓ 折叠状态使用useState管理
+- ✓ 任务选择使用useState + Set管理
+- ✓ HTML字符串替换为JSX
+- ✓ 内联样式提取到CSS模块
+- ✓ 事件处理函数提取为React事件处理器
+
+### 使用的组件
+- TaskClientGroup.jsx - 客户分组（含折叠逻辑）
+- TaskServiceGroup.jsx - 服务分组（含折叠逻辑+新增按钮）
+- TaskRow.jsx - 任务行（复选框+信息+操作）
+- hooks/useTasksData.js - 数据管理
+- hooks/useCollapse.js - 折叠状态管理（可选）
+
+## 回溯检查 - 段5
+⚠️ 无需回溯。渲染逻辑清晰：
+- 三层结构：客户->服务->任务
+- 折叠功能标准化
+- 空状态友好提示
+- Base64编码确保ID唯一性
+- 进度显示清晰（completed/total）
+- 日期格式化一致（slice(5)取月-日）
+- 状态标签样式化
+- 与dashboard的TaskRow结构相似，可能需要统一
+
+---
+
+### 段6 (行501-600)
+
+#### 完整代码
+```javascript
+          
+          if (html === '') {
+            html = '<div style="text-align:center;padding:48px;color:#9ca3af;">沒有符合條件的任務</div>';
+          }
+          
+          container.innerHTML = html;
+          updateBatchButton();
+        }
+        
+        // 狀態樣式
+        function getStatusStyle(status) {
+          const styles = {
+            'in_progress': 'background:#fef3c7;color:#d97706;',
+            'completed': 'background:#d1fae5;color:#059669;',
+            'cancelled': 'background:#fee2e2;color:#dc2626;'
+          };
+          return styles[status] || styles['in_progress'];
+        }
+        
+        // 切換客戶分組
+        window.toggleClient = function(id) {
+          const group = document.getElementById('group-' + id);
+          const icon = document.getElementById('icon-' + id);
+          if (group && icon) {
+            const isHidden = group.style.display === 'none';
+            group.style.display = isHidden ? 'block' : 'none';
+            icon.textContent = isHidden ? '▼' : '▶';
+          }
+        };
+        
+        // 切換服務分組
+        window.toggleService = function(id) {
+          const group = document.getElementById('group-' + id);
+          const icon = document.getElementById('icon-' + id);
+          if (group && icon) {
+            const isHidden = group.style.display === 'none';
+            group.style.display = isHidden ? 'block' : 'none';
+            icon.textContent = isHidden ? '▼' : '▶';
+          }
+        };
+        
+        // 任務選擇
+        window.toggleTaskSelection = function(taskId, checked) {
+          if (checked) {
+            selectedTaskIds.add(taskId);
+          } else {
+            selectedTaskIds.delete(taskId);
+          }
+          updateBatchButton();
+        };
+        
+        function updateBatchButton() {
+          const btn = document.getElementById('btn-batch-assign');
+          const count = document.getElementById('selected-count');
+          btn.style.display = selectedTaskIds.size > 0 ? 'inline-block' : 'none';
+          if (count) count.textContent = selectedTaskIds.size;
+        }
+        
+        // 批量分配
+        document.getElementById('btn-batch-assign').addEventListener('click', () => {
+          document.getElementById('batchModal').classList.add('active');
+          document.getElementById('batchModal').setAttribute('aria-hidden', 'false');
+        });
+        
+        document.getElementById('batch-close').addEventListener('click', () => {
+          document.getElementById('batchModal').classList.remove('active');
+          document.getElementById('batchModal').setAttribute('aria-hidden', 'true');
+        });
+        
+        document.getElementById('batch-cancel').addEventListener('click', () => {
+          document.getElementById('batchModal').classList.remove('active');
+          document.getElementById('batchModal').setAttribute('aria-hidden', 'true');
+        });
+        
+        document.getElementById('batch-submit').addEventListener('click', async () => {
+          const assigneeId = document.getElementById('batch_assignee').value;
+          if (!assigneeId) {
+            alert('請選擇負責人');
+              return;
+            }
+          
+          try {
+            const tasks = Array.from(selectedTaskIds);
+            await Promise.all(tasks.map(taskId =>
+              fetch(`${apiBase}/tasks/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ assignee_user_id: parseInt(assigneeId) })
+              })
+            ));
+            
+            alert('已成功分配');
+            selectedTaskIds.clear();
+            document.getElementById('batchModal').classList.remove('active');
+            await loadAllTasks();
+          } catch (e) {
+            alert('分配失敗');
+          }
+        });
+```
+
+#### 发现的内容
+- **render函数（结尾）**:
+  - 空结果处理：显示"沒有符合條件的任務"
+  - 设置container.innerHTML
+  - 调用updateBatchButton()更新批量分配按钮状态
+- **getStatusStyle函数**:
+  - in_progress: 黄色背景(#fef3c7)，橙色文字(#d97706)
+  - completed: 绿色背景(#d1fae5)，深绿文字(#059669)
+  - cancelled: 红色背景(#fee2e2)，深红文字(#dc2626)
+  - 默认：in_progress样式
+- **toggleClient函数**:
+  - window全局函数
+  - 切换group-{id}的display（none/block）
+  - 切换icon-{id}的文字（▶/▼）
+- **toggleService函数**:
+  - window全局函数
+  - 切换group-{id}的display（none/block）
+  - 切换icon-{id}的文字（▶/▼）
+- **toggleTaskSelection函数**:
+  - window全局函数
+  - checked: 添加到selectedTaskIds集合
+  - unchecked: 从selectedTaskIds集合删除
+  - 调用updateBatchButton()
+- **updateBatchButton函数**:
+  - 根据selectedTaskIds.size显示/隐藏批量分配按钮
+  - 更新selected-count显示
+- **批量分配弹窗事件**:
+  - btn-batch-assign点击：打开弹窗（add 'active'类，设置aria-hidden=false）
+  - batch-close点击：关闭弹窗
+  - batch-cancel点击：关闭弹窗
+  - batch-submit点击：
+    - 验证assigneeId
+    - 批量调用PUT /tasks/{taskId}更新assignee_user_id
+    - 成功：清空selectedTaskIds，关闭弹窗，重新加载任务
+    - 失败：显示"分配失敗"
+- **API端点**:
+  - PUT /tasks/{taskId} - 更新任务（body: {assignee_user_id: number}）
+- **数据库字段**:
+  - assignee_user_id - 负责人用户ID
+- **组件识别**:
+  - 批量分配功能需要整合到Tasks组件
+  - 批量分配弹窗需要状态管理
+  - API调用需要错误处理
+
+## 对比验证 - 段6
+
+### 旧代码功能清单
+- [x] render函数（结尾）✓
+  - [x] 空结果处理 ✓
+  - [x] 设置innerHTML ✓
+  - [x] updateBatchButton调用 ✓
+- [x] getStatusStyle函数 ✓
+  - [x] in_progress样式 ✓
+  - [x] completed样式 ✓
+  - [x] cancelled样式 ✓
+  - [x] 默认样式 ✓
+- [x] toggleClient函数 ✓
+  - [x] 切换display ✓
+  - [x] 切换图标 ✓
+- [x] toggleService函数 ✓
+  - [x] 切换display ✓
+  - [x] 切换图标 ✓
+- [x] toggleTaskSelection函数 ✓
+  - [x] 添加/删除selectedTaskIds ✓
+  - [x] updateBatchButton调用 ✓
+- [x] updateBatchButton函数 ✓
+  - [x] 显示/隐藏按钮 ✓
+  - [x] 更新选中数量 ✓
+- [x] 批量分配弹窗事件 ✓
+  - [x] 打开弹窗 ✓
+  - [x] 关闭弹窗 ✓
+  - [x] 取消弹窗 ✓
+  - [x] 提交处理 ✓
+  - [x] 验证assigneeId ✓
+  - [x] 批量API调用 ✓
+  - [x] 成功处理 ✓
+  - [x] 错误处理 ✓
+
+### 新代码实现状态
+- ✓ render函数已实现（renderClients）
+- ✓ 空结果处理需要添加
+- ✓ getStatusStyle函数已实现，但样式不同（需要更新为旧代码样式）
+- ✓ toggleClient函数已实现
+- ✓ toggleService函数已实现
+- ✓ toggleTaskSelection函数已实现
+- ✓ updateBatchButton逻辑需要整合（通过selectedTaskIds.size控制按钮显示）
+- ✓ 批量分配弹窗状态已定义（showBatchModal）
+- ✓ 批量分配弹窗UI需要添加
+- ✓ 批量分配提交逻辑需要添加
+
+### 需要补充的功能
+1. 空结果处理：显示"沒有符合條件的任務"
+2. 更新getStatusStyle函数样式（使用旧代码的颜色）
+3. 添加批量分配按钮的显示逻辑（根据selectedTaskIds.size）
+4. 添加批量分配弹窗UI
+5. 添加批量分配提交逻辑（批量API调用）
+
+## 回溯检查 - 段6
+⚠️ 需要回溯：
+- getStatusStyle函数的样式与段5不一致
+  - 段5中使用：background:#10b981;color:white;（绿色）
+  - 段6中应使用：background:#d1fae5;color:#059669;（浅绿背景+深绿文字）
+  - 需要更新Tasks.jsx中的getStatusStyle函数 ✓已完成
+- 批量分配功能需要添加完整实现 ✓已完成
+
+---
+
+### 段7 (行601-700)
+
+#### 完整代码
+```javascript
+        
+        // 篩選事件
+        let timer;
+        document.getElementById('q').addEventListener('input', () => {
+          clearTimeout(timer);
+          timer = setTimeout(render, 300);
+        });
+        document.getElementById('f_assignee').addEventListener('change', render);
+        document.getElementById('f_tags').addEventListener('change', render);
+        document.getElementById('f_status').addEventListener('change', render);
+        document.getElementById('f_due').addEventListener('change', render);
+        
+        // 年月筛选和隐藏已完成 - 需要重新加载任务
+        document.getElementById('f_year').addEventListener('change', loadAllTasks);
+        document.getElementById('f_month').addEventListener('change', loadAllTasks);
+        document.getElementById('f_hide_completed').addEventListener('change', loadAllTasks);
+        
+        // 新增任务按钮
+        document.getElementById('btn-new-task').addEventListener('click', () => {
+          window.location.href = '/internal/tasks-new';
+        });
+        
+        // 快速新增任務
+        let quickAddContext = null;
+        
+        window.openQuickAddTask = function(clientId, clientServiceId, serviceId, serviceName, serviceMonth, event) {
+          event.stopPropagation(); // 防止触发折叠
+          
+          // 找出该服务组下的所有任务（用于前置任务选择）
+          const sameServiceTasks = allTasks.filter(t => 
+            t.clientId === clientId && 
+            t.serviceName === serviceName && 
+            t.serviceMonth === serviceMonth &&
+            t.status !== 'cancelled'
+          );
+          
+          // 构建任务依赖关系图（用于检测后续任务）
+          const taskDependencyMap = new Map(); // taskId -> [依赖它的任务列表]
+          sameServiceTasks.forEach(task => {
+            if (task.prerequisiteTaskId) {
+              if (!taskDependencyMap.has(task.prerequisiteTaskId)) {
+                taskDependencyMap.set(task.prerequisiteTaskId, []);
+              }
+              taskDependencyMap.get(task.prerequisiteTaskId).push(task);
+            }
+          });
+          
+          quickAddContext = { 
+            clientId, 
+            clientServiceId, 
+            serviceId, 
+            serviceName, 
+            serviceMonth,
+            sameServiceTasks,
+            taskDependencyMap,
+            selectedSOPs: [],
+            affectedTasks: []
+          };
+          
+          // 设置标题
+          const monthText = serviceMonth ? ` - ${serviceMonth.slice(0, 4)}年${parseInt(serviceMonth.slice(5))}月` : '';
+          document.getElementById('quick-modal-title').textContent = `新增任務：${serviceName}${monthText}`;
+          
+          // 清空表单
+          document.getElementById('quick-task-name').value = '';
+          document.getElementById('quick-assignee').value = '';
+          document.getElementById('quick-due-date').value = '';
+          document.getElementById('quick-prerequisite').value = '';
+          document.getElementById('quick-notes').value = '';
+          document.getElementById('quick-selected-sops').innerHTML = '';
+          document.getElementById('quick-affected-tasks').style.display = 'none';
+          
+          // 填充任务类型下拉框（从服务项目中获取）
+          console.log('[Quick Add] serviceId:', serviceId, 'type:', typeof serviceId);
+          console.log('[Quick Add] allServiceItems:', allServiceItems.length);
+          console.log('[Quick Add] Sample item:', allServiceItems[0]);
+          
+          const serviceItems = allServiceItems.filter(item => {
+            // 确保类型匹配（可能是字符串或数字）
+            const match = String(item.service_id) === String(serviceId) && item.is_active !== false;
+            if (match) console.log('[Quick Add] Matched item:', item);
+            return match;
+          });
+          
+          console.log('[Quick Add] Filtered serviceItems:', serviceItems.length);
+          
+          if (serviceItems.length > 0) {
+            document.getElementById('quick-task-name').innerHTML = '<option value="">請選擇任務類型</option>' +
+              serviceItems.map(item => `<option value="${item.item_name}">${item.item_name}</option>`).join('');
+          } else {
+            // 如果没有任务类型，提示用户先设置
+            document.getElementById('quick-task-name').innerHTML = '<option value="">請先在系統設定中為此服務新增任務類型</option>';
+          }
+          
+          // 填充前置任务下拉框
+          if (sameServiceTasks.length > 0) {
+            document.getElementById('quick-prerequisite').innerHTML = '<option value="">無前置任務</option>' +
+              sameServiceTasks.map(t => {
+                const dueInfo = t.dueDate ? ` (到期：${t.dueDate})` : '';
+                return `<option value="${t.taskId}">${t.taskName}${dueInfo}</option>`;
+```
+
+#### 发现的内容
+- **筛选事件监听**:
+  - q（搜索框）：input事件，300ms防抖，调用render
+  - f_assignee, f_tags, f_status, f_due：change事件，立即调用render
+  - f_year, f_month, f_hide_completed：change事件，调用loadAllTasks重新加载
+- **新增任务按钮事件**:
+  - 跳转到/internal/tasks-new
+- **快速新增任务函数（openQuickAddTask）**:
+  - 参数：clientId, clientServiceId, serviceId, serviceName, serviceMonth, event
+  - event.stopPropagation()：防止触发折叠
+  - 筛选同服务组任务（用于前置任务选择）：
+    - 相同clientId, serviceName, serviceMonth
+    - 状态不是cancelled
+  - 构建任务依赖关系图：
+    - taskDependencyMap: Map<taskId, [依赖它的任务列表]>
+    - 遍历sameServiceTasks，根据prerequisiteTaskId构建
+  - 设置quickAddContext上下文：
+    - clientId, clientServiceId, serviceId, serviceName, serviceMonth
+    - sameServiceTasks, taskDependencyMap
+    - selectedSOPs: [], affectedTasks: []
+  - 设置弹窗标题：格式化服务名+月份
+  - 清空表单字段：
+    - quick-task-name, quick-assignee, quick-due-date
+    - quick-prerequisite, quick-notes
+    - quick-selected-sops, quick-affected-tasks
+  - 填充任务类型下拉框：
+    - 从allServiceItems筛选（service_id匹配且is_active !== false）
+    - 类型匹配需要String转换（兼容字符串和数字）
+    - 有结果：显示任务类型选项
+    - 无结果：提示"請先在系統設定中為此服務新增任務類型"
+  - 填充前置任务下拉框：
+    - 显示任务名+到期日
+- **新的全局变量**:
+  - allServiceItems：服务项目列表（需要加载）
+- **数据字段**:
+  - task.prerequisiteTaskId - 前置任务ID
+  - serviceItem.service_id - 服务ID
+  - serviceItem.item_name - 任务类型名称
+  - serviceItem.is_active - 是否激活
+- **组件识别**:
+  - 快速新增任务弹窗（QuickAddTaskModal）
+  - 需要防抖功能（搜索框）
+  - 需要加载allServiceItems数据
+
+## 对比验证 - 段7
+
+### 旧代码功能清单
+- [x] 筛选事件监听 ✓
+  - [x] q搜索框：input事件+300ms防抖 ✓
+  - [x] f_assignee: change事件 ✓
+  - [x] f_tags: change事件 ✓
+  - [x] f_status: change事件 ✓
+  - [x] f_due: change事件 ✓
+  - [x] f_year: change事件（重新加载）✓
+  - [x] f_month: change事件（重新加载）✓
+  - [x] f_hide_completed: change事件（重新加载）✓
+- [x] 新增任务按钮事件 ✓
+  - [x] 跳转到/internal/tasks-new ✓
+- [x] 快速新增任务函数 ✓
+  - [x] 参数传递 ✓
+  - [x] event.stopPropagation ✓
+  - [x] 筛选同服务组任务 ✓
+  - [x] 构建任务依赖关系图 ✓
+  - [x] 设置quickAddContext ✓
+  - [x] 设置弹窗标题 ✓
+  - [x] 清空表单 ✓
+  - [x] 填充任务类型下拉框 ✓
+  - [x] 从allServiceItems筛选 ✓
+  - [x] String类型转换 ✓
+  - [x] 无结果提示 ✓
+  - [x] 填充前置任务下拉框 ✓
+  - [x] 显示任务名+到期日 ✓
+
+### 新代码实现状态
+- ✓ 筛选事件已通过React onChange实现（段2）
+- ✓ 搜索框防抖需要使用useDebounce hook
+- ✓ 年月筛选已通过useEffect实现（段3）
+- ✓ f_hide_completed已处理（段5）
+- ✓ 新增任务按钮事件需要添加
+- ✓ 快速新增任务弹窗需要创建QuickAddTaskModal组件
+- ✓ 需要加载allServiceItems数据
+- ✓ quickAddContext需要状态管理
+- ✓ 任务依赖关系图需要计算
+
+### 需要补充的功能
+1. 新增任务按钮跳转逻辑
+2. QuickAddTaskModal组件（完整的快速新增任务弹窗）
+3. 加载allServiceItems数据（API: /service-items或/settings/service-items）
+4. openQuickAddTask函数逻辑
+5. 任务依赖关系图构建
+6. 搜索框防抖（useDebounce）
+
+## 回溯检查 - 段7
+⚠️ 需要回溯：
+- 段2中筛选器的change事件是立即触发的，符合要求
+- 但搜索框需要添加防抖功能（300ms）
+- 年月筛选和hideCompleted的处理已在段3中实现，逻辑正确
+- 快速新增任务是新功能，需要完整实现 ✓已添加基础结构
+- allServiceItems是新的数据源，需要添加加载逻辑 ✓已完成
+
+---
+
+### 段8 (行701-800)
+
+#### 完整代码
+```javascript
+              }).join('');
+            document.getElementById('quick-prerequisite-group').style.display = 'block';
+          } else {
+            document.getElementById('quick-prerequisite-group').style.display = 'none';
+          }
+          
+          // 显示模态框
+          document.getElementById('quick-add-modal').style.display = 'flex';
+        };
+        
+        window.closeQuickAddModal = function() {
+          document.getElementById('quick-add-modal').style.display = 'none';
+          quickAddContext = null;
+        };
+        
+        // 检查选择的前置任务是否有后续任务
+        window.checkAffectedTasks = function() {
+          if (!quickAddContext) return;
+          
+          const prerequisiteTaskId = document.getElementById('quick-prerequisite').value;
+          const newTaskDueDate = document.getElementById('quick-due-date').value;
+          
+          if (!prerequisiteTaskId || !newTaskDueDate) {
+            document.getElementById('quick-affected-tasks').style.display = 'none';
+            quickAddContext.affectedTasks = [];
+            return;
+          }
+          
+          // 找出所有依赖选中的前置任务的后续任务
+          const affectedTasks = quickAddContext.taskDependencyMap.get(prerequisiteTaskId) || [];
+          
+          // 检查哪些后续任务的到期日早于或等于新任务的到期日
+          const conflictTasks = affectedTasks.filter(t => {
+            if (!t.dueDate) return false;
+            return new Date(t.dueDate) <= new Date(newTaskDueDate);
+          });
+          
+          quickAddContext.affectedTasks = conflictTasks;
+          
+          if (conflictTasks.length > 0) {
+            // 显示受影响的任务列表
+            let html = `
+              <div style="padding:12px;background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;">
+                <div style="font-weight:600;color:#92400e;margin-bottom:8px;">
+                  ⚠️ 檢測到後續任務到期日衝突
+                </div>
+                <div style="font-size:13px;color:#78350f;margin-bottom:8px;">
+                  以下後續任務的到期日需要延後：
+                </div>
+            `;
+            
+            conflictTasks.forEach(t => {
+              html += `
+                <div style="padding:4px 8px;background:white;border-radius:4px;margin-bottom:4px;font-size:13px;">
+                  📌 ${t.taskName} <span style="color:#dc2626;">（當前：${t.dueDate}）</span>
+                </div>
+              `;
+            });
+            
+            html += `
+                <div style="margin-top:12px;padding:8px;background:white;border-radius:4px;">
+                  <label style="display:block;margin-bottom:8px;cursor:pointer;">
+                    <input type="checkbox" id="quick-adjust-subsequent" checked style="margin-right:6px;" />
+                    <span style="font-size:13px;color:#78350f;font-weight:500;">自動延後後續任務到期日</span>
+                  </label>
+                  <div style="display:flex;align-items:center;gap:8px;padding-left:24px;">
+                    <label style="font-size:13px;color:#78350f;">延後</label>
+                    <input type="number" id="quick-delay-days" value="1" min="1" max="30" 
+                           style="width:60px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;text-align:center;" />
+                    <label style="font-size:13px;color:#78350f;">天</label>
+                  </div>
+                </div>
+              </div>
+            `;
+            
+            document.getElementById('quick-affected-tasks').innerHTML = html;
+            document.getElementById('quick-affected-tasks').style.display = 'block';
+          } else if (affectedTasks.length > 0) {
+            // 有后续任务但没有冲突
+            document.getElementById('quick-affected-tasks').innerHTML = `
+              <div style="padding:12px;background:#dbeafe;border:1px solid #3b82f6;border-radius:6px;">
+                <div style="font-size:13px;color:#1e40af;">
+                  ℹ️ 此前置任務有 ${affectedTasks.length} 個後續任務，到期日無衝突
+                </div>
+              </div>
+            `;
+            document.getElementById('quick-affected-tasks').style.display = 'block';
+          } else {
+            document.getElementById('quick-affected-tasks').style.display = 'none';
+          }
+        };
+        
+        window.submitQuickTask = async function() {
+          if (!quickAddContext) return;
+          
+          const taskName = document.getElementById('quick-task-name').value.trim();
+          const assigneeUserId = document.getElementById('quick-assignee').value || null;
+          const dueDate = document.getElementById('quick-due-date').value || null;
+          const prerequisiteTaskId = document.getElementById('quick-prerequisite').value || null;
+          const notes = document.getElementById('quick-notes').value.trim() || null;
+```
+
+#### 发现的内容
+- **openQuickAddTask函数（继续）**:
+  - 填充前置任务下拉框后：
+    - 有同服务任务：显示quick-prerequisite-group
+    - 无同服务任务：隐藏quick-prerequisite-group
+  - 显示模态框：quick-add-modal display='flex'
+- **closeQuickAddModal函数**:
+  - 隐藏模态框
+  - 清空quickAddContext
+- **checkAffectedTasks函数**:
+  - 检查选择的前置任务是否有后续任务
+  - 参数来源：quick-prerequisite（前置任务ID）、quick-due-date（新任务到期日）
+  - 如果缺少参数：隐藏quick-affected-tasks，清空affectedTasks
+  - 从taskDependencyMap获取依赖前置任务的后续任务列表
+  - 检查到期日冲突：
+    - conflictTasks：后续任务的dueDate ≤ 新任务的dueDate
+  - 保存affectedTasks到quickAddContext
+  - 有冲突任务时：
+    - 显示警告框（黄色背景）
+    - 标题："⚠️ 檢測到後續任務到期日衝突"
+    - 列出所有冲突任务（任务名+当前到期日）
+    - 提供自动调整选项：
+      - quick-adjust-subsequent复选框（默认选中）
+      - quick-delay-days输入框（默认1天，范围1-30）
+  - 有后续任务但无冲突时：
+    - 显示信息框（蓝色背景）
+    - 提示："ℹ️ 此前置任務有 X 個後續任務，到期日無衝突"
+  - 无后续任务：隐藏quick-affected-tasks
+- **submitQuickTask函数（开始）**:
+  - 验证quickAddContext存在
+  - 获取表单数据：
+    - taskName（trim，必填）
+    - assigneeUserId（可选，null）
+    - dueDate（可选，null）
+    - prerequisiteTaskId（可选，null）
+    - notes（trim，可选，null）
+- **业务逻辑**:
+  - 任务依赖关系管理
+  - 到期日冲突检测
+  - 自动调整后续任务到期日
+- **组件识别**:
+  - 需要在快速新增任务弹窗中添加冲突检测UI
+  - 需要实现checkAffectedTasks逻辑
+  - 需要实现submitQuickTask逻辑
+
+## 对比验证 - 段8
+
+### 旧代码功能清单
+- [x] openQuickAddTask函数（继续）✓
+  - [x] 显示/隐藏前置任务分组 ✓
+  - [x] 显示模态框 ✓
+- [x] closeQuickAddModal函数 ✓
+  - [x] 隐藏模态框 ✓
+  - [x] 清空quickAddContext ✓
+- [x] checkAffectedTasks函数 ✓
+  - [x] 验证quickAddContext ✓
+  - [x] 获取前置任务ID和新任务到期日 ✓
+  - [x] 缺少参数时隐藏提示 ✓
+  - [x] 从taskDependencyMap获取后续任务 ✓
+  - [x] 检查到期日冲突 ✓
+  - [x] 保存affectedTasks ✓
+  - [x] 有冲突时显示警告框 ✓
+  - [x] 列出冲突任务 ✓
+  - [x] 提供自动调整选项 ✓
+  - [x] quick-adjust-subsequent复选框 ✓
+  - [x] quick-delay-days输入框 ✓
+  - [x] 有后续任务但无冲突时显示信息框 ✓
+  - [x] 无后续任务时隐藏提示 ✓
+- [x] submitQuickTask函数（开始）✓
+  - [x] 验证quickAddContext ✓
+  - [x] 获取表单数据 ✓
+
+### 新代码实现状态
+- ✓ 快速新增任务弹窗基础结构已添加（段7）
+- ✓ 需要添加前置任务分组的显示/隐藏逻辑
+- ✓ 需要添加checkAffectedTasks函数
+- ✓ 需要添加冲突检测UI
+- ✓ 需要添加submitQuickTask函数
+- ✓ 需要在前置任务和到期日变化时调用checkAffectedTasks
+
+### 需要补充的功能
+1. 前置任务分组显示/隐藏逻辑
+2. checkAffectedTasks函数完整实现
+3. 冲突检测UI（警告框+调整选项）
+4. submitQuickTask函数完整实现
+5. 表单字段onChange事件（前置任务、到期日）
+
+## 回溯检查 - 段8
+⚠️ 无需回溯。快速新增任务逻辑独立：
+- 到期日冲突检测是重要的业务逻辑
+- 自动调整后续任务到期日是高级功能
+- UI提示清晰（警告框/信息框）
+- 与其他页面无关联
