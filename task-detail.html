@@ -499,10 +499,10 @@
       }
     }
 
-    // 載入任務文檔
+    // 載入任務文檔（使用知識庫 API）
     async function loadTaskDocuments() {
       try {
-        const url = `${apiBase}/attachments?entity_type=task&entity_id=${currentTaskId}`;
+        const url = `${apiBase}/knowledge/documents?related_entity_type=task&related_entity_id=${currentTaskId}&category=attachment`;
         console.log('載入附件 URL:', url);
         
         const res = await fetch(url, { credentials: 'include' });
@@ -514,22 +514,23 @@
         console.log('附件數據:', json);
         
         const tbody = document.getElementById('documentsList');
+        const items = json.items || json.data || [];
         
-        if (!json.ok || !json.data || json.data.length === 0) {
+        if (!json.ok || items.length === 0) {
           tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #9ca3af;">尚無文檔</td></tr>';
           return;
         }
 
-        tbody.innerHTML = json.data.map(doc => `
+        tbody.innerHTML = items.map(doc => `
           <tr>
-            <td>${doc.filename || '未知文件'}</td>
-            <td>${doc.contentType || '-'}</td>
-            <td>${formatFileSize(doc.sizeBytes || 0)}</td>
-            <td>${formatDateTime(doc.uploadedAt)}</td>
-            <td>${doc.uploaderName || '未知'}</td>
+            <td>${doc.fileName || doc.file_name || '未知文件'}</td>
+            <td>${doc.fileType || doc.file_type || '-'}</td>
+            <td>${formatFileSize(doc.fileSize || doc.file_size || 0)}</td>
+            <td>${formatDateTime(doc.createdAt || doc.created_at)}</td>
+            <td>${doc.uploaderName || doc.uploader_name || '未知'}</td>
             <td>
-              <button class="table-btn-link" onclick="downloadDocument(${doc.id}, '${(doc.filename || 'file').replace(/'/g, "\\'")}')">下載</button>
-              <button class="table-btn-link danger" onclick="deleteDocument(${doc.id})">刪除</button>
+              <button class="table-btn-link" onclick="downloadDocument('${(doc.fileUrl || doc.file_url).replace(/'/g, "\\'")}', '${(doc.fileName || doc.file_name || 'file').replace(/'/g, "\\'")}')">下載</button>
+              <button class="table-btn-link danger" onclick="deleteDocument(${doc.document_id})">刪除</button>
             </td>
           </tr>
         `).join('');
@@ -1007,37 +1008,30 @@
         }
         
         try {
-          // 獲取上傳簽名
-          const signRes = await fetch(`${apiBase}/attachments/upload-sign`, {
+          // 使用知識庫 API 上傳
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('title', file.name);
+          formData.append('category', 'attachment');
+          formData.append('scope', 'task');
+          formData.append('related_entity_type', 'task');
+          formData.append('related_entity_id', currentTaskId);
+          
+          const uploadRes = await fetch(`${apiBase}/knowledge/documents/upload`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({
-              entity_type: 'task',
-              entity_id: currentTaskId,
-              filename: file.name,
-              content_type: file.type || 'application/octet-stream',
-              content_length: file.size
-            })
+            body: formData
           });
           
-          if (signRes.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
-          const signJson = await signRes.json();
-          
-          if (!signJson.ok) {
-            alert(signJson.message || '獲取上傳簽名失敗');
-            return;
+          if (uploadRes.status === 401) { 
+            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); 
+            return; 
           }
           
-          // 上傳文件
-          const uploadRes = await fetch(signJson.data.uploadUrl, {
-            method: 'PUT',
-            headers: signJson.data.headers,
-            body: file
-          });
+          const json = await uploadRes.json();
           
-          if (!uploadRes.ok) {
-            alert('上傳失敗');
+          if (!json.ok) {
+            alert(json.message || '上傳失敗');
             return;
           }
           
@@ -1055,11 +1049,18 @@
       fileInput.click();
     }
 
-    // 下載文檔
-    async function downloadDocument(attachmentId, filename) {
+    // 下載文檔（使用知識庫 API）
+    async function downloadDocument(fileUrl, filename) {
       try {
-        const res = await fetch(`${apiBase}/attachments/${attachmentId}/download`, { credentials: 'include' });
-        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        const res = await fetch(`${apiBase}/knowledge/documents/download?file_url=${encodeURIComponent(fileUrl)}`, { 
+          credentials: 'include' 
+        });
+        
+        if (res.status === 401) { 
+          window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); 
+          return; 
+        }
+        
         if (!res.ok) {
           alert('下載失敗');
           return;
@@ -1081,17 +1082,21 @@
       }
     }
 
-    // 刪除文檔
-    async function deleteDocument(attachmentId) {
+    // 刪除文檔（使用知識庫 API）
+    async function deleteDocument(documentId) {
       if (!confirm('確定要刪除此文檔嗎？')) return;
       
       try {
-        const res = await fetch(`${apiBase}/attachments/${attachmentId}`, {
+        const res = await fetch(`${apiBase}/knowledge/documents/${documentId}`, {
           method: 'DELETE',
           credentials: 'include'
         });
         
-        if (res.status === 401) { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); return; }
+        if (res.status === 401) { 
+          window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname); 
+          return; 
+        }
+        
         const json = await res.json();
         
         if (!json.ok) {
@@ -1099,6 +1104,7 @@
           return;
         }
 
+        alert('刪除成功');
         await loadTaskDocuments();
         
       } catch (err) {
