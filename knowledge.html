@@ -535,8 +535,8 @@
       </div>
     </section>
 
-    <!-- 筛选区域 -->
-    <section class="filters" style="padding:12px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+    <!-- 筛选区域（SOP/FAQ/資源中心專用，附件標籤隱藏） -->
+    <section class="filters" id="main-filters" style="padding:12px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
       <div style="flex:1;min-width:180px;max-width:240px;">
         <label for="q" style="display:block;margin-bottom:6px;color:var(--text-secondary);font-size:12px;">搜尋</label>
         <input id="q" type="search" placeholder="搜尋標題/內容…" aria-label="搜尋" style="padding:10px 12px;border:1px solid rgba(15,23,42,0.15);border-radius:8px;width:100%;" />
@@ -1997,6 +1997,12 @@
           document.querySelectorAll('.tab-button').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabName);
           });
+          
+          // 控制主篩選器顯示（附件標籤隱藏，其他標籤顯示）
+          const mainFilters = document.getElementById('main-filters');
+          if (mainFilters) {
+            mainFilters.style.display = (tabName === 'attachments') ? 'none' : 'flex';
+          }
           
           // 更新内容区域
           document.querySelectorAll('.tab-content').forEach(content => {
@@ -4010,9 +4016,21 @@
           loadAttachments();
         }
         
-        // 上傳表單處理（簡化版，帶進度條，25MB限制）
-        document.getElementById('attachmentUploadForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
+        // 初始化附件事件監聽器
+        function initAttachmentEventListeners() {
+          const form = document.getElementById('attachmentUploadForm');
+          const searchInput = document.getElementById('attachment-search');
+          const filterSelect = document.getElementById('attachment-filter-type');
+          
+          if (!form || !searchInput || !filterSelect) {
+            console.warn('[Attachments] 元素未找到，延遲綁定事件');
+            setTimeout(initAttachmentEventListeners, 100);
+            return;
+          }
+          
+          // 上傳表單處理（簡化版，帶進度條，25MB限制）
+          form.addEventListener('submit', async (e) => {
+            e.preventDefault();
           
           const file = document.getElementById('attachment-file').files[0];
           if (!file) {
@@ -4118,19 +4136,25 @@
           }
         });
         
-        // 搜尋輸入處理（Enter 鍵搜索）
-        document.getElementById('attachment-search').addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
+          // 搜尋輸入處理（Enter 鍵搜索）
+          searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+              attachmentState.page = 1;
+              loadAttachments();
+            }
+          });
+          
+          // 類型篩選變化時自動搜索
+          filterSelect.addEventListener('change', () => {
             attachmentState.page = 1;
             loadAttachments();
-          }
-        });
+          });
+          
+          console.log('[Attachments] ✅ 事件監聽器已綁定');
+        }
         
-        // 類型篩選變化時自動搜索
-        document.getElementById('attachment-filter-type').addEventListener('change', () => {
-          attachmentState.page = 1;
-          loadAttachments();
-        });
+        // 調用初始化函數
+        initAttachmentEventListeners();
         
       })();
     </script>
